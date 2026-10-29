@@ -18,10 +18,6 @@ import {
 } from "../lib/drain.js";
 import { loadGuardianToken } from "../lib/guardian-token.js";
 import {
-  stopContainerAppServer,
-  stopIngressNginx,
-} from "../lib/servers/nginx.js";
-import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
   stopProcessByPidFile,
@@ -270,9 +266,6 @@ export async function sleepAssistant(
     const res = dockerResourceNames(entry.assistantId);
     await sleepContainers(res);
     console.log("Docker containers stopped.");
-    if (await stopContainerAppServer(entry)) {
-      console.log("App server stopped.");
-    }
     return;
   }
 
@@ -379,12 +372,6 @@ export async function sleepAssistant(
     console.log("credential-executor stopped.");
   }
 
-  // Stop the nginx ingress if one is fronting this gateway — otherwise it
-  // keeps running against a dead upstream and serves 502s.
-  const ingressStopped = await stopIngressNginx();
-  if (ingressStopped) {
-    console.log("nginx ingress stopped.");
-  }
 }
 
 /**

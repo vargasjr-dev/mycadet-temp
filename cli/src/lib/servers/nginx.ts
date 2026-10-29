@@ -459,9 +459,12 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
         ...(metadata.assistantName ? { name: metadata.assistantName } : {}),
         // Each assistant carries its own hosting kind (the review follow-up
         // on #543): the chooser labels rows individually, so the edge stamps
-        // the served assistant's lockfile cloud — the same value the served
-        // SPA config carries. Undefined drops out of the JSON body.
-        remote: edgeServedRemote(lockfileAssistantRemote(id)),
+        // the served assistant's lockfile cloud — the truthful remote kind,
+        // NOT the served-SPA spelling (that one deliberately reads "custom"
+        // so remote browsers run the remote-gateway machinery; an assistant
+        // fact has no such excuse). Undefined drops out of the JSON body.
+        remote: lockfileAssistantRemote(id),
+        is_local: true,
       }
     : undefined;
   const responses = [

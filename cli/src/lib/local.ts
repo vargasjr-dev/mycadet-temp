@@ -58,7 +58,6 @@ import {
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
 } from "./http-client.js";
-import { stopIngressNginx } from "./servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   type ProcessState,
@@ -1980,7 +1979,4 @@ export async function stopLocalProcesses(
   // it — PID reuse must never send an unrelated process a signal.
   await stopTunnelProcess();
 
-  // Stop the nginx ingress if one is fronting this gateway (it guards against
-  // PID reuse itself).
-  await stopIngressNginx();
 }

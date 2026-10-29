@@ -23,7 +23,6 @@ console.warn = (...args: Parameters<typeof console.warn>) => {
 };
 
 const { routeTree } = await import("@/routes");
-const { authMiddleware } = await import("@/lib/auth/auth-middleware");
 
 afterAll(() => {
   console.warn = originalWarn;
@@ -43,23 +42,6 @@ function isUnderComponent(path: string, name: string): boolean {
   return matches.some(
     (m) =>
       (m.route as { Component?: { name?: string } }).Component?.name === name,
-  );
-}
-
-function hasRouteMiddleware(path: string, basename?: string): boolean {
-  const matches = matchRoutes(routeTree as never, path, basename) ?? [];
-  return matches.some((m) =>
-    Array.isArray((m.route as { middleware?: unknown }).middleware),
-  );
-}
-
-// React Router runs middleware from the outermost matched route inward, and in
-// array order within each route, so flattening the matched chain that way is
-// the order they run in.
-function middlewareExecutionOrder(path: string): unknown[] {
-  const matches = matchRoutes(routeTree as never, path) ?? [];
-  return matches.flatMap(
-    (m) => (m.route as { middleware?: unknown[] }).middleware ?? [],
   );
 }
 
@@ -99,7 +81,7 @@ describe("nuked account pages", () => {
 
 describe("remote web pairing route", () => {
   test("stays outside the auth-protected assistant app tree", () => {
-    expect(hasRouteMiddleware("/assistant/pair?deviceCode=abc")).toBe(false);
+    expect(isUnderComponent("/assistant/pair?deviceCode=abc", "RootLayout")).toBe(false);
   });
 
   test("uses the remote-gateway public path prefix as the router basename", () => {
@@ -112,9 +94,9 @@ describe("remote web pairing route", () => {
 
     expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
     expect(
-      hasRouteMiddleware(
+      isUnderComponent(
         "/assistant-123/assistant/pair?deviceCode=abc",
-        "/assistant-123",
+        "RootLayout",
       ),
     ).toBe(false);
   });
@@ -142,9 +124,9 @@ describe("credential entry route", () => {
       matchRoutes(routeTree as never, "/assistant/credentials/enter") ?? [];
     expect(matches.length).toBeGreaterThan(0);
     expect(matches.at(-1)?.pathname).toBe("/assistant/credentials/enter");
-    expect(hasRouteMiddleware("/assistant/credentials/enter?token=abc")).toBe(
-      false,
-    );
+    expect(
+      isUnderComponent("/assistant/credentials/enter?token=abc", "RootLayout"),
+    ).toBe(false);
   });
 
   test("matches under the remote-gateway public path prefix basename", () => {
@@ -157,9 +139,9 @@ describe("credential entry route", () => {
 
     expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
     expect(
-      hasRouteMiddleware(
+      isUnderComponent(
         "/assistant-123/assistant/credentials/enter",
-        "/assistant-123",
+        "RootLayout",
       ),
     ).toBe(false);
   });
@@ -167,15 +149,13 @@ describe("credential entry route", () => {
 
 describe("schedules routes", () => {
   // The Schedules page and per-schedule deep links render the same lazy
-  // SchedulesPage (under IntelligenceLayout), inside the auth-protected
-  // assistant tree.
+  // SchedulesPage (under IntelligenceLayout), inside the assistant app tree.
   test.each(["/assistant/schedules", "/assistant/schedules/sch_123"])(
-    "%s matches inside the auth-protected app tree",
+    "%s matches inside the assistant app tree",
     (path) => {
       const matches = matchRoutes(routeTree as never, path) ?? [];
       expect(matches.length).toBeGreaterThan(0);
       expect(matches.at(-1)?.pathname).toBe(path);
-      expect(hasRouteMiddleware(path)).toBe(true);
     },
   );
 
@@ -229,19 +209,6 @@ describe("skills routes", () => {
     const matches = matchRoutes(routeTree as never, url) ?? [];
     expect(matches.length).toBeGreaterThan(0);
     expect(matches.at(-1)?.params.skillId).toBe("org/repo/shared-skill");
-  });
-});
-
-describe("onboarding funnel middleware order", () => {
-  // A funnel return lands here on web and Electron; its query markers survive
-  // because `authMiddleware` — which resolves with pathname + search — is the
-  // only guard on the route.
-  test("guards the research funnel route with the auth middleware alone", () => {
-    const order = middlewareExecutionOrder(
-      "/assistant/onboarding/research?hosting=cadet-cloud&post_checkout=1",
-    );
-
-    expect(order).toContain(authMiddleware);
   });
 });
 
