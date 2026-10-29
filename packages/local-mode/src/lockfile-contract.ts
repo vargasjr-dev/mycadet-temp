@@ -354,25 +354,13 @@ export type TunnelProcessRecord = z.infer<typeof TunnelProcessRecordSchema>;
  * tunnel serves a URL, the edge serves a port.
  */
 export const AppProcessRecordSchema = z.object({
-  /**
-   * The edge process's bookkeeping, present while the edge runs. Absent on
-   * a stamp-only entry: the built-sha stamp below survives the edge's own
-   * stop, so between runs the `app` entry may carry only that.
-   */
+  /** The edge process's bookkeeping, present while the edge runs. */
   pid: z.number().optional(),
   /** The assistant the edge fronts, so `cadet ps` can nest the row. */
   assistantId: z.string().optional(),
   startedAt: z.string().optional(),
   /** Listening port for the nginx edge. */
-  port: z.number().optional(),
-  /**
-   * The commit the edge's source-built client bundles were last built from
-   * — the auto-build staleness stamp. Lives on the edge's own record rather
-   * than beside each dist so the CLI lockfile is the single home for edge
-   * state, and survives the edge's own stop (a build-cache fact, not a
-   * process fact) so restarting the edge never pays a needless rebuild.
-   */
-  builtSha: z.string().optional(),
+  port: z.number(),
 });
 export type AppProcessRecord = z.infer<typeof AppProcessRecordSchema>;
 
@@ -395,6 +383,13 @@ export const LockfileSchema = z.looseObject({
   activeAssistant: z.union([z.string(), z.null()]).catch(null),
   tunnel: TunnelProcessRecordSchema.optional().catch(undefined),
   app: AppProcessRecordSchema.optional().catch(undefined),
+  /**
+   * The commit the edge's source-built client bundles were last built from
+   * — the auto-build staleness stamp. A build-cache fact, not a process
+   * fact: it survives the edge's own stop, so restarting the edge never
+   * pays a needless rebuild.
+   */
+  appBuiltSha: z.string().optional().catch(undefined),
 });
 
 /**

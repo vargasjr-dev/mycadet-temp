@@ -144,7 +144,7 @@ export function readRootProcesses(): RootProcessRecords {
  * recorded yet.
  */
 export function readAppBuiltSha(): string | undefined {
-  return readRootProcesses().app?.builtSha;
+  return readLockfile().appBuiltSha;
 }
 
 /**
@@ -155,20 +155,16 @@ export function readAppBuiltSha(): string | undefined {
 export function stampAppBuiltSha(builtSha: string): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
-    if (data.app) {
-      data.app.builtSha = builtSha;
-    } else {
-      data.app = { builtSha };
-    }
+    data.appBuiltSha = builtSha;
     writeLockfileUnlocked(data);
   });
 }
 
 /**
- * Release the edge's process entry. The built-sha stamp is a build-cache
- * fact rather than a process fact, so it is kept while the pid bookkeeping
- * goes — restarting the edge re-stamps the process fields without paying a
- * needless bundle rebuild.
+ * Release the edge's process entry. The build stamp lives on its own
+ * lockfile key (`appBuiltSha`), so clearing the process bookkeeping never
+ * touches it — restarting the edge re-stamps the process fields without
+ * paying a needless bundle rebuild.
  */
 export function clearAppProcessRecord(expectedPid?: number): void {
   withCliLockfileLock(() => {
@@ -179,11 +175,7 @@ export function clearAppProcessRecord(expectedPid?: number): void {
       (expectedPid !== undefined && record.pid !== expectedPid)
     )
       return;
-    if (record.builtSha !== undefined) {
-      data.app = { builtSha: record.builtSha };
-    } else {
-      delete data.app;
-    }
+    delete data.app;
     writeLockfileUnlocked(data);
   });
 }

@@ -317,10 +317,12 @@ describe("parseLockfile", () => {
         startedAt: "2026-10-21T00:00:00.000Z",
         publicUrl: "https://tunnel.example.ts.net",
       },
-      app: { pid: 51, port: 7840, builtSha: "abc1234" },
+      app: { pid: 51, port: 7840 },
+      appBuiltSha: "abc1234",
     };
     expect(parseLockfile(raw).tunnel).toEqual(raw.tunnel);
     expect(parseLockfile(raw).app).toEqual(raw.app);
+    expect(parseLockfile(raw).appBuiltSha).toBe("abc1234");
   });
 
   test("drops a mistyped root process record, never the file", () => {

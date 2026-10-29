@@ -239,8 +239,11 @@ describe("buildNginxConfig", () => {
     remoteWebIngress: {
       webDistDir: "/tmp/cadet web/dist",
       appDistDir: "/tmp/cadet app/dist/standalone",
-      assistantId: "assistant-1",
-      version: "1.2.3",
+      config: {
+        remote: "custom",
+        assistantId: "assistant-1",
+        version: "1.2.3",
+      },
     },
   });
 
@@ -420,10 +423,13 @@ describe("buildNginxConfig", () => {
       remoteWebIngress: {
         webDistDir: "/tmp/cadet web/dist",
         appDistDir: "/tmp/cadet app/dist/standalone",
-        assistantName: "Homelab",
-        assistantId: "assistant-1",
-        hubUrl: "https://mycadet.ai/assistant",
-        version: "1.2.3",
+        config: {
+          remote: "custom",
+          assistantName: "Homelab",
+          assistantId: "assistant-1",
+          hubUrl: "https://mycadet.ai/assistant",
+          version: "1.2.3",
+        },
       },
     });
     expect(named).toContain(
@@ -979,23 +985,14 @@ const originalEnvironment = process.env.CADET_ENVIRONMENT;
 
 /** Pin the build environment so the stamped hubUrl is deterministic. */
 function pinProductionEnvironment(): void {
-  const originalIngressPort = process.env.CADET_NGINX_INGRESS_PORT;
   beforeEach(() => {
     process.env.CADET_ENVIRONMENT = "production";
-    // The edge port's only pin is the env var now that startAppServer takes
-    // no port argument; the suites assert against this same value.
-    process.env.CADET_NGINX_INGRESS_PORT = "7845";
   });
   afterEach(() => {
     if (originalEnvironment === undefined) {
       delete process.env.CADET_ENVIRONMENT;
     } else {
       process.env.CADET_ENVIRONMENT = originalEnvironment;
-    }
-    if (originalIngressPort === undefined) {
-      delete process.env.CADET_NGINX_INGRESS_PORT;
-    } else {
-      process.env.CADET_NGINX_INGRESS_PORT = originalIngressPort;
     }
   });
 }
@@ -1046,15 +1043,18 @@ describe("startAppServer", () => {
     expect(conf).toBe(
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
-        listenPort: 7845,
+        listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
           appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          hubUrl: PRODUCTION_HUB_URL,
-          version: "1.2.3",
+          config: {
+            remote: "custom",
+            hubUrl: PRODUCTION_HUB_URL,
+            version: "1.2.3",
+          },
         },
       }),
     );
@@ -1070,7 +1070,7 @@ describe("startAppServer", () => {
     // No assistant name was provided, so the served config omits the label.
     expect(indexHtml).not.toContain("assistantName");
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1185,7 +1185,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "started",
-      listenPort: 7845,
+      listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
     });
@@ -1231,7 +1231,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1243,7 +1243,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "already-running",
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
     });
     expect(edge.killed()).toBe(false);
@@ -1256,7 +1256,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
     });
     mockUnkillableNginx(pid);
@@ -1267,7 +1267,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "already-running",
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
     });
     expect(spawnMock).not.toHaveBeenCalled();
@@ -1279,7 +1279,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
     });
     const edge = mockKillableNginx(pid);
@@ -1298,21 +1298,24 @@ describe("startAppServer", () => {
     expect(conf).toBe(
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
-        listenPort: 7845,
+        listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
           appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          hubUrl: PRODUCTION_HUB_URL,
-          version: "1.2.3",
+          config: {
+            remote: "custom",
+            hubUrl: PRODUCTION_HUB_URL,
+            version: "1.2.3",
+          },
         },
       }),
     );
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830;");
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1323,7 +1326,7 @@ describe("startAppServer", () => {
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge({ listenPort: 7845 });
+    const pid = mockRunningEdge({ listenPort: 7840 });
     const edge = mockKillableNginx(pid);
 
     const result = await startAppServer({
@@ -1339,20 +1342,23 @@ describe("startAppServer", () => {
     expect(realFs.readFileSync(ingressConfPath(), "utf-8")).toBe(
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7900",
-        listenPort: 7845,
+        listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
           appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          hubUrl: PRODUCTION_HUB_URL,
-          version: "1.2.3",
+          config: {
+            remote: "custom",
+            hubUrl: PRODUCTION_HUB_URL,
+            version: "1.2.3",
+          },
         },
       }),
     );
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1364,7 +1370,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "My Homelab" }),
     });
@@ -1377,7 +1383,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "already-running",
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
     });
     expect(edge.killed()).toBe(false);
@@ -1391,7 +1397,7 @@ describe("startAppServer", () => {
       mockNginxSpawn();
       mockWebDistPresent();
       const pid = mockRunningEdge({
-        listenPort: 7845,
+        listenPort: 7840,
         gatewayUrl: "http://127.0.0.1:7830",
         remoteWebConfigHash: appConfigHash({
           ...(drift === "indexHtml"
@@ -1406,7 +1412,7 @@ describe("startAppServer", () => {
       const result = await startAppServer({
         gatewayUrl: "http://127.0.0.1:7830",
       });
-      expect(result).toMatchObject({ status: "started", listenPort: 7845 });
+      expect(result).toMatchObject({ status: "started", listenPort: 7840 });
       expect(edge.killed()).toBe(true);
       expect(readIngressState()?.remoteWebConfigHash).toBe(appConfigHash());
       expect(
@@ -1424,7 +1430,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
@@ -1444,7 +1450,7 @@ describe("startAppServer", () => {
     );
     expect(indexHtml).toContain('"assistantName":"New Name"');
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "New Name" }),
     });
@@ -1456,7 +1462,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
     });
     const edge = mockKillableNginx(pid);
@@ -1468,7 +1474,7 @@ describe("startAppServer", () => {
     expect(result.status).toBe("started");
     expect(edge.killed()).toBe(true);
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1480,7 +1486,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
@@ -1493,7 +1499,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "already-running",
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       staleRemoteWebConfig: true,
     });
@@ -1506,7 +1512,7 @@ describe("startAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "outdated-hash",
     });
@@ -1532,20 +1538,23 @@ describe("startAppServer", () => {
     expect(conf).toBe(
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
-        listenPort: 7845,
+        listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
           appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          hubUrl: PRODUCTION_HUB_URL,
-          version: "1.2.3",
+          config: {
+            remote: "custom",
+            hubUrl: PRODUCTION_HUB_URL,
+            version: "1.2.3",
+          },
         },
       }),
     );
     expect(readIngressState()).toEqual({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
@@ -1567,7 +1576,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "port-conflict",
-      listenPort: 7845,
+      listenPort: 7840,
       logPath: getIngressPaths().logPath,
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
@@ -1590,7 +1599,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "port-conflict",
-      listenPort: 7845,
+      listenPort: 7840,
       logPath: getIngressPaths().logPath,
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
@@ -1609,7 +1618,7 @@ describe("startAppServer", () => {
 
     expect(result).toEqual({
       status: "started",
-      listenPort: 7845,
+      listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
     });
@@ -1668,8 +1677,9 @@ describe("startAppServer", () => {
 
 describe("ensureAppServer", () => {
   const ASSISTANT_ID = "assistant-1";
-  const REQUESTED_PORT = 7846;
-  const originalIngressPort = process.env.CADET_NGINX_INGRESS_PORT;
+  // The edge starts on the module's default port; nothing in these tests
+  // binds it first.
+  const REQUESTED_PORT = 7840;
   const originalConfigHome = process.env.XDG_CONFIG_HOME;
   let lockfileDir: string;
 
@@ -1679,7 +1689,6 @@ describe("ensureAppServer", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: ASSISTANT_ID,
     } as never);
-    process.env.CADET_NGINX_INGRESS_PORT = String(REQUESTED_PORT);
     // Isolated lockfile dir so the assistant-name lookup never reads a real
     // machine lockfile.
     lockfileDir = makeWorkspace();
@@ -1687,11 +1696,6 @@ describe("ensureAppServer", () => {
   });
 
   afterEach(() => {
-    if (originalIngressPort === undefined) {
-      delete process.env.CADET_NGINX_INGRESS_PORT;
-    } else {
-      process.env.CADET_NGINX_INGRESS_PORT = originalIngressPort;
-    }
     if (originalConfigHome === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {
@@ -1752,7 +1756,7 @@ describe("ensureAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
@@ -1761,7 +1765,7 @@ describe("ensureAppServer", () => {
     const result = await ensureAppServer();
 
     expect(result).toEqual({
-      port: 7845,
+      port: 7840,
       started: false,
     });
     expect(edge.killed()).toBe(false);
@@ -1839,7 +1843,7 @@ describe("ensureAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
@@ -1860,7 +1864,7 @@ describe("ensureAppServer", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
@@ -1948,7 +1952,7 @@ describe("ensureAppServer", () => {
     await expect(ensureAppServer()).rejects.toThrow(getIngressPaths().logPath);
   });
 
-  test("a port conflict throws naming the port and the override mechanism", async () => {
+  test("a port conflict throws naming the port and the log path", async () => {
     makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
@@ -1961,7 +1965,6 @@ describe("ensureAppServer", () => {
       `already in use (for example by another assistant's app server)`,
     );
     await expect(promise).rejects.toThrow(`127.0.0.1:${REQUESTED_PORT}`);
-    await expect(promise).rejects.toThrow("CADET_NGINX_INGRESS_PORT");
     await expect(promise).rejects.toThrow(getIngressPaths().logPath);
   });
 });
@@ -2051,10 +2054,13 @@ describe("assistant metadata API", () => {
       remoteWebIngress: {
         webDistDir: "/tmp/web",
         appDistDir: "/tmp/app-dist",
-        version: "1.2.3",
-        assistantId: id,
-        assistantName: "My assistant",
-        hubUrl: "https://parent.example",
+        config: {
+          remote: "custom",
+          assistantName: "My assistant",
+          assistantId: id,
+          hubUrl: "https://parent.example",
+          version: "1.2.3",
+        },
       },
     });
   }
@@ -2115,7 +2121,11 @@ describe("assistant metadata API", () => {
     const conf = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: { webDistDir: "/tmp/web", appDistDir: "/tmp/app-dist" },
+      remoteWebIngress: {
+        webDistDir: "/tmp/web",
+        appDistDir: "/tmp/app-dist",
+        config: { remote: "custom" },
+      },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({ results: [], next: null });
   });
@@ -2126,7 +2136,7 @@ describe("assistant metadata API", () => {
       remoteWebIngress: {
         webDistDir: "/tmp/web",
         appDistDir: "/tmp/app-dist",
-        assistantId: "assistant-1",
+        config: { remote: "custom", assistantId: "assistant-1" },
       },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({
@@ -2150,7 +2160,7 @@ describe("assistant metadata API", () => {
         remoteWebIngress: {
           webDistDir: "/tmp/web",
           appDistDir: "/tmp/app-dist",
-          hubUrl: "ftp://parent.example",
+          config: { remote: "custom", hubUrl: "ftp://parent.example" },
         },
       }),
     ).toThrow("App origins");
@@ -2198,8 +2208,7 @@ describe("the app shell edge", () => {
       remoteWebIngress: {
         webDistDir: "/tmp/cadet web/dist",
         appDistDir: "/tmp/cadet app/dist/standalone",
-        version: "1.2.3",
-        assistantId: "assistant-1",
+        config: { remote: "custom", assistantId: "assistant-1", version: "1.2.3" },
       },
     });
   }
@@ -2398,7 +2407,7 @@ describe("the app shell edge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     mockRunningEdge({
-      listenPort: 7845,
+      listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
     });

@@ -207,7 +207,7 @@ describe("resolveEdgeClientDists", () => {
         "utf-8",
       ),
     );
-    expect(rawLockfile.app.builtSha).toBe(fixtureHeadSha);
+    expect(rawLockfile.appBuiltSha).toBe(fixtureHeadSha);
     logSpy.mockRestore();
 
     // The second resolve finds a fresh stamp and does not rebuild.

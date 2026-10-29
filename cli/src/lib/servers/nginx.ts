@@ -47,23 +47,6 @@ import { resolveEdgeClientDists } from "../web-dist.js";
 
 export const DEFAULT_NGINX_INGRESS_PORT = 7840;
 
-/** True when the edge's listen port is explicitly pinned via env (a pin
- *  keeps its port: collision discovery must not move it). */
-export function serverPortPinned(): boolean {
-  return process.env.CADET_NGINX_INGRESS_PORT !== undefined;
-}
-
-/** Listen port for nginx ingress, from CADET_NGINX_INGRESS_PORT. */
-export function getNginxServerPort(): number {
-  const raw = process.env.CADET_NGINX_INGRESS_PORT;
-  if (!raw) return DEFAULT_NGINX_INGRESS_PORT;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < 1 || value > 65535) {
-    throw new Error("CADET_NGINX_INGRESS_PORT must be a valid TCP port");
-  }
-  return value;
-}
-
 export interface IngressPaths {
   /** nginx prefix dir; conf, pidfile, and temp dirs live here. */
   dir: string;
@@ -164,35 +147,6 @@ function denylistLocations(prefix = ""): string {
 
 const DENYLIST_LOCATIONS = denylistLocations();
 
-export interface RemoteWebIngressOptions {
-  webDistDir: string;
-  /**
-   * Standalone app-shell bundle: the edge serves it as the outer
-   * account/client shell from the origin root and iframes the web SPA from
-   * /web/assistant/.
-   */
-  appDistDir: string;
-  /**
-   * The config-injected app-shell document. Defaults to the app bundle's own
-   * index; the edge start path points this at the ingress dir, where the
-   * injected copy is written.
-   */
-  appIndexHtmlPath?: string;
-  indexHtmlPath?: string;
-  /** Assistant release verified against the served UI artifact. */
-  version?: string;
-  /** Serving assistant's display name, stamped into the served config so
-   *  remote clients can label this origin. Absent in older served configs. */
-  assistantName?: string;
-  /** Serving assistant's id, stamped into the served config so a caller can
-   *  confirm which assistant an edge is fronting. Absent in older served
-   *  configs. */
-  assistantId?: string;
-  /** Cloud web SPA base the remote client can hand this origin to (see
-   *  `cloudAssistantHubUrl`). Absent in older served configs. */
-  hubUrl?: string;
-}
-
 /**
  * The web UI entry the assistant detail API hands the shell, relative to the
  * origin root: the distinct /web/assistant/ iframe namespace, so the shell's
@@ -220,30 +174,6 @@ function lockfileAssistantRemote(assistantId: string): string | undefined {
  */
 export function edgeServedRemote(recorded: string | undefined): RemoteHost {
   return recorded === "docker" ? "docker" : "custom";
-}
-
-/**
- * The config the edge injects into every served document. Structurally the
- * web bundle's `InjectedConfig` (clients/web, `InjectedConfigSchema`) — the
- * served document must parse under that schema, so any field added here must
- * land there too.
- */
-function remoteWebIngressConfig(
-  opts: Pick<
-    RemoteWebIngressOptions,
-    "assistantName" | "assistantId" | "hubUrl" | "version"
-  > & { cloudUrl?: string },
-): InjectedConfig {
-  return {
-    remote: edgeServedRemote(
-      opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
-    ),
-    assistantName: opts.assistantName,
-    assistantId: opts.assistantId,
-    hubUrl: opts.hubUrl,
-    cloudUrl: opts.cloudUrl,
-    version: opts.version,
-  };
 }
 
 /**
@@ -519,7 +449,21 @@ export function buildNginxConfig(opts: {
   /** Where the edge proxies gateway traffic — `getGatewayUrl` of the entry the edge fronts. */
   gatewayUrl: string;
   listenPort: number;
-  remoteWebIngress?: RemoteWebIngressOptions;
+  /**
+   * Serve the web + app-shell bundles with the injected config instead of
+   * proxying the gateway flat. The app-shell bundle is the outer
+   * account/client shell from the origin root; the web SPA is iframed from
+   * /web/assistant/. The index paths default to each bundle's own index;
+   * the start path points them at the ingress dir, where the injected
+   * copies are written.
+   */
+  remoteWebIngress?: {
+    webDistDir: string;
+    appDistDir: string;
+    indexHtmlPath?: string;
+    appIndexHtmlPath?: string;
+    config: InjectedConfig;
+  };
   /** Emit the `[::1]` listener. Off where the host has no IPv6 loopback,
    *  since nginx exits at startup when it cannot bind a listen address. */
   ipv6Loopback?: boolean;
@@ -532,7 +476,7 @@ export function buildNginxConfig(opts: {
     : "";
   const remoteWebIngress = opts.remoteWebIngress;
   const allowedOrigins = remoteWebIngress
-    ? appOrigins(remoteWebIngressConfig(remoteWebIngress))
+    ? appOrigins(remoteWebIngress.config)
     : [];
   const serverLocations = remoteWebIngress
     ? buildRemoteWebIngressLocations({
@@ -541,8 +485,8 @@ export function buildNginxConfig(opts: {
         appDistDir: remoteWebIngress.appDistDir,
         appIndexHtmlPath: remoteWebIngress.appIndexHtmlPath,
         indexHtmlPath: remoteWebIngress.indexHtmlPath,
-        config: remoteWebIngressConfig(remoteWebIngress),
-        version: remoteWebIngress.version,
+        config: remoteWebIngress.config,
+        version: remoteWebIngress.config.version,
       })
     : `${DENYLIST_LOCATIONS}
 
@@ -1155,7 +1099,7 @@ export async function startAppServer(opts: {
    */
   assistantId?: string;
 }): Promise<StartAppServerResult> {
-  let listenPort = getNginxServerPort();
+  let listenPort = DEFAULT_NGINX_INGRESS_PORT;
 
   const nginxVersion = getNginxVersion();
   if (!nginxVersion) {
@@ -1164,7 +1108,7 @@ export async function startAppServer(opts: {
 
   const running = isIngressRunning();
   const recorded = running ? readIngressState() : null;
-  if (recorded && !serverPortPinned()) {
+  if (recorded) {
     listenPort = recorded.listenPort;
   }
   const { webDistDir, appDistDir } = await resolveEdgeClientDists();
@@ -1180,15 +1124,20 @@ export async function startAppServer(opts: {
   // timestamp is the HEAD commit's), so the fingerprint below never drifts
   // between processes.
   const version = resolveVersion(join(import.meta.dir, "../../.."));
-  const spaOptions = {
-    hubUrl: cloudAssistantHubUrl(),
+  const config: InjectedConfig = {
+    remote: edgeServedRemote(
+      opts.assistantId
+        ? lockfileAssistantRemote(opts.assistantId)
+        : undefined,
+    ),
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
-    version,
+    hubUrl: cloudAssistantHubUrl(),
     cloudUrl: savedPublicBaseUrl(),
+    version,
   };
   const requestedConfigHash = remoteWebConfigFingerprint(
-    remoteWebIngressConfig(spaOptions),
+    config,
     webDistDir,
     version,
     appDistDir,
@@ -1222,15 +1171,11 @@ export async function startAppServer(opts: {
   // A foreign process squatting the default edge port (another assistant's
   // edge, a stale dev server) must not kill the tunnel: the edge port is
   // loopback-local and the public tunnel URL never carries it, so moving to
-  // the next free port is invisible to remote clients. An explicit
-  // CADET_NGINX_INGRESS_PORT pin keeps its intent and still fails on a
-  // collision.
-  if (!serverPortPinned()) {
-    const discovered = await findAvailableServerPort(listenPort);
-    if (discovered !== null && discovered !== listenPort) {
-      console.log(`Port ${listenPort} in use; using ${discovered} instead.`);
-      listenPort = discovered;
-    }
+  // the next free port is invisible to remote clients.
+  const discovered = await findAvailableServerPort(listenPort);
+  if (discovered !== null && discovered !== listenPort) {
+    console.log(`Port ${listenPort} in use; using ${discovered} instead.`);
+    listenPort = discovered;
   }
 
   // The edge's private state lives under the XDG data dir (never an
@@ -1243,9 +1188,8 @@ export async function startAppServer(opts: {
   mkdirSync(resolveLogDir(), { recursive: true });
   const remoteWebIngress = {
     webDistDir,
-    ...spaOptions,
     appDistDir,
-    config: remoteWebIngressConfig(spaOptions),
+    config,
     indexHtmlPath: join(paths.dir, "assistant-index.html"),
     appIndexHtmlPath: join(paths.dir, "app-index.html"),
   };
@@ -1255,18 +1199,18 @@ export async function startAppServer(opts: {
   );
   writeFileSync(
     remoteWebIngress.indexHtmlPath,
-    buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
+    buildRemoteWebIndexHtml(rawIndexHtml, config),
   );
-  // The app shell gets its own injected document: the same remote-web
-  // config, written beside the web one so the generated locations can
-  // alias it internally.
+  // The app shell gets its own injected document: the same injected config,
+  // written beside the web one so the generated locations can alias it
+  // internally.
   const rawAppIndexHtml = readFileSync(
     join(remoteWebIngress.appDistDir, "index.html"),
     "utf-8",
   );
   writeFileSync(
     join(paths.dir, "app-index.html"),
-    buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
+    buildRemoteWebIndexHtml(rawAppIndexHtml, config),
   );
   writeFileSync(
     paths.confPath,
@@ -1293,7 +1237,7 @@ export async function startAppServer(opts: {
     remoteWebConfigHash: remoteWebConfigFingerprint(
       remoteWebIngress.config,
       remoteWebIngress.webDistDir,
-      remoteWebIngress.version,
+      remoteWebIngress.config.version,
       remoteWebIngress.appDistDir,
     ),
   });
@@ -1396,20 +1340,16 @@ export async function stopContainerAppServer(
 
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
 function stampAppProcessEntry(
-  assistantId?: string,
-  port = getNginxServerPort(),
+  assistantId: string | undefined,
+  port: number,
 ): void {
   const pid = getIngressPid();
   if (pid !== null) {
-    // Carry the built-sha stamp forward: it predates this process entry
-    // (it survives the edge's own stop) and must not be wiped by the stamp.
-    const builtSha = readRootProcesses().app?.builtSha;
     stampRootProcess("app", {
       pid,
       startedAt: new Date().toISOString(),
       assistantId,
       port,
-      ...(builtSha !== undefined ? { builtSha } : {}),
     });
   }
 }
@@ -1525,8 +1465,7 @@ export async function ensureAppServer(): Promise<AppServer> {
       throw new Error(
         `nginx edge exited on startup, most likely because 127.0.0.1:${result.listenPort} ` +
           "is already in use (for example by another assistant's app server). " +
-          "Stop whatever is bound to that port, or pick a different edge port by " +
-          "setting the CADET_NGINX_INGRESS_PORT environment variable, then retry. " +
+          "Stop whatever is bound to that port, then retry. " +
           `Check the nginx log: ${result.logPath}`,
       );
   }
