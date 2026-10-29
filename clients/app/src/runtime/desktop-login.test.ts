@@ -73,7 +73,7 @@ test("desktop login refreshes the account before choosing the post-auth destinat
     intent: "signup",
     loginHint: "person@example.com",
   });
-  expect(calls).toEqual(["host", "refresh", "menu", "context"]);
+  expect(calls).toEqual(["host", "refresh", "context"]);
   expect(location.href).toBe("/assistant");
 });
 test("host exchange keeps resume probes suspended until it completes", async () => {
