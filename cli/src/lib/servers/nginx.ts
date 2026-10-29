@@ -29,10 +29,10 @@ import {
 } from "../assistant-config.js";
 import {
   getGatewayUrl,
-  type InjectedConfig,
+  type InjectedConfigStamp,
+  type Remote,
 } from "@mycadet/local-mode/contract";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
-import type { RemoteHost } from "../constants.js";
 import { waitForDaemonReady } from "../http-client.js";
 import { isLocalContainerEntry } from "../ingress-config.js";
 import { resolveEdgeClientDists } from "../web-dist.js";
@@ -159,21 +159,9 @@ export const ASSISTANT_ENTRY_URL = "web/assistant/";
 // cadet itself is hosted. "cloud" is never stamped (the cloud serves its
 // own bundles).
 /** The lockfile's recorded remote kind for the assistant, if one is found. */
-function lockfileAssistantRemote(assistantId: string): string | undefined {
+function lockfileAssistantRemote(assistantId: string): Remote | undefined {
   const result = lookupAssistantByIdentifier(assistantId);
   return result.status === "found" ? result.entry.cloud : undefined;
-}
-
-/**
- * The remote kind stamped into the served SPA config. Docker and custom
- * cadets are stamped truthfully; every other hosting shape — a local cadet
- * reached through this edge, paired remotes, unknown entries — reads as
- * "custom" so the served bundle always runs the remote-gateway machinery
- * (this edge serves remote browsers however the cadet itself is hosted).
- * "cloud" is never stamped: the cloud serves its own bundles.
- */
-export function edgeServedRemote(recorded: string | undefined): RemoteHost {
-  return recorded === "docker" ? "docker" : "custom";
 }
 
 /**
@@ -451,19 +439,18 @@ export function buildNginxConfig(opts: {
   listenPort: number;
   /**
    * Serve the web + app-shell bundles with the injected config instead of
-   * proxying the gateway flat. The app-shell bundle is the outer
-   * account/client shell from the origin root; the web SPA is iframed from
+   * proxying the gateway flat: pass the bundles' dist dirs and the config
+   * the documents carry. The app-shell bundle is the outer account/client
+   * shell from the origin root; the web SPA is iframed from
    * /web/assistant/. The index paths default to each bundle's own index;
    * the start path points them at the ingress dir, where the injected
    * copies are written.
    */
-  remoteWebIngress?: {
-    webDistDir: string;
-    appDistDir: string;
-    indexHtmlPath?: string;
-    appIndexHtmlPath?: string;
-    config: InjectedConfig;
-  };
+  config?: InjectedConfigStamp;
+  webDistDir?: string;
+  appDistDir?: string;
+  indexHtmlPath?: string;
+  appIndexHtmlPath?: string;
   /** Emit the `[::1]` listener. Off where the host has no IPv6 loopback,
    *  since nginx exits at startup when it cannot bind a listen address. */
   ipv6Loopback?: boolean;
@@ -474,19 +461,16 @@ export function buildNginxConfig(opts: {
   const ipv6Listen = opts.ipv6Loopback
     ? `    listen [::1]:${opts.listenPort};\n`
     : "";
-  const remoteWebIngress = opts.remoteWebIngress;
-  const allowedOrigins = remoteWebIngress
-    ? appOrigins(remoteWebIngress.config)
-    : [];
-  const serverLocations = remoteWebIngress
+  const { config, webDistDir, appDistDir } = opts;
+  const allowedOrigins = config ? appOrigins(config) : [];
+  const serverLocations = config
     ? buildRemoteWebIngressLocations({
         gatewayUrl: opts.gatewayUrl,
-        webDistDir: remoteWebIngress.webDistDir,
-        appDistDir: remoteWebIngress.appDistDir,
-        appIndexHtmlPath: remoteWebIngress.appIndexHtmlPath,
-        indexHtmlPath: remoteWebIngress.indexHtmlPath,
-        config: remoteWebIngress.config,
-        version: remoteWebIngress.config.version,
+        webDistDir: webDistDir!,
+        appDistDir: appDistDir!,
+        indexHtmlPath: opts.indexHtmlPath,
+        appIndexHtmlPath: opts.appIndexHtmlPath,
+        config,
       })
     : `${DENYLIST_LOCATIONS}
 
@@ -697,7 +681,6 @@ function buildRemoteWebIngressLocations(opts: {
   appIndexHtmlPath?: string;
   indexHtmlPath?: string;
   config: Record<string, unknown>;
-  version?: string;
 }): string {
   const webDistDir = nginxDirPath(opts.webDistDir);
   const indexHtmlPath =
@@ -717,7 +700,6 @@ ${denylistLocations("/web")}
 
 ${assistantMetadataLocations({
   ...opts.config,
-  version: opts.version,
   entryUrl: ASSISTANT_ENTRY_URL,
 })}
 
@@ -1124,12 +1106,10 @@ export async function startAppServer(opts: {
   // timestamp is the HEAD commit's), so the fingerprint below never drifts
   // between processes.
   const version = resolveVersion(join(import.meta.dir, "../../.."));
-  const config: InjectedConfig = {
-    remote: edgeServedRemote(
-      opts.assistantId
-        ? lockfileAssistantRemote(opts.assistantId)
-        : undefined,
-    ),
+  const config: InjectedConfigStamp = {
+    remote: opts.assistantId
+      ? lockfileAssistantRemote(opts.assistantId)
+      : undefined,
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
     hubUrl: cloudAssistantHubUrl(),
@@ -1186,30 +1166,16 @@ export async function startAppServer(opts: {
   const paths = getIngressPaths();
   mkdirSync(paths.dir, { recursive: true });
   mkdirSync(resolveLogDir(), { recursive: true });
-  const remoteWebIngress = {
-    webDistDir,
-    appDistDir,
-    config,
-    indexHtmlPath: join(paths.dir, "assistant-index.html"),
-    appIndexHtmlPath: join(paths.dir, "app-index.html"),
-  };
-  const rawIndexHtml = readFileSync(
-    join(remoteWebIngress.webDistDir, "index.html"),
-    "utf-8",
-  );
-  writeFileSync(
-    remoteWebIngress.indexHtmlPath,
-    buildRemoteWebIndexHtml(rawIndexHtml, config),
-  );
+  const indexHtmlPath = join(paths.dir, "assistant-index.html");
+  const appIndexHtmlPath = join(paths.dir, "app-index.html");
+  const rawIndexHtml = readFileSync(join(webDistDir, "index.html"), "utf-8");
+  writeFileSync(indexHtmlPath, buildRemoteWebIndexHtml(rawIndexHtml, config));
   // The app shell gets its own injected document: the same injected config,
   // written beside the web one so the generated locations can alias it
   // internally.
-  const rawAppIndexHtml = readFileSync(
-    join(remoteWebIngress.appDistDir, "index.html"),
-    "utf-8",
-  );
+  const rawAppIndexHtml = readFileSync(join(appDistDir, "index.html"), "utf-8");
   writeFileSync(
-    join(paths.dir, "app-index.html"),
+    appIndexHtmlPath,
     buildRemoteWebIndexHtml(rawAppIndexHtml, config),
   );
   writeFileSync(
@@ -1217,7 +1183,11 @@ export async function startAppServer(opts: {
     buildNginxConfig({
       gatewayUrl: opts.gatewayUrl,
       listenPort,
-      remoteWebIngress,
+      webDistDir,
+      appDistDir,
+      config,
+      indexHtmlPath,
+      appIndexHtmlPath,
       ipv6Loopback: hasIpv6Loopback(),
     }),
   );
@@ -1235,10 +1205,10 @@ export async function startAppServer(opts: {
     listenPort,
     gatewayUrl: opts.gatewayUrl,
     remoteWebConfigHash: remoteWebConfigFingerprint(
-      remoteWebIngress.config,
-      remoteWebIngress.webDistDir,
-      remoteWebIngress.config.version,
-      remoteWebIngress.appDistDir,
+      config,
+      webDistDir,
+      version,
+      appDistDir,
     ),
   });
   let exited = false;
@@ -1339,16 +1309,12 @@ export async function stopContainerAppServer(
 }
 
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
-function stampAppProcessEntry(
-  assistantId: string | undefined,
-  port: number,
-): void {
+function stampAppProcessEntry(port: number): void {
   const pid = getIngressPid();
   if (pid !== null) {
     stampRootProcess("app", {
       pid,
       startedAt: new Date().toISOString(),
-      assistantId,
       port,
     });
   }
@@ -1410,7 +1376,7 @@ export async function ensureAppServer(): Promise<AppServer> {
 
   switch (result.status) {
     case "started":
-      stampAppProcessEntry(entry.assistantId, result.listenPort);
+      stampAppProcessEntry(result.listenPort);
       return {
         port: result.listenPort,
         started: true,
@@ -1432,7 +1398,7 @@ export async function ensureAppServer(): Promise<AppServer> {
             stuckEdgeRecoveryHint(),
         );
       }
-      stampAppProcessEntry(entry.assistantId, result.listenPort);
+      stampAppProcessEntry(result.listenPort);
       return {
         port: result.listenPort,
         started: false,

@@ -93,7 +93,6 @@ export function stripVersionPrefix(version: string): string {
   return version.replace(/^[vV]/, "");
 }
 
-
 /**
  * Check whether two version strings refer to the same version.
  * Compares via semver when both parse; falls back to prefix-stripped

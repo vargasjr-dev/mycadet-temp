@@ -245,7 +245,6 @@ describe("cadet ps — platform status line", () => {
         pid: 77,
         port: 7841,
         startedAt: "2026-10-11T00:00:00.000Z",
-        assistantId: "assistant-123",
       },
     });
 

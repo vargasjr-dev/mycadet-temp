@@ -177,10 +177,6 @@ mock.module("../lib/tunnels/ngrok", () => ({
 
 const realNginxIngress = { ...nginxIngress };
 
-
-
-
-
 const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
   async () => ({ port: 7840, started: true, shellMode: "web" }),
 );
@@ -577,11 +573,10 @@ describe("cadet wake — app server restore", () => {
 
   // The restore flow stamps the `app` entry when it establishes the edge,
   // so seeding one is what the wake of an established assistant looks like.
-  function stampRecordedAppServer(assistantId = "local-assistant"): void {
+  function stampRecordedAppServer(port = 7840, pid = 4321): void {
     assistantConfig.stampRootProcess("app", {
-      pid: 4321,
-      port: 7840,
-      assistantId,
+      pid,
+      port,
       startedAt: new Date().toISOString(),
     });
   }
@@ -621,7 +616,7 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -726,7 +721,7 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
@@ -766,7 +761,7 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -792,46 +787,6 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake leaves a live edge fronting another assistant alone", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
-    });
-    loadAllAssistantsMock.mockReturnValue([
-      {
-        assistantId: "docker-2",
-        cloud: "docker",
-      },
-    ]);
-    // The edge is up and stamped for docker-2 — a live process pid, so the
-    // gate's liveness check passes and the ownership check fires.
-    assistantConfig.stampRootProcess("app", {
-      pid: process.pid,
-      port: 7840,
-      assistantId: "docker-2",
-      startedAt: new Date().toISOString(),
-    });
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
-
-    try {
-      await wake();
-
-      expect(ensureAppServerMock).not.toHaveBeenCalled();
-      expect(logSpy).toHaveBeenCalledWith("Wake complete.");
-    } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
-    }
-  });
-
   test("a docker wake waits for the gateway before restoring the edge", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
@@ -841,7 +796,7 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -868,7 +823,7 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     waitForDaemonReadyMock.mockImplementation(async () => false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -933,7 +888,7 @@ describe("cadet wake — app server restore", () => {
         cloud: "docker",
       },
     ]);
-    stampRecordedAppServer("docker-1");
+    stampRecordedAppServer();
     isIngressRunningMock.mockReturnValue(false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1025,7 +980,9 @@ describe("cadet wake — app server restore", () => {
     // edge whose stop fails reports staleRemoteWebConfig; both throw while the
     // edge keeps serving. Tunneling the gateway directly would put the
     // sensitive-route denylist behind the tunnel instead of in front of it.
-    stampRecordedAppServer();
+    // The lockfile's app record is the survivor's port source: stamp 7845
+    // against a live pid.
+    stampRecordedAppServer(7845, process.pid);
     stampRecordedTunnel("ngrok");
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -1053,8 +1010,8 @@ describe("cadet wake — app server restore", () => {
     );
   });
 
-  test("a failed rebuild falls back to the gateway port when the running edge fronts another gateway", async () => {
-    stampRecordedAppServer();
+  test("the lockfile's app record drives the surviving port — not the assistant", async () => {
+    stampRecordedAppServer(7840, process.pid);
     stampRecordedTunnel("ngrok");
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -1068,7 +1025,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7830,
+      port: 7840,
       assistantId: "local-assistant",
     });
   });

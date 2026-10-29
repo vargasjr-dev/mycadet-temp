@@ -88,9 +88,7 @@ export function buildCreateArgs(options: BasetenCreateOptions = {}): string[] {
  * Create a sandbox from the pushed image. Secrets pass through `env` and
  * reach Baseten as masked sandbox variables — never image layers.
  */
-export function createBasetenSandbox(
-  options: BasetenCreateOptions = {},
-): void {
+export function createBasetenSandbox(options: BasetenCreateOptions = {}): void {
   runBaseten(buildCreateArgs(options));
 }
 

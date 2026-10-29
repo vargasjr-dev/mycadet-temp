@@ -554,11 +554,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus(
-      "job-1",
-      VAK_TOKEN,
-      PLATFORM_URL,
-    );
+    const status = await cloudPollJobStatus("job-1", VAK_TOKEN, PLATFORM_URL);
 
     expect(status).toEqual({
       jobId: "job-1",
@@ -584,11 +580,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus(
-      "job-2",
-      VAK_TOKEN,
-      PLATFORM_URL,
-    );
+    const status = await cloudPollJobStatus("job-2", VAK_TOKEN, PLATFORM_URL);
 
     expect(status.status).toBe("complete");
     if (status.status === "complete") {
@@ -611,11 +603,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus(
-      "job-3",
-      VAK_TOKEN,
-      PLATFORM_URL,
-    );
+    const status = await cloudPollJobStatus("job-3", VAK_TOKEN, PLATFORM_URL);
 
     expect(status.status).toBe("failed");
     if (status.status === "failed") {

@@ -20,10 +20,7 @@ import {
   type TunnelProcessRecord,
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
-import {
-  resolveConfigDir,
-  resolveDataDir,
-} from "@mycadet/local-mode";
+import { resolveConfigDir, resolveDataDir } from "@mycadet/local-mode";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -414,11 +411,7 @@ type NgrokAgentConfigFile = z.infer<typeof NgrokAgentConfigFileSchema>;
  * stays in play and this file's `web_addr` wins on top of it.
  */
 export function ngrokAgentConfigPath(): string {
-  return join(
-    resolveConfigDir(),
-    "tunnels",
-    "ngrok-agent.yaml",
-  );
+  return join(resolveConfigDir(), "tunnels", "ngrok-agent.yaml");
 }
 
 function readNgrokAgentConfigFile(): NgrokAgentConfigFile {

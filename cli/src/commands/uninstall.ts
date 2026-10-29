@@ -15,7 +15,11 @@ import {
 } from "../lib/confirm-action.js";
 import { retireDocker } from "../lib/docker.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
-import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import {
+  resolveConfigDir,
+  resolveDataDir,
+  resolveLogDir,
+} from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { stopProcessByPidFile } from "../lib/process";
 

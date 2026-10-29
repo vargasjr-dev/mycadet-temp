@@ -19,7 +19,11 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
-import { readAppBuiltSha, stampAppBuiltSha } from "../lib/assistant-config.js";
+import {
+  readAppBuiltSha,
+  stampAppBuiltSha,
+  stampRootProcess,
+} from "../lib/assistant-config.js";
 import { resolveEdgeClientDists } from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
@@ -175,6 +179,8 @@ describe("resolveEdgeClientDists", () => {
   test("builds both missing bundles once and stamps the lockfile's app record", async () => {
     const { root, web, app } = seedCheckout();
     fixtureHeadSha = "a".repeat(40);
+    // The stamp rides the edge's own record; a running edge is what's there.
+    stampRootProcess("app", { pid: 4321, port: 7840 });
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(
       fakeSpawn(() => {
@@ -207,7 +213,7 @@ describe("resolveEdgeClientDists", () => {
         "utf-8",
       ),
     );
-    expect(rawLockfile.appBuiltSha).toBe(fixtureHeadSha);
+    expect(rawLockfile.app.builtSha).toBe(fixtureHeadSha);
     logSpy.mockRestore();
 
     // The second resolve finds a fresh stamp and does not rebuild.
@@ -224,6 +230,7 @@ describe("resolveEdgeClientDists", () => {
     const { root, web, app } = seedCheckout();
     seedWebDist(web);
     seedAppDist(app);
+    stampRootProcess("app", { pid: 4321, port: 7840 });
     stampAppBuiltSha("b".repeat(40));
     // The pull moved HEAD past the stamped build.
     fixtureHeadSha = "c".repeat(40);
@@ -251,6 +258,7 @@ describe("resolveEdgeClientDists", () => {
     const webDist = seedWebDist(web);
     const appDist = seedAppDist(app);
     fixtureHeadSha = "d".repeat(40);
+    stampRootProcess("app", { pid: 4321, port: 7840 });
     stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(fakeSpawn());
 
@@ -268,6 +276,8 @@ describe("resolveEdgeClientDists", () => {
     seedWebDist(web);
     seedAppDist(app);
     fixtureHeadSha = "e".repeat(40);
+    // The post-build stamp lands only on an existing edge record.
+    stampRootProcess("app", { pid: 4321, port: 7840 });
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
@@ -356,6 +366,7 @@ describe("resolveEdgeClientDists", () => {
     seedWebDist(web);
     fixtureHeadSha = "2".repeat(40);
     // The source-built app arm is fresh at HEAD, so nothing rebuilds.
+    stampRootProcess("app", { pid: 4321, port: 7840 });
     stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(((command: string) => {
       // git HEAD is a legitimate probe (the app arm is source-built); a

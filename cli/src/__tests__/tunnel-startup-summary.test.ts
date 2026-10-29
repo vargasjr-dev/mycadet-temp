@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { createServer } from "node:net";
 
 import { findAvailableServerPort } from "../lib/servers/nginx";
-import { edgeServedRemote } from "../lib/servers/nginx";
 import { summarizeStartupFailure } from "../lib/tunnel";
 
 function portOf(server: ReturnType<typeof createServer>): number {
@@ -89,22 +88,5 @@ describe("findAvailableServerPort", () => {
       await new Promise<void>((resolve) => first.close(() => resolve()));
       await new Promise<void>((resolve) => second.close(() => resolve()));
     }
-  });
-});
-
-describe("edgeServedRemote", () => {
-  test("a docker cadet is stamped truthfully", () => {
-    expect(edgeServedRemote("docker")).toBe("docker");
-  });
-
-  test("a custom cadet keeps its kind", () => {
-    expect(edgeServedRemote("custom")).toBe("custom");
-  });
-
-  test("local, paired, cloud, and unknown entries read as custom so the remote-gateway machinery always runs", () => {
-    expect(edgeServedRemote("local")).toBe("custom");
-    expect(edgeServedRemote("paired")).toBe("custom");
-    expect(edgeServedRemote("cloud")).toBe("custom");
-    expect(edgeServedRemote(undefined)).toBe("custom");
   });
 });

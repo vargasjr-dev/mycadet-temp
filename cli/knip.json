@@ -7,10 +7,7 @@
     "src/lib/cli-error.ts",
     "scripts/**/*.ts"
   ],
-  "project": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
+  "project": ["src/**/*.ts", "src/**/*.tsx"],
   "ignoreDependencies": [
     "@mycadet/assistant-api",
     "@mycadet/avatar-manifest",

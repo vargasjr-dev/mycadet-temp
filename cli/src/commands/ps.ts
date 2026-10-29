@@ -604,7 +604,6 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     const listenUrl = `http://127.0.0.1:${app.port}`;
     const info = [listenUrl, `PID ${app.pid}`].join(" | ");
     rows.push({
-      assistantId: app.assistantId,
       row: {
         name: "nginx",
         type: APP_TYPE,
@@ -650,15 +649,11 @@ export async function printRootProcessDetail(
     const state = readIngressState();
     detailLine("Status:", alive ? "running" : "not running");
     detailLine("PID:", String(app.pid));
-    detailLine(
-      "Listen:",
-      `http://127.0.0.1:${app.port}`,
-    );
+    detailLine("Listen:", `http://127.0.0.1:${app.port}`);
     detailLine(
       "Gateway:",
       state?.gatewayUrl !== undefined ? state.gatewayUrl : null,
     );
-    detailLine("Assistant:", assistantLabelFor(app.assistantId));
     detailLine("Started:", app.startedAt);
     detailLine("Log:", getIngressPaths().logPath);
     return true;
@@ -698,14 +693,6 @@ export async function printRootProcessDetail(
   }
 
   return false;
-}
-
-function assistantLabelFor(assistantId: string | undefined): string | null {
-  if (!assistantId) return null;
-  const result = lookupAssistantByIdentifier(assistantId);
-  return result.status === "found"
-    ? getAssistantDisplayName(result.entry)
-    : assistantId;
 }
 
 /**

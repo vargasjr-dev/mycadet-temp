@@ -42,7 +42,6 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  */
 type AuthMode = "guardian" | "session" | "platform";
 
-
 export interface AssistantClientOpts {
   assistantId?: string;
   /**

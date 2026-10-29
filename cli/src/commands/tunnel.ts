@@ -5,7 +5,10 @@ import {
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
-import { readRootProcesses, resolveTargetAssistant } from "../lib/assistant-config";
+import {
+  readRootProcesses,
+  resolveTargetAssistant,
+} from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
 import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";

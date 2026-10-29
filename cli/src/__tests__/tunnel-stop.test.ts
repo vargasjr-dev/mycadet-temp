@@ -89,7 +89,8 @@ afterEach(() => {
   process.argv = originalArgv;
   if (originalConfig === undefined) delete process.env.XDG_CONFIG_HOME;
   else process.env.XDG_CONFIG_HOME = originalConfig;
-  if (originalWorkspaceDir === undefined) delete process.env.CADET_WORKSPACE_DIR;
+  if (originalWorkspaceDir === undefined)
+    delete process.env.CADET_WORKSPACE_DIR;
   else process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   rmSync(root, { recursive: true, force: true });
 });

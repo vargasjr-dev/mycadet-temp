@@ -1978,5 +1978,4 @@ export async function stopLocalProcesses(
   // verifying the pid still belongs to the provider's binary before signaling
   // it — PID reuse must never send an unrelated process a signal.
   await stopTunnelProcess();
-
 }

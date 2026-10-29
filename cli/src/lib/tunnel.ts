@@ -19,9 +19,9 @@ import { isLocalContainerEntry } from "./ingress-config.js";
 import {
   ensureAppServer,
   getNginxVersion,
-  isPidAlive,
   isIngressRunning,
   readIngressState,
+  isPidAlive,
   type AppServer,
 } from "./servers/nginx.js";
 import { waitForDaemonReady } from "./http-client.js";
@@ -37,9 +37,7 @@ import {
 } from "./tunnels/ngrok.js";
 import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
-import {
-  type TunnelProviderName,
-} from "@mycadet/service-contracts/ingress";
+import { type TunnelProviderName } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
 import {
   CLOUDFLARE_PROVIDER,
@@ -434,10 +432,10 @@ function tunnelRestartCommand(): string {
  * when nothing verifiably fronts that gateway (an unrecorded upstream is
  * unverified, see `IngressState`).
  */
-function survivingAppServerPort(gatewayUrl: string): number | null {
+function survivingAppServerPort(): number | null {
   try {
-    const recorded = isIngressRunning() ? readIngressState() : null;
-    return recorded?.gatewayUrl === gatewayUrl ? recorded.listenPort : null;
+    const app = readRootProcesses().app;
+    return app?.pid !== undefined && isPidAlive(app.pid) ? app.port : null;
   } catch {
     return null;
   }
@@ -475,7 +473,7 @@ export async function restoreAppServer(
     appServer = await ensureAppServer();
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    const survivingPort = survivingAppServerPort(getGatewayUrl(entry));
+    const survivingPort = survivingAppServerPort();
     const impact =
       survivingPort !== null
         ? `The app server already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`
@@ -492,25 +490,6 @@ export async function restoreAppServer(
 }
 
 /**
- * Whether a container entry may restore the shared default-workspace edge.
- *
- * Waking one container must not repoint another's public endpoint at its own
- * gateway, and `ensureAppServer` cannot make that call: it restarts an edge
- * whose recorded gateway port drifts, which is the hijack itself. The root
- * lockfile's `app` record names the assistant a live edge fronts — an edge
- * fronting a different assistant disqualifies the wake; with no running edge
- * (or one already fronting this assistant), the restore may proceed.
- */
-function edgeFrontsAnotherAssistant(entry: LockfileAssistant): boolean {
-  const appRecord = readRootProcesses().app;
-  return (
-    appRecord?.assistantId !== undefined &&
-    appRecord.assistantId !== entry.assistantId &&
-    appRecord.pid !== undefined &&
-    isPidAlive(appRecord.pid)
-  );
-}
-
 /**
  * Wake counterpart to `stopContainerAppServer`: bring the shared
  * default-workspace edge back for a container assistant, so a tunnel that
@@ -530,9 +509,6 @@ export async function restoreContainerAppServer(
   }
   const gatewayPort = getLoopbackGatewayPort(entry);
   if (gatewayPort === undefined) {
-    return;
-  }
-  if (edgeFrontsAnotherAssistant(entry)) {
     return;
   }
   // Gate before waiting: a container that never established an app server

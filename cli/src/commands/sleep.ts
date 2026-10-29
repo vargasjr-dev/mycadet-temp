@@ -371,7 +371,6 @@ export async function sleepAssistant(
   if (cesStopped) {
     console.log("credential-executor stopped.");
   }
-
 }
 
 /**

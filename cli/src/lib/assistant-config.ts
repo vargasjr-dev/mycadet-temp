@@ -144,7 +144,7 @@ export function readRootProcesses(): RootProcessRecords {
  * recorded yet.
  */
 export function readAppBuiltSha(): string | undefined {
-  return readLockfile().appBuiltSha;
+  return readRootProcesses().app?.builtSha;
 }
 
 /**
@@ -155,16 +155,19 @@ export function readAppBuiltSha(): string | undefined {
 export function stampAppBuiltSha(builtSha: string): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
-    data.appBuiltSha = builtSha;
+    // The stamp rides the edge's own record: no record (the edge never
+    // started, or was cleared since) means nothing to stamp — the next
+    // resolve reads no stamp and rebuilds.
+    if (data.app) {
+      data.app.builtSha = builtSha;
+    }
     writeLockfileUnlocked(data);
   });
 }
 
 /**
- * Release the edge's process entry. The build stamp lives on its own
- * lockfile key (`appBuiltSha`), so clearing the process bookkeeping never
- * touches it — restarting the edge re-stamps the process fields without
- * paying a needless bundle rebuild.
+ * Release the edge's process entry — the record and its riding build stamp
+ * go with it.
  */
 export function clearAppProcessRecord(expectedPid?: number): void {
   withCliLockfileLock(() => {

@@ -13,7 +13,6 @@ import { join } from "path";
 
 import { resolveLogDir } from "@mycadet/local-mode";
 
-
 /** Regex matching pino-pretty's short time prefix, e.g. `[12:07:37.467] `. */
 const PINO_TIME_RE = /^\[\d{2}:\d{2}:\d{2}\.\d{3}\]\s*/;
 

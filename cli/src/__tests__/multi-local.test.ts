@@ -316,10 +316,7 @@ describe("multi-local", () => {
   describe("remote non-regression", () => {
     test("resolveTargetAssistant works with remote entries", () => {
       writeLockfile({
-        assistants: [
-          makeEntry("my-remote", "custom", {
-          }),
-        ],
+        assistants: [makeEntry("my-remote", "custom", {})],
         activeAssistant: "my-remote",
       });
       const result = resolveTargetAssistant();
@@ -328,8 +325,7 @@ describe("multi-local", () => {
     });
 
     test("remote entries don't get resources applied", () => {
-      const remoteEntry = makeEntry("cloud-box", "custom", {
-      });
+      const remoteEntry = makeEntry("cloud-box", "custom", {});
       writeLockfile({ assistants: [remoteEntry] });
       // Save and reload to verify resources are not injected
       saveLockfileAssistant(remoteEntry);

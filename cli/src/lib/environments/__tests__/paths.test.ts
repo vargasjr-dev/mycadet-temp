@@ -1,4 +1,12 @@
-import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 import { join } from "path";
 
 const TEST_HOME = "/test/home";
@@ -154,9 +162,7 @@ describe("path helpers", () => {
     test("respects XDG_DATA_HOME", () => {
       process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = "/custom/data";
-      expect(resolveAssistantsDir()).toBe(
-        "/custom/data/cadet-dev/assistants",
-      );
+      expect(resolveAssistantsDir()).toBe("/custom/data/cadet-dev/assistants");
     });
   });
 

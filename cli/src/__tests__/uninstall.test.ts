@@ -16,7 +16,11 @@ import {
   getInputHistoryPath,
   getSharedStateDir,
 } from "../lib/environments/paths.js";
-import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import {
+  resolveConfigDir,
+  resolveDataDir,
+  resolveLogDir,
+} from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.

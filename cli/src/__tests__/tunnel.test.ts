@@ -31,7 +31,10 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
-import { readRootProcesses, stampRootProcess } from "../lib/assistant-config.js";
+import {
+  readRootProcesses,
+  stampRootProcess,
+} from "../lib/assistant-config.js";
 import {
   getLocalInstanceDir,
   type LockfileAssistant,
@@ -352,7 +355,6 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -403,7 +405,6 @@ describe("app server targeting", () => {
       "ngrok",
       "--foreground",
     ];
-
 
     const logs = await runTunnelCapturingLogs();
     expect(logs).not.toContain("Tunneling the local assistant");
@@ -482,7 +483,6 @@ describe("app server targeting", () => {
       "ngrok",
       "--foreground",
     ];
-
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
@@ -1179,9 +1179,9 @@ describe("ngrok --domain spawn args", () => {
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
-    await expect(
-      realNgrok.runNgrokTunnel({ port: 7830 }),
-    ).rejects.toThrow("does not match");
+    await expect(realNgrok.runNgrokTunnel({ port: 7830 })).rejects.toThrow(
+      "does not match",
+    );
 
     expect(spawnMock).not.toHaveBeenCalled();
 
@@ -1601,7 +1601,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("app", {
       pid: 4321,
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     const workspaceDir = writeDefaultWorkspaceConfig({});
@@ -1652,7 +1651,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("app", {
       pid: 4321,
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     writeEntryWorkspaceConfig(entry, {
@@ -1695,7 +1693,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("app", {
       pid: 4321,
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     writeDefaultWorkspaceConfig({
@@ -1720,7 +1717,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("app", {
       pid: 4321,
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     // The saved webhook callback base stands (a pairing run leaves it); the
@@ -1753,7 +1749,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("app", {
       pid: 4321,
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     // An empty workspace config: nothing in it names a tunnel or a URL.
@@ -1765,7 +1760,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // tunnel is re-established and the URL is saved again.
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
-      assistantId: entry.assistantId,
     });
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
       TAILNET_URL,

@@ -236,14 +236,13 @@ describe("buildNginxConfig", () => {
   const remoteConf = buildNginxConfig({
     gatewayUrl: "http://127.0.0.1:7830",
     listenPort: 7840,
-    remoteWebIngress: {
-      webDistDir: "/tmp/cadet web/dist",
-      appDistDir: "/tmp/cadet app/dist/standalone",
-      config: {
-        remote: "custom",
-        assistantId: "assistant-1",
-        version: "1.2.3",
-      },
+
+    webDistDir: "/tmp/cadet web/dist",
+    appDistDir: "/tmp/cadet app/dist/standalone",
+    config: {
+      remote: "custom",
+      assistantId: "assistant-1",
+      version: "1.2.3",
     },
   });
 
@@ -420,16 +419,15 @@ describe("buildNginxConfig", () => {
     const named = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: {
-        webDistDir: "/tmp/cadet web/dist",
-        appDistDir: "/tmp/cadet app/dist/standalone",
-        config: {
-          remote: "custom",
-          assistantName: "Homelab",
-          assistantId: "assistant-1",
-          hubUrl: "https://mycadet.ai/assistant",
-          version: "1.2.3",
-        },
+
+      webDistDir: "/tmp/cadet web/dist",
+      appDistDir: "/tmp/cadet app/dist/standalone",
+      config: {
+        remote: "custom",
+        assistantName: "Homelab",
+        assistantId: "assistant-1",
+        hubUrl: "https://mycadet.ai/assistant",
+        version: "1.2.3",
       },
     });
     expect(named).toContain(
@@ -1045,16 +1043,14 @@ describe("startAppServer", () => {
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
-        remoteWebIngress: {
-          webDistDir,
-          appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
-          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          config: {
-            remote: "custom",
-            hubUrl: PRODUCTION_HUB_URL,
-            version: "1.2.3",
-          },
+
+        webDistDir,
+        appDistDir: fakeAppDistDir(),
+        indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+        appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
+        config: {
+          hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
       }),
     );
@@ -1065,7 +1061,10 @@ describe("startAppServer", () => {
       join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
-    expect(indexHtml).toContain('"remote":"custom"');
+    // No lockfile entry fronts this start, so no remote kind is stamped —
+    // the served config is the fields it has, nothing aliased.
+    expect(indexHtml).not.toContain('"remote"');
+    expect(indexHtml).toContain('"hubUrl":"https://mycadet.ai/assistant"');
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
     // No assistant name was provided, so the served config omits the label.
     expect(indexHtml).not.toContain("assistantName");
@@ -1300,16 +1299,14 @@ describe("startAppServer", () => {
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
-        remoteWebIngress: {
-          webDistDir,
-          appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
-          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          config: {
-            remote: "custom",
-            hubUrl: PRODUCTION_HUB_URL,
-            version: "1.2.3",
-          },
+
+        webDistDir,
+        appDistDir: fakeAppDistDir(),
+        indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+        appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
+        config: {
+          hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
       }),
     );
@@ -1344,16 +1341,14 @@ describe("startAppServer", () => {
         gatewayUrl: "http://127.0.0.1:7900",
         listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
-        remoteWebIngress: {
-          webDistDir,
-          appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
-          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          config: {
-            remote: "custom",
-            hubUrl: PRODUCTION_HUB_URL,
-            version: "1.2.3",
-          },
+
+        webDistDir,
+        appDistDir: fakeAppDistDir(),
+        indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+        appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
+        config: {
+          hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
       }),
     );
@@ -1540,16 +1535,14 @@ describe("startAppServer", () => {
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         ipv6Loopback: hasIpv6Loopback(),
-        remoteWebIngress: {
-          webDistDir,
-          appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
-          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
-          config: {
-            remote: "custom",
-            hubUrl: PRODUCTION_HUB_URL,
-            version: "1.2.3",
-          },
+
+        webDistDir,
+        appDistDir: fakeAppDistDir(),
+        indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+        appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
+        config: {
+          hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
       }),
     );
@@ -2051,16 +2044,15 @@ describe("assistant metadata API", () => {
     return buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: {
-        webDistDir: "/tmp/web",
-        appDistDir: "/tmp/app-dist",
-        config: {
-          remote: "custom",
-          assistantName: "My assistant",
-          assistantId: id,
-          hubUrl: "https://parent.example",
-          version: "1.2.3",
-        },
+
+      webDistDir: "/tmp/web",
+      appDistDir: "/tmp/app-dist",
+      config: {
+        remote: "custom",
+        assistantName: "My assistant",
+        assistantId: id,
+        hubUrl: "https://parent.example",
+        version: "1.2.3",
       },
     });
   }
@@ -2082,9 +2074,7 @@ describe("assistant metadata API", () => {
     // entries invent nothing) and the row reads as the self-hosted
     // assistant it is.
     expect(body(conf, "/v1/assistants/")).toEqual({
-      results: [
-        { id: "assistant-1", name: "My assistant", is_local: true },
-      ],
+      results: [{ id: "assistant-1", name: "My assistant", is_local: true }],
       next: null,
     });
     expect(body(conf, "/v1/assistants/assistant-1/")).toEqual({
@@ -2121,11 +2111,10 @@ describe("assistant metadata API", () => {
     const conf = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: {
-        webDistDir: "/tmp/web",
-        appDistDir: "/tmp/app-dist",
-        config: { remote: "custom" },
-      },
+
+      webDistDir: "/tmp/web",
+      appDistDir: "/tmp/app-dist",
+      config: { remote: "custom" },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({ results: [], next: null });
   });
@@ -2133,11 +2122,10 @@ describe("assistant metadata API", () => {
     const conf = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: {
-        webDistDir: "/tmp/web",
-        appDistDir: "/tmp/app-dist",
-        config: { remote: "custom", assistantId: "assistant-1" },
-      },
+
+      webDistDir: "/tmp/web",
+      appDistDir: "/tmp/app-dist",
+      config: { remote: "custom", assistantId: "assistant-1" },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({
       results: [{ id: "assistant-1", is_local: true }],
@@ -2157,11 +2145,10 @@ describe("assistant metadata API", () => {
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
-        remoteWebIngress: {
-          webDistDir: "/tmp/web",
-          appDistDir: "/tmp/app-dist",
-          config: { remote: "custom", hubUrl: "ftp://parent.example" },
-        },
+
+        webDistDir: "/tmp/web",
+        appDistDir: "/tmp/app-dist",
+        config: { remote: "custom", hubUrl: "ftp://parent.example" },
       }),
     ).toThrow("App origins");
   });
@@ -2181,7 +2168,6 @@ function appConfigHash(
     .update(
       JSON.stringify({
         config: {
-          remote: "custom",
           assistantName: opts.assistantName,
           assistantId: opts.assistantId,
           hubUrl: PRODUCTION_HUB_URL,
@@ -2205,10 +2191,13 @@ describe("the app shell edge", () => {
     return buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
-      remoteWebIngress: {
-        webDistDir: "/tmp/cadet web/dist",
-        appDistDir: "/tmp/cadet app/dist/standalone",
-        config: { remote: "custom", assistantId: "assistant-1", version: "1.2.3" },
+
+      webDistDir: "/tmp/cadet web/dist",
+      appDistDir: "/tmp/cadet app/dist/standalone",
+      config: {
+        remote: "custom",
+        assistantId: "assistant-1",
+        version: "1.2.3",
       },
     });
   }

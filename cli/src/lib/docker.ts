@@ -975,8 +975,7 @@ export async function recreateDockerContainers(
   }
 
   const gatewayPort =
-    getLoopbackGatewayPort(entry) ??
-    getDefaultPorts().gateway;
+    getLoopbackGatewayPort(entry) ?? getDefaultPorts().gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(
@@ -1009,7 +1008,6 @@ export async function recreateDockerContainers(
     },
     containerInfo: { ...info, assistantPort },
   });
-
 }
 
 /**

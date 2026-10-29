@@ -95,7 +95,10 @@ function otherAssistantPidSet(
 ): Set<string> {
   const pids = new Set<string>();
   for (const entry of entries) {
-    if (entry.assistantId === name && entry.resources?.instanceDir === instanceDir) {
+    if (
+      entry.assistantId === name &&
+      entry.resources?.instanceDir === instanceDir
+    ) {
       continue;
     }
     if (entry.cloud === "local" && entry.resources) {

@@ -96,6 +96,16 @@ export const InjectedConfigSchema = z.object({
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
 
 /**
+ * What a host stamps into a served document before parsing is in play: the
+ * recorded `remote` may be omitted outright (the schema's parse-time
+ * default answers for it) — the edge stamps the truthful recorded kind or
+ * nothing, never a served-spelling alias.
+ */
+export type InjectedConfigStamp = Omit<InjectedConfig, "remote"> & {
+  remote?: Remote;
+};
+
+/**
  * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from
  * each assistant entry and from that entry's `resources`. The one redaction
  * every host runs before lockfile data crosses to the renderer — pure, no
@@ -356,11 +366,15 @@ export type TunnelProcessRecord = z.infer<typeof TunnelProcessRecordSchema>;
 export const AppProcessRecordSchema = z.object({
   /** The edge process's bookkeeping, present while the edge runs. */
   pid: z.number().optional(),
-  /** The assistant the edge fronts, so `cadet ps` can nest the row. */
-  assistantId: z.string().optional(),
   startedAt: z.string().optional(),
   /** Listening port for the nginx edge. */
   port: z.number(),
+  /**
+   * The commit the edge's source-built client bundles were last built from
+   * — the auto-build staleness stamp. Rides the running edge's record: a
+   * build only stamps when an edge record exists to carry it.
+   */
+  builtSha: z.string().optional(),
 });
 export type AppProcessRecord = z.infer<typeof AppProcessRecordSchema>;
 
@@ -383,13 +397,6 @@ export const LockfileSchema = z.looseObject({
   activeAssistant: z.union([z.string(), z.null()]).catch(null),
   tunnel: TunnelProcessRecordSchema.optional().catch(undefined),
   app: AppProcessRecordSchema.optional().catch(undefined),
-  /**
-   * The commit the edge's source-built client bundles were last built from
-   * — the auto-build staleness stamp. A build-cache fact, not a process
-   * fact: it survives the edge's own stop, so restarting the edge never
-   * pays a needless rebuild.
-   */
-  appBuiltSha: z.string().optional().catch(undefined),
 });
 
 /**

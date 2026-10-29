@@ -85,8 +85,6 @@ function makeDeps(opts: {
   return { deps, calls };
 }
 
-
-
 afterEach(() => {
   restoreEnv();
   for (const dir of tempDirs.splice(0)) {
@@ -220,9 +218,9 @@ describe("startTailscaleServe", () => {
       },
     });
 
-    await expect(
-      startTailscaleServe({ port: 7840 }, deps),
-    ).rejects.toThrow(enableUrl);
+    await expect(startTailscaleServe({ port: 7840 }, deps)).rejects.toThrow(
+      enableUrl,
+    );
 
     // A failed serve must not persist an ingress URL.
     expect(existsSync(join(workspaceDir, "config.json"))).toBe(false);

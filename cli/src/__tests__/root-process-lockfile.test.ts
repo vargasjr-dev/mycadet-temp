@@ -91,21 +91,21 @@ describe("root process lockfile entries", () => {
 });
 
 describe("the app entry's built-sha stamp", () => {
-  test("a stamp can land before any edge process exists (stamp-only entry)", () => {
+  test("a stamp with no edge record is a no-op", () => {
     stampAppBuiltSha("a".repeat(40));
-    expect(readAppBuiltSha()).toBe("a".repeat(40));
-    // Stamp-only entry: no process bookkeeping to report.
-    expect(readRootProcesses().app?.pid).toBeUndefined();
+    // The stamp rides the edge's record: nothing to carry it, nothing lands.
+    expect(readAppBuiltSha()).toBeUndefined();
+    expect(readRootProcesses()).toEqual({});
   });
 
-  test("clearing the edge's process entry keeps its built-sha stamp", () => {
+  test("clearing the edge's process entry takes its built-sha stamp with it", () => {
     stampRootProcess("app", { pid: 5, port: 7841, startedAt: "t" });
     stampAppBuiltSha("b".repeat(40));
     expect(readAppBuiltSha()).toBe("b".repeat(40));
 
     clearAppProcessRecord();
-    // The pid bookkeeping goes; the build-cache stamp stays.
-    expect(readRootProcesses().app?.pid).toBeUndefined();
-    expect(readAppBuiltSha()).toBe("b".repeat(40));
+    // Record and stamp go together: the next resolve rebuilds.
+    expect(readRootProcesses()).toEqual({});
+    expect(readAppBuiltSha()).toBeUndefined();
   });
 });

@@ -76,7 +76,9 @@ describe("baseten sandbox image — file layout", () => {
   test("the image files live beside this module", () => {
     expect(BASETEN_IMAGE_NAME).toBe("cadet");
     expect(BASETEN_ASSISTANT_NAME).toBe("cadet");
-    expect(basetenDockerfilePath()).toBe(join(basetenSandboxDir(), "Dockerfile"));
+    expect(basetenDockerfilePath()).toBe(
+      join(basetenSandboxDir(), "Dockerfile"),
+    );
     expect(basetenEntrypointPath()).toBe(
       join(basetenSandboxDir(), "entrypoint.sh"),
     );

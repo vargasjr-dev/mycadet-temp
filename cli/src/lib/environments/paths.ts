@@ -58,5 +58,7 @@ export const ASSISTANT_INTERNAL_PORT = DEFAULT_PORTS.daemon;
 export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
 
 function xdgStateHome(): string {
-  return process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state");
+  return (
+    process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state")
+  );
 }
