@@ -1324,7 +1324,7 @@ jobs:
           # A truncated or mis-encoded secret decodes to a file that codesign
           # accepts and macOS then rejects at launch, so prove it parses here.
           if ! security cms -D -i "$PROFILE_PATH" > "$DECODED_PATH"; then
-            echo "::error::MAC_PROVISIONING_PROFILE does not decode as a provisioning profile. Re-export the .provisionprofile from the Apple Developer portal and store it base64-encoded in the secret."
+            echo "::error::MAC_PROVISIONING_PROFILE does not decode as a provisioning profile. Re-export the .provisionprofile from the Apple Developer portal and upload the RAW file to Secret Manager (mycadet project, IOS_PROVISIONING_PROFILE*) as a new version, then re-run the mycadet-cloud terraform prod apply to converge it here."
             exit 1
           fi
           # Exporting the variable below makes the pack sign

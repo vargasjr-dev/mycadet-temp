@@ -792,11 +792,14 @@ jobs:
           echo "$CERT_P12" | base64 -D > /tmp/certificate.p12
           # A PKCS#12 bundle opens with an ASN.1 SEQUENCE (30 82 …). Anything
           # else means the secret isn't the base64 of an exported .p12 (a
-          # stale or truncated export imports as "Unknown format") — re-export
-          # the Developer ID certificate from Keychain Access as a .p12 and
-          # store it base64-encoded in the secret.
+          # stale or truncated export imports as "Unknown format"). The value
+          # is terraform-converged from GCP Secret Manager (raw file upload —
+          # never paste, which UTF-8-sanitizes binaries: DER's 0x82 becomes
+          # U+FFFD and the bundle reads 30 EF…). Re-export from Keychain
+          # Access and upload the raw file to SM as a new version, then
+          # re-run mycadet-cloud's terraform prod apply.
           if [ "$(xxd -p -l 2 /tmp/certificate.p12)" != "3082" ]; then
-            echo "::error::DEVID_CERTIFICATE_P12 does not decode as a PKCS#12 bundle — re-export the Developer ID certificate as a .p12 and store it base64-encoded in the secret."
+            echo "::error::DEVID_CERTIFICATE_P12 does not decode as a PKCS#12 bundle — re-export the Developer ID certificate as a .p12 and upload the RAW file to Secret Manager (mycadet project, DEVID_CERTIFICATE_P12) as a new version, then re-run the mycadet-cloud terraform prod apply to converge it here."
             exit 1
           fi
           security import /tmp/certificate.p12 \
@@ -857,7 +860,7 @@ jobs:
           # A truncated or mis-encoded secret decodes to a file that codesign
           # accepts and macOS then rejects at launch, so prove it parses here.
           if ! security cms -D -i "$PROFILE_PATH" > "$DECODED_PATH"; then
-            echo "::error::MAC_PROVISIONING_PROFILE does not decode as a provisioning profile. Re-export the .provisionprofile from the Apple Developer portal and store it base64-encoded in the secret."
+            echo "::error::MAC_PROVISIONING_PROFILE does not decode as a provisioning profile. Re-export the .provisionprofile from the Apple Developer portal and upload the RAW file to Secret Manager (mycadet project, IOS_PROVISIONING_PROFILE*) as a new version, then re-run the mycadet-cloud terraform prod apply to converge it here."
             exit 1
           fi
           # Exporting the variable below makes the pack sign
