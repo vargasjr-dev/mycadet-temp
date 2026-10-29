@@ -62,3 +62,15 @@ if [[ -z "${CI:-}" ]]; then
 else
   echo "[postinstall] CI detected — keeping electron packaging armada"
 fi
+
+# ---------------------------------------------------------------------------
+# git hooks: point the repo's git at .githooks (fresh clones)
+#
+# Idempotent repo hygiene — a no-op when core.hooksPath is already set.
+# (This used to live in the @mycadet/assistant and @mycadet/gateway package
+# postinstalls; those packages now carry NO lifecycle scripts at all, so
+# consumer installs run nothing repo-flavored.)
+# ---------------------------------------------------------------------------
+if ! git config core.hooksPath >/dev/null 2>&1; then
+  git config core.hooksPath .githooks 2>/dev/null || true
+fi

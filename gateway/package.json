@@ -24,8 +24,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint",
     "lint:unused": "knip --include files,dependencies,unlisted",
-    "typecheck": "bunx tsc --noEmit",
-    "postinstall": "bash scripts/postinstall.sh"
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mycadet/assistant-client": "workspace:*",
