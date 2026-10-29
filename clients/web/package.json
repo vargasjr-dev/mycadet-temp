@@ -20,7 +20,7 @@
     "audit:cross-domain:check": "node scripts/audit-cross-domain-imports.mjs --check",
     "pretypecheck": "bun run openapi-ts",
     "typecheck": "bunx tsgo --noEmit",
-    "postinstall": "bun run openapi-ts",
+    "postinstall": "[ -f scripts/transform-daemon-spec.ts ] && bun run openapi-ts || true",
     "openapi-ts": "bun run scripts/transform-daemon-spec.ts && bun run scripts/transform-gateway-spec.ts && openapi-ts",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
