@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
+import * as basetenCli from "./baseten-cli.js";
 import {
   BasetenApiError,
   basetenImageRef,
@@ -12,6 +13,23 @@ const request = spyOn(globalThis, "fetch");
 
 function calls(): Array<[string, RequestInit]> {
   return request.mock.calls as unknown as Array<[string, RequestInit]>;
+}
+
+/** The HTTP arms' spies: no installed CLI, and a token ready to resolve. */
+function httpArm() {
+  process.env.BASETEN_SANDBOX_TOKEN = "short-lived-token";
+  return [
+    spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue(null),
+    spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
+  ];
+}
+
+/** The CLI-arm spies: an installed CLI, and a runner that never spawns. */
+function cliArm() {
+  return [
+    spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue("baseten"),
+    spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
+  ];
 }
 
 afterEach(() => {
@@ -48,7 +66,32 @@ describe("resolveBasetenToken", () => {
 });
 
 describe("pushBasetenImage", () => {
-  test("requests an upload URL, PUTs the archive, and polls until BUILT", async () => {
+  test("an installed baseten CLI takes the push and no token is needed", async () => {
+    const [cli, run] = cliArm();
+
+    await pushBasetenImage({
+      name: "cadet",
+      dir: "/tmp/staged",
+      zip: () => Promise.resolve(Buffer.from("zip")),
+    });
+
+    expect(run).toHaveBeenCalledWith([
+      "sandbox",
+      "image",
+      "push",
+      "--name",
+      "cadet",
+      "--dir",
+      "/tmp/staged",
+      "--wait",
+    ]);
+    expect(request).not.toHaveBeenCalled();
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
+  test("without a CLI it requests an upload URL, PUTs the archive, and polls until BUILT", async () => {
+    const [cli, run] = httpArm();
     request
       .mockResolvedValueOnce(
         Response.json({
@@ -63,8 +106,9 @@ describe("pushBasetenImage", () => {
 
     const polled: string[] = [];
     let zipped = 0;
-    await pushBasetenImage("token", {
+    await pushBasetenImage({
       name: "cadet",
+      dir: "/tmp/staged",
       zip: () => {
         zipped++;
         return Promise.resolve(Buffer.from("zip"));
@@ -73,6 +117,7 @@ describe("pushBasetenImage", () => {
       intervalMs: 1,
     });
 
+    expect(run).not.toHaveBeenCalled();
     expect(zipped).toBe(1);
     expect(polled).toEqual(["BUILDING", "BUILT"]);
     const push = calls().find(([url]) => url.endsWith("/v1/sandboxes/images"));
@@ -85,9 +130,12 @@ describe("pushBasetenImage", () => {
       url.endsWith("/v1/sandboxes/images/cadet"),
     );
     expect(poll?.[0]).toBe("https://api.baseten.co/v1/sandboxes/images/cadet");
+    cli.mockRestore();
+    run.mockRestore();
   });
 
-  test("a FAILED build surfaces instead of polling forever", async () => {
+  test("without a CLI a FAILED build surfaces instead of polling forever", async () => {
+    const [cli, run] = httpArm();
     request
       .mockResolvedValueOnce(
         Response.json(
@@ -99,22 +147,51 @@ describe("pushBasetenImage", () => {
       .mockResolvedValueOnce(Response.json({ status: "FAILED" }));
 
     await expect(
-      pushBasetenImage("token", {
+      pushBasetenImage({
         name: "cadet",
+        dir: "/tmp/staged",
         zip: () => Promise.resolve(Buffer.from("zip")),
         intervalMs: 1,
       }),
     ).rejects.toThrow(/build failed/);
+    cli.mockRestore();
+    run.mockRestore();
   });
 });
 
 describe("createBasetenSandbox", () => {
-  test("posts the image ref with provider envs marked secret", async () => {
+  test("an installed CLI creates through argv with env pairs and echoes the name", async () => {
+    const [cli, run] = cliArm();
+
+    const created = await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+      envs: [{ name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" }],
+    });
+
+    expect(run).toHaveBeenCalledWith([
+      "sandbox",
+      "create",
+      "--image",
+      "sandbox/cadet:latest",
+      "--name",
+      "my-cadet",
+      "--env",
+      "ANTHROPIC_API_KEY=sk-ant-1",
+    ]);
+    expect(created).toEqual({ name: "my-cadet" });
+    expect(request).not.toHaveBeenCalled();
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
+  test("over HTTP it posts the image ref with provider envs marked secret", async () => {
+    const [cli, run] = httpArm();
     request.mockResolvedValueOnce(
       Response.json({ name: "my-cadet", status: "DEPLOYED" }, { status: 201 }),
     );
 
-    await createBasetenSandbox("token", {
+    await createBasetenSandbox({
       name: "my-cadet",
       image: basetenImageRef("cadet"),
       envs: [{ name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" }],
@@ -127,19 +204,25 @@ describe("createBasetenSandbox", () => {
       name: "my-cadet",
       envs: [{ name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" }],
     });
+    cli.mockRestore();
+    run.mockRestore();
   });
 
-  test("a name is omitted from the request when not provided", async () => {
+  test("over HTTP a name is omitted from the request when not provided", async () => {
+    const [cli, run] = httpArm();
     request.mockResolvedValueOnce(
       Response.json({ name: "generated-by-server" }, { status: 201 }),
     );
-    await createBasetenSandbox("token", { image: basetenImageRef("cadet") });
+    await createBasetenSandbox({ image: basetenImageRef("cadet") });
     expect(JSON.parse(String(calls()[0][1].body))).toEqual({
       image: "sandbox/cadet:latest",
     });
+    cli.mockRestore();
+    run.mockRestore();
   });
 
-  test("API errors carry Baseten's code and message", async () => {
+  test("over HTTP API errors carry Baseten's code and message", async () => {
+    const [cli, run] = httpArm();
     request.mockResolvedValueOnce(
       Response.json(
         {
@@ -149,10 +232,12 @@ describe("createBasetenSandbox", () => {
         { status: 409 },
       ),
     );
-    const err = await createBasetenSandbox("token", {
+    const err = await createBasetenSandbox({
       image: basetenImageRef("cadet"),
     }).catch((e) => e);
     expect(err).toBeInstanceOf(BasetenApiError);
     expect(err.message).toMatch(/ALREADY_EXISTS/);
+    cli.mockRestore();
+    run.mockRestore();
   });
 });
