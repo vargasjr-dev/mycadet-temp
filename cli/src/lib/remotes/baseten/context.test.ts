@@ -16,7 +16,8 @@ const UNSHALLOW_DOCKERFILE = [
 
 describe("stampBasetenDockerfile", () => {
   test("stamps the CLI's package version so releases need no bump here", () => {
-    expect(mycadetVersion()).toMatch(/^\d+\.\d+\.\d+$/);
+    // resolveVersion local-stamps source checkouts; released CLIs stay plain.
+    expect(mycadetVersion()).toMatch(/^\d+\.\d+\.\d+(-local\.\d{12}\.[0-9a-f]+)?$/);
     const stamped = stampBasetenDockerfile(UNSHALLOW_DOCKERFILE, {
       version: mycadetVersion(),
     });

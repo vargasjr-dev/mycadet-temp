@@ -7,11 +7,38 @@
  * from BASETEN_API_KEY (or an explicit BASETEN_SANDBOX_TOKEN).
  */
 
+import { z } from "zod";
+
 const BASETEN_API_BASE = "https://api.baseten.co";
 
 export type BasetenEnvs = Array<{ name: string; secret: boolean; value: string }>;
 
 type Json = Record<string, unknown>;
+
+/** Any JSON object, tolerated to `{}` — responses beyond that are errors. */
+const JsonRecord = z.record(z.string(), z.unknown()).catch({});
+
+/** The error envelope the management API returns on failures. */
+const ErrorBody = z.object({
+  code: z.string().optional().catch(undefined),
+  message: z.string().optional().catch(undefined),
+  details: z
+    .object({ request_id: z.string().optional().catch(undefined) })
+    .catch({}),
+});
+
+const TokenIssued = z.object({
+  token: z.string().min(1).optional().catch(undefined),
+});
+
+const ImagePushAccepted = z.object({
+  upload_url: z.string().optional().catch(undefined),
+  status: z.string().optional().catch(undefined),
+});
+
+const ImageStatus = z.object({
+  status: z.string().optional().catch(undefined),
+});
 
 async function basetenFetch(
   token: string,
@@ -27,23 +54,17 @@ async function basetenFetch(
     },
   });
   const raw: unknown = await response.json().catch(() => ({}));
-  const body = isRecord(raw) ? raw : {};
+  const body = JsonRecord.parse(raw);
   if (!response.ok) {
-    const details = isRecord(body.details) ? body.details : {};
+    const error = ErrorBody.parse(body);
     throw new BasetenApiError(
       response.status,
-      typeof body.code === "string" ? body.code : "UNKNOWN",
-      typeof body.message === "string" && body.message
-        ? body.message
-        : response.statusText,
-      typeof details.request_id === "string" ? details.request_id : undefined,
+      error.code ?? "UNKNOWN",
+      error.message || response.statusText,
+      error.details.request_id,
     );
   }
   return body;
-}
-
-function isRecord(value: unknown): value is Json {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export class BasetenApiError extends Error {
@@ -74,15 +95,16 @@ export async function resolveBasetenToken(): Promise<string> {
       "Baseten credentials not found. Export BASETEN_API_KEY (or BASETEN_SANDBOX_TOKEN) first.",
     );
   }
-  const issued = await basetenFetch(apiKey, "/v1/token", {
-    method: "POST",
-    body: JSON.stringify({ scopes: ["sandboxes"] }),
-  });
-  const token = issued["token"];
-  if (typeof token !== "string" || !token) {
+  const issued = TokenIssued.parse(
+    await basetenFetch(apiKey, "/v1/token", {
+      method: "POST",
+      body: JSON.stringify({ scopes: ["sandboxes"] }),
+    }),
+  );
+  if (!issued.token) {
     throw new Error("Baseten token exchange returned no token.");
   }
-  return token;
+  return issued.token;
 }
 
 /** A sandbox image's registered reference, `sandbox/<name>:latest`. */
@@ -106,15 +128,17 @@ export async function pushBasetenImage(
     intervalMs?: number;
   },
 ): Promise<void> {
-  const accepted = await basetenFetch(token, "/v1/sandboxes/images", {
-    method: "POST",
-    body: JSON.stringify({ name: options.name }),
-  });
-  const uploadUrl = accepted["upload_url"];
+  const accepted = ImagePushAccepted.parse(
+    await basetenFetch(token, "/v1/sandboxes/images", {
+      method: "POST",
+      body: JSON.stringify({ name: options.name }),
+    }),
+  );
+  const uploadUrl = accepted.upload_url;
 
-  if (typeof uploadUrl !== "string") {
+  if (!uploadUrl) {
     throw new Error(
-      `Baseten image push returned no upload URL (status ${String(accepted["status"] ?? "unknown")}).`,
+      `Baseten image push returned no upload URL (status ${accepted.status ?? "unknown"}).`,
     );
   }
   const archive = await options.zip();
@@ -134,12 +158,13 @@ export async function pushBasetenImage(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    const image = await basetenFetch(
-      token,
-      `/v1/sandboxes/images/${encodeURIComponent(options.name)}`,
+    const image = ImageStatus.parse(
+      await basetenFetch(
+        token,
+        `/v1/sandboxes/images/${encodeURIComponent(options.name)}`,
+      ),
     );
-    const status =
-      typeof image["status"] === "string" ? image["status"] : "UNKNOWN";
+    const status = image.status ?? "UNKNOWN";
     options.poll?.(status);
     if (status === "BUILT") return;
     if (status === "FAILED") {

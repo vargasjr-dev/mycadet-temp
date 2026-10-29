@@ -36,7 +36,7 @@ COPY --from=ghcr.io/blaxel-ai/sandbox@sha256:8ebb596be14ed4c48f6fe4352e9d3de45dc
 
 # The published stack: `cadet`/`gateway`/`assistant` bins on PATH plus every
 # runtime package (@mycadet/cli, web, gateway, assistant, credential-executor).
-# Stamped from cli/package.json — never hardcode a version here.
+# Stamped from cli/package.json.
 ARG MYCADET_VERSION
 RUN bun add -g "mycadet@${MYCADET_VERSION}"
 

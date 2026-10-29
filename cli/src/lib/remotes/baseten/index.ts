@@ -1,4 +1,5 @@
 import { green } from "../../color.js";
+import { PROVIDER_ENV_VAR_NAMES } from "../../../shared/provider-env-vars.js";
 import {
   basetenImageRef,
   createBasetenSandbox,
@@ -24,16 +25,13 @@ import {
  * the sandbox is a running Cadet.
  */
 
-/** Provider credentials worth injecting into the sandbox, when present. */
-const PROVIDER_KEY_ENV_VARS = [
-  "ANTHROPIC_API_KEY",
-  "OPENAI_API_KEY",
-  "XAI_API_KEY",
-  "GEMINI_API_KEY",
-] as const;
-
+/**
+ * Every supported provider API key from the caller's environment is injected
+ * into the sandbox as a secret env var when present — the same combined map
+ * the docker/aws/gcp flows iterate (see shared/provider-env-vars.ts).
+ */
 function collectProviderEnvs() {
-  return PROVIDER_KEY_ENV_VARS.flatMap((name) => {
+  return Object.values(PROVIDER_ENV_VAR_NAMES).flatMap((name) => {
     const value = process.env[name];
     return value ? [{ name, secret: true, value }] : [];
   });

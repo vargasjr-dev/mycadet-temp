@@ -1,10 +1,8 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { resolveVersion } from "@mycadet/shared/version";
 import JSZip from "jszip";
-
-// Direct import — bun embeds this at compile time so it works in compiled binaries.
-import cliPkg from "../../../../package.json";
 
 /**
  * Builds the Baseten image push context from the Dockerfile and entrypoint.sh
@@ -19,11 +17,13 @@ import cliPkg from "../../../../package.json";
 export const BASETEN_IMAGE_NAME = "cadet";
 
 /**
- * Version of the Cadet stack the image installs — the CLI's own package
- * version, so a release's CLI always builds a matching runtime.
+ * Version of the Cadet stack the image installs — the CLI's own resolved
+ * version (cli/package.json via the shared resolver, so source checkouts
+ * carry their local stamp and releases stay plain), keeping a release's CLI
+ * on a matching runtime.
  */
 export function mycadetVersion(): string {
-  return cliPkg.version;
+  return resolveVersion(join(import.meta.dir, "../../../.."));
 }
 
 function escapeShellQuoted(value: string): string {

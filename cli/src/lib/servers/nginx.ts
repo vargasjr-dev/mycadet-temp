@@ -30,9 +30,9 @@ import {
 import {
   getGatewayUrl,
   type InjectedConfig,
+  type Remote,
 } from "@mycadet/local-mode/contract";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
-import type { RemoteHost } from "../constants.js";
 import { waitForDaemonReady } from "../http-client.js";
 import { isLocalContainerEntry } from "../ingress-config.js";
 import { resolveEdgeClientDists } from "../web-dist.js";
@@ -218,7 +218,7 @@ function lockfileAssistantRemote(assistantId: string): string | undefined {
  * (this edge serves remote browsers however the cadet itself is hosted).
  * "cloud" is never stamped: the cloud serves its own bundles.
  */
-export function edgeServedRemote(recorded: string | undefined): RemoteHost {
+export function edgeServedRemote(recorded: string | undefined): Remote {
   return recorded === "docker" ? "docker" : "custom";
 }
 
