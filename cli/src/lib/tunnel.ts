@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
@@ -15,10 +14,7 @@ import {
   getLoopbackGatewayPort,
 } from "@mycadet/local-mode/contract";
 
-import {
-  getDefaultWorkspaceDir,
-  isLocalContainerEntry,
-} from "./ingress-config.js";
+import { isLocalContainerEntry } from "./ingress-config.js";
 import {
   ensureAppServer,
   getNginxIngressPort,
@@ -201,7 +197,6 @@ const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 export interface LocalTunnelTarget {
   entry: LockfileAssistant;
   gatewayPort: number;
-  workspaceDir: string;
 }
 
 /**
@@ -216,16 +211,12 @@ export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
   if (entry.resources?.instanceDir) {
-    return {
-      entry,
-      gatewayPort: entry.resources.gatewayPort,
-      workspaceDir: join(entry.resources.instanceDir, "workspace"),
-    };
+    return { entry, gatewayPort: entry.resources.gatewayPort };
   }
   if (isLocalContainerEntry(entry)) {
     const gatewayPort = getLoopbackGatewayPort(entry);
     if (gatewayPort !== undefined) {
-      return { entry, gatewayPort, workspaceDir: getDefaultWorkspaceDir() };
+      return { entry, gatewayPort };
     }
   }
   return null;

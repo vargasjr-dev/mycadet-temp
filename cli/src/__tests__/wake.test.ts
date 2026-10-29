@@ -17,7 +17,6 @@ import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
-import * as ingressConfig from "../lib/ingress-config.js";
 import * as local from "../lib/local.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
@@ -176,15 +175,11 @@ mock.module("../lib/tunnels/ngrok", () => ({
   },
 }));
 
-const realIngressConfig = { ...ingressConfig };
 const realNginxIngress = { ...nginxIngress };
 
-const loadRawConfigMock = mock<typeof ingressConfig.loadRawConfig>(() => ({}));
 
-mock.module("../lib/ingress-config.js", () => ({
-  ...realIngressConfig,
-  loadRawConfig: loadRawConfigMock,
-}));
+
+
 
 const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
   async () => ({ port: 7840, started: true, shellMode: "web" }),
@@ -322,8 +317,6 @@ beforeEach(() => {
     publicUrl: "https://tunnel.example.com",
     waitForExit: Promise.resolve(),
   }));
-  loadRawConfigMock.mockReset();
-  loadRawConfigMock.mockReturnValue({});
   ensureAppServerMock.mockReset();
   ensureAppServerMock.mockResolvedValue({
     port: 7840,
@@ -354,7 +347,6 @@ afterAll(() => {
   mock.module("../lib/port-allocator.js", () => realPortAllocator);
   mock.module("../lib/local", () => realLocal);
   mock.module("../lib/tunnels/ngrok", () => realNgrok);
-  mock.module("../lib/ingress-config.js", () => realIngressConfig);
   mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);
   mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
@@ -569,10 +561,6 @@ describe("cadet wake: daemon startup failure", () => {
 });
 
 describe("cadet wake — app server restore", () => {
-  const webhookConfig = { telegram: { botUsername: "bot" } };
-  const enabledConfig = {
-    ingress: { enabled: true, publicBaseUrl: "https://assistant.example.com" },
-  };
   let lockfileDir = "";
 
   beforeEach(() => {
@@ -611,22 +599,6 @@ describe("cadet wake — app server restore", () => {
   }
 
   test("a recorded app server wakes the edge back up and tunnels the edge port", async () => {
-    loadRawConfigMock.mockReturnValue(webhookConfig);
-    stampRecordedAppServer();
-    stampRecordedTunnel("ngrok");
-
-    await wake();
-
-    expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7840,
-      assistantId: "local-assistant",
-    });
-    expect(logSpy).toHaveBeenCalledWith("Wake complete.");
-  });
-
-  test("a recorded app server wakes the edge even without webhook integrations", async () => {
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
 
@@ -649,7 +621,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     stampRecordedTunnel("ngrok");
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -689,7 +660,6 @@ describe("cadet wake — app server restore", () => {
       },
     };
     resolveTargetAssistantMock.mockReturnValue(migratedEntry);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     // The v0.0.10 run feedback: the containers were never created —
     // `docker start` answers "No such container".
     wakeContainersMock.mockImplementation(async () => {
@@ -725,7 +695,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
@@ -757,7 +726,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -798,7 +766,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -874,7 +841,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -902,7 +868,6 @@ describe("cadet wake — app server restore", () => {
       cloud: "docker",
       resources: { gatewayPort: 7930, daemonPort: 7821 },
     });
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     waitForDaemonReadyMock.mockImplementation(async () => false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -968,7 +933,6 @@ describe("cadet wake — app server restore", () => {
         cloud: "docker",
       },
     ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
     isIngressRunningMock.mockReturnValue(false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1026,8 +990,6 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a wake with no recorded app server or tunnel skips the edge and the tunnel", async () => {
-    loadRawConfigMock.mockReturnValue({ ingress: { enabled: true } });
-
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
@@ -1040,7 +1002,6 @@ describe("cadet wake — app server restore", () => {
     // predating the current edge template (one serving no assistantId, which
     // makes the identity probe degrade to always-healthy) must be rebuilt
     // rather than carried across the wake at its recorded listen port.
-    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     isIngressRunningMock.mockReturnValue(true);
@@ -1064,7 +1025,6 @@ describe("cadet wake — app server restore", () => {
     // edge whose stop fails reports staleRemoteWebConfig; both throw while the
     // edge keeps serving. Tunneling the gateway directly would put the
     // sensitive-route denylist behind the tunnel instead of in front of it.
-    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     isIngressRunningMock.mockReturnValue(true);
@@ -1094,7 +1054,6 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a failed rebuild falls back to the gateway port when the running edge fronts another gateway", async () => {
-    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     isIngressRunningMock.mockReturnValue(true);
@@ -1115,7 +1074,6 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
-    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     ensureAppServerMock.mockRejectedValue(
@@ -1144,7 +1102,6 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a failed rebuild names the provider that last tunneled here", async () => {
-    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("cloudflare");
     ensureAppServerMock.mockRejectedValue(new Error("edge rebuild failed"));
@@ -1159,18 +1116,8 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a failed rebuild names the record's tunnel, not the workspace's stale one", async () => {
-    // A tailnet pairing tunnel leaves the older public record in the
-    // workspace, so the advice has to name the tunnel actually in front of
-    // this assistant: the root lockfile's record, never the workspace's.
-    loadRawConfigMock.mockReturnValue({
-      ...webhookConfig,
-      ingress: {
-        lastTunnel: {
-          provider: "cloudflare",
-          publicBaseUrl: "https://assistant.example.com",
-        },
-      },
-    });
+    // The advice names the tunnel actually in front of this assistant: the
+    // root lockfile's record, which is the only record there is.
     stampRecordedAppServer();
     // A pairing-only run published no ingress base URL — the record shape
     // that says the tunnel in front is the tailnet serve.
@@ -1187,7 +1134,6 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a reused edge still points the tunnel at its listen port", async () => {
-    loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     ensureAppServerMock.mockResolvedValue({
