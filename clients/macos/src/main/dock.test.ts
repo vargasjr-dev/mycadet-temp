@@ -64,7 +64,6 @@ mock.module("./session-token-store.client", () => ({
 // active local assistants (gateway-only auth, no platform token).
 let mockLockfileAssistants: Array<Record<string, unknown>> = [];
 mock.module("@mycadet/local-mode", () => ({
-  resolveLockfilePaths: () => ["/fake/.cadet.lock.json"],
   readLockfile: () => ({
     assistants: mockLockfileAssistants,
     activeAssistant: null,

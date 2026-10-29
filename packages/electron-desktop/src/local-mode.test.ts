@@ -41,7 +41,18 @@ const spawnMock = mock((command: string, args: string[], options?: unknown) => {
   return lastChild;
 });
 
-mock.module("node:child_process", () => ({ spawn: spawnMock }));
+const spawnSyncMock = mock(
+  (_command: string, _args?: readonly string[], _options?: unknown) => ({
+    status: 0,
+    stdout: "",
+    stderr: "",
+  }),
+);
+
+mock.module("node:child_process", () => ({
+  spawn: spawnMock,
+  spawnSync: spawnSyncMock,
+}));
 
 // Mock cli-installer with controllable stubs. Defaults: CLI is not installed,
 // install succeeds, paths return fixed values.
@@ -97,7 +108,7 @@ const lockfileDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-lockfile-"));
 const configHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-config-"));
 process.env.CADET_ENVIRONMENT = "production";
 process.env.XDG_CONFIG_HOME = configHomeDir;
-const lockfilePath = path.join(lockfileDir, ".cadet.lock.json");
+const lockfilePath = path.join(lockfileDir, "lockfile.json");
 
 // Matches the module's `resolveConfigDir(process.env)` under the
 // production + XDG_CONFIG_HOME environment pinned above.
@@ -1232,7 +1243,6 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   test("reads the avatar off the lockfile entry's instance dir", () => {
     const avatarDir = path.join(
       instanceDir,
-      ".cadet",
       "workspace",
       "data",
       "avatar",
@@ -1282,7 +1292,6 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
         "cadet",
         "assistants",
         "asst-1",
-        ".cadet",
         "workspace",
         "data",
         "avatar",
@@ -1310,7 +1319,6 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   test("an unreadable manifest image surfaces as a failure over IPC", () => {
     const avatarDir = path.join(
       instanceDir,
-      ".cadet",
       "workspace",
       "data",
       "avatar",
