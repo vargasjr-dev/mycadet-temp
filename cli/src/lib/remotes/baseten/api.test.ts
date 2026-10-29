@@ -15,9 +15,12 @@ function calls(): Array<[string, RequestInit]> {
   return request.mock.calls as unknown as Array<[string, RequestInit]>;
 }
 
-/** The HTTP arms' spies: no installed CLI, and a token ready to resolve. */
+/** The HTTP arms' spies: no installed CLI, and an API key whose exchange is mocked. */
 function httpArm() {
-  process.env.BASETEN_SANDBOX_TOKEN = "short-lived-token";
+  process.env.BASETEN_API_KEY = "b10-key";
+  request.mockResolvedValueOnce(
+    Response.json({ token: "short-lived-token" }),
+  );
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue(null),
     spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
@@ -35,17 +38,9 @@ function cliArm() {
 afterEach(() => {
   request.mockReset();
   delete process.env.BASETEN_API_KEY;
-  delete process.env.BASETEN_SANDBOX_TOKEN;
 });
 
 describe("resolveBasetenToken", () => {
-  test("an explicit sandbox token passes through without a network call", async () => {
-    process.env.BASETEN_SANDBOX_TOKEN = "short-lived-token";
-    const token = await resolveBasetenToken();
-    expect(token).toBe("short-lived-token");
-    expect(request).not.toHaveBeenCalled();
-  });
-
   test("the API key is exchanged at POST /v1/token", async () => {
     process.env.BASETEN_API_KEY = "b10-key";
     request.mockResolvedValueOnce(
@@ -197,9 +192,11 @@ describe("createBasetenSandbox", () => {
       envs: [{ name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" }],
     });
 
-    const [url, init] = calls()[0];
-    expect(url).toBe("https://api.baseten.co/v1/sandboxes/instances");
-    expect(JSON.parse(String(init.body))).toEqual({
+    const instances = calls().find(([url]) =>
+      url.endsWith("/v1/sandboxes/instances"),
+    );
+    expect(instances?.[0]).toBe("https://api.baseten.co/v1/sandboxes/instances");
+    expect(JSON.parse(String(instances?.[1].body))).toEqual({
       image: "sandbox/cadet:latest",
       name: "my-cadet",
       envs: [{ name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" }],
@@ -214,7 +211,10 @@ describe("createBasetenSandbox", () => {
       Response.json({ name: "generated-by-server" }, { status: 201 }),
     );
     await createBasetenSandbox({ image: basetenImageRef("cadet") });
-    expect(JSON.parse(String(calls()[0][1].body))).toEqual({
+    const instances = calls().find(([url]) =>
+      url.endsWith("/v1/sandboxes/instances"),
+    );
+    expect(JSON.parse(String(instances?.[1].body))).toEqual({
       image: "sandbox/cadet:latest",
     });
     cli.mockRestore();

@@ -5,7 +5,7 @@
  *   https://docs.baseten.co/reference/management-api/sandboxes/overview
  *
  * The HTTP path authenticates with a short-lived sandbox access token,
- * exchanged from BASETEN_API_KEY (or an explicit BASETEN_SANDBOX_TOKEN).
+ * exchanged from BASETEN_API_KEY.
  */
 
 import { z } from "zod";
@@ -87,18 +87,13 @@ export class BasetenApiError extends Error {
 }
 
 /**
- * Short-lived bearer token for the sandbox API. BASETEN_SANDBOX_TOKEN wins
- * when set (callers that already minted one can pass it through); otherwise
- * BASETEN_API_KEY is exchanged at POST /v1/token.
+ * Short-lived bearer token for the sandbox API, exchanged from
+ * BASETEN_API_KEY at POST /v1/token.
  */
 export async function resolveBasetenToken(): Promise<string> {
-  const existing = process.env.BASETEN_SANDBOX_TOKEN;
-  if (existing) return existing;
   const apiKey = process.env.BASETEN_API_KEY;
   if (!apiKey) {
-    throw new Error(
-      "Baseten credentials not found. Export BASETEN_API_KEY (or BASETEN_SANDBOX_TOKEN) first.",
-    );
+    throw new Error("Baseten credentials not found. Export BASETEN_API_KEY first.");
   }
   const issued = await basetenFetch(apiKey, "/v1/token", TokenIssued, {
     method: "POST",
