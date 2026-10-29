@@ -5,27 +5,24 @@ import {
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
-import { readRootProcesses } from "../lib/assistant-config";
+import { readRootProcesses, resolveTargetAssistant } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
-import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
-  ADOPTED_TUNNEL_RE,
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
   adoptedTunnelStopNotice,
-  cadetTunnelComingSoonError,
   clearReservedDomain,
   ensureNginxForEdge,
-  hasWebhookIntegrationsConfigured,
   offerStopNgrokHolder,
   providerSupportsReservedDomain,
-  resolveLocalTunnelTarget,
   runProviderTunnel,
   stopTunnelProcess,
   summarizeStartupFailure,
 } from "../lib/tunnel.js";
+import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
+import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
 
@@ -228,30 +225,6 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-/**
- * Decide how the tailnet-only tailscale tunnel may treat the saved ingress base
- * URL, which is also the webhook callback base. Returns true when the run must
- * leave that URL in place and record the tailnet address for pairing only.
- *
- * A tailnet address in the callback base would repoint those callbacks at
- * something external services cannot resolve, so no run replaces it while
- * webhook integrations are configured. The choice of tailscale is always the
- * user's own, so it is honored, with what it does and does not record spelled
- * out.
- */
-function guardTailnetOnlyWebhookIngress(workspaceDir: string): boolean {
-  if (!hasWebhookIntegrationsConfigured(workspaceDir)) {
-    return false;
-  }
-  console.warn(
-    "⚠ Webhook integrations are configured, and the tailscale tunnel is reachable only from your own tailnet, " +
-      "so it cannot serve their callbacks. The saved ingress base URL stays as it is and the tailnet URL is " +
-      "recorded for device pairing only. For a tunnel those integrations can reach too, run `${cliCommand()} tunnel start --help` " +
-      "to see the public providers.",
-  );
-  return true;
-}
-
 // Generous cap so a slow provider handshake (e.g. cloudflared's own ~30s
 // quick-tunnel timeout) still counts as a successful, if slow, start.
 const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
@@ -350,19 +323,6 @@ async function spawnDetachedTunnel(): Promise<void> {
   }
 }
 
-/**
- * The workspace the tunnel fronts — the same resolution the start flow uses
- * (the active, or the sole locally-reachable, assistant). Falls back to the
- * default workspace when nothing resolves locally.
- */
-function tunnelWorkspace(): string {
-  try {
-    return resolveLocalTunnelTarget().workspaceDir;
-  } catch {
-    return getDefaultWorkspaceDir();
-  }
-}
-
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
@@ -372,7 +332,7 @@ async function stopTunnelFlow(): Promise<void> {
     );
     return;
   }
-  const stopped = await stopTunnelProcess(tunnelWorkspace());
+  const stopped = await stopTunnelProcess();
   console.log(
     stopped
       ? "Tunnel stopped. nginx and the saved domain are unchanged."
@@ -427,10 +387,10 @@ export const tunnel = Object.assign(
       throw cadetTunnelComingSoonError(provider);
     }
 
-    const { entry, workspaceDir } = resolveLocalTunnelTarget();
-
-    const preserveIngressUrl =
-      provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
+    // The tunnel is assistant-agnostic: its only concern is the app server —
+    // a machine-level edge that resolves whatever it fronts from the lockfile
+    // itself. ensureAppServer starts the edge when it is down and reuses it
+    // when up; the tunnel fronts the port it reports.
 
     if (clearDomain) {
       clearReservedDomain();
@@ -457,15 +417,16 @@ export const tunnel = Object.assign(
 
     const baseTunnelOpts = {
       port: edge.port,
-      assistantId: entry.assistantId,
-      workspaceDir,
+      // The edge fronts the lockfile's active assistant; the tunnel record
+      // just carries its id. Re-resolution is safe post-edge: ensureAppServer
+      // already resolved the same entry (and fails loud when there is none).
+      assistantId: resolveTargetAssistant().assistantId,
     };
 
     await runProviderTunnel(provider, {
       ...baseTunnelOpts,
       ...(domain ? { domain } : {}),
-      ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
     });
   },
-  { description: "Start or stop a tunnel for locally hosted assistants" },
+  { description: "Start or stop a tunnel in front of the app server" },
 );

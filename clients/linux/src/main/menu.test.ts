@@ -50,7 +50,20 @@ mock.module("./main-window", () => ({
   onOnboardingChange: () => () => undefined,
 }));
 
-const { buildLinuxMenu, installLinuxMenu } = await import("./menu");
+const { buildLinuxMenu, installLinuxMenu, setLinuxHasCloudSession } =
+  await import("./menu");
+
+test("the Log In/Log Out toggle follows the published session fact", () => {
+  const label = (): string =>
+    (submenu("File").find((item) =>
+      ["Log In", "Log Out"].includes(String(item.label)),
+    )?.label ?? "") as string;
+
+  setLinuxHasCloudSession(true);
+  expect(label()).toBe("Log Out");
+  setLinuxHasCloudSession(false);
+  expect(label()).toBe("Log In");
+});
 
 type MenuOptions = Parameters<typeof buildLinuxMenu>[0];
 
@@ -64,6 +77,7 @@ const submenu = (
 
 const enabled = (menu: string, label: string, options?: MenuOptions): unknown =>
   submenu(menu, options).find((item) => item.label === label)?.enabled;
+
 
 describe("buildLinuxMenu", () => {
   test("uses Linux roles and disables unavailable providers", () => {

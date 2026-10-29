@@ -229,6 +229,9 @@ beforeEach(() => {
     pid: 4321,
     provider: "ngrok",
     startedAt: new Date().toISOString(),
+    // The record's `publicUrl` is the restore's gate: a published run comes
+    // back after the upgrade.
+    publicUrl: "https://tunnel.example.com",
   });
   process.argv = [
     "bun",
@@ -437,7 +440,6 @@ describe("cadet upgrade local", () => {
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: 7830,
-      workspaceDir: join(tempDir, "workspace"),
       assistantId: "local-assistant",
     });
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");

@@ -78,7 +78,15 @@ import {
   installMainWindow,
   toggleVisibility as toggleMainWindowVisibility,
 } from "./main-window";
-import { installApplicationMenu, refreshCliPathMenuState } from "./menu";
+import {
+  installApplicationMenu,
+  refreshCliPathMenuState,
+  setHasCloudSession,
+} from "./menu";
+import {
+  getSessionToken,
+  onSessionTokenChange,
+} from "./session-token-store.client";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -414,6 +422,12 @@ app
     installTextInsertionIpc();
     installCommandPaletteWindow();
     installApplicationMenu();
+    // The menu's Log In/Log Out toggle is main's fact: derived from the same
+    // token store the OAuth flow and sign-out write.
+    setHasCloudSession(!!getSessionToken());
+    onSessionTokenChange(() => {
+      setHasCloudSession(!!getSessionToken());
+    });
     installQuickInput();
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
     installCompanionWindow();

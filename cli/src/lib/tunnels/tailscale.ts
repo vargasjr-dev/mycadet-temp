@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
@@ -14,14 +13,6 @@ import { win32 } from "node:path";
 import { GATEWAY_PORT } from "../constants.js";
 import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
-import {
-  clearIngressUrl,
-  loadRawConfig,
-  getDefaultWorkspaceDir,
-  saveIngressUrl,
-  savePairingTunnel,
-} from "../ingress-config.js";
-
 // ── Tailscale CLI discovery + invocation ────────────────────────────────────
 
 const MACOS_TAILSCALE_FALLBACK_PATHS = [
@@ -226,87 +217,24 @@ function serveFailureMessage(result: TailscaleCommandResult): string {
   return detail ? `${base}\n\n${detail}` : base;
 }
 
-/**
- * The ingress URL may only be cleared once the serve mapping is confirmed
- * stopped. tailscaled maintains the mapping independently of this process, so
- * a failed or errored stop leaves the URL live — clearing the config then
- * would strand webhook configuration while the endpoint still answers.
- */
-export function shouldClearIngressUrl(
-  result: TailscaleCommandResult | null,
-): boolean {
-  return result !== null && result.status === 0;
-}
-
 // ── Tailscale serve lifecycle ───────────────────────────────────────────────
 
 export interface RunTailscaleTunnelOptions {
   /** Local edge port to serve. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Workspace directory for config read/write. Defaults to ~/.cadet/workspace. */
-  workspaceDir?: string;
-  /** The assistant the records front (`ingress.assistantId`). */
+  /** The assistant the lockfile record fronts (`assistantId`). */
   assistantId?: string;
-  /**
-   * Publish the tailnet URL to the lockfile entry only, leaving the workspace
-   * `ingress` record untouched. Set when the saved public base URL is a live
-   * webhook callback base: those callbacks must keep resolving to an address
-   * their callers can reach while devices pair over the tailnet.
-   */
-  preserveIngressUrl?: boolean;
-}
-
-/**
- * Record the serve URL as the address to reach this assistant at: the workspace
- * ingress base URL plus the lockfile mirror, or the pairing record plus that
- * mirror when the ingress base URL must be preserved.
- *
- * The pairing card asks the daemon which address is serving this assistant,
- * and the daemon reads the workspace config, so a preserved run that published
- * to the lockfile alone would start a tunnel that card never shows.
- */
-function publishServeUrl(
-  opts: RunTailscaleTunnelOptions,
-  workspaceDir: string,
-  publicUrl: string,
-): void {
-  if (!opts.preserveIngressUrl) {
-    saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "tailscale");
-    return;
-  }
-  savePairingTunnel(
-    workspaceDir,
-    { provider: "tailscale", publicBaseUrl: publicUrl },
-    opts.assistantId,
-  );
-}
-
-/**
- * Drop what {@link publishServeUrl} recorded, from the same places. Exported
- * for the teardown tests, since the run itself holds until a signal.
- */
-export function retractServeUrl(
-  opts: RunTailscaleTunnelOptions,
-  workspaceDir: string,
-): void {
-  if (!opts.preserveIngressUrl) {
-    clearIngressUrl(workspaceDir);
-    return;
-  }
-  savePairingTunnel(workspaceDir, null);
 }
 
 export interface TailscaleServeInfo {
   publicUrl: string;
   port: number;
   binary: string;
-  workspaceDir: string;
 }
 
 /**
  * Preflight tailscale, front the local edge with `tailscale serve --bg`, and
- * persist the resulting tailnet URL (as the ingress base URL, or as the
- * lockfile pairing address alone under `preserveIngressUrl`).
+ * record the resulting tailnet URL in the root lockfile's `tunnel` record.
  *
  * `serve --bg` registers the mapping in tailscaled and returns immediately;
  * there is no long-lived child process to supervise. Throws on any failure
@@ -334,7 +262,6 @@ export async function startTailscaleServe(
   const hostname = resolveServeHostname(statusResult.stdout);
   const publicUrl = `https://${hostname}`;
 
-  const workspaceDir = opts.workspaceDir ?? getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   const serveResult = deps.run(binary, ["serve", "--bg", String(port)]);
@@ -342,13 +269,20 @@ export async function startTailscaleServe(
     throw new Error(serveFailureMessage(serveResult));
   }
 
-  publishServeUrl(opts, workspaceDir, publicUrl);
+  // The record is the save: the tailnet URL is the tunnel's published base,
+  // and the wake restore (and the refresh) read it from the lockfile. The
+  // serve lives in tailscaled, so the pid is this host process's.
+  stampRootProcess("tunnel", {
+    pid: process.pid,
+    provider: "tailscale",
+    startedAt: new Date().toISOString(),
+    publicUrl,
+  });
 
   return {
     publicUrl,
     port,
     binary,
-    workspaceDir,
   };
 }
 
@@ -385,11 +319,7 @@ export async function runTailscaleTunnel(
   console.log(`Tunnel established: ${publicUrl}`);
   console.log(`Serving:            localhost:${port}`);
   console.log("");
-  console.log(
-    opts.preserveIngressUrl
-      ? "Recorded as this assistant's pairing address. The saved ingress base URL, which is also the webhook callback base, is left as it was."
-      : "Ingress URL saved to config.",
-  );
+  console.log("Tunnel recorded in the lockfile.");
   console.log(
     "This URL is reachable only from devices signed in to your tailnet.",
   );
@@ -400,12 +330,6 @@ export async function runTailscaleTunnel(
   console.log(
     `The serve persists in tailscaled after this command exits. Stop it with \`${cliCommand()} tunnel stop\`.`,
   );
-
-  stampRootProcess("tunnel", {
-    pid: process.pid,
-    provider: "tailscale",
-    startedAt: new Date().toISOString(),
-  });
 
   // The serve itself lives in tailscaled and persists after this process
   // exits; no signal handling is registered and nothing is held open — a
@@ -419,21 +343,9 @@ export async function runTailscaleTunnel(
 export const TAILSCALE_TUNNEL_META: ProviderMeta = {
   reach: "Tailnet-only tunnel, reachable from your own devices",
   install: "install: https://tailscale.com/download, then run `tailscale up`",
-  notes: [
-    "When webhook integrations are configured it records its URL for device",
-    "pairing only, leaving the saved webhook callback base as it is.",
-  ],
+  notes: [],
   supportsReservedDomain: false,
 };
-
-const stoppedTailscaleStateSchema = z.object({
-  ingress: z
-    .object({
-      publicBaseUrl: z.string().optional(),
-      pairingTunnel: z.object({ provider: z.string() }).optional(),
-    })
-    .optional(),
-});
 
 export async function stopTailscaleTunnel(
   opts: ProviderStopOptions,
@@ -458,19 +370,6 @@ export async function stopTailscaleTunnel(
   }
   if (supervisor && opts.record.pid !== process.pid)
     await stopProcess(opts.record.pid, "tunnel supervisor");
-  if (opts.workspaceDir) {
-    const state = stoppedTailscaleStateSchema.parse(
-      loadRawConfig(opts.workspaceDir),
-    ).ingress;
-    const assistantId = opts.assistantId;
-    retractServeUrl(
-      {
-        assistantId,
-        preserveIngressUrl: state?.pairingTunnel?.provider === "tailscale",
-      },
-      opts.workspaceDir,
-    );
-  }
   return true;
 }
 

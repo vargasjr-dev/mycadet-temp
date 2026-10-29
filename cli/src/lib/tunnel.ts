@@ -1,32 +1,20 @@
 import { z } from "zod";
-import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
-  getAssistantDisplayName,
-  getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "./assistant-config.js";
-import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
 import {
   getGatewayUrl,
   getLoopbackGatewayPort,
 } from "@mycadet/local-mode/contract";
-import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
-} from "@mycadet/service-contracts/ingress";
 
-import {
-  getDefaultWorkspaceDir,
-  isLocalContainerEntry,
-  loadRawConfig,
-} from "./ingress-config.js";
+import { isLocalContainerEntry } from "./ingress-config.js";
 import {
   ensureAppServer,
   getNginxIngressPort,
@@ -50,7 +38,6 @@ import {
 import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
-  selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
@@ -157,7 +144,6 @@ export function providerSupportsReservedDomain(provider: string): boolean {
 export interface ProviderTunnelOptions {
   port: number;
   assistantId?: string;
-  workspaceDir: string;
   /** Reserved domain to bind (providers that support one only). */
   domain?: string;
   /** Tailnet-only runs keep the webhook callback base as it is. */
@@ -178,7 +164,6 @@ export interface ProviderTunnelResult {
 export interface ProviderStopOptions {
   record: TunnelProcessRecord;
   assistantId?: string;
-  workspaceDir?: string;
 }
 
 export interface TunnelProvider {
@@ -212,7 +197,6 @@ const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 export interface LocalTunnelTarget {
   entry: LockfileAssistant;
   gatewayPort: number;
-  workspaceDir: string;
 }
 
 /**
@@ -227,64 +211,15 @@ export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
   if (entry.resources?.instanceDir) {
-    return {
-      entry,
-      gatewayPort: entry.resources.gatewayPort,
-      workspaceDir: join(entry.resources.instanceDir, "workspace"),
-    };
+    return { entry, gatewayPort: entry.resources.gatewayPort };
   }
   if (isLocalContainerEntry(entry)) {
     const gatewayPort = getLoopbackGatewayPort(entry);
     if (gatewayPort !== undefined) {
-      return { entry, gatewayPort, workspaceDir: getDefaultWorkspaceDir() };
+      return { entry, gatewayPort };
     }
   }
   return null;
-}
-
-export function describeUntunnelableEntry(entry: LockfileAssistant): string {
-  const reference = getAssistantDisplayName(entry);
-  return isCloudHome(entry.cloud)
-    ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
-    : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
-}
-
-/**
- * Resolve the assistant whose gateway and workspace the app server fronts.
- * Tunnels only make sense for assistants with a local gateway; when the
- * active assistant has none (e.g. it is cloud-hosted) fall back to the sole
- * local target, otherwise exit with an error naming the way to pick one.
- */
-export function resolveLocalTunnelTarget(): LocalTunnelTarget {
-  const entry = resolveTargetAssistant();
-
-  const target = toLocalTunnelTarget(entry);
-  if (target) {
-    return target;
-  }
-
-  const localTargets = loadAllAssistants()
-    .map(toLocalTunnelTarget)
-    .filter((local): local is LocalTunnelTarget => local !== null);
-
-  if (localTargets.length === 1) {
-    console.log(
-      `${describeUntunnelableEntry(entry)} Tunneling the local assistant '${getAssistantDisplayName(localTargets[0].entry)}' instead.`,
-    );
-    return localTargets[0];
-  }
-
-  console.error(describeUntunnelableEntry(entry));
-  if (localTargets.length === 0) {
-    console.error(
-      `No local assistant found to tunnel. Run \`${cliCommand()} hatch\` first.`,
-    );
-  } else {
-    console.error(
-      `Multiple local assistants found; set the one to front with \`${cliCommand()} use <name>\`.`,
-    );
-  }
-  process.exit(1);
 }
 
 /**
@@ -347,7 +282,7 @@ export async function runProviderTunnel(
 ): Promise<{ publicUrl: string }> {
   const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
-  await refreshEdgeWithEstablishedUrl(opts, result.publicUrl);
+  await refreshEdgeWithEstablishedUrl();
   await result.waitForExit;
   return { publicUrl: result.publicUrl };
 }
@@ -355,25 +290,17 @@ export async function runProviderTunnel(
 /**
  * Re-ensure the edge right after a tunnel establishes, so the fresh public
  * URL (saved by the provider run) lands in the served config's `cloudUrl` in
- * the same session that created it. A no-op when the saved URL is not the
- * established one — e.g. a tailscale pairing-only run, which must never
- * repoint the webhook callback base the saved URL stands for.
+ * the same session that created it. A no-op when the run published no public
+ * URL — a tailscale pairing-only run, which must never repoint the webhook
+ * callback base the saved URL stands for.
+ *
+ * The saved URL comes from the root lockfile's `tunnel` record — the run
+ * stamps it with the URL it published — never from a workspace config: the
+ * tunnel layer's own state lives in the lockfile.
  */
-async function refreshEdgeWithEstablishedUrl(
-  opts: ProviderTunnelOptions,
-  publicUrl: string,
-): Promise<void> {
-  let savedUrl: string | undefined;
-  try {
-    const config = loadRawConfig(opts.workspaceDir);
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    if (typeof url === "string" && url.trim()) savedUrl = url.trim();
-  } catch {
-    return;
-  }
+async function refreshEdgeWithEstablishedUrl(): Promise<void> {
+  const savedUrl = readRootProcesses().tunnel?.publicUrl;
   if (!savedUrl) return;
-  if (savedUrl.replace(/\/+$/, "") !== publicUrl.replace(/\/+$/, "")) return;
   // Only re-ensure an edge that already fronts this assistant's gateway: the
   // app server resolves the assistant it fronts itself (the lockfile's active
   // entry), so an edge pointing elsewhere is left alone rather than
@@ -408,18 +335,13 @@ export function clearReservedDomain(): void {
  * signaling — a stale entry after PID reuse must not kill an unrelated
  * process.
  */
-export async function stopTunnelProcess(
-  workspaceDir?: string,
-): Promise<boolean> {
+export async function stopTunnelProcess(): Promise<boolean> {
   const recorded: TunnelProcessRecord | undefined = readRootProcesses().tunnel;
   if (!recorded) return false;
   const provider = providerNameSchema.parse(
     recorded.provider ?? DEFAULT_TUNNEL_PROVIDER,
   );
-  const stopped = await providers[provider].stop({
-    record: recorded,
-    workspaceDir,
-  });
+  const stopped = await providers[provider].stop({ record: recorded });
   clearRootProcess("tunnel", recorded.pid);
   return stopped;
 }
@@ -473,12 +395,6 @@ export function summarizeStartupFailure(logText: string): string | null {
   return lastLine === undefined ? null : cap(lastLine);
 }
 
-export {
-  ADOPTED_TUNNEL_RE,
-  hasWebhookIntegrationsConfigured,
-} from "./tunnels/ngrok.js";
-export { cadetTunnelComingSoonError } from "./tunnels/cadet.js";
-
 /** Matches the Docker hatch path's service-readiness allowance. */
 export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
 
@@ -496,19 +412,19 @@ function wantsAppServer(): boolean {
 /**
  * The `cadet tunnel start` invocation that rebuilds this assistant's edge.
  * That command requires `--provider`, and a `<provider>` placeholder would be
- * shell redirection rather than something to paste, so name the provider
- * recorded here; with none recorded, point at the help that lists them.
+ * shell redirection rather than something to paste, so name the provider the
+ * root lockfile's `tunnel` record carries — the tunnel layer's own state of
+ * record, stamped by every run and cleared only by a stop; with none
+ * recorded, point at the help that lists them.
  */
-function tunnelRestartCommand(workspaceDir: string): string {
+function tunnelRestartCommand(): string {
   try {
-    const record = selectRestartTunnelRecord(
-      loadRawConfig(workspaceDir).ingress,
-    );
-    if (record) {
+    const record = readRootProcesses().tunnel;
+    if (record?.provider) {
       return `${cliCommand()} tunnel start --provider ${record.provider}`;
     }
   } catch {
-    // An unreadable config names no provider; the help pointer still holds.
+    // An unreadable lockfile names no provider; the help pointer still holds.
   }
   return `${cliCommand()} tunnel --help`;
 }
@@ -569,7 +485,7 @@ export async function restoreAppServer(
           ? "Webhooks still work, but the web app is not being served."
           : "The web app and webhook delivery are unavailable until it is rebuilt.";
     console.warn(
-      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand(getDefaultWorkspaceDir())}\` to rebuild the app server.`,
+      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
     return survivingPort;
   }
@@ -620,7 +536,6 @@ export async function restoreContainerAppServer(
   if (gatewayPort === undefined) {
     return;
   }
-  const workspaceDir = getDefaultWorkspaceDir();
   if (edgeFrontsAnotherAssistant(entry)) {
     return;
   }
@@ -639,7 +554,7 @@ export async function restoreContainerAppServer(
     !(await waitForDaemonReady(gatewayPort, gatewayReadyTimeoutMs))
   ) {
     console.warn(
-      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the app server was not restored. Run \`${tunnelRestartCommand(workspaceDir)}\` once it is running.`,
+      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the app server was not restored. Run \`${tunnelRestartCommand()}\` once it is running.`,
     );
     return;
   }
@@ -659,12 +574,6 @@ export async function restoreAppServerAndAutoTunnel(
   entry: LockfileAssistant,
 ): Promise<void> {
   const gatewayPort = getLoopbackGatewayPort(entry);
-  // The entry names the workspace whose config carries the tunnel contract
-  // (publicBaseUrl, lastTunnel) the daemon reads: container assistants share
-  // the default workspace, local instances their own.
-  const workspaceDir = isLocalContainerEntry(entry)
-    ? getDefaultWorkspaceDir()
-    : join(getLocalInstanceDir(entry.resources), "workspace");
   // 1. Ensure the app server is started.
   const edgePort = await restoreAppServer(entry);
   // 2. Ensure the tunnel is started at it: lockfile.json records which
@@ -672,20 +581,12 @@ export async function restoreAppServerAndAutoTunnel(
   //    own start piece runs — pointed at the app server's port.
   const publicUrl = await ensureTunnel(
     edgePort ?? gatewayPort ?? getNginxIngressPort(),
-    workspaceDir,
     entry.assistantId,
   );
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
-    await refreshEdgeWithEstablishedUrl(
-      {
-        port: edgePort ?? gatewayPort ?? getNginxIngressPort(),
-        workspaceDir,
-        assistantId: entry.assistantId,
-      },
-      publicUrl,
-    );
+    await refreshEdgeWithEstablishedUrl();
   }
 }
 
@@ -703,35 +604,22 @@ export async function restoreAppServerAndAutoTunnel(
  */
 async function ensureTunnel(
   targetPort: number,
-  workspaceDir: string,
   assistantId?: string,
 ): Promise<string | null> {
   const expected = readRootProcesses().tunnel;
   if (!expected?.provider) {
     return null;
   }
-  // The workspace's `lastTunnel` record names the tunnel whose URL the app
-  // server fronts. The restore re-establishes the recorded provider only
-  // when that record agrees: a pairing-only tailscale run deliberately
-  // leaves `lastTunnel` on the older public provider, and re-running the
-  // tailnet's save then would repoint the webhook callback base that run
-  // did not repoint. No record (a rebuilt workspace config) carries no
-  // intent to contradict, so the restore proceeds.
-  try {
-    const ingress = loadRawConfig(workspaceDir).ingress as
-      | Record<string, unknown>
-      | undefined;
-    const lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
-    if (lastTunnel && lastTunnel.provider !== expected.provider) {
-      return null;
-    }
-  } catch {
-    // Unreadable config carries no contradicting record either.
+  // The record's `publicUrl` marks a run that published the ingress base URL
+  // the app server fronts. A pairing-only tailscale run deliberately stamps
+  // none — re-running its save would repoint the webhook callback base that
+  // run did not repoint — so the restore only re-establishes published runs.
+  if (!expected.publicUrl) {
+    return null;
   }
   try {
     const result = await providers[expected.provider]?.run({
       port: targetPort,
-      workspaceDir,
       assistantId,
     });
     if (!result) return null;

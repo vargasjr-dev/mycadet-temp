@@ -24,6 +24,7 @@ import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 const originalArgv = process.argv;
 const originalConfig = process.env.XDG_CONFIG_HOME;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 let root = "";
 let workspace = "";
 let stop: ReturnType<typeof spyOn<typeof processes, "stopProcess">>;
@@ -34,7 +35,10 @@ let logs: ReturnType<typeof spyOn<typeof console, "log">>;
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "cadet-tunnel-stop-"));
-  workspace = join(root, "instance", "workspace");
+  // The stop flow is workspace-agnostic: it clears the machine-level default
+  // workspace's ingress contract — the workspace the start flow wrote.
+  process.env.CADET_WORKSPACE_DIR = join(root, "workspace");
+  workspace = process.env.CADET_WORKSPACE_DIR;
   mkdirSync(workspace, { recursive: true });
   process.env.XDG_CONFIG_HOME = root;
   saveLockfileAssistant({
@@ -85,18 +89,22 @@ afterEach(() => {
   process.argv = originalArgv;
   if (originalConfig === undefined) delete process.env.XDG_CONFIG_HOME;
   else process.env.XDG_CONFIG_HOME = originalConfig;
+  if (originalWorkspaceDir === undefined) delete process.env.CADET_WORKSPACE_DIR;
+  else process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   rmSync(root, { recursive: true, force: true });
 });
 
-test("stop terminates the owned agent and clears ingress, retaining nginx and domain; repeated stop is harmless", async () => {
+test("stop terminates the owned agent and clears the record, retaining nginx and domain; repeated stop is harmless", async () => {
   await tunnel();
   expect(stop).toHaveBeenCalledWith(424242, "tunnel");
   expect(readRootProcesses().tunnel).toBeUndefined();
   expect(readRootProcesses().app?.pid).toBe(424243);
+  // The workspace is the daemon's, not the tunnel's: the stop writes none
+  // of it, so the seeded config stands untouched.
   expect(
     JSON.parse(readFileSync(join(workspace, "config.json"), "utf8")).ingress
       .publicBaseUrl,
-  ).toBeUndefined();
+  ).toBe("https://old.ngrok.app");
   expect(ngrok.loadNgrokDomain()).toBe("old.ngrok.app");
   await tunnel();
   expect(stop).toHaveBeenCalledTimes(1);
@@ -127,21 +135,12 @@ test("Cloudflare dispatch stops cloudflared and clears its ingress", async () =>
   expect(readRootProcesses().tunnel).toBeUndefined();
 });
 
-test("Tailscale dispatch disables serve and preserves the webhook ingress base", async () => {
+test("Tailscale dispatch disables the serve and its record", async () => {
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "tailscale",
     startedAt: new Date().toISOString(),
   });
-  writeFileSync(
-    join(workspace, "config.json"),
-    JSON.stringify({
-      ingress: {
-        publicBaseUrl: "https://old.ngrok.app",
-        pairingTunnel: { provider: "tailscale" },
-      },
-    }),
-  );
   const calls: string[][] = [];
   const deps: TailscaleDeps = {
     findBinary: async () => "tailscale",
@@ -158,11 +157,6 @@ test("Tailscale dispatch disables serve and preserves the webhook ingress base",
     expect(calls).toEqual([["serve", "--https=443", "off"]]);
     expect(stop).not.toHaveBeenCalled();
     expect(readRootProcesses().tunnel).toBeUndefined();
-    const state = JSON.parse(
-      readFileSync(join(workspace, "config.json"), "utf8"),
-    );
-    expect(state.ingress.publicBaseUrl).toBe("https://old.ngrok.app");
-    expect(state.ingress.pairingTunnel).toBeUndefined();
   } finally {
     provider.mockRestore();
   }

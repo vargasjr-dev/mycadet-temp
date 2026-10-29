@@ -31,12 +31,6 @@ export function persistRootSigningKey(root: string, key: string): void {
       rmSync(target, { recursive: true });
     }
     renameSync(temporary, target);
-    // The persisted key is the identity: a deprecated migration-source copy
-    // is stale the moment a replacement lands, and leaving it would read as
-    // a conflict on the next resolve.
-    rmSync(join(root, "workspace", "deprecated", "actor-token-signing-key"), {
-      force: true,
-    });
   } finally {
     rmSync(temporary, { force: true });
   }

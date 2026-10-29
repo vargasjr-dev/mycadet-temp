@@ -21,12 +21,9 @@ import {
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import {
-  clearIngressUrl,
-  getDefaultWorkspaceDir,
-  loadRawConfig,
-  saveIngressUrl,
-} from "../ingress-config.js";
-import { resolveConfigDir } from "@mycadet/local-mode";
+  resolveConfigDir,
+  resolveDataDir,
+} from "@mycadet/local-mode";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -605,11 +602,10 @@ export function pidListeningOnPort(port: number): number | null {
 async function stopConfirmedNgrokAgent(
   stale: TunnelProcessRecord,
   assistantId: string | undefined,
-  workspaceDir: string | undefined,
 ): Promise<TunnelProcessRecord | null> {
   try {
     const stopped = await stopOwnedTunnelAgent(
-      { record: stale, assistantId, workspaceDir },
+      { record: stale, assistantId },
       isNgrokProcess,
       "ngrok",
     );
@@ -781,53 +777,10 @@ export async function waitForNgrokUrl(
   );
 }
 
-/**
- * Check whether an already-loaded workspace config has webhook-based
- * integrations (e.g. Telegram, Twilio) that require a public ingress URL.
- */
-const TelegramIntegrationSchema = z.object({
-  botUsername: z.unknown().optional(),
-});
-
-const TwilioIntegrationSchema = z.object({
-  accountSid: z.unknown().optional(),
-  phoneNumber: z.unknown().optional(),
-});
-
-export function hasWebhookIntegrations(
-  config: Record<string, unknown>,
-): boolean {
-  const telegram = TelegramIntegrationSchema.safeParse(config.telegram);
-  if (telegram.success && telegram.data.botUsername) return true;
-  const twilio = TwilioIntegrationSchema.safeParse(config.twilio);
-  if (twilio.success && (twilio.data.accountSid || twilio.data.phoneNumber)) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Check whether the workspace at `workspaceDir` configures any webhook-based
- * integrations that require a public ingress URL. False when the config cannot
- * be read, so an unreadable workspace never blocks a caller.
- */
-export function hasWebhookIntegrationsConfigured(
-  workspaceDir: string,
-): boolean {
-  try {
-    return hasWebhookIntegrations(loadRawConfig(workspaceDir));
-  } catch {
-    return false;
-  }
-}
-
-
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Workspace directory for config read/write. Defaults to ~/.cadet/workspace. */
-  workspaceDir?: string;
-  /** Lockfile entry to mirror the ingress URL onto (`ingressUrl`). */
+  /** The assistant the lockfile record fronts (`assistantId`). */
   assistantId?: string;
   /**
    * Reserved ngrok domain to bind. Persisted so wake restores reuse it.
@@ -876,7 +829,6 @@ export async function runNgrokTunnel(
 
   console.log(`Using ${version}`);
 
-  const workspaceDir = opts.workspaceDir ?? getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   // The saved domain is standing intent: a run without --domain reuses it,
@@ -903,13 +855,18 @@ export async function runNgrokTunnel(
   if (adoptable) {
     const existingUrl = adoptable.url;
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
-    saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
     // Not our child process: a recorded entry would be stale or foreign.
     clearRootProcess("tunnel");
+    stampRootProcess("tunnel", {
+      pid: process.pid,
+      provider: "ngrok",
+      startedAt: new Date().toISOString(),
+      publicUrl: existingUrl,
+    });
     if (opts.domain) {
       saveNgrokDomain(opts.domain);
     }
-    console.log("Ingress URL saved to config.");
+    console.log("Tunnel recorded in the lockfile.");
     console.log("");
     console.log(
       `An ngrok agent from an earlier run is still up serving 127.0.0.1:${port} (${existingUrl}) — this run adopts it instead of starting a new agent.`,
@@ -956,7 +913,9 @@ export async function runNgrokTunnel(
   //      write. The file descriptor is inherited by the detached ngrok
   //      process and remains valid after CLI exit.
   // Startup-failure classification reads the log's tail instead of pipes.
-  const ngrokLogDir = join(workspaceDir, "data", "logs");
+  // The log lives in the machine's xdg data root — the tunnel is a machine
+  // fact, so its diagnostics are not filed inside any assistant.
+  const ngrokLogDir = join(resolveDataDir(), "logs");
   mkdirSync(ngrokLogDir, { recursive: true });
   const ngrokLogPath = join(ngrokLogDir, "ngrok.log");
 
@@ -965,10 +924,6 @@ export async function runNgrokTunnel(
       currentNgrok.kill("SIGTERM");
     }
     clearRootProcess("tunnel");
-    if (publicUrl) {
-      console.log("\nClearing ingress URL from config...");
-      clearIngressUrl(workspaceDir);
-    }
   };
 
   while (publicUrl === undefined) {
@@ -1046,7 +1001,6 @@ export async function runNgrokTunnel(
             const stopped = await stopConfirmedNgrokAgent(
               stale!,
               opts.assistantId,
-              workspaceDir,
             );
             if (stopped) {
               console.log(
@@ -1134,8 +1088,7 @@ export async function runNgrokTunnel(
     console.log(`Forwarding to:     localhost:${port}`);
 
     // The domain is standing intent, not tunnel state: cleanup clears the
-    // ingress URL but leaves the domain saved for wake/daemon restores.
-    saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
+    // tunnel record but leaves the domain saved for wake/daemon restores.
     if (ngrokProcess.pid) {
       stampRootProcess("tunnel", {
         pid: ngrokProcess.pid,
@@ -1147,7 +1100,7 @@ export async function runNgrokTunnel(
     if (opts.domain) {
       saveNgrokDomain(opts.domain);
     }
-    console.log("Ingress URL saved to config.");
+    console.log("Tunnel recorded in the lockfile.");
     console.log("");
     console.log(
       `The agent runs detached (log: ${ngrokLogPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,

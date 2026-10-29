@@ -3181,6 +3181,396 @@ export function buildSchema(): Record<string, unknown> {
             },
           },
         },
+      "/v1/upgrade-policy": {
+        get: {
+          summary: "Get the assistant's automatic-upgrade schedule",
+          description:
+            "Returns the stored policy, or the defaults (enabled, weekly, Mon 06:00–08:00 UTC) when none has been saved yet.",
+          operationId: "upgradePolicyGet",
+          security: [{ EdgeScoped: [] }],
+          responses: {
+            "200": {
+              description: "Current upgrade policy",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            },
+            "500": { description: "Internal server error" },
+          },
+        },
+        put: {
+          summary: "Save the assistant's automatic-upgrade schedule",
+          description: "Full replace — the request body is the complete policy.",
+          operationId: "upgradePolicyPut",
+          security: [{ EdgeScoped: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Saved upgrade policy",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            },
+            "400": { description: "Invalid request body" },
+            "500": { description: "Internal server error" },
+          },
+        },
+      },
+      "/v1/assistants/{assistantId}/upgrade-policy": {
+        get: {
+          summary: "Get the assistant's automatic-upgrade schedule (assistant-scoped)",
+          description:
+            "Returns the stored policy, or the defaults (enabled, weekly, Mon 06:00–08:00 UTC) when none has been saved yet.",
+          operationId: "upgradePolicyGetScoped",
+          security: [{ EdgeScoped: [] }],
+          parameters: [
+            {
+              name: "assistantId",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Current upgrade policy",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            },
+            "500": { description: "Internal server error" },
+          },
+        },
+        put: {
+          summary: "Save the assistant's automatic-upgrade schedule (assistant-scoped)",
+          description: "Full replace — the request body is the complete policy.",
+          operationId: "upgradePolicyPutScoped",
+          security: [{ EdgeScoped: [] }],
+          parameters: [
+            {
+              name: "assistantId",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Saved upgrade policy",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean" },
+                      timezone: { type: "string", maxLength: 64 },
+                      schedule: {
+                        type: "object",
+                        properties: {
+                          frequency: {
+                            type: "string",
+                            enum: ["daily", "weekly", "monthly"],
+                          },
+                          days_of_week: {
+                            type: "array",
+                            items: { type: "integer", minimum: 0, maximum: 6 },
+                          },
+                          days_of_month: {
+                            type: "array",
+                            items: { type: "integer", minimum: 1, maximum: 31 },
+                          },
+                          window: {
+                            type: "object",
+                            properties: {
+                              start: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                              end: {
+                                type: "string",
+                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                              },
+                            },
+                            required: ["start", "end"],
+                            additionalProperties: false,
+                          },
+                        },
+                        required: [
+                          "frequency",
+                          "days_of_week",
+                          "days_of_month",
+                          "window",
+                        ],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["enabled", "timezone", "schedule"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            },
+            "400": { description: "Invalid request body" },
+            "500": { description: "Internal server error" },
+          },
+        },
+      },
       "/v1/logs/export": {
         post: {
           summary: "Export logs from all services",

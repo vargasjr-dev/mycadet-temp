@@ -4,7 +4,6 @@ let localHost = false;
 const revoke = mock(async () => {});
 const signOut = mock(async () => {});
 const deleteBiometricToken = mock(async () => {});
-const setMenuCloudSession = mock(async (_has: boolean) => {});
 const fetchSpy = spyOn(globalThis, "fetch");
 mock.module("@app/lib/auth/session-client", () => ({
   logoutAccountSession: revoke,
@@ -16,7 +15,6 @@ mock.module("@app/runtime/local-host-transport", () => ({
   isLocalModeHostAvailable: () => localHost,
 }));
 mock.module("@app/runtime/native-biometric", () => ({ deleteBiometricToken }));
-mock.module("@app/runtime/menu", () => ({ setMenuCloudSession }));
 const { logoutAccount } = await import("./logout-account");
 beforeEach(() => {
   desktop = false;
@@ -30,7 +28,6 @@ test("browser logout revokes the account without accessing an assistant or local
   expect(revoke).toHaveBeenCalledTimes(1);
   expect(fetchSpy).not.toHaveBeenCalled();
   expect(signOut).not.toHaveBeenCalled();
-  expect(setMenuCloudSession).toHaveBeenCalledWith(false);
 });
 test("desktop credentials and biometrics are cleared even if account revocation or host signout fails", async () => {
   desktop = true;
@@ -40,7 +37,6 @@ test("desktop credentials and biometrics are cleared even if account revocation 
   await expect(logoutAccount()).rejects.toThrow("Cloud unavailable");
   expect(signOut).toHaveBeenCalledTimes(1);
   expect(deleteBiometricToken).toHaveBeenCalledTimes(1);
-  expect(setMenuCloudSession).toHaveBeenCalledWith(false);
   expect(fetchSpy).not.toHaveBeenCalled();
 });
 test("localhost logout clears the proxy token and tolerates an offline host", async () => {

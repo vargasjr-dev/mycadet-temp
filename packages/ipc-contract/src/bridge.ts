@@ -493,8 +493,7 @@ export interface CadetBridge {
       assistantId: string,
     ): Promise<LocalReadAssistantAvatarResult>;
   };
-  menu: {
-    setCloudSession(has: boolean): Promise<void>;
+  menu?: {
     /**
      * The top-level application menus: stable ids plus the shell's own
      * labels. Windows only: the shell hides the native frame (and the menu

@@ -32,7 +32,6 @@ import {
 } from "./command-palette.client";
 import { setCompanionSurfaceVisible } from "./companion-window";
 import { areChromeDevToolsEnabled } from "./devtools";
-import { handle } from "./ipc";
 import { dispatchToMain } from "./main-window";
 
 interface MenuState {
@@ -277,6 +276,16 @@ const applyMenu = (): void => {
 };
 
 /**
+ * The menu's Log In/Log Out toggle is this process's fact: the wiring
+ * derives it from the session-token store and publishes here. See index.ts.
+ */
+export function setHasCloudSession(has: boolean): void {
+  if (state.hasCloudSession === has) return;
+  state.hasCloudSession = has;
+  applyMenu();
+}
+
+/**
  * Builds and installs the macOS application menu. Without this, Electron
  * ships a default menu that includes developer-flavored items (Reload,
  * Toggle Developer Tools at the top level) and lacks the standard macOS
@@ -285,20 +294,16 @@ const applyMenu = (): void => {
  * The `View > Toggle Developer Tools` item is gated to dev/debug builds so a
  * normal packaged build doesn't expose devtools to end users.
  *
- * Registers an IPC handler so the renderer can publish platform session
- * state, which toggles the app menu between "Log Out" (session present) and
- * "Log In" (no session).
+ * The menu's Log In/Log Out toggle is main's own fact — the wiring derives
+ * it from the session-token store and publishes via setHasCloudSession —
+ * so no renderer probe needs to publish session state.
  */
 let installed = false;
 export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
 
-  handle("cadet:menu:setCloudSession", z.tuple([z.boolean()]), ([has]) => {
-    if (state.hasCloudSession === has) return;
-    state.hasCloudSession = has;
-    applyMenu();
-  });
+
 
   // Rebuild the menu when hotkey settings change so accelerators update
   // immediately without requiring an app restart.

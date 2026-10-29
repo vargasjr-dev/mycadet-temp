@@ -1,38 +1,14 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { useSyncExternalStore } from "react";
 
-import {
-  type ProviderRedirectOptions,
-  readAttributionParams,
-  startProviderRedirect,
-} from "@/domains/account/social-auth";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
-import {
-  isNewAssistantFunnel,
-  onboardingDestinationAfterConsent,
-} from "@/lib/navigation/onboarding-destination";
-import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
-import { isLocalClient } from "@/lib/local-mode";
-import { isElectron } from "@/runtime/is-electron";
-import { setMenuCloudSession } from "@/runtime/menu";
-import { primeElectronSessionToken } from "@/runtime/session-token";
-import {
-  captureInstallReferrer,
-  markInstallReferrerSpent,
-} from "@/runtime/install-referrer";
 import {
   isBiometricEnabled,
   setBiometricEnabled,
   storeBiometricToken,
 } from "@/runtime/native-biometric";
-import { buildNavigationState } from "@/lib/navigation/build-state";
 import { routes } from "@/utils/routes";
-
-// The login page's post-auth query reads only `userHasOnboardedAssistant`;
-// no session has been probed on this plane yet.
-const nativeAuthReturningUser = (): boolean =>
-  buildNavigationState().userHasOnboardedAssistant;
 
 /**
  * JS ↔ native bridge for the `NativeAuth` Capacitor plugin registered by the
@@ -44,9 +20,10 @@ const nativeAuthReturningUser = (): boolean =>
  * exchanges that code for a WorkOS access token, then swaps it for a cloud
  * session token. The raw session key never transits the custom scheme.
  *
- * Why native auth exists at all: Google and other IdPs refuse OAuth in
- * embedded WebViews (`disallowed_useragent`). The native plugins open the
- * platform browser auth surface instead and return a cloud session token.
+ * This bundle never starts a login — the app bundle owns the auth flows and
+ * hands the resulting session over. What lives here is the receive side:
+ * restoring a login whose WebView process was recreated mid-flow, plus the
+ * cookie installation and session probe that handshake relies on.
  */
 
 interface NativeAuthPlugin {
@@ -76,33 +53,6 @@ const NativeAuth = registerPlugin<NativeAuthPlugin>("NativeAuth");
 /** Fallback destination after a successful native login. */
 const DEFAULT_POST_AUTH_DESTINATION = routes.assistant;
 
-const desktopUpdateRequiredAuthError = (): Error => {
-  const error = new Error(
-    "The desktop auth bridge is unavailable. Update the app to sign in.",
-  ) as Error & { code: string; data: { authError: string } };
-  error.code = "AUTH_ERROR";
-  error.data = { authError: "desktop_update_required" };
-  return error;
-};
-
-// True while the Electron OAuth flow awaits its deep-link callback. The
-// redirect refocuses the window before the code exchange finishes, so the
-// auth store skips app-resume session probes while this is set.
-let oauthFlowInFlight = false;
-
-export function isOAuthFlowInFlight(): boolean {
-  return oauthFlowInFlight;
-}
-
-/**
- * Origin to present to the native OAuth flow. The Capacitor shell's
- * `server.url` includes `/assistant`; the plugins need the bare origin for
- * the login URL they construct.
- */
-export function deriveAuthBaseURL(): string {
-  return `${window.location.protocol}//${window.location.host}`;
-}
-
 /**
  * True when we're running inside a Capacitor native shell. Safe to call
  * server-side, so it falls through to `false` before hydration.
@@ -129,47 +79,6 @@ export function isNativePlatform(): boolean {
 const noop = () => () => {};
 export function useIsNativePlatform(): boolean {
   return useSyncExternalStore(noop, isNativePlatform, () => false);
-}
-
-/**
- * Run the native login flow end to end. On success the cloud session
- * cookie is installed into the native WebView cookie store and the page is
- * navigated to `returnTo` (sanitized) or `/assistant`, so `AuthProvider`
- * re-fetches `/_allauth/browser/v1/auth/session` and renders the
- * authenticated app at the right destination.
- *
- * Throws on user cancellation (`USER_CANCELLED`) and any other error; the
- * caller decides whether to surface or swallow.
- *
- * `attribution` is an explicit override; absent it, this resolves the flow's
- * attribution itself, so every native entry carries one.
- */
-export async function startNativeLogin(options?: {
-  baseURL?: string;
-  returnTo?: string | null;
-  loginHint?: string;
-  intent?: string;
-  attribution?: Record<string, string>;
-}): Promise<void> {
-  // Attribution resolves here for the same reason: the direct login form is
-  // the auth entry a fresh Play install reaches, and the install referrer is
-  // the only attribution such an install carries.
-  const attribution = await resolveNativeAttribution(options?.attribution);
-
-  const baseURL = options?.baseURL ?? deriveAuthBaseURL();
-  const destination = sanitizeReturnTo(
-    options?.returnTo ?? null,
-    DEFAULT_POST_AUTH_DESTINATION,
-  );
-  const { sessionToken } = await NativeAuth.startAuth({
-    baseURL,
-    ...(options?.loginHint ? { loginHint: options.loginHint } : {}),
-    ...(options?.intent ? { intent: options.intent } : {}),
-    ...(attribution ? { attribution } : {}),
-    postAuthDestination: destination,
-  });
-
-  await completeNativeLogin(sessionToken, destination);
 }
 
 /** Resume an Android browser login whose WebView process was recreated. */
@@ -227,8 +136,6 @@ async function completeNativeLogin(
   if (isNativePlatform()) {
     await waitForNativeSessionCookie();
   }
-
-  markInstallReferrerSpent();
 
   // Persist the token in native secure storage for biometric session recovery.
   // Respects the user's opt-out preference; storeBiometricToken is also
@@ -305,168 +212,4 @@ export function getSessionTokenFromCookies(): string | null {
     }
   }
   return null;
-}
-
-/**
- * Post-auth destination for the native (Capacitor/Electron) flows. A
- * first-run signup consents at the shell's screen (/account/consent) first.
- * A returning user skips hosting and research. A login keeps its `returnTo`
- * unless that target is the first-run funnel and the user is already
- * onboarded.
- */
-export function resolveNativePostAuthDestination(
-  intent: string | undefined,
-  returnTo: string | null | undefined,
-): string | null {
-  const isSignup = intent === "signup";
-  const returningUser = nativeAuthReturningUser();
-  if (returningUser) {
-    return isFirstRunOnboardingReturnTo(returnTo)
-      ? routes.assistant
-      : (returnTo ?? (isSignup ? routes.assistant : null));
-  }
-  if (!isSignup) {
-    return returnTo ?? null;
-  }
-  // Consent settles at the shell's screen (/account/consent), then the signup
-  // rides returnTo into the same post-consent destination the privacy screen
-  // used to hand off.
-  const signupNext = onboardingDestinationAfterConsent({
-    isLocalHatch: false,
-  });
-  return `/account/consent?returnTo=${encodeURIComponent(signupNext)}`;
-}
-
-/**
- * Whether `returnTo` names the first-run funnel a returning user should skip.
- * A walk carrying the new-assistant marker is provisioning, so it is first-run
- * for the assistant it is about to create and must not be skipped.
- */
-function isFirstRunOnboardingReturnTo(
-  returnTo: string | null | undefined,
-): boolean {
-  if (!returnTo) {
-    return false;
-  }
-  const [pathname = returnTo, search = ""] = returnTo.split(/[?#]/);
-  if (isNewAssistantFunnel(new URLSearchParams(search))) {
-    return false;
-  }
-  return (
-    pathname === routes.onboarding.hosting ||
-    pathname === routes.onboarding.research
-  );
-}
-
-/**
- * Attribution to hand the native shell, drawn from exactly one source.
- *
- * A caller's override wins outright, then URL params: they carry the user's
- * current, explicit campaign context. The Play install referrer is the
- * fallback, and it is the only attribution a Play install carries at all (such
- * an install arrives with no URL params).
- *
- * The two are never merged: `persist_attribution` on the cloud stores a row
- * as one coherent unit from a single source, so it must not be handed fields
- * spliced from two. First touch across repeat signups is already held there by
- * the empty-row backfill guard.
- */
-async function resolveNativeAttribution(
-  override: Record<string, string> | undefined,
-): Promise<Record<string, string> | undefined> {
-  const current = override ?? readAttributionParams(window.location.search);
-  if (Object.keys(current).length > 0) {
-    return current;
-  }
-  const referrer = await captureInstallReferrer();
-  return Object.keys(referrer).length > 0 ? referrer : undefined;
-}
-
-/**
- * Unified auth-flow entry point that transparently chooses between the
- * native plugin path and the web form-POST path.
- *
- * Call sites pass the same args they'd pass to `startProviderRedirect()`,
- * plus an optional `returnTo`; on Capacitor we route through
- * `startNativeLogin()` (which handles the cookie + navigation
- * internally), otherwise we fall through to the existing web flow.
- *
- * On the web path, errors propagate to the caller so the UI can display
- * feedback (e.g. inline error messages on the login form). On the native
- * path, `USER_CANCELLED` (user tapped cancel on the auth sheet) is
- * swallowed since it's a routine dismissal, and all other errors are
- * re-thrown for the caller to handle.
- */
-export async function startAuthFlow(
-  providerId: string,
-  callbackUrl: string,
-  options: ProviderRedirectOptions & { returnTo?: string | null } = {},
-): Promise<void> {
-  if (isNativePlatform()) {
-    try {
-      await startNativeLogin({
-        returnTo: resolveNativePostAuthDestination(
-          options.intent,
-          options.returnTo,
-        ),
-        loginHint: options.loginHint,
-        intent: options.intent,
-        attribution: options.attribution,
-      });
-    } catch (err) {
-      // Capacitor translates native `call.reject(msg, code)` into a
-      // JS Error whose `message` is the first arg and whose `code` is
-      // the second arg (as an own property, not in `message`). Match the
-      // code exactly rather than substring-matching the message.
-      const errorCode = (err as { code?: unknown } | null | undefined)?.code;
-      if (errorCode === "USER_CANCELLED") {
-        return;
-      }
-      throw err;
-    }
-    return;
-  }
-
-  // Electron requires the native OAuth bridge. The web and CLI callback
-  // fallbacks have no receiver inside the desktop shell.
-  if (isElectron()) {
-    if (!window.cadet?.auth?.startOAuth) {
-      throw desktopUpdateRequiredAuthError();
-    }
-    oauthFlowInFlight = true;
-    try {
-      const result = await window.cadet.auth.startOAuth({
-        loginHint: options.loginHint,
-        intent: options.intent,
-      });
-      if (result?.sessionToken) {
-        primeElectronSessionToken(result.sessionToken);
-        await setMenuCloudSession(true);
-        const destination = sanitizeReturnTo(
-          resolveNativePostAuthDestination(options.intent, options.returnTo),
-          DEFAULT_POST_AUTH_DESTINATION,
-        );
-        window.location.href = destination;
-      }
-    } finally {
-      oauthFlowInFlight = false;
-    }
-    return;
-  }
-
-  // Local client: redirect through the cloud's login page and back to a
-  // loopback callback. Cloud-hosted bundles are remote "cloud" — not local
-  // clients — so they keep same-origin auth.
-  if (isLocalClient()) {
-    await startLoopbackAuth(options.returnTo ?? undefined, {
-      intent: options.intent,
-    });
-    return;
-  }
-
-  // Web path: `options` carries an extra `returnTo` field that the web
-  // `startProviderRedirect` doesn't care about — TS's structural typing
-  // accepts the superset, and the web flow plumbs `returnTo` through
-  // `callbackUrl` instead. Errors propagate to the caller.
-  await startProviderRedirect(providerId, callbackUrl, options);
 }

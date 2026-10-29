@@ -130,8 +130,17 @@ mock.module("./cli-path-flow", () => ({
   isCliPathFlowInFlight: isCliPathFlowInFlightMock,
 }));
 
-const { installApplicationMenu, refreshCliPathMenuState } =
+const { installApplicationMenu, refreshCliPathMenuState, setHasCloudSession } =
   await import("./menu");
+
+test("the Log In/Log Out toggle follows the published session fact", () => {
+  installApplicationMenu();
+  setHasCloudSession(true);
+  expect(appMenuItem("Log Out")).toBeDefined();
+  expect(appMenuItem("Log In")).toBeUndefined();
+  setHasCloudSession(false);
+  expect(appMenuItem("Log In")).toBeDefined();
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -190,6 +199,7 @@ beforeEach(async () => {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
 
 describe("CLI path menu items", () => {
   test("shows Install while detection state is unknown (null)", async () => {

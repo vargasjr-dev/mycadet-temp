@@ -59,6 +59,37 @@ export type Remote = z.infer<typeof RemoteSchema>;
  * from the renderer-facing schema below; the CLI's extended type is the only
  * place they are modeled.
  */
+/**
+ * The runtime config a shell injects (`window.__CADET_CONFIG__`). This schema
+ * is the single shape: hosts stamp it, served bundles parse the window
+ * through it instead of re-declaring per-file object types.
+ *
+ * The URL fields are distinct origins in the topology, not synonyms:
+ * `cloudUrl` is the cloud API base and `hubUrl` the cloud hub SPA the
+ * pairing/settings pages link back to. The cloud login base is
+ * deliberately absent: the loopback handoff reads it from the build's
+ * environment seed (see startLoopbackAuth), keeping this config to the
+ * origins a served bundle can't infer.
+ */
+export const InjectedConfigSchema = z.object({
+  /** Nothing injected (SSR) or an unparseable config means the local cadet. */
+  remote: RemoteSchema.catch("local"),
+  /** Cloud API base (auth endpoints + assistant API). */
+  cloudUrl: z.string().optional(),
+  /** Device id stamped by the Electron host (device management). */
+  deviceId: z.string().optional(),
+  /** Version of the shell bundle serving this page (stamped by the host). */
+  version: z.string().optional(),
+  /** Serving assistant's id, stamped by every host that fronts one assistant. */
+  assistantId: z.string().optional(),
+  /** Serving assistant's display name, stamped by every host that fronts one assistant. */
+  assistantName: z.string().optional(),
+  /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
+  hubUrl: z.string().optional(),
+});
+
+export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
+
 export const SENSITIVE_KEYS = [
   "bearerToken",
   "guardianBootstrapSecret",

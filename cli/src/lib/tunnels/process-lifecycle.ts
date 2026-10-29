@@ -1,4 +1,3 @@
-import { clearIngressUrl } from "../ingress-config.js";
 import { stopProcess } from "../process.js";
 import type { ProviderStopOptions } from "../tunnel.js";
 
@@ -17,6 +16,5 @@ export async function stopOwnedTunnelAgent(
       );
     }
   }
-  if (opts.workspaceDir) clearIngressUrl(opts.workspaceDir);
   return stopped;
 }

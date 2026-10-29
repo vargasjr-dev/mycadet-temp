@@ -20,7 +20,6 @@ import type home from "@/i18n/locales/en/home.json";
 import type intelligence from "@/i18n/locales/en/intelligence.json";
 import type library from "@/i18n/locales/en/library.json";
 import type logs from "@/i18n/locales/en/logs.json";
-import type onboarding from "@/i18n/locales/en/onboarding.json";
 import type remoteWeb from "@/i18n/locales/en/remote-web.json";
 import type terminal from "@/i18n/locales/en/terminal.json";
 import type workspace from "@/i18n/locales/en/workspace.json";
@@ -49,7 +48,6 @@ declare module "i18next" {
     library: typeof library;
     home: typeof home;
     contacts: typeof contacts;
-    onboarding: typeof onboarding;
     intelligence: typeof intelligence;
     "assistant-inbox": typeof assistantInbox;
   }

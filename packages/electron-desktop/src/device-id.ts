@@ -7,14 +7,11 @@
  *
  * Path resolution mirrors CadetPaths.deviceIdFile (Swift) and
  * assistant/src/util/device-id.ts (daemon):
- *   - Production:     ~/.cadet/device.json  (legacy shared path)
- *   - Non-production: <configDir>/device.json where configDir is
- *                     $XDG_CONFIG_HOME/cadet-<env>
+ *   - <configDir>/device.json where configDir is $XDG_CONFIG_HOME/cadet-<env>
  */
 
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { resolveConfigDir, resolveEnvironmentName } from "@mycadet/local-mode";

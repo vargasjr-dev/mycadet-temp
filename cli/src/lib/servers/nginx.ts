@@ -1,9 +1,4 @@
-import {
-  execFileSync,
-  spawn,
-  spawnSync,
-  type ChildProcess,
-} from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
@@ -21,8 +16,7 @@ import { z } from "zod";
 
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
-import cliPkg from "../../../package.json";
-import { stampedVersion } from "@mycadet/shared/version";
+import { resolveVersion } from "@mycadet/shared/version";
 
 import {
   clearAppProcessRecord,
@@ -33,19 +27,15 @@ import {
   stampRootProcess,
   type LockfileAssistant,
 } from "../assistant-config.js";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  type InjectedConfig,
+} from "@mycadet/local-mode/contract";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import type { RemoteHost } from "../constants.js";
 import { waitForDaemonReady } from "../http-client.js";
-import {
-  getDefaultWorkspaceDir,
-  isLocalContainerEntry,
-  loadRawConfig,
-} from "../ingress-config.js";
+import { isLocalContainerEntry } from "../ingress-config.js";
 import { resolveEdgeClientDists } from "../web-dist.js";
-
-export { findWebDistDir } from "../web-dist.js";
-export { findAppDistDir } from "../web-dist.js";
 
 /**
  * CLI-managed nginx reverse proxy that fronts the gateway as the canonical
@@ -198,21 +188,6 @@ export interface RemoteWebIngressOptions {
 }
 
 /**
- * The injected remote-web config the edge stamps into every served document.
- * Structural mirror of the web bundle's `InjectedConfig` (`InjectedConfigSchema`
- * in clients/web/src/lib/injected-config.ts) — `remote` narrows to the two
- * kinds an edge can stamp.
- */
-type InjectedRemoteWebConfig = {
-  remote: RemoteHost;
-  cloudUrl?: string;
-  version?: string;
-  assistantId?: string;
-  assistantName?: string;
-  hubUrl?: string;
-}
-
-/**
  * The web UI entry the assistant detail API hands the shell, relative to the
  * origin root: the distinct /web/assistant/ iframe namespace, so the shell's
  * own /assistant/* host routes can never load the shell recursively.
@@ -252,7 +227,7 @@ function remoteWebIngressConfig(
     RemoteWebIngressOptions,
     "assistantName" | "assistantId" | "hubUrl" | "version"
   > & { cloudUrl?: string },
-): InjectedRemoteWebConfig {
+): InjectedConfig {
   return {
     remote: edgeServedRemote(
       opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
@@ -1015,18 +990,15 @@ function clearStoppedIngress(pidPath: string): void {
 }
 
 /**
- * The tunnel URL on record (the default workspace's `ingress.publicBaseUrl`,
- * saved when a tunnel established — the gateway-facing contract the daemon
- * reads), or undefined when none is — the served config stamps it as
- * `cloudUrl` so tunnel clients' account/auth surfaces stay on the origin
- * they came in on.
+ * The tunnel URL on record (the root lockfile's `tunnel.publicUrl`, stamped
+ * by whichever run established the tunnel), or undefined when none is — the
+ * served config stamps it as `cloudUrl` so tunnel clients' account/auth
+ * surfaces stay on the origin they came in on.
  */
 function savedPublicBaseUrl(): string | undefined {
   try {
-    const config = loadRawConfig(getDefaultWorkspaceDir());
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    if (typeof url !== "string" || !url.trim()) return undefined;
+    const url = readRootProcesses().tunnel?.publicUrl;
+    if (!url || !url.trim()) return undefined;
     return url.trim();
   } catch {
     return undefined;
@@ -1198,7 +1170,7 @@ export async function startAppServer(opts: {
   // runtime's. stampedVersion is stable for a given checkout (the stamp's
   // timestamp is the HEAD commit's), so the fingerprint below never drifts
   // between processes.
-  const version = stampedVersion(cliPkg.version);
+  const version = resolveVersion(join(import.meta.dir, "../../.."));
   const spaOptions = {
     hubUrl: cloudAssistantHubUrl(),
     assistantName: opts.assistantName,

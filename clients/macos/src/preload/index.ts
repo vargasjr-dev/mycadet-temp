@@ -360,10 +360,6 @@ const bridge: CadetBridge = {
   },
   downloads: createDownloadsBridge(ipcRenderer),
   localMode: createLocalModeBridge(ipcRenderer),
-  menu: {
-    setCloudSession: (has: boolean): Promise<void> =>
-      ipcRenderer.invoke("cadet:menu:setCloudSession", has) as Promise<void>,
-  },
   mainWindow: {
     ensureVisible: (): Promise<void> =>
       ipcRenderer.invoke("cadet:mainWindow:ensureVisible") as Promise<void>,

@@ -55,7 +55,6 @@ export const NAMESPACES = [
   "contacts",
   "intelligence",
   "assistant-inbox",
-  "onboarding",
 ] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];
