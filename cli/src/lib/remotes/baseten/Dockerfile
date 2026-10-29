@@ -17,15 +17,19 @@
 # Pin the base by digest (house convention — see assistant/Dockerfile).
 FROM debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
 
-# curl fetches the bun installer; git/openssl/jq are runtime conveniences the
-# assistant and its skills expect. No compilers: the runtime packages ship
-# prebuilt and bun runs TypeScript sources directly.
+# curl + unzip fetch and extract the bun installer; git/openssl/jq are runtime
+# conveniences the assistant and its skills expect. No compilers: the runtime
+# packages ship prebuilt and bun runs TypeScript sources directly.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-      ca-certificates curl git jq openssl \
+      ca-certificates curl git jq openssl unzip \
   && rm -rf /var/lib/apt/lists/*
 
 # Bun — the version the release pipeline pins (see .github/workflows/release.yml).
+# bun's installer extracts the release zip with unzip, which trixie-slim does
+# not ship — the apt line above includes it for this step. (Alternative if we
+# ever drop the installer: COPY --from=oven/bun:1.3.11@sha256:0733e5032507896…
+# the same pin gateway/Dockerfile uses.)
 RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash -s "bun-v1.3.11"
 
 # Baseten requires the sandbox API server in every image; the entrypoint

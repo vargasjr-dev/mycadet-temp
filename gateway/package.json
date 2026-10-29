@@ -25,8 +25,7 @@
     "lint": "eslint",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "typecheck": "bunx tsc --noEmit",
-    "prebuild": "cd .. && bun run meta/sync-bundled-copies.ts",
-    "postinstall": "cd .. && (git config core.hooksPath || git config core.hooksPath .githooks 2>/dev/null || true) && ([ -f meta/sync-bundled-copies.ts ] && bun run meta/sync-bundled-copies.ts 2>/dev/null || true)"
+    "postinstall": "bash scripts/postinstall.sh"
   },
   "dependencies": {
     "@mycadet/assistant-client": "workspace:*",
