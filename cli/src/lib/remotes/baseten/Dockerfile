@@ -5,13 +5,14 @@
 # assistant at build time. Baseten's control plane (processes, filesystem,
 # ports) rides on the sandbox-api binary every sandbox image must include.
 #
-# Build & push from the repo root:
-#   baseten sandbox image push --name cadet \
-#     --dir cli/src/lib/sandboxes/baseten --wait
+# You do not build this by hand — `cadet hatch --remote baseten` from a user
+# machine stages this file and its entrypoint into a build context, stamps
+# the ARGs below, and pushes it through the Baseten API:
+#   https://docs.baseten.co/reference/management-api/sandboxes/push-a-sandbox-image
 #
-# Credentials never bake into the image — pass them at create time:
-#   baseten sandbox create --name my-cadet --image sandbox/cadet:latest \
-#     --env ANTHROPIC_API_KEY=...
+# The version is stamped from cli/package.json by the launcher, so there is
+# nothing to bump here per release. The assistant name is optional: when
+# omitted, hatch picks a random one.
 
 # Pin the base by digest (house convention — see assistant/Dockerfile).
 FROM debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
@@ -35,7 +36,8 @@ COPY --from=ghcr.io/blaxel-ai/sandbox@sha256:8ebb596be14ed4c48f6fe4352e9d3de45dc
 
 # The published stack: `cadet`/`gateway`/`assistant` bins on PATH plus every
 # runtime package (@mycadet/cli, web, gateway, assistant, credential-executor).
-ARG MYCADET_VERSION=0.13.0
+# Stamped from cli/package.json — never hardcode a version here.
+ARG MYCADET_VERSION
 RUN bun add -g "mycadet@${MYCADET_VERSION}"
 
 # Runtime sources the CLI's daemon/gateway/CES resolvers can find. A plain bun
@@ -53,9 +55,11 @@ RUN printf '{"private":true,"dependencies":{"mycadet":"%s"}}\n' "${MYCADET_VERSI
 # Hatch the golden assistant: lockfile entry, workspace, signing identity and
 # first-boot migrations bake into the image. Every sandbox from this image
 # starts from this state; API keys and other secrets inject at create time.
-# The build runs headless, so the provider/API-key prompts are skipped and
-# hatch only warns that no key is configured yet.
-RUN cd /app && cadet hatch --name cadet --remote local
+# Hatches are local by default — no --remote needed. The build runs headless,
+# so the provider/API-key prompts are skipped and hatch only warns that no key
+# is configured yet.
+ARG ASSISTANT_NAME=""
+RUN cd /app && cadet hatch ${ASSISTANT_NAME:+--name "$ASSISTANT_NAME"}
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

@@ -9,6 +9,7 @@ import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
+import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/hatch-local";
 import {
   hatchAssistant,
@@ -254,6 +255,15 @@ export const hatch = Object.assign(
         netnsContainer: netnsContainer ?? undefined,
         gatewayPort: gatewayPort ?? undefined,
         assistantCaCertPath: assistantCaCert ?? undefined,
+      });
+      return;
+    }
+
+    if (remote === "baseten") {
+      await hatchBaseten({
+        name: name ?? undefined,
+        configValues,
+        verbose,
       });
       return;
     }
