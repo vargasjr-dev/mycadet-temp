@@ -15,8 +15,8 @@
  * - `CES_DATA_DIR` → `./ces-data`
  *
  * Managed containers set both explicitly (the cloud template provisions
- * `/ces-security` and `/ces-data` volumes); local mode sets them per
- * instance dir via the CLI. The assistant-visible data root (where
+ * `/ces-security` and `/ces-data` volumes); bare-metal runs fall back to
+ * the cwd convention. The assistant-visible data root (where
  * workspace, embeddings, etc. live) is a separate path and must never be
  * used for CES-private writes.
  */
@@ -24,22 +24,6 @@
 import { join } from "node:path";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
-
-// ---------------------------------------------------------------------------
-// Mode detection
-// ---------------------------------------------------------------------------
-
-export type CesMode = "local" | "managed";
-
-/**
- * Determine the CES operating mode from the environment.
- *
- * `CES_MODE=managed` is set explicitly in managed container entrypoints.
- * Everything else defaults to local.
- */
-export function getCesMode(): CesMode {
-  return process.env["CES_MODE"] === "managed" ? "managed" : "local";
-}
 
 // ---------------------------------------------------------------------------
 // Root directory helpers
@@ -50,8 +34,7 @@ export function getCesMode(): CesMode {
  *
  * Priority:
  * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the cloud template for the
- *    CES container — `/ces-security` in managed mode; per-instance
- *    `<instanceDir>/ces-security` in local mode)
+ *    CES container — `/ces-security`)
  * 2. Default: `./ces-security` (cwd fallback convention)
  */
 export function getSecurityDir(): string {
@@ -65,11 +48,10 @@ export function getSecurityDir(): string {
  * Return the CES-private data root (grants, audit logs, tool store).
  *
  * Priority:
- * 1. `CES_DATA_DIR` env var (set by the cloud template — `/ces-data` in
- *    managed mode; per-instance `<instanceDir>/ces-data` in local mode)
+ * 1. `CES_DATA_DIR` env var (set by the cloud template — `/ces-data`)
  * 2. Default: `./ces-data` (cwd fallback convention)
  */
-export function getCesDataRoot(_mode?: CesMode): string {
+export function getCesDataRoot(): string {
   return process.env["CES_DATA_DIR"]?.trim() || join(process.cwd(), "ces-data");
 }
 
@@ -78,8 +60,8 @@ export function getCesDataRoot(_mode?: CesMode): string {
 // ---------------------------------------------------------------------------
 
 /** Directory for CES log files. */
-export function getCesLogDir(mode?: CesMode): string {
-  return join(getCesDataRoot(mode), "logs");
+export function getCesLogDir(): string {
+  return join(getCesDataRoot(), "logs");
 }
 
 // ---------------------------------------------------------------------------

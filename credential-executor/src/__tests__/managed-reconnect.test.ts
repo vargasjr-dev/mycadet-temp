@@ -189,7 +189,6 @@ describe("managed CES reconnection (real entrypoint)", () => {
       cmd: [process.execPath, managedMain],
       env: {
         ...process.env,
-        CES_MODE: "managed",
         CES_DATA_DIR: dataDir,
         CES_BOOTSTRAP_SOCKET_DIR: socketDir,
         CES_HEALTH_PORT: String(healthPort),

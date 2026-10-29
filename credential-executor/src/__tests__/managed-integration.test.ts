@@ -55,7 +55,6 @@ const SAVED_ENV_KEYS = [
   "CES_DATA_DIR",
   "CES_BOOTSTRAP_SOCKET_DIR",
   "CES_HEALTH_PORT",
-  "CES_MODE",
   "CREDENTIAL_SECURITY_DIR",
 ] as const;
 
@@ -350,7 +349,6 @@ describe("managed CES integration (real Unix socket)", () => {
     mkdirSync(socketDir, { recursive: true });
 
     process.env["CES_DATA_DIR"] = dataDir;
-    process.env["CES_MODE"] = "managed";
 
     // -- Pick a free port for health server ------------------------------------
     // Use port 0 trick: bind, read the port, close, then use it.
@@ -553,7 +551,6 @@ describe("managed CES integration (real Unix socket)", () => {
     mkdirSync(socketDir, { recursive: true });
 
     process.env["CES_DATA_DIR"] = dataDir;
-    process.env["CES_MODE"] = "managed";
 
     controller = new AbortController();
 
@@ -605,7 +602,6 @@ describe("managed CES integration (real Unix socket)", () => {
     mkdirSync(socketDir, { recursive: true });
 
     process.env["CES_DATA_DIR"] = dataDir;
-    process.env["CES_MODE"] = "managed";
 
     controller = new AbortController();
 
@@ -712,7 +708,6 @@ describe("credential CRUD RPC", () => {
     mkdirSync(socketDir, { recursive: true });
 
     process.env["CES_DATA_DIR"] = dataDir;
-    process.env["CES_MODE"] = "managed";
     process.env["CREDENTIAL_SECURITY_DIR"] = securityDir;
 
     controller = new AbortController();
