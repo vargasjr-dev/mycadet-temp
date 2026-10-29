@@ -3,18 +3,18 @@
 //
 // Uses the CLI's own staging code so the practice build exercises the exact
 // context `cadet hatch --remote <name>` uploads — not a parallel shell
-// imitation that can drift. Prints the staged directory; the caller (the
-// release workflows' ci-remote-images job) owns cleanup.
+// imitation that can drift. Prints the staged directory; the caller
+// (cli/scripts/practice-build-remote-images.sh) owns cleanup.
 //
-// Usage: bun scripts/stage-remote-image-context.ts --remote <name>
+// Usage: bun cli/scripts/stage-remote-image-context.ts --remote <name>
 
-import { stageBasetenBuildContext } from "../cli/src/lib/remotes/baseten/context.js";
+import { stageBasetenBuildContext } from "../src/lib/remotes/baseten/context.js";
 
 const argv = process.argv.slice(2);
 const remoteFlag = argv.indexOf("--remote");
 const remote = remoteFlag >= 0 ? argv[remoteFlag + 1] : undefined;
 if (!remote) {
-  console.error("usage: bun scripts/stage-remote-image-context.ts --remote <name>");
+  console.error("usage: bun cli/scripts/stage-remote-image-context.ts --remote <name>");
   process.exit(1);
 }
 

@@ -297,20 +297,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Practice-build each remote's Dockerfile
-        run: |
-          set -euo pipefail
-          published=$(npm view mycadet version)
-          echo "Practice-building remote images against published mycadet@${published}"
-          shopt -s nullglob
-          dockerfiles=(cli/src/lib/remotes/*/Dockerfile)
-          [ ${#dockerfiles[@]} -gt 0 ] || { echo "::error::no remote Dockerfiles found"; exit 1; }
-          for dockerfile in "${dockerfiles[@]}"; do
-            remote=$(basename "$(dirname "${dockerfile}")")
-            echo "== remote: ${remote} =="
-            staged=$(bun scripts/stage-remote-image-context.ts --remote "${remote}")
-            sed -i "s/^ARG MYCADET_VERSION=.*/ARG MYCADET_VERSION=\"${published}\"/" "${staged}/Dockerfile"
-            docker build -t "cadet-remote-practice:${remote}" "${staged}"
-          done
+        run: bash cli/scripts/practice-build-remote-images.sh
 
   # ── Docker Images ──────────────────────────────────────────────────────
 
