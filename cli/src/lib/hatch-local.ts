@@ -15,7 +15,7 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { saveLockfileAssistant, resolveLogDir } from "@mycadet/local-mode";
 import {
   allocateLocalResources,
   findAssistantByName,
@@ -53,7 +53,6 @@ import {
 } from "./provider-secrets.js";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { printInstanceDetails } from "./instance-details.js";
-import { reportStartupFailureDiagnostics } from "./startup-diagnostics.js";
 import { checkProviderApiKey } from "./api-key-check.js";
 import {
   describeLoginError,
@@ -340,10 +339,10 @@ export async function hatchLocal(
       reporter.error(
         `\n❌ Local assistant startup failed — stopping partial processes.`,
       );
+      reporter.error(
+        `   Logs: ${join(getLocalInstanceDir(resources), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+      );
       await stopLocalProcesses(resources);
-      // Point at the logs the attempt wrote and, on a TTY, offer to show
-      // the one the operator picks — best effort, before the error rethrows.
-      await reportStartupFailureDiagnostics(resources, { reporter });
       throw error;
     }
 

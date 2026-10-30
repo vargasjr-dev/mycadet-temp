@@ -1175,19 +1175,29 @@ export async function startCes(
   }
 
   // Wait for the endpoint so the daemon's discovery finds it on the
-  // first probe rather than burning its retry budget.
-  const deadline = Date.now() + 10_000;
+  // first probe rather than burning its retry budget. A cold start (fresh
+  // install, antivirus scanning the binary) can be slow, so give it a
+  // minute and say so every 10 seconds instead of failing at 10.
+  const startedAt = Date.now();
+  const deadline = startedAt + 60_000;
+  let nextProgressLog = startedAt + 10_000;
   let endpointReady = false;
   while (Date.now() < deadline) {
     endpointReady = await isIpcEndpointReady(socketPath);
     if (endpointReady) {
       break;
     }
+    if (Date.now() >= nextProgressLog) {
+      console.warn(
+        `⚠ credential-executor socket not ready after ${Math.round((Date.now() - startedAt) / 1000)}s — still waiting`,
+      );
+      nextProgressLog += 10_000;
+    }
     await new Promise((r) => setTimeout(r, 50));
   }
   if (!endpointReady) {
     console.warn(
-      `⚠ credential-executor started but its socket did not appear within 10s — its output is logged in ${join(resolveLogDir(), "hatch.log")}`,
+      `⚠ credential-executor socket did not appear within 60s — its output is logged in ${join(resolveLogDir(), "hatch.log")}`,
     );
   } else {
     startupLog("✅ credential-executor started\n");
