@@ -104,7 +104,7 @@ export function resolveAssistantAvatarOwnerScopeId(
   }
   // The org rides the resolved row — a served/lockfile fact, not a store
   // web would manage.
-  return assistant.isCloudHosted
+  return assistant.cloud === "cloud"
     ? resolveNotificationIdentityScope({
         kind: "account",
         organizationId: assistant.organizationId ?? null,
@@ -122,7 +122,7 @@ export function resolveAssistantNotificationCloudId(
   if (assistant?.cloudAssistantId && isUuid(assistant.cloudAssistantId)) {
     return assistant.cloudAssistantId;
   }
-  return assistant?.isCloudHosted && isUuid(assistant.id) ? assistant.id : null;
+  return assistant?.cloud === "cloud" && isUuid(assistant.id) ? assistant.id : null;
 }
 
 interface AvatarOwner {

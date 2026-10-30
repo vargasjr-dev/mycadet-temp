@@ -16,7 +16,8 @@ const nginxIngressSource = readFileSync(
     "cli",
     "src",
     "lib",
-    "nginx-ingress.ts",
+    "servers",
+    "nginx.ts",
   ),
   "utf8",
 );

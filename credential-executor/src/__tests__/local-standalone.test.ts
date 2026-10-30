@@ -13,7 +13,7 @@
  */
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { createConnection, type Socket } from "node:net";
+import { createConnection, createServer, type Socket } from "node:net";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -29,6 +29,18 @@ import {
 } from "@mycadet/service-contracts/credential-rpc";
 
 import type { Subprocess } from "bun";
+
+function pickFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createServer();
+    srv.listen(0, () => {
+      const address = srv.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      srv.close(() => (port ? resolve(port) : reject(new Error("no port"))));
+    });
+    srv.on("error", reject);
+  });
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -149,11 +161,13 @@ describe("local CES standalone sibling (real entrypoint)", () => {
     }).path;
 
     const localMain = resolve(__dirname, "..", "main.ts");
+    const healthPort = await pickFreePort();
     const env: Record<string, string | undefined> = {
       ...process.env,
       CREDENTIAL_SECURITY_DIR: securityDir,
       CADET_WORKSPACE_DIR: workspaceDir,
       CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
+      CES_HEALTH_PORT: String(healthPort),
     };
 
     // stdin closed is how the CLI launches the sibling — CES serves over a

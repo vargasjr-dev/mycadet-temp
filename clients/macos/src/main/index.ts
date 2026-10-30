@@ -7,7 +7,9 @@ import { installCsp } from "@mycadet/electron-desktop/csp";
 import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
-import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
+import {
+  forwardGatewayRequest,
+} from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
@@ -20,7 +22,8 @@ import {
   servedConfigFromLockfile,
 } from "@mycadet/local-mode";
 
-import { getVersionInfo, installAbout, openAboutWindow } from "./about.client";
+import { getVersionInfo, openAboutWindow } from "@mycadet/electron-desktop/about";
+import { installAbout } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
@@ -276,8 +279,12 @@ const registerAppProtocol = (): void => {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const { cloudUrl } = resolveLocalConfigFromEnv();
+  // Single origin: the injected config carries THIS host's origin as
+  // `baseUrl` — the renderer's one origin for API, auth, and the assistant
+  // mount. `cloudUrl` stays a host-side forward target only; it never
+  // crosses into the renderer.
   const configJson = JSON.stringify({
-    cloudUrl,
+    baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
     deviceId: getDeviceId() ?? undefined,
     version: getVersionInfo().version,
     ...servedConfigFromLockfile(readLockfile()),

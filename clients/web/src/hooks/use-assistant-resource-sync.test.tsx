@@ -1046,8 +1046,7 @@ describe("useAssistantResourceSync", () => {
         assistants: [
           {
             id: "asst-1",
-            isLocal: false,
-            isCloudHosted: true,
+            cloud: "cloud",
             avatarUrl: "https://cdn.example/a.png",
           },
         ],
@@ -1108,8 +1107,6 @@ describe("useAssistantResourceSync", () => {
       assistants: [
         {
           id: "asst-1",
-          isLocal: true,
-          isCloudHosted: false,
           cloud: "local",
           cloudAssistantId: "uuid-1",
         },

@@ -24,9 +24,6 @@ declare global {
      * `domains/chat/voice/live-voice/connection.ts`.
      */
     readonly VITE_TUNNEL_HOST?: string;
-
-    /** Feature flag overrides via env vars: `VITE_CADET_FLAG_<UPPER_SNAKE_KEY>=true|false|string`. */
-    readonly [key: `VITE_CADET_FLAG_${string}`]: string | undefined;
   }
 
   interface ImportMeta {
@@ -35,7 +32,6 @@ declare global {
 
   interface Window {
     /** Feature flag overrides injected by Electron preload or CLI script. */
-    __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
     /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
     /** Raw host-injected config; `readInjectedConfig` is the parse boundary. */
     __CADET_CONFIG__?: unknown;

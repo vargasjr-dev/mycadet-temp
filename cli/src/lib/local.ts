@@ -68,7 +68,6 @@ import {
   stopProcessByPidFile,
   stopProcessGracefully,
 } from "./process.js";
-import { stopTunnelProcess } from "./tunnel.js";
 import { stripVersionPrefix } from "./version-compat.js";
 import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "./xdg-log.js";
 
@@ -1973,9 +1972,4 @@ export async function stopLocalProcesses(
     DAEMON_STOP_TIMEOUT_MS,
     stopProcessGracefully,
   );
-
-  // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry),
-  // verifying the pid still belongs to the provider's binary before signaling
-  // it — PID reuse must never send an unrelated process a signal.
-  await stopTunnelProcess();
 }

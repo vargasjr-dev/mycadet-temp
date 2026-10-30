@@ -43,7 +43,7 @@ mock.module("electron", () => ({
   },
 }));
 
-mock.module("./about.client", () => ({
+mock.module("@mycadet/electron-desktop/about", () => ({
   openAboutWindow: () => undefined,
 }));
 

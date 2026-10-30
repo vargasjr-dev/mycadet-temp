@@ -27,6 +27,7 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type { AssistantResolutionState } from "@/assistant/types";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { ApiError } from "@/utils/api-errors";
@@ -34,6 +35,22 @@ import { ApiError } from "@/utils/api-errors";
 let resolutionState: AssistantResolutionState = { kind: "loading" };
 function setResolutionState(next: AssistantResolutionState) {
   resolutionState = next;
+}
+
+/**
+ * The hosting answer lives on the lockfile entry's remote field, not the
+ * resolution kind. A local stamp synthesizes a self-hosted entry for the
+ * active id; the cloud world (no assistantId) synthesizes none, so the
+ * active row reads cloud-hosted. Tests reset both seams in their
+ * beforeEach.
+ */
+function setHosting(kind: "local" | "cloud") {
+  if (kind === "local") {
+    window.__CADET_CONFIG__ = { remote: "local", assistantId: ASSISTANT_ID };
+    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  } else {
+    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
+  }
 }
 
 mock.module("@/assistant/queries", () => ({
@@ -664,7 +681,8 @@ describe("ProfileEditorModal create mode — model-first", () => {
   });
 
   test("Ollama connections offer the bundled local models", () => {
-    setResolutionState({ kind: "self_hosted" });
+    setResolutionState({ kind: "active" });
+    setHosting("local");
     renderCreate([makeConnection("ollama", "ollama")]);
 
     selectModel("Llama 3.2");

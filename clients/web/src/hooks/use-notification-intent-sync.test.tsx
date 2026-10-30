@@ -43,8 +43,7 @@ const PLATFORM_ASSISTANT_ID = "123e4567-e89b-12d3-a456-426614174000";
 const PLATFORM_ASSISTANT: ResolvedAssistant = {
   id: "assistant-1",
   cloudAssistantId: PLATFORM_ASSISTANT_ID,
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
   organizationId: "org-1",
 };
 
@@ -414,14 +413,12 @@ describe("useNotificationIntentSync", () => {
   test("keeps delayed work bound to self-hosted origin A after selecting B", () => {
     const assistantA: ResolvedAssistant = {
       id: "local-a",
-      isLocal: true,
-      isCloudHosted: false,
+      cloud: "local",
       runtimeUrl: "https://a.example.com/assistant",
     };
     const assistantB: ResolvedAssistant = {
       id: "local-b",
-      isLocal: true,
-      isCloudHosted: false,
+      cloud: "local",
       runtimeUrl: "https://b.example.com/assistant",
     };
     useResolvedAssistantsStore.setState({

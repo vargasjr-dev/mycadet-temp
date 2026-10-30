@@ -2,7 +2,7 @@ import {
   getGatewayUrl,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
+  isUsableBaseUrl,
 } from "@mycadet/local-mode/contract";
 import {
   isLoopbackPublicUrl,
@@ -416,7 +416,7 @@ export function hasGatewayAddress(
   }
   if (assistant.cloud === "custom") {
     const gatewayUrl = getGatewayUrl(assistant);
-    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
+    return isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
   }
   return false;
 }

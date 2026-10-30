@@ -17,8 +17,6 @@ configureAboutRuntime({
   onAssistantNameChange: onNameChange,
 });
 
-export { getVersionInfo, openAboutWindow };
-
 export const installAbout = (): void => {
   installSharedAbout({ handle });
 };

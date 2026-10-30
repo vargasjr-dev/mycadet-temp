@@ -9,7 +9,7 @@ import {
   readOnboardingActive,
 } from "@mycadet/electron-desktop/window-state";
 
-import { openAboutWindow } from "./about.client";
+import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { checkForUpdates } from "./auto-update.client";
 import {
   isCliPathFlowInFlight,

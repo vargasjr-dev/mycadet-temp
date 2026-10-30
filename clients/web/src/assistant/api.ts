@@ -167,7 +167,6 @@ export async function getAssistant(
         handle: lockfileAssistant.assistantId,
         name: lockfileAssistant.name ?? lockfileAssistant.assistantId,
         status: "active",
-        is_local: true,
         created: lockfileAssistant.hatchedAt ?? "",
       } as Assistant,
     };

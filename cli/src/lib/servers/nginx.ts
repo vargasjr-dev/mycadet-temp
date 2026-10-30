@@ -382,7 +382,6 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
         // so remote browsers run the remote-gateway machinery; an assistant
         // fact has no such excuse). Undefined drops out of the JSON body.
         remote: lockfileAssistantRemote(id),
-        is_local: true,
       }
     : undefined;
   const responses = [

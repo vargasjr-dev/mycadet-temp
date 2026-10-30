@@ -158,3 +158,5 @@ __pycache__/
 
 assistant/workspace/
 
+# CES runtime state (logs, migration markers) — never commit.
+credential-executor/ces-data/

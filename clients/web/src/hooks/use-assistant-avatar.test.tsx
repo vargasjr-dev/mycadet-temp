@@ -120,8 +120,7 @@ URL.revokeObjectURL = revokeObjectURL;
 
 const assistantOne: ResolvedAssistant = {
   id: "asst-1",
-  isLocal: true,
-  isCloudHosted: false,
+  cloud: "local",
   runtimeUrl: "https://first.example.com/runtime",
 };
 
@@ -189,8 +188,7 @@ describe("useAssistantAvatar", () => {
       resolveAssistantNotificationCloudId({
         ...assistantOne,
         id: platformId,
-        isLocal: false,
-        isCloudHosted: true,
+        cloud: "cloud",
       }),
     ).toBe(platformId);
     expect(

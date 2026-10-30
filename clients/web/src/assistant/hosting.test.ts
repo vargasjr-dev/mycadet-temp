@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { useSyncExternalStore } from "react";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
-let injectedRemote: string | undefined = "local";
-const injectedConfigMock = mock(() =>
-  injectedRemote === undefined ? undefined : { remote: injectedRemote },
-);
+let injectedConfig: { remote?: string; assistantId?: string } | undefined = {
+  remote: "local",
+  assistantId: "asst-local",
+};
+const injectedConfigMock = mock(() => injectedConfig);
 mock.module("@/lib/injected-config", () => ({
   readInjectedConfig: injectedConfigMock,
 }));
@@ -34,6 +35,7 @@ mock.module("@/assistant/queries", () => ({
 }));
 
 import type { AssistantResolutionState } from "@/assistant/types";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantIsSelfHosted,
@@ -41,25 +43,72 @@ import {
   useAssistantHosting,
 } from "@/assistant/hosting";
 
+/** Point the store's active pointer at an assistant id (or clear it). */
+function setActiveAssistantId(id: string | null) {
+  act(() => {
+    useResolvedAssistantsStore.setState({ activeAssistantId: id });
+  });
+}
+
 beforeEach(() => {
-  injectedRemote = "local";
+  injectedConfig = { remote: "local", assistantId: "asst-local" };
   injectedConfigMock.mockClear();
   setLifecycle({ kind: "loading" });
+  useResolvedAssistantsStore.setState({
+    activeAssistantId: null,
+    assistants: [],
+    assistantsHydrated: true,
+  });
 });
 
 afterEach(() => {
   cleanup();
 });
 
-describe("useActiveAssistantIsSelfHosted", () => {
-  test("true for a server-projected self-hosted assistant", () => {
-    setLifecycle({ kind: "self_hosted" });
-    const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
-    expect(result.current).toBe(true);
+describe("useAssistantHosting", () => {
+  test('answers the lockfile entry\'s remote for an active assistant', () => {
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-local");
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("local");
   });
 
-  test("true for the gateway-auth short-circuit (active, local)", () => {
-    setLifecycle({ kind: "active", isLocal: true });
+  test('answers the entry remote even when the injected remote differs', () => {
+    injectedConfig = { remote: "local", assistantId: "asst-local" };
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-local");
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("local");
+  });
+
+  test('answers "cloud" for an active row with no lockfile entry', () => {
+    // A row absent from the served lockfile exists only in the cloud-served
+    // world — the cloud platform keeps no locally-synthesized entry.
+    injectedConfig = { remote: "cloud" };
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-platform");
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("cloud");
+  });
+
+  test("answers with the serving remote outside an active resolution", () => {
+    injectedConfig = { remote: "apple-container", assistantId: "asst-local" };
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("apple-container");
+  });
+
+  test('falls back to "local" when nothing was injected', () => {
+    injectedConfig = undefined;
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("local");
+  });
+});
+
+describe("useActiveAssistantIsSelfHosted", () => {
+  test("true for an active assistant whose lockfile remote is self-hosted", () => {
+    injectedConfig = { remote: "docker", assistantId: "asst-local" };
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-local");
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(true);
   });
@@ -71,26 +120,29 @@ describe("useActiveAssistantIsSelfHosted", () => {
     expect(result.current).toBe(false);
   });
 
-  test("false for a positively cloud-hosted assistant", () => {
-    setLifecycle({ kind: "active", isLocal: false });
+  test("false for a cloud-hosted assistant (no lockfile entry)", () => {
+    injectedConfig = { remote: "cloud" };
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-platform");
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(false);
   });
 });
 
 describe("useActiveAssistantIsCloudHosted", () => {
-  test("true only for a positively resolved cloud-hosted assistant", () => {
+  test("true only for an active assistant with no lockfile entry", () => {
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
     expect(result.current).toBe(false);
-    setLifecycle({ kind: "active", isLocal: false });
+    injectedConfig = { remote: "cloud" };
+    setLifecycle({ kind: "active" });
+    setActiveAssistantId("asst-platform");
     expect(result.current).toBe(true);
   });
 
   test("false for every other lifecycle state", () => {
+    injectedConfig = { remote: "cloud" };
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
-    setLifecycle({ kind: "self_hosted" });
-    expect(result.current).toBe(false);
-    setLifecycle({ kind: "active", isLocal: true });
+    setLifecycle({ kind: "initializing" });
     expect(result.current).toBe(false);
     setLifecycle({ kind: "error", message: "down" });
     expect(result.current).toBe(false);
@@ -105,34 +157,7 @@ describe("useActiveAssistantLifecycleIsLoading", () => {
     expect(result.current).toBe(true);
     setLifecycle({ kind: "cleaning_up" });
     expect(result.current).toBe(true);
-    setLifecycle({ kind: "active", isLocal: false });
+    setLifecycle({ kind: "active" });
     expect(result.current).toBe(false);
-  });
-});
-
-describe("useAssistantHosting", () => {
-  test('answers "cloud" for a resolved cloud-hosted assistant', () => {
-    setLifecycle({ kind: "active", isLocal: false });
-    const { result } = renderHook(() => useAssistantHosting());
-    expect(result.current).toBe("cloud");
-  });
-
-  test("answers with the serving remote for a self-hosted assistant", () => {
-    injectedRemote = "docker";
-    setLifecycle({ kind: "active", isLocal: true });
-    const { result } = renderHook(() => useAssistantHosting());
-    expect(result.current).toBe("docker");
-  });
-
-  test("answers with the serving remote without inventing a resolving arm", () => {
-    injectedRemote = "apple-container";
-    const { result } = renderHook(() => useAssistantHosting());
-    expect(result.current).toBe("apple-container");
-  });
-
-  test('falls back to "local" when nothing was injected', () => {
-    injectedRemote = undefined;
-    const { result } = renderHook(() => useAssistantHosting());
-    expect(result.current).toBe("local");
   });
 });

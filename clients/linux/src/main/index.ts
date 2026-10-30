@@ -8,6 +8,7 @@ import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
+import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
@@ -164,8 +165,9 @@ const registerAppProtocol = (): void => {
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv();
 handleSync("cadet:config:get", () => ({
-    cloudUrl: resolvedConfig.cloudUrl,
+  baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
   deviceId: getDeviceId(),
+  version: getVersionInfo().version,
 }));
 
 // ---------------------------------------------------------------------------

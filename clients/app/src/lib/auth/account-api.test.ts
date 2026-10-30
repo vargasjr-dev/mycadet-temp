@@ -95,13 +95,15 @@ test("Electron mutations carry native token and renderer origin without CSRF", a
   });
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
-    value: { cloudUrl: "https://cloud.example.com" },
+    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockResolvedValueOnce(new Response('{"data":{"user":{}}}'));
   await submitProviderSignup({ email: "a@example.com", username: "ada" });
   expect(fetchSpy).toHaveBeenCalledTimes(1);
+  // Same-origin for the bridge too: the Electron page origin serves
+  // /_allauth through the shell's own cloud forward.
   expect(fetchSpy.mock.calls[0]?.[0]).toBe(
-    "https://cloud.example.com/_allauth/app/v1/auth/provider/signup",
+    `${window.location.protocol}//${window.location.host}/_allauth/app/v1/auth/provider/signup`,
   );
   const headers = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
   expect(headers.get("X-Session-Token")).toBe("session123");

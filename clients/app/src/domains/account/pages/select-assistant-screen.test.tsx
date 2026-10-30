@@ -33,7 +33,7 @@ const routers: ReturnType<typeof createMemoryRouter>[] = [];
 // test fetch is spent (or delayed) on a session probe.
 document.cookie = "csrftoken=test; path=/";
 const host = {
-  cloudUrl: "https://host.example/admin/proxy/",
+  baseUrl: "https://host.example/admin/proxy/",
 };
 const detail = {
   id: "assistant-2",

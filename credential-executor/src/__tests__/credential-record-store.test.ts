@@ -116,10 +116,8 @@ describe("003-import-workspace-metadata", () => {
     );
 
     const prevWorkspace = process.env.CADET_WORKSPACE_DIR;
-    const prevMode = process.env.CES_MODE;
     const prevData = process.env.CES_DATA_DIR;
     process.env.CADET_WORKSPACE_DIR = workspace;
-    process.env.CES_MODE = "managed";
     process.env.CES_DATA_DIR = cesData;
 
     const unusedBackend: SecureKeyBackend = {
@@ -141,11 +139,6 @@ describe("003-import-workspace-metadata", () => {
         delete process.env.CADET_WORKSPACE_DIR;
       } else {
         process.env.CADET_WORKSPACE_DIR = prevWorkspace;
-      }
-      if (prevMode === undefined) {
-        delete process.env.CES_MODE;
-      } else {
-        process.env.CES_MODE = prevMode;
       }
       if (prevData === undefined) {
         delete process.env.CES_DATA_DIR;
@@ -184,10 +177,8 @@ describe("003-import-workspace-metadata", () => {
     );
 
     const prevWorkspace = process.env.CADET_WORKSPACE_DIR;
-    const prevMode = process.env.CES_MODE;
     const prevData = process.env.CES_DATA_DIR;
     process.env.CADET_WORKSPACE_DIR = workspace;
-    process.env.CES_MODE = "managed";
     process.env.CES_DATA_DIR = cesData;
 
     const unusedBackend: SecureKeyBackend = {
@@ -208,11 +199,6 @@ describe("003-import-workspace-metadata", () => {
         delete process.env.CADET_WORKSPACE_DIR;
       } else {
         process.env.CADET_WORKSPACE_DIR = prevWorkspace;
-      }
-      if (prevMode === undefined) {
-        delete process.env.CES_MODE;
-      } else {
-        process.env.CES_MODE = prevMode;
       }
       if (prevData === undefined) {
         delete process.env.CES_DATA_DIR;

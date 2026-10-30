@@ -240,7 +240,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       internalName: "credential-executor",
       network: "container",
       env: [
-        { kind: "static", name: "CES_MODE",                  value: "managed" },
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
         { kind: "static", name: "CREDENTIAL_SECURITY_DIR",   value: "/ces-security" },

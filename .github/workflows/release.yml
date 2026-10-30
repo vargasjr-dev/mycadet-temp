@@ -720,6 +720,33 @@ jobs:
           cache-from: type=gha,scope=docs-site
           cache-to: type=gha,mode=max,ignore-error=true,scope=docs-site
 
+  # ── Remote image practice builds ────────────────────────────────────────
+  #
+  # Build every remote's sandbox image Dockerfile (cli/src/lib/remotes/*)
+  # through the CLI's own staging code — the exact context `cadet hatch
+  # --remote <name>` uploads. Gates the @mycadet/cli publish: a broken image
+  # recipe (missing apt packages, bad bun pin, hatch regressions) stops the
+  # release before anything ships.
+  #
+  # The build pins the latest PUBLISHED mycadet — pre-publish, the version
+  # being released is not on npm yet, so this check validates the image
+  # recipe; the release's own bits are validated by the ci-* family.
+  ci-remote-images:
+    needs: [extract-version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Practice-build each remote's Dockerfile
+        run: bash cli/scripts/practice-build-remote-images.sh
+
   publish-npm-assistant-prod:
     needs:
       [
@@ -784,7 +811,7 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --access public
 
   publish-npm-cli-prod:
-    needs: [extract-version, ci-cli]
+    needs: [extract-version, ci-cli, ci-remote-images]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1480,6 +1507,140 @@ jobs:
           KEYCHAIN_PATH="$HOME/Library/Keychains/$KEYCHAIN_NAME-db"
           security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
           rm -rf ~/.private_keys 2>/dev/null || true
+
+  build-electron-windows:
+    # DISABLED alongside the mac build-electron: a shippable nsis installer
+    # needs Windows Authenticode signing material (a EV/Digital ID cert
+    # secret, e.g. WINDOWS_CERTIFICATE_P12 / WINDOWS_CERTIFICATE_PASSWORD),
+    # which is not configured yet. Re-enable by deleting this line together
+    # with build-electron's once both signing secrets exist.
+    if: false
+    needs: [extract-version]
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            artifact_name: windows-build-electron
+            update_artifact_name: windows-electron-update-x64
+    defaults:
+      run:
+        working-directory: clients/windows
+    env:
+      ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          if ! bun install --frozen-lockfile --filter=@mycadet/windows --filter=@mycadet/web --filter=@mycadet/app; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/windows --filter=@mycadet/web --filter=@mycadet/app
+          fi
+
+      # Installing does not download the Electron binary, so packaging
+      # provisions it explicitly (mirrors the mac job).
+      - name: Set up Electron binary
+        shell: bash
+        run: bun run setup
+
+      - name: Stamp release version into package.json
+        shell: bash
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+
+      - name: Build and package Electron app
+        env:
+          VITE_ENVIRONMENT: production
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
+        run: bun run pack --environment "production"
+
+      # Update artifacts upload before the installer so an installer artifact
+      # never exists without its update feed (mirrors the mac job).
+      - name: Upload Electron update artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.update_artifact_name }}
+          path: |
+            clients/windows/dist/latest*.yml
+            clients/windows/dist/*.exe
+            clients/windows/dist/*.exe.blockmap
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Electron installer artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: clients/windows/dist/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  build-electron-linux:
+    # DISABLED alongside the mac build-electron: the AppImage itself needs no
+    # signing, but the auto-update story for linux is undecided (AppImage has
+    # no electron-updater feed parity with mac/win), and shipping an
+    # installer without an update path strands installs. Re-enable by
+    # deleting this line together with build-electron's once the update
+    # approach is settled.
+    if: false
+    needs: [extract-version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            artifact_name: linux-build-electron
+    defaults:
+      run:
+        working-directory: clients/linux
+    env:
+      ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        working-directory: ${{ github.workspace }}
+        run: |
+          if ! bun install --frozen-lockfile --filter=@mycadet/linux --filter=@mycadet/web --filter=@mycadet/app; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/linux --filter=@mycadet/web --filter=@mycadet/app
+          fi
+
+      - name: Set up Electron binary
+        run: bun run setup
+
+      - name: Stamp release version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+
+      - name: Build and package Electron app
+        env:
+          VITE_ENVIRONMENT: production
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
+        run: bun run pack --environment "production"
+
+      - name: Upload Electron AppImage artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: clients/linux/dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 7
 
   upload-electron-updates:
     needs: [extract-version, build-electron, publish-meta-prod]

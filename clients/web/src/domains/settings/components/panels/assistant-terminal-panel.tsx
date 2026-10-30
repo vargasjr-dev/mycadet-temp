@@ -12,11 +12,11 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
   // The terminal session is a cloud-routed exec channel — it has no meaning
-  // against a self-hosted assistant. Once the lifecycle resolves to
-  // `self_hosted` early-return null, structurally blocking TerminalPanel
-  // from mounting a cloud-routed exec connection against a self-hosted
-  // target. The assistant is the shell's — the boot resolution owns the id,
-  // the panel runs its own fetch for nothing.
+  // against a self-hosted assistant. Self-hosted resolutions early-return
+  // null, structurally blocking TerminalPanel from mounting a cloud-routed
+  // exec connection against a self-hosted target. The assistant is the
+  // shell's — the boot resolution owns the id, the panel runs its own fetch
+  // for nothing.
   const { state, result } = useAssistantResolution();
   const assistantId = result?.ok ? result.data.id : null;
   const loading = state.kind === "loading";

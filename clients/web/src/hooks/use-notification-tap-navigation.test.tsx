@@ -48,15 +48,13 @@ import {
 const ASSISTANT_A: ResolvedAssistant = {
   id: "assistant-a",
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174000",
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
   organizationId: "org-1",
 };
 const ASSISTANT_B: ResolvedAssistant = {
   id: "assistant-b",
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174001",
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
 };
 
 let capturedHandler: NotificationTapHandler | null = null;
@@ -71,22 +69,19 @@ mock.module("@/runtime/notifications", () => ({
   postLocalNotification: postLocalNotificationMock,
 }));
 
-const connectAssistantMock = () =>
-  mock(async (assistantId: string) => {
-    useResolvedAssistantsStore.setState({
-      selectedAssistantId: assistantId,
-      activeAssistantId: assistantId,
-    });
+const connectAssistantMock = mock(async (assistantId: string) => {
+  useResolvedAssistantsStore.setState({
+    selectedAssistantId: assistantId,
+    activeAssistantId: assistantId,
   });
+});
 
-const connectCloudAssistantMock = connectAssistantMock();
-
-mock.module("@/assistant/connect-assistant", () => ({
-  connectCloudAssistant: connectCloudAssistantMock,
+mock.module("@/assistant/selection", () => ({
+  setSelectedAssistant: connectAssistantMock,
 }));
 
 function expectNoAssistantSwitch() {
-  expect(connectCloudAssistantMock).not.toHaveBeenCalled();
+  expect(connectAssistantMock).not.toHaveBeenCalled();
 }
 
 const { useNotificationTapNavigation } =
@@ -136,7 +131,13 @@ beforeEach(() => {
   capturedHandler = null;
   setNotificationTapHandlerMock.mockClear();
   postLocalNotificationMock.mockClear();
-  connectCloudAssistantMock.mockReset();
+  connectAssistantMock.mockReset();
+  connectAssistantMock.mockImplementation(async (assistantId) => {
+    useResolvedAssistantsStore.setState({
+      selectedAssistantId: assistantId,
+      activeAssistantId: assistantId,
+    });
+  });
   window.history.pushState(null, "", "/");
   useResolvedAssistantsStore.setState({
     assistants: [ASSISTANT_A, ASSISTANT_B],
@@ -144,13 +145,8 @@ beforeEach(() => {
     selectedAssistantId: ASSISTANT_B.id,
     activeAssistantId: ASSISTANT_B.id,
   });
-  setResolutionState({ kind: "active", isLocal: false });
-  connectCloudAssistantMock.mockImplementation(async (assistantId) => {
-    useResolvedAssistantsStore.setState({
-      selectedAssistantId: assistantId,
-      activeAssistantId: assistantId,
-    });
-  });
+  setResolutionState({ kind: "active" });
+
 });
 
 afterEach(() => {
@@ -209,7 +205,7 @@ describe("useNotificationTapNavigation", () => {
       identity: platformIdentity(ASSISTANT_A),
     });
 
-    expect(connectCloudAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
+    expect(connectAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
     expect(received).toEqual([{ threadId: "conv-a" }]);
     expect(postLocalNotificationMock).not.toHaveBeenCalled();
   });
@@ -219,7 +215,7 @@ describe("useNotificationTapNavigation", () => {
       selectedAssistantId: ASSISTANT_A.id,
       activeAssistantId: ASSISTANT_A.id,
     });
-    connectCloudAssistantMock.mockRejectedValueOnce(
+    connectAssistantMock.mockRejectedValueOnce(
       new Error("offline reconnect should not run"),
     );
     renderHook(() => useNotificationTapNavigation());
@@ -249,12 +245,12 @@ describe("useNotificationTapNavigation", () => {
       identity: platformIdentity(ASSISTANT_A),
     });
 
-    expect(connectCloudAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
+    expect(connectAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
     expect(received).toEqual([{ threadId: "conv-restore" }]);
   });
 
   test("waits for lifecycle activation after the selection write", async () => {
-    connectCloudAssistantMock.mockImplementationOnce(async (assistantId) => {
+    connectAssistantMock.mockImplementationOnce(async (assistantId) => {
       useResolvedAssistantsStore.setState({
         selectedAssistantId: assistantId,
       });
@@ -275,7 +271,7 @@ describe("useNotificationTapNavigation", () => {
     );
     await Promise.resolve();
     await Promise.resolve();
-    expect(connectCloudAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
+    expect(connectAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
     expect(received).toEqual([]);
 
     act(() => {
@@ -289,7 +285,7 @@ describe("useNotificationTapNavigation", () => {
   });
 
   test("a terminal lifecycle failure releases the next queued tap", async () => {
-    connectCloudAssistantMock.mockImplementationOnce(async (assistantId) => {
+    connectAssistantMock.mockImplementationOnce(async (assistantId) => {
       useResolvedAssistantsStore.setState({
         selectedAssistantId: assistantId,
       });
@@ -344,7 +340,7 @@ describe("useNotificationTapNavigation", () => {
   });
 
   test("drops the tap when switching the scoped assistant fails", async () => {
-    connectCloudAssistantMock.mockRejectedValueOnce(
+    connectAssistantMock.mockRejectedValueOnce(
       new Error("connection failed"),
     );
     renderHook(() => useNotificationTapNavigation());

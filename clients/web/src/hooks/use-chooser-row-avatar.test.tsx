@@ -185,8 +185,7 @@ const cloudRow = (
   overrides: Partial<ResolvedAssistant> = {},
 ): ResolvedAssistant => ({
   id,
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
   runtimeVersion: "0.9.0",
   organizationId: "org-1",
   ...overrides,
@@ -197,8 +196,6 @@ const localRow = (
   overrides: Partial<ResolvedAssistant> = {},
 ): ResolvedAssistant =>
   cloudRow(id, {
-    isLocal: true,
-    isCloudHosted: false,
     cloud: "local",
     ...overrides,
   });
@@ -286,8 +283,8 @@ describe("canFetchRowAvatarViaCloudProxy", () => {
   });
 
   test.each([
-    ["local", { isLocal: true, isCloudHosted: false }],
-    ["self-hosted", { isCloudHosted: false }],
+    ["local", { cloud: "local" }],
+    ["self-hosted", { cloud: "custom" }],
   ])("is closed for a %s row", (_label, overrides) => {
     expect(canFetchRowAvatarViaCloudProxy(cloudRow("a", overrides))).toBe(
       false,
@@ -318,8 +315,8 @@ describe("useChooserRowAvatar", () => {
   );
 
   test.each([
-    ["local", { isLocal: true, isCloudHosted: false }],
-    ["self-hosted", { isCloudHosted: false }],
+    ["local", { cloud: "local" }],
+    ["self-hosted", { cloud: "custom" }],
   ])(
     "issues zero SDK calls for a non-connected %s row",
     async (_l, overrides) => {
@@ -507,7 +504,7 @@ describe("useChooserRowAvatar", () => {
       overrides: Partial<ResolvedAssistant> = {},
     ) =>
       cloudRow(id, {
-        isCloudHosted: false,
+        cloud: "custom",
         ...overrides,
       });
 
@@ -764,7 +761,7 @@ describe("useChooserRowAvatar", () => {
 
   test("connected row delegates to useAssistantAvatar even when the gate is closed", async () => {
     const { result } = renderHook(
-      () => useChooserRowAvatar(cloudRow("active", { isLocal: true })),
+      () => useChooserRowAvatar(cloudRow("active", { cloud: "local" })),
       { wrapper: createWrapper() },
     );
     await waitFor(() => {
@@ -1163,7 +1160,7 @@ describe("useChooserRowAvatar", () => {
 
     test.each([
       ["platform", cloudRow("other")],
-      ["self-hosted", cloudRow("other", { isCloudHosted: false })],
+      ["self-hosted", cloudRow("other", { cloud: "custom" })],
       ["docker", localRow("other", { cloud: "docker" })],
     ])("issues no host call for a %s row", async (_l, row) => {
       renderHook(() => useChooserRowAvatar(row), { wrapper: createWrapper() });
@@ -1709,7 +1706,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(cloudRow("other", { isCloudHosted: false })),
+        () => useChooserRowAvatar(cloudRow("other", { cloud: "custom" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1747,7 +1744,7 @@ describe("useChooserRowAvatar", () => {
         blob: new Blob(["png"]),
       });
       const { result } = renderHook(
-        () => useChooserRowAvatar(cloudRow("other", { isCloudHosted: false })),
+        () => useChooserRowAvatar(cloudRow("other", { cloud: "custom" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1787,7 +1784,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(cloudRow("other", { isCloudHosted: false })),
+        () => useChooserRowAvatar(cloudRow("other", { cloud: "custom" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1802,7 +1799,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockRejectedValue(new Error("idb"));
       const { result } = renderHook(
-        () => useChooserRowAvatar(cloudRow("other", { isCloudHosted: false })),
+        () => useChooserRowAvatar(cloudRow("other", { cloud: "custom" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {

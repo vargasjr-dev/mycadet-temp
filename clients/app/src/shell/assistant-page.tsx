@@ -42,13 +42,12 @@ export function AssistantPage() {
       // A paired selection rides its own gateway path; served surfaces
       // leave this unset and resolve same-origin through their origin's
       // /v1 proxy; the native boot bundle's webview origin has no /v1
-      // router, so it resolves against the stamped cloudUrl.
+      // router, so it resolves against the host-stamped baseUrl.
       apiBaseUrl={
         selection?.apiBase ??
-        (isNativePlatform() ? config?.cloudUrl : undefined)
+        (isNativePlatform() ? config?.baseUrl : undefined)
       }
       location={`${location.pathname}${location.search}${location.hash}`}
-      origin={window.location.origin}
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,

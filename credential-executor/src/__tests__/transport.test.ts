@@ -355,12 +355,11 @@ describe("CesRpcServer", () => {
 // ---------------------------------------------------------------------------
 
 describe("CES data paths", () => {
-  test("data root resolves CES_DATA_DIR in any mode", () => {
+  test("data root resolves CES_DATA_DIR when set", () => {
     const savedDir = process.env["CES_DATA_DIR"];
     process.env["CES_DATA_DIR"] = "/custom/ces-data";
     try {
-      expect(getCesDataRoot("local")).toBe("/custom/ces-data");
-      expect(getCesDataRoot("managed")).toBe("/custom/ces-data");
+      expect(getCesDataRoot()).toBe("/custom/ces-data");
     } finally {
       if (savedDir !== undefined) {
         process.env["CES_DATA_DIR"] = savedDir;
@@ -374,10 +373,7 @@ describe("CES data paths", () => {
     const savedDir = process.env["CES_DATA_DIR"];
     delete process.env["CES_DATA_DIR"];
     try {
-      expect(getCesDataRoot("managed")).toBe(
-        join(process.cwd(), "ces-data"),
-      );
-      expect(getCesDataRoot("local")).toBe(join(process.cwd(), "ces-data"));
+      expect(getCesDataRoot()).toBe(join(process.cwd(), "ces-data"));
     } finally {
       if (savedDir !== undefined) process.env["CES_DATA_DIR"] = savedDir;
     }

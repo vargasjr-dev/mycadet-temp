@@ -22,7 +22,7 @@ test("loopback persists a fresh state and destination and sends only the callbac
   import.meta.env.VITE_ENVIRONMENT = "production";
   const location = useLocation("http://localhost:4567", "4567", {
     remote: "local",
-    cloudUrl: "https://cloud.example",
+    baseUrl: "https://cloud.example",
   });
   await startLoopbackAuth("/assistant/checkout?package=super", {
     intent: "signup",

@@ -13,7 +13,6 @@
   },
   "scripts": {
     "dev": "bun run src/main.ts",
-    "dev:managed": "CES_MODE=managed bun run src/main.ts",
     "lint": "eslint",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "typecheck": "bunx tsc --noEmit",

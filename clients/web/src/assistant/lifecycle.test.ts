@@ -13,10 +13,6 @@ describe("assistantStateCanServeChat", () => {
     expect(assistantStateCanServeChat("active")).toBe(true);
   });
 
-  test("self_hosted serves chat — the daemon is the runtime", () => {
-    expect(assistantStateCanServeChat("self_hosted")).toBe(true);
-  });
-
   test("every other kind is not serving chat", () => {
     expect(assistantStateCanServeChat("loading")).toBe(false);
     expect(assistantStateCanServeChat("initializing")).toBe(false);

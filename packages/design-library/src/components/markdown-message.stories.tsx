@@ -36,8 +36,8 @@ export const QuoteWithInlineCode: Story = {
     content: [
       "> Symptom: Settings shows `backup.enabled` as `false` in config, and",
       "> `handleBackupCreate()` throws a `BadRequestError` saying creation",
-      "> moved to the gateway (`POST /v1/backups/create`). Three `.vbundle`",
-      "> files exist in `/workspace/.backups/local/` — nothing newer.",
+      "> moved to the gateway (`POST /v1/backups/create`). Three `.tar.gz`",
+      "> backups exist in `~/.local/share/cadet/backups/` — nothing newer.",
     ].join("\n"),
   },
 };

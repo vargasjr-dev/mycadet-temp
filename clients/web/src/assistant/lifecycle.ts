@@ -39,15 +39,13 @@ export function isTransportShapedError(
  * Whether this resolution kind can serve chat queries and the surfaces
  * that mirror them (sidebar, Home Screen widgets, dock badge).
  *
- * `active` is a running assistant. `self_hosted` is too: the cloud
- * record is provisioned and the daemon is the runtime, so the same
- * conversation list that ChatPage already renders must also reach the
- * layout-owned queries.
+ * `active` is a running assistant, whatever remote serves it — the
+ * hosting question lives on the lockfile entry's remote field, not here.
  */
 export function assistantStateCanServeChat(
   kind: AssistantResolutionState["kind"],
 ): boolean {
-  return kind === "active" || kind === "self_hosted";
+  return kind === "active";
 }
 
 /**
@@ -63,12 +61,7 @@ export function resolveAssistantLifecycleState(
   if (result.ok) {
     const { status } = result.data;
     if (status === "active") {
-      // The server's one `active` status splits by hosting: `is_local` marks
-      // a self-hosted runtime (the cloud record is provisioned, the daemon is
-      // the runtime).
-      return result.data.is_local
-        ? { kind: "self_hosted" }
-        : { kind: "active", isLocal: false };
+      return { kind: "active" };
     }
     if (status === "initializing") {
       return { kind: "initializing" };

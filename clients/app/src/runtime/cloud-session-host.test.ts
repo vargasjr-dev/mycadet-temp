@@ -45,9 +45,9 @@ test("plain and remote browser hosts never receive a session token", async () =>
 
 test("local browser hosts receive the same cloud-session POST", async () => {
   Reflect.deleteProperty(window, "cadet");
-  setConfig({ remote: "local", cloudUrl: "https://mycadet.ai" });
+  setConfig({ remote: "local", baseUrl: "https://mycadet.ai" });
   requests.mockResolvedValue(new Response('{"ok":true}'));
-  expect(readInjectedConfig()?.cloudUrl).toBe("https://mycadet.ai");
+  expect(readInjectedConfig()?.baseUrl).toBe("https://mycadet.ai");
   expect(await registerLocalCloudSession("session123")).toBe(true);
   expect(requests).toHaveBeenCalledWith("/v1/session", {
     method: "POST",

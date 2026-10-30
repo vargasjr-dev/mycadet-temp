@@ -145,7 +145,7 @@ export function isCloudHome(cloud: unknown): boolean {
  * absolute http(s) URL. Shared by the renderer's paired-gateway URL derivation
  * and the host-side paired allowlist reader so the two can't drift.
  */
-export function isUsableRuntimeUrl(url: unknown): url is string {
+export function isUsableBaseUrl(url: unknown): url is string {
   if (typeof url !== "string" || url === "") {
     return false;
   }
@@ -155,6 +155,31 @@ export function isUsableRuntimeUrl(url: unknown): url is string {
   } catch {
     return false;
   }
+}
+
+/**
+ * The local build's control-plane base, read from the lockfile alone: the
+ * auto-tunnel's recorded `publicUrl` when one is up, else the app server
+ * edge's loopback port. A loopback base is reachable from the iOS simulator
+ * only — a device's `127.0.0.1` is the phone itself — so a device build
+ * wants a tunnel up before it stamps. `undefined` when neither record
+ * carries a usable address.
+ *
+ * The assistants play no role in this resolution — the capacitor app shell
+ * only deals with the app server — and the CLI's workspace config is never
+ * touched: the lockfile is the single home for edge state.
+ */
+export function resolveLocalServerUrl(): string | undefined {
+  const lockfile = readLockfile();
+  const tunnelUrl = lockfile.tunnel?.publicUrl;
+  if (isUsableBaseUrl(tunnelUrl)) {
+    return tunnelUrl;
+  }
+  const port = lockfile.app?.port;
+  if (typeof port === "number") {
+    return `http://127.0.0.1:${port}`;
+  }
+  return undefined;
 }
 
 /**
@@ -244,6 +269,7 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
 }
 
 /**
+
  * Per-instance resources for a local assistant: the renderer-facing ports,
  * the instance directory, the local runtime install metadata, and the
  * host-only ports. Strict: every field the CLI round-trips is modeled, so

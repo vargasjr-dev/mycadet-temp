@@ -25,8 +25,8 @@ import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import {
   getServedLockfile,
+  getLockfileAssistant,
   isLocalAssistant,
-  isCloudAssistant,
 } from "@/lib/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
@@ -53,8 +53,6 @@ export interface ResolvedAssistant {
   runtimeVersion?: string;
   currentReleaseVersion?: string | null;
   isActiveLockfileAssistant?: boolean;
-  isLocal: boolean;
-  isCloudHosted: boolean;
   /** Remote gateway URL for paired entries; only the lockfile carries it. */
   runtimeUrl?: string;
   /** Public ingress registered with the cloud for self-hosted local
@@ -104,7 +102,9 @@ export function resolveCloudAssistantId(assistantId: string): string {
  * it.
  */
 export function isConnectableFromThisDevice(a: ResolvedAssistant): boolean {
-  return !a.isLocal || a.cloud != null || a.ingressUrl != null;
+  const entry = getLockfileAssistant(a.id);
+  const isLocalEntry = !!entry && isLocalAssistant(entry);
+  return !isLocalEntry || a.cloud != null || a.ingressUrl != null;
 }
 
 /**
@@ -179,8 +179,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         currentReleaseVersion: existingById.get(a.assistantId)
           ?.currentReleaseVersion,
         isActiveLockfileAssistant: activeLockfileAssistantId === a.assistantId,
-        isLocal: isLocalAssistant(a),
-        isCloudHosted: isCloudAssistant(a),
         runtimeUrl: getGatewayUrl(a),
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
@@ -209,22 +207,23 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         assistantsHydrated: true,
         assistants: assistants
           .map((a): ResolvedAssistant => {
-            const lockfileFields = getLockfileFields(a.id);
+            const entry = getLockfileAssistant(a.id);
             return {
               id: a.id,
               name: a.name,
               hatchedAt: a.created,
-              onboardedAt: lockfileFields.onboardedAt,
-              cloud: lockfileFields.cloud,
-              runtimeVersion: lockfileFields.runtimeVersion,
-              runtimeUrl: lockfileFields.runtimeUrl,
-              cloudAssistantId: lockfileFields.cloudAssistantId,
+              onboardedAt: entry?.onboardedAt,
+              cloud: entry?.cloud,
+              runtimeVersion: entry?.resources?.runtimeVersion,
+              runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
+              cloudAssistantId: entry?.cloudAssistantId,
               ingressUrl: a.ingress_url,
               avatarUrl: apiAvatarUrl(a),
               currentReleaseVersion: a.current_release_version,
-              isActiveLockfileAssistant:
-                lockfileFields.isActiveLockfileAssistant,
-              ...classifyApiEntry(a.is_local),
+              isActiveLockfileAssistant: entry
+                ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
+                  a.id
+                : undefined,
             };
           })
           .filter(isConnectableFromThisDevice),
@@ -236,33 +235,33 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
       set((state) => {
         const idx = state.assistants.findIndex((a) => a.id === assistant.id);
         const prior = idx >= 0 ? state.assistants[idx] : undefined;
-        const lockfileFields = getLockfileFields(assistant.id);
+        const lockfileEntry = getLockfileAssistant(assistant.id);
         // The API payload omits lockfile-sourced fields; preserve them across
         // lifecycle refreshes.
         const entry: ResolvedAssistant = {
           id: assistant.id,
           name: assistant.name,
           hatchedAt: assistant.created,
-          onboardedAt: lockfileFields.onboardedAt,
+          onboardedAt: lockfileEntry?.onboardedAt,
           ingressUrl: assistant.ingress_url,
           avatarUrl: apiAvatarUrl(assistant),
           currentReleaseVersion: assistant.current_release_version,
-          ...classifyApiEntry(assistant.is_local),
         };
         if (prior) {
           const next = [...state.assistants];
           next[idx] = {
             ...entry,
-            cloud: lockfileFields.cloud ?? prior.cloud,
+            cloud: lockfileEntry?.cloud ?? prior.cloud,
             organizationId: prior.organizationId,
             runtimeVersion:
-              lockfileFields.runtimeVersion ?? prior.runtimeVersion,
-            runtimeUrl: lockfileFields.runtimeUrl ?? prior.runtimeUrl,
+              lockfileEntry?.resources?.runtimeVersion ?? prior.runtimeVersion,
+            runtimeUrl: lockfileEntry ? getGatewayUrl(lockfileEntry) : prior.runtimeUrl,
             cloudAssistantId:
-              lockfileFields.cloudAssistantId ?? prior.cloudAssistantId,
-            isActiveLockfileAssistant:
-              lockfileFields.isActiveLockfileAssistant ??
-              prior.isActiveLockfileAssistant,
+              lockfileEntry?.cloudAssistantId ?? prior.cloudAssistantId,
+            isActiveLockfileAssistant: lockfileEntry
+              ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
+                assistant.id
+              : prior.isActiveLockfileAssistant,
           };
           return { assistants: next };
         }
@@ -273,13 +272,17 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             ...state.assistants,
             {
               ...entry,
-              cloud: lockfileFields.cloud,
-              organizationId: lockfileFields.organizationId,
-              runtimeVersion: lockfileFields.runtimeVersion,
-              runtimeUrl: lockfileFields.runtimeUrl,
-              cloudAssistantId: lockfileFields.cloudAssistantId,
-              isActiveLockfileAssistant:
-                lockfileFields.isActiveLockfileAssistant,
+              cloud: lockfileEntry?.cloud,
+              organizationId: lockfileEntry?.cloudOrganizationId,
+              runtimeVersion: lockfileEntry?.resources?.runtimeVersion,
+              runtimeUrl: lockfileEntry
+                ? getGatewayUrl(lockfileEntry)
+                : undefined,
+              cloudAssistantId: lockfileEntry?.cloudAssistantId,
+              isActiveLockfileAssistant: lockfileEntry
+                ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
+                  assistant.id
+                : undefined,
             },
           ],
         };
@@ -346,48 +349,6 @@ function reconcileSelection(
 export const useResolvedAssistantsStore = createSelectors(
   useResolvedAssistantsStoreBase,
 );
-
-/**
- * Classification for an API-shaped entry: the API's `is_local` is the
- * renderer's whole display classification — pairedness is a connection fact
- * the app bundle manages, not an assistant fact.
- */
-function classifyApiEntry(
-  isLocalFromApi: boolean,
-): Pick<ResolvedAssistant, "isLocal" | "isCloudHosted"> {
-  return {
-    isLocal: isLocalFromApi,
-    isCloudHosted: !isLocalFromApi,
-  };
-}
-
-function getLockfileFields(assistantId: string): {
-  cloud?: string;
-  organizationId?: string;
-  onboardedAt?: string;
-  runtimeVersion?: string;
-  runtimeUrl?: string;
-  cloudAssistantId?: string;
-  isActiveLockfileAssistant?: boolean;
-} {
-  const lockfile = getServedLockfile();
-  const entry = lockfile.assistants.find((a) => a.assistantId === assistantId);
-  const activeLockfileAssistantId =
-    getEffectiveActiveLockfileAssistantId(lockfile);
-  return {
-    cloud: entry?.cloud,
-    // The renderer-safe lockfile contract carries the org under its
-    // cloud-spelled registration field.
-    organizationId: entry?.cloudOrganizationId,
-    onboardedAt: entry?.onboardedAt,
-    runtimeVersion: entry?.resources?.runtimeVersion,
-    runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
-    cloudAssistantId: entry?.cloudAssistantId,
-    isActiveLockfileAssistant: lockfile
-      ? activeLockfileAssistantId === assistantId
-      : undefined,
-  };
-}
 
 function getEffectiveActiveLockfileAssistantId(
   lockfile: Lockfile,

@@ -5,10 +5,9 @@
  * The web app holds exactly one active assistant at a time
  * (`useAssistantLifecycle` is global, `assistantId` is `string | null`),
  * so a single module-level connection slot is sufficient — no per-id
- * registry, no lifecycle table. The lifecycle hook calls
- * `setSelfHostedConnection({url, token})` when an assistant resolves to
- * `{ kind: "self_hosted" }`, and `setSelfHostedConnection(null)` when it
- * leaves that state (or transitions to `active`).
+ * registry, no lifecycle table. The app's session machinery owns the
+ * writes: `setSelfHostedConnection({url, token})` when a self-hosted
+ * session resolves, `setSelfHostedConnection(null)` when it leaves.
  *
  * The HeyAPI request interceptor reads the two slots independently:
  *   - `getSelfHostedIngressUrl()` to decide whether to rewrite a

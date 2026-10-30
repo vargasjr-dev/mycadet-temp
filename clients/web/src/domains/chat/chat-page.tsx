@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantResolution } from "@/assistant/queries";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { Button } from "@mycadet/design-library";
@@ -29,6 +30,7 @@ export function ChatPage() {
   const { t } = useTranslation("chat");
   const { state: assistantState, refetch: refetchAssistantResolution } =
     useAssistantResolution();
+  const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const shouldRenderChat = assistantStateCanServeChat(assistantState.kind);
 
@@ -130,7 +132,11 @@ export function ChatPage() {
   // Self-hosted runtime call failed — land on a terminal error state with a
   // retry button instead of leaving the sidebar + transcript stuck in the
   // seeded `isLoadingHistory` skeleton.
-  if (assistantState.kind === "self_hosted" && conversationListIsError) {
+  if (
+    assistantState.kind === "active" &&
+    activeAssistantIsSelfHosted &&
+    conversationListIsError
+  ) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-[var(--content-secondary)]">

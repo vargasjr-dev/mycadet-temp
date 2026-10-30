@@ -1,3 +1,4 @@
+
 import { createRequire } from "node:module";
 
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";

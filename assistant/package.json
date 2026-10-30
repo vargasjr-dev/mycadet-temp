@@ -34,7 +34,6 @@
     "test:stable": "EXCLUDE_EXPERIMENTAL=true bun run scripts/run-tests.ts",
     "test:bench": "find src -type f -name '*.benchmark.test.ts' -print0 | xargs -0 -P 1 -I {} bun test {}",
     "test:filesystem-tools": "bash scripts/test-filesystem-tools.sh",
-    "postinstall": "bun run scripts/postinstall.ts",
     "lint:skills": "bun ../scripts/skills/lint-skill-spec.mjs --dir src/config/bundled-skills --allow-tools-json",
     "lint:openapi": "bun run generate:openapi -- --check"
   },

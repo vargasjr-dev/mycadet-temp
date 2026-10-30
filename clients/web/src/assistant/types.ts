@@ -16,8 +16,7 @@ export type AssistantResolutionState =
   | { kind: "loading" }
   | { kind: "initializing" }
   | { kind: "cleaning_up" }
-  | { kind: "self_hosted" }
-  | { kind: "active"; isLocal: boolean }
+  | { kind: "active" }
   | { kind: "auto_hatch" }
   | {
       kind: "error";

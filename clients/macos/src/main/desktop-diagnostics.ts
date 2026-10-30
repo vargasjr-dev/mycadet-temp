@@ -10,7 +10,7 @@ import {
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
-import { getVersionInfo } from "./about.client";
+import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { getInstallLocation } from "./install-location";
 import { handle, on } from "./ipc";
 import { getLogFilePaths } from "./logger";

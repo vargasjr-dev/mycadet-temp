@@ -1760,6 +1760,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // tunnel is re-established and the URL is saved again.
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
+      assistantId: entry.assistantId,
     });
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
       TAILNET_URL,

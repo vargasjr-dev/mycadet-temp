@@ -31,9 +31,6 @@ import {
 } from "@/assistant/selection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
-  setSelfHostedConnection,
-} from "@/lib/self-hosted/connection";
-import {
   getLocalAssistants,
   isServedGatewayRuntime,
   isLocalClient,
@@ -105,7 +102,7 @@ export function assistantQueryKey(
     : ASSISTANT_QUERY_KEY;
 }
 
-/** The selection, unless it names a lockfile-only LOCAL assistant (gateway-based, never registered on the cloud — `getAssistant(id)` would 404). Managed AND platform self-hosted (API `is_local`) assistants ARE valid there — `projectAssistantResult` handles the self-hosted response — and a pre-hydration unknown id passes through for the 404 net. */
+/** The selection, unless it names a lockfile-only LOCAL assistant (gateway-based, never registered on the cloud — `getAssistant(id)` would 404). Managed AND platform assistants ARE valid there — `projectAssistantResult` projects the response — and a pre-hydration unknown id passes through for the 404 net. */
 function toCloudAssistantId(resolvedSelectionId: string | null): string | null {
   return resolvedSelectionId &&
     !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
@@ -122,25 +119,13 @@ function resolveSelectedCloudAssistantId(): string | null {
 }
 
 /**
- * Fetch a fresh `/assistant/` resolution and project it.
- * resolved-assistants record + active id, and the self-hosted connection
- * slots the request interceptor consults.
- *
- * A cloud-active resolution drops any stale self-hosted connection (runtime
- * calls belong on the cloud); a self-hosted one records the user's gateway +
- * actor token so runtime-proxied calls rewrite to the gateway.
+ * Fetch a fresh `/assistant/` resolution and project it onto the
+ * resolved-assistants store. Auth is handled app side, not web — the
+ * connection slots are owned by the app's own session machinery.
  */
 function projectAssistantResult(result: GetAssistantResult): void {
   if (!result.ok) {
     return;
-  }
-  if (result.data.is_local) {
-    setSelfHostedConnection({
-      url: result.data.ingress_url,
-      token: result.data.platform_actor_token,
-    });
-  } else {
-    setSelfHostedConnection(null);
   }
   const store = useResolvedAssistantsStore.getState();
   store.upsertFromApi(result.data);
@@ -210,7 +195,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
       isServedGatewayRuntime() ||
       (isLocalClient() && getActiveAssistant() != null)
     ) {
-      return { kind: "active", isLocal: true };
+      return { kind: "active" };
     }
     if (query.isPending) {
       return { kind: "loading" };

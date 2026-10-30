@@ -12,7 +12,7 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
  * Layout route that defers rendering of its child `<Outlet />` until
  * the assistant lifecycle has resolved: the selection store has a
  * non-null `activeAssistantId` AND the lifecycle store reports
- * `assistantState.kind` is `"active"` or `"self_hosted"`. Until both
+ * `assistantState.kind` is `"active"`. Until both
  * are true a placeholder is rendered.
  *
  * Without this gate, every route that reads `activeAssistantId` from
@@ -42,10 +42,7 @@ export function ActiveAssistantGate() {
     return <ActiveAssistantError message={assistantState.message} />;
   }
 
-  if (
-    !assistantId ||
-    (assistantState.kind !== "active" && assistantState.kind !== "self_hosted")
-  ) {
+  if (!assistantId || assistantState.kind !== "active") {
     return <ActiveAssistantPlaceholder />;
   }
 

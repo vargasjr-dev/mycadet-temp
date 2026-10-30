@@ -8,8 +8,7 @@
  * delete, list, bulk-set) plus the cloud-credential update handshake.
  *
  * This module re-exports the public API surface. For the entrypoint see
- * `main.ts` — unified for both local (bare-metal sibling) and managed
- * (Kubernetes sidecar) modes, selected by `getCesMode()`.
+ * `main.ts`.
  */
 
 export { CesRpcServer, createCesServer } from "./server.js";
@@ -22,8 +21,6 @@ export type {
 
 export {
   getCesDataRoot,
-  getCesMode,
   getBootstrapSocketPath,
   getHealthPort,
 } from "./paths.js";
-export type { CesMode } from "./paths.js";

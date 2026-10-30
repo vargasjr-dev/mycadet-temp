@@ -30,6 +30,22 @@ function setResolutionState(next: AssistantResolutionState) {
   }
 }
 
+
+/**
+ * The hosting answer lives on the lockfile entry's remote field, not the
+ * resolution kind. A local stamp synthesizes a self-hosted entry for the
+ * active id; the cloud world (no assistantId) synthesizes none, so the
+ * active row reads cloud-hosted.
+ */
+function setHosting(kind: "local" | "cloud") {
+  if (kind === "local") {
+    window.__CADET_CONFIG__ = { remote: "local", assistantId: "asst-local" };
+    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-local" });
+  } else {
+    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
+  }
+}
+
 mock.module("@/assistant/queries", () => ({
   useAssistantResolution: () =>
     ({
@@ -178,7 +194,7 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  setResolutionState({ kind: "active", isLocal: false });
+  setResolutionState({ kind: "active" });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
@@ -226,7 +242,8 @@ describe("document navigation header handoff", () => {
     "keeps navigation before the document host mounts during %s",
     (guard) => {
       if (guard.startsWith("self-hosted")) {
-        setResolutionState({ kind: "self_hosted" });
+        setResolutionState({ kind: "active" });
+        setHosting("local");
       }
       if (guard === "self-hosted-error") {
         conversationListError = true;
@@ -261,7 +278,7 @@ describe("document navigation header handoff", () => {
         screen.getByRole("button", { name: "Open navigation" }),
       ).toBeTruthy();
       act(() => {
-        setResolutionState({ kind: "active", isLocal: false });
+        setResolutionState({ kind: "active" });
       });
       expect(
         Boolean(screen.queryByRole("button", { name: "Open navigation" })),

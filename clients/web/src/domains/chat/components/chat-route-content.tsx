@@ -138,6 +138,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 import { cmdEnterToSend } from "@/utils/composer-settings";
 import { routes } from "@/utils/routes";
 import { useAssistantResolution } from "@/assistant/queries";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
@@ -361,6 +362,7 @@ export function ChatMainPanel({
     [assistantId],
   );
   const { state: assistantState } = useAssistantResolution();
+  const activeAssistantIsCloudHosted = useActiveAssistantIsCloudHosted();
   const assistantName = useAssistantIdentityStore.use.name();
   // -------------------------------------------------------------------------
   // Store reads — per-conversation state
@@ -731,7 +733,7 @@ export function ChatMainPanel({
     !isAssistantBusy;
 
   const showDoctorAction =
-    assistantState.kind === "active" && !assistantState.isLocal;
+    assistantState.kind === "active" && activeAssistantIsCloudHosted;
   const doctorAction = showDoctorAction ? (
     <Button asChild variant="outlined" size="compact">
       <Link to={`${routes.settings.debug}?tab=doctor`}>

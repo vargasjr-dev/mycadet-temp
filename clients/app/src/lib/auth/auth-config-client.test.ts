@@ -48,7 +48,7 @@ test("Electron configuration uses the host cloud origin and current session toke
   });
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
-    value: { cloudUrl: "https://cloud.example.com" },
+    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockImplementation(
     Object.assign(
@@ -58,8 +58,10 @@ test("Electron configuration uses the host cloud origin and current session toke
     ),
   );
   expect((await getAuthConfig()).ok).toBe(true);
+  // Same-origin for the bridge too: the Electron page origin serves
+  // /_allauth through the shell's own cloud forward.
   expect(fetchSpy.mock.calls[0]?.[0]).toBe(
-    "https://cloud.example.com/_allauth/app/v1/config",
+    `${window.location.protocol}//${window.location.host}/_allauth/app/v1/config`,
   );
   expect(
     new Headers(fetchSpy.mock.calls[0]?.[1]?.headers).get("X-Session-Token"),

@@ -235,7 +235,7 @@ mock.module("@mycadet/electron-desktop/settings", () => ({
   onSettingChange: () => () => {},
 }));
 
-mock.module("./about.client", () => ({
+mock.module("@mycadet/electron-desktop/about", () => ({
   openAboutWindow: mock(() => undefined),
 }));
 

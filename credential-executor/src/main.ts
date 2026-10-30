@@ -1,20 +1,15 @@
 #!/usr/bin/env bun
 /**
- * CES (Credential Execution Service) entrypoint — unified for both
- * local (bare-metal sibling) and managed (Kubernetes sidecar) modes.
+ * CES (Credential Execution Service) entrypoint.
  *
- * Mode is determined by `getCesMode()` from `paths.ts`:
- * - `CES_MODE=managed` (set in the Dockerfile / K8s statefulset) → managed mode
- * - absent or any other value → local mode (bare-metal sibling)
- *
- * Both modes serve credential CRUD RPC over a Unix socket using a concurrent
+ * Serves credential CRUD RPC over a Unix socket using a concurrent
  * multi-connection server (`serveStandaloneSocket`). Each connection gets its
  * own `CesRpcServer` over a shared, process-scoped handler registry. The server
  * stays listening across connections, so an assistant that disconnects (crash,
  * restart) can reconnect without CES re-binding.
  *
- * Managed mode additionally starts a health HTTP server (`/healthz`, `/readyz`,
- * optional credential CRUD routes) for Kubernetes liveness/readiness probes.
+ * Also starts a health HTTP server (`/healthz`, `/readyz`, optional credential
+ * CRUD routes) for liveness/readiness probes.
  */
 
 import { mkdirSync } from "node:fs";
@@ -39,10 +34,8 @@ import {
   getBootstrapSocketPath,
   getCesDataRoot,
   getCesLogDir,
-  getCesMode,
   getHealthPort,
   getSecurityDir,
-  type CesMode,
 } from "./paths.js";
 import { CesRpcServer, type RpcHandlerRegistry } from "./server.js";
 import {
@@ -68,8 +61,8 @@ const log = getLogger("main");
 // Data directory bootstrap
 // ---------------------------------------------------------------------------
 
-function ensureDataDirs(mode: CesMode): void {
-  mkdirSync(getCesDataRoot(mode), { recursive: true });
+function ensureDataDirs(): void {
+  mkdirSync(getCesDataRoot(), { recursive: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -80,9 +73,7 @@ function ensureDataDirs(mode: CesMode): void {
  * Build the RPC handler registry. CES serves credential CRUD (get / set /
  * delete / list / bulk-set) backed by the secure key store. The
  * `update_managed_credential` handler is registered separately by the RPC
- * server when an `onApiKeyUpdate` callback is supplied. Local and managed modes
- * share the same registry — they differ only in where the secure key backend
- * reads from and whether the health server is started.
+ * server when an `onApiKeyUpdate` callback is supplied.
  */
 export function buildCrudHandlers(
   secureKeyBackend: SecureKeyBackend,
@@ -237,7 +228,7 @@ function serveStandaloneSocket(opts: {
 }
 
 // ---------------------------------------------------------------------------
-// Health server (managed mode only)
+// Health server
 // ---------------------------------------------------------------------------
 
 let connectionCount = 0;
@@ -305,7 +296,7 @@ function startHealthServer(
           // Log export route
           const logExportResponse = await handleLogExportRoute(
             req,
-            getCesLogDir("managed"),
+            getCesLogDir(),
           );
           if (logExportResponse) return logExportResponse;
 
@@ -332,14 +323,11 @@ function startHealthServer(
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const mode = getCesMode();
-  ensureDataDirs(mode);
+  ensureDataDirs();
 
-  initLogger({ dir: getCesLogDir(mode), retentionDays: 30 });
+  initLogger({ dir: getCesLogDir(), retentionDays: 30 });
 
-  log.info(
-    `Starting CES v${CES_PROTOCOL_VERSION} (${mode} mode, socket transport)`,
-  );
+  log.info(`Starting CES v${CES_PROTOCOL_VERSION} (socket transport)`);
 
   const controller = new AbortController();
 
@@ -357,13 +345,13 @@ async function main(): Promise<void> {
   const secureKeyBackend = createLocalSecureKeyBackend(getSecurityDir());
 
   await runCesMigrations(
-    getCesDataRoot(mode),
+    getCesDataRoot(),
     secureKeyBackend,
     CES_MIGRATIONS,
   );
-  log.info(`CES ${mode} startup: migrations complete`);
+  log.info("CES startup: migrations complete");
 
-  initMetadataStore(getCesDataRoot(mode));
+  initMetadataStore(getCesDataRoot());
 
   // -- Build handlers --------------------------------------------------------
   // The per-connection session ID lives in each CesRpcServer's SessionContext;
@@ -374,25 +362,23 @@ async function main(): Promise<void> {
     ...buildRecordHandlers(),
   };
 
-  // -- Health server (managed only) -----------------------------------------
-  if (mode === "managed") {
-    const serviceToken = process.env["CES_SERVICE_TOKEN"] ?? "";
-    let credentialDeps: CredentialRouteDeps | null = null;
+  // -- Health server ----------------------------------------------------------
+  const serviceToken = process.env["CES_SERVICE_TOKEN"] ?? "";
+  let credentialDeps: CredentialRouteDeps | null = null;
 
-    if (serviceToken) {
-      credentialDeps = { backend: secureKeyBackend, serviceToken };
-      log.info("Credential CRUD routes enabled (CES_SERVICE_TOKEN configured)");
-    } else {
-      log.warn(
-        "CES_SERVICE_TOKEN not set — credential CRUD HTTP routes are disabled. " +
-          "Set CES_SERVICE_TOKEN to enable credential management over HTTP.",
-      );
-    }
-
-    const healthPort = getHealthPort();
-    startHealthServer(healthPort, controller.signal, credentialDeps);
-    log.info(`Health server listening on port ${healthPort}`);
+  if (serviceToken) {
+    credentialDeps = { backend: secureKeyBackend, serviceToken };
+    log.info("Credential CRUD routes enabled (CES_SERVICE_TOKEN configured)");
+  } else {
+    log.warn(
+      "CES_SERVICE_TOKEN not set — credential CRUD HTTP routes are disabled. " +
+        "Set CES_SERVICE_TOKEN to enable credential management over HTTP.",
+    );
   }
+
+  const healthPort = getHealthPort();
+  startHealthServer(healthPort, controller.signal, credentialDeps);
+  log.info(`Health server listening on port ${healthPort}`);
 
   // -- Socket server ---------------------------------------------------------
   const socketPath = getBootstrapSocketPath();
@@ -404,8 +390,8 @@ async function main(): Promise<void> {
     error: (msg: string, ...args: unknown[]) => rpcLog.error({ args }, msg),
   };
 
-  // Managed mode registers the `update_managed_credential` handler (via the
-  // `onApiKeyUpdate` hook) so the assistant can push its API key/ID after hatch.
+  // The `update_managed_credential` handler (via the `onApiKeyUpdate` hook)
+  // lets the assistant push its API key/ID after hatch.
   // The push is acknowledged and logged; CES stores credentials via the CRUD
   // handlers and no longer materializes platform tokens itself.
   serveStandaloneSocket({
@@ -414,23 +400,20 @@ async function main(): Promise<void> {
     signal: controller.signal,
     logger: rpcLogger,
     log,
-    onApiKeyUpdate:
-      mode === "managed"
-        ? (newKey: string, newAssistantId?: string) => {
-            // Ack-only. CES reads the durable assistant API key from the shared
-            // credential store via the CRUD handlers; this RPC just acknowledges
-            // the assistant's notification that the key rotated. The pushed
-            // value is intentionally not persisted here (length logged, never
-            // the value).
-            log.info(
-              {
-                keyBytes: newKey.length,
-                assistantIdUpdated: Boolean(newAssistantId),
-              },
-              "Acknowledged assistant API key update notification (ack only; value not stored by CES)",
-            );
-          }
-        : undefined,
+    onApiKeyUpdate: (newKey: string, newAssistantId?: string) => {
+      // Ack-only. CES reads the durable assistant API key from the shared
+      // credential store via the CRUD handlers; this RPC just acknowledges
+      // the assistant's notification that the key rotated. The pushed
+      // value is intentionally not persisted here (length logged, never
+      // the value).
+      log.info(
+        {
+          keyBytes: newKey.length,
+          assistantIdUpdated: Boolean(newAssistantId),
+        },
+        "Acknowledged assistant API key update notification (ack only; value not stored by CES)",
+      );
+    },
   });
 
   await new Promise<void>((resolve) => {
@@ -450,7 +433,7 @@ if (import.meta.main) {
     try {
       getLogger("main").fatal({ err }, "Fatal error");
     } catch {
-      process.stderr.write(`[ces-${getCesMode()}] Fatal: ${err}\n`);
+      process.stderr.write(`[ces] Fatal: ${err}\n`);
     }
     process.exit(1);
   });

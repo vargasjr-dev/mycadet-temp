@@ -25,8 +25,6 @@ globalThis.fetch = () => {
 const html = renderToString(
   createElement(AppShell, {
     location: "/admin/assistant",
-    mountPath: "/admin/assistant",
-    origin: "https://site.example.com",
     onNavigate: () => {
       throw new Error("SSR must not navigate.");
     },

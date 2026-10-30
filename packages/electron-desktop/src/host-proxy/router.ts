@@ -15,7 +15,7 @@ import {
   getGatewayUrl,
   isCloudHome,
   isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
+  isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
 
@@ -891,7 +891,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
     const gatewayUrl = getGatewayUrl(assistant);
     const isCloud =
       isCloudHome(assistant.cloud) &&
-      isUsableRuntimeUrl(gatewayUrl) &&
+      isUsableBaseUrl(gatewayUrl) &&
       hasSessionToken;
     if (!port && !isCloud) continue;
 

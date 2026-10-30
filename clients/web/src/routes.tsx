@@ -339,8 +339,8 @@ export const routeTree = [
         ErrorBoundary: RouteErrorBoundary,
         children: [
           // Settings and logs require a resolved assistant. The gate
-          // defers child rendering until the lifecycle reaches active/
-          // self_hosted, so route components can use useActiveAssistantId().
+          // defers child rendering until the lifecycle reaches active,
+          // so route components can use useActiveAssistantId().
           {
             Component: ActiveAssistantGate,
             children: [

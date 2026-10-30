@@ -20,6 +20,7 @@ export const VALID_REMOTE_HOSTS = [
   "docker",
   "custom",
   "cloud",
+  "baseten",
 ] as const;
 export type RemoteHost = (typeof VALID_REMOTE_HOSTS)[number];
 const ANSI = {
