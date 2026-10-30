@@ -44,7 +44,9 @@ export function stampBasetenDockerfile(
 ): string {
   const version = options.version.replace(/^v/, "");
   if (!version) {
-    throw new Error("Refusing to stamp the Baseten image with an empty version.");
+    throw new Error(
+      "Refusing to stamp the Baseten image with an empty version.",
+    );
   }
   const lines = dockerfile.split("\n").map((line) => {
     if (line.trim() === "ARG MYCADET_VERSION") {

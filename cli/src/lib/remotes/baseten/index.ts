@@ -5,10 +5,7 @@ import {
   createBasetenSandbox,
   pushBasetenImage,
 } from "./api.js";
-import {
-  BASETEN_IMAGE_NAME,
-  stageBasetenBuildContext,
-} from "./context.js";
+import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context.js";
 
 /**
  * The Baseten remote — `cadet hatch --remote baseten`.
@@ -75,7 +72,9 @@ export const hatchBaseten = Object.assign(
       const sandboxName = sandbox.name ?? name ?? "the sandbox";
       const sandboxUrl = sandbox.url;
       console.log("");
-      console.log(green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout));
+      console.log(
+        green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout),
+      );
       if (sandboxUrl) {
         console.log(`   URL: ${sandboxUrl}`);
       }

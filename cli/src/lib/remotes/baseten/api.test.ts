@@ -18,9 +18,7 @@ function calls(): Array<[string, RequestInit]> {
 /** The HTTP arms' spies: no installed CLI, and an API key whose exchange is mocked. */
 function httpArm() {
   process.env.BASETEN_API_KEY = "b10-key";
-  request.mockResolvedValueOnce(
-    Response.json({ token: "short-lived-token" }),
-  );
+  request.mockResolvedValueOnce(Response.json({ token: "short-lived-token" }));
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue(null),
     spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
@@ -44,13 +42,18 @@ describe("resolveBasetenToken", () => {
   test("the API key is exchanged at POST /v1/token", async () => {
     process.env.BASETEN_API_KEY = "b10-key";
     request.mockResolvedValueOnce(
-      Response.json({ token: "minted-token", expires_at: "2026-10-29T12:00:00Z" }),
+      Response.json({
+        token: "minted-token",
+        expires_at: "2026-10-29T12:00:00Z",
+      }),
     );
     const token = await resolveBasetenToken();
     expect(token).toBe("minted-token");
     const [url, init] = calls()[0];
     expect(url).toBe("https://api.baseten.co/v1/token");
-    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer b10-key");
+    expect(new Headers(init.headers).get("Authorization")).toBe(
+      "Bearer b10-key",
+    );
     expect(JSON.parse(String(init.body))).toEqual({ scopes: ["sandboxes"] });
   });
 
@@ -89,11 +92,14 @@ describe("pushBasetenImage", () => {
     const [cli, run] = httpArm();
     request
       .mockResolvedValueOnce(
-        Response.json({
-          name: "cadet",
-          status: "UPLOADING",
-          upload_url: "https://uploads.b10.run/cadet/source.zip",
-        }, { status: 202 }),
+        Response.json(
+          {
+            name: "cadet",
+            status: "UPLOADING",
+            upload_url: "https://uploads.b10.run/cadet/source.zip",
+          },
+          { status: 202 },
+        ),
       )
       .mockResolvedValueOnce(new Response(null, { status: 200 }))
       .mockResolvedValueOnce(Response.json({ status: "BUILDING" }))
@@ -195,7 +201,9 @@ describe("createBasetenSandbox", () => {
     const instances = calls().find(([url]) =>
       url.endsWith("/v1/sandboxes/instances"),
     );
-    expect(instances?.[0]).toBe("https://api.baseten.co/v1/sandboxes/instances");
+    expect(instances?.[0]).toBe(
+      "https://api.baseten.co/v1/sandboxes/instances",
+    );
     expect(JSON.parse(String(instances?.[1].body))).toEqual({
       image: "sandbox/cadet:latest",
       name: "my-cadet",

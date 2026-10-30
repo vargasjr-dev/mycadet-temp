@@ -96,16 +96,6 @@ export const InjectedConfigSchema = z.object({
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
 
 /**
- * What a host stamps into a served document before parsing is in play: the
- * recorded `remote` may be omitted outright (the schema's parse-time
- * default answers for it) — the edge stamps the truthful recorded kind or
- * nothing, never a served-spelling alias.
- */
-export type InjectedConfigStamp = Omit<InjectedConfig, "remote"> & {
-  remote?: Remote;
-};
-
-/**
  * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from
  * each assistant entry and from that entry's `resources`. The one redaction
  * every host runs before lockfile data crosses to the renderer — pure, no
