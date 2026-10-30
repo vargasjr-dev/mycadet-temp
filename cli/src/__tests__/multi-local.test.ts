@@ -55,13 +55,14 @@ const makeEntry = (
   id: string,
   remote: Remote = "local",
   extra?: Partial<LockfileAssistant>,
-): LockfileAssistant => ({
-  assistantId: id,
-  // The LockfileAssistant field is `cloud` — the rename happens only here,
-  // where the type forces it.
-  cloud: remote,
-  ...extra,
-});
+): LockfileAssistant =>
+  ({
+    assistantId: id,
+    // The LockfileAssistant field is `cloud` — the rename happens only here,
+    // where the type forces it.
+    cloud: remote,
+    ...extra,
+  }) as LockfileAssistant;
 
 function resetLockfile(): void {
   try {

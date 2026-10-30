@@ -516,7 +516,7 @@ describe("cadet upgrade assistant targeting", () => {
       assistantId: "quill-uuid",
       name: "Quill",
       ...overrides,
-    };
+    } as LockfileAssistant;
   }
 
   function argvFor(...positional: string[]): string[] {

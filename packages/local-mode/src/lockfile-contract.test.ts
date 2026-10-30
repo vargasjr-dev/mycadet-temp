@@ -377,7 +377,7 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+        sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
         port: 7830,
       }),
     ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
@@ -388,18 +388,19 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
+        sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
         port: 7830,
       }),
     ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
   });
 
-  test("a baseten entry without a URL or port falls through to the default loopback", () => {
-    // The hatch only records an entry once it has a URL; a URL-less record
-    // (describe missed) must not resolve to a half-built baseten address.
-    expect(
-      getGatewayUrl({ assistantId: "asst_bx", cloud: "baseten" }),
-    ).toBe(`http://127.0.0.1:${GATEWAY_PORT}`);
+  test("a baseten entry without a sandbox URL is dropped by the parse", () => {
+    // The union makes the URL and port un-omittable: a record that lost them
+    // (a describe miss) cannot survive as a half-addressable baseten entry.
+    const parsed = parseLockfile({
+      assistants: [{ assistantId: "asst_bx", cloud: "baseten", port: 7830 }],
+    });
+    expect(parsed.assistants).toEqual([]);
   });
 
   test("the schema round-trips a baseten entry's sandbox URL", () => {
@@ -410,11 +411,22 @@ describe("getGatewayUrl", () => {
           assistantId: "asst_bx",
           name: "Sandboxed",
           cloud: "baseten",
-          basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+          sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
           port: 7830,
         },
       ],
     };
     expect(parseLockfile(raw)).toEqual(raw as Lockfile);
+  });
+
+  test("an unknown cloud still parses as local", () => {
+    // The union's preprocessor routes absent and unknown topologies to the
+    // local default, so a forward-compat entry survives a downgrade.
+    const parsed = parseLockfile({
+      assistants: [{ assistantId: "asst_new", cloud: "galaxy" }],
+    });
+    expect(parsed.assistants).toEqual([
+      { assistantId: "asst_new", cloud: "local" },
+    ]);
   });
 });

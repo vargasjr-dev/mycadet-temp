@@ -49,11 +49,12 @@ function writeLockfile(data: unknown): void {
 const makeEntry = (
   id: string,
   extra?: Partial<LockfileAssistant>,
-): LockfileAssistant => ({
-  assistantId: id,
-  cloud: "local",
-  ...extra,
-});
+): LockfileAssistant =>
+  ({
+    assistantId: id,
+    cloud: "local",
+    ...extra,
+  }) as LockfileAssistant;
 
 describe("assistant-config", () => {
   beforeEach(() => {

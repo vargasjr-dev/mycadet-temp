@@ -118,12 +118,28 @@ export function getServedLockfile(): Lockfile {
   if (isCadetCloudRemote() || !assistantId) {
     return { ...EMPTY_LOCKFILE };
   }
+  const sandboxUrl = nonEmptyString(config?.sandboxUrl);
+  if (config?.remote === "baseten" && sandboxUrl && config.gatewayPort) {
+    return {
+      assistants: [
+        {
+          assistantId,
+          name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
+          cloud: "baseten",
+          sandboxUrl,
+          port: config.gatewayPort,
+          hatchedAt: "1970-01-01T00:00:00.000Z",
+        },
+      ],
+      activeAssistant: assistantId,
+    };
+  }
   return {
     assistants: [
       {
         assistantId,
         name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
-        cloud: config?.remote ?? "local",
+        cloud: config?.remote === "baseten" ? "local" : config?.remote ?? "local",
         hatchedAt: "1970-01-01T00:00:00.000Z",
         resources: { gatewayPort: 0, daemonPort: 0 },
       },

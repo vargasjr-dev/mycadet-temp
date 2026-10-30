@@ -299,7 +299,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "sbx-1",
             cloud: "baseten",
-            basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+            sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
             port: 7830,
           },
         ],

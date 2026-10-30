@@ -90,6 +90,10 @@ export const InjectedConfigSchema = z.object({
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
+  /** Serving baseten sandbox's server URL (the gateway rides `{sandboxUrl}/port/{gatewayPort}`). */
+  sandboxUrl: z.string().optional(),
+  /** Serving baseten sandbox's pinned gateway port. */
+  gatewayPort: z.number().optional(),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),
 });
@@ -256,12 +260,9 @@ function getCloudUrl(): string {
  *   recorded loopback gateway port, else the default gateway port.
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
-  // Baseten sandboxes: every client rides the sandbox API server's
-  // `/port/<PORT>/` reverse-proxy route — the gateway port is fixed at
-  // sandbox creation (the `GATEWAY_PORT` env), so the address is derivable
-  // from the entry alone.
-  if (entry.cloud === "baseten" && entry.basetenSandboxUrl && entry.port) {
-    return `${entry.basetenSandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
+  // Baseten: the gateway rides the sandbox API server's `/port/<PORT>/` route.
+  if (entry.cloud === "baseten") {
+    return `${entry.sandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
   }
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
     // Custom remotes speak TLS. Default ports elided the way a URL prints
@@ -314,36 +315,24 @@ export const ContainerInfoSchema = z.object({
 export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
 
 /**
- * The shape of one assistant entry. `assistantId` is the only
- * strictly-required field — the identity every reader looks entries up by —
- * and `cloud` always parses (absent and unknown values default to "local").
- * Strict: every field the CLI read-modify-writes is modeled, so the parse
- * drops nothing a reader needs; fields unknown to this build are accepted on
- * disk but dropped from the validated value. The renderer boundary is
- * enforced by {@link stripSensitiveFields} on the hosts, before this parse
- * runs.
+ * The shape of one assistant entry — a discriminated union on `cloud`.
+ * `assistantId` is the only strictly-required field everywhere — the identity
+ * every reader looks entries up by — and `cloud` always parses (absent and
+ * unknown values route to the "local" branch). Strict: every field the CLI
+ * read-modify-writes is modeled, so the parse drops nothing a reader needs;
+ * fields unknown to this build are accepted on disk but dropped from the
+ * validated value. The renderer boundary is enforced by
+ * {@link stripSensitiveFields} on the hosts, before this parse runs.
  */
-export const LockfileAssistantSchema = z.object({
+const ManagedAssistantSchema = z.object({
   assistantId: z.string(),
   name: z.string().optional(),
   /** Deployment topology; absent or unknown on-disk values parse as "local". */
-  cloud: RemoteSchema.catch("local"),
+  cloud: z.enum(["local", "docker", "apple-container", "cloud", "custom"]),
   /** Host address of a custom remote's gateway (cloud "custom"). */
   ipAddress: z.string().optional(),
-  /**
-   * Gateway port on a custom remote (cloud "custom"), or the
-   * sandbox-internal gateway port a Baseten sandbox's gateway listens on
-   * (cloud "baseten" — piped in as `GATEWAY_PORT` at sandbox creation so
-   * clients can address `{basetenSandboxUrl}/port/{port}` a priori).
-   */
+  /** Gateway port on a custom remote (cloud "custom"). */
   port: z.number().optional(),
-  /**
-   * The Baseten sandbox server URL (cloud "baseten") — the address every
-   * client hits; the assistant's gateway is reached at
-   * `{basetenSandboxUrl}/port/{port}/` with the sandbox access token the
-   * hatch saved beside the lockfile (see `basetenTokenPath`). Not a secret.
-   */
-  basetenSandboxUrl: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that
@@ -381,9 +370,41 @@ export const LockfileAssistantSchema = z.object({
 });
 
 /**
- * A validated, normalized assistant entry. `cloud` is always present (the
- * schema's `catch` defaults absent and unknown on-disk values to "local"), so
- * readers never special-case its absence.
+ * A Baseten sandbox entry: the sandbox server URL and the sandbox-internal
+ * gateway port are pinned at creation, so every reader can address
+ * `{sandboxUrl}/port/{port}` without a fallback.
+ */
+const BasetenAssistantSchema = ManagedAssistantSchema.extend({
+  cloud: z.literal("baseten"),
+  /** The Baseten sandbox server URL; the gateway rides `{sandboxUrl}/port/{port}`. */
+  sandboxUrl: z.string(),
+  /** The sandbox-internal gateway port, piped in as `GATEWAY_PORT` at creation. */
+  port: z.number(),
+});
+
+/**
+ * Route absent and unknown topology values to the local default before the
+ * union discriminates, keeping the on-disk contract permissive about clouds
+ * this build has never heard of.
+ */
+function withDefaultCloud(entry: unknown): unknown {
+  if (typeof entry !== "object" || entry === null) return entry;
+  const cloud = "cloud" in entry ? entry.cloud : undefined;
+  if (typeof cloud === "string" && RemoteSchema.safeParse(cloud).success) {
+    return entry;
+  }
+  return { ...entry, cloud: "local" };
+}
+
+export const LockfileAssistantSchema = z.preprocess(
+  withDefaultCloud,
+  z.discriminatedUnion("cloud", [BasetenAssistantSchema, ManagedAssistantSchema]),
+);
+
+/**
+ * A validated, normalized assistant entry — a discriminated union on
+ * `cloud`, so a baseten entry's `sandboxUrl`/`port` are always defined and
+ * every other topology reads as before.
  */
 export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
 

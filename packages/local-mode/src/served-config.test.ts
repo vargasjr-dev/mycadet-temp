@@ -24,8 +24,27 @@ describe("servedConfigFromLockfile", () => {
       assistantId: "active",
       assistantName: "Example Assistant",
       remote: "docker",
+      sandboxUrl: undefined,
+      gatewayPort: undefined,
     });
     expect(lockfile.assistants[1]?.bearerToken).toBe("example-host-token");
+  });
+
+  test("a baseten active entry stamps its sandbox serving identity", () => {
+    const config = servedConfigFromLockfile({
+      assistants: [
+        {
+          assistantId: "asst_bx",
+          name: "Sandboxed",
+          cloud: "baseten",
+          sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+          port: 7830,
+        },
+      ],
+      activeAssistant: "asst_bx",
+    });
+    expect(config.sandboxUrl).toBe("https://sbx-name-abc123.us-pdx-1.b10.co");
+    expect(config.gatewayPort).toBe(7830);
   });
 
   test("uses the sole entry when no active entry matches", () => {

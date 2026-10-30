@@ -61,6 +61,7 @@ export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
 export {
   GATEWAY_PORT,
+  getGatewayUrl,
   getLoopbackGatewayPort,
   LockfileAssistantSchema,
   parseLockfile,
@@ -126,7 +127,6 @@ export {
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,
-  isBasetenAssistant,
 } from "./guardian-token";
 export type {
   TokenResult,

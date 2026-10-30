@@ -190,16 +190,16 @@ function patchLockfileAssistantIfPresent(
     if (converged) {
       return { ok: true, lockfile };
     }
-    assistants[idx] = { ...entry, ...patch };
+    assistants[idx] = { ...entry, ...patch } as LockfileAssistant;
     lockfile.assistants = assistants;
     return writeRawLockfile(lockfile);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
-export type LockfileAssistantPatch = {
-  [K in keyof LockfileAssistant]?: LockfileAssistant[K] | undefined;
-};
+/** A partial entry patch, distributed over the union so each topology's own fields patch. */
+type AssistantPatch<T> = { [K in keyof T]?: T[K] | undefined };
+export type LockfileAssistantPatch = AssistantPatch<LockfileAssistant>;
 
 export function saveLockfileAssistant(
   assistant: LockfileAssistantPatch,

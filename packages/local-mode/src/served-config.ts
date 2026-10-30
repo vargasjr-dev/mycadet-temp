@@ -11,5 +11,9 @@ export function servedConfigFromLockfile(lockfile: Lockfile) {
     assistantId: served?.assistantId,
     assistantName: served?.name,
     remote: served?.cloud,
+    // Baseten serving identity: the sandbox URL and its pinned gateway port,
+    // so the served bundle can address `{sandboxUrl}/port/{gatewayPort}`.
+    sandboxUrl: served?.cloud === "baseten" ? served.sandboxUrl : undefined,
+    gatewayPort: served?.cloud === "baseten" ? served.port : undefined,
   };
 }

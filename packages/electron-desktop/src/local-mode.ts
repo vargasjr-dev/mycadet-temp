@@ -3,8 +3,6 @@ import { z } from "zod";
 import {
   getGuardianAccessToken,
   getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
-  isBasetenAssistant,
-  readBasetenSandboxToken,
   isActiveAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
@@ -284,12 +282,6 @@ export async function getPairedGuardianAccessToken(
   assistantId: string,
   runtimeUrl: string,
 ): Promise<TokenResult> {
-  // Baseten sandboxes read the token file the hatch saved — no CLI runtime
-  // resolution, no lease; the shared seam does the same branch, but the
-  // invocation must not be a prerequisite for it.
-  if (isBasetenAssistant(assistantId)) {
-    return readBasetenSandboxToken(assistantId);
-  }
   let invocation: CliInvocation;
   try {
     invocation = await requireRuntime().cli.resolveInvocation();

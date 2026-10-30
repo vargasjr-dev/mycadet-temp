@@ -3,6 +3,7 @@ import { green } from "../../color.js";
 import { PROVIDER_ENV_VAR_NAMES } from "../../../shared/provider-env-vars.js";
 import {
   GATEWAY_PORT,
+  getGatewayUrl,
   readLockfile,
   saveBasetenSandboxToken,
   saveLockfileAssistant,
@@ -66,28 +67,27 @@ function sandboxGatewayEnvs() {
  * (and its token file) rather than orphaning the old record. The token is
  * minted from BASETEN_API_KEY; without one (the installed-CLI arm needs no
  * key) the URL still records — the proxy reports the missing token
- * per-request until a re-hatch saves it.
+ * per-request until a re-hatch saves it. Returns the entry's derived gateway
+ * URL (the one the lockfile now records).
  */
 async function recordSandbox(params: {
   name: string;
   sandboxUrl: string | undefined;
   gatewayPort: number;
-}): Promise<void> {
+}): Promise<string | undefined> {
   const assistantId =
     readLockfile().assistants.find(
       (a) => a.cloud === "baseten" && a.name === params.name,
     )?.assistantId ?? randomUUID();
-  saveLockfileAssistant(
-    {
-      assistantId,
-      name: params.name,
-      cloud: "baseten",
-      ...(params.sandboxUrl ? { basetenSandboxUrl: params.sandboxUrl } : {}),
-      port: params.gatewayPort,
-      hatchedAt: new Date().toISOString(),
-    },
+  const entry = {
     assistantId,
-  );
+    name: params.name,
+    cloud: "baseten" as const,
+    sandboxUrl: params.sandboxUrl,
+    port: params.gatewayPort,
+    hatchedAt: new Date().toISOString(),
+  };
+  saveLockfileAssistant(entry, assistantId);
   try {
     saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
   } catch (err) {
@@ -98,6 +98,9 @@ async function recordSandbox(params: {
       "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
     );
   }
+  return params.sandboxUrl
+    ? getGatewayUrl({ ...entry, sandboxUrl: params.sandboxUrl })
+    : undefined;
 }
 
 export type HatchBasetenParams = {
@@ -137,10 +140,11 @@ export const hatchBaseten = Object.assign(
 
       const sandboxName = sandbox.name ?? name ?? "the sandbox";
       const sandboxUrl = sandbox.url;
+      let gatewayUrl: string | undefined;
       if (sandboxUrl) {
         // The gateway's port was pinned at creation, so the sandbox is
         // reachable the moment its gateway is up.
-        await recordSandbox({
+        gatewayUrl = await recordSandbox({
           name: sandboxName,
           sandboxUrl,
           gatewayPort: GATEWAY_PORT,
@@ -154,9 +158,9 @@ export const hatchBaseten = Object.assign(
       console.log(green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout));
       if (sandboxUrl) {
         console.log(`   URL: ${sandboxUrl}`);
-        console.log(
-          `   Assistant gateway: ${sandboxUrl.replace(/\/+$/, "")}/port/${GATEWAY_PORT}/`,
-        );
+        if (gatewayUrl) {
+          console.log(`   Assistant gateway: ${gatewayUrl}/`);
+        }
       }
       console.log(
         `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,

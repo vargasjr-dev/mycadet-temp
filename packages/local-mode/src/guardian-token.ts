@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+import { z } from "zod";
+
 import {
   isDnsIndependentLoopbackUrl,
   isLoopbackPublicUrl,
@@ -71,6 +73,12 @@ export function saveBasetenSandboxToken(
   fs.chmodSync(tokenPath, 0o600);
 }
 
+/** The token file the hatch writes: the sandbox access token plus mint bookkeeping. */
+const BasetenTokenFileSchema = z.object({
+  token: z.string().min(1),
+  mintedAt: z.string().optional(),
+});
+
 /**
  * Read a saved Baseten sandbox access token. TokenResult-shaped so it drops
  * straight into the paired-forward credential seam: a missing or corrupt
@@ -78,11 +86,11 @@ export function saveBasetenSandboxToken(
  */
 export function readBasetenSandboxToken(assistantId: string): TokenResult {
   try {
-    const raw = JSON.parse(
-      fs.readFileSync(basetenTokenPath(assistantId), "utf-8"),
-    ) as { token?: unknown };
-    if (typeof raw.token === "string" && raw.token) {
-      return { ok: true, accessToken: raw.token };
+    const parsed = BasetenTokenFileSchema.safeParse(
+      JSON.parse(fs.readFileSync(basetenTokenPath(assistantId), "utf-8")),
+    );
+    if (parsed.success) {
+      return { ok: true, accessToken: parsed.data.token };
     }
     return {
       ok: false,
@@ -337,10 +345,9 @@ export function getGuardianAccessToken(
 /**
  * Whether the lockfile records this assistant on the Baseten topology —
  * the proxy's credential seam branches on it (sandbox access token file,
- * not a leased guardian bearer). Exported so host wrappers can skip their
- * CLI-runtime resolution before delegating to the shared seam.
+ * not a leased guardian bearer).
  */
-export function isBasetenAssistant(assistantId: string): boolean {
+function isBasetenAssistant(assistantId: string): boolean {
   return (
     readLockfile().assistants.find((a) => a.assistantId === assistantId)
       ?.cloud === "baseten"
