@@ -1478,7 +1478,7 @@ jobs:
           cd meta
           jq --arg v "$VERSION" '
             .version = $v |
-            .bin = { "cadet-dev": .bin.cadet, "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
+            .bin = { "cadet-dev": .bin.cadet, "cadet": .bin.cadet, "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
             .dependencies["@mycadet/app"] = $v |
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |

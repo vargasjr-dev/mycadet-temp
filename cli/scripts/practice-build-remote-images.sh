@@ -30,4 +30,5 @@ for dockerfile in "${dockerfiles[@]}"; do
   staged=$(bun cli/scripts/stage-remote-image-context.ts --remote "${remote}")
   sed -i "s/^ARG MYCADET_VERSION=.*/ARG MYCADET_VERSION=\"${published}\"/" "${staged}/Dockerfile"
   docker build -t "cadet-remote-practice:${remote}" "${staged}"
+  rm -rf "${staged}"
 done

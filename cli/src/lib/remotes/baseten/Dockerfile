@@ -28,6 +28,11 @@ RUN apt-get update \
 # Bun — the version the release pipeline pins (see .github/workflows/release.yml).
 RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash -s "bun-v1.3.11"
 
+# `bun add -g` drops package bins (cadet, gateway, ...) into bun's global bin
+# dir, which is not on PATH by default — later build steps and the sandbox
+# runtime both need it.
+ENV PATH="/root/.bun/bin:${PATH}"
+
 # Baseten requires the sandbox API server in every image; the entrypoint
 # starts it. Pinned to the digest current at authoring time — re-pin
 # deliberately when refreshing the image.
