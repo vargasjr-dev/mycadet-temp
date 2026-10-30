@@ -6,15 +6,18 @@ import { capacitorInjectedConfig, injectedConfigScript } from "./stamp";
 
 describe("capacitorInjectedConfig", () => {
   // The house env pattern: snapshot the keys the stamp reads, restore
-  // afterwards. The lockfile dir points at an empty temp dir by default so
-  // the local stamp deterministically falls to the seed default.
-  const KEYS = [
-    "CADET_ENVIRONMENT",
-    "CADET_LOCKFILE_DIR",
-    "XDG_CONFIG_HOME",
-  ] as const;
+  // afterwards. The config home points at an empty temp dir pinned to the
+  // local environment, so the local stamp deterministically falls to the
+  // seed default (the lockfile path resolves from XDG_CONFIG_HOME +
+  // CADET_ENVIRONMENT — CADET_LOCKFILE_DIR has never existed).
+  const KEYS = ["CADET_ENVIRONMENT", "XDG_CONFIG_HOME"] as const;
   const saved: Record<string, string | undefined> = {};
   let emptyDir: string;
+
+  function writeLockfile(content: string): void {
+    mkdirSync(join(emptyDir, "cadet-local"), { recursive: true });
+    writeFileSync(join(emptyDir, "cadet-local", "lockfile.json"), content);
+  }
 
   beforeEach(() => {
     for (const key of KEYS) {
@@ -22,7 +25,8 @@ describe("capacitorInjectedConfig", () => {
       delete process.env[key];
     }
     emptyDir = mkdtempSync(join(tmpdir(), "cadet-stamp-empty-"));
-    process.env.CADET_LOCKFILE_DIR = emptyDir;
+    process.env.XDG_CONFIG_HOME = emptyDir;
+    process.env.CADET_ENVIRONMENT = "local";
   });
 
   afterEach(() => {
@@ -94,7 +98,7 @@ describe("capacitorInjectedConfig", () => {
         activeAssistant: null,
       }),
     );
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.CADET_ENVIRONMENT;
     process.env.XDG_CONFIG_HOME = configHome;
     try {
       expect(capacitorInjectedConfig()).toEqual({
@@ -125,12 +129,6 @@ describe("capacitorInjectedConfig", () => {
   });
 });
 
-function writeLockfile(content: string): void {
-  writeFileSync(
-    join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
-    content,
-  );
-}
 
 describe("injectedConfigScript", () => {
   // The script resolves the config itself — the local arm's lockfile is
@@ -138,14 +136,19 @@ describe("injectedConfigScript", () => {
   // above.
   let dir: string;
 
+  function writeLockfile(content: string): void {
+    mkdirSync(join(dir, "cadet-local"), { recursive: true });
+    writeFileSync(join(dir, "cadet-local", "lockfile.json"), content);
+  }
+
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "cadet-stamp-escape-"));
-    process.env.CADET_LOCKFILE_DIR = dir;
+    process.env.XDG_CONFIG_HOME = dir;
     process.env.CADET_ENVIRONMENT = "local";
   });
 
   afterEach(() => {
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
     delete process.env.CADET_ENVIRONMENT;
     rmSync(dir, { recursive: true, force: true });
   });

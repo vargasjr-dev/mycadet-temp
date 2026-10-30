@@ -1,10 +1,9 @@
 import { getElectronBridge } from "@app/runtime/electron-bridge";
 
 /**
- * Browser clients use their same-origin proxy. The native bridge has no
- * origin to serve `/v1` at, so it dials the stamped base directly — the
- * same-origin-vs-stamped distinction lives in the shells' proxy layers,
- * not here.
+ * Same origin for both shapes: browsers ride their origin's `/v1` proxy,
+ * and the Electron page origin serves `/_allauth` through the shell's own
+ * cloud forward — the same-origin rule holds for the bridge too.
  */
 export function authEndpoint(path: string): string {
   if (!getElectronBridge()) return `/_allauth/browser/v1/${path}`;
