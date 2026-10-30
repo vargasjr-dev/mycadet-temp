@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { connectCloudAssistant } from "@/assistant/connect-assistant";
+import { setSelectedAssistant } from "@/assistant/selection";
 import { useAssistantResolution } from "@/assistant/queries";
 import type { AssistantResolutionState } from "@/assistant/types";
 
@@ -157,9 +157,10 @@ export function useNotificationTapNavigation(): void {
       try {
         // Connecting to lockfile entries is app-only: the app bundle owns
         // those connections, so a tap on one just opens the thread through
-        // its owning host. Platform rows connect here.
+        // its owning host. A platform row's tap is its selection write —
+        // session-scoped server-side, answered with 401 when unauthenticated.
         if (assistant.isCloudHosted) {
-          await connectCloudAssistant(assistant.id);
+          await setSelectedAssistant(assistant.id);
         }
       } catch {
         return;

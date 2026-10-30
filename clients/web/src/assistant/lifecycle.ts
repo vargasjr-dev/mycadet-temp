@@ -63,10 +63,10 @@ export function resolveAssistantLifecycleState(
   if (result.ok) {
     const { status } = result.data;
     if (status === "active") {
-      // The server's one `active` status splits by hosting: `is_local` marks
-      // a self-hosted runtime (the cloud record is provisioned, the daemon is
-      // the runtime).
-      return result.data.is_local
+      // The server's one `active` status splits by hosting: a platform actor
+      // token marks a self-hosted runtime (the cloud record is provisioned,
+      // the daemon is the runtime).
+      return result.data.platform_actor_token
         ? { kind: "self_hosted" }
         : { kind: "active", isLocal: false };
     }

@@ -220,7 +220,6 @@ describe("upsertFromApi", () => {
         id: "asst-local",
         name: "Local",
         created: "2026-01-01T00:00:00Z",
-        is_local: true,
         current_release_version: "0.9.0",
       } as Parameters<
         ReturnType<typeof useResolvedAssistantsStore.getState>["setFromApi"]
@@ -249,7 +248,6 @@ describe("upsertFromApi", () => {
       id: "asst-platform",
       name: "Platform (refreshed)",
       created: "2026-01-01T00:00:00Z",
-      is_local: false,
       current_release_version: "0.10.0",
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
@@ -272,7 +270,6 @@ describe("upsertFromApi", () => {
       id: "paired-desk",
       name: "Desk (refreshed)",
       created: "2026-01-01T00:00:00Z",
-      is_local: false,
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
     >[0]);
@@ -280,8 +277,6 @@ describe("upsertFromApi", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
     expect(entry.cloud).toBe("custom");
-    // Pairedness is a connection fact the app bundle manages, not an
-    // assistant fact: the API's is_local owns the display classification.
     expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(true);
   });
@@ -296,7 +291,6 @@ describe("upsertFromApi", () => {
       id: "asst-local",
       name: "Local (refreshed)",
       created: "2026-01-01T00:00:00Z",
-      is_local: true,
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
     >[0]);
@@ -320,7 +314,6 @@ describe("upsertFromApi", () => {
       id: "asst-platform",
       name: "Platform (refreshed)",
       created: "2026-01-01T00:00:00Z",
-      is_local: false,
       current_release_version: "0.10.0",
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
@@ -343,7 +336,6 @@ describe("upsertFromApi", () => {
       id: "asst-local",
       name: "Local (refreshed)",
       created: "2026-01-01T00:00:00Z",
-      is_local: true,
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
     >[0]);
@@ -367,7 +359,6 @@ describe("setFromApi connectability", () => {
       id: "asst-api",
       name: "Api",
       created: "2026-01-01T00:00:00Z",
-      is_local: false,
       ingress_url: null,
       avatar_url: null,
       current_release_version: null,
@@ -456,31 +447,33 @@ describe("setFromApi connectability", () => {
     );
   });
 
-  it("drops a local registration with no ingress and no lockfile entry", () => {
+  it("reads an unknown ingress-less row as cloud-hosted and keeps it", () => {
     useResolvedAssistantsStore
       .getState()
       .setFromApi([
         apiEntry({ id: "asst-cloud" }),
-        apiEntry({ id: "asst-dead-local", is_local: true, ingress_url: null }),
+        apiEntry({ id: "asst-unknown", ingress_url: null }),
       ]);
 
     const assistants = useResolvedAssistantsStore.getState().assistants;
-    expect(assistants.map((a) => a.id)).toEqual(["asst-cloud"]);
+    expect(assistants.map((a) => a.id)).toEqual(["asst-cloud", "asst-unknown"]);
+    const unknown = assistants.find((a) => a.id === "asst-unknown");
+    expect(unknown?.isLocal).toBe(false);
+    expect(unknown?.isCloudHosted).toBe(true);
     expect(useResolvedAssistantsStore.getState().assistantsHydrated).toBe(true);
   });
 
-  it("keeps a local registration with a public ingress and carries its url", () => {
+  it("keeps a registration with a public ingress and carries its url", () => {
     useResolvedAssistantsStore.getState().setFromApi([
       apiEntry({
         id: "asst-tunneled",
-        is_local: true,
         ingress_url: "https://mac.example.com",
       }),
     ]);
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-tunneled");
-    expect(entry.isLocal).toBe(true);
+    expect(entry.isLocal).toBe(false);
     expect(entry.ingressUrl).toBe("https://mac.example.com");
   });
 
@@ -490,7 +483,7 @@ describe("setFromApi connectability", () => {
     useResolvedAssistantsStore
       .getState()
       .setFromApi([
-        apiEntry({ id: "asst-local", is_local: true, ingress_url: null }),
+        apiEntry({ id: "asst-local", ingress_url: null }),
       ]);
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
@@ -546,7 +539,6 @@ describe("selection reconcile on hydration", () => {
       id: "asst-active-org",
       name: "Active",
       created: "2026-01-01T00:00:00Z",
-      is_local: false,
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
     >[0];

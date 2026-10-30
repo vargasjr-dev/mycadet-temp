@@ -224,7 +224,8 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
               currentReleaseVersion: a.current_release_version,
               isActiveLockfileAssistant:
                 lockfileFields.isActiveLockfileAssistant,
-              ...classifyApiEntry(a.is_local),
+              isLocal: lockfileFields.isLocal,
+              isCloudHosted: lockfileFields.isCloudHosted,
             };
           })
           .filter(isConnectableFromThisDevice),
@@ -247,7 +248,8 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
           ingressUrl: assistant.ingress_url,
           avatarUrl: apiAvatarUrl(assistant),
           currentReleaseVersion: assistant.current_release_version,
-          ...classifyApiEntry(assistant.is_local),
+          isLocal: lockfileFields.isLocal,
+          isCloudHosted: lockfileFields.isCloudHosted,
         };
         if (prior) {
           const next = [...state.assistants];
@@ -347,20 +349,6 @@ export const useResolvedAssistantsStore = createSelectors(
   useResolvedAssistantsStoreBase,
 );
 
-/**
- * Classification for an API-shaped entry: the API's `is_local` is the
- * renderer's whole display classification — pairedness is a connection fact
- * the app bundle manages, not an assistant fact.
- */
-function classifyApiEntry(
-  isLocalFromApi: boolean,
-): Pick<ResolvedAssistant, "isLocal" | "isCloudHosted"> {
-  return {
-    isLocal: isLocalFromApi,
-    isCloudHosted: !isLocalFromApi,
-  };
-}
-
 function getLockfileFields(assistantId: string): {
   cloud?: string;
   organizationId?: string;
@@ -369,12 +357,20 @@ function getLockfileFields(assistantId: string): {
   runtimeUrl?: string;
   cloudAssistantId?: string;
   isActiveLockfileAssistant?: boolean;
+  isLocal: boolean;
+  isCloudHosted: boolean;
 } {
   const lockfile = getServedLockfile();
   const entry = lockfile.assistants.find((a) => a.assistantId === assistantId);
   const activeLockfileAssistantId =
     getEffectiveActiveLockfileAssistantId(lockfile);
   return {
+    // The lockfile's recorded hosting kind owns the display classification —
+    // an assistant fact. Rows with no entry exist only in the cloud-served
+    // world (the edge always synthesizes its one assistant's entry): they
+    // read cloud-hosted.
+    isLocal: entry ? isLocalAssistant(entry) : false,
+    isCloudHosted: entry ? isCloudAssistant(entry) : true,
     cloud: entry?.cloud,
     // The renderer-safe lockfile contract carries the org under its
     // cloud-spelled registration field.

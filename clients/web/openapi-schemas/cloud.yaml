@@ -5806,9 +5806,6 @@ components:
             assistant via a resize/onboarding apply. Null until storage is first applied.
             Used to derive onboarding pvc_ready and as the never-shrink floor; distinct
             from BillingAccount billing markers.
-        is_local:
-          type: boolean
-          readOnly: true
         ingress_url:
           type: string
           nullable: true
@@ -5838,7 +5835,6 @@ components:
       - handle
       - id
       - ingress_url
-      - is_local
       - machine_size
       - modified
       - platform_actor_token

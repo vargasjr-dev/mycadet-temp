@@ -73,10 +73,7 @@ export function DebugControlsPanel() {
               </p>
             </div>
             <div className="ml-4 shrink-0">
-              <RestartAssistant
-                assistantId={assistant.id}
-                isLocal={assistant.is_local}
-              />
+              <RestartAssistant assistantId={assistant.id} />
             </div>
           </div>
 

@@ -2076,15 +2076,12 @@ describe("assistant metadata API", () => {
     // entries invent nothing) and the row reads as the self-hosted
     // assistant it is.
     expect(body(conf, "/v1/assistants/")).toEqual({
-      results: [
-        { id: "assistant-1", name: "My assistant", is_local: true },
-      ],
+      results: [{ id: "assistant-1", name: "My assistant" }],
       next: null,
     });
     expect(body(conf, "/v1/assistants/assistant-1/")).toEqual({
       id: "assistant-1",
       name: "My assistant",
-      is_local: true,
       status: "active",
       version: "1.2.3",
       url: "web/assistant/",
@@ -2130,7 +2127,7 @@ describe("assistant metadata API", () => {
       },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({
-      results: [{ id: "assistant-1", is_local: true }],
+      results: [{ id: "assistant-1" }],
       next: null,
     });
     for (const path of [

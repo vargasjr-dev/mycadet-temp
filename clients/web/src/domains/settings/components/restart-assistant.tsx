@@ -37,10 +37,8 @@ async function restartLocalAssistant(
 
 export function RestartAssistant({
   assistantId,
-  isLocal,
 }: {
   assistantId: string;
-  isLocal: boolean;
 }) {
   const { t } = useTranslation("settings");
   const [restarting, setRestarting] = useState(false);
@@ -50,15 +48,13 @@ export function RestartAssistant({
     setConfirmOpen(false);
     setRestarting(true);
     try {
-      // A cloud-hosted assistant (`is_local === false`) is always restarted
-      // through the cloud API — running the local CLI sleep/wake against it
-      // would target a non-existent on-machine assistant. The CLI path is only
-      // taken for a local-kind assistant when a host is present to run it and
-      // wake operates on it. Mirrors the web-UI restart behavior.
+      // A cloud-hosted assistant is always restarted through the cloud API —
+      // running the local CLI sleep/wake against it would target a
+      // non-existent on-machine assistant. The CLI path is only taken when a
+      // host is present to run it and wake operates on the assistant.
+      // Mirrors the web-UI restart behavior.
       const isCli =
-        isLocal &&
-        isLocalModeHostAvailable() &&
-        isCliWakeableAssistant(assistantId);
+        isLocalModeHostAvailable() && isCliWakeableAssistant(assistantId);
 
       if (isCli) {
         const result = await restartLocalAssistant(

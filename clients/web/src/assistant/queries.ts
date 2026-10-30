@@ -105,7 +105,7 @@ export function assistantQueryKey(
     : ASSISTANT_QUERY_KEY;
 }
 
-/** The selection, unless it names a lockfile-only LOCAL assistant (gateway-based, never registered on the cloud — `getAssistant(id)` would 404). Managed AND platform self-hosted (API `is_local`) assistants ARE valid there — `projectAssistantResult` handles the self-hosted response — and a pre-hydration unknown id passes through for the 404 net. */
+/** The selection, unless it names a lockfile-only LOCAL assistant (gateway-based, never registered on the cloud — `getAssistant(id)` would 404). Managed AND platform self-hosted assistants ARE valid there — `projectAssistantResult` handles the self-hosted response — and a pre-hydration unknown id passes through for the 404 net. */
 function toCloudAssistantId(resolvedSelectionId: string | null): string | null {
   return resolvedSelectionId &&
     !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
@@ -128,13 +128,15 @@ function resolveSelectedCloudAssistantId(): string | null {
  *
  * A cloud-active resolution drops any stale self-hosted connection (runtime
  * calls belong on the cloud); a self-hosted one records the user's gateway +
- * actor token so runtime-proxied calls rewrite to the gateway.
+ * actor token so runtime-proxied calls rewrite to the gateway. The actor
+ * token is the discriminator: only a self-hosted platform assistant carries
+ * one.
  */
 function projectAssistantResult(result: GetAssistantResult): void {
   if (!result.ok) {
     return;
   }
-  if (result.data.is_local) {
+  if (result.data.platform_actor_token) {
     setSelfHostedConnection({
       url: result.data.ingress_url,
       token: result.data.platform_actor_token,
