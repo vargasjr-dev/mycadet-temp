@@ -49,7 +49,7 @@ function spawnStateRoot(): string {
 import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
-import { resolveDataDir } from "@mycadet/local-mode";
+import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import {
   type DaemonReadiness,
   httpHealthCheck,
@@ -1187,7 +1187,7 @@ export async function startCes(
   }
   if (!endpointReady) {
     console.warn(
-      "⚠ credential-executor started but its socket did not appear within 10s",
+      `⚠ credential-executor started but its socket did not appear within 10s — its output is logged in ${join(resolveLogDir(), "hatch.log")}`,
     );
   } else {
     startupLog("✅ credential-executor started\n");

@@ -53,6 +53,7 @@ import {
 } from "./provider-secrets.js";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { printInstanceDetails } from "./instance-details.js";
+import { reportStartupFailureDiagnostics } from "./startup-diagnostics.js";
 import { checkProviderApiKey } from "./api-key-check.js";
 import {
   describeLoginError,
@@ -340,6 +341,9 @@ export async function hatchLocal(
         `\n❌ Local assistant startup failed — stopping partial processes.`,
       );
       await stopLocalProcesses(resources);
+      // Point at the logs the attempt wrote and, on a TTY, offer to show
+      // the one the operator picks — best effort, before the error rethrows.
+      await reportStartupFailureDiagnostics(resources, { reporter });
       throw error;
     }
 
