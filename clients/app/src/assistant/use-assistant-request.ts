@@ -18,11 +18,10 @@ export type AssistantRequestState =
  */
 export function useAssistantRequest({
   apiBaseUrl = "/",
-  origin,
   assistantId,
-}: Omit<AssistantRequest, "signal">) {
+}: Omit<AssistantRequest, "signal" | "origin">) {
   const [attempt, setAttempt] = useState(0);
-  const key = JSON.stringify([apiBaseUrl, origin, assistantId, attempt]);
+  const key = JSON.stringify([apiBaseUrl, assistantId, attempt]);
   const [result, setResult] = useState<{
     key: string;
     state: AssistantRequestState;
@@ -31,6 +30,11 @@ export function useAssistantRequest({
     const controller = new AbortController();
     const settle = (state: AssistantRequestState) => setResult({ key, state });
     settle({ status: "loading" });
+    // The shell is same-origin by construction — every host (the desktop
+    // protocol, the web dev server, the cloud takeover) proxies the API at
+    // the page's own origin. Read inside the effect: SSR renders the shell
+    // without a window, and the origin is a browser fact.
+    const origin = window.location.origin;
     const timer = setTimeout(() => {
       console.error(
         `Assistant request timed out after 10s (apiBaseUrl ${apiBaseUrl}, origin ${origin}, assistantId ${assistantId ?? "none"})`,
@@ -93,7 +97,7 @@ export function useAssistantRequest({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [apiBaseUrl, origin, assistantId, attempt, key]);
+  }, [apiBaseUrl, assistantId, attempt, key]);
   const state: AssistantRequestState =
     result?.key === key ? result.state : { status: "loading" };
   return {

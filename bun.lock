@@ -272,7 +272,7 @@
     },
     "clients/linux": {
       "name": "@mycadet/linux",
-      "version": "0.0.1",
+      "version": "0.13.0",
       "dependencies": {
         "@mycadet/electron-desktop": "workspace:*",
         "@mycadet/electron-utils": "workspace:*",
@@ -299,7 +299,7 @@
     },
     "clients/macos": {
       "name": "@mycadet/macos",
-      "version": "0.0.1",
+      "version": "0.13.0",
       "dependencies": {
         "@mycadet/electron-desktop": "workspace:*",
         "@mycadet/electron-utils": "workspace:*",
@@ -447,7 +447,7 @@
     },
     "clients/windows": {
       "name": "@mycadet/windows",
-      "version": "0.0.1",
+      "version": "0.13.0",
       "dependencies": {
         "@mycadet/electron-desktop": "workspace:*",
         "@mycadet/electron-utils": "workspace:*",

@@ -69,10 +69,6 @@ function AssistantShell({
   onNavigate,
   title,
 }: AppShellProps) {
-  // The shell is same-origin by construction — every host (the desktop
-  // protocol, the web dev server, the cloud takeover) proxies the API at
-  // the page's own origin, and the frame mounts the page's own bundle.
-  const origin = window.location.origin;
   const { t } = useTranslation("account");
   // The wake flow — the user-facing recovery for the not-ready state: the
   // same drive the admin console's Wake button gets (wake the vm; a
@@ -83,7 +79,6 @@ function AssistantShell({
   const [wakeReason, setWakeReason] = useState<string | null>(null);
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
-    origin,
     assistantId,
   });
   // The tray's status logic lives with the resolution: the shell resolves the
@@ -115,7 +110,7 @@ function AssistantShell({
     setWakePending(true);
     setWakeReason(null);
     try {
-      const base = new URL(apiBaseUrl, origin);
+      const base = new URL(apiBaseUrl, window.location.origin);
       base.pathname = base.pathname.replace(/\/*$/, "/");
       const response = await fetch(
         new URL(`v1/assistants/${encodeURIComponent(assistantId)}/wake/`, base),
@@ -183,10 +178,10 @@ function AssistantShell({
   const assistant = state.assistant;
   return (
     <AssistantFrame
-      key={`${assistant.id}:${assistant.version}:${assistant.url}:${mountPath}:${origin}`}
+      key={`${assistant.id}:${assistant.version}:${assistant.url}:${mountPath}`}
       assistant={assistant}
       location={location}
-      origin={origin}
+      origin={window.location.origin}
       mountPath={mountPath}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}
