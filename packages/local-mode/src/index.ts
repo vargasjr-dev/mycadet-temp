@@ -63,13 +63,24 @@ export {
   GATEWAY_PORT,
   getGatewayUrl,
   getLoopbackGatewayPort,
+  isAppleContainerEntry,
+  isDockerEntry,
+  isLocalEntry,
+  isLocalRuntimeEntry,
   LockfileAssistantSchema,
   parseLockfile,
 } from "./lockfile-contract";
 export type {
   Lockfile,
   LockfileAssistant,
+  LocalAssistant,
   LocalAssistantResources,
+  LocalRuntimeAssistant,
+  DockerAssistant,
+  AppleContainerAssistant,
+  CloudAssistant,
+  CustomAssistant,
+  BasetenAssistant,
   LockfileWriteResult,
 } from "./lockfile-contract";
 export type { LockfileAssistantPatch } from "./lockfile";

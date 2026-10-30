@@ -17,6 +17,11 @@ import {
 } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
 import {
+  isDockerEntry,
+  isLocalEntry,
+  isLocalRuntimeEntry,
+} from "@mycadet/local-mode/contract";
+import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "./lifecycle-reporter.js";
@@ -97,6 +102,7 @@ function otherAssistantPidSet(
   for (const entry of entries) {
     if (
       entry.assistantId === name &&
+      isLocalRuntimeEntry(entry) &&
       entry.resources?.instanceDir === instanceDir
     ) {
       continue;
@@ -114,7 +120,7 @@ function otherAssistantPidSet(
         if (pid) pids.add(pid);
       }
     }
-    if (typeof entry.watcherPid === "number") {
+    if (entry.cloud === "docker" && typeof entry.watcherPid === "number") {
       pids.add(String(entry.watcherPid));
     }
   }
@@ -128,7 +134,7 @@ export async function retireLocal(
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
 
-  if (!entry.resources) {
+  if (!isLocalEntry(entry) || !entry.resources) {
     throw new Error(
       `Local assistant '${name}' is missing resource configuration. Re-hatch to fix.`,
     );

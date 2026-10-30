@@ -118,7 +118,7 @@ let mockSessionToken: string | null = null;
 
 const refreshLockfileNowMock = mock(() => {});
 
-const { configureLocalMode, getPairedGuardianAccessToken, installLocalMode } =
+const { configureLocalMode, installLocalMode } =
   await import("./local-mode");
 const { guardianTokenPath } = await import("@mycadet/local-mode");
 

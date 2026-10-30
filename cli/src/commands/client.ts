@@ -11,7 +11,10 @@ import {
   resolveConversationKey,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  isLocalRuntimeEntry,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
@@ -63,7 +66,8 @@ function collapseHomeForDisplay(dir: string): string {
 function readWorkspaceRoot(
   entry: LockfileAssistant | null,
 ): string | undefined {
-  const instanceDir = entry?.resources?.instanceDir;
+  if (!entry || !isLocalRuntimeEntry(entry)) return undefined;
+  const instanceDir = entry.resources?.instanceDir;
   return instanceDir ? collapseHomeForDisplay(instanceDir) : undefined;
 }
 

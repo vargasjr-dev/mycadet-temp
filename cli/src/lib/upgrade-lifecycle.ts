@@ -1,5 +1,8 @@
 import { randomBytes } from "crypto";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isDockerEntry,
+} from "@mycadet/local-mode/contract";
 import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
@@ -577,6 +580,12 @@ export async function performDockerRollback(
   entry: LockfileAssistant,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
+  if (!isDockerEntry(entry)) {
+    const msg = `Docker rollback requires a docker assistant; '${entry.assistantId}' is ${entry.cloud}.`;
+    console.error(msg);
+    emitCliError("UNKNOWN", msg);
+    process.exit(1);
+  }
   const gatewayUrl = getGatewayUrl(entry);
   const { targetVersion, backupPath } = options;
 

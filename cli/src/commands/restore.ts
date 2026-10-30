@@ -472,6 +472,12 @@ async function recoverFromArchive(name: string): Promise<void> {
   const entry: LockfileAssistant = JSON.parse(
     readFileSync(metadataPath, "utf-8"),
   );
+  // Retire archives local instances, so only a local entry can be restored.
+  if (entry.cloud !== "local") {
+    throw new Error(
+      `Retired assistant '${name}' is not a local assistant; only local archives can be restored.`,
+    );
+  }
   if (!entry.resources) {
     throw new Error(
       `Retired assistant '${name}' is missing resource configuration. ` +

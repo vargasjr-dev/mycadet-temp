@@ -23,6 +23,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import * as rootSigningKey from "../lib/root-signing-key.js";
+import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
@@ -220,9 +221,9 @@ let originalArgv: string[];
 let logSpy: ReturnType<typeof spyOn>;
 let warnSpy: ReturnType<typeof spyOn>;
 let errorSpy: ReturnType<typeof spyOn>;
-let localEntry: LockfileAssistant;
+let localEntry: LocalAssistant;
 
-function makeLocalEntry(): LockfileAssistant {
+function makeLocalEntry(): LocalAssistant {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-wake-test-"));
   // The identity lives in the instance's key file, not the lockfile.
   mkdirSync(join(tempDir, "gateway-security"), { recursive: true });

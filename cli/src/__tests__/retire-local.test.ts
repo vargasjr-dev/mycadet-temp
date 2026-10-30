@@ -17,7 +17,11 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { resolveLockfilePath } from "@mycadet/local-mode";
-import { makeEntry } from "./helpers/lockfile-entry.js";
+import {
+  makeEntry,
+  readEntry,
+  readLocalEntry,
+} from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -101,7 +105,7 @@ describe("retireLocal — CES sibling stop", () => {
     rmSync(instanceDir, { recursive: true, force: true });
     rmSync(join(testDir, "retired"), { recursive: true, force: true });
     mkdirSync(instanceDir, { recursive: true });
-    writeLockfile([makeEntry({ assistantId: "test-assistant" })]);
+    makeEntry({ assistantId: "test-assistant" });
 
     // Suppress console output from the lifecycle reporter.
     spyOn(console, "log").mockImplementation(() => {});
@@ -118,10 +122,11 @@ describe("retireLocal — CES sibling stop", () => {
   });
 
   test("stops the CES sibling alongside daemon and gateway", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "test-assistant",
       resources: { instanceDir },
     });
+    const entry = readLocalEntry("test-assistant");
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -154,7 +159,8 @@ describe("retireLocal — CES sibling stop", () => {
   // default in stopProcess would SIGKILL it first, stranding those workers as
   // orphans that outlive the runtime that spawned them.
   test("gives the daemon its full stop budget, not the default grace", async () => {
-    const entry = makeEntry({ assistantId: "test-assistant" });
+    makeEntry({ assistantId: "test-assistant" });
+    const entry = readLocalEntry("test-assistant");
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -182,10 +188,11 @@ describe("retireLocal — CES sibling stop", () => {
       },
     );
 
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "test-assistant",
       resources: { instanceDir },
     });
+    const entry = readLocalEntry("test-assistant");
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -204,24 +211,25 @@ describe("retireLocal — CES sibling stop", () => {
 
   test("protects other assistants during orphan cleanup", async () => {
     const otherInstanceDir = join(testDir, "other-instance");
-    const otherEntry = makeEntry({ assistantId: "other-assistant" });
-    otherEntry.resources!.instanceDir = otherInstanceDir;
+    makeEntry({
+      assistantId: "other-assistant",
+      resources: { instanceDir: otherInstanceDir },
+    });
     const otherPid = "4242";
-    const otherPidFile = getDaemonPidPath(otherEntry.resources);
+    const otherEntry = readEntry("other-assistant")!;
+    const otherPidFile = getDaemonPidPath(
+      otherEntry.cloud === "local" ? otherEntry.resources : undefined,
+    );
     mkdirSync(join(otherInstanceDir, "workspace"), {
       recursive: true,
     });
     writeFileSync(otherPidFile, otherPid);
-    writeLockfile([makeEntry({ assistantId: "test-assistant" }), otherEntry]);
     stopProcessByPidFileMock.mockImplementation(
       async (_pidFile: string, label: string): Promise<boolean> =>
         label !== "daemon",
     );
 
-    await retireLocal(
-      "test-assistant",
-      makeEntry({ assistantId: "test-assistant" }),
-      {
+    await retireLocal("test-assistant", readLocalEntry("test-assistant"), {
         progress: () => {},
         log: () => {},
         warn: () => {},

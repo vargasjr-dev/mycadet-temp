@@ -24,7 +24,10 @@ import { basename, join } from "node:path";
 import { type LockfileAssistant } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
-import { makeEntry } from "./helpers/lockfile-entry.js";
+import {
+  makeEntry,
+  readLocalEntry,
+} from "./helpers/lockfile-entry.js";
 
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
@@ -215,7 +218,8 @@ describe("restore error cases", () => {
   test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);
-    const entry = makeEntry({ assistantId: name, resources: { instanceDir } });
+    makeEntry({ assistantId: name, resources: { instanceDir } });
+    const entry = readLocalEntry(name);
     writeArchiveFixtures(name, entry);
     // Pre-create the collision path that recover checks
     mkdirSync(join(instanceDir, ".cadet"), { recursive: true });
@@ -229,11 +233,12 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
   test("extracts to retiredDir and renames staging dir to instanceDir directly", async () => {
     const name = "named-instance";
     const instanceDir = join(testDir, "custom-location", name);
-    const entry = makeEntry({
+    makeEntry({
       assistantId: name,
       guardianBootstrapSecret: "existing-bootstrap",
       resources: { instanceDir },
     });
+    const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
     // Named instance: targetDir is instanceDir itself (not instanceDir/.cadet)
@@ -272,7 +277,8 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     const name = "deep-nested-instance";
     // Use a path whose parent directory does not yet exist
     const instanceDir = join(testDir, "new-parent", "deeper", name);
-    const entry = makeEntry({ assistantId: name, resources: { instanceDir } });
+    makeEntry({ assistantId: name, resources: { instanceDir } });
+    const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
     process.argv = ["bun", "cadet", "restore", name];

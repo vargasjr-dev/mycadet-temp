@@ -17,6 +17,7 @@ import {
   getLocalInstanceDir,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
+import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
@@ -201,7 +202,7 @@ let consoleWarnSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
 let exitSpy: ReturnType<typeof spyOn>;
 
-function makeLocalEntry(): LockfileAssistant {
+function makeLocalEntry(): LocalAssistant {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-upgrade-local-test-"));
   // The identity lives in the instance's key file, not the lockfile.
   mkdirSync(join(tempDir, "gateway-security"), { recursive: true });
@@ -509,14 +510,14 @@ describe("cadet upgrade local", () => {
 // lookup rules themselves.
 describe("cadet upgrade assistant targeting", () => {
   function makeQuillEntry(
-    overrides: Partial<LockfileAssistant> = {},
-  ): LockfileAssistant {
+    overrides: Partial<LocalAssistant> = {},
+  ): LocalAssistant {
     return {
       ...makeLocalEntry(),
       assistantId: "quill-uuid",
       name: "Quill",
       ...overrides,
-    } as LockfileAssistant;
+    };
   }
 
   function argvFor(...positional: string[]): string[] {

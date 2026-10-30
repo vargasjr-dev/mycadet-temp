@@ -72,9 +72,9 @@ function sandboxGatewayEnvs() {
  */
 async function recordSandbox(params: {
   name: string;
-  sandboxUrl: string | undefined;
+  sandboxUrl: string;
   gatewayPort: number;
-}): Promise<string | undefined> {
+}): Promise<string> {
   const assistantId =
     readLockfile().assistants.find(
       (a) => a.cloud === "baseten" && a.name === params.name,
@@ -98,9 +98,7 @@ async function recordSandbox(params: {
       "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
     );
   }
-  return params.sandboxUrl
-    ? getGatewayUrl({ ...entry, sandboxUrl: params.sandboxUrl })
-    : undefined;
+  return getGatewayUrl(entry);
 }
 
 export type HatchBasetenParams = {
@@ -156,11 +154,9 @@ export const hatchBaseten = Object.assign(
       }
       console.log("");
       console.log(green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout));
-      if (sandboxUrl) {
+      if (sandboxUrl && gatewayUrl) {
         console.log(`   URL: ${sandboxUrl}`);
-        if (gatewayUrl) {
-          console.log(`   Assistant gateway: ${gatewayUrl}/`);
-        }
+        console.log(`   Assistant gateway: ${gatewayUrl}/`);
       }
       console.log(
         `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,

@@ -13,6 +13,7 @@ import {
   GATEWAY_PORT,
   getGatewayUrl,
   getLoopbackGatewayPort,
+  isLocalRuntimeEntry,
 } from "@mycadet/local-mode/contract";
 
 import { isLocalContainerEntry } from "./ingress-config.js";
@@ -208,7 +209,7 @@ export interface LocalTunnelTarget {
 export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
-  if (entry.resources?.instanceDir) {
+  if (isLocalRuntimeEntry(entry) && entry.resources?.instanceDir) {
     return { entry, gatewayPort: entry.resources.gatewayPort };
   }
   if (isLocalContainerEntry(entry)) {

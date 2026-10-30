@@ -15,7 +15,10 @@ import { dirname, join, resolve } from "path";
 import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  isDockerEntry,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
@@ -590,7 +593,9 @@ export async function retireDocker(name: string): Promise<void> {
   // Stop the file watcher process if one is tracked for this instance.
   const entry = findAssistantByName(name);
   const watcherPid =
-    typeof entry?.watcherPid === "number" ? entry.watcherPid : null;
+    entry && isDockerEntry(entry) && typeof entry.watcherPid === "number"
+      ? entry.watcherPid
+      : null;
   if (watcherPid !== null) {
     if (isCadetProcess(watcherPid)) {
       await stopProcess(watcherPid, "file-watcher");
@@ -933,6 +938,11 @@ export function isNoSuchContainerError(err: unknown): boolean {
 export async function recreateDockerContainers(
   entry: LockfileAssistant,
 ): Promise<void> {
+  if (!isDockerEntry(entry)) {
+    throw new Error(
+      `'${entry.assistantId}' is not a docker assistant — nothing to recreate`,
+    );
+  }
   const info = entry.containerInfo;
   if (!info?.assistantImage || !info.gatewayImage || !info.cesImage) {
     throw new Error(

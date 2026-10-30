@@ -1,7 +1,10 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import type { LockfileAssistant } from "./assistant-config";
+import {
+  isAppleContainerEntry,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 
 /**
  * Execute a command inside an Apple Container assistant via the management
@@ -13,6 +16,12 @@ export async function execAppleContainer(
   command: string[],
   service: string,
 ): Promise<void> {
+  if (!isAppleContainerEntry(entry)) {
+    console.error(
+      `'${entry.assistantId}' is not an apple-container assistant.`,
+    );
+    process.exit(1);
+  }
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(

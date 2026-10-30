@@ -23,7 +23,10 @@ import { loadAllAssistants } from "../lib/assistant-config.js";
 import * as loopbackFetchModule from "../lib/loopback-fetch.js";
 import * as cloudClientModule from "../lib/cloud-client.js";
 import * as retireLocalModule from "../lib/retire-local.js";
-import { makeEntry } from "./helpers/lockfile-entry.js";
+import {
+  makeEntry,
+  readEntry,
+} from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
 const originalArgv = [...process.argv];
@@ -222,11 +225,11 @@ describe("cadet retire", () => {
   });
 
   test("--yes retires by unquoted display name and removes by assistant ID", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant", "--yes"];
 
     await retire();
@@ -240,13 +243,13 @@ describe("cadet retire", () => {
   });
 
   test("local retire unregisters the cloud record straight from the lockfile entry", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
@@ -272,12 +275,12 @@ describe("cadet retire", () => {
   });
 
   test("local retire resolves the organization via the cloud when the entry omits it", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
@@ -304,11 +307,11 @@ describe("cadet retire", () => {
   });
 
   test("local retire skips the cloud unregister when no assistant id is bound", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
@@ -321,13 +324,13 @@ describe("cadet retire", () => {
   });
 
   test("local retire uses injected platform token from the app host", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     process.env.CADET_PLATFORM_TOKEN = "host-session-token";
     readCloudTokenMock.mockReturnValue(null);
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
@@ -350,13 +353,13 @@ describe("cadet retire", () => {
   });
 
   test("local retire continues when the cloud unregister fails", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
     loopbackSafeFetchMock.mockResolvedValue(
@@ -374,11 +377,11 @@ describe("cadet retire", () => {
   });
 
   test("non-interactive retire without --yes fails before deleting", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     const before = readLockfile();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
@@ -392,11 +395,11 @@ describe("cadet retire", () => {
   });
 
   test("interactive cancel leaves the assistant untouched", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     const before = readLockfile();
     setInteractiveTerminal();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
@@ -415,11 +418,11 @@ describe("cadet retire", () => {
   });
 
   test("interactive confirmation retires the assistant", async () => {
-    const entry = makeEntry({
+    makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    writeLockfile([entry]);
+    const entry = readEntry("assistant-1");
     setInteractiveTerminal();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
@@ -434,10 +437,8 @@ describe("cadet retire", () => {
   });
 
   test("ambiguous display names fail before deleting", async () => {
-    writeLockfile([
-      makeEntry({ assistantId: "assistant-1", name: "Example Assistant" }),
-      makeEntry({ assistantId: "assistant-2", name: "Example Assistant" }),
-    ]);
+    makeEntry({ assistantId: "assistant-1", name: "Example Assistant" });
+    makeEntry({ assistantId: "assistant-2", name: "Example Assistant" });
     const before = readLockfile();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant", "--yes"];
 

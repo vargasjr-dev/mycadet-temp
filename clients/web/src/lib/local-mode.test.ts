@@ -210,7 +210,9 @@ describe("served config synthesis", () => {
     stampServed({ assistantId: "served-1" });
 
     const entry = getServedLockfile().assistants[0];
-    expect(entry?.resources?.gatewayPort).toBe(0);
+    expect(
+      entry?.cloud === "local" ? entry.resources?.gatewayPort : undefined,
+    ).toBe(0);
   });
 
   test("getActiveAssistant is the served entry; nothing when unstamped", () => {

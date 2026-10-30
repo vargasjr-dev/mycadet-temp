@@ -14,6 +14,7 @@
 import {
   getGatewayUrl,
   isCloudHome,
+  isLocalRuntimeEntry,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
   type Lockfile,
@@ -886,7 +887,9 @@ function handleLockfileChange(lockfile: Lockfile): void {
     // url itself — the port is the only loopback record there is.
     const isMachineLocalEntry = isLoopbackGatewayCloud(assistant.cloud);
     const port = isMachineLocalEntry
-      ? assistant.resources?.gatewayPort
+      ? isLocalRuntimeEntry(assistant)
+        ? assistant.resources?.gatewayPort
+        : undefined
       : undefined;
     const gatewayUrl = getGatewayUrl(assistant);
     const isCloud =
@@ -898,7 +901,13 @@ function handleLockfileChange(lockfile: Lockfile): void {
     activeIds.add(assistant.assistantId);
     const fp = port
       ? localFingerprint(port)
-      : cloudFingerprint(gatewayUrl, assistant.cloudOrganizationId);
+      : cloudFingerprint(
+          gatewayUrl,
+          assistant.cloud === "cloud" || assistant.cloud === "local" ||
+            assistant.cloud === "docker" || assistant.cloud === "apple-container"
+            ? assistant.cloudOrganizationId
+            : undefined,
+        );
 
     const existing = connections.get(assistant.assistantId);
     const pending = pendingConnects.get(assistant.assistantId);
@@ -920,7 +929,10 @@ function handleLockfileChange(lockfile: Lockfile): void {
         connectCloudAssistant(
           assistant.assistantId,
           gatewayUrl,
-          assistant.cloudOrganizationId,
+          assistant.cloud === "cloud" || assistant.cloud === "local" ||
+            assistant.cloud === "docker" || assistant.cloud === "apple-container"
+            ? assistant.cloudOrganizationId
+            : undefined,
         );
       }
     }

@@ -6,6 +6,7 @@ import {
   getLocalInstanceDir,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
+import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
@@ -21,7 +22,7 @@ import {
 
 let directory: string,
   source: LockfileAssistant,
-  target: LockfileAssistant,
+  target: LocalAssistant,
   ops: HostTeleportOps;
 let order: string[],
   running: Map<string, boolean>,
@@ -70,7 +71,7 @@ beforeEach(async () => {
   previousLockDir = process.env.XDG_CONFIG_HOME;
   process.env.XDG_CONFIG_HOME = join(directory, "registry");
   source = await instance("source", "docker", 7);
-  target = await instance("target", "local", 3);
+  target = (await instance("target", "local", 3)) as LocalAssistant;
   saveLockfileAssistant(source);
   saveLockfileAssistant(target);
   order = [];

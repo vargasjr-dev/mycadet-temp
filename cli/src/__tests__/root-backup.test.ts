@@ -352,9 +352,9 @@ describe("root tar backup", () => {
 
   test("Docker restore uses inspected server mounts, streams bytes without host binds, and assigns destination ownership", async () => {
     const { entry, root } = await fixture();
-    entry.cloud = "docker";
+    const dockerEntry: LockfileAssistant = { ...entry, cloud: "docker" };
     const calls: Array<{ args: string[]; source: string }> = [];
-    const storage = new DockerRootStorage(entry, {
+    const storage = new DockerRootStorage(dockerEntry, {
       output: async (_command, _args) =>
         JSON.stringify([
           {

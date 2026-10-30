@@ -13,7 +13,10 @@ import {
   primeLocalGatewayConnectionWithRepair,
   type LockfileAssistant,
 } from "@/lib/local-mode";
-import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
+import {
+  isLoopbackGatewayCloud,
+  registrationSummary,
+} from "@mycadet/local-mode/contract";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -622,7 +625,7 @@ async function resolveOrganizationId(
   statusOrganizationId: string | null,
   assistant: LockfileAssistant,
 ): Promise<string | null> {
-  return statusOrganizationId ?? assistant.cloudOrganizationId ?? null;
+  return statusOrganizationId ?? registrationSummary(assistant).cloudOrganizationId ?? null;
 }
 
 async function ensureRegistration(

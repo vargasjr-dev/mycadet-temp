@@ -1,4 +1,5 @@
 import {
+  getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
   authorizePairedForwardHeaders,
   gatewayTargetsFromLockfile,
   loopbackGatewayBearer,
@@ -6,6 +7,8 @@ import {
   resolveGatewayProxyTarget,
   resolveLockfilePath,
   sanitizePairedForwardHeaders,
+  type CliInvocation,
+  type TokenResult,
   type GatewayEntryTarget,
   type GuardianTokenLease,
   type PairedGuardianTokenProvider,
@@ -16,10 +19,7 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import {
-  getLocalGuardianAccessToken,
-  getPairedGuardianAccessToken,
-} from "./local-mode";
+import { getLocalGuardianAccessToken, requireRuntime } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -180,7 +180,23 @@ export const forwardGatewayRequest = async (
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
-    getPairedGuardianAccessToken,
+    // The trusted main-process proxy reads the paired bearer through the
+    // shared seam, resolving the invocation here (the old electron-local
+    // wrapper lived only to do this).
+    async (assistantId, runtimeUrl): Promise<TokenResult> => {
+      let invocation: CliInvocation;
+      try {
+        invocation = await requireRuntime().cli.resolveInvocation();
+      } catch (err) {
+        return { ok: false, status: 500, error: (err as Error).message };
+      }
+      return getStoredPairedGuardianAccessToken(
+        assistantId,
+        runtimeUrl,
+        invocation,
+        true,
+      );
+    },
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };

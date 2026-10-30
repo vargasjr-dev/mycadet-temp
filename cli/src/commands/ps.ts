@@ -10,7 +10,7 @@ import {
 } from "@mycadet/service-contracts/ingress";
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
-import { resolveLogDir } from "@mycadet/local-mode";
+import { isLocalRuntimeEntry, resolveLogDir } from "@mycadet/local-mode";
 
 import {
   extractHostFromEntry,
@@ -338,6 +338,9 @@ function formatDetectionInfo(proc: DetectedProcess): string {
 async function getLocalProcesses(
   entry: LockfileAssistant,
 ): Promise<TableRow[]> {
+  if (!isLocalRuntimeEntry(entry)) {
+    return [];
+  }
   const resources = entry.resources;
   if (!resources) {
     throw new Error(
@@ -446,7 +449,9 @@ async function getDockerProcesses(
 
   // Show the file watcher process if the instance was hatched with --watch.
   const watcherPid =
-    typeof entry.watcherPid === "number" ? entry.watcherPid : null;
+    entry.cloud === "docker" && typeof entry.watcherPid === "number"
+      ? entry.watcherPid
+      : null;
   if (watcherPid !== null) {
     const alive = isLocalProcessAlive(watcherPid);
     results.push({
@@ -727,7 +732,7 @@ type AssistantHealth = {
 async function getAssistantListHealth(
   entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
-  const resources = entry.resources;
+  const resources = entry.cloud === "local" ? entry.resources : undefined;
   if (entry.cloud === "local" && resources) {
     // TODO(ATL-306): Remove readPidFile/getDaemonPidPath in favor of
     // fetching daemon PIDs via the health API (Gateway Security Migration).

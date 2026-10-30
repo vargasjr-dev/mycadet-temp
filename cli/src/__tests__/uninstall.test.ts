@@ -104,12 +104,7 @@ describe("cadet uninstall", () => {
       // of the uninstall AFTER the user confirms; the pre-confirm summary
       // says so up front (v0.0.10 run feedback: the hard refusal just
       // blocked the uninstall; the fs sweep deletes the archives anyway).
-      writeFileSync(
-        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
-        JSON.stringify({
-          assistants: [makeEntry({ assistantId: "test-assistant" })],
-        }) + "\n",
-      );
+      makeEntry({ assistantId: "test-assistant" });
 
       const exitMock = spyOn(process, "exit");
       exitMock.mockImplementation(
@@ -163,17 +158,7 @@ describe("cadet uninstall", () => {
   test("does not retire assistants when the confirm gate refuses", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      writeFileSync(
-        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
-        JSON.stringify({
-          assistants: [
-            {
-              ...makeEntry({ assistantId: "docker-assistant" }),
-              cloud: "docker",
-            },
-          ],
-        }) + "\n",
-      );
+      makeEntry({ assistantId: "docker-assistant", cloud: "docker" });
 
       const exitMock = spyOn(process, "exit");
       exitMock.mockImplementation(
@@ -198,17 +183,7 @@ describe("cadet uninstall", () => {
   test("--yes retires remaining assistants after the deletion list is shown", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      writeFileSync(
-        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
-        JSON.stringify({
-          assistants: [
-            {
-              ...makeEntry({ assistantId: "docker-assistant" }),
-              cloud: "docker",
-            },
-          ],
-        }) + "\n",
-      );
+      makeEntry({ assistantId: "docker-assistant", cloud: "docker" });
       mkdirSync(resolveConfigDir(), {
         recursive: true,
       });

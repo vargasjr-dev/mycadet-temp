@@ -11,7 +11,20 @@ import {
   stripSensitiveFields,
   SENSITIVE_KEYS,
   type Lockfile,
+  type LockfileAssistant,
+  type LocalRuntimeAssistant,
 } from "./lockfile-contract";
+
+/** `resources` only exists on the local-runtime branches — narrow for assertions. */
+function resourcesOf(
+  entry: LockfileAssistant | undefined,
+): LocalRuntimeAssistant["resources"] {
+  return entry?.cloud === "local" ||
+    entry?.cloud === "docker" ||
+    entry?.cloud === "apple-container"
+    ? entry.resources
+    : undefined;
+}
 
 describe("parseLockfile", () => {
   test("passes through a fully-populated lockfile", () => {
@@ -26,7 +39,6 @@ describe("parseLockfile", () => {
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
-          resources: { gatewayPort: 7777, daemonPort: 7778 },
         },
         {
           assistantId: "asst_2",
@@ -153,11 +165,11 @@ describe("parseLockfile", () => {
   test("absorbs a mistyped cloud as local; drops an entry whose other fields are mistyped", () => {
     // Entries parse whole: a mistyped modeled field invalidates the entry
     // (dropped, never partially salvaged). `cloud` is the exception — its
-    // catch absorbs any malformed value as "local".
+    // preprocessor absorbs any malformed value as "local".
     const raw = {
       assistants: [
         { assistantId: "asst_1", cloud: 7 }, // cloud not a string
-        { assistantId: "asst_2", cloud: "local", port: "nope" }, // mistyped modeled field
+        { assistantId: "asst_2", cloud: "local", resources: "nope" }, // mistyped modeled field
       ],
       activeAssistant: null,
     };
@@ -207,7 +219,7 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
       gatewayPort: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
@@ -236,7 +248,7 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
       instanceDir: "/data",
       gatewayPort: 7777,
       daemonPort: 7778,
@@ -246,7 +258,7 @@ describe("parseLockfile", () => {
     });
     const stripped = structuredClone(raw);
     stripSensitiveFields(stripped);
-    expect(parseLockfile(stripped).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(stripped).assistants[0])).toEqual({
       instanceDir: "/data",
       gatewayPort: 7777,
       daemonPort: 7778,

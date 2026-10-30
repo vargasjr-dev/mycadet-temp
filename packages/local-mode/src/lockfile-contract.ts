@@ -90,10 +90,6 @@ export const InjectedConfigSchema = z.object({
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
-  /** Serving baseten sandbox's server URL (the gateway rides `{sandboxUrl}/port/{gatewayPort}`). */
-  sandboxUrl: z.string().optional(),
-  /** Serving baseten sandbox's pinned gateway port. */
-  gatewayPort: z.number().optional(),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),
 });
@@ -224,7 +220,14 @@ export function isLoopbackGatewayCloud(cloud: Remote): boolean {
 export function getLoopbackGatewayPort(
   entry: LockfileAssistant,
 ): number | undefined {
-  return entry.resources?.gatewayPort;
+  if (
+    entry.cloud === "local" ||
+    entry.cloud === "docker" ||
+    entry.cloud === "apple-container"
+  ) {
+    return entry.resources?.gatewayPort;
+  }
+  return undefined;
 }
 
 /**
@@ -315,24 +318,13 @@ export const ContainerInfoSchema = z.object({
 export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
 
 /**
- * The shape of one assistant entry — a discriminated union on `cloud`.
- * `assistantId` is the only strictly-required field everywhere — the identity
- * every reader looks entries up by — and `cloud` always parses (absent and
- * unknown values route to the "local" branch). Strict: every field the CLI
- * read-modify-writes is modeled, so the parse drops nothing a reader needs;
- * fields unknown to this build are accepted on disk but dropped from the
- * validated value. The renderer boundary is enforced by
- * {@link stripSensitiveFields} on the hosts, before this parse runs.
+ * The fields every topology actually uses: the identity every reader looks
+ * entries up by, the display name, and the hatch/onboarding/conversation
+ * bookkeeping that is topology-agnostic.
  */
-const ManagedAssistantSchema = z.object({
+const BaseAssistantSchema = z.object({
   assistantId: z.string(),
   name: z.string().optional(),
-  /** Deployment topology; absent or unknown on-disk values parse as "local". */
-  cloud: z.enum(["local", "docker", "apple-container", "cloud", "custom"]),
-  /** Host address of a custom remote's gateway (cloud "custom"). */
-  ipAddress: z.string().optional(),
-  /** Gateway port on a custom remote (cloud "custom"). */
-  port: z.number().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that
@@ -340,6 +332,24 @@ const ManagedAssistantSchema = z.object({
    * `onboarded-assistant.ts`).
    */
   onboardedAt: z.string().optional(),
+  /**
+   * Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
+   * assistant's chat conversation by. Minted once on first `cadet client`
+   * launch and persisted so every session shares one conversation.
+   */
+  conversationKey: z.string().optional(),
+});
+
+/**
+ * The fields the self-hosted, on-machine topologies (local, docker,
+ * apple-container) share: host-recorded ports and instance dir, the bearer
+ * helper token, and the platform self-hosted registration the login flow
+ * stamps onto whichever runtime is active.
+ */
+const LocalRuntimeAssistantFields = {
+  resources: LocalAssistantResourcesSchema.optional(),
+  /** Helper token for the assistant API bearer; host-only secret. */
+  bearerToken: z.string().optional(),
   /** Platform assistant UUID for a self-hosted local assistant registration. */
   cloudAssistantId: z.string().optional(),
   /** Platform base URL used for a self-hosted local assistant registration. */
@@ -350,23 +360,60 @@ const ManagedAssistantSchema = z.object({
    * on it).
    */
   cloudOrganizationId: z.string().optional(),
-  resources: LocalAssistantResourcesSchema.optional(),
-  /** Helper token for cloud assistants' API bearer; host-only secret. */
-  bearerToken: z.string().optional(),
-  /** PID of the file watcher process for docker instances hatched with --watch. */
-  watcherPid: z.number().optional(),
-  /** Local bootstrap secret used to lease guardian tokens for Docker assistants after detached hatch. */
+};
+
+/** A plain on-machine assistant: host-managed ports and instance dir. */
+const LocalAssistantSchema = BaseAssistantSchema.extend({
+  ...LocalRuntimeAssistantFields,
+  cloud: z.literal("local"),
+  /** Bootstrap secret used to lease guardian tokens after detached hatch. */
   guardianBootstrapSecret: z.string().optional(),
+});
+
+/** A docker-hosted assistant: container metadata for rollback/upgrade. */
+const DockerAssistantSchema = BaseAssistantSchema.extend({
+  ...LocalRuntimeAssistantFields,
+  cloud: z.literal("docker"),
   /** Docker image metadata for rollback. Only present for docker topology entries. */
   containerInfo: ContainerInfoSchema.optional(),
+  /** Bootstrap secret used to lease guardian tokens after detached hatch. */
+  guardianBootstrapSecret: z.string().optional(),
+  /** PID of the file watcher process for docker instances hatched with --watch. */
+  watcherPid: z.number().optional(),
+});
+
+/** An apple-container assistant, driven through its management socket. */
+const AppleContainerAssistantSchema = BaseAssistantSchema.extend({
+  ...LocalRuntimeAssistantFields,
+  cloud: z.literal("apple-container"),
   /** Management socket path for apple-container assistants; written by the macOS host. */
   mgmtSocket: z.string().optional(),
+});
+
+/** A platform-hosted assistant, registered against the cloud API. */
+const CloudAssistantSchema = BaseAssistantSchema.extend({
+  cloud: z.literal("cloud"),
+  /** Platform assistant UUID for a self-hosted local assistant registration. */
+  cloudAssistantId: z.string().optional(),
+  /** Platform base URL used for a self-hosted local assistant registration. */
+  cloudBaseUrl: z.string().optional(),
   /**
-   * Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
-   * assistant's chat conversation by. Minted once on first `cadet client`
-   * launch and persisted so every session shares one conversation.
+   * Platform organization the entry belongs to — set by the self-hosted
+   * registration and carried by the platform sync (org-scoped readers key
+   * on it).
    */
-  conversationKey: z.string().optional(),
+  cloudOrganizationId: z.string().optional(),
+  /** Helper token for the assistant API bearer; host-only secret. */
+  bearerToken: z.string().optional(),
+});
+
+/** A self-hosted remote assistant, reached at its own address. */
+const CustomAssistantSchema = BaseAssistantSchema.extend({
+  cloud: z.literal("custom"),
+  /** Host address of the custom remote's gateway. */
+  ipAddress: z.string().optional(),
+  /** Gateway port on the custom remote. */
+  port: z.number().optional(),
 });
 
 /**
@@ -374,7 +421,7 @@ const ManagedAssistantSchema = z.object({
  * gateway port are pinned at creation, so every reader can address
  * `{sandboxUrl}/port/{port}` without a fallback.
  */
-const BasetenAssistantSchema = ManagedAssistantSchema.extend({
+const BasetenAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("baseten"),
   /** The Baseten sandbox server URL; the gateway rides `{sandboxUrl}/port/{port}`. */
   sandboxUrl: z.string(),
@@ -398,15 +445,102 @@ function withDefaultCloud(entry: unknown): unknown {
 
 export const LockfileAssistantSchema = z.preprocess(
   withDefaultCloud,
-  z.discriminatedUnion("cloud", [BasetenAssistantSchema, ManagedAssistantSchema]),
+  z.discriminatedUnion("cloud", [
+    LocalAssistantSchema,
+    DockerAssistantSchema,
+    AppleContainerAssistantSchema,
+    CloudAssistantSchema,
+    CustomAssistantSchema,
+    BasetenAssistantSchema,
+  ]),
 );
 
 /**
  * A validated, normalized assistant entry — a discriminated union on
- * `cloud`, so a baseten entry's `sandboxUrl`/`port` are always defined and
- * every other topology reads as before.
+ * `cloud`, so each topology carries exactly the fields it uses: a baseten
+ * entry's `sandboxUrl`/`port` are always defined, a docker entry's
+ * `containerInfo` reads without touching unrelated topologies, and absent or
+ * unknown on-disk clouds route to the local branch.
  */
 export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
+
+/** The local entry shape (cloud "local"). */
+export type LocalAssistant = z.infer<typeof LocalAssistantSchema>;
+/** The docker entry shape (cloud "docker"). */
+export type DockerAssistant = z.infer<typeof DockerAssistantSchema>;
+/** The apple-container entry shape (cloud "apple-container"). */
+export type AppleContainerAssistant = z.infer<
+  typeof AppleContainerAssistantSchema
+>;
+/** The cloud entry shape (cloud "cloud"). */
+export type CloudAssistant = z.infer<typeof CloudAssistantSchema>;
+/** The custom remote entry shape (cloud "custom"). */
+export type CustomAssistant = z.infer<typeof CustomAssistantSchema>;
+/** The baseten sandbox entry shape (cloud "baseten"). */
+export type BasetenAssistant = z.infer<typeof BasetenAssistantSchema>;
+
+/**
+ * The topologies whose gateway runs on this machine with host-recorded
+ * `resources`: local, docker, and apple-container.
+ */
+export type LocalRuntimeAssistant = Exclude<
+  LockfileAssistant,
+  { cloud: "custom" | "cloud" | "baseten" }
+>;
+
+/** Whether the entry's gateway runs on this machine with host `resources`. */
+export function isLocalRuntimeEntry(
+  entry: LockfileAssistant,
+): entry is LocalRuntimeAssistant {
+  return (
+    entry.cloud === "local" ||
+    entry.cloud === "docker" ||
+    entry.cloud === "apple-container"
+  );
+}
+
+/** Whether the entry is a docker-hosted assistant. */
+export function isDockerEntry(
+  entry: LockfileAssistant,
+): entry is DockerAssistant {
+  return entry.cloud === "docker";
+}
+
+/** Whether the entry is an apple-container assistant. */
+export function isAppleContainerEntry(
+  entry: LockfileAssistant,
+): entry is AppleContainerAssistant {
+  return entry.cloud === "apple-container";
+}
+
+/** Whether the entry is a plain on-machine assistant. */
+export function isLocalEntry(
+  entry: LockfileAssistant,
+): entry is LocalAssistant {
+  return entry.cloud === "local";
+}
+
+/**
+ * The platform self-hosted registration the login flows stamp, plus the
+ * recorded runtime version for the on-machine topologies. Identity-only:
+ * no secrets, no addresses. Custom and baseten remotes are never registered.
+ */
+export function registrationSummary(entry: LockfileAssistant): {
+  cloudAssistantId?: string;
+  cloudBaseUrl?: string;
+  cloudOrganizationId?: string;
+  runtimeVersion?: string;
+} {
+  if (entry.cloud === "custom" || entry.cloud === "baseten") return {};
+  return {
+    cloudAssistantId: entry.cloudAssistantId,
+    cloudBaseUrl: entry.cloudBaseUrl,
+    cloudOrganizationId: entry.cloudOrganizationId,
+    runtimeVersion: isLocalRuntimeEntry(entry)
+      ? entry.resources?.runtimeVersion
+      : undefined,
+  };
+}
 
 /**
  * A CLI-managed OS process recorded at the lockfile root under `tunnel`:

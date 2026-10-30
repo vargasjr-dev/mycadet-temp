@@ -6,7 +6,10 @@ import {
   type LockfileAssistant,
   resolveTargetAssistant,
 } from "../../lib/assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  isLocalRuntimeEntry,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -44,6 +47,11 @@ async function repairGuardianCredential(
   entry: LockfileAssistant,
   gatewayUrl: string,
 ): Promise<boolean> {
+  // Guardian leasing is a local-runtime mechanic: only those topologies
+  // carry a bootstrap secret.
+  if (entry.cloud !== "local" && entry.cloud !== "docker") {
+    return false;
+  }
   let bootstrapSecret = entry.guardianBootstrapSecret;
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();

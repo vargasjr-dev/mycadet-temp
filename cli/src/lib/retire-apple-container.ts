@@ -1,7 +1,10 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import type { LockfileAssistant } from "./assistant-config.js";
+import {
+  isAppleContainerEntry,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 
 /**
  * Retire an Apple Container assistant by sending a retire command to the
@@ -17,6 +20,12 @@ export async function retireAppleContainer(
     `\u{1F5D1}\ufe0f  Retiring Apple Container assistant '${name}'...\n`,
   );
 
+  if (!isAppleContainerEntry(entry)) {
+    console.error(
+      `'${entry.assistantId}' is not an apple-container assistant.`,
+    );
+    process.exit(1);
+  }
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(

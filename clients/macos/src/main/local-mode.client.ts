@@ -4,7 +4,6 @@ import path from "node:path";
 
 import {
   configureLocalMode,
-  getPairedGuardianAccessToken,
   installLocalMode,
 } from "@mycadet/electron-desktop/local-mode";
 import {
@@ -43,4 +42,4 @@ configureLocalMode({
   session: { getToken: getSessionToken },
 });
 
-export { getPairedGuardianAccessToken, installLocalMode };
+export { installLocalMode };
