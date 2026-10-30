@@ -5,14 +5,17 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   getGuardianAccessToken,
+  getPairedGuardianAccessToken,
   formatGuardianRefreshCliFailure,
   parseGuardianRefreshCliFailure,
   PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   isConfidentialRefreshUrl,
+  saveBasetenSandboxToken,
   saveGuardianToken,
   type GuardianTokenData,
 } from "../guardian-token";
+import { saveLockfileAssistant } from "../lockfile";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import type { CliInvocation } from "../util";
 
@@ -261,5 +264,85 @@ describe("isConfidentialRefreshUrl", () => {
 
   test("https to a .localhost name is confidential on the protocol alone", () => {
     expect(isConfidentialRefreshUrl("https://evil.localhost:8443")).toBe(true);
+  });
+});
+
+describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
+  let configDir: string;
+
+  beforeEach(() => {
+    // Same ambient-resolution fixture as the guardian tests: XDG at the tmp
+    // home, reads and writes through the production environment dir.
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "baseten-token-test-"));
+    process.env.XDG_CONFIG_HOME = home;
+    configDir = path.join(home, "cadet");
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
+    fs.rmSync(path.dirname(configDir), { recursive: true, force: true });
+  });
+
+  test("a baseten entry reads the saved sandbox token and never leases", async () => {
+    // The invocation fails loudly if any branch spawns the CLI — the baseten
+    // credential is a file read, not a lease.
+    saveLockfileAssistant({
+      assistantId: "asst_bx",
+      cloud: "baseten",
+      basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+      port: 7830,
+    });
+    saveBasetenSandboxToken("asst_bx", "sbx-token-1");
+
+    expect(
+      await getPairedGuardianAccessToken(
+        "asst_bx",
+        "https://sbx-name-abc123.us-pdx-1.b10.co/port/7830",
+        invocation,
+        false,
+      ),
+    ).toEqual({ ok: true, accessToken: "sbx-token-1" });
+  });
+
+  test("a missing token file is a structured 404, not a throw", async () => {
+    saveLockfileAssistant({
+      assistantId: "asst_bx",
+      cloud: "baseten",
+      port: 7830,
+    });
+
+    expect(
+      await getPairedGuardianAccessToken(
+        "asst_bx",
+        "https://sbx-name-abc123.us-pdx-1.b10.co/port/7830",
+        invocation,
+        false,
+      ),
+    ).toMatchObject({ ok: false, status: 404 });
+  });
+
+  test("a non-baseten entry still leases through the guardian path", async () => {
+    saveLockfileAssistant({ assistantId: "asst_local", cloud: "local" });
+
+    // A local entry behind a non-loopback paired URL trips the paired path's
+    // target-binding guard (403) — the guardian path, not the token-file
+    // branch, answered.
+    expect(
+      await getPairedGuardianAccessToken(
+        "asst_local",
+        "https://gw.example.com",
+        invocation,
+        false,
+      ),
+    ).toMatchObject({ ok: false, status: 403 });
+  });
+
+  test("the token file is saved 0600 under the assistants dir", () => {
+    saveBasetenSandboxToken("asst_bx", "t");
+
+    const stat = fs.statSync(
+      path.join(configDir, "assistants", "asst_bx", "baseten-token.json"),
+    );
+    expect(stat.mode & 0o777).toBe(0o600);
   });
 });

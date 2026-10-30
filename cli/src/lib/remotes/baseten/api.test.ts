@@ -27,11 +27,14 @@ function httpArm() {
   ];
 }
 
-/** The CLI-arm spies: an installed CLI, and a runner that never spawns. */
-function cliArm() {
+/** The CLI-arm spies: an installed CLI, a runner that never spawns, and a
+ * describe that reports the sandbox's URL (pre-release `describe --jq` prints
+ * it jq-quoted). */
+function cliArm(describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"') {
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue("baseten"),
     spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
+    spyOn(basetenCli, "captureBasetenCli").mockResolvedValue(describeUrl),
   ];
 }
 
@@ -156,7 +159,7 @@ describe("pushBasetenImage", () => {
 
 describe("createBasetenSandbox", () => {
   test("an installed CLI creates through argv with env pairs and echoes the name", async () => {
-    const [cli, run] = cliArm();
+    const [cli, run, capture] = cliArm();
 
     const created = await createBasetenSandbox({
       name: "my-cadet",
@@ -174,10 +177,60 @@ describe("createBasetenSandbox", () => {
       "--env",
       "ANTHROPIC_API_KEY=sk-ant-1",
     ]);
-    expect(created).toEqual({ name: "my-cadet" });
+    expect(capture).toHaveBeenCalledWith([
+      "sandbox",
+      "describe",
+      "--name",
+      "my-cadet",
+      "--jq",
+      ".url",
+    ]);
+    // The CLI arm reads the sandbox's URL back off describe so the hatch can
+    // record it in the lockfile.
+    expect(created).toEqual({
+      name: "my-cadet",
+      url: "https://sbx-my-cadet-abc123.us-pdx-1.b10.co",
+    });
     expect(request).not.toHaveBeenCalled();
     cli.mockRestore();
     run.mockRestore();
+    capture.mockRestore();
+  });
+
+  test("secret envs ride --env while plain config rides --plain-env", async () => {
+    const [cli, run, capture] = cliArm();
+
+    await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+      envs: [
+        { name: "GATEWAY_PORT", value: "7830", secret: false },
+        { name: "ANTHROPIC_API_KEY", secret: true, value: "sk-ant-1" },
+      ],
+    });
+
+    const argv = run.mock.calls[0]![0] as string[];
+    expect(argv).toContain("--plain-env");
+    expect(argv).toContain("GATEWAY_PORT=7830");
+    expect(argv).toContain("--env");
+    expect(argv).toContain("ANTHROPIC_API_KEY=sk-ant-1");
+    cli.mockRestore();
+    run.mockRestore();
+    capture.mockRestore();
+  });
+
+  test("a describe miss still creates, just without a URL to record", async () => {
+    const [cli, run, capture] = cliArm("");
+
+    const created = await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+    });
+
+    expect(created).toEqual({ name: "my-cadet" });
+    cli.mockRestore();
+    run.mockRestore();
+    capture.mockRestore();
   });
 
   test("over HTTP it posts the image ref with provider envs marked secret", async () => {

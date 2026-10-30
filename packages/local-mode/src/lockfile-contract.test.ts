@@ -5,6 +5,8 @@ import {
   LockfileSchema,
   RemoteSchema,
   KNOWN_REMOTES,
+  GATEWAY_PORT,
+  getGatewayUrl,
   parseLockfile,
   stripSensitiveFields,
   SENSITIVE_KEYS,
@@ -356,6 +358,7 @@ describe("taxonomy", () => {
       "apple-container",
       "cloud",
       "custom",
+      "baseten",
     ]);
   });
 
@@ -365,5 +368,53 @@ describe("taxonomy", () => {
 
   test("SENSITIVE_KEYS lists the redacted secrets", () => {
     expect(SENSITIVE_KEYS).toEqual(["bearerToken", "guardianBootstrapSecret"]);
+  });
+});
+
+describe("getGatewayUrl", () => {
+  test("a baseten entry rides the sandbox API server's /port/ route", () => {
+    expect(
+      getGatewayUrl({
+        assistantId: "asst_bx",
+        cloud: "baseten",
+        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+        port: 7830,
+      }),
+    ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
+  });
+
+  test("a baseten entry's recorded URL is joined trailing-slash-free", () => {
+    expect(
+      getGatewayUrl({
+        assistantId: "asst_bx",
+        cloud: "baseten",
+        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
+        port: 7830,
+      }),
+    ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
+  });
+
+  test("a baseten entry without a URL or port falls through to the default loopback", () => {
+    // The hatch only records an entry once it has a URL; a URL-less record
+    // (describe missed) must not resolve to a half-built baseten address.
+    expect(
+      getGatewayUrl({ assistantId: "asst_bx", cloud: "baseten" }),
+    ).toBe(`http://127.0.0.1:${GATEWAY_PORT}`);
+  });
+
+  test("the schema round-trips a baseten entry's sandbox URL", () => {
+    const raw = {
+      activeAssistant: "asst_bx",
+      assistants: [
+        {
+          assistantId: "asst_bx",
+          name: "Sandboxed",
+          cloud: "baseten",
+          basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+          port: 7830,
+        },
+      ],
+    };
+    expect(parseLockfile(raw)).toEqual(raw as Lockfile);
   });
 });

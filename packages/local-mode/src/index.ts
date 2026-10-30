@@ -31,6 +31,7 @@ export {
   resolveAssistantsDir,
   resolveInstanceDir,
   guardianTokenPath,
+  basetenTokenPath,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
 export {
@@ -59,6 +60,7 @@ export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
 export {
+  GATEWAY_PORT,
   getLoopbackGatewayPort,
   LockfileAssistantSchema,
   parseLockfile,
@@ -122,6 +124,9 @@ export {
   PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
   GUARDIAN_REFRESH_ERROR_PREFIX,
   saveGuardianToken,
+  saveBasetenSandboxToken,
+  readBasetenSandboxToken,
+  isBasetenAssistant,
 } from "./guardian-token";
 export type {
   TokenResult,

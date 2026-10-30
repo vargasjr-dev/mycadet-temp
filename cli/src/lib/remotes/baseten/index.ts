@@ -1,9 +1,17 @@
+import { randomUUID } from "node:crypto";
 import { green } from "../../color.js";
 import { PROVIDER_ENV_VAR_NAMES } from "../../../shared/provider-env-vars.js";
+import {
+  GATEWAY_PORT,
+  readLockfile,
+  saveBasetenSandboxToken,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import {
   basetenImageRef,
   createBasetenSandbox,
   pushBasetenImage,
+  resolveBasetenToken,
 } from "./api.js";
 import {
   BASETEN_IMAGE_NAME,
@@ -35,6 +43,61 @@ function collectProviderEnvs() {
     const value = process.env[name];
     return value ? [{ name, secret: true, value }] : [];
   });
+}
+
+/**
+ * The gateway port, pinned a priori: Baseten clients address HTTP services
+ * through the sandbox API server's `/port/<PORT>/` route, so the port can't
+ * be discovered after the fact — it rides the sandbox's environment as
+ * `GATEWAY_PORT` (the env the stack already honors) and the same number is
+ * recorded in the lockfile entry.
+ */
+function sandboxGatewayEnvs() {
+  return [
+    { name: "GATEWAY_PORT", value: String(GATEWAY_PORT), secret: false },
+  ];
+}
+
+/**
+ * Record the sandbox in the lockfile and persist its access token so the
+ * desktop proxy can route to it: the entry carries the sandbox server URL
+ * (the gateway is `{url}/port/{port}`), the token file beside the lockfile
+ * carries the bearer. A re-hatch of the same sandbox name reuses its entry
+ * (and its token file) rather than orphaning the old record. The token is
+ * minted from BASETEN_API_KEY; without one (the installed-CLI arm needs no
+ * key) the URL still records — the proxy reports the missing token
+ * per-request until a re-hatch saves it.
+ */
+async function recordSandbox(params: {
+  name: string;
+  sandboxUrl: string | undefined;
+  gatewayPort: number;
+}): Promise<void> {
+  const assistantId =
+    readLockfile().assistants.find(
+      (a) => a.cloud === "baseten" && a.name === params.name,
+    )?.assistantId ?? randomUUID();
+  saveLockfileAssistant(
+    {
+      assistantId,
+      name: params.name,
+      cloud: "baseten",
+      ...(params.sandboxUrl ? { basetenSandboxUrl: params.sandboxUrl } : {}),
+      port: params.gatewayPort,
+      hatchedAt: new Date().toISOString(),
+    },
+    assistantId,
+  );
+  try {
+    saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
+  } catch (err) {
+    console.warn(
+      `   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`,
+    );
+    console.warn(
+      "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
+    );
+  }
 }
 
 export type HatchBasetenParams = {
@@ -69,15 +132,31 @@ export const hatchBaseten = Object.assign(
       const sandbox = await createBasetenSandbox({
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
-        envs: collectProviderEnvs(),
+        envs: [...sandboxGatewayEnvs(), ...collectProviderEnvs()],
       });
 
       const sandboxName = sandbox.name ?? name ?? "the sandbox";
       const sandboxUrl = sandbox.url;
+      if (sandboxUrl) {
+        // The gateway's port was pinned at creation, so the sandbox is
+        // reachable the moment its gateway is up.
+        await recordSandbox({
+          name: sandboxName,
+          sandboxUrl,
+          gatewayPort: GATEWAY_PORT,
+        });
+      } else {
+        console.warn(
+          "   ⚠️  The sandbox returned no URL — nothing recorded in the lockfile.",
+        );
+      }
       console.log("");
       console.log(green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout));
       if (sandboxUrl) {
         console.log(`   URL: ${sandboxUrl}`);
+        console.log(
+          `   Assistant gateway: ${sandboxUrl.replace(/\/+$/, "")}/port/${GATEWAY_PORT}/`,
+        );
       }
       console.log(
         `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,
