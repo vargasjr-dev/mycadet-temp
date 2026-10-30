@@ -2,11 +2,12 @@
 /**
  * Baseten sandbox manager for desktop QA.
  *
- * One sandbox = one QA run of the Linux desktop client against the real
- * stack: the image (see ./Dockerfile) carries the toolchain — Xvfb, the
- * Electron runtime deps, the published `mycadet` daemon/gateway/web stack,
- * a hatched golden assistant — and each run checks out the git ref under
- * test, builds `clients/linux` inside the sandbox, and drives it headless.
+ * One sandbox = one QA run of the Linux desktop client: the image (see
+ * ./Dockerfile) carries the toolchain — Xvfb, the Electron runtime deps,
+ * the open-source repo pulled at build time — and each run builds
+ * `clients/linux` inside the sandbox and drives it headless. QA is performed
+ * through the sandbox itself (the sandbox-api control plane), not through a
+ * baked-in cadet stack: nothing hatches, nothing wakes.
  *
  * The same harness runs the client locally in a dev container; the sandbox
  * exists so QA scales beyond this machine and survives the desktop
@@ -17,8 +18,8 @@
  *
  * Usage:
  *   bun clients/linux/qa/index.ts image push
- *   bun clients/linux/qa/index.ts create --name qa-pr599 [--env KEY=VALUE]...
- *   bun clients/linux/qa/index.ts run --name qa-pr599 --ref vargas-jr/desktop-single-origin
+ *   bun clients/linux/qa/index.ts create --name qa-pr599
+ *   bun clients/linux/qa/index.ts run --name qa-pr599 [--ref <git-ref>]
  *   bun clients/linux/qa/index.ts exec --name qa-pr599 -- <command>...
  *   bun clients/linux/qa/index.ts delete --name qa-pr599
  *
@@ -27,17 +28,19 @@
  */
 import { spawnSync } from "node:child_process";
 
+import {
+  BASETEN_API_KEY_ENV,
+  runBaseten,
+} from "@mycadet/shared/providers/baseten";
+
 /** The Baseten image repository the desktop-QA image is pushed under. */
 export const QA_IMAGE_NAME = "cadet-desktop-qa";
 
 /** The sandbox-image tag the create/run commands resolve by default. */
 export const QA_IMAGE_REF = `sandbox/${QA_IMAGE_NAME}:latest`;
 
-/** Where the QA run checks out and builds the client under test. */
+/** Where the image pulls the open-source repo (the QA working tree). */
 export const QA_WORKSPACE = "/qa";
-
-/** The env var the Baseten CLI reads its API key from. */
-export const BASETEN_API_KEY_ENV = "BASETEN_API_KEY";
 
 export type ImagePushOptions = {
   /** Target image repository name. Defaults to {@link QA_IMAGE_NAME}. */
@@ -66,26 +69,11 @@ export function buildImagePushArgs(options: ImagePushOptions = {}): string[] {
 export type CreateOptions = {
   /** Sandbox name — one QA run per name. */
   name: string;
-  /** Image reference. Defaults to {@link QA_IMAGE_REF}. */
-  image?: string;
-  /** Extra environment — the credential injection path. */
-  env?: Record<string, string>;
 };
 
 /** Assemble the `baseten sandbox create` argv. Exported for tests. */
 export function buildCreateArgs(options: CreateOptions): string[] {
-  const args = [
-    "sandbox",
-    "create",
-    "--name",
-    options.name,
-    "--image",
-    options.image ?? QA_IMAGE_REF,
-  ];
-  for (const [key, value] of Object.entries(options.env ?? {})) {
-    args.push("--env", `${key}=${value}`);
-  }
-  return args;
+  return ["sandbox", "create", "--name", options.name];
 }
 
 export type ExecOptions = {
@@ -103,49 +91,49 @@ export function buildExecArgs(options: ExecOptions): string[] {
 export type RunOptions = {
   /** Sandbox name for the QA run. */
   name: string;
-  /** The git ref (branch/sha) to check out and build the client from. */
-  ref: string;
-  /** Repo to fetch. Defaults to the monorepo's GitHub remote. */
-  repo?: string;
+  /**
+   * Optional git ref to move the pulled repo to before building — the image
+   * clones the default branch, so a PR run names its ref here and the run
+   * fetches it in the existing clone (never a fresh one).
+   */
+  ref?: string;
 };
 
-/** Assemble the in-sandbox QA pipeline: fetch, build, drive, report. */
+/** Assemble the in-sandbox QA pipeline: build the client, drive it. */
 export function buildQaPipelineArgs(options: RunOptions): string[][] {
-  const repo =
-    options.repo ?? "https://github.com/vargasjr-dev/mycadet-temp.git";
-  const checkout = [
-    "sh",
-    "-c",
+  const steps: string[][] = [];
+  if (options.ref) {
+    steps.push([
+      "sh",
+      "-c",
+      `git -C ${QA_WORKSPACE} fetch origin ${options.ref} && git -C ${QA_WORKSPACE} checkout ${options.ref}`,
+    ]);
+  }
+  steps.push(
+    ["sh", "-c", `cd ${QA_WORKSPACE} && bun install --frozen-lockfile`],
     [
-      `rm -rf ${QA_WORKSPACE}/*`,
-      `git clone --depth 1 --branch ${options.ref} ${repo} ${QA_WORKSPACE}/src`,
-    ].join(" && "),
-  ];
-  const install = [
-    "sh",
-    "-c",
-    `cd ${QA_WORKSPACE}/src && bun install --frozen-lockfile`,
-  ];
-  const build = [
-    "sh",
-    "-c",
-    `cd ${QA_WORKSPACE}/src/clients/linux && bun install --frozen-lockfile && bun run build`,
-  ];
-  const drive = [
-    "sh",
-    "-c",
-    `cd ${QA_WORKSPACE}/src/clients/linux && xvfb-run -a bun run qa`,
-  ];
-  return [checkout, install, build, drive];
+      "sh",
+      "-c",
+      `cd ${QA_WORKSPACE}/clients/linux && bun install --frozen-lockfile && bun run build`,
+    ],
+    ["sh", "-c", `cd ${QA_WORKSPACE}/clients/linux && xvfb-run -a bun run qa`],
+  );
+  return steps;
 }
 
-/** Run the full QA pipeline for `ref` inside sandbox `name`, streaming output. */
+/** Run the full QA pipeline inside sandbox `name`, streaming output. */
 export function runQa(options: RunOptions): void {
   const steps = buildQaPipelineArgs(options);
-  const names = ["checkout", "install", "build", "drive"];
+  const names = [
+    ...(options.ref ? ["fetch"] : []),
+    "install",
+    "build",
+    "drive",
+  ];
   for (const [index, command] of steps.entries()) {
     console.log(`[qa] ${names[index]}: ${command[1]}`);
-    execBaseten(
+    requireApiKey();
+    runBaseten(
       buildExecArgs({ name: options.name, command }),
       `QA step ${names[index]} failed`,
     );
@@ -154,49 +142,37 @@ export function runQa(options: RunOptions): void {
 
 /** Push (and by default build) the desktop-QA image, streaming build logs. */
 export function pushImage(options: ImagePushOptions = {}): void {
-  execBaseten(buildImagePushArgs(options), "Image push failed");
+  runBaseten(buildImagePushArgs(options), "Image push failed");
 }
 
-/** Create a sandbox from the pushed image. Secrets ride `env`, never layers. */
+/** Create a sandbox from the pushed image. */
 export function createSandbox(options: CreateOptions): void {
-  execBaseten(buildCreateArgs(options), "Sandbox create failed");
+  runBaseten(buildCreateArgs(options), "Sandbox create failed");
 }
 
 /** Exec a command inside the named sandbox, streaming output. */
 export function execSandbox(options: ExecOptions): void {
-  execBaseten(buildExecArgs(options), "Sandbox exec failed");
+  runBaseten(buildExecArgs(options), "Sandbox exec failed");
 }
 
 /** Delete the named sandbox (irreversible — its local files go with it). */
 export function deleteSandbox(name: string): void {
-  execBaseten(
+  runBaseten(
     ["sandbox", "delete", "--name", name, "--yes"],
     "Sandbox delete failed",
   );
 }
 
-function execBaseten(args: string[], failure: string): void {
+/**
+ * The Baseten CLI authenticates from the env key for scripted use — check
+ * before the first exec so a run fails fast with the fix, not mid-pipeline.
+ */
+function requireApiKey(): void {
   if (!process.env[BASETEN_API_KEY_ENV]) {
     throw new Error(
       `${BASETEN_API_KEY_ENV} is not set — the Baseten CLI authenticates ` +
         `from it (vaulted as baseten:api_key; never commit it).`,
     );
-  }
-  const result = spawnSync("baseten", args, {
-    stdio: "inherit",
-    env: process.env,
-  });
-  if (result.error) {
-    if ("code" in result.error && result.error.code === "ENOENT") {
-      throw new Error(
-        "The Baseten CLI was not found on PATH. Install it first: " +
-          "https://docs.baseten.co/reference/cli/baseten/overview.md#install",
-      );
-    }
-    throw result.error;
-  }
-  if (result.status !== 0) {
-    throw new Error(`${failure}: baseten ${args.join(" ")} exited with ${result.status}`);
   }
 }
 
@@ -210,9 +186,7 @@ const COMMANDS: Record<string, (argv: string[]) => void> = {
   },
   create: (argv) => {
     const name = requireValue(flag(argv, "--name"), "create --name");
-    const image = flag(argv, "--image");
-    const env = Object.fromEntries(collectEnv(argv));
-    createSandbox({ name, image: image ?? undefined, env });
+    createSandbox({ name });
   },
   exec: (argv) => {
     const name = requireValue(flag(argv, "--name"), "exec --name");
@@ -225,7 +199,7 @@ const COMMANDS: Record<string, (argv: string[]) => void> = {
   },
   run: (argv) => {
     const name = requireValue(flag(argv, "--name"), "run --name");
-    const ref = requireValue(flag(argv, "--ref"), "run --ref");
+    const ref = flag(argv, "--ref") ?? undefined;
     runQa({ name, ref });
   },
   delete: (argv) => {
@@ -237,18 +211,6 @@ const COMMANDS: Record<string, (argv: string[]) => void> = {
 function flag(argv: string[], flagName: string): string | null {
   const index = argv.indexOf(flagName);
   return index >= 0 ? (argv[index + 1] ?? null) : null;
-}
-
-function collectEnv(argv: string[]): [string, string][] {
-  const pairs: [string, string][] = [];
-  for (let index = 0; index < argv.length; index++) {
-    if (argv[index] === "--env") {
-      const pair = argv[index + 1] ?? "";
-      const equals = pair.indexOf("=");
-      if (equals > 0) pairs.push([pair.slice(0, equals), pair.slice(equals + 1)]);
-    }
-  }
-  return pairs;
 }
 
 function requireValue(value: string | null, usage: string): string {

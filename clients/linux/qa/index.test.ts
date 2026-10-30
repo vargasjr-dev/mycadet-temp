@@ -30,29 +30,13 @@ describe("buildImagePushArgs", () => {
 });
 
 describe("buildCreateArgs", () => {
-  test("creates from the pushed image with env pairs exploded", () => {
-    expect(
-      buildCreateArgs({
-        name: "qa-pr599",
-        env: { BASETEN_API_KEY: "k", QA_REF: "r" },
-      }),
-    ).toEqual([
+  test("creates from the pushed image — name only, no env or image args", () => {
+    expect(buildCreateArgs({ name: "qa-pr599" })).toEqual([
       "sandbox",
       "create",
       "--name",
       "qa-pr599",
-      "--image",
-      QA_IMAGE_REF,
-      "--env",
-      "BASETEN_API_KEY=k",
-      "--env",
-      "QA_REF=r",
     ]);
-  });
-
-  test("honors an explicit image reference", () => {
-    const args = buildCreateArgs({ name: "qa", image: "sandbox/cadet:latest" });
-    expect(args[args.indexOf("--image") + 1]).toBe("sandbox/cadet:latest");
   });
 });
 
@@ -65,18 +49,22 @@ describe("buildExecArgs", () => {
 });
 
 describe("buildQaPipelineArgs", () => {
-  test("check out, install, build, drive — in that order", () => {
+  test("builds and drives in the pulled repo — no fresh clone per run", () => {
+    const steps = buildQaPipelineArgs({ name: "qa-pr599" });
+    expect(steps).toHaveLength(3);
+    expect(steps.every((step) => !step[1].includes("git clone"))).toBe(true);
+    expect(steps[0][2]).toBe("cd /qa && bun install --frozen-lockfile");
+    expect(steps[1][2]).toContain("clients/linux && bun install --frozen-lockfile");
+    expect(steps[2][2]).toContain("xvfb-run -a bun run qa");
+  });
+
+  test("a named ref fetches in the existing clone before building", () => {
     const steps = buildQaPipelineArgs({
       name: "qa-pr599",
-      ref: "vargas-jr/desktop-single-origin",
+      ref: "vargas-jr/desktop-qa-followup",
     });
     expect(steps).toHaveLength(4);
-    expect(steps[0][2]).toContain(
-      "git clone --depth 1 --branch vargas-jr/desktop-single-origin",
-    );
-    expect(steps[2][2]).toContain(
-      "clients/linux && bun install --frozen-lockfile && bun run build",
-    );
-    expect(steps[3][2]).toContain("xvfb-run -a bun run qa");
+    expect(steps[0][2]).toContain("git -C /qa fetch origin");
+    expect(steps[0][2]).toContain("git -C /qa checkout vargas-jr/desktop-qa-followup");
   });
 });
