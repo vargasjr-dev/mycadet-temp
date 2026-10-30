@@ -32,6 +32,7 @@ import {
 } from "@mycadet/design-library/components/searchable-select";
 
 import type { AssistantResolutionState } from "@/assistant/types";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -39,6 +40,22 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 let resolutionState: AssistantResolutionState = { kind: "loading" };
 function setResolutionState(next: AssistantResolutionState) {
   resolutionState = next;
+}
+
+/**
+ * The hosting answer lives on the lockfile entry's remote field, not the
+ * resolution kind. A local stamp synthesizes a self-hosted entry for the
+ * active id; the cloud world (no assistantId) synthesizes none, so the
+ * active row reads cloud-hosted. Tests reset both seams in their
+ * beforeEach.
+ */
+function setHosting(kind: "local" | "cloud") {
+  if (kind === "local") {
+    window.__CADET_CONFIG__ = { remote: "local", assistantId: ASSISTANT_ID };
+    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  } else {
+    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
+  }
 }
 
 mock.module("@/assistant/queries", () => ({
@@ -758,7 +775,8 @@ describe("a route with no connection yet", () => {
 
   test("re-keys the connect form when the lone route changes", () => {
     // Ollama is a local runtime, so only a self-hosted assistant offers it.
-    setResolutionState({ kind: "self_hosted" });
+    setResolutionState({ kind: "active" });
+    setHosting("local");
     renderCreate([makeConnection("anthropic-personal")]);
 
     selectModel("Gemini 3.6 Flash");

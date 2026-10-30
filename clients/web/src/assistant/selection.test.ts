@@ -47,8 +47,6 @@ function cloudAssistant(
 ): ResolvedAssistant {
   return {
     id,
-    isLocal: false,
-    isCloudHosted: true,
     organizationId,
   };
 }

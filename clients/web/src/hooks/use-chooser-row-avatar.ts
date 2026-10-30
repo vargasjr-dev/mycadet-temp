@@ -167,7 +167,7 @@ export function canFetchRowAvatarViaCloudProxy(
     !isLocalClient() &&
     !isServedGatewayRuntime() &&
     getSelfHostedIngressUrl() === null &&
-    row.isCloudHosted
+    row.cloud === "cloud"
   );
 }
 

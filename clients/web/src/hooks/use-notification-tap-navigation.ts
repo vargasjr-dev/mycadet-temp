@@ -159,7 +159,7 @@ export function useNotificationTapNavigation(): void {
         // those connections, so a tap on one just opens the thread through
         // its owning host. A platform row's tap is its selection write —
         // session-scoped server-side, answered with 401 when unauthenticated.
-        if (assistant.isCloudHosted) {
+        if (assistant.cloud === "cloud") {
           await setSelectedAssistant(assistant.id);
         }
       } catch {

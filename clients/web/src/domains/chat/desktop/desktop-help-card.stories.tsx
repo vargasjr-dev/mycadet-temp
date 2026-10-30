@@ -28,7 +28,7 @@ function PreviewFixture() {
     useResolvedAssistantsStore.setState({
       activeAssistantId: "assistant-example",
     });
-    setResolutionState({ kind: "active", isLocal: false });
+    setResolutionState({ kind: "active" });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
       useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });

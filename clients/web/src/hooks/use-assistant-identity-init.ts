@@ -51,12 +51,11 @@ export function useAssistantIdentityInit({
   ownerScopeId,
 }: UseAssistantIdentityInitParams) {
   // Identity is fetchable whenever the daemon proxy can answer for the
-  // assistant. That's true for "active" *and* "self_hosted" (which
-  // also renders chat per `shouldRenderChat` in ChatPage). The other
+  // assistant — true for "active" (whatever remote serves it). The other
   // lifecycle states (initializing, cleaning_up, retired, error, etc.)
   // can't satisfy the identity endpoint.
   const canFetchIdentity =
-    (assistantStateKind === "active" || assistantStateKind === "self_hosted") &&
+    assistantStateKind === "active" &&
     Boolean(assistantId) &&
     (ownerScopeId === undefined || Boolean(ownerScopeId));
   const ownerKey =

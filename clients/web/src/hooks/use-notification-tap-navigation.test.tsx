@@ -48,15 +48,13 @@ import {
 const ASSISTANT_A: ResolvedAssistant = {
   id: "assistant-a",
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174000",
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
   organizationId: "org-1",
 };
 const ASSISTANT_B: ResolvedAssistant = {
   id: "assistant-b",
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174001",
-  isLocal: false,
-  isCloudHosted: true,
+  cloud: "cloud",
 };
 
 let capturedHandler: NotificationTapHandler | null = null;
@@ -147,7 +145,7 @@ beforeEach(() => {
     selectedAssistantId: ASSISTANT_B.id,
     activeAssistantId: ASSISTANT_B.id,
   });
-  setResolutionState({ kind: "active", isLocal: false });
+  setResolutionState({ kind: "active" });
 
 });
 

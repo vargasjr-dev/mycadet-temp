@@ -8,6 +8,7 @@ import {
 } from "bun:test";
 
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getLockfileAssistant } from "@/lib/local-mode";
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
 import {
   AVATAR_SUPERSEDE_WINDOW_MS,
@@ -75,7 +76,6 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
     expect(entry.cloud).toBe("cloud");
-    expect(entry.isCloudHosted).toBe(true);
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(true);
   });
@@ -85,8 +85,6 @@ describe("setFromLockfile", () => {
       assistants: [
         {
           id: "asst-platform",
-          isLocal: false,
-          isCloudHosted: true,
           currentReleaseVersion: "0.9.0",
         },
       ],
@@ -106,8 +104,6 @@ describe("setFromLockfile", () => {
       assistants: [
         {
           id: "asst-platform",
-          isLocal: false,
-          isCloudHosted: true,
           avatarUrl: "https://cdn.example/a.png",
         },
       ],
@@ -133,7 +129,6 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-local");
     expect(entry.cloud).toBe("local");
-    expect(entry.isLocal).toBe(true);
     expect(entry.organizationId).toBeUndefined();
     expect(entry.runtimeVersion).toBe("v0.8.13");
     expect(entry.isActiveLockfileAssistant).toBe(true);
@@ -192,8 +187,7 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("paired-desk");
     // A custom remote is neither a loopback topology nor cloud-managed.
-    expect(entry.isLocal).toBe(false);
-    expect(entry.isCloudHosted).toBe(false);
+    expect(entry.cloud).toBe("custom");
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
   });
 
@@ -277,8 +271,6 @@ describe("upsertFromApi", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
     expect(entry.cloud).toBe("custom");
-    expect(entry.isLocal).toBe(false);
-    expect(entry.isCloudHosted).toBe(true);
   });
 
   it("preserves a lockfile-seeded runtimeVersion on refresh", () => {
@@ -447,7 +439,7 @@ describe("setFromApi connectability", () => {
     );
   });
 
-  it("reads an unknown ingress-less row as cloud-hosted and keeps it", () => {
+  it("keeps an unknown ingress-less row (cloud-world-only: no lockfile entry)", () => {
     useResolvedAssistantsStore
       .getState()
       .setFromApi([
@@ -458,8 +450,9 @@ describe("setFromApi connectability", () => {
     const assistants = useResolvedAssistantsStore.getState().assistants;
     expect(assistants.map((a) => a.id)).toEqual(["asst-cloud", "asst-unknown"]);
     const unknown = assistants.find((a) => a.id === "asst-unknown");
-    expect(unknown?.isLocal).toBe(false);
-    expect(unknown?.isCloudHosted).toBe(true);
+    // Cloud-world-only row: no lockfile entry, so no remote of its own.
+    expect(getLockfileAssistant("asst-unknown")).toBeUndefined();
+    expect(unknown?.cloud).toBeUndefined();
     expect(useResolvedAssistantsStore.getState().assistantsHydrated).toBe(true);
   });
 
@@ -473,7 +466,6 @@ describe("setFromApi connectability", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-tunneled");
-    expect(entry.isLocal).toBe(false);
     expect(entry.ingressUrl).toBe("https://mac.example.com");
   });
 
