@@ -73,12 +73,9 @@ export async function fetchWorkspaceTheme(
   return (data?.theme ?? null) as WorkspaceTheme | null;
 }
 
-export function useWorkspaceTheme(
-  assistantId: string | null,
-  isAssistantActive: boolean,
-): void {
+export function useWorkspaceTheme(assistantId: string | null): void {
   const queryClient = useQueryClient();
-  const enabled = isAssistantActive && !!assistantId;
+  const enabled = !!assistantId;
 
   const { data: theme } = useQuery({
     queryKey: workspaceThemeGetQueryKey({

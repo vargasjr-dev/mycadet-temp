@@ -62,7 +62,6 @@ function renderInit() {
     () =>
       useAssistantIdentityInit({
         assistantId: ASSISTANT_ID,
-        assistantStateKind: "active",
       }),
     { wrapper },
   );
@@ -122,7 +121,6 @@ describe("useAssistantIdentityInit", () => {
       ({ scopeId }: { scopeId: string }) =>
         useAssistantIdentityInit({
           assistantId: ASSISTANT_ID,
-          assistantStateKind: "active",
           ownerScopeId: scopeId,
         }),
       { wrapper, initialProps: { scopeId: firstScope } },
@@ -153,7 +151,6 @@ describe("useAssistantIdentityInit", () => {
       ({ scopeId }: { scopeId: string }) =>
         useAssistantIdentityInit({
           assistantId: ASSISTANT_ID,
-          assistantStateKind: "active",
           ownerScopeId: scopeId,
         }),
       { wrapper, initialProps: { scopeId: firstScope } },

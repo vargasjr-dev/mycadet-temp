@@ -68,7 +68,6 @@ function setup(
     () =>
       useMarkSeenOnOpen({
         assistantId: ASSISTANT_ID,
-        assistantStateKind: "active",
         activeConversationId: conversation?.conversationId ?? null,
         activeConversation: conversation,
         isTranscriptOnScreen,

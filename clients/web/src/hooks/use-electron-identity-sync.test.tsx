@@ -11,13 +11,7 @@ const { useElectronIdentitySync } =
   await import("./use-electron-identity-sync");
 afterEach(cleanup);
 
-test("withholds cached identity until the assistant is ready", () => {
-  const view = renderHook(({ ready }) => useElectronIdentitySync(ready), {
-    initialProps: { ready: false },
-  });
-  expect(publish).toHaveBeenLastCalledWith("");
-  view.rerender({ ready: true });
+test("publishes the cached identity once the store holds a name", () => {
+  renderHook(() => useElectronIdentitySync());
   expect(publish).toHaveBeenLastCalledWith("Example Assistant");
-  view.rerender({ ready: false });
-  expect(publish).toHaveBeenLastCalledWith("");
 });

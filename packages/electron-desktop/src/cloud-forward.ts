@@ -203,10 +203,10 @@ function planCloudForward(
 /**
  * Error code carried in the JSON body of a proxy-synthesized 502 so the
  * renderer can tell "the proxy's own `net.fetch` failed" apart from a real
- * cloud answer. Mirrors `PROXY_NETWORK_ERROR_CODE` in
- * `clients/web/src/assistant/lifecycle.ts`; the two must stay in sync, but
- * there is no shared package between the renderer and the Electron main
- * bundle to host the constant.
+ * cloud answer. Mirrors `PROXY_NETWORK_ERROR_CODE` in the renderer bundle's
+ * transport-error handling; the two must stay in sync, but there is no
+ * shared package between the renderer and the Electron main bundle to host
+ * the constant.
  */
 export const PROXY_NETWORK_ERROR_CODE = "proxy_network_error";
 

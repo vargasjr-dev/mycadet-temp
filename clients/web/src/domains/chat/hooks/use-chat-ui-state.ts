@@ -93,7 +93,6 @@ export function useChatUIState(): ChatUIState {
   const activeConversation = useActiveConversation(
     assistantId,
     activeConversationId,
-    true,
   );
 
   // --- Derived values (memoized) ------------------------------------------

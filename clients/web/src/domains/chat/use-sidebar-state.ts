@@ -68,7 +68,6 @@ import {
   type SidebarViewMode,
 } from "@/domains/chat/utils/sidebar-view-mode";
 import { useSidebarSectionsQuery } from "@/hooks/conversation-queries";
-import { useAssistantResolution } from "@/assistant/queries";
 import { getChannelLabel } from "@/utils/channel-presentation";
 import { RECENTS_SECTION_LABEL } from "@/domains/chat/utils/sidebar-section-icon";
 
@@ -191,8 +190,6 @@ export function useSidebarState({
   conversationGroups,
   attentionConversationIds,
 }: UseSidebarStateParams): SidebarState {
-  const isAssistantActive = useAssistantResolution().state.kind === "active";
-
   // --- Layout store hydration ---
 
   useEffect(() => {
@@ -229,7 +226,7 @@ export function useSidebarState({
      say, with no conversation rows. `null` when the assistant predates the
      endpoint or the read has not resolved, in which case existence keeps
      deriving from the loaded list below. */
-  const indexSections = useSidebarSectionsQuery(assistantId, isAssistantActive);
+  const indexSections = useSidebarSectionsQuery(assistantId);
 
   // --- Grouping (memoized per conversations reference) ---
 

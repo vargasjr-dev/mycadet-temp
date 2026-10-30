@@ -5,11 +5,6 @@
     "taglineWindows": "Asistente de IA para tu PC",
     "version": "Versión"
   },
-  "activeAssistantGate": {
-    "connecting": "Conectando con tu asistente…",
-    "errorTitle": "No pudimos conectarnos con tu asistente",
-    "retry": "Reintentar"
-  },
   "addCredentialModal": {
     "cancel": "Cancelar",
     "credentialSaved": "Credencial guardada.",

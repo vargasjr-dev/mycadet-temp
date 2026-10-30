@@ -76,18 +76,15 @@ const MAX_CONCURRENT_ROW_REFRESHES = 6;
  * - `sse.opened` — schedules a debounced first-page window refresh on
  *   reconnect to catch events missed during the transport gap
  */
-export function useConversationSync(
-  assistantId: string | null,
-  isAssistantActive: boolean,
-): void {
+export function useConversationSync(assistantId: string | null): void {
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unreadCountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
 
-  // Clear pending debounces when the assistant changes or deactivates
-  // so stale callbacks never fire with an old assistantId.
+  // Clear pending debounces when the assistant changes so stale callbacks
+  // never fire with an old assistantId.
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -99,10 +96,10 @@ export function useConversationSync(
         unreadCountTimerRef.current = null;
       }
     };
-  }, [assistantId, isAssistantActive]);
+  }, [assistantId]);
 
   useBusSubscription("sse.event", (envelope) => {
-    if (!assistantId || !isAssistantActive) {
+    if (!assistantId) {
       return;
     }
     const event = envelope.message;
@@ -134,7 +131,7 @@ export function useConversationSync(
   });
 
   useBusSubscription("sse.opened", ({ cause }) => {
-    if (!assistantId || !isAssistantActive) {
+    if (!assistantId) {
       return;
     }
     if (cause === "fresh") {

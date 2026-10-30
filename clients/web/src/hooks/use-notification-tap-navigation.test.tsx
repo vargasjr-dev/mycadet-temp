@@ -1,29 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
-
-import { useSyncExternalStore } from "react";
-import type { AssistantResolutionState } from "@/assistant/types";
-
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-const resolutionListeners = new Set<() => void>();
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-  for (const listener of resolutionListeners) {
-    listener();
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({
-    state: useSyncExternalStore(
-      (cb) => {
-        resolutionListeners.add(cb);
-        return () => resolutionListeners.delete(cb);
-      },
-      () => resolutionState,
-    ),
-  }),
-}));
+import { act, cleanup, renderHook } from "@testing-library/react";
 
 import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
@@ -35,8 +11,6 @@ import { __resetForTesting, subscribe } from "@/lib/event-bus";
 import { createNotificationIdentity } from "@/runtime/notification-avatar";
 import {
   __resetNotificationTapsForTests,
-  dispatchNotificationTap,
-  registerNotificationTapHandler,
   type NotificationTapHandler,
   type NotificationTapPayload,
 } from "@/runtime/notification-taps";
@@ -145,8 +119,6 @@ beforeEach(() => {
     selectedAssistantId: ASSISTANT_B.id,
     activeAssistantId: ASSISTANT_B.id,
   });
-  setResolutionState({ kind: "active" });
-
 });
 
 afterEach(() => {
@@ -284,46 +256,7 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([{ threadId: "conv-wait" }]);
   });
 
-  test("a terminal lifecycle failure releases the next queued tap", async () => {
-    connectAssistantMock.mockImplementationOnce(async (assistantId) => {
-      useResolvedAssistantsStore.setState({
-        selectedAssistantId: assistantId,
-      });
-    });
-    renderHook(() => useNotificationTapNavigation());
-    const handler = capturedHandler;
-    if (!handler) {
-      throw new Error("expected notification tap handler");
-    }
-    registerNotificationTapHandler(handler);
-    const received = collectThreadOpens();
-
-    dispatchNotificationTap({
-      conversationId: "conv-failed-activation",
-      sourceEventName: "reminder.fired",
-      identity: platformIdentity(ASSISTANT_A),
-    });
-    dispatchNotificationTap({
-      conversationId: "conv-after-failure",
-      sourceEventName: "legacy",
-    });
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(received).toEqual([]);
-
-    act(() => {
-      setResolutionState({ kind: "error", message: "activation failed" });
-    });
-
-    await waitFor(() => {
-      expect(received).toEqual([{ threadId: "conv-after-failure" }]);
-    });
-    expect(received).not.toContainEqual({
-      threadId: "conv-failed-activation",
-    });
-  });
-
-  test("does not open a removed assistant target", async () => {
+    test("does not open a removed assistant target", async () => {
     const identity = platformIdentity(ASSISTANT_A);
     useResolvedAssistantsStore.setState({ assistants: [ASSISTANT_B] });
     renderHook(() => useNotificationTapNavigation());
@@ -353,26 +286,5 @@ describe("useNotificationTapNavigation", () => {
     });
 
     expect(received).toEqual([]);
-  });
-
-  test("a non-auth resolution failure keeps an active target openable", async () => {
-    // The session is fine — a mid-use assistant resolution hiccup must not
-    // drop a tap whose target is already selected and active.
-    setResolutionState({ kind: "error", message: "assistant hiccup" });
-    useResolvedAssistantsStore.setState({
-      selectedAssistantId: ASSISTANT_A.id,
-      activeAssistantId: ASSISTANT_A.id,
-    });
-    renderHook(() => useNotificationTapNavigation());
-    const received = collectThreadOpens();
-
-    await sendTap({
-      conversationId: "conv-hiccup",
-      sourceEventName: "reminder.fired",
-      identity: platformIdentity(ASSISTANT_A),
-    });
-
-    expectNoAssistantSwitch();
-    expect(received).toEqual([{ threadId: "conv-hiccup" }]);
   });
 });

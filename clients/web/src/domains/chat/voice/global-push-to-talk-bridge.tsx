@@ -70,7 +70,6 @@ import { toast } from "@mycadet/design-library/components/toast";
 
 interface GlobalPushToTalkBridgeProps {
   assistantId: string | null;
-  enabled: boolean;
 }
 
 /** Bounds intent classification and explicit replacements before using raw words. */
@@ -257,24 +256,21 @@ function saveTranscriptDraft(text: string, assistantId: string | null): void {
   composer.saveDraft(conversationKey, nextInput);
 }
 
-export function GlobalPushToTalkBridge({
-  assistantId,
-  enabled,
-}: GlobalPushToTalkBridgeProps) {
-  const enabledRef = useRef(enabled);
+export function GlobalPushToTalkBridge({ assistantId }: GlobalPushToTalkBridgeProps) {
+  const enabledRef = useRef(true);
   const assistantIdRef = useRef(assistantId);
   const voiceKeyStartPendingRef = useRef(false);
   useEffect(() => {
     assistantIdRef.current = assistantId;
     return withdrawVoiceShortcutConfirmation;
   }, [assistantId]);
-  useEffect(() => {
-    enabledRef.current = enabled;
-    return () => {
+  useEffect(
+    () => () => {
       enabledRef.current = false;
       withdrawVoiceShortcutConfirmation();
-    };
-  }, [enabled]);
+    },
+    [],
+  );
   useCadetCommands({
     setUnplacedDictationOffer: (command) => {
       if (
@@ -373,7 +369,7 @@ export function GlobalPushToTalkBridge({
   // The voice mode shortcut lives here rather than in the chat layout because
   // this bridge is mounted app-wide: voice is reachable from any route, the
   // same way dictation is.
-  useVoiceModeHotkey({ enabled: enabled && supportsKeyboardActivation() });
+  useVoiceModeHotkey({ enabled: supportsKeyboardActivation() });
 
   // The voice key, from whatever app the user is in. A hold drives the same
   // target the overlay's stop button drives, so a hold and a press are the
@@ -382,14 +378,14 @@ export function GlobalPushToTalkBridge({
   // over a selection is the one exception: its words are a question about the
   // selection, and go to the assistant instead. A double tap is Talk.
   useVoiceKey({
-    key: enabled ? voiceKey : { kind: "off" },
+    key: voiceKey,
     onRegistered: setVoiceKeyRegistered,
     onHoldStart: ({ selection }) => {
       // A hold answers a start confirmation still up: the user moved on.
       if (voiceKeyStartPendingRef.current) {
         withdrawVoiceShortcutConfirmation();
       }
-      if (!enabled || companionIntroStaged()) {
+      if (companionIntroStaged()) {
         return;
       }
       if (useVoiceRecordingStore.getState().phase === "recording") {
@@ -432,9 +428,6 @@ export function GlobalPushToTalkBridge({
       }
     },
     onDoubleTap: async () => {
-      if (!enabled) {
-        return;
-      }
       // A second double tap while the confirmation is up takes it down.
       if (voiceKeyStartPendingRef.current) {
         withdrawVoiceShortcutConfirmation();

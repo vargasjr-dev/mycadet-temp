@@ -394,9 +394,6 @@
     "loadingImageWithAlt": "Cargando imagen… ({alt})"
   },
   "chatPage": {
-    "connecting": "Conectando…",
-    "connectingStuck": "Todavía se está conectando a tu asistente; parece que algo se ha quedado atascado. Inténtalo de nuevo, o actualiza la página si sigue ocurriendo.",
-    "retryNow": "Reintentar ahora",
     "selfHostedUnreachable": "No se pudo contactar con tu asistente autoalojado. Asegúrate de que el asistente esté en ejecución e inténtalo de nuevo.",
     "tryAgain": "Intentar de nuevo"
   },
@@ -404,8 +401,7 @@
     "askTheDoctor": "Preguntar al Doctor",
     "goToDoctor": "Ir al Doctor",
     "openPage": "Abrir página",
-    "suggestionFallback": "Sugerencia",
-    "copyCliFix": "Copiar corrección de CLI"
+    "suggestionFallback": "Sugerencia"
   },
   "chatRuleEditorModal": {
     "applyTo": "Aplicar a",
@@ -1405,16 +1401,6 @@
     "doneNotRight": "Marcado como incorrecto",
     "doneSaved": "Habilidad guardada",
     "recommended": "Recomendado"
-  },
-  "restoreCloudCredentialButton": {
-    "restore": "Restaurar acceso",
-    "restoring": "Restaurando...",
-    "restored": "Restaurado. Los modelos gestionados por Cadet vuelven a funcionar.",
-    "failedNoAssistant": "Selecciona un asistente y vuelve a intentarlo.",
-    "failedCannotActHere": "Esta aplicación no puede restaurar la credencial de este asistente. Abre el asistente en el equipo que lo ejecuta.",
-    "failedReplacementRejected": "Cadet rechazó la credencial de reemplazo. Inicia sesión en la plataforma Cadet y vuelve a intentarlo.",
-    "failedUnconfirmed": "El reemplazo se guardó, pero no se pudo confirmar con Cadet. Puede que empiece a funcionar en breve.",
-    "failedGeneric": "No se pudo restaurar el acceso. Inténtalo de nuevo en un momento."
   },
   "sidebarExpandRow": {
     "expand": "Expandir",

@@ -28,7 +28,6 @@ function renderEventStreamWithCapture(
       observeKeyRef.current = key;
 
       useEventStream({
-        assistantStateKind: "active",
         assistantId: "asst-1",
         activeConversationId: key,
         conversationExistsOnServer: true,

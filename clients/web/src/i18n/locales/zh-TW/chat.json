@@ -394,9 +394,6 @@
     "loadingImageWithAlt": "正在載入圖片… ({alt})"
   },
   "chatPage": {
-    "connecting": "正在連線…",
-    "connectingStuck": "仍在連線至您的助理 - 似乎卡住了。請再試一次，如果此問題持續發生，請重新整理頁面。",
-    "retryNow": "立即重試",
     "selfHostedUnreachable": "無法連線至您的自託管助理。請確認您的助理正在執行，然後再試一次。",
     "tryAgain": "再試一次"
   },
@@ -404,8 +401,7 @@
     "askTheDoctor": "詢問 Doctor",
     "goToDoctor": "前往 Doctor",
     "openPage": "開啟頁面",
-    "suggestionFallback": "建議",
-    "copyCliFix": "複製 CLI 修正"
+    "suggestionFallback": "建議"
   },
   "chatRuleEditorModal": {
     "applyTo": "套用至",
@@ -1416,16 +1412,6 @@
     "summaryTitle": "已準備好儲存",
     "summaryUnanswered": "未設定",
     "untitledTask": "觀察到的操作"
-  },
-  "restoreCloudCredentialButton": {
-    "restore": "復原存取",
-    "restoring": "正在復原...",
-    "restored": "已復原。由 Cadet 託管的模型重新可用。",
-    "failedNoAssistant": "請選擇一個助理，然後再試一次。",
-    "failedCannotActHere": "此應用程式無法為該助理復原憑證。請在執行該助理的電腦上開啟它。",
-    "failedReplacementRejected": "Cadet 拒絕了新的憑證。請登入 Cadet 平台後再試一次。",
-    "failedUnconfirmed": "新憑證已儲存，但無法向 Cadet 確認。它可能很快就會生效。",
-    "failedGeneric": "無法復原存取。請稍後再試。"
   },
   "chatsSection": {
     "emptyBody": "開始新的聊天後，它會顯示在這裡。",

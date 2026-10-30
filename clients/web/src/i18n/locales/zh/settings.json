@@ -115,7 +115,6 @@
     "version": "版本"
   },
   "assistantTerminalPanel": {
-    "loading": "正在加载终端...",
     "noAssistant": "未找到助手。孵化一个助手以使用终端。",
     "subtitle": "助手机器上的交互式 shell 会话",
     "targetContainer": "目标容器",

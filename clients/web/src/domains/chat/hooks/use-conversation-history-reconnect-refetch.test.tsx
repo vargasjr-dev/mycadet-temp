@@ -78,7 +78,6 @@ function renderHistory(activeConversationId: string | null = "conv-A") {
     () =>
       useConversationHistory({
         assistantId: "asst-1",
-        assistantStateKind: "active",
         activeConversationId,
       }),
     { wrapper: Wrapper },
@@ -132,21 +131,17 @@ describe("useConversationHistory — refetch on SSE reopen", () => {
       .addPathReferences(["/example/project-notes"]);
 
     const { rerender } = renderHook(
-      ({ assistantStateKind }: { assistantStateKind: "loading" | "active" }) =>
+      () =>
         useConversationHistory({
           assistantId: "asst-1",
-          assistantStateKind,
           activeConversationId: "conv-A",
         }),
       {
         wrapper: Wrapper,
-        initialProps: {
-          assistantStateKind: "loading" as "loading" | "active",
-        },
       },
     );
 
-    rerender({ assistantStateKind: "active" });
+    rerender({});
 
     expect(useComposerStore.getState().input).toBe("Unsent draft");
     expect(useComposerStore.getState().attachments).toMatchObject([

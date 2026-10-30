@@ -140,12 +140,10 @@ function Wrapper({ children }: { children: ReactNode }) {
 function useLegacyTranscript() {
   const { pagination } = useConversationHistory({
     assistantId: ASSISTANT_ID,
-    assistantStateKind: "active",
     activeConversationId: CONVERSATION_ID,
   });
   useMessageLifecycle({
     assistantId: ASSISTANT_ID,
-    assistantStateKind: "active",
     activeConversationId: CONVERSATION_ID,
     conversationExistsOnServer: true,
     latestPageOldestTimestamp: pagination.latestPageOldestTimestamp,

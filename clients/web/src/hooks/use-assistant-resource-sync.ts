@@ -72,10 +72,7 @@ const RECONNECT_SWEEP_DEBOUNCE_MS = 500;
  *   as one debounced `refreshAssistantResources` sweep
  * - `sse.closed`: clears capabilities before another draft can initialize
  */
-export function useAssistantResourceSync(
-  assistantId: string | null,
-  isAssistantActive: boolean,
-): void {
+export function useAssistantResourceSync(assistantId: string | null): void {
   const queryClient = useQueryClient();
   const pathOpts = { path: { assistant_id: assistantId ?? "" } };
   const reconnectSweepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -83,12 +80,12 @@ export function useAssistantResourceSync(
   );
 
   // Invariant: a scheduled reconnect catch-up is never dropped. On unmount and
-  // when the assistant changes or deactivates, the pending sweep is flushed
-  // here rather than cancelled, so the transport gap is always reconciled for
-  // the assistant it was scheduled for. This closure captures the departing
-  // assistantId, and the flush marks stale without refetching, so at worst the
-  // catch-up degrades to stale-marking for an assistant nobody observes any
-  // more and the next visit reads through.
+  // when the assistant changes, the pending sweep is flushed here rather than
+  // cancelled, so the transport gap is always reconciled for the assistant it
+  // was scheduled for. This closure captures the departing assistantId, and
+  // the flush marks stale without refetching, so at worst the catch-up
+  // degrades to stale-marking for an assistant nobody observes any more and
+  // the next visit reads through.
   useEffect(() => {
     return () => {
       const pendingSweep = reconnectSweepTimerRef.current;
@@ -102,10 +99,10 @@ export function useAssistantResourceSync(
       }
       refreshAssistantResources(queryClient, assistantId, "none");
     };
-  }, [assistantId, isAssistantActive, queryClient]);
+  }, [assistantId, queryClient]);
 
   useBusSubscription("sse.event", (envelope) => {
-    if (!assistantId || !isAssistantActive) {
+    if (!assistantId) {
       return;
     }
     const event = envelope.message;
@@ -258,7 +255,7 @@ export function useAssistantResourceSync(
     // A replacement process can advertise different endpoints. Clear the
     // previous answers immediately, before drafts can capture their defaults.
     resetAssistantCapabilities(queryClient, assistantId);
-    if (!isAssistantActive || cause === "fresh") {
+    if (cause === "fresh") {
       return;
     }
     if (reconnectSweepTimerRef.current) {

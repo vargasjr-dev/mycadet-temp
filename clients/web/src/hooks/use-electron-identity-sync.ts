@@ -22,10 +22,10 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
  * than the chat layout so the name tracks every authenticated route, not only
  * while chat is on screen.
  */
-export function useElectronIdentitySync(ready: boolean): void {
+export function useElectronIdentitySync(): void {
   const name = useAssistantIdentityStore.use.name();
 
   useEffect(() => {
-    setAssistantName(ready ? (name ?? "") : "");
-  }, [name, ready]);
+    setAssistantName(name ?? "");
+  }, [name]);
 }

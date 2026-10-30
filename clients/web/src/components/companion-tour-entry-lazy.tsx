@@ -18,17 +18,12 @@ const CompanionTourEntryModal = lazy(() =>
   })),
 );
 
-type CompanionTourEntryProps = Pick<CompanionTourEntryModalProps, "avatar"> & {
-  ready: boolean;
-};
+type CompanionTourEntryProps = Pick<CompanionTourEntryModalProps, "avatar">;
 
-function ElectronCompanionTourEntry({
-  avatar,
-  ready,
-}: CompanionTourEntryProps): ReactNode {
+function ElectronCompanionTourEntry({ avatar }: CompanionTourEntryProps): ReactNode {
   const name = useAssistantIdentityStore.use.name();
   const open = useCompanionIntroAnnouncement();
-  if (!ready || !open) {
+  if (!open) {
     return null;
   }
 

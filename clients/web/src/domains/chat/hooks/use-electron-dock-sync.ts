@@ -29,7 +29,6 @@ import { getDeviceBool, watchDeviceSetting } from "@/utils/device-settings";
 export function useElectronDockSync(
   assistantId: string | null,
   conversations: Conversation[],
-  isAssistantActive: boolean,
 ): void {
   const [dockBadgesEnabled, setDockBadgesEnabled] = useState(() =>
     getDeviceBool("dockBadgesEnabled", true),
@@ -38,7 +37,7 @@ export function useElectronDockSync(
   const unreadCount = useUnreadConversationCount(
     assistantId,
     conversations,
-    isElectron() && dockBadgesEnabled && isAssistantActive,
+    isElectron() && dockBadgesEnabled,
   );
 
   useEffect(

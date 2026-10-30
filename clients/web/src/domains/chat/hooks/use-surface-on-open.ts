@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { surfaceConversation } from "@/domains/chat/api/conversations";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import type { AssistantResolutionState } from "@/assistant/types";
 import type { Conversation } from "@/types/conversation-types";
 import {
   applySurfacedConversation,
@@ -34,12 +33,10 @@ import {
  */
 export function useSurfaceOnOpen({
   assistantId,
-  assistantStateKind,
   activeConversationId,
   activeConversation,
 }: {
   assistantId: string | null;
-  assistantStateKind: AssistantResolutionState["kind"];
   activeConversationId: string | null;
   activeConversation: Conversation | undefined;
 }) {
@@ -47,11 +44,7 @@ export function useSurfaceOnOpen({
   const surfacingConversationIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
+    if (!assistantId || !activeConversationId) {
       return;
     }
     if (
@@ -93,7 +86,6 @@ export function useSurfaceOnOpen({
     activeConversation,
     activeConversationId,
     assistantId,
-    assistantStateKind,
     queryClient,
   ]);
 }

@@ -47,7 +47,6 @@ mock.module("@/lib/local-mode", () => ({
   }),
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isLocalClient: () => isLocalClientValue,
-  isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   retireLocalAssistant: retireLocalAssistantMock,
   // The auth-store graph (pulled in by the store modules under test) needs
   // these; no test here exercises the gateway machinery.

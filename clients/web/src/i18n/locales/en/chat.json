@@ -401,9 +401,6 @@
     "loadingImageWithAlt": "Loading image… ({alt})"
   },
   "chatPage": {
-    "connecting": "Connecting…",
-    "connectingStuck": "Still connecting to your assistant - something seems stuck. Try again, or refresh the page if this keeps happening.",
-    "retryNow": "Retry now",
     "selfHostedUnreachable": "Couldn't reach your self-hosted assistant. Make sure your assistant is running, then try again.",
     "tryAgain": "Try again"
   },
@@ -411,8 +408,7 @@
     "askTheDoctor": "Ask the Doctor",
     "goToDoctor": "Go to Doctor",
     "openPage": "Open page",
-    "suggestionFallback": "Suggestion",
-    "copyCliFix": "Copy CLI fix"
+    "suggestionFallback": "Suggestion"
   },
   "chatRuleEditorModal": {
     "applyTo": "Apply to",
@@ -1428,16 +1424,6 @@
     "summaryTitle": "Ready to save",
     "summaryUnanswered": "Not set",
     "untitledTask": "What I saw"
-  },
-  "restoreCloudCredentialButton": {
-    "restore": "Restore access",
-    "restoring": "Restoring...",
-    "restored": "Restored. Cadet Cloud models are working again.",
-    "failedNoAssistant": "Select an assistant, then try again.",
-    "failedCannotActHere": "This app cannot restore the credential for this assistant. Open the assistant on the computer that runs it.",
-    "failedReplacementRejected": "Cadet rejected the replacement credential. Log in to Cadet Cloud, then try again.",
-    "failedUnconfirmed": "The replacement was saved but could not be confirmed with Cadet. It may start working shortly.",
-    "failedGeneric": "Could not restore access. Try again in a moment."
   },
   "sidebarExpandRow": {
     "expand": "Expand",
