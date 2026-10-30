@@ -142,7 +142,6 @@ export const routes = {
   logs: {
     root: r("/assistant/logs"),
     emails: r("/assistant/logs/emails"),
-    systemEvents: r("/assistant/logs/system-events"),
   },
   account: {
     // The tier's PAGES live in the app bundle; these paths are cross-bundle
@@ -289,7 +288,6 @@ export const routes = {
     mcp: r("/assistant/settings/mcp"),
     debug: r("/assistant/settings/debug"),
     dangerZone: r("/assistant/settings/danger-zone"),
-    systemEvents: r("/assistant/settings/system-events"),
     upgradeSuccess: r("/assistant/settings/billing/upgrade/success"),
   },
 

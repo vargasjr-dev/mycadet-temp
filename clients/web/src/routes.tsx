@@ -503,15 +503,6 @@ export const routeTree = [
                         ),
                     },
                   },
-                  {
-                    path: "system-events",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/system-events-redirect-page").then(
-                          (m) => m.SystemEventsRedirectPage,
-                        ),
-                    },
-                  },
                 ],
               },
 
@@ -542,15 +533,6 @@ export const routeTree = [
                       Component: () =>
                         import("@/domains/logs/pages/usage-redirect-page").then(
                           (m) => m.UsageRedirectPage,
-                        ),
-                    },
-                  },
-                  {
-                    path: "system-events",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/logs/pages/system-events-page").then(
-                          (m) => m.SystemEventsPage,
                         ),
                     },
                   },
