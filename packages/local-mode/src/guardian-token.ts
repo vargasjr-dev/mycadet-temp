@@ -7,7 +7,8 @@ import {
   isLoopbackPublicUrl,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { guardianTokenPath } from "./config";
+import { guardianTokenPath, basetenTokenPath } from "./config";
+import { readLockfile } from "./lockfile";
 import type { CliInvocation } from "./util";
 
 const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
@@ -51,6 +52,57 @@ export function saveGuardianToken(
     mode: 0o600,
   });
   fs.chmodSync(tokenPath, 0o600);
+}
+
+/**
+ * Persist the Baseten sandbox access token a hatch exchanged for an
+ * assistant, at {@link basetenTokenPath} under the guardian token's
+ * 0600/0700 discipline. Read by the desktop proxy's forward planner — the
+ * single credential for reaching that sandbox's gateway.
+ */
+export function saveBasetenSandboxToken(
+  assistantId: string,
+  token: string,
+): void {
+  const tokenPath = basetenTokenPath(assistantId);
+  fs.mkdirSync(path.dirname(tokenPath), { recursive: true, mode: 0o700 });
+  const data = JSON.stringify({ token, mintedAt: new Date().toISOString() });
+  fs.writeFileSync(tokenPath, data + "\n", { mode: 0o600 });
+  fs.chmodSync(tokenPath, 0o600);
+}
+
+/**
+ * Read a saved Baseten sandbox access token. TokenResult-shaped so it drops
+ * straight into the paired-forward credential seam: a missing or corrupt
+ * file is a 404, never a throw — the proxy surfaces the structured error.
+ */
+export function readBasetenSandboxToken(assistantId: string): TokenResult {
+  try {
+    const raw = JSON.parse(
+      fs.readFileSync(basetenTokenPath(assistantId), "utf-8"),
+    ) as { token?: unknown };
+    if (typeof raw.token === "string" && raw.token) {
+      return { ok: true, accessToken: raw.token };
+    }
+    return {
+      ok: false,
+      status: 404,
+      error: "Baseten sandbox token file is missing a token — re-run `cadet hatch --remote baseten`.",
+    };
+  } catch (err: unknown) {
+    if ((err as unknown as { code?: string }).code === "ENOENT") {
+      return {
+        ok: false,
+        status: 404,
+        error: "No Baseten sandbox token saved for this assistant — re-run `cadet hatch --remote baseten`.",
+      };
+    }
+    return {
+      ok: false,
+      status: 500,
+      error: `Failed to read the Baseten sandbox token: ${err}`,
+    };
+  }
 }
 
 /**
@@ -282,6 +334,19 @@ export function getGuardianAccessToken(
   return refresh;
 }
 
+/**
+ * Whether the lockfile records this assistant on the Baseten topology —
+ * the proxy's credential seam branches on it (sandbox access token file,
+ * not a leased guardian bearer). Exported so host wrappers can skip their
+ * CLI-runtime resolution before delegating to the shared seam.
+ */
+export function isBasetenAssistant(assistantId: string): boolean {
+  return (
+    readLockfile().assistants.find((a) => a.assistantId === assistantId)
+      ?.cloud === "baseten"
+  );
+}
+
 /** Resolve a paired bearer only when the proxy target matches its binding. */
 export function getPairedGuardianAccessToken(
   assistantId: string,
@@ -289,6 +354,13 @@ export function getPairedGuardianAccessToken(
   invocation: CliInvocation,
   isLoopback: boolean,
 ): Promise<TokenResult> {
+  // Baseten sandboxes don't lease guardian tokens: the credential is the
+  // sandbox access token the hatch saved beside the lockfile, read straight
+  // from disk — no CLI runtime, no mint, no refresh cycle. A missing file
+  // surfaces the structured 404 the proxy renders.
+  if (isBasetenAssistant(assistantId)) {
+    return Promise.resolve(readBasetenSandboxToken(assistantId));
+  }
   return getGuardianAccessToken(assistantId, invocation, isLoopback, {
     paired: true,
     pairedGatewayUrl,

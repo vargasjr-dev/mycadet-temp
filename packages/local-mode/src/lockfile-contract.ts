@@ -43,6 +43,7 @@ export const KNOWN_REMOTES = [
   "apple-container",
   "cloud",
   "custom",
+  "baseten",
 ] as const;
 
 /**
@@ -255,6 +256,13 @@ function getCloudUrl(): string {
  *   recorded loopback gateway port, else the default gateway port.
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
+  // Baseten sandboxes: every client rides the sandbox API server's
+  // `/port/<PORT>/` reverse-proxy route — the gateway port is fixed at
+  // sandbox creation (the `GATEWAY_PORT` env), so the address is derivable
+  // from the entry alone.
+  if (entry.cloud === "baseten" && entry.basetenSandboxUrl && entry.port) {
+    return `${entry.basetenSandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
+  }
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
     // Custom remotes speak TLS. Default ports elided the way a URL prints
     // them.
@@ -322,8 +330,20 @@ export const LockfileAssistantSchema = z.object({
   cloud: RemoteSchema.catch("local"),
   /** Host address of a custom remote's gateway (cloud "custom"). */
   ipAddress: z.string().optional(),
-  /** Gateway port on a custom remote (cloud "custom"). */
+  /**
+   * Gateway port on a custom remote (cloud "custom"), or the
+   * sandbox-internal gateway port a Baseten sandbox's gateway listens on
+   * (cloud "baseten" — piped in as `GATEWAY_PORT` at sandbox creation so
+   * clients can address `{basetenSandboxUrl}/port/{port}` a priori).
+   */
   port: z.number().optional(),
+  /**
+   * The Baseten sandbox server URL (cloud "baseten") — the address every
+   * client hits; the assistant's gateway is reached at
+   * `{basetenSandboxUrl}/port/{port}/` with the sandbox access token the
+   * hatch saved beside the lockfile (see `basetenTokenPath`). Not a secret.
+   */
+  basetenSandboxUrl: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that

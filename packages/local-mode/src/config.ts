@@ -65,6 +65,24 @@ export function resolveInstanceDir(assistantId: string): string {
 }
 
 /**
+ * The on-disk location of an assistant's Baseten sandbox access token, given
+ * an already resolved config dir. Same contract as {@link guardianTokenPath}:
+ * the single source of truth for this path so the CLI writer and every
+ * host-seam reader agree — the desktop proxy reads the file the hatch wrote.
+ * The token is a short-lived bearer for the sandbox's API server; it never
+ * enters the lockfile (which crosses the renderer boundary).
+ */
+export function basetenTokenPath(assistantId: string): string {
+  assertSafePathSegment(assistantId, "assistant ID");
+  return joinLocalPath(
+    resolveConfigDir(),
+    "assistants",
+    assistantId,
+    "baseten-token.json",
+  );
+}
+
+/**
  * The on-disk location of an assistant's guardian token, given an already
  * resolved config dir. The single source of truth for this path so the CLI
  * writer and every host-seam reader agree — a divergence here is what leaves a

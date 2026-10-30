@@ -292,6 +292,33 @@ describe("gatewayTargetsFromLockfile", () => {
     );
   });
 
+  test("a baseten entry resolves to a remote target on the sandbox /port/ route", () => {
+    expect(
+      gatewayTargetsFromLockfile({
+        assistants: [
+          {
+            assistantId: "sbx-1",
+            cloud: "baseten",
+            basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+            port: 7830,
+          },
+        ],
+      }),
+    ).toEqual(
+      targets({ "sbx-1": remote("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830") })(),
+    );
+  });
+
+  test("a baseten entry without a recorded URL is not targetable", () => {
+    // The hatch records the entry only once describe returns a URL; a
+    // URL-less record must not forward anywhere.
+    expect(
+      gatewayTargetsFromLockfile({
+        assistants: [{ assistantId: "sbx-1", cloud: "baseten", port: 7830 }],
+      }),
+    ).toEqual(new Map());
+  });
+
   test("tolerates malformed entries", () => {
     expect(
       gatewayTargetsFromLockfile({

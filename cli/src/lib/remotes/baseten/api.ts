@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import { resolveBasetenCli, runBasetenCli } from "./baseten-cli.js";
+import { captureBasetenCli, resolveBasetenCli, runBasetenCli } from "./baseten-cli.js";
 
 const BASETEN_API_BASE = "https://api.baseten.co";
 
@@ -209,9 +209,17 @@ export async function createBasetenSandbox(options: {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
     for (const env of options.envs ?? []) {
-      args.push("--env", `${env.name}=${env.value}`);
+      // `--env` marks the value secret (masked in configuration responses);
+      // `--plain-env` stays readable — configuration like a gateway port is
+      // not a credential and wants to be describable.
+      const flag = env.secret ? "--env" : "--plain-env";
+      args.push(flag, `${env.name}=${env.value}`);
     }
     await runBasetenCli(args);
+    if (options.name) {
+      const url = await describeBasetenSandboxUrl(options.name);
+      return { name: options.name, ...(url ? { url } : {}) };
+    }
     return { name: options.name };
   }
 
@@ -224,4 +232,27 @@ export async function createBasetenSandbox(options: {
       ...(options.envs?.length ? { envs: options.envs } : {}),
     }),
   });
+}
+
+/**
+ * The sandbox server URL off the installed CLI — `describe --jq '.url'` —
+ * with the jq quoting (`"https://..."`) stripped. Empty string when the CLI
+ * declines (name not found yet, pre-release output changes): the caller
+ * treats a miss as "no URL recorded" rather than a failed hatch.
+ */
+export async function describeBasetenSandboxUrl(name: string): Promise<string> {
+  try {
+    const out = await captureBasetenCli([
+      "sandbox",
+      "describe",
+      "--name",
+      name,
+      "--jq",
+      ".url",
+    ]);
+    return out.replace(/^"(.*)"$/, "$1");
+  } catch (err) {
+    console.warn(`   Could not describe the sandbox URL: ${err}`);
+    return "";
+  }
 }

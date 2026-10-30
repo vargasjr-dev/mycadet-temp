@@ -31,3 +31,11 @@ export function runBasetenCli(args: string[]): Promise<void> {
     });
   });
 }
+
+/**
+ * Run the baseten CLI and capture stdout — for read-only queries whose
+ * output the caller parses (e.g. a sandbox's URL off `describe --jq`).
+ */
+export async function captureBasetenCli(args: string[]): Promise<string> {
+  return (await execOutput("baseten", args)).trim();
+}
