@@ -194,7 +194,6 @@ describe("navigateToConversation", () => {
       activeAppId: SAMPLE_APP.appId,
       openedAppState: SAMPLE_APP,
       activeChatInfo: {
-        assistantId: "asst-1",
         conversationId: "conv-1",
         category: null,
       },

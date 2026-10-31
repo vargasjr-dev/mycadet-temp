@@ -209,6 +209,116 @@ export function resolveGatewayProxyTarget(
 const MIN_GATEWAY_PORT = 1024;
 const MAX_GATEWAY_PORT = 65535;
 
+/**
+ * Entry clouds this machine's host can retire directly: the host CLI owns
+ * their teardown (daemon stop, container removal, instance archive). Every
+ * other entry retires through the cloud's retire route the same proxy
+ * forwards, so the bundle never branches on entry type.
+ */
+export function isHostRetirableEntry(entry: LockfileAssistant): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "apple-container"
+  );
+}
+
+const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
+
+/**
+ * The scoped surface's retire arm. A `DELETE` on `/v1/assistants/{id}/retire/`
+ * for an entry the host can retire directly (`isHostRetirableEntry`) is
+ * answered host-side by running the CLI's retire, not forwarded to the
+ * entry's gateway (which cannot retire itself). Anything else is `pass`: the
+ * data-plane plan and the cloud forward keep the request on the endpoint the
+ * bundle called, which is the contract: one retire endpoint for every entry
+ * type, the serving host deciding how to honor it.
+ *
+ * Pure in the URL; `lockfile` is a thunk (typically the host's watched
+ * in-memory snapshot, falling back to disk) evaluated only after the URL
+ * matches, so the hot path of every other request never touches it.
+ */
+export function resolveAssistantRetireProxyDecision(
+  pathname: string,
+  method: string,
+  lockfile: () => { assistants: readonly unknown[] } | null,
+): { kind: "retireLocal"; assistantId: string } | { kind: "pass" } {
+  if (method !== "DELETE") {
+    return { kind: "pass" };
+  }
+  const match = RETIRE_PATTERN.exec(pathname);
+  if (!match) {
+    return { kind: "pass" };
+  }
+  let assistantId: string;
+  try {
+    assistantId = decodeURIComponent(match[1]!);
+  } catch {
+    return { kind: "pass" };
+  }
+  const lockfileValue = lockfile();
+  if (!lockfileValue) {
+    return { kind: "pass" };
+  }
+  for (const rawEntry of lockfileValue.assistants) {
+    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
+    if (!parsed.success || parsed.data.assistantId !== assistantId) {
+      continue;
+    }
+    return isHostRetirableEntry(parsed.data)
+      ? { kind: "retireLocal", assistantId: parsed.data.assistantId }
+      : { kind: "pass" };
+  }
+  return { kind: "pass" };
+}
+
+/**
+ * Compute the id-keyed gateway-target map from a lockfile's assistant
+ * entries. Each entry parses through {@link LockfileAssistantSchema}; an
+ * entry that fails the parse (or carries no usable id) is skipped. An
+ * off-machine `runtimeUrl` (an absolute http(s) address that is not
+ * loopback — a connect import's remote gateway) resolves to it directly;
+ * otherwise a loopback-gateway cloud (`local`, `docker`) resolves to its
+ * recorded loopback port (`entry.port`). Everything
+ * else — the cloud — is left out, and an absent id is a proxy
+ * rejection.
+ *
+ * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
+ * lockfile watcher) derives the map without touching disk on the request
+ * path.
+ */
+export function gatewayTargetsFromLockfile(lockfile: {
+  assistants: readonly unknown[];
+}): Map<string, GatewayEntryTarget> {
+  const targets = new Map<string, GatewayEntryTarget>();
+  for (const rawEntry of lockfile.assistants) {
+    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
+    if (!parsed.success) {
+      continue;
+    }
+    const { assistantId } = parsed.data;
+    if (!assistantId) {
+      continue;
+    }
+    const gatewayUrl = getGatewayUrl(parsed.data);
+    // Cloud assistants are driven through the platform session, never
+    // forwarded over this machine's proxy.
+    if (isCloudEntry(parsed.data)) {
+      continue;
+    }
+    if (isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
+      targets.set(assistantId, { kind: "remote", runtimeUrl: gatewayUrl });
+      continue;
+    }
+    if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
+      continue;
+    }
+    const port = parsed.data.port;
+    if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
+      targets.set(assistantId, { kind: "loopback", port });
+    }
+  }
+  return targets;
+}
+
 type LockfileEntriesRead =
   | { kind: "ok"; assistants: unknown[] }
   | { kind: "missing" }

@@ -85,7 +85,7 @@ export function DocumentViewerPage() {
       setState({ kind: "error" });
       return;
     }
-    const scope = documentRequestScope(assistantId);
+    const scope = documentRequestScope();
     requestRef.current = scope;
     void (async () => {
       try {
@@ -113,7 +113,11 @@ export function DocumentViewerPage() {
         };
         const options = { assistantId, surfaceId, isCurrent: scope.isCurrent };
         if (entryMode === "conversation") {
-          await loadDocumentConversation({ ...options, onReady });
+          await loadDocumentConversation({
+            surfaceId,
+            isCurrent: scope.isCurrent,
+            onReady,
+          });
         } else {
           const data = await loadDocumentContent(options);
           if (data && scope.isCurrent()) {
@@ -178,7 +182,6 @@ export function DocumentViewerPage() {
         }
         const latestDocument = { ...doc, ...saved };
         const options = {
-          assistantId,
           document: latestDocument,
           isCurrent: scope.isCurrent,
         };

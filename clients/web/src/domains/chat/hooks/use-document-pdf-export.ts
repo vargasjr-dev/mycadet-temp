@@ -20,7 +20,7 @@ export function useDocumentPdfExport(
     if (!assistantId || !surfaceId || !editor) {
       return;
     }
-    const scope = documentRequestScope(assistantId);
+    const scope = documentRequestScope();
     try {
       if (!scope.isCurrent()) {
         return;

@@ -118,8 +118,7 @@ let mockSessionToken: string | null = null;
 
 const refreshLockfileNowMock = mock(() => {});
 
-const { configureLocalMode, installLocalMode } =
-  await import("./local-mode");
+const { configureLocalMode, installLocalMode } = await import("./local-mode");
 const { guardianTokenPath } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
@@ -396,11 +395,6 @@ const replaceCloudAssistants = (cloudAssistants: unknown): WriteResult =>
     allowedEvent,
     cloudAssistants,
   ) as WriteResult;
-const retire = (assistantId?: unknown): Promise<unknown> =>
-  handlers["cadet:localMode:retire"](
-    allowedEvent,
-    assistantId,
-  ) as Promise<unknown>;
 const unpair = (assistantId?: unknown): WriteResult =>
   handlers["cadet:localMode:unpair"](allowedEvent, assistantId) as WriteResult;
 const wake = (assistantId?: unknown, options?: unknown): Promise<unknown> =>
@@ -664,94 +658,6 @@ describe("lockfile IPC handlers", () => {
 
     expect(result.ok).toBe(false);
     expect(readLockfile().assistants).toEqual([]);
-  });
-});
-
-describe("cadet:localMode:retire handler", () => {
-  test("dev: spawns `... retire <id> --yes` and reports success on a zero exit", async () => {
-    const pending = retire("asst-1");
-    await tick();
-    expect(spawnArgs[0]).toEqual([
-      "bun",
-      [
-        "run",
-        path.join("/repo", "cli", "src", "index.ts"),
-        "retire",
-        "asst-1",
-        "--yes",
-      ],
-    ]);
-    lastChild.emit("close", 0);
-    expect(await pending).toEqual({ ok: true });
-  });
-
-  test("a non-zero exit resolves to a failure carrying the CLI's stderr", async () => {
-    const pending = retire("asst-1");
-    await tick();
-    lastChild.stderr.emit("data", Buffer.from("no such assistant"));
-    lastChild.emit("close", 1);
-    expect(await pending).toEqual({ ok: false, error: "no such assistant" });
-  });
-
-  test("passes the current session token through the shared retire invocation", async () => {
-    mockSessionToken = "tok-electron";
-    const previousPlatformToken = process.env.CADET_PLATFORM_TOKEN;
-    process.env.CADET_PLATFORM_TOKEN = "parent-token";
-    try {
-      const pending = retire("asst-1");
-      await tick();
-      lastChild.emit("close", 0);
-
-      expect(await pending).toEqual({ ok: true });
-      expect(
-        (spawnOptions[0] as { env?: NodeJS.ProcessEnv }).env
-          ?.CADET_PLATFORM_TOKEN,
-      ).toBe("tok-electron");
-      expect(process.env.CADET_PLATFORM_TOKEN).toBe("parent-token");
-    } finally {
-      if (previousPlatformToken === undefined) {
-        delete process.env.CADET_PLATFORM_TOKEN;
-      } else {
-        process.env.CADET_PLATFORM_TOKEN = previousPlatformToken;
-      }
-    }
-  });
-
-  test("rejects a missing assistant id without spawning", async () => {
-    expect(await retire("")).toEqual({
-      ok: false,
-      error: "Missing assistantId",
-    });
-    expect(await retire(undefined)).toEqual({
-      ok: false,
-      error: "Missing assistantId",
-    });
-    expect(spawnArgs).toHaveLength(0);
-  });
-
-  test("packaged: uses installed CLI for retire", async () => {
-    appState.isPackaged = true;
-    cliInstallerState.isInstalled = true;
-
-    const pending = retire("asst-1");
-    await tick();
-    expect(spawnArgs[0]).toEqual([
-      cliInstallerState.bundledBunPath,
-      ["run", cliInstallerState.cliBinPath, "retire", "asst-1", "--yes"],
-    ]);
-    lastChild.emit("close", 0);
-    expect(await pending).toEqual({ ok: true });
-  });
-
-  test("packaged: returns error when install fails during retire", async () => {
-    appState.isPackaged = true;
-    cliInstallerState.isInstalled = false;
-    cliInstallerState.installError = new Error("disk full");
-
-    const result = (await retire("asst-1")) as { ok: boolean; error: string };
-    expect(result.ok).toBe(false);
-    expect(result.error).toBe("disk full");
-    expect(spawnArgs).toHaveLength(0);
   });
 });
 
@@ -1241,12 +1147,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   });
 
   test("reads the avatar off the lockfile entry's instance dir", () => {
-    const avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    const avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     fs.mkdirSync(avatarDir, { recursive: true });
     fs.writeFileSync(
       path.join(avatarDir, "avatar.json"),
@@ -1317,12 +1218,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   });
 
   test("an unreadable manifest image surfaces as a failure over IPC", () => {
-    const avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    const avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     fs.mkdirSync(avatarDir, { recursive: true });
     fs.writeFileSync(
       path.join(avatarDir, "avatar.json"),

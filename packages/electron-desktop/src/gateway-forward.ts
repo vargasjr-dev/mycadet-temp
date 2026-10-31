@@ -2,7 +2,10 @@ import {
   authorizePairedForwardHeaders,
   loopbackGatewayBearer,
   readGatewayTargets,
+  readLockfile,
+  resolveAssistantRetireProxyDecision,
   resolveGatewayProxyTarget,
+  runRetire,
   sanitizePairedForwardHeaders,
   type TokenResult,
   type GuardianTokenLease,
@@ -15,7 +18,7 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import { getLocalGuardianAccessToken } from "./local-mode";
+import { getLocalGuardianAccessToken, requireRuntime } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -177,10 +180,46 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
   return readGatewayTargets();
 };
 
+/**
+ * Run the CLI's retire for an on-machine entry the scoped surface's retire
+ * arm resolved host-side. A bodyless 204 parses as the client's success null;
+ * a failure carries the CLI's message as the cloud error shape, so the
+ * confirmation dialog renders the same detail either way.
+ */
+async function retireLocalAssistantHostside(
+  assistantId: string,
+): Promise<Response> {
+  const result = await runRetire(
+    () => requireRuntime().cli.resolveInvocation(),
+    assistantId,
+    {
+      cloudToken: requireRuntime().session.getToken() ?? undefined,
+    },
+  );
+  if (result.ok) {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
+  // The scoped surface's retire arm: an on-machine entry is retired by the
+  // host CLI here rather than forwarded to a gateway that cannot retire
+  // itself, so the bundle's one endpoint holds for every entry type.
+  const retire = resolveAssistantRetireProxyDecision(
+    new URL(request.url).pathname,
+    request.method,
+    () => getWatchedLockfileSnapshot() ?? readLockfile(),
+  );
+  if (retire.kind === "retireLocal") {
+    return retireLocalAssistantHostside(retire.assistantId);
+  }
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
     // The trusted main-process proxy reads the paired bearer through the
