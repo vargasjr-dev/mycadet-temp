@@ -17,7 +17,6 @@ import {
 } from "react-router";
 
 import { useAutoGreetGate } from "@/domains/chat/hooks/use-auto-greet-gate";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -90,6 +89,7 @@ import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 import { ChatContentLayout } from "@/domains/chat/components/chat-content-layout";
 import type { ChatMainPanelProps } from "@/domains/chat/components/chat-route-content";
 import { useSessionDisclosureState } from "@/domains/chat/transcript/use-session-disclosure-state";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * Stage a `?prompt=` that arrived without in-app provenance (a clicked link)

@@ -6,7 +6,7 @@ import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import type { DocumentViewerContainerHandle } from "@/domains/chat/components/document-viewer-container";
 import type { DisplayAttachment } from "@/domains/chat/types/types";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 
 import { useComposerSubmit } from "./use-composer-submit";
@@ -37,7 +37,7 @@ function deferred<T>() {
 }
 
 function selectOwner(owner = OWNER) {
-  useResolvedAssistantsStore.setState({ activeAssistantId: owner.assistantId });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: owner.assistantId } });
   useConversationStore.setState({ activeConversationId: owner.conversationId });
   useViewerStore.setState({
     mainView: "document",
@@ -161,7 +161,7 @@ describe("shared document preparation and composer submit", () => {
       await waitFor(() => expect(flush).toHaveBeenCalledTimes(1));
       act(() => {
         if (change === "restore") { useViewerStore.getState().toggleAppMinimized(); }
-        if (change === "assistant") { useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" }); }
+        if (change === "assistant") { useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } }); }
         if (change === "conversation") { useConversationStore.setState({ activeConversationId: "conversation-2" }); }
         if (change === "document") { useViewerStore.setState({ openedDocumentState: null }); }
       });
@@ -281,7 +281,7 @@ describe("shared document preparation and composer submit", () => {
       act(() => { pending = result.current.submitMessage(); });
       await waitFor(() => expect(flush).toHaveBeenCalledTimes(1));
       act(() => {
-        if (change === "assistant") { useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" }); }
+        if (change === "assistant") { useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } }); }
         if (change === "conversation") { useConversationStore.setState({ activeConversationId: "conversation-2" }); }
         if (change === "close") { useViewerStore.getState().closeDocument(); }
         if (change === "lease") { invalidateLease(); }

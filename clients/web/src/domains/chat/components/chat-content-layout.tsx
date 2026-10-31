@@ -33,7 +33,7 @@ import {
   type ChatMainPanelProps,
 } from "@/domains/chat/components/chat-route-content";
 import { handleAppViewerAction } from "@/domains/chat/app-viewer-actions";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { paneState, showsFullWidthApp } from "@/stores/pane-state";
 import { WorkspacePanes } from "@/domains/chat/components/workspace-panes";
@@ -58,6 +58,7 @@ import { exitAppSplit } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 import { getDocumentFeedbackPrompt } from "../document-conversation";
 import { skillDetailBackState } from "@/utils/skills";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 // Import thunks for the lazy panel chunks, shared by the React.lazy wrappers
 // below and the idle-prefetch effect. Once a thunk has run, the browser module
@@ -191,7 +192,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
 
   const isSharing = useDeployStore.use.isSharing();
   const isDeploying = useDeployStore.use.isDeploying();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
 
   const isMobile = useIsMobile();
   const documentPreparation = useDocumentChatPreparation({
@@ -235,7 +236,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
 
   const handleShareApp = useCallback(() => {
     const app = useViewerStore.getState().openedAppState;
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (app && aid) {
       void useDeployStore.getState().shareApp(aid, app.appId, app.name);
     }
@@ -243,7 +244,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
 
   const handleDeployApp = useCallback(() => {
     const app = useViewerStore.getState().openedAppState;
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (app && aid) {
       void useDeployStore
         .getState()
@@ -289,7 +290,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
   );
 
   const onRequestSubagentDetail = useCallback((id: string) => {
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (!aid) {
       return;
     }
@@ -306,7 +307,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
   );
 
   const onRequestWorkflowJournal = useCallback((runId: string) => {
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (!aid) {
       return;
     }

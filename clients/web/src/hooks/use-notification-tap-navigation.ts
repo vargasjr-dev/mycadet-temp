@@ -1,103 +1,41 @@
 import { useEffect } from "react";
 
-import { setSelectedAssistant } from "@/assistant/selection";
-
 import { publish } from "@/lib/event-bus";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
-import {
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
-
-const TAP_ACTIVATION_TIMEOUT_MS = 15_000;
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 
 /**
- * The assistant a tap targets, if it is still in the roster. The roster is
- * the serving shell's own resolution projected into web — org-scoped by
- * construction and stamped before the first render — so a row's presence
- * already answers every "may this tap route" question the old session and
- * organization gates re-derived by hand: no session, no rows; a stale org's
- * assistant isn't in a current-org roster. What survives is the lookup.
+ * The assistant a tap targets, if it is the one this surface serves. The
+ * served entry is the shell's own resolution stamped before the first
+ * render, so its presence already answers every "may this tap route"
+ * question the old session and organization gates re-derived by hand. A
+ * tap for any other assistant has no answer here — which assistant a
+ * surface serves is the host's fact, not a web selection.
  */
 function resolveCurrentTapAssistant(
   payload: NotificationTapPayload,
-): ResolvedAssistant | null {
+): boolean {
   const identity = payload.identity;
   if (!identity) {
-    return null;
+    return false;
   }
-  return (
-    useResolvedAssistantsStore
-      .getState()
-      .assistants.find((candidate) => candidate.id === identity.assistantId) ??
-    null
-  );
-}
-
-function waitForActiveTapAssistant(
-  payload: NotificationTapPayload,
-  assistantId: string,
-): Promise<boolean> {
-  const readOutcome = (): boolean | null => {
-    if (!resolveCurrentTapAssistant(payload)) {
-      return false;
-    }
-    const assistantsState = useResolvedAssistantsStore.getState();
-    if (assistantsState.selectedAssistantId !== assistantId) {
-      return false;
-    }
-    if (assistantsState.activeAssistantId === assistantId) {
-      return true;
-    }
-    // A wedged activation simply burns the bounded timeout — there is no
-    // resolution state to read (the web bundle exists only for a resolved
-    // assistant; the selection write's failure path returned above).
-    return null;
-  };
-  const immediate = readOutcome();
-  if (immediate !== null) {
-    return Promise.resolve(immediate);
-  }
-  return new Promise<boolean>((resolve) => {
-    let unsubscribeAssistants = () => {};
-    let cancellationTimer: ReturnType<typeof setTimeout> | null = null;
-    const finish = (outcome: boolean) => {
-      unsubscribeAssistants();
-      if (cancellationTimer) {
-        clearTimeout(cancellationTimer);
-      }
-      resolve(outcome);
-    };
-    const settleIfComplete = () => {
-      const outcome = readOutcome();
-      if (outcome === null) {
-        return;
-      }
-      finish(outcome);
-    };
-    unsubscribeAssistants =
-      useResolvedAssistantsStore.subscribe(settleIfComplete);
-    cancellationTimer = setTimeout(() => {
-      finish(false);
-    }, TAP_ACTIVATION_TIMEOUT_MS);
-    settleIfComplete();
-  });
+  const entry = getResolvedAssistant();
+  return entry?.assistantId === identity.assistantId;
 }
 
 /**
  * Routes notification taps to the originating conversation. Mounted at
  * `RootLayout` so a tap arriving on any route navigates.
  *
- * The tap's inputs are the payload and the assistant roster — nothing from
+ * The tap's inputs are the payload and the served assistant — nothing from
  * the session world. The serving shell resolved the assistant before web
- * loaded, so a tap has no session question to ask; a target that is gone
- * fails the roster lookup, and the connect path re-validates the platform
- * session itself, exactly as it does for every non-tap entry into the app.
- * The thread open publishes `deeplink.openThread` rather than navigating
- * directly so taps share the `cadet://thread/...` deep-link path — the same
- * channel, with the same server-side validity handling; no client-side
- * pre-validation a deep link never had.
+ * loaded, so a tap has no session question to ask; a target that is not the
+ * served assistant fails the lookup. The thread open publishes
+ * `deeplink.openThread` rather than navigating directly so taps share the
+ * `cadet://thread/...` deep-link path — the same channel, with the same
+ * server-side validity handling; no client-side pre-validation a deep link
+ * never had.
  *
  * No effect cleanup: `setNotificationTapHandler` swaps the handler
  * reference in place and registers the cloud listeners only once
@@ -112,7 +50,7 @@ export function useNotificationTapNavigation(): void {
     if (window.location.search.includes("popout=1")) {
       return;
     }
-    setNotificationTapHandler(async (payload) => {
+    setNotificationTapHandler((payload) => {
       if (!payload.conversationId) {
         return;
       }
@@ -120,30 +58,7 @@ export function useNotificationTapNavigation(): void {
         publish("deeplink.openThread", { threadId: payload.conversationId });
         return;
       }
-      const assistant = resolveCurrentTapAssistant(payload);
-      if (!assistant) {
-        return;
-      }
-      const assistantSelection = useResolvedAssistantsStore.getState();
-      if (
-        assistantSelection.selectedAssistantId === assistant.id &&
-        assistantSelection.activeAssistantId === assistant.id
-      ) {
-        publish("deeplink.openThread", { threadId: payload.conversationId });
-        return;
-      }
-      try {
-        // Connecting to lockfile entries is app-only: the app bundle owns
-        // those connections, so a tap on one just opens the thread through
-        // its owning host. A platform row's tap is its selection write —
-        // session-scoped server-side, answered with 401 when unauthenticated.
-        if (assistant.cloud === "cloud") {
-          await setSelectedAssistant(assistant.id);
-        }
-      } catch {
-        return;
-      }
-      if (!(await waitForActiveTapAssistant(payload, assistant.id))) {
+      if (!resolveCurrentTapAssistant(payload)) {
         return;
       }
       publish("deeplink.openThread", { threadId: payload.conversationId });

@@ -62,12 +62,15 @@ const selectionStore = create<{ selectedAssistantId: string | null }>(() => ({
   selectedAssistantId: "self",
 }));
 
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    selectedAssistantId: () => selectionStore((s) => s.selectedAssistantId),
+    assistant: () => {
+      const id = selectionStore((s) => s.selectedAssistantId);
+      return id ? { cloud: "local", assistantId: id } : null;
+    },
   };
-  return { useResolvedAssistantsStore: store };
+  return { useResolvedAssistantStore: store };
 });
 
 const { PairedDevicesSection } = await import("./paired-devices-section");

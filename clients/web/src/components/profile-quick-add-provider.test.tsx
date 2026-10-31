@@ -24,10 +24,10 @@ import { createElement, useEffect } from "react";
 const NEW_PROFILE_NAME = "fast-cheap";
 
 // --- resolved assistants store (active assistant id) -------------------------
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
-  store.use = { activeAssistantId: () => "assistant-1" };
-  return { useResolvedAssistantsStore: store };
+  store.use = { assistant: () => ({ cloud: "local", assistantId: "assistant-1" }) };
+  return { useResolvedAssistantStore: store };
 });
 
 // --- toast -------------------------------------------------------------------

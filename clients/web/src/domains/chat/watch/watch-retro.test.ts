@@ -8,7 +8,7 @@ import {
   settleWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "asst-owner";
 
@@ -20,7 +20,11 @@ const SESSION = {
 
 /** Make `assistantId` the active one, which is what the state is bound to. */
 const activate = (assistantId: string | null) => {
-  useResolvedAssistantsStore.getState().setActiveAssistantId(assistantId);
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant(
+      assistantId ? { cloud: "local", assistantId } : null,
+    );
 };
 
 /** The runtime's announcement, in the shape the event stream carries it. */

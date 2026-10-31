@@ -46,7 +46,7 @@ import {
 } from "@/assistant/disk-pressure";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useStreamStore } from "@/domains/chat/stream-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { recordDiagnostic } from "@/lib/diagnostics";
 import { saveDismissedSurfaceIds } from "@/domains/chat/utils/dismissed-surfaces-storage";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
@@ -343,7 +343,7 @@ export function useSendMessage({
           useComposerStore.getState().sessionGeneration &&
         isAsyncChatScopeCurrent({
           currentAssistantId:
-            useResolvedAssistantsStore.getState().activeAssistantId,
+            getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId,
@@ -377,7 +377,7 @@ export function useSendMessage({
             assistantId: requestAssistantId,
             conversationId: requestConversationId,
             activeAssistantId:
-              useResolvedAssistantsStore.getState().activeAssistantId,
+              getActiveAssistantId(),
             activeConversationId:
               useConversationStore.getState().activeConversationId,
           });
@@ -533,7 +533,7 @@ export function useSendMessage({
           conversationId: requestConversationId,
           resolvedConversationId: effectiveConversationId,
           activeAssistantId:
-            useResolvedAssistantsStore.getState().activeAssistantId,
+            getActiveAssistantId(),
           activeConversationId:
             useConversationStore.getState().activeConversationId,
         });
@@ -661,7 +661,7 @@ export function useSendMessage({
         // is the window the switch happens in.
         const answerIsOnScreen = isAsyncChatScopeCurrent({
           currentAssistantId:
-            useResolvedAssistantsStore.getState().activeAssistantId,
+            getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId: activeAssistantId,
@@ -754,7 +754,7 @@ export function useSendMessage({
           useComposerStore.getState().sessionGeneration &&
         isAsyncChatScopeCurrent({
           currentAssistantId:
-            useResolvedAssistantsStore.getState().activeAssistantId,
+            getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId: assistantId,

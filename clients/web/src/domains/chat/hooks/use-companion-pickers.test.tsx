@@ -27,13 +27,13 @@ const { useCompanionPopoverStore } =
   await import("@/domains/chat/companion-popover");
 const { useLiveVoiceStore } =
   await import("@/domains/chat/voice/live-voice/live-voice-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 beforeEach(() => {
   voiceHookOptions = [];
   catalogAvailable = true;
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   useLiveVoiceStore.setState({ state: "idle" });
   useCompanionPopoverStore.setState({
     openPicker: null,
@@ -57,7 +57,7 @@ describe("useCompanionPickers", () => {
   });
 
   test("asks for voices only during a call, and says whether there are any", () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
     renderHook(() => useCompanionPickers());
     expect(voiceHookOptions.at(-1)?.enabled ?? true).toBe(false);
     expect(useCompanionPopoverStore.getState().voicesPickable).toBe(false);
@@ -71,7 +71,7 @@ describe("useCompanionPickers", () => {
 
   test("offers no voices for an assistant without a catalog", () => {
     catalogAvailable = false;
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
     useLiveVoiceStore.setState({ state: "listening" });
 
     renderHook(() => useCompanionPickers());

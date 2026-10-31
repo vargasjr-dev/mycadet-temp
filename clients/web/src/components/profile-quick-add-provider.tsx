@@ -38,7 +38,6 @@ import {
   type ReactNode,
 } from "react";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { ProfilePatchEntryWritable } from "@/generated/daemon/types.gen";
 import { ProfileEditorModal } from "@/domains/settings/ai/profile-editor-modal";
 import { probeSavedProfile } from "@/domains/settings/ai/use-profile-save";
@@ -47,6 +46,7 @@ import { configGet } from "@/generated/daemon/sdk.gen";
 import { inferenceProviderconnectionsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
 import { toast } from "@mycadet/design-library/components/toast";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface OpenProfileQuickAddArgs {
   /**
@@ -82,7 +82,7 @@ const ProfileQuickAddContext =
 
 export function ProfileQuickAddProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
 
   const configMutation = useLlmConfigPatch();
   const [isOpen, setIsOpen] = useState(false);

@@ -9,8 +9,9 @@
  * started under against the scope in hand and drop a result the assistant now
  * on screen never asked for.
  */
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { requestScopeKey } from "@/utils/request-scope-key";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * The scope a request made right now would carry.
@@ -21,12 +22,11 @@ import { requestScopeKey } from "@/utils/request-scope-key";
  * is what resolves an org), so the assistant key covers it.
  */
 export function currentRequestScopeKey(): string {
-  const { activeAssistantId } = useResolvedAssistantsStore.getState();
-  return requestScopeKey({ assistantId: activeAssistantId });
+  return requestScopeKey({ assistantId: getActiveAssistantId() });
 }
 
 /** Subscribe to {@link currentRequestScopeKey}. */
 export function useRequestScopeKey(): string {
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const activeAssistantId = useResolvedAssistantId();
   return requestScopeKey({ assistantId: activeAssistantId });
 }

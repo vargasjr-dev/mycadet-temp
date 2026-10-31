@@ -30,8 +30,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { useBackgroundTaskStore } =
   await import("@/domains/chat/background-task-store");
 const { stopBackgroundTask } =
@@ -55,11 +55,11 @@ beforeEach(() => {
   nextData = { cancelled: true };
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
 });
 
 afterEach(() => {
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   useBackgroundTaskStore.getState().reset();
 });
 
@@ -107,7 +107,7 @@ describe("stopBackgroundTask", () => {
 
   test("does not optimistically cancel when there is no active assistant", async () => {
     seedRunning();
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
 
     await expect(stopBackgroundTask("bg-1")).rejects.toThrow(
       "No active assistant",

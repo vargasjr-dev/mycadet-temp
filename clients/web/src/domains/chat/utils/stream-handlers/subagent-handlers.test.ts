@@ -57,8 +57,8 @@ const {
 } = await import("@/domains/chat/utils/stream-handlers/subagent-handlers");
 const { useSubagentStore } = await import("@/domains/chat/subagent-store");
 const { useConversationStore } = await import("@/stores/conversation-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { makeCtx } =
   await import("@/domains/chat/utils/stream-handlers/test-helpers");
 
@@ -79,7 +79,7 @@ beforeEach(() => {
   selfLookupSupported = true;
   reconcileCalls = 0;
   reconciledParents.length = 0;
-  useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+  useResolvedAssistantStore.getState().setAssistant(null);
   useConversationStore.getState().setActiveConversationId(null);
 });
 
@@ -308,7 +308,7 @@ describe("handleSubagentStatusChanged: unknown subagent id", () => {
 
 describe("unknown-id reconcile kick", () => {
   function activate() {
-    useResolvedAssistantsStore.getState().setActiveAssistantId("asst-1");
+    useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
     useConversationStore.getState().setActiveConversationId(PARENT);
   }
 

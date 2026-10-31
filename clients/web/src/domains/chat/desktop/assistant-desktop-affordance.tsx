@@ -3,13 +3,13 @@ import { Monitor } from "lucide-react";
 
 import { useAssistantName } from "@/hooks/use-assistant-name";
 import { useTranslation } from "@/i18n";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { usePointerCoarse } from "@/utils/pointer";
 
 import { AVATAR_ACCENT } from "../components/streaming-shimmer-text";
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useDesktopSetupStatus } from "./use-desktop-setup";
 import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function AssistantDesktopAffordance({
   onToggle,
@@ -18,7 +18,7 @@ export function AssistantDesktopAffordance({
 }) {
   const { t } = useTranslation("chat");
   const enabled = useVirtualDesktopEnabled();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const assistantName = useAssistantName(assistantId);
   const session = useDesktopPreviewStore.use.session();
   const fullscreenOnly = usePointerCoarse();

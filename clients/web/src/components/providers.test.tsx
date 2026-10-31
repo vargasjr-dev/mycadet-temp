@@ -24,8 +24,8 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 }));
 
 const { AppProviders } = await import("@/components/providers");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 const PROBE_KEY = ["org-scoped-probe"];
 const ASSET_FAILURE_OPTIONS = {
@@ -67,7 +67,7 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-123" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-123" } });
 });
 
 afterEach(() => {
@@ -86,9 +86,9 @@ describe("AppProviders cache scope", () => {
       ),
     ).toHaveLength(1);
     act(() => {
-      useResolvedAssistantsStore.setState({
-        activeAssistantId: "assistant-456",
-      });
+      useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-456" },
+    });
     });
     expect(assetEvents()).toHaveLength(0);
   });
@@ -100,9 +100,9 @@ describe("AppProviders cache scope", () => {
     });
 
     act(() => {
-      useResolvedAssistantsStore.setState({
-        activeAssistantId: "assistant-456",
-      });
+      useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-456" },
+    });
     });
 
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();

@@ -9,7 +9,6 @@ import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 import { autoSendPromptState } from "@/utils/auto-send-prompt";
@@ -39,6 +38,7 @@ import {
 import { useDocumentCommentEvents } from "./hooks/use-document-comment-events";
 import { useDocumentPdfExport } from "./hooks/use-document-pdf-export";
 import { useUnseenDocumentChangesStore } from "./unseen-document-changes-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 type DocumentPageState =
   | { kind: "loading" }
@@ -54,9 +54,7 @@ export function DocumentViewerPage() {
   const isMobile = useIsMobile();
   // The route host stays stable while the user edits, even across a breakpoint.
   const [entryMode] = useState(isMobile ? "conversation" : "standalone");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantsHydrated =
-    useResolvedAssistantsStore.use.assistantsHydrated();
+  const assistantId = useResolvedAssistantId();
   const returnTo = documentReturnPath(
     new URLSearchParams(search).get(DOCUMENT_RETURN_PARAM),
   );
@@ -80,11 +78,11 @@ export function DocumentViewerPage() {
     setState({ kind: "loading" });
     preparingRef.current = false;
     setPreparing(false);
-    if (!surfaceId || (!assistantId && assistantsHydrated)) {
+    // The viewer is a user-opened surface — it mounts after the shell has
+    // stamped the assistant — so a missing id here means the assistant is
+    // gone, the same settled answer as a missing surface.
+    if (!surfaceId || !assistantId) {
       setState({ kind: "error" });
-      return;
-    }
-    if (!assistantId) {
       return;
     }
     const scope = documentRequestScope(assistantId);
@@ -133,7 +131,6 @@ export function DocumentViewerPage() {
   }, [
     surfaceId,
     assistantId,
-    assistantsHydrated,
     entryMode,
     navigate,
     returnTo,

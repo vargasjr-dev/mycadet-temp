@@ -27,7 +27,7 @@ import type {
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { createStoryQueryClient } from "@/lib/story-query-cache";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { AppSummary } from "@/types/app-types";
 import { clearAppHtmlCache, primeAppHtmlCache } from "@/utils/app-html-cache";
 
@@ -106,8 +106,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
   const [client] = useState(createStoryClient);
   const [previousState] = useState(() => {
     const previous = {
-      assistantId:
-        useResolvedAssistantsStore.getState().activeAssistantId ?? null,
+      entry: useResolvedAssistantStore.getState().assistant,
       identity: {
         name: useAssistantIdentityStore.getState().name,
         version: useAssistantIdentityStore.getState().version,
@@ -116,7 +115,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
       nativePlatform: document.documentElement.dataset.nativePlatform,
     };
 
-    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
     useAssistantIdentityStore
       .getState()
       .setIdentity("Example Assistant", "1.0.0", ASSISTANT_ID);
@@ -142,8 +141,8 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
 
   useEffect(() => {
     return () => {
-      useResolvedAssistantsStore.setState({
-        activeAssistantId: previousState.assistantId,
+      useResolvedAssistantStore.setState({
+        assistant: previousState.entry,
       });
       useAssistantIdentityStore
         .getState()

@@ -28,7 +28,7 @@ import {
 import { SideMenu } from "@mycadet/design-library";
 
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   restoreStubbedModules,
   stubModule,
@@ -110,7 +110,7 @@ async function closeMenuViaSettings(): Promise<void> {
 beforeEach(() => {
   navigateArgs = [];
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   isTouchMobileRef.value = false;
   feedbackRef.prefetches = 0;
   prefetchedPaths.length = 0;

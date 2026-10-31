@@ -14,82 +14,55 @@ mock.module("@/lib/local-mode", () => ({
 }));
 
 const { buildNavigationState } = await import("./build-state");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
-const { clearSelectedAssistantId, writeSelectedAssistantId } =
-  await import("@/assistant/selected-assistant-storage");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 beforeEach(() => {
   mockIsLocalClient = true;
   mockIsCloudRemote = false;
   globalThis.sessionStorage?.clear();
-  useResolvedAssistantsStore.setState({
-    assistants: [],
-    activeAssistantId: null,
-  });
-  clearSelectedAssistantId();
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 afterEach(() => {
-  useResolvedAssistantsStore.setState({
-    assistants: [],
-    activeAssistantId: null,
-  });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("buildNavigationState — onboarding scoping", () => {
   const FRESH = new Date().toISOString();
   const WEEK_OLD = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-  const row = (id: string, hatchedAt: string) => ({
-    id,
+  const entry = (assistantId: string, hatchedAt: string) => ({
+    cloud: "cloud" as const,
+    assistantId,
     hatchedAt,
-    isLocal: false,
-    isCloudHosted: true,
   });
 
-  test("false on both when no assistant is a week old", () => {
-    useResolvedAssistantsStore.setState({
-      assistants: [row("asst-fresh", FRESH)],
-    });
-    writeSelectedAssistantId("asst-fresh");
+  test("false on both when the assistant is fresh", () => {
+    useResolvedAssistantStore.getState().setAssistant(entry("asst", FRESH));
 
     const state = buildNavigationState();
     expect(state.userHasOnboardedAssistant).toBe(false);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
 
-  test("true on both when the selected assistant is a week old", () => {
-    useResolvedAssistantsStore.setState({
-      assistants: [row("asst-old", WEEK_OLD)],
-    });
-    writeSelectedAssistantId("asst-old");
+  test("true on both when the assistant is a week old", () => {
+    useResolvedAssistantStore.getState().setAssistant(entry("asst", WEEK_OLD));
 
     const state = buildNavigationState();
     expect(state.userHasOnboardedAssistant).toBe(true);
     expect(state.selectedAssistantOnboarded).toBe(true);
   });
 
-  // The chooser loop: a week-old sibling must not answer for a fresh
-  // selection, or every new-assistant walk is bounced back to the chooser.
-  test("a week-old sibling does not make a fresh selection onboarded", () => {
-    useResolvedAssistantsStore.setState({
-      assistants: [row("asst-old", WEEK_OLD), row("asst-fresh", FRESH)],
-    });
-    writeSelectedAssistantId("asst-fresh");
-
+  test("false on both when nothing is served yet", () => {
     const state = buildNavigationState();
-    expect(state.userHasOnboardedAssistant).toBe(true);
+    expect(state.hasAssistants).toBe(false);
+    expect(state.userHasOnboardedAssistant).toBe(false);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
 
-  test("selectedAssistantOnboarded is false with nothing selected", () => {
-    useResolvedAssistantsStore.setState({
-      assistants: [row("asst-old", WEEK_OLD)],
-    });
-    clearSelectedAssistantId();
+  test("hasAssistants answers the served entry", () => {
+    useResolvedAssistantStore.getState().setAssistant(entry("asst", FRESH));
 
-    expect(buildNavigationState().selectedAssistantOnboarded).toBe(
-      false,
-    );
+    expect(buildNavigationState().hasAssistants).toBe(true);
   });
 });

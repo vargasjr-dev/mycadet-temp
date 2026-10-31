@@ -106,8 +106,8 @@ const { useLiveVoiceSessionController } =
 const { useVoicePrefsStore } = await import("@/stores/voice-prefs-store");
 const { useAssistantIdentityStore } =
   await import("@/stores/assistant-identity-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { __resetPendingDeepLinkForTesting, usePendingDeepLinkStore } =
   await import("@/stores/pending-deep-link-store");
 const { useLiveVoiceStore } =
@@ -205,7 +205,7 @@ beforeEach(() => {
   __resetPendingDeepLinkForTesting();
   useConversationStore.getState().reset();
   useAssistantIdentityStore.setState({ assistantId: null, version: null });
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   interruptionHandlers = [];
   onNativeAndroid = false;
   onNativeIOS = false;
@@ -287,7 +287,7 @@ describe("starter registration", () => {
       assistantId: "assistant-1",
       version: "0.10.12",
     });
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     useConversationStore.getState().setActiveConversationId("conv-1");
     usePendingDeepLinkStore
       .getState()
@@ -346,7 +346,7 @@ describe("re-draining on an assistant switch", () => {
   /** Resolved, active, and new enough to serve live voice. */
   function activeAssistant(assistantId: string): void {
     useAssistantIdentityStore.setState({ assistantId, version: "0.10.12" });
-    useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: assistantId } });
   }
 
   /**
@@ -419,7 +419,7 @@ describe("re-draining on an assistant switch", () => {
       .getState()
       .setPendingVoiceStart({ entry: "deep_link" });
     act(() => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
     });
     await flushDrains();
 

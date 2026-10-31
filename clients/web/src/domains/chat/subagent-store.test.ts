@@ -104,8 +104,8 @@ const { useSubagentStore } = await import("@/domains/chat/subagent-store");
 const { reconcileSubagentStoreFromNotifications } =
   await import("@/domains/chat/hooks/reconcile-subagent-hydration");
 const { useConversationStore } = await import("@/stores/conversation-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -136,7 +136,7 @@ beforeEach(() => {
   setSystemTime();
   getState().reset();
   useConversationStore.getState().setActiveConversationId(null);
-  useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+  useResolvedAssistantStore.getState().setAssistant(null);
   selfLookupSupported = true;
   reconcileSupported = true;
   fetchSubagentDetail.mockClear();
@@ -2786,8 +2786,8 @@ describe("reconcileFromDaemon", () => {
   });
 
   it("discards a snapshot when the assistant changes without a conversation reset", async () => {
-    const previous = useResolvedAssistantsStore.getState().activeAssistantId;
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    const previous = useResolvedAssistantStore.getState().assistant;
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     try {
       reconcileReply = {
         ok: true,
@@ -2797,11 +2797,11 @@ describe("reconcileFromDaemon", () => {
         "assistant-1",
         "conv-parent",
       );
-      useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
       await pending;
       expect(getState().byId["sa-old"]).toBeUndefined();
     } finally {
-      useResolvedAssistantsStore.setState({ activeAssistantId: previous });
+      useResolvedAssistantStore.setState({ assistant: previous });
     }
   });
 

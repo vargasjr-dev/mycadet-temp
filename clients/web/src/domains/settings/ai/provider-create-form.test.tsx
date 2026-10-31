@@ -28,7 +28,7 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { createElement, type ReactNode } from "react";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { setHosting } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
@@ -243,7 +243,7 @@ beforeEach(() => {
   createResponseJson = null;
   toastSuccessCalls = [];
   window.__CADET_CONFIG__ = undefined;
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 afterEach(() => {

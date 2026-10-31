@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 import type * as DocumentSave from "@/domains/chat/api/document-save";
 import type { DocumentSaveTarget } from "@/domains/chat/api/document-save";
@@ -25,7 +25,7 @@ mock.module(
 
 const { useDocumentEditorSave } = await import("./use-document-editor-save");
 const { waitForDocumentSaves } = documentSave;
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 
 const TARGET: DocumentSaveTarget = {
   source: "document",
@@ -64,7 +64,7 @@ function renderSave() {
 }
 
 beforeEach(() => {
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   saveDocumentContent.mockReset();
   saveDocumentContent.mockImplementation(async () => {});
   captureError.mockClear();
@@ -73,8 +73,8 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   await act(async () => {});
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.setState(selection, true);
 });
 
 describe("useDocumentEditorSave", () => {
@@ -137,12 +137,12 @@ describe("useDocumentEditorSave", () => {
     act(() => result.current.changeContent("Assistant one's body"));
     unmount();
     await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
     await waitForDocumentSaves({ ...TARGET, assistantId: "assistant-2" });
     await waitForDocumentSaves({ ...TARGET, surfaceId: "surface-2" });
     await waitForDocumentSaves(TARGET, () => false);
     expect(saveDocumentContent).toHaveBeenCalledTimes(1);
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     await waitForDocumentSaves(TARGET);
     expect(saveDocumentContent.mock.calls[1]).toEqual([
       TARGET,
@@ -167,8 +167,8 @@ describe("useDocumentEditorSave", () => {
         write.reject(new Error("offline"));
         await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
       }
-      useResolvedAssistantsStore.setState({ activeAssistantId: null });
-      useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
       if (stage === "before unmount") {
         await expect(result.current.flushPendingSave()).rejects.toThrow(
           "session has ended",

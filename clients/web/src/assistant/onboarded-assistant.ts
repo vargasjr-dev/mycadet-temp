@@ -39,7 +39,7 @@ export function isHatchedOnboarded(
 }
 
 interface OnboardingSignals {
-  id: string;
+  assistantId: string;
   /** The lockfile half of the stamp; the device half is read here. */
   onboardedAt?: string;
   hatchedAt?: string;
@@ -50,37 +50,37 @@ export function isAssistantOnboarded(
   assistant: OnboardingSignals,
   nowMs: number = Date.now(),
 ): boolean {
-  if (assistant.onboardedAt ?? readOnboardedAt(assistant.id)) {
+  if (assistant.onboardedAt ?? readOnboardedAt(assistant.assistantId)) {
     return true;
   }
   return isHatchedOnboarded(assistant.hatchedAt, nowMs);
 }
 
 /**
- * Does the user own any onboarded assistant? The right question for post-auth
- * and the onboarding intercept, where the landing assistant is not yet known.
+ * Is the served assistant past first-run onboarding? The right question for
+ * post-auth and the onboarding intercept (is this a returning user) and for
+ * the privacy funnel (is THIS assistant past first run) alike — there is one
+ * assistant. Null (pre-stamp) is not onboarded: an unidentifiable assistant
+ * must not be assumed past first run, or the funnel bounces walks that
+ * legitimately need to run.
  */
-export function userHasOnboardedAssistant(
-  assistants: ReadonlyArray<OnboardingSignals>,
+export function isSelectedAssistantOnboarded(
+  assistant: OnboardingSignals | null,
   nowMs: number = Date.now(),
 ): boolean {
-  return assistants.some((assistant) => isAssistantOnboarded(assistant, nowMs));
+  return assistant ? isAssistantOnboarded(assistant, nowMs) : false;
 }
 
 /**
- * Is the assistant the user currently has selected onboarded? False when
- * nothing is selected or the id is not in the list: an unidentifiable
- * assistant must not be assumed past first run, or the funnel bounces walks
- * that legitimately need to run.
+ * Does the user own an onboarded assistant? The right question for post-auth
+ * and the onboarding intercept, where the landing assistant is not yet known.
+ * With one assistant per surface this is the same question as
+ * {@link isSelectedAssistantOnboarded}; kept as its own name for the
+ * "returning user" intent at call sites.
  */
-export function isSelectedAssistantOnboarded(
-  assistants: ReadonlyArray<OnboardingSignals>,
-  selectedAssistantId: string | null,
+export function userHasOnboardedAssistant(
+  assistant: OnboardingSignals | null,
   nowMs: number = Date.now(),
 ): boolean {
-  if (!selectedAssistantId) {
-    return false;
-  }
-  const selected = assistants.find((a) => a.id === selectedAssistantId);
-  return selected ? isAssistantOnboarded(selected, nowMs) : false;
+  return isSelectedAssistantOnboarded(assistant, nowMs);
 }

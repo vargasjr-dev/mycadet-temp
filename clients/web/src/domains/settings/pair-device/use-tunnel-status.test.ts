@@ -13,7 +13,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { integrationsIngressStatusGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { MIN_VERSION } from "@/lib/backwards-compat/ingress-status-gate";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 import {
   createQueryClientWrapper,
@@ -60,7 +60,7 @@ async function settle() {
 
 beforeEach(() => {
   resetProbe();
-  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
   useAssistantIdentityStore
     .getState()
     .setIdentity("Test", MIN_VERSION, ASSISTANT_ID);
@@ -68,7 +68,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+  useResolvedAssistantStore.getState().setAssistant(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
 

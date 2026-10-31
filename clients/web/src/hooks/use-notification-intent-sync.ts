@@ -51,7 +51,7 @@ import {
   shouldSuppressFocusedNotificationDelivery,
 } from "@/runtime/notifications";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { IdentityGetResponse } from "@/generated/daemon/types.gen";
 
 /**
@@ -66,10 +66,9 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const assistants = useResolvedAssistantsStore.use.assistants();
-  const assistant = assistants.find(
-    (candidate) => candidate.id === assistantId,
-  );
+  const entry = useResolvedAssistantStore.use.assistant();
+  const assistant =
+    entry && entry.assistantId === assistantId ? entry : null;
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"

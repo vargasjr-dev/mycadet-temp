@@ -27,7 +27,7 @@ import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "asst-story";
 const CONVERSATION_ID = "conv-story";
@@ -194,7 +194,7 @@ function Harness({
     } else {
       setAccent(seedAvatar(queryClient));
     }
-    useResolvedAssistantsStore.setState({
+    useResolvedAssistantStore.setState({
       activeAssistantId: ASSISTANT_ID,
     } as never);
     useConversationStore.setState({

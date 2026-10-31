@@ -44,7 +44,8 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { LocationMirror } from "@/hooks/router-probe.test-helper";
 import { liveViewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { carriedAppEntryState } from "@/utils/app-navigation";
 import { hasAutoSendPromptState } from "@/utils/auto-send-prompt";
@@ -102,7 +103,7 @@ function ConversationRoute() {
     conversationId: string;
     appId: string;
   }>();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useActiveAssistantId();
   const navigate = useNavigate();
   const location = useLocation();
   const openApp = useOpenAppFromChat();
@@ -133,8 +134,10 @@ function ConversationRoute() {
  */
 function ConversationRouteWithLoader() {
   const { conversationId } = useParams<{ conversationId: string }>();
+  const assistantId = useActiveAssistantId();
+
   useConversationLoader({
-    assistantId: "assistant-1",
+    assistantId,
     activeConversationId: conversationId ?? null,
     urlConversationId: conversationId ?? null,
     searchParams: new URLSearchParams(),
@@ -190,14 +193,14 @@ function renderHistory(
 const viewport = liveViewportAxesStub();
 const viewerSnapshot = useViewerStore.getState();
 const conversationSnapshot = useConversationStore.getState();
-const selectionSnapshot = useResolvedAssistantsStore.getState();
+const selectionSnapshot = useResolvedAssistantStore.getState();
 
 beforeEach(() => {
   pendingOpens = [];
   holdOpens = false;
   openRequests = 0;
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
   useConversationStore.setState({ activeConversationId: CONV_ID });
   spyOn(daemonClient, "post").mockImplementation((async (options: {
     url: string;
@@ -234,7 +237,7 @@ afterEach(() => {
   mock.restore();
   useViewerStore.setState(viewerSnapshot, true);
   useConversationStore.setState(conversationSnapshot, true);
-  useResolvedAssistantsStore.setState(selectionSnapshot, true);
+  useResolvedAssistantStore.setState(selectionSnapshot, true);
 });
 
 function click(name: string): void {
@@ -634,7 +637,7 @@ describe("app route history", () => {
     // A switch leaves this route mounted, so the app on screen would otherwise
     // stay the previous assistant's while every other action uses the new one.
     await act(async () => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" });
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
     });
 
     await waitFor(() =>

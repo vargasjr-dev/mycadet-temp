@@ -3,12 +3,12 @@ import { useCallback, useState } from "react";
 
 import type { QuestionResponseEntry } from "@/domains/chat/api/event-types";
 import { useTranslation } from "@/i18n";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { QuestionEntry } from "@/types/interaction-ui-types";
 
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
 import { useOverflows } from "@/hooks/use-overflows";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface DesktopHelpCardProps {
   entry: QuestionEntry;
@@ -28,7 +28,7 @@ export function DesktopHelpCard({
       contentKey: entry.question,
       paused: expanded,
     });
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const enabled = useVirtualDesktopEnabled();
   const session = useDesktopPreviewStore.use.session();
   const attachPreview = useCallback(

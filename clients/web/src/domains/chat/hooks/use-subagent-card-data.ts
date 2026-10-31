@@ -36,7 +36,7 @@ import {
   type SubagentEntry,
   type SubagentTimelineEvent,
 } from "@/domains/chat/subagent-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useSubagentSteps } from "@/domains/chat/subagent-step-projection";
 import { canAddressSubagentDetail } from "@/domains/chat/store-helpers/subagent-detail-addressability";
 import type { SubagentStatus } from "@mycadet/assistant-api";
@@ -754,7 +754,7 @@ export function useSubagentCardData(
   subagentId: string,
 ): ToolCallCardData | null {
   const entry = useSubagentStore((state) => state.byId[subagentId]);
-  const assistantId = useResolvedAssistantsStore((s) => s.activeAssistantId);
+  const assistantId = useResolvedAssistantStore((s) => s.assistant?.assistantId ?? null);
   // A boolean dep, not `entry`: per-tick identity bumps (usage, status) must
   // not re-run the effect; only the loading-detail state flipping should.
   const needsDetail = entry !== undefined && isLoadingDetail(entry);

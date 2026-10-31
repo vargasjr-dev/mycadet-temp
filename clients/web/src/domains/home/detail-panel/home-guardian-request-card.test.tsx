@@ -46,17 +46,19 @@ mock.module("@/domains/home/hooks/use-home-feed-query", () => ({
   useInvalidateHomeFeed: () => () => {},
 }));
 
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    activeAssistantId: () => "assistant-1",
+    assistant: () => ({ cloud: "local", assistantId: "assistant-1" }),
   };
   // lifecycle-service reads getState() + subscribe() outside React render;
   // the mock store mirrors the real store's surface.
-  store.getState = () => ({ activeAssistantId: "assistant-1" });
+  store.getState = () => ({
+    assistant: { cloud: "local", assistantId: "assistant-1" },
+  });
   store.subscribe = () => () => {};
   return {
-    useResolvedAssistantsStore: store,
+    useResolvedAssistantStore: store,
     // build-state (in the card's import graph) filters candidates through
     // this helper; passthrough keeps every assistant valid under the mock.
     assistantsValidForOrg: (assistants: unknown) => assistants,

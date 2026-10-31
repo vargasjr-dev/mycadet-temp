@@ -17,7 +17,7 @@ import { initI18n } from "@/i18n";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
 import { getServedLockfile, isLocalClient } from "@/lib/local-mode";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -72,10 +72,12 @@ async function boot(router: Router) {
   // boot route is announced.
   setupRemoteGatewayNavBridge();
   if (isLocalClient()) {
-    // The local arm's resolved list IS the served synthesis: the host
+    // The local arm's resolved assistant IS the served synthesis: the host
     // stamped the one assistant this surface serves. No roster, no warm-up
     // fetch - one store write.
-    useResolvedAssistantsStore.getState().setFromLockfile(getServedLockfile());
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant(getServedLockfile().assistants[0] ?? null);
   }
   // Local mode awaits `initSession()` above, so this separates "session was
   // the boot cost" from "the app tree was".

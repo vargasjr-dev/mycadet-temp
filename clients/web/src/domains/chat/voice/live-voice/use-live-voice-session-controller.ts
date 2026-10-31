@@ -61,7 +61,7 @@ import {
   subscribeVoiceAudioInterruptions,
 } from "@/runtime/native-audio-session";
 import { isNativeAndroid } from "@/runtime/platform-detection";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 /** Injectable primitive factories, for tests. */
 export type UseLiveVoiceSessionControllerOptions = Pick<
@@ -244,8 +244,8 @@ export function useLiveVoiceSessionController(
   // the park is one-shot, so a drain that overlaps one already in flight loses
   // the consume and stops.
   useEffect(() => {
-    return useResolvedAssistantsStore.subscribe((state, prevState) => {
-      if (state.activeAssistantId === prevState.activeAssistantId) {
+    return useResolvedAssistantStore.subscribe((state, prevState) => {
+      if (state.assistant === prevState.assistant) {
         return;
       }
       void drainPendingVoiceStart((to, navigateOptions) =>

@@ -30,13 +30,12 @@ import type { AssistantEvent } from "@/types/event-types";
 import { useAssistantResourceSync } from "@/hooks/use-assistant-resource-sync";
 import { assistantIdentityQueryKey } from "@/hooks/use-assistant-identity-init";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
-import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
 import { cloudAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
 import { getClientId } from "@/lib/client-identity";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 function createWrapper(queryClient: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -989,79 +988,6 @@ describe("useAssistantResourceSync", () => {
     });
   });
 
-  test("avatar sync tag also invalidates the chooser row cache by prefix", async () => {
-    const queryClient = freshQueryClient();
-    const calls: InvalidateCall[] = [];
-    queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    renderHook(() => useAssistantResourceSync("asst-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
-    await waitFor(() => {
-      expect(
-        sweepsFor(calls, chooserRowAvatarQueryKeyPrefix("asst-1")),
-      ).toEqual([
-        {
-          queryKey: chooserRowAvatarQueryKeyPrefix("asst-1"),
-          refetchType: "none",
-        },
-      ]);
-    });
-  });
-
-  test("avatar_updated also invalidates the chooser row cache by prefix", async () => {
-    const queryClient = freshQueryClient();
-    const calls: InvalidateCall[] = [];
-    queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    renderHook(() => useAssistantResourceSync("asst-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-    emit({ type: "avatar_updated" } as unknown as AssistantEvent);
-    await waitFor(() => {
-      expect(
-        sweepsFor(calls, chooserRowAvatarQueryKeyPrefix("asst-1")),
-      ).toEqual([
-        {
-          queryKey: chooserRowAvatarQueryKeyPrefix("asst-1"),
-          refetchType: "none",
-        },
-      ]);
-    });
-  });
-
-  test("avatar change events clear the row's synced avatarUrl; the reconnect sweep does not", async () => {
-    const seed = () =>
-      useResolvedAssistantsStore.setState({
-        assistants: [
-          {
-            id: "asst-1",
-            cloud: "cloud",
-            avatarUrl: "https://cdn.example/a.png",
-          },
-        ],
-      });
-    const avatarUrl = () =>
-      useResolvedAssistantsStore.getState().assistants[0]?.avatarUrl;
-    const queryClient = freshQueryClient();
-    queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    renderHook(() => useAssistantResourceSync("asst-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    seed();
-    emit({ type: "avatar_updated" } as unknown as AssistantEvent);
-    await waitFor(() => expect(avatarUrl()).toBeNull());
-
-    seed();
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
-    await waitFor(() => expect(avatarUrl()).toBeNull());
-
-    seed();
-    publish("sse.opened", { assistantId: "asst-1", cause: "error" });
-    await flushReconnectSweep();
-    expect(avatarUrl()).toBe("https://cdn.example/a.png");
-  });
-
   test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
@@ -1092,14 +1018,10 @@ describe("useAssistantResourceSync", () => {
   test("avatar_updated drops the lookup entry under the row's platform id", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        {
-          id: "asst-1",
-          cloud: "local",
-          cloudAssistantId: "uuid-1",
-        },
-      ],
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "local",
+      assistantId: "asst-1",
+      cloudAssistantId: "uuid-1",
     });
     const key = cloudAvatarUrlsQueryKey(null);
     queryClient.setQueryData(
