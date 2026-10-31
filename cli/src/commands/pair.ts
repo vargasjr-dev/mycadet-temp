@@ -38,7 +38,7 @@ import {
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerResourceNames } from "../lib/docker.js";
-import { gatewayCliInvocation } from "../lib/local.js";
+import { gatewayCliInvocation } from "../lib/remotes/local.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { execOutput } from "../lib/step-runner.js";

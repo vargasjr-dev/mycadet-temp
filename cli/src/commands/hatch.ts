@@ -10,7 +10,7 @@ import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
-import { hatchLocal } from "../lib/hatch-local";
+import { hatchLocal } from "../lib/remotes/local.js";
 import { hatchAssistant, readCloudToken } from "../lib/cloud-client";
 import { validateAssistantName } from "../lib/retire-archive";
 

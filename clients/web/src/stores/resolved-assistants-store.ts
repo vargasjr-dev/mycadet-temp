@@ -24,7 +24,6 @@ import { z } from "zod";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import { getServedLockfile, getLockfileAssistant } from "@/lib/local-mode";
-import { isLocalRuntimeEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
@@ -73,19 +72,20 @@ export interface ResolvedAssistant {
  * the cloud copy can have caught up.
  */
 function entryRuntimeVersion(entry: LockfileAssistant | undefined) {
-  return entry && isLocalRuntimeEntry(entry) ? entry.runtimeVersion : undefined;
+  return entry &&
+    entry.cloud !== "cloud" &&
+    entry.cloud !== "custom" &&
+    entry.cloud !== "baseten"
+    ? entry.runtimeVersion
+    : undefined;
 }
 
 function entryCloudAssistantId(entry: LockfileAssistant | undefined) {
-  return entry && isLocalRuntimeEntry(entry)
-    ? entry.cloudAssistantId
-    : undefined;
+  return entry?.cloudAssistantId;
 }
 
 function lockfileEntryOrganizationId(entry: LockfileAssistant | undefined) {
-  return entry && isLocalRuntimeEntry(entry)
-    ? entry.cloudOrganizationId
-    : undefined;
+  return entry?.cloudOrganizationId;
 }
 
 function apiAvatarUrl(a: Assistant): string | null | undefined {
@@ -178,11 +178,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
           a.cloud === "apple-container"
             ? a.runtimeVersion
             : undefined,
-        organizationId: isLocalRuntimeEntry(a)
-          ? a.cloudOrganizationId
-          : a.cloud === "cloud"
-            ? a.cloudOrganizationId
-            : undefined,
+        organizationId: a.cloudOrganizationId,
         cloudAssistantId: entryCloudAssistantId(a),
         avatarUrl: existingById.get(a.assistantId)?.avatarUrl,
         currentReleaseVersion: existingById.get(a.assistantId)

@@ -19,7 +19,6 @@ import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
 import { isDockerEntry, saveLockfileAssistant } from "@mycadet/local-mode";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
@@ -983,8 +982,7 @@ export async function recreateDockerContainers(
     await pullImage(image, log);
   }
 
-  const gatewayPort =
-    getLoopbackGatewayPort(entry) ?? getDefaultPorts().gateway;
+  const gatewayPort = entry.port ?? getDefaultPorts().gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(

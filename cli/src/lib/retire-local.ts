@@ -16,10 +16,7 @@ import {
   stopProcessByPidFile,
 } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
-import {
-  isLocalEntry,
-  isLocalRuntimeEntry,
-} from "@mycadet/local-mode/contract";
+import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
   consoleLifecycleReporter,
   type LifecycleReporter,
@@ -101,7 +98,9 @@ function otherAssistantPidSet(
   for (const entry of entries) {
     if (
       entry.assistantId === name &&
-      isLocalRuntimeEntry(entry) &&
+      entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten" &&
       entry.instanceDir === instanceDir
     ) {
       continue;

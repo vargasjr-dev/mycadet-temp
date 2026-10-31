@@ -1,10 +1,7 @@
 import { app, BrowserWindow, net, powerMonitor } from "electron";
 
 import { readLockfile } from "@mycadet/local-mode";
-import {
-  getLoopbackGatewayPort,
-  isLoopbackGatewayCloud,
-} from "@mycadet/local-mode/contract";
+import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
 
 import { setBackendReachable } from "./status";
 
@@ -49,7 +46,7 @@ function resolveProbeTarget(): ProbeTarget {
   if (!isLoopbackGatewayCloud(entry.cloud)) {
     return { kind: "non-local" };
   }
-  const port = getLoopbackGatewayPort(entry);
+  const port = "port" in entry ? entry.port : undefined;
   if (port) {
     return {
       kind: "local",
@@ -131,4 +128,3 @@ export function installConnectivityProbe(): () => Promise<void> {
   startProbing();
   return runProbe;
 }
-

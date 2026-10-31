@@ -18,7 +18,7 @@ import * as docker from "../lib/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
-import * as local from "../lib/local.js";
+import * as local from "../lib/remotes/local.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as processLib from "../lib/process.js";
@@ -160,7 +160,7 @@ const startGatewayMock = mock<typeof local.startGateway>(
 );
 const startCesMock = mock<typeof local.startCes>(async () => {});
 
-mock.module("../lib/local", () => ({
+mock.module("../lib/remotes/local", () => ({
   ...realLocal,
   generateLocalSecret: generateLocalSecretMock,
   isAssistantWatchModeAvailable: isAssistantWatchModeAvailableMock,
@@ -347,7 +347,7 @@ afterAll(() => {
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
   mock.module("../lib/process", () => realProcessLib);
   mock.module("../lib/port-allocator.js", () => realPortAllocator);
-  mock.module("../lib/local", () => realLocal);
+  mock.module("../lib/remotes/local", () => realLocal);
   mock.module("../lib/tunnels/ngrok", () => realNgrok);
   mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);

@@ -20,7 +20,7 @@ import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import * as local from "../lib/local.js";
+import * as local from "../lib/remotes/local.js";
 import * as loopbackFetch from "../lib/loopback-fetch.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
@@ -134,7 +134,7 @@ const stopLocalProcessesMock = mock<typeof local.stopLocalProcesses>(
 );
 const startCesMock = mock<typeof local.startCes>(async () => {});
 
-mock.module("../lib/local.js", () => ({
+mock.module("../lib/remotes/local.js", () => ({
   ...realLocal,
   generateLocalSigningKey: generateLocalSecretMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
@@ -334,7 +334,7 @@ afterAll(() => {
   mock.module("../lib/assistant-config", () => realAssistantConfig);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
-  mock.module("../lib/local.js", () => realLocal);
+  mock.module("../lib/remotes/local.js", () => realLocal);
   mock.module("../lib/loopback-fetch.js", () => realLoopbackFetch);
   mock.module("../lib/tunnels/ngrok.js", () => realNgrok);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);

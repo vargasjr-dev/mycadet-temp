@@ -1,6 +1,5 @@
 import {
   getGuardianAccessToken,
-  isLocalRuntimeEntry,
   readLockfile,
   resolveConfigDir,
   type CliInvocation,
@@ -29,7 +28,13 @@ export const createBundleHostProvider = (
     const entry = assistants.find(
       (assistant) => assistant.assistantId === activeAssistant,
     );
-    if (!entry || !isLocalRuntimeEntry(entry) || !entry.port) {
+    if (
+      !entry ||
+      entry.cloud === "cloud" ||
+      entry.cloud === "custom" ||
+      entry.cloud === "baseten" ||
+      !entry.port
+    ) {
       return null;
     }
     return {

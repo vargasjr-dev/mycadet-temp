@@ -203,24 +203,6 @@ export function isLoopbackGatewayCloud(cloud: Remote): boolean {
 }
 
 /**
- * The loopback gateway port recorded for an assistant entry. Entries
- * without one derive the default gateway port through
- * {@link getGatewayUrl}.
- */
-export function getLoopbackGatewayPort(
-  entry: LockfileAssistant,
-): number | undefined {
-  if (
-    entry.cloud === "local" ||
-    entry.cloud === "docker" ||
-    entry.cloud === "apple-container"
-  ) {
-    return entry.port;
-  }
-  return undefined;
-}
-
-/**
  * The gateway port a freshly hatched assistant's gateway listens on, with
  * the `GATEWAY_PORT` env override the CLI tooling honors.
  */
@@ -257,16 +239,16 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
   if (entry.cloud === "baseten") {
     return `${entry.sandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
   }
-  if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
+  if (entry.cloud === "custom") {
     // Custom remotes speak TLS. Default ports elided the way a URL prints
-    // them.
+    // them. The schema requires the address and port.
     const elided = entry.port === 443;
     return `https://${entry.ipAddress}${elided ? "" : `:${entry.port}`}`;
   }
   if (isCloudHome(entry.cloud)) {
     return getCloudUrl().replace(/\/+$/, "");
   }
-  const port = getLoopbackGatewayPort(entry);
+  const port = "port" in entry ? entry.port : undefined;
   return `http://127.0.0.1:${port ?? GATEWAY_PORT}`;
 }
 
@@ -329,6 +311,24 @@ const LocalRuntimeAssistantFields = {
   /** Where the runtime build is installed on this machine. */
   runtimeInstallDir: z.string().optional(),
 };
+
+/**
+ * Legacy-placement backfill: entries written before the `resources` field
+ * died carried their gateway port at `resources.gatewayPort`. Zod sees the
+ * shape raw, so a preprocess copies the legacy port onto `port` when the
+ * entry has no top-level one — old lockfiles parse clean through the new
+ * flat schema.
+ */
+function backfillLegacyPlacement(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const entry = raw as Record<string, unknown>;
+  if (entry.port !== undefined) return entry;
+  const resources = entry.resources;
+  if (!resources || typeof resources !== "object") return entry;
+  const gatewayPort = (resources as Record<string, unknown>).gatewayPort;
+  if (gatewayPort === undefined) return entry;
+  return { ...entry, port: gatewayPort };
+}
 
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
@@ -394,7 +394,7 @@ function withDefaultCloud(entry: unknown): unknown {
 }
 
 export const LockfileAssistantSchema = z.preprocess(
-  withDefaultCloud,
+  (entry) => backfillLegacyPlacement(withDefaultCloud(entry)),
   z.discriminatedUnion("cloud", [
     LocalAssistantSchema,
     DockerAssistantSchema,
@@ -413,15 +413,6 @@ export const LockfileAssistantSchema = z.preprocess(
  * unknown on-disk clouds route to the local branch.
  */
 export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
-
-/**
- * The topologies whose gateway runs on this machine: local, docker, and
- * apple-container.
- */
-export type LocalRuntimeAssistant = Exclude<
-  LockfileAssistant,
-  { cloud: "custom" | "cloud" | "baseten" }
->;
 
 export type LocalAssistant = z.infer<typeof LocalAssistantSchema>;
 export type DockerAssistant = z.infer<typeof DockerAssistantSchema>;
@@ -451,15 +442,6 @@ export function isLocalEntry(
   entry: LockfileAssistant,
 ): entry is LocalAssistant {
   return entry.cloud === "local";
-}
-
-/** Whether the entry's gateway runs on this machine. */
-export function isLocalRuntimeEntry(
-  entry: LockfileAssistant,
-): entry is LocalRuntimeAssistant {
-  return (
-    isLocalEntry(entry) || isDockerEntry(entry) || isAppleContainerEntry(entry)
-  );
 }
 
 /**

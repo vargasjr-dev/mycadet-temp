@@ -1,9 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
-import { gatewayCliInvocation } from "../local.js";
+import type {
+  LocalAssistant,
+  DockerAssistant,
+  AppleContainerAssistant,
+} from "@mycadet/local-mode/contract";
+import { gatewayCliInvocation } from "../remotes/local.js";
 
-function fakeEntry(instanceDir: string): LocalRuntimeAssistant {
+function fakeEntry(
+  instanceDir: string,
+): LocalAssistant | DockerAssistant | AppleContainerAssistant {
   // gatewayCliInvocation only reads the recorded paths; the rest of the
   // entry shape is irrelevant here.
   return {

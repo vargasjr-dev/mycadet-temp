@@ -9,14 +9,8 @@ import {
   type TunnelProcessRecord,
 } from "./assistant-config.js";
 import { cliCommand } from "./cli-name.js";
-import {
-  GATEWAY_PORT,
-  getGatewayUrl,
-  getLoopbackGatewayPort,
-  isLocalRuntimeEntry,
-} from "@mycadet/local-mode/contract";
+import { GATEWAY_PORT, getGatewayUrl } from "@mycadet/local-mode/contract";
 
-import { isLocalContainerEntry } from "./ingress-config.js";
 import {
   ensureAppServer,
   getNginxVersion,
@@ -209,14 +203,21 @@ export interface LocalTunnelTarget {
 export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
-  if (isLocalRuntimeEntry(entry) && entry.instanceDir) {
+  if (
+    entry.cloud !== "cloud" &&
+    entry.cloud !== "custom" &&
+    entry.cloud !== "baseten" &&
+    entry.instanceDir
+  ) {
     return { entry, gatewayPort: entry.port ?? GATEWAY_PORT };
   }
-  if (isLocalContainerEntry(entry)) {
-    const gatewayPort = getLoopbackGatewayPort(entry);
-    if (gatewayPort !== undefined) {
-      return { entry, gatewayPort };
-    }
+  if (
+    entry.cloud !== "cloud" &&
+    entry.cloud !== "custom" &&
+    entry.cloud !== "baseten" &&
+    entry.port !== undefined
+  ) {
+    return { entry, gatewayPort: entry.port };
   }
   return null;
 }
@@ -467,7 +468,13 @@ export async function restoreAppServer(
   entry: LockfileAssistant,
 ): Promise<number> {
   if (!wantsAppServer()) {
-    return getLoopbackGatewayPort(entry) ?? GATEWAY_PORT;
+    return (
+      (entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+        ? entry.port
+        : undefined) ?? GATEWAY_PORT
+    );
   }
   let appServer: AppServer;
   try {
@@ -482,7 +489,15 @@ export async function restoreAppServer(
     console.warn(
       `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
-    return survivingPort ?? getLoopbackGatewayPort(entry) ?? GATEWAY_PORT;
+    return (
+      survivingPort ??
+      (entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+        ? entry.port
+        : undefined) ??
+      GATEWAY_PORT
+    );
   }
   console.log(
     `   App server ${appServer.started ? "started" : "already running"} on 127.0.0.1:${appServer.port}.`,
@@ -505,13 +520,17 @@ export async function restoreContainerAppServer(
   entry: LockfileAssistant,
   gatewayReadyTimeoutMs = 0,
 ): Promise<void> {
-  if (!isLocalContainerEntry(entry)) {
+  if (
+    !(
+      entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+    ) ||
+    entry.port === undefined
+  ) {
     return;
   }
-  const gatewayPort = getLoopbackGatewayPort(entry);
-  if (gatewayPort === undefined) {
-    return;
-  }
+  const gatewayPort = entry.port;
   // Gate before waiting: a container that never established an app server
   // wants no edge, and must not pay the gateway-readiness wait to find that
   // out.

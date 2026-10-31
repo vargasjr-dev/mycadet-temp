@@ -13,12 +13,11 @@ import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 
 import {
-  extractHostFromEntry,
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
-  getDaemonPidPath,
+  getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   readRootProcesses,
@@ -30,19 +29,12 @@ import { loadGuardianToken } from "../lib/guardian-token";
 import {
   checkCloudHealth,
   checkHealth,
-  fetchCloudPs,
   fetchGatewayPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
 import { readCloudToken } from "../lib/cloud-client";
 import { dockerResourceNames } from "../lib/docker";
-import { existsSync } from "fs";
-import {
-  classifyProcess,
-  isPidAlive,
-  parseRemotePs,
-  readPidFile,
-} from "../lib/process-utils";
+import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";
 import { execOutput } from "../lib/step-runner";
 import {
@@ -217,35 +209,6 @@ function flattenProcessTree(
 
 // ── Remote process listing via SSH ──────────────────────────────
 
-const SSH_OPTS = [
-  "-o",
-  "StrictHostKeyChecking=no",
-  "-o",
-  "UserKnownHostsFile=/dev/null",
-  "-o",
-  "ConnectTimeout=10",
-  "-o",
-  "LogLevel=ERROR",
-];
-
-const REMOTE_PS_CMD = [
-  // List Cadet-related processes: daemon, gateway, qdrant, and any bun children
-  "ps ax -o pid=,ppid=,args=",
-  "| grep -E 'cadet|qdrant'",
-  "| grep -v grep",
-].join(" ");
-
-const REMOTE_SSH_TIMEOUT_MS = 30_000;
-
-async function getRemoteProcessesCustom(
-  entry: LockfileAssistant,
-): Promise<string> {
-  const host = extractHostFromEntry(entry);
-  return execOutput("ssh", [...SSH_OPTS, `root@${host}`, REMOTE_PS_CMD], {
-    timeoutMs: REMOTE_SSH_TIMEOUT_MS,
-  });
-}
-
 const LOCAL_CMD_TIMEOUT_MS = 5_000;
 
 async function getDockerContainerState(
@@ -272,55 +235,6 @@ function isLocalProcessAlive(pid: number): boolean {
   }
 }
 
-async function getDockerProcesses(
-  entry: LockfileAssistant,
-): Promise<TableRow[]> {
-  const res = dockerResourceNames(entry.assistantId);
-
-  const containers: { name: string; containerName: string }[] = [
-    { name: "assistant", containerName: res.assistantContainer },
-    { name: "gateway", containerName: res.gatewayContainer },
-    { name: "credential-executor", containerName: res.cesContainer },
-  ];
-
-  const results = await Promise.all(
-    containers.map(async ({ name, containerName }) => {
-      const state = await getDockerContainerState(containerName);
-      if (!state) {
-        return {
-          name,
-          type: ASSISTANT_TYPE,
-          status: withStatusEmoji("not found"),
-          info: `container ${containerName}`,
-        };
-      }
-      return {
-        name,
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(state === "running" ? "running" : state),
-        info: `container ${containerName}`,
-      };
-    }),
-  );
-
-  // Show the file watcher process if the instance was hatched with --watch.
-  const watcherPid =
-    entry.cloud === "docker" && typeof entry.watcherPid === "number"
-      ? entry.watcherPid
-      : null;
-  if (watcherPid !== null) {
-    const alive = isLocalProcessAlive(watcherPid);
-    results.push({
-      name: "file-watcher",
-      type: ASSISTANT_TYPE,
-      status: withStatusEmoji(alive ? "running" : "not running"),
-      info: alive ? `PID ${watcherPid}` : "not detected",
-    });
-  }
-
-  return results;
-}
-
 function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "local") {
     return entry.instanceDir ?? "unknown — no instance dir recorded";
@@ -334,108 +248,29 @@ function locationFor(entry: LockfileAssistant): string {
 async function getAssistantProcessRows(
   entry: LockfileAssistant,
 ): Promise<TableRow[]> {
-  const cloud = entry.cloud;
-
-  console.log(`Processes for ${getAssistantDisplayName(entry)} — ${cloud}:`);
+  console.log(
+    `Processes for ${getAssistantDisplayName(entry)} — ${entry.cloud}:`,
+  );
   console.log(`Location: ${locationFor(entry)}\n`);
 
-  if (cloud === "local") {
-    const gatewayUrl = getGatewayUrl(entry);
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    const tree = await fetchGatewayPs(gatewayUrl, token);
-    return tree && tree.length > 0
-      ? flattenProcessTree(tree)
-      : [
-          {
-            name: "assistant",
-            type: ASSISTANT_TYPE,
-            status: withStatusEmoji("unreachable"),
-            info: "could not reach the gateway's process tree — is the assistant running?",
-          },
-        ];
-  }
-
-  if (cloud === "docker") {
-    return getDockerProcesses(entry);
-  }
-
-  if (isCloudHome(cloud)) {
-    console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
-
-    const psData = await fetchCloudPs(entry);
-
-    if (!psData) {
-      return [
+  // One path for every remote: the gateway's own process-tree API. The
+  // gateway serves it regardless of topology — local and docker publish it
+  // on their loopback port, remotes at their recorded address — so ps never
+  // discriminated by remote in the first place.
+  const gatewayUrl = getGatewayUrl(entry);
+  const token = loadGuardianToken(entry.assistantId)?.accessToken;
+  const tree = await fetchGatewayPs(gatewayUrl, token);
+  return tree && tree.length > 0
+    ? flattenProcessTree(tree)
+    : [
         {
           name: "assistant",
           type: ASSISTANT_TYPE,
           status: withStatusEmoji("unreachable"),
-          info: "could not reach Cadet Cloud API — run `cadet login`",
+          info: "could not reach the gateway's process tree — is the assistant running?",
         },
       ];
-    }
-
-    return flattenProcessTree(psData.processes);
-  }
-
-  if (cloud === "apple-container") {
-    const mgmtSocket = entry.mgmtSocket;
-    const socketAlive = mgmtSocket ? existsSync(mgmtSocket) : false;
-    const rows: TableRow[] = [
-      {
-        name: "container",
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(socketAlive ? "running" : "not running"),
-        info: socketAlive
-          ? `mgmt ${mgmtSocket}`
-          : "management socket not found",
-      },
-    ];
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    const health = await checkHealth(getGatewayUrl(entry), token);
-    rows.push({
-      name: "gateway",
-      type: ASSISTANT_TYPE,
-      status: withStatusEmoji(health.status),
-      info: getGatewayUrl(entry) + (health.detail ? ` | ${health.detail}` : ""),
-    });
-    return rows;
-  }
-
-  let output: string;
-  try {
-    if (cloud === "custom") {
-      output = await getRemoteProcessesCustom(entry);
-    } else {
-      console.error(`Unsupported cloud type '${cloud}' for process listing.`);
-      process.exit(1);
-    }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes("timed out")) {
-      console.warn(`Warning: remote process listing timed out — ${msg}`);
-      return [];
-    }
-    console.error(`Failed to list processes: ${msg}`);
-    process.exit(1);
-  }
-
-  const procs = parseRemotePs(output);
-
-  if (procs.length === 0) {
-    console.log("No cadet processes found on the remote instance.");
-    return [];
-  }
-
-  return procs.map((p) => ({
-    name: classifyProcess(p.command),
-    type: ASSISTANT_TYPE,
-    status: withStatusEmoji("running"),
-    info: `PID ${p.pid} | ${p.command.slice(0, 80)}`,
-  }));
 }
-
-// ── Root-managed process rows (tunnel agent, app edge) ──────────
 
 /** A CLI-managed process row, plus the assistant it fronts (when recorded). */
 interface RootManagedRow {
@@ -443,17 +278,6 @@ interface RootManagedRow {
   assistantId?: string;
 }
 
-/**
- * Rows for the CLI-managed processes recorded at the lockfile root: the
- * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
- * stale entry reads as not running rather than as a lie. The edge carries
- * the assistant it fronts; the tunnel fronts the App Server, not an
- * assistant, so its row renders unattributed. The INFO column leads with
- * the URL the process serves — the tunnel's public URL, the edge's loopback
- * listen URL — the same way assistant rows lead with their runtime URL. The
- * app entry may carry only its built-sha stamp between runs; such an entry
- * reports no row.
- */
 async function getRootManagedRows(): Promise<RootManagedRow[]> {
   const { tunnel, app } = readRootProcesses();
   const rows: RootManagedRow[] = [];
@@ -601,7 +425,10 @@ async function getAssistantListHealth(
   entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
   if (entry.cloud === "local") {
-    const pid = readPidFile(getDaemonPidPath(entry));
+    // Liveness reads the gateway's pid file: the gateway is what the health
+    // probe addresses, and the daemon can outlive a dead gateway (and vice
+    // versa) after a crash.
+    const pid = readPidFile(join(getLocalInstanceDir(entry), "gateway.pid"));
     const alive = pid !== null && isPidAlive(pid);
     if (!alive) {
       return { status: "sleeping", detail: null };

@@ -30,7 +30,7 @@ import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import { isLocalRuntimeEntry, resolveLogDir } from "@mycadet/local-mode";
+import { resolveLogDir } from "@mycadet/local-mode";
 import {
   readRootProcesses,
   stampRootProcess,
@@ -172,7 +172,13 @@ function writeEntryWorkspaceConfig(
   entry: LockfileAssistant,
   config: Record<string, unknown>,
 ): string {
-  if (!isLocalRuntimeEntry(entry)) {
+  if (
+    !(
+      entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+    )
+  ) {
     throw new Error("expected a local-runtime entry");
   }
   const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
