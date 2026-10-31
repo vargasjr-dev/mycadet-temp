@@ -97,7 +97,7 @@ function seedStores(): void {
   saveViewMode(ASSISTANT_ID, "all");
   useSidebarLayoutStore.setState({ assistantId: null });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
   });
 }
 

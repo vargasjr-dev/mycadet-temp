@@ -404,7 +404,7 @@ describe("ChatInfoPanel top level", () => {
     await renderChatInfo();
 
     await act(async () => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();

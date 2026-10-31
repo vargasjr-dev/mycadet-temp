@@ -72,7 +72,6 @@ let listError: Error | null = null;
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
-  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 const sdkActual = await import("@/generated/daemon/sdk.gen");

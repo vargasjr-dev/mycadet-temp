@@ -12,7 +12,7 @@ import {
   useGuardianDecisionStore,
 } from "../guardian-decision-store";
 import { useInvalidateHomeFeed } from "./use-home-feed-query";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type { GuardianDecisionOutcome } from "../guardian-decision-store";
 
@@ -136,7 +136,7 @@ export function useGuardianDecision(): {
   /** The requests whose outcome is terminal here; see `isTerminalDecision`. */
   decidedRequestIds: ReadonlySet<string>;
 } {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const invalidateFeed = useInvalidateHomeFeed(assistantId);
   const outcomes = useGuardianDecisionStore.use.outcomes();
   const pendingRequestIds = useGuardianDecisionStore.use.pendingRequestIds();
@@ -208,7 +208,7 @@ export function useGuardianDecision(): {
   return {
     decide,
     isPending: decision.isPending,
-    canDecide: assistantId !== null,
+    canDecide: Boolean(assistantId),
     outcomes,
     pendingRequestIds,
     decidedRequestIds,

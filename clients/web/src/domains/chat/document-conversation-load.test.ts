@@ -281,35 +281,27 @@ describe("loadDocumentConversation", () => {
     },
   );
 
-  test.each(["closed", "assistant switched"])(
-    "a %s owner cannot revalidate or publish",
-    async (reason) => {
-      const scope = documentRequestScope("assistant-1");
-      const pending = deferred<Awaited<ReturnType<typeof conversation>>>();
-      conversation.mockImplementationOnce(() => pending.promise);
-      const loading = loadDocumentConversation({
-        ...options,
-        isCurrent: scope.isCurrent,
-      });
-      await waitFor(() => expect(conversation).toHaveBeenCalledTimes(1));
-      edit("Pending update");
-      invalidate(["documents:list"]);
-      if (reason === "closed") {
-        scope.dispose();
-      } else {
-        useSetupLocalAssistant("assistant-2");
-        useSetupLocalAssistant("assistant-1");
-      }
-      pending.resolve({
-        data: { conversation: { id: "conv-1" } },
-        response: new Response(null, { status: 200 }),
-      });
-      await loading;
-      scope.dispose();
-      expect(read).toHaveBeenCalledTimes(1);
-      expect(onReady).not.toHaveBeenCalled();
-    },
-  );
+  test("a closed owner cannot revalidate or publish", async () => {
+    const scope = documentRequestScope("assistant-1");
+    const pending = deferred<Awaited<ReturnType<typeof conversation>>>();
+    conversation.mockImplementationOnce(() => pending.promise);
+    const loading = loadDocumentConversation({
+      ...options,
+      isCurrent: scope.isCurrent,
+    });
+    await waitFor(() => expect(conversation).toHaveBeenCalledTimes(1));
+    edit("Pending update");
+    invalidate(["documents:list"]);
+    scope.dispose();
+    pending.resolve({
+      data: { conversation: { id: "conv-1" } },
+      response: new Response(null, { status: 200 }),
+    });
+    await loading;
+    scope.dispose();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(onReady).not.toHaveBeenCalled();
+  });
 
   test.each(["stream", "sync"] as const)(
     "failed %s revalidation releases its listener and permits a fresh retry",

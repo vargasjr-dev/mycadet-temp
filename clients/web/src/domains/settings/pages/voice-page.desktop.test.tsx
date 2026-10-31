@@ -21,7 +21,6 @@ import { MemoryRouter } from "react-router";
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "asst-test",
-  useResolvedAssistantId: () => "asst-test",
 }));
 mock.module("@/components/speech/use-cloud-voice-selection", () => ({
   useCloudVoiceSelection: (): UseCloudVoiceSelection => ({

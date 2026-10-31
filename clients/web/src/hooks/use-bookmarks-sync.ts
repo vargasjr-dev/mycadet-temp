@@ -19,11 +19,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { bookmarksGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function useBookmarksSync(): void {
   const queryClient = useQueryClient();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
 
   useBusSubscription("sse.event", (envelope) => {
     const type = (envelope.message as { type?: string }).type;

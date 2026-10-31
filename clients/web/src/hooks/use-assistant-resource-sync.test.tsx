@@ -35,7 +35,6 @@ import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
 import { getClientId } from "@/lib/client-identity";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 function createWrapper(queryClient: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -988,7 +987,7 @@ describe("useAssistantResourceSync", () => {
   test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    const key = cloudAvatarUrlsQueryKey(null);
+    const key = cloudAvatarUrlsQueryKey("");
     queryClient.setQueryData(
       key,
       new Map([
@@ -1010,32 +1009,6 @@ describe("useAssistantResourceSync", () => {
       queryClient.getQueryData<Map<string, string>>(key)?.get("asst-2"),
     ).toBe("https://cdn.example/b.png");
     expect(queryClient.getQueryState(key)?.fetchStatus).toBe("idle");
-  });
-
-  test("avatar_updated drops the lookup entry under the row's platform id", async () => {
-    const queryClient = freshQueryClient();
-    queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    useResolvedAssistantStore.getState().setAssistant({
-      cloud: "local",
-      assistantId: "asst-1",
-      port: 7830,
-      cloudAssistantId: "uuid-1",
-    });
-    const key = cloudAvatarUrlsQueryKey(null);
-    queryClient.setQueryData(
-      key,
-      new Map([["uuid-1", "https://cdn.example/a.png"]]),
-    );
-    renderHook(() => useAssistantResourceSync("asst-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    emit({ type: "avatar_updated" } as unknown as AssistantEvent);
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<Map<string, string>>(key)?.has("uuid-1"),
-      ).toBe(false);
-    });
   });
 
   test("invalidates avatar query on avatar_updated event", async () => {

@@ -151,9 +151,9 @@ function identityHydrated(version: string = SUPPORTED_VERSION): void {
     version,
     name: "Ada",
   });
-  useResolvedAssistantStore
-    .getState()
-    .setAssistant({ cloud: "local", assistantId: "assistant-1", port: 7830 });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
 }
 
 /**
@@ -216,7 +216,7 @@ beforeEach(() => {
     version: null,
     name: null,
   });
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useConversationStore.getState().reset();
   useConversationStore
     .getState()

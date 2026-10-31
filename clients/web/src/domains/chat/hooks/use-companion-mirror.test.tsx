@@ -134,7 +134,7 @@ afterEach(() => {
   clearWatchRetro();
   isPopout = false;
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useTurnStore.getState().resetTurn();
   useConversationStore.setState({ processingConversationIds: new Set() });
   useChatSessionStore.setState({ snapshot: null } as never);

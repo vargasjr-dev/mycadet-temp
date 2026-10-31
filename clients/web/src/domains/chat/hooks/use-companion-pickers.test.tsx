@@ -34,7 +34,7 @@ const { useResolvedAssistantStore } =
 beforeEach(() => {
   voiceHookOptions = [];
   catalogAvailable = true;
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useLiveVoiceStore.setState({ state: "idle" });
   useCompanionPopoverStore.setState({
     openPicker: null,

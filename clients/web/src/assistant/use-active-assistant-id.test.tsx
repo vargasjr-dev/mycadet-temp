@@ -6,7 +6,7 @@ import { useActiveAssistantId } from "./use-active-assistant-id";
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("useActiveAssistantId", () => {
@@ -16,9 +16,9 @@ describe("useActiveAssistantId", () => {
     expect(result.current).toBe("asst-1");
   });
 
-  test("throws when no assistant is resolved (the store is empty)", () => {
-    expect(() => {
-      renderHook(() => useActiveAssistantId());
-    }).toThrow(/no resolved assistant/);
+  test("returns the unresolved shell's empty id when no assistant is stamped", () => {
+    useResolvedAssistantStore.getState().resetAssistant();
+    const { result } = renderHook(() => useActiveAssistantId());
+    expect(result.current).toBe("");
   });
 });

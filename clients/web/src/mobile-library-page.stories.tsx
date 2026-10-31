@@ -116,7 +116,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
     };
 
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
     });
     useAssistantIdentityStore
       .getState()

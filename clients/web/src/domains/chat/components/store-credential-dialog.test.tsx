@@ -49,7 +49,6 @@ import type { StoreCredentialDialogProps } from "@/domains/chat/components/store
 const ASSISTANT_ID = "asst-test";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
-  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 const toasts: Array<{ kind: "success" | "error"; message: string }> = [];

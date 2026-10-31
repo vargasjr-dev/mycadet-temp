@@ -44,7 +44,7 @@ import {
   navigateToDocumentConversation,
   setDocumentConversationPresentation,
 } from "../document-conversation-navigation";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Opens the document `surfaceId` under `assistantId` in the viewer panel. */
 export async function openDocumentFromChat(
@@ -63,7 +63,7 @@ export function useOpenDocumentFromChat(
   ownerAssistantId?: string,
   beforeOpen?: () => void,
 ): (surfaceId: string) => Promise<void> {
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   const assistantId = ownerAssistantId ?? activeAssistantId;
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -200,7 +200,7 @@ export function useOpenAppFromChat(): (
   appId: string,
   options?: OpenAppFromChatOptions,
 ) => Promise<void> {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const navigate = useNavigate();
   const location = useLocation();
 

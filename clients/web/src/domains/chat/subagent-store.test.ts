@@ -137,7 +137,7 @@ beforeEach(() => {
   setSystemTime();
   getState().reset();
   useConversationStore.getState().setActiveConversationId(null);
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   selfLookupSupported = true;
   reconcileSupported = true;
   fetchSubagentDetail.mockClear();

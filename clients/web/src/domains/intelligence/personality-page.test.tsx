@@ -20,7 +20,6 @@ mock.module("@/hooks/use-is-mobile", () => ({
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
-  useResolvedAssistantId: () => "assistant-1",
 }));
 
 mock.module("@/hooks/use-assistant-avatar", () => ({

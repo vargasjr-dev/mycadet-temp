@@ -15,12 +15,12 @@ import { Button } from "@mycadet/design-library";
 
 import { ActiveChatView } from "@/domains/chat/active-chat-view";
 import { useTranslation } from "@/i18n";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function ChatPage() {
   const { t } = useTranslation("chat");
   const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
 
   // Conversation list query — needed for the self-hosted error guard below.
   // TanStack Query deduplicates with the same query in ActiveChatView.

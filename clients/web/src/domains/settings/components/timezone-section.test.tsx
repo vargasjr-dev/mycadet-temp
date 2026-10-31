@@ -86,7 +86,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("TimezoneSection", () => {
@@ -114,7 +114,7 @@ describe("TimezoneSection", () => {
   });
 
   test("with no assistant id, writes the device setting and skips the PATCH", () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const { getByText } = render(<TimezoneSection />);
     fireEvent.click(getByText("pick-zone"));
 

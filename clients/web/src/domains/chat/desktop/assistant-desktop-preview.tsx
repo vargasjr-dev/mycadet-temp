@@ -12,7 +12,7 @@ import { usePointerCoarse } from "@/utils/pointer";
 import { DesktopPreviewFrame } from "./desktop-preview-frame";
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 const DesktopPreviewContent = lazy(() =>
   import("./desktop-preview-content").then((module) => ({
@@ -22,7 +22,7 @@ const DesktopPreviewContent = lazy(() =>
 
 export function AssistantDesktopPreview() {
   const enabled = useVirtualDesktopEnabled();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const session = useDesktopPreviewStore.use.session();
   const inlinePreview = useDesktopPreviewStore.use.inlinePreview();
   const fullscreenOnly = usePointerCoarse();

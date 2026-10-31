@@ -127,7 +127,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("SkillDetailPanel skill query states", () => {

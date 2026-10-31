@@ -206,7 +206,7 @@ beforeEach(() => {
   __resetPendingDeepLinkForTesting();
   useConversationStore.getState().reset();
   useAssistantIdentityStore.setState({ assistantId: null, version: null });
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   interruptionHandlers = [];
   onNativeAndroid = false;
   onNativeIOS = false;
@@ -347,9 +347,9 @@ describe("re-draining on an assistant switch", () => {
   /** Resolved, active, and new enough to serve live voice. */
   function activeAssistant(assistantId: string): void {
     useAssistantIdentityStore.setState({ assistantId, version: "0.10.12" });
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: assistantId, port: 7830 });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: assistantId },
+    });
   }
 
   /**

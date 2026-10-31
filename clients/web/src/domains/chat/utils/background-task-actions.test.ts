@@ -60,7 +60,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useBackgroundTaskStore.getState().reset();
 });
 
@@ -108,7 +108,7 @@ describe("stopBackgroundTask", () => {
 
   test("does not optimistically cancel when there is no active assistant", async () => {
     seedRunning();
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
 
     await expect(stopBackgroundTask("bg-1")).rejects.toThrow(
       "No active assistant",

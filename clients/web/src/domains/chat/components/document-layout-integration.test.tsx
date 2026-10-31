@@ -977,8 +977,8 @@ describe("document session chat handoff", () => {
             useResolvedAssistantStore.setState({
               assistant: {
                 cloud: "local",
+                port: 0,
                 assistantId: "assistant-2",
-                port: 7830,
               },
             });
           }
@@ -1077,8 +1077,8 @@ describe("document PDF export saves", () => {
           act(() =>
             useResolvedAssistantStore.getState().setAssistant({
               cloud: "local",
+              port: 0,
               assistantId: "assistant-2",
-              port: 7830,
             }),
           );
         }
@@ -1179,8 +1179,8 @@ describe("desktop document feedback", () => {
         act(() =>
           useResolvedAssistantStore.getState().setAssistant({
             cloud: "local",
+            port: 0,
             assistantId: "assistant-2",
-            port: 7830,
           }),
         );
       } else {

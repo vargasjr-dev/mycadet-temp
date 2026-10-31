@@ -505,11 +505,6 @@
     "titleNamed": "{assistantName} needs more power",
     "upgrade": "Upgrade"
   },
-  "retireConfirmDialog": {
-    "confirmLabel": "Retire",
-    "message": "This will permanently retire this assistant and all of its data. You will need to go through the onboarding flow again to create a new one. This action cannot be undone.",
-    "title": "Retire Assistant"
-  },
   "rootHydrateFallback": {
     "loadingAria": "Loading"
   },

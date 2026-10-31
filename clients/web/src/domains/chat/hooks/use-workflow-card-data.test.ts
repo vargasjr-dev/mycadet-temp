@@ -315,7 +315,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   afterEach(() => {
     cleanup();
     useWorkflowStore.getState().reset();
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     mock.restore();
   });
 
@@ -354,7 +354,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when no assistant is active", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
 
     renderHook(() => useWorkflowCardData("wf-no-asst"));

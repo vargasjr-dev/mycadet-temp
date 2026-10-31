@@ -33,7 +33,6 @@ import { setHosting } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 
-
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
  * resolution kind. A local stamp synthesizes a self-hosted entry for the
@@ -243,7 +242,7 @@ beforeEach(() => {
   createResponseJson = null;
   toastSuccessCalls = [];
   window.__CADET_CONFIG__ = undefined;
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 afterEach(() => {

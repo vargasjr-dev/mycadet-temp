@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useStickyProfiles } from "@/assistant/use-sticky-profiles";
 import { configGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * The display label of an inference profile key for the active assistant,
@@ -10,7 +10,7 @@ import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
  * gone. Shares the daemon-config query the composer already holds.
  */
 export function useProfileLabel(profileKey: string | undefined): string {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const configQuery = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId ?? "" } }),
     enabled: !!assistantId && !!profileKey,

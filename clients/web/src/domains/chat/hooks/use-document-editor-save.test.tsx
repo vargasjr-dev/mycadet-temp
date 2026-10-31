@@ -74,7 +74,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   await act(async () => {});
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useResolvedAssistantStore.setState(selection, true);
 });
 

@@ -11,11 +11,7 @@ import {
 import { useSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { createGenerationGuard } from "@/lib/generation-guard";
-import {
-  chooserRowAvatarCacheQueryKey,
-  persistLastSeenAvatar,
-} from "@/lib/persist-last-seen-avatar";
-import { deleteLastSeenAvatar } from "@/lib/avatar-last-seen-cache";
+import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import {
@@ -32,7 +28,7 @@ import type {
 } from "@/types/avatar";
 import { resolveAvatarAccentHex } from "@/utils/avatar-accent";
 import { isUuid } from "@/utils/uuid";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export const AVATAR_QUERY_KEY_PREFIX = "assistantAvatar";
 
@@ -84,25 +80,6 @@ const activeOwners = new Map<
 
 /** Latest fetch generation per assistant; a superseded fetch must not persist or track. */
 const fetchGenerations = createGenerationGuard();
-
-/**
- * Full avatar cleanup for an assistant leaving this device: the last-seen
- * cache entry, this module's held URLs and queries. Retire runs this so a
- * re-paired id within gcTime cannot render a revoked image.
- */
-export function forgetAssistantAvatar(
-  queryClient: QueryClient,
-  assistantId: string,
-): void {
-  void deleteLastSeenAvatar(assistantId);
-  releaseAssistantAvatarUrl(assistantId);
-  for (const queryKey of [
-    avatarQueryKey(assistantId),
-    chooserRowAvatarCacheQueryKey(assistantId),
-  ]) {
-    queryClient.removeQueries({ queryKey });
-  }
-}
 
 /**
  * Revoke the object URL this hook holds for a removed assistant, and
@@ -609,17 +586,18 @@ export function useAssistantAvatar(
 
 /**
  * The active assistant's avatar for a surface that draws the character only
- * once the query has settled. `useAssistantAvatar(null)` is a disabled query,
- * which reports `isLoading: false` with no data, so the id gates `ready` too.
- * Drawing early would flash `ChatAvatar`'s synthesized fallback traits (the
- * bundled green) and then jump to the real colour.
+ * once the query has settled. An empty id (the cloud platform's SPA before
+ * its projection lands) disables the query, which reports
+ * `isLoading: false` with no data, so the id gates `ready` too. Drawing
+ * early would flash `ChatAvatar`'s synthesized fallback traits (the bundled
+ * green) and then jump to the real colour.
  */
 export function useActiveAssistantAvatar() {
-  const activeId = useResolvedAssistantId();
+  const activeId = useActiveAssistantId();
   const { components, traits, customImageUrl, isLoading } =
     useAssistantAvatar(activeId);
   return {
-    ready: activeId != null && !isLoading,
+    ready: Boolean(activeId) && !isLoading,
     components,
     traits,
     customImageUrl,

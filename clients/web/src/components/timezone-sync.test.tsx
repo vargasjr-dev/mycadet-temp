@@ -66,7 +66,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 function lastBody() {
@@ -117,7 +117,7 @@ describe("TimezoneSync", () => {
   });
 
   test("no PATCH when no assistant id is available", async () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     renderSync();
     await new Promise((r) => setTimeout(r, 10));
     expect(patchMock).not.toHaveBeenCalled();

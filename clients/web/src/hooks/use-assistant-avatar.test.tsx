@@ -154,7 +154,7 @@ afterEach(() => {
   releaseAssistantAvatarUrl("asst-1");
   releaseAssistantAvatarUrl("asst-2");
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   fetchCharacterComponents.mockClear();
   fetchAvatarState.mockClear();
   fetchAvatarImageUrlResult.mockClear();

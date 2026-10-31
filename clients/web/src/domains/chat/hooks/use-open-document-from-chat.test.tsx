@@ -144,11 +144,9 @@ describe("mobile chat document entry", () => {
     });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
     act(() =>
-      useResolvedAssistantStore.getState().setAssistant({
-        cloud: "local",
-        assistantId: "assistant-2",
-        port: 7830,
-      }),
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "local", port: 0, assistantId: "assistant-2" }),
     );
     await act(async () => {
       resolveLoad({ data: documentData });
@@ -185,8 +183,8 @@ describe("mobile chat document entry", () => {
           act(() =>
             useResolvedAssistantStore.getState().setAssistant({
               cloud: "local",
+              port: 0,
               assistantId: "assistant-2",
-              port: 7830,
             }),
           );
         }

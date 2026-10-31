@@ -252,7 +252,7 @@ afterEach(() => {
   cleanup();
   restoreFetch();
   resetEventBus();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useAssistantIdentityStore.getState().clearIdentity();
 });
 

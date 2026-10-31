@@ -289,7 +289,7 @@ describe("DocumentViewerPage", () => {
   });
 
   test("a settled missing assistant shows a fallback instead of a permanent spinner", async () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const page = renderPage("surf-1");
     await page.findByText("Document not found.");
     fireEvent.click(page.getByText("Go back"));

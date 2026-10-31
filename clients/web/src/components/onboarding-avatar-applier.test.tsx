@@ -52,7 +52,7 @@ describe("OnboardingAvatarApplier", () => {
       pendingAvatarTraits: null,
       pendingAvatarVoice: null,
     });
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
   });
 
   afterEach(cleanup);

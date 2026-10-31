@@ -160,7 +160,7 @@ afterEach(() => {
 describe("useOpenAppFromChat", () => {
   test("no-ops when there is no active assistant", async () => {
     // GIVEN no assistant is selected
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const { result } = renderOpenApp(CHAT_PATH);
 
     // WHEN a surface asks to open an app
