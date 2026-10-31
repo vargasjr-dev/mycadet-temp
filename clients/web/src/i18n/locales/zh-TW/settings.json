@@ -307,8 +307,7 @@
     "sentAt": "已於 {time} 傳送給 Cadet。",
     "toastFailed": "偵錯套件未傳送。",
     "toastFailedWithReason": "偵錯套件未傳送：{reason}",
-    "toastSent": "偵錯套件已傳送給 Cadet。",
-    "useDesktopApp": "請在執行此助理的電腦上，透過 Cadet 桌面應用程式匯出。"
+    "toastSent": "偵錯套件已傳送給 Cadet。"
   },
   "debugControlsPanel": {
     "backups": "備份",

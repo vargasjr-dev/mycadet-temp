@@ -307,8 +307,7 @@
     "sentAt": "Enviado a Cadet a las {time}.",
     "toastFailed": "El paquete de depuración no se envió.",
     "toastFailedWithReason": "El paquete de depuración no se envió: {reason}",
-    "toastSent": "Paquete de depuración enviado a Cadet.",
-    "useDesktopApp": "Exporta desde la aplicación de escritorio de Cadet en el equipo que ejecuta este asistente."
+    "toastSent": "Paquete de depuración enviado a Cadet."
   },
   "debugControlsPanel": {
     "backups": "Copias de seguridad",

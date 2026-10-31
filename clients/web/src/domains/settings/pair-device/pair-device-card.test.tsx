@@ -27,7 +27,6 @@ import {
 } from "./pair-device-test-helpers";
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
-let gatewayPath: string | undefined = "/assistant";
 let supportsPairingRoutes = true;
 let selectedAssistant: {
   assistantId: string;
@@ -40,7 +39,6 @@ let selectedAssistant: {
 const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
-  hasGatewayAddress: () => gatewayPath !== undefined,
   getActiveAssistant: () => selectedAssistant,
 }));
 
@@ -233,7 +231,6 @@ function recheckButton(): HTMLElement | null {
 }
 
 beforeEach(() => {
-  gatewayPath = "/assistant";
   supportsPairingRoutes = true;
   selectedAssistant = { assistantId: "self", cloud: "local" };
   listDevicesResult = { ok: false, error: "unavailable" };
@@ -260,11 +257,12 @@ afterEach(() => {
 });
 
 describe("PairDeviceCard", () => {
-  test("renders nothing when there is no local gateway (remote/platform mode)", () => {
-    gatewayPath = undefined;
-    const { container } = renderCard();
-    expect(container.firstChild).toBeNull();
-    expect(screen.queryByText("Pair a device")).toBeNull();
+  test("renders the section for any resolved assistant — no gateway address required", () => {
+    // Device pairing works for every assistant entry: the scoped data plane
+    // is plain same-origin /v1, so platform/remote entries pair too.
+    selectedAssistant = { assistantId: "self", cloud: "cloud" };
+    renderCard();
+    expect(screen.getByText("Pair a device")).toBeTruthy();
   });
 
   test("renders the section in local mode", () => {
@@ -615,15 +613,19 @@ describe("PairDeviceCard: pending pairing requests", () => {
     ).toBeTruthy();
   });
 
-  test("stays hidden with the card when there is no local gateway", () => {
-    gatewayPath = undefined;
+  test("the pending-request poll runs for any resolved assistant too", async () => {
+    // No gateway-address gate: the pairing data plane is same-origin /v1 for
+    // every assistant entry, so the card polls there as well.
+    selectedAssistant = { assistantId: "self", cloud: "cloud" };
     installPendingFetch();
-    const { container } = renderCard();
+    renderCard();
 
-    expect(container.firstChild).toBeNull();
-    expect(screen.queryByText("Pairing requests")).toBeNull();
-    // The gate keeps the poll from ever firing.
-    expect(fetchLog).toHaveLength(0);
+    await waitFor(() =>
+      expect(
+        fetchLog.some((r) => r.url.endsWith("/remote-web/pairing-requests")),
+      ).toBe(true),
+    );
+    expect(screen.getByText("Pair a device")).toBeTruthy();
   });
 });
 

@@ -3,14 +3,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const LOCAL = { assistantId: "local-1", cloud: "local" } as const;
 let selected: typeof LOCAL | null = LOCAL;
-let gatewayPath: string | null = "/assistant";
 const calls: string[] = [];
 let exportFails = false;
 let toastErrors: string[] = [];
 
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => selected,
-  hasGatewayAddress: () => selected !== null && gatewayPath !== null,
 }));
 
 mock.module("@/generated/api/sdk.gen", () => ({
@@ -69,7 +67,6 @@ function renderRow() {
 describe("DebugBundleExport", () => {
   beforeEach(() => {
     selected = LOCAL;
-    gatewayPath = "/assistant";
     calls.length = 0;
     exportFails = false;
     toastErrors = [];
@@ -104,10 +101,14 @@ describe("DebugBundleExport", () => {
     ).toBeTruthy();
   });
 
-  test("without a local daemon it points at the desktop app instead of a button", () => {
-    gatewayPath = null;
+  test("the export renders for any assistant, even before one is resolved", () => {
+    // Debug bundle exports are not a local-only affordance — every assistant
+    // entry supports them, so the button renders regardless of what the
+    // resolved store holds.
+    selected = null;
     renderRow();
-    expect(screen.queryByRole("button")).toBeNull();
-    screen.getByText(/export from the cadet desktop app/i);
+    expect(
+      screen.getByRole("button", { name: "Export debug bundle" }),
+    ).toBeTruthy();
   });
 });

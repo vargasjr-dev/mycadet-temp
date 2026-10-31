@@ -313,8 +313,7 @@
     "sentAt": "Sent to Cadet at {time}.",
     "toastFailed": "The debug bundle was not sent.",
     "toastFailedWithReason": "The debug bundle was not sent: {reason}",
-    "toastSent": "Debug bundle sent to Cadet.",
-    "useDesktopApp": "Export from the Cadet desktop app on the computer running this assistant."
+    "toastSent": "Debug bundle sent to Cadet."
   },
   "debugControlsPanel": {
     "backups": "Backups",

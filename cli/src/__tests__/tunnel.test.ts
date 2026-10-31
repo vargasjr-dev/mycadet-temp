@@ -1597,12 +1597,9 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   }
 
   test("a recorded tailnet tunnel re-establishes the serve at the app server's port and re-records the url", async () => {
-    const { entry } = seedRecordedTailnetWake();
+    seedRecordedTailnetWake();
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     // Step 1: the edge started even though the gateway had cleared the url —
     // the lockfile's records are why the wake still wants both back.
@@ -1623,17 +1620,14 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   });
 
   test("the fresh url re-ensures the edge so the served config carries it the same wake", async () => {
-    const { entry } = seedRecordedTailnetWake();
+    seedRecordedTailnetWake();
     isIngressRunningMock.mockImplementation(() => true);
     readIngressStateMock.mockImplementation(() => ({
       listenPort: EDGE_PORT,
       gatewayUrl: "http://127.0.0.1:7830",
     }));
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
   });
@@ -1664,10 +1658,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       ),
     );
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -1681,10 +1672,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       ingress: { enabled: true },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -1709,10 +1697,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       ingress: { enabled: true },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -1742,10 +1727,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     // The pairing run did not repoint the webhook callback base; the restore
     // must not repoint it either.
@@ -1770,10 +1752,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // An empty workspace config: nothing in it names a tunnel or a URL.
     writeDefaultWorkspaceConfig({});
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.port,
-      entry.assistantId,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel();
 
     // The lockfile's tunnel record published a URL, so the recorded tailnet
     // tunnel is re-established and the URL is saved again.

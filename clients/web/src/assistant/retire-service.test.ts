@@ -56,7 +56,6 @@ mock.module("@/lib/local-mode", () => ({
   hasGatewayAddress: () => false,
   hasPairedGateway: () => false,
   primeLocalGatewayConnection: async () => {},
-  primeLocalGatewayConnectionWithStartupRetry: async () => {},
   primeLocalGatewayConnectionWithRepair: async () => {},
 }));
 const forgetAssistantAvatarMock = mock((_qc: QueryClient, _id: string) => {});

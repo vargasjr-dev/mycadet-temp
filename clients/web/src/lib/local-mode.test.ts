@@ -71,9 +71,7 @@ import {
   isCloudAssistant,
   isRetryablePairingFailure,
   hasAssistants,
-  LOCAL_GATEWAY_STARTUP_RETRY,
   primeLocalGatewayConnection,
-  primeLocalGatewayConnectionWithStartupRetry,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
 } from "@/lib/local-mode";
@@ -806,45 +804,5 @@ describe("primeLocalGatewayConnection", () => {
     expect(getSelfHostedActorToken()).toBeNull();
     // The local selection's data-plane signal is topology, not the slot.
     expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
-  });
-});
-
-describe("primeLocalGatewayConnectionWithStartupRetry (paired target)", () => {
-  // The startup ride-out exists for the LOCAL gateway's Login Item window.
-  // Paired failures (failed host credential read, remote transport error) fall
-  // through promptly to the chooser instead of stalling the boot retry budget
-  // on a machine that waiting cannot start.
-  test("a failing paired credential read is not ridden out", async () => {
-    enableLocalMode();
-    const fetchMock = mock(
-      async () => new Response("Guardian token not found", { status: 404 }),
-    );
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    const start = Date.now();
-    await expect(
-      primeLocalGatewayConnectionWithStartupRetry(pairedEntry),
-    ).rejects.toBeInstanceOf(localModeHost.GuardianTokenError);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-    expect(Date.now() - start).toBeLessThan(
-      LOCAL_GATEWAY_STARTUP_RETRY.intervalMs,
-    );
-  });
-
-  test("a remote transport failure is not ridden out either", async () => {
-    enableLocalMode();
-    const fetchMock = mock(async () => {
-      throw new TypeError("Failed to fetch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await expect(
-      primeLocalGatewayConnectionWithStartupRetry(pairedEntry),
-    ).rejects.toThrow("Failed to fetch");
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
   });
 });

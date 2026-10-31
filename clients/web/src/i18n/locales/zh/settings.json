@@ -307,8 +307,7 @@
     "sentAt": "已于 {time} 发送给 Cadet。",
     "toastFailed": "调试包未发送。",
     "toastFailedWithReason": "调试包未发送：{reason}",
-    "toastSent": "调试包已发送给 Cadet。",
-    "useDesktopApp": "请在运行此助手的电脑上，通过 Cadet 桌面应用导出。"
+    "toastSent": "调试包已发送给 Cadet。"
   },
   "debugControlsPanel": {
     "backups": "备份",

@@ -338,6 +338,11 @@ export function describeLoginError(error: unknown): string {
   );
 }
 
+/** The guardian bearer recorded beside the lockfile, for gateway calls. */
+function guardianBearer(assistantId: string): string | undefined {
+  return loadGuardianToken(assistantId)?.accessToken;
+}
+
 /**
  * Register the active self-hosted assistant with the cloud and inject
  * cloud credentials into its runtime — the post-login half of the desktop
@@ -346,11 +351,6 @@ export function describeLoginError(error: unknown): string {
  * provider path. Non-fatal by design; callers log failures. Reads the cloud
  * session token and the guardian bearer from their disk files.
  */
-/** The guardian bearer recorded beside the lockfile, for gateway calls. */
-function guardianBearer(assistantId: string): string | undefined {
-  return loadGuardianToken(assistantId)?.accessToken;
-}
-
 export async function registerLocalAssistantWithCloud(
   user: { id: string; email: string },
   log: (message: string) => void = console.log,

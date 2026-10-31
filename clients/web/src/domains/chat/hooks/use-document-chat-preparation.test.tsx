@@ -11,6 +11,7 @@ import type { DisplayAttachment } from "@/domains/chat/types/types";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 import { useComposerSubmit } from "./use-composer-submit";
 import { useDocumentChatPreparation } from "./use-document-chat-preparation";
@@ -43,12 +44,8 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function selectOwner(owner = OWNER) {
-  useResolvedAssistantStore.getState().setAssistant({
-    cloud: "local",
-    assistantId: owner.assistantId,
-    port: 7830,
-  });
+function useSelectOwner(owner = OWNER) {
+  useSetupLocalAssistant(owner.assistantId);
   useConversationStore.setState({ activeConversationId: owner.conversationId });
   useViewerStore.setState({
     mainView: "document",
@@ -132,7 +129,7 @@ function renderPreparedComposer() {
 }
 
 beforeEach(() => {
-  selectOwner();
+  useSelectOwner();
   useComposerStore.setState({
     input: "Revise this paragraph",
     attachments: [ATTACHMENT],
@@ -455,7 +452,7 @@ describe("shared document preparation and composer submit", () => {
         surfaceId: change === "surface" ? "surface-2" : OWNER.surfaceId,
       };
       act(() => {
-        selectOwner(next);
+        useSelectOwner(next);
         if (change === "chat") {
           useViewerStore.getState().closeDocument();
         }
@@ -489,9 +486,9 @@ describe("shared document preparation and composer submit", () => {
     });
     await waitFor(() => expect(flush).toHaveBeenCalledTimes(1));
     const other = { ...OWNER, conversationId: "conversation-2" };
-    act(() => selectOwner(other));
+    act(() => useSelectOwner(other));
     rerender({ ...other, sendDisabled: false, showingDocument: true });
-    act(() => selectOwner());
+    act(() => useSelectOwner());
     rerender({ ...OWNER, sendDisabled: false, showingDocument: true });
     await act(async () => {
       saving.resolve(SNAPSHOT);
@@ -515,7 +512,7 @@ describe("shared document preparation and composer submit", () => {
     await waitFor(() => expect(flush).toHaveBeenCalledTimes(1));
     const next = { ...OWNER, surfaceId: "surface-2" };
     act(() => {
-      selectOwner(next);
+      useSelectOwner(next);
       useComposerStore.getState().setInput("New owner message");
     });
     rerender({ ...next, sendDisabled: false, showingDocument: true });

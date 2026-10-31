@@ -12,6 +12,8 @@ import {
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "./cli-name.js";
 import {
+  isCloudEntry,
+  isDockerEntry,
   isLocalEntry,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
@@ -25,6 +27,7 @@ import {
   type AppServer,
 } from "./servers/nginx.js";
 import { waitForDaemonReady } from "./http-client.js";
+import { GATEWAY_PORT } from "./constants.js";
 import {
   confirmStopAnswer,
   isNgrokEndpointOnlineError,
@@ -411,14 +414,24 @@ function survivingAppServerPort(): number | null {
 }
 
 /**
+ * Loopback gateway port of the target assistant — what a tunnel fronts when
+ * no app server edge survives to front instead. A cloud entry has no loopback
+ * gateway; the global default keeps the return a number.
+ */
+function targetGatewayPort(): number {
+  const entry = resolveTargetAssistant();
+  return isCloudEntry(entry) ? GATEWAY_PORT : entry.port;
+}
+
+/**
  * Bring the nginx edge back up after a wake or local upgrade; a drifted or
  * failed edge warns and reports the surviving port rather than failing the
- * wake. Returns the loopback port a tunnel should front — the app server's
- * own port when it runs, else the gateway's.
+ * wake. Returns the loopback port a tunnel should front — the App Server
+ * manages its own port, completely agnostic of the cadet gateway port.
  */
-export async function restoreAppServer(gatewayPort: number): Promise<number> {
+export async function restoreAppServer(): Promise<number> {
   if (!wantsAppServer()) {
-    return gatewayPort;
+    return targetGatewayPort();
   }
   let appServer: AppServer;
   try {
@@ -433,7 +446,7 @@ export async function restoreAppServer(gatewayPort: number): Promise<number> {
     console.warn(
       `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
-    return survivingPort ?? gatewayPort;
+    return survivingPort ?? targetGatewayPort();
   }
   console.log(
     `   App server ${appServer.started ? "started" : "already running"} on 127.0.0.1:${appServer.port}.`,
@@ -456,7 +469,7 @@ export async function restoreContainerAppServer(
   entry: LockfileAssistant,
   gatewayReadyTimeoutMs = 0,
 ): Promise<void> {
-  if (!isLocalEntry(entry)) {
+  if (!isDockerEntry(entry)) {
     return;
   }
   const gatewayPort = entry.port;
@@ -479,7 +492,7 @@ export async function restoreContainerAppServer(
     );
     return;
   }
-  await restoreAppServerAndAutoTunnel(gatewayPort, entry.assistantId);
+  await restoreAppServerAndAutoTunnel();
 }
 
 /**
@@ -491,16 +504,13 @@ export async function restoreContainerAppServer(
  *    tunnel takes),
  * 3. save the tunnel's ingress url to each assistant.
  */
-export async function restoreAppServerAndAutoTunnel(
-  gatewayPort: number,
-  assistantId?: string,
-): Promise<void> {
+export async function restoreAppServerAndAutoTunnel(): Promise<void> {
   // 1. Ensure the app server is started.
-  const appServerPort = await restoreAppServer(gatewayPort);
+  const appServerPort = await restoreAppServer();
   // 2. Ensure the tunnel is started at it: lockfile.json records which
   //    tunnel we expect connected to the app server, so only that provider's
   //    own start piece runs — pointed at the app server's port.
-  const publicUrl = await ensureTunnel(appServerPort, assistantId);
+  const publicUrl = await ensureTunnel(appServerPort);
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
@@ -520,10 +530,7 @@ export async function restoreAppServerAndAutoTunnel(
  * resurrects it. Returns the established URL, or null when nothing was
  * started.
  */
-async function ensureTunnel(
-  targetPort: number,
-  assistantId?: string,
-): Promise<string | null> {
+async function ensureTunnel(targetPort: number): Promise<string | null> {
   const expected = readRootProcesses().tunnel;
   if (!expected?.provider) {
     return null;
@@ -538,7 +545,9 @@ async function ensureTunnel(
   try {
     const result = await providers[expected.provider]?.run({
       port: targetPort,
-      assistantId,
+      // The tunnel is a root resource; the target assistant only names the
+      // token/notify seams for the re-established run.
+      assistantId: resolveTargetAssistant().assistantId,
     });
     if (!result) return null;
     // The run owns nothing in this process — the agent is detached — but an
