@@ -42,9 +42,8 @@ describe("secure-keys", () => {
   beforeEach(() => {
     _resetBackend();
 
-    // Ensure CADET_DEV and CADET_DESKTOP_APP are NOT set
+    // Ensure CADET_DEV is NOT set
     delete process.env.CADET_DEV;
-    delete process.env.CADET_DESKTOP_APP;
   });
 
   afterEach(() => {
@@ -52,7 +51,6 @@ describe("secure-keys", () => {
     // Clear any memory-backend pin a describe installed.
     setSecureKeyBackendForTesting(undefined);
     delete process.env.CADET_DEV;
-    delete process.env.CADET_DESKTOP_APP;
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CES_CREDENTIAL_URL;
     delete process.env.CES_BOOTSTRAP_SOCKET_DIR;
