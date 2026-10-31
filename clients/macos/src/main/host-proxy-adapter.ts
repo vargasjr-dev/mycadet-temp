@@ -10,7 +10,6 @@ import {
   getGuardianAccessToken,
   resolveConfigDir,
   resolveEnvironmentName,
-  type CliInvocation,
 } from "@mycadet/local-mode";
 
 import { app } from "electron";
@@ -34,9 +33,7 @@ import { installPresenceMonitor } from "./presence";
 import { getSessionToken } from "./session-token-store.client";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 
-export const installHostProxyBridge = (
-  resolveCliInvocation: () => Promise<CliInvocation>,
-): (() => void) => {
+export const installHostProxyBridge = (): (() => void) => {
   const browserExecutor = new HostBrowserExecutor();
   const uiSnapshotExecutor = createHostUiSnapshotExecutor({
     resolveRendererBase: () => RENDERER_BASE_PROD,
@@ -44,18 +41,7 @@ export const installHostProxyBridge = (
   const runtime: HostProxyRuntime = {
     acquireGuardianToken: async (assistantId) => {
       const configDir = resolveConfigDir();
-      let invocation: CliInvocation;
-      try {
-        invocation = await resolveCliInvocation();
-      } catch (err) {
-        log.error("[host-proxy-router] failed to resolve CLI invocation", {
-          assistantId,
-          err,
-        });
-        return { ok: false, status: 500, error: (err as Error).message };
-      }
-
-      const result = await getGuardianAccessToken(assistantId, invocation);
+      const result = await getGuardianAccessToken(assistantId);
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {
           assistantId,

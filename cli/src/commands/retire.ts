@@ -27,7 +27,7 @@ import {
   getCloudUrl,
   readCloudToken,
 } from "../lib/cloud-client.js";
-import { retireDocker, dockerResourceNames } from "../lib/docker.js";
+import { retireDocker, dockerResourceNames } from "../lib/remotes/docker.js";
 import { stopContainerAppServer } from "../lib/servers/nginx.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { retireAppleContainer } from "../lib/retire-apple-container.js";

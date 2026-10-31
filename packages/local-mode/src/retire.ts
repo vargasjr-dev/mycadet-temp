@@ -5,6 +5,7 @@ import {
   HOST_WRAPPER_LONG_HEADROOM_MS,
 } from "./lifecycle-budgets";
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 const RETIRE_TIMEOUT_MS =
   DAEMON_STOP_TIMEOUT_MS + HOST_WRAPPER_LONG_HEADROOM_MS;
@@ -18,12 +19,10 @@ export interface RetireOptions {
 }
 
 export async function runRetire(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   options: RetireOptions = {},
 ): Promise<RetireResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+  const resolved = await resolveCliInvocation();
   return new Promise((resolve) => {
     const child = spawn(
       resolved.command,

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 
-import type { CliInvocation } from "../util";
+import { configureCliPaths } from "../cli-invocation";
 import { FakeChild, mockChildProcessSpawn } from "./helpers/child-process-mock";
 
 let lastChild: FakeChild;
@@ -24,11 +24,15 @@ afterEach(() => {
   spawnMock.mockClear();
 });
 
-const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
+// The inlined resolution probes the configured dev entry: `bun run cli`,
+// the same invocation shape these assertions have always expected.
+configureCliPaths({ devEntry: () => "cli" });
 
 describe("runWake", () => {
   test("spawns the CLI wake command for the assistant and resolves ok on exit 0", async () => {
-    const pending = runWake(invocation, "asst-42");
+    const pending = runWake("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -36,7 +40,9 @@ describe("runWake", () => {
   });
 
   test("repairGuardian: true chains the gateway's own token re-lease after the wake", async () => {
-    const pending = runWake(invocation, "asst-42", { repairGuardian: true });
+    const pending = runWake("asst-42", { repairGuardian: true });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0); // wake completes...
     await Promise.resolve(); // the chain spawns the re-lease
     expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "wake", "asst-42"]]);
@@ -50,7 +56,9 @@ describe("runWake", () => {
   });
 
   test("repairGuardian: false ends at the wake", async () => {
-    const pending = runWake(invocation, "asst-42", { repairGuardian: false });
+    const pending = runWake("asst-42", { repairGuardian: false });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -58,7 +66,9 @@ describe("runWake", () => {
   });
 
   test("a non-zero exit resolves to a failure carrying the CLI's output", async () => {
-    const pending = runWake(invocation, "asst-42");
+    const pending = runWake("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit(
       "data",
       Buffer.from("no sibling environment to seed from"),
@@ -73,7 +83,9 @@ describe("runWake", () => {
   });
 
   test("a spawn failure resolves to a failure rather than rejecting", async () => {
-    const pending = runWake(invocation, "asst-42");
+    const pending = runWake("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("error", new Error("ENOENT"));
 
     const result = await pending;

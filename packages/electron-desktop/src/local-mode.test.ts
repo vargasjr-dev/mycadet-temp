@@ -75,27 +75,26 @@ const ensureCliInstalledMock = mock(async () => {
 const realExistsSync = fs.existsSync.bind(fs);
 const existsSyncOverrides: Record<string, boolean> = {};
 
-const resolveInvocation = async () => {
-  const envPath = process.env.CADET_CLI_PATH;
-  if (envPath) {
-    return { command: "bun", baseArgs: ["run", envPath] };
-  }
-  if (!appState.isPackaged) {
+// The host's CLI facts, mirroring the real provider: a dev entry behind the
+// packaging check, the installed pair behind the installer.
+const cliPaths: CliPaths = {
+  installed: () => [
+    {
+      bun: cliInstallerState.bundledBunPath,
+      cli: cliInstallerState.cliBinPath,
+    },
+  ],
+  devEntry: () => {
+    if (appState.isPackaged) return undefined;
     const repoRoot = path.resolve(appState.appPath, "..", "..");
     const cliEntry = path.join(repoRoot, "cli", "src", "index.ts");
     const exists =
       cliEntry in existsSyncOverrides
         ? existsSyncOverrides[cliEntry]
         : realExistsSync(cliEntry);
-    if (exists) {
-      return { command: "bun", baseArgs: ["run", cliEntry] };
-    }
-  }
-  await ensureCliInstalledMock();
-  return {
-    command: cliInstallerState.bundledBunPath,
-    baseArgs: ["run", cliInstallerState.cliBinPath],
-  };
+    return exists ? cliEntry : undefined;
+  },
+  prepare: ensureCliInstalledMock,
 };
 
 // Point the lockfile transport at a throwaway dir so the lockfile handlers
@@ -118,15 +117,15 @@ let mockSessionToken: string | null = null;
 
 const refreshLockfileNowMock = mock(() => {});
 
-const { configureLocalMode, installLocalMode } =
-  await import("./local-mode");
+const { configureLocalMode, installLocalMode } = await import("./local-mode");
+type CliPaths = import("@mycadet/local-mode").CliPaths;
 const { guardianTokenPath } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
 
 beforeAll(() => {
   configureLocalMode({
-    cli: { resolveInvocation },
+    cliPaths,
     handle,
     refreshLockfile: refreshLockfileNowMock,
     session: { getToken: () => mockSessionToken },
@@ -357,24 +356,6 @@ const seedLockfileAssistant = (
     }),
   );
 };
-const renameLockfileAssistant = (
-  assistantId?: unknown,
-  name?: unknown,
-): WriteResult =>
-  handlers["cadet:localMode:renameLockfileAssistant"](
-    allowedEvent,
-    assistantId,
-    name,
-  ) as WriteResult;
-const stampLockfileAssistantOnboarded = (
-  assistantId?: unknown,
-  onboardedAt?: unknown,
-): WriteResult =>
-  handlers["cadet:localMode:stampLockfileAssistantOnboarded"](
-    allowedEvent,
-    assistantId,
-    onboardedAt,
-  ) as WriteResult;
 const writePairedLockfileAssistant = (assistantId: string): void => {
   fs.writeFileSync(
     lockfilePath,
@@ -391,11 +372,6 @@ const writePairedLockfileAssistant = (assistantId: string): void => {
     }),
   );
 };
-const replaceCloudAssistants = (cloudAssistants: unknown): WriteResult =>
-  handlers["cadet:localMode:replaceCloudAssistants"](
-    allowedEvent,
-    cloudAssistants,
-  ) as WriteResult;
 const retire = (assistantId?: unknown): Promise<unknown> =>
   handlers["cadet:localMode:retire"](
     allowedEvent,
@@ -458,213 +434,8 @@ describe("lockfile IPC handlers", () => {
     expect(() => readLockfile()).toThrow();
   });
 
-  test("renameLockfileAssistant persists the rename and refreshes the watcher", () => {
-    seedLockfileAssistant(
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-        name: "Old Name",
-      },
-      "asst-1",
-    );
-    refreshLockfileNowMock.mockClear();
-
-    const result = renameLockfileAssistant("asst-1", "Credence");
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.lockfile.assistants).toEqual([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-        name: "Credence",
-      },
-    ]);
-    expect(result.lockfile.activeAssistant).toBe("asst-1");
-    expect(refreshLockfileNowMock).toHaveBeenCalledTimes(1);
-
-    const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(onDisk.assistants[0]?.name).toBe("Credence");
-  });
-
-  test("renameLockfileAssistant refuses a missing entry without creating the file", () => {
-    const result = renameLockfileAssistant("asst-gone", "Credence");
-
-    expect(result.ok).toBe(false);
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-    expect(refreshLockfileNowMock).not.toHaveBeenCalled();
-  });
-
-  test("renameLockfileAssistant refuses a corrupt file without clobbering it", () => {
-    fs.writeFileSync(lockfilePath, "{ not json");
-
-    const result = renameLockfileAssistant("asst-1", "Credence");
-
-    expect(result.ok).toBe(false);
-    expect(fs.readFileSync(lockfilePath, "utf-8")).toBe("{ not json");
-    expect(refreshLockfileNowMock).not.toHaveBeenCalled();
-  });
-
-  test("renameLockfileAssistant rejects a missing id or name with a structured error", () => {
-    expect(renameLockfileAssistant(undefined, "Credence")).toEqual({
-      ok: false,
-      error: "Missing assistantId or name",
-    });
-    expect(renameLockfileAssistant("asst-1", undefined)).toEqual({
-      ok: false,
-      error: "Missing assistantId or name",
-    });
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("stampLockfileAssistantOnboarded records the completion and refreshes", () => {
-    seedLockfileAssistant(
-      { assistantId: "asst-1", cloud: "local", name: "Credence" },
-      "asst-1",
-    );
-    refreshLockfileNowMock.mockClear();
-
-    const result = stampLockfileAssistantOnboarded(
-      "asst-1",
-      "2026-08-31T00:00:00.000Z",
-    );
-
-    expect(result.ok).toBe(true);
-    expect(refreshLockfileNowMock).toHaveBeenCalledTimes(1);
-    const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(onDisk.assistants[0]?.onboardedAt).toBe("2026-08-31T00:00:00.000Z");
-    expect(onDisk.assistants[0]?.name).toBe("Credence");
-  });
-
   // The whole point of routing this through the host: a completion that lands
   // after a retire must not re-create the entry from the renderer's snapshot.
-  test("stampLockfileAssistantOnboarded refuses a missing entry without creating the file", () => {
-    const result = stampLockfileAssistantOnboarded(
-      "asst-gone",
-      "2026-08-31T00:00:00.000Z",
-    );
-
-    expect(result.ok).toBe(false);
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-    expect(refreshLockfileNowMock).not.toHaveBeenCalled();
-  });
-
-  test("stampLockfileAssistantOnboarded keeps the first stamp", () => {
-    seedLockfileAssistant(
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        onboardedAt: "2026-08-01T00:00:00.000Z",
-      },
-      "asst-1",
-    );
-
-    const result = stampLockfileAssistantOnboarded(
-      "asst-1",
-      "2026-08-31T00:00:00.000Z",
-    );
-
-    expect(result.ok).toBe(true);
-    const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(onDisk.assistants[0]?.onboardedAt).toBe("2026-08-01T00:00:00.000Z");
-  });
-
-  test("stampLockfileAssistantOnboarded refuses a corrupt file without clobbering it", () => {
-    fs.writeFileSync(lockfilePath, "{ not json");
-
-    const result = stampLockfileAssistantOnboarded(
-      "asst-1",
-      "2026-08-31T00:00:00.000Z",
-    );
-
-    expect(result.ok).toBe(false);
-    expect(fs.readFileSync(lockfilePath, "utf-8")).toBe("{ not json");
-  });
-
-  test("stampLockfileAssistantOnboarded rejects a missing id or timestamp", () => {
-    expect(
-      stampLockfileAssistantOnboarded(undefined, "2026-08-31T00:00:00.000Z"),
-    ).toEqual({ ok: false, error: "Missing assistantId or onboardedAt" });
-    expect(stampLockfileAssistantOnboarded("asst-1", undefined)).toEqual({
-      ok: false,
-      error: "Missing assistantId or onboardedAt",
-    });
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("replaceCloudAssistants swaps platform entries while preserving local ones", () => {
-    seedLockfileAssistant(
-      {
-        assistantId: "local-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-      },
-      "local-1",
-    );
-    seedLockfileAssistant(
-      { assistantId: "old-platform", cloud: "cloud", runtimeUrl: "http://x" },
-      "local-1",
-    );
-
-    const result = replaceCloudAssistants([
-      { assistantId: "new-platform", cloud: "cadet", runtimeUrl: "http://y" },
-    ]);
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    const ids = (
-      result.lockfile.assistants as Array<{ assistantId: string }>
-    ).map((a) => a.assistantId);
-    expect(ids).toEqual(["local-1", "new-platform"]);
-  });
-
-  test("replaceCloudAssistants rejects a non-array argument without touching disk", () => {
-    seedLockfileAssistant(
-      {
-        assistantId: "local-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-      },
-      "local-1",
-    );
-
-    // The renderer's typed bridge only ever sends an array. A non-array is a
-    // programming error or a hostile sender, so the schema rejects it rather
-    // than coercing to an empty set — coercion would silently wipe every
-    // platform assistant from the lockfile, a far worse outcome than failing.
-    expect(() => replaceCloudAssistants("not-an-array")).toThrow();
-
-    const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
-      assistants: Array<{ assistantId: string }>;
-    };
-    expect(onDisk.assistants.map((a) => a.assistantId)).toEqual(["local-1"]);
-  });
-
-  test("replaceCloudAssistants cannot create a paired entry", () => {
-    const result = replaceCloudAssistants([
-      {
-        assistantId: "paired-1",
-        cloud: "paired",
-        paired: true,
-        runtimeUrl: "https://attacker.example.com",
-      },
-    ]);
-
-    expect(result.ok).toBe(false);
-    expect(readLockfile().assistants).toEqual([]);
-  });
 });
 
 describe("cadet:localMode:retire handler", () => {
@@ -1241,12 +1012,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   });
 
   test("reads the avatar off the lockfile entry's instance dir", () => {
-    const avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    const avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     fs.mkdirSync(avatarDir, { recursive: true });
     fs.writeFileSync(
       path.join(avatarDir, "avatar.json"),
@@ -1317,12 +1083,7 @@ describe("cadet:localMode:readAssistantAvatar handler", () => {
   });
 
   test("an unreadable manifest image surfaces as a failure over IPC", () => {
-    const avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    const avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     fs.mkdirSync(avatarDir, { recursive: true });
     fs.writeFileSync(
       path.join(avatarDir, "avatar.json"),

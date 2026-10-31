@@ -5,6 +5,7 @@ import {
   HOST_WRAPPER_HEADROOM_MS,
 } from "./lifecycle-budgets";
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 const SLEEP_TIMEOUT_MS = DAEMON_STOP_TIMEOUT_MS + HOST_WRAPPER_HEADROOM_MS;
 
@@ -22,12 +23,8 @@ export type SleepResult =
  * Mirrors {@link runRetire}'s never-reject contract so each host wires
  * transport once and surfaces a structured failure rather than a thrown error.
  */
-export async function runSleep(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
-  assistantId: string,
-): Promise<SleepResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+export async function runSleep(assistantId: string): Promise<SleepResult> {
+  const resolved = await resolveCliInvocation();
   return new Promise((resolve) => {
     const child = spawn(
       resolved.command,

@@ -6,7 +6,7 @@ import {
   resolveImageRefs,
   resolveOwnImageRefs,
 } from "../lib/cloud-releases.js";
-import { dockerhubImages } from "../lib/docker.js";
+import { dockerhubImages } from "../lib/remotes/docker.js";
 import {
   isDevVersion,
   isLocalVersion,

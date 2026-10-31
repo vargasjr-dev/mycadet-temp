@@ -22,7 +22,7 @@ import {
   stopContainers,
   sleepContainers,
   wakeContainers,
-} from "./docker.js";
+} from "./remotes/docker.js";
 import { resolveDataDir } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";

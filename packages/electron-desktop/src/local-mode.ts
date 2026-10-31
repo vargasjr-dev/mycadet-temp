@@ -3,13 +3,10 @@ import { z } from "zod";
 import {
   getGuardianAccessToken,
   isActiveAssistant,
-  renameLockfileAssistantIfPresent,
-  stampLockfileAssistantOnboardedIfPresent,
   readLockfile,
   stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
-  replaceCloudAssistants,
   runDevicesList,
   runDevicesRevoke,
   runHatch,
@@ -22,7 +19,8 @@ import {
   pairingStart,
   unpairAssistant,
   LockfileAssistantSchema,
-  type CliInvocation,
+  configureCliPaths,
+  type CliPaths,
   type LockfileWriteResult,
   type TokenResult,
   type UpgradeOptions,
@@ -76,22 +74,16 @@ interface UpgradeResult {
   error?: string;
 }
 
-export interface LocalModeCliProvider {
-  resolveInvocation: () => Promise<CliInvocation>;
-}
-
 export interface LocalModeSessionProvider {
   getToken: () => string | null;
 }
 
-export const LOCAL_MODE_CLI = capabilityToken<LocalModeCliProvider>(
-  "desktop.local-mode-cli",
-);
 export const LOCAL_MODE_SESSION = capabilityToken<LocalModeSessionProvider>(
   "desktop.local-mode-session",
 );
 export interface LocalModeRuntime {
-  cli: LocalModeCliProvider;
+  /** The host's CLI facts — the inlined invocation resolution probes these. */
+  cliPaths?: CliPaths;
   handle: IpcHandle;
   refreshLockfile: () => void;
   session: LocalModeSessionProvider;
@@ -102,6 +94,7 @@ let runtime: LocalModeRuntime | null = null;
 
 export const configureLocalMode = (next: LocalModeRuntime): void => {
   runtime = next;
+  configureCliPaths(next.cliPaths);
 };
 
 export const configureUnavailableLocalMode = (
@@ -109,9 +102,6 @@ export const configureUnavailableLocalMode = (
   unavailableError: string,
 ): void => {
   configureLocalMode({
-    cli: {
-      resolveInvocation: async () => ({ command: "unused", baseArgs: [] }),
-    },
     handle,
     refreshLockfile: () => undefined,
     session: { getToken: () => null },
@@ -133,12 +123,7 @@ export const requireRuntime = (): LocalModeRuntime => {
  */
 async function hatch(remote?: string): Promise<HatchResult> {
   try {
-    const result = await runHatch(
-      () => requireRuntime().cli.resolveInvocation(),
-      {
-        remote,
-      },
-    );
+    const result = await runHatch({ remote });
     return result.ok
       ? { ok: true, assistantId: result.assistantId }
       : { ok: false, error: result.error };
@@ -155,13 +140,9 @@ interface SleepResult {
 /** Retire a local assistant. Mirrors `hatch`'s never-reject contract. */
 async function retire(assistantId: string): Promise<RetireResult> {
   try {
-    const result = await runRetire(
-      () => requireRuntime().cli.resolveInvocation(),
-      assistantId,
-      {
-        cloudToken: requireRuntime().session.getToken() ?? undefined,
-      },
-    );
+    const result = await runRetire(assistantId, {
+      cloudToken: requireRuntime().session.getToken() ?? undefined,
+    });
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
@@ -171,10 +152,7 @@ async function retire(assistantId: string): Promise<RetireResult> {
 /** Stop a local assistant's daemon and gateway. Mirrors `hatch`'s never-reject contract. */
 async function sleep(assistantId: string): Promise<SleepResult> {
   try {
-    const result = await runSleep(
-      () => requireRuntime().cli.resolveInvocation(),
-      assistantId,
-    );
+    const result = await runSleep(assistantId);
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
@@ -185,10 +163,7 @@ async function sleep(assistantId: string): Promise<SleepResult> {
 async function listDevices(
   assistantId: string,
 ): Promise<LocalListDevicesResult> {
-  return runDevicesList(
-    () => requireRuntime().cli.resolveInvocation(),
-    assistantId,
-  );
+  return runDevicesList(assistantId);
 }
 
 /** Revoke one paired device's tokens. Mirrors `hatch`'s never-reject contract. */
@@ -197,11 +172,7 @@ async function revokeDevice(
   hashedDeviceId: string,
 ): Promise<LocalRevokeDeviceResult> {
   try {
-    return runDevicesRevoke(
-      () => requireRuntime().cli.resolveInvocation(),
-      assistantId,
-      hashedDeviceId,
-    );
+    return runDevicesRevoke(assistantId, hashedDeviceId);
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -217,11 +188,7 @@ async function wake(
   options?: WakeOptions,
 ): Promise<WakeResult> {
   try {
-    const result = await runWake(
-      () => requireRuntime().cli.resolveInvocation(),
-      assistantId,
-      options,
-    );
+    const result = await runWake(assistantId, options);
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
@@ -247,16 +214,8 @@ async function upgrade(
 
   upgradingLocalAssistantIds.add(assistantId);
 
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
-  } catch (err) {
-    upgradingLocalAssistantIds.delete(assistantId);
-    return { ok: false, error: (err as Error).message };
-  }
-
-  try {
-    const result = await runUpgrade(invocation, assistantId, options);
+    const result = await runUpgrade(assistantId, options);
     if (!result.ok) {
       return { ok: false, error: result.error };
     }
@@ -272,13 +231,7 @@ async function upgrade(
 export async function getLocalGuardianAccessToken(
   assistantId: string,
 ): Promise<TokenResult> {
-  let invocation: CliInvocation;
-  try {
-    invocation = await requireRuntime().cli.resolveInvocation();
-  } catch (err) {
-    return { ok: false, status: 500, error: (err as Error).message };
-  }
-  return getGuardianAccessToken(assistantId, invocation);
+  return getGuardianAccessToken(assistantId);
 }
 
 // A persisted assistant entry as it crosses the IPC boundary. The
@@ -366,59 +319,6 @@ export const installLocalMode = (): void => {
     stripSensitiveFields(lockfile);
     return lockfile;
   });
-
-  // Rename-if-present: refuses missing entries and unreadable files instead
-  // of upserting, so a stale renderer cache never re-creates an entry. Both
-  // args stay optional on the wire, keeping the never-reject contract.
-  ipc(
-    "cadet:localMode:renameLockfileAssistant",
-    z.tuple([z.string().optional(), z.string().optional()]),
-    ([assistantId, name]): LockfileWriteResult => {
-      if (!assistantId || !name) {
-        return { ok: false, error: "Missing assistantId or name" };
-      }
-      const result = renameLockfileAssistantIfPresent(assistantId, name);
-      if (!result.ok) {
-        return { ok: false, error: result.error };
-      }
-      // Refresh the watcher so lockfile-driven surfaces pick up the new name
-      // in the same tick instead of after the next poll.
-      refreshLockfile();
-      return { ok: true, lockfile: result.lockfile };
-    },
-  );
-
-  // Update-only, like the rename above: the host decides against the on-disk
-  // registry so a completion racing a retire cannot resurrect the entry.
-  ipc(
-    "cadet:localMode:stampLockfileAssistantOnboarded",
-    z.tuple([z.string().optional(), z.string().optional()]),
-    ([assistantId, onboardedAt]): LockfileWriteResult => {
-      if (!assistantId || !onboardedAt) {
-        return { ok: false, error: "Missing assistantId or onboardedAt" };
-      }
-      const result = stampLockfileAssistantOnboardedIfPresent(
-        assistantId,
-        onboardedAt,
-      );
-      if (!result.ok) {
-        return { ok: false, error: result.error };
-      }
-      refreshLockfile();
-      return { ok: true, lockfile: result.lockfile };
-    },
-  );
-
-  ipc(
-    "cadet:localMode:replaceCloudAssistants",
-    z.tuple([z.array(LockfileAssistantSchema), z.string().optional()]),
-    ([list, cloudOrganizationId]): LockfileWriteResult => {
-      const result = replaceCloudAssistants(list, cloudOrganizationId);
-      return result.ok
-        ? { ok: true, lockfile: result.lockfile }
-        : { ok: false, error: result.error };
-    },
-  );
 
   ipc("cadet:localMode:retire", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {

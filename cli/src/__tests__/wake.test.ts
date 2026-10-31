@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
-import * as docker from "../lib/docker.js";
+import * as docker from "../lib/remotes/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -75,7 +75,7 @@ const recreateDockerContainersMock = mock<
   typeof docker.recreateDockerContainers
 >(async () => {});
 
-mock.module("../lib/docker.js", () => ({
+mock.module("../lib/remotes/docker.js", () => ({
   ...realDocker,
   dockerResourceNames: dockerResourceNamesMock,
   wakeContainers: wakeContainersMock,
@@ -353,7 +353,7 @@ afterEach(() => {
 afterAll(() => {
   mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
-  mock.module("../lib/docker.js", () => realDocker);
+  mock.module("../lib/remotes/docker.js", () => realDocker);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
   mock.module("../lib/process", () => realProcessLib);
   mock.module("../lib/port-allocator.js", () => realPortAllocator);
@@ -626,10 +626,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7840,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7840 });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
 
@@ -653,10 +650,7 @@ describe("cadet wake — app server restore", () => {
       expect(ensureAppServerMock).toHaveBeenCalledWith();
       // Container wakes run the same auto-tunnel as local wakes (docker
       // parity); the spawned agent records itself in the root lockfile.
-      expect(ngrokRunMock).toHaveBeenCalledWith({
-        port: 7840,
-        assistantId: "docker-1",
-      });
+      expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7840 });
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -969,16 +963,16 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a recorded tunnel fronts the gateway port when no edge is recorded", async () => {
+  test("a recorded tunnel without a recorded app server re-establishes nothing", async () => {
+    // The tunnel fronts the app server, never the gateway directly — no
+    // recorded edge leaves the wake nothing to restore and nothing for the
+    // tunnel to front.
     stampRecordedTunnel("ngrok");
 
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7830,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).not.toHaveBeenCalled();
   });
 
   test("a wake with no recorded app server or tunnel skips the edge and the tunnel", async () => {
@@ -1006,10 +1000,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7840,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7840 });
   });
 
   test("a failed rebuild keeps tunneling the SPA edge that is still running", async () => {
@@ -1035,10 +1026,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7845,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7845 });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("127.0.0.1:7845"),
     );
@@ -1061,13 +1049,10 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7840,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7840 });
   });
 
-  test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
+  test("nginx-missing warns and skips the tunnel — there is no gateway-port fallback", async () => {
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
     ensureAppServerMock.mockRejectedValue(
@@ -1088,10 +1073,9 @@ describe("cadet wake — app server restore", () => {
         "Run `cadet tunnel start --provider ngrok` to rebuild the app server.",
       ),
     );
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7830,
-      assistantId: "local-assistant",
-    });
+    // The tunnel fronts the app server; with the edge unrestorable there is
+    // no gateway-port fallback to front instead.
+    expect(ngrokRunMock).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
 
@@ -1137,10 +1121,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokRunMock).toHaveBeenCalledWith({
-      port: 7841,
-      assistantId: "local-assistant",
-    });
+    expect(ngrokRunMock).toHaveBeenCalledWith({ port: 7841 });
   });
 
   describe("--all", () => {
@@ -1198,15 +1179,16 @@ describe("cadet wake — app server restore", () => {
 
     test("continues past a failing assistant and exits 1", async () => {
       mockColdStart();
+      // A real wake failure for the first entry: the CES sibling's spawn
+      // dies. (The entry's own shape can't be the failure anymore — a
+      // missing instanceDir falls back to the shared data root — so the
+      // failure comes from a start the wake actually performs.)
+      startCesMock.mockRejectedValueOnce(new Error("ces spawn failed"));
       loadAllAssistantsMock.mockReturnValue([
-        // Missing resources is a deliberate refusal for this entry.
-        {
-          assistantId: "wake-all-1",
-          cloud: "local",
-          port: 7830,
-        },
+        makeAllEntry("wake-all-1", join(tempDir, "instance-1")),
         makeAllEntry("wake-all-2", join(tempDir, "instance-2")),
       ]);
+      mkdirSync(join(tempDir, "instance-1"), { recursive: true });
       mkdirSync(join(tempDir, "instance-2"), { recursive: true });
       process.argv = ["bun", "cadet", "wake", "--all"];
 
@@ -1225,9 +1207,10 @@ describe("cadet wake — app server restore", () => {
         exitSpy.mockRestore();
       }
 
-      // The healthy assistant was still started.
-      expect(startCesMock).toHaveBeenCalledTimes(1);
-      expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
+      // Both assistants attempted their starts; only the first's CES spawn
+      // failed, and the loop moved on to start the healthy one fully.
+      expect(startCesMock).toHaveBeenCalledTimes(2);
+      expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
       expect(startGatewayMock).toHaveBeenCalledTimes(1);
     });
 

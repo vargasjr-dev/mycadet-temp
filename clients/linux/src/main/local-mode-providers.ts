@@ -3,11 +3,9 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
-import { LOCAL_MODE_CLI, LOCAL_MODE_SESSION } from "@mycadet/electron-desktop/local-mode";
+import { LOCAL_MODE_SESSION } from "@mycadet/electron-desktop/local-mode";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
-import {
-  type CliInvocation,
-} from "@mycadet/local-mode";
+import { configureCliPaths, resolveCliInvocation } from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,
@@ -15,27 +13,25 @@ import {
   getCliBinPath,
 } from "./cli-installer";
 
-const resolveCliInvocation = async (): Promise<CliInvocation> => {
-  const override = process.env.CADET_CLI_PATH;
-  if (override) {
-    return { command: "bun", baseArgs: ["run", override] };
-  }
-
-  if (!app.isPackaged) {
+// The CLI-invocation resolution is inlined into @mycadet/local-mode; the
+// host's part is only its own facts: the bundled bun + installed CLI pair
+// (probed after the installer runs) and the dev checkout behind the
+// packaging check.
+configureCliPaths({
+  installed: () => [{ bun: getBundledBunPath(), cli: getCliBinPath() }],
+  devEntry: () => {
+    if (app.isPackaged) return undefined;
     const repoRoot = path.resolve(app.getAppPath(), "..", "..");
     const cliEntry = path.join(repoRoot, "cli", "src", "index.ts");
-    if (existsSync(cliEntry)) {
-      return { command: "bun", baseArgs: ["run", cliEntry] };
-    }
-  }
+    return existsSync(cliEntry) ? cliEntry : undefined;
+  },
+  prepare: ensureCliInstalled,
+});
 
-  await ensureCliInstalled();
-  return { command: getBundledBunPath(), baseArgs: ["run", getCliBinPath()] };
-};
+export { resolveCliInvocation };
 
 export const installLinuxLocalModeProviders = (
   registry: DesktopCapabilityRegistry,
 ): void => {
-  registry.provide(LOCAL_MODE_CLI, { resolveInvocation: resolveCliInvocation });
   registry.provide(LOCAL_MODE_SESSION, { getToken: getSessionToken });
 };

@@ -14,9 +14,6 @@ import {
   readLockfile,
   servedConfigFromLockfile,
   stripSensitiveFields,
-  renameLockfileAssistantIfPresent,
-  stampLockfileAssistantOnboardedIfPresent,
-  replaceCloudAssistants,
   runDevicesList,
   runDevicesRevoke,
   pairingCancel,
@@ -280,57 +277,13 @@ function lockfileMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
+    // Read-only: the local-mode commands own lockfile writes now (the
+    // desktop bridge's write verbs are gone with them).
     if (req.method === "GET") {
       res.setHeader("Content-Type", "application/json");
       const lockfile = readLockfile();
       stripSensitiveFields(lockfile);
       res.end(JSON.stringify(lockfile));
-    } else if (req.method === "POST") {
-      const chunks: Buffer[] = [];
-      req.on("data", (chunk: Buffer) => chunks.push(chunk));
-      req.on("end", () => {
-        let body: Record<string, unknown>;
-        try {
-          body = JSON.parse(Buffer.concat(chunks).toString()) as Record<
-            string,
-            unknown
-          >;
-        } catch {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
-          return;
-        }
-
-        let result;
-        if (body.syncPlatform && Array.isArray(body.cloudAssistants)) {
-          result = replaceCloudAssistants(
-            body.cloudAssistants as Array<Record<string, unknown>>,
-            body.cloudOrganizationId as string | undefined,
-          );
-        } else if (body.rename && typeof body.rename === "object") {
-          const rename = body.rename as Record<string, unknown>;
-          result = renameLockfileAssistantIfPresent(
-            rename.assistantId as string,
-            rename.name as string,
-          );
-        } else if (body.onboarded && typeof body.onboarded === "object") {
-          const onboarded = body.onboarded as Record<string, unknown>;
-          result = stampLockfileAssistantOnboardedIfPresent(
-            onboarded.assistantId as string,
-            onboarded.onboardedAt as string,
-          );
-        } else {
-          result = {
-            ok: false,
-            status: 400,
-            error: "Unknown lockfile mutation",
-          };
-        }
-        res.statusCode = result.ok ? 200 : result.status;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(result));
-      });
     } else {
       res.statusCode = 405;
       res.end();

@@ -222,8 +222,6 @@ function serveFailureMessage(result: TailscaleCommandResult): string {
 export interface RunTailscaleTunnelOptions {
   /** Local edge port to serve. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** The assistant the lockfile record fronts (`assistantId`). */
-  assistantId?: string;
 }
 
 export interface TailscaleServeInfo {

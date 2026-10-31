@@ -20,7 +20,7 @@ import {
   extractHostFromEntry,
   resolveAssistant,
 } from "../lib/assistant-config";
-import { dockerResourceNames } from "../lib/docker";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/remotes/apple-container.js";
 import {

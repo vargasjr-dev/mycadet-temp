@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 
-import type { CliInvocation } from "../util";
+import { configureCliPaths } from "../cli-invocation";
 import { FakeChild, mockChildProcessSpawn } from "./helpers/child-process-mock";
 
 let lastChild: FakeChild;
@@ -41,11 +41,15 @@ afterEach(() => {
   delete process.env.CADET_PLATFORM_TOKEN;
 });
 
-const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
+// The inlined resolution probes the configured dev entry: `bun run cli`,
+// the same invocation shape these assertions have always expected.
+configureCliPaths({ devEntry: () => "cli" });
 
 describe("runRetire", () => {
   test("spawns the CLI retire command", async () => {
-    const pending = runRetire(invocation, "asst-42");
+    const pending = runRetire("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -57,9 +61,11 @@ describe("runRetire", () => {
   });
 
   test("passes a host platform token to the CLI subprocess", async () => {
-    const pending = runRetire(invocation, "asst-42", {
+    const pending = runRetire("asst-42", {
       cloudToken: "session-token",
     });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -68,7 +74,9 @@ describe("runRetire", () => {
   });
 
   test("a non-zero exit resolves to a failure carrying the CLI output", async () => {
-    const pending = runRetire(invocation, "asst-42");
+    const pending = runRetire("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit("data", Buffer.from("retire failed"));
     lastChild.emit("close", 1);
 

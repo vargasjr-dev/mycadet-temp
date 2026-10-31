@@ -24,7 +24,7 @@ import {
   dockerResourceNames,
   sleepContainers,
   startContainers,
-} from "../lib/docker.js";
+} from "../lib/remotes/docker.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 

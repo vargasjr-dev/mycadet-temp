@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 
-import type { CliInvocation } from "../util";
+import { configureCliPaths } from "../cli-invocation";
 import { FakeChild, mockChildProcessSpawn } from "./helpers/child-process-mock";
 
 let lastChild: FakeChild;
@@ -41,7 +41,9 @@ afterEach(() => {
   spawnMock.mockClear();
 });
 
-const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
+// The inlined resolution probes the configured dev entry: `bun run cli`,
+// the same invocation shape these assertions have always expected.
+configureCliPaths({ devEntry: () => "cli" });
 
 describe("isValidReleaseVersion", () => {
   test("accepts release tags, staying lenient about semver shape", () => {
@@ -80,7 +82,9 @@ describe("isValidReleaseVersion", () => {
 
 describe("runUpgrade", () => {
   test("spawns the CLI upgrade command for a release tag", async () => {
-    const pending = runUpgrade(invocation, "asst-42", { version: "v1.2.3" });
+    const pending = runUpgrade("asst-42", { version: "v1.2.3" });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -92,7 +96,9 @@ describe("runUpgrade", () => {
   });
 
   test("spawns the CLI upgrade command for --latest", async () => {
-    const pending = runUpgrade(invocation, "asst-42", { latest: true });
+    const pending = runUpgrade("asst-42", { latest: true });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("close", 0);
 
     expect(await pending).toEqual({ ok: true });
@@ -106,7 +112,7 @@ describe("runUpgrade", () => {
   });
 
   test("rejects a malicious version without spawning", async () => {
-    const result = await runUpgrade(invocation, "asst-42", {
+    const result = await runUpgrade("asst-42", {
       version: "npm:@attacker/evil@1.0.0",
     });
 
@@ -120,7 +126,7 @@ describe("runUpgrade", () => {
   });
 
   test("rejects a path-traversal version without spawning", async () => {
-    const result = await runUpgrade(invocation, "asst-42", {
+    const result = await runUpgrade("asst-42", {
       version: "../../../../tmp/evil",
     });
 

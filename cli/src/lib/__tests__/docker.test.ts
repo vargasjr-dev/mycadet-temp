@@ -13,7 +13,7 @@ import {
   resolveDockerHatchMode,
   resolveDockerProviderCredentialSetupAction,
   type ServiceName,
-} from "../docker.js";
+} from "../remotes/docker.js";
 import { buildServiceRunArgs } from "../statefulset.js";
 
 const instanceName = "test-instance";

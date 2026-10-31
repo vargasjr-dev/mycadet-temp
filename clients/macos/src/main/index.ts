@@ -493,7 +493,7 @@ app
     // switcher submenu has data on its first right-click.
     const teardownLockfileWatcher = installLockfileWatcher();
     app.on("before-quit", teardownLockfileWatcher);
-    const teardownHostProxy = installHostProxyBridge(resolveCliInvocation);
+    const teardownHostProxy = installHostProxyBridge();
     app.on("before-quit", teardownHostProxy);
     installTray({
       toggleMainWindow: toggleMainWindowVisibility,
