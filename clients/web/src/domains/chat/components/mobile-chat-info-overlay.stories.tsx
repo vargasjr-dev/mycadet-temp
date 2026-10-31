@@ -18,7 +18,6 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
 import {
-  CHAT_INFO_ASSISTANT_ID,
   CHAT_INFO_CONVERSATION_ID,
   inChatInfoConversation,
 } from "@/domains/chat/components/chat-info-story-fixtures";
@@ -33,7 +32,6 @@ const meta: Meta<typeof MobileChatInfoOverlay> = {
   decorators: [inChatInfoConversation],
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: null,
     },
@@ -59,7 +57,6 @@ export const Open: Story = {};
 export const AppsLevel: Story = {
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "apps",
     },
@@ -70,7 +67,6 @@ export const AppsLevel: Story = {
 export const FilesLevel: Story = {
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "files",
     },

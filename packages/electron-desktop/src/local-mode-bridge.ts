@@ -19,7 +19,6 @@ export const createLocalModeBridge = (
   readAssistantAvatar: (assistantId) =>
     ipc.invoke("cadet:localMode:readAssistantAvatar", assistantId),
   readLockfile: () => ipc.invoke("cadet:localMode:readLockfile"),
-  retire: (assistantId) => ipc.invoke("cadet:localMode:retire", assistantId),
   revokeDevice: (assistantId, hashedDeviceId) =>
     ipc.invoke("cadet:localMode:revokeDevice", assistantId, hashedDeviceId),
   sleep: (assistantId) => ipc.invoke("cadet:localMode:sleep", assistantId),

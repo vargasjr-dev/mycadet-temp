@@ -16,6 +16,7 @@ import {
   stripSensitiveFields,
   runDevicesList,
   runDevicesRevoke,
+  runRetire,
   pairingCancel,
   pairingPoll,
   pairingStart,
@@ -23,6 +24,7 @@ import {
   getGuardianAccessToken,
   loopbackGatewayBearer,
   resolveGatewayProxyTarget,
+  resolveAssistantRetireProxyDecision,
   readGatewayTargets,
   authorizePairedForwardHeaders,
   type CliInvocation,
@@ -506,6 +508,40 @@ function gatewayProxyMiddleware(
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
+    // The scoped surface's retire arm: an on-machine entry is retired by the
+    // host CLI here rather than forwarded to a gateway that cannot retire
+    // itself, so the bundle's one endpoint holds for every entry type. The
+    // shared decision bails before touching the lockfile unless the request
+    // is a retire-shaped DELETE.
+    const retireDecision = resolveAssistantRetireProxyDecision(
+      requestPathname(req),
+      req.method ?? "GET",
+      () => readLockfile(),
+    );
+    if (retireDecision.kind === "retireLocal") {
+      if (rejectUnlessLocalEndpointRequest(req, res)) {
+        return;
+      }
+      let invocation: CliInvocation;
+      try {
+        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
+      } catch (err) {
+        respondJson(res, 500, {
+          detail: err instanceof Error ? err.message : String(err),
+        });
+        return;
+      }
+      runRetire(invocation, retireDecision.assistantId).then((result) => {
+        if (result.ok) {
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+        respondJson(res, result.status, { detail: result.error });
+      });
+      return;
+    }
+
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
     // rides one id-keyed proxy for every assistant gateway. The lockfile
     // resolves the id to a loopback port (locally hatched) or the recorded

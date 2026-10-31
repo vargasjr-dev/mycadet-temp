@@ -72,13 +72,13 @@ const {
   ASSETS_PILL_UNSEEN_DOT_TESTID,
   ASSETS_PILL_UNSEEN_DOT_PULSE_CLASS,
 } = await import("@/domains/chat/components/conversation-assets-pill");
-const { ChatInfoPanel } = await import(
-  "@/domains/chat/components/chat-info-panel"
-);
-const { useUnseenDocumentChangesStore } = await import(
-  "@/domains/chat/unseen-document-changes-store"
-);
+const { ChatInfoPanel } =
+  await import("@/domains/chat/components/chat-info-panel");
+const { useUnseenDocumentChangesStore } =
+  await import("@/domains/chat/unseen-document-changes-store");
 const { useViewerStore } = await import("@/stores/viewer-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 const ASSISTANT_ID = "asst-1";
 const CONVERSATION_ID = "conv-1";
@@ -272,6 +272,11 @@ beforeEach(() => {
   viewport.set({ narrow: false, coarsePointer: false });
   useUnseenDocumentChangesStore.setState({ changedDocuments: {} });
   useViewerStore.getState().reset();
+  // The composed tests render the real panel, whose assistant-scoped reads
+  // go through the active id.
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
+  });
 });
 
 afterEach(() => {
@@ -324,7 +329,6 @@ describe("desktop pill", () => {
     expect(chatInfoState()).toEqual({
       mainView: "chat-info",
       activeChatInfo: {
-        assistantId: ASSISTANT_ID,
         conversationId: CONVERSATION_ID,
         category: null,
       },
@@ -356,7 +360,6 @@ describe("desktop pill", () => {
     // not just the trigger's own click.
     act(() => {
       useViewerStore.getState().openChatInfo({
-        assistantId: ASSISTANT_ID,
         conversationId: CONVERSATION_ID,
       });
     });

@@ -142,6 +142,8 @@ export {
   parseAssistantGatewayUrl,
   readGatewayTargets,
   resolveGatewayProxyTarget,
+  resolveAssistantRetireProxyDecision,
+  isHostRetirableEntry,
   sanitizePairedForwardHeaders,
   FLATTENED_FIRST_SEGMENTS,
 } from "./gateway-proxy";

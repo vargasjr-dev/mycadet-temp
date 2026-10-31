@@ -33,7 +33,7 @@ import {
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
 import { useAssistantChoices } from "@app/assistant/use-assistant-choices";
-import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
+import { retireAssistant } from "@app/assistant/retire-assistant";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
 import { formatRelativeDate } from "@app/utils/format-date";
@@ -270,7 +270,7 @@ export function SelectAssistantScreen() {
       return;
     }
     setRetirePending(true);
-    const outcome = await retireCloudAssistant(retireTarget.id);
+    const outcome = await retireAssistant(retireTarget.id);
     setRetirePending(false);
     // A failure keeps the dialog open with the cloud's detail beside the
     // retry button — web's chooser-remove shape. Success closes and

@@ -91,7 +91,7 @@ export function useOpenDocumentFromChat(
         return;
       }
       requestRef.current?.dispose();
-      const scope = documentRequestScope(assistantId);
+      const scope = documentRequestScope();
       requestRef.current = scope;
       if (!scope.isCurrent()) {
         scope.dispose();
@@ -113,7 +113,6 @@ export function useOpenDocumentFromChat(
           return;
         }
         await loadDocumentConversation({
-          assistantId,
           surfaceId,
           isCurrent: scope.isCurrent,
           onReady: (data, linkedId) => {

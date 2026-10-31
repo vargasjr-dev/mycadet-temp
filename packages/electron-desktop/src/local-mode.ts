@@ -10,7 +10,6 @@ import {
   runDevicesList,
   runDevicesRevoke,
   runHatch,
-  runRetire,
   runSleep,
   runUpgrade,
   runWake,
@@ -55,11 +54,6 @@ import type { IpcHandle } from "./ipc";
 interface HatchResult {
   ok: boolean;
   assistantId?: string;
-  error?: string;
-}
-
-interface RetireResult {
-  ok: boolean;
   error?: string;
 }
 
@@ -135,18 +129,6 @@ async function hatch(remote?: string): Promise<HatchResult> {
 interface SleepResult {
   ok: boolean;
   error?: string;
-}
-
-/** Retire a local assistant. Mirrors `hatch`'s never-reject contract. */
-async function retire(assistantId: string): Promise<RetireResult> {
-  try {
-    const result = await runRetire(assistantId, {
-      cloudToken: requireRuntime().session.getToken() ?? undefined,
-    });
-    return result.ok ? { ok: true } : { ok: false, error: result.error };
-  } catch (err) {
-    return { ok: false, error: (err as Error).message };
-  }
 }
 
 /** Stop a local assistant's daemon and gateway. Mirrors `hatch`'s never-reject contract. */
@@ -320,12 +302,6 @@ export const installLocalMode = (): void => {
     return lockfile;
   });
 
-  ipc("cadet:localMode:retire", assistantIdArgs, ([assistantId]) => {
-    if (!assistantId) {
-      return { ok: false, error: "Missing assistantId" };
-    }
-    return retire(assistantId);
-  });
 
   ipc(
     "cadet:localMode:unpair",

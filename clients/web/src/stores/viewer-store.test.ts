@@ -796,7 +796,7 @@ describe("openProcessDetail", () => {
   });
 });
 
-const SAMPLE_CHAT_INFO = { assistantId: "a1", conversationId: "c1" };
+const SAMPLE_CHAT_INFO = { conversationId: "c1" };
 
 describe("closeActiveOverlay", () => {
   it("closes a tool detail overlay and restores its prior view", () => {
@@ -1236,7 +1236,6 @@ describe("openChatInfo / toggleChatInfo / closeChatInfo / setChatInfoCategory", 
     const state = getState();
     expect(state.mainView).toBe("chat-info");
     expect(state.activeChatInfo).toEqual({
-      assistantId: "a1",
       conversationId: "c2",
       category: null,
     });
@@ -1262,18 +1261,6 @@ describe("openChatInfo / toggleChatInfo / closeChatInfo / setChatInfoCategory", 
     expect(getState().viewBeforeChatInfo).toBe("app");
     getState().closeChatInfo();
     expect(getState().mainView).toBe("app");
-  });
-
-  it("toggle treats the same conversation id under another assistant as a new target", () => {
-    getState().openChatInfo(SAMPLE_CHAT_INFO);
-    getState().toggleChatInfo({ ...SAMPLE_CHAT_INFO, assistantId: "a2" });
-    const state = getState();
-    expect(state.mainView).toBe("chat-info");
-    expect(state.activeChatInfo).toEqual({
-      assistantId: "a2",
-      conversationId: "c1",
-      category: null,
-    });
   });
 
   it("setChatInfoCategory drills in and back out on the open payload", () => {
@@ -1310,19 +1297,13 @@ describe("sameChatInfoTarget", () => {
     expect(sameChatInfoTarget(getState(), SAMPLE_CHAT_INFO)).toBe(true);
   });
 
-  it("rejects another conversation, another assistant, and a closed panel", () => {
+  it("rejects another conversation and a closed panel", () => {
     getState().openChatInfo(SAMPLE_CHAT_INFO);
 
     expect(
       sameChatInfoTarget(getState(), {
         ...SAMPLE_CHAT_INFO,
         conversationId: "c2",
-      }),
-    ).toBe(false);
-    expect(
-      sameChatInfoTarget(getState(), {
-        ...SAMPLE_CHAT_INFO,
-        assistantId: "a2",
       }),
     ).toBe(false);
 

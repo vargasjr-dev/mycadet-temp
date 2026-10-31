@@ -44,7 +44,6 @@ const onReady = mock(
   (_document: DocumentContent, _conversationId: string | null) => {},
 );
 const options = {
-  assistantId: "assistant-1",
   surfaceId: "surface-1",
   isCurrent,
   onReady,
@@ -282,7 +281,7 @@ describe("loadDocumentConversation", () => {
   );
 
   test("a closed owner cannot revalidate or publish", async () => {
-    const scope = documentRequestScope("assistant-1");
+    const scope = documentRequestScope();
     const pending = deferred<Awaited<ReturnType<typeof conversation>>>();
     conversation.mockImplementationOnce(() => pending.promise);
     const loading = loadDocumentConversation({

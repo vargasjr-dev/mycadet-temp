@@ -138,14 +138,13 @@ export function useDocumentConversationRoute() {
     const target: DocumentTarget = { source: "document", surfaceId };
     ownedTargetRef.current = target;
     useViewerStore.setState({ activeDocumentTarget: target });
-    const scope = documentRequestScope(assistantId);
+    const scope = documentRequestScope();
     scopeRef.current = scope;
     useViewerStore.getState().openDocument();
     setStatus({ owner, kind: "loading" });
     void (async () => {
       try {
         await loadDocumentConversation({
-          assistantId,
           surfaceId,
           isCurrent: scope.isCurrent,
           onReady: (data, linkedId) => {

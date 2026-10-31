@@ -117,7 +117,6 @@ const withChatInfoOpen: Decorator = function WithChatInfoOpen(Story) {
   // before the trigger below it first samples the store.
   useState(() => {
     useViewerStore.getState().openChatInfo({
-      assistantId: ASSISTANT_ID,
       conversationId: CONVERSATION_ID,
     });
   });

@@ -28,10 +28,7 @@ export const ASSETS_PILL_UNSEEN_DOT_TESTID = "assets-pill-unseen-dot";
 export const ASSETS_PILL_UNSEEN_DOT_PULSE_CLASS = "unseen-dot-pulse";
 
 /** Dismiss the chat-info panel when it is the one this trigger owns. */
-function closeOwnedChatInfo(target: {
-  assistantId: string;
-  conversationId: string;
-}): void {
+function closeOwnedChatInfo(target: { conversationId: string }): void {
   const state = useViewerStore.getState();
   if (sameChatInfoTarget(state, target)) {
     state.closeChatInfo();
@@ -61,7 +58,7 @@ export function ConversationAssetsPill({
   const activeChatInfo = useViewerStore.use.activeChatInfo();
   const isOpen = sameChatInfoTarget(
     { mainView, activeChatInfo },
-    { assistantId, conversationId },
+    { conversationId },
   );
 
   // The panel this pill opened must not outlive the pill's target: the chat
@@ -72,9 +69,9 @@ export function ConversationAssetsPill({
   // conversation, not even for one frame.
   useLayoutEffect(() => {
     return () => {
-      closeOwnedChatInfo({ assistantId, conversationId });
+      closeOwnedChatInfo({ conversationId });
     };
-  }, [assistantId, conversationId]);
+  }, [conversationId]);
 
   // The header cluster only has room for a labelled pill on a roomy window.
   const isMobile = useIsMobile();
@@ -83,8 +80,8 @@ export function ConversationAssetsPill({
   const hasUnseenChanges = useHasUnseenDocumentChanges(conversationId);
 
   const handleClick = useCallback(() => {
-    useViewerStore.getState().toggleChatInfo({ assistantId, conversationId });
-  }, [assistantId, conversationId]);
+    useViewerStore.getState().toggleChatInfo({ conversationId });
+  }, [conversationId]);
 
   // The trigger stands for the assets that reached the client, so nothing
   // reaching it is nothing to point at: a conversation that holds none, one

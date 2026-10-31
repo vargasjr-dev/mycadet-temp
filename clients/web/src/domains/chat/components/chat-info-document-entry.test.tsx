@@ -90,7 +90,6 @@ function renderPanel(search = "") {
   });
   seedTranscriptMessages("assistant-1", "conv-1", []);
   useViewerStore.getState().openChatInfo({
-    assistantId: "assistant-1",
     conversationId: "conv-1",
   });
   return render(
