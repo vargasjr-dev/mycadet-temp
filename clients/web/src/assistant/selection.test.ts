@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const ORG_A = "org-a";
 

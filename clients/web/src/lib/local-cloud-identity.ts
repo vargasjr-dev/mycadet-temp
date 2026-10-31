@@ -11,9 +11,9 @@ import {
   isLocalAssistant,
   isLocalClient,
   primeLocalGatewayConnectionWithRepair,
-  type LockfileAssistant,
 } from "@/lib/local-mode";
 import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,

@@ -20,7 +20,6 @@ import {
 } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
-import {} from "../lib/docker";
 import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases";
 import {
   authHeaders,

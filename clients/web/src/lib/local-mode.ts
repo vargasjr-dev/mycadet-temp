@@ -31,23 +31,14 @@ import {
   unpairAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
-import type {
-  Lockfile,
-  LockfileAssistant,
-  LocalPairingFailure,
-  LocalPairingPollResult,
-  LocalPairingStartResult,
-  LocalRetireResult,
-} from "@/runtime/local-mode-host";
+import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
+import type { LocalPairingFailure, LocalPairingPollResult, LocalPairingStartResult, LocalRetireResult } from "@/runtime/local-mode-host";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 // The lockfile shape is the transport contract shared by the Electron IPC and
-// dev-server branches, so the seam owns it; re-exported here for the renderer
-// features that read and model assistants.
-export type { Lockfile, LockfileAssistant, LocalRetireResult };
 
 // ---------------------------------------------------------------------------
 // Served assistant

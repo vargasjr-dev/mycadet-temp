@@ -1,17 +1,21 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { parseLockfile } from "@mycadet/local-mode/contract";
+import {
+  parseLockfile,
+  type Lockfile,
+  type LockfileWriteResult,
+} from "@mycadet/local-mode/contract";
 
 import * as localModeHost from "@/runtime/local-mode-host";
 
-const loadLockfileHost = mock(async (): Promise<localModeHost.Lockfile> => {
+const loadLockfileHost = mock(async (): Promise<Lockfile> => {
   throw new Error("host down");
 });
 
 const fetchGuardianTokenHost = mock(async (_id: string) => "guardian-tok");
 
 const unpairAssistantHost = mock(
-  async (_assistantId: string): Promise<localModeHost.LockfileWriteResult> => ({
+  async (_assistantId: string): Promise<LockfileWriteResult> => ({
     ok: true as const,
     lockfile: { assistants: [], activeAssistant: null },
   }),
@@ -80,7 +84,7 @@ import {
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 const realFetch = globalThis.fetch;

@@ -164,11 +164,6 @@ export function computeDeviceId(): string {
   return getOrCreatePersistedDeviceId();
 }
 
-/**
- * Read a previously persisted guardian token for the given assistant.
- * Returns the parsed token data, or null if the file does not exist or is
- * unreadable.
- */
 /** The hatch-recorded bootstrap secret, from its xdg file. */
 export function loadGuardianBootstrapSecret(
   assistantId: string,
@@ -218,6 +213,11 @@ export function loadAssistantBearerToken(
   }
 }
 
+/**
+ * Read a previously persisted guardian token for the given assistant.
+ * Returns the parsed token data, or null if the file does not exist or is
+ * unreadable.
+ */
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
