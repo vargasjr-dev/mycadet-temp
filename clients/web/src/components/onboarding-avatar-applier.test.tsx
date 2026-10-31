@@ -60,7 +60,7 @@ describe("OnboardingAvatarApplier", () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1" });
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
 
     render(<OnboardingAvatarApplier />);
 
@@ -77,7 +77,7 @@ describe("OnboardingAvatarApplier", () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1" });
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
 
     render(<OnboardingAvatarApplier />);
 
@@ -94,7 +94,7 @@ describe("OnboardingAvatarApplier", () => {
     useOnboardingFocusStore.getState().setPendingAvatarVoice("aura-2-luna-en");
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1" });
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
 
     render(<OnboardingAvatarApplier />);
 
@@ -117,7 +117,7 @@ describe("OnboardingAvatarApplier", () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1" });
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
 
     render(<OnboardingAvatarApplier />);
 
@@ -134,7 +134,7 @@ describe("OnboardingAvatarApplier", () => {
     useOnboardingFocusStore.getState().setPendingAvatarVoice("aura-2-luna-en");
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1" });
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
 
     render(<OnboardingAvatarApplier />);
 

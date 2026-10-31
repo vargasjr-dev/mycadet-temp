@@ -73,12 +73,12 @@ mock.module("@/stores/resolved-assistant-store", () => ({
   getActiveAssistantId: () => activeAssistantId,
   getResolvedAssistant: () =>
     activeAssistantId
-      ? { cloud: "local", assistantId: activeAssistantId }
+      ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
       : null,
   useResolvedAssistantStore: {
     getState: () => ({
       assistant: activeAssistantId
-        ? { cloud: "local", assistantId: activeAssistantId }
+        ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
         : null,
     }),
     subscribe: (listener: (state: unknown) => void) => {
@@ -130,7 +130,7 @@ const activate = (
   for (const listener of [...assistantListeners]) {
     listener({
       assistant: activeAssistantId
-        ? { cloud: "local", assistantId: activeAssistantId }
+        ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
         : null,
     });
   }

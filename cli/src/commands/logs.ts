@@ -5,10 +5,10 @@ import { createInterface } from "readline";
 import { watch } from "fs";
 import { join } from "path";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   extractHostFromEntry,
   resolveAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import { resolveLogDir } from "@mycadet/local-mode";

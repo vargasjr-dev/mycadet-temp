@@ -1,4 +1,4 @@
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 /**
  * `useNotificationIntentSync` forwards `notification_intent` SSE events to
  * `postLocalNotification`, including remote-push acceptance metadata, and
@@ -31,10 +31,7 @@ import {
 } from "@/runtime/browser-notification-delivery";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import {
-  useResolvedAssistantStore,
-  
-} from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { PostLocalNotificationArgs } from "@/runtime/notifications";
 import { isClientAttended } from "@/runtime/window-attention";
 import { isConversationChatPath, routes } from "@/utils/routes";
@@ -412,7 +409,11 @@ describe("useNotificationIntentSync", () => {
       daemonPort: 9101,
     };
     useResolvedAssistantStore.getState().setAssistant(assistantA);
-    const mounted = mountAt(routes.assistant, undefined, assistantA.assistantId);
+    const mounted = mountAt(
+      routes.assistant,
+      undefined,
+      assistantA.assistantId,
+    );
 
     publishNotificationIntent({ assistantName: "Origin A" });
     const originA = postedArgs[0]?.identity;

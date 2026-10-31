@@ -17,7 +17,7 @@
 import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 interface ResolvedAssistantState {
   /** The one assistant this web surface serves. */
@@ -51,7 +51,9 @@ export function getResolvedAssistant(): LockfileAssistant | null {
 
 /** Non-reactive read of the served assistant's id. */
 export function getActiveAssistantId(): string | null {
-  return useResolvedAssistantStoreBase.getState().assistant?.assistantId ?? null;
+  return (
+    useResolvedAssistantStoreBase.getState().assistant?.assistantId ?? null
+  );
 }
 
 /** The id the cloud knows the assistant by: the lockfile's registration for a local instance, else the entry's own id. */

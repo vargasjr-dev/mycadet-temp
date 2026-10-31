@@ -200,7 +200,9 @@ beforeEach(() => {
   holdOpens = false;
   openRequests = 0;
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+  });
   useConversationStore.setState({ activeConversationId: CONV_ID });
   spyOn(daemonClient, "post").mockImplementation((async (options: {
     url: string;
@@ -637,7 +639,9 @@ describe("app route history", () => {
     // A switch leaves this route mounted, so the app on screen would otherwise
     // stay the previous assistant's while every other action uses the new one.
     await act(async () => {
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
+      });
     });
 
     await waitFor(() =>

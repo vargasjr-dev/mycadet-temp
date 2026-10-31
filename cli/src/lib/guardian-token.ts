@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { execSync } from "node:child_process";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   closeSync,
   existsSync,
@@ -164,11 +164,6 @@ export function computeDeviceId(): string {
   return getOrCreatePersistedDeviceId();
 }
 
-/**
- * Read a previously persisted guardian token for the given assistant.
- * Returns the parsed token data, or null if the file does not exist or is
- * unreadable.
- */
 /** The hatch-recorded bootstrap secret, from its xdg file. */
 export function loadGuardianBootstrapSecret(
   assistantId: string,
@@ -218,6 +213,11 @@ export function loadAssistantBearerToken(
   }
 }
 
+/**
+ * Read a previously persisted guardian token for the given assistant.
+ * Returns the parsed token data, or null if the file does not exist or is
+ * unreadable.
+ */
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {

@@ -326,7 +326,9 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: ALL_ICONS };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+  });
 });
 
 afterEach(() => {

@@ -1,6 +1,6 @@
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 
 const HealthResponseSchema = z.object({

@@ -29,7 +29,6 @@ function buildAssistantArgs(
   const res = dockerResourceNames(instanceName);
   const builders = buildServiceRunArgs({
     gatewayPort: 7830,
-    assistantPort: 7821,
     imageTags,
     instanceName,
     res,
@@ -44,7 +43,6 @@ function buildGatewayArgs(
   const res = dockerResourceNames(instanceName);
   const builders = buildServiceRunArgs({
     gatewayPort: 7830,
-    assistantPort: 7821,
     imageTags,
     instanceName,
     res,
@@ -89,12 +87,12 @@ describe("buildServiceRunArgs — assistant", () => {
   });
 
   test("publishes the assistant HTTP port loopback-only — the same-pod gateway and host-local tooling are the only callers", () => {
-    const args = buildAssistantArgs({ assistantPort: 18000 });
+    const args = buildAssistantArgs();
     // The port mapping is expressed as two adjacent args: "-p" then the spec.
     // Bound to `127.0.0.1:` — the assistant HTTP API serves the gateway (same
     // pod) and host-local tooling; the gateway's edge is the only ingress, so
     // the API never faces the LAN.
-    const portSpec = `127.0.0.1:18000:${ASSISTANT_INTERNAL_PORT}`;
+    const portSpec = `127.0.0.1:${ASSISTANT_INTERNAL_PORT}:${ASSISTANT_INTERNAL_PORT}`;
     const portIndex = args.indexOf(portSpec);
     expect(portIndex).toBeGreaterThan(0);
     expect(args[portIndex - 1]).toBe("-p");

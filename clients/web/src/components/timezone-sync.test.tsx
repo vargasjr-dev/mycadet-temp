@@ -60,7 +60,9 @@ beforeEach(() => {
   browserTz = "America/New_York";
   patchMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+  });
 });
 
 afterEach(() => {

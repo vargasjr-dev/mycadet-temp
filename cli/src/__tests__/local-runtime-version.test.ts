@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-  LocalAssistant,
-  DockerAssistant,
-  AppleContainerAssistant,
-} from "@mycadet/local-mode/contract";
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
 import { ensureLocalRuntime } from "../lib/remotes/local.js";
@@ -42,15 +37,9 @@ describe("ensureLocalRuntime version guard", () => {
 
   test("throws before any install for untrusted versions", () => {
     for (const version of MALICIOUS_VERSIONS) {
-      expect(() =>
-        ensureLocalRuntime(
-          entry as
-            | LocalAssistant
-            | DockerAssistant
-            | (AppleContainerAssistant & { daemonPort: number }),
-          version,
-        ),
-      ).toThrow(`Invalid runtime version '${version}'`);
+      expect(() => ensureLocalRuntime(entry, version)).toThrow(
+        `Invalid runtime version '${version}'`,
+      );
     }
   });
 });

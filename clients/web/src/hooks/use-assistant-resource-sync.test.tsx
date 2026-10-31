@@ -701,10 +701,9 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    const { unmount } = renderHook(
-      () => useAssistantResourceSync("asst-1"),
-      { wrapper: createWrapper(queryClient) },
-    );
+    const { unmount } = renderHook(() => useAssistantResourceSync("asst-1"), {
+      wrapper: createWrapper(queryClient),
+    });
 
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
     unmount();
@@ -817,10 +816,9 @@ describe("useAssistantResourceSync", () => {
       await waitFor(() => {
         expect(fetches).toBe(1);
       });
-      const { unmount } = renderHook(
-        () => useAssistantResourceSync("asst-1"),
-        { wrapper: createWrapper(queryClient) },
-      );
+      const { unmount } = renderHook(() => useAssistantResourceSync("asst-1"), {
+        wrapper: createWrapper(queryClient),
+      });
 
       publish("sse.opened", { assistantId: "asst-1", cause: "error" });
       unmount();
@@ -839,10 +837,9 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    const { unmount } = renderHook(
-      () => useAssistantResourceSync("asst-1"),
-      { wrapper: createWrapper(queryClient) },
-    );
+    const { unmount } = renderHook(() => useAssistantResourceSync("asst-1"), {
+      wrapper: createWrapper(queryClient),
+    });
 
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
     await flushReconnectSweep();
@@ -1021,6 +1018,7 @@ describe("useAssistantResourceSync", () => {
     useResolvedAssistantStore.getState().setAssistant({
       cloud: "local",
       assistantId: "asst-1",
+      port: 7830,
       cloudAssistantId: "uuid-1",
     });
     const key = cloudAvatarUrlsQueryKey(null);

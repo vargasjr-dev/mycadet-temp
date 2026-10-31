@@ -31,9 +31,8 @@ import {
   unpairAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
+import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
 import type {
-  Lockfile,
-  LockfileAssistant,
   LocalPairingFailure,
   LocalPairingPollResult,
   LocalPairingStartResult,
@@ -45,9 +44,6 @@ import type {
 // ---------------------------------------------------------------------------
 
 // The lockfile shape is the transport contract shared by the Electron IPC and
-// dev-server branches, so the seam owns it; re-exported here for the renderer
-// features that read and model assistants.
-export type { Lockfile, LockfileAssistant, LocalRetireResult };
 
 // ---------------------------------------------------------------------------
 // Served assistant
@@ -310,7 +306,7 @@ export function hasAssistants(): boolean {
  * A local-kind assistant, by origin: a plain on-machine assistant the web
  * client drives through its full set of local lifecycle flows (wake, local
  * retire). Identity only — whether it currently has a reachable gateway is a
- * separate, connect-time question (see `hasLocalGateway`).
+ * separate, connect-time question (see `expectsLocalGateway`).
  *
  * Deliberately excludes the externally-managed container runtimes
  * (`docker`, `apple-container`), the remote self-hosted cloud (`custom`,
@@ -379,8 +375,14 @@ export function getLockfileAssistant(
   );
 }
 
-function expectsLocalGateway(
-  assistant: LockfileAssistant | undefined,
+/**
+ * Whether the given assistant (default: the active one) reaches this runtime
+ * over a resolvable local gateway: a local-kind assistant in local
+ * (non-remote-gateway) mode. The host owns everything URL-shaped — the
+ * scoped data plane is plain same-origin `/v1`.
+ */
+export function expectsLocalGateway(
+  assistant: LockfileAssistant | undefined = getActiveAssistant(),
 ): assistant is LockfileAssistant {
   return (
     !!assistant &&
@@ -388,21 +390,6 @@ function expectsLocalGateway(
     !isServedGatewayRuntime() &&
     isLoopbackGatewayCloud(assistant.cloud)
   );
-}
-
-/**
- * Whether the given assistant (default: the selected one) reaches this
- * runtime over a resolvable local gateway: a local-kind assistant in local
- * (non-remote-gateway) mode with a recorded loopback port. The host owns
- * everything URL-shaped — the scoped data plane is plain same-origin `/v1`.
- */
-export function hasLocalGateway(
-  assistant: LockfileAssistant | undefined = getActiveAssistant(),
-): boolean {
-  if (!expectsLocalGateway(assistant)) {
-    return false;
-  }
-  return ("port" in assistant ? assistant.port : undefined) != null;
 }
 
 /**

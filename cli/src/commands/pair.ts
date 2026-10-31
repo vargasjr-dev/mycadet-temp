@@ -28,12 +28,12 @@ import {
 
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";

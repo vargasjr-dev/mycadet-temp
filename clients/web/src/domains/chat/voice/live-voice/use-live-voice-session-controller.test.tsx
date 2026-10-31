@@ -287,7 +287,9 @@ describe("starter registration", () => {
       assistantId: "assistant-1",
       version: "0.10.12",
     });
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    });
     useConversationStore.getState().setActiveConversationId("conv-1");
     usePendingDeepLinkStore
       .getState()
@@ -346,7 +348,9 @@ describe("re-draining on an assistant switch", () => {
   /** Resolved, active, and new enough to serve live voice. */
   function activeAssistant(assistantId: string): void {
     useAssistantIdentityStore.setState({ assistantId, version: "0.10.12" });
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: assistantId } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: assistantId, port: 7830 },
+    });
   }
 
   /**
@@ -419,7 +423,9 @@ describe("re-draining on an assistant switch", () => {
       .getState()
       .setPendingVoiceStart({ entry: "deep_link" });
     act(() => {
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+      });
     });
     await flushDrains();
 

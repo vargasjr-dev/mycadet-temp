@@ -3,7 +3,7 @@ import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./lan-ip.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 /**
  * Resolve the URL for a generic runtime endpoint under `/v1/<subpath>`,

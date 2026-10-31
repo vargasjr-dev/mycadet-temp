@@ -47,7 +47,11 @@ describe("RedactedCredentialChip reveal scoping", () => {
   test("reveals against the transcript assistantId, not the active assistant", async () => {
     // Active assistant is a DIFFERENT assistant than the transcript owner.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "active-assistant" },
+      assistant: {
+        cloud: "local",
+        assistantId: "active-assistant",
+        port: 7830,
+      },
     });
 
     const { getAllByLabelText } = render(
@@ -65,7 +69,11 @@ describe("RedactedCredentialChip reveal scoping", () => {
 
   test("falls back to the active assistant when no assistantId prop is passed", async () => {
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "active-assistant" },
+      assistant: {
+        cloud: "local",
+        assistantId: "active-assistant",
+        port: 7830,
+      },
     });
 
     const { getAllByLabelText } = render(
@@ -82,7 +90,11 @@ describe("RedactedCredentialChip reveal scoping", () => {
     // An explicit null owner (pre-active transcript) must not fall through to
     // the active assistant — the chip stays a non-revealable badge.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "active-assistant" },
+      assistant: {
+        cloud: "local",
+        assistantId: "active-assistant",
+        port: 7830,
+      },
     });
 
     const { queryAllByLabelText } = render(
@@ -97,7 +109,11 @@ describe("RedactedCredentialChip reveal scoping", () => {
     // daemon refused to vouch for this span, so nothing it claims (type,
     // service, field) may be displayed or made interactive.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "active-assistant" },
+      assistant: {
+        cloud: "local",
+        assistantId: "active-assistant",
+        port: 7830,
+      },
     });
 
     const { container, queryAllByLabelText, getByText } = render(

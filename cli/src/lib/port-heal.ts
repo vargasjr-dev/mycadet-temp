@@ -3,7 +3,7 @@ import { getDefaultPorts } from "./environments/paths.js";
 import { findPidListeningOnPort } from "./remotes/local.js";
 import { isCadetProcess } from "./process.js";
 import { loadAllAssistants } from "./assistant-config.js";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 /**
  * Wake-time port auto-heal (the other half of the port de-clash).

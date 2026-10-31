@@ -80,7 +80,9 @@ beforeEach(() => {
   setDeviceSettingMock.mockClear();
   captureErrorMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+  });
 });
 
 afterEach(() => {
@@ -187,7 +189,9 @@ describe("TimezoneSection", () => {
         }),
     );
 
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-A" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "asst-A", port: 7830 },
+    });
     const { getByText, rerender } = render(<TimezoneSection />);
 
     // (a) Start a change for assistant A: the first PATCH fires and stays in
@@ -200,7 +204,9 @@ describe("TimezoneSection", () => {
 
     // (b) Switch the active assistant to B and re-render so `assistantIdRef`
     // picks up the new id via its effect.
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-B" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "asst-B", port: 7830 },
+    });
     rerender(<TimezoneSection />);
 
     // (c) Change the timezone again while A's PATCH is still in flight: this

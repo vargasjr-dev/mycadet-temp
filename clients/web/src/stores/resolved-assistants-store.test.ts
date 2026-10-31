@@ -15,7 +15,7 @@ import {
   markAvatarSuperseded,
   resetAvatarSupersedeForTests,
 } from "@/lib/avatar-supersede";
-import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
+import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
 
 // A platform entry is identified by `cloud === "cloud"` and carries a
 // `cloudOrganizationId`; a local entry has a non-cadet cloud + gateway port and no org.

@@ -12,7 +12,7 @@ import {
 import { dockerResourceNames } from "../lib/docker.js";
 import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 
 const entry: LockfileAssistant = {
@@ -23,7 +23,6 @@ const entry: LockfileAssistant = {
     assistantImage: "image-assistant",
     gatewayImage: "image-gateway",
     cesImage: "image-ces",
-    assistantPort: 7821,
   },
 };
 const names = dockerResourceNames(entry.assistantId);
@@ -329,35 +328,4 @@ test("legacy vbundle is rejected before touching destination containers", async 
     ),
   ).rejects.toThrow("vellum-to-cadet");
   expect(commands.calls).toHaveLength(0);
-});
-
-test("reads the remote Docker runtime version through in-container health instead of host ports", async () => {
-  const { readHostRuntimeVersion } = await import("../lib/host-teleport.js");
-  commands.on(
-    "docker",
-    (args) => args[0] === "exec" && args.at(-1)?.endsWith("/healthz") === true,
-    ({ args }) => {
-      expect(args[1]).toBe(names.gatewayContainer);
-      expect(args.at(-1)).toBe("http://127.0.0.1:7830/healthz");
-      return { stdout: JSON.stringify({ version: "0.12.9" }) };
-    },
-  );
-  expect(await readHostRuntimeVersion(entry)).toBe("0.12.9");
-});
-
-test("sleeping remote Docker runtime uses its recorded image tag for the version guard", async () => {
-  const { readHostRuntimeVersion } = await import("../lib/host-teleport.js");
-  commands.on("docker", (args) => args[0] === "exec", {
-    code: 1,
-    stderr: "container is stopped",
-  });
-  expect(
-    await readHostRuntimeVersion({
-      ...entry,
-      containerInfo: {
-        ...entry.containerInfo!,
-        gatewayImage: "mycadet/gateway:0.12.8",
-      },
-    }),
-  ).toBe("0.12.8");
 });

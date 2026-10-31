@@ -11,6 +11,7 @@ import {
 const LOCAL_ENTRY = {
   cloud: "local" as const,
   assistantId: "asst-1",
+  port: 7830,
   cloudAssistantId: "11111111-2222-4333-8444-555555555555",
 };
 

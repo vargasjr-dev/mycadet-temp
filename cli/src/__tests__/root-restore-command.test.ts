@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as roots from "../lib/root-backup.js";
 import * as cloud from "../lib/cloud-client.js";
 import * as lifecycle from "../lib/upgrade-lifecycle.js";
@@ -82,7 +83,7 @@ afterAll(async () => {
 
 for (const topology of ["local", "docker"] as const) {
   test(`${topology} restore uses root storage without runtime authentication`, async () => {
-    const entry: config.LockfileAssistant = {
+    const entry: LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
       port: 7830,
@@ -98,7 +99,7 @@ for (const topology of ["local", "docker"] as const) {
 }
 
 test("cloud restore uploads tar and calls the cloud API using the assistant's cloud session", async () => {
-  const entry: config.LockfileAssistant = {
+  const entry: LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
   };

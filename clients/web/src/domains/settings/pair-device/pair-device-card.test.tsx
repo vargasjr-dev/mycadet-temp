@@ -39,7 +39,9 @@ let selectedAssistant: {
 const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
-  hasLocalGateway: () => gatewayPath !== undefined,
+  expectsLocalGateway: (() => gatewayPath !== undefined) as unknown as Partial<
+    typeof import("@/lib/local-mode")
+  >["expectsLocalGateway"],
   getActiveAssistant: () => selectedAssistant,
 }));
 
@@ -240,7 +242,9 @@ beforeEach(() => {
   resetFetchLog();
   localStorage.clear();
   resetProbe();
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
   // Tests that exercise the status row opt into a version that serves it.
   useAssistantIdentityStore
     .getState()

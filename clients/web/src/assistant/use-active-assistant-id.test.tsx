@@ -10,7 +10,9 @@ afterEach(() => {
 
 describe("useActiveAssistantId", () => {
   test("returns the active id when the gate has resolved", () => {
-    useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
     const { result } = renderHook(() => useActiveAssistantId());
     expect(result.current).toBe("asst-1");
   });

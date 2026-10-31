@@ -146,7 +146,9 @@ beforeEach(() => {
     version: "0.10.12",
     name: "Ada",
   });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useVoicePrefsStore.setState({ firstRunSeen: true });
 });
 

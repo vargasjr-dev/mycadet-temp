@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { GATEWAY_PORT } from "../lib/constants.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const entry = (overrides: Partial<LockfileAssistant>): LockfileAssistant =>
   ({
@@ -44,8 +44,8 @@ describe("getGatewayUrl", () => {
   });
 
   test("a recorded default port dials the gateway default", () => {
-    expect(
-      getGatewayUrl(entry({ cloud: "local", port: GATEWAY_PORT })),
-    ).toBe(`http://127.0.0.1:${GATEWAY_PORT}`);
+    expect(getGatewayUrl(entry({ cloud: "local", port: GATEWAY_PORT }))).toBe(
+      `http://127.0.0.1:${GATEWAY_PORT}`,
+    );
   });
 });

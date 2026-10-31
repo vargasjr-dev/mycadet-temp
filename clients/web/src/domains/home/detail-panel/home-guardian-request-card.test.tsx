@@ -49,12 +49,16 @@ mock.module("@/domains/home/hooks/use-home-feed-query", () => ({
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    assistant: () => ({ cloud: "local", assistantId: "assistant-1" }),
+    assistant: () => ({
+      cloud: "local",
+      assistantId: "assistant-1",
+      port: 7830,
+    }),
   };
   // lifecycle-service reads getState() + subscribe() outside React render;
   // the mock store mirrors the real store's surface.
   store.getState = () => ({
-    assistant: { cloud: "local", assistantId: "assistant-1" },
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
   });
   store.subscribe = () => () => {};
   return {

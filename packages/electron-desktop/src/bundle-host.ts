@@ -1,4 +1,5 @@
 import {
+  getGatewayUrl,
   getGuardianAccessToken,
   readLockfile,
   resolveConfigDir,
@@ -39,7 +40,7 @@ export const createBundleHostProvider = (
     }
     return {
       assistantId: entry.assistantId,
-      port: entry.port,
+      baseUrl: getGatewayUrl(entry),
     };
   },
   acquireGatewayToken: async (assistantId) => {

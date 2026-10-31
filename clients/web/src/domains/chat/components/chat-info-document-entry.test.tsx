@@ -131,7 +131,9 @@ beforeEach(() => {
     openedDocumentState: null,
   });
   useConversationStore.setState({ activeConversationId: "conv-1" });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   conversationExists = true;
   documentLoad = new Promise((resolve, reject) => {
     finishLoad = resolve;
@@ -236,8 +238,12 @@ describe("mobile Chat Info document entry", () => {
           fireEvent.click(screen.getByLabelText("Close chat info"));
         } else {
           useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2" },
-    });
+            assistant: {
+              cloud: "local",
+              assistantId: "assistant-2",
+              port: 7830,
+            },
+          });
         }
       });
       await act(async () => finishLoad(DOCUMENT));

@@ -35,10 +35,8 @@ import {
   readRootProcesses,
   stampRootProcess,
 } from "../lib/assistant-config.js";
-import {
-  getLocalInstanceDir,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
@@ -165,29 +163,6 @@ function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
     daemonPort: 7821,
     mgmtSocket: "/tmp/fake-mgmt.sock",
   };
-}
-
-/** Seed a local entry's workspace config; returns that workspace dir. */
-function writeEntryWorkspaceConfig(
-  entry: LockfileAssistant,
-  config: Record<string, unknown>,
-): string {
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    )
-  ) {
-    throw new Error("expected a local-runtime entry");
-  }
-  const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
-  mkdirSync(workspaceDir, { recursive: true });
-  writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify(config, null, 2),
-  );
-  return workspaceDir;
 }
 
 /**
@@ -1664,12 +1639,21 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       port: EDGE_PORT,
       startedAt: new Date().toISOString(),
     });
-    writeEntryWorkspaceConfig(entry, {
-      ingress: {
-        enabled: true,
-        lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-      },
-    });
+    const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
+    mkdirSync(workspaceDir, { recursive: true });
+    writeFileSync(
+      join(workspaceDir, "config.json"),
+      JSON.stringify(
+        {
+          ingress: {
+            enabled: true,
+            lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+          },
+        },
+        null,
+        2,
+      ),
+    );
 
     await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 

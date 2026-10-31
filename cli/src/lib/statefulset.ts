@@ -262,13 +262,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
 
 export interface BuildServiceRunArgsOpts extends DockerRunSecrets {
   gatewayPort: number;
-  /**
-   * Host-side port for the assistant HTTP API. Allocated dynamically by
-   * `hatchDocker` (mirroring `gatewayPort`) so concurrent instances on the
-   * same host don't collide on a fixed port bind. Unused when
-   * `netnsContainer` is set (no host ports are published in that mode).
-   */
-  assistantPort: number;
   imageTags: Record<ServiceName, string>;
   instanceName: string;
   res: DockerResourceNames;
@@ -361,7 +354,6 @@ export function buildServiceRunArgs(
 ): Record<ServiceName, () => string[]> {
   const {
     gatewayPort,
-    assistantPort,
     imageTags,
     instanceName,
     res,
@@ -409,7 +401,7 @@ export function buildServiceRunArgs(
                 ? // Loopback-only: the assistant HTTP API serves the gateway
                   // (same pod) and host-local tooling. The gateway's edge is
                   // the only ingress; the API never faces the LAN.
-                  `127.0.0.1:${assistantPort}`
+                  `127.0.0.1:${ASSISTANT_INTERNAL_PORT}`
                 : port.hostPort;
           if (hostSide !== undefined) {
             args.push("-p", `${hostSide}:${port.containerPort}`);

@@ -150,7 +150,9 @@ function identityHydrated(version: string = SUPPORTED_VERSION): void {
     version,
     name: "Ada",
   });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
 }
 
 /**
@@ -384,7 +386,9 @@ describe("a request that cannot be served yet stays parked", () => {
     // identity fetch has not landed, so the version wait resolves on its 5s
     // timeout with `version` still null. The eligibility gate would read the
     // conservative `false` and throw the command away.
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    });
     registerStarter();
 
     requestVoiceStart(navigate, { entry: "deep_link" });
@@ -407,7 +411,9 @@ describe("a request that cannot be served yet stays parked", () => {
     // as "too old for live voice" and spends a press the user really made.
     identityHydrated();
     registerStarter();
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+    });
 
     usePendingDeepLinkStore
       .getState()
@@ -1059,7 +1065,9 @@ describe("state read before the preflight is re-read after it", () => {
     registerStarter();
     const { drain, release } = await drainBlockedOnPreflight();
 
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+    });
     release();
     await drain;
 
@@ -1071,7 +1079,9 @@ describe("state read before the preflight is re-read after it", () => {
     expect(isParked()).toBe(true);
 
     // Back on the assistant the press was made for, the next drain serves it.
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    });
     await drainPendingVoiceStart(navigate);
     expectStartedOnFreshDraft();
   });
@@ -1085,7 +1095,9 @@ describe("state read before the preflight is re-read after it", () => {
     preflightVerdict = { status: "not-ready", userMessage: "Set up a voice." };
     const { drain, release } = await drainBlockedOnPreflight();
 
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+    });
     release();
     await drain;
 

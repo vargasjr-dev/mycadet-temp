@@ -4,12 +4,11 @@ import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
 import {
-  getDaemonPidPath,
-  getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "../lib/remotes/local.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
   drainAssistant,
@@ -30,19 +29,6 @@ const ACTIVE_CALL_LEASES_FILE = "active-call-leases.json";
 type ActiveCallLease = {
   callSessionId: string;
 };
-
-function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    )
-  ) {
-    throw new Error(`'${entry.assistantId}' is not an on-machine assistant.`);
-  }
-  return getLocalInstanceDir(entry);
-}
 
 function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
   const path = join(cadetDir, ACTIVE_CALL_LEASES_FILE);
@@ -291,7 +277,7 @@ export async function sleepAssistant(
     );
   }
   const assistantPidFile = getDaemonPidPath(entry);
-  const cadetDir = getAssistantRootDir(entry);
+  const cadetDir = getLocalInstanceDir(entry);
   const gatewayPidFile = join(cadetDir, "gateway.pid");
 
   if (!force) {

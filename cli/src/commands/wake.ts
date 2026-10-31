@@ -4,7 +4,7 @@ import {
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   dockerResourceNames,
   isNoSuchContainerError,

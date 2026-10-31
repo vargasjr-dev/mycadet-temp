@@ -16,8 +16,8 @@ import { hostname } from "node:os";
 
 import type { DeviceRecord } from "@mycadet/local-mode";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  type LockfileAssistant,
   getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config";

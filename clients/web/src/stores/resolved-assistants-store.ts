@@ -32,7 +32,7 @@ import {
   readSelectedAssistantId,
   writeSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
-import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
+import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { Assistant } from "@/generated/api/types.gen";
 
 export interface ResolvedAssistant {

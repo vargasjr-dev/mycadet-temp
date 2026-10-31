@@ -59,7 +59,7 @@ async function isProcessing(inputs: {
 
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
   useConversationStore.getState().setActiveConversationId(CONVERSATION_ID);
   if (inputs.isMarkedProcessingLocally) {
     useConversationStore.getState().markConversationProcessing(CONVERSATION_ID);

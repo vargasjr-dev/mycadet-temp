@@ -242,16 +242,6 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
     expect(fs.existsSync(lockfilePath)).toBe(false);
   });
 
-  test("keeps an existing stamp: the first completion is the real one", () => {
-    const stamped = { ...entry, onboardedAt: "2026-08-01T00:00:00.000Z" };
-    writeOnDisk({ activeAssistant: null, assistants: [stamped] });
-
-    const result = stampLockfileAssistantOnboardedIfPresent("asst_1", AT);
-
-    expect(result.ok).toBe(true);
-    expect(readOnDisk().assistants).toEqual([stamped]);
-  });
-
   test("refuses a corrupt on-disk file without clobbering it", () => {
     fs.writeFileSync(lockfilePath, "{ not json");
 

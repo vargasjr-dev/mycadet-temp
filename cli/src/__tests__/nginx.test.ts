@@ -27,7 +27,7 @@ import { resolveLockfilePath } from "@mycadet/local-mode";
 import * as httpClient from "../lib/http-client.js";
 import * as versionModule from "@mycadet/shared/version";
 import * as assistantConfigModule from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };

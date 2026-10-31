@@ -60,7 +60,9 @@ async function settle() {
 
 beforeEach(() => {
   resetProbe();
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
   useAssistantIdentityStore
     .getState()
     .setIdentity("Test", MIN_VERSION, ASSISTANT_ID);

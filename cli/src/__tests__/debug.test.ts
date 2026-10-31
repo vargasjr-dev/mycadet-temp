@@ -17,6 +17,7 @@ const testDir = mkdtempSync(join(tmpdir(), "cli-debug-test-"));
 process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as cloudClient from "../lib/cloud-client.js";
 import { withPreconnect } from "./helpers/http.js";
@@ -62,7 +63,7 @@ const LOCAL_ENTRY = {
   cloudAssistantId: "11111111-2222-3333-4444-555555555555",
   cloudBaseUrl: "https://cloud.mycadet.ai",
   cloudOrganizationId: "org-1",
-} satisfies assistantConfig.LockfileAssistant;
+} satisfies LockfileAssistant;
 
 let originalFetch: typeof globalThis.fetch;
 let originalExit: typeof process.exit;

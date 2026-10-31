@@ -120,16 +120,14 @@ async function resolveSetupBearerToken(
     }
   }
 
-  {
-    try {
-      const leasedToken = await leaseGuardianToken(entry);
-      if (isGuardianAccessTokenUsable(leasedToken)) {
-        return leasedToken.accessToken;
-      }
-    } catch {
-      // Fall through to any lockfile bearer token, or let the setup request
-      // surface the gateway's auth error below.
+  try {
+    const leasedToken = await leaseGuardianToken(entry);
+    if (isGuardianAccessTokenUsable(leasedToken)) {
+      return leasedToken.accessToken;
     }
+  } catch {
+    // Fall through to any lockfile bearer token, or let the setup request
+    // surface the gateway's auth error below.
   }
 
   return entry.cloud === "cloud"

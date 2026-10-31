@@ -23,7 +23,7 @@ const activate = (assistantId: string | null) => {
   useResolvedAssistantStore
     .getState()
     .setAssistant(
-      assistantId ? { cloud: "local", assistantId } : null,
+      assistantId ? { cloud: "local", assistantId, port: 7830 } : null,
     );
 };
 
