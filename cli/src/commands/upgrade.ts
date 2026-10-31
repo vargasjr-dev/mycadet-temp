@@ -61,7 +61,6 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
   generateLocalSecret,
   ensureLocalRuntime,
-  requireReadyRuntimeEntry,
   startCes,
   startGateway,
   startLocalDaemon,
@@ -291,8 +290,6 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  requireReadyRuntimeEntry(entry);
-
   // The runtime fields the upgrade replaces, snapshotted for the failure
   // path's rollback to the previous install.
   const originalRuntime = {

@@ -53,6 +53,7 @@ function spawnStateRoot(): string {
 import {
   allocateLocalPlacement,
   findAssistantByName,
+  findAvailablePort,
   setActiveAssistant,
 } from "../assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -123,6 +124,7 @@ import { restoreAppServerAndAutoTunnel } from "../tunnel.js";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
+import { getDefaultPorts } from "../environments/paths.js";
 
 const _require = createRequire(import.meta.url);
 
@@ -1577,20 +1579,6 @@ function writeAssistantWrapper(
   );
 }
 
-/**
- * The daemon lifecycle reads the recorded daemon port; an entry without
- * one predates per-instance records and cannot start. Throws with the
- * re-hatch guidance the callers show.
- */
-export function requireReadyRuntimeEntry(entry: LocalAssistant): number {
-  if (entry.daemonPort === undefined) {
-    throw new Error(
-      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
-    );
-  }
-  return entry.daemonPort;
-}
-
 // NOTE: startLocalDaemon() is the CLI-side daemon lifecycle manager.
 // It should eventually converge with
 // assistant/src/daemon/daemon-control.ts::startDaemon which is the
@@ -1601,7 +1589,8 @@ export async function startLocalDaemon(
   options?: DaemonStartOptions,
 ): Promise<void> {
   writeAssistantWrapper(entry);
-  const daemonPort = requireReadyRuntimeEntry(entry);
+  const basePorts = getDefaultPorts();
+  const daemonPort = await findAvailablePort(basePorts.daemon);
 
   const runtimeAssistantIndex = !watch
     ? localRuntimeAssistantIndex(entry)
@@ -2478,7 +2467,9 @@ export async function wakeLocal(
       `'${entry.assistantId}' is not an on-machine assistant.`,
     );
   }
-  requireReadyRuntimeEntry(entry);
+
+  const basePorts = getDefaultPorts();
+  const daemonPort = await findAvailablePort(basePorts.daemon);
 
   // Port auto-heal: a recorded port something else holds (a still-running
   // vellum assistant on the pre-de-clash ports, a stray listener) used to
@@ -2500,7 +2491,6 @@ export async function wakeLocal(
     }
   }
 
-  const daemonPort = requireReadyRuntimeEntry(entry);
   const pidFile = getDaemonPidPath(entry);
 
   // Budget anchor for the migration-coordination wait below: the host
