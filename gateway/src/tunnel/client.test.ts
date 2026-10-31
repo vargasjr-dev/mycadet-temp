@@ -152,7 +152,7 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   return {
     assistantRuntimeBaseUrl: "http://localhost:7821",
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-    logFile: { dir: join(workspaceDir, "logs"), retentionDays: 30 },
+    logFile: { dir: join(workspaceDir, "logs") },
     maxAttachmentBytes: {
       telegram: 1,
       slack: 1,

@@ -17,14 +17,8 @@ export const LogFileConfigSchema = z
       .string({ error: "logFile.dir must be a string" })
       .optional()
       .describe("Directory path for log file storage"),
-    retentionDays: z
-      .number({ error: "logFile.retentionDays must be a number" })
-      .int("logFile.retentionDays must be an integer")
-      .positive("logFile.retentionDays must be a positive integer")
-      .default(30)
-      .describe("Number of days to retain log files before automatic deletion"),
   })
-  .describe("Log file storage and retention settings");
+  .describe("Log file storage settings");
 
 export type AuditLogConfig = z.infer<typeof AuditLogConfigSchema>;
 export type LogFileConfig = z.infer<typeof LogFileConfigSchema>;

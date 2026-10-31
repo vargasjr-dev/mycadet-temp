@@ -44,7 +44,7 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
     runtimeMaxRetries: 2,
     runtimeInitialBackoffMs: 500,
     maxWebhookPayloadBytes: 1048576,
-    logFile: { dir: undefined, retentionDays: 30 },
+    logFile: { dir: undefined },
     maxAttachmentBytes: {
       telegram: 50 * 1024 * 1024,
       slack: 100 * 1024 * 1024,

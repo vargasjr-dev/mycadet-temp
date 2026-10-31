@@ -33,7 +33,6 @@ mock.module("../util/logger.js", () => ({
   getCliLogger: () => noopLogger,
   truncateForLog: (v: string) => v,
   initLogger: () => {},
-  pruneOldLogFiles: () => 0,
 }));
 
 const { loadSkillCatalog, loadSkillBySelector, resolveSkillSelector } =

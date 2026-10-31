@@ -62,7 +62,6 @@ function prettyOpts(extra?: PrettyOptions): PrettyOptions {
 
 export type LogFileConfig = {
   dir: string | undefined;
-  retentionDays: number;
 };
 
 const LOG_FILE_PREFIX = "assistant-";
@@ -87,34 +86,6 @@ function logFilePathForDate(dir: string, date: Date): string {
  */
 export function getCurrentLogFilePath(): string {
   return logFilePathForDate(getLogsDir(), new Date());
-}
-
-export function pruneOldLogFiles(dir: string, retentionDays: number): number {
-  if (!existsSync(dir)) {
-    return 0;
-  }
-
-  const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
-  cutoff.setUTCHours(0, 0, 0, 0);
-
-  let removed = 0;
-  for (const name of readdirSync(dir)) {
-    const match = LOG_FILE_PATTERN.exec(name);
-    if (!match) {
-      continue;
-    }
-    const fileDate = new Date(match[1] + "T00:00:00Z");
-    if (fileDate < cutoff) {
-      try {
-        unlinkSync(join(dir, name));
-        removed++;
-      } catch {
-        // best-effort
-      }
-    }
-  }
-  return removed;
 }
 
 let rootLogger: Logger | null = null;
@@ -218,18 +189,6 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildRotatingLogger(config);
-
-  // Use the resolved dir (may differ from config.dir when containerized)
-  const resolvedDir = activeLogFileConfig?.dir;
-  if (resolvedDir && config.retentionDays > 0) {
-    const removed = pruneOldLogFiles(resolvedDir, config.retentionDays);
-    if (removed > 0) {
-      rootLogger.info(
-        { removed, retentionDays: config.retentionDays },
-        "Pruned old log files",
-      );
-    }
-  }
 }
 
 function getRootLogger(): Logger {
@@ -298,7 +257,7 @@ function getRootLogger(): Logger {
       }
 
       // Register state so ensureCurrentDate() rebuilds across UTC midnight.
-      activeLogFileConfig = { dir: logDir, retentionDays: 0 };
+      activeLogFileConfig = { dir: logDir };
       activeLogDate = formatDate(new Date());
     } catch {
       rootLogger = pino(

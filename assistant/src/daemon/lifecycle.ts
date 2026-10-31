@@ -575,10 +575,7 @@ export async function runDaemon(): Promise<void> {
   }
 
   if (config.logFile.dir) {
-    initLogger({
-      dir: config.logFile.dir,
-      retentionDays: config.logFile.retentionDays,
-    });
+    initLogger({ dir: config.logFile.dir });
   }
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).

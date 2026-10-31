@@ -12,7 +12,6 @@ import { logSerializers } from "./log-redact.js";
 
 export type LogFileConfig = {
   dir: string | undefined;
-  retentionDays: number;
 };
 
 const LOG_FILE_PREFIX = "ces-";
@@ -28,30 +27,6 @@ function formatDate(date: Date): string {
 
 function logFilePathForDate(dir: string, date: Date): string {
   return join(dir, `${LOG_FILE_PREFIX}${formatDate(date)}${LOG_FILE_SUFFIX}`);
-}
-
-export function pruneOldLogFiles(dir: string, retentionDays: number): number {
-  if (!existsSync(dir)) return 0;
-
-  const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
-  cutoff.setUTCHours(0, 0, 0, 0);
-
-  let removed = 0;
-  for (const name of readdirSync(dir)) {
-    const match = LOG_FILE_PATTERN.exec(name);
-    if (!match) continue;
-    const fileDate = new Date(match[1] + "T00:00:00Z");
-    if (fileDate < cutoff) {
-      try {
-        unlinkSync(join(dir, name));
-        removed++;
-      } catch {
-        // best-effort
-      }
-    }
-  }
-  return removed;
 }
 
 let rootLogger: pino.Logger | null = null;
@@ -107,16 +82,6 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
-
-  if (config.dir && config.retentionDays > 0) {
-    const removed = pruneOldLogFiles(config.dir, config.retentionDays);
-    if (removed > 0) {
-      rootLogger.info(
-        { removed, retentionDays: config.retentionDays },
-        "Pruned old log files",
-      );
-    }
-  }
 }
 
 /**
