@@ -982,7 +982,7 @@ export async function recreateDockerContainers(
     await pullImage(image, log);
   }
 
-  const gatewayPort = entry.port ?? getDefaultPorts().gateway;
+  const gatewayPort = entry.port;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(

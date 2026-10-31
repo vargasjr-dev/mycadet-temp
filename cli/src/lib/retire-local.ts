@@ -8,11 +8,9 @@ import {
   loadAllAssistants,
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
-import { readPidFile } from "./process-utils.js";
 import { stopIngressNginx } from "./servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
-  stopOrphanedDaemonProcesses,
   stopProcessByPidFile,
 } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
@@ -87,42 +85,6 @@ export function getRetireArchiveCommand(
   };
 }
 
-/** The PIDs recorded for every OTHER local assistant — the daemon-process
- * scan must never kill a sibling assistant's live services. */
-function otherAssistantPidSet(
-  entries: LockfileAssistant[],
-  name: string,
-  instanceDir: string,
-): Set<string> {
-  const pids = new Set<string>();
-  for (const entry of entries) {
-    if (
-      entry.assistantId === name &&
-      isLocalEntry(entry) &&
-      entry.instanceDir === instanceDir
-    ) {
-      continue;
-    }
-    if (entry.cloud === "local") {
-      const stateDir = getLocalInstanceDir(entry);
-      const candidates = [
-        getDaemonPidPath(entry),
-        join(stateDir, "gateway.pid"),
-        join(stateDir, "workspace", "data", "qdrant", "qdrant.pid"),
-        join(stateDir, "workspace", "embed-worker.pid"),
-      ];
-      for (const file of candidates) {
-        const pid = readPidFile(file);
-        if (pid) pids.add(pid);
-      }
-    }
-    if (entry.cloud === "docker" && typeof entry.watcherPid === "number") {
-      pids.add(String(entry.watcherPid));
-    }
-  }
-  return pids;
-}
-
 export async function retireLocal(
   name: string,
   entry: LockfileAssistant,
@@ -150,9 +112,8 @@ export async function retireLocal(
     return { assistantId: name, archived: false, sharedDataDir: true };
   }
 
-  const daemonPidFile = getDaemonPidPath(entry);
-  const daemonStopped = await stopProcessByPidFile(
-    daemonPidFile,
+  await stopProcessByPidFile(
+    getDaemonPidPath(entry),
     "daemon",
     undefined,
     DAEMON_STOP_TIMEOUT_MS,
@@ -174,17 +135,6 @@ export async function retireLocal(
   // Stop the nginx ingress if one is fronting this gateway — it would
   // otherwise be orphaned when the instance directory is archived.
   await stopIngressNginx();
-
-  // If the PID file didn't track a running daemon, scan for orphaned
-  // daemon processes that may have been started without writing a PID.
-  if (!daemonStopped) {
-    const otherAssistantPids = otherAssistantPidSet(
-      loadAllAssistants(),
-      name,
-      entry.instanceDir ?? "",
-    );
-    await stopOrphanedDaemonProcesses(otherAssistantPids);
-  }
 
   // Archive and remove the entire instance directory.
   const dirToArchive = getLocalInstanceDir(entry);

@@ -3,17 +3,14 @@ import { cliCommand } from "../lib/cli-name.js";
 import { basename, dirname, join, sep } from "path";
 import { fileURLToPath } from "url";
 
-import {
-  getDaemonPidPath,
-  getLocalInstanceDir,
-  loadAllAssistants,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { loadAllAssistants } from "../lib/assistant-config.js";
 import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
+import { isLocalEntry } from "@mycadet/local-mode/contract";
 import { retireDocker } from "../lib/docker.js";
+import { retireLocal } from "../lib/retire-local.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
 import {
   resolveConfigDir,
@@ -21,34 +18,8 @@ import {
   resolveLogDir,
 } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { stopProcessByPidFile } from "../lib/process";
 
-/**
- * The per-assistant teardown uninstall performs before deleting the data:
- * docker assistants keep containers, volumes, and a network in docker that
- * the filesystem sweep never reaches, and local assistants keep processes.
- * Everything on-disk is deleted by the sweep regardless — this is the part
- * uninstall could NOT do before it refused.
- */
-async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
-  if (entry.cloud === "docker") {
-    await retireDocker(entry.assistantId);
-    return;
-  }
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    )
-  )
-    return;
-  await stopProcessByPidFile(
-    join(getLocalInstanceDir(entry), "gateway.pid"),
-    "gateway",
-  );
-  await stopProcessByPidFile(getDaemonPidPath(entry), "assistant");
-}
+
 
 /** A directory (or file) scheduled for deletion, with what it holds. */
 interface DeleteTarget {
@@ -303,7 +274,14 @@ export const uninstall = Object.assign(
         continue;
       }
       try {
-        await retireAssistantData(entry);
+        // The shared retire helper tears down everything the filesystem
+        // sweep never reaches (containers, processes) and archives the
+        // instance as a safety net before the sweep deletes the originals.
+        if (entry.cloud === "docker") {
+          await retireDocker(entry.assistantId);
+        } else if (isLocalEntry(entry)) {
+          await retireLocal(entry.assistantId, entry);
+        }
       } catch (err) {
         console.error(
           `   Warning: could not fully retire '${entry.assistantId}': ${err instanceof Error ? err.message : String(err)}`,
