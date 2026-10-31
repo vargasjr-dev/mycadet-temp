@@ -69,11 +69,9 @@ const defaultOps: HostTeleportOps = {
   sleep: (entry) =>
     sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
   backup: async (entry) => {
-    const archive = await createBackup(
-      getGatewayUrl(entry),
-      entry.assistantId,
-      { prefix: `${entry.assistantId}-pre-teleport` },
-    );
+    const archive = await createBackup(entry.assistantId, {
+      prefix: `${entry.assistantId}-pre-teleport`,
+    });
     if (!archive) {
       throw new Error(
         `Could not capture '${entry.assistantId}'; teleport aborted.`,

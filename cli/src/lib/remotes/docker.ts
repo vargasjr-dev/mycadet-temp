@@ -219,7 +219,7 @@ export async function upgradeDocker(
     buildProgressEvent(UPGRADE_PROGRESS.BACKING_UP),
   );
   console.log("📦 Creating pre-upgrade backup...");
-  const backupPath = await createBackup(gatewayUrl, entry.assistantId, {
+  const backupPath = await createBackup(entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion ?? "unknown"} → ${versionTag}`,
   });
@@ -403,12 +403,7 @@ export async function upgradeDocker(
             );
             console.log(`📦 Restoring data from pre-upgrade backup...`);
             console.log(`   Source: ${backupPath}`);
-            const restored = await restoreBackup(
-              gatewayUrl,
-              entry.assistantId,
-              backupPath,
-              {},
-            );
+            const restored = await restoreBackup(entry.assistantId, backupPath, {});
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {

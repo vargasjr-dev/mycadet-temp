@@ -19,14 +19,11 @@ import { stageRootArchive, STATE_ROOTS } from "../lib/root-backup.js";
 const directory = await mkdtemp(join(tmpdir(), "safety-root-backup-"));
 const root = join(directory, "instance");
 const backupDir = join(directory, "backups");
-const entry: config.LockfileAssistant & { runtimeUrl: string } = {
+const entry: config.LockfileAssistant = {
   assistantId: "alpha",
   cloud: "local",
-  runtimeUrl: "http://127.0.0.1:1",
   instanceDir: root,
-  daemonPort: 1,
   port: 2,
-  cesPort: 3,
 };
 mkdirSync(join(root, "gateway-security"), { recursive: true });
 writeFileSync(
@@ -59,7 +56,7 @@ afterAll(async () => {
 });
 
 test("pre-upgrade safety backup captures all roots in XDG without a guardian token", async () => {
-  const path = await backups.createBackup(entry.runtimeUrl, entry.assistantId, {
+  const path = await backups.createBackup(entry.assistantId, {
     prefix: "alpha-pre-upgrade",
   });
   expect(path).toMatch(
@@ -75,14 +72,14 @@ test("pre-upgrade safety backup captures all roots in XDG without a guardian tok
 });
 
 test("rollback restores gateway and CES state as well as workspace", async () => {
-  const path = await backups.createBackup(entry.runtimeUrl, entry.assistantId, {
+  const path = await backups.createBackup(entry.assistantId, {
     prefix: "alpha-pre-rollback",
   });
   for (const name of STATE_ROOTS)
     await writeFile(join(root, name, "after-upgrade"), "stale");
   await writeFile(join(root, "workspace", "notes"), "modified");
   expect(
-    await backups.restoreBackup(entry.runtimeUrl, entry.assistantId, path!, {
+    await backups.restoreBackup(entry.assistantId, path!, {
       resume: false,
     }),
   ).toBe(true);
@@ -102,9 +99,9 @@ test("rollback restores gateway and CES state as well as workspace", async () =>
 
 test("missing registry identity fails before capture instead of trying runtime export", async () => {
   lookup.mockReturnValue(null);
-  expect(await backups.createBackup(entry.runtimeUrl, "missing")).toBeNull();
+  expect(await backups.createBackup("missing")).toBeNull();
   expect(
-    await backups.restoreBackup(entry.runtimeUrl, "missing", "missing.tar.gz"),
+    await backups.restoreBackup("missing", "missing.tar.gz"),
   ).toBe(false);
   expect(tokens).not.toHaveBeenCalled();
 });

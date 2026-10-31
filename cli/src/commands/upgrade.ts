@@ -1,7 +1,6 @@
 import { cliCommand } from "../lib/cli-name.js";
 import { upgradeDocker } from "../lib/remotes/docker.js";
 import {
-  GATEWAY_PORT,
   getGatewayUrl,
   isDockerEntry,
   isLocalEntry,
@@ -19,6 +18,7 @@ import {
   lookupAssistantByIdentifier,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {} from "../lib/docker";
 import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases";
@@ -288,17 +288,10 @@ async function ensureGuardianTokenAfterLocalUpgrade(
 }
 
 async function upgradeLocal(
-  entry: LockfileAssistant,
+  entry: LocalAssistant,
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  if (!isLocalEntry(entry)) {
-    const msg = `'${entry.assistantId}' is not a local assistant.`;
-    console.error(msg);
-    emitCliError("UNKNOWN", msg);
-    process.exit(1);
-  }
-
   requireReadyRuntimeEntry(entry);
 
   // The runtime fields the upgrade replaces, snapshotted for the failure
@@ -309,7 +302,7 @@ async function upgradeLocal(
   };
 
   const targetVersion = await targetVersionFromCli(version);
-  const adminUrl = `http://127.0.0.1:${entry.port ?? GATEWAY_PORT}`;
+  const adminUrl = `http://127.0.0.1:${entry.port}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {
@@ -368,7 +361,7 @@ async function upgradeLocal(
     buildProgressEvent(UPGRADE_PROGRESS.BACKING_UP),
   );
   console.log("📦 Creating pre-upgrade backup...");
-  const backupPath = await createBackup(adminUrl, entry.assistantId, {
+  const backupPath = await createBackup(entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
   });
@@ -431,7 +424,7 @@ async function upgradeLocal(
     }
     await ensureGuardianTokenAfterLocalUpgrade(
       entry,
-      entry.port ?? GATEWAY_PORT,
+      entry.port,
       bootstrapSecret,
     );
     console.log("✅ Local assistant processes started\n");
@@ -460,7 +453,6 @@ async function upgradeLocal(
     saveLockfileAssistant(entry);
     if (backupPath) {
       const restored = await restoreBackup(
-        adminUrl,
         entry.assistantId,
         backupPath,
         { resume: false },
@@ -822,7 +814,7 @@ async function upgradePrepare(
   );
 
   // 4. Create backup
-  const backupPath = await createBackup(gatewayUrl, entry.assistantId, {
+  const backupPath = await createBackup(entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion} → ${targetVersion}`,
   });
@@ -1006,7 +998,7 @@ export const upgrade = Object.assign(
         return;
       }
 
-      if (cloud === "local") {
+      if (isLocalEntry(entry)) {
         await upgradeLocal(entry, effectiveVersion, force);
         return;
       }

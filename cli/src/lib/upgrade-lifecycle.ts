@@ -535,12 +535,9 @@ export async function attemptFailedStateRestore(opts: {
     `📦 Reverted stack not ready — attempting ${opts.backupLabel} backup restore...`,
   );
   console.log(`   Source: ${opts.backupPath}`);
-  const restored = await restoreBackup(
-    opts.runtimeUrl,
-    opts.assistantId,
-    opts.backupPath,
-    { resume: false },
-  );
+  const restored = await restoreBackup(opts.assistantId, opts.backupPath, {
+    resume: false,
+  });
   if (!restored) {
     return { restored: false, ready: false };
   }
@@ -675,14 +672,10 @@ export async function performDockerRollback(
 
   // Create a pre-rollback backup as a safety net
   console.log("📦 Creating pre-rollback backup...");
-  const preRollbackBackupPath = await createBackup(
-    gatewayUrl,
-    entry.assistantId,
-    {
-      prefix: `${entry.assistantId}-pre-rollback`,
-      description: `Pre-rollback snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
-    },
-  );
+  const preRollbackBackupPath = await createBackup(entry.assistantId, {
+    prefix: `${entry.assistantId}-pre-rollback`,
+    description: `Pre-rollback snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
+  });
   if (preRollbackBackupPath) {
     console.log(`   Backup saved: ${preRollbackBackupPath}\n`);
     pruneOldBackups(entry.assistantId, 3, "pre-rollback");
@@ -787,9 +780,7 @@ export async function performDockerRollback(
       (msg) => console.log(msg),
     );
     if (
-      !(await restoreBackup(gatewayUrl, entry.assistantId, backupPath, {
-        resume: false,
-      }))
+      !(await restoreBackup(entry.assistantId, backupPath, { resume: false }))
     )
       throw new Error("Target backup roots could not be restored.");
     await wakeContainers(res);
@@ -937,7 +928,6 @@ export async function performDockerRollback(
             console.log(`📦 Restoring data from pre-rollback backup...`);
             console.log(`   Source: ${preRollbackBackupPath}`);
             const restored = await restoreBackup(
-              gatewayUrl,
               entry.assistantId,
               preRollbackBackupPath,
               {},

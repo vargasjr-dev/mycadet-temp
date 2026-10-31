@@ -19,7 +19,6 @@ export function formatSize(bytes: number): string {
 
 /** Internal safety backup callers resolve their registered host topology, never runtime auth. */
 export async function createBackup(
-  _runtimeUrl: string,
   assistantId: string,
   options?: { prefix?: string; description?: string; timeoutMs?: number },
 ): Promise<string | null> {
@@ -46,7 +45,6 @@ export async function createBackup(
 
 /** Restore every persistent root; failed-state recovery can leave services stopped for its caller to restart. */
 export async function restoreBackup(
-  _runtimeUrl: string,
   assistantId: string,
   backupPath: string,
   options: { resume?: boolean } = {},
