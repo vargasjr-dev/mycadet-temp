@@ -226,7 +226,8 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080, daemonPort: 8501 },
+            port: 8080,
+            daemonPort: 8501,
           },
         ],
       }),
@@ -248,12 +249,13 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 80, daemonPort: 8501 },
+            port: 80,
+            daemonPort: 8501,
           },
           {
             assistantId: "def-456",
             cloud: "docker",
-            resources: { gatewayPort: 70000 },
+            port: 70000,
           },
         ],
       }),
@@ -305,7 +307,9 @@ describe("gatewayTargetsFromLockfile", () => {
         ],
       }),
     ).toEqual(
-      targets({ "sbx-1": remote("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830") })(),
+      targets({
+        "sbx-1": remote("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830"),
+      })(),
     );
   });
 
@@ -330,7 +334,8 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080, daemonPort: 8501 },
+            port: 8080,
+            daemonPort: 8501,
           },
         ],
       }),
@@ -361,7 +366,8 @@ describe("readGatewayTargets", () => {
             {
               assistantId: "abc-123",
               cloud: "local",
-              resources: { gatewayPort: 8080, daemonPort: 8501 },
+              port: 8080,
+              daemonPort: 8501,
             },
             {
               assistantId: "def-456",

@@ -36,7 +36,8 @@ describe("getGatewayUrl", () => {
       getGatewayUrl(
         entry({
           cloud: "local",
-          resources: { gatewayPort: 7900, daemonPort: 7901 },
+          port: 7900,
+          daemonPort: 7901,
         }),
       ),
     ).toBe("http://127.0.0.1:7900");

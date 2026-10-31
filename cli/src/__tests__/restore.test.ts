@@ -24,10 +24,7 @@ import { basename, join } from "node:path";
 import { type LockfileAssistant } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
-import {
-  makeEntry,
-  readLocalEntry,
-} from "./helpers/lockfile-entry.js";
+import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
@@ -218,7 +215,7 @@ describe("restore error cases", () => {
   test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);
-    makeEntry({ assistantId: name, resources: { instanceDir } });
+    makeEntry({ assistantId: name, instanceDir });
     const entry = readLocalEntry(name);
     writeArchiveFixtures(name, entry);
     // Pre-create the collision path that recover checks
@@ -236,7 +233,7 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     makeEntry({
       assistantId: name,
       guardianBootstrapSecret: "existing-bootstrap",
-      resources: { instanceDir },
+      instanceDir,
     });
     const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
@@ -277,7 +274,7 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     const name = "deep-nested-instance";
     // Use a path whose parent directory does not yet exist
     const instanceDir = join(testDir, "new-parent", "deeper", name);
-    makeEntry({ assistantId: name, resources: { instanceDir } });
+    makeEntry({ assistantId: name, instanceDir });
     const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 

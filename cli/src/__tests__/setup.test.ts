@@ -194,12 +194,10 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       cloud: "local",
-      resources: {
-        instanceDir: testDir,
-        gatewayPort: 3000,
-        daemonPort: 8501,
-        cesPort: 9002,
-      },
+      instanceDir: testDir,
+      port: 3000,
+      daemonPort: 8501,
+      cesPort: 9002,
     });
     saveGuardianToken("assistant-123", guardianTokenFixture());
 
@@ -227,12 +225,10 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       cloud: "local",
-      resources: {
-        instanceDir: testDir,
-        gatewayPort: 3000,
-        daemonPort: 8501,
-        cesPort: 9002,
-      },
+      instanceDir: testDir,
+      port: 3000,
+      daemonPort: 8501,
+      cesPort: 9002,
     });
     saveGuardianToken("assistant-123", guardianTokenFixture());
 
@@ -253,12 +249,10 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       cloud: "local",
-      resources: {
-        instanceDir: testDir,
-        gatewayPort: 3000,
-        daemonPort: 8501,
-        cesPort: 9002,
-      },
+      instanceDir: testDir,
+      port: 3000,
+      daemonPort: 8501,
+      cesPort: 9002,
     });
     installFetchStub({
       leasedToken: guardianTokenFixture({
@@ -285,7 +279,8 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       cloud: "docker",
-      resources: { gatewayPort: 7831, daemonPort: 7821 },
+      port: 7831,
+      daemonPort: 7821,
       guardianBootstrapSecret: "test-bootstrap-secret",
     });
     installFetchStub({

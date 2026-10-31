@@ -22,7 +22,8 @@ describe("resolveRuntimeUrl", () => {
   test("local cloud uses gateway-loopback /v1/<subpath>", () => {
     makeEntry({
       cloud: "local",
-      resources: { gatewayPort: 7821, daemonPort: 7822 },
+      port: 7821,
+      daemonPort: 7822,
       assistantId: "ast-local-1",
     });
     const entry = readEntry("ast-local-1")!;
@@ -34,7 +35,8 @@ describe("resolveRuntimeUrl", () => {
   test("docker cloud uses gateway-loopback /v1/<subpath>", () => {
     makeEntry({
       cloud: "docker",
-      resources: { gatewayPort: 7831, daemonPort: 7821 },
+      port: 7831,
+      daemonPort: 7821,
       assistantId: "ast-docker-1",
     });
     const entry = readEntry("ast-docker-1")!;

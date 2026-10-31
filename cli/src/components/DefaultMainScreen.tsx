@@ -820,8 +820,6 @@ interface DefaultMainScreenProps {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  /** Absolute path of the assistant's data root, home-collapsed for display. */
-  workspaceRoot?: string;
   healthStatus?: string;
 }
 
@@ -867,7 +865,6 @@ function DefaultMainScreen({
   runtimeUrl,
   assistantId,
   assistantName,
-  workspaceRoot,
   healthStatus,
 }: DefaultMainScreenProps): ReactElement {
   const accentColor = "magenta";
@@ -912,8 +909,6 @@ function DefaultMainScreen({
     { text: assistantId, style: "dim" },
     { text: "Runtime", style: "heading" },
     { text: runtimeUrl, style: "dim" },
-    { text: "Workspace", style: "heading" },
-    { text: workspaceRoot ?? "—", style: "dim" },
     { text: "Status", style: "heading" },
     { text: withStatusEmoji(healthStatus ?? "checking..."), style: "dim" },
   ];
@@ -1228,8 +1223,6 @@ interface ChatAppProps {
   /** Client-minted conversation key the CLI addresses its conversation by. */
   conversationKey: string;
   assistantName?: string;
-  /** Assistant data root for the header details panel (home-collapsed). */
-  workspaceRoot?: string;
   /** Pre-built auth headers (e.g. { Authorization: "Bearer ..." } for local,
    *  { "X-Session-Token": "...", "Cadet-Organization-Id": "..." } for platform). */
   auth?: Record<string, string>;
@@ -1242,7 +1235,6 @@ function ChatApp({
   assistantId,
   conversationKey,
   assistantName,
-  workspaceRoot,
   auth,
   onExit,
   handleRef,
@@ -2356,7 +2348,6 @@ function ChatApp({
         runtimeUrl={runtimeUrl}
         assistantId={assistantId}
         assistantName={liveAssistantName}
-        workspaceRoot={workspaceRoot}
         healthStatus={healthStatus}
       />
 
@@ -2477,7 +2468,6 @@ export function renderChatApp(
   options?: {
     auth?: Record<string, string>;
     assistantName?: string;
-    workspaceRoot?: string;
     /** Client-minted conversation key (resolved from the assistant entry).
      *  Unregistered targets (--url) get an ephemeral uuid. */
     conversationKey?: string;
@@ -2491,7 +2481,6 @@ export function renderChatApp(
       assistantId={assistantId}
       conversationKey={options?.conversationKey ?? crypto.randomUUID()}
       assistantName={options?.assistantName}
-      workspaceRoot={options?.workspaceRoot}
       auth={options?.auth}
       onExit={onExit}
       handleRef={(h) => {

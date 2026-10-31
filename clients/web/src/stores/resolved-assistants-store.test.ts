@@ -30,22 +30,18 @@ const localAssistant: LockfileAssistant = {
   assistantId: "asst-local",
   name: "Local",
   cloud: "local",
-  resources: {
-    gatewayPort: 7830,
-    daemonPort: 7831,
-    runtimeVersion: "v0.8.13",
-  },
+  port: 7830,
+  daemonPort: 7831,
+  runtimeVersion: "v0.8.13",
 };
 
 const otherLocalAssistant: LockfileAssistant = {
   assistantId: "asst-other",
   name: "Other Local",
   cloud: "local",
-  resources: {
-    gatewayPort: 7930,
-    daemonPort: 7931,
-    runtimeVersion: "v0.8.12",
-  },
+  port: 7930,
+  daemonPort: 7931,
+  runtimeVersion: "v0.8.12",
 };
 
 const pairedAssistant: LockfileAssistant = {
@@ -474,9 +470,7 @@ describe("setFromApi connectability", () => {
 
     useResolvedAssistantsStore
       .getState()
-      .setFromApi([
-        apiEntry({ id: "asst-local", ingress_url: null }),
-      ]);
+      .setFromApi([apiEntry({ id: "asst-local", ingress_url: null })]);
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-local");

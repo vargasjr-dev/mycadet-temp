@@ -24,10 +24,8 @@ import { z } from "zod";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import { getServedLockfile, getLockfileAssistant } from "@/lib/local-mode";
-import {
-  getGatewayUrl,
-  registrationSummary,
-} from "@mycadet/local-mode/contract";
+import { isLocalRuntimeEntry } from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
@@ -35,7 +33,7 @@ import {
   readSelectedAssistantId,
   writeSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
-import type { Lockfile } from "@/runtime/local-mode-host";
+import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 import type { Assistant } from "@/generated/api/types.gen";
 
 export interface ResolvedAssistant {
@@ -74,6 +72,22 @@ export interface ResolvedAssistant {
  * local read just outranked; keep the row on its live/cache sources until
  * the cloud copy can have caught up.
  */
+function entryRuntimeVersion(entry: LockfileAssistant | undefined) {
+  return entry && isLocalRuntimeEntry(entry) ? entry.runtimeVersion : undefined;
+}
+
+function entryCloudAssistantId(entry: LockfileAssistant | undefined) {
+  return entry && isLocalRuntimeEntry(entry)
+    ? entry.cloudAssistantId
+    : undefined;
+}
+
+function lockfileEntryOrganizationId(entry: LockfileAssistant | undefined) {
+  return entry && isLocalRuntimeEntry(entry)
+    ? entry.cloudOrganizationId
+    : undefined;
+}
+
 function apiAvatarUrl(a: Assistant): string | null | undefined {
   return isAvatarSuperseded(a.id) ? null : a.avatar_url;
 }
@@ -158,9 +172,18 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         hatchedAt: a.hatchedAt,
         onboardedAt: a.onboardedAt,
         cloud: a.cloud,
-        runtimeVersion: registrationSummary(a).runtimeVersion,
-        organizationId: registrationSummary(a).cloudOrganizationId,
-        cloudAssistantId: registrationSummary(a).cloudAssistantId,
+        runtimeVersion:
+          a.cloud === "local" ||
+          a.cloud === "docker" ||
+          a.cloud === "apple-container"
+            ? a.runtimeVersion
+            : undefined,
+        organizationId: isLocalRuntimeEntry(a)
+          ? a.cloudOrganizationId
+          : a.cloud === "cloud"
+            ? a.cloudOrganizationId
+            : undefined,
+        cloudAssistantId: entryCloudAssistantId(a),
         avatarUrl: existingById.get(a.assistantId)?.avatarUrl,
         currentReleaseVersion: existingById.get(a.assistantId)
           ?.currentReleaseVersion,
@@ -189,31 +212,26 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
     setFromApi: (assistants) =>
       set({
         assistantsHydrated: true,
-        assistants: assistants
-          .map((a): ResolvedAssistant => {
-            const entry = getLockfileAssistant(a.id);
-            return {
-              id: a.id,
-              name: a.name,
-              hatchedAt: a.created,
-              onboardedAt: entry?.onboardedAt,
-              cloud: entry?.cloud,
-              runtimeVersion: entry
-                ? registrationSummary(entry).runtimeVersion
-                : undefined,
-              runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
-              cloudAssistantId: entry
-                ? registrationSummary(entry).cloudAssistantId
-                : undefined,
-              ingressUrl: a.ingress_url,
-              avatarUrl: apiAvatarUrl(a),
-              currentReleaseVersion: a.current_release_version,
-              isActiveLockfileAssistant: entry
-                ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
-                  a.id
-                : undefined,
-            };
-          })
+        assistants: assistants.map((a): ResolvedAssistant => {
+          const entry = getLockfileAssistant(a.id);
+          return {
+            id: a.id,
+            name: a.name,
+            hatchedAt: a.created,
+            onboardedAt: entry?.onboardedAt,
+            cloud: entry?.cloud,
+            runtimeVersion: entryRuntimeVersion(entry),
+            runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
+            cloudAssistantId: entryCloudAssistantId(entry),
+            ingressUrl: a.ingress_url,
+            avatarUrl: apiAvatarUrl(a),
+            currentReleaseVersion: a.current_release_version,
+            isActiveLockfileAssistant: entry
+              ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
+                a.id
+              : undefined,
+          };
+        }),
       }),
 
     markHydrated: () => set({ assistantsHydrated: true }),
@@ -241,14 +259,12 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             cloud: lockfileEntry?.cloud ?? prior.cloud,
             organizationId: prior.organizationId,
             runtimeVersion:
-              (lockfileEntry
-                ? registrationSummary(lockfileEntry).runtimeVersion
-                : undefined) ?? prior.runtimeVersion,
-            runtimeUrl: lockfileEntry ? getGatewayUrl(lockfileEntry) : prior.runtimeUrl,
+              entryRuntimeVersion(lockfileEntry) ?? prior.runtimeVersion,
+            runtimeUrl: lockfileEntry
+              ? getGatewayUrl(lockfileEntry)
+              : prior.runtimeUrl,
             cloudAssistantId:
-              (lockfileEntry
-                ? registrationSummary(lockfileEntry).cloudAssistantId
-                : undefined) ?? prior.cloudAssistantId,
+              entryCloudAssistantId(lockfileEntry) ?? prior.cloudAssistantId,
             isActiveLockfileAssistant: lockfileEntry
               ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
                 assistant.id
@@ -264,18 +280,12 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             {
               ...entry,
               cloud: lockfileEntry?.cloud,
-              organizationId: lockfileEntry
-                ? registrationSummary(lockfileEntry).cloudOrganizationId
-                : undefined,
-              runtimeVersion: lockfileEntry
-                ? registrationSummary(lockfileEntry).runtimeVersion
-                : undefined,
+              organizationId: lockfileEntryOrganizationId(lockfileEntry),
+              runtimeVersion: entryRuntimeVersion(lockfileEntry),
               runtimeUrl: lockfileEntry
                 ? getGatewayUrl(lockfileEntry)
                 : undefined,
-              cloudAssistantId: lockfileEntry
-                ? registrationSummary(lockfileEntry).cloudAssistantId
-                : undefined,
+              cloudAssistantId: entryCloudAssistantId(lockfileEntry),
               isActiveLockfileAssistant: lockfileEntry
                 ? getEffectiveActiveLockfileAssistantId(getServedLockfile()) ===
                   assistant.id

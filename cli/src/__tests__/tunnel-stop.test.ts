@@ -45,12 +45,10 @@ beforeEach(() => {
     assistantId: "fixture",
     name: "fixture",
     cloud: "local",
-    resources: {
-      instanceDir: join(root, "instance"),
-      gatewayPort: 7830,
-      daemonPort: 7821,
-      cesPort: 8090,
-    },
+    instanceDir: join(root, "instance"),
+    port: 7830,
+    daemonPort: 7821,
+    cesPort: 8090,
   });
   writeFileSync(
     join(workspace, "config.json"),

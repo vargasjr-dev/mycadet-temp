@@ -66,12 +66,10 @@ async function fixture() {
   const entry: LockfileAssistant = {
     assistantId: "test",
     cloud: "local",
-    resources: {
-      instanceDir: root,
-      daemonPort: 7821,
-      gatewayPort: 7831,
-      cesPort: 7790,
-    },
+    instanceDir: root,
+    daemonPort: 7821,
+    port: 7831,
+    cesPort: 7790,
   };
   return { dir, root, entry, file: join(dir, "backup.tar.gz") };
 }
@@ -88,7 +86,7 @@ describe("root tar backup", () => {
     await mkdir(destination);
     const fresh = {
       ...entry,
-      resources: { ...entry.resources!, instanceDir: destination },
+      instanceDir: destination,
     };
     await initializeRootArchive(fresh, file);
     expect(
@@ -105,7 +103,9 @@ describe("root tar backup", () => {
     expect(
       await readFile(join(destination, "ces-data", "grants.json"), "utf8"),
     ).toBe("CES policies");
-    expect((await readdir(destination)).sort()).toEqual([...STATE_ROOTS].sort());
+    expect((await readdir(destination)).sort()).toEqual(
+      [...STATE_ROOTS].sort(),
+    );
   });
 
   test("initialization refuses running services before replacing any roots", async () => {

@@ -20,7 +20,7 @@ let activeAssistant = {
   assistantId: RUNTIME_ASSISTANT_ID,
   cloud: "local",
   organizationId: ORGANIZATION_ID,
-  resources: { gatewayPort: 20101 },
+  port: 20101,
 };
 let isLocalClientValue = true;
 let selfHostedIngressUrl: string | null = GATEWAY_URL;
@@ -148,7 +148,7 @@ beforeEach(() => {
     assistantId: RUNTIME_ASSISTANT_ID,
     cloud: "local",
     organizationId: ORGANIZATION_ID,
-    resources: { gatewayPort: 20101 },
+    port: 20101,
   };
   isLocalClientValue = true;
   selfHostedIngressUrl = GATEWAY_URL;

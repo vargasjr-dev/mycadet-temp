@@ -23,12 +23,10 @@ const entry: config.LockfileAssistant & { runtimeUrl: string } = {
   assistantId: "alpha",
   cloud: "local",
   runtimeUrl: "http://127.0.0.1:1",
-  resources: {
-    instanceDir: root,
-    daemonPort: 1,
-    gatewayPort: 2,
-    cesPort: 3,
-  },
+  instanceDir: root,
+  daemonPort: 1,
+  port: 2,
+  cesPort: 3,
 };
 mkdirSync(join(root, "gateway-security"), { recursive: true });
 writeFileSync(

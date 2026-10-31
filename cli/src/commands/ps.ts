@@ -10,7 +10,7 @@ import {
 } from "@mycadet/service-contracts/ingress";
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
-import { isLocalRuntimeEntry, resolveLogDir } from "@mycadet/local-mode";
+import { resolveLogDir } from "@mycadet/local-mode";
 
 import {
   extractHostFromEntry,
@@ -19,7 +19,6 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   getDaemonPidPath,
-  getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   readRootProcesses,
@@ -44,8 +43,6 @@ import {
   parseRemotePs,
   readPidFile,
 } from "../lib/process-utils";
-import { pgrepExact } from "../lib/pgrep";
-import { probePort } from "../lib/port-probe";
 import { withStatusEmoji } from "../lib/status-emoji";
 import { execOutput } from "../lib/step-runner";
 import {
@@ -249,148 +246,7 @@ async function getRemoteProcessesCustom(
   });
 }
 
-interface ProcessSpec {
-  name: string;
-  pgrepName: string;
-  port: number;
-  pidFile: string;
-}
-
-interface DetectedProcess {
-  name: string;
-  pid: string | null;
-  port: number;
-  running: boolean;
-  watch: boolean;
-}
-
 const LOCAL_CMD_TIMEOUT_MS = 5_000;
-
-async function isWatchMode(pid: string): Promise<boolean> {
-  try {
-    const args = await execOutput("ps", ["-p", pid, "-o", "args="], {
-      timeoutMs: LOCAL_CMD_TIMEOUT_MS,
-    });
-    return args.includes("--watch");
-  } catch {
-    return false;
-  }
-}
-
-async function detectProcess(spec: ProcessSpec): Promise<DetectedProcess> {
-  // Tier 1: pgrep by process title
-  const pids = await pgrepExact(spec.pgrepName);
-  if (pids.length > 0) {
-    const watch = await isWatchMode(pids[0]);
-    return {
-      name: spec.name,
-      pid: pids[0],
-      port: spec.port,
-      running: true,
-      watch,
-    };
-  }
-
-  // Tier 2: TCP port probe (skip for processes without a port)
-  const listening = spec.port > 0 && (await probePort(spec.port));
-  if (listening) {
-    const filePid = readPidFile(spec.pidFile);
-    const watch = filePid ? await isWatchMode(filePid) : false;
-    return {
-      name: spec.name,
-      pid: filePid,
-      port: spec.port,
-      running: true,
-      watch,
-    };
-  }
-
-  // Tier 3: PID file fallback
-  const filePid = readPidFile(spec.pidFile);
-  if (filePid && isPidAlive(filePid)) {
-    const watch = await isWatchMode(filePid);
-    return {
-      name: spec.name,
-      pid: filePid,
-      port: spec.port,
-      running: true,
-      watch,
-    };
-  }
-
-  return {
-    name: spec.name,
-    pid: null,
-    port: spec.port,
-    running: false,
-    watch: false,
-  };
-}
-
-function formatDetectionInfo(proc: DetectedProcess): string {
-  const parts: string[] = [];
-  if (proc.pid) parts.push(`PID ${proc.pid}`);
-  if (proc.port > 0) parts.push(`port ${proc.port}`);
-  if (proc.watch) parts.push("watch");
-  return parts.join(" | ");
-}
-
-async function getLocalProcesses(
-  entry: LockfileAssistant,
-): Promise<TableRow[]> {
-  if (!isLocalRuntimeEntry(entry)) {
-    return [];
-  }
-  const resources = entry.resources;
-  if (!resources) {
-    throw new Error(
-      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
-    );
-  }
-  const cadetDir = getLocalInstanceDir(resources);
-  const gatewayUrl = getGatewayUrl(entry);
-  const token = loadGuardianToken(entry.assistantId)?.accessToken;
-
-  // Preferred path: the gateway's /v1/ps returns the daemon's REAL process
-  // tree (assistant + every child it owns, built from the OS process table)
-  // with the gateway's own entry appended — no hard-coded subsystem list to
-  // drift out of sync with what the assistant actually spawns.
-  const tree = gatewayUrl ? await fetchGatewayPs(gatewayUrl, token) : null;
-
-  // When the gateway can't answer, report one honest row (the cloud arm's
-  // shape) — local processes ride the daemon's process-tree API, same as
-  // cloud processes ride the cloud api.
-  const rows: TableRow[] =
-    tree && tree.length > 0
-      ? flattenProcessTree(tree)
-      : [
-          {
-            name: "assistant",
-            type: ASSISTANT_TYPE,
-            status: withStatusEmoji(tree ? "not running" : "unreachable"),
-            info: tree
-              ? "the gateway reported no processes — is the daemon running?"
-              : "could not reach the gateway's process tree — is the assistant running?",
-          },
-        ];
-
-  // The credential-executor is a CLI-spawned SIBLING (not a daemon child),
-  // so the daemon's process tree can never report it — detect it here.
-  const ces = await detectProcess({
-    name: "credential-executor",
-    pgrepName: "credential-executor",
-    port: 0,
-    pidFile: join(cadetDir, "ces.pid"),
-  });
-  rows.push({
-    name: "credential-executor",
-    type: ASSISTANT_TYPE,
-    status: withStatusEmoji(ces.running ? "running" : "not running"),
-    info: ces.running ? formatDetectionInfo(ces) : "not detected",
-  });
-
-  return rows;
-}
 
 async function getDockerContainerState(
   containerName: string,
@@ -467,7 +323,7 @@ async function getDockerProcesses(
 
 function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "local") {
-    return entry.resources?.instanceDir ?? "unknown — no instance dir recorded";
+    return entry.instanceDir ?? "unknown — no instance dir recorded";
   }
   if (entry.cloud === "docker") {
     return `docker container ${dockerResourceNames(entry.assistantId).assistantContainer}`;
@@ -484,7 +340,19 @@ async function getAssistantProcessRows(
   console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
-    return getLocalProcesses(entry);
+    const gatewayUrl = getGatewayUrl(entry);
+    const token = loadGuardianToken(entry.assistantId)?.accessToken;
+    const tree = await fetchGatewayPs(gatewayUrl, token);
+    return tree && tree.length > 0
+      ? flattenProcessTree(tree)
+      : [
+          {
+            name: "assistant",
+            type: ASSISTANT_TYPE,
+            status: withStatusEmoji("unreachable"),
+            info: "could not reach the gateway's process tree — is the assistant running?",
+          },
+        ];
   }
 
   if (cloud === "docker") {
@@ -732,11 +600,8 @@ type AssistantHealth = {
 async function getAssistantListHealth(
   entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
-  const resources = entry.cloud === "local" ? entry.resources : undefined;
-  if (entry.cloud === "local" && resources) {
-    // TODO(ATL-306): Remove readPidFile/getDaemonPidPath in favor of
-    // fetching daemon PIDs via the health API (Gateway Security Migration).
-    const pid = readPidFile(getDaemonPidPath(resources));
+  if (entry.cloud === "local") {
+    const pid = readPidFile(getDaemonPidPath(entry));
     const alive = pid !== null && isPidAlive(pid);
     if (!alive) {
       return { status: "sleeping", detail: null };

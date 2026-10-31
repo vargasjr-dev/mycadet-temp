@@ -74,7 +74,6 @@ export type {
   Lockfile,
   LockfileAssistant,
   LocalAssistant,
-  LocalAssistantResources,
   LocalRuntimeAssistant,
   DockerAssistant,
   AppleContainerAssistant,

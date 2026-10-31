@@ -200,7 +200,7 @@ export interface LocalTunnelTarget {
 
 /**
  * Map an entry to its local tunnel target, or null when it has no locally
- * reachable gateway (e.g. cloud-hosted). Entries with `resources` carry
+ * reachable gateway (e.g. cloud-hosted). On-machine entries carry
  * their own gateway port and instance workspace. Local container entries
  * (docker, apple-container) run locally without host resources: their
  * gateway port comes from their recorded runtime url and their ingress
@@ -209,8 +209,8 @@ export interface LocalTunnelTarget {
 export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
-  if (isLocalRuntimeEntry(entry) && entry.resources?.instanceDir) {
-    return { entry, gatewayPort: entry.resources.gatewayPort };
+  if (isLocalRuntimeEntry(entry) && entry.instanceDir) {
+    return { entry, gatewayPort: entry.port ?? GATEWAY_PORT };
   }
   if (isLocalContainerEntry(entry)) {
     const gatewayPort = getLoopbackGatewayPort(entry);

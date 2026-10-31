@@ -1,12 +1,18 @@
 import { describe, expect, test } from "bun:test";
 
-import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
+import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
 import { gatewayCliInvocation } from "../local.js";
 
-function fakeResources(instanceDir: string): LocalAssistantResources {
-  // gatewayCliInvocation only reads instanceDir; the rest of the resources
-  // shape is irrelevant here.
-  return { instanceDir, daemonPort: 0, gatewayPort: 0 };
+function fakeEntry(instanceDir: string): LocalRuntimeAssistant {
+  // gatewayCliInvocation only reads the recorded paths; the rest of the
+  // entry shape is irrelevant here.
+  return {
+    assistantId: "asst_gateway-cli",
+    cloud: "local",
+    instanceDir,
+    port: 0,
+    daemonPort: 0,
+  };
 }
 
 describe("gatewayCliInvocation", () => {
@@ -18,7 +24,7 @@ describe("gatewayCliInvocation", () => {
 
   test("pins CADET_WORKSPACE_DIR to the instance dir for named instances", () => {
     const invocation = gatewayCliInvocation(
-      fakeResources("/data/assistants/testy"),
+      fakeEntry("/data/assistants/testy"),
     );
     expect(invocation.env.CADET_WORKSPACE_DIR).toBe(
       "/data/assistants/testy/workspace",
@@ -27,7 +33,7 @@ describe("gatewayCliInvocation", () => {
 
   test("pins GATEWAY_SECURITY_DIR to the instance dir for named instances", () => {
     const invocation = gatewayCliInvocation(
-      fakeResources("/data/assistants/testy"),
+      fakeEntry("/data/assistants/testy"),
     );
     expect(invocation.env.GATEWAY_SECURITY_DIR).toBe(
       "/data/assistants/testy/gateway-security",

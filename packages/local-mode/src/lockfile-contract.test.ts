@@ -12,19 +12,7 @@ import {
   SENSITIVE_KEYS,
   type Lockfile,
   type LockfileAssistant,
-  type LocalRuntimeAssistant,
 } from "./lockfile-contract";
-
-/** `resources` only exists on the local-runtime branches — narrow for assertions. */
-function resourcesOf(
-  entry: LockfileAssistant | undefined,
-): LocalRuntimeAssistant["resources"] {
-  return entry?.cloud === "local" ||
-    entry?.cloud === "docker" ||
-    entry?.cloud === "apple-container"
-    ? entry.resources
-    : undefined;
-}
 
 describe("parseLockfile", () => {
   test("passes through a fully-populated lockfile", () => {
@@ -169,7 +157,7 @@ describe("parseLockfile", () => {
     const raw = {
       assistants: [
         { assistantId: "asst_1", cloud: 7 }, // cloud not a string
-        { assistantId: "asst_2", cloud: "local", resources: "nope" }, // mistyped modeled field
+        { assistantId: "asst_2", cloud: "local", port: "nope" }, // mistyped modeled field
       ],
       activeAssistant: null,
     };
@@ -189,13 +177,14 @@ describe("parseLockfile", () => {
     expect(parseLockfile(raw).assistants).toEqual([]);
   });
 
-  test("drops an entry whose resources are mistyped", () => {
+  test("drops an entry whose runtime fields are mistyped", () => {
     const raw = {
       assistants: [
         {
           assistantId: "asst_1",
           cloud: "local",
-          resources: { gatewayPort: "7777", daemonPort: 7778 },
+          port: "7777",
+          daemonPort: 7778,
         },
       ],
       activeAssistant: null,
@@ -209,22 +198,20 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           cloud: "local",
-          resources: {
-            gatewayPort: 7777,
-            daemonPort: 7778,
-            runtimeVersion: "v0.8.13",
-            runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-          },
+          port: 7777,
+          daemonPort: 7778,
+          runtimeVersion: "v0.8.13",
+          runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
         },
       ],
       activeAssistant: null,
     };
-    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
-      gatewayPort: 7777,
-      daemonPort: 7778,
-      runtimeVersion: "v0.8.13",
-      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-    });
+    const parsed = parseLockfile(raw).assistants[0];
+    if (parsed?.cloud !== "local") throw new Error("expected a local entry");
+    expect(parsed.port).toBe(7777);
+    expect(parsed.daemonPort).toBe(7778);
+    expect(parsed.runtimeVersion).toBe("v0.8.13");
+    expect(parsed.runtimeInstallDir).toBe("/tmp/cadet/runtime/0.8.13");
   });
 
   test("the resources parse is strict over the modeled shape; secrets leave at the hosts' strip", () => {
@@ -236,21 +223,20 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           cloud: "local",
-          resources: {
-            instanceDir: "/data",
-            gatewayPort: 7777,
-            daemonPort: 7778,
-            runtimeVersion: "v0.8.13",
-            runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-            cesPort: 7780,
-          },
+          instanceDir: "/data",
+          port: 7777,
+          daemonPort: 7778,
+          runtimeVersion: "v0.8.13",
+          runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
+          cesPort: 7780,
         },
       ],
       activeAssistant: null,
     };
-    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
+    const parsed = parseLockfile(raw).assistants[0];
+    expect(parsed).toMatchObject({
       instanceDir: "/data",
-      gatewayPort: 7777,
+      port: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
@@ -258,9 +244,9 @@ describe("parseLockfile", () => {
     });
     const stripped = structuredClone(raw);
     stripSensitiveFields(stripped);
-    expect(resourcesOf(parseLockfile(stripped).assistants[0])).toEqual({
+    expect(parseLockfile(stripped).assistants[0]).toMatchObject({
       instanceDir: "/data",
-      gatewayPort: 7777,
+      port: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",

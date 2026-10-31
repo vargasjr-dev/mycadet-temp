@@ -29,12 +29,12 @@ export const createBundleHostProvider = (
     const entry = assistants.find(
       (assistant) => assistant.assistantId === activeAssistant,
     );
-    if (!entry || !isLocalRuntimeEntry(entry) || !entry.resources?.gatewayPort) {
+    if (!entry || !isLocalRuntimeEntry(entry) || !entry.port) {
       return null;
     }
     return {
       assistantId: entry.assistantId,
-      port: entry.resources.gatewayPort,
+      port: entry.port,
     };
   },
   acquireGatewayToken: async (assistantId) => {

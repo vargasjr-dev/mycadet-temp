@@ -106,12 +106,10 @@ function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
             assistantId: "sleep-test",
             runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
             cloud: "local",
-            resources: {
-              instanceDir: testDir,
-              daemonPort: DEFAULT_DAEMON_PORT,
-              gatewayPort: DEFAULT_GATEWAY_PORT,
-              cesPort: DEFAULT_CES_PORT,
-            },
+            instanceDir: testDir,
+            daemonPort: DEFAULT_DAEMON_PORT,
+            port: DEFAULT_GATEWAY_PORT,
+            cesPort: DEFAULT_CES_PORT,
             ...extraEntryFields,
           },
         ],
@@ -276,12 +274,10 @@ describe("sleep command", () => {
   describe("--wait", () => {
     test("runs the drain phase against the recorded gateway port before stopping", async () => {
       writeLockfile({
-        resources: {
-          instanceDir: testDir,
-          daemonPort: 8501,
-          gatewayPort: 9999,
-          cesPort: DEFAULT_CES_PORT,
-        },
+        instanceDir: testDir,
+        daemonPort: 8501,
+        port: 9999,
+        cesPort: DEFAULT_CES_PORT,
       });
       isProcessAliveMock.mockReturnValue({ alive: true, pid: 4321 });
       process.argv = ["bun", "cadet", "sleep", "sleep-test", "--wait"];
@@ -406,23 +402,19 @@ describe("sleep command", () => {
                 assistantId: "sleep-all-1",
                 runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
                 cloud: "local",
-                resources: {
-                  instanceDir: join(testDir, "instance-1"),
-                  daemonPort: DEFAULT_DAEMON_PORT,
-                  gatewayPort: DEFAULT_GATEWAY_PORT,
-                  cesPort: DEFAULT_CES_PORT,
-                },
+                instanceDir: join(testDir, "instance-1"),
+                daemonPort: DEFAULT_DAEMON_PORT,
+                port: DEFAULT_GATEWAY_PORT,
+                cesPort: DEFAULT_CES_PORT,
               },
               {
                 assistantId: "sleep-all-2",
                 runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
                 cloud: "local",
-                resources: {
-                  instanceDir: join(testDir, "instance-2"),
-                  daemonPort: DEFAULT_DAEMON_PORT,
-                  gatewayPort: DEFAULT_GATEWAY_PORT,
-                  cesPort: DEFAULT_CES_PORT,
-                },
+                instanceDir: join(testDir, "instance-2"),
+                daemonPort: DEFAULT_DAEMON_PORT,
+                port: DEFAULT_GATEWAY_PORT,
+                cesPort: DEFAULT_CES_PORT,
               },
             ],
             activeAssistant: "sleep-all-1",

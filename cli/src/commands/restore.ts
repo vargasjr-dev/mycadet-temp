@@ -18,6 +18,7 @@ import {
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
+  requireReadyRuntimeEntry,
   generateLocalSecret,
   startCes,
   startLocalDaemon,
@@ -478,17 +479,10 @@ async function recoverFromArchive(name: string): Promise<void> {
       `Retired assistant '${name}' is not a local assistant; only local archives can be restored.`,
     );
   }
-  if (!entry.resources) {
-    throw new Error(
-      `Retired assistant '${name}' is missing resource configuration. ` +
-        `Fix the archive metadata at ${metadataPath} and retry, ` +
-        `or run 'cadet hatch' to re-provision with proper resource allocation.`,
-    );
-  }
-  const resources = entry.resources;
+  requireReadyRuntimeEntry(entry);
 
   // Check that the recovering entry's own target directory is free.
-  const target = getLocalInstanceDir(resources);
+  const target = getLocalInstanceDir(entry);
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -507,7 +501,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   // Correct restoration: extract to retiredDir, then rename the staging entry
   // back to the original target path. Using homedir() as the -C target was
   // wrong for any instance stored outside the home directory.
-  const targetDir = getLocalInstanceDir(resources);
+  const targetDir = getLocalInstanceDir(entry);
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
@@ -522,9 +516,9 @@ async function recoverFromArchive(name: string): Promise<void> {
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([
-    startCes(false, resources),
-    startLocalDaemon(false, resources),
-    startGateway(false, resources, { bootstrapSecret }),
+    startCes(false, entry),
+    startLocalDaemon(false, requireReadyRuntimeEntry(entry)),
+    startGateway(false, entry, { bootstrapSecret }),
   ]);
 
   unlinkSync(archivePath);

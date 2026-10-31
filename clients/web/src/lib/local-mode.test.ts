@@ -128,7 +128,8 @@ afterEach(() => {
 const localA: LockfileAssistant = {
   assistantId: "local-a",
   cloud: "local",
-  resources: { gatewayPort: 7830, daemonPort: 7831 },
+  port: 7830,
+  daemonPort: 7831,
 } as LockfileAssistant;
 
 const platform: LockfileAssistant = {
@@ -210,9 +211,7 @@ describe("served config synthesis", () => {
     stampServed({ assistantId: "served-1" });
 
     const entry = getServedLockfile().assistants[0];
-    expect(
-      entry?.cloud === "local" ? entry.resources?.gatewayPort : undefined,
-    ).toBe(0);
+    expect(entry?.cloud === "local" ? entry.port : undefined).toBe(0);
   });
 
   test("getActiveAssistant is the served entry; nothing when unstamped", () => {
@@ -631,7 +630,7 @@ describe("hasLocalGateway", () => {
     const docker = {
       assistantId: "dk",
       cloud: "docker",
-      resources: { gatewayPort: 7930 },
+      port: 7930,
     } as LockfileAssistant;
     expect(hasLocalGateway(docker)).toBe(true);
   });
@@ -641,7 +640,7 @@ describe("hasLocalGateway", () => {
     const docker = {
       assistantId: "dk",
       cloud: "docker",
-      resources: { gatewayPort: 7931 },
+      port: 7931,
     } as LockfileAssistant;
     expect(hasLocalGateway(docker)).toBe(true);
   });
@@ -651,7 +650,7 @@ describe("hasLocalGateway", () => {
     const entry = {
       assistantId: "x",
       cloud: "local",
-      resources: { gatewayPort: 7830 },
+      port: 7830,
     } as LockfileAssistant;
     expect(hasLocalGateway(entry)).toBe(true);
   });
@@ -708,7 +707,7 @@ describe("hasGatewayAddress", () => {
     const local = {
       assistantId: "p",
       cloud: "local",
-      resources: { gatewayPort: 8787 },
+      port: 8787,
     } as LockfileAssistant;
     expect(hasGatewayAddress(local)).toBe(true);
   });

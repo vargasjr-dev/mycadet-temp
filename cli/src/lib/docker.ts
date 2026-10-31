@@ -15,10 +15,7 @@ import { dirname, join, resolve } from "path";
 import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
-import {
-  isDockerEntry,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
+import { isDockerEntry, saveLockfileAssistant } from "@mycadet/local-mode";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
@@ -1011,11 +1008,8 @@ export async function recreateDockerContainers(
   // reach the right endpoints.
   saveLockfileAssistant({
     ...entry,
-    resources: {
-      ...entry.resources,
-      gatewayPort,
-      daemonPort: entry.resources?.daemonPort ?? assistantPort,
-    },
+    port: gatewayPort,
+    daemonPort: entry.daemonPort ?? assistantPort,
     containerInfo: { ...info, assistantPort },
   });
 }
@@ -1688,7 +1682,8 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const gatewayUrl = `http://localhost:${gatewayPort}`;
     const dockerEntry: LockfileAssistant = {
       assistantId: instanceName,
-      resources: { gatewayPort, daemonPort: assistantPort },
+      port: gatewayPort,
+      daemonPort: assistantPort,
       cloud: "docker",
       hatchedAt: new Date().toISOString(),
       guardianBootstrapSecret: ownSecret,

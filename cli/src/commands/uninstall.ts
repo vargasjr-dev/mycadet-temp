@@ -36,13 +36,12 @@ async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
     await retireDocker(entry.assistantId);
     return;
   }
-  const resources = isLocalRuntimeEntry(entry) ? entry.resources : undefined;
-  if (!resources) return;
+  if (!isLocalRuntimeEntry(entry)) return;
   await stopProcessByPidFile(
-    join(getLocalInstanceDir(resources), "gateway.pid"),
+    join(getLocalInstanceDir(entry), "gateway.pid"),
     "gateway",
   );
-  await stopProcessByPidFile(getDaemonPidPath(resources), "assistant");
+  await stopProcessByPidFile(getDaemonPidPath(entry), "assistant");
 }
 
 /** A directory (or file) scheduled for deletion, with what it holds. */

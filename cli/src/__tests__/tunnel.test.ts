@@ -30,10 +30,7 @@ import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import {
-  isLocalRuntimeEntry,
-  resolveLogDir,
-} from "@mycadet/local-mode";
+import { isLocalRuntimeEntry, resolveLogDir } from "@mycadet/local-mode";
 import {
   readRootProcesses,
   stampRootProcess,
@@ -135,12 +132,10 @@ function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
   return {
     assistantId,
     cloud: "local",
-    resources: {
-      instanceDir,
-      daemonPort: 7821,
-      gatewayPort: 7830,
-      cesPort: 7822,
-    },
+    instanceDir,
+    daemonPort: 7821,
+    port: 7830,
+    cesPort: 7822,
   };
 }
 
@@ -156,16 +151,19 @@ function makeDockerEntry(assistantId = "docker-1"): LockfileAssistant {
   return {
     assistantId,
     cloud: "docker",
-    resources: { gatewayPort: 7930, daemonPort: 7821 },
+    port: 7930,
+    daemonPort: 7821,
   };
 }
 
-/** A macOS-app-managed entry: local container gateway, no `resources`. */
+/** A macOS-app-managed entry: the container rides the macOS app's socket. */
 function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
   return {
     assistantId,
     cloud: "apple-container",
-    resources: { gatewayPort: 8030, daemonPort: 7821 },
+    port: 8030,
+    daemonPort: 7821,
+    mgmtSocket: "/tmp/fake-mgmt.sock",
   };
 }
 
@@ -174,10 +172,10 @@ function writeEntryWorkspaceConfig(
   entry: LockfileAssistant,
   config: Record<string, unknown>,
 ): string {
-  if (!isLocalRuntimeEntry(entry) || !entry.resources) {
+  if (!isLocalRuntimeEntry(entry)) {
     throw new Error("expected a local-runtime entry");
   }
-  const workspaceDir = join(getLocalInstanceDir(entry.resources), "workspace");
+  const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
   mkdirSync(workspaceDir, { recursive: true });
   writeFileSync(
     join(workspaceDir, "config.json"),
@@ -429,7 +427,8 @@ describe("app server targeting", () => {
         {
           assistantId: "docker-1",
           cloud: "docker",
-          resources: { gatewayPort: 7930, daemonPort: 7821 },
+          port: 7930,
+          daemonPort: 7821,
         },
       ],
       "docker-1",

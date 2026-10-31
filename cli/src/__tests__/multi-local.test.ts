@@ -3,12 +3,12 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Create a temp directory that acts as a fake home, so allocateLocalResources()
+// Create a temp directory that acts as a fake home, so allocateLocalPlacement()
 // never touches the real ~/.cadet directory.
 const testDir = mkdtempSync(join(tmpdir(), "cli-multi-local-test-"));
 process.env.XDG_CONFIG_HOME = testDir;
 
-// Mock homedir() to return testDir — this isolates allocateLocalResources()
+// Mock homedir() to return testDir — this isolates allocateLocalPlacement()
 // which uses homedir() directly for instance directory creation.
 await mockOsHomedir(() => () => testDir);
 
@@ -21,7 +21,7 @@ mock.module("../lib/port-probe.js", () => ({
 }));
 
 import {
-  allocateLocalResources,
+  allocateLocalPlacement,
   resolveTargetAssistant,
   setActiveAssistant,
   getActiveAssistant,
@@ -70,7 +70,7 @@ describe("multi-local", () => {
     probePortMock.mockImplementation(() => Promise.resolve(false));
   });
 
-  describe("allocateLocalResources() produces non-conflicting ports", () => {
+  describe("allocateLocalPlacement() produces non-conflicting ports", () => {
     test("first instance (prod) gets XDG multi-instance dir with default ports", async () => {
       // GIVEN XDG_DATA_HOME points at a scratch directory and no local
       // assistants exist in the lockfile
@@ -79,7 +79,7 @@ describe("multi-local", () => {
       process.env.XDG_DATA_HOME = xdgDataHome;
       try {
         // WHEN we allocate resources for the first instance
-        const res = await allocateLocalResources("instance-a");
+        const res = await allocateLocalPlacement("instance-a");
 
         // THEN it lands under the XDG multi-instance dir (no "first = home"
         // special case anymore)
@@ -89,7 +89,7 @@ describe("multi-local", () => {
 
         // AND it gets the default ports since no other instances exist
         expect(res.daemonPort).toBe(DEFAULT_DAEMON_PORT);
-        expect(res.gatewayPort).toBe(DEFAULT_GATEWAY_PORT);
+        expect(res.port).toBe(DEFAULT_GATEWAY_PORT);
       } finally {
         if (prevXdg !== undefined) {
           process.env.XDG_DATA_HOME = prevXdg;
@@ -109,7 +109,7 @@ describe("multi-local", () => {
       process.env.XDG_DATA_HOME = xdgDataHome;
       try {
         // WHEN we allocate resources for the first instance
-        const res = await allocateLocalResources("instance-a");
+        const res = await allocateLocalPlacement("instance-a");
 
         // THEN it lands under the env-scoped multi-instance dir
         expect(res.instanceDir).toBe(
@@ -140,9 +140,9 @@ describe("multi-local", () => {
       process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = xdgDataHome;
       try {
-        const res = await allocateLocalResources("dev-a");
+        const res = await allocateLocalPlacement("dev-a");
         expect(res.daemonPort).toBe(18000);
-        expect(res.gatewayPort).toBe(18100);
+        expect(res.port).toBe(18100);
         expect(res.cesPort).toBe(18300);
       } finally {
         if (prevEnv !== undefined) {
@@ -173,11 +173,13 @@ describe("multi-local", () => {
       );
 
       // WHEN we allocate resources for a second instance
-      const b = await allocateLocalResources("instance-b");
+      const b = await allocateLocalPlacement("instance-b");
 
       // THEN the second instance gets non-default ports
+      if (b.daemonPort === undefined || b.port === undefined)
+        throw new Error("expected a fully-allocated placement");
       expect(occupiedPorts.has(b.daemonPort)).toBe(false);
-      expect(occupiedPorts.has(b.gatewayPort)).toBe(false);
+      expect(occupiedPorts.has(b.port)).toBe(false);
 
       // AND it gets its own dedicated instance directory
       expect(b.instanceDir).toContain("instance-b");
@@ -197,9 +199,11 @@ describe("multi-local", () => {
       );
 
       // WHEN we allocate resources for a new instance
-      const res = await allocateLocalResources("probe-test");
+      const res = await allocateLocalPlacement("probe-test");
 
       // THEN the daemon port skips all occupied ports
+      if (res.daemonPort === undefined)
+        throw new Error("expected an allocated daemon port");
       expect(res.daemonPort).toBeGreaterThan(DEFAULT_DAEMON_PORT + 1);
       expect(portsInUse.has(res.daemonPort)).toBe(false);
     });
@@ -214,9 +218,9 @@ describe("multi-local", () => {
     });
 
     test("active assistant set returns the active entry", () => {
-            makeEntry({ assistantId: "alpha" });
-        makeEntry({ assistantId: "beta" });
-        setActiveAssistant("alpha");
+      makeEntry({ assistantId: "alpha" });
+      makeEntry({ assistantId: "beta" });
+      setActiveAssistant("alpha");
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("alpha");
     });
@@ -277,17 +281,17 @@ describe("multi-local", () => {
 
   describe("removeLockfileAssistant() reassigns activeAssistant on removal", () => {
     test("set active to foo, remove foo, verify active is reassigned to bar", () => {
-            makeEntry({ assistantId: "foo" });
-        makeEntry({ assistantId: "bar" });
-        setActiveAssistant("foo");
+      makeEntry({ assistantId: "foo" });
+      makeEntry({ assistantId: "bar" });
+      setActiveAssistant("foo");
       removeLockfileAssistant("foo");
       expect(getActiveAssistant()).toBe("bar");
     });
 
     test("set active to foo, remove bar, verify active is still foo", () => {
-            makeEntry({ assistantId: "foo" });
-        makeEntry({ assistantId: "bar" });
-        setActiveAssistant("foo");
+      makeEntry({ assistantId: "foo" });
+      makeEntry({ assistantId: "bar" });
+      setActiveAssistant("foo");
       removeLockfileAssistant("bar");
       expect(getActiveAssistant()).toBe("foo");
     });
@@ -295,15 +299,25 @@ describe("multi-local", () => {
 
   describe("remote non-regression", () => {
     test("resolveTargetAssistant works with remote entries", () => {
-            makeEntry({ assistantId: "my-remote", cloud: "custom" });
-        setActiveAssistant("my-remote");
+      makeEntry({
+        assistantId: "my-remote",
+        cloud: "custom",
+        ipAddress: "10.0.0.4",
+        port: 7831,
+      });
+      setActiveAssistant("my-remote");
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("my-remote");
       expect(result.cloud).toBe("custom");
     });
 
     test("remote entries don't get resources applied", () => {
-      makeEntry({ assistantId: "cloud-box", cloud: "custom" });
+      makeEntry({
+        assistantId: "cloud-box",
+        cloud: "custom",
+        ipAddress: "10.0.0.5",
+        port: 7831,
+      });
       const remoteEntry = readEntry("cloud-box");
       // Save and reload to verify resources are not injected
       saveLockfileAssistant(remoteEntry!);
@@ -312,7 +326,7 @@ describe("multi-local", () => {
         result.cloud === "local" ||
           result.cloud === "docker" ||
           result.cloud === "apple-container"
-          ? result.resources
+          ? result.instanceDir
           : undefined,
       ).toBeUndefined();
     });

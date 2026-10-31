@@ -102,14 +102,14 @@ function otherAssistantPidSet(
     if (
       entry.assistantId === name &&
       isLocalRuntimeEntry(entry) &&
-      entry.resources?.instanceDir === instanceDir
+      entry.instanceDir === instanceDir
     ) {
       continue;
     }
-    if (entry.cloud === "local" && entry.resources) {
-      const stateDir = getLocalInstanceDir(entry.resources);
+    if (entry.cloud === "local") {
+      const stateDir = getLocalInstanceDir(entry);
       const candidates = [
-        getDaemonPidPath(entry.resources),
+        getDaemonPidPath(entry),
         join(stateDir, "gateway.pid"),
         join(stateDir, "workspace", "data", "qdrant", "qdrant.pid"),
         join(stateDir, "workspace", "embed-worker.pid"),
@@ -133,21 +133,16 @@ export async function retireLocal(
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
 
-  if (!isLocalEntry(entry) || !entry.resources) {
-    throw new Error(
-      `Local assistant '${name}' is missing resource configuration. Re-hatch to fix.`,
-    );
+  if (!isLocalEntry(entry)) {
+    throw new Error(`'${name}' is not a local assistant.`);
   }
-  const resources = entry.resources;
-  const cadetDir = getLocalInstanceDir(resources);
+  const cadetDir = getLocalInstanceDir(entry);
 
   // Check whether another local assistant shares the same data directory.
   const otherSharesDir = loadAllAssistants().some((other) => {
     if (other.cloud !== "local") return false;
     if (other.assistantId === name) return false;
-    if (!other.resources) return false;
-    const otherCadetDir = other.resources.instanceDir;
-    return otherCadetDir === cadetDir;
+    return other.instanceDir === cadetDir;
   });
 
   if (otherSharesDir) {
@@ -158,7 +153,7 @@ export async function retireLocal(
     return { assistantId: name, archived: false, sharedDataDir: true };
   }
 
-  const daemonPidFile = getDaemonPidPath(resources);
+  const daemonPidFile = getDaemonPidPath(entry);
   const daemonStopped = await stopProcessByPidFile(
     daemonPidFile,
     "daemon",
@@ -189,13 +184,13 @@ export async function retireLocal(
     const otherAssistantPids = otherAssistantPidSet(
       loadAllAssistants(),
       name,
-      resources.instanceDir ?? "",
+      entry.instanceDir ?? "",
     );
     await stopOrphanedDaemonProcesses(otherAssistantPids);
   }
 
   // Archive and remove the entire instance directory.
-  const dirToArchive = getLocalInstanceDir(resources);
+  const dirToArchive = getLocalInstanceDir(entry);
 
   // Move the data directory out of the way so the path is immediately available
   // for the next hatch, then kick off the tar archive in the background.

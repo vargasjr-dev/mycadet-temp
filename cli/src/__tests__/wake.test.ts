@@ -234,12 +234,10 @@ function makeLocalEntry(): LocalAssistant {
   return {
     assistantId: "local-assistant",
     cloud: "local",
-    resources: {
-      instanceDir: tempDir,
-      daemonPort: 7821,
-      gatewayPort: 7830,
-      cesPort: 7822,
-    },
+    instanceDir: tempDir,
+    daemonPort: 7821,
+    port: 7830,
+    cesPort: 7822,
   };
 }
 
@@ -615,7 +613,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
@@ -689,7 +688,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -720,7 +720,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     stampRecordedAppServer();
     isIngressRunningMock.mockReturnValue(true);
@@ -760,7 +761,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     stampRecordedAppServer();
     ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
@@ -795,7 +797,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     stampRecordedAppServer();
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -822,7 +825,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     stampRecordedAppServer();
     waitForDaemonReadyMock.mockImplementation(async () => false);
@@ -853,7 +857,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -881,7 +886,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     loadAllAssistantsMock.mockReturnValue([
       {
@@ -914,7 +920,8 @@ describe("cadet wake — app server restore", () => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: 7930, daemonPort: 7821 },
+      port: 7930,
+      daemonPort: 7821,
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1123,12 +1130,10 @@ describe("cadet wake — app server restore", () => {
       return {
         assistantId,
         cloud: "local",
-        resources: {
-          instanceDir,
-          daemonPort: 7821,
-          gatewayPort: 7830,
-          cesPort: 7822,
-        },
+        instanceDir,
+        daemonPort: 7821,
+        port: 7830,
+        cesPort: 7822,
       };
     }
 

@@ -14,7 +14,8 @@ describe("servedConfigFromLockfile", () => {
           cloud: "docker",
           bearerToken: "example-host-token",
           guardianBootstrapSecret: "example-bootstrap-secret",
-          resources: { gatewayPort: 7830, daemonPort: 7831 },
+          port: 7830,
+          daemonPort: 7831,
         },
       ],
       activeAssistant: "active",
@@ -26,9 +27,9 @@ describe("servedConfigFromLockfile", () => {
       remote: "docker",
     });
     const entry = lockfile.assistants[1];
-    expect(
-      entry?.cloud === "docker" ? entry.bearerToken : undefined,
-    ).toBe("example-host-token");
+    expect(entry?.cloud === "docker" ? entry.bearerToken : undefined).toBe(
+      "example-host-token",
+    );
   });
 
   test("uses the sole entry when no active entry matches", () => {

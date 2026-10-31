@@ -1,18 +1,20 @@
 import { describe, expect, test } from "bun:test";
 
+import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
-import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { ensureLocalRuntime } from "../lib/local.js";
 
 // Only `instanceDir` is read, and only after the validation guard passes —
 // invalid versions throw before any filesystem access, so a minimal stub is
 // sufficient for the rejection cases.
-const resources = {
+const entry = {
+  assistantId: "asst_version-guard",
+  cloud: "local" as const,
   instanceDir: "/tmp/cadet-nonexistent-instance",
+  port: 0,
   daemonPort: 0,
-  gatewayPort: 0,
-} satisfies LocalAssistantResources;
+};
 
 const VALID_VERSIONS = ["latest", "v1.2.3", "1.2.3", "0.6.0-staging.5"];
 const MALICIOUS_VERSIONS = [
@@ -36,9 +38,12 @@ describe("ensureLocalRuntime version guard", () => {
 
   test("throws before any install for untrusted versions", () => {
     for (const version of MALICIOUS_VERSIONS) {
-      expect(() => ensureLocalRuntime(resources, version)).toThrow(
-        `Invalid runtime version '${version}'`,
-      );
+      expect(() =>
+        ensureLocalRuntime(
+          entry as LocalRuntimeAssistant & { daemonPort: number },
+          version,
+        ),
+      ).toThrow(`Invalid runtime version '${version}'`);
     }
   });
 });

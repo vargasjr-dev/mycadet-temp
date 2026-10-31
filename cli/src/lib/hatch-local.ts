@@ -16,8 +16,9 @@ import { join } from "path";
 import cliPkg from "../../package.json";
 
 import { saveLockfileAssistant, resolveLogDir } from "@mycadet/local-mode";
+import { requireReadyRuntimeEntry } from "./local.js";
 import {
-  allocateLocalResources,
+  allocateLocalPlacement,
   findAssistantByName,
   getLocalInstanceDir,
   setActiveAssistant,
@@ -215,10 +216,14 @@ export async function hatchLocal(
       );
     }
 
-    const resources = await allocateLocalResources(instanceName);
+    const entry: LockfileAssistant = {
+      assistantId: instanceName,
+      cloud: "local",
+      ...(await allocateLocalPlacement(instanceName)),
+    };
 
     const logsDir = join(
-      getLocalInstanceDir(resources),
+      getLocalInstanceDir(entry),
       "workspace",
       "data",
       "logs",
@@ -300,14 +305,7 @@ export async function hatchLocal(
       // the gateway boots with the archived signing identity.
       await (
         await import("./root-backup.js")
-      ).initializeRootArchive(
-        {
-          assistantId: instanceName,
-          cloud: "local",
-          resources,
-        },
-        params.initialArchive,
-      );
+      ).initializeRootArchive(entry, params.initialArchive);
     }
     const bootstrapSecret = generateLocalSecret();
     try {
@@ -316,8 +314,8 @@ export async function hatchLocal(
       // hatched instance would otherwise come up with CES unavailable.
       // startCes always launches the CES sibling.
       const startupResults = await Promise.allSettled([
-        startCes(watch, resources),
-        startLocalDaemon(watch, resources, {
+        startCes(watch, entry),
+        startLocalDaemon(watch, requireReadyRuntimeEntry(entry), {
           defaultWorkspaceConfigPath,
           requireReady: true,
         }),
@@ -331,7 +329,7 @@ export async function hatchLocal(
       }
 
       reporter.progress(4, 6, "Starting gateway...");
-      await startGateway(watch, resources, {
+      await startGateway(watch, entry, {
         bootstrapSecret,
         requireReady: true,
       });
@@ -340,19 +338,14 @@ export async function hatchLocal(
         `\n❌ Local assistant startup failed — stopping partial processes.`,
       );
       reporter.error(
-        `   Logs: ${join(getLocalInstanceDir(resources), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+        `   Logs: ${join(getLocalInstanceDir(entry), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
       );
-      await stopLocalProcesses(resources);
+      await stopLocalProcesses(entry);
       throw error;
     }
 
-    const entry: LockfileAssistant = {
-      assistantId: instanceName,
-      cloud: "local",
-      hatchedAt: new Date().toISOString(),
-      resources,
-      guardianBootstrapSecret: bootstrapSecret,
-    };
+    entry.hatchedAt = new Date().toISOString();
+    entry.guardianBootstrapSecret = bootstrapSecret;
 
     reporter.progress(5, 6, "Saving configuration...");
     saveLockfileAssistant(entry);
@@ -439,7 +432,7 @@ export async function hatchLocal(
     {
       name: instanceName,
       runtime: getGatewayUrl(entry),
-      root: entry.resources!.instanceDir,
+      root: entry.instanceDir,
     },
     (message) => reporter.log(message),
   );

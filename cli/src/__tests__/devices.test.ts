@@ -171,17 +171,15 @@ describe("cadet devices", () => {
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  function seedLocal(id: string, gatewayPort = 7830): void {
+  function seedLocal(id: string, port = 7830): void {
     saveLockfileAssistant({
       assistantId: id,
       name: id,
       cloud: "local",
-      resources: {
-        instanceDir: testDir,
-        gatewayPort,
-        daemonPort: 8501,
-        cesPort: 9002,
-      },
+      instanceDir: testDir,
+      port,
+      daemonPort: 8501,
+      cesPort: 9002,
     });
   }
 

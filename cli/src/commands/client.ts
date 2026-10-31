@@ -1,5 +1,4 @@
 import { isCloudHome } from "../lib/cloud-values.js";
-import { homedir } from "node:os";
 
 import {
   findAssistantByName,
@@ -11,10 +10,7 @@ import {
   resolveConversationKey,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import {
-  isLocalRuntimeEntry,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
@@ -45,30 +41,12 @@ interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
-  /** Assistant data root (home-collapsed) for the TUI details panel. */
-  workspaceRoot?: string;
   /** "cadet" for cloud-hosted assistants, undefined for local. */
   cloud?: string;
   /** Platform session token (X-Session-Token), set when isCloudHome(cloud). */
   cloudToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
-}
-
-/** Collapse the home prefix so panel paths read `~/...` instead of absolute. */
-function collapseHomeForDisplay(dir: string): string {
-  const home = homedir();
-  if (dir === home) return "~";
-  return dir.startsWith(`${home}/`) ? `~${dir.slice(home.length)}` : dir;
-}
-
-/** The assistant's data root (from the lockfile), for the TUI details panel. */
-function readWorkspaceRoot(
-  entry: LockfileAssistant | null,
-): string | undefined {
-  if (!entry || !isLocalRuntimeEntry(entry)) return undefined;
-  const instanceDir = entry.resources?.instanceDir;
-  return instanceDir ? collapseHomeForDisplay(instanceDir) : undefined;
 }
 
 // Exported for unit testing the arg/auth resolution without launching the TUI.
@@ -150,7 +128,6 @@ export function parseArgs(): ParsedArgs {
   let assistantId = entry?.assistantId ?? DAEMON_INTERNAL_ASSISTANT_ID;
   let assistantName = entry ? getAssistantDisplayName(entry) : undefined;
   const cloud = entry?.cloud;
-  const workspaceRoot = readWorkspaceRoot(entry);
 
   // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this
   // session only. Resolve it BEFORE the credential lookup below so an ephemeral
@@ -197,7 +174,6 @@ export function parseArgs(): ParsedArgs {
     runtimeUrl: normalizeRuntimeUrl(runtimeUrl),
     assistantId,
     assistantName,
-    workspaceRoot,
     cloud,
     cloudToken,
     bearerToken,
@@ -318,7 +294,6 @@ export const client = Object.assign(
       runtimeUrl,
       assistantId,
       assistantName: parsedAssistantName,
-      workspaceRoot,
       cloud,
       cloudToken,
       bearerToken,
@@ -375,7 +350,7 @@ export const client = Object.assign(
     const lookup = lookupAssistantByIdentifier(assistantId);
     const conversationKey =
       lookup.status === "found"
-        ? resolveConversationKey(lookup.entry)
+        ? resolveConversationKey(lookup.entry.assistantId)
         : undefined;
 
     const { renderChatApp } = await import("../components/DefaultMainScreen");
@@ -393,7 +368,7 @@ export const client = Object.assign(
         console.log(`${ANSI.dim}Disconnected.${ANSI.reset}`);
         process.exit(0);
       },
-      { auth, assistantName, workspaceRoot, conversationKey },
+      { auth, assistantName, conversationKey },
     );
   },
   { description: "Connect to a hatched assistant" },

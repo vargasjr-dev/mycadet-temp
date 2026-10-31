@@ -164,11 +164,9 @@ describe("saveLockfileAssistant", () => {
       assistantId: "asst_1",
       cloud: "local",
       name: "Old Name",
-      resources: {
-        instanceDir: "/tmp/x",
-        gatewayPort: 7830,
-        daemonPort: 7831,
-      },
+      instanceDir: "/tmp/x",
+      port: 7830,
+      daemonPort: 7831,
       bearerToken: "bt-on-disk-secret",
       guardianBootstrapSecret: "gb-on-disk-secret",
     };
@@ -268,7 +266,8 @@ describe("renameLockfileAssistantIfPresent", () => {
     assistantId: "asst_1",
     cloud: "local",
     name: "Old Name",
-    resources: { gatewayPort: 7830, daemonPort: 7831 },
+    port: 7830,
+    daemonPort: 7831,
     bearerToken: "bt-on-disk-secret",
   };
 
