@@ -7,7 +7,7 @@
  */
 import { readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, basename, win32 } from "node:path";
+import { basename, dirname, join, win32 } from "node:path";
 
 import {
   pathListDelimiter,
