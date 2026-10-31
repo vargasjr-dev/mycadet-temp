@@ -108,9 +108,11 @@ export function isServedGatewayRuntime(): boolean {
 }
 
 /**
- * The assistant identity stamped by the serving host: one local-kind entry
- * with a placeholder port, because the host owns routing — the renderer
- * holds no transport URL and classifies nothing as paired.
+ * The assistant identity stamped by the serving host: one entry mirroring the
+ * stamped remote. The host owns routing — the renderer holds no transport URL
+ * and classifies nothing as paired — so the entry carries only what identity
+ * readers need. A baseten stamp has no serving fields in the injected config,
+ * so it falls back to the local default the contract's own preprocessor uses.
  */
 export function getServedLockfile(): Lockfile {
   const config = readInjectedConfig();
@@ -118,16 +120,24 @@ export function getServedLockfile(): Lockfile {
   if (isCadetCloudRemote() || !assistantId) {
     return { ...EMPTY_LOCKFILE };
   }
+  const remote = config?.remote ?? "local";
+  const base = {
+    assistantId,
+    name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
+    hatchedAt: "1970-01-01T00:00:00.000Z",
+  };
+  const entry =
+    remote === "custom"
+      ? { ...base, cloud: "custom" as const }
+      : remote === "cloud"
+        ? { ...base, cloud: "cloud" as const }
+        : {
+            ...base,
+            cloud: remote === "baseten" ? ("local" as const) : remote,
+            resources: { gatewayPort: 0, daemonPort: 0 },
+          };
   return {
-    assistants: [
-      {
-        assistantId,
-        name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
-        cloud: config?.remote ?? "local",
-        hatchedAt: "1970-01-01T00:00:00.000Z",
-        resources: { gatewayPort: 0, daemonPort: 0 },
-      },
-    ],
+    assistants: [entry],
     activeAssistant: assistantId,
   };
 }

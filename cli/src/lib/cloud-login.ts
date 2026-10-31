@@ -7,12 +7,14 @@
  */
 
 import { pollingCloudLogin } from "./cloud-login-poll.js";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isLocalRuntimeEntry,
+} from "@mycadet/local-mode/contract";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 
-import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
@@ -353,8 +355,10 @@ export async function registerLocalAssistantWithPlatform(
   const log = options.log ?? console.log;
   const entry = resolveAssistant();
 
-  // Skip managed ("cadet") assistants — they are handled by the cloud.
-  if (!entry || isCloudHome(entry.cloud)) return;
+  // Skip managed ("cadet") assistants — they are handled by the cloud — and
+  // anything that is not an on-machine runtime: the registration flow mirrors
+  // the desktop app's local bootstrap, which only fronts local runtimes.
+  if (!entry || !isLocalRuntimeEntry(entry)) return;
 
   const gatewayUrl = getGatewayUrl(entry);
 

@@ -26,7 +26,10 @@ import {
 } from "../lib/guardian-token.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";
-import { makeEntry } from "./helpers/lockfile-entry.js";
+import {
+  makeEntry,
+  readEntry,
+} from "./helpers/lockfile-entry.js";
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();
@@ -290,7 +293,8 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const leased = await leaseGuardianToken(makeEntry({ assistantId: "px" }));
+    makeEntry({ assistantId: "px" });
+    const leased = await leaseGuardianToken(readEntry("px")!);
 
     expect(leased.accessToken).toBe("access-lease");
     expect(leased.refreshAfter).toBeDefined();
@@ -315,7 +319,10 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const err = await leaseGuardianToken(makeEntry({ assistantId: "px" })).then(
+    makeEntry({ assistantId: "px" });
+    const err = await leaseGuardianToken(
+      readEntry("px")!,
+    ).then(
       () => null,
       (e: unknown) => e,
     );

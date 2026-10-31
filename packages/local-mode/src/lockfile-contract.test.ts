@@ -11,7 +11,20 @@ import {
   stripSensitiveFields,
   SENSITIVE_KEYS,
   type Lockfile,
+  type LockfileAssistant,
+  type LocalRuntimeAssistant,
 } from "./lockfile-contract";
+
+/** `resources` only exists on the local-runtime branches — narrow for assertions. */
+function resourcesOf(
+  entry: LockfileAssistant | undefined,
+): LocalRuntimeAssistant["resources"] {
+  return entry?.cloud === "local" ||
+    entry?.cloud === "docker" ||
+    entry?.cloud === "apple-container"
+    ? entry.resources
+    : undefined;
+}
 
 describe("parseLockfile", () => {
   test("passes through a fully-populated lockfile", () => {
@@ -26,7 +39,6 @@ describe("parseLockfile", () => {
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
-          resources: { gatewayPort: 7777, daemonPort: 7778 },
         },
         {
           assistantId: "asst_2",
@@ -153,11 +165,11 @@ describe("parseLockfile", () => {
   test("absorbs a mistyped cloud as local; drops an entry whose other fields are mistyped", () => {
     // Entries parse whole: a mistyped modeled field invalidates the entry
     // (dropped, never partially salvaged). `cloud` is the exception — its
-    // catch absorbs any malformed value as "local".
+    // preprocessor absorbs any malformed value as "local".
     const raw = {
       assistants: [
         { assistantId: "asst_1", cloud: 7 }, // cloud not a string
-        { assistantId: "asst_2", cloud: "local", port: "nope" }, // mistyped modeled field
+        { assistantId: "asst_2", cloud: "local", resources: "nope" }, // mistyped modeled field
       ],
       activeAssistant: null,
     };
@@ -207,7 +219,7 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
       gatewayPort: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
@@ -236,7 +248,7 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(raw).assistants[0])).toEqual({
       instanceDir: "/data",
       gatewayPort: 7777,
       daemonPort: 7778,
@@ -246,7 +258,7 @@ describe("parseLockfile", () => {
     });
     const stripped = structuredClone(raw);
     stripSensitiveFields(stripped);
-    expect(parseLockfile(stripped).assistants[0]?.resources).toEqual({
+    expect(resourcesOf(parseLockfile(stripped).assistants[0])).toEqual({
       instanceDir: "/data",
       gatewayPort: 7777,
       daemonPort: 7778,
@@ -377,7 +389,7 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+        sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
         port: 7830,
       }),
     ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
@@ -388,18 +400,19 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
+        sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
         port: 7830,
       }),
     ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
   });
 
-  test("a baseten entry without a URL or port falls through to the default loopback", () => {
-    // The hatch only records an entry once it has a URL; a URL-less record
-    // (describe missed) must not resolve to a half-built baseten address.
-    expect(
-      getGatewayUrl({ assistantId: "asst_bx", cloud: "baseten" }),
-    ).toBe(`http://127.0.0.1:${GATEWAY_PORT}`);
+  test("a baseten entry without a sandbox URL is dropped by the parse", () => {
+    // The union makes the URL and port un-omittable: a record that lost them
+    // (a describe miss) cannot survive as a half-addressable baseten entry.
+    const parsed = parseLockfile({
+      assistants: [{ assistantId: "asst_bx", cloud: "baseten", port: 7830 }],
+    });
+    expect(parsed.assistants).toEqual([]);
   });
 
   test("the schema round-trips a baseten entry's sandbox URL", () => {
@@ -410,11 +423,22 @@ describe("getGatewayUrl", () => {
           assistantId: "asst_bx",
           name: "Sandboxed",
           cloud: "baseten",
-          basetenSandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+          sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
           port: 7830,
         },
       ],
     };
     expect(parseLockfile(raw)).toEqual(raw as Lockfile);
+  });
+
+  test("an unknown cloud still parses as local", () => {
+    // The union's preprocessor routes absent and unknown topologies to the
+    // local default, so a forward-compat entry survives a downgrade.
+    const parsed = parseLockfile({
+      assistants: [{ assistantId: "asst_new", cloud: "galaxy" }],
+    });
+    expect(parsed.assistants).toEqual([
+      { assistantId: "asst_new", cloud: "local" },
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
+import * as localModeShared from "@mycadet/local-mode";
 import { PROXY_ERROR_HEADER, PROXY_NETWORK_ERROR_CODE } from "./cloud-forward";
 import type { GatewayForwardFetcher } from "./gateway-forward";
 
@@ -18,7 +19,7 @@ mock.module("./lockfile-watcher", () => ({
 }));
 
 let tokenResult: TokenResult = { ok: true, accessToken: "host-token" };
-const getPairedGuardianAccessToken = mock(
+const getStoredPairedGuardianAccessToken = mock(
   async (_assistantId: string, _runtimeUrl: string): Promise<TokenResult> =>
     tokenResult,
 );
@@ -26,8 +27,16 @@ let localTokenResult: TokenResult = { ok: true, accessToken: "local-guardian" };
 const getLocalGuardianAccessToken = mock(
   async (_assistantId: string): Promise<TokenResult> => localTokenResult,
 );
+mock.module("@mycadet/local-mode", () => ({
+  ...localModeShared,
+  getPairedGuardianAccessToken: getStoredPairedGuardianAccessToken,
+}));
 mock.module("./local-mode", () => ({
-  getPairedGuardianAccessToken,
+  // The paired seam resolves its invocation through the desktop runtime;
+  // the shared token reader above is mocked, so a stand-in invocation is fine.
+  requireRuntime: () => ({
+    cli: { resolveInvocation: async () => ({ env: {} }) },
+  }),
   getLocalGuardianAccessToken,
 }));
 
@@ -85,7 +94,7 @@ const pairedLockfile = {
 beforeEach(() => {
   tokenResult = { ok: true, accessToken: "host-token" };
   localTokenResult = { ok: true, accessToken: "local-guardian" };
-  getPairedGuardianAccessToken.mockClear();
+  getStoredPairedGuardianAccessToken.mockClear();
   getLocalGuardianAccessToken.mockClear();
   clearLoopbackGatewayBearerCache();
 });
@@ -101,7 +110,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
       await forwardGatewayRequest(request("/assistant/assets/app.js"), fetcher),
     ).toBeNull();
     expect(calls).toHaveLength(0);
-    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getStoredPairedGuardianAccessToken).not.toHaveBeenCalled();
     expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
   });
 
@@ -113,7 +122,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     );
     expect(response?.status).toBe(403);
     expect(await response?.text()).toBe("Assistant is not active in lockfile");
-    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getStoredPairedGuardianAccessToken).not.toHaveBeenCalled();
     expect(calls).toHaveLength(0);
   });
 
@@ -126,7 +135,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
       ),
     ).toBeNull();
     expect(calls).toHaveLength(0);
-    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getStoredPairedGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("forwards the scoped SDK surface verbatim to the recorded port", async () => {
@@ -368,7 +377,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       }),
       fetcher,
     );
-    expect(getPairedGuardianAccessToken).toHaveBeenCalledWith(
+    expect(getStoredPairedGuardianAccessToken).toHaveBeenCalledWith(
       "abc",
       "https://gw.example.com",
     );

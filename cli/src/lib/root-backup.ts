@@ -19,7 +19,10 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
+  isLocalRuntimeEntry,
   saveLockfileAssistant,
+  type DockerAssistant,
+  type LocalAssistant,
   type LocalAssistantResources,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -265,9 +268,16 @@ export class LocalRootStorage implements RootStorage {
   readonly root: string;
   initialRunning?: Set<string>;
   private readonly resources: LocalAssistantResources;
+  private readonly localEntry: LocalAssistant | DockerAssistant;
   constructor(readonly entry: LockfileAssistant) {
-    if (!entry.resources)
+    // Local-style roots: plain on-machine instances and docker instances
+    // (whose state roots are volumes) both carry the resource paths.
+    if (
+      (entry.cloud !== "local" && entry.cloud !== "docker") ||
+      !entry.resources
+    )
       throw new Error("Local backup requires the instance's resource paths.");
+    this.localEntry = entry;
     this.resources = entry.resources;
     this.root = resolve(getLocalInstanceDir(entry.resources));
   }
@@ -325,7 +335,7 @@ export class LocalRootStorage implements RootStorage {
       !isProcessAlive(join(this.root, "gateway.pid")).alive
     )
       await startGateway(false, resources, {
-        bootstrapSecret: this.entry.guardianBootstrapSecret,
+        bootstrapSecret: this.localEntry.guardianBootstrapSecret,
       });
     await this.checkReady();
   }
@@ -733,7 +743,9 @@ export async function withRootOperationLock<T>(
   const identity =
     entry.cloud === "docker"
       ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : entry.resources?.instanceDir;
+      : isLocalRuntimeEntry(entry)
+        ? entry.resources?.instanceDir
+        : undefined;
   const lock = join(
     parent,
     createHash("sha256")
@@ -776,7 +788,7 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (entry.cloud !== "docker" && entry.resources) {
+  if (entry.cloud !== "docker" && isLocalRuntimeEntry(entry) && entry.resources) {
     for (const root of STATE_ROOTS) {
       const path = resolve(getLocalInstanceDir(entry.resources), root);
       if (resolve(output) === path || resolve(output).startsWith(`${path}/`))

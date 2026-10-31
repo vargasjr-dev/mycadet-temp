@@ -931,9 +931,11 @@ describe("host-proxy-router", () => {
       lockfileListener?.({
         assistants: [
           {
+            // The per-cloud union gives cloud entries no `resources` at all,
+            // so a stale loopback port is no longer even representable —
+            // this pins the classification the old recorded-port bug broke.
             assistantId: "cloud-1",
             cloud: "cloud",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
           },
         ],
         activeAssistant: "cloud-1",

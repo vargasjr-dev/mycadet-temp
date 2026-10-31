@@ -1,5 +1,9 @@
 import { rm } from "node:fs/promises";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isDockerEntry,
+  isLocalRuntimeEntry,
+} from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -133,7 +137,7 @@ export async function readHostRuntimeVersion(
   if (entry.cloud !== "docker") {
     return (
       (await fetchCurrentVersion(getGatewayUrl(entry))) ??
-      entry.resources?.runtimeVersion
+      (isLocalRuntimeEntry(entry) ? entry.resources?.runtimeVersion : undefined)
     );
   }
   try {
@@ -336,6 +340,11 @@ const DockerConfiguration = z.object({
 async function dockerReplacementOptions(
   entry: LockfileAssistant,
 ): Promise<Parameters<typeof startContainers>[0]> {
+  if (!isDockerEntry(entry)) {
+    throw new Error(
+      `'${entry.assistantId}' is not a docker assistant — teleport expects a docker target.`,
+    );
+  }
   const res = dockerResourceNames(entry.assistantId);
   const states = new Map<string, z.infer<typeof DockerConfiguration>>();
   for (const container of [
@@ -450,7 +459,9 @@ export async function restoreHostTeleportTarget(
   if (await storageFor(entry).running()) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
-  const originalResources = entry.resources;
+  const originalResources = isLocalRuntimeEntry(entry)
+    ? entry.resources
+    : undefined;
   const replaceContainers = async (
     opts: Parameters<typeof startContainers>[0],
   ) => {
@@ -500,7 +511,9 @@ export async function restoreHostTeleportTarget(
         }
         await startContainers(previous, (message) => console.log(message));
       }
-      entry.resources = originalResources;
+      if (isLocalRuntimeEntry(entry)) {
+        entry.resources = originalResources;
+      }
       await restoreRootBackup(entry, recovery, { resume: false });
     } catch (recoveryError) {
       throw new TeleportRecoveryError(

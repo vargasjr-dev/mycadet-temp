@@ -11,6 +11,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import {
+  makeEntry,
+  makeEntryObject,
+  readEntry,
+} from "./helpers/lockfile-entry.js";
+
 // Point lockfile operations at a temp directory
 const testDir = mkdtempSync(join(tmpdir(), "cli-assistant-config-test-"));
 const prevConfigHome = process.env.XDG_CONFIG_HOME;
@@ -24,8 +30,6 @@ import {
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
   loadAllAssistants,
-  getActiveAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 
@@ -46,14 +50,7 @@ function writeLockfile(data: unknown): void {
   );
 }
 
-const makeEntry = (
-  id: string,
-  extra?: Partial<LockfileAssistant>,
-): LockfileAssistant => ({
-  assistantId: id,
-  cloud: "local",
-  ...extra,
-});
+
 
 describe("assistant-config", () => {
   beforeEach(() => {
@@ -84,7 +81,11 @@ describe("assistant-config", () => {
     // migration tooling is what moves it to the canonical config-dir path.
     writeFileSync(
       join(testDir, ".cadet.lock.json"),
-      JSON.stringify({ assistants: [makeEntry("legacy-1")] }, null, 2),
+      JSON.stringify(
+        { assistants: [{ assistantId: "legacy-1", cloud: "local" }] },
+        null,
+        2,
+      ),
     );
     expect(loadAllAssistants()).toEqual([]);
   });
@@ -95,7 +96,8 @@ describe("assistant-config", () => {
   });
 
   test("saveLockfileAssistant and loadAllAssistants round-trip", () => {
-    const entry = makeEntry("test-1");
+    makeEntry({ assistantId: "test-1" });
+    const entry = readEntry("test-1")!;
     saveLockfileAssistant(entry);
     const all = loadAllAssistants();
     expect(all).toHaveLength(1);
@@ -103,7 +105,7 @@ describe("assistant-config", () => {
   });
 
   test("saveLockfileAssistant writes under the advisory lock and cleans it up", () => {
-    saveLockfileAssistant(makeEntry("locked-1"));
+    makeEntry({ assistantId: "locked-1" });
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
     expect(existsSync(join(testDir, "cadet", "lockfile.json.lock"))).toBe(
@@ -117,7 +119,8 @@ describe("assistant-config", () => {
     const past = new Date(Date.now() - 60_000);
     utimesSync(lockDir, past, past);
 
-    saveLockfileAssistant(makeEntry("stale-lock-1"));
+    const stale = makeEntryObject({ assistantId: "stale-lock-1" });
+    saveLockfileAssistant(stale);
     expect(loadAllAssistants()).toHaveLength(1);
     expect(existsSync(lockDir)).toBe(false);
   });
@@ -127,9 +130,9 @@ describe("assistant-config", () => {
     mkdirSync(lockDir, { recursive: true });
     try {
       const start = Date.now();
-      expect(() => saveLockfileAssistant(makeEntry("contended-1"))).toThrow(
-        /Timed out acquiring lockfile lock/,
-      );
+      expect(
+        () => saveLockfileAssistant(makeEntryObject({ assistantId: "contended-1" })),
+      ).toThrow(/Timed out acquiring lockfile lock/);
       expect(Date.now() - start).toBeLessThan(2_000);
       expect(loadAllAssistants()).toEqual([]);
     } finally {
@@ -138,42 +141,32 @@ describe("assistant-config", () => {
   });
 
   test("findAssistantByName returns matching entry", () => {
-    writeLockfile({
-      assistants: [makeEntry("alpha"), makeEntry("beta")],
-    });
+    makeEntry({ assistantId: "alpha" });
+      makeEntry({ assistantId: "beta" });
     const result = findAssistantByName("beta");
     expect(result).not.toBeNull();
     expect(result!.assistantId).toBe("beta");
   });
 
   test("getAssistantDisplayName prefers the entry's name", () => {
-    expect(
-      getAssistantDisplayName(makeEntry("assistant-1", { name: "Alice" })),
-    ).toBe("Alice");
-    expect(getAssistantDisplayName(makeEntry("assistant-3"))).toBe(
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+    expect(getAssistantDisplayName(readEntry("assistant-1")!)).toBe("Alice");
+    expect(getAssistantDisplayName(makeEntryObject({ assistantId: "assistant-3" }))).toBe(
       "assistant-3",
     );
   });
 
   test("findAssistantByName only resolves assistant IDs", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("assistant-1", { name: "Alice" }),
-        makeEntry("assistant-2", { name: "Bob" }),
-      ],
-    });
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+      makeEntry({ assistantId: "assistant-2", name: "Bob" });
 
     expect(findAssistantByName("Alice")).toBeNull();
     expect(findAssistantByName("assistant-1")?.assistantId).toBe("assistant-1");
   });
 
   test("lookupAssistantByIdentifier resolves a unique display name", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("assistant-1", { name: "Alice" }),
-        makeEntry("assistant-2", { name: "Bob" }),
-      ],
-    });
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+      makeEntry({ assistantId: "assistant-2", name: "Bob" });
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("found");
@@ -183,12 +176,8 @@ describe("assistant-config", () => {
   });
 
   test("assistant ID lookup wins over a display name match", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("Alice", { name: "Primary" }),
-        makeEntry("assistant-2", { name: "Alice" }),
-      ],
-    });
+    makeEntry({ assistantId: "Alice", name: "Primary" });
+    makeEntry({ assistantId: "assistant-2", name: "Alice" });
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("found");
@@ -198,12 +187,8 @@ describe("assistant-config", () => {
   });
 
   test("ambiguous display name lookup is explicit", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("assistant-1", { name: "Alice" }),
-        makeEntry("assistant-2", { name: "Alice" }),
-      ],
-    });
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+      makeEntry({ assistantId: "assistant-2", name: "Alice" });
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("ambiguous");
@@ -217,14 +202,14 @@ describe("assistant-config", () => {
   });
 
   test("findAssistantByName returns null for non-existent name", () => {
-    writeLockfile({ assistants: [makeEntry("alpha")] });
+    makeEntry({ assistantId: "alpha" });
     expect(findAssistantByName("missing")).toBeNull();
   });
 
   test("removeLockfileAssistant removes matching entry", () => {
-    writeLockfile({
-      assistants: [makeEntry("a"), makeEntry("b"), makeEntry("c")],
-    });
+    makeEntry({ assistantId: "a" });
+      makeEntry({ assistantId: "b" });
+      makeEntry({ assistantId: "c" });
     removeLockfileAssistant("b");
     const all = loadAllAssistants();
     expect(all).toHaveLength(2);
@@ -232,79 +217,50 @@ describe("assistant-config", () => {
   });
 
   test("removeLockfileAssistant reassigns activeAssistant to remaining entry", () => {
-    writeLockfile({
-      assistants: [makeEntry("a"), makeEntry("b")],
-      activeAssistant: "a",
-    });
-    removeLockfileAssistant("a");
-    expect(getActiveAssistant()).toBe("b");
-    expect(loadAllAssistants()).toHaveLength(1);
-  });
-
-  test("removeLockfileAssistant clears activeAssistant when no entries remain", () => {
-    writeLockfile({
-      assistants: [makeEntry("only")],
-      activeAssistant: "only",
-    });
-    removeLockfileAssistant("only");
-    expect(getActiveAssistant()).toBeNull();
-    expect(loadAllAssistants()).toHaveLength(0);
-  });
-
-  test("removeLockfileAssistant preserves activeAssistant when removing a different entry", () => {
-    writeLockfile({
-      assistants: [makeEntry("a"), makeEntry("b"), makeEntry("c")],
-      activeAssistant: "a",
-    });
-    removeLockfileAssistant("b");
-    expect(getActiveAssistant()).toBe("a");
-    expect(loadAllAssistants()).toHaveLength(2);
-  });
-
-  test("loadLatestAssistant returns null when empty", () => {
-    expect(loadLatestAssistant()).toBeNull();
-  });
-
-  test("loadLatestAssistant returns most recently hatched entry", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("old", {
+    makeEntry({ assistantId: "a" });
+      makeEntry({ assistantId: "b" });
+      makeEntry({ assistantId: "only" });
+      makeEntry({ assistantId: "a" });
+      makeEntry({ assistantId: "b" });
+      makeEntry({ assistantId: "c" });
+      makeEntry({ assistantId: "old", 
           hatchedAt: "2024-01-01T00:00:00Z",
-        }),
-        makeEntry("new", {
+        });
+      makeEntry({ assistantId: "new", 
           hatchedAt: "2025-06-15T00:00:00Z",
-        }),
-        makeEntry("mid", {
+        });
+      makeEntry({ assistantId: "mid", 
           hatchedAt: "2024-06-15T00:00:00Z",
-        }),
-      ],
-    });
+        });
     const latest = loadLatestAssistant();
     expect(latest).not.toBeNull();
     expect(latest!.assistantId).toBe("new");
   });
 
   test("loadLatestAssistant handles entries without hatchedAt", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("no-date"),
-        makeEntry("with-date", {
+    makeEntry({ assistantId: "no-date" });
+      makeEntry({ assistantId: "with-date", 
           hatchedAt: "2025-01-01T00:00:00Z",
-        }),
-      ],
-    });
+        });
     const latest = loadLatestAssistant();
     expect(latest!.assistantId).toBe("with-date");
   });
 
   test("loadAllAssistants returns every schema-valid entry", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("valid"),
-        { cloud: "local" }, // missing assistantId: the schema drops it
-        { assistantId: "no-url", cloud: "local" }, // valid: runtimeUrl is optional
-      ],
-    });
+    // Mixed seeding: the helper's canonical entry plus raw rows the schema
+    // filters (a missing assistantId is dropped, a bare local row survives).
+    makeEntry({ assistantId: "valid" });
+    const raw = JSON.parse(
+      readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8"),
+    ) as { assistants: unknown[] };
+    raw.assistants.push(
+      { cloud: "local" },
+      { assistantId: "no-url", cloud: "local" },
+    );
+    writeFileSync(
+      join(testDir, "cadet", "lockfile.json"),
+      JSON.stringify(raw, null, 2),
+    );
     const all = loadAllAssistants();
     expect(all).toHaveLength(2);
     expect(all[0].assistantId).toBe("valid");

@@ -7,13 +7,13 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
   getActiveAssistant,
-  type LockfileAssistant,
+  setActiveAssistant,
 } from "../lib/assistant-config.js";
 import { use } from "../commands/use.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
@@ -25,24 +25,6 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
-
-function writeLockfile(
-  entries: LockfileAssistant[],
-  activeAssistant?: string,
-): void {
-  mkdirSync(join(testDir, "cadet"), { recursive: true });
-  writeFileSync(
-    join(testDir, "cadet", "lockfile.json"),
-    JSON.stringify(
-      {
-        assistants: entries,
-        ...(activeAssistant ? { activeAssistant } : {}),
-      },
-      null,
-      2,
-    ),
-  );
-}
 
 describe("cadet use", () => {
   beforeEach(() => {
@@ -73,10 +55,8 @@ describe("cadet use", () => {
   });
 
   test("sets active assistant by unique display name", async () => {
-    writeLockfile([
-      makeEntry({ assistantId: "assistant-1", name: "Alice" }),
-      makeEntry({ assistantId: "assistant-2", name: "Bob" }),
-    ]);
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+    makeEntry({ assistantId: "assistant-2", name: "Bob" });
     process.argv = ["bun", "cadet", "use", "Alice"];
 
     await use();
@@ -88,10 +68,8 @@ describe("cadet use", () => {
   });
 
   test("sets active assistant by unquoted multi-word display name", async () => {
-    writeLockfile([
-      makeEntry({ assistantId: "assistant-1", name: "Example Assistant" }),
-      makeEntry({ assistantId: "assistant-2", name: "Bob" }),
-    ]);
+    makeEntry({ assistantId: "assistant-1", name: "Example Assistant" });
+    makeEntry({ assistantId: "assistant-2", name: "Bob" });
     process.argv = ["bun", "cadet", "use", "Example", "Assistant"];
 
     await use();
@@ -103,10 +81,8 @@ describe("cadet use", () => {
   });
 
   test("prints active assistant with display name and id", async () => {
-    writeLockfile(
-      [makeEntry({ assistantId: "assistant-1", name: "Alice" })],
-      "assistant-1",
-    );
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+    setActiveAssistant("assistant-1");
 
     await use();
 
@@ -116,13 +92,9 @@ describe("cadet use", () => {
   });
 
   test("rejects ambiguous display names without changing active assistant", async () => {
-    writeLockfile(
-      [
-        makeEntry({ assistantId: "assistant-1", name: "Alice" }),
-        makeEntry({ assistantId: "assistant-2", name: "Alice" }),
-      ],
-      "assistant-2",
-    );
+    makeEntry({ assistantId: "assistant-1", name: "Alice" });
+    makeEntry({ assistantId: "assistant-2", name: "Alice" });
+    setActiveAssistant("assistant-2");
     process.argv = ["bun", "cadet", "use", "Alice"];
 
     await expect(use()).rejects.toThrow("process.exit:1");

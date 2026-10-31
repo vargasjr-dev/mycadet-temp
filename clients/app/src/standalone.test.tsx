@@ -150,9 +150,12 @@ describe("the shell's assistant commands", () => {
     });
   });
 
-  test("selectAssistant routes a down local daemon to the chooser under a toast", async () => {
+  test("selectAssistant routes a down local daemon to the assistant screen (the not-ready panel owns recovery)", async () => {
     const sink = stubCadet({
       lockfile: localLockfile,
+      // The shell doesn't probe health: any lockfile entry connects by
+      // navigating with the selection state, and an unreachable gateway
+      // lands on the not-ready panel's wake, whatever its remote type.
       status: () => ({ ok: false, status: 502, error: "down" }),
     });
     const router = renderChrome();
@@ -160,14 +163,11 @@ describe("the shell's assistant commands", () => {
       sink.handler!({ kind: "selectAssistant", assistantId: "assistant-1" });
     });
     await waitFor(() =>
-      expect(router.state.location.pathname).toBe("/account/select-assistant"),
+      expect(router.state.location.pathname).toBe("/assistant"),
     );
-    // The toast names the failure so the route to the chooser reads as a
-    // recovery step, not a silent bounce.
-    expect(await screen.findByRole("alert")).toBeDefined();
-    expect(
-      await screen.findByText("Couldn't switch to that assistant."),
-    ).toBeDefined();
+    expect(router.state.location.state).toEqual({
+      assistantSelection: { id: "assistant-1" },
+    });
   });
 
   test("selectAssistant routes an id the lockfile does not know to the chooser", async () => {
@@ -182,15 +182,8 @@ describe("the shell's assistant commands", () => {
     expect(await screen.findByRole("alert")).toBeDefined();
   });
 
-  test("rePair re-probes the current selection instead of routing anywhere", async () => {
-    const statusCalls: string[] = [];
-    const sink = stubCadet({
-      lockfile: localLockfile,
-      status: (assistantId) => {
-        statusCalls.push(assistantId);
-        return { ok: true, state: "healthy" };
-      },
-    });
+  test("rePair reconnects the current selection in place", async () => {
+    const sink = stubCadet({ lockfile: localLockfile });
     const router = renderChrome();
     // createMemoryRouter's entries carry no state, so the test selects the
     // way the shell itself does: a navigation carrying the selection state.
@@ -205,9 +198,12 @@ describe("the shell's assistant commands", () => {
     await act(async () => {
       sink.handler!({ kind: "rePair" });
     });
-    await waitFor(() => expect(statusCalls).toEqual(["assistant-1"]));
-    // Reconnected in place: never bounced to the chooser.
+    // Reconnected in place: the selection state is re-carried, never a
+    // bounce to the chooser.
     expect(router.state.location.pathname).toBe("/assistant");
+    expect(router.state.location.state).toEqual({
+      assistantSelection: { id: "assistant-1" },
+    });
   });
 
   test("rePair without a selection does nothing", async () => {

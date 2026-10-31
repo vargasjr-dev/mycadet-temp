@@ -16,6 +16,7 @@ import {
 import { retireDocker } from "../lib/docker.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
 import {
+  isLocalRuntimeEntry,
   resolveConfigDir,
   resolveDataDir,
   resolveLogDir,
@@ -35,7 +36,7 @@ async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
     await retireDocker(entry.assistantId);
     return;
   }
-  const resources = entry.resources;
+  const resources = isLocalRuntimeEntry(entry) ? entry.resources : undefined;
   if (!resources) return;
   await stopProcessByPidFile(
     join(getLocalInstanceDir(resources), "gateway.pid"),

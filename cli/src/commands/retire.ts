@@ -104,6 +104,10 @@ async function unregisterSelfHostedLocalPlatformRecord(
   const token = readPlatformRetireToken();
   if (!token) return;
 
+  // The self-hosted registration fields only exist on the local-runtime and
+  // platform entries — custom/baseten remotes are never registered.
+  if (entry.cloud === "custom" || entry.cloud === "baseten") return;
+
   const cloudAssistantId = nonEmptyString(entry.cloudAssistantId);
   if (!cloudAssistantId) return;
 

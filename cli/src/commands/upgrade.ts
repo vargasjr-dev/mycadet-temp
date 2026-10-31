@@ -1,5 +1,9 @@
 import { cliCommand } from "../lib/cli-name.js";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isDockerEntry,
+  isLocalEntry,
+} from "@mycadet/local-mode/contract";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
 
@@ -263,6 +267,12 @@ async function upgradeDocker(
   version: string | null,
   force: boolean,
 ): Promise<void> {
+  if (!isDockerEntry(entry)) {
+    const msg = `Docker upgrade requires a docker assistant; '${entry.assistantId}' is ${entry.cloud}.`;
+    console.error(msg);
+    emitCliError("UNKNOWN", msg);
+    process.exit(1);
+  }
   const gatewayUrl = getGatewayUrl(entry);
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
@@ -777,7 +787,7 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  if (!entry.resources) {
+  if (!isLocalEntry(entry) || !entry.resources) {
     const msg = `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`;
     console.error(msg);
     emitCliError("UNKNOWN", msg);

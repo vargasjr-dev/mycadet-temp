@@ -61,14 +61,26 @@ export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
 export {
   GATEWAY_PORT,
+  getGatewayUrl,
   getLoopbackGatewayPort,
+  isAppleContainerEntry,
+  isDockerEntry,
+  isLocalEntry,
+  isLocalRuntimeEntry,
   LockfileAssistantSchema,
   parseLockfile,
 } from "./lockfile-contract";
 export type {
   Lockfile,
   LockfileAssistant,
+  LocalAssistant,
   LocalAssistantResources,
+  LocalRuntimeAssistant,
+  DockerAssistant,
+  AppleContainerAssistant,
+  CloudAssistant,
+  CustomAssistant,
+  BasetenAssistant,
   LockfileWriteResult,
 } from "./lockfile-contract";
 export type { LockfileAssistantPatch } from "./lockfile";
@@ -126,7 +138,6 @@ export {
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,
-  isBasetenAssistant,
 } from "./guardian-token";
 export type {
   TokenResult,

@@ -133,7 +133,7 @@ export function renameLockfileAssistantIfPresent(
   if (typeof name !== "string" || name === "") {
     return { ok: false, status: 400, error: "Missing name" };
   }
-  return patchLockfileAssistantIfPresent(assistantId, { name });
+  return updateLockfileAssistantIfPresent(assistantId, { name });
 }
 
 /**
@@ -149,7 +149,7 @@ export function stampLockfileAssistantOnboardedIfPresent(
   if (typeof onboardedAt !== "string" || onboardedAt === "") {
     return { ok: false, status: 400, error: "Missing onboardedAt" };
   }
-  return patchLockfileAssistantIfPresent(
+  return updateLockfileAssistantIfPresent(
     assistantId,
     { onboardedAt },
     (entry) => typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
@@ -158,10 +158,12 @@ export function stampLockfileAssistantOnboardedIfPresent(
 
 /**
  * The shared update-only write: read the on-disk registry under the lock,
- * refuse a missing entry, and merge `patch` into it. `skip` short-circuits to
- * a successful no-op for a field whose current value should win.
+ * refuse a missing entry, and merge `patch` into it through
+ * {@link saveLockfileAssistant} (re-entrant under the held lock).
+ * `skip` short-circuits to a successful no-op for a field whose current
+ * value should win.
  */
-function patchLockfileAssistantIfPresent(
+function updateLockfileAssistantIfPresent(
   assistantId: string,
   patch: LockfileAssistantPatch,
   skip?: (entry: LockfileAssistant) => boolean,
@@ -172,16 +174,18 @@ function patchLockfileAssistantIfPresent(
 
   const locked = withLockfileLock((): WriteResult => {
     const lockfile = readLockfile();
-    const assistants = [...lockfile.assistants];
-    const idx = assistants.findIndex((a) => a?.assistantId === assistantId);
-    if (idx < 0) {
+    const entry = lockfile.assistants.find(
+      (a) => a?.assistantId === assistantId,
+    );
+    if (!entry) {
       return {
         ok: false,
         status: 404,
         error: "No lockfile entry for this assistant",
       };
     }
-    const entry = assistants[idx]!;
+    // An already-converged patch must not rewrite the file: a rename to the
+    // current name leaves the on-disk bytes exactly as they were.
     const converged =
       skip?.(entry) ??
       (Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>).every(
@@ -190,16 +194,15 @@ function patchLockfileAssistantIfPresent(
     if (converged) {
       return { ok: true, lockfile };
     }
-    assistants[idx] = { ...entry, ...patch };
-    lockfile.assistants = assistants;
-    return writeRawLockfile(lockfile);
+    saveLockfileAssistant({ ...entry, ...patch });
+    return { ok: true, lockfile: readLockfile() };
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
-export type LockfileAssistantPatch = {
-  [K in keyof LockfileAssistant]?: LockfileAssistant[K] | undefined;
-};
+/** A partial entry patch, distributed over the union so each topology's own fields patch. */
+type AssistantPatch<T> = { [K in keyof T]?: T[K] | undefined };
+export type LockfileAssistantPatch = AssistantPatch<LockfileAssistant>;
 
 export function saveLockfileAssistant(
   assistant: LockfileAssistantPatch,
@@ -272,8 +275,11 @@ export function replaceCloudAssistants(
     const preserved = existing.filter((a) => {
       if (!isCloudHome(a.cloud)) return true;
       if (syncedIds.has(a.assistantId)) return false;
-      return cloudOrganizationId != null &&
-        a.cloudOrganizationId !== cloudOrganizationId;
+      return (
+        cloudOrganizationId != null &&
+        a.cloud === "cloud" &&
+        a.cloudOrganizationId !== cloudOrganizationId
+      );
     });
     // `onboardedAt` is recorded by the client and unknown to the cloud, so
     // the replacement rows never carry it. Without this it is erased by every

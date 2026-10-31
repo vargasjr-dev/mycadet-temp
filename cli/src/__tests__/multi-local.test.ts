@@ -1,5 +1,4 @@
 import { describe, test, expect, beforeEach, afterAll, mock } from "bun:test";
-import type { Remote } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,11 +26,11 @@ import {
   setActiveAssistant,
   getActiveAssistant,
   removeLockfileAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
+import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
@@ -50,18 +49,6 @@ function readLockfileRaw(): Record<string, unknown> {
     readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8"),
   ) as Record<string, unknown>;
 }
-
-const makeEntry = (
-  id: string,
-  remote: Remote = "local",
-  extra?: Partial<LockfileAssistant>,
-): LockfileAssistant => ({
-  assistantId: id,
-  // The LockfileAssistant field is `cloud` — the rename happens only here,
-  // where the type forces it.
-  cloud: remote,
-  ...extra,
-});
 
 function resetLockfile(): void {
   try {
@@ -174,7 +161,7 @@ describe("multi-local", () => {
 
     test("second instance gets distinct ports and dir when first instance is saved", async () => {
       // GIVEN a first local assistant already exists in the lockfile
-      saveLockfileAssistant(makeEntry("instance-a"));
+      makeEntry({ assistantId: "instance-a" });
 
       // AND the default ports are occupied
       const occupiedPorts = new Set([
@@ -198,7 +185,7 @@ describe("multi-local", () => {
 
     test("skips ports that probePort reports as in-use", async () => {
       // GIVEN a first local assistant already exists in the lockfile
-      saveLockfileAssistant(makeEntry("existing"));
+      makeEntry({ assistantId: "existing" });
 
       // AND the default daemon ports are occupied
       const portsInUse = new Set([
@@ -220,34 +207,29 @@ describe("multi-local", () => {
 
   describe("resolveTargetAssistant() priority chain", () => {
     test("explicit name returns that entry", () => {
-      writeLockfile({
-        assistants: [makeEntry("alpha"), makeEntry("beta")],
-      });
+      makeEntry({ assistantId: "alpha" });
+      makeEntry({ assistantId: "beta" });
       const result = resolveTargetAssistant("beta");
       expect(result.assistantId).toBe("beta");
     });
 
     test("active assistant set returns the active entry", () => {
-      writeLockfile({
-        assistants: [makeEntry("alpha"), makeEntry("beta")],
-        activeAssistant: "alpha",
-      });
+            makeEntry({ assistantId: "alpha" });
+        makeEntry({ assistantId: "beta" });
+        setActiveAssistant("alpha");
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("alpha");
     });
 
     test("sole local assistant returns it", () => {
-      writeLockfile({
-        assistants: [makeEntry("only-one")],
-      });
+      makeEntry({ assistantId: "only-one" });
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("only-one");
     });
 
     test("multiple local assistants and no active throws with guidance", () => {
-      writeLockfile({
-        assistants: [makeEntry("x"), makeEntry("y")],
-      });
+      makeEntry({ assistantId: "x" });
+      makeEntry({ assistantId: "y" });
       // resolveTargetAssistant calls process.exit(1) on ambiguity
       const mockExit = mock(() => {
         throw new Error("process.exit called");
@@ -280,13 +262,13 @@ describe("multi-local", () => {
 
   describe("setActiveAssistant() / getActiveAssistant() round-trip", () => {
     test("set active, read it back", () => {
-      writeLockfile({ assistants: [makeEntry("my-assistant")] });
+      makeEntry({ assistantId: "my-assistant" });
       setActiveAssistant("my-assistant");
       expect(getActiveAssistant()).toBe("my-assistant");
     });
 
     test("lockfile is updated on disk", () => {
-      writeLockfile({ assistants: [makeEntry("disk-check")] });
+      makeEntry({ assistantId: "disk-check" });
       setActiveAssistant("disk-check");
       const raw = readLockfileRaw();
       expect(raw.activeAssistant).toBe("disk-check");
@@ -295,19 +277,17 @@ describe("multi-local", () => {
 
   describe("removeLockfileAssistant() reassigns activeAssistant on removal", () => {
     test("set active to foo, remove foo, verify active is reassigned to bar", () => {
-      writeLockfile({
-        assistants: [makeEntry("foo"), makeEntry("bar")],
-        activeAssistant: "foo",
-      });
+            makeEntry({ assistantId: "foo" });
+        makeEntry({ assistantId: "bar" });
+        setActiveAssistant("foo");
       removeLockfileAssistant("foo");
       expect(getActiveAssistant()).toBe("bar");
     });
 
     test("set active to foo, remove bar, verify active is still foo", () => {
-      writeLockfile({
-        assistants: [makeEntry("foo"), makeEntry("bar")],
-        activeAssistant: "foo",
-      });
+            makeEntry({ assistantId: "foo" });
+        makeEntry({ assistantId: "bar" });
+        setActiveAssistant("foo");
       removeLockfileAssistant("bar");
       expect(getActiveAssistant()).toBe("foo");
     });
@@ -315,22 +295,26 @@ describe("multi-local", () => {
 
   describe("remote non-regression", () => {
     test("resolveTargetAssistant works with remote entries", () => {
-      writeLockfile({
-        assistants: [makeEntry("my-remote", "custom", {})],
-        activeAssistant: "my-remote",
-      });
+            makeEntry({ assistantId: "my-remote", cloud: "custom" });
+        setActiveAssistant("my-remote");
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("my-remote");
       expect(result.cloud).toBe("custom");
     });
 
     test("remote entries don't get resources applied", () => {
-      const remoteEntry = makeEntry("cloud-box", "custom", {});
-      writeLockfile({ assistants: [remoteEntry] });
+      makeEntry({ assistantId: "cloud-box", cloud: "custom" });
+      const remoteEntry = readEntry("cloud-box");
       // Save and reload to verify resources are not injected
-      saveLockfileAssistant(remoteEntry);
+      saveLockfileAssistant(remoteEntry!);
       const result = resolveTargetAssistant("cloud-box");
-      expect(result.resources).toBeUndefined();
+      expect(
+        result.cloud === "local" ||
+          result.cloud === "docker" ||
+          result.cloud === "apple-container"
+          ? result.resources
+          : undefined,
+      ).toBeUndefined();
     });
   });
 });

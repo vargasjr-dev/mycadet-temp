@@ -243,7 +243,11 @@ function lockfileInstanceDir(
     ? rawEntry.resources
     : undefined;
   return firstString(
-    entry?.resources?.instanceDir,
+    entry?.cloud === "local" ||
+      entry?.cloud === "docker" ||
+      entry?.cloud === "apple-container"
+      ? entry.resources?.instanceDir
+      : undefined,
     rawResources?.instanceDir,
     rawEntry?.baseDataDir,
   );
@@ -296,13 +300,19 @@ function resolveStatusResources(
   const instanceDir =
     lockfileInstanceDir(entry, rawEntry) ??
     resolveInstanceDir(entry.assistantId);
+  const entryResources =
+    entry.cloud === "local" ||
+    entry.cloud === "docker" ||
+    entry.cloud === "apple-container"
+      ? entry.resources
+      : undefined;
   return {
     instanceDir,
     daemonPort:
-      firstNumber(entry.resources?.daemonPort, rawResources?.daemonPort) ??
+      firstNumber(entryResources?.daemonPort, rawResources?.daemonPort) ??
       ports.daemon,
     gatewayPort:
-      firstNumber(entry.resources?.gatewayPort, rawResources?.gatewayPort) ??
+      firstNumber(entryResources?.gatewayPort, rawResources?.gatewayPort) ??
       ports.gateway,
   };
 }

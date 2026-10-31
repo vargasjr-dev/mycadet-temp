@@ -1,7 +1,23 @@
-import { describe, expect, test } from "bun:test";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, test } from "bun:test";
 
 import { healConflictedLocalPorts } from "../port-heal.js";
-import { makeEntry } from "../../__tests__/helpers/lockfile-entry.js";
+import {
+  makeEntry,
+  readEntry,
+  readLocalEntry,
+} from "../../__tests__/helpers/lockfile-entry.js";
+
+// The fixture helper writes through the real lockfile path — isolate it.
+const testDir = mkdtempSync(join(tmpdir(), "port-heal-test-"));
+const prevConfigHome = process.env.XDG_CONFIG_HOME;
+process.env.XDG_CONFIG_HOME = testDir;
+afterAll(() => {
+  if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+  else process.env.XDG_CONFIG_HOME = prevConfigHome;
+});
 
 /** Every port free, no listener pids, no sibling claims. */
 const freeDeps = {
@@ -12,7 +28,8 @@ const freeDeps = {
 
 describe("healConflictedLocalPorts", () => {
   test("a local entry with all ports free passes through untouched", async () => {
-    const entry = makeEntry();
+    makeEntry();
+    const entry = readLocalEntry();
     expect(await healConflictedLocalPorts(entry, freeDeps)).toBe(null);
     expect(entry.resources?.daemonPort).toBe(7801);
     expect(entry.resources?.gatewayPort).toBe(7831);
@@ -20,7 +37,8 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("a foreign-held daemon port is reallocated from the env base", async () => {
-    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    makeEntry({ resources: { daemonPort: 9000 } });
+    const entry = readLocalEntry();
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9000 && port !== 7821,
@@ -35,7 +53,8 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("a port held by one of our own processes is never moved", async () => {
-    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    makeEntry({ resources: { daemonPort: 9000 } });
+    const entry = readLocalEntry();
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9000,
@@ -48,7 +67,8 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("a held port with no discoverable listener is treated as foreign", async () => {
-    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    makeEntry({ resources: { daemonPort: 9000 } });
+    const entry = readLocalEntry();
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9000,
@@ -60,7 +80,8 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("a moved gateway port updates the recorded port — the url is no longer mirrored", async () => {
-    const entry = makeEntry({ resources: { gatewayPort: 9001 } });
+    makeEntry({ resources: { gatewayPort: 9001 } });
+    const entry = readLocalEntry();
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9001,
@@ -72,9 +93,10 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("a healed move leaves no other address record to touch", async () => {
-    const entry = makeEntry({
+    makeEntry({
       resources: { gatewayPort: 9001 },
     });
+    const entry = readLocalEntry();
     await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9001,
@@ -83,9 +105,10 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("the walk skips sibling claims, the entry's own ports, and fresh allocations", async () => {
-    const entry = makeEntry({
+    makeEntry({
       resources: { daemonPort: 9000, gatewayPort: 9001 },
     });
+    const entry = readLocalEntry();
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
       // both recorded ports are held by a foreign process
@@ -102,20 +125,24 @@ describe("healConflictedLocalPorts", () => {
   });
 
   test("docker entries pass through untouched", async () => {
-    const entry = makeEntry({
+    makeEntry({
       cloud: "docker",
       resources: { daemonPort: 9000 },
     });
-    const result = await healConflictedLocalPorts(entry, {
+    const entry = readEntry();
+    const result = await healConflictedLocalPorts(entry!, {
       ...freeDeps,
       isPortFree: async () => false,
     });
     expect(result).toBe(null);
-    expect(entry.resources?.daemonPort).toBe(9000);
+    expect(
+      entry?.cloud === "docker" ? entry.resources?.daemonPort : undefined,
+    ).toBe(9000);
   });
 
   test("an entry without resources passes through untouched", async () => {
-    const entry = makeEntry();
+    makeEntry();
+    const entry = readLocalEntry();
     // The contract always parses resources for a local entry; the guard
     // exists for the same defensive reason wake's own does.
     entry.resources = undefined;

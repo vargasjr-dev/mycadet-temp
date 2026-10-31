@@ -583,7 +583,13 @@ export async function leaseGuardianToken(
   entry: LockfileAssistant,
 ): Promise<GuardianTokenData> {
   // The gateway address derives from the entry's topology; assistantId and
-  // the bootstrap secret ride the entry too.
+  // the bootstrap secret ride the entry too. Only the local runtimes lease —
+  // they are the topologies a detached hatch records a bootstrap secret for.
+  if (entry.cloud !== "local" && entry.cloud !== "docker") {
+    throw new Error(
+      `Guardian token leasing is not available for '${entry.cloud}' assistants.`,
+    );
+  }
   const gatewayUrl = getGatewayUrl(entry);
   const assistantId = entry.assistantId;
   const bootstrapSecret = entry.guardianBootstrapSecret;

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "fs";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isLocalRuntimeEntry } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
@@ -32,7 +32,7 @@ type ActiveCallLease = {
 };
 
 function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (!entry.resources) {
+  if (!isLocalRuntimeEntry(entry) || !entry.resources) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -275,7 +275,7 @@ export async function sleepAssistant(
     );
   }
 
-  if (entry.cloud && entry.cloud !== "local") {
+  if (entry.cloud !== "local") {
     throw new Error(
       `'cadet sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
     );

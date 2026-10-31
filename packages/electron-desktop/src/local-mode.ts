@@ -2,9 +2,6 @@ import { z } from "zod";
 
 import {
   getGuardianAccessToken,
-  getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
-  isBasetenAssistant,
-  readBasetenSandboxToken,
   isActiveAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
@@ -124,7 +121,7 @@ export const configureUnavailableLocalMode = (
   });
 };
 
-const requireRuntime = (): LocalModeRuntime => {
+export const requireRuntime = (): LocalModeRuntime => {
   if (!runtime) {
     throw new Error("Local-mode runtime is unavailable");
   }
@@ -277,35 +274,6 @@ async function getHostGuardianAccessToken(
     return { ok: false, status: 500, error: (err as Error).message };
   }
   return getGuardianAccessToken(assistantId, invocation, true, options);
-}
-
-/** Read a paired guardian bearer for the trusted main-process proxy. */
-export async function getPairedGuardianAccessToken(
-  assistantId: string,
-  runtimeUrl: string,
-): Promise<TokenResult> {
-  // Baseten sandboxes read the token file the hatch saved — no CLI runtime
-  // resolution, no lease; the shared seam does the same branch, but the
-  // invocation must not be a prerequisite for it.
-  if (isBasetenAssistant(assistantId)) {
-    return readBasetenSandboxToken(assistantId);
-  }
-  let invocation: CliInvocation;
-  try {
-    invocation = await requireRuntime().cli.resolveInvocation();
-  } catch (err) {
-    return {
-      ok: false,
-      status: 500,
-      error: (err as Error).message,
-    };
-  }
-  return getStoredPairedGuardianAccessToken(
-    assistantId,
-    runtimeUrl,
-    invocation,
-    true,
-  );
 }
 
 /** Read a local guardian token for the trusted main-process bearer mint. */

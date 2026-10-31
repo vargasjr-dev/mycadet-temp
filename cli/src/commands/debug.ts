@@ -74,6 +74,14 @@ export const debug = Object.assign(
       console.error(`Not logged in. Run '${cliCommand()} login' first.`);
       process.exit(1);
     }
+    // The self-hosted registration fields ride the local-runtime and platform
+    // branches — custom/baseten remotes are never registered.
+    if (entry.cloud === "custom" || entry.cloud === "baseten") {
+      console.error(
+        `${reference} is not registered with the cloud yet. Run 'cadet login' and retry.`,
+      );
+      process.exit(1);
+    }
     const cloudAssistantId = entry.cloudAssistantId?.trim();
     if (!cloudAssistantId) {
       console.error(

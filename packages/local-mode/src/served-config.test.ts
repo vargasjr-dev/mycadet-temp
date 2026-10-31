@@ -25,7 +25,10 @@ describe("servedConfigFromLockfile", () => {
       assistantName: "Example Assistant",
       remote: "docker",
     });
-    expect(lockfile.assistants[1]?.bearerToken).toBe("example-host-token");
+    const entry = lockfile.assistants[1];
+    expect(
+      entry?.cloud === "docker" ? entry.bearerToken : undefined,
+    ).toBe("example-host-token");
   });
 
   test("uses the sole entry when no active entry matches", () => {

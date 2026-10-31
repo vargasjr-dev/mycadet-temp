@@ -205,7 +205,9 @@ describe("connect import", () => {
     const entry = findAssistantByName("link-box");
     expect(entry).not.toBeNull();
     expect(entry!.cloud).toBe("custom");
-    expect(entry!.ipAddress).toBe(new URL(HOST).hostname);
+    expect(
+      entry!.cloud === "custom" ? entry!.ipAddress : undefined,
+    ).toBe(new URL(HOST).hostname);
     const token = loadGuardianToken("link-box");
     expect(token?.accessToken).toBe("acc-tok");
     expect(token?.refreshToken).toBe("refresh-tok");
