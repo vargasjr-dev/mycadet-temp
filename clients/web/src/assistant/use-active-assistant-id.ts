@@ -1,17 +1,10 @@
 /**
- * Type-safe accessor for the active assistant id inside
- * `ActiveAssistantGate`-guarded routes.
+ * The active assistant id — always defined within the web bundle.
  *
- * The gate defers rendering its `<Outlet />` until the selection
- * store has a non-null id AND the lifecycle reaches `active`, so
- * every gated route can treat the id as `string`. This hook turns
- * the runtime guarantee into a type guarantee — and throws if
- * called outside the gate, which is the bug we want loud.
- *
- * Routes that intentionally render across pre-active states
- * (`ChatPage`, `DocumentViewerPage`) read the raw store via
- * `useResolvedAssistantsStore.use.activeAssistantId()` and handle
- * the null case themselves.
+ * The serving shell resolves the assistant and stamps the roster before
+ * the first render, so every route can treat the id as `string`. This
+ * hook turns that runtime guarantee into a type guarantee — and throws
+ * if the id is somehow missing, which is the bug we want loud.
  */
 
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";

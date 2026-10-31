@@ -1,32 +1,29 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
-let injectedConfig: { remote?: string; assistantId?: string } | undefined = {
-  remote: "local",
-  assistantId: "asst-local",
-};
-const injectedConfigMock = mock(() => injectedConfig);
-mock.module("@/lib/injected-config", () => ({
-  readInjectedConfig: injectedConfigMock,
-}));
-
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantsStore, type ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantIsSelfHosted,
   useAssistantHosting,
 } from "@/assistant/hosting";
 
+function row(id: string, cloud?: string): ResolvedAssistant {
+  return { id, ...(cloud ? { cloud } : {}) };
+}
+
 /** Point the store's active pointer at an assistant id (or clear it). */
-function setActiveAssistantId(id: string | null) {
+function setActive(id: string | null, assistants: ResolvedAssistant[]) {
   act(() => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: id });
+    useResolvedAssistantsStore.setState({
+      activeAssistantId: id,
+      assistants,
+      assistantsHydrated: true,
+    });
   });
 }
 
 beforeEach(() => {
-  injectedConfig = { remote: "local", assistantId: "asst-local" };
-  injectedConfigMock.mockClear();
   useResolvedAssistantsStore.setState({
     activeAssistantId: null,
     assistants: [],
@@ -39,50 +36,49 @@ afterEach(() => {
 });
 
 describe("useAssistantHosting", () => {
-  test('answers "cloud" for a row with no lockfile entry', () => {
-    // A row absent from the lockfile exists only in the cloud-served
-    // world — the cloud platform keeps no locally-synthesized entry.
-    setActiveAssistantId("asst-platform");
+  test('reads the active row\'s lockfile remote', () => {
+    setActive("asst-local", [row("asst-local", "local")]);
+    const { result } = renderHook(() => useAssistantHosting());
+    expect(result.current).toBe("local");
+  });
+
+  test('answers "cloud" for a row absent from the lockfile', () => {
+    // The projection normalizes no-entry rows to "cloud" — they exist only
+    // in the cloud-served world.
+    setActive("asst-platform", [row("asst-platform", "cloud")]);
     const { result } = renderHook(() => useAssistantHosting());
     expect(result.current).toBe("cloud");
   });
 
-  test("the injected config no longer decides anything", () => {
-    // The injected remote was the pre-resolution answer; there is no
-    // pre-resolution window left, so even an apple-container stamp can't
-    // turn a no-entry row local.
-    injectedConfig = { remote: "apple-container", assistantId: "asst-local" };
-    setActiveAssistantId("asst-platform");
+  test('answers "cloud" with no active row at all', () => {
     const { result } = renderHook(() => useAssistantHosting());
     expect(result.current).toBe("cloud");
   });
 });
 
 describe("useActiveAssistantIsSelfHosted", () => {
-  test("true for a self-hosted lockfile entry", () => {
-    injectedConfig = { remote: "docker", assistantId: "asst-local" };
-    setActiveAssistantId("asst-local");
+  test("true for a self-hosted active row", () => {
+    setActive("asst-local", [row("asst-local", "docker")]);
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(true);
   });
 
-  test("false for a cloud-hosted assistant (no lockfile entry)", () => {
-    setActiveAssistantId("asst-platform");
+  test("false for a cloud-hosted active row", () => {
+    setActive("asst-platform", [row("asst-platform", "cloud")]);
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(false);
   });
 });
 
 describe("useActiveAssistantIsCloudHosted", () => {
-  test("true for a cloud row with no lockfile entry", () => {
-    setActiveAssistantId("asst-platform");
+  test("true for a cloud active row", () => {
+    setActive("asst-platform", [row("asst-platform", "cloud")]);
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
     expect(result.current).toBe(true);
   });
 
-  test("false for a self-hosted lockfile entry", () => {
-    injectedConfig = { remote: "local", assistantId: "asst-local" };
-    setActiveAssistantId("asst-local");
+  test("false for a self-hosted active row", () => {
+    setActive("asst-local", [row("asst-local", "local")]);
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
     expect(result.current).toBe(false);
   });

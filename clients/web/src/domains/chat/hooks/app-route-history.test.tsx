@@ -133,10 +133,8 @@ function ConversationRoute() {
  */
 function ConversationRouteWithLoader() {
   const { conversationId } = useParams<{ conversationId: string }>();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-
   useConversationLoader({
-    assistantId,
+    assistantId: "assistant-1",
     activeConversationId: conversationId ?? null,
     urlConversationId: conversationId ?? null,
     searchParams: new URLSearchParams(),

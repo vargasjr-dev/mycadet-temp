@@ -500,7 +500,6 @@
   },
   "resourcePressureBanner": {
     "body": "您的助手正在努力工作，并已达到其当前资源限制。请升级以确保其平稳运行。",
-    "bodyNoUpgrade": "您的助手正在努力工作，并已达到其当前资源限制。",
     "dontShowAgain": "不再显示",
     "title": "您的助手需要更多算力",
     "titleNamed": "{assistantName} 需要更多算力",

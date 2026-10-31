@@ -500,7 +500,6 @@
   },
   "resourcePressureBanner": {
     "body": "您的助理正在努力工作並達到其目前的資源限制。請升級以確保其順暢執行。",
-    "bodyNoUpgrade": "您的助理正在努力工作並達到其目前的資源限制。",
     "dontShowAgain": "不再顯示",
     "title": "您的助理需要更多資源",
     "titleNamed": "{assistantName} 需要更多資源",

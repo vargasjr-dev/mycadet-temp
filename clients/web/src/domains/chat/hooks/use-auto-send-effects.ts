@@ -38,7 +38,6 @@ export interface UseAutoSendEffectsOptions {
    * `?prompt=` that arrived without the in-app auto-send marker.
    */
   prefillComposer: (content: string) => void;
-  /** Whether the assistant resolution is active (the daemon can serve). */
   /** Reads the staged pre-chat initial message from sessionStorage. */
   getPendingInitialMessage: () => string | undefined;
   /**
