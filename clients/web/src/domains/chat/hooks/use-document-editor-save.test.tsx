@@ -168,7 +168,7 @@ describe("useDocumentEditorSave", () => {
         write.reject(new Error("offline"));
         await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
       }
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
       useSetupLocalAssistant("assistant-1");
       if (stage === "before unmount") {
         await expect(result.current.flushPendingSave()).rejects.toThrow(
