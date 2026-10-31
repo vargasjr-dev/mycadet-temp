@@ -325,11 +325,14 @@ export class LocalRootStorage implements RootStorage {
       !isProcessAlive(join(this.root, "ces.pid")).alive
     )
       await startCes(false, entry);
+    // The daemon lifecycle is local-only; a docker root's assistant service
+    // is the container, not a host daemon.
     if (
+      isLocalEntry(entry) &&
       this.initialRunning?.has("assistant") &&
       !isProcessAlive(getDaemonPidPath(entry)).alive
     )
-      await startLocalDaemon(false, requireReadyRuntimeEntry(entry));
+      await startLocalDaemon(false, entry);
     if (
       this.initialRunning?.has("gateway") &&
       !isProcessAlive(join(this.root, "gateway.pid")).alive
