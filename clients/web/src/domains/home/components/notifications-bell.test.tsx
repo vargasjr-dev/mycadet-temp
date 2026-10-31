@@ -481,17 +481,18 @@ function skill(id: string): { id: string } {
   return { id };
 }
 
-// The active assistant resolves asynchronously, so it is null for the first
-// frames after a load. Held in a ref so a test can render that window.
-const activeAssistantIdRef: { value: string | null } = { value: "assistant-1" };
+// The store is non-optional: pre-projection (the cloud platform's account
+// surfaces) it holds the unresolved shell, whose empty id skips every
+// assistant-scoped read. Held in a ref so a test can render that window.
+const activeAssistantIdRef: { value: string } = { value: "assistant-1" };
 
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
     assistant: () =>
       activeAssistantIdRef.value
-        ? { cloud: "local", assistantId: activeAssistantIdRef.value }
-        : null,
+        ? { cloud: "local", port: 0, assistantId: activeAssistantIdRef.value }
+        : { cloud: "cloud", assistantId: "" },
   };
   return { useResolvedAssistantStore: store };
 });
@@ -1539,9 +1540,9 @@ describe("NotificationsBell briefing recipe gating", () => {
   });
 
   test("hides the recipe before the active assistant resolves", async () => {
-    // No assistant means no list to judge by, and a recipe launched here would
-    // seed a conversation with nothing to open it against.
-    activeAssistantIdRef.value = null;
+    // The unresolved shell's empty id means no list to judge by, and a recipe
+    // launched here would seed a conversation with nothing to open it against.
+    activeAssistantIdRef.value = "";
 
     await openBell();
 

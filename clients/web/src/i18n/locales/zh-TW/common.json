@@ -505,11 +505,6 @@
     "titleNamed": "{assistantName} 需要更多資源",
     "upgrade": "升級"
   },
-  "retireConfirmDialog": {
-    "confirmLabel": "停用",
-    "message": "這將永久停用此助理及其所有資料。您需要再次完成引導流程才能建立新的助理。此動作無法復原。",
-    "title": "停用助理"
-  },
   "rootHydrateFallback": {
     "loadingAria": "正在載入"
   },

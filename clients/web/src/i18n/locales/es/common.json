@@ -503,11 +503,6 @@
     "titleNamed": "{assistantName} necesita más potencia",
     "upgrade": "Mejorar plan"
   },
-  "retireConfirmDialog": {
-    "confirmLabel": "Retirar",
-    "message": "Esto retirará de forma permanente este asistente y todos sus datos. Tendrás que volver a completar el flujo de incorporación para crear uno nuevo. Esta acción no se puede deshacer.",
-    "title": "Retirar asistente"
-  },
   "rootHydrateFallback": {
     "loadingAria": "Cargando"
   },
