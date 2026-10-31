@@ -134,16 +134,19 @@ export const requireRuntime = (): LocalModeRuntime => {
  * for the web/dev middleware path.
  */
 async function hatch(remote?: string): Promise<HatchResult> {
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
+    const result = await runHatch(
+      () => requireRuntime().cli.resolveInvocation(),
+      {
+        remote,
+      },
+    );
+    return result.ok
+      ? { ok: true, assistantId: result.assistantId }
+      : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  const result = await runHatch(invocation, { remote });
-  return result.ok
-    ? { ok: true, assistantId: result.assistantId }
-    : { ok: false, error: result.error };
 }
 
 interface SleepResult {
@@ -153,41 +156,41 @@ interface SleepResult {
 
 /** Retire a local assistant. Mirrors `hatch`'s never-reject contract. */
 async function retire(assistantId: string): Promise<RetireResult> {
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
+    const result = await runRetire(
+      () => requireRuntime().cli.resolveInvocation(),
+      assistantId,
+      {
+        cloudToken: requireRuntime().session.getToken() ?? undefined,
+      },
+    );
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  const result = await runRetire(invocation, assistantId, {
-    cloudToken: requireRuntime().session.getToken() ?? undefined,
-  });
-  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /** Stop a local assistant's daemon and gateway. Mirrors `hatch`'s never-reject contract. */
 async function sleep(assistantId: string): Promise<SleepResult> {
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
+    const result = await runSleep(
+      () => requireRuntime().cli.resolveInvocation(),
+      assistantId,
+    );
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  const result = await runSleep(invocation, assistantId);
-  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /** List a local assistant's paired devices. Mirrors `hatch`'s never-reject contract. */
 async function listDevices(
   assistantId: string,
 ): Promise<LocalListDevicesResult> {
-  let invocation: CliInvocation;
-  try {
-    invocation = await requireRuntime().cli.resolveInvocation();
-  } catch (err) {
-    return { ok: false, error: (err as Error).message };
-  }
-  return runDevicesList(invocation, assistantId);
+  return runDevicesList(
+    () => requireRuntime().cli.resolveInvocation(),
+    assistantId,
+  );
 }
 
 /** Revoke one paired device's tokens. Mirrors `hatch`'s never-reject contract. */
@@ -195,13 +198,15 @@ async function revokeDevice(
   assistantId: string,
   hashedDeviceId: string,
 ): Promise<LocalRevokeDeviceResult> {
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
+    return runDevicesRevoke(
+      () => requireRuntime().cli.resolveInvocation(),
+      assistantId,
+      hashedDeviceId,
+    );
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  return runDevicesRevoke(invocation, assistantId, hashedDeviceId);
 }
 
 /**
@@ -213,14 +218,16 @@ async function wake(
   assistantId: string,
   options?: WakeOptions,
 ): Promise<WakeResult> {
-  let invocation: CliInvocation;
   try {
-    invocation = await requireRuntime().cli.resolveInvocation();
+    const result = await runWake(
+      () => requireRuntime().cli.resolveInvocation(),
+      assistantId,
+      options,
+    );
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
-  const result = await runWake(invocation, assistantId, options);
-  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 const upgradingLocalAssistantIds = new Set<string>();

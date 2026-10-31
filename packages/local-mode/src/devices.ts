@@ -157,10 +157,12 @@ function parseDeviceRecords(stdout: string): DeviceRecord[] | null {
 }
 
 export async function runDevicesList(
-  invocation: CliInvocation,
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
 ): Promise<DevicesListResult> {
-  const result = await runDevicesCli(invocation, [
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
+  const result = await runDevicesCli(resolved, [
     "devices",
     assistantId,
     "--json",
@@ -180,11 +182,13 @@ export async function runDevicesList(
 }
 
 export async function runDevicesRevoke(
-  invocation: CliInvocation,
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   hashedDeviceId: string,
 ): Promise<DevicesRevokeResult> {
-  const result = await runDevicesCli(invocation, [
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
+  const result = await runDevicesCli(resolved, [
     "devices",
     "revoke",
     hashedDeviceId,

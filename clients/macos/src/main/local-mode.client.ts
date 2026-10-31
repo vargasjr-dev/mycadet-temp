@@ -6,9 +6,7 @@ import {
   configureLocalMode,
   installLocalMode,
 } from "@mycadet/electron-desktop/local-mode";
-import {
-  type CliInvocation,
-} from "@mycadet/local-mode";
+import { type CliInvocation } from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,
@@ -41,5 +39,3 @@ configureLocalMode({
   refreshLockfile: refreshLockfileNow,
   session: { getToken: getSessionToken },
 });
-
-export { installLocalMode };

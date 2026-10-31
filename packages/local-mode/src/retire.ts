@@ -17,15 +17,17 @@ export interface RetireOptions {
   cloudToken?: string;
 }
 
-export function runRetire(
-  invocation: CliInvocation,
+export async function runRetire(
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   options: RetireOptions = {},
 ): Promise<RetireResult> {
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
   return new Promise((resolve) => {
     const child = spawn(
-      invocation.command,
-      [...invocation.baseArgs, "retire", assistantId, "--yes"],
+      resolved.command,
+      [...resolved.baseArgs, "retire", assistantId, "--yes"],
       {
         ...(options.cloudToken
           ? {

@@ -22,14 +22,16 @@ export type SleepResult =
  * Mirrors {@link runRetire}'s never-reject contract so each host wires
  * transport once and surfaces a structured failure rather than a thrown error.
  */
-export function runSleep(
-  invocation: CliInvocation,
+export async function runSleep(
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
 ): Promise<SleepResult> {
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
   return new Promise((resolve) => {
     const child = spawn(
-      invocation.command,
-      [...invocation.baseArgs, "sleep", assistantId, "--force"],
+      resolved.command,
+      [...resolved.baseArgs, "sleep", assistantId, "--force"],
       { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
     );
 

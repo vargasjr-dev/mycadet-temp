@@ -25,17 +25,19 @@ export interface RunHatchOptions {
   remote?: string;
 }
 
-export function runHatch(
-  invocation: CliInvocation,
+export async function runHatch(
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   options?: RunHatchOptions,
 ): Promise<HatchResult> {
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
   return new Promise((resolve) => {
-    const args = [...invocation.baseArgs, "hatch"];
+    const args = [...resolved.baseArgs, "hatch"];
     if (options?.remote) {
       args.push("--remote", options.remote);
     }
 
-    const child = spawn(invocation.command, args, {
+    const child = spawn(resolved.command, args, {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });

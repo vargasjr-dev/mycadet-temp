@@ -9,9 +9,9 @@ import { red } from "../lib/color";
 import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import type { ServiceName } from "../lib/docker";
-import { execAppleContainer } from "../lib/exec-apple-container";
+import { execAppleContainer } from "../lib/remotes/apple-container";
 import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
-import { sshAppleContainer } from "../lib/ssh-apple-container";
+import { sshAppleContainer } from "../lib/remotes/apple-container";
 import {
   interactiveSession,
   nonInteractiveExec,

@@ -183,20 +183,13 @@ export const forwardGatewayRequest = async (
     // The trusted main-process proxy reads the paired bearer through the
     // shared seam, resolving the invocation here (the old electron-local
     // wrapper lived only to do this).
-    async (assistantId, runtimeUrl): Promise<TokenResult> => {
-      let invocation: CliInvocation;
-      try {
-        invocation = await requireRuntime().cli.resolveInvocation();
-      } catch (err) {
-        return { ok: false, status: 500, error: (err as Error).message };
-      }
-      return getStoredPairedGuardianAccessToken(
+    (assistantId, runtimeUrl) =>
+      getStoredPairedGuardianAccessToken(
         assistantId,
         runtimeUrl,
-        invocation,
+        () => requireRuntime().cli.resolveInvocation(),
         true,
-      );
-    },
+      ),
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };

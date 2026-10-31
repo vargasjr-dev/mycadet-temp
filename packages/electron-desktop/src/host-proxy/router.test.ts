@@ -943,15 +943,7 @@ describe("host-proxy-router", () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
-        assistants: [
-          {
-            // The per-cloud union gives cloud entries no `resources` at all,
-            // so a stale loopback port is no longer even representable —
-            // this pins the classification the old recorded-port bug broke.
-            assistantId: "cloud-1",
-            cloud: "cloud",
-          },
-        ],
+        assistants: [{ assistantId: "cloud-1", cloud: "cloud" }],
         activeAssistant: "cloud-1",
       });
       await flush();

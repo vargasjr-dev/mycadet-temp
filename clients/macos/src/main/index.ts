@@ -7,9 +7,7 @@ import { installCsp } from "@mycadet/electron-desktop/csp";
 import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
-import {
-  forwardGatewayRequest,
-} from "@mycadet/electron-desktop/gateway-forward";
+import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
@@ -22,7 +20,10 @@ import {
   servedConfigFromLockfile,
 } from "@mycadet/local-mode";
 
-import { getVersionInfo, openAboutWindow } from "@mycadet/electron-desktop/about";
+import {
+  getVersionInfo,
+  openAboutWindow,
+} from "@mycadet/electron-desktop/about";
 import { installAbout } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
@@ -71,7 +72,8 @@ import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
-import { installLocalMode, resolveCliInvocation } from "./local-mode.client";
+import { resolveCliInvocation } from "./local-mode.client";
+import { installLocalMode } from "@mycadet/electron-desktop/local-mode";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
 import { installLockfileWatcher } from "@mycadet/electron-desktop/lockfile-watcher";
 import { installHostProxyBridge } from "./host-proxy-adapter";
