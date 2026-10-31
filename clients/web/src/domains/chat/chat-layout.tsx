@@ -9,8 +9,6 @@ import {
 } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 
-import { assistantStateCanServeChat } from "@/assistant/lifecycle";
-import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { MOBILE_MEDIA_QUERY, useIsMobile } from "@/hooks/use-is-mobile";
 import {
@@ -159,9 +157,6 @@ export function ChatLayout({
     useOnboardingFocusStore.use.consumeSidebarCollapse();
 
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantStateKind = useAssistantResolution().state.kind;
-
-  const isAssistantActive = assistantStateCanServeChat(assistantStateKind);
 
   useLiveVoiceSessionController();
 
@@ -173,12 +168,12 @@ export function ChatLayout({
     isPending: isConversationListPending,
     isError: conversationsFailed,
     refetch: retryConversations,
-  } = useConversationListQuery(assistantId, isAssistantActive);
+  } = useConversationListQuery(assistantId);
   const {
     conversationGroups,
     isPending: isGroupsPending,
     isError: groupsFailed,
-  } = useConversationGroupsQuery(assistantId, isAssistantActive);
+  } = useConversationGroupsQuery(assistantId);
 
   useMaterializedDraftReconcile(conversations);
 
@@ -194,7 +189,6 @@ export function ChatLayout({
 
   useAttentionTracking({
     assistantId,
-    assistantStateKind,
     isTranscriptOnScreen: transcriptOnScreen,
   });
 
@@ -204,7 +198,7 @@ export function ChatLayout({
       conversationGroups,
     });
 
-  useElectronDockSync(assistantId, conversations, isAssistantActive);
+  useElectronDockSync(assistantId, conversations);
 
   useNativeRecentChatsSync(
     conversations,
@@ -215,7 +209,6 @@ export function ChatLayout({
     assistantId,
     conversations,
     conversationGroups,
-    isAssistantActive,
     !isConversationListPending &&
       !conversationsFailed &&
       !isGroupsPending &&
@@ -454,11 +447,7 @@ export function ChatLayout({
   }, [assistantId]);
 
   const activeConversation =
-    useActiveConversation(
-      assistantId,
-      activeConversationId,
-      isAssistantActive,
-    ) ?? null;
+    useActiveConversation(assistantId, activeConversationId) ?? null;
 
   const topBarCenter =
     topBarCenterSlot ??

@@ -5,11 +5,6 @@
     "taglineWindows": "您的 Windows PC AI 助手",
     "version": "版本"
   },
-  "activeAssistantGate": {
-    "connecting": "正在连接到您的助手…",
-    "errorTitle": "无法连接到您的助手",
-    "retry": "重试"
-  },
   "addCredentialModal": {
     "cancel": "取消",
     "credentialSaved": "凭据已保存。",

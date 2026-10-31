@@ -137,8 +137,6 @@ import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { cmdEnterToSend } from "@/utils/composer-settings";
 import { routes } from "@/utils/routes";
-import { useAssistantResolution } from "@/assistant/queries";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
@@ -167,12 +165,9 @@ import { shouldMintNewChatDraft } from "@/domains/chat/utils/conversation-select
 import { isNativeMobile } from "@/runtime/platform-detection";
 import { useConversationStore } from "@/stores/conversation-store";
 import { paneState } from "@/stores/pane-state";
-import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
 
-import { canRecoverLocalAssistantCloudCredential } from "@/lib/local-cloud-identity";
 
-import { RestoreCloudCredentialButton } from "./restore-cloud-credential-button";
 
 // ---------------------------------------------------------------------------
 // Props — only values that cannot be owned locally
@@ -279,9 +274,6 @@ function useActiveProcessSlots(isPopout: boolean) {
 // Component
 // ---------------------------------------------------------------------------
 
-const REPROVISION_ASSISTANT_KEY_COMMAND =
-  "assistant keys set credential/cadet/assistant_api_key <key>";
-
 export function ChatMainPanel({
   sendMessage,
   handleStopGenerating,
@@ -361,8 +353,6 @@ export function ChatMainPanel({
       useComposerStore.getState().addFiles(files, assistantId),
     [assistantId],
   );
-  const { state: assistantState } = useAssistantResolution();
-  const activeAssistantIsCloudHosted = useActiveAssistantIsCloudHosted();
   const assistantName = useAssistantIdentityStore.use.name();
   // -------------------------------------------------------------------------
   // Store reads — per-conversation state
@@ -732,38 +722,24 @@ export function ChatMainPanel({
     !activeConversationIsProcessing &&
     !isAssistantBusy;
 
-  const showDoctorAction =
-    assistantState.kind === "active" && activeAssistantIsCloudHosted;
-  const doctorAction = showDoctorAction ? (
+  // The Doctor can re-issue a key for any assistant — cloud or self-hosted —
+  // so the recovery banner always offers it.
+  const doctorAction = (
     <Button asChild variant="outlined" size="compact">
       <Link to={`${routes.settings.debug}?tab=doctor`}>
         {t("chatRouteContent.goToDoctor")}
       </Link>
     </Button>
-  ) : undefined;
+  );
 
   // The assistant API key is provisioned by the cloud, so unlike a rejected
   // personal key there is nothing for the user to fix in Settings. Recovery
-  // differs by how the assistant is hosted, so the banner offers one of two
-  // actions rather than a single link:
-  //
-  //   cloud-hosted → the Doctor, which can re-issue the key. The request is
-  //     parked in the same one-shot store `/doctor <message>` uses, so the
-  //     panel auto-starts a session already on topic, not on a blank prompt.
-  //   self-hosted -> the client owns the reprovision flow (the cloud's own
-  //     recovery excludes these registrations). Where this client can write
-  //     to the assistant's gateway (a plain local assistant or a local Docker
-  //     instance), the banner performs it, and the button itself asks for a
-  //     platform sign-in first when there is none. Where it cannot (a
-  //     remotely served client, a cloud-disabled one), the banner hands
-  //     over the CLI command instead, so no hosting mode is left without a
-  //     way back.
-  //
-  // Built per banner rather than once, so a successful repair retires exactly
-  // the error or notice that offered it. Clearing the slot unconditionally
-  // would also wipe a newer failure that arrived while the repair ran.
-  const buildReprovisionAssistantKeyAction = (onRestored: () => void) =>
-    showDoctorAction ? (
+  // is the Doctor's: it can re-issue the key for any assistant, and the
+  // request is parked in the same one-shot store `/doctor <message>` uses, so
+  // the panel auto-starts a session already on topic, not on a blank prompt.
+  const buildReprovisionAssistantKeyAction = () => (
+    // The Doctor re-issues the key for any assistant — cloud or self-hosted —
+    // so the banner always hands over to it.
       <Button asChild variant="outlined" size="compact">
         <Link
           to={`${routes.settings.debug}?tab=doctor`}
@@ -776,23 +752,7 @@ export function ChatMainPanel({
           {t("chatRouteContent.askTheDoctor")}
         </Link>
       </Button>
-    ) : assistantState.kind === "active" &&
-      canRecoverLocalAssistantCloudCredential() ? (
-      <RestoreCloudCredentialButton onRestored={onRestored} />
-    ) : assistantState.kind === "active" ? (
-      <Button
-        variant="outlined"
-        size="compact"
-        onClick={() =>
-          copyToClipboard(REPROVISION_ASSISTANT_KEY_COMMAND, {
-            successMessage: "Command copied. Run it where the assistant runs.",
-            errorMessage: "Couldn't copy the command.",
-          })
-        }
-      >
-        {t("chatRouteContent.copyCliFix")}
-      </Button>
-    ) : undefined;
+  );
 
   // Blocked automatic opens (see `handleOpenUrl`) carry the URL in
   // `actionUrl`; the button click is a real user gesture, so the re-open
@@ -825,12 +785,7 @@ export function ChatMainPanel({
               useChatSessionStore.getState().setError(null),
             ) ??
             (isCloudCredentialChatError(error)
-              ? buildReprovisionAssistantKeyAction(() => {
-                  const session = useChatSessionStore.getState();
-                  if (session.error === error) {
-                    session.setError(null);
-                  }
-                })
+              ? buildReprovisionAssistantKeyAction()
               : doctorAction),
         }
       : null;
@@ -845,12 +800,7 @@ export function ChatMainPanel({
               useChatSessionStore.getState().setNotice(null),
             ) ??
             (isCloudCredentialChatError(notice)
-              ? buildReprovisionAssistantKeyAction(() => {
-                  const session = useChatSessionStore.getState();
-                  if (session.notice === notice) {
-                    session.setNotice(null);
-                  }
-                })
+              ? buildReprovisionAssistantKeyAction()
               : undefined),
         }
       : null;
@@ -1121,7 +1071,6 @@ export function ChatMainPanel({
     <DiskPressureBannerSlot
       diskPressure={diskPressure}
       visibility={diskPressureVisibility}
-      assistantStateKind={assistantState.kind}
     />
   );
 
@@ -1136,7 +1085,6 @@ export function ChatMainPanel({
       resourcePressure={resourcePressure}
       assistantId={assistantId}
       assistantName={assistantName}
-      assistantStateKind={assistantState.kind}
       hidden={diskPressureBannerVisible}
     />
   );
@@ -1202,9 +1150,7 @@ export function ChatMainPanel({
     conversationId: activeConversationId,
     modeSessionDescriptors: historyPagination.modeSessions,
     sessionDisclosureState,
-    sessionClockConnected:
-      assistantState.kind === "active" &&
-      !(isMobile && documentRoute.showingDocument),
+    sessionClockConnected: !(isMobile && documentRoute.showingDocument),
     onBeforeSessionDisclosureToggle:
       scrollCoordinator.prepareForDisclosureToggle,
     assistantDisplayName: assistantName?.trim() || undefined,

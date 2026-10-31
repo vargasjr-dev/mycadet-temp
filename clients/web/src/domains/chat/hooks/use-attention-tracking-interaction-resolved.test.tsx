@@ -126,7 +126,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -159,7 +158,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -186,7 +184,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -212,7 +209,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -240,7 +236,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -264,7 +259,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -295,7 +289,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -335,7 +328,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       ({ id }: { id: string | null }) =>
         useAttentionTracking({
           assistantId: id,
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper, initialProps: { id: "asst-1" } as { id: string | null } },

@@ -207,7 +207,6 @@ function renderColdBoot(
     () =>
       useConversationLoader({
         assistantId: ASSISTANT_ID,
-        assistantStateKind: "active",
         activeConversationId: null,
         urlConversationId,
         searchParams: new URLSearchParams(),

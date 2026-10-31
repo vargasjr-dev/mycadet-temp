@@ -9,39 +9,18 @@
  * show the rotation notice, an assistant with no backups yet, and a
  * self-hosted assistant, which displays CLI backup instructions.
  */
-import { mock } from "bun:test";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import type { AssistantBackup } from "@/assistant/api";
-import type { AssistantResolutionState } from "@/assistant/types";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { setHosting } from "@/assistant/hosting.test-helper";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { client as cloudClient } from "@/generated/api/client.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-}
-
 /**
  * The hosting answer lives on the lockfile entry's remote field: a local
  * stamp synthesizes a self-hosted entry for the story assistant's id; the
  * cloud world synthesizes none, so the active row reads cloud-hosted.
  */
-function setHosting(kind: "local" | "cloud") {
-  if (kind === "local") {
-    window.__CADET_CONFIG__ = { remote: "local", assistantId: "story-assistant" };
-    useResolvedAssistantsStore.setState({ activeAssistantId: "story-assistant" });
-  } else {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({ state: resolutionState }),
-  useAssistantBootResolution: () => ({ state: resolutionState }),
-}));
-
 const ASSISTANT_IDS = {
   established: "story-assistant",
   fresh: "story-assistant-fresh",
@@ -124,11 +103,8 @@ const meta = {
   },
   beforeEach: () => {
     const restorePlatform = stubClientFetch(cloudClient, platformFetch);
-    const previousLifecycleState = resolutionState;
-    setResolutionState({ kind: "active" });
     return () => {
       restorePlatform();
-      setResolutionState(previousLifecycleState);
     };
   },
   decorators: [
@@ -160,7 +136,6 @@ export const Empty: Story = {
 /** A self-hosted assistant: the same list without the Export button. */
 export const SelfHosted: Story = {
   beforeEach: () => {
-    setResolutionState({ kind: "active" });
     setHosting("local");
   },
 };

@@ -6,20 +6,12 @@
  * inlined in a single consumer.
  */
 
-import type { AssistantResolutionState } from "@/assistant/types";
 import type {
   AllowlistOption,
   DirectoryScopeOption,
   QuestionEntry,
   ScopeOption,
 } from "@/types/interaction-ui-types";
-
-// ---------------------------------------------------------------------------
-// Assistant state
-// ---------------------------------------------------------------------------
-
-/** The `kind` discriminant of `AssistantResolutionState`, shared across multiple hooks. */
-export type AssistantStateKind = AssistantResolutionState["kind"];
 
 // ---------------------------------------------------------------------------
 // State shapes for prompt / error UI

@@ -38,8 +38,6 @@ import type { AssistantEvent } from "@/types/event-types";
 
 /** Params accepted by {@link useEventStream}. */
 export interface UseEventStreamParams {
-  /** Current assistant lifecycle state kind. */
-  assistantStateKind: string;
   /** Resolved assistant ID (null when not yet loaded). */
   assistantId: string | null;
   /** Currently active conversation key. */
@@ -62,7 +60,6 @@ export interface UseEventStreamParams {
 }
 
 export function useEventStream({
-  assistantStateKind,
   assistantId,
   activeConversationId,
   conversationExistsOnServer,
@@ -114,11 +111,7 @@ export function useEventStream({
   // track the active conversation's identity.
   // --------------------------------------------------------------------------
   useEffect(() => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
+    if (!assistantId || !activeConversationId) {
       return;
     }
     if (!conversationExistsOnServer) {
@@ -158,12 +151,7 @@ export function useEventStream({
         s.setStreamContext(null);
       }
     };
-  }, [
-    assistantStateKind,
-    assistantId,
-    activeConversationId,
-    conversationExistsOnServer,
-  ]);
+  }, [assistantId, activeConversationId, conversationExistsOnServer]);
 
   // --------------------------------------------------------------------------
   // SSE event consumer — recreated per conversation so internal seq-
@@ -172,7 +160,6 @@ export function useEventStream({
   // --------------------------------------------------------------------------
   const consumer = useMemo(() => {
     if (
-      assistantStateKind !== "active" ||
       !assistantId ||
       !activeConversationId ||
       !conversationExistsOnServer
@@ -195,12 +182,7 @@ export function useEventStream({
         return reconcileActiveConversationRef.current("seq_gap", true);
       },
     });
-  }, [
-    assistantStateKind,
-    assistantId,
-    activeConversationId,
-    conversationExistsOnServer,
-  ]);
+  }, [assistantId, activeConversationId, conversationExistsOnServer]);
 
   // --------------------------------------------------------------------------
   // Post-reconnect reconcile handler — recreated per conversation so
@@ -208,11 +190,7 @@ export function useEventStream({
   // handler's captured-id filter stays current.
   // --------------------------------------------------------------------------
   const reconcileHandler = useMemo(() => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
+    if (!assistantId || !activeConversationId) {
       return null;
     }
     // Refs read inside closures that run at event-dispatch time, not during render.
@@ -229,7 +207,7 @@ export function useEventStream({
       startReconciliationLoop: (epoch) =>
         startReconciliationLoopRef.current(epoch),
     });
-  }, [assistantStateKind, assistantId, activeConversationId]);
+  }, [assistantId, activeConversationId]);
 
   // --------------------------------------------------------------------------
   // Bus subscriptions — per EVENT_BUS.md, React code uses
@@ -261,11 +239,7 @@ export function useEventStream({
   });
 
   useBusSubscription("sse.closed", ({ reason }) => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
+    if (!assistantId || !activeConversationId) {
       return;
     }
     const streamState = useStreamStore.getState();

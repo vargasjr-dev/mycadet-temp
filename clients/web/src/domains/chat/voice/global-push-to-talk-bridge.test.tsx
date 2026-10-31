@@ -250,15 +250,12 @@ const { useVoiceKeyTapStore } =
 const { useLiveVoiceStore } =
   await import("@/domains/chat/voice/live-voice/live-voice-store");
 
-const renderBridge = (
-  assistantId: string | null = "assistant-1",
-  enabled = true,
-) => {
+const renderBridge = (assistantId: string | null = "assistant-1") => {
   // The bridge's voice mode shortcut navigates to the conversation surface
   // when a press finds no composer, so it renders under a router in the app.
   render(
     <MemoryRouter>
-      <GlobalPushToTalkBridge assistantId={assistantId} enabled={enabled} />
+      <GlobalPushToTalkBridge assistantId={assistantId} />
     </MemoryRouter>,
   );
   if (!latestVoiceInputProps) {
@@ -1170,7 +1167,7 @@ test("ignores the final offer if the voice bridge unmounts during its state read
   );
   const view = render(
     <MemoryRouter>
-      <GlobalPushToTalkBridge assistantId="assistant-1" enabled />
+      <GlobalPushToTalkBridge assistantId="assistant-1" />
     </MemoryRouter>,
   );
   const pending = holdHandlers?.onDoubleTap();
@@ -1199,17 +1196,6 @@ test("checks the native tour step when the staging notification is stale", async
   });
   expect(readCompanionState).toHaveBeenCalled();
   expect(toggleVoiceMock).not.toHaveBeenCalled();
-});
-
-test("voice gestures stay inactive before assistant selection is ready", async () => {
-  renderBridge("a1", false);
-  await act(async () => {
-    await holdHandlers?.onDoubleTap();
-    holdHandlers?.onHoldStart({ selection: null });
-  });
-  expect(toggleVoiceMock).not.toHaveBeenCalled();
-  expect(voiceStartMock).not.toHaveBeenCalled();
-  expect(advanceIntro).not.toHaveBeenCalled();
 });
 
 test("canceling a double tap never opens a microphone or starts a call", async () => {
@@ -1298,7 +1284,7 @@ test("an answered confirmation stays up until the call is started", async () => 
   expect(withdrawMock).toHaveBeenCalled();
 });
 
-test.each(["unmount", "assistant-change", "disabled", "another-call"] as const)(
+test.each(["unmount", "assistant-change", "another-call"] as const)(
   "a confirmation cannot start after %s",
   async (change) => {
     let answer: (confirmed: boolean) => void = () => {};
@@ -1310,7 +1296,7 @@ test.each(["unmount", "assistant-change", "disabled", "another-call"] as const)(
     );
     const view = render(
       <MemoryRouter>
-        <GlobalPushToTalkBridge assistantId="assistant-1" enabled />
+        <GlobalPushToTalkBridge assistantId="assistant-1" />
       </MemoryRouter>,
     );
     const pending = holdHandlers?.onDoubleTap();
@@ -1325,10 +1311,7 @@ test.each(["unmount", "assistant-change", "disabled", "another-call"] as const)(
       view.rerender(
         <MemoryRouter>
           <GlobalPushToTalkBridge
-            assistantId={
-              change === "assistant-change" ? "assistant-2" : "assistant-1"
-            }
-            enabled={change !== "disabled"}
+            assistantId={change === "assistant-change" ? "assistant-2" : "assistant-1"}
           />
         </MemoryRouter>,
       );

@@ -14,7 +14,6 @@ function renderEventStream(
   return renderHook(
     ({ key }: { key: string }) => {
       useEventStream({
-        assistantStateKind: "active",
         assistantId: "asst-1",
         activeConversationId: key,
         conversationExistsOnServer: true,

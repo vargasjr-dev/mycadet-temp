@@ -26,16 +26,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { AssistantResolutionState } from "@/assistant/types";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { setHosting } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { ApiError } from "@/utils/api-errors";
 
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-}
 
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
@@ -44,20 +39,6 @@ function setResolutionState(next: AssistantResolutionState) {
  * active row reads cloud-hosted. Tests reset both seams in their
  * beforeEach.
  */
-function setHosting(kind: "local" | "cloud") {
-  if (kind === "local") {
-    window.__CADET_CONFIG__ = { remote: "local", assistantId: ASSISTANT_ID };
-    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
-  } else {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({ state: resolutionState }),
-  useAssistantBootResolution: () => ({ state: resolutionState }),
-}));
-
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -391,7 +372,6 @@ function fillCreateForm(): void {
 beforeEach(async () => {
   createdConnection = makeConnection("anthropic-personal");
   toastSuccessCalls = [];
-  setResolutionState({ kind: "loading" });
   // Seed a hydrated pre-gate version: the save path awaits
   // whenAssistantVersionKnown(), and an unhydrated store would stall each
   // save until that helper's timeout. Gate-on tests override per-test.
@@ -681,7 +661,6 @@ describe("ProfileEditorModal create mode — model-first", () => {
   });
 
   test("Ollama connections offer the bundled local models", () => {
-    setResolutionState({ kind: "active" });
     setHosting("local");
     renderCreate([makeConnection("ollama", "ollama")]);
 

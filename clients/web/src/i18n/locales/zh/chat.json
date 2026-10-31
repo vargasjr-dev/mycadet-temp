@@ -394,9 +394,6 @@
     "loadingImageWithAlt": "正在加载图片… ({alt})"
   },
   "chatPage": {
-    "connecting": "正在连接…",
-    "connectingStuck": "仍在连接到您的助手 - 似乎卡住了。请重试，如果此问题持续发生，请刷新页面。",
-    "retryNow": "立即重试",
     "selfHostedUnreachable": "无法连接到您的自托管助手。请确保您的助手正在运行，然后重试。",
     "tryAgain": "重试"
   },
@@ -404,8 +401,7 @@
     "askTheDoctor": "询问 Doctor",
     "goToDoctor": "前往 Doctor",
     "openPage": "打开页面",
-    "suggestionFallback": "建议",
-    "copyCliFix": "复制 CLI 修复命令"
+    "suggestionFallback": "建议"
   },
   "chatRuleEditorModal": {
     "applyTo": "应用于",
@@ -1416,16 +1412,6 @@
     "summaryTitle": "已准备好保存",
     "summaryUnanswered": "未设置",
     "untitledTask": "观察到的操作"
-  },
-  "restoreCloudCredentialButton": {
-    "restore": "恢复访问",
-    "restoring": "正在恢复...",
-    "restored": "已恢复。由 Cadet 托管的模型重新可用。",
-    "failedNoAssistant": "请选择一个助手，然后重试。",
-    "failedCannotActHere": "此应用无法为该助手恢复凭据。请在运行该助手的电脑上打开它。",
-    "failedReplacementRejected": "Cadet 拒绝了新的凭据。请登录 Cadet 平台后重试。",
-    "failedUnconfirmed": "新凭据已保存，但无法与 Cadet 确认。它可能很快就会生效。",
-    "failedGeneric": "无法恢复访问。请稍后重试。"
   },
   "chatsSection": {
     "emptyBody": "开始新的聊天后，它会显示在这里。",

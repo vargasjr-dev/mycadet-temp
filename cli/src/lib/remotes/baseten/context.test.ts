@@ -10,14 +10,16 @@ import {
 const UNSHALLOW_DOCKERFILE = [
   "ARG MYCADET_VERSION",
   "RUN bun add -g mycadet@${MYCADET_VERSION}",
-  "ARG ASSISTANT_NAME=\"\"",
-  "RUN cd /app && cadet hatch ${ASSISTANT_NAME:+--name \"$ASSISTANT_NAME\"}",
+  'ARG ASSISTANT_NAME=""',
+  'RUN cd /app && cadet hatch ${ASSISTANT_NAME:+--name "$ASSISTANT_NAME"}',
 ].join("\n");
 
 describe("stampBasetenDockerfile", () => {
   test("stamps the CLI's package version so releases need no bump here", () => {
     // resolveVersion local-stamps source checkouts; released CLIs stay plain.
-    expect(mycadetVersion()).toMatch(/^\d+\.\d+\.\d+(-local\.\d{12}\.[0-9a-f]+)?$/);
+    expect(mycadetVersion()).toMatch(
+      /^\d+\.\d+\.\d+(-local\.\d{12}\.[0-9a-f]+)?$/,
+    );
     const stamped = stampBasetenDockerfile(UNSHALLOW_DOCKERFILE, {
       version: mycadetVersion(),
     });

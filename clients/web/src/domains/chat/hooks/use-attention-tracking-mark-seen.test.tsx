@@ -119,7 +119,6 @@ describe("useAttentionTracking — mark-seen effect", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -144,7 +143,6 @@ describe("useAttentionTracking — mark-seen effect", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -169,7 +167,6 @@ describe("useAttentionTracking — mark-seen effect", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -225,7 +222,6 @@ describe("useAttentionTracking — mark-seen effect", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },
@@ -282,7 +278,6 @@ describe("useAttentionTracking — mark-seen effect", () => {
       () =>
         useAttentionTracking({
           assistantId: "asst-1",
-          assistantStateKind: "active",
           isTranscriptOnScreen: true,
         }),
       { wrapper },

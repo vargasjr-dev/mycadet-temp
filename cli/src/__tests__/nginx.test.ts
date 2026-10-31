@@ -205,6 +205,26 @@ function makeWorkspace(): string {
   return dir;
 }
 
+/** Seed the one assistant entry the edge's strict lookup fronts. */
+function seedAssistant(name = "Homelab"): void {
+  const path = resolveLockfilePath();
+  realFs.mkdirSync(join(path, ".."), { recursive: true });
+  realFs.writeFileSync(
+    path,
+    JSON.stringify({
+      assistants: [
+        {
+          assistantId: "assistant-1",
+          name,
+          cloud: "local",
+          localUrl: "http://127.0.0.1:7830",
+        },
+      ],
+      activeAssistant: "assistant-1",
+    }),
+  );
+}
+
 /** Stamp the lockfile's tunnel record with a published URL. */
 function stampTunnelRecord(url: string): void {
   // Resolve exactly as the edge's own read will.
@@ -1000,6 +1020,7 @@ describe("startAppServer", () => {
 
   test("the metadata route serves the CLI's own version stamp, always ready", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1021,12 +1042,14 @@ describe("startAppServer", () => {
 
   test("serves the SPA config unchanged", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     if (result.status !== "started") {
@@ -1049,6 +1072,9 @@ describe("startAppServer", () => {
         indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
         appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
         config: {
+          remote: "local",
+          assistantName: "Homelab",
+          assistantId: "assistant-1",
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1061,13 +1087,11 @@ describe("startAppServer", () => {
       join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
-    // No lockfile entry fronts this start, so no remote kind is stamped —
-    // the served config is the fields it has, nothing aliased.
-    expect(indexHtml).not.toContain('"remote"');
+    // The served config is the seeded entry's own facts: its recorded
+    // kind, its display name, nothing aliased.
+    expect(indexHtml).toContain('"remote":"local"');
+    expect(indexHtml).toContain('"assistantName":"Homelab"');
     expect(indexHtml).toContain('"hubUrl":"https://mycadet.ai/assistant"');
-    expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
-    // No assistant name was provided, so the served config omits the label.
-    expect(indexHtml).not.toContain("assistantName");
     expect(readIngressState()).toEqual({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
@@ -1081,6 +1105,7 @@ describe("startAppServer", () => {
     // that leftover, so a prior file without /readyz cannot keep pairing
     // broken after boot.
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1099,6 +1124,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
@@ -1112,36 +1138,16 @@ describe("startAppServer", () => {
     expect(readyzBlock).toContain("proxy_pass http://127.0.0.1:7830;");
   });
 
-  test("stamps the assistant label into the served config when provided", async () => {
-    makeWorkspace();
-    mockNginxInstalled();
-    mockNginxSpawn();
-    mockWebDistPresent();
-
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantName: "My Homelab",
-    });
-
-    expect(result.status).toBe("started");
-    const indexHtml = realFs.readFileSync(
-      join(getIngressPaths().dir, "assistant-index.html"),
-      "utf-8",
-    );
-    expect(indexHtml).toContain('"assistantName":"My Homelab"');
-    expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
-    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
-    expect(conf).toContain('\\"assistantName\\":\\"My Homelab\\"');
-  });
-
   test("requires the web dist", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistMissing();
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({ status: "web-dist-missing" });
@@ -1151,6 +1157,7 @@ describe("startAppServer", () => {
 
   test("builds the missing web bundle from the source checkout and starts", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     // No built bundle anywhere, but the source checkout IS present, so the
     // edge auto-builds it through the spawn boundary (mocked here).
@@ -1180,6 +1187,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1201,6 +1209,7 @@ describe("startAppServer", () => {
 
   test("reports a failed source build with the manual recipe", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     // Bundle missing, source checkout present: the edge auto-builds, and
     // the build spawn fails.
@@ -1220,12 +1229,14 @@ describe("startAppServer", () => {
     await expect(
       startAppServer({
         gatewayUrl: "http://127.0.0.1:7830",
+        assistantId: "assistant-1",
       }),
     ).rejects.toThrow("cd clients/web && bun run build");
   });
 
   test("already-running reports the recorded listen port", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1238,6 +1249,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1251,6 +1263,7 @@ describe("startAppServer", () => {
 
   test("a failed restart reports the recorded gateway port", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1262,6 +1275,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1274,6 +1288,7 @@ describe("startAppServer", () => {
 
   test("restarts the edge when its recorded gateway port drifts from the request", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1285,6 +1300,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     if (result.status !== "started") {
@@ -1305,6 +1321,9 @@ describe("startAppServer", () => {
         indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
         appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
         config: {
+          remote: "local",
+          assistantName: "Homelab",
+          assistantId: "assistant-1",
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1320,6 +1339,7 @@ describe("startAppServer", () => {
 
   test("restarts an edge whose state predates the recorded gateway port", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1328,6 +1348,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7900",
+      assistantId: "assistant-1",
     });
 
     if (result.status !== "started") {
@@ -1347,6 +1368,9 @@ describe("startAppServer", () => {
         indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
         appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
         config: {
+          remote: "local",
+          assistantName: "Homelab",
+          assistantId: "assistant-1",
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1361,19 +1385,20 @@ describe("startAppServer", () => {
 
   test("short-circuits when the running SPA edge already serves the requested config", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
     const pid = mockRunningEdge({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
-      remoteWebConfigHash: appConfigHash({ assistantName: "My Homelab" }),
+      remoteWebConfigHash: appConfigHash(),
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
-      assistantName: "My Homelab",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1388,6 +1413,7 @@ describe("startAppServer", () => {
   for (const drift of ["indexHtml", "webDistDir"] as const) {
     test(`restarts a detached edge when the web bundle ${drift} changes`, async () => {
       makeWorkspace();
+      seedAssistant();
       mockNginxInstalled();
       mockNginxSpawn();
       mockWebDistPresent();
@@ -1406,6 +1432,7 @@ describe("startAppServer", () => {
       const edge = mockKillableNginx(pid);
       const result = await startAppServer({
         gatewayUrl: "http://127.0.0.1:7830",
+        assistantId: "assistant-1",
       });
       expect(result).toMatchObject({ status: "started", listenPort: 7840 });
       expect(edge.killed()).toBe(true);
@@ -1421,6 +1448,7 @@ describe("startAppServer", () => {
 
   test("restarts the edge when the injected SPA config drifts from the recorded one", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1430,10 +1458,11 @@ describe("startAppServer", () => {
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
     const edge = mockKillableNginx(pid);
+    seedAssistant("New Name");
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
-      assistantName: "New Name",
+      assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
@@ -1453,6 +1482,7 @@ describe("startAppServer", () => {
 
   test("restarts an SPA edge whose state predates the config fingerprint", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1464,6 +1494,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
@@ -1477,6 +1508,7 @@ describe("startAppServer", () => {
 
   test("a config-drifted edge that survives the restart attempt reports it as stale", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1486,10 +1518,11 @@ describe("startAppServer", () => {
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
     mockUnkillableNginx(pid);
+    seedAssistant("New Name");
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
-      assistantName: "New Name",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1503,6 +1536,7 @@ describe("startAppServer", () => {
 
   test("starts a fresh edge when the old one exits during the stop", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1522,6 +1556,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     if (result.status !== "started") {
@@ -1541,6 +1576,9 @@ describe("startAppServer", () => {
         indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
         appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
         config: {
+          remote: "local",
+          assistantName: "Homelab",
+          assistantId: "assistant-1",
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1558,6 +1596,7 @@ describe("startAppServer", () => {
     // probe while this workspace's nginx dies on the bind, so a healthy probe
     // alone must not count as started.
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
@@ -1565,6 +1604,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1581,6 +1621,7 @@ describe("startAppServer", () => {
     // milliseconds, while our master is still failing its bind. The child being
     // alive right after the probe must not count as started.
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawnExitsAfterProbe();
     mockWebDistPresent();
@@ -1588,6 +1629,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1601,12 +1643,14 @@ describe("startAppServer", () => {
 
   test("started requires the pid file to name the live spawned master", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({
@@ -1628,6 +1672,7 @@ describe("startAppServer", () => {
 
   test("a spawn that exits with a failed probe is also a port conflict", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
@@ -1635,6 +1680,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("port-conflict");
@@ -1642,6 +1688,7 @@ describe("startAppServer", () => {
 
   test("a child still retrying its bind at the settle deadline is killed before rollback", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockWebDistPresent();
     const kills: string[] = [];
@@ -1661,6 +1708,7 @@ describe("startAppServer", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("port-conflict");
@@ -1727,24 +1775,9 @@ describe("ensureAppServer", () => {
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
   });
 
-  test("omits the assistant label when the lockfile has no matching entry", async () => {
-    mockNginxInstalled();
-    mockNginxSpawn();
-    mockWebDistPresent();
-
-    await ensureAppServer();
-
-    const indexHtml = realFs.readFileSync(
-      join(getIngressPaths().dir, "assistant-index.html"),
-      "utf-8",
-    );
-    expect(indexHtml).not.toContain("assistantName");
-    expect(indexHtml).toContain(`"assistantId":"${ASSISTANT_ID}"`);
-    expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
-  });
-
   test("reuses a running edge that already serves the requested config", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1808,6 +1841,7 @@ describe("ensureAppServer", () => {
 
   test("a config-drifted edge that survives the restart attempt throws", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1832,6 +1866,7 @@ describe("ensureAppServer", () => {
 
   test("a port-drifted edge that survives the restart attempt throws", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1853,6 +1888,7 @@ describe("ensureAppServer", () => {
 
   test("restarts a port-drifted edge against the requested gateway port", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1876,6 +1912,7 @@ describe("ensureAppServer", () => {
 
   test("starts the SPA edge", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1896,26 +1933,9 @@ describe("ensureAppServer", () => {
     });
   });
 
-  test("an entry without an assistant id still gets the SPA edge", async () => {
-    makeWorkspace();
-    resolveTargetAssistantMock.mockReturnValue({} as never);
-    mockNginxInstalled();
-    mockNginxSpawn();
-    mockWebDistPresent();
-
-    const result = await ensureAppServer();
-
-    expect(result).toEqual({
-      port: REQUESTED_PORT,
-      started: true,
-    });
-    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
-    expect(conf).toContain("location ^~ /assistant/ {");
-    expect(conf).not.toContain("assistantId");
-  });
-
   test("missing nginx throws with install instructions", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxMissing();
 
     const promise = ensureAppServer();
@@ -1929,6 +1949,7 @@ describe("ensureAppServer", () => {
 
   test("missing web dist throws build guidance", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockWebDistMissing();
 
@@ -1937,6 +1958,7 @@ describe("ensureAppServer", () => {
 
   test("an unreachable edge throws with the log path", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1947,6 +1969,7 @@ describe("ensureAppServer", () => {
 
   test("a port conflict throws naming the port and the log path", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
@@ -2166,8 +2189,9 @@ function appConfigHash(
     .update(
       JSON.stringify({
         config: {
-          assistantName: opts.assistantName,
-          assistantId: opts.assistantId,
+          remote: "local",
+          assistantName: opts.assistantName ?? "Homelab",
+          assistantId: opts.assistantId ?? "assistant-1",
           hubUrl: PRODUCTION_HUB_URL,
           cloudUrl: opts.cloudUrl,
           version: "1.2.3",
@@ -2281,6 +2305,7 @@ describe("the app shell edge", () => {
 
   test("starts, injects both documents, and records the edge fingerprint", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2313,6 +2338,7 @@ describe("the app shell edge", () => {
 
   test("stamps the saved tunnel URL as the served config's cloudUrl", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2344,6 +2370,7 @@ describe("the app shell edge", () => {
 
   test("omits cloudUrl when no tunnel URL is on record", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2365,6 +2392,7 @@ describe("the app shell edge", () => {
 
   test("fails fast when the app bundle is not built", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2382,6 +2410,7 @@ describe("the app shell edge", () => {
 
     const result = await startAppServer({
       gatewayUrl: "http://127.0.0.1:7830",
+      assistantId: "assistant-1",
     });
 
     expect(result).toEqual({ status: "app-dist-missing" });
@@ -2390,6 +2419,7 @@ describe("the app shell edge", () => {
 
   test("reuses an already-running edge", async () => {
     makeWorkspace();
+    seedAssistant();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();

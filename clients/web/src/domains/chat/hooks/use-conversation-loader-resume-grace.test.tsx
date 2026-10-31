@@ -70,7 +70,6 @@ function renderLoader() {
     () =>
       useConversationLoader({
         assistantId: "asst-1",
-        assistantStateKind: "active",
         activeConversationId: "conv-A",
         urlConversationId: "conv-A",
         searchParams: new URLSearchParams(),

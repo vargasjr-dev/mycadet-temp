@@ -318,7 +318,7 @@ describe("supersedeCloudAvatar", () => {
       assistants: [
         {
           id: "paired-slug",
-          cloud: "paired",
+          cloud: "custom",
           cloudAssistantId: PAIRED_UUID,
         },
       ],

@@ -28,15 +28,11 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { createElement, type ReactNode } from "react";
 
-import type { AssistantResolutionState } from "@/assistant/types";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { setHosting } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-}
 
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
@@ -45,20 +41,6 @@ function setResolutionState(next: AssistantResolutionState) {
  * active row reads cloud-hosted. The next test's beforeEach restores both
  * seams.
  */
-function setHosting(kind: "local" | "cloud") {
-  if (kind === "local") {
-    window.__CADET_CONFIG__ = { remote: "local", assistantId: ASSISTANT_ID };
-    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
-  } else {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({ state: resolutionState }),
-  useAssistantBootResolution: () => ({ state: resolutionState }),
-}));
-
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -260,7 +242,6 @@ beforeEach(() => {
   createResponseStatus = 200;
   createResponseJson = null;
   toastSuccessCalls = [];
-  setResolutionState({ kind: "loading" });
   window.__CADET_CONFIG__ = undefined;
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
 });
@@ -421,7 +402,6 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama creates a keyless connection without saving a secret", async () => {
-    setResolutionState({ kind: "active" });
     setHosting("local");
     render(
       <ModalWrapper>
@@ -456,7 +436,6 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create form shows an optional Base URL field", async () => {
-    setResolutionState({ kind: "active" });
     setHosting("local");
     render(
       <ModalWrapper>
@@ -477,7 +456,6 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create posts a filled Base URL", async () => {
-    setResolutionState({ kind: "active" });
     setHosting("local");
     render(
       <ModalWrapper>
@@ -508,7 +486,6 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("cloud-hosted assistants ignore an Ollama default provider seed", () => {
-    setResolutionState({ kind: "active" });
     setHosting("cloud");
     render(
       <ModalWrapper>

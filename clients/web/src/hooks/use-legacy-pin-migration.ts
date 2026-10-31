@@ -77,7 +77,6 @@ export function planLegacyPinClaim(
 
 export function useLegacyPinMigration(
   assistantId: string | null | undefined,
-  isAssistantActive: boolean,
 ): void {
   const queryClient = useQueryClient();
   const daemonOwnsPins = useSupportsDaemonAppPins();
@@ -85,7 +84,7 @@ export function useLegacyPinMigration(
     () => ({ assistant_id: assistantId ?? "" }),
     [assistantId],
   );
-  const enabled = Boolean(assistantId) && isAssistantActive && daemonOwnsPins;
+  const enabled = Boolean(assistantId) && daemonOwnsPins;
 
   const { data: apps } = useQuery({
     ...appsGetOptions({ path }),

@@ -10,7 +10,6 @@ import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantIsSelfHosted,
-  useActiveAssistantLifecycleIsLoading,
 } from "@/assistant/hosting";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useEnvironmentStore } from "@/stores/environment-store";
@@ -40,7 +39,6 @@ export function EmailChannelSection() {
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
   const isSelfHosted = useActiveAssistantIsSelfHosted();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const isResolving = useActiveAssistantLifecycleIsLoading();
 
   const [mode, setMode] = useState<ServiceMode>(() => {
     if (isSelfHosted) {
@@ -236,12 +234,7 @@ export function EmailChannelSection() {
     >
       {mode === "managed" ? (
         <div className="space-y-4">
-          {isResolving ? (
-            <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t("emailChannelSection.connecting")}
-            </div>
-          ) : cloudAssistantId === null ? (
+          {cloudAssistantId === null ? (
             <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("emailChannelSection.connecting")}

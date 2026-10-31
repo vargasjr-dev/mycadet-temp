@@ -60,7 +60,7 @@ import {
   parsePendingSecretState,
   parsePendingConfirmationData,
 } from "@/domains/chat/utils/send-message-utils";
-import type { AssistantStateKind, ChatError } from "@/domains/chat/types";
+import type { ChatError } from "@/domains/chat/types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import {
   getPendingInteractions,
@@ -85,7 +85,6 @@ import {
 
 interface UseConversationHistoryParams {
   assistantId: string | null;
-  assistantStateKind: AssistantStateKind;
   activeConversationId: string | null;
 }
 
@@ -192,17 +191,13 @@ function clearConfirmationTranscriptMarker(requestId: string): void {
 
 export function useConversationHistory({
   assistantId,
-  assistantStateKind,
   activeConversationId,
 }: UseConversationHistoryParams): ConversationHistoryResult {
   const queryClient = useQueryClient();
   const pagination = useHistoryPagination({
     assistantId,
     conversationId: activeConversationId,
-    enabled:
-      assistantStateKind === "active" &&
-      !!assistantId &&
-      !!activeConversationId,
+    enabled: !!assistantId && !!activeConversationId,
   });
 
   /**
@@ -228,18 +223,14 @@ export function useConversationHistory({
   // Conversation-switch reset — delegated to the store action.
   // -------------------------------------------------------------------------
   useEffect(() => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
+    if (!assistantId || !activeConversationId) {
       return;
     }
     useChatSessionStore.getState().switchToConversation({
       assistantId,
       activeConversationId,
     });
-  }, [assistantStateKind, assistantId, activeConversationId]);
+  }, [assistantId, activeConversationId]);
 
   // -------------------------------------------------------------------------
   // Register the history-cache writer for `patchTranscriptMessages`, so
@@ -746,7 +737,6 @@ export function useConversationHistory({
         return;
       }
       if (
-        assistantStateKind !== "active" ||
         !assistantId ||
         !activeConversationId ||
         openedAssistantId !== assistantId

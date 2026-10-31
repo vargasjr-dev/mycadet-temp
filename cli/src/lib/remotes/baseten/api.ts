@@ -13,7 +13,11 @@ import { captureBasetenCli, resolveBasetenCli, runBasetenCli } from "./baseten-c
 
 const BASETEN_API_BASE = "https://api.baseten.co";
 
-export type BasetenEnvs = Array<{ name: string; secret: boolean; value: string }>;
+export type BasetenEnvs = Array<{
+  name: string;
+  secret: boolean;
+  value: string;
+}>;
 
 /** The error envelope the management API returns on failures. */
 const ErrorBody = z.object({
@@ -93,7 +97,9 @@ export class BasetenApiError extends Error {
 export async function resolveBasetenToken(): Promise<string> {
   const apiKey = process.env.BASETEN_API_KEY;
   if (!apiKey) {
-    throw new Error("Baseten credentials not found. Export BASETEN_API_KEY first.");
+    throw new Error(
+      "Baseten credentials not found. Export BASETEN_API_KEY first.",
+    );
   }
   const issued = await basetenFetch(apiKey, "/v1/token", TokenIssued, {
     method: "POST",

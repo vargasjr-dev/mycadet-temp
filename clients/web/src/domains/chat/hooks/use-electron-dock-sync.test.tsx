@@ -78,11 +78,7 @@ function setup(opts: {
 
   renderHook(
     () =>
-      useElectronDockSync(
-        ASSISTANT_ID,
-        opts.conversations,
-        opts.isAssistantActive ?? true,
-      ),
+      useElectronDockSync(ASSISTANT_ID, opts.conversations),
     {
       wrapper: ({ children }: { children: ReactNode }) =>
         createElement(QueryClientProvider, { client }, children),
@@ -148,26 +144,6 @@ describe("useElectronDockSync", () => {
     });
   });
 
-  test("does not query a starting assistant, and still publishes a badge", async () => {
-    // `ChatLayout` mounts before the assistant is active. Querying then spends
-    // the retry budget on a request that cannot succeed, so the badge falls
-    // back to the loaded rows until the assistant comes up.
-    let queried = false;
-    unreadCountImpl = async () => {
-      queried = true;
-      return 9;
-    };
-
-    setup({
-      conversations: [unread("a"), unread("b")],
-      isAssistantActive: false,
-    });
-
-    await waitFor(() => {
-      expect(setDockBadgeCalls.at(-1)).toBe(2);
-    });
-    expect(queried).toBe(false);
-  });
 
   test("never publishes a negative badge", async () => {
     // Optimistic decrements are deliberately unclamped so a revert is exact,

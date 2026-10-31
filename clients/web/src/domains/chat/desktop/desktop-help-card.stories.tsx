@@ -1,21 +1,11 @@
-import { mock } from "bun:test";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 
-import type { AssistantResolutionState } from "@/assistant/types";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 
 import { DesktopHelpCard } from "./desktop-help-card";
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-}
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({ state: resolutionState }),
-  useAssistantBootResolution: () => ({ state: resolutionState }),
-}));
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 
 function PreviewFixture() {
@@ -24,15 +14,12 @@ function PreviewFixture() {
   useLayoutEffect(() => {
     const initialSession = useDesktopPreviewStore.getState().session;
     const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
-    const previousLifecycleState = resolutionState;
     useResolvedAssistantsStore.setState({
       activeAssistantId: "assistant-example",
     });
-    setResolutionState({ kind: "active" });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
       useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
-      setResolutionState(previousLifecycleState);
     };
   }, []);
   return (

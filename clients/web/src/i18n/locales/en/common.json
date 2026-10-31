@@ -5,11 +5,6 @@
     "taglineWindows": "AI assistant for your PC",
     "version": "Version"
   },
-  "activeAssistantGate": {
-    "connecting": "Connecting to your assistant…",
-    "errorTitle": "We couldn't reach your assistant",
-    "retry": "Try again"
-  },
   "addCredentialModal": {
     "cancel": "Cancel",
     "credentialSaved": "Credential saved.",

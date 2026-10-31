@@ -153,7 +153,6 @@ export interface DiskPressureBannerSlotProps {
    */
   visibility: DiskPressureBannerVisibility;
   /** `"active"` for cloud-hosted assistants that have an upgrade path. */
-  assistantStateKind: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +162,6 @@ export interface DiskPressureBannerSlotProps {
 export function DiskPressureBannerSlot({
   diskPressure,
   visibility,
-  assistantStateKind,
 }: DiskPressureBannerSlotProps) {
   const navigate = useNavigate();
 
@@ -188,11 +186,7 @@ export function DiskPressureBannerSlot({
         onReviewWorkspaceData={() =>
           void navigate(`${routes.workspace}?sort=size`)
         }
-        onUpgradeStorage={
-          assistantStateKind === "active"
-            ? () => void openExternalUrl(cloudAccountBillingUrl())
-            : null
-        }
+        onUpgradeStorage={() => void openExternalUrl(cloudAccountBillingUrl())}
       />
     </div>
   );

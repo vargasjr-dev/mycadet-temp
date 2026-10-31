@@ -29,7 +29,7 @@ import {
 } from "../assistant-config.js";
 import {
   getGatewayUrl,
-  type InjectedConfigStamp,
+  type InjectedConfig,
   type Remote,
 } from "@mycadet/local-mode/contract";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
@@ -445,7 +445,7 @@ export function buildNginxConfig(opts: {
    * the start path points them at the ingress dir, where the injected
    * copies are written.
    */
-  config?: InjectedConfigStamp;
+  config?: InjectedConfig;
   webDistDir?: string;
   appDistDir?: string;
   indexHtmlPath?: string;
@@ -1068,17 +1068,11 @@ export async function startAppServer(opts: {
   /** Where the edge proxies gateway traffic — `getGatewayUrl` of the fronted entry. */
   gatewayUrl: string;
   /**
-   * Serving assistant's display name, stamped into the served remote-web
-   * config (`__CADET_CONFIG__.assistantName`) so remote clients can label
-   * this origin. Omitted when unknown; consumers tolerate its absence.
-   */
-  assistantName?: string;
-  /**
    * Serving assistant's id, stamped into the served remote-web config
    * (`__CADET_CONFIG__.assistantId`) so a caller probing this origin can
-   * confirm which assistant the edge fronts. Omitted when unknown.
+   * confirm which assistant the edge fronts.
    */
-  assistantId?: string;
+  assistantId: string;
 }): Promise<StartAppServerResult> {
   let listenPort = DEFAULT_NGINX_INGRESS_PORT;
 
@@ -1105,11 +1099,18 @@ export async function startAppServer(opts: {
   // timestamp is the HEAD commit's), so the fingerprint below never drifts
   // between processes.
   const version = resolveVersion(join(import.meta.dir, "../../.."));
-  const config: InjectedConfigStamp = {
-    remote: opts.assistantId
-      ? lockfileAssistantRemote(opts.assistantId)
-      : undefined,
-    assistantName: opts.assistantName,
+  // The caller resolved this assistant from the lockfile moments ago, so
+  // the entry is there: a miss means the lockfile changed under us, which
+  // is a bug to stop on, not a config to guess through.
+  const assistant = lookupAssistantByIdentifier(opts.assistantId);
+  if (assistant.status !== "found") {
+    throw new Error(
+      `The assistant ${opts.assistantId} is not in the lockfile, but the app server was asked to serve its UI.`,
+    );
+  }
+  const config: InjectedConfig = {
+    remote: assistant.entry.cloud,
+    assistantName: getAssistantDisplayName(assistant.entry),
     assistantId: opts.assistantId,
     hubUrl: cloudAssistantHubUrl(),
     cloudUrl: savedPublicBaseUrl(),
@@ -1272,17 +1273,6 @@ export async function startAppServer(opts: {
 }
 
 /**
- * Display name recorded for the assistant in the CLI lockfile; undefined when
- * no entry matches, so the served config omits the label rather than guessing.
- */
-function lockfileAssistantName(assistantId: string): string | undefined {
-  const result = lookupAssistantByIdentifier(assistantId);
-  return result.status === "found"
-    ? getAssistantDisplayName(result.entry)
-    : undefined;
-}
-
-/**
  * Stop the app server fronting a container assistant, if this assistant is
  * the one it currently fronts.
  *
@@ -1365,11 +1355,9 @@ function stuckEdgeRecoveryHint(): string {
  */
 export async function ensureAppServer(): Promise<AppServer> {
   const entry = resolveTargetAssistant();
-  const assistantName = lockfileAssistantName(entry.assistantId);
   const gatewayUrl = getGatewayUrl(entry);
   const result = await startAppServer({
     gatewayUrl,
-    ...(assistantName ? { assistantName } : {}),
     assistantId: entry.assistantId,
   });
 

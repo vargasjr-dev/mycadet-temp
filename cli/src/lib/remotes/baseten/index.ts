@@ -14,10 +14,7 @@ import {
   pushBasetenImage,
   resolveBasetenToken,
 } from "./api.js";
-import {
-  BASETEN_IMAGE_NAME,
-  stageBasetenBuildContext,
-} from "./context.js";
+import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context.js";
 
 /**
  * The Baseten remote — `cadet hatch --remote baseten`.
@@ -153,8 +150,10 @@ export const hatchBaseten = Object.assign(
         );
       }
       console.log("");
-      console.log(green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout));
-      if (sandboxUrl && gatewayUrl) {
+      console.log(
+        green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout),
+      );
+      if (sandboxUrl) {
         console.log(`   URL: ${sandboxUrl}`);
         console.log(`   Assistant gateway: ${gatewayUrl}/`);
       }

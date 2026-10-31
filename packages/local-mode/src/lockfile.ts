@@ -184,7 +184,14 @@ function updateLockfileAssistantIfPresent(
         error: "No lockfile entry for this assistant",
       };
     }
-    if (skip?.(entry)) {
+    // An already-converged patch must not rewrite the file: a rename to the
+    // current name leaves the on-disk bytes exactly as they were.
+    const converged =
+      skip?.(entry) ??
+      (Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>).every(
+        ([key, value]) => entry[key] === value,
+      );
+    if (converged) {
       return { ok: true, lockfile };
     }
     saveLockfileAssistant({ ...entry, ...patch });

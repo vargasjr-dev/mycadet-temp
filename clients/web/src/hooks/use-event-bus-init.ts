@@ -51,13 +51,10 @@ import { publishWindowOnlineSource } from "@/runtime/event-sources/window-online
 interface UseEventBusInitParams {
   /** Resolved assistant id, or `null` when not yet loaded. */
   assistantId: string | null;
-  /** `true` once the assistant lifecycle reports `kind === "active"`. */
-  isAssistantActive: boolean;
 }
 
 export function useEventBusInit({
   assistantId,
-  isAssistantActive,
 }: UseEventBusInitParams): void {
   useEffect(() => {
     // Source helpers touch `document` / `window` at call time and
@@ -95,9 +92,9 @@ export function useEventBusInit({
   }, []);
 
   useEffect(() => {
-    if (!assistantId || !isAssistantActive) {
+    if (!assistantId) {
       return;
     }
     return sseService.attach(assistantId);
-  }, [assistantId, isAssistantActive]);
+  }, [assistantId]);
 }

@@ -14,7 +14,9 @@ const argv = process.argv.slice(2);
 const remoteFlag = argv.indexOf("--remote");
 const remote = remoteFlag >= 0 ? argv[remoteFlag + 1] : undefined;
 if (!remote) {
-  console.error("usage: bun cli/scripts/stage-remote-image-context.ts --remote <name>");
+  console.error(
+    "usage: bun cli/scripts/stage-remote-image-context.ts --remote <name>",
+  );
   process.exit(1);
 }
 

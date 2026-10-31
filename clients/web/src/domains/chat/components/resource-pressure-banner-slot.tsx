@@ -53,7 +53,6 @@ export interface ResourcePressureBannerSlotProps {
   /** Display name for the banner title; null falls back to generic copy. */
   assistantName: string | null;
   /** `"active"` for cloud-hosted assistants that have an upgrade path. */
-  assistantStateKind: string;
   /**
    * Render nothing while true (disk-pressure precedence). The slot stays
    * MOUNTED so its in-memory dismissal fallback (used when storage writes
@@ -71,7 +70,6 @@ export function ResourcePressureBannerSlot({
   resourcePressure,
   assistantId,
   assistantName,
-  assistantStateKind,
   hidden = false,
 }: ResourcePressureBannerSlotProps) {
   const dismissedUntilKey = assistantId
@@ -205,11 +203,7 @@ export function ResourcePressureBannerSlot({
         key={assistantId ?? "no-assistant"}
         assistantName={assistantName}
         onDismiss={dismiss}
-        onUpgrade={
-          assistantStateKind === "active"
-            ? () => void openExternalUrl(cloudAccountBillingUrl())
-            : null
-        }
+        onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
       />
     </div>
   );

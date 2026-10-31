@@ -17,7 +17,6 @@ export const PENDING_SHARE_SEND_TTL_MS = 60_000;
 
 export interface UseShareInboxSendOptions {
   assistantId: string | null;
-  isAssistantActive: boolean;
   activeConversationId: string | null;
   conversationExistsOnServer: boolean;
   sendMessage: (
@@ -73,7 +72,6 @@ function removeOwnedAttachments(ownedLocalIds: string[]): void {
  */
 export function useShareInboxSend({
   assistantId,
-  isAssistantActive,
   activeConversationId,
   conversationExistsOnServer,
   sendMessage,
@@ -85,7 +83,7 @@ export function useShareInboxSend({
     conversations,
     isPending: listPending,
     isError: listErrored,
-  } = useConversationListQuery(assistantId, isAssistantActive);
+  } = useConversationListQuery(assistantId);
 
   useEffect(() => {
     const store = usePendingDeepLinkStore.getState();
