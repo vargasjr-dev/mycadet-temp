@@ -1,5 +1,8 @@
 import { existsSync, readFileSync } from "fs";
-import { getGatewayUrl, isLocalRuntimeEntry } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isLocalRuntimeEntry,
+} from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
@@ -32,12 +35,10 @@ type ActiveCallLease = {
 };
 
 function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (!isLocalRuntimeEntry(entry) || !entry.resources) {
-    throw new Error(
-      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
-    );
+  if (!isLocalRuntimeEntry(entry)) {
+    throw new Error(`'${entry.assistantId}' is not an on-machine assistant.`);
   }
-  return getLocalInstanceDir(entry.resources);
+  return getLocalInstanceDir(entry);
 }
 
 function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
@@ -281,18 +282,12 @@ export async function sleepAssistant(
     );
   }
 
-  if (!entry.resources) {
-    throw new Error(
-      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
-    );
-  }
-  const resources = entry.resources;
   if (process.platform === "win32") {
     throw new Error(
       "Graceful-only shutdown is not supported for Windows local services.",
     );
   }
-  const assistantPidFile = getDaemonPidPath(resources);
+  const assistantPidFile = getDaemonPidPath(entry);
   const cadetDir = getAssistantRootDir(entry);
   const gatewayPidFile = join(cadetDir, "gateway.pid");
 

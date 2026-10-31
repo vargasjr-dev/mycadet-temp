@@ -27,7 +27,7 @@ import type { LockfileAssistant } from "./assistant-config.js";
  */
 
 export interface PortHealMove {
-  field: "daemonPort" | "gatewayPort" | "cesPort";
+  field: "daemonPort" | "port" | "cesPort";
   from: number;
   to: number;
 }
@@ -56,7 +56,7 @@ export interface PortHealDeps {
   allocatePort?: (base: number, exclude: number[]) => Promise<number>;
 }
 
-const HEALED_PORT_FIELDS = ["daemonPort", "gatewayPort", "cesPort"] as const;
+const HEALED_PORT_FIELDS = ["daemonPort", "port", "cesPort"] as const;
 
 /**
  * Probe a recorded port for "something else holds it": a one-candidate
@@ -98,11 +98,10 @@ function otherReservedPortsDefault(assistantId: string): number[] {
   const reserved: number[] = [];
   for (const other of loadAllAssistants()) {
     if (other.assistantId === assistantId) continue;
-    if (other.cloud !== "local" || !other.resources) continue;
-    reserved.push(other.resources.daemonPort, other.resources.gatewayPort);
-    if (other.resources.cesPort !== undefined) {
-      reserved.push(other.resources.cesPort);
-    }
+    if (other.cloud !== "local") continue;
+    if (other.daemonPort !== undefined) reserved.push(other.daemonPort);
+    if (other.port !== undefined) reserved.push(other.port);
+    if (other.cesPort !== undefined) reserved.push(other.cesPort);
   }
   return reserved;
 }
@@ -110,14 +109,13 @@ function otherReservedPortsDefault(assistantId: string): number[] {
 /**
  * Reallocate every recorded port a foreign process holds, in place.
  * Returns the moves, or null when there was nothing to heal (not a local
- * entry, no resources, or every recorded port is free or ours).
+ * entry, or every recorded port is free or ours).
  */
 export async function healConflictedLocalPorts(
   entry: LockfileAssistant,
   deps: PortHealDeps = {},
 ): Promise<PortHealResult | null> {
-  if (entry.cloud !== "local" || !entry.resources) return null;
-  const resources = entry.resources;
+  if (entry.cloud !== "local") return null;
 
   const isPortFree = deps.isPortFree ?? isPortFreeDefault;
   const findListenerPid = deps.findListenerPid ?? findPidListeningOnPort;
@@ -130,14 +128,14 @@ export async function healConflictedLocalPorts(
   // daemon port must not take the gateway's, and every field must move OFF
   // the ports being abandoned.
   for (const field of HEALED_PORT_FIELDS) {
-    const recorded = resources[field];
+    const recorded = entry[field];
     if (recorded !== undefined) reserved.add(recorded);
   }
 
   const basePorts = getDefaultPorts();
   const moves: PortHealMove[] = [];
   for (const field of HEALED_PORT_FIELDS) {
-    const recorded = resources[field];
+    const recorded = entry[field];
     if (recorded === undefined) continue;
     if (await isPortFree(recorded)) continue;
 
@@ -151,16 +149,16 @@ export async function healConflictedLocalPorts(
     const base =
       field === "daemonPort"
         ? basePorts.daemon
-        : field === "gatewayPort"
+        : field === "port"
           ? basePorts.gateway
           : basePorts.ces;
     const fresh = await allocatePort(base, [...reserved]);
-    resources[field] = fresh;
+    entry[field] = fresh;
     reserved.add(fresh);
     moves.push({ field, from: recorded, to: fresh });
   }
 
-  // The recorded gatewayPort is authoritative — the heal rewrites it in
-  // place and every reader derives the gateway address from it.
+  // The recorded port is authoritative — the heal rewrites it in place
+  // and every reader derives the gateway address from it.
   return moves.length > 0 ? { moves } : null;
 }

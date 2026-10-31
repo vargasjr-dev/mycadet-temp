@@ -234,23 +234,14 @@ function findRawAssistant(
   return isRecord(entry) ? entry : null;
 }
 
-// Legacy entries persisted the directory as top-level `baseDataDir`.
 function lockfileInstanceDir(
   entry: LockfileAssistant | undefined,
-  rawEntry: Record<string, unknown> | null,
 ): string | undefined {
-  const rawResources = isRecord(rawEntry?.resources)
-    ? rawEntry.resources
+  return entry?.cloud === "local" ||
+    entry?.cloud === "docker" ||
+    entry?.cloud === "apple-container"
+    ? entry.instanceDir
     : undefined;
-  return firstString(
-    entry?.cloud === "local" ||
-      entry?.cloud === "docker" ||
-      entry?.cloud === "apple-container"
-      ? entry.resources?.instanceDir
-      : undefined,
-    rawResources?.instanceDir,
-    rawEntry?.baseDataDir,
-  );
 }
 
 export type LockfileInstanceDirResult =
@@ -282,38 +273,31 @@ export function resolveLockfileInstanceDir(
     return {
       ok: true,
       instanceDir:
-        lockfileInstanceDir(entry, rawEntry) ?? resolveInstanceDir(assistantId),
+        lockfileInstanceDir(entry) ?? resolveInstanceDir(assistantId),
     };
   } catch {
     return { ok: true };
   }
 }
 
-function resolveStatusResources(
-  entry: LockfileAssistant,
-  rawEntry: Record<string, unknown> | null,
-): StatusResources {
-  const rawResources = isRecord(rawEntry?.resources)
-    ? rawEntry.resources
-    : undefined;
+function resolveStatusResources(entry: LockfileAssistant): StatusResources {
   const ports = defaultPorts();
   const instanceDir =
-    lockfileInstanceDir(entry, rawEntry) ??
-    resolveInstanceDir(entry.assistantId);
-  const entryResources =
-    entry.cloud === "local" ||
-    entry.cloud === "docker" ||
-    entry.cloud === "apple-container"
-      ? entry.resources
-      : undefined;
+    lockfileInstanceDir(entry) ?? resolveInstanceDir(entry.assistantId);
   return {
     instanceDir,
     daemonPort:
-      firstNumber(entryResources?.daemonPort, rawResources?.daemonPort) ??
-      ports.daemon,
+      (entry.cloud === "local" ||
+      entry.cloud === "docker" ||
+      entry.cloud === "apple-container"
+        ? entry.daemonPort
+        : undefined) ?? ports.daemon,
     gatewayPort:
-      firstNumber(entryResources?.gatewayPort, rawResources?.gatewayPort) ??
-      ports.gateway,
+      (entry.cloud === "local" ||
+      entry.cloud === "docker" ||
+      entry.cloud === "apple-container"
+        ? entry.port
+        : undefined) ?? ports.gateway,
   };
 }
 
@@ -321,7 +305,7 @@ async function runtimeStatusForEntry(
   entry: LockfileAssistant,
   rawEntry: Record<string, unknown> | null,
 ): Promise<LocalAssistantStatusResult> {
-  const resources = resolveStatusResources(entry, rawEntry);
+  const resources = resolveStatusResources(entry);
   const observedAtMs = Date.now();
 
   const assistantPid = readPidState(getDaemonPidPath(resources.instanceDir));

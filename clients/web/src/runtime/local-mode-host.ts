@@ -15,7 +15,6 @@ import { parseLockfile } from "@mycadet/local-mode/contract";
 import type {
   Lockfile,
   LockfileAssistant,
-  LocalAssistantResources,
   LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 
@@ -54,12 +53,7 @@ import { isElectron } from "@/runtime/is-electron";
  * renderer, so the data-plane URL stays byte-identical everywhere.
  */
 
-export type {
-  Lockfile,
-  LockfileAssistant,
-  LocalAssistantResources,
-  LockfileWriteResult,
-};
+export type { Lockfile, LockfileAssistant, LockfileWriteResult };
 
 // The contract's validating parser, re-exported so `lib/` can run persisted
 // (localStorage) lockfile reads through the same total validation the hosts

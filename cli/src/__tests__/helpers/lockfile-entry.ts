@@ -6,7 +6,6 @@ import {
   type ContainerInfo,
   type LocalAssistant,
   type LockfileAssistant,
-  type LocalAssistantResources,
   type Remote,
 } from "@mycadet/local-mode/contract";
 
@@ -23,7 +22,7 @@ export type EntryOverrides = {
   assistantId?: string;
   name?: string;
   cloud?: Remote;
-  resources?: Partial<LocalAssistantResources>;
+  instanceDir?: string;
   watcherPid?: number;
   guardianBootstrapSecret?: string;
   containerInfo?: Partial<ContainerInfo>;
@@ -34,18 +33,21 @@ export type EntryOverrides = {
   cloudOrganizationId?: string;
   ipAddress?: string;
   port?: number;
+  daemonPort?: number;
+  cesPort?: number;
+  runtimeVersion?: string;
+  runtimeInstallDir?: string;
   sandboxUrl?: string;
   hatchedAt?: string;
   onboardedAt?: string;
-  conversationKey?: string;
 };
 
-const BASE_RESOURCES = {
+/** The placement a fresh local fixture carries. */
+export const BASE_PLACEMENT = {
   instanceDir: "/tmp/cadet-test-instance",
   daemonPort: 7801,
-  gatewayPort: 7831,
+  port: 7831,
   cesPort: 7790,
-  signingKey: "ab".repeat(32),
 };
 
 function readLockfileRaw(): Record<string, unknown> {
@@ -71,13 +73,12 @@ function readAssistants(): unknown[] {
 export function makeEntryObject(
   overrides: EntryOverrides = {},
 ): LockfileAssistant {
-  const { resources, ...rest } = overrides;
   return LockfileAssistantSchema.parse({
     assistantId: "assistant-1",
     cloud: "local",
     guardianBootstrapSecret: "test-bootstrap-secret",
-    ...rest,
-    resources: { ...BASE_RESOURCES, ...resources },
+    ...BASE_PLACEMENT,
+    ...overrides,
   });
 }
 
@@ -85,19 +86,16 @@ export function makeEntryObject(
  * The canonical lockfile-entry fixture — one `makeEntry` for every suite.
  * Writes the entry straight into the lockfile the suite has pointed the CLI
  * at (via `XDG_CONFIG_HOME`) and returns void: suites that need the object
- * read it back with `readEntry`. A `resources` override MERGES onto the base
- * ports instead of replacing them: a partial override that dropped
- * `instanceDir` once broke a drain test. The entry parses through
+ * read it back with `readEntry`. The entry parses through
  * `LockfileAssistantSchema` so the shape is always the contract's.
  */
 export function makeEntry(overrides: EntryOverrides = {}): void {
-  const { resources, ...rest } = overrides;
   const entry = LockfileAssistantSchema.parse({
     assistantId: "assistant-1",
     cloud: "local",
     guardianBootstrapSecret: "test-bootstrap-secret",
-    ...rest,
-    resources: { ...BASE_RESOURCES, ...resources },
+    ...BASE_PLACEMENT,
+    ...overrides,
   });
   const assistants = readAssistants();
   const index = assistants.findIndex(
@@ -132,15 +130,13 @@ export function readEntry(
       "assistantId" in a &&
       a.assistantId === assistantId,
   );
-  return found === undefined
-    ? undefined
-    : LockfileAssistantSchema.parse(found);
+  return found === undefined ? undefined : LockfileAssistantSchema.parse(found);
 }
 
 /**
  * `readEntry` for the canonical local fixture — narrows the union so the
- * suites can assert on `resources` directly. Throws when the entry on disk
- * is not a local assistant.
+ * suites can assert on the runtime fields directly. Throws when the entry
+ * on disk is not a local assistant.
  */
 export function readLocalEntry(assistantId = "assistant-1"): LocalAssistant {
   const entry = readEntry(assistantId);

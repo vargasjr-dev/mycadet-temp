@@ -208,8 +208,8 @@ function printRetireTarget(entry: LockfileAssistant, cloud: string): void {
       id: entry.assistantId,
       cloud,
       runtime: getGatewayUrl(entry),
-      ...(entry.cloud === "local" && entry.resources?.instanceDir
-        ? { root: entry.resources.instanceDir }
+      ...(entry.cloud === "local" && entry.instanceDir
+        ? { root: entry.instanceDir }
         : {}),
       ...(entry.cloud === "docker"
         ? {

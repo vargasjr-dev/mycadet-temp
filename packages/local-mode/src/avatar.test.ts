@@ -18,10 +18,7 @@ describe("readLockfileAssistantAvatar", () => {
   const read = (assistantId = "asst-1") =>
     readLockfileAssistantAvatar(assistantId);
 
-  const writeLockfileEntry = (
-    resources?: Record<string, unknown>,
-    extra: Record<string, unknown> = {},
-  ): void => {
+  const writeLockfileEntry = (extra: Record<string, unknown> = {}): void => {
     fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
     fs.writeFileSync(
       lockfilePath,
@@ -31,7 +28,6 @@ describe("readLockfileAssistantAvatar", () => {
             assistantId: "asst-1",
             cloud: "local",
             runtimeUrl: "http://127.0.0.1:1",
-            resources,
             ...extra,
           },
         ],
@@ -59,7 +55,7 @@ describe("readLockfileAssistantAvatar", () => {
     lockfilePath = path.join(tempDir, "cadet", "lockfile.json");
     instanceDir = path.join(tempDir, "instance");
     avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
-    writeLockfileEntry({ instanceDir, gatewayPort: 1, daemonPort: 2 });
+    writeLockfileEntry({ instanceDir, port: 1, daemonPort: 2 });
   });
 
   afterEach(() => {
@@ -149,7 +145,7 @@ describe("readLockfileAssistantAvatar", () => {
   });
 
   test("entry without an instanceDir reads the default instance dir", () => {
-    writeLockfileEntry({ gatewayPort: 1, daemonPort: 2 });
+    writeLockfileEntry({ port: 1, daemonPort: 2 });
     const defaultAvatarDir = path.join(
       process.env.XDG_DATA_HOME ?? "",
       "cadet",
@@ -172,13 +168,13 @@ describe("readLockfileAssistantAvatar", () => {
   });
 
   test("entry without an instanceDir and no default workspace yields null", () => {
-    writeLockfileEntry({ gatewayPort: 1, daemonPort: 2 });
+    writeLockfileEntry({ port: 1, daemonPort: 2 });
 
     expect(read()).toEqual({ ok: true, avatar: null });
   });
 
   test("legacy lockfile entry with only baseDataDir resolves", () => {
-    writeLockfileEntry(undefined, { baseDataDir: instanceDir });
+    writeLockfileEntry({ instanceDir });
     writeAvatarFile("character-traits.json", JSON.stringify(traits));
 
     expect(read()).toEqual({

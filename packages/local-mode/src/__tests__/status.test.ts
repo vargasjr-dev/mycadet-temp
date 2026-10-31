@@ -25,11 +25,9 @@ function writeLocalLockfile(overrides: Record<string, unknown> = {}): void {
   writeLockfile({
     assistantId: "local-1",
     cloud: "local",
-    resources: {
-      instanceDir,
-      daemonPort: 30101,
-      gatewayPort: 30102,
-    },
+    instanceDir,
+    daemonPort: 30101,
+    port: 30102,
     ...overrides,
   });
 }
@@ -104,10 +102,9 @@ describe("getLocalAssistantStatus", () => {
     });
   });
 
-  test("returns sleeping for legacy local entries without cloud/resources", async () => {
+  test("returns sleeping for local entries without recorded ports", async () => {
     writeLockfile({
       assistantId: "legacy-local",
-      baseDataDir: instanceDir,
       runtimeUrl: "http://127.0.0.1:30102",
     });
 
@@ -144,11 +141,9 @@ describe("getLocalAssistantStatus", () => {
 
   test("returns starting when a fresh assistant PID is alive but health is not ready yet", async () => {
     writeLocalLockfile({
-      resources: {
-        instanceDir,
-        daemonPort: await unusedPort(),
-        gatewayPort: 30102,
-      },
+      instanceDir,
+      daemonPort: await unusedPort(),
+      port: 30102,
     });
     writeAssistantPid(String(process.pid));
 
@@ -163,11 +158,9 @@ describe("getLocalAssistantStatus", () => {
 
   test("returns crashed when an old live assistant PID is still not responding", async () => {
     writeLocalLockfile({
-      resources: {
-        instanceDir,
-        daemonPort: await unusedPort(),
-        gatewayPort: 30102,
-      },
+      instanceDir,
+      daemonPort: await unusedPort(),
+      port: 30102,
     });
     const pidPath = writeAssistantPid(String(process.pid));
     markStale(pidPath);
@@ -189,11 +182,9 @@ describe("getLocalAssistantStatus", () => {
     const daemonPort = await listen(server);
     try {
       writeLocalLockfile({
-        resources: {
-          instanceDir,
-          daemonPort,
-          gatewayPort: await unusedPort(),
-        },
+        instanceDir,
+        daemonPort,
+        port: await unusedPort(),
       });
       writeAssistantPid(String(process.pid));
 
@@ -233,8 +224,12 @@ describe("resolveLockfileInstanceDir", () => {
     });
   });
 
-  test("honors legacy top-level baseDataDir", () => {
-    writeLockfile({ assistantId: "local-1", baseDataDir: instanceDir });
+  test("reads the recorded instance dir off the entry", () => {
+    writeLockfile({
+      assistantId: "local-1",
+      cloud: "local",
+      instanceDir,
+    });
     expect(resolveLockfileInstanceDir("local-1")).toEqual({
       ok: true,
       instanceDir,
@@ -279,7 +274,7 @@ describe("resolveLockfileInstanceDir", () => {
     writeFileSync(
       legacyPath,
       JSON.stringify({
-        assistants: [{ assistantId: "local-1", baseDataDir: instanceDir }],
+        assistants: [{ assistantId: "local-1", cloud: "local" }],
       }),
     );
     expect(resolveLockfileInstanceDir("local-1")).toEqual({

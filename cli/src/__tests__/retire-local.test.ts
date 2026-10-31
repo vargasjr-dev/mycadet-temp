@@ -112,7 +112,7 @@ describe("retireLocal — CES sibling stop", () => {
   test("stops the CES sibling alongside daemon and gateway", async () => {
     makeEntry({
       assistantId: "test-assistant",
-      resources: { instanceDir },
+      instanceDir,
     });
     const entry = readLocalEntry("test-assistant");
     await retireLocal("test-assistant", entry, {
@@ -178,7 +178,7 @@ describe("retireLocal — CES sibling stop", () => {
 
     makeEntry({
       assistantId: "test-assistant",
-      resources: { instanceDir },
+      instanceDir,
     });
     const entry = readLocalEntry("test-assistant");
     await retireLocal("test-assistant", entry, {
@@ -201,12 +201,12 @@ describe("retireLocal — CES sibling stop", () => {
     const otherInstanceDir = join(testDir, "other-instance");
     makeEntry({
       assistantId: "other-assistant",
-      resources: { instanceDir: otherInstanceDir },
+      instanceDir: otherInstanceDir,
     });
     const otherPid = "4242";
     const otherEntry = readEntry("other-assistant")!;
     const otherPidFile = getDaemonPidPath(
-      otherEntry.cloud === "local" ? otherEntry.resources : undefined,
+      otherEntry.cloud === "local" ? otherEntry : undefined,
     );
     mkdirSync(join(otherInstanceDir, "workspace"), {
       recursive: true,
@@ -218,12 +218,11 @@ describe("retireLocal — CES sibling stop", () => {
     );
 
     await retireLocal("test-assistant", readLocalEntry("test-assistant"), {
-        progress: () => {},
-        log: () => {},
-        warn: () => {},
-        error: () => {},
-      },
-    );
+      progress: () => {},
+      log: () => {},
+      warn: () => {},
+      error: () => {},
+    });
 
     expect(stopOrphanedDaemonProcessesMock).toHaveBeenCalledTimes(1);
     const excludedPids = stopOrphanedDaemonProcessesMock.mock.calls[0]?.[0];

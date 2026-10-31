@@ -327,7 +327,8 @@ const MIXED_LOCKFILE: Lockfile = {
     {
       assistantId: "local-1",
       cloud: "local",
-      resources: { gatewayPort: 9001, daemonPort: 9002 },
+      port: 9001,
+      daemonPort: 9002,
     },
     {
       assistantId: "cloud-1",
@@ -392,7 +393,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -416,7 +418,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -450,7 +453,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -474,7 +478,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -510,7 +515,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -543,7 +549,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -573,7 +580,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -601,7 +609,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -631,7 +640,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -661,7 +671,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -689,7 +700,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "a1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
         ],
         activeAssistant: "a1",
@@ -720,7 +732,8 @@ describe("host-proxy-router", () => {
             {
               assistantId: "a1",
               cloud: "local",
-              resources: { gatewayPort: 9001, daemonPort: 9002 },
+              port: 9001,
+              daemonPort: 9002,
             },
           ],
           activeAssistant: "a1",
@@ -885,7 +898,8 @@ describe("host-proxy-router", () => {
           {
             assistantId: "local-1",
             cloud: "local",
-            resources: { gatewayPort: 9001, daemonPort: 9002 },
+            port: 9001,
+            daemonPort: 9002,
           },
           {
             assistantId: "cloud-1",
@@ -982,12 +996,14 @@ describe("host-proxy-router", () => {
         {
           assistantId: "paired-https",
           cloud: "local",
-          resources: { gatewayPort: 9001, daemonPort: 9002 },
+          port: 9001,
+          daemonPort: 9002,
         },
         {
           assistantId: "paired-http",
           cloud: "local",
-          resources: { gatewayPort: 7831, daemonPort: 9002 },
+          port: 7831,
+          daemonPort: 9002,
         },
       ],
       activeAssistant: "paired-https",

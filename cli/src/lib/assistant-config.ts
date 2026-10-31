@@ -1,15 +1,17 @@
 import { randomBytes } from "crypto";
-import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "fs";
 import { dirname, join } from "path";
 
-import {
-  readLockfile,
-  saveLockfileAssistant,
-  withLockfileLock,
-} from "@mycadet/local-mode";
+import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
 import {
   type AppProcessRecord,
-  type LocalAssistantResources,
+  type LocalAssistant,
   type Lockfile,
   type LockfileAssistant,
   type TunnelProcessRecord,
@@ -20,6 +22,7 @@ export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 
 import {
   resolveAssistantsDir,
+  resolveConfigDir,
   resolveDataDir,
   resolveLockfilePath,
 } from "@mycadet/local-mode";
@@ -60,14 +63,12 @@ export type RootProcessKind = keyof RootProcessRecords;
  * The instance's data root: the recorded instanceDir, or the shared state
  * root for legacy entries predating per-instance dirs.
  */
-export function getLocalInstanceDir(
-  resources?: LocalAssistantResources,
-): string {
-  return resources?.instanceDir ?? resolveDataDir();
+export function getLocalInstanceDir(entry?: { instanceDir?: string }): string {
+  return entry?.instanceDir ?? resolveDataDir();
 }
 
-export function getDaemonPidPath(resources?: LocalAssistantResources): string {
-  return join(getLocalInstanceDir(resources), "workspace", "cadet.pid");
+export function getDaemonPidPath(entry?: { instanceDir?: string }): string {
+  return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
@@ -377,13 +378,30 @@ export function extractHostFromEntry(entry: LockfileAssistant): string {
  * conversation by (web's temp-client-id pattern: clients/web
  * document-conversation mints a uuid, persists it, and passes it as the
  * conversation key so creation is retry-safe). Minted once and persisted
- * on the entry so every session shares one conversation.
+ * to an xdg file keyed by assistant id — client bookkeeping, not an
+ * assistant fact, so it stays off the lockfile entry.
  */
-export function resolveConversationKey(entry: LockfileAssistant): string {
-  if (entry.conversationKey) return entry.conversationKey;
+export function resolveConversationKey(assistantId: string): string {
+  const path = conversationKeyPath(assistantId);
+  try {
+    const existing = readFileSync(path, "utf-8").trim();
+    if (existing) return existing;
+  } catch {
+    // Not minted yet.
+  }
   const minted = crypto.randomUUID();
-  saveLockfileAssistant({ ...entry, conversationKey: minted });
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, minted);
   return minted;
+}
+
+function conversationKeyPath(assistantId: string): string {
+  return join(
+    resolveConfigDir(),
+    "assistants",
+    assistantId,
+    "conversation-key",
+  );
 }
 
 /**
@@ -408,28 +426,30 @@ async function findAvailablePort(
 }
 
 /**
- * Allocate an isolated set of resources for a named local instance.
- * Every new local assistant is allocated under
+ * Allocate an isolated placement for a named local instance: its data root
+ * and host ports. Every new local assistant is allocated under
  * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/`. The legacy `~/.cadet/`
  * path is only reached via existing lockfile entries from before this change
- * — the read path honors whatever `resources.instanceDir` is stored, so
- * production users' existing first-local assistants keep their `~/.cadet/`
- * roots unchanged.
+ * — the read path honors whatever `instanceDir` is stored, so production
+ * users' existing first-local assistants keep their `~/.cadet/` roots
+ * unchanged.
  */
-export async function allocateLocalResources(
+export async function allocateLocalPlacement(
   instanceName: string,
-): Promise<LocalAssistantResources> {
+): Promise<
+  Pick<LocalAssistant, "instanceDir" | "port" | "daemonPort" | "cesPort">
+> {
   const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
   // Collect ports already assigned to other local instances in the lockfile.
   const reservedPorts: number[] = [];
-  for (const entry of loadAllAssistants()) {
-    if (entry.cloud !== "local" || !entry.resources) continue;
-    reservedPorts.push(entry.resources.daemonPort, entry.resources.gatewayPort);
-    if (entry.resources.cesPort !== undefined) {
-      reservedPorts.push(entry.resources.cesPort);
-    }
+  for (const recorded of loadAllAssistants()) {
+    if (recorded.cloud !== "local") continue;
+    if (recorded.daemonPort !== undefined)
+      reservedPorts.push(recorded.daemonPort);
+    if (recorded.port !== undefined) reservedPorts.push(recorded.port);
+    if (recorded.cesPort !== undefined) reservedPorts.push(recorded.cesPort);
   }
 
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
@@ -449,8 +469,8 @@ export async function allocateLocalResources(
 
   return {
     instanceDir,
+    port: gatewayPort,
     daemonPort,
-    gatewayPort,
     cesPort,
   };
 }

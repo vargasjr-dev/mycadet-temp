@@ -173,7 +173,7 @@ export const exec = Object.assign(
     const cloud = entry.cloud;
 
     if (cloud === "local") {
-      const instanceDir = entry.resources?.instanceDir;
+      const instanceDir = entry.instanceDir;
       if (!instanceDir) {
         console.error(
           red(

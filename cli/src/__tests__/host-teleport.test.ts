@@ -56,12 +56,10 @@ async function instance(
   return {
     assistantId: name,
     cloud,
-    resources: {
-      instanceDir: root,
-      daemonPort: 1,
-      gatewayPort: 2,
-      cesPort: 3,
-    },
+    instanceDir: root,
+    daemonPort: 1,
+    port: 2,
+    cesPort: 3,
   };
 }
 const previousDataHome = process.env.XDG_DATA_HOME;
@@ -160,20 +158,17 @@ test("moves all four roots and encrypted key pairs using the exact stopped-sourc
   await teleportHostInstallation(source, "local", "target", options, ops);
   for (const state of STATE_ROOTS) {
     expect(
-      await readFile(
-        join(getLocalInstanceDir(target.resources), state, "state"),
-        "utf8",
-      ),
+      await readFile(join(getLocalInstanceDir(target), state, "state"), "utf8"),
     ).toBe(`source:${state}`);
   }
   expect(
     await readFile(
-      join(getLocalInstanceDir(target.resources), "ces-security", "keys.enc"),
+      join(getLocalInstanceDir(target), "ces-security", "keys.enc"),
     ),
   ).toEqual(Buffer.from([7, 0, 255]));
   expect(
     await readFile(
-      join(getLocalInstanceDir(target.resources), "ces-security", "store.key"),
+      join(getLocalInstanceDir(target), "ces-security", "store.key"),
     ),
   ).toEqual(Buffer.alloc(32, 8));
   expect(order).toEqual([

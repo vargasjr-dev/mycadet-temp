@@ -23,7 +23,6 @@ import {
   saveLockfileAssistant,
   type DockerAssistant,
   type LocalAssistant,
-  type LocalAssistantResources,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
@@ -36,7 +35,12 @@ import {
   waitForDaemonReady,
   waitForDaemonMigrationsReady,
 } from "./http-client.js";
-import { startCes, startGateway, startLocalDaemon } from "./local.js";
+import {
+  requireReadyRuntimeEntry,
+  startCes,
+  startGateway,
+  startLocalDaemon,
+} from "./local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -267,35 +271,30 @@ export interface RootStorage {
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
   initialRunning?: Set<string>;
-  private readonly resources: LocalAssistantResources;
   private readonly localEntry: LocalAssistant | DockerAssistant;
   constructor(readonly entry: LockfileAssistant) {
     // Local-style roots: plain on-machine instances and docker instances
-    // (whose state roots are volumes) both carry the resource paths.
-    if (
-      (entry.cloud !== "local" && entry.cloud !== "docker") ||
-      !entry.resources
-    )
-      throw new Error("Local backup requires the instance's resource paths.");
+    // (whose state roots are volumes) both carry the recorded paths.
+    if (entry.cloud !== "local" && entry.cloud !== "docker")
+      throw new Error("Local backup requires an on-machine instance.");
     this.localEntry = entry;
-    this.resources = entry.resources;
-    this.root = resolve(getLocalInstanceDir(entry.resources));
+    this.root = resolve(getLocalInstanceDir(entry));
   }
   async running(): Promise<boolean> {
     const running = new Set(
       [
-        ["assistant", getDaemonPidPath(this.resources)],
+        ["assistant", getDaemonPidPath(this.localEntry)],
         ["gateway", join(this.root, "gateway.pid")],
         ["ces", join(this.root, "ces.pid")],
       ]
         .filter(([, file]) => isProcessAlive(file!).alive)
         .map(([service]) => service!),
     );
-    const resources = this.resources;
+    const entry = this.localEntry;
     for (const [service, port] of [
-      ["assistant", resources.daemonPort],
-      ["gateway", resources.gatewayPort],
-      ["ces", resources.cesPort],
+      ["assistant", entry.daemonPort],
+      ["gateway", entry.port],
+      ["ces", entry.cesPort],
     ] as const) {
       if (
         !running.has(service) &&
@@ -319,32 +318,33 @@ export class LocalRootStorage implements RootStorage {
       await this.checkReady();
       return;
     }
-    const resources = this.resources;
+    const entry = this.localEntry;
     if (
       this.initialRunning?.has("ces") &&
       !isProcessAlive(join(this.root, "ces.pid")).alive
     )
-      await startCes(false, resources);
+      await startCes(false, entry);
     if (
       this.initialRunning?.has("assistant") &&
-      !isProcessAlive(getDaemonPidPath(resources)).alive
+      !isProcessAlive(getDaemonPidPath(entry)).alive
     )
-      await startLocalDaemon(false, resources);
+      await startLocalDaemon(false, requireReadyRuntimeEntry(entry));
     if (
       this.initialRunning?.has("gateway") &&
       !isProcessAlive(join(this.root, "gateway.pid")).alive
     )
-      await startGateway(false, resources, {
-        bootstrapSecret: this.localEntry.guardianBootstrapSecret,
+      await startGateway(false, entry, {
+        bootstrapSecret: entry.guardianBootstrapSecret,
       });
     await this.checkReady();
   }
   private async checkReady(): Promise<void> {
-    const resources = this.resources;
+    const entry = this.localEntry;
     if (
       this.initialRunning?.has("assistant") &&
+      entry.daemonPort !== undefined &&
       (await waitForDaemonMigrationsReady(
-        resources.daemonPort,
+        entry.daemonPort,
         Date.now() + 60_000,
       )) !== "ready"
     ) {
@@ -353,8 +353,8 @@ export class LocalRootStorage implements RootStorage {
       );
     }
     for (const [service, port] of [
-      ["gateway", resources.gatewayPort],
-      ["ces", resources.cesPort],
+      ["gateway", entry.port],
+      ["ces", entry.cesPort],
     ] as const) {
       if (
         this.initialRunning?.has(service) &&
@@ -744,7 +744,7 @@ export async function withRootOperationLock<T>(
     entry.cloud === "docker"
       ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
       : isLocalRuntimeEntry(entry)
-        ? entry.resources?.instanceDir
+        ? entry.instanceDir
         : undefined;
   const lock = join(
     parent,
@@ -788,9 +788,9 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (entry.cloud !== "docker" && isLocalRuntimeEntry(entry) && entry.resources) {
+  if (entry.cloud !== "docker" && isLocalRuntimeEntry(entry)) {
     for (const root of STATE_ROOTS) {
-      const path = resolve(getLocalInstanceDir(entry.resources), root);
+      const path = resolve(getLocalInstanceDir(entry), root);
       if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
         throw new Error("Save backups outside the persistent service roots.");
     }

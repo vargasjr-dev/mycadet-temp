@@ -210,12 +210,10 @@ function makeLocalEntry(): LocalAssistant {
   return {
     assistantId: "local-assistant",
     cloud: "local",
-    resources: {
-      instanceDir: tempDir,
-      daemonPort: 7821,
-      gatewayPort: 7830,
-      cesPort: 7822,
-    },
+    instanceDir: tempDir,
+    daemonPort: 7821,
+    port: 7830,
+    cesPort: 7822,
     guardianBootstrapSecret: "existing-bootstrap-secret",
   };
 }
@@ -541,7 +539,7 @@ describe("cadet upgrade assistant targeting", () => {
     expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("Quill");
     expect(exitSpy).not.toHaveBeenCalled();
     expect(stopLocalProcessesMock).toHaveBeenCalledWith(
-      expect.objectContaining({ instanceDir: quill.resources!.instanceDir }),
+      expect.objectContaining({ instanceDir: quill.instanceDir }),
     );
   });
 
@@ -561,7 +559,7 @@ describe("cadet upgrade assistant targeting", () => {
     expect(exitSpy).not.toHaveBeenCalled();
     expect(stopLocalProcessesMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        instanceDir: multiWord.resources!.instanceDir,
+        instanceDir: multiWord.instanceDir,
       }),
     );
   });
@@ -583,7 +581,7 @@ describe("cadet upgrade assistant targeting", () => {
     expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("quill-uuid");
     expect(exitSpy).not.toHaveBeenCalled();
     expect(stopLocalProcessesMock).toHaveBeenCalledWith(
-      expect.objectContaining({ instanceDir: target.resources!.instanceDir }),
+      expect.objectContaining({ instanceDir: target.instanceDir }),
     );
   });
 

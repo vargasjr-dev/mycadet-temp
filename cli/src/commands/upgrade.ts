@@ -1,6 +1,8 @@
 import { cliCommand } from "../lib/cli-name.js";
 import {
+  GATEWAY_PORT,
   getGatewayUrl,
+  getLoopbackGatewayPort,
   isDockerEntry,
   isLocalEntry,
 } from "@mycadet/local-mode/contract";
@@ -77,6 +79,7 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
   generateLocalSecret,
   ensureLocalRuntime,
+  requireReadyRuntimeEntry,
   startCes,
   startGateway,
   startLocalDaemon,
@@ -787,19 +790,24 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  if (!isLocalEntry(entry) || !entry.resources) {
-    const msg = `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`;
+  if (!isLocalEntry(entry)) {
+    const msg = `'${entry.assistantId}' is not a local assistant.`;
     console.error(msg);
     emitCliError("UNKNOWN", msg);
     process.exit(1);
   }
 
-  const resources = entry.resources;
+  requireReadyRuntimeEntry(entry);
 
-  const originalResources = { ...resources };
+  // The runtime fields the upgrade replaces, snapshotted for the failure
+  // path's rollback to the previous install.
+  const originalRuntime = {
+    runtimeVersion: entry.runtimeVersion,
+    runtimeInstallDir: entry.runtimeInstallDir,
+  };
 
   const targetVersion = await targetVersionFromCli(version);
-  const adminUrl = `http://127.0.0.1:${resources.gatewayPort}`;
+  const adminUrl = `http://127.0.0.1:${getLoopbackGatewayPort(entry) ?? GATEWAY_PORT}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {
@@ -892,21 +900,18 @@ async function upgradeLocal(
   console.log(
     "⬇️  Downloading local runtime packages (assistant, gateway, credential-executor)...",
   );
-  const runtimeInstall = ensureLocalRuntime(resources, targetVersion, {
+  const runtimeInstall = ensureLocalRuntime(entry, targetVersion, {
     force,
   });
-  const upgradedResources = {
-    ...resources,
-    runtimeVersion: runtimeInstall.version,
-    runtimeInstallDir: runtimeInstall.installDir,
-  };
-  entry.resources = upgradedResources;
+  entry.runtimeVersion = runtimeInstall.version;
+  entry.runtimeInstallDir = runtimeInstall.installDir;
   saveLockfileAssistant(entry);
+  const upgradedEntry = entry;
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   try {
     console.log("🛑 Stopping local assistant processes...");
-    await stopLocalProcesses(upgradedResources);
+    await stopLocalProcesses(upgradedEntry);
     console.log("✅ Local assistant processes stopped\n");
 
     console.log("🚀 Starting upgraded local assistant...");
@@ -917,9 +922,9 @@ async function upgradeLocal(
       // topology starts its sibling processes together. startCes always
       // launches the CES sibling.
       await Promise.all([
-        startCes(false, upgradedResources),
-        startLocalDaemon(false, upgradedResources),
-        startGateway(false, upgradedResources, { bootstrapSecret }),
+        startCes(false, upgradedEntry),
+        startLocalDaemon(false, requireReadyRuntimeEntry(upgradedEntry)),
+        startGateway(false, upgradedEntry, { bootstrapSecret }),
       ]);
     } finally {
       if (previousAppVersion === undefined) {
@@ -930,7 +935,7 @@ async function upgradeLocal(
     }
     await ensureGuardianTokenAfterLocalUpgrade(
       entry,
-      upgradedResources.gatewayPort,
+      entry.port ?? GATEWAY_PORT,
       bootstrapSecret,
     );
     console.log("✅ Local assistant processes started\n");
@@ -953,8 +958,9 @@ async function upgradeLocal(
     console.error(
       "Local upgrade failed; restoring the previous runtime and service roots...",
     );
-    await stopLocalProcesses(upgradedResources);
-    entry.resources = originalResources;
+    await stopLocalProcesses(upgradedEntry);
+    entry.runtimeVersion = originalRuntime.runtimeVersion;
+    entry.runtimeInstallDir = originalRuntime.runtimeInstallDir;
     saveLockfileAssistant(entry);
     if (backupPath) {
       const restored = await restoreBackup(
@@ -969,9 +975,9 @@ async function upgradeLocal(
           { cause: error },
         );
       await Promise.all([
-        startCes(false, originalResources),
-        startLocalDaemon(false, originalResources),
-        startGateway(false, originalResources, { bootstrapSecret }),
+        startCes(false, entry),
+        startLocalDaemon(false, requireReadyRuntimeEntry(entry)),
+        startGateway(false, entry, { bootstrapSecret }),
       ]);
       if (!(await waitForReady(adminUrl)))
         throw new Error(

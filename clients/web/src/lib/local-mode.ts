@@ -35,7 +35,6 @@ import {
 import type {
   Lockfile,
   LockfileAssistant,
-  LocalAssistantResources,
   LocalPairingFailure,
   LocalPairingPollResult,
   LocalPairingStartResult,
@@ -49,12 +48,7 @@ import type {
 // The lockfile shape is the transport contract shared by the Electron IPC and
 // dev-server branches, so the seam owns it; re-exported here for the renderer
 // features that read and model assistants.
-export type {
-  Lockfile,
-  LockfileAssistant,
-  LocalAssistantResources,
-  LocalRetireResult,
-};
+export type { Lockfile, LockfileAssistant, LocalRetireResult };
 
 // ---------------------------------------------------------------------------
 // Served assistant
@@ -126,16 +120,22 @@ export function getServedLockfile(): Lockfile {
     name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
     hatchedAt: "1970-01-01T00:00:00.000Z",
   };
+  const localish = (
+    cloud: "local" | "docker" | "apple-container",
+  ): { cloud: "local" | "docker" | "apple-container" } extends never
+    ? never
+    : LockfileAssistant =>
+    ({ ...base, cloud, port: 0, daemonPort: 0 }) as LockfileAssistant;
   const entry =
     remote === "custom"
-      ? { ...base, cloud: "custom" as const }
+      ? { ...base, cloud: "custom" as const, ipAddress: "127.0.0.1", port: 0 }
       : remote === "cloud"
         ? { ...base, cloud: "cloud" as const }
-        : {
-            ...base,
-            cloud: remote === "baseten" ? ("local" as const) : remote,
-            resources: { gatewayPort: 0, daemonPort: 0 },
-          };
+        : remote === "docker"
+          ? localish("docker")
+          : remote === "apple-container"
+            ? localish("apple-container")
+            : localish("local");
   return {
     assistants: [entry],
     activeAssistant: assistantId,

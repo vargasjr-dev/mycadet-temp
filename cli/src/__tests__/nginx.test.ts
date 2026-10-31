@@ -2001,7 +2001,8 @@ describe("stopContainerAppServer", () => {
     return {
       assistantId: "docker-1",
       cloud: "docker",
-      resources: { gatewayPort: port, daemonPort: port + 1 },
+      port: port,
+      daemonPort: port + 1,
     };
   }
 

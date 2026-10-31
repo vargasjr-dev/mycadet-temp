@@ -137,7 +137,7 @@ export async function readHostRuntimeVersion(
   if (entry.cloud !== "docker") {
     return (
       (await fetchCurrentVersion(getGatewayUrl(entry))) ??
-      (isLocalRuntimeEntry(entry) ? entry.resources?.runtimeVersion : undefined)
+      (isLocalRuntimeEntry(entry) ? entry.runtimeVersion : undefined)
     );
   }
   try {
@@ -459,8 +459,11 @@ export async function restoreHostTeleportTarget(
   if (await storageFor(entry).running()) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
-  const originalResources = isLocalRuntimeEntry(entry)
-    ? entry.resources
+  const originalRuntime = isLocalRuntimeEntry(entry)
+    ? {
+        runtimeVersion: entry.runtimeVersion,
+        runtimeInstallDir: entry.runtimeInstallDir,
+      }
     : undefined;
   const replaceContainers = async (
     opts: Parameters<typeof startContainers>[0],
@@ -512,7 +515,8 @@ export async function restoreHostTeleportTarget(
         await startContainers(previous, (message) => console.log(message));
       }
       if (isLocalRuntimeEntry(entry)) {
-        entry.resources = originalResources;
+        entry.runtimeVersion = originalRuntime?.runtimeVersion;
+        entry.runtimeInstallDir = originalRuntime?.runtimeInstallDir;
       }
       await restoreRootBackup(entry, recovery, { resume: false });
     } catch (recoveryError) {

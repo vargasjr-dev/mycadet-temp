@@ -47,7 +47,7 @@ function spawnStateRoot(): string {
 }
 
 import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
-import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
+import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import {
@@ -96,11 +96,11 @@ function normalizeRuntimeVersion(version: string): string {
 }
 
 export function getLocalRuntimeInstallDir(
-  resources: LocalAssistantResources,
+  entry: LocalRuntimeAssistant,
   version: string,
 ): string {
   return join(
-    getLocalInstanceDir(resources),
+    getLocalInstanceDir(entry),
     "runtime",
     normalizeRuntimeVersion(version),
   );
@@ -208,9 +208,9 @@ function envWithBunPath(
 }
 
 function localRuntimeAssistantIndex(
-  resources: LocalAssistantResources,
+  entry: LocalRuntimeAssistant,
 ): string | undefined {
-  const installDir = resources.runtimeInstallDir;
+  const installDir = entry.runtimeInstallDir;
   if (!installDir) return undefined;
   const candidate = packagePath(
     installDir,
@@ -221,25 +221,25 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  resources: LocalAssistantResources | undefined,
+  entry: LocalRuntimeAssistant | undefined,
 ): string | undefined {
-  const installDir = resources?.runtimeInstallDir;
+  const installDir = entry?.runtimeInstallDir;
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
 }
 
 function localRuntimeCesDir(
-  resources: LocalAssistantResources | undefined,
+  entry: LocalRuntimeAssistant | undefined,
 ): string | undefined {
-  const installDir = resources?.runtimeInstallDir;
+  const installDir = entry?.runtimeInstallDir;
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/credential-executor", "");
   return isCesSourceDir(candidate) ? candidate : undefined;
 }
 
 export function ensureLocalRuntime(
-  resources: LocalAssistantResources,
+  entry: LocalRuntimeAssistant,
   version: string,
   options: { force?: boolean } = {},
 ): LocalRuntimeInstall {
@@ -258,7 +258,7 @@ export function ensureLocalRuntime(
   const normalizedVersion = normalizeRuntimeVersion(version);
   const displayVersion =
     normalizedVersion === "latest" ? "latest" : `v${normalizedVersion}`;
-  const installDir = getLocalRuntimeInstallDir(resources, normalizedVersion);
+  const installDir = getLocalRuntimeInstallDir(entry, normalizedVersion);
 
   if (!options.force && hasLocalRuntimeComponents(installDir)) {
     return { version: displayVersion, installDir };
@@ -419,10 +419,10 @@ function findGatewaySourceFromCwd(): string | undefined {
 }
 
 function resolveAssistantIndexPath(
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
 ): string | undefined {
-  if (resources) {
-    const runtimeIndex = localRuntimeAssistantIndex(resources);
+  if (entry) {
+    const runtimeIndex = localRuntimeAssistantIndex(entry);
     if (runtimeIndex) return runtimeIndex;
   }
 
@@ -561,11 +561,11 @@ type DaemonStartOptions = {
  * writable per-instance directory used outside containers.
  */
 function resolveCesBootstrapSocketDir(
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
   env?: Record<string, string | undefined>,
 ): string {
-  if (resources) {
-    return join(getLocalInstanceDir(resources), "ces-data");
+  if (entry) {
+    return join(getLocalInstanceDir(entry), "ces-data");
   }
   const dataDir =
     env?.CES_DATA_DIR?.trim() || join(resolveDataDir(), "ces-data");
@@ -579,22 +579,23 @@ function resolveCesBootstrapSocketDir(
  */
 function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
-  resources: LocalAssistantResources | undefined,
+  entry: LocalRuntimeAssistant,
   options?: DaemonStartOptions,
 ): void {
-  if (resources) {
-    env.CADET_WORKSPACE_DIR = join(getLocalInstanceDir(resources), "workspace");
+  {
+    env.CADET_WORKSPACE_DIR = join(getLocalInstanceDir(entry), "workspace");
     env.GATEWAY_SECURITY_DIR = join(
-      getLocalInstanceDir(resources),
+      getLocalInstanceDir(entry),
       "gateway-security",
     );
     env.CREDENTIAL_SECURITY_DIR = join(
-      getLocalInstanceDir(resources),
+      getLocalInstanceDir(entry),
       "ces-security",
     );
-    env.CES_DATA_DIR = join(getLocalInstanceDir(resources), "ces-data");
-    env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
-    env.GATEWAY_PORT = String(resources.gatewayPort);
+    env.CES_DATA_DIR = join(getLocalInstanceDir(entry), "ces-data");
+    if (entry.daemonPort !== undefined)
+      env.RUNTIME_HTTP_PORT = String(entry.daemonPort);
+    if (entry.port !== undefined) env.GATEWAY_PORT = String(entry.port);
     delete env.QDRANT_URL;
   }
   if (options?.defaultWorkspaceConfigPath) {
@@ -602,7 +603,7 @@ function applyDaemonEnvOverrides(
       options.defaultWorkspaceConfigPath;
   }
   // CES and the assistant resolve the socket from CES_BOOTSTRAP_SOCKET_DIR.
-  const bootstrapDir = resolveCesBootstrapSocketDir(resources, env);
+  const bootstrapDir = resolveCesBootstrapSocketDir(entry, env);
   env.CES_BOOTSTRAP_SOCKET_DIR = bootstrapDir;
   mkdirSync(bootstrapDir, { recursive: true });
   applyIpcSocketDirOverride(env);
@@ -759,7 +760,7 @@ function logAssistantAlreadyRunning(
 
 async function startDaemonFromSource(
   assistantIndex: string,
-  resources: LocalAssistantResources,
+  entry: ReadyRuntimeEntry,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const foreground = options?.foreground ?? false;
@@ -767,17 +768,17 @@ async function startDaemonFromSource(
 
   // Ensure the directory containing PID/socket files exists. For named
   // instances this is instanceDir/.cadet/workspace/ (matching daemon's getWorkspaceDir()).
-  const pidFile = getDaemonPidPath(resources);
+  const pidFile = getDaemonPidPath(entry);
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, resources.daemonPort)) {
+  if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
     return null;
   }
 
   const daemonState = await resolveProcessState(
     pidFile,
-    resources.daemonPort,
+    entry.daemonPort,
     "Assistant",
     60_000,
     "readyz",
@@ -787,7 +788,7 @@ async function startDaemonFromSource(
     return null;
   }
 
-  if (await checkOrphanedDaemon(pidFile, resources.daemonPort)) {
+  if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
     return null;
   }
 
@@ -804,7 +805,7 @@ async function startDaemonFromSource(
   if (isRepoCheckoutPath(assistantIndex)) {
     env.CADET_DEV = "1";
   }
-  applyDaemonEnvOverrides(env, resources, options);
+  applyDaemonEnvOverrides(env, entry, options);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
   // detect the in-progress spawn and wait instead of racing.
@@ -825,7 +826,7 @@ async function startDaemonFromSource(
       })
     : (() => {
         const daemonLogFd = openRuntimeLogFile(
-          resources?.instanceDir ?? spawnStateRoot(),
+          entry?.instanceDir ?? spawnStateRoot(),
           "assistant",
         );
         const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
@@ -856,7 +857,7 @@ async function startDaemonFromSource(
 // assistant-side equivalent.
 async function startDaemonWatchFromSource(
   assistantIndex: string,
-  resources: LocalAssistantResources,
+  entry: ReadyRuntimeEntry,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const mainPath = resolveDaemonMainPath(assistantIndex);
@@ -864,17 +865,17 @@ async function startDaemonWatchFromSource(
     throw new Error(`Daemon main.ts not found at ${mainPath}`);
   }
 
-  const pidFile = getDaemonPidPath(resources);
+  const pidFile = getDaemonPidPath(entry);
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, resources.daemonPort)) {
+  if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
     return null;
   }
 
   const daemonState = await resolveProcessState(
     pidFile,
-    resources.daemonPort,
+    entry.daemonPort,
     "Assistant",
     60_000,
     "readyz",
@@ -884,7 +885,7 @@ async function startDaemonWatchFromSource(
     return null;
   }
 
-  if (await checkOrphanedDaemon(pidFile, resources.daemonPort)) {
+  if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
     return null;
   }
 
@@ -894,14 +895,14 @@ async function startDaemonWatchFromSource(
     CADET_DEV: "1",
     CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
-  applyDaemonEnvOverrides(env, resources, options);
+  applyDaemonEnvOverrides(env, entry, options);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
   // detect the in-progress spawn and wait instead of racing.
   writeFileSync(pidFile, "starting", "utf-8");
 
   const daemonLogFd = openRuntimeLogFile(
-    resources?.instanceDir ?? spawnStateRoot(),
+    entry?.instanceDir ?? spawnStateRoot(),
     "assistant",
   );
   const child = spawn(
@@ -932,8 +933,8 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(resources?: LocalAssistantResources): string {
-  const runtimeGatewayDir = localRuntimeGatewayDir(resources);
+function resolveGatewayDir(entry?: LocalRuntimeAssistant): string {
+  const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
   // Source tree: cli/src/lib/ → ../../.. → repo root → gateway/
@@ -982,11 +983,11 @@ function resolveGatewayDir(resources?: LocalAssistantResources): string {
  * as cwd and the instance-pinned CADET_WORKSPACE_DIR / GATEWAY_SECURITY_DIR
  * the server was given (the file-backed pairing store must resolve
  * identically in both processes). Callers pass the resolved assistant
- * entry's `resources` (undefined for the default instance, where both
+ * entry's `entry` (undefined for the default instance, where both
  * processes fall back to the same cwd-relative paths).
  */
 export function gatewayCliInvocation(
-  resources?: LocalAssistantResources | undefined,
+  entry?: LocalRuntimeAssistant | undefined,
 ): {
   command: string;
   args: string[];
@@ -995,18 +996,15 @@ export function gatewayCliInvocation(
 } {
   return {
     command: resolveBunExecutable(),
-    args: ["run", join(resolveGatewayDir(resources), "src/cli/index.ts")],
+    args: ["run", join(resolveGatewayDir(entry), "src/cli/index.ts")],
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(resources?.instanceDir
+      ...(entry?.instanceDir
         ? {
-            CADET_WORKSPACE_DIR: join(
-              getLocalInstanceDir(resources),
-              "workspace",
-            ),
+            CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
             GATEWAY_SECURITY_DIR: join(
-              getLocalInstanceDir(resources),
+              getLocalInstanceDir(entry),
               "gateway-security",
             ),
           }
@@ -1015,8 +1013,8 @@ export function gatewayCliInvocation(
   };
 }
 
-function resolveCesDir(resources?: LocalAssistantResources): string {
-  const runtimeCesDir = localRuntimeCesDir(resources);
+function resolveCesDir(entry?: LocalRuntimeAssistant): string {
+  const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
   // Source tree / npm sibling: cli/src/lib/ → ../../.. → credential-executor/
@@ -1051,11 +1049,11 @@ function resolveCesDir(resources?: LocalAssistantResources): string {
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
 export function resolveCesSocketPath(
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
-    workspaceDir: resolveCesBootstrapSocketDir(resources),
+    workspaceDir: resolveCesBootstrapSocketDir(entry),
     platform: hostPlatform,
   }).path;
 }
@@ -1093,11 +1091,9 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  */
 export async function startCes(
   watch: boolean = false,
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
 ): Promise<void> {
-  const cadetDir = resources
-    ? getLocalInstanceDir(resources)
-    : resolveDataDir();
+  const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1106,21 +1102,21 @@ export async function startCes(
 
   startupLog("🔐 Starting credential-executor sibling...");
 
-  const socketPath = resolveCesSocketPath(resources);
+  const socketPath = resolveCesSocketPath(entry);
   // A stale socket file from an unclean shutdown blocks re-bind; CES unlinks it
   // on startup, but remove it here too so a leftover never masks a launch bug.
   removeIpcEndpointFile(socketPath);
 
-  const securityDir = resources
-    ? join(getLocalInstanceDir(resources), "ces-security")
+  const securityDir = entry
+    ? join(getLocalInstanceDir(entry), "ces-security")
     : join(resolveDataDir(), "ces-security");
-  const dataDir = resources
-    ? join(getLocalInstanceDir(resources), "ces-data")
+  const dataDir = entry
+    ? join(getLocalInstanceDir(entry), "ces-data")
     : join(resolveDataDir(), "ces-data");
-  const workspaceDir = resources
-    ? join(getLocalInstanceDir(resources), "workspace")
+  const workspaceDir = entry
+    ? join(getLocalInstanceDir(entry), "workspace")
     : join(resolveDataDir(), "workspace");
-  const bootstrapDir = resolveCesBootstrapSocketDir(resources);
+  const bootstrapDir = resolveCesBootstrapSocketDir(entry);
   mkdirSync(securityDir, { recursive: true });
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(bootstrapDir, { recursive: true });
@@ -1134,7 +1130,7 @@ export async function startCes(
   };
 
   let ces;
-  const runtimeCesDir = !watch ? localRuntimeCesDir(resources) : undefined;
+  const runtimeCesDir = !watch ? localRuntimeCesDir(entry) : undefined;
   const cesBinary = compiledSibling("credential-executor");
   if (!runtimeCesDir && isCompiledCli() && existsSync(cesBinary) && !watch) {
     // Compiled binary alongside the CLI (desktop app / compiled CLI).
@@ -1149,7 +1145,7 @@ export async function startCes(
     pipeToLogFile(ces, cesLogFd, "credential-executor");
   } else {
     // Source tree / bunx: run the CES entry point via bun.
-    const cesDir = runtimeCesDir ?? resolveCesDir(resources);
+    const cesDir = runtimeCesDir ?? resolveCesDir(entry);
     const cesEntry = join(cesDir, "src/main.ts");
     const bunArgs = watch ? ["--watch", "run", cesEntry] : ["run", cesEntry];
     const cesLogFd = openLogFile("hatch.log");
@@ -1454,20 +1450,20 @@ export function isGatewayWatchModeAvailable(): boolean {
  *
  * The wrapper is idempotent: safe to call on every daemon wake.
  */
-function writeAssistantWrapper(resources: LocalAssistantResources): void {
+function writeAssistantWrapper(entry: LocalRuntimeAssistant): void {
   if (platform() === "win32") {
     return;
   }
   const assistantBinary = compiledSibling("assistant");
   if (!isCompiledCli() || !existsSync(assistantBinary)) return;
 
-  const workspaceDir = join(getLocalInstanceDir(resources), "workspace");
+  const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
   const gatewaySecurityDir = join(
-    getLocalInstanceDir(resources),
+    getLocalInstanceDir(entry),
     "gateway-security",
   );
-  const cesSecurityDir = join(getLocalInstanceDir(resources), "ces-security");
-  const cesDataDir = join(getLocalInstanceDir(resources), "ces-data");
+  const cesSecurityDir = join(getLocalInstanceDir(entry), "ces-security");
+  const cesDataDir = join(getLocalInstanceDir(entry), "ces-data");
   const binDir = join(workspaceDir, "bin");
 
   mkdirSync(binDir, { recursive: true });
@@ -1487,19 +1483,38 @@ function writeAssistantWrapper(resources: LocalAssistantResources): void {
   );
 }
 
+/** A local runtime entry with the daemon port a hatch records. */
+export type ReadyRuntimeEntry = LocalRuntimeAssistant & { daemonPort: number };
+
+/**
+ * The daemon lifecycle reads the recorded daemon port; an entry without
+ * one predates per-instance records and cannot start. Throws with the
+ * re-hatch guidance the callers show.
+ */
+export function requireReadyRuntimeEntry(
+  entry: LocalRuntimeAssistant,
+): ReadyRuntimeEntry {
+  if (entry.daemonPort === undefined) {
+    throw new Error(
+      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
+    );
+  }
+  return entry as ReadyRuntimeEntry;
+}
+
 // NOTE: startLocalDaemon() is the CLI-side daemon lifecycle manager.
 // It should eventually converge with
 // assistant/src/daemon/daemon-control.ts::startDaemon which is the
 // assistant-side equivalent.
 export async function startLocalDaemon(
   watch: boolean = false,
-  resources: LocalAssistantResources,
+  entry: ReadyRuntimeEntry,
   options?: DaemonStartOptions,
 ): Promise<void> {
-  writeAssistantWrapper(resources);
+  writeAssistantWrapper(entry);
 
   const runtimeAssistantIndex = !watch
-    ? localRuntimeAssistantIndex(resources)
+    ? localRuntimeAssistantIndex(entry)
     : undefined;
   if (runtimeAssistantIndex) {
     startupLog("🔨 Starting local assistant runtime...");
@@ -1509,16 +1524,16 @@ export async function startLocalDaemon(
     // the user was already told about.
     const runtimeSpawn = await startDaemonFromSource(
       runtimeAssistantIndex,
-      resources,
+      entry,
       options,
     );
     if (runtimeSpawn) {
       await reportFreshSpawnReadiness(
         runtimeSpawn,
-        getDaemonPidPath(resources),
-        resources.daemonPort,
+        getDaemonPidPath(entry),
+        entry.daemonPort,
         await waitForDaemonMigrationsReady(
-          resources.daemonPort,
+          entry.daemonPort,
           Date.now() + 60000,
         ),
         options?.requireReady,
@@ -1537,17 +1552,17 @@ export async function startLocalDaemon(
     // In watch mode, skip the bundled binary and use source (bun --watch
     // only works with source files, not compiled binaries).
 
-    const pidFile = getDaemonPidPath(resources);
+    const pidFile = getDaemonPidPath(entry);
 
     // --- Lifecycle guard: prevent split-brain daemon state ---
-    if (await awaitStartingSentinel(pidFile, resources.daemonPort)) {
+    if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
       ensureBunInstalled();
       return;
     }
 
     const daemonState = await resolveProcessState(
       pidFile,
-      resources.daemonPort,
+      entry.daemonPort,
       "Assistant",
       60_000,
       "readyz",
@@ -1559,12 +1574,12 @@ export async function startLocalDaemon(
     let daemonSpawn: DaemonSpawn | null = null;
 
     if (!daemonAlive) {
-      if (await checkOrphanedDaemon(pidFile, resources.daemonPort)) {
+      if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
         ensureBunInstalled();
         // The orphan already answers health checks — a readiness probe
         // classifies it without blocking on an in-flight migration.
         logDaemonReadiness(
-          await probeDaemonReadinessWithRetry(resources.daemonPort),
+          await probeDaemonReadinessWithRetry(entry.daemonPort),
           options?.requireReady,
         );
         return;
@@ -1644,7 +1659,7 @@ export async function startLocalDaemon(
           daemonEnv[key] = process.env[key]!;
         }
       }
-      applyDaemonEnvOverrides(daemonEnv, resources, options);
+      applyDaemonEnvOverrides(daemonEnv, entry, options);
       const daemonSpawnEnv = envWithCompiledRuntimeNodePath(daemonEnv);
 
       // Write a sentinel PID file before spawning so concurrent hatch() calls
@@ -1661,7 +1676,7 @@ export async function startLocalDaemon(
           })
         : (() => {
             const daemonLogFd = openRuntimeLogFile(
-              resources?.instanceDir ?? spawnStateRoot(),
+              entry?.instanceDir ?? spawnStateRoot(),
               "assistant",
             );
             const c = spawn(daemonBinary, [], {
@@ -1706,17 +1721,17 @@ export async function startLocalDaemon(
     // its in-flight migration would just double the reported diagnosis.
     if (!daemonAlive) {
       let readiness = await waitForDaemonMigrationsReady(
-        resources.daemonPort,
+        entry.daemonPort,
         Date.now() + 60000,
       );
       const daemonHealthy =
         readiness !== "unreachable" ||
-        (await httpHealthCheck(resources.daemonPort));
+        (await httpHealthCheck(entry.daemonPort));
 
       // Dev fallback: if the bundled daemon did not become healthy in time,
       // fall back to source daemon startup so local source runs still work.
       if (!daemonHealthy) {
-        const assistantIndex = resolveAssistantIndexPath(resources);
+        const assistantIndex = resolveAssistantIndexPath(entry);
         if (assistantIndex) {
           console.log(
             "   Bundled assistant not healthy after 60s, falling back to source assistant...",
@@ -1733,14 +1748,10 @@ export async function startLocalDaemon(
             DAEMON_STOP_TIMEOUT_MS,
           );
           daemonSpawn = watch
-            ? await startDaemonWatchFromSource(
-                assistantIndex,
-                resources,
-                options,
-              )
-            : await startDaemonFromSource(assistantIndex, resources, options);
+            ? await startDaemonWatchFromSource(assistantIndex, entry, options)
+            : await startDaemonFromSource(assistantIndex, entry, options);
           readiness = await waitForDaemonMigrationsReady(
-            resources.daemonPort,
+            entry.daemonPort,
             Date.now() + 60000,
           );
         }
@@ -1748,14 +1759,14 @@ export async function startLocalDaemon(
         // The health check just passed, so the readyz probes were the flaky
         // part — re-probe once so the log reports the daemon's real state
         // instead of "did not become ready".
-        readiness = await probeDaemonReadiness(resources.daemonPort);
+        readiness = await probeDaemonReadiness(entry.daemonPort);
       }
 
       if (daemonSpawn) {
         await reportFreshSpawnReadiness(
           daemonSpawn,
           pidFile,
-          resources.daemonPort,
+          entry.daemonPort,
           readiness,
           options?.requireReady,
         );
@@ -1766,7 +1777,7 @@ export async function startLocalDaemon(
   } else {
     startupLog("🔨 Starting local assistant...");
 
-    const assistantIndex = resolveAssistantIndexPath(resources);
+    const assistantIndex = resolveAssistantIndexPath(entry);
     if (!assistantIndex) {
       throw new Error(
         "cadet-daemon binary not found and assistant source not available.\n" +
@@ -1774,16 +1785,16 @@ export async function startLocalDaemon(
       );
     }
     const sourceSpawn = watch
-      ? await startDaemonWatchFromSource(assistantIndex, resources, options)
-      : await startDaemonFromSource(assistantIndex, resources, options);
+      ? await startDaemonWatchFromSource(assistantIndex, entry, options)
+      : await startDaemonFromSource(assistantIndex, entry, options);
     // Attach case was classified and logged inside the start function.
     if (sourceSpawn) {
       await reportFreshSpawnReadiness(
         sourceSpawn,
-        getDaemonPidPath(resources),
-        resources.daemonPort,
+        getDaemonPidPath(entry),
+        entry.daemonPort,
         await waitForDaemonMigrationsReady(
-          resources.daemonPort,
+          entry.daemonPort,
           Date.now() + 60000,
         ),
         options?.requireReady,
@@ -1794,21 +1805,19 @@ export async function startLocalDaemon(
 
 export async function startGateway(
   watch: boolean = false,
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
   options?: {
     bootstrapSecret?: string;
     requireReady?: boolean;
   },
 ): Promise<string> {
-  const effectiveGatewayPort = resources?.gatewayPort ?? GATEWAY_PORT;
+  const effectiveGatewayPort = entry?.port ?? GATEWAY_PORT;
 
   // Kill any existing gateway process before spawning a new one.
   // Without this, crashed/stale gateways accumulate as zombies — the old
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
-  const gwPidDir = resources
-    ? getLocalInstanceDir(resources)
-    : resolveDataDir();
+  const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1817,7 +1826,7 @@ export async function startGateway(
   startupLog("🌐 Starting gateway...");
 
   const effectiveDaemonPort =
-    resources?.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
+    entry?.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
 
   const gatewayEnv: Record<string, string> = {
     ...(process.env as Record<string, string>),
@@ -1838,21 +1847,18 @@ export async function startGateway(
     // Pin gateway workspace/security paths to the named instance so parent
     // env vars cannot leak a different workspace. The gateway opens the
     // assistant DB directly for guardian bootstrap.
-    ...(resources
+    ...(entry
       ? {
-          CADET_WORKSPACE_DIR: join(
-            getLocalInstanceDir(resources),
-            "workspace",
-          ),
+          CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
           GATEWAY_SECURITY_DIR: join(
-            getLocalInstanceDir(resources),
+            getLocalInstanceDir(entry),
             "gateway-security",
           ),
           CREDENTIAL_SECURITY_DIR: join(
-            getLocalInstanceDir(resources),
+            getLocalInstanceDir(entry),
             "ces-security",
           ),
-          CES_DATA_DIR: join(getLocalInstanceDir(resources), "ces-data"),
+          CES_DATA_DIR: join(getLocalInstanceDir(entry), "ces-data"),
         }
       : {}),
   };
@@ -1861,9 +1867,7 @@ export async function startGateway(
 
   let gateway;
 
-  const runtimeGatewayDir = !watch
-    ? localRuntimeGatewayDir(resources)
-    : undefined;
+  const runtimeGatewayDir = !watch ? localRuntimeGatewayDir(entry) : undefined;
   const gatewayBinary = compiledSibling("cadet-gateway");
   if (
     !runtimeGatewayDir &&
@@ -1875,7 +1879,7 @@ export async function startGateway(
     // CLI invoked from the terminal). In watch mode, skip the bundled binary
     // and use source (bun --watch only works with source files).
     const gatewayLogFd = openRuntimeLogFile(
-      resources?.instanceDir ?? spawnStateRoot(),
+      entry?.instanceDir ?? spawnStateRoot(),
       "gateway",
     );
     gateway = spawn(gatewayBinary, [], {
@@ -1888,13 +1892,13 @@ export async function startGateway(
     pipeToLogFile(gateway, gatewayLogFd, "gateway");
   } else {
     // Source tree / bunx: resolve the gateway source directory and run via bun.
-    const gatewayDir = runtimeGatewayDir ?? resolveGatewayDir(resources);
+    const gatewayDir = runtimeGatewayDir ?? resolveGatewayDir(entry);
     const gatewayEntry = join(gatewayDir, "src/index.ts");
     const bunArgs = watch
       ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
       : ["run", gatewayEntry, "--cadet-gateway"];
     const gwLogFd = openRuntimeLogFile(
-      resources?.instanceDir ?? spawnStateRoot(),
+      entry?.instanceDir ?? spawnStateRoot(),
       "gateway",
     );
     gateway = spawn(resolveBunExecutable(), bunArgs, {
@@ -1913,9 +1917,7 @@ export async function startGateway(
   gateway.unref();
 
   if (gateway.pid) {
-    const gwPidDir = resources
-      ? getLocalInstanceDir(resources)
-      : resolveDataDir();
+    const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 
@@ -1945,16 +1947,14 @@ export async function startGateway(
  * and clean up PID files. Called when hatch fails partway through
  * so we don't leave orphaned processes with no lock file entry.
  *
- * When `resources` is provided, uses instance-specific paths instead of
+ * When `entry` is provided, uses instance-specific paths instead of
  * the default ~/.cadet/ paths.
  */
 export async function stopLocalProcesses(
-  resources?: LocalAssistantResources,
+  entry?: LocalRuntimeAssistant,
 ): Promise<void> {
-  const cadetDir = resources
-    ? getLocalInstanceDir(resources)
-    : resolveDataDir();
-  const daemonPidFile = getDaemonPidPath(resources);
+  const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+  const daemonPidFile = getDaemonPidPath(entry);
   await stopProcessByPidFile(
     daemonPidFile,
     "daemon",

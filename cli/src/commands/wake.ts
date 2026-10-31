@@ -7,7 +7,7 @@ import {
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { saveLockfileAssistant, GATEWAY_PORT } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   dockerResourceNames,
@@ -35,6 +35,7 @@ import {
   startLocalDaemon,
   startGateway,
 } from "../lib/local";
+import { requireReadyRuntimeEntry } from "../lib/local.js";
 import {
   DOCKER_GATEWAY_READY_TIMEOUT_MS,
   restoreContainerAppServer,
@@ -224,12 +225,7 @@ export async function wakeAssistant(
     );
   }
 
-  if (!entry.resources) {
-    throw new WakeExit(
-      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
-    );
-  }
-  const resources = entry.resources;
+  requireReadyRuntimeEntry(entry);
 
   // Port auto-heal: a recorded port something else holds (a still-running
   // vellum assistant on the pre-de-clash ports, a stray listener) used to
@@ -251,7 +247,8 @@ export async function wakeAssistant(
     }
   }
 
-  const pidFile = getDaemonPidPath(resources);
+  const daemonPort = requireReadyRuntimeEntry(entry).daemonPort;
+  const pidFile = getDaemonPidPath(entry);
 
   // Budget anchor for the migration-coordination wait below: the host
   // wrapper (packages/local-mode/src/wake.ts WAKE_TIMEOUT_MS) SIGTERMs wake
@@ -264,7 +261,7 @@ export async function wakeAssistant(
   let daemonMigrationsFailed = false;
   const daemonState = await resolveProcessState(
     pidFile,
-    resources.daemonPort,
+    daemonPort,
     "Assistant",
     60_000,
     "readyz",
@@ -333,8 +330,8 @@ export async function wakeAssistant(
     // connection, so it is only (re)started alongside the daemon. startCes
     // always launches the CES sibling unconditionally.
     await Promise.all([
-      startCes(watch, resources),
-      startLocalDaemon(watch, resources, { foreground }),
+      startCes(watch, entry),
+      startLocalDaemon(watch, requireReadyRuntimeEntry(entry), { foreground }),
     ]);
     // A daemon that aborts during startup (an occupied runtime HTTP port, a
     // fatal subsystem failure) leaves no process behind, and readiness alone
@@ -344,14 +341,14 @@ export async function wakeAssistant(
     // an assistant that is not running.
     if (!isProcessAlive(pidFile).alive) {
       throw new WakeExit(
-        `the assistant exited during startup and is not running. Its runtime HTTP port ${resources.daemonPort} may be held by another process (check \`lsof -i :${resources.daemonPort}\`); the daemon log records the startup error it reported.`,
+        `the assistant exited during startup and is not running. Its runtime HTTP port ${daemonPort} may be held by another process (check \`lsof -i :${daemonPort}\`); the daemon log records the startup error it reported.`,
       );
     }
     // startLocalDaemon's post-spawn wait is bounded (60s), and a longer
     // migration outlives it. Classify the fresh spawn the same way the
     // attach path does, so the gateway-coordination wait below applies to
     // both paths and wake's closing summary stays honest.
-    const readiness = await probeDaemonReadinessWithRetry(resources.daemonPort);
+    const readiness = await probeDaemonReadinessWithRetry(daemonPort);
     daemonUnready = readiness === "migrating";
     daemonMigrationsFailed = readiness === "failed";
   } else {
@@ -360,23 +357,23 @@ export async function wakeAssistant(
     // means credential operations will fail until the next wake. Relaunch the
     // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
     // the next credential read. startCes always launches the sibling.
-    const cadetDir = getLocalInstanceDir(resources);
+    const cadetDir = getLocalInstanceDir(entry);
     const cesPidFile = join(cadetDir, "ces.pid");
     const cesAlive = isProcessAlive(cesPidFile).alive;
     if (!cesAlive) {
       console.log("CES sibling not running — relaunching...");
-      await startCes(watch, resources);
+      await startCes(watch, entry);
     }
   }
 
   // Start gateway
   let gatewayStarted = false;
   {
-    const cadetDir = getLocalInstanceDir(resources);
+    const cadetDir = getLocalInstanceDir(entry);
     const gatewayPidFile = join(cadetDir, "gateway.pid");
     const gatewayState = await resolveProcessState(
       gatewayPidFile,
-      resources.gatewayPort,
+      entry.port ?? GATEWAY_PORT,
       "Gateway",
     );
     const gatewayAlive = gatewayState.status === "healthy";
@@ -391,7 +388,7 @@ export async function wakeAssistant(
         );
         return false;
       }
-      await startGateway(restartWithWatch, resources, {
+      await startGateway(restartWithWatch, entry, {
         bootstrapSecret,
       });
       return true;
@@ -429,7 +426,7 @@ export async function wakeAssistant(
         }
       }
     } else {
-      await startGateway(watch, resources, { bootstrapSecret });
+      await startGateway(watch, entry, { bootstrapSecret });
       gatewayStarted = true;
     }
   }
@@ -447,7 +444,7 @@ export async function wakeAssistant(
     const waitBudgetMs = Math.min(60_000, wakeStartedAt + 150_000 - Date.now());
     if (waitBudgetMs > 0) {
       const readiness = await waitForDaemonMigrationsReady(
-        resources.daemonPort,
+        daemonPort,
         Date.now() + waitBudgetMs,
       );
       daemonUnready = readiness !== "ready";

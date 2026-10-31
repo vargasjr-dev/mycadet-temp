@@ -212,7 +212,7 @@ async function mintPairingChallengeOrExit(
         { timeoutMs: 30_000 },
       );
     } else {
-      const invocation = gatewayCliInvocation(entry.resources);
+      const invocation = gatewayCliInvocation(entry);
       stdout = await execOutput(
         invocation.command,
         [...invocation.args, "pairing", "mint"],
