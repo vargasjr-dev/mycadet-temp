@@ -6,17 +6,9 @@ const authRef = {
   hasCloudSession: true,
 };
 const resolvedRef = {
-  assistants: [
-    {
-      id: "assistant-1",
-      name: "Primary",
-      isLocal: false,
-      isCloudHosted: true,
-    },
-  ],
-  activeAssistantId: "assistant-1" as string | null,
-  selectedAssistantId: null as string | null,
-  assistantsHydrated: true,
+  assistant: { cloud: "local", assistantId: "assistant-1", name: "Primary" } as
+    | { cloud: "local"; assistantId: string; name?: string }
+    | null,
 };
 
 const useAssistantBootResolutionMock = mock(() => ({
@@ -66,39 +58,22 @@ mock.module("@/lib/local-mode", () => ({
   isGatewaySessionLive: () => false,
   getActiveAssistant: () =>
     localSelectedRef.value ??
-    (resolvedRef.activeAssistantId
-      ? { assistantId: resolvedRef.activeAssistantId }
+    (resolvedRef.assistant
+      ? { assistantId: resolvedRef.assistant.assistantId }
       : undefined),
   setActiveLockfileAssistant: async () => undefined,
 }));
 
 
-mock.module("@/stores/resolved-assistants-store", () => {
-  const useResolvedAssistantsStore = () => null;
-  useResolvedAssistantsStore.use = {
-    assistants: () => resolvedRef.assistants,
-    activeAssistantId: () => resolvedRef.activeAssistantId,
-    selectedAssistantId: () => resolvedRef.selectedAssistantId,
-    assistantsHydrated: () => resolvedRef.assistantsHydrated,
+mock.module("@/stores/resolved-assistant-store", () => {
+  const useResolvedAssistantStore = () => null;
+  useResolvedAssistantStore.use = {
+    assistant: () => resolvedRef.assistant,
   };
-  useResolvedAssistantsStore.getState = () => ({
-    assistants: resolvedRef.assistants,
-    selectedAssistantId: resolvedRef.selectedAssistantId,
-    assistantsHydrated: resolvedRef.assistantsHydrated,
+  useResolvedAssistantStore.getState = () => ({
+    assistant: resolvedRef.assistant,
   });
-  return {
-    useResolvedAssistantsStore,
-    assistantsValidForOrg: (
-      assistants: { organizationId?: string | null; isLocal?: boolean }[],
-      activeOrgId: string | null,
-    ) =>
-      assistants.filter(
-        (a) =>
-          a.isLocal ||
-          a.organizationId == null ||
-          a.organizationId === activeOrgId,
-      ),
-  };
+  return { useResolvedAssistantStore };
 });
 
 const useCommandPaletteSectionsMock = mock((_params: unknown) => ({
@@ -129,17 +104,11 @@ const { CommandPaletteWindowPage } =
 beforeEach(() => {
   authRef.sessionStatus = "authenticated";
   authRef.hasCloudSession = true;
-  resolvedRef.assistants = [
-    {
-      id: "assistant-1",
-      name: "Primary",
-      isLocal: false,
-      isCloudHosted: true,
-    },
-  ];
-  resolvedRef.activeAssistantId = "assistant-1";
-  resolvedRef.selectedAssistantId = null;
-  resolvedRef.assistantsHydrated = true;
+  resolvedRef.assistant = {
+    cloud: "local",
+    assistantId: "assistant-1",
+    name: "Primary",
+  };
   localSelectedRef.value = null;
 
   useAssistantBootResolutionMock.mockClear();
@@ -164,23 +133,12 @@ describe("CommandPaletteWindowPage", () => {
     );
   });
 
-  test("uses the selected platform assistant while boot resolution is still resolving", () => {
-    resolvedRef.assistants = [
-      {
-        id: "assistant-1",
-        name: "Primary",
-        isLocal: false,
-        isCloudHosted: true,
-      },
-      {
-        id: "assistant-2",
-        name: "Secondary",
-        isLocal: false,
-        isCloudHosted: true,
-      },
-    ];
-    resolvedRef.activeAssistantId = null;
-    resolvedRef.selectedAssistantId = "assistant-2";
+  test("binds the palette to the served assistant's id", () => {
+    resolvedRef.assistant = {
+      cloud: "local",
+      assistantId: "assistant-2",
+      name: "Secondary",
+    };
 
     render(<CommandPaletteWindowPage />);
 

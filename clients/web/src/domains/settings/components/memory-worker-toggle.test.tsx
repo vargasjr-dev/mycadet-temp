@@ -26,6 +26,7 @@ const stopMock = mock(async () => ({}));
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
+  useResolvedAssistantId: () => "assistant-1",
 }));
 
 mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({

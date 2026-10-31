@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef } from "react";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
@@ -157,7 +157,7 @@ function Library() {
   );
 }
 
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 const viewer = useViewerStore.getState();
 let queryClient: QueryClient;
 beforeEach(() => {
@@ -167,7 +167,7 @@ beforeEach(() => {
   entryMode = "conversation";
   load.mockClear();
   write.mockClear();
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useViewerStore.setState({
     mainView: "chat",
     openedDocumentState: null,
@@ -204,7 +204,7 @@ afterEach(async () => {
   viewport.restore();
   queryClient.clear();
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useViewerStore.setState(viewer, true);
 });
 

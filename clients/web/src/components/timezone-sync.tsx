@@ -31,18 +31,18 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { client } from "@/generated/api/client.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { getBrowserTimezone } from "@/utils/browser-timezone";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function TimezoneSync(): null {
   // Reactivity trigger only: this value changes whenever the browser zone
   // changes, re-running the effect below. The detected value is re-read
   // imperatively inside `trySync` from `getBrowserTimezone()`.
   const effectiveTz = useEffectiveTimezone();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
 
   const { mutateAsync: patchTimezone } = useMutation({
     mutationFn: async (vars: {

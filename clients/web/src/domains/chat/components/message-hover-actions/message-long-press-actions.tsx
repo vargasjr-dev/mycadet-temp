@@ -15,8 +15,8 @@ import type { MessageHoverActionsProps } from "@/domains/chat/components/message
 import { useMessageReadAloudStore } from "@/domains/chat/message-read-aloud-store";
 import { messageCopyText } from "@/domains/chat/utils/message-plain-text";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { BottomSheet, PanelItem } from "@mycadet/design-library";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 type MessageLongPressActionsProps = MessageHoverActionsProps & {
   /** Controlled open state for the BottomSheet. */
@@ -46,7 +46,7 @@ export function MessageLongPressActions({
   onOpenChange,
 }: MessageLongPressActionsProps) {
   const { t } = useTranslation("chat");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const readAloudMessageId = useMessageReadAloudStore.use.messageId();
   const readAloudStatus = useMessageReadAloudStore.use.status();
   const isThisReading =

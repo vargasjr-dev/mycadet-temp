@@ -41,7 +41,7 @@ import { ensureMainWindowVisible } from "@/runtime/main-window";
 import { whenAssistantVersionKnownFor } from "@/lib/backwards-compat/utils";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { keptAppId } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 import { toast } from "@mycadet/design-library/components/toast";
@@ -295,7 +295,7 @@ export async function drainPendingVoiceStart(
   const duringCompanionIntro = companionIntroStaged();
   // Who a fresh start means, read before the wait below rather than after it,
   // because the wait is scoped to this assistant.
-  const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+  const assistantId = getActiveAssistantId();
   // `supportsLiveVoice` reads `false` until the identity fetch lands, and a
   // cold-launch deep link fires squarely inside that window, so resolve the
   // version first rather than gating on the conservative default (this is the
@@ -412,7 +412,7 @@ export async function drainPendingVoiceStart(
   // drain runs both against whoever is active by then. That next drain is the
   // switch itself: `useLiveVoiceSessionController` runs one on every change of
   // active assistant, so the repark is a retry rather than a wait for the TTL.
-  if (useResolvedAssistantsStore.getState().activeAssistantId !== assistantId) {
+  if (getActiveAssistantId() !== assistantId) {
     return;
   }
   publishConfigNotice(readiness.notice);

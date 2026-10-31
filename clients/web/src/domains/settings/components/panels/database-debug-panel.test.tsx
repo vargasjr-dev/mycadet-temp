@@ -18,6 +18,7 @@ let databaseError: unknown = null;
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
+  useResolvedAssistantId: () => "assistant-1",
 }));
 
 mock.module("@/lib/backwards-compat/use-supports-debug-database", () => ({

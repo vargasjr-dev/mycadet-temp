@@ -28,7 +28,7 @@ import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-s
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { setHosting } from "@/assistant/hosting.test-helper";
 
 import type * as ActiveChat from "../active-chat-view";
@@ -110,7 +110,7 @@ mock.module(
 
 const { ChatPage } = await import("../chat-page");
 const viewport = viewportAxesStub();
-const initialSelection = useResolvedAssistantsStore.getState();
+const initialSelection = useResolvedAssistantStore.getState();
 const initialSlots = useChatLayoutSlotsStore.getState();
 let queryClient: QueryClient;
 
@@ -160,7 +160,7 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
   firstMessageSetup = false;
@@ -175,7 +175,7 @@ afterEach(() => {
   cleanup();
   queryClient.clear();
   viewport.restore();
-  useResolvedAssistantsStore.setState(initialSelection, true);
+  useResolvedAssistantStore.setState(initialSelection, true);
   useChatLayoutSlotsStore.setState(initialSlots, true);
 });
 

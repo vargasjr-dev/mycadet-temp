@@ -8,7 +8,7 @@ import {
 
 import { useConversationStore } from "@/stores/conversation-store";
 import { paneState } from "@/stores/pane-state";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -79,7 +79,7 @@ export function useDocumentChatPreparation({
           mountedRef.current &&
           ownerRef.current === owner &&
           editorRef.current === editor &&
-          useResolvedAssistantsStore.getState().activeAssistantId ===
+          getActiveAssistantId() ===
             assistantId &&
           conversation.activeConversationId === conversationId &&
           (viewer.mainView === "document" ||

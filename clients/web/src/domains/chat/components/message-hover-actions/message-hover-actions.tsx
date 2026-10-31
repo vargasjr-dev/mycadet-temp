@@ -19,7 +19,7 @@ import type { DisplayMessage } from "@/domains/chat/types/types";
 import { messageCopyText } from "@/domains/chat/utils/message-plain-text";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type MessageHoverActionsProps = {
   /** The message whose text is copied and whose role/timestamp drive the row. */
@@ -258,7 +258,7 @@ function MessageReadAloudButton({
   conversationId?: string | null;
 }) {
   const { t } = useTranslation("chat");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const activeMessageId = useMessageReadAloudStore.use.messageId();
   const status = useMessageReadAloudStore.use.status();
   const isThisMessage = activeMessageId === messageId;

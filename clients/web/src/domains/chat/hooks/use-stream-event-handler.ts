@@ -2,7 +2,7 @@ import { type Dispatch, type SetStateAction, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { tailIsAssistant } from "@/domains/chat/utils/stream-updaters/shared";
 import { useTurnStore } from "@/domains/chat/turn-store";
 import { endTurn } from "@/domains/chat/turn-coordinator";
@@ -261,7 +261,7 @@ export function useStreamEventHandler(
         router: { push },
         isNative,
         streamContext: streamState.streamContext,
-        assistantId: useResolvedAssistantsStore.getState().activeAssistantId,
+        assistantId: getActiveAssistantId(),
         composerSessionGeneration: composerSessionGenerationRef.current,
         setOptimisticSends: store.setOptimisticSends,
         // Read live rather than closing over `store`: a queue ack can arrive

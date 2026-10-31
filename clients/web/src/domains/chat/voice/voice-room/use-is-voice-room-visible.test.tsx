@@ -102,8 +102,8 @@ const { useAssistantIdentityStore } =
   await import("@/stores/assistant-identity-store");
 const { __resetPendingDeepLinkForTesting } =
   await import("@/stores/pending-deep-link-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { useConversationStore } = await import("@/stores/conversation-store");
 const { useViewerStore } = await import("@/stores/viewer-store");
 const { useVoicePrefsStore } = await import("@/stores/voice-prefs-store");
@@ -146,7 +146,7 @@ beforeEach(() => {
     version: "0.10.12",
     name: "Ada",
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useVoicePrefsStore.setState({ firstRunSeen: true });
 });
 

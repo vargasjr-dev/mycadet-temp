@@ -28,6 +28,7 @@ let defaultProviderGetCalls = 0;
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
+  useResolvedAssistantId: () => "assistant-1",
 }));
 
 const actualSdk = await import("@/generated/daemon/sdk.gen");

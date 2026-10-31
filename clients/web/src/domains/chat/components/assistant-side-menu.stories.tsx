@@ -29,7 +29,7 @@ import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
 import { DRAWER_SURFACE_BACKGROUND } from "@/domains/chat/utils/drawer-surface";
 import { appsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { AppSummary } from "@/types/app-types";
 import {
   saveViewMode,
@@ -215,7 +215,7 @@ function seedViewMode(assistantId: string, mode: SidebarViewMode): void {
   /* `useAssistantCapability` keys on the active assistant from this store, not
      on the id the story passes as a prop, so the seeded `appPins` answer is
      only found once the store agrees which assistant is active. */
-  useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: assistantId } });
 }
 
 /**

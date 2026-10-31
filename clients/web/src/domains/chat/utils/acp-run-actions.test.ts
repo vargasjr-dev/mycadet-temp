@@ -31,8 +31,8 @@ mock.module("@/generated/daemon/client.gen", () => ({
   },
 }));
 
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { useAcpRunStore } = await import("@/domains/chat/acp-run-store");
 const { stopAcpRun, steerAcpRun } =
   await import("@/domains/chat/utils/acp-run-actions");
@@ -42,11 +42,11 @@ beforeEach(() => {
   nextData = undefined;
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
 });
 
 afterEach(() => {
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("stopAcpRun", () => {
@@ -106,7 +106,7 @@ describe("stopAcpRun", () => {
       parentConversationId: "conv-1",
       startedAt: 1,
     });
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
 
     await expect(stopAcpRun("acp-1")).rejects.toThrow("No active assistant");
 
@@ -141,7 +141,7 @@ describe("steerAcpRun", () => {
 
 describe("no active assistant", () => {
   test("throws before issuing a request", async () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     await expect(stopAcpRun("acp-1")).rejects.toThrow("No active assistant");
     expect(calls).toHaveLength(0);
   });

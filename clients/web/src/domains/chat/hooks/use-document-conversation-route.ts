@@ -4,7 +4,6 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   sameDocumentTarget,
   useViewerStore,
@@ -29,11 +28,12 @@ import {
   returnFromDocument,
 } from "../document-conversation-navigation";
 import { useOverlayEscape } from "./use-overlay-escape";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Owns document URL intent inside the existing conversation session. */
 export function useDocumentConversationRoute() {
   const { t } = useTranslation("chat");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const { conversationId } = useParams<{ conversationId: string }>();
   const location = useLocation();
   const { pathname, search, state: navigationState } = location;

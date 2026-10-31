@@ -31,7 +31,7 @@ import type {
   SkillsByIdFilesGetResponse,
   SkillsByIdGetResponse,
 } from "@/generated/daemon/types.gen";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "asst-1";
 const SKILL_ID = "skill-1";
@@ -121,12 +121,12 @@ function renderPanel(
 beforeEach(() => {
   skillPayload = makeSkillDetail();
   skillError = null;
-  useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
 });
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("SkillDetailPanel skill query states", () => {

@@ -1,3 +1,4 @@
+import type { LockfileAssistant } from "@/runtime/local-mode-host";
 /**
  * `useNotificationIntentSync` forwards `notification_intent` SSE events to
  * `postLocalNotification`, including remote-push acceptance metadata, and
@@ -31,20 +32,20 @@ import {
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import {
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
+  useResolvedAssistantStore,
+  
+} from "@/stores/resolved-assistant-store";
 import type { PostLocalNotificationArgs } from "@/runtime/notifications";
 import { isClientAttended } from "@/runtime/window-attention";
 import { isConversationChatPath, routes } from "@/utils/routes";
 
 const CONVERSATION_ID = "conv-1";
 const PLATFORM_ASSISTANT_ID = "123e4567-e89b-12d3-a456-426614174000";
-const PLATFORM_ASSISTANT: ResolvedAssistant = {
-  id: "assistant-1",
+const PLATFORM_ASSISTANT: LockfileAssistant = {
+  assistantId: "assistant-1",
   cloudAssistantId: PLATFORM_ASSISTANT_ID,
   cloud: "cloud",
-  organizationId: "org-1",
+  cloudOrganizationId: "org-1",
 };
 
 const postedArgs: PostLocalNotificationArgs[] = [];
@@ -240,10 +241,7 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   __resetForTesting();
-  useResolvedAssistantsStore.setState({
-    assistants: [PLATFORM_ASSISTANT],
-    activeAssistantId: "assistant-1",
-  });
+  useResolvedAssistantStore.getState().setAssistant(PLATFORM_ASSISTANT);
   useConversationStore.getState().reset();
   setVisibilityState("visible");
   postedArgs.length = 0;
@@ -401,39 +399,34 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useResolvedAssistantsStore.setState({
-        assistants: [],
-        activeAssistantId: null,
-        selectedAssistantId: null,
-      });
+      useResolvedAssistantStore.getState().setAssistant(null);
     });
     expect(canDeliver?.()).toBe(false);
   });
 
-  test("keeps delayed work bound to self-hosted origin A after selecting B", () => {
-    const assistantA: ResolvedAssistant = {
-      id: "local-a",
+  test("delayed work stays bound to the origin that minted it after the served assistant changes", () => {
+    const assistantA: LockfileAssistant = {
+      assistantId: "local-a",
       cloud: "local",
-      runtimeUrl: "https://a.example.com/assistant",
+      port: 9101,
+      daemonPort: 9101,
     };
-    const assistantB: ResolvedAssistant = {
-      id: "local-b",
-      cloud: "local",
-      runtimeUrl: "https://b.example.com/assistant",
-    };
-    useResolvedAssistantsStore.setState({
-      assistants: [assistantA, assistantB],
-      activeAssistantId: assistantA.id,
-    });
-    const mounted = mountAt(routes.assistant, undefined, assistantA.id);
+    useResolvedAssistantStore.getState().setAssistant(assistantA);
+    const mounted = mountAt(routes.assistant, undefined, assistantA.assistantId);
 
     publishNotificationIntent({ assistantName: "Origin A" });
     const originA = postedArgs[0]?.identity;
     expect(postedArgs[0]?.canDeliver?.()).toBe(true);
 
+    const assistantB: LockfileAssistant = {
+      assistantId: "local-b",
+      cloud: "local",
+      port: 9102,
+      daemonPort: 9102,
+    };
     act(() => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: assistantB.id });
-      mounted.rerender({ assistantId: assistantB.id });
+      useResolvedAssistantStore.getState().setAssistant(assistantB);
+      mounted.rerender({ assistantId: assistantB.assistantId });
     });
 
     expect(postedArgs[0]?.canDeliver?.()).toBe(false);
@@ -442,11 +435,10 @@ describe("useNotificationIntentSync", () => {
         assistantA,
         window.location.href,
       ),
-      assistantId: assistantA.id,
+      assistantId: assistantA.assistantId,
     });
     expect(originA?.nativeSenderId.startsWith("local:")).toBe(true);
-    expect(originA?.scopeId).not.toContain("a.example.com");
-    expect(postedArgs[0]?.assistantId).toBe(assistantA.id);
+    expect(postedArgs[0]?.assistantId).toBe(assistantA.assistantId);
     expect(postedArgs[0]?.assistantName).toBe("Origin A");
   });
 });
@@ -601,11 +593,7 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useResolvedAssistantsStore.setState({
-        assistants: [],
-        activeAssistantId: null,
-        selectedAssistantId: null,
-      });
+      useResolvedAssistantStore.getState().setAssistant(null);
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

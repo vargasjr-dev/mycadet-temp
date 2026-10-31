@@ -46,7 +46,7 @@ import { create } from "zustand";
 
 import type { WatchRetroCompletedEvent } from "@mycadet/assistant-api";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 /**
  * How long a summary may be pending before the wait is abandoned.
@@ -125,8 +125,8 @@ function releaseOwnerSubscription(): void {
  */
 function bindToOwner(assistantId: string): void {
   releaseOwnerSubscription();
-  ownerSubscription = useResolvedAssistantsStore.subscribe((state) => {
-    if (state.activeAssistantId !== assistantId) {
+  ownerSubscription = useResolvedAssistantStore.subscribe((state) => {
+    if (state.assistant?.assistantId !== assistantId) {
       console.info(
         "watch-retro: dropping the session summary, its assistant is no longer active",
       );

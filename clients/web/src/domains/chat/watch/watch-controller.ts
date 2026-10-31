@@ -91,7 +91,7 @@ import { beginWatchRetro } from "@/domains/chat/watch/watch-retro";
 import { supportsWatchCaptureTarget } from "@/lib/backwards-compat/watch-capture-target";
 import { supportsWatchRetroCompletion } from "@/lib/backwards-compat/watch-retro-completion";
 import { resolveSupportsWatchSessions } from "@/lib/backwards-compat/watch-sessions";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 
 /**
@@ -629,8 +629,8 @@ function openSession(
    * next press starts a session against whatever is active then.
    */
   subscriptions.push(
-    useResolvedAssistantsStore.subscribe((state) => {
-      if (state.activeAssistantId !== ownerAssistantId) {
+    useResolvedAssistantStore.subscribe((state) => {
+      if (state.assistant?.assistantId !== ownerAssistantId) {
         console.info(
           "watch-controller: ending the session, its assistant is no longer active",
         );
@@ -775,7 +775,7 @@ export async function toggleWatch(
     session.stop();
     return;
   }
-  const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+  const assistantId = getActiveAssistantId();
   // Nothing to start against, and nothing to bind the session to. The gate
   // below answers `false` for a null owner anyway; taking it here is what lets
   // everything after this line hold a real assistant id.
@@ -902,7 +902,7 @@ export async function toggleWatch(
   // than before, so the check that decides is the one nearest the dial; the
   // cost is a minted token spent on a start that is then discarded, and a
   // single-use token nobody presents just expires.
-  if (useResolvedAssistantsStore.getState().activeAssistantId !== assistantId) {
+  if (getActiveAssistantId() !== assistantId) {
     releaseAttempt();
     return;
   }

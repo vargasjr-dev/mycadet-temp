@@ -69,6 +69,7 @@ mock.module("@/assistant/api", () => ({
 }));
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "mcp-assistant-123",
+  useResolvedAssistantId: () => "mcp-assistant-123",
 }));
 mock.module("@/utils/conversation-navigation", () =>
   conversationNavigationMock({ navigateToNewConversation: setupConversation }),

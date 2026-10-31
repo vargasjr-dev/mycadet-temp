@@ -73,8 +73,8 @@ mock.module("@/utils/fetch-conversation-detail", () => ({
 
 const { useSendMessage } =
   await import("@/domains/chat/hooks/use-send-message");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { useConversationStore } = await import("@/stores/conversation-store");
 const { useChatSessionStore } =
   await import("@/domains/chat/chat-session-store");
@@ -120,7 +120,7 @@ beforeEach(() => {
   deleteQueuedMessageMock = mock(async () => true);
   // Scope check: the send's assistant/conversation must be the active ones so
   // the fallback branch is reached (not short-circuited as inactive).
-  useResolvedAssistantsStore.getState().setActiveAssistantId("asst-1");
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
   useConversationStore.getState().setActiveConversationId("conv-A");
   useChatSessionStore.setState({
     snapshot: null,

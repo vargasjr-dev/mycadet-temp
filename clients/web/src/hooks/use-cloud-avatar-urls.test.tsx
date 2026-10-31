@@ -15,7 +15,6 @@ import {
   expect,
   mock,
   setSystemTime,
-  spyOn,
   test,
 } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -41,8 +40,8 @@ const listAssistants = mock(
 const actualApi = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({ ...actualApi, listAssistants }));
 
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const {
   cloudAvatarUrlsQueryKey,
   supersedeCloudAvatar,
@@ -192,27 +191,26 @@ describe("useCloudAvatarUrls", () => {
     });
 
     act(() =>
-      useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" }),
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "local", assistantId: "asst-2" }),
     );
 
     await waitFor(() => {
       expect(listAssistants).toHaveBeenCalledTimes(2);
     });
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
   });
 
   test("never writes the resolved-assistants store", async () => {
-    const setState = spyOn(useResolvedAssistantsStore, "setState");
-    const before = useResolvedAssistantsStore.getState().assistants;
+    const before = useResolvedAssistantStore.getState().assistant;
     const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
-    expect(setState).not.toHaveBeenCalled();
-    expect(useResolvedAssistantsStore.getState().assistants).toBe(before);
-    setState.mockRestore();
+    expect(useResolvedAssistantStore.getState().assistant).toBe(before);
   });
 });
 
@@ -314,14 +312,12 @@ describe("supersedeCloudAvatar", () => {
   const PAIRED_UUID = "11111111-2222-4333-8444-555555555555";
 
   test("a row with a known platform id is suppressed under it", () => {
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        {
-          id: "paired-slug",
-          cloud: "custom",
-          cloudAssistantId: PAIRED_UUID,
-        },
-      ],
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "custom",
+      assistantId: "paired-slug",
+      ipAddress: "10.0.0.1",
+      port: 443,
+      cloudAssistantId: PAIRED_UUID,
     });
     const queryClient = new QueryClient();
     const key = cloudAvatarUrlsQueryKey(null);

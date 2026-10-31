@@ -3,8 +3,7 @@ import {
   isSelectedAssistantOnboarded,
   userHasOnboardedAssistant,
 } from "@/assistant/onboarded-assistant";
-import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 export interface NavigationState {
   isLocalClient: boolean;
@@ -24,17 +23,11 @@ export interface NavigationState {
 }
 
 export function buildNavigationState(): NavigationState {
-  const { assistants } = useResolvedAssistantsStore.getState();
-  // The persisted key rather than the store slice: this runs inside route
-  // middleware, before the store has necessarily reconciled a selection.
-  const selectedAssistantId = readSelectedAssistantId();
+  const assistant = useResolvedAssistantStore.getState().assistant;
   return {
     isLocalClient: isLocalClient(),
-    hasAssistants: assistants.length > 0,
-    userHasOnboardedAssistant: userHasOnboardedAssistant(assistants),
-    selectedAssistantOnboarded: isSelectedAssistantOnboarded(
-      assistants,
-      selectedAssistantId,
-    ),
+    hasAssistants: assistant !== null,
+    userHasOnboardedAssistant: userHasOnboardedAssistant(assistant),
+    selectedAssistantOnboarded: isSelectedAssistantOnboarded(assistant),
   };
 }

@@ -21,7 +21,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 }));
 
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   getEditChatConversationId,
   setEditChatConversationId,
@@ -34,13 +34,13 @@ const {
 
 const document = { surfaceId: "surface-1", conversationId: "conv-existing" };
 const options = { assistantId: "assistant-1", document, isCurrent: () => true };
-let selection: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selection: ReturnType<typeof useResolvedAssistantStore.getState>;
 let identity: ReturnType<typeof useAssistantIdentityStore.getState>;
 
 beforeEach(() => {
-  selection = useResolvedAssistantsStore.getState();
+  selection = useResolvedAssistantStore.getState();
   identity = useAssistantIdentityStore.getState();
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",
@@ -60,7 +60,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useAssistantIdentityStore.setState(identity, true);
   window.sessionStorage.clear();
 });
@@ -124,12 +124,12 @@ describe("document conversation entry", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       const prematureLinks = linkConversation.mock.calls.length;
       if (cancelled) {
-        useResolvedAssistantsStore.setState({
-          activeAssistantId: "assistant-2",
-        });
-        useResolvedAssistantsStore.setState({
-          activeAssistantId: "assistant-1",
-        });
+        useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2" },
+    });
+        useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1" },
+    });
       }
       useAssistantIdentityStore.setState({
         assistantId: "assistant-1",
@@ -227,8 +227,8 @@ describe("document conversation entry", () => {
 
   test("assistant switch away and back permanently cancels the request", () => {
     const scope = documentRequestScope("assistant-1");
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     expect(scope.isCurrent()).toBe(false);
     scope.dispose();
   });

@@ -4,8 +4,8 @@ import { TimezonePicker } from "@/domains/settings/components/timezone-picker";
 import { client } from "@/generated/api/client.gen";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * Timezone preference editor, rendered as a section inside the Profile card.
@@ -16,7 +16,7 @@ import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
  */
 export function TimezoneSection() {
   const { t } = useTranslation("settings");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const [timezone, setTimezone] = useState<string>(() =>
     getDeviceSetting("timezone", ""),
   );

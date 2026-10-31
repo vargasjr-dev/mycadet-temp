@@ -92,8 +92,8 @@ const { ChatInfoPanel } = await import(
   "@/domains/chat/components/chat-info-panel"
 );
 const { useViewerStore } = await import("@/stores/viewer-store");
-const { useResolvedAssistantsStore } = await import(
-  "@/stores/resolved-assistants-store"
+const { useResolvedAssistantStore } = await import(
+  "@/stores/resolved-assistant-store"
 );
 const { showPath } = await import("@/stores/open-app.test-helper");
 const { useUnseenDocumentChangesStore } = await import(
@@ -208,8 +208,7 @@ const {
   loadApp: realLoadApp,
   loadDocument: realLoadDocument,
 } = useViewerStore.getState();
-const realActiveAssistantId =
-  useResolvedAssistantsStore.getState().activeAssistantId;
+const realAssistant = useResolvedAssistantStore.getState().assistant;
 
 interface Seed {
   apps?: AppSummary[];
@@ -290,7 +289,7 @@ beforeEach(() => {
   onSelectCategory.mockClear();
   useViewerStore.setState({ closeChatInfo, loadApp, loadDocument });
   // The shared opener the app tiles go through reads the active assistant.
-  useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
 });
 
 afterEach(() => {
@@ -309,9 +308,7 @@ afterAll(() => {
     loadApp: realLoadApp,
     loadDocument: realLoadDocument,
   });
-  useResolvedAssistantsStore.setState({
-    activeAssistantId: realActiveAssistantId,
-  });
+  useResolvedAssistantStore.setState({ assistant: realAssistant });
   restoreDomStubs();
   mock.restore();
 });
@@ -400,7 +397,7 @@ describe("ChatInfoPanel top level", () => {
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" });
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
     });
 
     expect(closeChatInfo).toHaveBeenCalledTimes(1);
@@ -410,13 +407,13 @@ describe("ChatInfoPanel top level", () => {
     await renderChatInfo();
 
     await act(async () => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: null });
+      useResolvedAssistantStore.getState().setAssistant(null);
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
@@ -425,7 +422,7 @@ describe("ChatInfoPanel top level", () => {
   // The dismissal lands in an effect, so a tile clicked in the same commit
   // still has to refuse: its app id belongs to the payload's assistant.
   test("opens no app while its assistant is not the active one", async () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
 
     await renderChatInfo();
     fireEvent.click(screen.getByLabelText("Open App 1"));

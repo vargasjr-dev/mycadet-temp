@@ -1,3 +1,4 @@
+import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -21,9 +22,9 @@ import { MIN_VERSION } from "@/lib/backwards-compat/avatar-state-manifest";
 import { chooserRowAvatarCacheQueryKey } from "@/lib/persist-last-seen-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import {
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
+  useResolvedAssistantStore,
+  
+} from "@/stores/resolved-assistant-store";
 
 const components: CharacterComponents = {
   bodyShapes: [
@@ -118,15 +119,18 @@ const { releaseAssistantAvatarUrl, useAssistantAvatar } =
 const revokeObjectURL = mock((_url: string) => {});
 URL.revokeObjectURL = revokeObjectURL;
 
-const assistantOne: ResolvedAssistant = {
-  id: "asst-1",
+const assistantOne: LockfileAssistant = {
+  assistantId: "asst-1",
   cloud: "local",
-  runtimeUrl: "https://first.example.com/runtime",
+  port: 9101,
+  daemonPort: 9101,
 };
 
-const assistantTwo: ResolvedAssistant = {
+const assistantTwo: LockfileAssistant = {
   ...assistantOne,
-  id: "asst-2",
+  assistantId: "asst-2",
+  port: 9102,
+  daemonPort: 9102,
 };
 
 function createWrapper(
@@ -145,11 +149,7 @@ beforeEach(() => {
   // Default to a manifest-capable assistant so the `/avatar/state` path is
   // exercised; legacy-path tests override the version explicitly.
   useAssistantIdentityStore.getState().setIdentity("test-asst", MIN_VERSION);
-  useResolvedAssistantsStore.setState({
-    assistants: [assistantOne, assistantTwo],
-    assistantsHydrated: true,
-    activeAssistantId: "asst-1",
-  });
+  useResolvedAssistantStore.getState().setAssistant(assistantOne);
 });
 
 afterEach(() => {
@@ -157,11 +157,7 @@ afterEach(() => {
   releaseAssistantAvatarUrl("asst-1");
   releaseAssistantAvatarUrl("asst-2");
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantsStore.setState({
-    assistants: [],
-    assistantsHydrated: false,
-    activeAssistantId: null,
-  });
+  useResolvedAssistantStore.getState().setAssistant(null);
   fetchCharacterComponents.mockClear();
   fetchAvatarState.mockClear();
   fetchAvatarImageUrlResult.mockClear();
@@ -186,8 +182,7 @@ describe("useAssistantAvatar", () => {
     ).toBe(platformId);
     expect(
       resolveAssistantNotificationCloudId({
-        ...assistantOne,
-        id: platformId,
+        assistantId: platformId,
         cloud: "cloud",
       }),
     ).toBe(platformId);
@@ -258,6 +253,7 @@ describe("useAssistantAvatar", () => {
       expect(result.current.traits).toEqual(traits);
     });
 
+    useResolvedAssistantStore.getState().setAssistant(assistantTwo);
     rerender("asst-2");
     expect(result.current.traits).toBeNull();
     expect(result.current.customImageUrl).toBeNull();
@@ -289,7 +285,8 @@ describe("useAssistantAvatar", () => {
     const firstScope = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
     const secondAssistant = {
       ...assistantOne,
-      runtimeUrl: "https://second.example.com/runtime",
+      port: 9102,
+      daemonPort: 9102,
     };
     const secondScope = resolveAssistantAvatarOwnerScopeId(
       secondAssistant,
@@ -305,9 +302,7 @@ describe("useAssistantAvatar", () => {
     expect(result.current.owner?.scopeId).toBe(firstScope);
 
     act(() => {
-      useResolvedAssistantsStore.setState({
-        assistants: [secondAssistant, assistantTwo],
-      });
+      useResolvedAssistantStore.getState().setAssistant(secondAssistant);
     });
     await waitFor(() => {
       expect(result.current.customImageUrl).toBe("blob:second-origin");
@@ -330,9 +325,7 @@ describe("useAssistantAvatar", () => {
     ).toBe(false);
 
     act(() => {
-      useResolvedAssistantsStore.setState({
-        assistants: [assistantOne, assistantTwo],
-      });
+      useResolvedAssistantStore.getState().setAssistant(assistantOne);
     });
     await waitFor(() => {
       expect(result.current.customImageUrl).toBe("blob:first-origin-return");
@@ -463,14 +456,15 @@ describe("useAssistantAvatar", () => {
     });
     const secondOwner = {
       ...assistantTwo,
-      runtimeUrl: "https://other-assistant.example.com/runtime",
+      port: 9103,
+      daemonPort: 9103,
     };
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
 
     const { result, rerender } = renderHook(
-      ({ firstOwner }: { firstOwner: ResolvedAssistant }) => ({
+      ({ firstOwner }: { firstOwner: LockfileAssistant }) => ({
         first: useAssistantAvatar("asst-1", { ownerAssistant: firstOwner }),
         second: useAssistantAvatar("asst-2", { ownerAssistant: secondOwner }),
       }),
@@ -487,7 +481,8 @@ describe("useAssistantAvatar", () => {
     rerender({
       firstOwner: {
         ...assistantOne,
-        runtimeUrl: "https://first-moved.example.com/runtime",
+        port: 9104,
+        daemonPort: 9104,
       },
     });
     await waitFor(() => {
@@ -560,6 +555,7 @@ describe("useAssistantAvatar", () => {
       expect(fetchAvatarState).toHaveBeenCalledTimes(1);
     });
 
+    useResolvedAssistantStore.getState().setAssistant(assistantTwo);
     rerender("asst-2");
     await waitFor(() => {
       expect(result.current.customImageUrl).toBe("blob:assistant-b");
@@ -626,45 +622,18 @@ describe("useAssistantAvatar", () => {
 
     test("a sibling's read never touches the cache, only the active assistant's does", async () => {
       fetchAvatarState.mockResolvedValueOnce(characterState);
-      const { result } = renderHook(() => useAssistantAvatar("asst-2"), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => useAssistantAvatar("asst-2", { ownerAssistant: assistantTwo }),
+        {
+          wrapper: createWrapper(),
+        },
+      );
       await waitFor(() => {
         expect(result.current.traits).toEqual(traits);
       });
       await new Promise((resolve) => setTimeout(resolve, 20));
       expect(writeLastSeenAvatar).not.toHaveBeenCalled();
       expect(deleteLastSeenAvatar).not.toHaveBeenCalled();
-    });
-
-    test("a read issued for the active assistant persists even if the user switched before it landed", async () => {
-      let resolveState: (state: AvatarState) => void = () => {};
-      fetchAvatarState.mockImplementationOnce(
-        () =>
-          new Promise<AvatarState>((resolve) => {
-            resolveState = resolve;
-          }),
-      );
-      const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
-        wrapper: createWrapper(),
-      });
-      await waitFor(() => {
-        expect(fetchAvatarState).toHaveBeenCalledTimes(1);
-      });
-
-      useResolvedAssistantsStore.getState().setActiveAssistantId("asst-2");
-      resolveState(characterState);
-
-      await waitFor(() => {
-        expect(result.current.traits).toEqual(traits);
-      });
-      await waitFor(() => {
-        expect(writeLastSeenAvatar).toHaveBeenCalledWith(
-          "asst-1",
-          { kind: "character", traits },
-          expect.any(Number),
-        );
-      });
     });
 
     test("a superseded legacy read that finishes last persists nothing and drops its blob", async () => {

@@ -15,7 +15,6 @@ import { useEffect, useMemo } from "react";
 
 import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-store";
 import type { ChatHeaderSupplements } from "@/components/layout/chat-layout-slots-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
@@ -29,6 +28,7 @@ import { ChannelSourceLinkPill } from "@/domains/chat/components/channel-source-
 import { ConversationAssetsPill } from "@/domains/chat/components/conversation-assets-pill";
 
 import type { Conversation } from "@/types/conversation-types";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export interface UseChatHeaderRegistrationOptions {
   assetsRefreshKey: number;
@@ -49,7 +49,7 @@ export function useChatHeaderRegistration({
   handleCopyConversation,
   onRefresh,
 }: UseChatHeaderRegistrationOptions): void {
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const messages = useTranscriptMessages();
   const setTopBarRightSlot = useChatLayoutSlotsStore.use.setTopBarRightSlot();

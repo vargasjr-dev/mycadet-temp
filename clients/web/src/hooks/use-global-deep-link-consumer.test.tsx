@@ -24,7 +24,7 @@ import {
   __resetPendingDeepLinkForTesting,
   usePendingDeepLinkStore,
 } from "@/stores/pending-deep-link-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import {
   appEntryStateFor,
@@ -160,7 +160,7 @@ const resetStores = () => {
   useLiveVoiceStore.getState().reset();
   useLiveVoiceStore.getState().setStarter(null);
   useAssistantIdentityStore.setState({ assistantId: null, version: null });
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   showPath(routes.assistant);
 };
 
@@ -170,7 +170,7 @@ const resetStores = () => {
  */
 const seedEligibleAssistant = (version = "0.10.12") => {
   useAssistantIdentityStore.setState({ assistantId: "assistant-1", version });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
 };
 
 beforeEach(() => {

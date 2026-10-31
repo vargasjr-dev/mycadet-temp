@@ -25,7 +25,7 @@ import {
 
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { liveViewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -112,7 +112,7 @@ function Conversation() {
 }
 
 const viewport = liveViewportAxesStub();
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 const viewer = useViewerStore.getState();
 const conversation = useConversationStore.getState();
 const identity = useAssistantIdentityStore.getState();
@@ -124,7 +124,7 @@ let pendingSessionRead: Promise<void> | null;
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",
@@ -195,7 +195,7 @@ afterEach(() => {
   queryClient.clear();
   viewport.restore();
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useViewerStore.setState(viewer, true);
   useConversationStore.setState(conversation, true);
   useAssistantIdentityStore.setState(identity, true);

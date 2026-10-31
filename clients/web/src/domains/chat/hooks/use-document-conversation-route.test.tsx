@@ -34,7 +34,7 @@ import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { subscribeAndroidBackButtonSource } from "@/runtime/event-sources/android-back-button";
 import type { DocumentContent } from "@/types/document-types";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 
 import { navigateToDocumentConversation } from "../document-conversation-navigation";
@@ -241,7 +241,7 @@ function renderRoute(
   );
 }
 
-let selection: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selection: ReturnType<typeof useResolvedAssistantStore.getState>;
 let viewer: ReturnType<typeof useViewerStore.getState>;
 let conversation: ReturnType<typeof useConversationStore.getState>;
 const viewport = viewportAxesStub();
@@ -249,11 +249,11 @@ beforeEach(() => {
   backButtonHandler = undefined;
   minimizeApp.mockClear();
   viewport.set({ narrow: true, coarsePointer: true });
-  selection = useResolvedAssistantsStore.getState();
+  selection = useResolvedAssistantStore.getState();
   viewer = useViewerStore.getState();
   conversation = useConversationStore.getState();
   useConversationStore.setState({ activeConversationId: null });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useUnseenDocumentChangesStore.setState({ changedDocuments: {} });
   useViewerStore.setState({
     mainView: "chat",
@@ -284,7 +284,7 @@ afterEach(() => {
   cleanup();
   viewport.restore();
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useViewerStore.setState(viewer, true);
   useConversationStore.setState(conversation, true);
 });

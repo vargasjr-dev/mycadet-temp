@@ -485,12 +485,15 @@ function skill(id: string): { id: string } {
 // frames after a load. Held in a ref so a test can render that window.
 const activeAssistantIdRef: { value: string | null } = { value: "assistant-1" };
 
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    activeAssistantId: () => activeAssistantIdRef.value,
+    assistant: () =>
+      activeAssistantIdRef.value
+        ? { cloud: "local", assistantId: activeAssistantIdRef.value }
+        : null,
   };
-  return { useResolvedAssistantsStore: store };
+  return { useResolvedAssistantStore: store };
 });
 
 import { NotificationsBell } from "@/domains/home/components/notifications-bell";

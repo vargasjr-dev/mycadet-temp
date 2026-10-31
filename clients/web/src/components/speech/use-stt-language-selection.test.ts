@@ -77,11 +77,11 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { useSttLanguageSelection } =
   await import("@/components/speech/use-stt-language-selection");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 function renderSelection() {
-  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

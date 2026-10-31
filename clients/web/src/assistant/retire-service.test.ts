@@ -60,7 +60,9 @@ mock.module("@/lib/local-mode", () => ({
   primeLocalGatewayConnectionWithRepair: async () => {},
 }));
 const forgetAssistantAvatarMock = mock((_qc: QueryClient, _id: string) => {});
-mock.module("@/hooks/use-chooser-row-avatar", () => ({
+const avatarModuleActual = await import("@/hooks/use-assistant-avatar");
+mock.module("@/hooks/use-assistant-avatar", () => ({
+  ...avatarModuleActual,
   forgetAssistantAvatar: forgetAssistantAvatarMock,
 }));
 const queryClient = new QueryClient();
@@ -80,12 +82,12 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
   },
 }));
 
-const removeMock = mock((assistantId: string) => {
-  storeAssistants = storeAssistants.filter((a) => a.id !== assistantId);
+const setAssistantMock = mock((entry: unknown) => {
+  storeAssistants = entry === null ? [] : storeAssistants;
 });
-mock.module("@/stores/resolved-assistants-store", () => ({
-  useResolvedAssistantsStore: {
-    getState: () => ({ remove: removeMock }),
+mock.module("@/stores/resolved-assistant-store", () => ({
+  useResolvedAssistantStore: {
+    getState: () => ({ setAssistant: setAssistantMock }),
   },
 }));
 
@@ -113,7 +115,7 @@ beforeEach(() => {
   listAssistantsMock.mockClear();
   retireLocalAssistantMock.mockClear();
   forgetAssistantAvatarMock.mockClear();
-  removeMock.mockClear();
+  setAssistantMock.mockClear();
 });
 
 afterEach(() => {
@@ -226,19 +228,16 @@ describe("retireAssistant", () => {
     }
   });
 
-  test("post-retire redirects to the assistant when other assistants remain", async () => {
-    isLocalClientValue = true;
-    lockfileAssistants = [
-      { assistantId: "l1", cloud: "local" },
-      { assistantId: "p1", cloud: "cadet" },
-    ];
-    storeAssistants = [{ id: "l1" }, { id: "p1" }];
+  test("post-retire in cloud mode redirects to privacy onboarding", async () => {
+    isLocalClientValue = false;
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
+    storeAssistants = [];
 
-    const outcome = await retireAssistant(queryClient, "l1");
+    const outcome = await retireAssistant(queryClient, "p1");
 
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
-      expect(outcome.nextRoute).toBe("/assistant");
+      expect(outcome.nextRoute).toBe("/assistant/onboarding/privacy");
     }
   });
 

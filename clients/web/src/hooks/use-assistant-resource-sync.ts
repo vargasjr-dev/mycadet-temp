@@ -46,7 +46,6 @@ import {
   soundsConfigGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
-import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { supersedeCloudAvatar } from "@/hooks/use-cloud-avatar-urls";
 import { getClientId } from "@/lib/client-identity";
@@ -299,12 +298,6 @@ function invalidateAvatarQueries(
   void queryClient.invalidateQueries({
     queryKey: avatarQueryKey(assistantId),
     refetchType,
-  });
-  // Chooser-row queries are disabled for the connected row, so this only
-  // marks them stale for when the user switches away and back.
-  void queryClient.invalidateQueries({
-    queryKey: chooserRowAvatarQueryKeyPrefix(assistantId),
-    refetchType: "none",
   });
 }
 

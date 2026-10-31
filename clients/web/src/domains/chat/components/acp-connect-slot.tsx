@@ -7,11 +7,11 @@
 
 import { AcpConnectAffordance } from "@/domains/chat/transcript/acp-connect-affordance";
 import { useAcpConnectPlacement } from "@/domains/chat/hooks/use-acp-connect-placement";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function AcpConnectSlot() {
   const placement = useAcpConnectPlacement();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
 
   if (placement !== "docked") {
     return null;

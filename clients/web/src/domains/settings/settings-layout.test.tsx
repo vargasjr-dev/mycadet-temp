@@ -28,12 +28,10 @@ mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({
   useSupportsCredentialsSettings: () => supportsCredentials,
 }));
 
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
-  store.use = {
-    activeAssistantId: () => "asst-active",
-  };
-  return { useResolvedAssistantsStore: store };
+  store.use = { assistant: () => ({ cloud: "local", assistantId: "asst-active" }) };
+  return { useResolvedAssistantStore: store };
 });
 
 mock.module("@/runtime/notifications", () => ({

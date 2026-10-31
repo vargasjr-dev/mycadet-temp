@@ -11,7 +11,7 @@ import { waitFor } from "@testing-library/react";
 
 import { publish } from "@/lib/event-bus";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { DocumentContent } from "@/types/document-types";
 import { setEditChatConversationId } from "@/utils/edit-chat-session";
@@ -36,7 +36,7 @@ const link = mock(async () => ({ data: { success: true } }));
 const { loadDocumentConversation, documentRequestScope } =
   await import("./document-conversation");
 
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 const identity = useAssistantIdentityStore.getState();
 const isCurrent = mock(() => true);
 const onReady = mock(
@@ -119,7 +119,7 @@ beforeEach(() => {
     }
     throw new Error(`Unexpected request: ${options.url}`);
   }) as typeof daemonClient.post);
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",
@@ -141,7 +141,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useAssistantIdentityStore.setState(identity, true);
   window.sessionStorage.clear();
 });
@@ -296,12 +296,12 @@ describe("loadDocumentConversation", () => {
       if (reason === "closed") {
         scope.dispose();
       } else {
-        useResolvedAssistantsStore.setState({
-          activeAssistantId: "assistant-2",
-        });
-        useResolvedAssistantsStore.setState({
-          activeAssistantId: "assistant-1",
-        });
+        useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2" },
+    });
+        useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1" },
+    });
       }
       pending.resolve({
         data: { conversation: { id: "conv-1" } },

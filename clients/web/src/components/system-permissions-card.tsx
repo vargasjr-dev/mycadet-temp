@@ -23,7 +23,7 @@ import {
   type SystemPermissionKind,
   type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   getDeviceBool,
   setDeviceBool,
@@ -244,9 +244,7 @@ export function SystemPermissionsCard({
   const { pendingKind, run } = usePendingKind();
   const [notificationBadgesEnabled, setNotificationBadgesEnabled] =
     useNotificationBadgesEnabled();
-  const selectedAssistantId =
-    useResolvedAssistantsStore.use.selectedAssistantId();
-  const assistants = useResolvedAssistantsStore.use.assistants();
+  const assistant = useResolvedAssistantStore.use.assistant();
 
   const hostOS = detectElectronHostOS();
   const isWindowsHost = hostOS === "windows";
@@ -345,9 +343,6 @@ export function SystemPermissionsCard({
         if (meta.sourceKind !== "notifications" || hostOS !== "macos") {
           return undefined;
         }
-        const assistant = assistants.find(
-          (candidate) => candidate.id === selectedAssistantId,
-        );
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
           getSelfHostedIngressUrl() ??
@@ -360,7 +355,7 @@ export function SystemPermissionsCard({
         }
         const identity = createNotificationIdentity(
           scopeId,
-          assistant.id,
+          assistant.assistantId,
           resolveAssistantNotificationCloudId(assistant),
         );
         if (!identity) {

@@ -32,13 +32,13 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useSkillDetailFiles } from "@/hooks/use-skill-detail-files";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 import {
   invalidateSkillsList,
   isRemovableSkill,
   skillDetailBackState,
 } from "@/utils/skills";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface SkillDetailPanelProps {
   skillId: string;
@@ -50,7 +50,7 @@ export function SkillDetailPanel({ skillId, onClose }: SkillDetailPanelProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
 
   const skillQuery = useQuery({

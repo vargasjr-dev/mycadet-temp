@@ -29,8 +29,8 @@ const { SubagentSpawnGroup } = await import(
   "@/domains/chat/components/subagent-inline-progress-card/subagent-spawn-group"
 );
 const { useSubagentStore } = await import("@/domains/chat/subagent-store");
-const { useResolvedAssistantsStore } = await import(
-  "@/stores/resolved-assistants-store"
+const { useResolvedAssistantStore } = await import(
+  "@/stores/resolved-assistant-store"
 );
 
 const NOW = 1700000000000;
@@ -99,7 +99,7 @@ describe("SubagentSpawnGroup", () => {
     // card projects "Loading" until its timeline is fetched. The demand lives
     // in `useSubagentCardData` (rendering a row IS the fetch trigger), so the
     // closed control fetches nothing and opening it fetches every member.
-    useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
+    useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
     const ids = ["sa-done-0", "sa-done-1"];
     for (const id of ids) {
       useSubagentStore.getState().spawnSubagent({
@@ -127,7 +127,7 @@ describe("SubagentSpawnGroup", () => {
     expect(spy).toHaveBeenCalledWith("assistant-1", "sa-done-1");
 
     spy.mockRestore();
-    useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+    useResolvedAssistantStore.getState().setAssistant(null);
   });
 
   test("threads onSubagentClick and onStopSubagent to each row", () => {

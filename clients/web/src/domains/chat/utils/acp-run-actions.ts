@@ -8,7 +8,7 @@
 
 import { client } from "@/generated/daemon/client.gen";
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 
 /** Response of `POST /v1/acp/:id/steer`. Hand-maintained to match the daemon's action response shape. */
 export interface SteerAcpRunResponse {
@@ -25,7 +25,7 @@ export interface SteerAcpRunResponse {
 type KnownDaemonUrl = "/v1/assistants/{assistant_id}/config";
 
 function activeAssistantId(): string {
-  const id = useResolvedAssistantsStore.getState().activeAssistantId;
+  const id = getActiveAssistantId();
   if (!id) {
     throw new Error("No active assistant");
   }

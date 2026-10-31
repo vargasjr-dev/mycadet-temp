@@ -102,8 +102,8 @@ const { useVoiceRecordingStore } =
   await import("@/domains/chat/voice/voice-recording-store");
 const { useAssistantIdentityStore } =
   await import("@/stores/assistant-identity-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { MIN_VERSION: TARGET_MIN_VERSION } =
   await import("@/lib/backwards-compat/watch-capture-target");
 const { useInteractionStore } =
@@ -133,7 +133,7 @@ afterEach(() => {
   clearWatchRetro();
   isPopout = false;
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   useTurnStore.getState().resetTurn();
   useConversationStore.setState({ processingConversationIds: new Set() });
   useChatSessionStore.setState({ snapshot: null } as never);
@@ -453,7 +453,7 @@ describe("the capture target the companion mirror publishes", () => {
   });
 
   test("says a session cannot be aimed until the assistant's version says so", async () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
     render(<Mirror />);
     expect(latest().watchTargets).toBe(false);
     act(() => {
@@ -467,7 +467,7 @@ describe("the capture target the companion mirror publishes", () => {
   });
 
   test("does not let one assistant's version aim another's sessions", async () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
     render(<Mirror />);
     act(() => {
       useAssistantIdentityStore

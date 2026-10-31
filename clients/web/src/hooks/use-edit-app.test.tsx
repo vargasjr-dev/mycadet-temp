@@ -12,7 +12,7 @@ mock.module("@/hooks/use-is-mobile", () => ({
   MOBILE_MEDIA_QUERY: "(max-width: 767px)",
 }));
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useViewerStore, type OpenedAppState } from "@/stores/viewer-store";
 import { routes } from "@/utils/routes";
@@ -32,7 +32,7 @@ import { useEditApp } from "./use-edit-app";
 
 let viewerSnapshot: ReturnType<typeof useViewerStore.getState>;
 let conversationSnapshot: ReturnType<typeof useConversationStore.getState>;
-let selectionSnapshot: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selectionSnapshot: ReturnType<typeof useResolvedAssistantStore.getState>;
 
 const openAppMock = mock((_appId: string) => undefined);
 const setLoadedAppMock = mock((_app: OpenedAppState) => undefined);
@@ -63,7 +63,7 @@ const wrapper = wrapperAt(LIBRARY_PATH);
 beforeEach(() => {
   viewerSnapshot = useViewerStore.getState();
   conversationSnapshot = useConversationStore.getState();
-  selectionSnapshot = useResolvedAssistantsStore.getState();
+  selectionSnapshot = useResolvedAssistantStore.getState();
 
   mobileRef.current = false;
   openAppMock.mockReset();
@@ -88,7 +88,7 @@ beforeEach(() => {
     setEditingConversationId:
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
 });
 
 afterEach(() => {
@@ -96,13 +96,13 @@ afterEach(() => {
   window.sessionStorage.clear();
   useViewerStore.setState(viewerSnapshot, true);
   useConversationStore.setState(conversationSnapshot, true);
-  useResolvedAssistantsStore.setState(selectionSnapshot, true);
+  useResolvedAssistantStore.setState(selectionSnapshot, true);
 });
 
 describe("useEditApp", () => {
   test("no-ops when there is no active assistant", () => {
     // GIVEN no assistant is selected
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     const { result } = renderHook(() => useEditApp(), { wrapper });
 
     // WHEN the user tries to edit an app

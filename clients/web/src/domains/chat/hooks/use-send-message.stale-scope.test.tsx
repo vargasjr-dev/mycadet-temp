@@ -37,7 +37,7 @@ import {
 } from "@/domains/chat/turn-store";
 import type { EphemeralMetaResult } from "@/domains/chat/types/types";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 /** The thread the send was written in. */
 const SEND_CONVERSATION = "conv-written-in";
@@ -203,7 +203,7 @@ beforeEach(() => {
     ephemeralMetaResults: [],
     contextWindowUsage: null,
   });
-  useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
   // The draft map is module state shared across tests; reloading it for the
   // assistant from an empty localStorage is how the store itself resets it.
   localStorage.clear();
@@ -542,7 +542,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
+      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -594,7 +594,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
+      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -661,7 +661,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
+      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);

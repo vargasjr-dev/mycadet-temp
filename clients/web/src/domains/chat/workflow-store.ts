@@ -18,7 +18,7 @@
 
 import { create } from "zustand";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { workflowsRunsByIdAbortPost } from "@/generated/daemon/sdk.gen";
 import { createSelectors } from "@/utils/create-selectors";
 import { isActiveStatus } from "@/utils/workflow-status";
@@ -723,7 +723,7 @@ const useWorkflowStoreBase = create<WorkflowStore>()((set, get) => ({
   },
 
   abortRun: async (runId) => {
-    const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+    const assistantId = getActiveAssistantId();
     if (!assistantId) {
       return;
     }

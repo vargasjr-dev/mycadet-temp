@@ -8,10 +8,10 @@
 
 import { backgroundtoolsCancelPost } from "@/generated/daemon/sdk.gen";
 import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 
 function activeAssistantId(): string {
-  const id = useResolvedAssistantsStore.getState().activeAssistantId;
+  const id = getActiveAssistantId();
   if (!id) {
     throw new Error("No active assistant");
   }

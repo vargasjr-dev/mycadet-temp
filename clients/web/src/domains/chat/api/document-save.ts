@@ -6,7 +6,7 @@
  */
 
 import { documentsPost } from "@/generated/daemon/sdk.gen";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 /** A document surface saved through the documents API. */
 export interface DocumentSaveTarget {
@@ -30,8 +30,8 @@ const pendingSaves = new Map<
 >();
 let sessionGeneration = 0;
 
-useResolvedAssistantsStore.subscribe((state, previous) => {
-  if (state.activeAssistantId === null && previous.activeAssistantId !== null) {
+useResolvedAssistantStore.subscribe((state, previous) => {
+  if (state.assistant === null && previous.assistant !== null) {
     sessionGeneration += 1;
     pendingSaves.clear();
   }

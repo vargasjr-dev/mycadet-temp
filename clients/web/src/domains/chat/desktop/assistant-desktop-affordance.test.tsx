@@ -13,7 +13,6 @@ import { useEffect, useState } from "react";
 import { publish } from "@/lib/event-bus";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
-let assistantId = "asst-1";
 let touch = false;
 let cloudHosted = true;
 let attended = true;
@@ -38,23 +37,21 @@ mock.module("@/utils/pointer", () => ({
   isPointerCoarse: () => touch,
 }));
 
-mock.module("@/stores/resolved-assistants-store", () => ({
-  useResolvedAssistantsStore: {
+const servedRef = {
+  value: { cloud: "local", assistantId: "asst-1", name: "Alice" } as
+    | { cloud: "local"; assistantId: string; name?: string }
+    | null,
+};
+mock.module("@/stores/resolved-assistant-store", () => ({
+  useResolvedAssistantStore: {
     use: {
-      activeAssistantId: () => assistantId,
-      assistants: () => [
-        { id: "asst-1", name: "Alice" },
-        { id: "asst-2", name: "Bob" },
-      ],
+      assistant: () => servedRef.value,
     },
     // lifecycle-service reads getState() + subscribe() outside React render;
     // the mock store mirrors the real store's surface.
-    getState: () => ({ activeAssistantId: assistantId }),
+    getState: () => ({ assistant: servedRef.value }),
     subscribe: () => () => {},
   },
-  // build-state (in the affordance's import graph) filters candidates
-  // through this helper; passthrough keeps every assistant valid.
-  assistantsValidForOrg: (assistants: unknown) => assistants,
 }));
 
 let panelUnmounts = 0;
@@ -108,7 +105,7 @@ beforeEach(() => {
     submittedHelpRequests: {},
   });
   panelUnmounts = 0;
-  assistantId = "asst-1";
+  servedRef.value = { cloud: "local", assistantId: "asst-1", name: "Alice" };
   useDesktopPreviewStore.getState().close();
 });
 
@@ -130,7 +127,11 @@ describe("AssistantDesktopAffordance", () => {
         name: "Open Example Assistant's virtual desktop",
       }),
     ).not.toBeNull();
-    assistantId = "asst-2";
+    servedRef.value = {
+      cloud: "local",
+      assistantId: "asst-2",
+      name: "Bob",
+    };
     rerender(<DesktopHarness />);
     expect(
       screen.getByRole("button", { name: "Open Bob's virtual desktop" }),
@@ -450,11 +451,11 @@ describe("AssistantDesktopAffordance", () => {
     await waitFor(() =>
       expect(screen.getByTestId("desktop-panel")).not.toBeNull(),
     );
-    assistantId = "asst-2";
+    servedRef.value = { cloud: "local", assistantId: "asst-2", name: "Bob" };
     rerender(<DesktopHarness />);
     expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
     expect(panelUnmounts).toBe(1);
-    assistantId = "asst-1";
+    servedRef.value = { cloud: "local", assistantId: "asst-1", name: "Alice" };
     rerender(<DesktopHarness />);
     expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
   });

@@ -71,6 +71,7 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
+  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 mock.module("@/generated/api/sdk.gen", () => ({
