@@ -13,13 +13,13 @@ import {
   installBundleConfirmation,
 } from "./bundle-confirmation";
 import { unpackBundle, type BundleScanData } from "./bundle-manager";
-import { getBundlePlatform } from "./bundle-platform";
+import {
+  getBundlePlatform,
+  type ActiveBundleGateway,
+} from "./bundle-platform";
 import { openBundleWindow } from "./bundle-window";
 
-interface ActiveGateway {
-  assistantId: string;
-  port: number;
-}
+export type ActiveGateway = ActiveBundleGateway;
 
 export function resolveActiveGateway(): ActiveGateway | null {
   return getBundlePlatform().resolveActiveGateway();
@@ -33,7 +33,7 @@ async function acquireGatewayToken(
 
 export async function scanBundleViaGateway(
   filePath: string,
-  port: number,
+  gatewayUrl: string,
   token: string | null,
 ): Promise<BundleScanData | null> {
   try {
@@ -43,9 +43,7 @@ export async function scanBundleViaGateway(
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
-    // Local gateway base URL (gatewayPort from the lockfile, not the runtime port).
-    const gatewayBaseUrl = `http://127.0.0.1:${port}`;
-    const response = await net.fetch(`${gatewayBaseUrl}/v1/apps/open-bundle`, {
+    const response = await net.fetch(`${gatewayUrl}/v1/apps/open-bundle`, {
       method: "POST",
       body: JSON.stringify({ filePath }),
       headers,
@@ -71,7 +69,11 @@ export async function handleBundleFile(filePath: string): Promise<void> {
   }
 
   const token = await acquireGatewayToken(gateway.assistantId);
-  const scanData = await scanBundleViaGateway(filePath, gateway.port, token);
+  const scanData = await scanBundleViaGateway(
+    filePath,
+    gateway.gatewayUrl,
+    token,
+  );
   if (!scanData) {
     dialog.showErrorBox("Cannot open bundle", "Failed to scan bundle.");
     return;

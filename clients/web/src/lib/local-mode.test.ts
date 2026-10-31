@@ -621,12 +621,6 @@ describe("hasLocalGateway", () => {
     expect(hasLocalGateway(localA)).toBe(true);
   });
 
-  test("is false for a local assistant with no recorded gateway port", () => {
-    enableLocalMode();
-    const portless = { assistantId: "x", cloud: "local" } as LockfileAssistant;
-    expect(hasLocalGateway(portless)).toBe(false);
-  });
-
   test("is true for a docker assistant's recorded loopback port", () => {
     // Docker entries record the published gateway as a loopback runtimeUrl and
     // carry no `resources` block.
@@ -657,12 +651,6 @@ describe("hasLocalGateway", () => {
       port: 7830,
     } as LockfileAssistant;
     expect(hasLocalGateway(entry)).toBe(true);
-  });
-
-  test("is false for a docker assistant with no recorded port", () => {
-    enableLocalMode();
-    const bare = { assistantId: "dk", cloud: "docker" } as LockfileAssistant;
-    expect(hasLocalGateway(bare)).toBe(false);
   });
 
   test("is false for a cloud assistant", () => {

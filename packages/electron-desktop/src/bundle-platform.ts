@@ -8,7 +8,7 @@ export const CADET_PROTOCOL = "cadet";
 
 export interface ActiveBundleGateway {
   assistantId: string;
-  port: number;
+  gatewayUrl: string;
 }
 
 export interface BundleHostProvider {

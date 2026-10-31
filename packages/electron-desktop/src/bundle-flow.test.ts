@@ -18,7 +18,7 @@ mock.module("electron", () => ({
 }));
 
 const resolveActiveGatewayMock = mock(
-  (): { assistantId: string; port: number } | null => null,
+  (): { assistantId: string; gatewayUrl: string } | null => null,
 );
 const acquireGatewayTokenMock = mock(
   async (_assistantId: string) => "fake-token",
@@ -140,7 +140,10 @@ describe("handleBundleFile", () => {
   });
 
   test("shows error when scan fails", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
     netFetchMock.mockResolvedValue(new Response(null, { status: 500 }));
 
     await handleBundleFile("/tmp/test.cadet");
@@ -151,7 +154,10 @@ describe("handleBundleFile", () => {
   });
 
   test("shows error for blocked findings without opening confirmation", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
     const blockedScan: BundleScanData = {
       ...SAMPLE_SCAN,
       scanResult: {
@@ -178,7 +184,10 @@ describe("handleBundleFile", () => {
   });
 
   test("does not unpack when user cancels confirmation", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
     openBundleConfirmationMock.mockResolvedValue(false);
 
     await handleBundleFile("/tmp/test.cadet");
@@ -189,7 +198,10 @@ describe("handleBundleFile", () => {
   });
 
   test("shows error when unpack fails", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
     unpackBundleMock.mockRejectedValue(new Error("disk full"));
 
     await handleBundleFile("/tmp/test.cadet");
@@ -200,7 +212,10 @@ describe("handleBundleFile", () => {
   });
 
   test("sends auth token in scan request", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
 
     await handleBundleFile("/tmp/test.cadet");
 
@@ -211,7 +226,10 @@ describe("handleBundleFile", () => {
   });
 
   test("success flow: scans, confirms, unpacks, opens window", async () => {
-    resolveActiveGatewayMock.mockReturnValue({ assistantId: "a1", port: 9000 });
+    resolveActiveGatewayMock.mockReturnValue({
+      assistantId: "a1",
+      gatewayUrl: "http://127.0.0.1:9000",
+    });
 
     await handleBundleFile("/tmp/test.cadet");
 

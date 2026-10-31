@@ -7,7 +7,10 @@ import {
   type Lockfile,
   type LockfileAssistant,
 } from "./lockfile-contract";
-import { isCloudEntry } from "./lockfile-contract";
+import {
+  isCloudEntry,
+  LockfileAssistantSchema,
+} from "./lockfile-contract";
 import { resolveLockfilePath } from "./config";
 import { z } from "zod";
 
@@ -138,9 +141,7 @@ export function renameLockfileAssistantIfPresent(
 
 /**
  * Record when an assistant finished first-run onboarding. Update-only, on the
- * same terms as {@link renameLockfileAssistantIfPresent}. Keeps an existing
- * stamp: the first completion is the real one, and a replayed funnel must not
- * move it.
+ * same terms as {@link renameLockfileAssistantIfPresent}.
  */
 export function stampLockfileAssistantOnboardedIfPresent(
   assistantId: string,
@@ -149,25 +150,17 @@ export function stampLockfileAssistantOnboardedIfPresent(
   if (typeof onboardedAt !== "string" || onboardedAt === "") {
     return { ok: false, status: 400, error: "Missing onboardedAt" };
   }
-  return updateLockfileAssistantIfPresent(
-    assistantId,
-    { onboardedAt },
-    (entry) =>
-      typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
-  );
+  return updateLockfileAssistantIfPresent(assistantId, { onboardedAt });
 }
 
 /**
  * The shared update-only write: read the on-disk registry under the lock,
  * refuse a missing entry, and merge `patch` into it through
  * {@link saveLockfileAssistant} (re-entrant under the held lock).
- * `skip` short-circuits to a successful no-op for a field whose current
- * value should win.
  */
 function updateLockfileAssistantIfPresent(
   assistantId: string,
   patch: LockfileAssistantPatch,
-  skip?: (entry: LockfileAssistant) => boolean,
 ): WriteResult {
   if (typeof assistantId !== "string" || assistantId === "") {
     return { ok: false, status: 400, error: "Missing assistantId" };
@@ -187,11 +180,9 @@ function updateLockfileAssistantIfPresent(
     }
     // An already-converged patch must not rewrite the file: a rename to the
     // current name leaves the on-disk bytes exactly as they were.
-    const converged =
-      skip?.(entry) ??
-      (
-        Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>
-      ).every(([key, value]) => entry[key] === value);
+    const converged = (
+      Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>
+    ).every(([key, value]) => entry[key] === value);
     if (converged) {
       return { ok: true, lockfile };
     }
@@ -219,29 +210,17 @@ export function saveLockfileAssistant(
     const existingIdx = assistants.findIndex(
       (a) => a.assistantId === assistantId,
     );
-    // The secret keys the contract no longer models are scrubbed from the
-    // merged raw entry — the first write migrates an old lockfile clean.
-    const legacySecretKeys = [
-      "bearerToken",
-      "guardianBootstrapSecret",
-    ] as const;
-    const stripLegacySecrets = (raw: Record<string, unknown>) => {
-      for (const key of legacySecretKeys) delete raw[key];
-      return raw;
-    };
+    // The contract's parse is total: unknown keys (the legacy on-disk
+    // secrets) drop here, so the first write through the schema migrates an
+    // old lockfile clean.
     if (existingIdx >= 0) {
-      assistants[existingIdx] = stripLegacySecrets({
-        ...stripLegacySecrets(assistants[existingIdx]!),
+      assistants[existingIdx] = LockfileAssistantSchema.parse({
+        ...assistants[existingIdx]!,
         ...assistant,
         assistantId,
-      }) as LockfileAssistant;
+      });
     } else {
-      assistants.push(
-        stripLegacySecrets({
-          ...assistant,
-          assistantId,
-        }) as LockfileAssistant,
-      );
+      assistants.push(LockfileAssistantSchema.parse({ ...assistant, assistantId }));
     }
     lockfile.assistants = assistants;
     if (activeAssistant !== undefined) {

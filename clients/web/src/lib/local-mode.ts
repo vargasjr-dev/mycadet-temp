@@ -390,10 +390,10 @@ function expectsLocalGateway(
 export function hasLocalGateway(
   assistant: LockfileAssistant | undefined = getActiveAssistant(),
 ): boolean {
-  if (!expectsLocalGateway(assistant)) {
-    return false;
-  }
-  return ("port" in assistant ? assistant.port : undefined) != null;
+  // The contract requires a port on every loopback-capable entry — a served
+  // LockfileAssistant cannot be portless (a malformed one is dropped at
+  // parse time), so the cloud/isLocal discrimination is the whole question.
+  return expectsLocalGateway(assistant);
 }
 
 /**
