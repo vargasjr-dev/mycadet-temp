@@ -22,7 +22,7 @@ import {
 } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
-import { sshAppleContainer } from "../lib/ssh-apple-container";
+import { sshAppleContainer } from "../lib/remotes/apple-container";
 import {
   closeTerminalSession,
   createTerminalSession,

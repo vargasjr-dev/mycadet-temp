@@ -32,12 +32,14 @@ export interface WakeOptions {
  * {@link runRetire}'s never-reject contract so each host wires transport once
  * and surfaces a structured failure rather than a thrown error.
  */
-export function runWake(
-  invocation: CliInvocation,
+export async function runWake(
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   options?: WakeOptions,
 ): Promise<WakeResult> {
-  return runCli(invocation, ["wake", assistantId], WAKE_TIMEOUT_MS).then(
+  const resolved =
+    typeof invocation === "function" ? await invocation() : invocation;
+  return runCli(resolved, ["wake", assistantId], WAKE_TIMEOUT_MS).then(
     (woken) => {
       if (!woken.ok || !options?.repairGuardian) {
         return woken;
@@ -45,7 +47,7 @@ export function runWake(
       // The credential repair is the gateway's own machinery now: the
       // gateway is up after the wake, so the re-lease runs against it.
       return runCli(
-        invocation,
+        resolved,
         ["gateway", "token", "refresh", assistantId],
         REPAIR_TIMEOUT_MS,
       );

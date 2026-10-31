@@ -95,14 +95,16 @@ export function readBasetenSandboxToken(assistantId: string): TokenResult {
     return {
       ok: false,
       status: 404,
-      error: "Baseten sandbox token file is missing a token — re-run `cadet hatch --remote baseten`.",
+      error:
+        "Baseten sandbox token file is missing a token — re-run `cadet hatch --remote baseten`.",
     };
   } catch (err: unknown) {
     if ((err as unknown as { code?: string }).code === "ENOENT") {
       return {
         ok: false,
         status: 404,
-        error: "No Baseten sandbox token saved for this assistant — re-run `cadet hatch --remote baseten`.",
+        error:
+          "No Baseten sandbox token saved for this assistant — re-run `cadet hatch --remote baseten`.",
       };
     }
     return {
@@ -355,10 +357,10 @@ function isBasetenAssistant(assistantId: string): boolean {
 }
 
 /** Resolve a paired bearer only when the proxy target matches its binding. */
-export function getPairedGuardianAccessToken(
+export async function getPairedGuardianAccessToken(
   assistantId: string,
   pairedGatewayUrl: string,
-  invocation: CliInvocation,
+  invocation: CliInvocation | (() => Promise<CliInvocation>),
   isLoopback: boolean,
 ): Promise<TokenResult> {
   // Baseten sandboxes don't lease guardian tokens: the credential is the
@@ -366,9 +368,16 @@ export function getPairedGuardianAccessToken(
   // from disk — no CLI runtime, no mint, no refresh cycle. A missing file
   // surfaces the structured 404 the proxy renders.
   if (isBasetenAssistant(assistantId)) {
-    return Promise.resolve(readBasetenSandboxToken(assistantId));
+    return readBasetenSandboxToken(assistantId);
   }
-  return getGuardianAccessToken(assistantId, invocation, isLoopback, {
+  let resolved: CliInvocation;
+  try {
+    resolved =
+      typeof invocation === "function" ? await invocation() : invocation;
+  } catch (err) {
+    return { ok: false, status: 500, error: (err as Error).message };
+  }
+  return getGuardianAccessToken(assistantId, resolved, isLoopback, {
     paired: true,
     pairedGatewayUrl,
   });
