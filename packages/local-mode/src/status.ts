@@ -6,7 +6,7 @@ import { SEEDS } from "@mycadet/environments";
 
 import { resolveInstanceDir } from "./config";
 import { resolveEnvironmentName } from "./environment";
-import type { LockfileAssistant } from "./lockfile-contract";
+import { isLocalEntry, type LockfileAssistant } from "./lockfile-contract";
 import { getLockfileData } from "./lockfile";
 import { assertSafePathSegment } from "./paths";
 
@@ -237,11 +237,7 @@ function findRawAssistant(
 function lockfileInstanceDir(
   entry: LockfileAssistant | undefined,
 ): string | undefined {
-  return entry?.cloud === "local" ||
-    entry?.cloud === "docker" ||
-    entry?.cloud === "apple-container"
-    ? entry.instanceDir
-    : undefined;
+  return entry && isLocalEntry(entry) ? entry.instanceDir : undefined;
 }
 
 export type LockfileInstanceDirResult =

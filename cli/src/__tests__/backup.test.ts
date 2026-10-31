@@ -61,6 +61,7 @@ for (const topology of ["local", "docker"] as const) {
     const entry: config.LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
+      port: 7830,
     };
     lookup.mockReturnValue(entry);
     process.argv = ["bun", "cadet", "backup", "test"];
@@ -92,6 +93,7 @@ test("rejects legacy output names before capture", async () => {
   lookup.mockReturnValue({
     assistantId: "test",
     cloud: "local",
+    port: 7830,
   });
   process.argv = [
     "bun",

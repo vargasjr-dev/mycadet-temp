@@ -123,15 +123,6 @@ export function stripSensitiveFields(data: Record<string, unknown>): void {
 }
 
 /**
- * Whether a cloud value denotes the cloud-managed topology. Every reader
- * classifying an entry as platform-managed switches on this instead of
- * matching the literal.
- */
-export function isCloudHome(cloud: unknown): boolean {
-  return cloud === "cloud";
-}
-
-/**
  * Whether an entry's `runtimeUrl` is one a serving host can forward to: an
  * absolute http(s) URL. Shared by the renderer's paired-gateway URL derivation
  * and the host-side paired allowlist reader so the two can't drift.
@@ -245,11 +236,10 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
     const elided = entry.port === 443;
     return `https://${entry.ipAddress}${elided ? "" : `:${entry.port}`}`;
   }
-  if (isCloudHome(entry.cloud)) {
+  if (isCloudEntry(entry)) {
     return getCloudUrl().replace(/\/+$/, "");
   }
-  const port = "port" in entry ? entry.port : undefined;
-  return `http://127.0.0.1:${port ?? GATEWAY_PORT}`;
+  return `http://127.0.0.1:${entry.port}`;
 }
 
 /** Docker image metadata for the service group. Enables rollback to known-good refs. */
@@ -299,10 +289,11 @@ const BaseAssistantSchema = z.object({
  */
 const LocalRuntimeAssistantFields = {
   /** The gateway port a freshly hatched assistant's gateway listens on. */
-  port: z.number().optional(),
+  port: z.number(),
   /** The runtime daemon's port, recorded at hatch. */
   daemonPort: z.number().optional(),
-  /** The assistant's data root on this machine. */
+  /** The instance's state root on this machine. Local instances keep their
+   * data here; docker instances record their host-side volume root. */
   instanceDir: z.string().optional(),
   /** The content-editor server's port, recorded at hatch. */
   cesPort: z.number().optional(),
@@ -311,24 +302,6 @@ const LocalRuntimeAssistantFields = {
   /** Where the runtime build is installed on this machine. */
   runtimeInstallDir: z.string().optional(),
 };
-
-/**
- * Legacy-placement backfill: entries written before the `resources` field
- * died carried their gateway port at `resources.gatewayPort`. Zod sees the
- * shape raw, so a preprocess copies the legacy port onto `port` when the
- * entry has no top-level one — old lockfiles parse clean through the new
- * flat schema.
- */
-function backfillLegacyPlacement(raw: unknown): unknown {
-  if (!raw || typeof raw !== "object") return raw;
-  const entry = raw as Record<string, unknown>;
-  if (entry.port !== undefined) return entry;
-  const resources = entry.resources;
-  if (!resources || typeof resources !== "object") return entry;
-  const gatewayPort = (resources as Record<string, unknown>).gatewayPort;
-  if (gatewayPort === undefined) return entry;
-  return { ...entry, port: gatewayPort };
-}
 
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
@@ -384,17 +357,42 @@ const BasetenAssistantSchema = BaseAssistantSchema.extend({
  * union discriminates, keeping the on-disk contract permissive about clouds
  * this build has never heard of.
  */
-function withDefaultCloud(entry: unknown): unknown {
+/**
+ * The one preprocess the entry union parses through. Routes absent and
+ * unknown topology values to the local default before the union
+ * discriminates, and backfills the legacy `resources.gatewayPort` onto
+ * `port` — but only when the flat `port` field would fail the number
+ * schema (absent or not a number): a valid port always wins. Zod has no
+ * field-level sibling fallback, so the object-level preprocess is the
+ * supported surface for this.
+ */
+function normalizeEntry(entry: unknown): unknown {
   if (typeof entry !== "object" || entry === null) return entry;
-  const cloud = "cloud" in entry ? entry.cloud : undefined;
-  if (typeof cloud === "string" && RemoteSchema.safeParse(cloud).success) {
-    return entry;
+  let rec = entry as Record<string, unknown>;
+  const cloud = rec.cloud;
+  if (!(typeof cloud === "string" && RemoteSchema.safeParse(cloud).success)) {
+    rec = { ...rec, cloud: "local" };
   }
-  return { ...entry, cloud: "local" };
+  if (rec.port === undefined) {
+    // The flat port failed the required schema (absent on a legacy or bare
+    // entry): fall back to the legacy resources.gatewayPort, else the
+    // gateway default. A mistyped port never falls back — a bad modeled
+    // field still drops the entry.
+    const resources = rec.resources;
+    const gatewayPort =
+      resources && typeof resources === "object"
+        ? (resources as Record<string, unknown>).gatewayPort
+        : undefined;
+    rec = {
+      ...rec,
+      port: typeof gatewayPort === "number" ? gatewayPort : GATEWAY_PORT,
+    };
+  }
+  return rec;
 }
 
 export const LockfileAssistantSchema = z.preprocess(
-  (entry) => backfillLegacyPlacement(withDefaultCloud(entry)),
+  normalizeEntry,
   z.discriminatedUnion("cloud", [
     LocalAssistantSchema,
     DockerAssistantSchema,
@@ -422,6 +420,13 @@ export type AppleContainerAssistant = z.infer<
 export type CloudAssistant = z.infer<typeof CloudAssistantSchema>;
 export type CustomAssistant = z.infer<typeof CustomAssistantSchema>;
 export type BasetenAssistant = z.infer<typeof BasetenAssistantSchema>;
+
+/** Whether the entry is a platform-hosted assistant. */
+export function isCloudEntry(
+  entry: LockfileAssistant,
+): entry is CloudAssistant {
+  return entry.cloud === "cloud";
+}
 
 /** Whether the entry is a docker-hosted assistant. */
 export function isDockerEntry(

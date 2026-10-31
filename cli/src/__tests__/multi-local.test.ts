@@ -323,11 +323,7 @@ describe("multi-local", () => {
       saveLockfileAssistant(remoteEntry!);
       const result = resolveTargetAssistant("cloud-box");
       expect(
-        result.cloud === "local" ||
-          result.cloud === "docker" ||
-          result.cloud === "apple-container"
-          ? result.instanceDir
-          : undefined,
+        result.cloud === "local" ? result.instanceDir : undefined,
       ).toBeUndefined();
     });
   });

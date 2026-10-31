@@ -12,8 +12,8 @@
  */
 
 import {
+  isCloudEntry,
   getGatewayUrl,
-  isCloudHome,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
   type Lockfile,
@@ -884,17 +884,15 @@ function handleLockfileChange(lockfile: Lockfile): void {
     // connect paired; clouds need a platform session. The merge-staleness
     // the old recorded-url check guarded against is gone with the recorded
     // url itself — the port is the only loopback record there is.
-    const isMachineLocalEntry = isLoopbackGatewayCloud(assistant.cloud);
-    const port = isMachineLocalEntry
-      ? "port" in assistant
+    const port =
+      assistant.cloud === "local" ||
+      assistant.cloud === "docker" ||
+      assistant.cloud === "apple-container"
         ? assistant.port
-        : undefined
-      : undefined;
+        : undefined;
     const gatewayUrl = getGatewayUrl(assistant);
     const isCloud =
-      isCloudHome(assistant.cloud) &&
-      isUsableBaseUrl(gatewayUrl) &&
-      hasSessionToken;
+      isCloudEntry(assistant) && isUsableBaseUrl(gatewayUrl) && hasSessionToken;
     if (!port && !isCloud) continue;
 
     activeIds.add(assistant.assistantId);

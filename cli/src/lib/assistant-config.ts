@@ -63,11 +63,30 @@ export type RootProcessKind = keyof RootProcessRecords;
  * The instance's data root: the recorded instanceDir, or the shared state
  * root for legacy entries predating per-instance dirs.
  */
-export function getLocalInstanceDir(entry?: { instanceDir?: string }): string {
-  return entry?.instanceDir ?? resolveDataDir();
+export function isOnMachineEntry(entry: LockfileAssistant): boolean {
+  return (
+    entry.cloud === "local" ||
+    entry.cloud === "docker" ||
+    entry.cloud === "apple-container"
+  );
 }
 
-export function getDaemonPidPath(entry?: { instanceDir?: string }): string {
+export function getLocalInstanceDir(
+  entry?: LockfileAssistant | undefined,
+): string {
+  return (
+    (entry &&
+    (entry.cloud === "local" ||
+      entry.cloud === "docker" ||
+      entry.cloud === "apple-container")
+      ? entry.instanceDir
+      : undefined) ?? resolveDataDir()
+  );
+}
+
+export function getDaemonPidPath(
+  entry?: LockfileAssistant | undefined,
+): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }
 

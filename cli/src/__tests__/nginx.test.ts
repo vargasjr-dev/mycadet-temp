@@ -1729,6 +1729,8 @@ describe("ensureAppServer", () => {
   beforeEach(() => {
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: ASSISTANT_ID,
+      cloud: "local",
+      port: 7830,
     } as never);
     // Isolated lockfile dir so the assistant-name lookup never reads a real
     // machine lockfile.
@@ -2051,6 +2053,7 @@ describe("stopContainerAppServer", () => {
       await stopContainerAppServer({
         assistantId: "docker-1",
         cloud: "docker",
+        port: 7830,
       }),
     ).toBe(false);
     expect(killed()).toBe(false);

@@ -521,7 +521,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   // always launches the CES sibling.
   await Promise.all([
     startCes(false, entry),
-    startLocalDaemon(false, requireReadyRuntimeEntry(entry)),
+    startLocalDaemon(false, entry),
     startGateway(false, entry, { bootstrapSecret }),
   ]);
 

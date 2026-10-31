@@ -31,6 +31,7 @@ import { mockCommands } from "./commands-mock.js";
 const entry: LockfileAssistant = {
   assistantId: "docker-backup",
   cloud: "docker",
+  port: 7830,
 };
 const names = dockerResourceNames(entry.assistantId);
 const containers = [

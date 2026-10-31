@@ -1,3 +1,4 @@
+import { GATEWAY_PORT } from "./lockfile-contract";
 import { describe, expect, test } from "bun:test";
 
 import type { Lockfile, LockfileAssistant } from "./lockfile-contract";
@@ -7,7 +8,7 @@ describe("servedConfigFromLockfile", () => {
   test("selects the active entry and exposes only public config fields", () => {
     const lockfile: Lockfile = {
       assistants: [
-        { assistantId: "other", cloud: "local" },
+        { assistantId: "other", cloud: "local", port: GATEWAY_PORT },
         {
           assistantId: "active",
           name: "Example Assistant",
@@ -35,7 +36,9 @@ describe("servedConfigFromLockfile", () => {
   test("uses the sole entry when no active entry matches", () => {
     expect(
       servedConfigFromLockfile({
-        assistants: [{ assistantId: "sole", cloud: "local" }],
+        assistants: [
+          { assistantId: "sole", cloud: "local", port: GATEWAY_PORT },
+        ],
         activeAssistant: "removed",
       }).assistantId,
     ).toBe("sole");
@@ -45,8 +48,8 @@ describe("servedConfigFromLockfile", () => {
     expect(
       servedConfigFromLockfile({
         assistants: [
-          { assistantId: "first", cloud: "local" },
-          { assistantId: "second", cloud: "local" },
+          { assistantId: "first", cloud: "local", port: GATEWAY_PORT },
+          { assistantId: "second", cloud: "local", port: GATEWAY_PORT },
         ],
         activeAssistant: null,
       }).assistantId,

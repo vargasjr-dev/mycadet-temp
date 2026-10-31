@@ -21,6 +21,7 @@ test("exports logs through the scoped data plane and uploads bytes with no crede
       assistantId: "local-1",
       cloud: "local",
       name: "Local",
+      port: 7830,
       hatchedAt: "2026-01-01",
     },
     "https://storage.example.com/upload",

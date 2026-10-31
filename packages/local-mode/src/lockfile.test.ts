@@ -10,6 +10,7 @@ import {
   replaceCloudAssistants,
   saveLockfileAssistant,
 } from "./lockfile";
+import { GATEWAY_PORT } from "./lockfile-contract";
 
 let dir: string;
 let lockfilePath: string;
@@ -63,7 +64,7 @@ describe("getLockfileData", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.assistants).toEqual([
-        { assistantId: "asst_ok", cloud: "local" },
+        { assistantId: "asst_ok", cloud: "local", port: GATEWAY_PORT },
       ]);
     }
   });
@@ -87,6 +88,7 @@ describe("getLockfileData", () => {
         {
           assistantId: "asst_legacy",
           cloud: "local",
+          port: GATEWAY_PORT,
         },
       ]);
       expect(result.data.activeAssistant).toBe("asst_legacy");
@@ -213,6 +215,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
     assistantId: "asst_1",
     cloud: "local",
     name: "Credence",
+    port: GATEWAY_PORT,
   };
   const AT = "2026-08-31T00:00:00.000Z";
 
@@ -293,7 +296,7 @@ describe("renameLockfileAssistantIfPresent", () => {
     const assistants = onDisk.assistants as Array<Record<string, unknown>>;
     expect(assistants).toEqual([
       { ...entry, name: "Renamed" },
-      { assistantId: "asst_other", cloud: "local" },
+      { assistantId: "asst_other", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 
@@ -450,6 +453,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_local",
           cloud: "local",
+          port: GATEWAY_PORT,
         },
       ]),
     ).toMatchObject({ ok: false, status: 403 });

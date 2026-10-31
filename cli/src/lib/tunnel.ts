@@ -9,7 +9,11 @@ import {
   type TunnelProcessRecord,
 } from "./assistant-config.js";
 import { cliCommand } from "./cli-name.js";
-import { GATEWAY_PORT, getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  isLocalEntry,
+  GATEWAY_PORT,
+  getGatewayUrl,
+} from "@mycadet/local-mode/contract";
 
 import {
   ensureAppServer,
@@ -203,13 +207,8 @@ export interface LocalTunnelTarget {
 export function toLocalTunnelTarget(
   entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
-  if (
-    entry.cloud !== "cloud" &&
-    entry.cloud !== "custom" &&
-    entry.cloud !== "baseten" &&
-    entry.instanceDir
-  ) {
-    return { entry, gatewayPort: entry.port ?? GATEWAY_PORT };
+  if (isLocalEntry(entry) && entry.instanceDir) {
+    return { entry, gatewayPort: entry.port };
   }
   if (
     entry.cloud !== "cloud" &&

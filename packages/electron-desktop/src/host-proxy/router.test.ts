@@ -437,7 +437,9 @@ describe("host-proxy-router", () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
-        assistants: [{ assistantId: "no-resources", cloud: "local" }],
+        assistants: [
+          { assistantId: "no-resources", cloud: "local", port: 7830 },
+        ],
         activeAssistant: null,
       });
       await flush();

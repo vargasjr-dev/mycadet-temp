@@ -136,6 +136,7 @@ test("versioned restore installs roots into stopped target containers before fir
   const entry: config.LockfileAssistant = {
     assistantId: "recovery",
     cloud: "docker",
+    port: 7830,
   };
   capture.mockImplementation(async () => {
     events.push("capture-safety");

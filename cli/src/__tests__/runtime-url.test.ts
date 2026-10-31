@@ -43,9 +43,9 @@ describe("getGatewayUrl", () => {
     ).toBe("http://127.0.0.1:7900");
   });
 
-  test("an entry with nothing derives the default gateway port", () => {
-    expect(getGatewayUrl(entry({ cloud: "local" }))).toBe(
-      `http://127.0.0.1:${GATEWAY_PORT}`,
-    );
+  test("a recorded default port dials the gateway default", () => {
+    expect(
+      getGatewayUrl(entry({ cloud: "local", port: GATEWAY_PORT })),
+    ).toBe(`http://127.0.0.1:${GATEWAY_PORT}`);
   });
 });

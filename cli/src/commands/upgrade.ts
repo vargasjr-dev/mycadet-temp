@@ -419,7 +419,7 @@ async function upgradeLocal(
       // launches the CES sibling.
       await Promise.all([
         startCes(false, upgradedEntry),
-        startLocalDaemon(false, requireReadyRuntimeEntry(upgradedEntry)),
+        startLocalDaemon(false, upgradedEntry),
         startGateway(false, upgradedEntry, { bootstrapSecret }),
       ]);
     } finally {
@@ -472,7 +472,7 @@ async function upgradeLocal(
         );
       await Promise.all([
         startCes(false, entry),
-        startLocalDaemon(false, requireReadyRuntimeEntry(entry)),
+        startLocalDaemon(false, entry),
         startGateway(false, entry, { bootstrapSecret }),
       ]);
       if (!(await waitForReady(adminUrl)))

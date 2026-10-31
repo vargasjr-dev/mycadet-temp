@@ -22,7 +22,6 @@ import {
 } from "@app/assistant/local-mode-host";
 import {
   getGatewayUrl,
-  isCloudHome,
   isLoopbackGatewayCloud,
 } from "@mycadet/local-mode/contract";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
@@ -145,7 +144,8 @@ export function SelectAssistantScreen() {
   // alike.
   const lockfileEntries =
     lockfile?.assistants.filter(
-      (entry) => isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "custom",
+      (entry) =>
+        isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "custom",
     ) ?? [];
 
   // The lockfile hydrates on mount (Electron only — a no-op elsewhere), so a
@@ -347,7 +347,7 @@ export function SelectAssistantScreen() {
           const label = entry.name ?? entry.assistantId;
           const subtitle = remoteGateway
             ? new URL(getGatewayUrl(entry)).hostname
-            : isCloudHome(entry.cloud)
+            : entry.cloud === "cloud"
               ? t("selectAssistantScreen.cloudHostedWithHost", {
                   host: new URL(getGatewayUrl(entry)).hostname,
                 })

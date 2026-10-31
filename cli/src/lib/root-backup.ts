@@ -19,6 +19,7 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
+  isLocalEntry,
   saveLockfileAssistant,
   type DockerAssistant,
   type LocalAssistant,
@@ -36,7 +37,6 @@ import {
 } from "./http-client.js";
 import { loadGuardianBootstrapSecret } from "./guardian-token.js";
 import {
-  requireReadyRuntimeEntry,
   startCes,
   startGateway,
   startLocalDaemon,
@@ -324,11 +324,14 @@ export class LocalRootStorage implements RootStorage {
       !isProcessAlive(join(this.root, "ces.pid")).alive
     )
       await startCes(false, entry);
+    // The daemon lifecycle is local-only; a docker root's assistant service
+    // is the container, not a host daemon.
     if (
+      isLocalEntry(entry) &&
       this.initialRunning?.has("assistant") &&
       !isProcessAlive(getDaemonPidPath(entry)).alive
     )
-      await startLocalDaemon(false, requireReadyRuntimeEntry(entry));
+      await startLocalDaemon(false, entry);
     if (
       this.initialRunning?.has("gateway") &&
       !isProcessAlive(join(this.root, "gateway.pid")).alive
@@ -745,9 +748,7 @@ export async function withRootOperationLock<T>(
   const identity =
     entry.cloud === "docker"
       ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : entry.cloud !== "cloud" &&
-          entry.cloud !== "custom" &&
-          entry.cloud !== "baseten"
+      : isLocalEntry(entry)
         ? entry.instanceDir
         : undefined;
   const lock = join(

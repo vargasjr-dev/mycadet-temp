@@ -85,6 +85,7 @@ for (const topology of ["local", "docker"] as const) {
     const entry: config.LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
+      port: 7830,
     };
     lookup.mockReturnValue(entry);
     process.argv = ["bun", "cadet", "restore", "test", "--from", file];

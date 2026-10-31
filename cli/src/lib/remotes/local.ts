@@ -69,7 +69,7 @@ import {
   resolveLogDir,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isLocalEntry } from "@mycadet/local-mode/contract";
 import {
   type DaemonReadiness,
   httpHealthCheck,
@@ -815,7 +815,8 @@ function logAssistantAlreadyRunning(
 
 async function startDaemonFromSource(
   assistantIndex: string,
-  entry: ReadyRuntimeEntry,
+  entry: LocalAssistant,
+  daemonPort: number,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const foreground = options?.foreground ?? false;
@@ -827,13 +828,13 @@ async function startDaemonFromSource(
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
+  if (await awaitStartingSentinel(pidFile, daemonPort)) {
     return null;
   }
 
   const daemonState = await resolveProcessState(
     pidFile,
-    entry.daemonPort,
+    daemonPort,
     "Assistant",
     60_000,
     "readyz",
@@ -843,7 +844,7 @@ async function startDaemonFromSource(
     return null;
   }
 
-  if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
+  if (await checkOrphanedDaemon(pidFile, daemonPort)) {
     return null;
   }
 
@@ -881,7 +882,7 @@ async function startDaemonFromSource(
       })
     : (() => {
         const daemonLogFd = openRuntimeLogFile(
-          entry?.instanceDir ?? spawnStateRoot(),
+          getLocalInstanceDir(entry),
           "assistant",
         );
         const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
@@ -912,7 +913,8 @@ async function startDaemonFromSource(
 // assistant-side equivalent.
 async function startDaemonWatchFromSource(
   assistantIndex: string,
-  entry: ReadyRuntimeEntry,
+  entry: LocalAssistant,
+  daemonPort: number,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const mainPath = resolveDaemonMainPath(assistantIndex);
@@ -924,13 +926,13 @@ async function startDaemonWatchFromSource(
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
+  if (await awaitStartingSentinel(pidFile, daemonPort)) {
     return null;
   }
 
   const daemonState = await resolveProcessState(
     pidFile,
-    entry.daemonPort,
+    daemonPort,
     "Assistant",
     60_000,
     "readyz",
@@ -940,7 +942,7 @@ async function startDaemonWatchFromSource(
     return null;
   }
 
-  if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
+  if (await checkOrphanedDaemon(pidFile, daemonPort)) {
     return null;
   }
 
@@ -957,7 +959,7 @@ async function startDaemonWatchFromSource(
   writeFileSync(pidFile, "starting", "utf-8");
 
   const daemonLogFd = openRuntimeLogFile(
-    entry?.instanceDir ?? spawnStateRoot(),
+    getLocalInstanceDir(entry),
     "assistant",
   );
   const child = spawn(
@@ -1061,7 +1063,7 @@ export function gatewayCliInvocation(
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(entry?.instanceDir
+      ...(entry && isLocalEntry(entry)
         ? {
             CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
             GATEWAY_SECURITY_DIR: join(
@@ -1549,27 +1551,18 @@ function writeAssistantWrapper(
   );
 }
 
-/** A local runtime entry with the daemon port a hatch records. */
-export type ReadyRuntimeEntry = (
-  | LocalAssistant
-  | DockerAssistant
-  | AppleContainerAssistant
-) & { daemonPort: number };
-
 /**
  * The daemon lifecycle reads the recorded daemon port; an entry without
  * one predates per-instance records and cannot start. Throws with the
  * re-hatch guidance the callers show.
  */
-export function requireReadyRuntimeEntry(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): ReadyRuntimeEntry {
+export function requireReadyRuntimeEntry(entry: LocalAssistant): number {
   if (entry.daemonPort === undefined) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  return entry as ReadyRuntimeEntry;
+  return entry.daemonPort;
 }
 
 // NOTE: startLocalDaemon() is the CLI-side daemon lifecycle manager.
@@ -1578,10 +1571,11 @@ export function requireReadyRuntimeEntry(
 // assistant-side equivalent.
 export async function startLocalDaemon(
   watch: boolean = false,
-  entry: ReadyRuntimeEntry,
+  entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): Promise<void> {
   writeAssistantWrapper(entry);
+  const daemonPort = requireReadyRuntimeEntry(entry);
 
   const runtimeAssistantIndex = !watch
     ? localRuntimeAssistantIndex(entry)
@@ -1595,17 +1589,15 @@ export async function startLocalDaemon(
     const runtimeSpawn = await startDaemonFromSource(
       runtimeAssistantIndex,
       entry,
+      daemonPort,
       options,
     );
     if (runtimeSpawn) {
       await reportFreshSpawnReadiness(
         runtimeSpawn,
         getDaemonPidPath(entry),
-        entry.daemonPort,
-        await waitForDaemonMigrationsReady(
-          entry.daemonPort,
-          Date.now() + 60000,
-        ),
+        daemonPort,
+        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
         options?.requireReady,
       );
     }
@@ -1625,14 +1617,14 @@ export async function startLocalDaemon(
     const pidFile = getDaemonPidPath(entry);
 
     // --- Lifecycle guard: prevent split-brain daemon state ---
-    if (await awaitStartingSentinel(pidFile, entry.daemonPort)) {
+    if (await awaitStartingSentinel(pidFile, daemonPort)) {
       ensureBunInstalled();
       return;
     }
 
     const daemonState = await resolveProcessState(
       pidFile,
-      entry.daemonPort,
+      daemonPort,
       "Assistant",
       60_000,
       "readyz",
@@ -1644,12 +1636,12 @@ export async function startLocalDaemon(
     let daemonSpawn: DaemonSpawn | null = null;
 
     if (!daemonAlive) {
-      if (await checkOrphanedDaemon(pidFile, entry.daemonPort)) {
+      if (await checkOrphanedDaemon(pidFile, daemonPort)) {
         ensureBunInstalled();
         // The orphan already answers health checks — a readiness probe
         // classifies it without blocking on an in-flight migration.
         logDaemonReadiness(
-          await probeDaemonReadinessWithRetry(entry.daemonPort),
+          await probeDaemonReadinessWithRetry(daemonPort),
           options?.requireReady,
         );
         return;
@@ -1746,7 +1738,7 @@ export async function startLocalDaemon(
           })
         : (() => {
             const daemonLogFd = openRuntimeLogFile(
-              entry?.instanceDir ?? spawnStateRoot(),
+              getLocalInstanceDir(entry),
               "assistant",
             );
             const c = spawn(daemonBinary, [], {
@@ -1791,12 +1783,11 @@ export async function startLocalDaemon(
     // its in-flight migration would just double the reported diagnosis.
     if (!daemonAlive) {
       let readiness = await waitForDaemonMigrationsReady(
-        entry.daemonPort,
+        daemonPort,
         Date.now() + 60000,
       );
       const daemonHealthy =
-        readiness !== "unreachable" ||
-        (await httpHealthCheck(entry.daemonPort));
+        readiness !== "unreachable" || (await httpHealthCheck(daemonPort));
 
       // Dev fallback: if the bundled daemon did not become healthy in time,
       // fall back to source daemon startup so local source runs still work.
@@ -1818,10 +1809,20 @@ export async function startLocalDaemon(
             DAEMON_STOP_TIMEOUT_MS,
           );
           daemonSpawn = watch
-            ? await startDaemonWatchFromSource(assistantIndex, entry, options)
-            : await startDaemonFromSource(assistantIndex, entry, options);
+            ? await startDaemonWatchFromSource(
+                assistantIndex,
+                entry,
+                daemonPort,
+                options,
+              )
+            : await startDaemonFromSource(
+                assistantIndex,
+                entry,
+                daemonPort,
+                options,
+              );
           readiness = await waitForDaemonMigrationsReady(
-            entry.daemonPort,
+            daemonPort,
             Date.now() + 60000,
           );
         }
@@ -1829,14 +1830,14 @@ export async function startLocalDaemon(
         // The health check just passed, so the readyz probes were the flaky
         // part — re-probe once so the log reports the daemon's real state
         // instead of "did not become ready".
-        readiness = await probeDaemonReadiness(entry.daemonPort);
+        readiness = await probeDaemonReadiness(daemonPort);
       }
 
       if (daemonSpawn) {
         await reportFreshSpawnReadiness(
           daemonSpawn,
           pidFile,
-          entry.daemonPort,
+          daemonPort,
           readiness,
           options?.requireReady,
         );
@@ -1855,18 +1856,20 @@ export async function startLocalDaemon(
       );
     }
     const sourceSpawn = watch
-      ? await startDaemonWatchFromSource(assistantIndex, entry, options)
-      : await startDaemonFromSource(assistantIndex, entry, options);
+      ? await startDaemonWatchFromSource(
+          assistantIndex,
+          entry,
+          daemonPort,
+          options,
+        )
+      : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
     // Attach case was classified and logged inside the start function.
     if (sourceSpawn) {
       await reportFreshSpawnReadiness(
         sourceSpawn,
         getDaemonPidPath(entry),
-        entry.daemonPort,
-        await waitForDaemonMigrationsReady(
-          entry.daemonPort,
-          Date.now() + 60000,
-        ),
+        daemonPort,
+        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
         options?.requireReady,
       );
     }
@@ -1949,7 +1952,7 @@ export async function startGateway(
     // CLI invoked from the terminal). In watch mode, skip the bundled binary
     // and use source (bun --watch only works with source files).
     const gatewayLogFd = openRuntimeLogFile(
-      entry?.instanceDir ?? spawnStateRoot(),
+      getLocalInstanceDir(entry),
       "gateway",
     );
     gateway = spawn(gatewayBinary, [], {
@@ -1967,10 +1970,7 @@ export async function startGateway(
     const bunArgs = watch
       ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
       : ["run", gatewayEntry, "--cadet-gateway"];
-    const gwLogFd = openRuntimeLogFile(
-      entry?.instanceDir ?? spawnStateRoot(),
-      "gateway",
-    );
+    const gwLogFd = openRuntimeLogFile(getLocalInstanceDir(entry), "gateway");
     gateway = spawn(resolveBunExecutable(), bunArgs, {
       cwd: spawnStateRoot(),
       detached: true,
@@ -2298,7 +2298,7 @@ export async function hatchLocal(
       // startCes always launches the CES sibling.
       const startupResults = await Promise.allSettled([
         startCes(watch, entry),
-        startLocalDaemon(watch, requireReadyRuntimeEntry(entry), {
+        startLocalDaemon(watch, entry, {
           defaultWorkspaceConfigPath,
           requireReady: true,
         }),
@@ -2447,13 +2447,7 @@ export async function wakeLocal(
   opts: { watch: boolean; foreground: boolean },
 ): Promise<void> {
   const { watch, foreground } = opts;
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    )
-  ) {
+  if (!isLocalEntry(entry)) {
     throw new WakeExit(
       `'${entry.assistantId}' is not an on-machine assistant.`,
     );
@@ -2480,7 +2474,7 @@ export async function wakeLocal(
     }
   }
 
-  const daemonPort = requireReadyRuntimeEntry(entry).daemonPort;
+  const daemonPort = requireReadyRuntimeEntry(entry);
   const pidFile = getDaemonPidPath(entry);
 
   // Budget anchor for the migration-coordination wait below: the host
@@ -2563,7 +2557,7 @@ export async function wakeLocal(
     // always launches the CES sibling unconditionally.
     await Promise.all([
       startCes(watch, entry),
-      startLocalDaemon(watch, requireReadyRuntimeEntry(entry), { foreground }),
+      startLocalDaemon(watch, entry, { foreground }),
     ]);
     // A daemon that aborts during startup (an occupied runtime HTTP port, a
     // fatal subsystem failure) leaves no process behind, and readiness alone

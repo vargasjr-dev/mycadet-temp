@@ -98,9 +98,7 @@ function otherAssistantPidSet(
   for (const entry of entries) {
     if (
       entry.assistantId === name &&
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten" &&
+      isLocalEntry(entry) &&
       entry.instanceDir === instanceDir
     ) {
       continue;
