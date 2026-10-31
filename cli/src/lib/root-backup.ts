@@ -37,7 +37,6 @@ import {
 } from "./http-client.js";
 import { loadGuardianBootstrapSecret } from "./guardian-token.js";
 import {
-  requireReadyRuntimeEntry,
   startCes,
   startGateway,
   startLocalDaemon,
