@@ -20,19 +20,5 @@
     "loading": "正在載入…",
     "emailsLoadFailed": "無法載入近期電子郵件。",
     "noEmails": "尚無電子郵件。"
-  },
-  "systemEventsTab": {
-    "longSleep": "長時間休眠",
-    "hideDetails": "隱藏詳細資訊",
-    "showDetails": "顯示詳細資訊",
-    "intro": "您的助理在過去 {days, plural, one {# 天} other {# 天}} 的生命週期事件，最新在前。",
-    "loading": "正在載入系統事件...",
-    "loadFailed": "載入系統事件失敗。請重新整理後再試。",
-    "empty": "過去 {days, plural, one {# 天} other {# 天}} 未記錄任何系統事件。",
-    "loadingOlder": "正在載入較舊的事件...",
-    "loadOlder": "載入較舊的事件"
-  },
-  "systemEventsPage": {
-    "notAvailable": "目前助理無法使用系統事件。"
   }
 }

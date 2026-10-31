@@ -8,20 +8,14 @@ import { SidebarShell } from "@/components/sidebar-shell";
 import { SidebarTree } from "@/components/sidebar-tree";
 
 export function LogsLayout() {
-  // Managed email and cloud system events have no meaning against a
-  // self-hosted assistant; the tabs hide there and render otherwise.
+  // Managed email has no meaning against a self-hosted assistant; the
+  // tab hides there and renders otherwise.
   const isSelfHosted = useActiveAssistantIsSelfHosted();
   const { pathname } = useLocation();
 
   const filteredItems = useMemo(
     () =>
-      LOGS_SIDEBAR.filter(
-        (item) =>
-          !(
-            isSelfHosted &&
-            (item.id === "system-events" || item.id === "emails")
-          ),
-      ),
+      LOGS_SIDEBAR.filter((item) => !(isSelfHosted && item.id === "emails")),
     [isSelfHosted],
   );
 
