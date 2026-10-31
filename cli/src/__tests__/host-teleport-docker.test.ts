@@ -9,7 +9,7 @@ import {
   restoreHostTeleportTarget,
   TeleportRecoveryError,
 } from "../lib/host-teleport.js";
-import { dockerResourceNames } from "../lib/docker.js";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";

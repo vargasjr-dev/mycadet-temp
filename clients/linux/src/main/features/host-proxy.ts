@@ -11,7 +11,6 @@ import type {
 } from "@mycadet/electron-desktop/capability-registry";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
-import { LOCAL_MODE_CLI } from "@mycadet/electron-desktop/local-mode";
 import {
   getWatchedLockfile,
   onLockfileChange,
@@ -49,26 +48,7 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
   const teardown = installHostProxyBridge(
     createLinuxHostProxyRuntime({
       acquireGuardianToken: async (assistantId) => {
-        // Resolved lazily so this module works regardless of when (or
-        // whether) the CLI provider registers. Without it, local
-        // assistants stay explicitly unreachable; cloud assistants use
-        // the session token instead.
-        const cli = capabilities.get(LOCAL_MODE_CLI);
-        if (!cli) {
-          log.warn(
-            "[host-proxy] no CLI provider registered, skipping local assistant",
-            { assistantId },
-          );
-          return {
-            ok: false,
-            status: 500,
-            error: "no CLI provider registered",
-          };
-        }
-        const result = await getGuardianAccessToken(
-          assistantId,
-          await cli.resolveInvocation(),
-        );
+        const result = await getGuardianAccessToken(assistantId);
         if (!result.ok) {
           log.warn("[host-proxy] failed to obtain guardian token", {
             assistantId,

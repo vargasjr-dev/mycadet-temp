@@ -3,7 +3,6 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
-  ASSISTANT_INTERNAL_PORT,
   AVATAR_DEVICE_ENV_VAR,
   collectWatchTargets,
   dockerResourceNames,
@@ -13,7 +12,8 @@ import {
   resolveDockerHatchMode,
   resolveDockerProviderCredentialSetupAction,
   type ServiceName,
-} from "../docker.js";
+} from "../remotes/docker.js";
+import { ASSISTANT_INTERNAL_PORT } from "../environments/paths.js";
 import { buildServiceRunArgs } from "../statefulset.js";
 
 const instanceName = "test-instance";

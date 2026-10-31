@@ -33,7 +33,7 @@ import {
   type ManagedProcessEntry,
 } from "../lib/health-check";
 import { readCloudToken } from "../lib/cloud-client";
-import { dockerResourceNames } from "../lib/docker";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";
 import { execOutput } from "../lib/step-runner";

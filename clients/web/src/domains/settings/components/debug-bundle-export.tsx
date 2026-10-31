@@ -5,20 +5,17 @@ import { useState } from "react";
 import { exportLocalDebugBundle } from "./diagnostic-export";
 import { assistantsDebugBundleUploadUrlCreate } from "@/generated/api/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { getActiveAssistant } from "@/lib/local-mode";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugBundleExport({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const [sentAt, setSentAt] = useState<Date | null>(null);
-  const selectedAssistant = getActiveAssistant();
+  const selectedAssistant = getResolvedAssistant();
 
   const exportBundle = useMutation({
     mutationFn: async () => {
-      if (!selectedAssistant) {
-        throw new Error("no assistant");
-      }
       const { data } = await assistantsDebugBundleUploadUrlCreate({
         path: { id: assistantId },
         throwOnError: true,

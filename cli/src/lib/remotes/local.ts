@@ -1,3 +1,4 @@
+import { execOutput } from "../step-runner.js";
 import {
   type ChildProcess,
   execFileSync,
@@ -1532,53 +1533,6 @@ export function isGatewayWatchModeAvailable(): boolean {
   }
 }
 
-/**
- * Write (or overwrite) a shell wrapper at `<workspace>/bin/assistant` that
- * pre-injects the three instance-specific env vars before exec-ing the real
- * assistant binary from the app bundle.
- *
- * This lets developers invoke `<workspace>/bin/assistant <command>` directly
- * from the terminal without manually setting env vars.  Only created when a
- * compiled `assistant` binary is present adjacent to the CLI executable (i.e.
- * inside a desktop app bundle) — a no-op in source/watch mode.
- *
- * The wrapper is idempotent: safe to call on every daemon wake.
- */
-function writeAssistantWrapper(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): void {
-  if (platform() === "win32") {
-    return;
-  }
-  const assistantBinary = compiledSibling("assistant");
-  if (!isCompiledCli() || !existsSync(assistantBinary)) return;
-
-  const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
-  const gatewaySecurityDir = join(
-    getLocalInstanceDir(entry),
-    "gateway-security",
-  );
-  const cesSecurityDir = join(getLocalInstanceDir(entry), "ces-security");
-  const cesDataDir = join(getLocalInstanceDir(entry), "ces-data");
-  const binDir = join(workspaceDir, "bin");
-
-  mkdirSync(binDir, { recursive: true });
-  const wrapperPath = join(binDir, "assistant");
-  writeFileSync(
-    wrapperPath,
-    [
-      "#!/bin/sh",
-      `export CADET_WORKSPACE_DIR="${workspaceDir}"`,
-      `export CREDENTIAL_SECURITY_DIR="${cesSecurityDir}"`,
-      `export GATEWAY_SECURITY_DIR="${gatewaySecurityDir}"`,
-      `export CES_DATA_DIR="${cesDataDir}"`,
-      `exec "${assistantBinary}" "$@"`,
-      "",
-    ].join("\n"),
-    { mode: 0o755 },
-  );
-}
-
 // NOTE: startLocalDaemon() is the CLI-side daemon lifecycle manager.
 // It should eventually converge with
 // assistant/src/daemon/daemon-control.ts::startDaemon which is the
@@ -1588,7 +1542,6 @@ export async function startLocalDaemon(
   entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): Promise<void> {
-  writeAssistantWrapper(entry);
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
 
@@ -2706,4 +2659,23 @@ export async function wakeLocal(
     );
   }
   console.log("Wake complete.");
+}
+
+/**
+ * Mint (and approve) a remote-web pairing challenge on the local gateway —
+ * the `gateway pairing mint` the pair command wraps, run through the
+ * gateway CLI invocation. Process execution is the local-presence proof.
+ * Returns the command's stdout; its last line is the challenge JSON.
+ */
+export async function localPair(entry: LocalAssistant): Promise<string> {
+  const invocation = gatewayCliInvocation(entry);
+  return execOutput(
+    invocation.command,
+    [...invocation.args, "pairing", "mint"],
+    {
+      cwd: invocation.cwd,
+      env: invocation.env,
+      timeoutMs: 30_000,
+    },
+  );
 }

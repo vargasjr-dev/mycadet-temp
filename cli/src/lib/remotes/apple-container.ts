@@ -7,6 +7,7 @@ import { createConnection } from "net";
 import { existsSync } from "fs";
 
 import {
+  type AppleContainerAssistant,
   isAppleContainerEntry,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
@@ -27,6 +28,37 @@ export async function execAppleContainer(
     );
     process.exit(1);
   }
+  return runAppleContainerExec(entry, command, service, (data) =>
+    process.stdout.write(data),
+  );
+}
+
+/**
+ * Mint (and approve) a remote-web pairing challenge inside the assistant's
+ * gateway service — the apple-container topology's `gateway pairing mint`,
+ * run through the management socket's exec with the output CAPTURED (the
+ * caller needs the challenge JSON, not a terminal stream). Returns the
+ * command's stdout; its last line is the challenge JSON.
+ */
+export async function appleContainerPair(
+  entry: AppleContainerAssistant,
+): Promise<string> {
+  const chunks: Buffer[] = [];
+  await runAppleContainerExec(
+    entry,
+    ["bun", "run", "src/cli/index.ts", "pairing", "mint"],
+    "cadet-gateway",
+    (data) => chunks.push(data),
+  );
+  return Buffer.concat(chunks).toString("utf-8");
+}
+
+async function runAppleContainerExec(
+  entry: AppleContainerAssistant,
+  command: string[],
+  service: string,
+  onOutput: (data: Buffer) => void,
+): Promise<void> {
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(
@@ -106,13 +138,13 @@ export async function execAppleContainer(
 
         // Write any bytes that arrived after the handshake newline.
         if (remainder.length > 0) {
-          process.stdout.write(remainder);
+          onOutput(remainder);
         }
         return;
       }
 
-      // Stream command output to stdout.
-      process.stdout.write(data);
+      // Stream command output to the sink.
+      onOutput(data);
     });
 
     socket.on("end", () => {

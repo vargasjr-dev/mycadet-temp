@@ -6,7 +6,6 @@ import type { Plugin, Connect, ViteDevServer } from "vite";
 
 import {
   resolveLocalConfigFromEnv,
-  resolveDevCliInvocation,
   isLoopbackAddr,
   headerHostIsLoopback,
   originIsAllowed,
@@ -14,9 +13,6 @@ import {
   readLockfile,
   servedConfigFromLockfile,
   stripSensitiveFields,
-  renameLockfileAssistantIfPresent,
-  stampLockfileAssistantOnboardedIfPresent,
-  replaceCloudAssistants,
   runDevicesList,
   runDevicesRevoke,
   runRetire,
@@ -30,7 +26,6 @@ import {
   resolveAssistantRetireProxyDecision,
   readGatewayTargets,
   authorizePairedForwardHeaders,
-  type CliInvocation,
 } from "@mycadet/local-mode";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
@@ -79,7 +74,6 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
 
 export function localModePlugin(env: Record<string, string>): Plugin {
   const config = resolveLocalConfigFromEnv();
-  const baseDir = path.resolve(import.meta.dirname, "..", "..");
 
   const configJson = JSON.stringify({
     cloudUrl: config.cloudUrl,
@@ -102,8 +96,8 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(lockfileMiddleware());
       server.middlewares.use(unpairMiddleware());
       server.middlewares.use(pairingMiddleware());
-      server.middlewares.use(devicesMiddleware(baseDir));
-      server.middlewares.use(gatewayProxyMiddleware(baseDir, env));
+      server.middlewares.use(devicesMiddleware());
+      server.middlewares.use(gatewayProxyMiddleware(env));
       server.middlewares.use(accountSpaFallback(server));
     },
   };
@@ -282,57 +276,13 @@ function lockfileMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
+    // Read-only: the local-mode commands own lockfile writes now (the
+    // desktop bridge's write verbs are gone with them).
     if (req.method === "GET") {
       res.setHeader("Content-Type", "application/json");
       const lockfile = readLockfile();
       stripSensitiveFields(lockfile);
       res.end(JSON.stringify(lockfile));
-    } else if (req.method === "POST") {
-      const chunks: Buffer[] = [];
-      req.on("data", (chunk: Buffer) => chunks.push(chunk));
-      req.on("end", () => {
-        let body: Record<string, unknown>;
-        try {
-          body = JSON.parse(Buffer.concat(chunks).toString()) as Record<
-            string,
-            unknown
-          >;
-        } catch {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
-          return;
-        }
-
-        let result;
-        if (body.syncPlatform && Array.isArray(body.cloudAssistants)) {
-          result = replaceCloudAssistants(
-            body.cloudAssistants as Array<Record<string, unknown>>,
-            body.cloudOrganizationId as string | undefined,
-          );
-        } else if (body.rename && typeof body.rename === "object") {
-          const rename = body.rename as Record<string, unknown>;
-          result = renameLockfileAssistantIfPresent(
-            rename.assistantId as string,
-            rename.name as string,
-          );
-        } else if (body.onboarded && typeof body.onboarded === "object") {
-          const onboarded = body.onboarded as Record<string, unknown>;
-          result = stampLockfileAssistantOnboardedIfPresent(
-            onboarded.assistantId as string,
-            onboarded.onboardedAt as string,
-          );
-        } else {
-          result = {
-            ok: false,
-            status: 400,
-            error: "Unknown lockfile mutation",
-          };
-        }
-        res.statusCode = result.ok ? 200 : result.status;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(result));
-      });
     } else {
       res.statusCode = 405;
       res.end();
@@ -485,7 +435,7 @@ function pairingMiddleware(): Connect.NextHandleFunction {
 // Paired-device management via the CLI (`cadet devices … --json`). POST-only
 // (the renderer's postLocalCommand always POSTs); run-helper results respond
 // 200 with `ok` discriminating success so all hosts share one wire shape.
-function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
+function devicesMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const isRevoke = requestPathname(req) === "/v1/devices/revoke";
     if (!isRevoke && requestPathname(req) !== "/v1/devices") {
@@ -524,26 +474,13 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
         revokeHash = hashedDeviceId;
       }
 
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
+      if (revokeHash !== null) {
+        void runDevicesRevoke(assistantId, revokeHash).then((result) => {
+          respondJson(res, 200, result);
         });
         return;
       }
-
-      if (revokeHash !== null) {
-        void runDevicesRevoke(invocation, assistantId, revokeHash).then(
-          (result) => {
-            respondJson(res, 200, result);
-          },
-        );
-        return;
-      }
-      void runDevicesList(invocation, assistantId).then((result) => {
+      void runDevicesList(assistantId).then((result) => {
         respondJson(res, 200, result);
       });
     });
@@ -551,7 +488,6 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
 }
 
 function gatewayProxyMiddleware(
-  baseDir: string,
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -569,16 +505,7 @@ function gatewayProxyMiddleware(
       if (rejectUnlessLocalEndpointRequest(req, res)) {
         return;
       }
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          detail: err instanceof Error ? err.message : String(err),
-        });
-        return;
-      }
-      runRetire(invocation, retireDecision.assistantId).then((result) => {
+      runRetire(retireDecision.assistantId).then((result) => {
         if (result.ok) {
           res.statusCode = 204;
           res.end();
@@ -623,10 +550,7 @@ function gatewayProxyMiddleware(
       // The trusted dev-server host owns the Authorization header: it
       // overwrites whatever the renderer sent with the bearer it mints
       // from the on-disk guardian token — the browser never holds one.
-      const lease = async () => {
-        const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-        return getGuardianAccessToken(decision.assistantId, invocation);
-      };
+      const lease = () => getGuardianAccessToken(decision.assistantId);
       const mint =
         decision.path !== "/auth/token"
           ? loopbackGatewayBearer(port, lease)
@@ -663,15 +587,6 @@ function gatewayProxyMiddleware(
       return;
     }
 
-    let invocation: CliInvocation;
-    try {
-      invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-    } catch (err) {
-      res.statusCode = 500;
-      res.end(err instanceof Error ? err.message : String(err));
-      return;
-    }
-
     const target = new URL(decision.target.runtimeUrl);
     const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers)) {
@@ -689,7 +604,7 @@ function gatewayProxyMiddleware(
     void authorizePairedForwardHeaders(
       decision.assistantId,
       headers,
-      (assistantId) => getGuardianAccessToken(assistantId, invocation),
+      getGuardianAccessToken,
     ).then((result) => {
       if (!result.ok) {
         res.statusCode = result.status;

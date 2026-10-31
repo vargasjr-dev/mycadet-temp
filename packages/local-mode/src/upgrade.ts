@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 const UPGRADE_TIMEOUT_MS = 20 * 60 * 1000;
 
@@ -62,11 +63,11 @@ function extractVersion(output: string): string | undefined {
  * (backup, process restart, health wait, rollback on failure); the host
  * bridge only starts it and returns the structured result to the renderer.
  */
-export function runUpgrade(
-  invocation: CliInvocation,
+export async function runUpgrade(
   assistantId: string,
   options?: UpgradeOptions,
 ): Promise<UpgradeResult> {
+  const invocation = await resolveCliInvocation();
   return new Promise((resolve) => {
     // Reject an untrusted `--version` at the host boundary before spawning the
     // CLI. `latest` (or the `--latest` flag) is always allowed; an explicit

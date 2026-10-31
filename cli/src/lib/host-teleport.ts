@@ -14,7 +14,7 @@ import {
   hatchDocker,
   retireDocker,
   startContainers,
-} from "./docker.js";
+} from "./remotes/docker.js";
 import { hatchLocal } from "./remotes/local.js";
 import { retireLocal } from "./retire-local.js";
 import { validateAssistantName } from "./retire-archive.js";

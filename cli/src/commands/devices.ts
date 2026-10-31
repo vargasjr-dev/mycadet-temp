@@ -37,7 +37,7 @@ import {
 } from "../lib/confirm-action.js";
 import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
-import { dockerResourceNames } from "../lib/docker.js";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 const dockerGatewayResponseSchema = z.object({

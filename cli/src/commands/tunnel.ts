@@ -5,10 +5,7 @@ import {
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
-import {
-  readRootProcesses,
-  resolveTargetAssistant,
-} from "../lib/assistant-config";
+import { readRootProcesses } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
 import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
@@ -420,10 +417,6 @@ export const tunnel = Object.assign(
 
     const baseTunnelOpts = {
       port: edge.port,
-      // The edge fronts the lockfile's active assistant; the tunnel record
-      // just carries its id. Re-resolution is safe post-edge: ensureAppServer
-      // already resolved the same entry (and fails loud when there is none).
-      assistantId: resolveTargetAssistant().assistantId,
     };
 
     await runProviderTunnel(provider, {

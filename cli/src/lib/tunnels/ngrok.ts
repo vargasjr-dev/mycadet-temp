@@ -594,11 +594,10 @@ export function pidListeningOnPort(port: number): number | null {
  */
 async function stopConfirmedNgrokAgent(
   stale: TunnelProcessRecord,
-  assistantId: string | undefined,
 ): Promise<TunnelProcessRecord | null> {
   try {
     const stopped = await stopOwnedTunnelAgent(
-      { record: stale, assistantId },
+      { record: stale },
       isNgrokProcess,
       "ngrok",
     );
@@ -773,8 +772,6 @@ export async function waitForNgrokUrl(
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** The assistant the lockfile record fronts (`assistantId`). */
-  assistantId?: string;
   /**
    * Reserved ngrok domain to bind. Persisted so wake restores reuse it.
    * When omitted, a previously saved domain is reused without being rewritten.
@@ -991,10 +988,7 @@ export async function runNgrokTunnel(
             "Stop the other ngrok tunnel and start a new one pointing at this installation? [Y/n] ",
           );
           if (confirmStopAnswer(answer)) {
-            const stopped = await stopConfirmedNgrokAgent(
-              stale!,
-              opts.assistantId,
-            );
+            const stopped = await stopConfirmedNgrokAgent(stale!);
             if (stopped) {
               console.log(
                 "Stopped the old ngrok agent. Retrying the tunnel...",

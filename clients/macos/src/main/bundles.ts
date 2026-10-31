@@ -17,7 +17,7 @@ import { resolveCliInvocation } from "./local-mode.client";
 
 export const installMacBundleWorkflow = (): void => {
   configureBundlePlatform({
-    ...createBundleHostProvider(resolveCliInvocation),
+    ...createBundleHostProvider(),
     bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     rendererBase: () => RENDERER_BASE_PROD,
     ipc: { handle, on },

@@ -9,7 +9,7 @@ import {
 } from "../lib/assistant-config.js";
 import { getDaemonPidPath, getLocalInstanceDir } from "../lib/remotes/local.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
+import { dockerResourceNames, sleepContainers } from "../lib/remotes/docker.js";
 import {
   drainAssistant,
   type DrainOutcome,

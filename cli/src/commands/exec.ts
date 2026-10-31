@@ -7,8 +7,8 @@ import { spawn } from "child_process";
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
-import { dockerResourceNames } from "../lib/docker";
-import type { ServiceName } from "../lib/docker";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
+import type { ServiceName } from "../lib/remotes/docker.js";
 import {
   execAppleContainer,
   sshAppleContainer,

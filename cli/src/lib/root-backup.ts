@@ -27,7 +27,7 @@ import {
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
-import { dockerResourceNames } from "./docker.js";
+import { dockerResourceNames } from "./remotes/docker.js";
 import { execOutput } from "./step-runner.js";
 import { isProcessAlive } from "./process.js";
 import { probePort } from "./port-probe.js";
@@ -262,6 +262,12 @@ export interface RootStorage {
   capture(target: string): Promise<void>;
   replace(source: string): Promise<void>;
   prepareRestore?(source: string): Promise<void>;
+  /**
+   * Refuse a backup target that would recurse into this topology's own
+   * state. The per-topology rule lives with the storage that knows where
+   * its state roots sit.
+   */
+  assertBackupTarget(output: string): void;
 }
 
 export class LocalRootStorage implements RootStorage {
@@ -276,6 +282,14 @@ export class LocalRootStorage implements RootStorage {
     this.localEntry = entry;
     this.root = resolve(getLocalInstanceDir(entry));
   }
+  assertBackupTarget(output: string): void {
+    for (const root of STATE_ROOTS) {
+      const path = resolve(getLocalInstanceDir(this.localEntry), root);
+      if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
+        throw new Error("Save backups outside the persistent service roots.");
+    }
+  }
+
   async running(): Promise<boolean> {
     const running = new Set(
       [
@@ -516,6 +530,9 @@ export class DockerRootStorage implements RootStorage {
       "ces-data": names.cesContainer,
     };
   }
+  /** The docker state roots are volumes inside the containers — a host
+   * output path can never recurse into them. */
+  assertBackupTarget(_output: string): void {}
   async inspect(container: string): Promise<ContainerInspection> {
     const result = z
       .array(ContainerInspectionSchema)
@@ -782,18 +799,7 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (
-    entry.cloud !== "docker" &&
-    entry.cloud !== "cloud" &&
-    entry.cloud !== "custom" &&
-    entry.cloud !== "baseten"
-  ) {
-    for (const root of STATE_ROOTS) {
-      const path = resolve(getLocalInstanceDir(entry), root);
-      if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
-        throw new Error("Save backups outside the persistent service roots.");
-    }
-  }
+  ops.storage.assertBackupTarget(output);
   const stage = await mkdtemp(join(tmpdir(), "cadet-backup-"));
   await chmod(stage, 0o700);
   let running = false;

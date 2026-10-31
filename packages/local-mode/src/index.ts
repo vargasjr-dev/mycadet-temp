@@ -51,10 +51,7 @@ export {
 } from "./paths";
 export {
   readLockfile,
-  renameLockfileAssistantIfPresent,
-  stampLockfileAssistantOnboardedIfPresent,
   saveLockfileAssistant,
-  replaceCloudAssistants,
   isActiveAssistant,
 } from "./lockfile";
 export { servedConfigFromLockfile } from "./served-config";
@@ -82,6 +79,11 @@ export type {
   LockfileWriteResult,
 } from "./lockfile-contract";
 export type { LockfileAssistantPatch } from "./lockfile";
+export {
+  configureCliPaths,
+  resolveCliInvocation,
+  type CliPaths,
+} from "./cli-invocation";
 export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
 export { runRetire } from "./retire";

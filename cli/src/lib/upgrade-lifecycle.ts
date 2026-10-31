@@ -16,13 +16,13 @@ import {
   captureImageRefs,
   DOCKER_READY_TIMEOUT_MS,
   dockerResourceNames,
-  GATEWAY_INTERNAL_PORT,
   pullImage,
   startContainers,
   stopContainers,
   sleepContainers,
   wakeContainers,
-} from "./docker.js";
+} from "./remotes/docker.js";
+import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
 import { resolveDataDir } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";

@@ -345,10 +345,7 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -397,10 +394,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
     expect(logs).not.toContain("Tunneling the local assistant");
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "cloud-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("a docker assistant set active tunnels the edge port", async () => {
@@ -430,10 +424,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "docker-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("an active docker assistant tunnels on a bare invocation", async () => {
@@ -452,10 +443,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "docker-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("an active cloud assistant with no local entries still tunnels the edge", async () => {
@@ -475,10 +463,7 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "cloud-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
@@ -520,10 +505,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "apple-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("targets the edge port for cloudflare", async () => {
@@ -541,10 +523,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runCloudflareTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
@@ -567,10 +546,7 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
@@ -582,10 +558,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(logs).toContain("Using the default provider: ngrok");
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
@@ -606,10 +579,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("ngrok fronts the edge with the lockfile's active assistant", async () => {
@@ -627,10 +597,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("missing nginx aborts before any provider spawn", async () => {
@@ -727,7 +694,6 @@ describe("app server targeting", () => {
 
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
-      assistantId: "assistant-1",
       domain: "foo.ngrok.app",
     });
   });
@@ -778,10 +744,7 @@ describe("app server targeting", () => {
     // The saved domain lives in the XDG ngrok config, not the workspace config.
     expect(realNgrok.loadNgrokDomain()).toBeNull();
     // The run proceeds domainless: no `domain` key reaches runNgrokTunnel.
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
   });
 
   test("rejects --clear-domain combined with --domain", async () => {
@@ -1187,7 +1150,6 @@ describe("ngrok --domain spawn args", () => {
     await withLockfileFor("adopt-assistant", () =>
       realNgrok.runNgrokTunnel({
         port: 7830,
-        assistantId: "adopt-assistant",
       }),
     );
 
@@ -1215,7 +1177,6 @@ describe("ngrok --domain spawn args", () => {
     const run = withLockfileFor("spawn-assistant", () =>
       realNgrok.runNgrokTunnel({
         port: 7830,
-        assistantId: "spawn-assistant",
       }),
     );
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
@@ -1606,10 +1567,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     // Step 2: the tunnel re-established at the app server's port, never the
     // gateway's fallback port.
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-    });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     // Step 3: the url rode to every locally-reachable assistant's gateway,
     // and the lockfile record carries it again.
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
@@ -1756,10 +1714,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
 
     // The lockfile's tunnel record published a URL, so the recorded tailnet
     // tunnel is re-established and the URL is saved again.
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: entry.assistantId,
-    });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
       TAILNET_URL,
       entry.assistantId,

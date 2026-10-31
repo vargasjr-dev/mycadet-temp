@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { configureCliPaths } from "../cli-invocation";
+
 import {
   getGuardianAccessToken,
   formatGuardianRefreshCliFailure,
@@ -17,7 +19,7 @@ import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairi
 import type { CliInvocation } from "../util";
 
 // An invocation that would fail loudly if any tested branch spawned the CLI.
-const invocation: CliInvocation = { command: "false", baseArgs: [] };
+configureCliPaths({ devEntry: () => "false" });
 
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60_000).toISOString();
@@ -57,14 +59,14 @@ describe("getGuardianAccessToken", () => {
   test("returns the stored token while the access token is fresh", async () => {
     saveGuardianToken("asst-1", makeTokenData({}));
 
-    expect(await getGuardianAccessToken("asst-1", invocation)).toEqual({
+    expect(await getGuardianAccessToken("asst-1")).toEqual({
       ok: true,
       accessToken: "access",
     });
   });
 
   test("returns a structured 404 when no token file exists", async () => {
-    expect(await getGuardianAccessToken("missing", invocation)).toEqual({
+    expect(await getGuardianAccessToken("missing")).toEqual({
       ok: false,
       status: 404,
       error: "Guardian token not found",
@@ -80,7 +82,7 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken("asst-1", invocation);
+    const result = await getGuardianAccessToken("asst-1");
 
     expect(result).toEqual({
       ok: false,
@@ -99,7 +101,7 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken("asst-1", invocation);
+    const result = await getGuardianAccessToken("asst-1");
 
     expect(result).toEqual({
       ok: false,
@@ -221,7 +223,7 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
     });
     saveBasetenSandboxToken("asst_bx", "sbx-token-1");
 
-    expect(await getGuardianAccessToken("asst_bx", invocation)).toEqual({
+    expect(await getGuardianAccessToken("asst_bx")).toEqual({
       ok: true,
       accessToken: "sbx-token-1",
     });
@@ -235,7 +237,7 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
       port: 7830,
     });
 
-    expect(await getGuardianAccessToken("asst_bx", invocation)).toMatchObject({
+    expect(await getGuardianAccessToken("asst_bx")).toMatchObject({
       ok: false,
       status: 404,
     });
@@ -246,9 +248,10 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
 
     // No token file for the local entry: the guardian path answers with the
     // structured 404 (the baseten branch did not intercept).
-    expect(
-      await getGuardianAccessToken("asst_local", invocation),
-    ).toMatchObject({ ok: false, status: 404 });
+    expect(await getGuardianAccessToken("asst_local")).toMatchObject({
+      ok: false,
+      status: 404,
+    });
   });
 
   test("the token file is saved 0600 under the assistants dir", () => {

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import * as backups from "../lib/backup-ops.js";
-import * as docker from "../lib/docker.js";
+import * as docker from "../lib/remotes/docker.js";
 import * as lifecycle from "../lib/upgrade-lifecycle.js";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";

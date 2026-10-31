@@ -28,22 +28,21 @@ const getStoredPairedGuardianAccessToken = mock(
 const runRetireMock = mock(async (): Promise<RetireResult> => ({ ok: true }));
 type RetireResult = { ok: true } | { ok: false; status: number; error: string };
 let localTokenResult: TokenResult = { ok: true, accessToken: "local-guardian" };
-const getLocalGuardianAccessToken = mock(
+const getGuardianAccessToken = mock(
   async (_assistantId: string): Promise<TokenResult> => localTokenResult,
 );
 mock.module("@mycadet/local-mode", () => ({
   ...localModeShared,
+  getGuardianAccessToken,
   getPairedGuardianAccessToken: getStoredPairedGuardianAccessToken,
   runRetire: runRetireMock,
 }));
 mock.module("./local-mode", () => ({
   // The paired seam resolves its invocation through the desktop runtime;
-  // the shared token reader above is mocked, so a stand-in invocation is fine.
+  // the shared token reader above is mocked.
   requireRuntime: () => ({
-    cli: { resolveInvocation: async () => ({ env: {} }) },
     session: { getToken: () => "session-token" },
   }),
-  getLocalGuardianAccessToken,
 }));
 
 const { forwardGatewayRequest } = await import("./gateway-forward");
@@ -101,7 +100,7 @@ beforeEach(() => {
   tokenResult = { ok: true, accessToken: "host-token" };
   localTokenResult = { ok: true, accessToken: "local-guardian" };
   getStoredPairedGuardianAccessToken.mockClear();
-  getLocalGuardianAccessToken.mockClear();
+  getGuardianAccessToken.mockClear();
   runRetireMock.mockClear();
   runRetireMock.mockImplementation(
     async (): Promise<RetireResult> => ({
@@ -123,7 +122,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     ).toBeNull();
     expect(calls).toHaveLength(0);
     expect(getStoredPairedGuardianAccessToken).not.toHaveBeenCalled();
-    expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("rejects an id that is not active in the lockfile before fetching", async () => {
@@ -207,7 +206,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
       fetcher,
     );
 
-    expect(getLocalGuardianAccessToken).toHaveBeenCalledWith("abc");
+    expect(getGuardianAccessToken).toHaveBeenCalledWith("abc");
     const forwards = calls.filter(
       ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
     );
@@ -252,7 +251,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     expect(new URL(url).pathname).toBe("/auth/token");
     const headers = new Headers(init!.headers);
     expect(headers.get("authorization")).toBeNull();
-    expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("sets loopback Origin when renderer Origin is app://mycadet.ai", async () => {

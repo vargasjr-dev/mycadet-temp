@@ -7,7 +7,7 @@
  */
 import { readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, win32 } from "node:path";
+import { basename, dirname, join, win32 } from "node:path";
 
 import {
   pathListDelimiter,
@@ -50,6 +50,12 @@ export const SAFE_ENV_VARS = [
   "ASSISTANT_IPC_SOCKET_DIR",
   "GATEWAY_IPC_SOCKET_DIR",
   "GATEWAY_SECURITY_DIR",
+  // The instance's CES-private directory paths (not secret values — the same
+  // class as GATEWAY_SECURITY_DIR). A bash-tool child invoking the installed
+  // `assistant` command resolves this instance's security dirs from these
+  // instead of its cwd fallbacks.
+  "CREDENTIAL_SECURITY_DIR",
+  "CES_DATA_DIR",
   "CADET_CLOUD_URL",
   "CADET_ASSISTANT_PLATFORM_URL",
   "CADET_DOCS_BASE_URL",
@@ -368,25 +374,37 @@ export function buildSanitizedEnv(
       hostPlatform,
     );
   }
-  prependWindowsAssistantDir(
-    env,
-    hostPlatform,
-    options?.execPath ?? process.execPath,
-  );
+  prependAssistantDir(env, hostPlatform, options?.execPath ?? process.execPath);
   return env;
 }
 
-function prependWindowsAssistantDir(
+/** Whether `execPath` is a bun runtime rather than a compiled product binary. */
+function isBunRuntime(execPath: string): boolean {
+  const base = basename(execPath);
+  return base === "bun" || base === "bunx" || base.startsWith("bun-");
+}
+
+/**
+ * When a compiled `assistant` ships beside this daemon binary (the app
+ * bundle's layout), put that directory on the bash tool's PATH: tool-spawned
+ * children invoke `assistant …` directly, and the sanitized env above already
+ * carries the instance env the binary needs. A bun runtime has no sibling
+ * product binary — dev and npm-style installs reach `assistant` through the
+ * PATH command the daemon installs at startup.
+ */
+function prependAssistantDir(
   env: Record<string, string>,
   hostPlatform: NodeJS.Platform,
   execPath: string,
 ): void {
-  if (hostPlatform !== "win32") {
+  if (isBunRuntime(execPath)) {
     return;
   }
+  const siblingBinary =
+    hostPlatform === "win32" ? "assistant.exe" : "assistant";
   const execDir = dirname(execPath);
   try {
-    if (!statSync(join(execDir, "assistant.exe")).isFile()) {
+    if (!statSync(join(execDir, siblingBinary)).isFile()) {
       return;
     }
   } catch {

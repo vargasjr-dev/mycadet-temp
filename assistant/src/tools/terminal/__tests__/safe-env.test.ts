@@ -151,6 +151,35 @@ describe("safe-env Windows forwarding", () => {
     }
   });
 
+  test("prepends the posix assistant binary directory when it sits beside the runtime", () => {
+    const dir = mkdtempSync(join(tmpdir(), "posix-assistant-"));
+    writeFileSync(join(dir, "assistant"), "");
+    try {
+      const env = buildSanitizedEnv(
+        "linux",
+        { PATH: "/usr/bin:/bin" },
+        { execPath: join(dir, "cadet-daemon") },
+      );
+      expect(env.PATH).toBe(`${dir}:/usr/bin:/bin`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("does not prepend a posix assistant path when the sibling binary is absent", () => {
+    const dir = mkdtempSync(join(tmpdir(), "posix-no-assistant-"));
+    try {
+      const env = buildSanitizedEnv(
+        "linux",
+        { PATH: "/usr/bin:/bin" },
+        { execPath: join(dir, "cadet-daemon") },
+      );
+      expect(env.PATH).toBe("/usr/bin:/bin");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("matches Windows environment names case-insensitively", () => {
     const dir = mkdtempSync(join(tmpdir(), "win-case-insensitive-"));
     try {

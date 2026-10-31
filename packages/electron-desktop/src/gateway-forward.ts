@@ -1,5 +1,6 @@
 import {
   authorizePairedForwardHeaders,
+  getGuardianAccessToken,
   loopbackGatewayBearer,
   readGatewayTargets,
   readLockfile,
@@ -18,7 +19,7 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import { getLocalGuardianAccessToken, requireRuntime } from "./local-mode";
+import { requireRuntime } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -189,13 +190,9 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
 async function retireLocalAssistantHostside(
   assistantId: string,
 ): Promise<Response> {
-  const result = await runRetire(
-    () => requireRuntime().cli.resolveInvocation(),
-    assistantId,
-    {
-      cloudToken: requireRuntime().session.getToken() ?? undefined,
-    },
-  );
+  const result = await runRetire(assistantId, {
+    cloudToken: requireRuntime().session.getToken() ?? undefined,
+  });
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
@@ -225,7 +222,7 @@ export const forwardGatewayRequest = async (
     // The trusted main-process proxy reads the paired bearer through the
     // shared seam, resolving the invocation here (the old electron-local
     // wrapper lived only to do this).
-    getLocalGuardianAccessToken,
+    getGuardianAccessToken,
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };
@@ -299,7 +296,7 @@ async function executeLoopbackForward(
   fetcher: GatewayForwardFetcher,
 ): Promise<Response> {
   const lease: GuardianTokenLease = () =>
-    getLocalGuardianAccessToken(plan.assistantId);
+    getGuardianAccessToken(plan.assistantId);
   // The mint dials the same network seam as the forward, so a recorded or
   // stubbed fetcher sees both hops.
   const mintFetcher = (input: RequestInfo | URL, init?: RequestInit) =>

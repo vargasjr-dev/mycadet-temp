@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 // Fast loopback HTTP calls; well under the lifecycle-op timeouts.
 const DEVICES_TIMEOUT_MS = 30_000;
@@ -157,11 +158,9 @@ function parseDeviceRecords(stdout: string): DeviceRecord[] | null {
 }
 
 export async function runDevicesList(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
 ): Promise<DevicesListResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+  const resolved = await resolveCliInvocation();
   const result = await runDevicesCli(resolved, [
     "devices",
     assistantId,
@@ -182,12 +181,10 @@ export async function runDevicesList(
 }
 
 export async function runDevicesRevoke(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   hashedDeviceId: string,
 ): Promise<DevicesRevokeResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+  const resolved = await resolveCliInvocation();
   const result = await runDevicesCli(resolved, [
     "devices",
     "revoke",

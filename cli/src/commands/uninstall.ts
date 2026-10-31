@@ -9,7 +9,7 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
-import { retireDocker } from "../lib/docker.js";
+import { retireDocker } from "../lib/remotes/docker.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
 import {

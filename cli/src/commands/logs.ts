@@ -10,7 +10,7 @@ import {
   extractHostFromEntry,
   resolveAssistant,
 } from "../lib/assistant-config";
-import { dockerResourceNames } from "../lib/docker";
+import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import { execOutput } from "../lib/step-runner";
 

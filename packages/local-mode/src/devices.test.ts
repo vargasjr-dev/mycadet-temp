@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 
-import type { CliInvocation } from "./util";
+import { configureCliPaths } from "./cli-invocation";
 import {
   FakeChild,
   mockChildProcessSpawn,
@@ -36,11 +36,13 @@ afterEach(() => {
   spawnMock.mockClear();
 });
 
-const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
+configureCliPaths({ devEntry: () => "cli" });
 
 describe("runDevicesList", () => {
   test("spawns the CLI devices command and parses the JSON document", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from(
@@ -83,7 +85,9 @@ describe("runDevicesList", () => {
   });
 
   test("tolerates null and non-numeric timestamps", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from(
@@ -118,7 +122,9 @@ describe("runDevicesList", () => {
   });
 
   test("non-string pairingUserAgent and clientReportedName parse to null without failing the record", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from(
@@ -174,7 +180,9 @@ describe("runDevicesList", () => {
   });
 
   test("passes isCurrentHost through only when literally true", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from(
@@ -223,7 +231,9 @@ describe("runDevicesList", () => {
   });
 
   test("an empty device list parses to no records", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit("data", Buffer.from('{ "devices": [] }'));
     lastChild.emit("close", 0);
 
@@ -231,7 +241,9 @@ describe("runDevicesList", () => {
   });
 
   test("malformed stdout resolves to a failure with a snippet", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit("data", Buffer.from("not json"));
     lastChild.emit("close", 0);
 
@@ -242,7 +254,9 @@ describe("runDevicesList", () => {
   });
 
   test("a record missing hashedDeviceId resolves to a failure", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from(JSON.stringify({ devices: [{ platform: "ios" }] })),
@@ -259,7 +273,9 @@ describe("runDevicesList", () => {
   });
 
   test("a non-zero exit resolves to a failure carrying stderr", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit("data", Buffer.from("devices failed"));
     lastChild.emit("close", 1);
 
@@ -270,7 +286,9 @@ describe("runDevicesList", () => {
   });
 
   test("a spawn error resolves to a failure", async () => {
-    const pending = runDevicesList(invocation, "asst-42");
+    const pending = runDevicesList("asst-42");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("error", new Error("ENOENT"));
 
     expect(await pending).toEqual({
@@ -282,7 +300,9 @@ describe("runDevicesList", () => {
 
 describe("runDevicesRevoke", () => {
   test("spawns the CLI revoke command and succeeds on exit 0", async () => {
-    const pending = runDevicesRevoke(invocation, "asst-42", "hash-a");
+    const pending = runDevicesRevoke("asst-42", "hash-a");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stdout.emit(
       "data",
       Buffer.from('{ "ok": true, "hashedDeviceId": "hash-a" }'),
@@ -307,7 +327,9 @@ describe("runDevicesRevoke", () => {
   });
 
   test("a non-zero exit resolves to a failure carrying stderr", async () => {
-    const pending = runDevicesRevoke(invocation, "asst-42", "hash-a");
+    const pending = runDevicesRevoke("asst-42", "hash-a");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit("data", Buffer.from("revoke failed"));
     lastChild.emit("close", 1);
 
@@ -318,7 +340,9 @@ describe("runDevicesRevoke", () => {
   });
 
   test("a spawn error resolves to a failure", async () => {
-    const pending = runDevicesRevoke(invocation, "asst-42", "hash-a");
+    const pending = runDevicesRevoke("asst-42", "hash-a");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.emit("error", new Error("EACCES"));
 
     expect(await pending).toEqual({
@@ -328,7 +352,9 @@ describe("runDevicesRevoke", () => {
   });
 
   test("multi-line stderr with a trailing Error: line surfaces just that message", async () => {
-    const pending = runDevicesRevoke(invocation, "asst-42", "hash-a");
+    const pending = runDevicesRevoke("asst-42", "hash-a");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit(
       "data",
       Buffer.from(
@@ -351,7 +377,9 @@ describe("runDevicesRevoke", () => {
   });
 
   test("stderr without an Error: line falls back to the whole stderr", async () => {
-    const pending = runDevicesRevoke(invocation, "asst-42", "hash-a");
+    const pending = runDevicesRevoke("asst-42", "hash-a");
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
     lastChild.stderr.emit(
       "data",
       Buffer.from("Device to revoke:\n  Platform: ios\n"),

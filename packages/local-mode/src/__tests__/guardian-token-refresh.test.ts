@@ -11,7 +11,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { CliInvocation } from "../util";
+import { configureCliPaths } from "../cli-invocation";
 import type { GuardianTokenData } from "../guardian-token";
 import { FakeChild, mockChildProcessSpawn } from "./helpers/child-process-mock";
 
@@ -39,7 +39,7 @@ afterEach(() => {
   spawnMock.mockClear();
 });
 
-const invocation: CliInvocation = { command: "bun", baseArgs: ["run", "cli"] };
+configureCliPaths({ devEntry: () => "cli" });
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60_000).toISOString();
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -72,7 +72,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 503 is an unreachable gateway, not a spent token", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation);
+    const pending = getGuardianAccessToken("asst-1");
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -90,7 +90,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 401 is a spent credential", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation);
+    const pending = getGuardianAccessToken("asst-1");
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -108,7 +108,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 403 is a local confidentiality refusal, not a spent credential", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation);
+    const pending = getGuardianAccessToken("asst-1");
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -126,7 +126,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("an unlabeled non-zero CLI exit is a 503, not a 401", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation);
+    const pending = getGuardianAccessToken("asst-1");
     await tick();
     lastChild.stderr.emit(
       "data",
