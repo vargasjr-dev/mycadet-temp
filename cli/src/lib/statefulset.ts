@@ -268,7 +268,7 @@ export interface BuildServiceRunArgsOpts extends DockerRunSecrets {
    * same host don't collide on a fixed port bind. Unused when
    * `netnsContainer` is set (no host ports are published in that mode).
    */
-  assistantPort: number;
+  assistantPort?: number;
   imageTags: Record<ServiceName, string>;
   instanceName: string;
   res: DockerResourceNames;
@@ -361,7 +361,7 @@ export function buildServiceRunArgs(
 ): Record<ServiceName, () => string[]> {
   const {
     gatewayPort,
-    assistantPort,
+    assistantPort = ASSISTANT_INTERNAL_PORT,
     imageTags,
     instanceName,
     res,

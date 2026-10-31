@@ -20,7 +20,6 @@ import {
   DOCKER_READY_TIMEOUT_MS,
   dockerResourceNames,
   GATEWAY_INTERNAL_PORT,
-  ASSISTANT_INTERNAL_PORT,
   pullImage,
   startContainers,
   stopContainers,
@@ -704,10 +703,6 @@ export async function performDockerRollback(
     // use default
   }
 
-  // Recover the assistant host port from the entry, fall back to default.
-  const assistantPort =
-    entry.containerInfo?.assistantPort ?? ASSISTANT_INTERNAL_PORT;
-
   // Broadcast SSE "starting" event
   console.log("📢 Notifying connected clients...");
   await broadcastUpgradeEvent(
@@ -771,7 +766,6 @@ export async function performDockerRollback(
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
-        assistantPort,
         imageTags: targetImageTags,
         instanceName,
         res,
@@ -801,7 +795,6 @@ export async function performDockerRollback(
         assistantImage: targetImageTags.assistant,
         gatewayImage: targetImageTags.gateway,
         cesImage: targetImageTags["credential-executor"],
-        assistantPort,
       },
     };
     saveLockfileAssistant(updatedEntry);
@@ -879,7 +872,6 @@ export async function performDockerRollback(
             extraAssistantEnv,
             extraGatewayEnv,
             gatewayPort,
-            assistantPort,
             imageTags: currentImageRefs,
             instanceName,
             res,
@@ -902,7 +894,6 @@ export async function performDockerRollback(
               extraAssistantEnv,
               extraGatewayEnv,
               gatewayPort,
-              assistantPort,
               imageTags: currentImageRefs,
               instanceName,
               res,
@@ -953,7 +944,6 @@ export async function performDockerRollback(
               cesImage:
                 entry.containerInfo?.cesImage ??
                 currentImageRefs["credential-executor"],
-              assistantPort,
             },
           };
           saveLockfileAssistant(revertedEntry);

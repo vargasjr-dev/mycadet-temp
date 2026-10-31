@@ -384,8 +384,7 @@ async function dockerReplacementOptions(
   );
   const gatewayUrl = getGatewayUrl(entry);
   const gatewayPort = Number(new URL(gatewayUrl).port);
-  const assistantPort = entry.containerInfo?.assistantPort;
-  if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1 || !assistantPort) {
+  if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1) {
     throw new Error(
       "Docker target is missing its published ports. Use a newly hatched target.",
     );
@@ -393,7 +392,6 @@ async function dockerReplacementOptions(
   return {
     ...replay,
     gatewayPort,
-    assistantPort,
     imageTags: {
       assistant: states.get(res.assistantContainer)!.Image,
       gateway: states.get(res.gatewayContainer)!.Image,

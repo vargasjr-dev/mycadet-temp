@@ -423,27 +423,16 @@ export async function allocateLocalPlacement(
   const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
-  // Collect ports already assigned to other local instances in the lockfile.
-  const reservedPorts: number[] = [];
-  for (const recorded of loadAllAssistants()) {
-    if (recorded.cloud !== "local") continue;
-    if (recorded.daemonPort !== undefined)
-      reservedPorts.push(recorded.daemonPort);
-    if (recorded.port !== undefined) reservedPorts.push(recorded.port);
-    if (recorded.cesPort !== undefined) reservedPorts.push(recorded.cesPort);
-  }
-
+  // The probe is the source of truth — anything actually listening claims
+  // its port, whether that listener is another assistant or not. Only this
+  // allocation's own three ports need excluding from each other.
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
   const basePorts = getDefaultPorts();
-  const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
-  const gatewayPort = await findAvailablePort(basePorts.gateway, [
-    ...reservedPorts,
-    daemonPort,
-  ]);
+  const daemonPort = await findAvailablePort(basePorts.daemon);
+  const gatewayPort = await findAvailablePort(basePorts.gateway, [daemonPort]);
   const cesPort = await findAvailablePort(basePorts.ces, [
-    ...reservedPorts,
     daemonPort,
     gatewayPort,
   ]);

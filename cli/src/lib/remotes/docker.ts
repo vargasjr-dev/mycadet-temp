@@ -12,7 +12,6 @@ import {
 } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
-  ASSISTANT_INTERNAL_PORT,
   captureImageRefs,
   dockerResourceNames,
   GATEWAY_INTERNAL_PORT,
@@ -209,8 +208,6 @@ export async function upgradeDocker(
   }
 
   // Recover the assistant host port from the entry, fall back to default.
-  const assistantPort =
-    entry.containerInfo?.assistantPort ?? ASSISTANT_INTERNAL_PORT;
 
   // Capture complete persistent roots before replacing any services.
   await broadcastUpgradeEvent(
@@ -252,7 +249,6 @@ export async function upgradeDocker(
       extraAssistantEnv,
       extraGatewayEnv,
       gatewayPort,
-      assistantPort,
       imageTags,
       instanceName,
       res,
@@ -271,7 +267,6 @@ export async function upgradeDocker(
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
         cesImage: imageTags["credential-executor"],
-        assistantPort,
       },
     };
     saveLockfileAssistant(updatedEntry);
@@ -352,7 +347,6 @@ export async function upgradeDocker(
             extraAssistantEnv,
             extraGatewayEnv,
             gatewayPort,
-            assistantPort,
             imageTags: previousImageRefs,
             instanceName,
             res,
@@ -375,7 +369,6 @@ export async function upgradeDocker(
               extraAssistantEnv,
               extraGatewayEnv,
               gatewayPort,
-              assistantPort,
               imageTags: previousImageRefs,
               instanceName,
               res,
@@ -431,7 +424,6 @@ export async function upgradeDocker(
               cesImage:
                 entry.containerInfo?.cesImage ??
                 previousImageRefs["credential-executor"],
-              assistantPort,
             },
           };
           saveLockfileAssistant(rolledBackEntry);

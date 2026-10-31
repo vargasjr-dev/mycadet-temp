@@ -254,7 +254,6 @@ export const ContainerInfoSchema = z.object({
    * instead of re-allocating (which could grab a different port if another
    * process took it in the interim).
    */
-  assistantPort: z.number().optional(),
 });
 export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
 

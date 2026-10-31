@@ -23,7 +23,6 @@ const entry: LockfileAssistant = {
     assistantImage: "image-assistant",
     gatewayImage: "image-gateway",
     cesImage: "image-ces",
-    assistantPort: 7821,
   },
 };
 const names = dockerResourceNames(entry.assistantId);
