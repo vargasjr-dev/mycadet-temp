@@ -11,9 +11,7 @@ import {
 } from "fs";
 import { basename, dirname, join } from "path";
 
-import {
-  findAssistantByName,
-} from "../lib/assistant-config.js";
+import { findAssistantByName } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { LockfileAssistant } from "../lib/assistant-config.js";

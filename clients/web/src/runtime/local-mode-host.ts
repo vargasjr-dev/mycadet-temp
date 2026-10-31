@@ -52,8 +52,6 @@ import { isElectron } from "@/runtime/is-electron";
  * renderer, so the data-plane URL stays byte-identical everywhere.
  */
 
-
-
 export interface LocalHatchResult {
   ok: boolean;
   assistantId?: string;

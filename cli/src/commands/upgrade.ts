@@ -451,11 +451,9 @@ async function upgradeLocal(
     entry.runtimeInstallDir = originalRuntime.runtimeInstallDir;
     saveLockfileAssistant(entry);
     if (backupPath) {
-      const restored = await restoreBackup(
-        entry.assistantId,
-        backupPath,
-        { resume: false },
-      );
+      const restored = await restoreBackup(entry.assistantId, backupPath, {
+        resume: false,
+      });
       if (!restored)
         throw new Error(
           `Local recovery failed; services remain stopped. Backup: ${backupPath}`,

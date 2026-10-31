@@ -13,10 +13,7 @@ import {
   installBundleConfirmation,
 } from "./bundle-confirmation";
 import { unpackBundle, type BundleScanData } from "./bundle-manager";
-import {
-  getBundlePlatform,
-  type ActiveBundleGateway,
-} from "./bundle-platform";
+import { getBundlePlatform, type ActiveBundleGateway } from "./bundle-platform";
 import { openBundleWindow } from "./bundle-window";
 
 export type ActiveGateway = ActiveBundleGateway;

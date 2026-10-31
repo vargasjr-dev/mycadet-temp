@@ -329,4 +329,3 @@ test("legacy vbundle is rejected before touching destination containers", async 
   ).rejects.toThrow("vellum-to-cadet");
   expect(commands.calls).toHaveLength(0);
 });
-

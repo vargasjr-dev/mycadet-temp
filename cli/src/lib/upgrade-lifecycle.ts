@@ -1,8 +1,5 @@
 import { randomBytes } from "crypto";
-import {
-  getGatewayUrl,
-  isDockerEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";

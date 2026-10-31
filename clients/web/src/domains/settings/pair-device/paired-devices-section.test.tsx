@@ -10,7 +10,11 @@ import {
 } from "@testing-library/react";
 import { create } from "zustand";
 
-import type { LocalListDevicesResult, LocalPairedDeviceRecord, LocalRevokeDeviceResult } from "@/runtime/local-mode-host";
+import type {
+  LocalListDevicesResult,
+  LocalPairedDeviceRecord,
+  LocalRevokeDeviceResult,
+} from "@/runtime/local-mode-host";
 
 import { createTimerHarness } from "./pair-device-test-helpers";
 

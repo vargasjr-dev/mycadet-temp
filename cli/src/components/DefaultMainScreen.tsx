@@ -2358,11 +2358,13 @@ function ChatApp({
     <Box flexDirection="column" height={terminalRows}>
       <DefaultMainScreen
         entry={
-          lookup.status === "found" ? lookup.entry : {
-            assistantId,
-            cloud: "cloud",
-            name: liveAssistantName,
-          }
+          lookup.status === "found"
+            ? lookup.entry
+            : {
+                assistantId,
+                cloud: "cloud",
+                name: liveAssistantName,
+              }
         }
         runtimeUrl={runtimeUrl}
         healthStatus={healthStatus}

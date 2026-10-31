@@ -12,10 +12,7 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import {
-  makeEntry,
-  readLocalEntry,
-} from "./helpers/lockfile-entry.js";
+import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -194,7 +191,6 @@ describe("retireLocal — CES sibling stop", () => {
     );
     expect(cesStopCall).toBeDefined();
   });
-
 });
 
 test("uses a Windows-native archive process", () => {

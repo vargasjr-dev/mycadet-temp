@@ -25,10 +25,7 @@ import {
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import { LockfileAssistant } from "./assistant-config.js";
-import {
-  getDaemonPidPath,
-  getLocalInstanceDir,
-} from "./remotes/local.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";
@@ -39,11 +36,7 @@ import {
   waitForDaemonMigrationsReady,
 } from "./http-client.js";
 import { loadGuardianBootstrapSecret } from "./guardian-token.js";
-import {
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "./remotes/local.js";
+import { startCes, startGateway, startLocalDaemon } from "./remotes/local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -750,9 +743,7 @@ export async function withRootOperationLock<T>(
   await mkdir(parent, { recursive: true, mode: 0o700 });
   const lock = join(
     parent,
-    createHash("sha256")
-      .update(entry.assistantId)
-      .digest("hex"),
+    createHash("sha256").update(entry.assistantId).digest("hex"),
   );
   const owned = ownedOperationLocks.getStore();
   if (owned?.has(lock)) {

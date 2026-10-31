@@ -32,7 +32,12 @@ import {
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
 import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
-import type { LocalPairingFailure, LocalPairingPollResult, LocalPairingStartResult, LocalRetireResult } from "@/runtime/local-mode-host";
+import type {
+  LocalPairingFailure,
+  LocalPairingPollResult,
+  LocalPairingStartResult,
+  LocalRetireResult,
+} from "@/runtime/local-mode-host";
 
 // ---------------------------------------------------------------------------
 // Types

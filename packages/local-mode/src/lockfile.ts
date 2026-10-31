@@ -7,10 +7,7 @@ import {
   type Lockfile,
   type LockfileAssistant,
 } from "./lockfile-contract";
-import {
-  isCloudEntry,
-  LockfileAssistantSchema,
-} from "./lockfile-contract";
+import { isCloudEntry, LockfileAssistantSchema } from "./lockfile-contract";
 import { resolveLockfilePath } from "./config";
 import { z } from "zod";
 
@@ -220,7 +217,9 @@ export function saveLockfileAssistant(
         assistantId,
       });
     } else {
-      assistants.push(LockfileAssistantSchema.parse({ ...assistant, assistantId }));
+      assistants.push(
+        LockfileAssistantSchema.parse({ ...assistant, assistantId }),
+      );
     }
     lockfile.assistants = assistants;
     if (activeAssistant !== undefined) {

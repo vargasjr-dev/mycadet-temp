@@ -135,7 +135,6 @@ const defaultOps: HostTeleportOps = {
   },
 };
 
-
 function checkVersion(
   source: string | undefined,
   target: string | undefined,

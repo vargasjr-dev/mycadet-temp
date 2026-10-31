@@ -396,7 +396,11 @@ export async function upgradeDocker(
             );
             console.log(`📦 Restoring data from pre-upgrade backup...`);
             console.log(`   Source: ${backupPath}`);
-            const restored = await restoreBackup(entry.assistantId, backupPath, {});
+            const restored = await restoreBackup(
+              entry.assistantId,
+              backupPath,
+              {},
+            );
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {

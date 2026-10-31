@@ -19,8 +19,6 @@ import {
 } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 
-
-
 /** A directory (or file) scheduled for deletion, with what it holds. */
 interface DeleteTarget {
   path: string;

@@ -3,16 +3,10 @@ import { existsSync, mkdirSync, renameSync, writeFileSync } from "fs";
 import { basename, dirname, join, win32 } from "path";
 
 import { loadAllAssistants } from "./assistant-config.js";
-import {
-  getDaemonPidPath,
-  getLocalInstanceDir,
-} from "./remotes/local.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { LockfileAssistant } from "./assistant-config.js";
 import { stopIngressNginx } from "./servers/nginx.js";
-import {
-  DAEMON_STOP_TIMEOUT_MS,
-  stopProcessByPidFile,
-} from "./process.js";
+import { DAEMON_STOP_TIMEOUT_MS, stopProcessByPidFile } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
