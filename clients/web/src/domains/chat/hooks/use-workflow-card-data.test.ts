@@ -314,7 +314,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   afterEach(() => {
     cleanup();
     useWorkflowStore.getState().reset();
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     mock.restore();
   });
 
@@ -322,7 +322,9 @@ describe("useWorkflowCardData — hydration wiring", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+    });
 
     const { result } = renderHook(() => useWorkflowCardData("wf-absent"));
 
@@ -336,7 +338,9 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when an entry already exists", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+    });
     useWorkflowStore
       .getState()
       .startRun({ runId: "wf-present", timestamp: NOW });
@@ -353,7 +357,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when no assistant is active", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
 
     renderHook(() => useWorkflowCardData("wf-no-asst"));

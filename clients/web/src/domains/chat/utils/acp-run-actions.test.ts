@@ -42,11 +42,13 @@ beforeEach(() => {
   nextData = undefined;
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+  });
 });
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("stopAcpRun", () => {
@@ -106,7 +108,7 @@ describe("stopAcpRun", () => {
       parentConversationId: "conv-1",
       startedAt: 1,
     });
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
 
     await expect(stopAcpRun("acp-1")).rejects.toThrow("No active assistant");
 
@@ -141,7 +143,7 @@ describe("steerAcpRun", () => {
 
 describe("no active assistant", () => {
   test("throws before issuing a request", async () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     await expect(stopAcpRun("acp-1")).rejects.toThrow("No active assistant");
     expect(calls).toHaveLength(0);
   });

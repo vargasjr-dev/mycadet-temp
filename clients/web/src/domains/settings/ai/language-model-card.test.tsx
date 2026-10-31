@@ -28,7 +28,6 @@ let defaultProviderGetCalls = 0;
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
-  useResolvedAssistantId: () => "assistant-1",
 }));
 
 const actualSdk = await import("@/generated/daemon/sdk.gen");
@@ -167,5 +166,4 @@ describe("default-provider availability notice", () => {
     expect(result.baseElement.textContent).not.toContain("should never render");
     expect(defaultProviderGetCalls).toBe(0);
   });
-
 });

@@ -55,7 +55,7 @@ import {
   useViewerStore,
 } from "@/stores/viewer-store";
 import type { DisplayAttachment } from "@/types/attachment-types";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface ChatInfoPanelProps {
   payload: ChatInfoPayload;
@@ -71,7 +71,7 @@ export function ChatInfoPanel({
 }: ChatInfoPanelProps) {
   const { t } = useTranslation("chat");
   const { assistantId, conversationId } = payload;
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   const openDocument = useOpenDocumentFromChat(
     assistantId,
     useViewerStore.getState().closeChatInfo,

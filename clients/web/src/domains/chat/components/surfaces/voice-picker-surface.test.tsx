@@ -125,14 +125,10 @@ beforeAll(() => {
 
 const onActionCalls: unknown[][] = [];
 
-function renderSurface({
-  noAssistant = false,
-}: { noAssistant?: boolean } = {}) {
+function renderSurface() {
   useResolvedAssistantStore
     .getState()
-    .setAssistant(
-      noAssistant ? null : { cloud: "local", assistantId: ASSISTANT_ID },
-    );
+    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -297,13 +293,6 @@ describe("VoicePickerSurface", () => {
   test("an empty voice catalog gets a pointer, not an empty card", () => {
     managedVoicesData = { voices: [], defaultModel: null };
     renderSurface();
-
-    expect(screen.queryByRole("listbox")).toBeNull();
-    expect(screen.getByText(/available for this assistant/)).toBeTruthy();
-  });
-
-  test("no assistant gets a pointer, not an empty card", () => {
-    renderSurface({ noAssistant: true });
 
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(screen.getByText(/available for this assistant/)).toBeTruthy();

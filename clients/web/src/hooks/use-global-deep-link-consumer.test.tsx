@@ -160,7 +160,7 @@ const resetStores = () => {
   useLiveVoiceStore.getState().reset();
   useLiveVoiceStore.getState().setStarter(null);
   useAssistantIdentityStore.setState({ assistantId: null, version: null });
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   showPath(routes.assistant);
 };
 
@@ -170,7 +170,9 @@ const resetStores = () => {
  */
 const seedEligibleAssistant = (version = "0.10.12") => {
   useAssistantIdentityStore.setState({ assistantId: "assistant-1", version });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
 };
 
 beforeEach(() => {

@@ -66,11 +66,6 @@ export interface LocalHatchResult {
   error?: string;
 }
 
-export interface LocalRetireResult {
-  ok: boolean;
-  error?: string;
-}
-
 export interface LocalSleepResult {
   ok: boolean;
   error?: string;
@@ -264,30 +259,12 @@ export async function loadLockfileHost(): Promise<Lockfile> {
 }
 
 /**
- * Retire a local assistant. Both hosts drive the Cadet CLI's `retire` in a
- * trusted process and return the same `{ ok, error }` contract.
- */
-export async function retireLocalAssistantHost(
-  assistantId: string,
-): Promise<LocalRetireResult> {
-  if (isElectron()) {
-    return window.cadet!.localMode.retire(assistantId);
-  }
-
-  return requestLocalCommand<LocalRetireResult>(
-    `/v1/assistants/${encodeURIComponent(assistantId)}/retire/`,
-    { method: "DELETE" },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
  * Forget a paired assistant (the `paired` flag): remove its lockfile entry and
  * delete its stored guardian token on this machine. Client-side only: the
  * remote assistant is never touched. Both hosts run the shared package op in a
  * trusted process and return the same `LockfileWriteResult` contract; hosts
  * refuse non-paired entries (local/cloud assistants go through
- * {@link retireLocalAssistantHost}). Older Electron hosts that predate the IPC
+ * the local-mode retire bridge). Older Electron hosts that predate the IPC
  * channel degrade to a structured unsupported error, mirroring
  * {@link sleepLocalAssistantHost}.
  */
@@ -470,7 +447,7 @@ export async function sleepLocalAssistantHost(
  *
  * This is the non-destructive repair primitive: it revives a stopped or
  * unresolved assistant in place without touching its data or identity, the
- * counterpart to {@link retireLocalAssistantHost}'s destructive removal.
+ * counterpart to the local-mode retire bridge's destructive removal.
  * A plain wake (no options) is the safe auto-repair primitive. It restores a
  * guardian token only when the current environment's config dir has none
  * (copied from a sibling environment); a token the gateway rejects at the

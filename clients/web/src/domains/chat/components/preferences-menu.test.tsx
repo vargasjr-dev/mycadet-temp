@@ -110,7 +110,7 @@ async function closeMenuViaSettings(): Promise<void> {
 beforeEach(() => {
   navigateArgs = [];
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   isTouchMobileRef.value = false;
   feedbackRef.prefetches = 0;
   prefetchedPaths.length = 0;

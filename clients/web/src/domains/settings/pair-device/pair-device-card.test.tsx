@@ -31,8 +31,9 @@ let supportsPairingRoutes = true;
 let selectedAssistant: {
   assistantId: string;
   cloud: string;
+  port?: number;
   name?: string;
-} = { assistantId: "self", cloud: "local" };
+} = { assistantId: "self", cloud: "local", port: 0 };
 
 // Spread the real module so transitive consumers (e.g. the pending-request
 // chain) keep every export; only the reads the tests drive are overridden.
@@ -234,13 +235,15 @@ function recheckButton(): HTMLElement | null {
 beforeEach(() => {
   gatewayPath = "/assistant";
   supportsPairingRoutes = true;
-  selectedAssistant = { assistantId: "self", cloud: "local" };
+  selectedAssistant = { assistantId: "self", cloud: "local", port: 0 };
   listDevicesResult = { ok: false, error: "unavailable" };
   listDevicesCalls = 0;
   resetFetchLog();
   localStorage.clear();
   resetProbe();
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
   // Tests that exercise the status row opt into a version that serves it.
   useAssistantIdentityStore
     .getState()
@@ -254,7 +257,7 @@ afterEach(() => {
   cleanup();
   restoreFetch();
   resetEventBus();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useAssistantIdentityStore.getState().clearIdentity();
 });
 
@@ -376,6 +379,7 @@ describe("PairDeviceCard", () => {
     selectedAssistant = {
       assistantId: "self",
       cloud: "local",
+      port: 0,
       name: "My Assistant",
     };
     renderCard();
@@ -690,6 +694,7 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
+      port: 0,
     };
     probeAnswers(healthyStatus());
     renderCard();
@@ -707,6 +712,7 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
+      port: 0,
     };
     probeAnswers({ state: "unconfigured" });
     renderCard();
@@ -892,6 +898,7 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
+      port: 0,
     };
     probeAnswers({ state: "stopped" });
     renderCard();
@@ -922,6 +929,7 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
+      port: 0,
       name: "My Assistant",
     };
     probeAnswers({
@@ -946,6 +954,7 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
+      port: 0,
       name: "My Assistant",
     };
     probeAnswers({ state: "unconfigured" });

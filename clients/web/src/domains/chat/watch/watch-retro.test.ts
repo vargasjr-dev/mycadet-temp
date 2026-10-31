@@ -20,11 +20,13 @@ const SESSION = {
 
 /** Make `assistantId` the active one, which is what the state is bound to. */
 const activate = (assistantId: string | null) => {
+  if (!assistantId) {
+    useResolvedAssistantStore.getState().resetAssistant();
+    return;
+  }
   useResolvedAssistantStore
     .getState()
-    .setAssistant(
-      assistantId ? { cloud: "local", assistantId } : null,
-    );
+    .setAssistant({ cloud: "local", port: 0, assistantId });
 };
 
 /** The runtime's announcement, in the shape the event stream carries it. */

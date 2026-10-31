@@ -10,8 +10,22 @@
  * asserts the rows and their handlers.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 
 // Pin the cloud to a pointer device, so the control opens its POPOVER and
 // not the touch bottom sheet. Unmocked, `matchMedia` in the test DOM does not
@@ -25,13 +39,11 @@ mock.module("@/hooks/use-touch-mobile", () => ({
   TOUCH_MOBILE_MEDIA_QUERY: "(width < 48rem) and (pointer: coarse)",
 }));
 
-const { SubagentSpawnGroup } = await import(
-  "@/domains/chat/components/subagent-inline-progress-card/subagent-spawn-group"
-);
+const { SubagentSpawnGroup } =
+  await import("@/domains/chat/components/subagent-inline-progress-card/subagent-spawn-group");
 const { useSubagentStore } = await import("@/domains/chat/subagent-store");
-const { useResolvedAssistantStore } = await import(
-  "@/stores/resolved-assistant-store"
-);
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 const NOW = 1700000000000;
 
@@ -86,9 +98,9 @@ describe("SubagentSpawnGroup", () => {
     expect(screen.getByTestId("subagent-spawn-group-trigger")).toBeTruthy();
     expect(rows()).toHaveLength(0);
     expect(screen.queryAllByTestId("subagent-avatar-badge")).toHaveLength(0);
-    expect(
-      screen.queryAllByTestId("subagent-avatar-row-details"),
-    ).toHaveLength(0);
+    expect(screen.queryAllByTestId("subagent-avatar-row-details")).toHaveLength(
+      0,
+    );
 
     openControl();
     expect(rows()).toHaveLength(3);
@@ -99,7 +111,9 @@ describe("SubagentSpawnGroup", () => {
     // card projects "Loading" until its timeline is fetched. The demand lives
     // in `useSubagentCardData` (rendering a row IS the fetch trigger), so the
     // closed control fetches nothing and opening it fetches every member.
-    useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
     const ids = ["sa-done-0", "sa-done-1"];
     for (const id of ids) {
       useSubagentStore.getState().spawnSubagent({
@@ -127,7 +141,7 @@ describe("SubagentSpawnGroup", () => {
     expect(spy).toHaveBeenCalledWith("assistant-1", "sa-done-1");
 
     spy.mockRestore();
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
   });
 
   test("threads onSubagentClick and onStopSubagent to each row", () => {

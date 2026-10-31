@@ -12,7 +12,6 @@ let ownCredentials: Array<{ service: string; field: string }> = [];
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-123",
-  useResolvedAssistantId: () => "assistant-123",
 }));
 
 mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({

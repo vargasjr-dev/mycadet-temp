@@ -121,12 +121,14 @@ function renderPanel(
 beforeEach(() => {
   skillPayload = makeSkillDetail();
   skillError = null;
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
+  });
 });
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("SkillDetailPanel skill query states", () => {

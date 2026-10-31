@@ -88,25 +88,21 @@ const calls: string[] = [];
 /** Where the route stood at each `closeChatInfo`, for the open sequence. */
 const routeAtClose: string[] = [];
 
-const { ChatInfoPanel } = await import(
-  "@/domains/chat/components/chat-info-panel"
-);
+const { ChatInfoPanel } =
+  await import("@/domains/chat/components/chat-info-panel");
 const { useViewerStore } = await import("@/stores/viewer-store");
-const { useResolvedAssistantStore } = await import(
-  "@/stores/resolved-assistant-store"
-);
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { showPath } = await import("@/stores/open-app.test-helper");
-const { useUnseenDocumentChangesStore } = await import(
-  "@/domains/chat/unseen-document-changes-store"
-);
+const { useUnseenDocumentChangesStore } =
+  await import("@/domains/chat/unseen-document-changes-store");
 const {
   appsGetQueryKey,
   attachmentsGetInfiniteQueryKey,
   documentsGetQueryKey,
 } = await import("@/generated/daemon/@tanstack/react-query.gen");
-const { makeDisplayAttachment, SAMPLE_PREVIEWS } = await import(
-  "@/domains/chat/components/chat-attachments/attachment-fixtures"
-);
+const { makeDisplayAttachment, SAMPLE_PREVIEWS } =
+  await import("@/domains/chat/components/chat-attachments/attachment-fixtures");
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -289,7 +285,9 @@ beforeEach(() => {
   onSelectCategory.mockClear();
   useViewerStore.setState({ closeChatInfo, loadApp, loadDocument });
   // The shared opener the app tiles go through reads the active assistant.
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
+  });
 });
 
 afterEach(() => {
@@ -397,7 +395,9 @@ describe("ChatInfoPanel top level", () => {
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
+      });
     });
 
     expect(closeChatInfo).toHaveBeenCalledTimes(1);
@@ -407,13 +407,15 @@ describe("ChatInfoPanel top level", () => {
     await renderChatInfo();
 
     await act(async () => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
+      });
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
@@ -422,7 +424,9 @@ describe("ChatInfoPanel top level", () => {
   // The dismissal lands in an effect, so a tile clicked in the same commit
   // still has to refuse: its app id belongs to the payload's assistant.
   test("opens no app while its assistant is not the active one", async () => {
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
+    });
 
     await renderChatInfo();
     fireEvent.click(screen.getByLabelText("Open App 1"));

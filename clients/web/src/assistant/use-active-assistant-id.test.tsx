@@ -5,12 +5,14 @@ import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useActiveAssistantId } from "./use-active-assistant-id";
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("useActiveAssistantId", () => {
   test("returns the active id when the gate has resolved", () => {
-    useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
     const { result } = renderHook(() => useActiveAssistantId());
     expect(result.current).toBe("asst-1");
   });

@@ -120,7 +120,9 @@ beforeEach(() => {
   deleteQueuedMessageMock = mock(async () => true);
   // Scope check: the send's assistant/conversation must be the active ones so
   // the fallback branch is reached (not short-circuited as inactive).
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
   useConversationStore.getState().setActiveConversationId("conv-A");
   useChatSessionStore.setState({
     snapshot: null,

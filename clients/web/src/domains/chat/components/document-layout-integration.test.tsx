@@ -289,7 +289,9 @@ beforeEach(() => {
     finishWrite = resolve;
     failWrite = reject;
   });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",
@@ -578,8 +580,6 @@ describe("document viewport handoff", () => {
     await act(async () => finishWrite());
     expect(saved.content).toBe("Latest first document body");
   });
-
-
 
   test("replacing a desktop document flushes edits without closing the new panel", async () => {
     renderLayout(false);
@@ -976,8 +976,12 @@ describe("document session chat handoff", () => {
             useViewerStore.getState().closeDocument();
           } else {
             useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2" },
-    });
+              assistant: {
+                cloud: "local",
+                port: 0,
+                assistantId: "assistant-2",
+              },
+            });
           }
           finishWrite();
         }
@@ -1072,9 +1076,11 @@ describe("document PDF export saves", () => {
           );
         } else {
           act(() =>
-            useResolvedAssistantStore
-              .getState()
-              .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
+            useResolvedAssistantStore.getState().setAssistant({
+              cloud: "local",
+              port: 0,
+              assistantId: "assistant-2",
+            }),
           );
         }
         await act(async () => finishWrite());
@@ -1172,9 +1178,11 @@ describe("desktop document feedback", () => {
         fireEvent.click(screen.getByRole("button", { name: "Close document" }));
       } else if (action === "assistant switch") {
         act(() =>
-          useResolvedAssistantStore
-            .getState()
-            .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
+          useResolvedAssistantStore.getState().setAssistant({
+            cloud: "local",
+            port: 0,
+            assistantId: "assistant-2",
+          }),
         );
       } else {
         act(() =>

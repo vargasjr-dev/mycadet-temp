@@ -79,7 +79,7 @@ beforeEach(() => {
   selfLookupSupported = true;
   reconcileCalls = 0;
   reconciledParents.length = 0;
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useConversationStore.getState().setActiveConversationId(null);
 });
 
@@ -308,7 +308,9 @@ describe("handleSubagentStatusChanged: unknown subagent id", () => {
 
 describe("unknown-id reconcile kick", () => {
   function activate() {
-    useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: "asst-1" });
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
     useConversationStore.getState().setActiveConversationId(PARENT);
   }
 

@@ -10,7 +10,7 @@ import { routes } from "@/utils/routes";
 import { SETTINGS_SIDEBAR } from "@/utils/settings-navigation";
 import { SidebarShell } from "@/components/sidebar-shell";
 import { SidebarTree } from "@/components/sidebar-tree";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * React Router layout route for `/assistant/settings/*`.
@@ -31,7 +31,7 @@ export function SettingsLayout() {
   const { t } = useTranslation("settings");
   const notificationSettingsAvailable =
     useIsNativeAndroid() || isBrowserNotificationHost();
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   // The Credentials tab needs routes that only newer assistants
   // serve (v0.8.1+ / v0.10.8+); an older assistant 404s them, so hide the
   // tabs rather than render a dead error page. Scoped to the active assistant

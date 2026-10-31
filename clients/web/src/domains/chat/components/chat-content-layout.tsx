@@ -58,7 +58,7 @@ import { exitAppSplit } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 import { getDocumentFeedbackPrompt } from "../document-conversation";
 import { skillDetailBackState } from "@/utils/skills";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 // Import thunks for the lazy panel chunks, shared by the React.lazy wrappers
 // below and the idle-prefetch effect. Once a thunk has run, the browser module
@@ -192,7 +192,7 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
 
   const isSharing = useDeployStore.use.isSharing();
   const isDeploying = useDeployStore.use.isDeploying();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
 
   const isMobile = useIsMobile();
   const documentPreparation = useDocumentChatPreparation({

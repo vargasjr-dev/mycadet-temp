@@ -8,7 +8,7 @@ import type { QuestionEntry } from "@/types/interaction-ui-types";
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
 import { useOverflows } from "@/hooks/use-overflows";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface DesktopHelpCardProps {
   entry: QuestionEntry;
@@ -28,7 +28,7 @@ export function DesktopHelpCard({
       contentKey: entry.question,
       paused: expanded,
     });
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const enabled = useVirtualDesktopEnabled();
   const session = useDesktopPreviewStore.use.session();
   const attachPreview = useCallback(

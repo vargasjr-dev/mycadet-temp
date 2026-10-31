@@ -326,7 +326,9 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: ALL_ICONS };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+  });
 });
 
 afterEach(() => {
@@ -336,7 +338,7 @@ afterEach(() => {
   getAppIconState.mockClear();
   setAppIcon.mockClear();
   getInfoMock.mockClear();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("AppIconRow", () => {

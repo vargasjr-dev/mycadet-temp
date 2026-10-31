@@ -48,7 +48,6 @@ mock.module(
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
     primeLocalGatewayConnection: async () => {},
-    retireLocalAssistant: async () => ({ ok: false }),
   }),
 );
 

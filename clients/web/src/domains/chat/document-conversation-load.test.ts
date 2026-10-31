@@ -119,7 +119,9 @@ beforeEach(() => {
     }
     throw new Error(`Unexpected request: ${options.url}`);
   }) as typeof daemonClient.post);
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",
@@ -297,11 +299,11 @@ describe("loadDocumentConversation", () => {
         scope.dispose();
       } else {
         useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2" },
-    });
+          assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
+        });
         useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-1" },
-    });
+          assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+        });
       }
       pending.resolve({
         data: { conversation: { id: "conv-1" } },

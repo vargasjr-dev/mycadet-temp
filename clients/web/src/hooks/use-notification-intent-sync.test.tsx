@@ -31,10 +31,7 @@ import {
 } from "@/runtime/browser-notification-delivery";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import {
-  useResolvedAssistantStore,
-  
-} from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { PostLocalNotificationArgs } from "@/runtime/notifications";
 import { isClientAttended } from "@/runtime/window-attention";
 import { isConversationChatPath, routes } from "@/utils/routes";
@@ -399,7 +396,7 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -412,7 +409,11 @@ describe("useNotificationIntentSync", () => {
       daemonPort: 9101,
     };
     useResolvedAssistantStore.getState().setAssistant(assistantA);
-    const mounted = mountAt(routes.assistant, undefined, assistantA.assistantId);
+    const mounted = mountAt(
+      routes.assistant,
+      undefined,
+      assistantA.assistantId,
+    );
 
     publishNotificationIntent({ assistantName: "Origin A" });
     const originA = postedArgs[0]?.identity;
@@ -593,7 +594,7 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

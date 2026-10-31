@@ -111,7 +111,9 @@ async function exportFromMenu() {
 }
 
 beforeEach(() => {
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
   downloadDocumentPdf.mockReset();
   downloadDocumentPdf.mockImplementation(async () => {});
   captureError.mockClear();

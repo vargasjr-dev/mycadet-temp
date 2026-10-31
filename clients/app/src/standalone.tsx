@@ -8,6 +8,9 @@ import {
 } from "react-router";
 import { toast, Toaster } from "@mycadet/design-library/components/toast";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
+import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
+import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
+import { retireLocalAssistantHost } from "@app/assistant/local-mode-host";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
@@ -26,6 +29,13 @@ import { routes } from "@app/utils/routes";
 
 export function DesktopChrome() {
   const [createOpen, setCreateOpen] = useState(false);
+  // Id of the assistant a tray "Retire <assistant>…" command targets. The
+  // retire lives here in the shell — the chooser's dialog is the cloud row's
+  // path; the command carries the id so the retire runs without routing
+  // through the chooser screen first.
+  const [retireTargetId, setRetireTargetId] = useState<string | null>(null);
+  const [retirePending, setRetirePending] = useState(false);
+  const [retireError, setRetireError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation("account");
@@ -69,6 +79,11 @@ export function DesktopChrome() {
       }
       connectAssistantById(command.assistantId);
     },
+    retireAssistant: (command) => {
+      if (command.kind === "retireAssistant") {
+        setRetireTargetId(command.assistantId);
+      }
+    },
     rePair: () => {
       // The current selection is the thing to re-pair; nothing selected
       // means nothing to re-pair (web's guard).
@@ -79,6 +94,36 @@ export function DesktopChrome() {
       connectAssistantById(id);
     },
   });
+  const handleRetireConfirm = async () => {
+    if (!retireTargetId || retirePending) {
+      return;
+    }
+    setRetirePending(true);
+    setRetireError(null);
+    // A lockfile entry of an on-machine topology retires through the host
+    // CLI; everything else (platform rows, paired imports) retires through
+    // the cloud's retire route.
+    await useLocalLockfileStore.load();
+    const entry = useLocalLockfileStore
+      .getState()
+      .lockfile?.assistants.find((a) => a.assistantId === retireTargetId);
+    const onMachine =
+      entry !== undefined &&
+      (entry.cloud === "local" ||
+        entry.cloud === "docker" ||
+        entry.cloud === "apple-container");
+    const outcome = onMachine
+      ? await retireLocalAssistantHost(retireTargetId)
+      : await retireCloudAssistant(retireTargetId);
+    setRetirePending(false);
+    if (!outcome.ok) {
+      setRetireError(outcome.error || "Failed to retire assistant.");
+      return;
+    }
+    setRetireTargetId(null);
+    navigate(routes.account.selectAssistant);
+  };
+
   useDeepLinkConsumer();
   return (
     <>
@@ -92,6 +137,18 @@ export function DesktopChrome() {
           silently no-ops. Every route renders through this layout, and both
           entries (standalone and capacitor) boot through it. */}
       <Toaster />
+      <RetireConfirmDialog
+        open={retireTargetId !== null}
+        error={retireError}
+        isPending={retirePending}
+        onConfirm={() => void handleRetireConfirm()}
+        onCancel={() => {
+          if (!retirePending) {
+            setRetireTargetId(null);
+            setRetireError(null);
+          }
+        }}
+      />
       <Outlet />
     </>
   );

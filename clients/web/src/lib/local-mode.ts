@@ -27,7 +27,6 @@ import {
   pairingCancelHost,
   pairingPollHost,
   pairingStartHost,
-  retireLocalAssistantHost,
   unpairAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
@@ -37,7 +36,6 @@ import type {
   LocalPairingFailure,
   LocalPairingPollResult,
   LocalPairingStartResult,
-  LocalRetireResult,
 } from "@/runtime/local-mode-host";
 
 // ---------------------------------------------------------------------------
@@ -47,7 +45,7 @@ import type {
 // The lockfile shape is the transport contract shared by the Electron IPC and
 // dev-server branches, so the seam owns it; re-exported here for the renderer
 // features that read and model assistants.
-export type { Lockfile, LockfileAssistant, LocalRetireResult };
+export type { Lockfile, LockfileAssistant };
 
 // ---------------------------------------------------------------------------
 // Served assistant
@@ -278,21 +276,6 @@ export async function cancelAssistantPairing(handle: string): Promise<void> {
 // ---------------------------------------------------------------------------
 // Retire
 // ---------------------------------------------------------------------------
-
-/**
- * Retire a local assistant, then clear its selection, gateway token, and
- * self-hosted connection. On failure the local state is left untouched and
- * the error is returned for the caller to surface.
- */
-export async function retireLocalAssistant(
-  assistantId: string,
-): Promise<LocalRetireResult> {
-  const result = await retireLocalAssistantHost(assistantId);
-  if (result.ok) {
-    clearSelectedAssistantSession();
-  }
-  return result;
-}
 
 // ---------------------------------------------------------------------------
 // Assistant queries

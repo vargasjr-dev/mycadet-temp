@@ -21,10 +21,7 @@ import {
 import { MIN_VERSION } from "@/lib/backwards-compat/avatar-state-manifest";
 import { chooserRowAvatarCacheQueryKey } from "@/lib/persist-last-seen-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import {
-  useResolvedAssistantStore,
-  
-} from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const components: CharacterComponents = {
   bodyShapes: [
@@ -157,7 +154,7 @@ afterEach(() => {
   releaseAssistantAvatarUrl("asst-1");
   releaseAssistantAvatarUrl("asst-2");
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   fetchCharacterComponents.mockClear();
   fetchAvatarState.mockClear();
   fetchAvatarImageUrlResult.mockClear();

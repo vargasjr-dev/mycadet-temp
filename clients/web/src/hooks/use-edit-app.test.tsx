@@ -88,7 +88,9 @@ beforeEach(() => {
     setEditingConversationId:
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
+  });
 });
 
 afterEach(() => {
@@ -102,7 +104,7 @@ afterEach(() => {
 describe("useEditApp", () => {
   test("no-ops when there is no active assistant", () => {
     // GIVEN no assistant is selected
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const { result } = renderHook(() => useEditApp(), { wrapper });
 
     // WHEN the user tries to edit an app

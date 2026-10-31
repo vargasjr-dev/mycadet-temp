@@ -10,7 +10,6 @@ const {
   GuardianTokenError,
   hatchLocalAssistant,
   loadLockfileHost,
-  retireLocalAssistantHost,
   unpairAssistantHost,
   pairingStartHost,
   pairingPollHost,
@@ -171,35 +170,6 @@ describe("loadLockfileHost", () => {
 
     expect(await loadLockfileHost()).toEqual(lockfile);
     expect(readLockfile).toHaveBeenCalledTimes(1);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("retireLocalAssistantHost", () => {
-  test("web/dev host DELETEs the conductor's retire route for the assistant", async () => {
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await retireLocalAssistantHost("a-1");
-
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/v1/assistants/a-1/retire/");
-    expect(init.method).toBe("DELETE");
-  });
-
-  test("Electron host retires through the bridge and never touches fetch", async () => {
-    const retire = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ retire });
-
-    expect(await retireLocalAssistantHost("a-1")).toEqual({ ok: true });
-    expect(retire).toHaveBeenCalledWith("a-1");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

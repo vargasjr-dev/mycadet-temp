@@ -136,7 +136,7 @@ beforeEach(() => {
   setSystemTime();
   getState().reset();
   useConversationStore.getState().setActiveConversationId(null);
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   selfLookupSupported = true;
   reconcileSupported = true;
   fetchSubagentDetail.mockClear();
@@ -2787,7 +2787,9 @@ describe("reconcileFromDaemon", () => {
 
   it("discards a snapshot when the assistant changes without a conversation reset", async () => {
     const previous = useResolvedAssistantStore.getState().assistant;
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+    });
     try {
       reconcileReply = {
         ok: true,
@@ -2797,7 +2799,9 @@ describe("reconcileFromDaemon", () => {
         "assistant-1",
         "conv-parent",
       );
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
+      });
       await pending;
       expect(getState().byId["sa-old"]).toBeUndefined();
     } finally {

@@ -33,7 +33,7 @@ const { useResolvedAssistantStore } =
 beforeEach(() => {
   voiceHookOptions = [];
   catalogAvailable = true;
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useLiveVoiceStore.setState({ state: "idle" });
   useCompanionPopoverStore.setState({
     openPicker: null,
@@ -57,7 +57,9 @@ describe("useCompanionPickers", () => {
   });
 
   test("asks for voices only during a call, and says whether there are any", () => {
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+    });
     renderHook(() => useCompanionPickers());
     expect(voiceHookOptions.at(-1)?.enabled ?? true).toBe(false);
     expect(useCompanionPopoverStore.getState().voicesPickable).toBe(false);
@@ -71,7 +73,9 @@ describe("useCompanionPickers", () => {
 
   test("offers no voices for an assistant without a catalog", () => {
     catalogAvailable = false;
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+    });
     useLiveVoiceStore.setState({ state: "listening" });
 
     renderHook(() => useCompanionPickers());

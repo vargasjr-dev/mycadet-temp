@@ -46,7 +46,6 @@ const ASSISTANT_ID = "asst-test";
 // seed a fixed id, and stub toast so the barrel render stays inert.
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
-  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },

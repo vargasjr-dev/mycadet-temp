@@ -36,14 +36,14 @@ import { MobileWorkflowDetailOverlay } from "@/domains/chat/components/mobile-wo
 import { useAppViewerRouteHandlers } from "@/domains/chat/hooks/use-app-viewer-route-handlers";
 import { useMobileOverlayTarget } from "@/domains/chat/hooks/use-mobile-overlay-target";
 import { handleAppViewerAction } from "@/domains/chat/app-viewer-actions";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function MobileChatOverlays() {
   const overlayTarget = useMobileOverlayTarget();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const mainView = useViewerStore.use.mainView();
   const openedAppState = useViewerStore.use.openedAppState();
   const openedDocumentState = useViewerStore.use.openedDocumentState();

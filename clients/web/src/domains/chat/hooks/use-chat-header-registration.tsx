@@ -28,7 +28,7 @@ import { ChannelSourceLinkPill } from "@/domains/chat/components/channel-source-
 import { ConversationAssetsPill } from "@/domains/chat/components/conversation-assets-pill";
 
 import type { Conversation } from "@/types/conversation-types";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export interface UseChatHeaderRegistrationOptions {
   assetsRefreshKey: number;
@@ -49,7 +49,7 @@ export function useChatHeaderRegistration({
   handleCopyConversation,
   onRefresh,
 }: UseChatHeaderRegistrationOptions): void {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const messages = useTranscriptMessages();
   const setTopBarRightSlot = useChatLayoutSlotsStore.use.setTopBarRightSlot();

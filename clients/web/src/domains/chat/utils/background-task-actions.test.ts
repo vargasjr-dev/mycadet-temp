@@ -55,11 +55,13 @@ beforeEach(() => {
   nextData = { cancelled: true };
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
+  });
 });
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useBackgroundTaskStore.getState().reset();
 });
 
@@ -107,7 +109,7 @@ describe("stopBackgroundTask", () => {
 
   test("does not optimistically cancel when there is no active assistant", async () => {
     seedRunning();
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
 
     await expect(stopBackgroundTask("bg-1")).rejects.toThrow(
       "No active assistant",

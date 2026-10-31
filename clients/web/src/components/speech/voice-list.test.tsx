@@ -122,7 +122,9 @@ beforeAll(() => {
 });
 
 function renderList() {
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

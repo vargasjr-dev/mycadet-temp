@@ -193,13 +193,13 @@ describe("useCloudAvatarUrls", () => {
     act(() =>
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "local", assistantId: "asst-2" }),
+        .setAssistant({ cloud: "local", port: 0, assistantId: "asst-2" }),
     );
 
     await waitFor(() => {
       expect(listAssistants).toHaveBeenCalledTimes(2);
     });
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
   });
 
   test("never writes the resolved-assistants store", async () => {
@@ -269,9 +269,9 @@ describe("suppressCloudAvatarUrl", () => {
     });
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
-    expect(
-      queryClient.getQueryState(cloudAvatarUrlsQueryKey(null))?.status,
-    ).toBe("success");
+    expect(queryClient.getQueryState(cloudAvatarUrlsQueryKey(""))?.status).toBe(
+      "success",
+    );
   });
 
   test("a list started inside the window still omits the id; one after it carries it again", async () => {
@@ -320,7 +320,7 @@ describe("supersedeCloudAvatar", () => {
       cloudAssistantId: PAIRED_UUID,
     });
     const queryClient = new QueryClient();
-    const key = cloudAvatarUrlsQueryKey(null);
+    const key = cloudAvatarUrlsQueryKey("");
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
     supersedeCloudAvatar(queryClient, "paired-slug");

@@ -38,7 +38,7 @@ import {
 import { useDocumentCommentEvents } from "./hooks/use-document-comment-events";
 import { useDocumentPdfExport } from "./hooks/use-document-pdf-export";
 import { useUnseenDocumentChangesStore } from "./unseen-document-changes-store";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 type DocumentPageState =
   | { kind: "loading" }
@@ -54,7 +54,7 @@ export function DocumentViewerPage() {
   const isMobile = useIsMobile();
   // The route host stays stable while the user edits, even across a breakpoint.
   const [entryMode] = useState(isMobile ? "conversation" : "standalone");
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const returnTo = documentReturnPath(
     new URLSearchParams(search).get(DOCUMENT_RETURN_PARAM),
   );

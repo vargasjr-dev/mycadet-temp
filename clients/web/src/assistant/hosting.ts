@@ -8,7 +8,7 @@ import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
  * for a resolved assistant, so there is no resolving answer.
  */
 export function useAssistantHosting(): Remote {
-  return useResolvedAssistantStore((s) => s.assistant?.cloud ?? "cloud");
+  return useResolvedAssistantStore((s) => s.assistant.cloud);
 }
 
 /** The active assistant's remote is "cloud". */

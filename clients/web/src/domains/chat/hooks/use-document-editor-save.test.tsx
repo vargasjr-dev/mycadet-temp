@@ -64,7 +64,9 @@ function renderSave() {
 }
 
 beforeEach(() => {
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+  });
   saveDocumentContent.mockReset();
   saveDocumentContent.mockImplementation(async () => {});
   captureError.mockClear();
@@ -73,7 +75,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   await act(async () => {});
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useResolvedAssistantStore.setState(selection, true);
 });
 
@@ -137,12 +139,16 @@ describe("useDocumentEditorSave", () => {
     act(() => result.current.changeContent("Assistant one's body"));
     unmount();
     await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
+    });
     await waitForDocumentSaves({ ...TARGET, assistantId: "assistant-2" });
     await waitForDocumentSaves({ ...TARGET, surfaceId: "surface-2" });
     await waitForDocumentSaves(TARGET, () => false);
     expect(saveDocumentContent).toHaveBeenCalledTimes(1);
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+    });
     await waitForDocumentSaves(TARGET);
     expect(saveDocumentContent.mock.calls[1]).toEqual([
       TARGET,
@@ -167,8 +173,10 @@ describe("useDocumentEditorSave", () => {
         write.reject(new Error("offline"));
         await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
       }
-      useResolvedAssistantStore.getState().setAssistant(null);
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+      useResolvedAssistantStore.getState().resetAssistant();
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+      });
       if (stage === "before unmount") {
         await expect(result.current.flushPendingSave()).rejects.toThrow(
           "session has ended",
