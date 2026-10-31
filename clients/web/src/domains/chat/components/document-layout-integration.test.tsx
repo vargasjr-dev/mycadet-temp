@@ -39,6 +39,7 @@ import type * as Progress from "./progress-stack";
 import type * as ChatInfo from "./chat-info-panel";
 import type * as Surfaces from "../api/surfaces";
 import { useOpenDocumentFromChat } from "../hooks/use-open-app-from-chat";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useComposerSubmit } from "../hooks/use-composer-submit";
 import { useComposerStore } from "../composer-store";
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
@@ -68,9 +69,9 @@ mock.module(
 mock.module(
   "./chat-info-panel",
   (): Partial<typeof ChatInfo> => ({
-    ChatInfoPanel: ({ payload, onClose }) => {
+    ChatInfoPanel: ({ onClose }) => {
       const openDocument = useOpenDocumentFromChat(
-        payload.assistantId,
+        useActiveAssistantId(),
         onClose,
       );
       return (
@@ -492,7 +493,6 @@ describe("document viewport handoff", () => {
       );
       act(() =>
         useViewerStore.getState().openChatInfo({
-          assistantId: "assistant-1",
           conversationId: "conv-1",
         }),
       );
@@ -588,7 +588,6 @@ describe("document viewport handoff", () => {
     );
     act(() =>
       useViewerStore.getState().openChatInfo({
-        assistantId: "assistant-1",
         conversationId: "conv-1",
       }),
     );

@@ -123,7 +123,6 @@ function DocumentSession() {
       <button
         onClick={() => {
           useViewerStore.getState().openChatInfo({
-            assistantId: "assistant-1",
             conversationId: "conv-1",
           });
           void openDocument("surface-1");

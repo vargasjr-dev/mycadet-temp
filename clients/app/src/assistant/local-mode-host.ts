@@ -148,17 +148,6 @@ export async function wakeLocalAssistantHost(
   return wake(assistantId, options);
 }
 
-/** Destructively remove a local assistant and its data. */
-export async function retireLocalAssistantHost(
-  assistantId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const retire = window.cadet?.localMode?.retire;
-  if (!retire) {
-    return { ok: false, error: "Retire is not supported by this app version" };
-  }
-  return retire(assistantId);
-}
-
 /** Remove a paired entry and its stored guardian token from this device. */
 export async function unpairLocalAssistant(
   assistantId: string,

@@ -12,6 +12,7 @@ import {
   authorizePairedForwardHeaders,
   parseAssistantGatewayUrl,
   readGatewayTargets,
+  resolveAssistantRetireProxyDecision,
   resolveGatewayProxyTarget,
   sanitizePairedForwardHeaders,
 } from "../gateway-proxy";
@@ -426,5 +427,112 @@ describe("remote-forward header handling", () => {
     );
     expect(result).toEqual({ ok: true });
     expect(headers.get("authorization")).toBe("Bearer host-token");
+  });
+});
+
+describe("resolveAssistantRetireProxyDecision", () => {
+  const noLockfile = () => null as never;
+  const withEntries =
+    (...entries: unknown[]) =>
+    () => ({ assistants: entries });
+
+  const localEntry = { assistantId: "asst-local", cloud: "local", port: 7830 };
+  const dockerEntry = {
+    assistantId: "asst-docker",
+    cloud: "docker",
+    port: 7831,
+  };
+  const appleEntry = {
+    assistantId: "asst-apple",
+    cloud: "apple-container",
+    mgmtSocket: "/tmp/mgmt.sock",
+  };
+  const cloudEntry = {
+    assistantId: "asst-cloud",
+    cloud: "cloud",
+  };
+  const pairedEntry = {
+    assistantId: "asst-paired",
+    cloud: "custom",
+    runtimeUrl: "https://gw.example.com",
+  };
+
+  test("non-DELETE methods pass without consulting the lockfile", () => {
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-local/retire/",
+        "POST",
+        withEntries(localEntry),
+      ),
+    ).toEqual({ kind: "pass" });
+    // The thunk is never called for a bail, so null proves the point.
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-local/retire/",
+        "GET",
+        noLockfile,
+      ),
+    ).toEqual({ kind: "pass" });
+  });
+
+  test("non-retire paths pass without consulting the lockfile", () => {
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-local/conversations",
+        "DELETE",
+        noLockfile,
+      ),
+    ).toEqual({ kind: "pass" });
+  });
+
+  test("a host-retirable entry resolves to retireLocal", () => {
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-local/retire/",
+        "DELETE",
+        withEntries(localEntry),
+      ),
+    ).toEqual({ kind: "retireLocal", assistantId: "asst-local" });
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-docker/retire/",
+        "DELETE",
+        withEntries(dockerEntry),
+      ),
+    ).toEqual({ kind: "retireLocal", assistantId: "asst-docker" });
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-apple/retire/",
+        "DELETE",
+        withEntries(appleEntry),
+      ),
+    ).toEqual({ kind: "retireLocal", assistantId: "asst-apple" });
+  });
+
+  test("cloud and paired entries pass through to the endpoint's forward", () => {
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-cloud/retire/",
+        "DELETE",
+        withEntries(cloudEntry),
+      ),
+    ).toEqual({ kind: "pass" });
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/asst-paired/retire/",
+        "DELETE",
+        withEntries(pairedEntry),
+      ),
+    ).toEqual({ kind: "pass" });
+  });
+
+  test("an id the lockfile does not know passes", () => {
+    expect(
+      resolveAssistantRetireProxyDecision(
+        "/v1/assistants/ghost/retire/",
+        "DELETE",
+        withEntries(localEntry),
+      ),
+    ).toEqual({ kind: "pass" });
   });
 });

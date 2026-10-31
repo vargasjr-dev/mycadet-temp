@@ -296,7 +296,6 @@ describe("document conversation route", () => {
       name: "chat-info",
       open: () =>
         useViewerStore.getState().openChatInfo({
-          assistantId: "assistant-1",
           conversationId: "conv-1",
         }),
       close: () => useViewerStore.getState().closeChatInfo(),

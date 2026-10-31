@@ -34,7 +34,7 @@ const {
 } = await import("./document-conversation");
 
 const document = { surfaceId: "surface-1", conversationId: "conv-existing" };
-const options = { assistantId: "assistant-1", document, isCurrent: () => true };
+const options = { document, isCurrent: () => true };
 let selection: ReturnType<typeof useResolvedAssistantStore.getState>;
 let identity: ReturnType<typeof useAssistantIdentityStore.getState>;
 
@@ -120,7 +120,7 @@ describe("document conversation entry", () => {
     async (cancelled) => {
       cachedReplacement();
       useAssistantIdentityStore.setState({ assistantId: "assistant-2" });
-      const scope = documentRequestScope("assistant-1");
+      const scope = documentRequestScope();
       const pending = resolveDocumentConversation({ ...options, ...scope });
       await new Promise((resolve) => setTimeout(resolve, 0));
       const prematureLinks = linkConversation.mock.calls.length;
@@ -222,7 +222,7 @@ describe("document conversation entry", () => {
   });
 
   test("a store change cannot flip the scope — only dispose cancels it", () => {
-    const scope = documentRequestScope("assistant-1");
+    const scope = documentRequestScope();
     useResolvedAssistantStore.setState({
       assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
     });
@@ -232,6 +232,18 @@ describe("document conversation entry", () => {
     expect(scope.isCurrent()).toBe(true);
     scope.dispose();
     expect(scope.isCurrent()).toBe(false);
+  });
+
+  test("a scope created under the unresolved shell never goes current", () => {
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "cloud", assistantId: "" },
+    });
+    const scope = documentRequestScope();
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
+    });
+    expect(scope.isCurrent()).toBe(false);
+    scope.dispose();
   });
 
   test("explicit creation is blocked on an unsupported assistant", async () => {

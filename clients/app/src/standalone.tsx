@@ -9,8 +9,7 @@ import {
 import { toast, Toaster } from "@mycadet/design-library/components/toast";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
-import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
-import { retireLocalAssistantHost } from "@app/assistant/local-mode-host";
+import { retireAssistant } from "@app/assistant/retire-assistant";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
@@ -100,21 +99,10 @@ export function DesktopChrome() {
     }
     setRetirePending(true);
     setRetireError(null);
-    // A lockfile entry of an on-machine topology retires through the host
-    // CLI; everything else (platform rows, paired imports) retires through
-    // the cloud's retire route.
-    await useLocalLockfileStore.load();
-    const entry = useLocalLockfileStore
-      .getState()
-      .lockfile?.assistants.find((a) => a.assistantId === retireTargetId);
-    const onMachine =
-      entry !== undefined &&
-      (entry.cloud === "local" ||
-        entry.cloud === "docker" ||
-        entry.cloud === "apple-container");
-    const outcome = onMachine
-      ? await retireLocalAssistantHost(retireTargetId)
-      : await retireCloudAssistant(retireTargetId);
+    // One endpoint for every entry type: the same-origin retire route, whose
+    // serving host (the desktop proxy for on-machine entries, the cloud for
+    // platform rows) decides how to honor it.
+    const outcome = await retireAssistant(retireTargetId);
     setRetirePending(false);
     if (!outcome.ok) {
       setRetireError(outcome.error || "Failed to retire assistant.");

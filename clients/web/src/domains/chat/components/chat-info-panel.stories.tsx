@@ -37,7 +37,6 @@ import {
 } from "@/domains/chat/components/chat-attachments/attachment-fixtures";
 import { CHAT_INFO_DRAWER_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import {
-  CHAT_INFO_ASSISTANT_ID,
   CHAT_INFO_CONVERSATION_ID,
   type ChatInfoStoryConversation,
   failChatInfoDocuments,
@@ -88,7 +87,6 @@ const meta: Meta<typeof ChatInfoPanel> = {
   decorators: [inChatInfoConversation, inDrawer],
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: null,
     },
@@ -124,7 +122,6 @@ export const FewAssets: Story = {
 export const AppsSeeAll: Story = {
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "apps",
     },
@@ -136,7 +133,6 @@ export const FilesSeeAll: Story = {
   parameters: { chatInfo: FILE_HEAVY },
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "files",
     },
@@ -157,7 +153,6 @@ export const FramesSeeAll: Story = {
   parameters: { chatInfo: WITH_FRAMES },
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "frames",
     },
@@ -179,7 +174,6 @@ export const FramesLoadMore: Story = {
   },
   args: {
     payload: {
-      assistantId: CHAT_INFO_ASSISTANT_ID,
       conversationId: CHAT_INFO_CONVERSATION_ID,
       category: "frames",
     },
@@ -237,7 +231,6 @@ export const LevelTwoInteraction: Story = {
     return (
       <ChatInfoPanel
         payload={{
-          assistantId: CHAT_INFO_ASSISTANT_ID,
           conversationId: CHAT_INFO_CONVERSATION_ID,
           category,
         }}

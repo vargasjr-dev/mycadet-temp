@@ -70,8 +70,10 @@ export function ChatInfoPanel({
   onSelectCategory,
 }: ChatInfoPanelProps) {
   const { t } = useTranslation("chat");
-  const { assistantId, conversationId } = payload;
-  const activeAssistantId = useActiveAssistantId();
+  const { conversationId } = payload;
+  // The one assistant this bundle serves: the payload carries only the
+  // conversation, and every assistant-scoped read goes through the active id.
+  const assistantId = useActiveAssistantId();
   const openDocument = useOpenDocumentFromChat(
     assistantId,
     useViewerStore.getState().closeChatInfo,
@@ -134,31 +136,16 @@ export function ChatInfoPanel({
     }
   }, [clearConversation, conversationId, unseenDocuments]);
 
-  // The panel is about one assistant's conversation and its tiles reach that
-  // assistant's apps, so it does not outlive a switch away from it. The empty
-  // id is the unresolved shell (the platform's pre-projection window), not a
-  // switch: the panel's surface is not even mounted there.
-  useEffect(() => {
-    if (activeAssistantId && activeAssistantId !== assistantId) {
-      useViewerStore.getState().closeChatInfo();
-    }
-  }, [activeAssistantId, assistantId]);
-
-  // An app is a route under the active assistant, so a tile opens only while
-  // this panel's assistant is that one; the dismissal above runs in an effect,
-  // so a click in the same commit still has to refuse. Closing first returns
+  // An app is a route under the active assistant. Closing first returns
   // the viewer to whatever the panel was opened from, so the app lands there
   // rather than behind the panel. The app hangs off the conversation this
   // panel is about, not whatever the route names.
   const handleOpenApp = useCallback(
     (appId: string) => {
-      if (assistantId !== activeAssistantId) {
-        return;
-      }
       useViewerStore.getState().closeChatInfo();
       void openApp(appId, { conversationId });
     },
-    [activeAssistantId, assistantId, conversationId, openApp],
+    [conversationId, openApp],
   );
 
   const handleOpenFile = useCallback(

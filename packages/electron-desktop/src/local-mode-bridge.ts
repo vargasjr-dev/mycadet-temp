@@ -33,7 +33,6 @@ export const createLocalModeBridge = (
       assistants,
       cloudOrganizationId,
     ),
-  retire: (assistantId) => ipc.invoke("cadet:localMode:retire", assistantId),
   revokeDevice: (assistantId, hashedDeviceId) =>
     ipc.invoke("cadet:localMode:revokeDevice", assistantId, hashedDeviceId),
   sleep: (assistantId) => ipc.invoke("cadet:localMode:sleep", assistantId),

@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { toast } from "@mycadet/design-library/components/toast";
 import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
@@ -204,6 +212,31 @@ describe("the shell's assistant commands", () => {
     expect(router.state.location.state).toEqual({
       assistantSelection: { id: "assistant-1" },
     });
+  });
+
+  test("the retire command confirms into the one same-origin retire endpoint", async () => {
+    // The lockfile fixture's LOCAL row retires through the same endpoint a
+    // platform row does: the serving host (the desktop proxy) owns the
+    // on-machine teardown, so the shell never branches on entry type. The
+    // stub's localMode exposes no retire bridge at all — a bridge call would
+    // fail the test, not silently pass.
+    request.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const sink = stubCadet({
+      lockfile: localLockfile,
+      status: () => ({ ok: true, state: "healthy" }),
+    });
+    renderChrome();
+    await act(async () => {
+      sink.handler!({ kind: "retireAssistant", assistantId: "assistant-1" });
+    });
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Retire" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const deleteCall = request.mock.calls.find(([url, init]) =>
+      String(url).includes("/retire/"),
+    );
+    expect(String(deleteCall?.[0])).toBe("/v1/assistants/assistant-1/retire/");
+    expect(deleteCall?.[1]?.method).toBe("DELETE");
   });
 
   test("rePair without a selection does nothing", async () => {

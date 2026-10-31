@@ -518,7 +518,6 @@ export type ChatInfoCategory = "apps" | "files" | "frames";
 
 /** What the chat-info panel is showing: one conversation, at one level. */
 export interface ChatInfoPayload {
-  assistantId: string;
   conversationId: string;
   /**
    * The category drilled into through See All. `null` is the top level, where
@@ -528,14 +527,14 @@ export interface ChatInfoPayload {
 }
 
 /**
- * The identity of a chat-info target. Conversation ids are assistant-scoped,
- * so both halves name it; hosts key the panel on this so a retarget remounts
- * it rather than carrying preview and pending-delete state across.
+ * The identity of a chat-info target. The bundle has one assistant, so the
+ * conversation id alone names it; hosts key the panel on this so a retarget
+ * remounts it rather than carrying preview and pending-delete state across.
  */
 export function chatInfoTargetKey(
-  target: Pick<ChatInfoPayload, "assistantId" | "conversationId">,
+  target: Pick<ChatInfoPayload, "conversationId">,
 ): string {
-  return `${target.assistantId}:${target.conversationId}`;
+  return target.conversationId;
 }
 
 /**
@@ -545,7 +544,7 @@ export function chatInfoTargetKey(
  */
 export function sameChatInfoTarget(
   state: Pick<ViewerState, "mainView" | "activeChatInfo">,
-  target: Pick<ChatInfoPayload, "assistantId" | "conversationId">,
+  target: Pick<ChatInfoPayload, "conversationId">,
 ): boolean {
   return (
     state.mainView === "chat-info" &&
@@ -743,19 +742,13 @@ export interface ViewerActions {
 
   // --- Chat info panel ---
   /** Open the chat-info panel for `target`, at the top level. */
-  openChatInfo: (target: {
-    assistantId: string;
-    conversationId: string;
-  }) => void;
+  openChatInfo: (target: { conversationId: string }) => void;
   /**
    * Open the chat-info panel for `target`, or close it when it is already
    * showing the SAME conversation. Powers the header trigger, where clicking
    * the already-active control dismisses the panel.
    */
-  toggleChatInfo: (target: {
-    assistantId: string;
-    conversationId: string;
-  }) => void;
+  toggleChatInfo: (target: { conversationId: string }) => void;
   closeChatInfo: () => void;
   /** Drill into a category (See All) or back out (`null`). No-op unless the panel is open. */
   setChatInfoCategory: (category: ChatInfoCategory | null) => void;
@@ -1348,7 +1341,6 @@ const useViewerStoreBase = create<ViewerStore>()((set, get) => ({
     set({
       mainView: "chat-info",
       activeChatInfo: {
-        assistantId: target.assistantId,
         conversationId: target.conversationId,
         category: null,
       },

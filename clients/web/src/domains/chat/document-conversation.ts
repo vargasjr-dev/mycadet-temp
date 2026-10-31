@@ -29,18 +29,19 @@ export function getDocumentFeedbackPrompt(title: string): string {
 }
 
 interface DocumentConversationOptions {
-  assistantId: string;
   document: DocumentConversationRef;
   isCurrent: () => boolean;
 }
 
 /**
- * A request scope: live until disposed. A new assistant id never arrives by
+ * A request scope: live until disposed. The assistant id is read once at
+ * creation (the store's pre-projection shell reads as unresolved, so a scope
+ * created there never goes current); a new assistant id never arrives by
  * switching — it loads a whole new web bundle — so there is no store watch
  * here, only the unmount/dispose gate the callers own.
  */
-export function documentRequestScope(assistantId: string) {
-  let current = getActiveAssistantId() === assistantId;
+export function documentRequestScope() {
+  let current = getActiveAssistantId() !== "";
   return {
     isCurrent: () => current,
     dispose: () => {
@@ -67,10 +68,11 @@ async function existingConversation(
 }
 
 async function linkDocumentConversation(
-  { assistantId, document, isCurrent }: DocumentConversationOptions,
+  { document, isCurrent }: DocumentConversationOptions,
   conversationId: string,
   linkedConversationIds?: Set<string>,
 ) {
+  const assistantId = getActiveAssistantId();
   if (!isCurrent()) {
     return null;
   }
@@ -106,7 +108,8 @@ async function resolveAndLinkDocumentConversation(
   options: DocumentConversationOptions,
   linkedConversationIds?: Set<string>,
 ): Promise<string | null> {
-  const { assistantId, document, isCurrent } = options;
+  const assistantId = getActiveAssistantId();
+  const { document, isCurrent } = options;
   const cached = getEditChatConversationId(assistantId, document.surfaceId);
   const candidates = [
     ...new Set(
@@ -136,16 +139,15 @@ async function resolveAndLinkDocumentConversation(
 
 /** Publishes a loaded document only after its link and observed writes settle. */
 export async function loadDocumentConversation({
-  assistantId,
   surfaceId,
   isCurrent,
   onReady,
 }: {
-  assistantId: string;
   surfaceId: string;
   isCurrent: () => boolean;
   onReady: (document: DocumentContent, conversationId: string | null) => void;
 }): Promise<void> {
+  const assistantId = getActiveAssistantId();
   let changed = false;
   // Link writes emit list invalidations without changing the document's owner.
   const linkedConversationIds = new Set<string>();
@@ -173,7 +175,7 @@ export async function loadDocumentConversation({
         return;
       }
       const conversationId = await resolveAndLinkDocumentConversation(
-        { assistantId, document, isCurrent },
+        { document, isCurrent },
         linkedConversationIds,
       );
       if (!isCurrent()) {
@@ -194,7 +196,8 @@ export async function loadDocumentConversation({
 export async function startDocumentConversation(
   options: DocumentConversationOptions,
 ): Promise<string | null> {
-  const { assistantId, document, isCurrent } = options;
+  const assistantId = getActiveAssistantId();
+  const { document, isCurrent } = options;
   await whenAssistantVersionKnownFor(assistantId);
   if (!isCurrent()) {
     return null;

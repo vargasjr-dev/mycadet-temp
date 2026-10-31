@@ -443,7 +443,6 @@ export interface CadetBridge {
       cloudAssistants: Array<Record<string, unknown>>,
       cloudOrganizationId?: string,
     ): Promise<LockfileWriteResult>;
-    retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
     /**
      * Revoke one paired device's tokens on a local assistant's gateway.
      * Server-side: the device's next request is rejected.
