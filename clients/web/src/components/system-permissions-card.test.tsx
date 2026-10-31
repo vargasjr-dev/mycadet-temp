@@ -256,6 +256,7 @@ describe("SystemPermissionsCard", () => {
       assistants[0] && {
         cloud: "local",
         assistantId: assistants[0].id,
+        port: 7830,
       },
       expect.any(String),
     );
