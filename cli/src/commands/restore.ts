@@ -16,7 +16,6 @@ import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  requireReadyRuntimeEntry,
   generateLocalSecret,
   startCes,
   startLocalDaemon,
@@ -481,7 +480,6 @@ async function recoverFromArchive(name: string): Promise<void> {
       `Retired assistant '${name}' is not a local assistant; only local archives can be restored.`,
     );
   }
-  requireReadyRuntimeEntry(entry);
 
   // Check that the recovering entry's own target directory is free.
   const target = getLocalInstanceDir(entry);

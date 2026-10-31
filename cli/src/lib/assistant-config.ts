@@ -388,7 +388,7 @@ function conversationKeyPath(assistantId: string): string {
  * available when `probePort()` returns false (nothing listening). Scans up to
  * 100 ports above the base before giving up.
  */
-async function findAvailablePort(basePort: number): Promise<number> {
+export async function findAvailablePort(basePort: number): Promise<number> {
   const maxOffset = 100;
   for (let offset = 0; offset < maxOffset; offset++) {
     const port = basePort + offset;
