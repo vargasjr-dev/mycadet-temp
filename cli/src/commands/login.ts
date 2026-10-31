@@ -16,7 +16,7 @@ import {
 } from "../lib/cloud-client";
 import {
   describeLoginError,
-  registerLocalAssistantWithPlatform,
+  registerLocalAssistantWithCloud,
   workosPkceLogin,
 } from "../lib/cloud-login.js";
 import { getCloudUrl } from "../lib/cloud-client";
@@ -102,7 +102,7 @@ export const login = Object.assign(
       // Register the local assistant with the cloud (non-fatal).
       // Mirrors the desktop app's LocalAssistantBootstrapService flow.
       try {
-        await registerLocalAssistantWithPlatform(token, user);
+        await registerLocalAssistantWithCloud(token, user);
       } catch {
         // Non-fatal — login succeeded even if registration fails
       }

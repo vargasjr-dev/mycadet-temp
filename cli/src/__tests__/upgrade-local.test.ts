@@ -94,6 +94,11 @@ function makeGuardianToken(
   };
 }
 
+const bootstrapSecrets = new Map<string, string>();
+const saveGuardianBootstrapSecret = (id: string, secret: string) => {
+  bootstrapSecrets.set(id, secret);
+};
+const loadGuardianBootstrapSecret = (id: string) => bootstrapSecrets.get(id);
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
   async () => makeGuardianToken({ isNew: true }),
 );
@@ -105,6 +110,8 @@ mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
   leaseGuardianToken: leaseGuardianTokenMock,
   resetGuardianBootstrap: resetGuardianBootstrapMock,
+  saveGuardianBootstrapSecret,
+  loadGuardianBootstrapSecret,
 }));
 
 const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
@@ -207,6 +214,7 @@ function makeLocalEntry(): LocalAssistant {
     join(tempDir, "gateway-security", "actor-token-signing-key"),
     Buffer.from("ab".repeat(32), "hex"),
   );
+  saveGuardianBootstrapSecret("local-assistant", "existing-bootstrap-secret");
   return {
     assistantId: "local-assistant",
     cloud: "local",
@@ -214,7 +222,6 @@ function makeLocalEntry(): LocalAssistant {
     daemonPort: 7821,
     port: 7830,
     cesPort: 7822,
-    guardianBootstrapSecret: "existing-bootstrap-secret",
   };
 }
 
@@ -431,7 +438,6 @@ describe("cadet upgrade local", () => {
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
       expect.objectContaining({
         assistantId: "local-assistant",
-        guardianBootstrapSecret: "existing-bootstrap-secret",
       }),
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({

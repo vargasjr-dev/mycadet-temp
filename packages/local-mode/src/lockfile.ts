@@ -152,7 +152,8 @@ export function stampLockfileAssistantOnboardedIfPresent(
   return updateLockfileAssistantIfPresent(
     assistantId,
     { onboardedAt },
-    (entry) => typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
+    (entry) =>
+      typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
   );
 }
 
@@ -188,9 +189,9 @@ function updateLockfileAssistantIfPresent(
     // current name leaves the on-disk bytes exactly as they were.
     const converged =
       skip?.(entry) ??
-      (Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>).every(
-        ([key, value]) => entry[key] === value,
-      );
+      (
+        Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>
+      ).every(([key, value]) => entry[key] === value);
     if (converged) {
       return { ok: true, lockfile };
     }
@@ -218,14 +219,29 @@ export function saveLockfileAssistant(
     const existingIdx = assistants.findIndex(
       (a) => a.assistantId === assistantId,
     );
+    // The secret keys the contract no longer models are scrubbed from the
+    // merged raw entry — the first write migrates an old lockfile clean.
+    const legacySecretKeys = [
+      "bearerToken",
+      "guardianBootstrapSecret",
+    ] as const;
+    const stripLegacySecrets = (raw: Record<string, unknown>) => {
+      for (const key of legacySecretKeys) delete raw[key];
+      return raw;
+    };
     if (existingIdx >= 0) {
-      assistants[existingIdx] = {
-        ...assistants[existingIdx]!,
+      assistants[existingIdx] = stripLegacySecrets({
+        ...stripLegacySecrets(assistants[existingIdx]!),
         ...assistant,
         assistantId,
-      } as LockfileAssistant;
+      }) as LockfileAssistant;
     } else {
-      assistants.push({ ...assistant, assistantId } as LockfileAssistant);
+      assistants.push(
+        stripLegacySecrets({
+          ...assistant,
+          assistantId,
+        }) as LockfileAssistant,
+      );
     }
     lockfile.assistants = assistants;
     if (activeAssistant !== undefined) {

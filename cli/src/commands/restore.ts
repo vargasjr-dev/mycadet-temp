@@ -35,6 +35,10 @@ import {
   cloudPollJobStatus,
 } from "../lib/cloud-client.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
+import {
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
+} from "../lib/guardian-token.js";
 
 function printUsage(): void {
   console.log(
@@ -507,8 +511,8 @@ async function recoverFromArchive(name: string): Promise<void> {
 
   await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
   const bootstrapSecret =
-    entry.guardianBootstrapSecret ?? generateLocalSecret();
-  entry.guardianBootstrapSecret = bootstrapSecret;
+    loadGuardianBootstrapSecret(entry.assistantId) ?? generateLocalSecret();
+  saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
   saveLockfileAssistant(entry);

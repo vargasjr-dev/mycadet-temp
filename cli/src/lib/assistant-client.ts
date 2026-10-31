@@ -115,13 +115,7 @@ export class AssistantClient {
       this.authMode = "platform";
       this.orgId = undefined;
     } else {
-      this.token =
-        loadGuardianToken(this._assistantId)?.accessToken ??
-        (entry.cloud === "local" ||
-        entry.cloud === "docker" ||
-        entry.cloud === "cloud"
-          ? entry.bearerToken
-          : undefined);
+      this.token = loadGuardianToken(this._assistantId)?.accessToken;
       this.authMode = "guardian";
       this.orgId = undefined;
     }

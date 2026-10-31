@@ -159,7 +159,7 @@ describe("saveLockfileAssistant", () => {
     });
   });
 
-  test("a name-only payload preserves resources and on-disk secrets byte-for-byte", () => {
+  test("a name-only payload preserves the placement and drops the legacy secret fields", () => {
     const entry = {
       assistantId: "asst_1",
       cloud: "local",
@@ -178,7 +178,16 @@ describe("saveLockfileAssistant", () => {
       Record<string, unknown>
     >;
     expect(assistants).toHaveLength(1);
-    expect(assistants[0]).toEqual({ ...entry, name: "Renamed" });
+    // The secrets moved to the xdg token files: the first write through the
+    // contract scrubs the legacy on-disk copies.
+    expect(assistants[0]).toEqual({
+      assistantId: "asst_1",
+      cloud: "local",
+      name: "Renamed",
+      instanceDir: "/tmp/x",
+      port: 7830,
+      daemonPort: 7831,
+    });
   });
 
   test("preserves activeAssistant when no active id is provided", () => {
@@ -268,10 +277,9 @@ describe("renameLockfileAssistantIfPresent", () => {
     name: "Old Name",
     port: 7830,
     daemonPort: 7831,
-    bearerToken: "bt-on-disk-secret",
   };
 
-  test("renames the entry preserving resources, secrets, and activeAssistant", () => {
+  test("renames the entry preserving its fields and activeAssistant", () => {
     writeOnDisk({
       activeAssistant: "asst_other",
       assistants: [entry, { assistantId: "asst_other", cloud: "local" }],

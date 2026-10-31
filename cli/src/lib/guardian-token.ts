@@ -17,6 +17,8 @@ import { hostname, platform } from "os";
 import { dirname, join } from "path";
 
 import {
+  assistantBearerTokenPath,
+  guardianBootstrapSecretPath,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   resolveConfigDir,
@@ -167,6 +169,55 @@ export function computeDeviceId(): string {
  * Returns the parsed token data, or null if the file does not exist or is
  * unreadable.
  */
+/** The hatch-recorded bootstrap secret, from its xdg file. */
+export function loadGuardianBootstrapSecret(
+  assistantId: string,
+): string | undefined {
+  try {
+    const raw = readFileSync(
+      guardianBootstrapSecretPath(assistantId),
+      "utf-8",
+    ).trim();
+    return raw || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function saveGuardianBootstrapSecret(
+  assistantId: string,
+  secret: string,
+): void {
+  const path = guardianBootstrapSecretPath(assistantId);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, secret);
+}
+
+/** Persist the assistant-API bearer to its file (the sync's writer). */
+export function saveAssistantBearerToken(
+  assistantId: string,
+  token: string,
+): void {
+  const path = assistantBearerTokenPath(assistantId);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, token);
+}
+
+/** The assistant-API bearer recorded by the platform sync, from its file. */
+export function loadAssistantBearerToken(
+  assistantId: string,
+): string | undefined {
+  try {
+    const raw = readFileSync(
+      assistantBearerTokenPath(assistantId),
+      "utf-8",
+    ).trim();
+    return raw || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
@@ -592,7 +643,7 @@ export async function leaseGuardianToken(
   }
   const gatewayUrl = getGatewayUrl(entry);
   const assistantId = entry.assistantId;
-  const bootstrapSecret = entry.guardianBootstrapSecret;
+  const bootstrapSecret = loadGuardianBootstrapSecret(assistantId);
   // The gateway 503s every non-probe route ({status: "starting"}) while its
   // post-assistant-ready backfills run — exactly the window that burned the
   // caller's lease-retry budget. Poll /readyz (body-aware: it is the probe

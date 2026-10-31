@@ -293,6 +293,12 @@ export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
  */
 const BaseAssistantSchema = z.object({
   assistantId: z.string(),
+  /** Platform assistant UUID for this assistant's registration. */
+  cloudAssistantId: z.string().optional(),
+  /** Platform base URL this assistant was registered against. */
+  cloudBaseUrl: z.string().optional(),
+  /** Platform organization the entry belongs to. */
+  cloudOrganizationId: z.string().optional(),
   name: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
@@ -307,9 +313,7 @@ const BaseAssistantSchema = z.object({
 
 /**
  * The fields the self-hosted, on-machine topologies (local, docker,
- * apple-container) share: host-recorded ports and instance dir, the bearer
- * helper token, and the platform self-hosted registration the login flow
- * stamps onto whichever runtime is active.
+ * apple-container) share: host-recorded ports and instance dir.
  */
 const LocalRuntimeAssistantFields = {
   /** The gateway port a freshly hatched assistant's gateway listens on. */
@@ -324,26 +328,12 @@ const LocalRuntimeAssistantFields = {
   runtimeVersion: z.string().optional(),
   /** Where the runtime build is installed on this machine. */
   runtimeInstallDir: z.string().optional(),
-  /** Helper token for the assistant API bearer; host-only secret. */
-  bearerToken: z.string().optional(),
-  /** Platform assistant UUID for a self-hosted local assistant registration. */
-  cloudAssistantId: z.string().optional(),
-  /** Platform base URL used for a self-hosted local assistant registration. */
-  cloudBaseUrl: z.string().optional(),
-  /**
-   * Platform organization the entry belongs to — set by the self-hosted
-   * registration and carried by the platform sync (org-scoped readers key
-   * on it).
-   */
-  cloudOrganizationId: z.string().optional(),
 };
 
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
   ...LocalRuntimeAssistantFields,
   cloud: z.literal("local"),
-  /** Bootstrap secret used to lease guardian tokens after detached hatch. */
-  guardianBootstrapSecret: z.string().optional(),
 });
 
 /** A docker-hosted assistant: container metadata for rollback/upgrade. */
@@ -352,8 +342,6 @@ const DockerAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("docker"),
   /** Docker image metadata for rollback. Only present for docker topology entries. */
   containerInfo: ContainerInfoSchema.optional(),
-  /** Bootstrap secret used to lease guardian tokens after detached hatch. */
-  guardianBootstrapSecret: z.string().optional(),
 });
 
 /** An apple-container assistant, driven through its management socket. */
@@ -367,18 +355,6 @@ const AppleContainerAssistantSchema = BaseAssistantSchema.extend({
 /** A platform-hosted assistant, registered against the cloud API. */
 const CloudAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("cloud"),
-  /** Platform assistant UUID for a self-hosted local assistant registration. */
-  cloudAssistantId: z.string().optional(),
-  /** Platform base URL used for a self-hosted local assistant registration. */
-  cloudBaseUrl: z.string().optional(),
-  /**
-   * Platform organization the entry belongs to — set by the self-hosted
-   * registration and carried by the platform sync (org-scoped readers key
-   * on it).
-   */
-  cloudOrganizationId: z.string().optional(),
-  /** Helper token for the assistant API bearer; host-only secret. */
-  bearerToken: z.string().optional(),
 });
 
 /** A self-hosted remote assistant, reached at its own address. */

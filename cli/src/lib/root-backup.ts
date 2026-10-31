@@ -35,6 +35,7 @@ import {
   waitForDaemonReady,
   waitForDaemonMigrationsReady,
 } from "./http-client.js";
+import { loadGuardianBootstrapSecret } from "./guardian-token.js";
 import {
   requireReadyRuntimeEntry,
   startCes,
@@ -334,7 +335,9 @@ export class LocalRootStorage implements RootStorage {
       !isProcessAlive(join(this.root, "gateway.pid")).alive
     )
       await startGateway(false, entry, {
-        bootstrapSecret: entry.guardianBootstrapSecret,
+        bootstrapSecret: loadGuardianBootstrapSecret(
+          this.localEntry.assistantId,
+        ),
       });
     await this.checkReady();
   }

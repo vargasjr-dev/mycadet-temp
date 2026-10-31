@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Lockfile } from "./lockfile-contract";
+import type { Lockfile, LockfileAssistant } from "./lockfile-contract";
 import { servedConfigFromLockfile } from "./served-config";
 
 describe("servedConfigFromLockfile", () => {
@@ -12,8 +12,6 @@ describe("servedConfigFromLockfile", () => {
           assistantId: "active",
           name: "Example Assistant",
           cloud: "docker",
-          bearerToken: "example-host-token",
-          guardianBootstrapSecret: "example-bootstrap-secret",
           port: 7830,
           daemonPort: 7831,
         },
@@ -26,9 +24,11 @@ describe("servedConfigFromLockfile", () => {
       assistantName: "Example Assistant",
       remote: "docker",
     });
+    // The entry carries no bearer at all — the token lives in its xdg
+    // file, never in the lockfile the renderer boundary reads.
     const entry = lockfile.assistants[1];
-    expect(entry?.cloud === "docker" ? entry.bearerToken : undefined).toBe(
-      "example-host-token",
+    expect(entry?.cloud === "docker" ? "bearerToken" in entry : undefined).toBe(
+      false,
     );
   });
 
@@ -63,11 +63,13 @@ describe("servedConfigFromLockfile", () => {
   test("never exposes the guardian credential, even for a paired entry", () => {
     const config = servedConfigFromLockfile({
       assistants: [
+        // The raw on-disk shape a pre-xdg lockfile still carries — the
+        // parse drops it, and the served stamp never sees it.
         {
           assistantId: "paired",
           cloud: "local",
           bearerToken: "example-host-token",
-        },
+        } as unknown as LockfileAssistant,
       ],
       activeAssistant: "paired",
     });
