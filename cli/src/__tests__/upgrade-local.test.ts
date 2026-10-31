@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import cliPkg from "../../package.json";
-import { getLocalInstanceDir } from "../lib/assistant-config.js";
+import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
@@ -397,7 +397,6 @@ describe("cadet upgrade local", () => {
       expect.any(Object),
     );
     expect(createBackupMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
       "local-assistant",
       expect.objectContaining({
         prefix: "local-assistant-pre-upgrade",
@@ -471,7 +470,6 @@ describe("cadet upgrade local", () => {
     );
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
     expect(restoreBackupMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
       "local-assistant",
       "/tmp/local-pre-upgrade.tar.gz",
       { resume: false },

@@ -1,5 +1,6 @@
 import { isCloudHome } from "../lib/cloud-values.js";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
   formatAssistantLookupError,
@@ -8,7 +9,6 @@ import {
   lookupAssistantByIdentifier,
   resolveAssistant,
   resolveConversationKey,
-  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";

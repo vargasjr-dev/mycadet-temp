@@ -2,10 +2,8 @@ import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  getLocalInstanceDir,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {

@@ -53,7 +53,9 @@ mock.module(
     }),
     // Sibling test files in this suite mock the same module and share a
     // process; keep the export their modules import so relinking succeeds.
-    hasLocalGateway: () => false,
+    expectsLocalGateway: (() => false) as unknown as Partial<
+      typeof import("@/lib/local-mode")
+    >["expectsLocalGateway"],
   }),
 );
 
@@ -68,7 +70,7 @@ mock.module("@/stores/resolved-assistant-store", () => {
   store.use = {
     assistant: () => {
       const id = selectionStore((s) => s.selectedAssistantId);
-      return id ? { cloud: "local", assistantId: id } : null;
+      return id ? { cloud: "local", assistantId: id, port: 7830 } : null;
     },
   };
   return { useResolvedAssistantStore: store };

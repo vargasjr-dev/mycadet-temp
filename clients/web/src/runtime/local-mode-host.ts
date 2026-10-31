@@ -14,7 +14,6 @@ import type {
 import { parseLockfile } from "@mycadet/local-mode/contract";
 import type {
   Lockfile,
-  LockfileAssistant,
   LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 
@@ -36,9 +35,8 @@ import { isElectron } from "@/runtime/is-electron";
  * `clients/web/docs/ELECTRON.md`.
  *
  * Both branches return the same wire contract, so callers never observe which
- * host they're on. The contract types are owned by `@mycadet/local-mode` —
- * the package every host produces them from — and re-exported here so `lib/`
- * can keep importing them from `runtime/` without reaching back into `lib/`.
+ * host they're on. The contract types are owned by `@mycadet/local-mode`;
+ * import them from the package directly.
  *
  * Unlike the host-only wrappers (`dock.ts`, `native-biometric.ts`), these
  * functions are NOT no-ops off Electron — the web/dev branch is a real
@@ -52,13 +50,6 @@ import { isElectron } from "@/runtime/is-electron";
  * the desktop shell). The transport branch lives in the host, not the
  * renderer, so the data-plane URL stays byte-identical everywhere.
  */
-
-export type { Lockfile, LockfileAssistant, LockfileWriteResult };
-
-// The contract's validating parser, re-exported so `lib/` can run persisted
-// (localStorage) lockfile reads through the same total validation the hosts
-// apply to on-disk reads, without importing the package directly.
-export { parseLockfile };
 
 export interface LocalHatchResult {
   ok: boolean;

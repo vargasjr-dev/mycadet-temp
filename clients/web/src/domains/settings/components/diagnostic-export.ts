@@ -1,7 +1,5 @@
-import {
-  fetchAssistantLogsHost,
-  type LockfileAssistant,
-} from "@/runtime/local-mode-host";
+import { fetchAssistantLogsHost } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 export async function exportLocalDebugBundle(
   assistant: LockfileAssistant,

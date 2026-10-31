@@ -1,4 +1,4 @@
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 /**
  * `useNotificationIntentSync` forwards `notification_intent` SSE events to
  * `postLocalNotification`, including remote-push acceptance metadata, and

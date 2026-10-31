@@ -4,6 +4,7 @@ import { cliCommand } from "../lib/cli-name.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   extractHostFromEntry,
   formatAssistantLookupError,
@@ -12,7 +13,6 @@ import {
   loadAllAssistants,
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
@@ -202,13 +202,13 @@ function parseRetireArgs(args: string[]): RetireArgs {
   };
 }
 
-function printRetireTarget(entry: LockfileAssistant, cloud: string): void {
+function printRetireTarget(entry: LockfileAssistant): void {
   console.log("Assistant to retire:");
   printInstanceDetails(
     {
       name: getAssistantDisplayName(entry),
       id: entry.assistantId,
-      cloud,
+      cloud: entry.cloud,
       runtime: getGatewayUrl(entry),
       ...(entry.cloud === "local" && entry.instanceDir
         ? { root: entry.instanceDir }
@@ -326,7 +326,7 @@ async function retireInner(): Promise<void> {
   const assistantId = entry.assistantId;
   const cloud = entry.cloud;
 
-  printRetireTarget(entry, cloud);
+  printRetireTarget(entry);
 
   if (!parsed.yes) {
     if (!canPromptForConfirmation()) {

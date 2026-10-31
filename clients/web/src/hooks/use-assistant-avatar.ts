@@ -19,7 +19,7 @@ import {
   useResolvedAssistantStore,
 } from "@/stores/resolved-assistant-store";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type {
   AvatarRead,
   AvatarState,

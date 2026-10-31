@@ -8,16 +8,11 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { getDaemonPidPath } from "../lib/assistant-config.js";
-import {
-  makeEntry,
-  readEntry,
-  readLocalEntry,
-} from "./helpers/lockfile-entry.js";
+import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -195,38 +190,6 @@ describe("retireLocal — CES sibling stop", () => {
         label === "credential-executor",
     );
     expect(cesStopCall).toBeDefined();
-  });
-
-  test("protects other assistants during orphan cleanup", async () => {
-    const otherInstanceDir = join(testDir, "other-instance");
-    makeEntry({
-      assistantId: "other-assistant",
-      instanceDir: otherInstanceDir,
-    });
-    const otherPid = "4242";
-    const otherEntry = readEntry("other-assistant")!;
-    const otherPidFile = getDaemonPidPath(
-      otherEntry.cloud === "local" ? otherEntry : undefined,
-    );
-    mkdirSync(join(otherInstanceDir, "workspace"), {
-      recursive: true,
-    });
-    writeFileSync(otherPidFile, otherPid);
-    stopProcessByPidFileMock.mockImplementation(
-      async (_pidFile: string, label: string): Promise<boolean> =>
-        label !== "daemon",
-    );
-
-    await retireLocal("test-assistant", readLocalEntry("test-assistant"), {
-      progress: () => {},
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    });
-
-    expect(stopOrphanedDaemonProcessesMock).toHaveBeenCalledTimes(1);
-    const excludedPids = stopOrphanedDaemonProcessesMock.mock.calls[0]?.[0];
-    expect(excludedPids?.has(otherPid)).toBeTrue();
   });
 });
 

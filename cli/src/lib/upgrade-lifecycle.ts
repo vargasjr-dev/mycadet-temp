@@ -1,8 +1,5 @@
 import { randomBytes } from "crypto";
-import {
-  getGatewayUrl,
-  isDockerEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
@@ -10,7 +7,7 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
@@ -20,7 +17,6 @@ import {
   DOCKER_READY_TIMEOUT_MS,
   dockerResourceNames,
   GATEWAY_INTERNAL_PORT,
-  ASSISTANT_INTERNAL_PORT,
   pullImage,
   startContainers,
   stopContainers,
@@ -535,12 +531,9 @@ export async function attemptFailedStateRestore(opts: {
     `📦 Reverted stack not ready — attempting ${opts.backupLabel} backup restore...`,
   );
   console.log(`   Source: ${opts.backupPath}`);
-  const restored = await restoreBackup(
-    opts.runtimeUrl,
-    opts.assistantId,
-    opts.backupPath,
-    { resume: false },
-  );
+  const restored = await restoreBackup(opts.assistantId, opts.backupPath, {
+    resume: false,
+  });
   if (!restored) {
     return { restored: false, ready: false };
   }
@@ -675,14 +668,10 @@ export async function performDockerRollback(
 
   // Create a pre-rollback backup as a safety net
   console.log("📦 Creating pre-rollback backup...");
-  const preRollbackBackupPath = await createBackup(
-    gatewayUrl,
-    entry.assistantId,
-    {
-      prefix: `${entry.assistantId}-pre-rollback`,
-      description: `Pre-rollback snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
-    },
-  );
+  const preRollbackBackupPath = await createBackup(entry.assistantId, {
+    prefix: `${entry.assistantId}-pre-rollback`,
+    description: `Pre-rollback snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
+  });
   if (preRollbackBackupPath) {
     console.log(`   Backup saved: ${preRollbackBackupPath}\n`);
     pruneOldBackups(entry.assistantId, 3, "pre-rollback");
@@ -710,10 +699,6 @@ export async function performDockerRollback(
   } catch {
     // use default
   }
-
-  // Recover the assistant host port from the entry, fall back to default.
-  const assistantPort =
-    entry.containerInfo?.assistantPort ?? ASSISTANT_INTERNAL_PORT;
 
   // Broadcast SSE "starting" event
   console.log("📢 Notifying connected clients...");
@@ -778,7 +763,6 @@ export async function performDockerRollback(
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
-        assistantPort,
         imageTags: targetImageTags,
         instanceName,
         res,
@@ -787,9 +771,7 @@ export async function performDockerRollback(
       (msg) => console.log(msg),
     );
     if (
-      !(await restoreBackup(gatewayUrl, entry.assistantId, backupPath, {
-        resume: false,
-      }))
+      !(await restoreBackup(entry.assistantId, backupPath, { resume: false }))
     )
       throw new Error("Target backup roots could not be restored.");
     await wakeContainers(res);
@@ -810,7 +792,6 @@ export async function performDockerRollback(
         assistantImage: targetImageTags.assistant,
         gatewayImage: targetImageTags.gateway,
         cesImage: targetImageTags["credential-executor"],
-        assistantPort,
       },
     };
     saveLockfileAssistant(updatedEntry);
@@ -888,7 +869,6 @@ export async function performDockerRollback(
             extraAssistantEnv,
             extraGatewayEnv,
             gatewayPort,
-            assistantPort,
             imageTags: currentImageRefs,
             instanceName,
             res,
@@ -911,7 +891,6 @@ export async function performDockerRollback(
               extraAssistantEnv,
               extraGatewayEnv,
               gatewayPort,
-              assistantPort,
               imageTags: currentImageRefs,
               instanceName,
               res,
@@ -937,7 +916,6 @@ export async function performDockerRollback(
             console.log(`📦 Restoring data from pre-rollback backup...`);
             console.log(`   Source: ${preRollbackBackupPath}`);
             const restored = await restoreBackup(
-              gatewayUrl,
               entry.assistantId,
               preRollbackBackupPath,
               {},
@@ -963,7 +941,6 @@ export async function performDockerRollback(
               cesImage:
                 entry.containerInfo?.cesImage ??
                 currentImageRefs["credential-executor"],
-              assistantPort,
             },
           };
           saveLockfileAssistant(revertedEntry);

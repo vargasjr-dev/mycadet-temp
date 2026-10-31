@@ -2,10 +2,10 @@ import { z } from "zod";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   getAssistantDisplayName,
   resolveTargetAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { loadGuardianToken, leaseGuardianToken } from "../lib/guardian-token";

@@ -2,10 +2,8 @@ import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../../lib/cli-name.js";
 
-import {
-  type LockfileAssistant,
-  resolveTargetAssistant,
-} from "../../lib/assistant-config.js";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import { resolveTargetAssistant } from "../../lib/assistant-config.js";
 import {
   loadGuardianBootstrapSecret,
   saveGuardianBootstrapSecret,

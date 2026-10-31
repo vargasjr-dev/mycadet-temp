@@ -8,7 +8,7 @@ import {
   type ManagedBackupEntry,
 } from "@mycadet/local-mode/teleport-backup-policy";
 
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import {
   authHeaders,

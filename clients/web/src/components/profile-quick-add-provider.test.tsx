@@ -26,7 +26,13 @@ const NEW_PROFILE_NAME = "fast-cheap";
 // --- resolved assistants store (active assistant id) -------------------------
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
-  store.use = { assistant: () => ({ cloud: "local", assistantId: "assistant-1" }) };
+  store.use = {
+    assistant: () => ({
+      cloud: "local",
+      assistantId: "assistant-1",
+      port: 7830,
+    }),
+  };
   return { useResolvedAssistantStore: store };
 });
 

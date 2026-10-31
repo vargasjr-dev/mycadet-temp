@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as backupOps from "../lib/backup-ops.js";
 import * as roots from "../lib/root-backup.js";
 import * as cloud from "../lib/cloud-client.js";
@@ -58,7 +59,7 @@ afterAll(() => {
 
 for (const topology of ["local", "docker"] as const) {
   test(`${topology} backup uses root storage without runtime auth`, async () => {
-    const entry: config.LockfileAssistant = {
+    const entry: LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
       port: 7830,
@@ -77,7 +78,7 @@ for (const topology of ["local", "docker"] as const) {
 }
 
 test("cloud backup calls the cloud backup API with session authentication", async () => {
-  const entry: config.LockfileAssistant = {
+  const entry: LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
   };

@@ -18,12 +18,9 @@ import {
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
-export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
-
 import {
   resolveAssistantsDir,
   resolveConfigDir,
-  resolveDataDir,
   resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
@@ -52,43 +49,6 @@ export interface RootProcessRecords {
 }
 
 export type RootProcessKind = keyof RootProcessRecords;
-
-/**
- * Derive the daemon PID file path from a resources object. The PID file
- * lives inside the instance's workspace directory. Falls back to the XDG
- * data root's workspace when the entry carries no instance dir
- * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
- */
-/**
- * The instance's data root: the recorded instanceDir, or the shared state
- * root for legacy entries predating per-instance dirs.
- */
-export function isOnMachineEntry(entry: LockfileAssistant): boolean {
-  return (
-    entry.cloud === "local" ||
-    entry.cloud === "docker" ||
-    entry.cloud === "apple-container"
-  );
-}
-
-export function getLocalInstanceDir(
-  entry?: LockfileAssistant | undefined,
-): string {
-  return (
-    (entry &&
-    (entry.cloud === "local" ||
-      entry.cloud === "docker" ||
-      entry.cloud === "apple-container")
-      ? entry.instanceDir
-      : undefined) ?? resolveDataDir()
-  );
-}
-
-export function getDaemonPidPath(
-  entry?: LockfileAssistant | undefined,
-): string {
-  return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
-}
 
 function writeLockfileUnlocked(data: Lockfile): void {
   const lockfilePath = resolveLockfilePath();
@@ -428,14 +388,10 @@ function conversationKeyPath(assistantId: string): string {
  * available when `probePort()` returns false (nothing listening). Scans up to
  * 100 ports above the base before giving up.
  */
-async function findAvailablePort(
-  basePort: number,
-  excludedPorts: number[] = [],
-): Promise<number> {
+async function findAvailablePort(basePort: number): Promise<number> {
   const maxOffset = 100;
   for (let offset = 0; offset < maxOffset; offset++) {
     const port = basePort + offset;
-    if (excludedPorts.includes(port)) continue;
     const inUse = await probePort(port);
     if (!inUse) return port;
   }
@@ -461,30 +417,15 @@ export async function allocateLocalPlacement(
   const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
-  // Collect ports already assigned to other local instances in the lockfile.
-  const reservedPorts: number[] = [];
-  for (const recorded of loadAllAssistants()) {
-    if (recorded.cloud !== "local") continue;
-    if (recorded.daemonPort !== undefined)
-      reservedPorts.push(recorded.daemonPort);
-    if (recorded.port !== undefined) reservedPorts.push(recorded.port);
-    if (recorded.cesPort !== undefined) reservedPorts.push(recorded.cesPort);
-  }
-
+  // The probe is the source of truth — anything actually listening claims
+  // its port, whether that listener is another assistant or not.
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
   const basePorts = getDefaultPorts();
-  const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
-  const gatewayPort = await findAvailablePort(basePorts.gateway, [
-    ...reservedPorts,
-    daemonPort,
-  ]);
-  const cesPort = await findAvailablePort(basePorts.ces, [
-    ...reservedPorts,
-    daemonPort,
-    gatewayPort,
-  ]);
+  const daemonPort = await findAvailablePort(basePorts.daemon);
+  const gatewayPort = await findAvailablePort(basePorts.gateway);
+  const cesPort = await findAvailablePort(basePorts.ces);
 
   return {
     instanceDir,

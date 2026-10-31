@@ -2,7 +2,7 @@ import { rm } from "node:fs/promises";
 import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
   removeLockfileAssistant,
@@ -33,7 +33,6 @@ import { fetchCurrentVersion } from "./http-client.js";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant } from "../commands/sleep.js";
 import { generateInstanceName } from "./random-name.js";
-import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
 type HostEnvironment = "local" | "docker";
@@ -69,11 +68,9 @@ const defaultOps: HostTeleportOps = {
   sleep: (entry) =>
     sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
   backup: async (entry) => {
-    const archive = await createBackup(
-      getGatewayUrl(entry),
-      entry.assistantId,
-      { prefix: `${entry.assistantId}-pre-teleport` },
-    );
+    const archive = await createBackup(entry.assistantId, {
+      prefix: `${entry.assistantId}-pre-teleport`,
+    });
     if (!archive) {
       throw new Error(
         `Could not capture '${entry.assistantId}'; teleport aborted.`,
@@ -82,7 +79,7 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  version: readHostRuntimeVersion,
+  version: async (entry) => await fetchCurrentVersion(getGatewayUrl(entry)),
   hatch: async (env, name, initialArchive) => {
     const instanceName = generateInstanceName(name ?? null);
     if (findAssistantByName(instanceName)) {
@@ -126,55 +123,6 @@ const defaultOps: HostTeleportOps = {
     removeLockfileAssistant(entry.assistantId);
   },
 };
-
-export async function readHostRuntimeVersion(
-  entry: LockfileAssistant,
-): Promise<string | undefined> {
-  if (entry.cloud !== "docker") {
-    return (
-      (await fetchCurrentVersion(getGatewayUrl(entry))) ??
-      (entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-        ? entry.runtimeVersion
-        : undefined)
-    );
-  }
-  try {
-    const container = dockerResourceNames(entry.assistantId).gatewayContainer;
-    const state = await new DockerRootStorage(entry).inspect(container);
-    const configured = state.Config.Env.find((value) =>
-      value.startsWith("GATEWAY_PORT="),
-    )?.slice("GATEWAY_PORT=".length);
-    const port = configured ? Number(configured) : GATEWAY_INTERNAL_PORT;
-    if (!Number.isSafeInteger(port) || port < 1 || port > 65535) {
-      throw new Error("Invalid Docker gateway health port.");
-    }
-    const result = await execOutput(
-      "docker",
-      [
-        "exec",
-        container,
-        "bun",
-        "--eval",
-        "const r=await fetch(process.argv.at(-1),{signal:AbortSignal.timeout(1500)});if(!r.ok)process.exit(1);console.log(JSON.stringify(await r.json()))",
-        `http://127.0.0.1:${port}/healthz`,
-      ],
-      { timeoutMs: 3000 },
-    );
-    const parsed = z
-      .object({ version: z.string() })
-      .safeParse(JSON.parse(result));
-    if (parsed.success) {
-      return parsed.data.version;
-    }
-  } catch {
-    // Sleeping containers still carry their recorded release tag.
-  }
-  return entry.containerInfo?.gatewayImage.match(
-    /:v?(\d+\.\d+\.\d+(?:-[\w.-]+)?)$/,
-  )?.[1];
-}
 
 function checkVersion(
   source: string | undefined,
@@ -424,8 +372,7 @@ async function dockerReplacementOptions(
   );
   const gatewayUrl = getGatewayUrl(entry);
   const gatewayPort = Number(new URL(gatewayUrl).port);
-  const assistantPort = entry.containerInfo?.assistantPort;
-  if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1 || !assistantPort) {
+  if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1) {
     throw new Error(
       "Docker target is missing its published ports. Use a newly hatched target.",
     );
@@ -433,7 +380,6 @@ async function dockerReplacementOptions(
   return {
     ...replay,
     gatewayPort,
-    assistantPort,
     imageTags: {
       assistant: states.get(res.assistantContainer)!.Image,
       gateway: states.get(res.gatewayContainer)!.Image,

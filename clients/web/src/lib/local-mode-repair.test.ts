@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 // The wrapper under test orchestrates the real connect primitive, so we drive
 // its external seams rather than the primitive itself: the host-routed readyz

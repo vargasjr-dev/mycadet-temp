@@ -1,12 +1,11 @@
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import * as backups from "../lib/backup-ops.js";
 import * as docker from "../lib/docker.js";
 import * as lifecycle from "../lib/upgrade-lifecycle.js";
-import * as config from "../lib/assistant-config.js";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
 import * as loopback from "../lib/loopback-fetch.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const capture = spyOn(backups, "createBackup");
 const images = spyOn(docker, "captureImageRefs");
@@ -92,12 +91,9 @@ test("failed-state recovery restores tar roots while stopped before restarting o
       containerOptions,
     }),
   ).toEqual({ restored: true, ready: true });
-  expect(restore).toHaveBeenCalledWith(
-    "http://127.0.0.1:7830",
-    "recovery",
-    "pre-upgrade.tar.gz",
-    { resume: false },
-  );
+  expect(restore).toHaveBeenCalledWith("recovery", "pre-upgrade.tar.gz", {
+    resume: false,
+  });
   expect(events).toEqual([
     "restore-roots",
     "sleep",
@@ -133,7 +129,7 @@ test("versioned restore installs roots into stopped target containers before fir
       stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
     }),
   );
-  const entry: config.LockfileAssistant = {
+  const entry: LockfileAssistant = {
     assistantId: "recovery",
     cloud: "docker",
     port: 7830,
@@ -170,10 +166,11 @@ test("versioned restore installs roots into stopped target containers before fir
       backupPath: "/tmp/source.tar.gz",
     });
     expect(restore).toHaveBeenCalledWith(
-      getGatewayUrl(entry),
       entry.assistantId,
       "/tmp/source.tar.gz",
-      { resume: false },
+      {
+        resume: false,
+      },
     );
     expect(events).toEqual([
       "capture-safety",

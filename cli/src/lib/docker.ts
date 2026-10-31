@@ -19,7 +19,7 @@ import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
 import { isDockerEntry, saveLockfileAssistant } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "./assistant-config";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
 import { buildServiceRunArgs } from "./statefulset.js";
@@ -821,7 +821,6 @@ export async function startContainers(
     extraAssistantEnv?: Record<string, string>;
     extraGatewayEnv?: Record<string, string>;
     gatewayPort: number;
-    assistantPort: number;
     imageTags: Record<ServiceName, string>;
     instanceName: string;
     res: ReturnType<typeof dockerResourceNames>;
@@ -982,8 +981,8 @@ export async function recreateDockerContainers(
     await pullImage(image, log);
   }
 
-  const gatewayPort = entry.port ?? getDefaultPorts().gateway;
-  const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
+  const gatewayPort = entry.port;
+  const assistantPort = ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(
     {
@@ -991,7 +990,6 @@ export async function recreateDockerContainers(
       extraAssistantEnv: { CADET_DEVICE_ID: device },
       extraGatewayEnv: { CADET_DEVICE_ID: device },
       gatewayPort,
-      assistantPort,
       imageTags: {
         assistant: info.assistantImage,
         gateway: info.gatewayImage,
@@ -1010,7 +1008,7 @@ export async function recreateDockerContainers(
     ...entry,
     port: gatewayPort,
     daemonPort: entry.daemonPort ?? assistantPort,
-    containerInfo: { ...info, assistantPort },
+    containerInfo: info,
   });
 }
 
@@ -1195,7 +1193,6 @@ function startFileWatcher(opts: {
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort: number;
-  assistantPort: number;
   imageTags: Record<ServiceName, string>;
   instanceName: string;
   repoRoot: string;
@@ -1203,8 +1200,7 @@ function startFileWatcher(opts: {
   netnsContainer?: string;
   assistantCaCertPath?: string;
 }): () => void {
-  const { gatewayPort, assistantPort, imageTags, instanceName, repoRoot, res } =
-    opts;
+  const { gatewayPort, imageTags, instanceName, repoRoot, res } = opts;
 
   const { dirs: watchDirs, files: watchFiles } = collectWatchTargets(repoRoot);
 
@@ -1219,7 +1215,6 @@ function startFileWatcher(opts: {
     extraAssistantEnv: opts.extraAssistantEnv,
     extraGatewayEnv: opts.extraGatewayEnv,
     gatewayPort,
-    assistantPort,
     imageTags,
     instanceName,
     res,
@@ -1691,7 +1686,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
         cesImage: imageTags["credential-executor"],
-        assistantPort,
       },
     };
     if (params.initialArchive) {
@@ -1705,7 +1699,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
-        assistantPort,
         imageTags,
         instanceName,
         res,
@@ -1804,7 +1797,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
-        assistantPort,
         imageTags,
         instanceName,
         repoRoot,

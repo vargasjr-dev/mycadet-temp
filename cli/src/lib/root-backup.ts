@@ -24,8 +24,8 @@ import {
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "./assistant-config.js";
-import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";
@@ -36,11 +36,7 @@ import {
   waitForDaemonMigrationsReady,
 } from "./http-client.js";
 import { loadGuardianBootstrapSecret } from "./guardian-token.js";
-import {
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "./remotes/local.js";
+import { startCes, startGateway, startLocalDaemon } from "./remotes/local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -745,17 +741,9 @@ export async function withRootOperationLock<T>(
 ): Promise<T> {
   const parent = join(getBackupsDir(), ".operations");
   await mkdir(parent, { recursive: true, mode: 0o700 });
-  const identity =
-    entry.cloud === "docker"
-      ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : isLocalEntry(entry)
-        ? entry.instanceDir
-        : undefined;
   const lock = join(
     parent,
-    createHash("sha256")
-      .update(identity ?? entry.assistantId)
-      .digest("hex"),
+    createHash("sha256").update(entry.assistantId).digest("hex"),
   );
   const owned = ownedOperationLocks.getStore();
   if (owned?.has(lock)) {

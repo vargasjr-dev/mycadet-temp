@@ -23,7 +23,7 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { getAssistant, type GetAssistantResult } from "@/assistant/api";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { getLockfileAssistant } from "@/lib/local-mode";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
 

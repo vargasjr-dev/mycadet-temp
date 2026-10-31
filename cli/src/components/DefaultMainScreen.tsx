@@ -9,7 +9,11 @@ import {
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
-import { lookupAssistantByIdentifier } from "../lib/assistant-config";
+import {
+  getAssistantDisplayName,
+  lookupAssistantByIdentifier,
+} from "../lib/assistant-config";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { checkHealth } from "../lib/health-check";
 import {
   guardianTokenDueForRenewal,
@@ -17,6 +21,7 @@ import {
   refreshGuardianToken,
 } from "../lib/guardian-token";
 import { trustedRefreshUrl } from "../lib/runtime-url";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { appendHistory, loadHistory } from "../lib/input-history";
 import { tuiLog } from "../lib/tui-log";
 import {
@@ -817,9 +822,9 @@ export function renderErrorMainScreen(error: unknown): number {
 }
 
 interface DefaultMainScreenProps {
-  runtimeUrl: string;
-  assistantId: string;
-  assistantName?: string;
+  /** Identity and placement come from the entry; the header derives the
+   *  assistant id, display name, and gateway URL from it. */
+  entry: LockfileAssistant;
   healthStatus?: string;
 }
 
@@ -862,11 +867,12 @@ function CompactHeader({
 }
 
 function DefaultMainScreen({
-  runtimeUrl,
-  assistantId,
-  assistantName,
+  entry,
   healthStatus,
 }: DefaultMainScreenProps): ReactElement {
+  const assistantId = entry.assistantId;
+  const assistantName = getAssistantDisplayName(entry);
+  const runtimeUrl = getGatewayUrl(entry);
   const accentColor = "magenta";
   const caps = getTerminalCapabilities();
   const headerSep = caps.unicodeSupported ? "─" : "-";
@@ -996,14 +1002,14 @@ export function render(
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
   const headerHeight = calculateHeaderHeight(terminalColumns);
 
-  const { unmount } = inkRender(
-    <DefaultMainScreen
-      runtimeUrl={runtimeUrl}
-      assistantId={assistantId}
-      assistantName={assistantName}
-    />,
-    { exitOnCtrlC: false },
-  );
+  const lookup = lookupAssistantByIdentifier(assistantId);
+  const entry: LockfileAssistant =
+    lookup.status === "found"
+      ? lookup.entry
+      : { assistantId, cloud: "cloud", name: assistantName };
+  const { unmount } = inkRender(<DefaultMainScreen entry={entry} />, {
+    exitOnCtrlC: false,
+  });
   unmount();
 
   if (isCompact) {
@@ -2329,6 +2335,7 @@ function ChatApp({
     }
   }, [selection]);
 
+  const lookup = lookupAssistantByIdentifier(assistantId);
   if (connectionState !== "connected") {
     return (
       <ConnectionScreen
@@ -2345,9 +2352,15 @@ function ChatApp({
   return (
     <Box flexDirection="column" height={terminalRows}>
       <DefaultMainScreen
-        runtimeUrl={runtimeUrl}
-        assistantId={assistantId}
-        assistantName={liveAssistantName}
+        entry={
+          lookup.status === "found"
+            ? lookup.entry
+            : {
+                assistantId,
+                cloud: "cloud",
+                name: liveAssistantName,
+              }
+        }
         healthStatus={healthStatus}
       />
 

@@ -106,12 +106,11 @@ mock.module("@/stores/resolved-assistant-store", () => ({
     use: {
       assistant: () =>
         selectedAssistantId
-          ? { cloud: "local", assistantId: selectedAssistantId }
+          ? { cloud: "local", assistantId: selectedAssistantId, port: 7830 }
           : null,
     },
   },
 }));
-
 
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => null,
@@ -257,6 +256,7 @@ describe("SystemPermissionsCard", () => {
       assistants[0] && {
         cloud: "local",
         assistantId: assistants[0].id,
+        port: 7830,
       },
       expect.any(String),
     );
