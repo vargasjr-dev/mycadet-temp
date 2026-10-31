@@ -29,6 +29,7 @@ import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import type * as Editor from "../components/tiptap-document-editor";
 import type { DocumentViewerContainerHandle } from "../components/document-viewer-container";
 import { useOpenDocumentFromChat } from "./use-open-app-from-chat";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const original: DocumentContent = {
   success: true,
@@ -167,9 +168,7 @@ beforeEach(() => {
   entryMode = "conversation";
   load.mockClear();
   write.mockClear();
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useViewerStore.setState({
     mainView: "chat",
     openedDocumentState: null,

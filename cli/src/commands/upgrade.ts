@@ -428,7 +428,7 @@ async function upgradeLocal(
     );
     console.log("✅ Local assistant processes started\n");
 
-    await restoreAppServerAndAutoTunnel(entry);
+    await restoreAppServerAndAutoTunnel(entry.port, entry.assistantId);
 
     console.log("Waiting for assistant to become ready...");
     const ready = await waitForReady(adminUrl);

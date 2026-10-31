@@ -3,10 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { GATEWAY_PORT } from "../lockfile-contract";
+import {
+  GATEWAY_PORT,
+  LockfileAssistantSchema,
+  type LockfileAssistant,
+} from "../lockfile-contract";
 import {
   authorizePairedForwardHeaders,
-  gatewayTargetsFromLockfile,
   parseAssistantGatewayUrl,
   readGatewayTargets,
   resolveGatewayProxyTarget,
@@ -23,16 +26,12 @@ const loopback = (port: number) => ({ kind: "loopback", port }) as const;
 const remote = (runtimeUrl: string) =>
   ({ kind: "remote", runtimeUrl }) as const;
 
-const targets =
-  (
-    map: Record<
-      string,
-      | { kind: "loopback"; port: number }
-      | { kind: "remote"; runtimeUrl: string }
-    >,
-  ) =>
-  () =>
-    new Map(Object.entries(map));
+const entries = (map: Record<string, unknown>) => () =>
+  new Map(
+    Object.entries(map).map(
+      ([id, raw]) => [id, LockfileAssistantSchema.parse(raw)] as const,
+    ),
+  );
 
 describe("parseAssistantGatewayUrl", () => {
   test("parses the scoped SDK surface and forwards the full path", () => {
@@ -131,9 +130,19 @@ describe("parseAssistantGatewayUrl", () => {
 });
 
 describe("resolveGatewayProxyTarget", () => {
-  const entry = targets({
-    "abc-123": loopback(8080),
-    "def-456": remote("https://gw.example.com"),
+  const entry = entries({
+    "abc-123": {
+      assistantId: "abc-123",
+      cloud: "local",
+      port: 8080,
+      daemonPort: 8501,
+    },
+    "def-456": {
+      assistantId: "def-456",
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
+    },
   });
 
   test("passes non-gateway paths through untouched", () => {
@@ -141,7 +150,7 @@ describe("resolveGatewayProxyTarget", () => {
       kind: "pass",
     });
     expect(
-      resolveGatewayProxyTarget("/assistant/assets/app.js", targets({})),
+      resolveGatewayProxyTarget("/assistant/assets/app.js", entries({})),
     ).toEqual({ kind: "pass" });
   });
 
@@ -156,7 +165,6 @@ describe("resolveGatewayProxyTarget", () => {
       target: loopback(8080),
     });
   });
-
   test("forwards a scoped path for an imported pairing to its runtimeUrl", () => {
     expect(
       resolveGatewayProxyTarget("/v1/assistants/def-456/messages?x=1", entry),
@@ -187,159 +195,106 @@ describe("resolveGatewayProxyTarget", () => {
       resolveGatewayProxyTarget("/v1/assistants/zzz-999/messages", entry),
     ).toEqual({ kind: "pass" });
     expect(
-      resolveGatewayProxyTarget("/v1/assistants/zzz-999/x", targets({})),
+      resolveGatewayProxyTarget("/v1/assistants/zzz-999/x", entries({})),
     ).toEqual({ kind: "pass" });
   });
 });
 
-describe("gatewayTargetsFromLockfile", () => {
+describe("gateway target derivation", () => {
+  const forwardTarget = (id: string, raw: unknown) =>
+    resolveGatewayProxyTarget(`/v1/assistants/${id}/x`, entries({ [id]: raw }))
+      .kind === "forward"
+      ? (
+          resolveGatewayProxyTarget(
+            `/v1/assistants/${id}/x`,
+            entries({ [id]: raw }),
+          ) as { target: unknown }
+        ).target
+      : undefined;
+
   test("resolves a paired entry's custom addressing to a remote target", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "custom",
-            ipAddress: "gw.example.com",
-            port: 443,
-          },
-        ],
+      forwardTarget("abc-123", {
+        assistantId: "abc-123",
+        cloud: "custom",
+        ipAddress: "gw.example.com",
+        port: 443,
       }),
-    ).toEqual(targets({ "abc-123": remote("https://gw.example.com") })());
+    ).toEqual(remote("https://gw.example.com"));
   });
 
-  test("omits loopback entries with no recorded port beyond the default's loopback form", () => {
+  test("a custom entry pointing at loopback is not targetable", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          { assistantId: "abc-123", cloud: "custom" },
-          { assistantId: "def-456", cloud: "cloud" },
-        ],
-      }),
-    ).toEqual(new Map());
+      resolveGatewayProxyTarget(
+        "/v1/assistants/abc-123/x",
+        entries({
+          "abc-123": {
+            assistantId: "abc-123",
+            cloud: "custom",
+            ipAddress: "127.0.0.1",
+            port: 443,
+          },
+        }),
+      ),
+    ).toEqual({ kind: "pass" });
   });
 
   test("resolves a local entry's recorded gatewayPort to a loopback target", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            port: 8080,
-            daemonPort: 8501,
-          },
-        ],
+      forwardTarget("abc-123", {
+        assistantId: "abc-123",
+        cloud: "local",
+        port: 8080,
+        daemonPort: 8501,
       }),
-    ).toEqual(targets({ "abc-123": loopback(8080) })());
+    ).toEqual(loopback(8080));
   });
 
   test("a docker entry without a recorded port derives the default gateway port", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [{ assistantId: "abc-123", cloud: "docker" }],
+      forwardTarget("abc-123", {
+        assistantId: "abc-123",
+        cloud: "docker",
       }),
-    ).toEqual(new Map([["abc-123", loopback(GATEWAY_PORT)]]));
+    ).toEqual(loopback(GATEWAY_PORT));
   });
 
-  test("omits ports outside the 1024-65535 proxy range", () => {
-    expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            port: 80,
-            daemonPort: 8501,
-          },
-          {
-            assistantId: "def-456",
-            cloud: "docker",
-            port: 70000,
-          },
-        ],
-      }),
-    ).toEqual(new Map());
+  test("ports outside the 1024-65535 proxy range are not targetable", () => {
+    for (const port of [80, 70000]) {
+      expect(
+        resolveGatewayProxyTarget(
+          "/v1/assistants/abc-123/x",
+          entries({
+            "abc-123": {
+              assistantId: "abc-123",
+              cloud: "local",
+              port,
+              daemonPort: 8501,
+            },
+          }),
+        ),
+      ).toEqual({ kind: "pass" });
+    }
   });
 
   test("omits clouds the SPA does not drive over this proxy", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          { assistantId: "a", cloud: "cloud" },
-          // A retired spelling parses as "local": loopback-gated, so it
-          // derives the default loopback port rather than being omitted.
-          { assistantId: "b", cloud: "gcp" },
-        ],
-      }),
-    ).toEqual(new Map([["b", { kind: "loopback", port: GATEWAY_PORT }]]));
-  });
-
-  test("a custom entry's recorded addressing is targetable", () => {
-    expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "c",
-            cloud: "custom",
-            ipAddress: "gw.example.com",
-            port: 7831,
-          },
-        ],
-      }),
-    ).toEqual(
-      new Map([
-        ["c", { kind: "remote", runtimeUrl: "https://gw.example.com:7831" }],
-      ]),
-    );
+      resolveGatewayProxyTarget(
+        "/v1/assistants/a/x",
+        entries({ a: { assistantId: "a", cloud: "cloud" } }),
+      ),
+    ).toEqual({ kind: "pass" });
   });
 
   test("a baseten entry resolves to a remote target on the sandbox /port/ route", () => {
     expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "sbx-1",
-            cloud: "baseten",
-            sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
-            port: 7830,
-          },
-        ],
+      forwardTarget("sbx-1", {
+        assistantId: "sbx-1",
+        cloud: "baseten",
+        sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
+        port: 7830,
       }),
-    ).toEqual(
-      targets({
-        "sbx-1": remote("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830"),
-      })(),
-    );
-  });
-
-  test("a baseten entry without a recorded URL is not targetable", () => {
-    // The hatch records the entry only once describe returns a URL; a
-    // URL-less record must not forward anywhere.
-    expect(
-      gatewayTargetsFromLockfile({
-        assistants: [{ assistantId: "sbx-1", cloud: "baseten", port: 7830 }],
-      }),
-    ).toEqual(new Map());
-  });
-
-  test("tolerates malformed entries", () => {
-    expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          null,
-          42,
-          { noId: true },
-          { assistantId: "", paired: true },
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            port: 8080,
-            daemonPort: 8501,
-          },
-        ],
-      }),
-    ).toEqual(targets({ "abc-123": loopback(8080) })());
+    ).toEqual(remote("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830"));
   });
 });
 
@@ -380,9 +335,19 @@ describe("readGatewayTargets", () => {
       ),
     );
     expect(readGatewayTargets()).toEqual(
-      targets({
-        "abc-123": loopback(8080),
-        "def-456": remote("https://gw.example.com"),
+      entries({
+        "abc-123": {
+          assistantId: "abc-123",
+          cloud: "local",
+          port: 8080,
+          daemonPort: 8501,
+        },
+        "def-456": {
+          assistantId: "def-456",
+          cloud: "custom",
+          ipAddress: "gw.example.com",
+          port: 443,
+        },
       })(),
     );
     fs.rmSync(dir, { recursive: true, force: true });
@@ -393,6 +358,30 @@ describe("readGatewayTargets", () => {
       fs.writeFileSync(lockfilePath, JSON.stringify({ assistants: [] })),
     );
     expect(readGatewayTargets()).toEqual(new Map());
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("malformed entries are skipped, not fatal", () => {
+    const dir = withAmbientLockfile((lockfilePath) =>
+      fs.writeFileSync(
+        lockfilePath,
+        JSON.stringify({
+          assistants: [
+            null,
+            42,
+            { noId: true },
+            { assistantId: "", cloud: "local", port: 8080, daemonPort: 8501 },
+            {
+              assistantId: "abc-123",
+              cloud: "local",
+              port: 8080,
+              daemonPort: 8501,
+            },
+          ],
+        }),
+      ),
+    );
+    expect(readGatewayTargets().size).toBe(1);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
@@ -429,11 +418,9 @@ describe("remote-forward header handling", () => {
     const headers = new Headers({ authorization: "Bearer renderer" });
     const result = await authorizePairedForwardHeaders(
       "abc-123",
-      "https://gw.example.com",
       headers,
-      async (assistantId, runtimeUrl) => {
+      async (assistantId) => {
         expect(assistantId).toBe("abc-123");
-        expect(runtimeUrl).toBe("https://gw.example.com");
         return { ok: true, accessToken: "host-token" };
       },
     );

@@ -12,6 +12,7 @@ import {
   isUsableBaseUrl,
   LockfileAssistantSchema,
 } from "./lockfile-contract";
+import type { LockfileAssistant } from "./lockfile-contract";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 export { FLATTENED_FIRST_SEGMENTS };
@@ -164,7 +165,7 @@ const GATEWAY_REJECTION: GatewayProxyDecision = {
  */
 export function resolveGatewayProxyTarget(
   url: string,
-  getTargets: () => Map<string, GatewayEntryTarget>,
+  getTargets: () => Map<string, LockfileAssistant>,
 ): GatewayProxyDecision {
   const parsed = parseAssistantGatewayUrl(url);
   if (!parsed.match) {
@@ -173,8 +174,27 @@ export function resolveGatewayProxyTarget(
   if (!parsed.valid) {
     return GATEWAY_REJECTION;
   }
-  const target = getTargets().get(parsed.target.assistantId);
-  if (!target) {
+  const entry = getTargets().get(parsed.target.assistantId);
+  // Cloud assistants are driven through the platform session, never
+  // forwarded over this machine's proxy.
+  if (!entry || isCloudEntry(entry)) {
+    return { kind: "pass" };
+  }
+  const gatewayUrl = getGatewayUrl(entry);
+  if (isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
+    return {
+      kind: "forward",
+      assistantId: parsed.target.assistantId,
+      path: parsed.target.path,
+      search: parsed.target.search,
+      target: { kind: "remote", runtimeUrl: gatewayUrl },
+    };
+  }
+  if (!isLoopbackGatewayCloud(entry.cloud)) {
+    return { kind: "pass" };
+  }
+  const port = entry.port;
+  if (port == null || port < MIN_GATEWAY_PORT || port > MAX_GATEWAY_PORT) {
     return { kind: "pass" };
   }
   return {
@@ -182,61 +202,12 @@ export function resolveGatewayProxyTarget(
     assistantId: parsed.target.assistantId,
     path: parsed.target.path,
     search: parsed.target.search,
-    target,
+    target: { kind: "loopback", port },
   };
 }
 
 const MIN_GATEWAY_PORT = 1024;
 const MAX_GATEWAY_PORT = 65535;
-
-/**
- * Compute the id-keyed gateway-target map from a lockfile's assistant
- * entries. Each entry parses through {@link LockfileAssistantSchema}; an
- * entry that fails the parse (or carries no usable id) is skipped. An
- * off-machine `runtimeUrl` (an absolute http(s) address that is not
- * loopback — a connect import's remote gateway) resolves to it directly;
- * otherwise a loopback-gateway cloud (`local`, `docker`) resolves to its
- * recorded loopback port (`entry.port`). Everything
- * else — the cloud — is left out, and an absent id is a proxy
- * rejection.
- *
- * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
- * lockfile watcher) derives the map without touching disk on the request
- * path.
- */
-export function gatewayTargetsFromLockfile(lockfile: {
-  assistants: readonly unknown[];
-}): Map<string, GatewayEntryTarget> {
-  const targets = new Map<string, GatewayEntryTarget>();
-  for (const rawEntry of lockfile.assistants) {
-    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
-    if (!parsed.success) {
-      continue;
-    }
-    const { assistantId } = parsed.data;
-    if (!assistantId) {
-      continue;
-    }
-    const gatewayUrl = getGatewayUrl(parsed.data);
-    // Cloud assistants are driven through the platform session, never
-    // forwarded over this machine's proxy.
-    if (isCloudEntry(parsed.data)) {
-      continue;
-    }
-    if (isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
-      targets.set(assistantId, { kind: "remote", runtimeUrl: gatewayUrl });
-      continue;
-    }
-    if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
-      continue;
-    }
-    const port = parsed.data.port;
-    if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
-      targets.set(assistantId, { kind: "loopback", port });
-    }
-  }
-  return targets;
-}
 
 type LockfileEntriesRead =
   | { kind: "ok"; assistants: unknown[] }
@@ -270,19 +241,26 @@ function readLockfileAssistantEntries(candidate: string): LockfileEntriesRead {
 }
 
 /**
- * Read the gateway-target map from the lockfile on disk
- * ({@link gatewayTargetsFromLockfile} over the first readable candidate).
- * Path selection matches the unpair write path (`readRawLockfile` in
+ * Read the id-keyed gateway-target map from the lockfile on disk. The
+ * lockfile's assistant entries ARE the gateway targets; the map keys them
+ * by id. Path selection matches the unpair write path (`readRawLockfile` in
  * lockfile.ts): the first readable, parseable lockfile is authoritative even
  * when it yields no targets, so an unpaired or retired assistant can never
  * survive in a stale fallback file's target map.
  */
-export function readGatewayTargets(): Map<string, GatewayEntryTarget> {
+export function readGatewayTargets(): Map<string, LockfileAssistant> {
   const read = readLockfileAssistantEntries(resolveLockfilePath());
   if (read.kind !== "ok") {
-    return new Map<string, GatewayEntryTarget>();
+    return new Map<string, LockfileAssistant>();
   }
-  return gatewayTargetsFromLockfile({ assistants: read.assistants });
+  const targets = new Map<string, LockfileAssistant>();
+  for (const rawEntry of read.assistants) {
+    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
+    if (parsed.success && parsed.data.assistantId) {
+      targets.set(parsed.data.assistantId, parsed.data);
+    }
+  }
+  return targets;
 }
 
 /**
@@ -313,7 +291,6 @@ export function sanitizePairedForwardHeaders(headers: Headers): void {
 
 export type PairedGuardianTokenProvider = (
   assistantId: string,
-  runtimeUrl: string,
 ) => Promise<TokenResult>;
 
 export type PairedForwardAuthorizationResult =
@@ -323,12 +300,11 @@ export type PairedForwardAuthorizationResult =
 /** Replace renderer authorization with the paired credential owned by the host. */
 export async function authorizePairedForwardHeaders(
   assistantId: string,
-  runtimeUrl: string,
   headers: Headers,
   getGuardianToken: PairedGuardianTokenProvider,
 ): Promise<PairedForwardAuthorizationResult> {
   sanitizePairedForwardHeaders(headers);
-  const result = await getGuardianToken(assistantId, runtimeUrl);
+  const result = await getGuardianToken(assistantId);
   if (!result.ok) {
     return result;
   }

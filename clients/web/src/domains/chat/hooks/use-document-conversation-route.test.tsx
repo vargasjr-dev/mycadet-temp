@@ -44,6 +44,7 @@ import type * as TurnTimeout from "./use-turn-timeout";
 import { DocumentChatContent } from "../components/document-chat-content";
 import type { DocumentViewerContainerHandle } from "../components/document-viewer-container";
 import { trackDocumentSave } from "../api/document-save";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const nativeApp = await import("@capacitor/app");
 let backButtonHandler: BackButtonListener | undefined;
@@ -253,9 +254,7 @@ beforeEach(() => {
   viewer = useViewerStore.getState();
   conversation = useConversationStore.getState();
   useConversationStore.setState({ activeConversationId: null });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useUnseenDocumentChangesStore.setState({ changedDocuments: {} });
   useViewerStore.setState({
     mainView: "chat",

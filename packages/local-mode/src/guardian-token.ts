@@ -16,11 +16,6 @@ import type { CliInvocation } from "./util";
 const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
 const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
 
-export const PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR =
-  "Paired assistant credentials are available only through the paired gateway proxy";
-export const PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR =
-  "Paired assistant target does not match the stored pairing";
-
 /** The persisted shape of an assistant's guardian token file. */
 export interface GuardianTokenData {
   guardianPrincipalId: string;
@@ -225,25 +220,21 @@ export function parseGuardianRefreshCliFailure(
   };
 }
 
-export interface GuardianTokenOptions {
-  /**
-   * True when the entry was imported from another machine via `cadet pair`.
-   * A paired entry has no local daemon, so expired-refresh guidance points at
-   * re-pairing instead of `cadet hatch`/`cadet wake`.
-   */
-  paired?: boolean;
-  /** Gateway URL resolved for the paired proxy request. */
-  pairedGatewayUrl?: string;
-}
-
+/** The persisted shape of an assistant's guardian token file. */
+/**
+ * The guardian access token for an assistant, from its xdg token file —
+ * the only argument is the assistant id, everything else is on disk.
+ * Baseten sandboxes don't lease guardian tokens: the credential is the
+ * sandbox access token the hatch saved beside the lockfile, read straight
+ * from disk — no CLI runtime, no mint, no refresh cycle. A missing file
+ * surfaces the structured 404 the proxy renders.
+ */
 export function getGuardianAccessToken(
   assistantId: string,
   invocation: CliInvocation,
-  isLoopback: boolean,
-  options?: GuardianTokenOptions,
 ): Promise<TokenResult> {
-  if (!isLoopback) {
-    return Promise.resolve({ ok: false, status: 403, error: "Forbidden" });
+  if (isBasetenAssistant(assistantId)) {
+    return Promise.resolve(readBasetenSandboxToken(assistantId));
   }
 
   let tokenPath: string;
@@ -282,41 +273,6 @@ export function getGuardianAccessToken(
     });
   }
 
-  if (data.pairedGatewayUrl) {
-    if (!options?.paired) {
-      return Promise.resolve({
-        ok: false,
-        status: 403,
-        error: PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
-      });
-    }
-    if (options.pairedGatewayUrl !== data.pairedGatewayUrl) {
-      return Promise.resolve({
-        ok: false,
-        status: 403,
-        error: PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
-      });
-    }
-  } else if (options?.paired) {
-    if (!options.pairedGatewayUrl) {
-      return Promise.resolve({
-        ok: false,
-        status: 403,
-        error: PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
-      });
-    }
-    data = { ...data, pairedGatewayUrl: options.pairedGatewayUrl };
-    try {
-      saveGuardianToken(assistantId, data);
-    } catch {
-      return Promise.resolve({
-        ok: false,
-        status: 500,
-        error: "Failed to bind paired assistant credential",
-      });
-    }
-  }
-
   if (!isAccessTokenExpired(data)) {
     return Promise.resolve({ ok: true, accessToken: data.accessToken });
   }
@@ -325,7 +281,7 @@ export function getGuardianAccessToken(
     return Promise.resolve({
       ok: false,
       status: 401,
-      error: options?.paired
+      error: data.pairedGatewayUrl
         ? "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`."
         : "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
     });
@@ -354,33 +310,6 @@ function isBasetenAssistant(assistantId: string): boolean {
     readLockfile().assistants.find((a) => a.assistantId === assistantId)
       ?.cloud === "baseten"
   );
-}
-
-/** Resolve a paired bearer only when the proxy target matches its binding. */
-export async function getPairedGuardianAccessToken(
-  assistantId: string,
-  pairedGatewayUrl: string,
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
-  isLoopback: boolean,
-): Promise<TokenResult> {
-  // Baseten sandboxes don't lease guardian tokens: the credential is the
-  // sandbox access token the hatch saved beside the lockfile, read straight
-  // from disk — no CLI runtime, no mint, no refresh cycle. A missing file
-  // surfaces the structured 404 the proxy renders.
-  if (isBasetenAssistant(assistantId)) {
-    return readBasetenSandboxToken(assistantId);
-  }
-  let resolved: CliInvocation;
-  try {
-    resolved =
-      typeof invocation === "function" ? await invocation() : invocation;
-  } catch (err) {
-    return { ok: false, status: 500, error: (err as Error).message };
-  }
-  return getGuardianAccessToken(assistantId, resolved, isLoopback, {
-    paired: true,
-    pairedGatewayUrl,
-  });
 }
 
 function refreshToken(

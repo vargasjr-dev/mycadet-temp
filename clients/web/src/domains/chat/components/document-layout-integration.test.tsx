@@ -41,6 +41,7 @@ import type * as Surfaces from "../api/surfaces";
 import { useOpenDocumentFromChat } from "../hooks/use-open-app-from-chat";
 import { useComposerSubmit } from "../hooks/use-composer-submit";
 import { useComposerStore } from "../composer-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const downloadDocumentPdf = mock(
   async (
@@ -289,9 +290,7 @@ beforeEach(() => {
     finishWrite = resolve;
     failWrite = reject;
   });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",

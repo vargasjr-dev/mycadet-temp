@@ -7,6 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 interface PostCall {
   url: string;
@@ -42,9 +43,7 @@ beforeEach(() => {
   nextData = undefined;
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
-  });
+  useSetupLocalAssistant("asst-1");
 });
 
 afterEach(() => {

@@ -24,6 +24,7 @@ import {
 import { currentLocation, wrapperAt } from "@/hooks/router-probe.test-helper";
 
 import { useEditApp } from "./use-edit-app";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 // We can't safely `mock.module(...)` core stores like viewer/conversation
 // because Bun module mocks are process-global — they leak into every other
@@ -88,9 +89,7 @@ beforeEach(() => {
     setEditingConversationId:
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
-  });
+  useSetupLocalAssistant(ASSISTANT_ID);
 });
 
 afterEach(() => {

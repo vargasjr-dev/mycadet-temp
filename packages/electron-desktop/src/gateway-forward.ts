@@ -1,16 +1,12 @@
 import {
-  getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
   authorizePairedForwardHeaders,
-  gatewayTargetsFromLockfile,
   loopbackGatewayBearer,
   readGatewayTargets,
   resolveGatewayProxyTarget,
-  resolveLockfilePath,
   sanitizePairedForwardHeaders,
-  type CliInvocation,
   type TokenResult,
-  type GatewayEntryTarget,
   type GuardianTokenLease,
+  type LockfileAssistant,
   type PairedGuardianTokenProvider,
 } from "@mycadet/local-mode";
 
@@ -19,7 +15,7 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import { getLocalGuardianAccessToken, requireRuntime } from "./local-mode";
+import { getLocalGuardianAccessToken } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -93,7 +89,7 @@ export type GatewayForwardPlan =
  */
 function planGatewayForward(
   request: Request,
-  getTargets: () => Map<string, GatewayEntryTarget>,
+  getTargets: () => Map<string, LockfileAssistant>,
 ): GatewayForwardPlan {
   const url = new URL(request.url);
   const decision = resolveGatewayProxyTarget(
@@ -148,7 +144,6 @@ async function authorizeGatewayForwardPlan(
   }
   const result = await authorizePairedForwardHeaders(
     plan.assistantId,
-    plan.target.runtimeUrl,
     plan.headers,
     getGuardianToken,
   );
@@ -165,13 +160,21 @@ export type GatewayForwardFetcher = (
 ) => Promise<Response>;
 
 /**
- * The gateway target map for a forward: prefer the watcher's in-memory
- * snapshot so gateway requests never read disk; the direct read covers only
- * the window before the watcher installs.
+ * The gateway target map for a forward: the lockfile's assistant entries ARE
+ * the targets. Prefer the watcher's in-memory snapshot so gateway requests
+ * never read disk; the direct read covers only the window before the watcher
+ * installs.
  */
-const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
+const readForwardTargets = (): Map<string, LockfileAssistant> => {
   const watched = getWatchedLockfileSnapshot();
-  return watched ? gatewayTargetsFromLockfile(watched) : readGatewayTargets();
+  if (watched) {
+    return new Map(
+      watched.assistants.flatMap((entry) =>
+        entry.assistantId ? [[entry.assistantId, entry] as const] : [],
+      ),
+    );
+  }
+  return readGatewayTargets();
 };
 
 export const forwardGatewayRequest = async (
@@ -183,13 +186,7 @@ export const forwardGatewayRequest = async (
     // The trusted main-process proxy reads the paired bearer through the
     // shared seam, resolving the invocation here (the old electron-local
     // wrapper lived only to do this).
-    (assistantId, runtimeUrl) =>
-      getStoredPairedGuardianAccessToken(
-        assistantId,
-        runtimeUrl,
-        () => requireRuntime().cli.resolveInvocation(),
-        true,
-      ),
+    getLocalGuardianAccessToken,
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };

@@ -17,6 +17,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import type * as Mobile from "@/hooks/use-is-mobile";
 import { trackDocumentSave } from "../api/document-save";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const documentData = {
   success: true,
@@ -53,9 +54,7 @@ beforeEach(() => {
   selection = useResolvedAssistantStore.getState();
   conversation = useConversationStore.getState();
   viewer = useViewerStore.getState();
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useConversationStore.setState({ activeConversationId: "conv-origin" });
   useViewerStore.setState({ mainView: "chat", openedDocumentState: null });
   found = true;

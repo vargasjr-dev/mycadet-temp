@@ -33,6 +33,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 
 import { showDocumentInConversation } from "../document-conversation-navigation";
 import type { ChatMainPanelProps } from "./chat-route-content";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const documentData = {
   success: true,
@@ -109,9 +110,7 @@ function renderLayout(url: string, previousEntries: string[] = []) {
 
 beforeEach(() => {
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",

@@ -10,10 +10,7 @@ let toastErrors: string[] = [];
 
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => selected,
-  expectsLocalGateway: (() =>
-    selected !== null && gatewayPath !== null) as unknown as Partial<
-    typeof import("@/lib/local-mode")
-  >["expectsLocalGateway"],
+  hasGatewayAddress: () => selected !== null && gatewayPath !== null,
 }));
 
 mock.module("@/generated/api/sdk.gen", () => ({

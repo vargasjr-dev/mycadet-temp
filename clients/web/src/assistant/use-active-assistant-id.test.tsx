@@ -3,6 +3,7 @@ import { renderHook } from "@testing-library/react";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useActiveAssistantId } from "./use-active-assistant-id";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 afterEach(() => {
   useResolvedAssistantStore.getState().setAssistant(null);
@@ -10,9 +11,7 @@ afterEach(() => {
 
 describe("useActiveAssistantId", () => {
   test("returns the active id when the gate has resolved", () => {
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
     const { result } = renderHook(() => useActiveAssistantId());
     expect(result.current).toBe("asst-1");
   });

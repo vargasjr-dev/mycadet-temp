@@ -6,6 +6,7 @@ import type {
   WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
 import type * as WatchController from "@/domains/chat/watch/watch-controller";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const published: CompanionContext[] = [];
 // Counted rather than reimplemented: what this hook owns is calling the clear
@@ -453,9 +454,7 @@ describe("the capture target the companion mirror publishes", () => {
   });
 
   test("says a session cannot be aimed until the assistant's version says so", async () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
-    });
+    useSetupLocalAssistant("asst-1");
     render(<Mirror />);
     expect(latest().watchTargets).toBe(false);
     act(() => {
@@ -469,9 +468,7 @@ describe("the capture target the companion mirror publishes", () => {
   });
 
   test("does not let one assistant's version aim another's sessions", async () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
-    });
+    useSetupLocalAssistant("asst-2");
     render(<Mirror />);
     act(() => {
       useAssistantIdentityStore

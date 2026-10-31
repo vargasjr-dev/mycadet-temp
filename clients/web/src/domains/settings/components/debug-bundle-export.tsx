@@ -5,7 +5,7 @@ import { useState } from "react";
 import { exportLocalDebugBundle } from "./diagnostic-export";
 import { assistantsDebugBundleUploadUrlCreate } from "@/generated/api/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { expectsLocalGateway, getActiveAssistant } from "@/lib/local-mode";
+import { getActiveAssistant, hasGatewayAddress } from "@/lib/local-mode";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 
@@ -13,7 +13,7 @@ export function DebugBundleExport({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const [sentAt, setSentAt] = useState<Date | null>(null);
   const selectedAssistant = getActiveAssistant();
-  const hasLocalDaemon = expectsLocalGateway(selectedAssistant);
+  const hasLocalDaemon = hasGatewayAddress(selectedAssistant);
   const canExport = hasLocalDaemon;
 
   const exportBundle = useMutation({

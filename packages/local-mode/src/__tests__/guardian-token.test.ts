@@ -5,11 +5,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   getGuardianAccessToken,
-  getPairedGuardianAccessToken,
   formatGuardianRefreshCliFailure,
   parseGuardianRefreshCliFailure,
-  PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
-  PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   isConfidentialRefreshUrl,
   saveBasetenSandboxToken,
   saveGuardianToken,
@@ -60,14 +57,14 @@ describe("getGuardianAccessToken", () => {
   test("returns the stored token while the access token is fresh", async () => {
     saveGuardianToken("asst-1", makeTokenData({}));
 
-    expect(await getGuardianAccessToken("asst-1", invocation, true)).toEqual({
+    expect(await getGuardianAccessToken("asst-1", invocation)).toEqual({
       ok: true,
       accessToken: "access",
     });
   });
 
   test("returns a structured 404 when no token file exists", async () => {
-    expect(await getGuardianAccessToken("missing", invocation, true)).toEqual({
+    expect(await getGuardianAccessToken("missing", invocation)).toEqual({
       ok: false,
       status: 404,
       error: "Guardian token not found",
@@ -83,7 +80,7 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken("asst-1", invocation, true);
+    const result = await getGuardianAccessToken("asst-1", invocation);
 
     expect(result).toEqual({
       ok: false,
@@ -98,13 +95,11 @@ describe("getGuardianAccessToken", () => {
       makeTokenData({
         accessTokenExpiresAt: PAST,
         refreshTokenExpiresAt: PAST,
+        pairedGatewayUrl: "https://gateway.example.com",
       }),
     );
 
-    const result = await getGuardianAccessToken("asst-1", invocation, true, {
-      paired: true,
-      pairedGatewayUrl: "https://gateway.example.com",
-    });
+    const result = await getGuardianAccessToken("asst-1", invocation);
 
     expect(result).toEqual({
       ok: false,
@@ -112,74 +107,6 @@ describe("getGuardianAccessToken", () => {
       error:
         "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`.",
     });
-  });
-
-  test("an explicit paired: false keeps the hatch/wake guidance", async () => {
-    saveGuardianToken(
-      "asst-1",
-      makeTokenData({
-        accessTokenExpiresAt: PAST,
-        refreshTokenExpiresAt: PAST,
-      }),
-    );
-
-    const result = await getGuardianAccessToken("asst-1", invocation, true, {
-      paired: false,
-    });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.error).toContain("cadet hatch");
-  });
-
-  test("returns a paired token only for its stored gateway target", async () => {
-    saveGuardianToken(
-      "paired-1",
-      makeTokenData({ pairedGatewayUrl: "https://gateway.example.com" }),
-    );
-
-    expect(await getGuardianAccessToken("paired-1", invocation, true)).toEqual({
-      ok: false,
-      status: 403,
-      error: PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
-    });
-    expect(
-      await getGuardianAccessToken("paired-1", invocation, true, {
-        paired: true,
-        pairedGatewayUrl: "https://attacker.example.com",
-      }),
-    ).toEqual({
-      ok: false,
-      status: 403,
-      error: PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
-    });
-    expect(
-      await getGuardianAccessToken("paired-1", invocation, true, {
-        paired: true,
-        pairedGatewayUrl: "https://gateway.example.com",
-      }),
-    ).toEqual({ ok: true, accessToken: "access" });
-  });
-
-  test("binds a legacy paired token before returning it", async () => {
-    saveGuardianToken("paired-1", makeTokenData({}));
-
-    expect(
-      await getGuardianAccessToken("paired-1", invocation, true, {
-        paired: true,
-        pairedGatewayUrl: "https://gateway.example.com",
-      }),
-    ).toEqual({ ok: true, accessToken: "access" });
-
-    const stored = JSON.parse(
-      fs.readFileSync(
-        path.join(configDir, "assistants", "paired-1", "guardian-token.json"),
-        "utf-8",
-      ),
-    ) as GuardianTokenData;
-    expect(stored.pairedGatewayUrl).toBe("https://gateway.example.com");
   });
 });
 
@@ -294,14 +221,10 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
     });
     saveBasetenSandboxToken("asst_bx", "sbx-token-1");
 
-    expect(
-      await getPairedGuardianAccessToken(
-        "asst_bx",
-        "https://sbx-name-abc123.us-pdx-1.b10.co/port/7830",
-        invocation,
-        false,
-      ),
-    ).toEqual({ ok: true, accessToken: "sbx-token-1" });
+    expect(await getGuardianAccessToken("asst_bx", invocation)).toEqual({
+      ok: true,
+      accessToken: "sbx-token-1",
+    });
   });
 
   test("a missing token file is a structured 404, not a throw", async () => {
@@ -312,30 +235,20 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
       port: 7830,
     });
 
-    expect(
-      await getPairedGuardianAccessToken(
-        "asst_bx",
-        "https://sbx-name-abc123.us-pdx-1.b10.co/port/7830",
-        invocation,
-        false,
-      ),
-    ).toMatchObject({ ok: false, status: 404 });
+    expect(await getGuardianAccessToken("asst_bx", invocation)).toMatchObject({
+      ok: false,
+      status: 404,
+    });
   });
 
   test("a non-baseten entry still leases through the guardian path", async () => {
     saveLockfileAssistant({ assistantId: "asst_local", cloud: "local" });
 
-    // A local entry behind a non-loopback paired URL trips the paired path's
-    // target-binding guard (403) — the guardian path, not the token-file
-    // branch, answered.
+    // No token file for the local entry: the guardian path answers with the
+    // structured 404 (the baseten branch did not intercept).
     expect(
-      await getPairedGuardianAccessToken(
-        "asst_local",
-        "https://gw.example.com",
-        invocation,
-        false,
-      ),
-    ).toMatchObject({ ok: false, status: 403 });
+      await getGuardianAccessToken("asst_local", invocation),
+    ).toMatchObject({ ok: false, status: 404 });
   });
 
   test("the token file is saved 0600 under the assistants dir", () => {

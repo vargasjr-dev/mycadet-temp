@@ -5,7 +5,6 @@ import {
   isActiveAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   readLockfile,
   stripSensitiveFields,
   getLocalAssistantStatus,
@@ -24,7 +23,6 @@ import {
   unpairAssistant,
   LockfileAssistantSchema,
   type CliInvocation,
-  type GuardianTokenOptions,
   type LockfileWriteResult,
   type TokenResult,
   type UpgradeOptions,
@@ -270,9 +268,9 @@ async function upgrade(
   }
 }
 
-async function getHostGuardianAccessToken(
+/** Read a guardian token for the trusted main-process bearer mint. */
+export async function getLocalGuardianAccessToken(
   assistantId: string,
-  options: GuardianTokenOptions,
 ): Promise<TokenResult> {
   let invocation: CliInvocation;
   try {
@@ -280,14 +278,7 @@ async function getHostGuardianAccessToken(
   } catch (err) {
     return { ok: false, status: 500, error: (err as Error).message };
   }
-  return getGuardianAccessToken(assistantId, invocation, true, options);
-}
-
-/** Read a local guardian token for the trusted main-process bearer mint. */
-export async function getLocalGuardianAccessToken(
-  assistantId: string,
-): Promise<TokenResult> {
-  return getHostGuardianAccessToken(assistantId, { paired: false });
+  return getGuardianAccessToken(assistantId, invocation);
 }
 
 // A persisted assistant entry as it crosses the IPC boundary. The

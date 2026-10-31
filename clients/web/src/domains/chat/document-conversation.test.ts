@@ -26,6 +26,7 @@ import {
   getEditChatConversationId,
   setEditChatConversationId,
 } from "@/utils/edit-chat-session";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 const {
   documentRequestScope,
   resolveDocumentConversation,
@@ -40,9 +41,7 @@ let identity: ReturnType<typeof useAssistantIdentityStore.getState>;
 beforeEach(() => {
   selection = useResolvedAssistantStore.getState();
   identity = useAssistantIdentityStore.getState();
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",
@@ -126,12 +125,8 @@ describe("document conversation entry", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       const prematureLinks = linkConversation.mock.calls.length;
       if (cancelled) {
-        useResolvedAssistantStore.setState({
-          assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
-        });
-        useResolvedAssistantStore.setState({
-          assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-        });
+        useSetupLocalAssistant("assistant-2");
+        useSetupLocalAssistant("assistant-1");
       }
       useAssistantIdentityStore.setState({
         assistantId: "assistant-1",
@@ -229,12 +224,8 @@ describe("document conversation entry", () => {
 
   test("assistant switch away and back permanently cancels the request", () => {
     const scope = documentRequestScope("assistant-1");
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
-    });
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-    });
+    useSetupLocalAssistant("assistant-2");
+    useSetupLocalAssistant("assistant-1");
     expect(scope.isCurrent()).toBe(false);
     scope.dispose();
   });

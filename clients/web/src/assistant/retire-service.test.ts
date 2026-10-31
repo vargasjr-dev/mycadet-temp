@@ -53,9 +53,7 @@ mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => undefined,
   isServedGatewayRuntime: () => false,
   isCadetCloudRemote: () => false,
-  expectsLocalGateway: (() => false) as unknown as Partial<
-    typeof import("@/lib/local-mode")
-  >["expectsLocalGateway"],
+  hasGatewayAddress: () => false,
   hasPairedGateway: () => false,
   primeLocalGatewayConnection: async () => {},
   primeLocalGatewayConnectionWithStartupRetry: async () => {},

@@ -22,6 +22,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
 import type * as AssistantApi from "@/assistant/api";
 import type { Assistant } from "@/generated/api";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const actualLocalMode = await import("@/lib/local-mode");
 let cloudRemote = false;
@@ -190,11 +191,7 @@ describe("useCloudAvatarUrls", () => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
 
-    act(() =>
-      useResolvedAssistantStore
-        .getState()
-        .setAssistant({ cloud: "local", assistantId: "asst-2", port: 7830 }),
-    );
+    act(() => useSetupLocalAssistant("asst-2"));
 
     await waitFor(() => {
       expect(listAssistants).toHaveBeenCalledTimes(2);

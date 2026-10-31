@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { CharacterTraits } from "@/types/avatar";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const TRAITS: CharacterTraits = {
   bodyShape: "round",
@@ -58,9 +59,7 @@ describe("OnboardingAvatarApplier", () => {
 
   test("clears staged traits after a successful save", async () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
 
     render(<OnboardingAvatarApplier />);
 
@@ -75,9 +74,7 @@ describe("OnboardingAvatarApplier", () => {
   test("keeps staged traits queued when the save reports failure", async () => {
     saveCharacterTraitsImpl = async () => false;
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
 
     render(<OnboardingAvatarApplier />);
 
@@ -92,9 +89,7 @@ describe("OnboardingAvatarApplier", () => {
   test("applies the avatar's voice alongside its face", async () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
     useOnboardingFocusStore.getState().setPendingAvatarVoice("aura-2-luna-en");
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
 
     render(<OnboardingAvatarApplier />);
 
@@ -115,9 +110,7 @@ describe("OnboardingAvatarApplier", () => {
 
   test("patches no voice when the catalog never resolved one", async () => {
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
 
     render(<OnboardingAvatarApplier />);
 
@@ -132,9 +125,7 @@ describe("OnboardingAvatarApplier", () => {
     configPatchOk = false;
     useOnboardingFocusStore.getState().setPendingAvatarTraits(TRAITS);
     useOnboardingFocusStore.getState().setPendingAvatarVoice("aura-2-luna-en");
-    useResolvedAssistantStore
-      .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    useSetupLocalAssistant("asst-1");
 
     render(<OnboardingAvatarApplier />);
 

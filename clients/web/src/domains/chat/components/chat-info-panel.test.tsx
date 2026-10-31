@@ -67,6 +67,7 @@ import type { AppSummary } from "@/types/app-types";
 import type { DocumentSummary } from "@/types/document-types";
 import type { ChatInfoCategory } from "@/stores/viewer-store";
 import { routes } from "@/utils/routes";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const ASSISTANT_ID = "asst-1";
 const CONVERSATION_ID = "conv-1";
@@ -285,9 +286,7 @@ beforeEach(() => {
   onSelectCategory.mockClear();
   useViewerStore.setState({ closeChatInfo, loadApp, loadDocument });
   // The shared opener the app tiles go through reads the active assistant.
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
-  });
+  useSetupLocalAssistant(ASSISTANT_ID);
 });
 
 afterEach(() => {
@@ -395,9 +394,7 @@ describe("ChatInfoPanel top level", () => {
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
-      });
+      useSetupLocalAssistant("asst-2");
     });
 
     expect(closeChatInfo).toHaveBeenCalledTimes(1);
@@ -413,9 +410,7 @@ describe("ChatInfoPanel top level", () => {
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
-      });
+      useSetupLocalAssistant(ASSISTANT_ID);
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
@@ -424,9 +419,7 @@ describe("ChatInfoPanel top level", () => {
   // The dismissal lands in an effect, so a tile clicked in the same commit
   // still has to refuse: its app id belongs to the payload's assistant.
   test("opens no app while its assistant is not the active one", async () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
-    });
+    useSetupLocalAssistant("asst-2");
 
     await renderChatInfo();
     fireEvent.click(screen.getByLabelText("Open App 1"));

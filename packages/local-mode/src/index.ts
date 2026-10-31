@@ -126,28 +126,20 @@ export type {
 } from "./status";
 export {
   getGuardianAccessToken,
-  getPairedGuardianAccessToken,
   isConfidentialRefreshUrl,
   formatGuardianRefreshCliFailure,
   parseGuardianRefreshCliFailure,
-  PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
-  PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
   GUARDIAN_REFRESH_ERROR_PREFIX,
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,
 } from "./guardian-token";
-export type {
-  TokenResult,
-  GuardianTokenData,
-  GuardianTokenOptions,
-} from "./guardian-token";
+export type { TokenResult, GuardianTokenData } from "./guardian-token";
 export {
   authorizePairedForwardHeaders,
   parseAssistantGatewayUrl,
   readGatewayTargets,
   resolveGatewayProxyTarget,
-  gatewayTargetsFromLockfile,
   sanitizePairedForwardHeaders,
   FLATTENED_FIRST_SEGMENTS,
 } from "./gateway-proxy";

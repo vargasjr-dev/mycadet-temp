@@ -24,7 +24,6 @@ import {
   pairingStart,
   unpairAssistant,
   getGuardianAccessToken,
-  getPairedGuardianAccessToken,
   loopbackGatewayBearer,
   resolveGatewayProxyTarget,
   readGatewayTargets,
@@ -590,9 +589,7 @@ function gatewayProxyMiddleware(
       // from the on-disk guardian token — the browser never holds one.
       const lease = async () => {
         const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-        return getGuardianAccessToken(decision.assistantId, invocation, true, {
-          paired: false,
-        });
+        return getGuardianAccessToken(decision.assistantId, invocation);
       };
       const mint =
         decision.path !== "/auth/token"
@@ -655,10 +652,8 @@ function gatewayProxyMiddleware(
     }
     void authorizePairedForwardHeaders(
       decision.assistantId,
-      decision.target.runtimeUrl,
       headers,
-      (assistantId, runtimeUrl) =>
-        getPairedGuardianAccessToken(assistantId, runtimeUrl, invocation, true),
+      (assistantId) => getGuardianAccessToken(assistantId, invocation),
     ).then((result) => {
       if (!result.ok) {
         res.statusCode = result.status;

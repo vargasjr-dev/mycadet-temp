@@ -102,7 +102,7 @@ export const login = Object.assign(
       // Register the local assistant with the cloud (non-fatal).
       // Mirrors the desktop app's LocalAssistantBootstrapService flow.
       try {
-        await registerLocalAssistantWithCloud(token, user);
+        await registerLocalAssistantWithCloud(user);
       } catch {
         // Non-fatal — login succeeded even if registration fails
       }

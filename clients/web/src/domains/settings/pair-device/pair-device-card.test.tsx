@@ -25,6 +25,7 @@ import {
   restoreFetch,
   VERSION_BELOW_INGRESS_STATUS,
 } from "./pair-device-test-helpers";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 let gatewayPath: string | undefined = "/assistant";
 let supportsPairingRoutes = true;
@@ -39,9 +40,7 @@ let selectedAssistant: {
 const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
-  expectsLocalGateway: (() => gatewayPath !== undefined) as unknown as Partial<
-    typeof import("@/lib/local-mode")
-  >["expectsLocalGateway"],
+  hasGatewayAddress: () => gatewayPath !== undefined,
   getActiveAssistant: () => selectedAssistant,
 }));
 
@@ -242,9 +241,7 @@ beforeEach(() => {
   resetFetchLog();
   localStorage.clear();
   resetProbe();
-  useResolvedAssistantStore
-    .getState()
-    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
+  useSetupLocalAssistant(ASSISTANT_ID);
   // Tests that exercise the status row opt into a version that serves it.
   useAssistantIdentityStore
     .getState()

@@ -306,7 +306,7 @@ export function hasAssistants(): boolean {
  * A local-kind assistant, by origin: a plain on-machine assistant the web
  * client drives through its full set of local lifecycle flows (wake, local
  * retire). Identity only — whether it currently has a reachable gateway is a
- * separate, connect-time question (see `expectsLocalGateway`).
+ * separate, connect-time question (see `hasGatewayAddress`).
  *
  * Deliberately excludes the externally-managed container runtimes
  * (`docker`, `apple-container`), the remote self-hosted cloud (`custom`,
@@ -376,23 +376,6 @@ export function getLockfileAssistant(
 }
 
 /**
- * Whether the given assistant (default: the active one) reaches this runtime
- * over a resolvable local gateway: a local-kind assistant in local
- * (non-remote-gateway) mode. The host owns everything URL-shaped — the
- * scoped data plane is plain same-origin `/v1`.
- */
-export function expectsLocalGateway(
-  assistant: LockfileAssistant | undefined = getActiveAssistant(),
-): assistant is LockfileAssistant {
-  return (
-    !!assistant &&
-    isLocalClient() &&
-    !isServedGatewayRuntime() &&
-    isLoopbackGatewayCloud(assistant.cloud)
-  );
-}
-
-/**
  * Whether the entry carries a gateway address this runtime's host can
  * resolve: a recorded loopback port for a local assistant, or a usable
  * non-loopback recorded address for a custom remote. Pairs and locals ask
@@ -434,7 +417,7 @@ function isReadyzResponseReady(body: unknown): boolean {
 
 export async function probeLocalGatewayReady(): Promise<boolean> {
   const assistant = getActiveAssistant();
-  if (!assistant || !expectsLocalGateway(assistant)) {
+  if (!assistant || !hasGatewayAddress(assistant)) {
     return false;
   }
   try {
@@ -483,11 +466,11 @@ export async function primeLocalGatewayConnection(
     return;
   }
   if (!hasGatewayAddress(assistant)) {
-    // A local assistant we recognize but can't resolve a gateway for (no
-    // port) is recoverable by waking it — surface that instead of
-    // silently leaving the session unconnected. Non-local / non-local-
-    // mode cases stay no-ops.
-    if (expectsLocalGateway(assistant)) {
+    // A loopback-cloud assistant we recognize but can't resolve a gateway
+    // for (no port) is recoverable by waking it — surface that instead of
+    // silently leaving the session unconnected. Cloud/platform cases stay
+    // no-ops; a custom remote's address is user-edited, not wake-fixed.
+    if (isLoopbackGatewayCloud(assistant.cloud)) {
       throw new UnresolvedLocalGatewayError(assistant.assistantId);
     }
     return;
@@ -575,7 +558,14 @@ function isGatewayStillStarting(
   target: LockfileAssistant | undefined,
 ): boolean {
   const assistant = target ?? getActiveAssistant();
-  if (!assistant || !expectsLocalGateway(assistant)) {
+  if (
+    !assistant ||
+    !isLocalClient() ||
+    isServedGatewayRuntime() ||
+    // Waiting can only fix a gateway this machine starts (loopback). A
+    // paired or custom remote's failure is never ridden out.
+    !isLoopbackGatewayCloud(assistant.cloud)
+  ) {
     return false;
   }
   if (error instanceof UnresolvedLocalGatewayError) {

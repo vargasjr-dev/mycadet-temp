@@ -16,7 +16,6 @@ import {
   saveGuardianBootstrapSecret,
   saveGuardianToken,
   type GuardianTokenData,
-  saveAssistantBearerToken,
 } from "../lib/guardian-token.js";
 import { setup } from "../commands/setup.js";
 
@@ -317,7 +316,10 @@ describe("setup command", () => {
       ],
       activeAssistant: "assistant-123",
     });
-    saveAssistantBearerToken("assistant-123", "entry-token");
+    saveGuardianToken(
+      "assistant-123",
+      guardianTokenFixture({ accessToken: "guardian-token" }),
+    );
 
     await setup();
 
@@ -325,11 +327,11 @@ describe("setup command", () => {
       "https://assistant.example/v1/config/llm/default-provider",
     );
     expect(fetchCalls[0].headers.get("Authorization")).toBe(
-      "Bearer entry-token",
+      "Bearer guardian-token",
     );
   });
 
-  test("falls back to the lockfile bearer token when guardian token is expired", async () => {
+  test("refreshes an expired guardian token before the setup request", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     // The platform base lives at the lockfile ROOT (not the entry) — the
     // cloud address derives from it.
@@ -343,7 +345,6 @@ describe("setup command", () => {
       ],
       activeAssistant: "assistant-123",
     });
-    saveAssistantBearerToken("assistant-123", "entry-token");
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({
@@ -351,6 +352,11 @@ describe("setup command", () => {
         accessTokenExpiresAt: new Date(Date.now() - 60_000).toISOString(),
       }),
     );
+    installFetchStub({
+      refreshedToken: guardianTokenFixture({
+        accessToken: "fresh-guardian-token",
+      }),
+    });
 
     await setup();
 
@@ -361,7 +367,7 @@ describe("setup command", () => {
       "Bearer expired-guardian-token",
     );
     expect(fetchCalls[1].headers.get("Authorization")).toBe(
-      "Bearer entry-token",
+      "Bearer fresh-guardian-token",
     );
   });
 
@@ -379,7 +385,6 @@ describe("setup command", () => {
       ],
       activeAssistant: "assistant-123",
     });
-    saveAssistantBearerToken("assistant-123", "entry-token");
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({

@@ -41,6 +41,7 @@ import {
   returnFromDocument,
 } from "../document-conversation-navigation";
 import { useDocumentHeaderVisible } from "./use-document-header-visible";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 let conversationListError = false;
 let firstMessageSetup = false;
@@ -159,9 +160,7 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-  });
+  useSetupLocalAssistant("assistant-1");
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
   firstMessageSetup = false;

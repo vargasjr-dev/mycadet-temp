@@ -44,8 +44,10 @@ function deferred<T>() {
 }
 
 function selectOwner(owner = OWNER) {
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: owner.assistantId, port: 7830 },
+  useResolvedAssistantStore.getState().setAssistant({
+    cloud: "local",
+    assistantId: owner.assistantId,
+    port: 7830,
   });
   useConversationStore.setState({ activeConversationId: owner.conversationId });
   useViewerStore.setState({

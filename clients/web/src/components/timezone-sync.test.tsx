@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { publish } from "@/lib/event-bus";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 interface PatchArgs {
   url: string;
@@ -60,9 +61,7 @@ beforeEach(() => {
   browserTz = "America/New_York";
   patchMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
-  });
+  useSetupLocalAssistant("asst-1");
 });
 
 afterEach(() => {

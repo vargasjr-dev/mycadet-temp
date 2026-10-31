@@ -23,6 +23,7 @@ import { useViewerStore } from "@/stores/viewer-store";
 import { setEditChatConversationId } from "@/utils/edit-chat-session";
 
 import type * as Surfaces from "./api/surfaces";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const daemonSdk = await import("@/generated/daemon/sdk.gen");
 
@@ -172,9 +173,7 @@ beforeEach(() => {
   release.mockClear();
   downloadDocumentPdf.mockClear();
   window.sessionStorage.clear();
-  useResolvedAssistantStore
-    .getState()
-    .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+  useSetupLocalAssistant("asst-1");
   useAssistantIdentityStore.setState({
     assistantId: "asst-1",
     version: "0.11.12",
