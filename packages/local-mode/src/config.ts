@@ -83,6 +83,39 @@ export function basetenTokenPath(assistantId: string): string {
 }
 
 /**
+ * The on-disk location of an assistant's guardian bootstrap secret, given an
+ * already resolved config dir. Same contract as {@link guardianTokenPath}:
+ * the single source of truth for this path. Secrets never live in the
+ * lockfile (which crosses the renderer boundary); the hatch/docker/restore
+ * writers create the file and every lease-repair reader goes through here.
+ */
+export function guardianBootstrapSecretPath(assistantId: string): string {
+  assertSafePathSegment(assistantId, "assistant ID");
+  return joinLocalPath(
+    resolveConfigDir(),
+    "assistants",
+    assistantId,
+    "guardian-bootstrap-secret",
+  );
+}
+
+/**
+ * The on-disk location of an assistant's bearer token, given an already
+ * resolved config dir. Same contract as {@link guardianTokenPath}. The
+ * platform sync strips the bearer from the lockfile rows it writes and
+ * persists it here instead; readers go through this path.
+ */
+export function assistantBearerTokenPath(assistantId: string): string {
+  assertSafePathSegment(assistantId, "assistant ID");
+  return joinLocalPath(
+    resolveConfigDir(),
+    "assistants",
+    assistantId,
+    "bearer-token",
+  );
+}
+
+/**
  * The on-disk location of an assistant's guardian token, given an already
  * resolved config dir. The single source of truth for this path so the CLI
  * writer and every host-seam reader agree — a divergence here is what leaves a

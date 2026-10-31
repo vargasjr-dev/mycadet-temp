@@ -6,8 +6,9 @@ import {
   type LockfileAssistant,
   resolveTargetAssistant,
 } from "../../lib/assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
   GuardianLeasePermanentError,
   leaseGuardianToken,
   loadGuardianToken,
@@ -49,11 +50,10 @@ async function repairGuardianCredential(
   if (entry.cloud !== "local" && entry.cloud !== "docker") {
     return false;
   }
-  let bootstrapSecret = entry.guardianBootstrapSecret;
+  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
-    entry.guardianBootstrapSecret = bootstrapSecret;
-    saveLockfileAssistant(entry);
+    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
   }
 
   const maxAttempts = 3;

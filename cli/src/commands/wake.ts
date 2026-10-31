@@ -22,6 +22,10 @@ import {
 import { healConflictedLocalPorts } from "../lib/port-heal.js";
 import { yellow } from "../lib/color.js";
 import {
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
+} from "../lib/guardian-token.js";
+import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
   resolveProcessState,
@@ -312,12 +316,11 @@ export async function wakeAssistant(
     }
   }
 
-  let bootstrapSecret = entry.guardianBootstrapSecret;
+  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
   let bootstrapSecretBackfilled = false;
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
-    entry.guardianBootstrapSecret = bootstrapSecret;
-    saveLockfileAssistant(entry);
+    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
     bootstrapSecretBackfilled = true;
   }
 

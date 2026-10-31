@@ -39,6 +39,7 @@ import { generateInstanceName } from "./random-name.js";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
+  saveGuardianBootstrapSecret,
 } from "./guardian-token.js";
 import { archiveLogFile, resetLogFile } from "./xdg-log.js";
 import {
@@ -58,7 +59,7 @@ import { checkProviderApiKey } from "./api-key-check.js";
 import {
   describeLoginError,
   ensureCloudLoginInteractive,
-  registerLocalAssistantWithPlatform,
+  registerLocalAssistantWithCloud,
 } from "./cloud-login.js";
 import { fetchCurrentUser, readCloudToken } from "./cloud-client.js";
 import { withLocalHatchLock } from "./local-hatch-lock.js";
@@ -308,6 +309,7 @@ export async function hatchLocal(
       ).initializeRootArchive(entry, params.initialArchive);
     }
     const bootstrapSecret = generateLocalSecret();
+    saveGuardianBootstrapSecret(instanceName, bootstrapSecret);
     try {
       // Launch the CES sibling alongside the daemon, in parallel — matching the
       // Docker topology. The assistant does not spawn its own CES, so a freshly
@@ -345,7 +347,6 @@ export async function hatchLocal(
     }
 
     entry.hatchedAt = new Date().toISOString();
-    entry.guardianBootstrapSecret = bootstrapSecret;
 
     reporter.progress(5, 6, "Saving configuration...");
     saveLockfileAssistant(entry);
@@ -417,7 +418,7 @@ export async function hatchLocal(
     try {
       const token = readCloudToken()!;
       const user = await fetchCurrentUser(token);
-      await registerLocalAssistantWithPlatform(token, user, {
+      await registerLocalAssistantWithCloud(token, user, {
         bearerToken: guardianAccessToken,
         log: (m) => reporter.log(m),
       });

@@ -1,5 +1,8 @@
 import { randomBytes } from "crypto";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  type DockerAssistant,
+  getGatewayUrl,
+} from "@mycadet/local-mode/contract";
 import {
   chmodSync,
   existsSync,
@@ -27,7 +30,11 @@ import {
   getDefaultPorts,
 } from "./environments/paths.js";
 import { green, yellow } from "./color.js";
-import { leaseGuardianToken } from "./guardian-token";
+import {
+  leaseGuardianToken,
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
+} from "./guardian-token";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { isCadetProcess, stopProcess } from "./process";
 import { generateInstanceName } from "./random-name";
@@ -933,13 +940,8 @@ export function isNoSuchContainerError(err: unknown): boolean {
  * generate). Empty volumes just get fresh state on first boot.
  */
 export async function recreateDockerContainers(
-  entry: LockfileAssistant,
+  entry: DockerAssistant,
 ): Promise<void> {
-  if (!isDockerEntry(entry)) {
-    throw new Error(
-      `'${entry.assistantId}' is not a docker assistant — nothing to recreate`,
-    );
-  }
   const info = entry.containerInfo;
   if (!info?.assistantImage || !info.gatewayImage || !info.cesImage) {
     throw new Error(
@@ -987,7 +989,7 @@ export async function recreateDockerContainers(
   const device = getOrCreateHostDeviceId();
   await startContainers(
     {
-      bootstrapSecret: entry.guardianBootstrapSecret,
+      bootstrapSecret: loadGuardianBootstrapSecret(entry.assistantId),
       extraAssistantEnv: { CADET_DEVICE_ID: device },
       extraGatewayEnv: { CADET_DEVICE_ID: device },
       gatewayPort,
@@ -1653,6 +1655,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     // it so the gateway receives a comma-separated list of all expected
     // bootstrap secrets.
     const ownSecret = randomBytes(32).toString("hex");
+    saveGuardianBootstrapSecret(instanceName, ownSecret);
     const preExisting = process.env.GUARDIAN_BOOTSTRAP_SECRET;
     const bootstrapSecret = preExisting
       ? `${preExisting},${ownSecret}`
@@ -1686,7 +1689,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       daemonPort: assistantPort,
       cloud: "docker",
       hatchedAt: new Date().toISOString(),
-      guardianBootstrapSecret: ownSecret,
       containerInfo: {
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
@@ -1793,10 +1795,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (watch && repoRoot) {
-      saveLockfileAssistant({
+      const watching: LockfileAssistant = {
         ...dockerEntry,
         watcherPid: process.pid,
-      });
+      };
+      saveLockfileAssistant(watching);
       const stopWatcher = startFileWatcher({
         bootstrapSecret,
         cesServiceToken,
@@ -1817,10 +1820,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log("\n🛑 Shutting down...");
           stopWatcher();
           await stopContainers(res);
-          saveLockfileAssistant({
+          const unwatched: LockfileAssistant = {
             ...dockerEntry,
             watcherPid: undefined,
-          });
+          };
+          saveLockfileAssistant(unwatched);
           log("✅ Docker instance stopped.");
           resolve();
         };

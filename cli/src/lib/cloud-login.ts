@@ -7,10 +7,8 @@
  */
 
 import { pollingCloudLogin } from "./cloud-login-poll.js";
-import {
-  getGatewayUrl,
-  isLocalRuntimeEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { isCloudHome } from "./cloud-values.js";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
@@ -18,7 +16,7 @@ import type { AddressInfo } from "net";
 import { resolveAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
-import { computeDeviceId } from "./guardian-token.js";
+import { computeDeviceId, loadAssistantBearerToken } from "./guardian-token.js";
 import { openBrowser } from "./open-browser.js";
 import {
   fetchCurrentUser,
@@ -347,7 +345,7 @@ export function describeLoginError(error: unknown): string {
  * complete the same flow right after an interactive login on the Cadet Cloud
  * provider path. Non-fatal by design; callers log failures.
  */
-export async function registerLocalAssistantWithPlatform(
+export async function registerLocalAssistantWithCloud(
   token: string,
   user: { id: string; email: string },
   options: { bearerToken?: string; log?: (message: string) => void } = {},
@@ -355,10 +353,8 @@ export async function registerLocalAssistantWithPlatform(
   const log = options.log ?? console.log;
   const entry = resolveAssistant();
 
-  // Skip managed ("cadet") assistants — they are handled by the cloud — and
-  // anything that is not an on-machine runtime: the registration flow mirrors
-  // the desktop app's local bootstrap, which only fronts local runtimes.
-  if (!entry || !isLocalRuntimeEntry(entry)) return;
+  // Skip managed ("cadet") assistants — they are handled by the cloud.
+  if (!entry || isCloudHome(entry.cloud)) return;
 
   const gatewayUrl = getGatewayUrl(entry);
 
@@ -368,7 +364,7 @@ export async function registerLocalAssistantWithPlatform(
     fetchCurrentVersion(gatewayUrl),
     fetchAssistantIngressUrl(
       gatewayUrl,
-      options.bearerToken ?? entry.bearerToken,
+      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
     ),
   ]);
   const cloudUrl = getCloudUrl();
@@ -397,7 +393,8 @@ export async function registerLocalAssistantWithPlatform(
   const resolved = await resolveAssistantApiKeyForInjection({
     registrationApiKey: registration.assistant_api_key,
     runtimeUrl: gatewayUrl,
-    bearerToken: options.bearerToken ?? entry.bearerToken,
+    bearerToken:
+      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
     token,
     organizationId: orgId,
     clientInstallationId,
@@ -413,7 +410,8 @@ export async function registerLocalAssistantWithPlatform(
   // mirroring the desktop app's LocalAssistantBootstrapService flow.
   const allInjected = await injectCredentialsIntoAssistant({
     gatewayUrl: gatewayUrl,
-    bearerToken: options.bearerToken ?? entry.bearerToken,
+    bearerToken:
+      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
     assistantApiKey,
     cloudAssistantId: registration.assistant.id,
     organizationId: orgId,

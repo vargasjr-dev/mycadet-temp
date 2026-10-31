@@ -31,7 +31,9 @@ export {
   resolveAssistantsDir,
   resolveInstanceDir,
   guardianTokenPath,
+  assistantBearerTokenPath,
   basetenTokenPath,
+  guardianBootstrapSecretPath,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
 export {

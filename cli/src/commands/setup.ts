@@ -1,10 +1,11 @@
 import { resolveAssistant } from "../lib/assistant-config.js";
 import {
   getGatewayUrl,
-  isLocalRuntimeEntry,
+  type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import {
+  loadAssistantBearerToken,
   leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
@@ -101,7 +102,7 @@ function isGuardianAccessTokenUsable(
 }
 
 async function resolveSetupBearerToken(
-  entry: NonNullable<ReturnType<typeof resolveAssistant>>,
+  entry: LockfileAssistant,
   gatewayUrl: string,
 ): Promise<string | undefined> {
   const guardianToken = loadGuardianToken(entry.assistantId);
@@ -119,8 +120,7 @@ async function resolveSetupBearerToken(
     }
   }
 
-  const canLeaseGuardianToken = isLocalRuntimeEntry(entry);
-  if (canLeaseGuardianToken) {
+  {
     try {
       const leasedToken = await leaseGuardianToken(entry);
       if (isGuardianAccessTokenUsable(leasedToken)) {
@@ -132,7 +132,9 @@ async function resolveSetupBearerToken(
     }
   }
 
-  return entry.cloud === "cloud" ? entry.bearerToken : undefined;
+  return entry.cloud === "cloud"
+    ? loadAssistantBearerToken(entry.assistantId)
+    : undefined;
 }
 
 export const setup = Object.assign(

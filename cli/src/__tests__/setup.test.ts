@@ -13,8 +13,10 @@ import { join } from "node:path";
 
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
+  saveGuardianBootstrapSecret,
   saveGuardianToken,
   type GuardianTokenData,
+  saveAssistantBearerToken,
 } from "../lib/guardian-token.js";
 import { setup } from "../commands/setup.js";
 
@@ -281,8 +283,8 @@ describe("setup command", () => {
       cloud: "docker",
       port: 7831,
       daemonPort: 7821,
-      guardianBootstrapSecret: "test-bootstrap-secret",
     });
+    saveGuardianBootstrapSecret("assistant-123", "test-bootstrap-secret");
     installFetchStub({
       leasedToken: guardianTokenFixture({
         accessToken: "leased-docker-token",
@@ -310,12 +312,12 @@ describe("setup command", () => {
       assistants: [
         {
           assistantId: "assistant-123",
-          bearerToken: "entry-token",
           cloud: "cloud",
         },
       ],
       activeAssistant: "assistant-123",
     });
+    saveAssistantBearerToken("assistant-123", "entry-token");
 
     await setup();
 
@@ -336,12 +338,12 @@ describe("setup command", () => {
       assistants: [
         {
           assistantId: "assistant-123",
-          bearerToken: "entry-token",
           cloud: "cloud",
         },
       ],
       activeAssistant: "assistant-123",
     });
+    saveAssistantBearerToken("assistant-123", "entry-token");
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({
@@ -372,12 +374,12 @@ describe("setup command", () => {
       assistants: [
         {
           assistantId: "assistant-123",
-          bearerToken: "entry-token",
           cloud: "cloud",
         },
       ],
       activeAssistant: "assistant-123",
     });
+    saveAssistantBearerToken("assistant-123", "entry-token");
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({

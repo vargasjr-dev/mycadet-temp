@@ -1,5 +1,9 @@
 import { resolveLockfilePath } from "@mycadet/local-mode";
 import {
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
+} from "../lib/guardian-token.js";
+import {
   afterAll,
   afterEach,
   beforeAll,
@@ -232,9 +236,9 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     const instanceDir = join(testDir, "custom-location", name);
     makeEntry({
       assistantId: name,
-      guardianBootstrapSecret: "existing-bootstrap",
       instanceDir,
     });
+    saveGuardianBootstrapSecret(name, "existing-bootstrap");
     const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
@@ -266,7 +270,7 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
       expect.objectContaining({ instanceDir: expect.any(String) }),
-      { bootstrapSecret: "existing-bootstrap" },
+      { bootstrapSecret: loadGuardianBootstrapSecret(name) },
     ]);
   });
 
