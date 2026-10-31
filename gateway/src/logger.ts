@@ -13,7 +13,6 @@ import { logSerializers } from "./log-redact.js";
 
 export type LogFileConfig = {
   dir: string | undefined;
-  retentionDays: number;
 };
 
 /**
@@ -60,35 +59,6 @@ function jsonLogFilePathForDate(dir: string, date: Date): string {
     dir,
     `${LOG_FILE_PREFIX}${formatDate(date)}${LOG_FILE_JSON_SUFFIX}`,
   );
-}
-
-export function pruneOldLogFiles(dir: string, retentionDays: number): number {
-  if (!existsSync(dir)) return 0;
-  // Disabled retention is a no-op. Guarding here (not just in the `prune()`
-  // wrapper) lets tests exercise the disable path directly without going
-  // through `initLogger`, which is module-level state.
-  if (retentionDays <= 0) return 0;
-
-  const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
-  cutoff.setUTCHours(0, 0, 0, 0);
-
-  let removed = 0;
-  for (const name of readdirSync(dir)) {
-    const match =
-      LOG_FILE_PATTERN.exec(name) ?? LOG_FILE_JSON_PATTERN.exec(name);
-    if (!match) continue;
-    const fileDate = new Date(match[1] + "T00:00:00Z");
-    if (fileDate < cutoff) {
-      try {
-        unlinkSync(join(dir, name));
-        removed++;
-      } catch {
-        // best-effort
-      }
-    }
-  }
-  return removed;
 }
 
 let rootLogger: pino.Logger | null = null;
@@ -156,41 +126,22 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
 }
 
 /**
- * Best-effort retention sweep. Called once at startup and again whenever the
- * UTC date rolls over inside a long-lived process, so log files don't outlive
- * `retentionDays` even if the gateway never restarts. No-ops when no dir is
- * configured or retention is disabled (`retentionDays <= 0`).
+ * Best-effort retention sweep removed outright (field feedback item 8 —
+ * the first-boot prune stretched every wake). Daily files roll over via
+ * `ensureCurrentDate`; old files simply accumulate until the operator
+ * cleans them.
  */
-function prune(config: LogFileConfig | null, logger: pino.Logger | null): void {
-  if (!config?.dir) return;
-  // `pruneOldLogFiles` short-circuits when retentionDays <= 0, so we don't
-  // double-guard here. Keeping the dir check because we have nothing to
-  // sweep without a configured directory.
-  const removed = pruneOldLogFiles(config.dir, config.retentionDays);
-  if (removed > 0) {
-    logger?.info(
-      { removed, retentionDays: config.retentionDays },
-      "Pruned old log files",
-    );
-  }
-}
 
 function ensureCurrentDate(): void {
   if (!activeConfig?.dir || !activeLogDate) return;
   const today = formatDate(new Date());
   if (today !== activeLogDate) {
-    const config = activeConfig;
-    rootLogger = buildLogger(config);
-    // Retention sweep on date rollover so long-lived pods don't accumulate
-    // files past `retentionDays`. `pruneOldLogFiles` is best-effort and safe
-    // to call on every rollover.
-    prune(config, rootLogger);
+    rootLogger = buildLogger(activeConfig);
   }
 }
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
-  prune(config, rootLogger);
 }
 
 /**

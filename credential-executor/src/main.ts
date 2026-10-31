@@ -325,7 +325,7 @@ function startHealthServer(
 async function main(): Promise<void> {
   ensureDataDirs();
 
-  initLogger({ dir: getCesLogDir(), retentionDays: 30 });
+  initLogger({ dir: getCesLogDir() });
 
   log.info(`Starting CES v${CES_PROTOCOL_VERSION} (socket transport)`);
 

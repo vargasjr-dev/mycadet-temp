@@ -132,7 +132,7 @@ describe("runCesMigrations", () => {
   beforeEach(() => {
     // Rebuild the module-level root logger from the mocked pino, discarding any
     // real logger a previously-executed test file left cached.
-    initLogger({ dir: undefined, retentionDays: 0 });
+    initLogger({ dir: undefined });
     mockFileExists = false;
     mockFileContents = null;
     existsSyncFn.mockClear();

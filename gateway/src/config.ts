@@ -182,7 +182,6 @@ export function loadConfig(): GatewayConfig {
 
   const logFile: LogFileConfig = {
     dir: join(getGatewaySecurityDir(), "logs"),
-    retentionDays: 30,
   };
 
   log.info(
