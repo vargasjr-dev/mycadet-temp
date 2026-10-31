@@ -10,7 +10,6 @@ import { dirname, join } from "path";
 
 import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
 import {
-  isLocalEntry,
   type AppProcessRecord,
   type LocalAssistant,
   type Lockfile,
