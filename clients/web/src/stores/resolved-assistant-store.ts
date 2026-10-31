@@ -24,7 +24,7 @@
 import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getServedLockfile } from "@/lib/local-mode";
 
 /** The boot entry for a surface whose serving host fronted no assistant. */

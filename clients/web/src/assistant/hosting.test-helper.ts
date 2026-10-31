@@ -1,5 +1,4 @@
-import type { Remote } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant, Remote } from "@mycadet/local-mode/contract";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
