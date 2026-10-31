@@ -27,7 +27,6 @@ import {
   getGuardianAccessToken,
   loopbackGatewayBearer,
   resolveGatewayProxyTarget,
-  resolveAssistantRetireProxyDecision,
   readGatewayTargets,
   authorizePairedForwardHeaders,
   type CliInvocation,
@@ -102,6 +101,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(lockfileMiddleware());
       server.middlewares.use(unpairMiddleware());
       server.middlewares.use(pairingMiddleware());
+      server.middlewares.use(retireMiddleware());
       server.middlewares.use(devicesMiddleware(baseDir));
       server.middlewares.use(gatewayProxyMiddleware(baseDir, env));
       server.middlewares.use(accountSpaFallback(server));
@@ -482,6 +482,31 @@ function pairingMiddleware(): Connect.NextHandleFunction {
   };
 }
 
+function retireMiddleware(): Connect.NextHandleFunction {
+  return (req, res, next) => {
+    // replace with the actual check for detecting reture routes
+    if (req.url === `/v1/retire`) {
+      return next();
+    }
+
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      res.end();
+      return;
+    }
+
+    runRetire({ name: assistantId })
+      .then(() => {
+        respondJson(res, 200, { ok: true });
+        return;
+      })
+      .catch(() => {
+        respondJson(res, 500, { ok: true });
+        return;
+      });
+  };
+}
+
 // Paired-device management via the CLI (`cadet devices … --json`). POST-only
 // (the renderer's postLocalCommand always POSTs); run-helper results respond
 // 200 with `ok` discriminating success so all hosts share one wire shape.
@@ -555,40 +580,6 @@ function gatewayProxyMiddleware(
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
-    // The scoped surface's retire arm: an on-machine entry is retired by the
-    // host CLI here rather than forwarded to a gateway that cannot retire
-    // itself, so the bundle's one endpoint holds for every entry type. The
-    // shared decision bails before touching the lockfile unless the request
-    // is a retire-shaped DELETE.
-    const retireDecision = resolveAssistantRetireProxyDecision(
-      requestPathname(req),
-      req.method ?? "GET",
-      () => readLockfile(),
-    );
-    if (retireDecision.kind === "retireLocal") {
-      if (rejectUnlessLocalEndpointRequest(req, res)) {
-        return;
-      }
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          detail: err instanceof Error ? err.message : String(err),
-        });
-        return;
-      }
-      runRetire(invocation, retireDecision.assistantId).then((result) => {
-        if (result.ok) {
-          res.statusCode = 204;
-          res.end();
-          return;
-        }
-        respondJson(res, result.status, { detail: result.error });
-      });
-      return;
-    }
-
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
     // rides one id-keyed proxy for every assistant gateway. The lockfile
     // resolves the id to a loopback port (locally hatched) or the recorded

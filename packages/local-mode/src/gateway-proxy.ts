@@ -223,52 +223,7 @@ export function isHostRetirableEntry(entry: LockfileAssistant): boolean {
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
 
-/**
- * The scoped surface's retire arm. A `DELETE` on `/v1/assistants/{id}/retire/`
- * for an entry the host can retire directly (`isHostRetirableEntry`) is
- * answered host-side by running the CLI's retire, not forwarded to the
- * entry's gateway (which cannot retire itself). Anything else is `pass`: the
- * data-plane plan and the cloud forward keep the request on the endpoint the
- * bundle called, which is the contract: one retire endpoint for every entry
- * type, the serving host deciding how to honor it.
- *
- * Pure in the URL; `lockfile` is a thunk (typically the host's watched
- * in-memory snapshot, falling back to disk) evaluated only after the URL
- * matches, so the hot path of every other request never touches it.
- */
-export function resolveAssistantRetireProxyDecision(
-  pathname: string,
-  method: string,
-  lockfile: () => { assistants: readonly unknown[] } | null,
-): { kind: "retireLocal"; assistantId: string } | { kind: "pass" } {
-  if (method !== "DELETE") {
-    return { kind: "pass" };
-  }
-  const match = RETIRE_PATTERN.exec(pathname);
-  if (!match) {
-    return { kind: "pass" };
-  }
-  let assistantId: string;
-  try {
-    assistantId = decodeURIComponent(match[1]!);
-  } catch {
-    return { kind: "pass" };
-  }
-  const lockfileValue = lockfile();
-  if (!lockfileValue) {
-    return { kind: "pass" };
-  }
-  for (const rawEntry of lockfileValue.assistants) {
-    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
-    if (!parsed.success || parsed.data.assistantId !== assistantId) {
-      continue;
-    }
-    return isHostRetirableEntry(parsed.data)
-      ? { kind: "retireLocal", assistantId: parsed.data.assistantId }
-      : { kind: "pass" };
-  }
-  return { kind: "pass" };
-}
+
 
 /**
  * Compute the id-keyed gateway-target map from a lockfile's assistant

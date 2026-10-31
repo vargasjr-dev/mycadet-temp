@@ -300,6 +300,11 @@ async function retireInner(): Promise<void> {
   }
 
   const parsed = parseRetireArgs(args);
+  return runRetire(parsed)
+}
+
+// Move logic to @mycadet/local-mode/operations/retire
+export async function runRetire(parsed: RetireArgs) {
   // No name given: retire whichever assistant is currently in use.
   const name = parsed.name ?? getActiveAssistant() ?? undefined;
 
@@ -347,6 +352,10 @@ async function retireInner(): Promise<void> {
   }
 
   if (cloud === "apple-container") {
+    // this will force us to move a lot of remote logic into local-mode. Final layout:
+    // @mycadet/local-mode/operations/[retire|hatch|wake|upgrade|...]
+    // @mycadet/local-mode/remotes/[local|docker|cloud|...]/[index|retire|hatch|wake|upgrade|...]
+    // future name of local-mode will become `@mycadet/operator`
     await retireAppleContainer(assistantId, entry);
     await stopContainerAppServer(entry);
   } else if (cloud === "docker") {

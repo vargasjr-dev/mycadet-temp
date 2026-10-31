@@ -3,7 +3,6 @@ import {
   loopbackGatewayBearer,
   readGatewayTargets,
   readLockfile,
-  resolveAssistantRetireProxyDecision,
   resolveGatewayProxyTarget,
   runRetire,
   sanitizePairedForwardHeaders,
@@ -180,46 +179,10 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
   return readGatewayTargets();
 };
 
-/**
- * Run the CLI's retire for an on-machine entry the scoped surface's retire
- * arm resolved host-side. A bodyless 204 parses as the client's success null;
- * a failure carries the CLI's message as the cloud error shape, so the
- * confirmation dialog renders the same detail either way.
- */
-async function retireLocalAssistantHostside(
-  assistantId: string,
-): Promise<Response> {
-  const result = await runRetire(
-    () => requireRuntime().cli.resolveInvocation(),
-    assistantId,
-    {
-      cloudToken: requireRuntime().session.getToken() ?? undefined,
-    },
-  );
-  if (result.ok) {
-    return new Response(null, { status: 204 });
-  }
-  return new Response(JSON.stringify({ detail: result.error }), {
-    status: result.status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
-  // The scoped surface's retire arm: an on-machine entry is retired by the
-  // host CLI here rather than forwarded to a gateway that cannot retire
-  // itself, so the bundle's one endpoint holds for every entry type.
-  const retire = resolveAssistantRetireProxyDecision(
-    new URL(request.url).pathname,
-    request.method,
-    () => getWatchedLockfileSnapshot() ?? readLockfile(),
-  );
-  if (retire.kind === "retireLocal") {
-    return retireLocalAssistantHostside(retire.assistantId);
-  }
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
     // The trusted main-process proxy reads the paired bearer through the
@@ -337,3 +300,49 @@ async function executeLoopbackForward(
   plan.headers.set("authorization", `Bearer ${fresh}`);
   return doFetch();
 }
+
+// This should all go in its own file
+// @mycadet/local-mode/operations/routes.ts
+
+export const routes = [
+  {
+    path: "/retire",
+    handler: ({ assistantId }: { assistantId: string }) =>
+      runRetire({ name: assistantId }),
+  },
+];
+
+export const forwardOperatorRequest = (request: Request) => {
+  for (const route of routes) {
+    if (route.path.match(request.url)) {
+      const assistantId = request.params.assistantId; // psuedocode, should be straightforward to parse out
+      return route
+        .handler({ assistantId })
+        .then(
+          () =>
+            new Response(
+              {
+                /** relevant body */
+              },
+              200,
+            ),
+        )
+        .catch(
+          (e) =>
+            new Response(
+              {
+                /** relevant body */
+              },
+              500,
+            ),
+        );
+    }
+  }
+
+  return new Response(
+              {
+                /** relevant body */
+              },
+              404,
+            ),
+};

@@ -17,6 +17,7 @@ export interface RetireOptions {
   cloudToken?: string;
 }
 
+// delete this version of runRetire and replace the direct method from cli/src/lib/retire.ts
 export async function runRetire(
   invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
