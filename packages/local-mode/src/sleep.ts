@@ -20,7 +20,7 @@ export type SleepResult =
  * immediately follows with a `wake`, so the brief interruption is expected
  * and user-confirmed at the UI level.
  *
- * Mirrors {@link runRetire}'s never-reject contract so each host wires
+ * Mirrors the retire operation's never-reject contract so each host wires
  * transport once and surfaces a structured failure rather than a thrown error.
  */
 export async function runSleep(assistantId: string): Promise<SleepResult> {

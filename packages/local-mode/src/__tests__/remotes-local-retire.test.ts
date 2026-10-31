@@ -12,7 +12,7 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
+import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -20,12 +20,12 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them. Bun runs every test file in one process with a
 // shared loader, and `mock.restore()` does not undo `mock.module()`. Without
-// restoring, the `retire-archive.js` mock in particular leaks its hardcoded
-// `test-assistant.*` paths into sibling files (e.g. `recover.test.ts`), which
-// then fail to find their own archives.
-const realProcess = { ...(await import("../lib/process.js")) };
-const realNginxIngress = { ...(await import("../lib/servers/nginx.js")) };
-const realRetireArchive = { ...(await import("../lib/retire-archive.js")) };
+// restoring, the archive mock in particular leaks its hardcoded
+// `test-assistant.*` paths into sibling files, which then fail to find their
+// own archives.
+const realProcess = { ...(await import("../process")) };
+const realIngress = { ...(await import("../ingress")) };
+const realArchive = { ...(await import("../remotes/local/archive")) };
 
 const stopProcessByPidFileMock = mock(
   async (
@@ -36,26 +36,24 @@ const stopProcessByPidFileMock = mock(
   ): Promise<boolean> => true,
 );
 
-const { DAEMON_STOP_TIMEOUT_MS } = realProcess;
-const stopOrphanedDaemonProcessesMock = mock(
-  async (_excludePids?: ReadonlySet<string>): Promise<boolean> => false,
-);
+const { DAEMON_STOP_TIMEOUT_MS } = await import("../lifecycle-budgets");
 const stopIngressNginxMock = mock(async (): Promise<boolean> => false);
 
-mock.module("../lib/process.js", () => ({
+mock.module("../process", () => ({
   ...realProcess,
   stopProcessByPidFile: stopProcessByPidFileMock,
-  stopOrphanedDaemonProcesses: stopOrphanedDaemonProcessesMock,
 }));
 
-mock.module("../lib/servers/nginx.js", () => ({
+mock.module("../ingress", () => ({
+  ...realIngress,
   stopIngressNginx: stopIngressNginxMock,
 }));
 
 // Keep archive paths on the same filesystem as the test dir so rename doesn't
 // hit EXDEV (cross-device link).
 const retiredStagingDir = join(testDir, "retired");
-mock.module("../lib/retire-archive.js", () => ({
+mock.module("../remotes/local/archive", () => ({
+  ...realArchive,
   getArchivePath: () => join(retiredStagingDir, "test-assistant.tar.gz"),
   getMetadataPath: () => join(retiredStagingDir, "test-assistant.meta.json"),
 }));
@@ -63,12 +61,12 @@ mock.module("../lib/retire-archive.js", () => ({
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
-  mock.module("../lib/process.js", () => realProcess);
-  mock.module("../lib/servers/nginx.js", () => realNginxIngress);
-  mock.module("../lib/retire-archive.js", () => realRetireArchive);
+  mock.module("../process", () => realProcess);
+  mock.module("../ingress", () => realIngress);
+  mock.module("../remotes/local/archive", () => realArchive);
 });
 
-import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
+import { getRetireArchiveCommand, retireLocal } from "../remotes/local/retire";
 
 const instanceDir = join(testDir, "test-instance");
 
@@ -80,8 +78,6 @@ describe("retireLocal — CES sibling stop", () => {
   beforeEach(() => {
     stopProcessByPidFileMock.mockReset();
     stopProcessByPidFileMock.mockResolvedValue(true);
-    stopOrphanedDaemonProcessesMock.mockReset();
-    stopOrphanedDaemonProcessesMock.mockResolvedValue(false);
     stopIngressNginxMock.mockReset();
     stopIngressNginxMock.mockResolvedValue(false);
 

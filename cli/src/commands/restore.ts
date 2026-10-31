@@ -13,7 +13,11 @@ import { basename, dirname, join } from "path";
 
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  saveLockfileAssistant,
+  getArchivePath,
+  getMetadataPath,
+} from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   generateLocalSecret,
@@ -21,7 +25,6 @@ import {
   startLocalDaemon,
   startGateway,
 } from "../lib/remotes/local.js";
-import { getArchivePath, getMetadataPath } from "../lib/retire-archive.js";
 import { exec } from "../lib/step-runner.js";
 import {
   readCloudToken,

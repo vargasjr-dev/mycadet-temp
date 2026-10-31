@@ -30,7 +30,7 @@ export interface WakeOptions {
  * This is the non-destructive repair primitive: it revives a stopped or
  * mis-seeded local assistant in place without touching its data or identity,
  * the same way the native client re-pairs on a failed connection. Mirrors
- * {@link runRetire}'s never-reject contract so each host wires transport once
+ * the retire operation's never-reject contract: each host wires transport once
  * and surfaces a structured failure rather than a thrown error.
  */
 export async function runWake(

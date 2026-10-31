@@ -1,11 +1,10 @@
-import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
   mkdirSync,
   openSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
@@ -18,9 +17,7 @@ import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import { resolveVersion } from "@mycadet/shared/version";
 
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  clearAppProcessRecord,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   readRootProcesses,
@@ -32,10 +29,32 @@ import {
   type InjectedConfig,
   type Remote,
 } from "@mycadet/local-mode/contract";
-import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import {
+  getIngressPaths,
+  ingressStatePath,
+  isIngressRunning,
+  readIngressState,
+  getIngressPid,
+  stopIngressNginx,
+  type IngressState,
+} from "@mycadet/local-mode";
+import { resolveLogDir } from "@mycadet/local-mode";
 import { waitForDaemonReady } from "../http-client.js";
-import { isLocalContainerEntry } from "../ingress-config.js";
 import { resolveEdgeClientDists } from "../web-dist.js";
+
+// The edge's read/stop surface lives in `@mycadet/local-mode` (the retire
+// operation stops the edge in-process); re-exported here for the tunnel and
+// ps surfaces.
+export {
+  getIngressPaths,
+  isIngressRunning,
+  isPidAlive,
+  readIngressState,
+  getIngressPid,
+  stopIngressNginx,
+  stopContainerAppServer,
+} from "@mycadet/local-mode";
+export type { IngressPaths, IngressState } from "@mycadet/local-mode";
 
 /**
  * CLI-managed nginx reverse proxy that fronts the gateway as the canonical
@@ -46,32 +65,6 @@ import { resolveEdgeClientDists } from "../web-dist.js";
  */
 
 export const DEFAULT_NGINX_INGRESS_PORT = 7840;
-
-export interface IngressPaths {
-  /** nginx prefix dir; conf, pidfile, and temp dirs live here. */
-  dir: string;
-  confPath: string;
-  pidPath: string;
-  logPath: string;
-}
-
-/**
- * The app server's own state, under the environment's XDG data dir — never
- * inside an assistant's workspace: the edge is machine-level (it fronts the
- * workspace's active assistant for every tunnel and wake path), and assistant
- * workspaces are the assistants' own to manage. The gateway-facing ingress
- * contract (publicBaseUrl, enabled, lastTunnel) stays in the workspace
- * `config.json` the daemon reads; this file is the edge's private record.
- */
-export function getIngressPaths(): IngressPaths {
-  const dir = join(resolveDataDir(), "ingress");
-  return {
-    dir,
-    confPath: join(dir, "nginx.conf"),
-    pidPath: join(dir, "nginx.pid"),
-    logPath: join(resolveLogDir(), "nginx-ingress.log"),
-  };
-}
 
 function nginxQuoted(value: string, label: string): string {
   if (/[\u0000-\u001f\u007f]/.test(value)) {
@@ -808,119 +801,9 @@ export function getNginxVersion(): string | null {
  * depending on it here would couple this lib's behavior to those mocks.
  */
 
-function readPidFile(pidPath: string): number | null {
-  try {
-    const pid = parseInt(readFileSync(pidPath, "utf-8").trim(), 10);
-    return Number.isInteger(pid) && pid > 0 ? pid : null;
-  } catch {
-    return null;
-  }
-}
-
-export function isPidAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check whether a PID belongs to this ingress nginx process.
- *
- * Matching only the executable name is not enough: a stale pidfile can point
- * at a system nginx or another assistant's ingress after PID reuse.
- */
-function isIngressNginxProcess(pid: number, paths: IngressPaths): boolean {
-  try {
-    const output = execFileSync(
-      "ps",
-      ["-ww", "-p", String(pid), "-o", "command="],
-      {
-        encoding: "utf-8",
-        timeout: 3000,
-        stdio: ["ignore", "pipe", "ignore"],
-        windowsHide: true,
-      },
-    ).trim();
-    return (
-      /nginx/.test(output) &&
-      output.includes(paths.dir) &&
-      output.includes(paths.confPath)
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** The ingress nginx PID when it is recorded and alive, null otherwise. */
-export function getIngressPid(): number | null {
-  const paths = getIngressPaths();
-  const pid = readPidFile(paths.pidPath);
-  return pid !== null && isPidAlive(pid) && isIngressNginxProcess(pid, paths)
-    ? pid
-    : null;
-}
-
-export function isIngressRunning(): boolean {
-  return getIngressPid() !== null;
-}
-
-export interface IngressState {
-  listenPort: number;
-  /**
-   * Gateway URL the edge's proxy_pass targets — `getGatewayUrl` of the entry
-   * the edge fronts. Undefined in state records that predate the field;
-   * callers treat an unknown upstream as unverified and restart the edge so
-   * the running config provably targets the requested gateway and the state
-   * is stamped for future comparisons.
-   */
-  gatewayUrl?: string;
-  /**
-   * Fingerprint of the injected SPA config and its source bundle. Undefined
-   * for records that predate the field; an edge without a recorded
-   * fingerprint is treated as drifted and restarted so the served index
-   * provably carries the requested config.
-   */
-  remoteWebConfigHash?: string;
-}
-
-function ingressStatePath(): string {
-  return join(getIngressPaths().dir, "state.json");
-}
-
-export function readIngressState(): IngressState | null {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(ingressStatePath(), "utf-8"));
-  } catch {
-    return null;
-  }
-  const state = (raw ?? {}) as Record<string, unknown>;
-  const listenPort = state.listenPort;
-  if (typeof listenPort !== "number") return null;
-  const gatewayUrl = state.gatewayUrl;
-  const remoteWebConfigHash = state.remoteWebConfigHash;
-  return {
-    listenPort,
-    ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
-    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
-  };
-}
-
 function saveIngressState(state: IngressState): void {
   mkdirSync(getIngressPaths().dir, { recursive: true });
   writeFileSync(ingressStatePath(), JSON.stringify(state, null, 2) + "\n");
-}
-
-function clearStoppedIngress(pidPath: string): void {
-  rmSync(ingressStatePath(), { force: true });
-  rmSync(pidPath, { force: true });
-  // The edge is gone; release the root lockfile's process entry with it.
-  // Its built-sha stamp survives (a build-cache fact, not a process fact)
-  // so restarting the edge never pays a needless bundle rebuild.
-  clearAppProcessRecord();
 }
 
 /**
@@ -939,66 +822,6 @@ function savedPublicBaseUrl(): string | undefined {
   }
 }
 
-const STOP_TIMEOUT_MS = 2_000;
-
-async function waitForPidExit(
-  pid: number,
-  timeoutMs: number,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (!isPidAlive(pid)) return true;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return !isPidAlive(pid);
-}
-
-/**
- * Stop a running ingress nginx via its pidfile and clear the recorded state.
- * Returns true if a process was stopped.
- *
- * Verifies the PID still belongs to this ingress nginx before killing to avoid
- * hitting an unrelated process if the OS has reused the PID. SIGTERM is nginx
- * fast shutdown; escalate to SIGKILL if it doesn't exit within the timeout.
- */
-export async function stopIngressNginx(): Promise<boolean> {
-  const paths = getIngressPaths();
-
-  const pid = readPidFile(paths.pidPath);
-  if (pid === null || !isPidAlive(pid) || !isIngressNginxProcess(pid, paths)) {
-    clearStoppedIngress(paths.pidPath);
-    return false;
-  }
-
-  try {
-    process.kill(pid, "SIGTERM");
-    if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
-      try {
-        process.kill(pid, "SIGKILL");
-      } catch {
-        if (!isPidAlive(pid)) {
-          clearStoppedIngress(paths.pidPath);
-          return true;
-        }
-        return false;
-      }
-      if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
-        return false;
-      }
-    }
-  } catch {
-    if (!isPidAlive(pid)) {
-      clearStoppedIngress(paths.pidPath);
-      return true;
-    }
-    return false;
-  }
-
-  clearStoppedIngress(paths.pidPath);
-  return true;
-}
-
-/** Probe budget for confirming the freshly-spawned edge answers /healthz. */
 export const INGRESS_READY_TIMEOUT_MS = 5_000;
 
 /**
@@ -1282,21 +1105,6 @@ export async function startAppServer(opts: {
  * another assistant's working tunnel; a record with no recorded upstream
  * cannot be attributed, so it is left alone.
  */
-export async function stopContainerAppServer(
-  entry: LockfileAssistant,
-): Promise<boolean> {
-  if (!isLocalContainerEntry(entry)) {
-    return false;
-  }
-  if (!isIngressRunning()) {
-    return false;
-  }
-  if (readIngressState()?.gatewayUrl !== getGatewayUrl(entry)) {
-    return false;
-  }
-  return stopIngressNginx();
-}
-
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
 function stampAppProcessEntry(port: number): void {
   const pid = getIngressPid();

@@ -23,10 +23,13 @@ const getStoredPairedGuardianAccessToken = mock(
   async (_assistantId: string, _runtimeUrl: string): Promise<TokenResult> =>
     tokenResult,
 );
-// The scoped surface's retire arm runs the CLI's retire host-side; the mock
-// replaces the spawn so tests observe the call instead of running it.
-const runRetireMock = mock(async (): Promise<RetireResult> => ({ ok: true }));
+// The scoped surface's retire arm runs the headless retire operation
+// host-side; the mock replaces the operation so tests observe the call
+// instead of running it.
 type RetireResult = { ok: true } | { ok: false; status: number; error: string };
+const retireAssistantEntryMock = mock(
+  async (): Promise<RetireResult> => ({ ok: true }),
+);
 let localTokenResult: TokenResult = { ok: true, accessToken: "local-guardian" };
 const getGuardianAccessToken = mock(
   async (_assistantId: string): Promise<TokenResult> => localTokenResult,
@@ -35,14 +38,7 @@ mock.module("@mycadet/local-mode", () => ({
   ...localModeShared,
   getGuardianAccessToken,
   getPairedGuardianAccessToken: getStoredPairedGuardianAccessToken,
-  runRetire: runRetireMock,
-}));
-mock.module("./local-mode", () => ({
-  // The paired seam resolves its invocation through the desktop runtime;
-  // the shared token reader above is mocked.
-  requireRuntime: () => ({
-    session: { getToken: () => "session-token" },
-  }),
+  retireAssistantEntry: retireAssistantEntryMock,
 }));
 
 const { forwardGatewayRequest } = await import("./gateway-forward");
@@ -101,8 +97,8 @@ beforeEach(() => {
   localTokenResult = { ok: true, accessToken: "local-guardian" };
   getStoredPairedGuardianAccessToken.mockClear();
   getGuardianAccessToken.mockClear();
-  runRetireMock.mockClear();
-  runRetireMock.mockImplementation(
+  retireAssistantEntryMock.mockClear();
+  retireAssistantEntryMock.mockImplementation(
     async (): Promise<RetireResult> => ({
       ok: true,
     }),
@@ -486,15 +482,15 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
 });
 
 describe("forwardGatewayRequest — the scoped surface's retire arm", () => {
-  test("an on-machine entry's retire DELETE runs the host CLI instead of forwarding", async () => {
-    watchedSnapshot = {
-      assistants: [{ assistantId: "abc", cloud: "local", port: 8080 }],
-    };
+  test("an on-machine entry's retire DELETE runs the retire operation in-process instead of forwarding", async () => {
+    const entry = { assistantId: "abc", cloud: "local", port: 8080 };
+    watchedSnapshot = { assistants: [entry] };
     const { fetcher, calls } = recorder();
     const response = await forwardGatewayRequest(
       request("/v1/assistants/abc/retire/", { method: "DELETE" }),
       fetcher,
     );
+    expect(retireAssistantEntryMock).toHaveBeenCalledWith(entry);
     expect(calls).toEqual([]);
     expect(response?.status).toBe(204);
   });
@@ -503,7 +499,7 @@ describe("forwardGatewayRequest — the scoped surface's retire arm", () => {
     watchedSnapshot = {
       assistants: [{ assistantId: "abc", cloud: "local", port: 8080 }],
     };
-    runRetireMock.mockImplementationOnce(async () => ({
+    retireAssistantEntryMock.mockImplementationOnce(async () => ({
       ok: false,
       status: 500,
       error: "no such assistant",
@@ -529,7 +525,7 @@ describe("forwardGatewayRequest — the scoped surface's retire arm", () => {
     );
     // Cloud rows ride the host's cloud forward in the caller; the gateway
     // planner stays out of the way.
-    expect(runRetireMock).not.toHaveBeenCalled();
+    expect(retireAssistantEntryMock).not.toHaveBeenCalled();
     expect(calls).toEqual([]);
     expect(response).toBeNull();
   });

@@ -1,12 +1,11 @@
 import {
   authorizePairedForwardHeaders,
   getGuardianAccessToken,
+  forwardOperatorRequest,
   loopbackGatewayBearer,
   readGatewayTargets,
   readLockfile,
-  resolveAssistantRetireProxyDecision,
   resolveGatewayProxyTarget,
-  runRetire,
   sanitizePairedForwardHeaders,
   type TokenResult,
   type GuardianTokenLease,
@@ -19,7 +18,6 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import { requireRuntime } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -182,40 +180,33 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
 };
 
 /**
- * Run the CLI's retire for an on-machine entry the scoped surface's retire
- * arm resolved host-side. A bodyless 204 parses as the client's success null;
- * a failure carries the CLI's message as the cloud error shape, so the
- * confirmation dialog renders the same detail either way.
+ * The operator entry lookup for the host's retire mount: prefer the watcher's
+ * in-memory snapshot (the same preference the gateway planner's target map
+ * uses), falling back to the lockfile on disk for the window before the
+ * watcher installs.
  */
-async function retireLocalAssistantHostside(
+const operatorEntryLookup = (
   assistantId: string,
-): Promise<Response> {
-  const result = await runRetire(assistantId, {
-    cloudToken: requireRuntime().session.getToken() ?? undefined,
-  });
-  if (result.ok) {
-    return new Response(null, { status: 204 });
-  }
-  return new Response(JSON.stringify({ detail: result.error }), {
-    status: result.status,
-    headers: { "content-type": "application/json" },
-  });
-}
+): LockfileAssistant | undefined => {
+  const watched = getWatchedLockfileSnapshot();
+  const assistants = watched ? watched.assistants : readLockfile().assistants;
+  return assistants.find((entry) => entry.assistantId === assistantId);
+};
 
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
-  // The scoped surface's retire arm: an on-machine entry is retired by the
-  // host CLI here rather than forwarded to a gateway that cannot retire
-  // itself, so the bundle's one endpoint holds for every entry type.
-  const retire = resolveAssistantRetireProxyDecision(
-    new URL(request.url).pathname,
-    request.method,
-    () => getWatchedLockfileSnapshot() ?? readLockfile(),
-  );
-  if (retire.kind === "retireLocal") {
-    return retireLocalAssistantHostside(retire.assistantId);
+  // The operator routes ride AHEAD of the data-plane planner: an on-machine
+  // entry's retire DELETE is answered host-side by the headless retire
+  // operation (in-process — no CLI spawn), so the bundle's one endpoint
+  // holds for every entry type. A pass (unknown id, platform-hosted entry)
+  // falls through to the planner untouched.
+  const operator = await forwardOperatorRequest(request, {
+    findEntry: operatorEntryLookup,
+  });
+  if (operator) {
+    return operator;
   }
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),

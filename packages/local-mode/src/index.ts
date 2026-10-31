@@ -86,8 +86,91 @@ export {
 } from "./cli-invocation";
 export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
-export { runRetire } from "./retire";
-export type { RetireOptions, RetireResult } from "./retire";
+export {
+  forwardOperatorRequest,
+  matchOperatorRequest,
+  executeOperatorMatch,
+} from "./operations/routes";
+export type {
+  OperatorRoute,
+  OperatorMatch,
+  OperatorDeps,
+  OperatorEntryLookup,
+} from "./operations/routes";
+export {
+  retireAssistantEntry,
+  isHostExecutableRetireEntry,
+} from "./operations/retire";
+export type { RetireResult } from "./operations/retire";
+export {
+  loadAllAssistants,
+  lookupAssistantByIdentifier,
+  formatAssistantLookupError,
+  getAssistantDisplayName,
+  removeLockfileAssistant,
+  getActiveAssistant,
+  extractHostFromEntry,
+  clearAppProcessRecord,
+} from "./operations/lookup";
+export type { AssistantLookupResult } from "./operations/lookup";
+export {
+  getLocalInstanceDir,
+  getDaemonPidPath,
+} from "./remotes/local/instance";
+export { retireLocal, getRetireArchiveCommand } from "./remotes/local/retire";
+export type { RetireLocalResult } from "./remotes/local/retire";
+export {
+  validateAssistantName,
+  getRetiredDir,
+  resolveRetiredFilePath,
+  getArchivePath,
+  getMetadataPath,
+} from "./remotes/local/archive";
+export {
+  dockerResourceNames,
+  removeContainer,
+  retireDocker,
+} from "./remotes/docker/retire";
+export { retireAppleContainer } from "./remotes/apple-container/retire";
+export {
+  stopContainerAppServer,
+  stopIngressNginx,
+  getIngressPaths,
+  ingressStatePath,
+  readIngressState,
+  getIngressPid,
+  isIngressRunning,
+  isPidAlive,
+} from "./ingress";
+export type { IngressPaths, IngressState } from "./ingress";
+export { exec, buildExecErrorMessage } from "./exec";
+export {
+  isCadetCommandLine,
+  parseTasklistCsv,
+  windowsCommandLineLookupArgs,
+  readProcessCommandLine,
+  readPosixCommandLine,
+  isCadetWindowsProcess,
+  isCadetProcess,
+  isProcessAlive,
+  removeFiles,
+  stopProcess,
+  stopProcessByPidFile,
+} from "./process";
+export type { TasklistProcess, ProcessAliveResult } from "./process";
+export { readWindowsProcesses } from "./process";
+export { loopbackSafeFetch, isLoopbackUrl } from "./loopback-fetch";
+export {
+  cloudTokenPath,
+  readCloudToken,
+  resolveCloudUrl as getCloudUrl,
+  authHeadersForKnownOrganization,
+  cloudAuthHeaders,
+  invalidateOrgIdCache,
+  fetchOrganizationId,
+} from "./cloud-auth";
+export { consoleLifecycleReporter } from "./lifecycle-reporter";
+export type { LifecycleReporter } from "./lifecycle-reporter";
 export { unpairAssistant } from "./unpair";
 export {
   pairAssistant,
@@ -142,8 +225,6 @@ export {
   parseAssistantGatewayUrl,
   readGatewayTargets,
   resolveGatewayProxyTarget,
-  resolveAssistantRetireProxyDecision,
-  isHostRetirableEntry,
   sanitizePairedForwardHeaders,
   FLATTENED_FIRST_SEGMENTS,
 } from "./gateway-proxy";

@@ -4,7 +4,10 @@ import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
 import { setActiveAssistant } from "../lib/assistant-config";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  saveLockfileAssistant,
+  validateAssistantName,
+} from "@mycadet/local-mode";
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
@@ -12,7 +15,6 @@ import { hatchDocker } from "../lib/remotes/docker.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
 import { hatchAssistant, readCloudToken } from "../lib/cloud-client";
-import { validateAssistantName } from "../lib/retire-archive";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
 
