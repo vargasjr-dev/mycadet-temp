@@ -95,6 +95,9 @@ describe("startCes", () => {
     // startCes unlinks it first, then waits for it to reappear. We create it
     // after a short delay to simulate CES binding the socket.
     const resources = {
+      assistantId: "test-assistant",
+      cloud: "local",
+      port: 7830,
       instanceDir: tempDir,
       name: "test-assistant",
     } as unknown as Parameters<typeof startCes>[1];
@@ -151,6 +154,9 @@ describe("startCes", () => {
 
   test("POSIX local CES seam matches resolveIpcEndpoint", () => {
     const resources = {
+      assistantId: "assistant-123",
+      cloud: "local",
+      port: 7830,
       instanceDir: "/tmp/assistant-123",
     } as Parameters<typeof resolveCesSocketPath>[0];
 

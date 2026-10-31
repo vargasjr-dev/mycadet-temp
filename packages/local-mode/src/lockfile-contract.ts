@@ -292,6 +292,9 @@ const LocalRuntimeAssistantFields = {
   port: z.number(),
   /** The runtime daemon's port, recorded at hatch. */
   daemonPort: z.number().optional(),
+  /** The instance's state root on this machine. Local instances keep their
+   * data here; docker instances record their host-side volume root. */
+  instanceDir: z.string().optional(),
   /** The content-editor server's port, recorded at hatch. */
   cesPort: z.number().optional(),
   /** The runtime build version this instance runs. */
@@ -303,9 +306,6 @@ const LocalRuntimeAssistantFields = {
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
   ...LocalRuntimeAssistantFields,
-  /** The assistant's data root on this machine. Local-only: containerized
-   * topologies keep their data in their runtime, not on the host fs. */
-  instanceDir: z.string().optional(),
   cloud: z.literal("local"),
 });
 

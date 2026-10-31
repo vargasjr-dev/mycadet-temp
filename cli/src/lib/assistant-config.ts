@@ -64,14 +64,24 @@ export type RootProcessKind = keyof RootProcessRecords;
  * The instance's data root: the recorded instanceDir, or the shared state
  * root for legacy entries predating per-instance dirs.
  */
+export function isOnMachineEntry(entry: LockfileAssistant): boolean {
+  return (
+    entry.cloud === "local" ||
+    entry.cloud === "docker" ||
+    entry.cloud === "apple-container"
+  );
+}
+
 export function getLocalInstanceDir(
   entry?: LockfileAssistant | undefined,
 ): string {
-  // Only the local topology carries a data root on this machine;
-  // containerized remotes keep theirs in their runtime.
   return (
-    (entry && isLocalEntry(entry) ? entry.instanceDir : undefined) ??
-    resolveDataDir()
+    (entry &&
+    (entry.cloud === "local" ||
+      entry.cloud === "docker" ||
+      entry.cloud === "apple-container")
+      ? entry.instanceDir
+      : undefined) ?? resolveDataDir()
   );
 }
 
