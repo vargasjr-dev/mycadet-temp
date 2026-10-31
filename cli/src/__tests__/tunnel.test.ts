@@ -167,29 +167,6 @@ function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
   };
 }
 
-/** Seed a local entry's workspace config; returns that workspace dir. */
-function writeEntryWorkspaceConfig(
-  entry: LockfileAssistant,
-  config: Record<string, unknown>,
-): string {
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    )
-  ) {
-    throw new Error("expected a local-runtime entry");
-  }
-  const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
-  mkdirSync(workspaceDir, { recursive: true });
-  writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify(config, null, 2),
-  );
-  return workspaceDir;
-}
-
 /**
  * Pin the default workspace and seed its config. The start flow's
  * webhook-integration guard reads the machine-level workspace under the
@@ -1664,12 +1641,21 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       port: EDGE_PORT,
       startedAt: new Date().toISOString(),
     });
-    writeEntryWorkspaceConfig(entry, {
-      ingress: {
-        enabled: true,
-        lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-      },
-    });
+    const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
+    mkdirSync(workspaceDir, { recursive: true });
+    writeFileSync(
+      join(workspaceDir, "config.json"),
+      JSON.stringify(
+        {
+          ingress: {
+            enabled: true,
+            lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+          },
+        },
+        null,
+        2,
+      ),
+    );
 
     await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
