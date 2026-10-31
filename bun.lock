@@ -837,7 +837,7 @@
     },
     "qa": {
       "name": "@mycadet/qa",
-      "version": "0.0.1",
+      "version": "0.13.0",
       "devDependencies": {
         "@mycadet/shared": "workspace:*",
         "@types/bun": "1.3.14",
