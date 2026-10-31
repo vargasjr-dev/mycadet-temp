@@ -33,6 +33,7 @@ const PLATFORM_ASSISTANT_ID = "platform-1";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   ...activeAssistantIdModule,
   useActiveAssistantId: () => ASSISTANT_ID,
+  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 mock.module("@/assistant/hosting", () => ({

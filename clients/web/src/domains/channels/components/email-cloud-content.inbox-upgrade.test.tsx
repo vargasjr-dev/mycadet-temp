@@ -14,6 +14,7 @@ const ASSISTANT_ID = "assistant-123";
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
+  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 // The design library's index re-exports every name from this module, so the

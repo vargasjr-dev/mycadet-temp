@@ -28,7 +28,7 @@ import { useSendMessage } from "@/domains/chat/hooks/use-send-message";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useTurnStore, INITIAL_TURN_STATE } from "@/domains/chat/turn-store";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -86,7 +86,7 @@ beforeEach(() => {
   useChatSessionStore.getState().setOptimisticSends([]);
   useChatSessionStore.getState().setError(null);
   useComposerStore.getState().setInput("");
-  useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+  useResolvedAssistantStore.getState().setAssistant(null);
   useViewerStore.getState().reset();
 
   daemonClient.post = mock(async () => {

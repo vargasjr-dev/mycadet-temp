@@ -8,7 +8,7 @@ import { conversationListQueryKey } from "@/utils/conversation-list-keys";
 import { listPage } from "@/utils/conversation-list.test-helper";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type { Conversation } from "@/types/conversation-types";
 
 const ASSISTANT_ID = "test-asst";
@@ -42,7 +42,7 @@ async function isProcessing(inputs: {
   // test reflect exactly the inputs given (the version set by `setVersion` is
   // intentionally preserved).
   useConversationStore.getState().reset();
-  useResolvedAssistantsStore.getState().clear();
+  useResolvedAssistantStore.getState().setAssistant(null);
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -57,7 +57,9 @@ async function isProcessing(inputs: {
     ]),
   );
 
-  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
   useConversationStore.getState().setActiveConversationId(CONVERSATION_ID);
   if (inputs.isMarkedProcessingLocally) {
     useConversationStore.getState().markConversationProcessing(CONVERSATION_ID);
@@ -84,14 +86,14 @@ async function isProcessing(inputs: {
 beforeEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
   useConversationStore.getState().reset();
-  useResolvedAssistantsStore.getState().clear();
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 afterEach(() => {
   cleanup();
   useAssistantIdentityStore.getState().clearIdentity();
   useConversationStore.getState().reset();
-  useResolvedAssistantsStore.getState().clear();
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 // Exhaustive truth-table for the underlying semver gate lives in

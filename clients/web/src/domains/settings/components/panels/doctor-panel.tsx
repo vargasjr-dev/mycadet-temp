@@ -56,11 +56,11 @@ import {
 import type { AssistantsDoctorSessionsCreateData } from "@/generated/api/types.gen";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { ApiError, extractErrorMessage } from "@/utils/api-errors";
 import { useTranslation } from "@/i18n";
 import { isPointerCoarse } from "@/utils/pointer";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 // ---------------------------------------------------------------------------
 // UserOutcomePromptEntry
@@ -90,7 +90,7 @@ function UserOutcomePromptEntry({
 
 export function DoctorPanel() {
   const { t } = useTranslation("settings");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId() ?? "";
+  const assistantId = useResolvedAssistantId() ?? "";
 
   // Store state — client-owned values only
   const storeEntries = useDoctorPanelStore.use.entries();

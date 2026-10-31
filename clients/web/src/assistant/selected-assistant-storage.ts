@@ -2,7 +2,7 @@
  * Raw persistence for the single selected-assistant id.
  *
  * Deliberately dependency-free (only `@/utils/local-settings`) so it can be
- * imported by BOTH `resolved-assistants-store.ts` (the reactive owner) and
+ * imported by BOTH `resolved-assistant-store.ts` (the reactive owner) and
  * `lib/local-mode.ts` (the lockfile-resolving getters) without an import
  * cycle — the store already imports `local-mode`, so `local-mode` can't import
  * the store. `setLocalSetting` fires the same-tab `cadet:pref-changed` event,

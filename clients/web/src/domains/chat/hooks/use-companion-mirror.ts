@@ -33,7 +33,7 @@ import {
 } from "@/runtime/companion-surface";
 import { supportsWatchCaptureTarget } from "@/lib/backwards-compat/watch-capture-target";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
@@ -133,7 +133,7 @@ function currentContext(): CompanionContext {
     // else. Re-read on every identity write, so it flips once the version
     // resolves and again on an assistant switch.
     watchTargets: supportsWatchCaptureTarget(
-      useResolvedAssistantsStore.getState().activeAssistantId,
+      getActiveAssistantId(),
     ),
     // What the call is being shown, and whether it can be shown anything.
     // Published from here for the reason `captureTarget` is: the session the

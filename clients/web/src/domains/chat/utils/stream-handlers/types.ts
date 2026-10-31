@@ -38,7 +38,7 @@ export interface StreamHandlerContext {
   router: Router;
   isNative: boolean;
 
-  // --- Stream context (resolved from stream-store / resolved-assistants-store) ---
+  // --- Stream context (resolved from stream-store / resolved-assistant-store) ---
   streamContext: StreamContext | null;
   assistantId: string | null;
   /** Auth session that owned this stream handler mount. */

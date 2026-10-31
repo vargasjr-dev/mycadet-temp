@@ -81,8 +81,8 @@ const { MIN_VERSION: INGRESS_STATUS_MIN_VERSION } =
   await import("@/lib/backwards-compat/ingress-status-gate");
 const { useAssistantIdentityStore } =
   await import("@/stores/assistant-identity-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const PUBLIC_URL = "https://foo.ts.net";
 const PAIR_URL = "https://foo.ts.net/assistant/pair#device_code=DEV-123";
 const ASSISTANT_ID = "self";
@@ -240,7 +240,7 @@ beforeEach(() => {
   resetFetchLog();
   localStorage.clear();
   resetProbe();
-  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
   // Tests that exercise the status row opt into a version that serves it.
   useAssistantIdentityStore
     .getState()
@@ -254,7 +254,7 @@ afterEach(() => {
   cleanup();
   restoreFetch();
   resetEventBus();
-  useResolvedAssistantsStore.getState().setActiveAssistantId(null);
+  useResolvedAssistantStore.getState().setAssistant(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
 

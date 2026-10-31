@@ -15,6 +15,7 @@ import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   ...activeAssistantIdModule,
   useActiveAssistantId: () => "assistant-1",
+  useResolvedAssistantId: () => "assistant-1",
 }));
 
 mock.module("@/domains/settings/usage/usage-tab", () => ({

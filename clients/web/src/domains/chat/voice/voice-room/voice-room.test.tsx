@@ -3439,10 +3439,10 @@ describe("VoiceRoom: camera", () => {
         // and all the sheet's inert sweep spares.
         expect(roomDialog()?.contains(explainer())).toBe(true);
         expect(explainer()?.textContent).toContain("Photo or Live?");
-        // No assistant is resolved in this suite, so this is also the camera's
-        // own fallback name, which reads mid-sentence.
+        // The name is the app-wide one (identity store first, the served
+        // entry as fallback) — here the identity seed is what reads.
         expect(explainer()?.textContent).toContain(
-          "Pick how your assistant sees what you're pointing at. You can switch any time.",
+          "Pick how test-asst sees what you're pointing at. You can switch any time.",
         );
         // It says what the two modes are; the camera is on neither's account
         // anywhere but photo.

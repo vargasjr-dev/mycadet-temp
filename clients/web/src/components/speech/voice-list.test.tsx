@@ -107,8 +107,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 }));
 
 const { VoiceList } = await import("@/components/speech/voice-list");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 beforeAll(() => {
   (
@@ -122,7 +122,7 @@ beforeAll(() => {
 });
 
 function renderList() {
-  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

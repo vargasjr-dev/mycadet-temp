@@ -32,8 +32,8 @@ import { useActiveConversationIsProcessing } from "@/lib/backwards-compat/conver
 import { useConversationStore } from "@/stores/conversation-store";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { Conversation } from "@/types/conversation-types";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 // ---------------------------------------------------------------------------
 // Return type
@@ -55,7 +55,7 @@ export interface ChatUIState {
   thinkingLabel: string | null;
   liveAssistantMessageId: string | null;
   activeConversationIsProcessing: boolean;
-  /** Resolved active assistant ID (from resolved-assistants-store). */
+  /** Resolved active assistant ID (from resolved-assistant-store). */
   assistantId: string | null;
   /** Active conversation ID (from conversation-store). */
   activeConversationId: string | null;
@@ -78,7 +78,7 @@ export function useChatUIState(): ChatUIState {
   const activeToolCallCount = useTurnStore.use.activeToolCallCount();
   const statusText = useTurnStore.use.statusText();
 
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const activeConversationId = useConversationStore.use.activeConversationId();
 
   // All message-derived checks read the rendered transcript (the materialized

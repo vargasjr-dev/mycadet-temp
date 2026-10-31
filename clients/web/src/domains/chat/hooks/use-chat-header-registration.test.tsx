@@ -23,10 +23,10 @@ mock.module("@/components/layout/chat-layout-slots-store", () => {
   return { useChatLayoutSlotsStore: store };
 });
 
-mock.module("@/stores/resolved-assistants-store", () => {
+mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
-  store.use = { activeAssistantId: () => "asst-1" };
-  return { useResolvedAssistantsStore: store };
+  store.use = { assistant: () => ({ cloud: "local", assistantId: "asst-1" }) };
+  return { useResolvedAssistantStore: store };
 });
 
 mock.module("@/stores/conversation-store", () => {

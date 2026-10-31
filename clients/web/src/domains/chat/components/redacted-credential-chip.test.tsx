@@ -24,7 +24,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import { RedactedCredentialChip } from "@/domains/chat/components/redacted-credential-chip";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ENRICHED = {
   type: "Anthropic API Key",
@@ -40,14 +40,14 @@ function lastRevealAssistantId(): unknown {
 
 afterEach(() => {
   credentialsRevealPost.mockClear();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("RedactedCredentialChip reveal scoping", () => {
   test("reveals against the transcript assistantId, not the active assistant", async () => {
     // Active assistant is a DIFFERENT assistant than the transcript owner.
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: "active-assistant",
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "active-assistant" },
     });
 
     const { getAllByLabelText } = render(
@@ -64,8 +64,8 @@ describe("RedactedCredentialChip reveal scoping", () => {
   });
 
   test("falls back to the active assistant when no assistantId prop is passed", async () => {
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: "active-assistant",
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "active-assistant" },
     });
 
     const { getAllByLabelText } = render(
@@ -81,8 +81,8 @@ describe("RedactedCredentialChip reveal scoping", () => {
   test("is not revealable when the transcript assistantId is explicitly null", () => {
     // An explicit null owner (pre-active transcript) must not fall through to
     // the active assistant — the chip stays a non-revealable badge.
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: "active-assistant",
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "active-assistant" },
     });
 
     const { queryAllByLabelText } = render(
@@ -96,8 +96,8 @@ describe("RedactedCredentialChip reveal scoping", () => {
     // Even when enriched-looking props ride along, `neutralized` wins: the
     // daemon refused to vouch for this span, so nothing it claims (type,
     // service, field) may be displayed or made interactive.
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: "active-assistant",
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "active-assistant" },
     });
 
     const { container, queryAllByLabelText, getByText } = render(

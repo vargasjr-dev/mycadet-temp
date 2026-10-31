@@ -12,7 +12,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import type { PropsWithChildren } from "react";
 
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import type * as Mobile from "@/hooks/use-is-mobile";
@@ -45,15 +45,15 @@ function Wrapper({ children }: PropsWithChildren) {
   return <MemoryRouter initialEntries={[originPath]}>{children}</MemoryRouter>;
 }
 
-let selection: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selection: ReturnType<typeof useResolvedAssistantStore.getState>;
 let conversation: ReturnType<typeof useConversationStore.getState>;
 let viewer: ReturnType<typeof useViewerStore.getState>;
 beforeEach(() => {
   originPath = "/assistant/conversations/conv-origin";
-  selection = useResolvedAssistantsStore.getState();
+  selection = useResolvedAssistantStore.getState();
   conversation = useConversationStore.getState();
   viewer = useViewerStore.getState();
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useConversationStore.setState({ activeConversationId: "conv-origin" });
   useViewerStore.setState({ mainView: "chat", openedDocumentState: null });
   found = true;
@@ -82,7 +82,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useConversationStore.setState(conversation, true);
   useViewerStore.setState(viewer, true);
 });
@@ -143,7 +143,9 @@ describe("mobile chat document entry", () => {
     });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
     act(() =>
-      useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" }),
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
     );
     await act(async () => {
       resolveLoad({ data: documentData });
@@ -178,9 +180,9 @@ describe("mobile chat document entry", () => {
         expect(load).not.toHaveBeenCalled();
         if (cancelled) {
           act(() =>
-            useResolvedAssistantsStore.setState({
-              activeAssistantId: "assistant-2",
-            }),
+            useResolvedAssistantStore
+              .getState()
+              .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
           );
         }
       } finally {

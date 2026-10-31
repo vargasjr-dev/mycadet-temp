@@ -154,7 +154,7 @@ import { CameraShutter } from "@/domains/chat/voice/camera-shutter";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useSupportsVoiceCamera } from "@/lib/backwards-compat/use-supports-voice-camera";
 import { scopedAvatarAccentVars } from "@/hooks/use-avatar-accent-var";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useAssistantName } from "@/hooks/use-assistant-name";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
 import { toneForBg } from "@/utils/avatar-tone";
 
@@ -1012,9 +1012,7 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
     assistantAudioActive,
     cameraOpen,
   );
-  const assistantName = useResolvedAssistantsStore.use
-    .assistants()
-    .find((a) => a.id === assistantId)?.name;
+  const assistantName = useAssistantName(assistantId);
   // The one sentence camera mode says. Composed here rather than inside the
   // pill so the room's own always-mounted region speaks it: a live region that
   // arrives with its first sentence already in it is announced by nothing

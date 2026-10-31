@@ -6,7 +6,7 @@ import {
   skillsByIdGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { type SeedQueryCache, withQueryCache } from "@/lib/story-query-cache";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 import { DetailPanelStoryFrame } from "@/domains/chat/components/detail-panel-story-frame";
 
@@ -21,7 +21,7 @@ import { SkillDetailPanel } from "./skill-detail-panel";
 const ASSISTANT_ID = "asst_story";
 const SKILL_ID = "release-triage";
 
-useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
 
 const SKILL_MD = `---
 name: Release triage

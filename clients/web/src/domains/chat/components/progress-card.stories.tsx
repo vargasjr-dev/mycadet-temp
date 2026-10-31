@@ -25,7 +25,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 import { randomCharacterTraits } from "@/utils/avatar-random";
 
@@ -84,7 +84,7 @@ function seedPlan(
  * `useAvatarAccentVar`, which no story mounts.
  */
 function seedAvatar(queryClient: QueryClient): string | null {
-  useResolvedAssistantsStore.setState({
+  useResolvedAssistantStore.setState({
     activeAssistantId: ASSISTANT_ID,
   } as never);
   const traits = randomCharacterTraits(BUNDLED_COMPONENTS);

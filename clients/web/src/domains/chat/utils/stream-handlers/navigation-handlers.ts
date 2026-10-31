@@ -12,7 +12,7 @@ import {
   keptAppId,
   revealConversationView,
 } from "@/utils/conversation-navigation";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import type { StreamHandlerContext } from "@/domains/chat/utils/stream-handlers/types";
@@ -175,14 +175,16 @@ export function handleOpenPanel(
     reportOpenPanelOutcome(event, ctx, "nack", "no_active_assistant");
     return;
   }
-  const { assistants } = useResolvedAssistantsStore.getState();
+  const entry = getResolvedAssistant();
   // The identity store carries the assistant's self-chosen name from
   // IDENTITY.md; the cloud record name can be a placeholder
   // (e.g. "New Assistant"), so it is only a fallback.
   const identityName = useAssistantIdentityStore.getState().name;
   const assistantName =
     identityName?.trim() ||
-    assistants.find((a) => a.id === streamAssistantId)?.name ||
+    (entry && entry.assistantId === streamAssistantId
+      ? entry.name
+      : undefined) ||
     "Assistant";
   useViewerStore.getState().openChannelSetup({
     channel,

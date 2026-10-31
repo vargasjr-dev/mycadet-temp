@@ -25,7 +25,7 @@ import {
   type WorkflowEntry,
   type WorkflowLeaf,
 } from "@/domains/chat/workflow-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { isActiveStatus } from "@/utils/workflow-status";
 import type { WorkflowRunStatus } from "@mycadet/assistant-api";
 import {
@@ -268,7 +268,7 @@ export function useWorkflowAgentAvatarSeeds(runId: string): string[] {
  */
 export function useWorkflowCardData(runId: string): ToolCallCardData | null {
   const entry = useWorkflowStore((state) => state.byId[runId]);
-  const assistantId = useResolvedAssistantsStore((s) => s.activeAssistantId);
+  const assistantId = useResolvedAssistantStore((s) => s.assistant?.assistantId ?? null);
 
   useEffect(() => {
     if (!entry && assistantId) {

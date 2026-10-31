@@ -54,7 +54,7 @@ import { useOnboardingWindowSize } from "@/hooks/use-onboarding-window-size";
 import { useConversationSync } from "@/hooks/use-conversation-sync";
 import { useLegacyPinMigration } from "@/hooks/use-legacy-pin-migration";
 import { useWorkspaceTheme } from "@/hooks/use-workspace-theme";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
@@ -97,6 +97,7 @@ import { toggleCompanionPicker } from "@/domains/chat/companion-popover";
 import { useCompanionPickers } from "@/domains/chat/hooks/use-companion-pickers";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notification-avatar";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * App-level layout route. Owns four cross-route concerns:
@@ -157,13 +158,8 @@ export function RootLayout() {
   // never takes the keys.
   useCallChords();
 
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistants = useResolvedAssistantsStore.use.assistants();
-  const assistantsHydrated =
-    useResolvedAssistantsStore.use.assistantsHydrated();
-  const activeAssistant = assistants.find(
-    (assistant) => assistant.id === assistantId,
-  );
+  const assistantId = useResolvedAssistantId();
+  const activeAssistant = useResolvedAssistantStore.use.assistant();
   const assistantVersion = useAssistantIdentityStore.use.version();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
@@ -225,21 +221,22 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    // Keyed on hydration: until the store's roster is hydrated there is
+    // Keyed on the served assistant: until the shell stamps it there is
     // nothing to key scopes on. The web bundle exists only for a resolved
     // assistant, so there is no resolution state to wait on.
-    if (!assistantsHydrated) {
+    if (!activeAssistant) {
       return [];
     }
-    return assistants
-      .map((assistant) => {
-        const fallback =
-          assistant.id === assistantId ? connectionFallback : null;
-        const scopeId = resolveAssistantAvatarOwnerScopeId(assistant, fallback);
-        return scopeId ? { scopeId, assistantId: assistant.id } : null;
-      })
-      .filter((owner) => owner !== null);
-  }, [assistantId, assistants, assistantsHydrated, connectionFallback]);
+    const fallback =
+      activeAssistant.assistantId === assistantId ? connectionFallback : null;
+    const scopeId = resolveAssistantAvatarOwnerScopeId(
+      activeAssistant,
+      fallback,
+    );
+    return scopeId
+      ? [{ scopeId, assistantId: activeAssistant.assistantId }]
+      : [];
+  }, [assistantId, activeAssistant, connectionFallback]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {
       return;
@@ -412,7 +409,7 @@ export function RootLayout() {
       // does not exist rather than on the report.
       if (
         retro.assistantId !==
-        useResolvedAssistantsStore.getState().activeAssistantId
+        getActiveAssistantId()
       ) {
         return;
       }

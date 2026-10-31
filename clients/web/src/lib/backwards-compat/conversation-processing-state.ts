@@ -26,7 +26,7 @@
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useAssistantSupports } from "@/lib/backwards-compat/utils";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 const MIN_VERSION = "0.8.8";
 
@@ -41,7 +41,7 @@ const MIN_VERSION = "0.8.8";
 export function useActiveConversationIsProcessing(): boolean {
   const serverOwnsProcessingState = useAssistantSupports(MIN_VERSION);
 
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const processingConversationIds =
     useConversationStore.use.processingConversationIds();

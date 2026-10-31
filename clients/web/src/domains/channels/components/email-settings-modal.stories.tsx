@@ -17,7 +17,7 @@ import {
 import { assistantChannelAdmissionPolicyListQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "story-assistant";
 const LOCAL_ASSISTANT_ID = "local-story-assistant";
@@ -109,7 +109,7 @@ const meta: Meta<typeof EmailSettingsModal> = {
     // The body reads the active assistant off the store, and the trust-floor
     // section only renders against a gateway new enough to serve it; the
     // story stands in for both.
-    useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
     const previous = useAssistantIdentityStore.getState().version;
     useAssistantIdentityStore.setState({ version: TRUST_FLOORS_VERSION });
     return () => {

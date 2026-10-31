@@ -27,7 +27,7 @@ import { useDocumentEditorSync } from "@/hooks/use-document-editor-sync";
 import { publish } from "@/lib/event-bus";
 import { liveViewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 import type * as ErrorCapture from "@/lib/error-reporting/capture-error";
@@ -264,7 +264,7 @@ const write = mock(
     return { data: { success: true } };
   },
 );
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 const conversation = useConversationStore.getState();
 const viewer = useViewerStore.getState();
 let queryClient: QueryClient;
@@ -289,7 +289,7 @@ beforeEach(() => {
     finishWrite = resolve;
     failWrite = reject;
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",
@@ -323,7 +323,7 @@ afterEach(async () => {
   viewport.restore();
   document.body.style.pointerEvents = "";
   mock.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useConversationStore.setState(conversation, true);
   useViewerStore.setState(viewer, true);
   useComposerStore.setState({ input: "", attachments: [] });
@@ -975,9 +975,9 @@ describe("document session chat handoff", () => {
           if (outcome === "closed") {
             useViewerStore.getState().closeDocument();
           } else {
-            useResolvedAssistantsStore.setState({
-              activeAssistantId: "assistant-2",
-            });
+            useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2" },
+    });
           }
           finishWrite();
         }
@@ -1072,9 +1072,9 @@ describe("document PDF export saves", () => {
           );
         } else {
           act(() =>
-            useResolvedAssistantsStore.setState({
-              activeAssistantId: "assistant-2",
-            }),
+            useResolvedAssistantStore
+              .getState()
+              .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
           );
         }
         await act(async () => finishWrite());
@@ -1172,9 +1172,9 @@ describe("desktop document feedback", () => {
         fireEvent.click(screen.getByRole("button", { name: "Close document" }));
       } else if (action === "assistant switch") {
         act(() =>
-          useResolvedAssistantsStore.setState({
-            activeAssistantId: "assistant-2",
-          }),
+          useResolvedAssistantStore
+            .getState()
+            .setAssistant({ cloud: "local", assistantId: "assistant-2" }),
         );
       } else {
         act(() =>

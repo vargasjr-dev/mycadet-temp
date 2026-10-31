@@ -6,7 +6,7 @@ import {
   revokePairedDeviceHost,
   type LocalPairedDeviceRecord,
 } from "@/runtime/local-mode-host";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 export interface PairedDevicesController {
   /**
@@ -116,12 +116,8 @@ export function usePairedDevices({
     [],
   );
 
-  // Reactive selection seam: every switch path writes this slice. The
-  // lockfile-active fallback covers a null slice (e.g. no explicit selection).
-  const selectedAssistantId =
-    useResolvedAssistantsStore.use.selectedAssistantId();
-  const assistantId =
-    selectedAssistantId ?? getActiveAssistant()?.assistantId;
+  // The served assistant — the shell stamped it; there is no selection.
+  const assistantId = useResolvedAssistantStore.use.assistant()?.assistantId;
 
   useEffect(() => {
     // A selection switch invalidates any open confirm dialog.

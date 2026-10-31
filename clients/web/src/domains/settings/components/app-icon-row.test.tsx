@@ -176,8 +176,8 @@ const { AppIconRow } =
   await import("@/domains/settings/components/app-icon-row");
 const { APP_ICON_UNSUPPORTED, useAppIconStore } =
   await import("@/stores/app-icon-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 /** Every icon the generator emits from the catalog, as a full shell would. */
 const ALL_ICONS = BUNDLED_COMPONENTS.eyeStyles.flatMap((eyeStyle) =>
@@ -326,7 +326,7 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: ALL_ICONS };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
 });
 
 afterEach(() => {
@@ -336,7 +336,7 @@ afterEach(() => {
   getAppIconState.mockClear();
   setAppIcon.mockClear();
   getInfoMock.mockClear();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("AppIconRow", () => {

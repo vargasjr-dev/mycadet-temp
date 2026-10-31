@@ -13,7 +13,7 @@ import {
 } from "@/lib/backwards-compat/utils";
 import { MIN_VERSION } from "@/lib/backwards-compat/server-minted-conversation";
 import { resolveSupportsDocumentConversationLink } from "@/lib/backwards-compat/document-conversation-link";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   getEditChatConversationId,
   setEditChatConversationId,
@@ -37,9 +37,9 @@ interface DocumentConversationOptions {
 /** A scope is invalid permanently after an assistant switch, including A-B-A. */
 export function documentRequestScope(assistantId: string) {
   let current =
-    useResolvedAssistantsStore.getState().activeAssistantId === assistantId;
-  const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
-    if (state.activeAssistantId !== assistantId) {
+    getActiveAssistantId() === assistantId;
+  const unsubscribe = useResolvedAssistantStore.subscribe((state) => {
+    if (state.assistant?.assistantId !== assistantId) {
       current = false;
     }
   });

@@ -21,8 +21,8 @@ import { useEffect, useRef, useState } from "react";
 import { saveCharacterTraits } from "@/assistant/avatar-api";
 import { configPatch } from "@/generated/daemon/sdk.gen";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { CharacterTraits } from "@/types/avatar";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 const AVATAR_APPLY_INITIAL_RETRY_MS = 1_500;
 const AVATAR_APPLY_MAX_RETRY_MS = 15_000;
@@ -70,7 +70,7 @@ export function OnboardingAvatarApplier() {
     useOnboardingFocusStore.use.setPendingAvatarTraits();
   const setPendingAvatarVoice =
     useOnboardingFocusStore.use.setPendingAvatarVoice();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const savingRef = useRef(false);
   const failedAttemptsRef = useRef(0);
   const currentHandoffRef = useRef<{

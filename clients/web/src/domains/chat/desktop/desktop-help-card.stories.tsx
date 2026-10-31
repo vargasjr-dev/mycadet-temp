@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 
 import { DesktopHelpCard } from "./desktop-help-card";
@@ -13,13 +13,13 @@ function PreviewFixture() {
   const session = useDesktopPreviewStore.use.session();
   useLayoutEffect(() => {
     const initialSession = useDesktopPreviewStore.getState().session;
-    const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: "assistant-example",
+    const previousAssistant = useResolvedAssistantStore.getState().assistant;
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-example" },
     });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
-      useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
+      useResolvedAssistantStore.setState({ assistant: previousAssistant });
     };
   }, []);
   return (

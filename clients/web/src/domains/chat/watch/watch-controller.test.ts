@@ -67,16 +67,21 @@ let mintGate: Promise<void> | null = null;
  * subscription's lifetime is exactly what binds a session to its assistant.
  */
 let activeAssistantId: string | null = null;
-const assistantListeners = new Set<
-  (state: { activeAssistantId: string | null }) => void
->();
+const assistantListeners = new Set<(state: unknown) => void>();
 
-mock.module("@/stores/resolved-assistants-store", () => ({
-  useResolvedAssistantsStore: {
-    getState: () => ({ activeAssistantId }),
-    subscribe: (
-      listener: (state: { activeAssistantId: string | null }) => void,
-    ) => {
+mock.module("@/stores/resolved-assistant-store", () => ({
+  getActiveAssistantId: () => activeAssistantId,
+  getResolvedAssistant: () =>
+    activeAssistantId
+      ? { cloud: "local", assistantId: activeAssistantId }
+      : null,
+  useResolvedAssistantStore: {
+    getState: () => ({
+      assistant: activeAssistantId
+        ? { cloud: "local", assistantId: activeAssistantId }
+        : null,
+    }),
+    subscribe: (listener: (state: unknown) => void) => {
       assistantListeners.add(listener);
       return () => {
         assistantListeners.delete(listener);
@@ -123,7 +128,11 @@ const activate = (
     .getState()
     .setIdentity("test-asst", version, assistantId);
   for (const listener of [...assistantListeners]) {
-    listener({ activeAssistantId });
+    listener({
+      assistant: activeAssistantId
+        ? { cloud: "local", assistantId: activeAssistantId }
+        : null,
+    });
   }
 };
 

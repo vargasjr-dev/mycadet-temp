@@ -13,7 +13,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 interface PatchArgs {
   url: string;
@@ -80,12 +80,12 @@ beforeEach(() => {
   setDeviceSettingMock.mockClear();
   captureErrorMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
-  useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
 });
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
 });
 
 describe("TimezoneSection", () => {
@@ -113,7 +113,7 @@ describe("TimezoneSection", () => {
   });
 
   test("with no assistant id, writes the device setting and skips the PATCH", () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     const { getByText } = render(<TimezoneSection />);
     fireEvent.click(getByText("pick-zone"));
 
@@ -187,7 +187,7 @@ describe("TimezoneSection", () => {
         }),
     );
 
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-A" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-A" } });
     const { getByText, rerender } = render(<TimezoneSection />);
 
     // (a) Start a change for assistant A: the first PATCH fires and stays in
@@ -200,7 +200,7 @@ describe("TimezoneSection", () => {
 
     // (b) Switch the active assistant to B and re-render so `assistantIdRef`
     // picks up the new id via its effect.
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-B" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-B" } });
     rerender(<TimezoneSection />);
 
     // (c) Change the timezone again while A's PATCH is still in flight: this

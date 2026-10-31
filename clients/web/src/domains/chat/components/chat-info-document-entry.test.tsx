@@ -23,7 +23,7 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import type * as ElementSize from "@/hooks/use-element-size";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 
@@ -116,12 +116,12 @@ let documentLoad: Promise<DocumentContent>;
 let conversationExists: boolean;
 let releaseOrgHeader: () => void;
 let viewer: ReturnType<typeof useViewerStore.getState>;
-let selection: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selection: ReturnType<typeof useResolvedAssistantStore.getState>;
 let conversation: ReturnType<typeof useConversationStore.getState>;
 
 beforeEach(() => {
   viewer = useViewerStore.getState();
-  selection = useResolvedAssistantsStore.getState();
+  selection = useResolvedAssistantStore.getState();
   conversation = useConversationStore.getState();
   releaseOrgHeader = holdOrgHeaderUnresolved();
   viewport.set({ narrow: true, coarsePointer: true });
@@ -131,7 +131,7 @@ beforeEach(() => {
     openedDocumentState: null,
   });
   useConversationStore.setState({ activeConversationId: "conv-1" });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   conversationExists = true;
   documentLoad = new Promise((resolve, reject) => {
     finishLoad = resolve;
@@ -165,7 +165,7 @@ afterEach(() => {
   releaseOrgHeader();
   clearTranscriptMessages();
   useViewerStore.setState(viewer, true);
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useConversationStore.setState(conversation, true);
 });
 afterAll(restoreDomStubs);
@@ -235,9 +235,9 @@ describe("mobile Chat Info document entry", () => {
         if (reason === "close") {
           fireEvent.click(screen.getByLabelText("Close chat info"));
         } else {
-          useResolvedAssistantsStore.setState({
-            activeAssistantId: "assistant-2",
-          });
+          useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2" },
+    });
         }
       });
       await act(async () => finishLoad(DOCUMENT));

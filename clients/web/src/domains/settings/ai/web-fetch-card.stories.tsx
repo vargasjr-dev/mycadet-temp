@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { WebFetchCard } from "@/domains/settings/ai/web-fetch-card";
 import { withQueryCache } from "@/lib/story-query-cache";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const meta: Meta<typeof WebFetchCard> = {
   title: "Settings/AI/WebFetchCard",
@@ -11,9 +11,9 @@ const meta: Meta<typeof WebFetchCard> = {
     (Story) => {
       // The card reads the active assistant id from the resolved-assistants
       // store; seed it so `useActiveAssistantId()` doesn't throw.
-      useResolvedAssistantsStore.setState({
-        activeAssistantId: "story-assistant",
-      });
+      useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "story-assistant" },
+    });
       return (
         <div style={{ maxWidth: 640, padding: 24 }}>
           <Story />

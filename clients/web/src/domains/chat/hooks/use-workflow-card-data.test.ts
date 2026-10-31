@@ -15,7 +15,7 @@ import {
   useWorkflowCardData,
 } from "@/domains/chat/hooks/use-workflow-card-data";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import type {
   WorkflowEntry,
   WorkflowLeaf,
@@ -314,7 +314,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   afterEach(() => {
     cleanup();
     useWorkflowStore.getState().reset();
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     mock.restore();
   });
 
@@ -322,7 +322,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
 
     const { result } = renderHook(() => useWorkflowCardData("wf-absent"));
 
@@ -336,7 +336,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when an entry already exists", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
     useWorkflowStore
       .getState()
       .startRun({ runId: "wf-present", timestamp: NOW });
@@ -353,7 +353,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when no assistant is active", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
 
     renderHook(() => useWorkflowCardData("wf-no-asst"));

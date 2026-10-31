@@ -102,8 +102,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { VoicePickerSurface } =
   await import("@/domains/chat/components/surfaces/voice-picker-surface");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 
 const SURFACE: Surface = {
   surfaceId: "surface-voice-1",
@@ -128,9 +128,11 @@ const onActionCalls: unknown[][] = [];
 function renderSurface({
   noAssistant = false,
 }: { noAssistant?: boolean } = {}) {
-  useResolvedAssistantsStore.setState({
-    activeAssistantId: noAssistant ? null : ASSISTANT_ID,
-  });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant(
+      noAssistant ? null : { cloud: "local", assistantId: ASSISTANT_ID },
+    );
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

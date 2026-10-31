@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 
 import {
   CommandPalette,
@@ -8,13 +8,12 @@ import { useAssistantBootResolution } from "@/assistant/queries";
 import { useCommandPaletteSections } from "@/domains/chat/hooks/use-command-palette-sections";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
-import { useGatedSelectedAssistantId } from "@/assistant/selection";
 import {
   dismissCommandPaletteWindow,
   selectCommandPaletteCommand,
 } from "@/runtime/command-palette-window";
 import type { CadetCommand } from "@/runtime/is-electron";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const noop = (): void => undefined;
 const noopNavigate = (_to: string | number): void => undefined;
@@ -62,21 +61,8 @@ export function CommandPaletteWindowPage() {
   useAppTheme();
   useAssistantBootResolution();
 
-  const assistants = useResolvedAssistantsStore.use.assistants();
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  // The same gated read the resolution uses; when no selection is honored,
-  // track the resolved active id, so the palette never binds to a
-  // selection the resolution ignored.
-  const gatedSelectedAssistantId = useGatedSelectedAssistantId();
-  const selectedAssistant = useMemo(() => {
-    const selectedId = gatedSelectedAssistantId ?? activeAssistantId;
-    if (!selectedId) {
-      return null;
-    }
-    const entry = assistants.find((a) => a.id === selectedId);
-    return entry ? { id: entry.id, name: entry.name } : null;
-  }, [gatedSelectedAssistantId, activeAssistantId, assistants]);
-  const assistantId = selectedAssistant?.id ?? null;
+  const assistant = useResolvedAssistantStore.use.assistant();
+  const assistantId = assistant?.assistantId ?? null;
   const { conversations } = useConversationListQuery(assistantId, true);
 
   const handleItemSelect = useCallback((item: CommandPaletteItemData) => {
@@ -92,7 +78,7 @@ export function CommandPaletteWindowPage() {
     handleItemSelect: selectItem,
   } = useCommandPaletteSections({
     assistantId,
-    assistantName: selectedAssistant?.name,
+    assistantName: assistant?.name,
     conversations,
     activeConversationId: undefined,
     startNewConversation: noop,

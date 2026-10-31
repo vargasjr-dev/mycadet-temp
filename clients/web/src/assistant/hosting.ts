@@ -1,20 +1,14 @@
 import type { Remote } from "@mycadet/local-mode/contract";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 /**
- * The active assistant's remote — the store's active row's `cloud`, which
- * the projection normalizes: the lockfile entry's hosting kind for
- * lockfile rows, `"cloud"` for rows absent from the lockfile (they exist
- * only in the cloud-served world). The web bundle exists only for a
- * resolved assistant, so there is no resolving answer.
+ * The active assistant's remote — the served entry's `cloud`, stamped by
+ * the shell or the `/assistant/` projection. The web bundle exists only
+ * for a resolved assistant, so there is no resolving answer.
  */
 export function useAssistantHosting(): Remote {
-  return (
-    (useResolvedAssistantsStore((s) =>
-      s.assistants.find((a) => a.id === s.activeAssistantId)?.cloud,
-    ) ?? "cloud") as Remote
-  );
+  return useResolvedAssistantStore((s) => s.assistant?.cloud ?? "cloud");
 }
 
 /** The active assistant's remote is "cloud". */

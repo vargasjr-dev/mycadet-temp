@@ -101,11 +101,13 @@ mock.module("@/runtime/platform-detection", () => ({
   detectElectronHostOS: () => hostOS,
 }));
 
-mock.module("@/stores/resolved-assistants-store", () => ({
-  useResolvedAssistantsStore: {
+mock.module("@/stores/resolved-assistant-store", () => ({
+  useResolvedAssistantStore: {
     use: {
-      selectedAssistantId: () => selectedAssistantId,
-      assistants: () => assistants,
+      assistant: () =>
+        selectedAssistantId
+          ? { cloud: "local", assistantId: selectedAssistantId }
+          : null,
     },
   },
 }));
@@ -252,7 +254,10 @@ describe("SystemPermissionsCard", () => {
       expect(requestSystemPermission).toHaveBeenCalledTimes(1);
     });
     expect(resolveAssistantAvatarOwnerScopeId).toHaveBeenCalledWith(
-      assistants[0],
+      assistants[0] && {
+        cloud: "local",
+        assistantId: assistants[0].id,
+      },
       expect.any(String),
     );
     expect(requestSystemPermission).toHaveBeenCalledWith("notifications", {

@@ -95,8 +95,8 @@ const { useConversationStore } = await import("@/stores/conversation-store");
 const { useViewerStore } = await import("@/stores/viewer-store");
 const { __resetPendingDeepLinkForTesting, usePendingDeepLinkStore } =
   await import("@/stores/pending-deep-link-store");
-const { useResolvedAssistantsStore } =
-  await import("@/stores/resolved-assistants-store");
+const { useResolvedAssistantStore } =
+  await import("@/stores/resolved-assistant-store");
 const { useVoicePrefsStore } = await import("@/stores/voice-prefs-store");
 const { SAMPLE_APP, showOpenAppRoute, showPath } =
   await import("@/stores/open-app.test-helper");
@@ -150,7 +150,7 @@ function identityHydrated(version: string = SUPPORTED_VERSION): void {
     version,
     name: "Ada",
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
 }
 
 /**
@@ -213,7 +213,7 @@ beforeEach(() => {
     version: null,
     name: null,
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: null });
+  useResolvedAssistantStore.getState().setAssistant(null);
   useConversationStore.getState().reset();
   useConversationStore
     .getState()
@@ -384,7 +384,7 @@ describe("a request that cannot be served yet stays parked", () => {
     // identity fetch has not landed, so the version wait resolves on its 5s
     // timeout with `version` still null. The eligibility gate would read the
     // conservative `false` and throw the command away.
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     registerStarter();
 
     requestVoiceStart(navigate, { entry: "deep_link" });
@@ -407,7 +407,7 @@ describe("a request that cannot be served yet stays parked", () => {
     // as "too old for live voice" and spends a press the user really made.
     identityHydrated();
     registerStarter();
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
 
     usePendingDeepLinkStore
       .getState()
@@ -1059,7 +1059,7 @@ describe("state read before the preflight is re-read after it", () => {
     registerStarter();
     const { drain, release } = await drainBlockedOnPreflight();
 
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
     release();
     await drain;
 
@@ -1071,7 +1071,7 @@ describe("state read before the preflight is re-read after it", () => {
     expect(isParked()).toBe(true);
 
     // Back on the assistant the press was made for, the next drain serves it.
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
     await drainPendingVoiceStart(navigate);
     expectStartedOnFreshDraft();
   });
@@ -1085,7 +1085,7 @@ describe("state read before the preflight is re-read after it", () => {
     preflightVerdict = { status: "not-ready", userMessage: "Set up a voice." };
     const { drain, release } = await drainBlockedOnPreflight();
 
-    useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-2" });
+    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
     release();
     await drain;
 

@@ -25,7 +25,7 @@ import {
 } from "@/lib/stt/language-catalog";
 import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/cloud-voice-catalog";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useAssistantName } from "@/hooks/use-assistant-name";
 import { useTranslation } from "@/i18n";
 
 /**
@@ -110,9 +110,7 @@ export function VoiceFirstRunCard({
   const { t } = useTranslation("chat");
   const { components, traits, customImageUrl } =
     useAssistantAvatar(assistantId);
-  const assistantName = useResolvedAssistantsStore.use
-    .assistants()
-    .find((a) => a.id === assistantId)?.name;
+  const assistantName = useAssistantName(assistantId);
   const displayName = assistantName ?? t("voiceFirstRunCard.yourAssistant");
 
   const [view, setView] = useState<FirstRunView>("intro");

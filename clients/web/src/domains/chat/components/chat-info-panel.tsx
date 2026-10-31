@@ -49,13 +49,13 @@ import {
   type ConversationAssetSource,
 } from "@/lib/conversation-asset-sources";
 import { useTranslation } from "@/i18n";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   type ChatInfoCategory,
   type ChatInfoPayload,
   useViewerStore,
 } from "@/stores/viewer-store";
 import type { DisplayAttachment } from "@/types/attachment-types";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface ChatInfoPanelProps {
   payload: ChatInfoPayload;
@@ -71,7 +71,7 @@ export function ChatInfoPanel({
 }: ChatInfoPanelProps) {
   const { t } = useTranslation("chat");
   const { assistantId, conversationId } = payload;
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const activeAssistantId = useResolvedAssistantId();
   const openDocument = useOpenDocumentFromChat(
     assistantId,
     useViewerStore.getState().closeChatInfo,

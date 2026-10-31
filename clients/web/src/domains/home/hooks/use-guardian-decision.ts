@@ -3,7 +3,6 @@ import { useCallback, useMemo } from "react";
 import { useGuardianactionsDecisionPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
 import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { ApiError } from "@/utils/api-errors";
 import { toast } from "@mycadet/design-library/components/toast";
 import type { GuardianDecisionActionId } from "@mycadet/service-contracts/guardian-requests";
@@ -13,6 +12,7 @@ import {
   useGuardianDecisionStore,
 } from "../guardian-decision-store";
 import { useInvalidateHomeFeed } from "./use-home-feed-query";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type { GuardianDecisionOutcome } from "../guardian-decision-store";
 
@@ -136,7 +136,7 @@ export function useGuardianDecision(): {
   /** The requests whose outcome is terminal here; see `isTerminalDecision`. */
   decidedRequestIds: ReadonlySet<string>;
 } {
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const invalidateFeed = useInvalidateHomeFeed(assistantId);
   const outcomes = useGuardianDecisionStore.use.outcomes();
   const pendingRequestIds = useGuardianDecisionStore.use.pendingRequestIds();

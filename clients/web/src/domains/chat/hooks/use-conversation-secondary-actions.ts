@@ -29,7 +29,7 @@ import { haptic } from "@/utils/haptics";
 import { messagePlainText } from "@/domains/chat/utils/message-plain-text";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
@@ -104,7 +104,7 @@ export function useConversationSecondaryActions({
   const handleForkConversation = useCallback(
     async (throughMessageId: string) => {
       const assistantId =
-        useResolvedAssistantsStore.getState().activeAssistantId;
+        getActiveAssistantId();
       const activeConversationId =
         useConversationStore.getState().activeConversationId;
       if (!assistantId || !activeConversationId) {
@@ -137,7 +137,7 @@ export function useConversationSecondaryActions({
   // rows disappear via the messages sync invalidation — no local state to
   // update here.
   const handleRetryLatestTurn = useCallback(async () => {
-    const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+    const assistantId = getActiveAssistantId();
     const activeConversationId =
       useConversationStore.getState().activeConversationId;
     if (!assistantId || !activeConversationId) {

@@ -4,7 +4,7 @@ import {
   type RetireAssistantOptions,
   retireAssistantById,
 } from "@/assistant/api";
-import { forgetAssistantAvatar } from "@/hooks/use-chooser-row-avatar";
+import { forgetAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import {
   getServedLockfile,
   isLocalAssistant,
@@ -14,7 +14,7 @@ import {
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { forgetAssistantOnboarded } from "@/assistant/onboarded-assistant-record";
 import { removeLocalSetting } from "@/utils/local-settings";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { routes } from "@/utils/routes";
 
 /**
@@ -93,7 +93,7 @@ export async function retireAssistant(
       }
     }
 
-    useResolvedAssistantsStore.getState().remove(assistantId);
+    useResolvedAssistantStore.getState().setAssistant(null);
     forgetAssistantAvatar(queryClient, assistantId);
     // The completion record goes with it, so a reused id is never pre-marked.
     forgetAssistantOnboarded(assistantId);

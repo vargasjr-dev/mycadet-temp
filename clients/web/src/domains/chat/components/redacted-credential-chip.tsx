@@ -28,8 +28,8 @@ import { useCallback, useRef, useState } from "react";
 import { credentialsRevealPost } from "@/generated/daemon/sdk.gen";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { toast } from "@mycadet/design-library/components/toast";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 const COPIED_FEEDBACK_MS = 1500;
 
@@ -79,7 +79,7 @@ export function RedactedCredentialChip({
   // (ChatPage loading/connecting) outside `ActiveAssistantGate`, where the
   // throwing `useActiveAssistantId()` would crash the view. A null id simply
   // renders the non-revealable badge until the assistant is active.
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const activeAssistantId = useResolvedAssistantId();
   // Prefer the transcript's own assistant; the global active assistant is only
   // a fallback for callers that render before an explicit id is available.
   const assistantId =

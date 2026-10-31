@@ -6,10 +6,8 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import {
-  resolveCloudAssistantId,
-  useResolvedAssistantsStore,
-} from "@/stores/resolved-assistants-store";
+import { resolveCloudAssistantId } from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type CloudAvatarUrls = ReadonlyMap<string, string>;
 
@@ -63,8 +61,6 @@ export function supersedeCloudAvatar(
   queryClient: QueryClient,
   assistantId: string,
 ): void {
-  const store = useResolvedAssistantsStore.getState();
-  store.clearAvatarUrl(assistantId);
   suppressCloudAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
 }
 
@@ -96,7 +92,7 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  * and this lookup keeps that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const activeAssistantId = useResolvedAssistantId();
   const query = useQuery<CloudAvatarUrls>({
     queryKey: cloudAvatarUrlsQueryKey(activeAssistantId),
     queryFn: fetchCloudAvatarUrls,

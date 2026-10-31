@@ -17,7 +17,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
 import type { DocumentsByIdGetResponse } from "@/generated/daemon/types.gen";
 import { useUnseenDocumentChangesStore } from "@/domains/chat/unseen-document-changes-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { setEditChatConversationId } from "@/utils/edit-chat-session";
@@ -172,10 +172,9 @@ beforeEach(() => {
   release.mockClear();
   downloadDocumentPdf.mockClear();
   window.sessionStorage.clear();
-  useResolvedAssistantsStore.setState({
-    activeAssistantId: "asst-1",
-    assistantsHydrated: true,
-  });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", assistantId: "asst-1" });
   useAssistantIdentityStore.setState({
     assistantId: "asst-1",
     version: "0.11.12",
@@ -291,7 +290,7 @@ describe("DocumentViewerPage", () => {
   });
 
   test("a settled missing assistant shows a fallback instead of a permanent spinner", async () => {
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     const page = renderPage("surf-1");
     await page.findByText("Document not found.");
     fireEvent.click(page.getByText("Go back"));

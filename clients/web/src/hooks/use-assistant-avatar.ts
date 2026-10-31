@@ -11,13 +11,16 @@ import {
 import { useSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { createGenerationGuard } from "@/lib/generation-guard";
-import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
+import {
+  chooserRowAvatarCacheQueryKey,
+  persistLastSeenAvatar,
+} from "@/lib/persist-last-seen-avatar";
+import { deleteLastSeenAvatar } from "@/lib/avatar-last-seen-cache";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
-import {
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type {
   AvatarRead,
   AvatarState,
@@ -26,6 +29,7 @@ import type {
 } from "@/types/avatar";
 import { resolveAvatarAccentHex } from "@/utils/avatar-accent";
 import { isUuid } from "@/utils/uuid";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export const AVATAR_QUERY_KEY_PREFIX = "assistantAvatar";
 
@@ -79,6 +83,25 @@ const activeOwners = new Map<
 const fetchGenerations = createGenerationGuard();
 
 /**
+ * Full avatar cleanup for an assistant leaving this device: the last-seen
+ * cache entry, this module's held URLs and queries. Retire runs this so a
+ * re-paired id within gcTime cannot render a revoked image.
+ */
+export function forgetAssistantAvatar(
+  queryClient: QueryClient,
+  assistantId: string,
+): void {
+  void deleteLastSeenAvatar(assistantId);
+  releaseAssistantAvatarUrl(assistantId);
+  for (const queryKey of [
+    avatarQueryKey(assistantId),
+    chooserRowAvatarCacheQueryKey(assistantId),
+  ]) {
+    queryClient.removeQueries({ queryKey });
+  }
+}
+
+/**
  * Revoke the object URL this hook holds for a removed assistant, and
  * supersede any in-flight fetch so it drops its own blob instead.
  */
@@ -96,33 +119,35 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
  * scope needs no auth-store read.
  */
 export function resolveAssistantAvatarOwnerScopeId(
-  assistant: ResolvedAssistant | null | undefined,
+  assistant: LockfileAssistant | null | undefined,
   connectionFallback: string | null,
 ): string | null {
   if (!assistant) {
     return null;
   }
-  // The org rides the resolved row — a served/lockfile fact, not a store
-  // web would manage.
+  // The org rides the served entry — a lockfile fact, not a store web
+  // would manage.
   return assistant.cloud === "cloud"
     ? resolveNotificationIdentityScope({
         kind: "account",
-        organizationId: assistant.organizationId ?? null,
+        organizationId: assistant.cloudOrganizationId ?? null,
       })
     : resolveNotificationIdentityScope({
         kind: "connection",
-        url: assistant.runtimeUrl ?? assistant.ingressUrl ?? connectionFallback,
+        url: getGatewayUrl(assistant) ?? connectionFallback,
       });
 }
 
 /** Resolve the cloud UUID shared by remote and local sender identities. */
 export function resolveAssistantNotificationCloudId(
-  assistant: ResolvedAssistant | null | undefined,
+  assistant: LockfileAssistant | null | undefined,
 ): string | null {
   if (assistant?.cloudAssistantId && isUuid(assistant.cloudAssistantId)) {
     return assistant.cloudAssistantId;
   }
-  return assistant?.cloud === "cloud" && isUuid(assistant.id) ? assistant.id : null;
+  return assistant?.cloud === "cloud" && isUuid(assistant.assistantId)
+    ? assistant.assistantId
+    : null;
 }
 
 interface AvatarOwner {
@@ -209,7 +234,7 @@ export interface AssistantAvatarOptions {
   /** Exact request/connection owner used by notification publication. */
   ownerScopeId?: string | null;
   /** Resolved row already held by a caller before the global list catches up. */
-  ownerAssistant?: ResolvedAssistant | null;
+  ownerAssistant?: LockfileAssistant | null;
   /**
    * Per-assistant manifest gate. The default reads the ACTIVE assistant's
    * version, which is wrong for a sibling on another runtime; list surfaces
@@ -393,11 +418,13 @@ export function useAssistantAvatar(
   const queryClient = useQueryClient();
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
-  const assistants = useResolvedAssistantsStore.use.assistants();
+  const entry = useResolvedAssistantStore.use.assistant();
   const assistant =
     options?.ownerAssistant === undefined
-      ? assistants.find((candidate) => candidate.id === assistantId)
-      : options.ownerAssistant?.id === assistantId
+      ? entry && entry.assistantId === assistantId
+        ? entry
+        : null
+      : options.ownerAssistant?.assistantId === assistantId
         ? options.ownerAssistant
         : null;
   const connectionFallback =
@@ -488,7 +515,7 @@ export function useAssistantAvatar(
       // issued for the active assistant is its avatar even if the user has
       // switched away by the time it lands (a reconnect sweep, say).
       const isActiveRead =
-        id === useResolvedAssistantsStore.getState().activeAssistantId;
+        id === getActiveAssistantId();
       const [components, { state, traits, imageUrl }] = await Promise.all([
         fetchCharacterComponents(id),
         supportsManifest
@@ -586,7 +613,7 @@ export function useAssistantAvatar(
  * bundled green) and then jump to the real colour.
  */
 export function useActiveAssistantAvatar() {
-  const activeId = useResolvedAssistantsStore.use.activeAssistantId();
+  const activeId = useResolvedAssistantId();
   const { components, traits, customImageUrl, isLoading } =
     useAssistantAvatar(activeId);
   return {

@@ -5,11 +5,11 @@ import { useAssistantInboxState } from "@/domains/assistant-inbox/hooks/use-assi
 import { useFeatureIntroSeen } from "@/hooks/use-feature-intro-seen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 
 import { AssistantEmailIntroModal } from "./assistant-email-intro-modal";
 import { resolveAssistantEmailIntro } from "./resolve-assistant-email-intro";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface GateProps {
   assistantId: string;
@@ -74,7 +74,7 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
  */
 export function AssistantEmailIntro() {
   const { seen, markSeen } = useFeatureIntroSeen("assistant-email");
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   if (seen || assistantId === null) {
     return null;
   }

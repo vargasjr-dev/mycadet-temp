@@ -26,7 +26,7 @@ mock.module("@/hooks/use-is-mobile", () => ({
   MOBILE_MEDIA_QUERY: "(max-width: 767px)",
 }));
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { currentLocation, wrapperAt } from "@/hooks/router-probe.test-helper";
@@ -48,7 +48,7 @@ import {
 
 let viewerSnapshot: ReturnType<typeof useViewerStore.getState>;
 let conversationSnapshot: ReturnType<typeof useConversationStore.getState>;
-let selectionSnapshot: ReturnType<typeof useResolvedAssistantsStore.getState>;
+let selectionSnapshot: ReturnType<typeof useResolvedAssistantStore.getState>;
 
 let lightSpy: ReturnType<typeof spyOn<typeof haptic, "light">>;
 
@@ -100,7 +100,7 @@ function goTo(navigate: NavigateFunction, path: string): void {
 beforeEach(() => {
   viewerSnapshot = useViewerStore.getState();
   conversationSnapshot = useConversationStore.getState();
-  selectionSnapshot = useResolvedAssistantsStore.getState();
+  selectionSnapshot = useResolvedAssistantStore.getState();
 
   lightSpy = spyOn(haptic, "light").mockImplementation(async () => {});
 
@@ -145,7 +145,7 @@ beforeEach(() => {
     setEditingConversationId:
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
-  useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
 });
 
 afterEach(() => {
@@ -153,13 +153,13 @@ afterEach(() => {
   lightSpy.mockRestore();
   useViewerStore.setState(viewerSnapshot, true);
   useConversationStore.setState(conversationSnapshot, true);
-  useResolvedAssistantsStore.setState(selectionSnapshot, true);
+  useResolvedAssistantStore.setState(selectionSnapshot, true);
 });
 
 describe("useOpenAppFromChat", () => {
   test("no-ops when there is no active assistant", async () => {
     // GIVEN no assistant is selected
-    useResolvedAssistantsStore.setState({ activeAssistantId: null });
+    useResolvedAssistantStore.getState().setAssistant(null);
     const { result } = renderOpenApp(CHAT_PATH);
 
     // WHEN a surface asks to open an app

@@ -28,7 +28,7 @@ import {
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";
 
 import { showDocumentInConversation } from "../document-conversation-navigation";
@@ -69,7 +69,7 @@ mock.module("../api/document-comments", () => ({
 }));
 const { ChatContentLayout } = await import("./chat-content-layout");
 const viewport = viewportAxesStub();
-const selection = useResolvedAssistantsStore.getState();
+const selection = useResolvedAssistantStore.getState();
 const viewer = useViewerStore.getState();
 const conversation = useConversationStore.getState();
 
@@ -109,7 +109,7 @@ function renderLayout(url: string, previousEntries: string[] = []) {
 
 beforeEach(() => {
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
+  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",
@@ -138,7 +138,7 @@ afterEach(() => {
   cleanup();
   mock.restore();
   viewport.restore();
-  useResolvedAssistantsStore.setState(selection, true);
+  useResolvedAssistantStore.setState(selection, true);
   useConversationStore.setState(conversation, true);
   useViewerStore.setState(viewer, true);
 });

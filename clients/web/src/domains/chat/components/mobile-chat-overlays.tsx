@@ -14,7 +14,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router";
 import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-container";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useDeployStore } from "@/stores/deploy-store";
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
@@ -36,13 +36,14 @@ import { MobileWorkflowDetailOverlay } from "@/domains/chat/components/mobile-wo
 import { useAppViewerRouteHandlers } from "@/domains/chat/hooks/use-app-viewer-route-handlers";
 import { useMobileOverlayTarget } from "@/domains/chat/hooks/use-mobile-overlay-target";
 import { handleAppViewerAction } from "@/domains/chat/app-viewer-actions";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function MobileChatOverlays() {
   const overlayTarget = useMobileOverlayTarget();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const mainView = useViewerStore.use.mainView();
   const openedAppState = useViewerStore.use.openedAppState();
   const openedDocumentState = useViewerStore.use.openedDocumentState();
@@ -67,7 +68,7 @@ export function MobileChatOverlays() {
 
   const handleShareApp = useCallback(() => {
     const app = useViewerStore.getState().openedAppState;
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (app && aid) {
       void useDeployStore.getState().shareApp(aid, app.appId, app.name);
     }
@@ -75,7 +76,7 @@ export function MobileChatOverlays() {
 
   const handleDeployApp = useCallback(() => {
     const app = useViewerStore.getState().openedAppState;
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (app && aid) {
       void useDeployStore
         .getState()
@@ -110,7 +111,7 @@ export function MobileChatOverlays() {
   );
 
   const handleRequestSubagentDetail = useCallback((subagentId: string) => {
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (!aid) {
       return;
     }
@@ -127,7 +128,7 @@ export function MobileChatOverlays() {
   );
 
   const handleRequestWorkflowJournal = useCallback((runId: string) => {
-    const aid = useResolvedAssistantsStore.getState().activeAssistantId;
+    const aid = getActiveAssistantId();
     if (!aid) {
       return;
     }

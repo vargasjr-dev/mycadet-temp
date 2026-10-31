@@ -12,7 +12,7 @@
 
 import { create } from "zustand";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import {
   subagentsByIdAbortPost,
   subagentsReconcileGet,
@@ -848,7 +848,7 @@ async function runReconcile(
 ): Promise<void> {
   const generation = resetGeneration;
   const assistantAtFetch =
-    useResolvedAssistantsStore.getState().activeAssistantId;
+    getActiveAssistantId();
   // Absence from the response is only evidence about rows the daemon could
   // have reported, the ones this conversation already held, still active,
   // when the request went out. Captured before the await rather than inferred
@@ -883,7 +883,7 @@ async function runReconcile(
   // store with the previous chat's subagents.
   if (
     generation !== resetGeneration ||
-    assistantAtFetch !== useResolvedAssistantsStore.getState().activeAssistantId
+    assistantAtFetch !== getActiveAssistantId()
   ) {
     return;
   }
@@ -1653,7 +1653,7 @@ const useSubagentStoreBase = create<SubagentStore>()((set, get) => ({
   },
 
   abortSubagent: async (subagentId) => {
-    const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+    const assistantId = getActiveAssistantId();
     const activeConversationId =
       useConversationStore.getState().activeConversationId;
     if (!assistantId || !activeConversationId) {
@@ -1705,7 +1705,7 @@ export const useSubagentStore = createSelectors(useSubagentStoreBase);
  * conversation reconciles ITS parent rather than whichever chat is on screen.
  */
 export function requestSubagentReconcile(parentConversationId: string): void {
-  const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
+  const assistantId = getActiveAssistantId();
   if (!assistantId) {
     return;
   }

@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useViewerStore, type OpenedAppState } from "@/stores/viewer-store";
@@ -13,6 +12,7 @@ import {
 import { appEntryState } from "@/utils/app-navigation";
 import { currentPathname } from "@/utils/conversation-navigation";
 import { appIdForPath, conversationIdForPath, routes } from "@/utils/routes";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * Open an app in the split "edit" view — chat on the left, app on the right —
@@ -35,7 +35,7 @@ import { appIdForPath, conversationIdForPath, routes } from "@/utils/routes";
  * Library app view (`LibraryDetailPage`).
  */
 export function useEditApp(): (app: OpenedAppState) => void {
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { pathname } = useLocation();

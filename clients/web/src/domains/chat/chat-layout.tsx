@@ -9,7 +9,6 @@ import {
 } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { MOBILE_MEDIA_QUERY, useIsMobile } from "@/hooks/use-is-mobile";
 import {
   getLocalBool,
@@ -101,6 +100,7 @@ import {
 import { GroupNameDialogFromStore } from "./group-name-dialog-from-store";
 import { RenameDialogFromStore } from "./rename-dialog-from-store";
 import { useTranslation } from "@/i18n";
+import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
 
 const CommandPalette = lazy(() =>
   import("@/components/command-palette/command-palette").then((m) => ({
@@ -156,7 +156,7 @@ export function ChatLayout({
   const consumeSidebarCollapse =
     useOnboardingFocusStore.use.consumeSidebarCollapse();
 
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useResolvedAssistantId();
 
   useLiveVoiceSessionController();
 
