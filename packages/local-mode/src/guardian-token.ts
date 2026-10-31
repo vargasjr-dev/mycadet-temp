@@ -12,6 +12,7 @@ import {
 import { guardianTokenPath, basetenTokenPath } from "./config";
 import { readLockfile } from "./lockfile";
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
 const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
@@ -229,10 +230,10 @@ export function parseGuardianRefreshCliFailure(
  * from disk — no CLI runtime, no mint, no refresh cycle. A missing file
  * surfaces the structured 404 the proxy renders.
  */
-export function getGuardianAccessToken(
+export async function getGuardianAccessToken(
   assistantId: string,
-  invocation: CliInvocation,
 ): Promise<TokenResult> {
+  const invocation = await resolveCliInvocation();
   if (isBasetenAssistant(assistantId)) {
     return Promise.resolve(readBasetenSandboxToken(assistantId));
   }

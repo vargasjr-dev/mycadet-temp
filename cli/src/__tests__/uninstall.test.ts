@@ -33,7 +33,7 @@ const ORIGINAL_ARGV = process.argv;
 const retireDockerCalls: string[] = [];
 let onRetireDocker: ((name: string) => void) | undefined;
 
-mock.module("../lib/docker.js", () => ({
+mock.module("../lib/remotes/docker.js", () => ({
   retireDocker: (name: string) => {
     retireDockerCalls.push(name);
     onRetireDocker?.(name);

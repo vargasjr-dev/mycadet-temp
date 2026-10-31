@@ -17,9 +17,7 @@ import { denyAllPermissions } from "./permissions";
  * local assistant's gateway and a guardian token for it, minted through the
  * `cadet` CLI.
  */
-export const createBundleHostProvider = (
-  resolveInvocation: () => Promise<CliInvocation>,
-): BundleHostProvider => ({
+export const createBundleHostProvider = (): BundleHostProvider => ({
   resolveActiveGateway: (): ActiveBundleGateway | null => {
     const { assistants, activeAssistant } = readLockfile();
     if (!activeAssistant) {
@@ -45,8 +43,7 @@ export const createBundleHostProvider = (
   },
   acquireGatewayToken: async (assistantId) => {
     try {
-      const invocation = await resolveInvocation();
-      const result = await getGuardianAccessToken(assistantId, invocation);
+      const result = await getGuardianAccessToken(assistantId);
       return result.ok ? result.accessToken : null;
     } catch {
       return null;

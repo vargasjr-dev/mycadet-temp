@@ -10,7 +10,7 @@ import {
   isNoSuchContainerError,
   recreateDockerContainers,
   wakeContainers,
-} from "../lib/docker.js";
+} from "../lib/remotes/docker.js";
 import {
   DOCKER_GATEWAY_READY_TIMEOUT_MS,
   restoreContainerAppServer,

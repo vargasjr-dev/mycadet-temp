@@ -17,7 +17,12 @@
 // Call `qrcodeTerminal.generate` as a method — the library reads its default
 // error-correction level off `this`, so a destructured import renders nothing.
 import qrcodeTerminal from "qrcode-terminal";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isAppleContainerEntry,
+  isDockerEntry,
+  isLocalEntry,
+} from "@mycadet/local-mode/contract";
 
 import {
   buildRemoteWebPairingUrl,
@@ -37,11 +42,12 @@ import {
 } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
-import { dockerResourceNames } from "../lib/docker.js";
-import { gatewayCliInvocation } from "../lib/remotes/local.js";
+import { dockerPair } from "../lib/remotes/docker.js";
+import { appleContainerPair } from "../lib/remotes/apple-container.js";
+import { localPair } from "../lib/remotes/local.js";
+import { cloudPair } from "../lib/remotes/cloud.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
-import { execOutput } from "../lib/step-runner.js";
 
 function assistantDisplayName(entry: LockfileAssistant): string {
   return entry.name || entry.assistantId;
@@ -151,77 +157,28 @@ async function gatewayPost(
 }
 
 /**
- * {@link gatewayPost}, but also exiting with a generic message on non-2xx.
- * Every pairing subcommand talks to the gateway this way, so the reachability
- * + HTTP-error handling has a single home.
- */
-async function gatewayPostOrExit(
-  gatewayUrl: string,
-  path: string,
-  body: unknown,
-): Promise<Response> {
-  return exitOnHttpError(await gatewayPost(gatewayUrl, path, body));
-}
-
-/** Exit with a generic HTTP-error message on non-2xx; pass 2xx through. */
-async function exitOnHttpError(response: Response): Promise<Response> {
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => "");
-    console.error(
-      `Error: HTTP ${response.status}: ${errorBody || response.statusText}`,
-    );
-    process.exit(1);
-  }
-  return response;
-}
-
-/**
- * Mint (and approve) a remote-web pairing challenge. `local` and `docker`
- * remotes mint through the gateway CLI — `gateway pairing mint` run on
- * the assistant's host (locally, or docker-exec'd into the gateway container)
- * — replacing the old loopback HTTP mint whose loopback-peer gate
- * containerized gateways could never satisfy (published-port NAT rewrites
- * host-originated peers to the docker bridge address). The mint executes the
- * pairing logic directly against the file-backed challenge store, so the
- * running gateway's verification routes see it with no IPC round-trip.
- * Process execution is the local-presence proof; the mint command approves
- * on the spot, so the returned challenge is already paired-ready. Other
- * topologies keep the loopback HTTP mint they used before.
+ * Mint (and approve) a remote-web pairing challenge. `cadet pair` is a
+ * wrapper around `gateway pairing mint` executed on the assistant's gateway:
+ * each topology's own remote module owns its execution surface
+ * (`localPair` through the gateway CLI invocation, `dockerPair` through
+ * docker exec, `appleContainerPair` through the management socket,
+ * `cloudPair` through the platform's terminal-session exec). Process
+ * execution is the local-presence proof; the mint approves on the spot, so
+ * the returned challenge is already paired-ready.
  */
 async function mintPairingChallengeOrExit(
   entry: LockfileAssistant,
 ): Promise<RemoteWebPairingChallengeResponse> {
-  if (entry.cloud !== "local" && entry.cloud !== "docker") {
-    return mintPairingChallengeOverLoopbackOrExit(entry);
-  }
-
   let stdout: string;
   try {
-    if (entry.cloud === "docker") {
-      stdout = await execOutput(
-        "docker",
-        [
-          "exec",
-          dockerResourceNames(entry.assistantId).gatewayContainer,
-          "bun",
-          "run",
-          "src/cli/index.ts",
-          "pairing",
-          "mint",
-        ],
-        { timeoutMs: 30_000 },
-      );
+    if (isLocalEntry(entry)) {
+      stdout = await localPair(entry);
+    } else if (isDockerEntry(entry)) {
+      stdout = await dockerPair(entry);
+    } else if (isAppleContainerEntry(entry)) {
+      stdout = await appleContainerPair(entry);
     } else {
-      const invocation = gatewayCliInvocation(entry);
-      stdout = await execOutput(
-        invocation.command,
-        [...invocation.args, "pairing", "mint"],
-        {
-          cwd: invocation.cwd,
-          env: invocation.env,
-          timeoutMs: 30_000,
-        },
-      );
+      stdout = await cloudPair(entry);
     }
   } catch (err) {
     console.error(
@@ -232,6 +189,13 @@ async function mintPairingChallengeOrExit(
     process.exit(1);
   }
 
+  return parseMintedChallenge(stdout);
+}
+
+/** Parse the mint's last stdout line into the challenge response. */
+function parseMintedChallenge(
+  stdout: string,
+): RemoteWebPairingChallengeResponse {
   const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";
   let challenge: RemoteWebPairingChallengeResponse;
   try {
@@ -246,32 +210,6 @@ async function mintPairingChallengeOrExit(
     );
     process.exit(1);
   }
-  return challenge;
-}
-
-/**
- * Mint a challenge over the gateway's loopback HTTP route — the path every
- * topology took before the gateway-CLI mint existed. Kept for remotes that
- * are neither `local` nor `docker` (apple containers, SSH-managed hosts,
- * cloud-managed), where no gateway-CLI execution surface is defined.
- */
-async function mintPairingChallengeOverLoopbackOrExit(
-  entry: LockfileAssistant,
-): Promise<RemoteWebPairingChallengeResponse> {
-  // Mint over loopback (the derived port avoids mDNS for same-machine calls),
-  // then approve immediately: running this CLI on the host IS the
-  // local-presence proof, so the other device completes pairing in one step
-  // from the link.
-  const mintUrl = getGatewayUrl(entry);
-  const response = await gatewayPostOrExit(
-    mintUrl,
-    "/v1/remote-web/pairing-challenge",
-    {},
-  );
-  const challenge: RemoteWebPairingChallengeResponse = await response.json();
-  await gatewayPostOrExit(mintUrl, "/v1/remote-web/pairing-verification", {
-    userCode: challenge.userCode,
-  } satisfies RemoteWebPairingVerificationRequest);
   return challenge;
 }
 

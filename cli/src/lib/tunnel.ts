@@ -12,7 +12,6 @@ import {
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "./cli-name.js";
 import {
-  isCloudEntry,
   isDockerEntry,
   isLocalEntry,
   getGatewayUrl,
@@ -27,7 +26,6 @@ import {
   type AppServer,
 } from "./servers/nginx.js";
 import { waitForDaemonReady } from "./http-client.js";
-import { GATEWAY_PORT } from "./constants.js";
 import {
   confirmStopAnswer,
   isNgrokEndpointOnlineError,
@@ -144,7 +142,6 @@ export function providerSupportsReservedDomain(provider: string): boolean {
 /** Options every provider tunnel accepts; `runProviderTunnel` maps them. */
 export interface ProviderTunnelOptions {
   port: number;
-  assistantId?: string;
   /** Reserved domain to bind (providers that support one only). */
   domain?: string;
   /** Tailnet-only runs keep the webhook callback base as it is. */
@@ -164,7 +161,6 @@ export interface ProviderTunnelResult {
 
 export interface ProviderStopOptions {
   record: TunnelProcessRecord;
-  assistantId?: string;
 }
 
 export interface TunnelProvider {
@@ -414,39 +410,28 @@ function survivingAppServerPort(): number | null {
 }
 
 /**
- * Loopback gateway port of the target assistant — what a tunnel fronts when
- * no app server edge survives to front instead. A cloud entry has no loopback
- * gateway; the global default keeps the return a number.
+ * Bring the nginx edge back up after a wake or local upgrade. Returns the
+ * port a tunnel should front — the App Server manages its own port, completely
+ * agnostic of the cadet gateway port. Raises when the edge cannot be restored
+ * and nothing survives to front instead; there is no assistant-derived
+ * fallback port.
  */
-function targetGatewayPort(): number {
-  const entry = resolveTargetAssistant();
-  return isCloudEntry(entry) ? GATEWAY_PORT : entry.port;
-}
-
-/**
- * Bring the nginx edge back up after a wake or local upgrade; a drifted or
- * failed edge warns and reports the surviving port rather than failing the
- * wake. Returns the loopback port a tunnel should front — the App Server
- * manages its own port, completely agnostic of the cadet gateway port.
- */
-export async function restoreAppServer(): Promise<number> {
-  if (!wantsAppServer()) {
-    return targetGatewayPort();
-  }
+async function restoreAppServer(): Promise<number> {
   let appServer: AppServer;
   try {
     appServer = await ensureAppServer();
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     const survivingPort = survivingAppServerPort();
-    const impact =
-      survivingPort !== null
-        ? `The app server already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`
-        : "Webhooks still work, but the web app is not being served.";
-    console.warn(
-      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
+    if (survivingPort !== null) {
+      console.warn(
+        `   Could not restore the app server: ${detail} The app server already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`,
+      );
+      return survivingPort;
+    }
+    throw new Error(
+      `${detail} Webhooks still work, but the web app is not being served. Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
-    return survivingPort ?? targetGatewayPort();
   }
   console.log(
     `   App server ${appServer.started ? "started" : "already running"} on 127.0.0.1:${appServer.port}.`,
@@ -505,8 +490,23 @@ export async function restoreContainerAppServer(
  * 3. save the tunnel's ingress url to each assistant.
  */
 export async function restoreAppServerAndAutoTunnel(): Promise<void> {
-  // 1. Ensure the app server is started.
-  const appServerPort = await restoreAppServer();
+  // No recorded app server wants no edge — and the tunnel fronts the app
+  // server, never the gateway directly, so there is nothing to re-establish
+  // at all.
+  if (!wantsAppServer()) {
+    return;
+  }
+  // 1. Ensure the app server is started. A failed restore warns and skips
+  //    the tunnel: there is no app-server port for it to front.
+  let appServerPort: number;
+  try {
+    appServerPort = await restoreAppServer();
+  } catch (err) {
+    console.warn(
+      `   Could not restore the app server: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return;
+  }
   // 2. Ensure the tunnel is started at it: lockfile.json records which
   //    tunnel we expect connected to the app server, so only that provider's
   //    own start piece runs — pointed at the app server's port.
@@ -545,9 +545,6 @@ async function ensureTunnel(targetPort: number): Promise<string | null> {
   try {
     const result = await providers[expected.provider]?.run({
       port: targetPort,
-      // The tunnel is a root resource; the target assistant only names the
-      // token/notify seams for the re-established run.
-      assistantId: resolveTargetAssistant().assistantId,
     });
     if (!result) return null;
     // The run owns nothing in this process — the agent is detached — but an

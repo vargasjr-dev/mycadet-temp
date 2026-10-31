@@ -8,7 +8,7 @@ import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
-import { hatchDocker } from "../lib/docker";
+import { hatchDocker } from "../lib/remotes/docker.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
 import { hatchAssistant, readCloudToken } from "../lib/cloud-client";

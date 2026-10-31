@@ -1,15 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const LOCAL = { assistantId: "local-1", cloud: "local" } as const;
-let selected: typeof LOCAL | null = LOCAL;
+const LOCAL = { assistantId: "local-1", cloud: "local", port: 7830 } as const;
 const calls: string[] = [];
 let exportFails = false;
 let toastErrors: string[] = [];
-
-mock.module("@/lib/local-mode", () => ({
-  getActiveAssistant: () => selected,
-}));
 
 mock.module("@/generated/api/sdk.gen", () => ({
   assistantsDebugBundleUploadUrlCreate: async ({
@@ -45,6 +40,7 @@ mock.module("@mycadet/design-library/components/toast", () => ({
 }));
 
 import { DebugBundleExport } from "@/domains/settings/components/debug-bundle-export";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   cleanup,
   fireEvent,
@@ -66,7 +62,7 @@ function renderRow() {
 
 describe("DebugBundleExport", () => {
   beforeEach(() => {
-    selected = LOCAL;
+    useResolvedAssistantStore.getState().setAssistant({ ...LOCAL });
     calls.length = 0;
     exportFails = false;
     toastErrors = [];
@@ -101,11 +97,12 @@ describe("DebugBundleExport", () => {
     ).toBeTruthy();
   });
 
-  test("the export renders for any assistant, even before one is resolved", () => {
-    // Debug bundle exports are not a local-only affordance — every assistant
-    // entry supports them, so the button renders regardless of what the
-    // resolved store holds.
-    selected = null;
+  test("the export reads the resolved store's entry", () => {
+    // The store is the single assistant fact and its entry is non-optional;
+    // the export rides whatever entry the surface serves.
+    expect(useResolvedAssistantStore.getState().assistant.assistantId).toBe(
+      "local-1",
+    );
     renderRow();
     expect(
       screen.getByRole("button", { name: "Export debug bundle" }),

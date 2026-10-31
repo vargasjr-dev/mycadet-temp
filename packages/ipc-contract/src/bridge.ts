@@ -421,28 +421,6 @@ export interface CadetBridge {
     /** List the devices holding pairing tokens for a local assistant. */
     listDevices(assistantId: string): Promise<LocalListDevicesResult>;
     readLockfile(): Promise<Lockfile>;
-    /**
-     * Rename an existing lockfile entry. The host refuses when the entry is
-     * missing or the on-disk file is unreadable, so a stale renderer cache
-     * can never re-create a retired assistant. Never touches the active
-     * assistant.
-     */
-    renameLockfileAssistant(
-      assistantId: string,
-      name: string,
-    ): Promise<LockfileWriteResult>;
-    /**
-     * Stamp `onboardedAt` on an existing lockfile entry. Update-only on the
-     * same terms as `renameLockfileAssistant`, and keeps an existing stamp.
-     */
-    stampLockfileAssistantOnboarded(
-      assistantId: string,
-      onboardedAt: string,
-    ): Promise<LockfileWriteResult>;
-    replaceCloudAssistants(
-      cloudAssistants: Array<Record<string, unknown>>,
-      cloudOrganizationId?: string,
-    ): Promise<LockfileWriteResult>;
     retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
     /**
      * Revoke one paired device's tokens on a local assistant's gateway.

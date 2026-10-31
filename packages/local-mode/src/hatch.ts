@@ -6,6 +6,7 @@ import {
   HOST_WRAPPER_LONG_HEADROOM_MS,
 } from "./lifecycle-budgets";
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 // A hatch whose daemon comes up but never becomes ready spends the readiness
 // window first, then rolls back through the full daemon stop, so the wrapper
@@ -26,11 +27,9 @@ export interface RunHatchOptions {
 }
 
 export async function runHatch(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
   options?: RunHatchOptions,
 ): Promise<HatchResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+  const resolved = await resolveCliInvocation();
   return new Promise((resolve) => {
     const args = [...resolved.baseArgs, "hatch"];
     if (options?.remote) {

@@ -439,10 +439,10 @@ describe("cadet upgrade local", () => {
         assistantId: "local-assistant",
       }),
     );
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: 7830,
-      assistantId: "local-assistant",
-    });
+    // The recorded tunnel re-establishes only when the app server it fronts
+    // is restored; this fixture records no edge, so nothing tunnels here
+    // (the restore-with-edge coverage lives in the wake and tunnel suites).
+    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
     expect(commitWorkspaceViaGatewayMock).toHaveBeenCalledWith(
       "http://127.0.0.1:7830",

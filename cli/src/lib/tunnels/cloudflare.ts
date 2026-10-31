@@ -186,8 +186,6 @@ export function waitForCloudflareTunnelUrl(
 export interface RunCloudflareTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Lockfile entry to mirror the ingress URL onto (`ingressUrl`). */
-  assistantId?: string;
 }
 
 export async function runCloudflareTunnel(

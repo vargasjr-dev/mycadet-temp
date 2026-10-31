@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 
 import type { CliInvocation } from "./util";
+import { resolveCliInvocation } from "./cli-invocation";
 
 // `wake` cold-starts a stopped assistant, so it can legitimately run far
 // longer than a teardown like `retire`: the CLI waits up to 60s for the daemon
@@ -33,12 +34,10 @@ export interface WakeOptions {
  * and surfaces a structured failure rather than a thrown error.
  */
 export async function runWake(
-  invocation: CliInvocation | (() => Promise<CliInvocation>),
   assistantId: string,
   options?: WakeOptions,
 ): Promise<WakeResult> {
-  const resolved =
-    typeof invocation === "function" ? await invocation() : invocation;
+  const resolved = await resolveCliInvocation();
   return runCli(resolved, ["wake", assistantId], WAKE_TIMEOUT_MS).then(
     (woken) => {
       if (!woken.ok || !options?.repairGuardian) {

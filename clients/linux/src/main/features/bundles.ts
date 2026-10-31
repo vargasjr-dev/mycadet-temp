@@ -16,7 +16,6 @@ import type {
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
 import { onFileOpen } from "@mycadet/electron-desktop/file-open";
-import { LOCAL_MODE_CLI } from "@mycadet/electron-desktop/local-mode";
 
 import { getRendererBase } from "../app-config";
 import { handle, on } from "../ipc.client";
@@ -25,14 +24,7 @@ const bundles: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "linux.bundles",
   install(registry) {
     configureBundlePlatform({
-      // Modules install synchronously in path order and `local-mode` (the CLI
-      // provider) sorts after this one, while a cold launch from a `.cadet`
-      // file replays argv during `file-open`'s install. Yielding once lets
-      // every module finish installing before the CLI is looked up.
-      ...createBundleHostProvider(async () => {
-        await Promise.resolve();
-        return registry.require(LOCAL_MODE_CLI).resolveInvocation();
-      }),
+      ...createBundleHostProvider(),
       bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
       rendererBase: () => getRendererBase(app.isPackaged),
       ipc: { handle, on },

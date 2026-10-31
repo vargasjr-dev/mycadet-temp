@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 import { getCloudUrl } from "./cloud-client.js";
-import { dockerhubImages } from "./docker.js";
-import type { ServiceName } from "./docker.js";
+import { dockerhubImages } from "./remotes/docker.js";
+import type { ServiceName } from "./remotes/docker.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 const ReleaseListItemSchema = z.object({

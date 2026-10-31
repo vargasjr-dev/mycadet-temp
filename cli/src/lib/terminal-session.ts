@@ -282,11 +282,29 @@ export interface NonInteractiveExecOptions {
   timeoutMs?: number;
 }
 
-export async function nonInteractiveExec(
+export class RemoteExecTimeoutError extends Error {
+  constructor(
+    message: string,
+    readonly partialOutput: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Run a command in a cloud assistant service and CAPTURE its output: the
+ * seam `cadet exec`'s non-interactive printer wraps, and remote one-shot
+ * commands (the pairing mint) ride to get the command's stdout back.
+ * Creates an ephemeral terminal session, sends the command wrapped in
+ * sentinels for reliable output extraction, and resolves with the extracted
+ * output and the remote command's exit code. Raises
+ * {@link RemoteExecTimeoutError} when the timeout fires.
+ */
+export async function execViaTerminalSession(
   assistant: ResolvedManagedAssistant,
   command: string[],
   options?: NonInteractiveExecOptions & { service?: string },
-): Promise<void> {
+): Promise<{ output: string; exitCode: number }> {
   const verbose = options?.verbose ?? false;
   const timeoutMs = options?.timeoutMs ?? 30_000;
   const dbg = verbose
@@ -431,33 +449,57 @@ export async function nonInteractiveExec(
 
   dbg(`extracted result: ${result.length} chars, exit code: ${exitCode}`);
 
-  if (timedOut && !result) {
+  if (timedOut) {
     const secs = timeoutMs / 1000;
-    console.error(
-      `\x1b[31mError: command timed out after ${secs}s with no output.\x1b[0m`,
+    throw new RemoteExecTimeoutError(
+      `command timed out after ${secs}s`,
+      result,
     );
-    console.error(
-      `\x1b[2mTip: use --timeout <seconds> to increase the limit, or --timeout 0 to disable.\x1b[0m`,
-    );
-    process.exit(124);
   }
 
-  if (timedOut && result) {
-    const secs = timeoutMs / 1000;
-    process.stdout.write(result + "\n");
-    console.error(
-      `\x1b[33mWarning: command timed out after ${secs}s (partial output above).\x1b[0m`,
-    );
-    process.exit(124);
-  }
-
-  if (result) {
-    process.stdout.write(result + "\n");
-  } else {
+  if (!result) {
     dbg(`no output extracted between sentinels`);
   }
 
-  process.exit(exitCode);
+  return { output: result, exitCode };
+}
+
+/**
+ * `cadet exec`'s non-interactive printer: run the command on the assistant's
+ * service, print its output, and exit with the remote command's exit code.
+ */
+export async function nonInteractiveExec(
+  assistant: ResolvedManagedAssistant,
+  command: string[],
+  options?: NonInteractiveExecOptions & { service?: string },
+): Promise<never> {
+  try {
+    const { output, exitCode } = await execViaTerminalSession(
+      assistant,
+      command,
+      options,
+    );
+    if (output) {
+      process.stdout.write(`${output}\n`);
+    }
+    process.exit(exitCode);
+  } catch (err) {
+    if (err instanceof RemoteExecTimeoutError) {
+      if (err.partialOutput) {
+        process.stdout.write(`${err.partialOutput}\n`);
+        console.error(
+          `\x1b[33mWarning: ${err.message} (partial output above).\x1b[0m`,
+        );
+      } else {
+        console.error(`\x1b[31mError: ${err.message} with no output.\x1b[0m`);
+        console.error(
+          `\x1b[2mTip: use --timeout <seconds> to increase the limit, or --timeout 0 to disable.\x1b[0m`,
+        );
+      }
+      process.exit(124);
+    }
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------

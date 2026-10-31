@@ -8,6 +8,7 @@ import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guar
 import { isCloudClientConfigured } from "../cloud/client.js";
 import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
+import { writeSelfWrapper } from "./self-wrapper.js";
 import {
   getConfig,
   hasPendingDefaultWorkspaceConfig,
@@ -112,6 +113,9 @@ export async function runDaemon(): Promise<void> {
   // whatever was in the live environment at process spawn.
   loadDotEnv();
   validateEnv();
+  // The daemon writes its own developer-facing `assistant` wrapper now that
+  // the environment is final — see self-wrapper.ts.
+  writeSelfWrapper();
   log.info(
     {
       version: APP_VERSION,
