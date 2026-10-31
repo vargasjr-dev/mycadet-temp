@@ -60,7 +60,6 @@ import {
   resetLogFile,
   writeToLogFile,
 } from "./xdg-log";
-import { emitProgress } from "./desktop-progress.js";
 
 export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
@@ -1374,7 +1373,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
   };
 
   try {
-    emitProgress(1, 6, "Checking Docker...");
     await ensureDockerInstalled();
 
     const instanceName = generateInstanceName(name);
@@ -1468,7 +1466,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     watch = mode.watcher;
 
     if (mode.build && repoRoot) {
-      emitProgress(2, 6, "Building images...");
       const localTag = `local-${instanceName}`;
       imageTags.assistant = `mycadet:${localTag}`;
       imageTags.gateway = `cadet-gateway:${localTag}`;
@@ -1491,7 +1488,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (!mode.build || !repoRoot) {
-      emitProgress(2, 6, "Pulling images...");
 
       // Allow explicit image overrides via environment variables.
       // When all three are set, skip version-based resolution entirely.
@@ -1559,7 +1555,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
 
     const res = dockerResourceNames(instanceName);
 
-    emitProgress(3, 6, "Creating volumes...");
     // When joining an externally-owned network namespace, the owner already
     // provides the network stack — creating a per-instance network here would
     // be unused and leak on teardown.
@@ -1654,7 +1649,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       ? `${preExisting},${ownSecret}`
       : ownSecret;
 
-    emitProgress(4, 6, "Starting containers...");
     const hostDeviceId = getOrCreateHostDeviceId();
     extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;
     // Forward the migration URL allowlists so a daemon inside the container
@@ -1709,7 +1703,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     );
     const containersUpAt = Date.now();
 
-    emitProgress(5, 6, "Saving configuration...");
     saveLockfileAssistant(dockerEntry);
     setActiveAssistant(instanceName);
 
@@ -1722,7 +1715,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       await storage.resume();
     }
 
-    emitProgress(6, 6, "Waiting for services...");
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;
     const { ready, guardianAccessToken, notReadyReason } = params.initialArchive

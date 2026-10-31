@@ -2,7 +2,6 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { closeSync } from "node:fs";
 import { join } from "node:path";
 
-import { isCompiledCli } from "./remotes/local.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import { openLogFile, resetLogFile } from "./xdg-log.js";
 
@@ -42,13 +41,9 @@ export interface DetachedRelaunchResult {
 export async function relaunchDetached(
   opts: RelaunchDetachedOptions,
 ): Promise<DetachedRelaunchResult> {
-  const spawnArgs = isCompiledCli()
-    ? opts.args
-    : [process.argv[1], ...opts.args];
-
   resetLogFile(opts.logFile);
   const fd = openLogFile(opts.logFile);
-  const child = spawn(process.execPath, spawnArgs, {
+  const child = spawn(process.execPath, opts.args, {
     detached: true,
     stdio: ["ignore", fd, fd],
     windowsHide: true,
