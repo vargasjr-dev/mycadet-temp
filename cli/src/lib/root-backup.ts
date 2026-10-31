@@ -745,16 +745,10 @@ export async function withRootOperationLock<T>(
 ): Promise<T> {
   const parent = join(getBackupsDir(), ".operations");
   await mkdir(parent, { recursive: true, mode: 0o700 });
-  const identity =
-    entry.cloud === "docker"
-      ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : isLocalEntry(entry)
-        ? entry.instanceDir
-        : undefined;
   const lock = join(
     parent,
     createHash("sha256")
-      .update(identity ?? entry.assistantId)
+      .update(entry.assistantId)
       .digest("hex"),
   );
   const owned = ownedOperationLocks.getStore();
