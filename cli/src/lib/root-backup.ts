@@ -24,8 +24,11 @@ import {
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "./assistant-config.js";
-import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
+import { LockfileAssistant } from "./assistant-config.js";
+import {
+  getDaemonPidPath,
+  getLocalInstanceDir,
+} from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";

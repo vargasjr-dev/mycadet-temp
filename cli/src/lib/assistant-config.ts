@@ -23,7 +23,6 @@ export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 import {
   resolveAssistantsDir,
   resolveConfigDir,
-  resolveDataDir,
   resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
@@ -52,43 +51,6 @@ export interface RootProcessRecords {
 }
 
 export type RootProcessKind = keyof RootProcessRecords;
-
-/**
- * Derive the daemon PID file path from a resources object. The PID file
- * lives inside the instance's workspace directory. Falls back to the XDG
- * data root's workspace when the entry carries no instance dir
- * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
- */
-/**
- * The instance's data root: the recorded instanceDir, or the shared state
- * root for legacy entries predating per-instance dirs.
- */
-export function isOnMachineEntry(entry: LockfileAssistant): boolean {
-  return (
-    entry.cloud === "local" ||
-    entry.cloud === "docker" ||
-    entry.cloud === "apple-container"
-  );
-}
-
-export function getLocalInstanceDir(
-  entry?: LockfileAssistant | undefined,
-): string {
-  return (
-    (entry &&
-    (entry.cloud === "local" ||
-      entry.cloud === "docker" ||
-      entry.cloud === "apple-container")
-      ? entry.instanceDir
-      : undefined) ?? resolveDataDir()
-  );
-}
-
-export function getDaemonPidPath(
-  entry?: LockfileAssistant | undefined,
-): string {
-  return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
-}
 
 function writeLockfileUnlocked(data: Lockfile): void {
   const lockfilePath = resolveLockfilePath();

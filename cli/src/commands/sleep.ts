@@ -4,12 +4,14 @@ import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
 import {
-  getDaemonPidPath,
-  getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import {
+  getDaemonPidPath,
+  getLocalInstanceDir,
+} from "../lib/remotes/local.js";
+import { LockfileAssistant } from "../lib/assistant-config.js";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
   drainAssistant,

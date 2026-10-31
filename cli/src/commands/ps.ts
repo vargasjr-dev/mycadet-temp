@@ -17,12 +17,12 @@ import {
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
-  getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   readRootProcesses,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { getLocalInstanceDir } from "../lib/remotes/local";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";

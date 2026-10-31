@@ -2,12 +2,12 @@ import { spawn } from "child_process";
 import { existsSync, mkdirSync, renameSync, writeFileSync } from "fs";
 import { basename, dirname, join, win32 } from "path";
 
+import { loadAllAssistants } from "./assistant-config.js";
 import {
   getDaemonPidPath,
   getLocalInstanceDir,
-  loadAllAssistants,
-} from "./assistant-config.js";
-import type { LockfileAssistant } from "./assistant-config.js";
+} from "./remotes/local.js";
+import { LockfileAssistant } from "./assistant-config.js";
 import { stopIngressNginx } from "./servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,

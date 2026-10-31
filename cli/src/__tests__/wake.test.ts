@@ -25,7 +25,7 @@ import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import { LockfileAssistant } from "../lib/assistant-config.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };
@@ -46,14 +46,13 @@ const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
 const saveLockfileAssistantMock = mock<
   typeof localModeModule.saveLockfileAssistant
 >(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
-const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
-  (entry) =>
-    join(
-      entry && entry.cloud === "local" && entry.instanceDir
-        ? entry.instanceDir
-        : "missing",
-      "daemon.pid",
-    ),
+const getDaemonPidPathMock = mock<typeof local.getDaemonPidPath>((entry) =>
+  join(
+    entry && entry.cloud === "local" && entry.instanceDir
+      ? entry.instanceDir
+      : "missing",
+    "daemon.pid",
+  ),
 );
 
 mock.module("@mycadet/local-mode", () => ({
@@ -66,7 +65,6 @@ mock.module("../lib/assistant-config.js", () => ({
   resolveTargetAssistant: resolveTargetAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
   saveLockfileAssistant: saveLockfileAssistantMock,
-  getDaemonPidPath: getDaemonPidPathMock,
 }));
 
 const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(
@@ -174,6 +172,7 @@ mock.module("../lib/remotes/local", () => ({
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
   startCes: startCesMock,
+  getDaemonPidPath: getDaemonPidPathMock,
 }));
 
 const ngrokRunMock = mock<typeof ngrok.runNgrokTunnel>(async () => ({

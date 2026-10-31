@@ -35,10 +35,8 @@ import {
   readRootProcesses,
   stampRootProcess,
 } from "../lib/assistant-config.js";
-import {
-  getLocalInstanceDir,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
