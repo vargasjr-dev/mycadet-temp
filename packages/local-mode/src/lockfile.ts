@@ -7,7 +7,7 @@ import {
   type Lockfile,
   type LockfileAssistant,
 } from "./lockfile-contract";
-import { isCloudHome } from "./lockfile-contract";
+import { isCloudEntry } from "./lockfile-contract";
 import { resolveLockfilePath } from "./config";
 import { z } from "zod";
 
@@ -273,7 +273,7 @@ export function replaceCloudAssistants(
       (assistant) =>
         typeof assistant?.assistantId !== "string" ||
         assistant.assistantId === "" ||
-        !isCloudHome(assistant.cloud),
+        !isCloudEntry(assistant),
     )
   ) {
     return {
@@ -289,7 +289,7 @@ export function replaceCloudAssistants(
     const syncedIds = new Set(cloudAssistants.map((a) => a.assistantId));
     // Org-scoped sync preserves other orgs' platform entries; no org full-replaces.
     const preserved = existing.filter((a) => {
-      if (!isCloudHome(a.cloud)) return true;
+      if (!isCloudEntry(a)) return true;
       if (syncedIds.has(a.assistantId)) return false;
       return (
         cloudOrganizationId != null &&

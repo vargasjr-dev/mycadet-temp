@@ -2051,6 +2051,7 @@ describe("stopContainerAppServer", () => {
       await stopContainerAppServer({
         assistantId: "docker-1",
         cloud: "docker",
+        port: 7830,
       }),
     ).toBe(false);
     expect(killed()).toBe(false);

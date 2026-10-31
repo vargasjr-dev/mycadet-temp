@@ -7,7 +7,7 @@ import {
   FLATTENED_FIRST_SEGMENTS,
   GATEWAY_PORT,
   getGatewayUrl,
-  isCloudHome,
+  isCloudEntry,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
   LockfileAssistantSchema,
@@ -220,7 +220,7 @@ export function gatewayTargetsFromLockfile(lockfile: {
     const gatewayUrl = getGatewayUrl(parsed.data);
     // Cloud assistants are driven through the platform session, never
     // forwarded over this machine's proxy.
-    if (isCloudHome(parsed.data.cloud)) {
+    if (isCloudEntry(parsed.data)) {
       continue;
     }
     if (isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
@@ -230,8 +230,7 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
       continue;
     }
-    const port =
-      ("port" in parsed.data ? parsed.data.port : undefined) ?? GATEWAY_PORT;
+    const port = parsed.data.port;
     if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
       targets.set(assistantId, { kind: "loopback", port });
     }

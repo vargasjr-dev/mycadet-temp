@@ -64,7 +64,7 @@ describe("parseLockfile", () => {
       assistants: [{ assistantId: "asst_1" }],
     });
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local" },
+      { assistantId: "asst_1", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 
@@ -82,6 +82,7 @@ describe("parseLockfile", () => {
       {
         assistantId: "asst_1",
         cloud: "local",
+        port: GATEWAY_PORT,
       },
     ]);
   });
@@ -99,7 +100,7 @@ describe("parseLockfile", () => {
 
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_ok", cloud: "local" },
+      { assistantId: "asst_ok", cloud: "local", port: GATEWAY_PORT },
     ]);
     expect(parsed.activeAssistant).toBe("asst_ok");
   });
@@ -124,7 +125,7 @@ describe("parseLockfile", () => {
     // merges raw JSON; see lockfile.test.ts).
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local" },
+      { assistantId: "asst_1", cloud: "local", port: GATEWAY_PORT },
     ]);
     expect(parsed.activeAssistant).toBe("asst_1");
     expect(parsed.schemaVersion).toBe(99);
@@ -162,7 +163,7 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local" },
+      { assistantId: "asst_1", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 
@@ -267,9 +268,9 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "gcp_1", cloud: "local" },
-      { assistantId: "ssh_1", cloud: "local" },
-      { assistantId: "legacy_1", cloud: "local" },
+      { assistantId: "gcp_1", cloud: "local", port: GATEWAY_PORT },
+      { assistantId: "ssh_1", cloud: "local", port: GATEWAY_PORT },
+      { assistantId: "legacy_1", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 
@@ -287,7 +288,7 @@ describe("parseLockfile", () => {
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
     expect(parsed.data.assistants).toEqual([
-      { assistantId: "a", cloud: "local" },
+      { assistantId: "a", cloud: "local", port: GATEWAY_PORT },
     ]);
     expect(parsed.data.activeAssistant).toBe("a");
     expect(LockfileSchema.safeParse("not an object").success).toBe(false);
@@ -303,7 +304,7 @@ describe("parseLockfile", () => {
     };
     expect(parseLockfile(raw).assistants).toEqual([
       { assistantId: "a", cloud: "cloud" },
-      { assistantId: "c", cloud: "local" },
+      { assistantId: "c", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 
@@ -333,7 +334,9 @@ describe("parseLockfile", () => {
     const parsed = parseLockfile(raw);
     expect(parsed.tunnel).toBeUndefined();
     expect(parsed.app).toBeUndefined();
-    expect(parsed.assistants).toEqual([{ assistantId: "a", cloud: "local" }]);
+    expect(parsed.assistants).toEqual([
+      { assistantId: "a", cloud: "local", port: GATEWAY_PORT },
+    ]);
   });
 });
 
@@ -424,7 +427,7 @@ describe("getGatewayUrl", () => {
       assistants: [{ assistantId: "asst_new", cloud: "galaxy" }],
     });
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_new", cloud: "local" },
+      { assistantId: "asst_new", cloud: "local", port: GATEWAY_PORT },
     ]);
   });
 });

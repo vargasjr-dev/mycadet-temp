@@ -46,8 +46,8 @@ const {
 
 const SAMPLE_LOCKFILE: Lockfile = {
   assistants: [
-    { assistantId: "ast-1", name: "Alpha", cloud: "local" },
-    { assistantId: "ast-2", name: "Beta", cloud: "local" },
+    { assistantId: "ast-1", name: "Alpha", cloud: "local", port: 7830 },
+    { assistantId: "ast-2", name: "Beta", cloud: "local", port: 7830 },
   ],
   activeAssistant: "ast-1",
 };
@@ -177,7 +177,9 @@ describe("lockfile-watcher", () => {
       // filesystem registers a different mtime than the initial read).
       await new Promise((resolve) => setTimeout(resolve, 50));
       const updated: Lockfile = {
-        assistants: [{ assistantId: "ast-3", name: "Gamma", cloud: "local" }],
+        assistants: [
+          { assistantId: "ast-3", name: "Gamma", cloud: "local", port: 7830 },
+        ],
         activeAssistant: "ast-3",
       };
       writeLockfile(updated);
@@ -287,7 +289,12 @@ describe("lockfile-watcher", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       const updated: Lockfile = {
         assistants: [
-          { assistantId: "ast-new", name: "NewAssistant", cloud: "local" },
+          {
+            assistantId: "ast-new",
+            name: "NewAssistant",
+            cloud: "local",
+            port: 7830,
+          },
         ],
         activeAssistant: "ast-new",
       };

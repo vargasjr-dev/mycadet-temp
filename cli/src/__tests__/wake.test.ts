@@ -47,7 +47,13 @@ const saveLockfileAssistantMock = mock<
   typeof localModeModule.saveLockfileAssistant
 >(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
-  (resources) => join(resources?.instanceDir ?? "missing", "daemon.pid"),
+  (entry) =>
+    join(
+      entry && entry.cloud === "local" && entry.instanceDir
+        ? entry.instanceDir
+        : "missing",
+      "daemon.pid",
+    ),
 );
 
 mock.module("@mycadet/local-mode", () => ({
@@ -267,8 +273,13 @@ beforeEach(() => {
     lockfile: { assistants: [], activeAssistant: null },
   }));
   getDaemonPidPathMock.mockReset();
-  getDaemonPidPathMock.mockImplementation((resources) =>
-    join(resources?.instanceDir ?? "missing", "daemon.pid"),
+  getDaemonPidPathMock.mockImplementation((entry) =>
+    join(
+      entry && entry.cloud === "local" && entry.instanceDir
+        ? entry.instanceDir
+        : "missing",
+      "daemon.pid",
+    ),
   );
   resolveProcessStateMock.mockReset();
   resolveProcessStateMock.mockImplementation(
@@ -665,6 +676,7 @@ describe("cadet wake — app server restore", () => {
     const migratedEntry = {
       assistantId: "docker-1",
       cloud: "docker" as const,
+      port: 7830,
       containerInfo: {
         assistantImage: "mycadet/mycadet-assistant:v0.12.7",
         gatewayImage: "mycadet/mycadet-gateway:v0.12.7",
@@ -910,6 +922,7 @@ describe("cadet wake — app server restore", () => {
       {
         assistantId: "docker-1",
         cloud: "docker",
+        port: 7830,
       },
     ]);
     stampRecordedAppServer();
@@ -1191,6 +1204,7 @@ describe("cadet wake — app server restore", () => {
         {
           assistantId: "wake-all-1",
           cloud: "local",
+          port: 7830,
         },
         makeAllEntry("wake-all-2", join(tempDir, "instance-2")),
       ]);

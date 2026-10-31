@@ -10,6 +10,7 @@ import { dirname, join } from "path";
 
 import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
 import {
+  isLocalEntry,
   type AppProcessRecord,
   type LocalAssistant,
   type Lockfile,
@@ -63,11 +64,20 @@ export type RootProcessKind = keyof RootProcessRecords;
  * The instance's data root: the recorded instanceDir, or the shared state
  * root for legacy entries predating per-instance dirs.
  */
-export function getLocalInstanceDir(entry?: { instanceDir?: string }): string {
-  return entry?.instanceDir ?? resolveDataDir();
+export function getLocalInstanceDir(
+  entry?: LockfileAssistant | undefined,
+): string {
+  // Only the local topology carries a data root on this machine;
+  // containerized remotes keep theirs in their runtime.
+  return (
+    (entry && isLocalEntry(entry) ? entry.instanceDir : undefined) ??
+    resolveDataDir()
+  );
 }
 
-export function getDaemonPidPath(entry?: { instanceDir?: string }): string {
+export function getDaemonPidPath(
+  entry?: LockfileAssistant | undefined,
+): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }
 

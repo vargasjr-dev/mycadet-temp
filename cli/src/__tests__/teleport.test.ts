@@ -7,6 +7,7 @@ const entry: assistants.LockfileAssistant = {
   assistantId: "source-1",
   name: "source",
   cloud: "local",
+  port: 7830,
   hatchedAt: "2026-01-01T00:00:00Z",
 };
 const find = spyOn(assistants, "findAssistantByName");

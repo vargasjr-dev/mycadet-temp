@@ -49,6 +49,7 @@ mock.module(
     getActiveAssistant: () => ({
       assistantId: selectedAssistantId,
       cloud: "local",
+      port: 7830,
     }),
     // Sibling test files in this suite mock the same module and share a
     // process; keep the export their modules import so relinking succeeds.

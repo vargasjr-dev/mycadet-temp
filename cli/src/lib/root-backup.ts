@@ -19,6 +19,7 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
+  isLocalEntry,
   saveLockfileAssistant,
   type DockerAssistant,
   type LocalAssistant,
@@ -745,9 +746,7 @@ export async function withRootOperationLock<T>(
   const identity =
     entry.cloud === "docker"
       ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : entry.cloud !== "cloud" &&
-          entry.cloud !== "custom" &&
-          entry.cloud !== "baseten"
+      : isLocalEntry(entry)
         ? entry.instanceDir
         : undefined;
   const lock = join(

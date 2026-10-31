@@ -69,7 +69,7 @@ import {
   resolveLogDir,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isLocalEntry } from "@mycadet/local-mode/contract";
 import {
   type DaemonReadiness,
   httpHealthCheck,
@@ -881,7 +881,7 @@ async function startDaemonFromSource(
       })
     : (() => {
         const daemonLogFd = openRuntimeLogFile(
-          entry?.instanceDir ?? spawnStateRoot(),
+          getLocalInstanceDir(entry ?? undefined),
           "assistant",
         );
         const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
@@ -957,7 +957,7 @@ async function startDaemonWatchFromSource(
   writeFileSync(pidFile, "starting", "utf-8");
 
   const daemonLogFd = openRuntimeLogFile(
-    entry?.instanceDir ?? spawnStateRoot(),
+    getLocalInstanceDir(entry ?? undefined),
     "assistant",
   );
   const child = spawn(
@@ -1061,7 +1061,7 @@ export function gatewayCliInvocation(
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(entry?.instanceDir
+      ...(entry && isLocalEntry(entry)
         ? {
             CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
             GATEWAY_SECURITY_DIR: join(
@@ -1746,7 +1746,7 @@ export async function startLocalDaemon(
           })
         : (() => {
             const daemonLogFd = openRuntimeLogFile(
-              entry?.instanceDir ?? spawnStateRoot(),
+              getLocalInstanceDir(entry ?? undefined),
               "assistant",
             );
             const c = spawn(daemonBinary, [], {
@@ -1949,7 +1949,7 @@ export async function startGateway(
     // CLI invoked from the terminal). In watch mode, skip the bundled binary
     // and use source (bun --watch only works with source files).
     const gatewayLogFd = openRuntimeLogFile(
-      entry?.instanceDir ?? spawnStateRoot(),
+      getLocalInstanceDir(entry ?? undefined),
       "gateway",
     );
     gateway = spawn(gatewayBinary, [], {
@@ -1968,7 +1968,7 @@ export async function startGateway(
       ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
       : ["run", gatewayEntry, "--cadet-gateway"];
     const gwLogFd = openRuntimeLogFile(
-      entry?.instanceDir ?? spawnStateRoot(),
+      getLocalInstanceDir(entry ?? undefined),
       "gateway",
     );
     gateway = spawn(resolveBunExecutable(), bunArgs, {

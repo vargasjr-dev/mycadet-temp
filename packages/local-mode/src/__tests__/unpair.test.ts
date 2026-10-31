@@ -1,3 +1,4 @@
+import { GATEWAY_PORT } from "../lockfile-contract";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
@@ -70,7 +71,7 @@ describe("unpairAssistant", () => {
     // modeled fields and drops anything a newer writer added to an entry.
     const onDisk = readLockfileFromDisk();
     expect(onDisk.assistants).toEqual([
-      { assistantId: "local-1", cloud: "local" },
+      { assistantId: "local-1", cloud: "local", port: GATEWAY_PORT },
     ]);
     expect(onDisk.activeAssistant).toBe("local-1");
   });
