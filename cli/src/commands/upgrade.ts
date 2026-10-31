@@ -3,7 +3,6 @@ import { upgradeDocker } from "../lib/remotes/docker.js";
 import {
   GATEWAY_PORT,
   getGatewayUrl,
-  getLoopbackGatewayPort,
   isDockerEntry,
   isLocalEntry,
 } from "@mycadet/local-mode/contract";
@@ -68,7 +67,7 @@ import {
   startGateway,
   startLocalDaemon,
   stopLocalProcesses,
-} from "../lib/local.js";
+} from "../lib/remotes/local.js";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
 import {
   loadGuardianBootstrapSecret,
@@ -310,7 +309,7 @@ async function upgradeLocal(
   };
 
   const targetVersion = await targetVersionFromCli(version);
-  const adminUrl = `http://127.0.0.1:${getLoopbackGatewayPort(entry) ?? GATEWAY_PORT}`;
+  const adminUrl = `http://127.0.0.1:${entry.port ?? GATEWAY_PORT}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {

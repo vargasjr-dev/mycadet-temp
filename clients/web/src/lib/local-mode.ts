@@ -1,6 +1,5 @@
 import {
   getGatewayUrl,
-  getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
 } from "@mycadet/local-mode/contract";
@@ -403,7 +402,7 @@ export function hasLocalGateway(
   if (!expectsLocalGateway(assistant)) {
     return false;
   }
-  return getLoopbackGatewayPort(assistant) != null;
+  return ("port" in assistant ? assistant.port : undefined) != null;
 }
 
 /**
@@ -422,7 +421,7 @@ export function hasGatewayAddress(
     return false;
   }
   if (isLoopbackGatewayCloud(assistant.cloud)) {
-    return getLoopbackGatewayPort(assistant) != null;
+    return ("port" in assistant ? assistant.port : undefined) != null;
   }
   if (assistant.cloud === "custom") {
     const gatewayUrl = getGatewayUrl(assistant);

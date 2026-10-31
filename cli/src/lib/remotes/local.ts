@@ -7,9 +7,13 @@ import {
 } from "child_process";
 import { createHash, randomBytes } from "crypto";
 import {
+  appendFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
+  readlinkSync,
+  symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "fs";
@@ -46,10 +50,26 @@ function spawnStateRoot(): string {
   return root;
 }
 
-import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
-import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
-import { GATEWAY_PORT } from "./constants.js";
-import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import {
+  allocateLocalPlacement,
+  findAssistantByName,
+  getDaemonPidPath,
+  getLocalInstanceDir,
+  setActiveAssistant,
+} from "../assistant-config.js";
+import type { LockfileAssistant } from "../assistant-config.js";
+import type {
+  LocalAssistant,
+  DockerAssistant,
+  AppleContainerAssistant,
+} from "@mycadet/local-mode/contract";
+import { GATEWAY_PORT } from "../constants.js";
+import {
+  resolveDataDir,
+  resolveLogDir,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   type DaemonReadiness,
   httpHealthCheck,
@@ -57,7 +77,7 @@ import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
-} from "./http-client.js";
+} from "../http-client.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   type ProcessState,
@@ -67,9 +87,44 @@ import {
   resolveProcessState,
   stopProcessByPidFile,
   stopProcessGracefully,
-} from "./process.js";
-import { stripVersionPrefix } from "./version-compat.js";
-import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "./xdg-log.js";
+} from "../process.js";
+import { stripVersionPrefix } from "../version-compat.js";
+import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "../xdg-log.js";
+import { green, yellow } from "../color.js";
+import { buildHatchConfigValues, writeInitialConfig } from "../config-utils.js";
+import {
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
+  loadGuardianBootstrapSecret,
+  saveGuardianBootstrapSecret,
+} from "../guardian-token.js";
+import {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "../lifecycle-reporter.js";
+import {
+  collectProviderApiKey,
+  configureHatchProviderApiKey,
+  promptProviderChoice,
+  resolveHatchProvider,
+  shouldPromptForHatchProvider,
+} from "../provider-secrets.js";
+import { logHatchNextSteps } from "../hatch-next-steps.js";
+import { printInstanceDetails } from "../instance-details.js";
+import { checkProviderApiKey } from "../api-key-check.js";
+import {
+  describeLoginError,
+  ensureCloudLoginInteractive,
+  registerLocalAssistantWithCloud,
+} from "../cloud-login.js";
+import { fetchCurrentUser, readCloudToken } from "../cloud-client.js";
+import { withLocalHatchLock } from "../local-hatch-lock.js";
+import { generateInstanceName } from "../random-name.js";
+import { healConflictedLocalPorts } from "../port-heal.js";
+import { restoreAppServerAndAutoTunnel } from "../tunnel.js";
+
+// Direct import — bun embeds this at compile time so it works in compiled binaries.
+import cliPkg from "../../../package.json";
 
 const _require = createRequire(import.meta.url);
 
@@ -96,7 +151,7 @@ function normalizeRuntimeVersion(version: string): string {
 }
 
 export function getLocalRuntimeInstallDir(
-  entry: LocalRuntimeAssistant,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   version: string,
 ): string {
   return join(
@@ -208,7 +263,7 @@ function envWithBunPath(
 }
 
 function localRuntimeAssistantIndex(
-  entry: LocalRuntimeAssistant,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): string | undefined {
   const installDir = entry.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -221,7 +276,7 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  entry: LocalRuntimeAssistant | undefined,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
   const installDir = entry?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -230,7 +285,7 @@ function localRuntimeGatewayDir(
 }
 
 function localRuntimeCesDir(
-  entry: LocalRuntimeAssistant | undefined,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
   const installDir = entry?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -239,7 +294,7 @@ function localRuntimeCesDir(
 }
 
 export function ensureLocalRuntime(
-  entry: LocalRuntimeAssistant,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   version: string,
   options: { force?: boolean } = {},
 ): LocalRuntimeInstall {
@@ -419,7 +474,7 @@ function findGatewaySourceFromCwd(): string | undefined {
 }
 
 function resolveAssistantIndexPath(
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): string | undefined {
   if (entry) {
     const runtimeIndex = localRuntimeAssistantIndex(entry);
@@ -561,7 +616,7 @@ type DaemonStartOptions = {
  * writable per-instance directory used outside containers.
  */
 function resolveCesBootstrapSocketDir(
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   env?: Record<string, string | undefined>,
 ): string {
   if (entry) {
@@ -579,7 +634,7 @@ function resolveCesBootstrapSocketDir(
  */
 function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
-  entry: LocalRuntimeAssistant,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   options?: DaemonStartOptions,
 ): void {
   {
@@ -933,7 +988,9 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(entry?: LocalRuntimeAssistant): string {
+function resolveGatewayDir(
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
@@ -987,7 +1044,11 @@ function resolveGatewayDir(entry?: LocalRuntimeAssistant): string {
  * processes fall back to the same cwd-relative paths).
  */
 export function gatewayCliInvocation(
-  entry?: LocalRuntimeAssistant | undefined,
+  entry?:
+    | LocalAssistant
+    | DockerAssistant
+    | AppleContainerAssistant
+    | undefined,
 ): {
   command: string;
   args: string[];
@@ -1013,18 +1074,21 @@ export function gatewayCliInvocation(
   };
 }
 
-function resolveCesDir(entry?: LocalRuntimeAssistant): string {
+function resolveCesDir(
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+): string {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
-  // Source tree / npm sibling: cli/src/lib/ → ../../.. → credential-executor/
-  const sourceDir = join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "credential-executor",
-  );
+  // Source tree / npm sibling: walk up from this file until a
+  // `credential-executor/` sibling appears (the file's depth moved when the
+  // local remote module landed under remotes/).
+  let sourceDir = join(import.meta.dir, "credential-executor");
+  let probeDir = import.meta.dir;
+  while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
+    probeDir = dirname(probeDir);
+    sourceDir = join(probeDir, "credential-executor");
+  }
   if (isCesSourceDir(sourceDir)) {
     return sourceDir;
   }
@@ -1049,7 +1113,7 @@ function resolveCesDir(entry?: LocalRuntimeAssistant): string {
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
 export function resolveCesSocketPath(
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
@@ -1091,7 +1155,7 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  */
 export async function startCes(
   watch: boolean = false,
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): Promise<void> {
   const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
   const cesPidFile = join(cadetDir, "ces.pid");
@@ -1450,7 +1514,9 @@ export function isGatewayWatchModeAvailable(): boolean {
  *
  * The wrapper is idempotent: safe to call on every daemon wake.
  */
-function writeAssistantWrapper(entry: LocalRuntimeAssistant): void {
+function writeAssistantWrapper(
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+): void {
   if (platform() === "win32") {
     return;
   }
@@ -1484,7 +1550,11 @@ function writeAssistantWrapper(entry: LocalRuntimeAssistant): void {
 }
 
 /** A local runtime entry with the daemon port a hatch records. */
-export type ReadyRuntimeEntry = LocalRuntimeAssistant & { daemonPort: number };
+export type ReadyRuntimeEntry = (
+  | LocalAssistant
+  | DockerAssistant
+  | AppleContainerAssistant
+) & { daemonPort: number };
 
 /**
  * The daemon lifecycle reads the recorded daemon port; an entry without
@@ -1492,7 +1562,7 @@ export type ReadyRuntimeEntry = LocalRuntimeAssistant & { daemonPort: number };
  * re-hatch guidance the callers show.
  */
 export function requireReadyRuntimeEntry(
-  entry: LocalRuntimeAssistant,
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): ReadyRuntimeEntry {
   if (entry.daemonPort === undefined) {
     throw new Error(
@@ -1805,7 +1875,7 @@ export async function startLocalDaemon(
 
 export async function startGateway(
   watch: boolean = false,
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   options?: {
     bootstrapSecret?: string;
     requireReady?: boolean;
@@ -1951,7 +2021,7 @@ export async function startGateway(
  * the default ~/.cadet/ paths.
  */
 export async function stopLocalProcesses(
-  entry?: LocalRuntimeAssistant,
+  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): Promise<void> {
   const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
   const daemonPidFile = getDaemonPidPath(entry);
@@ -1982,4 +2052,651 @@ export async function stopLocalProcesses(
     DAEMON_STOP_TIMEOUT_MS,
     stopProcessGracefully,
   );
+}
+
+/**
+ * Attempts to place a symlink at the given path pointing to cliBinary.
+ * Returns true if the symlink was created (or already correct), false on failure.
+ */
+function trySymlink(cliBinary: string, symlinkPath: string): boolean {
+  try {
+    // Use lstatSync (not existsSync) to detect dangling symlinks —
+    // existsSync follows symlinks and returns false for broken links.
+    try {
+      const stats = lstatSync(symlinkPath);
+      if (!stats.isSymbolicLink()) {
+        // Real file — don't overwrite (developer's local install)
+        return false;
+      }
+      // Already a symlink — skip if it already points to our binary
+      const dest = readlinkSync(symlinkPath);
+      if (dest === cliBinary) return true;
+      // Stale or dangling symlink — remove before creating new one
+      unlinkSync(symlinkPath);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") return false;
+      // Path doesn't exist — proceed to create symlink
+    }
+
+    const dir = join(symlinkPath, "..");
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    symlinkSync(cliBinary, symlinkPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ensures ~/.local/bin is present in the user's shell profile so that
+ * symlinks placed there are on PATH in new terminal sessions.
+ */
+function ensureLocalBinInShellProfile(localBinDir: string): void {
+  const shell = process.env.SHELL ?? "";
+  const home = homedir();
+  // Determine the appropriate shell profile to modify
+  const profilePath = shell.endsWith("/zsh")
+    ? join(home, ".zshrc")
+    : shell.endsWith("/bash")
+      ? join(home, ".bash_profile")
+      : null;
+  if (!profilePath) return;
+
+  try {
+    const contents = existsSync(profilePath)
+      ? readFileSync(profilePath, "utf-8")
+      : "";
+    // Check if ~/.local/bin is already referenced in PATH exports
+    if (contents.includes(localBinDir)) return;
+    const line = `\nexport PATH="${localBinDir}:\$PATH"\n`;
+    appendFileSync(profilePath, line);
+    console.log(`   Added ${localBinDir} to ${profilePath}`);
+  } catch {
+    // Not critical — user can add it manually
+  }
+}
+
+function installCLISymlink(): void {
+  const cliBinary = process.execPath;
+  if (!cliBinary || !existsSync(cliBinary)) return;
+
+  // Preferred location — works on most Macs where /usr/local/bin exists
+  const preferredPath = "/usr/local/bin/cadet";
+  if (trySymlink(cliBinary, preferredPath)) {
+    console.log(`   Symlinked ${preferredPath} → ${cliBinary}`);
+    return;
+  }
+
+  // Fallback — use ~/.local/bin which is user-writable and doesn't need root.
+  // On some Macs /usr/local doesn't exist and creating it requires admin privileges.
+  const localBinDir = join(homedir(), ".local", "bin");
+  const fallbackPath = join(localBinDir, "cadet");
+  if (trySymlink(cliBinary, fallbackPath)) {
+    console.log(`   Symlinked ${fallbackPath} → ${cliBinary}`);
+    ensureLocalBinInShellProfile(localBinDir);
+    return;
+  }
+
+  console.log(
+    `   ⚠ Could not create symlink for cadet CLI (tried ${preferredPath} and ${fallbackPath})`,
+  );
+}
+
+export interface HatchLocalParams {
+  /** Instance display name. Defaults to an auto-generated name. */
+  name?: string | null;
+  /** Build from a local source tree and hot-reload on change. */
+  watch?: boolean;
+  /** Hatch-time config values (key → value). */
+  configValues?: Record<string, string>;
+  setupProviderCredentials?: boolean;
+  /** Whole-installation state installed before the first service startup. */
+  initialArchive?: string;
+  /**
+   * Show the per-service startup logs (assistant, credential executor,
+   * gateway) and the extended next steps. Off by default — the happy path
+   * ends at the hatched summary.
+   */
+  verbose?: boolean;
+  /**
+   * Sink for progress and log output. Defaults to the console reporter so CLI
+   * callers keep their existing terminal output; in-process callers can inject
+   * their own reporter to consume progress without writing to stdout.
+   */
+  reporter?: LifecycleReporter;
+}
+
+export interface HatchLocalResult {
+  assistantId: string;
+  /**
+   * Guardian access token leased during hatch, when the lease succeeded. The
+   * full token pair is persisted to disk regardless; this is surfaced so an
+   * in-process caller can prime a connection without re-reading the file.
+   */
+  guardianAccessToken?: string;
+}
+
+export async function hatchLocal(
+  params: HatchLocalParams = {},
+): Promise<HatchLocalResult> {
+  const { name, watch = false, configValues = {} } = params;
+  const reporter = params.reporter ?? consoleLifecycleReporter;
+  const verbose = params.verbose ?? false;
+  const setupProviderCredentials = params.setupProviderCredentials !== false;
+  setStartupLogging(verbose);
+  let provider = setupProviderCredentials
+    ? resolveHatchProvider(configValues)
+    : undefined;
+  const instanceName = generateInstanceName(
+    name ?? process.env.CADET_ASSISTANT_NAME,
+  );
+  // Collected inside the lock (right after the provider choice, so the two
+  // prompts sit back-to-back), consumed after the guardian token leases.
+  let precollectedApiKey: string | undefined;
+
+  const { entry } = await withLocalHatchLock(async () => {
+    reporter.progress(1, 6, "Allocating resources...");
+
+    const existing = findAssistantByName(instanceName);
+    if (existing && (!existing.cloud || existing.cloud === "local")) {
+      throw new Error(
+        `An assistant named "${instanceName}" is already hatched.\n` +
+          `Run \`cadet wake\` to restart it, or \`cadet retire ${instanceName}\` to remove it first.`,
+      );
+    }
+
+    const entry: LockfileAssistant = {
+      assistantId: instanceName,
+      cloud: "local",
+      ...(await allocateLocalPlacement(instanceName)),
+    };
+
+    reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
+    reporter.log("");
+
+    const apiKeyCheck = checkProviderApiKey();
+    let pickedProvider = false;
+    if (
+      shouldPromptForHatchProvider({
+        configValues,
+        setupProviderCredentials,
+        hasProviderApiKey: apiKeyCheck.hasKey,
+        stdinIsTTY: process.stdin.isTTY,
+      })
+    ) {
+      const picked = await promptProviderChoice();
+      if (picked) {
+        provider = picked;
+        pickedProvider = true;
+        // Collect the key immediately, while the choice is fresh — the
+        // startup logs are quiet now, so nothing separates the two prompts.
+        precollectedApiKey = await collectProviderApiKey(picked);
+
+        // Picking Cadet Cloud should feel like signing in, not like a
+        // mystery later — open the browser login right here. Skipped for
+        // the desktop app (it runs its own login UI) and non-TTY runs.
+        if (
+          picked === "cadet" &&
+          !process.env.CADET_DESKTOP_APP &&
+          process.stdin.isTTY &&
+          !readCloudToken()
+        ) {
+          reporter.log("");
+          reporter.log(
+            "Cadet Cloud selected — opening your browser to log in...",
+          );
+          try {
+            await ensureCloudLoginInteractive();
+            reporter.log("✅ Logged in to Cadet Cloud");
+          } catch (error) {
+            reporter.warn(
+              `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
+            );
+            reporter.warn("   You can retry later with `cadet login`.");
+          }
+        }
+      }
+    }
+
+    if (
+      !apiKeyCheck.hasKey &&
+      !pickedProvider &&
+      !process.env.CADET_DESKTOP_APP
+    ) {
+      reporter.warn(
+        "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
+      );
+      reporter.warn("  To fix, export your key before running cadet hatch:");
+      reporter.warn("  export ANTHROPIC_API_KEY=<your-key>");
+      reporter.warn("");
+    }
+
+    if (!process.env.APP_VERSION) {
+      process.env.APP_VERSION = cliPkg.version;
+    }
+
+    reporter.progress(2, 6, "Setting up local assistant...");
+    const hatchConfigValues = buildHatchConfigValues(configValues, provider);
+    const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
+
+    reporter.progress(3, 6, "Starting assistant...");
+    if (params.initialArchive) {
+      // Restores the archived state roots — gateway-security included, so
+      // the gateway boots with the archived signing identity.
+      await (
+        await import("../root-backup.js")
+      ).initializeRootArchive(entry, params.initialArchive);
+    }
+    const bootstrapSecret = generateLocalSecret();
+    saveGuardianBootstrapSecret(instanceName, bootstrapSecret);
+    try {
+      // Launch the CES sibling alongside the daemon, in parallel — matching the
+      // Docker topology. The assistant does not spawn its own CES, so a freshly
+      // hatched instance would otherwise come up with CES unavailable.
+      // startCes always launches the CES sibling.
+      const startupResults = await Promise.allSettled([
+        startCes(watch, entry),
+        startLocalDaemon(watch, requireReadyRuntimeEntry(entry), {
+          defaultWorkspaceConfigPath,
+          requireReady: true,
+        }),
+      ]);
+      const startupFailure = startupResults.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
+      );
+      if (startupFailure) {
+        throw startupFailure.reason;
+      }
+
+      reporter.progress(4, 6, "Starting gateway...");
+      await startGateway(watch, entry, {
+        bootstrapSecret,
+        requireReady: true,
+      });
+    } catch (error) {
+      reporter.error(
+        `\n❌ Local assistant startup failed — stopping partial processes.`,
+      );
+      reporter.error(
+        `   Logs: ${join(getLocalInstanceDir(entry), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+      );
+      await stopLocalProcesses(entry);
+      throw error;
+    }
+
+    entry.hatchedAt = new Date().toISOString();
+
+    reporter.progress(5, 6, "Saving configuration...");
+    saveLockfileAssistant(entry);
+    setActiveAssistant(instanceName);
+
+    return { entry };
+  });
+
+  // Lease a guardian token so the desktop app can import it on first launch
+  // instead of hitting /v1/guardian/init itself.
+  reporter.progress(6, 6, "Securing connection...");
+  const maxLeaseAttempts = 3;
+  let guardianAccessToken: string | undefined;
+  for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
+    try {
+      const tokenData = await leaseGuardianToken(entry);
+      guardianAccessToken = tokenData.accessToken;
+      break;
+    } catch (err) {
+      if (
+        attempt < maxLeaseAttempts &&
+        !(err instanceof GuardianLeasePermanentError)
+      ) {
+        const delayMs = 2000 * 2 ** (attempt - 1);
+        reporter.error(
+          yellow(
+            `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
+          ),
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+      } else {
+        reporter.error(
+          yellow(
+            `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
+              `   The assistant is running but guardian-token.json was not written.\n` +
+              `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
+          ),
+        );
+      }
+    }
+  }
+
+  if (process.env.CADET_DESKTOP_APP) {
+    installCLISymlink();
+  }
+
+  if (provider !== undefined && provider !== null && !guardianAccessToken) {
+    reporter.error(
+      yellow(
+        `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
+          `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
+      ),
+    );
+  } else if (provider !== undefined) {
+    await configureHatchProviderApiKey({
+      gatewayUrl: getGatewayUrl(entry),
+      provider,
+      bearerToken: guardianAccessToken,
+      env: process.env,
+      precollectedKey: precollectedApiKey,
+    });
+  }
+
+  // Picking Cadet Cloud ends with the assistant registered on the cloud
+  // and its cloud credentials injected — the same post-login flow
+  // `cadet login` runs — so messages route through the cloud connection
+  // immediately after hatch. Non-fatal: the assistant is up either way.
+  if (provider === "cadet" && readCloudToken()) {
+    try {
+      const token = readCloudToken()!;
+      const user = await fetchCurrentUser(token);
+      await registerLocalAssistantWithCloud(token, user, {
+        bearerToken: guardianAccessToken,
+        log: (m) => reporter.log(m),
+      });
+    } catch {
+      // Non-fatal — `cadet login` can complete the registration later.
+    }
+  }
+
+  reporter.log("");
+  reporter.log(green(`✅ Local assistant hatched!`, process.stdout));
+  printInstanceDetails(
+    {
+      name: instanceName,
+      runtime: getGatewayUrl(entry),
+      root: entry.instanceDir,
+    },
+    (message) => reporter.log(message),
+  );
+  logHatchNextSteps((message) => reporter.log(message));
+
+  const result: HatchLocalResult = {
+    assistantId: instanceName,
+    guardianAccessToken,
+  };
+
+  return result;
+}
+
+/**
+ * Marks a deliberate per-assistant wake refusal (an unmanageable runtime, a
+ * daemon that died during startup). The single-assistant path renders it as
+ * the same "Error: …" + exit 1 the command always printed; `--all` treats it
+ * as one entry's failure and keeps waking the rest.
+ */
+export class WakeExit extends Error {}
+
+/**
+ * Start a local-runtime assistant's daemon, CES sibling, and gateway. The
+ * command layer's local branch of `cadet wake` — every local-runtime
+ * decision (port heal, attach-or-spawn, gateway restart, migration wait)
+ * lives here with the rest of the local remote's lifecycle methods.
+ */
+export async function wakeLocal(
+  entry: LockfileAssistant,
+  opts: { watch: boolean; foreground: boolean },
+): Promise<void> {
+  const { watch, foreground } = opts;
+  if (
+    !(
+      entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+    )
+  ) {
+    throw new WakeExit(
+      `'${entry.assistantId}' is not an on-machine assistant.`,
+    );
+  }
+  requireReadyRuntimeEntry(entry);
+
+  // Port auto-heal: a recorded port something else holds (a still-running
+  // vellum assistant on the pre-de-clash ports, a stray listener) used to
+  // kill the daemon on EADDRINUSE — or worse, leave a foreign listener
+  // answering this wake's health probes. Move the entry off foreign-held
+  // ports before anything binds, and say so loudly. Ports held by our own
+  // processes are left for the orphan path to adopt. Local only: docker
+  // ports are published by existing containers and need a recreate, which
+  // the docker path below reports on its own.
+  const portHeal = await healConflictedLocalPorts(entry);
+  if (portHeal) {
+    saveLockfileAssistant(entry);
+    for (const move of portHeal.moves) {
+      console.warn(
+        yellow(
+          `⚠️  ${entry.assistantId}: ${move.field} ${move.from} is held by another process — moved to ${move.to}.`,
+        ),
+      );
+    }
+  }
+
+  const daemonPort = requireReadyRuntimeEntry(entry).daemonPort;
+  const pidFile = getDaemonPidPath(entry);
+
+  // Budget anchor for the migration-coordination wait below: the host
+  // wrapper (packages/local-mode/src/wake.ts WAKE_TIMEOUT_MS) SIGTERMs wake
+  // after 180s, and the hung-daemon health wait + post-spawn wait + gateway
+  // start can already consume most of that.
+  const wakeStartedAt = Date.now();
+
+  let daemonRunning = false;
+  let daemonUnready = false;
+  let daemonMigrationsFailed = false;
+  const daemonState = await resolveProcessState(
+    pidFile,
+    daemonPort,
+    "Assistant",
+    60_000,
+    "readyz",
+  );
+  if (daemonState.status !== "needs_start") {
+    if (daemonState.status === "stuck") {
+      daemonRunning = true;
+      daemonUnready = true;
+      console.log(
+        `Assistant running (pid ${daemonState.pid}) but is not responding and could not be stopped.`,
+      );
+    } else if (watch && isAssistantWatchModeAvailable()) {
+      console.log(
+        `Assistant running (pid ${daemonState.pid}) — restarting in watch mode...`,
+      );
+      const stopped = await stopProcessByPidFile(
+        pidFile,
+        "assistant",
+        undefined,
+        DAEMON_STOP_TIMEOUT_MS,
+      );
+      if (!stopped && isProcessAlive(pidFile).alive) {
+        daemonRunning = true;
+        daemonUnready = true;
+        console.log(
+          `Assistant running (pid ${daemonState.pid}) but could not be stopped for watch mode.`,
+        );
+      }
+    } else {
+      daemonRunning = true;
+      daemonUnready = daemonState.status !== "healthy";
+      daemonMigrationsFailed = daemonState.status === "migration_failed";
+      if (watch) {
+        console.log(
+          `Assistant running (pid ${daemonState.pid}) — watch mode not available, no source files. Keeping existing process.`,
+        );
+      } else if (daemonMigrationsFailed) {
+        console.log(
+          `Assistant running (pid ${daemonState.pid}) but its database migrations failed.`,
+        );
+      } else if (daemonUnready) {
+        console.log(
+          `Assistant running (pid ${daemonState.pid}) — database migrations still running.`,
+        );
+      } else {
+        console.log(`Assistant already running (pid ${daemonState.pid}).`);
+      }
+    }
+  }
+
+  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
+  let bootstrapSecretBackfilled = false;
+  if (!bootstrapSecret) {
+    bootstrapSecret = generateLocalSecret();
+    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
+    bootstrapSecretBackfilled = true;
+  }
+
+  if (!daemonRunning) {
+    // Spin up CES and the daemon in parallel, the way the Docker topology
+    // brings its sibling containers up together — the assistant polls for the
+    // CES socket during startup (discoverCesWithRetry), so it tolerates CES
+    // still binding. CES's lifecycle tracks the daemon (its only consumer):
+    // restarting it under a live daemon would sever the daemon's open
+    // connection, so it is only (re)started alongside the daemon. startCes
+    // always launches the CES sibling unconditionally.
+    await Promise.all([
+      startCes(watch, entry),
+      startLocalDaemon(watch, requireReadyRuntimeEntry(entry), { foreground }),
+    ]);
+    // A daemon that aborts during startup (an occupied runtime HTTP port, a
+    // fatal subsystem failure) leaves no process behind, and readiness alone
+    // cannot see that: whatever foreign listener holds the port answers the
+    // probe in its place. Liveness is the authoritative signal, so check it
+    // first and fail the command instead of reporting a successful wake for
+    // an assistant that is not running.
+    if (!isProcessAlive(pidFile).alive) {
+      throw new WakeExit(
+        `the assistant exited during startup and is not running. Its runtime HTTP port ${daemonPort} may be held by another process (check \`lsof -i :${daemonPort}\`); the daemon log records the startup error it reported.`,
+      );
+    }
+    // startLocalDaemon's post-spawn wait is bounded (60s), and a longer
+    // migration outlives it. Classify the fresh spawn the same way the
+    // attach path does, so the gateway-coordination wait below applies to
+    // both paths and wake's closing summary stays honest.
+    const readiness = await probeDaemonReadinessWithRetry(daemonPort);
+    daemonUnready = readiness === "migrating";
+    daemonMigrationsFailed = readiness === "failed";
+  } else {
+    // Self-heal: the daemon is already healthy, but the CES sibling may have
+    // died independently (crash, OOM kill). A dead ces.pid under a live daemon
+    // means credential operations will fail until the next wake. Relaunch the
+    // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
+    // the next credential read. startCes always launches the sibling.
+    const cadetDir = getLocalInstanceDir(entry);
+    const cesPidFile = join(cadetDir, "ces.pid");
+    const cesAlive = isProcessAlive(cesPidFile).alive;
+    if (!cesAlive) {
+      console.log("CES sibling not running — relaunching...");
+      await startCes(watch, entry);
+    }
+  }
+
+  // Start gateway
+  let gatewayStarted = false;
+  {
+    const cadetDir = getLocalInstanceDir(entry);
+    const gatewayPidFile = join(cadetDir, "gateway.pid");
+    const gatewayState = await resolveProcessState(
+      gatewayPidFile,
+      entry.port ?? GATEWAY_PORT,
+      "Gateway",
+    );
+    const gatewayAlive = gatewayState.status === "healthy";
+    const gatewayStuck = gatewayState.status === "stuck";
+    const restartGateway = async (
+      restartWithWatch: boolean,
+    ): Promise<boolean> => {
+      const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
+      if (!stopped && isProcessAlive(gatewayPidFile).alive) {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
+        );
+        return false;
+      }
+      await startGateway(restartWithWatch, entry, {
+        bootstrapSecret,
+      });
+      return true;
+    };
+    const needsRestart = bootstrapSecretBackfilled && gatewayAlive;
+    if (gatewayStuck) {
+      console.log(
+        `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
+      );
+    } else if (needsRestart) {
+      const restartWithWatch = watch && isGatewayWatchModeAvailable();
+      if (restartWithWatch) {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) — restarting to apply bootstrap secret...`,
+        );
+      } else {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) — restarting without watch mode to apply bootstrap secret...`,
+        );
+      }
+      gatewayStarted = await restartGateway(restartWithWatch);
+    } else if (gatewayAlive) {
+      if (watch && isGatewayWatchModeAvailable()) {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) — restarting in watch mode...`,
+        );
+        gatewayStarted = await restartGateway(watch);
+      } else {
+        if (watch) {
+          console.log(
+            `Gateway running (pid ${gatewayState.pid}) — watch mode not available, no source files. Keeping existing process.`,
+          );
+        } else {
+          console.log(`Gateway already running (pid ${gatewayState.pid}).`);
+        }
+      }
+    } else {
+      await startGateway(watch, entry, { bootstrapSecret });
+      gatewayStarted = true;
+    }
+  }
+
+  // A freshly-(re)started gateway refuses all non-probe traffic until the
+  // daemon reports migration readiness, so consumers that act right after
+  // wake (the web connect-repair retry, the guardian re-provision below)
+  // would hit its closed gate. When the daemon is migrating AND the gateway
+  // was just started (or a guardian repair was requested), wait out the
+  // migration — capped at 60s and at whatever budget remains before the
+  // 180s host-wrapper SIGTERM (30s headroom kept), since earlier bounded
+  // waits may already have consumed most of it. Fast path (gateway already
+  // serving, no repair) stays ~1s.
+  if (daemonUnready && !daemonMigrationsFailed && gatewayStarted) {
+    const waitBudgetMs = Math.min(60_000, wakeStartedAt + 150_000 - Date.now());
+    if (waitBudgetMs > 0) {
+      const readiness = await waitForDaemonMigrationsReady(
+        daemonPort,
+        Date.now() + waitBudgetMs,
+      );
+      daemonUnready = readiness !== "ready";
+      daemonMigrationsFailed = readiness === "failed";
+    }
+  }
+
+  // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
+  // records itself in the root lockfile under `tunnel`. Non-fatal: a down
+  // edge is a degraded remote-web/webhook path, not a broken assistant.
+  await restoreAppServerAndAutoTunnel(entry);
+
+  if (daemonMigrationsFailed) {
+    console.log(
+      "Assistant database migrations FAILED — DB-backed routes will return 503 until the assistant is restarted. Check the daemon logs.",
+    );
+  } else if (daemonUnready) {
+    console.log(
+      "Assistant is still running database migrations; DB-backed routes return 503 until they finish.",
+    );
+  }
+  console.log("Wake complete.");
 }

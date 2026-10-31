@@ -15,7 +15,7 @@ import {
   refreshGuardianTokenResult,
   resetGuardianBootstrap,
 } from "../../lib/guardian-token.js";
-import { generateLocalSecret } from "../../lib/local.js";
+import { generateLocalSecret } from "../../lib/remotes/local.js";
 
 function printUsage(): void {
   console.log(

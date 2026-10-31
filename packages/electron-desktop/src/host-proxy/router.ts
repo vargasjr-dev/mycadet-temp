@@ -14,7 +14,6 @@
 import {
   getGatewayUrl,
   isCloudHome,
-  isLocalRuntimeEntry,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
   type Lockfile,
@@ -887,7 +886,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
     // url itself — the port is the only loopback record there is.
     const isMachineLocalEntry = isLoopbackGatewayCloud(assistant.cloud);
     const port = isMachineLocalEntry
-      ? isLocalRuntimeEntry(assistant)
+      ? "port" in assistant
         ? assistant.port
         : undefined
       : undefined;

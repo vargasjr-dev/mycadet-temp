@@ -23,7 +23,7 @@ import {
   startCes,
   startLocalDaemon,
   startGateway,
-} from "../lib/local.js";
+} from "../lib/remotes/local.js";
 import { getArchivePath, getMetadataPath } from "../lib/retire-archive.js";
 import { exec } from "../lib/step-runner.js";
 import {

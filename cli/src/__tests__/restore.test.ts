@@ -26,7 +26,7 @@ import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
 import { type LockfileAssistant } from "../lib/assistant-config.js";
-import * as localModule from "../lib/local.js";
+import * as localModule from "../lib/remotes/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
 import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
@@ -51,7 +51,7 @@ const startCesMock = mock(async () => {});
 const execMock = mock(async (_cmd: string, _args: string[]) => {});
 
 beforeAll(() => {
-  mock.module("../lib/local.js", () => ({
+  mock.module("../lib/remotes/local.js", () => ({
     generateLocalSigningKey: () => "deadbeefdeadbeefdeadbeefdeadbeef",
     startLocalDaemon: startLocalDaemonMock,
     startGateway: startGatewayMock,
@@ -61,7 +61,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  mock.module("../lib/local.js", () => realLocal);
+  mock.module("../lib/remotes/local.js", () => realLocal);
   mock.module("../lib/step-runner.js", () => ({ exec: realExec }));
 });
 

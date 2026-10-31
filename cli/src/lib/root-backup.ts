@@ -19,7 +19,6 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
-  isLocalRuntimeEntry,
   saveLockfileAssistant,
   type DockerAssistant,
   type LocalAssistant,
@@ -41,7 +40,7 @@ import {
   startCes,
   startGateway,
   startLocalDaemon,
-} from "./local.js";
+} from "./remotes/local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -746,7 +745,9 @@ export async function withRootOperationLock<T>(
   const identity =
     entry.cloud === "docker"
       ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
-      : isLocalRuntimeEntry(entry)
+      : entry.cloud !== "cloud" &&
+          entry.cloud !== "custom" &&
+          entry.cloud !== "baseten"
         ? entry.instanceDir
         : undefined;
   const lock = join(
@@ -791,7 +792,12 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (entry.cloud !== "docker" && isLocalRuntimeEntry(entry)) {
+  if (
+    entry.cloud !== "docker" &&
+    entry.cloud !== "cloud" &&
+    entry.cloud !== "custom" &&
+    entry.cloud !== "baseten"
+  ) {
     for (const root of STATE_ROOTS) {
       const path = resolve(getLocalInstanceDir(entry), root);
       if (resolve(output) === path || resolve(output).startsWith(`${path}/`))

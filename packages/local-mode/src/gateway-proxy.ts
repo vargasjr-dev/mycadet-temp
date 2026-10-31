@@ -7,7 +7,6 @@ import {
   FLATTENED_FIRST_SEGMENTS,
   GATEWAY_PORT,
   getGatewayUrl,
-  getLoopbackGatewayPort,
   isCloudHome,
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
@@ -197,7 +196,7 @@ const MAX_GATEWAY_PORT = 65535;
  * off-machine `runtimeUrl` (an absolute http(s) address that is not
  * loopback — a connect import's remote gateway) resolves to it directly;
  * otherwise a loopback-gateway cloud (`local`, `docker`) resolves to its
- * recorded loopback port via {@link getLoopbackGatewayPort}. Everything
+ * recorded loopback port (`entry.port`). Everything
  * else — the cloud — is left out, and an absent id is a proxy
  * rejection.
  *
@@ -231,7 +230,8 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
       continue;
     }
-    const port = getLoopbackGatewayPort(parsed.data) ?? GATEWAY_PORT;
+    const port =
+      ("port" in parsed.data ? parsed.data.port : undefined) ?? GATEWAY_PORT;
     if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
       targets.set(assistantId, { kind: "loopback", port });
     }

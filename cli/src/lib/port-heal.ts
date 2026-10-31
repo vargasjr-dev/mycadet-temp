@@ -1,6 +1,6 @@
 import { findOpenPort } from "./port-allocator.js";
 import { getDefaultPorts } from "./environments/paths.js";
-import { findPidListeningOnPort } from "./local.js";
+import { findPidListeningOnPort } from "./remotes/local.js";
 import { isCadetProcess } from "./process.js";
 import { loadAllAssistants } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";

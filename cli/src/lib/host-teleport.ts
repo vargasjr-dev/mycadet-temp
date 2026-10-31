@@ -1,9 +1,5 @@
 import { rm } from "node:fs/promises";
-import {
-  getGatewayUrl,
-  isDockerEntry,
-  isLocalRuntimeEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -19,7 +15,7 @@ import {
   retireDocker,
   startContainers,
 } from "./docker.js";
-import { hatchLocal } from "./hatch-local.js";
+import { hatchLocal } from "./remotes/local.js";
 import { retireLocal } from "./retire-local.js";
 import { validateAssistantName } from "./retire-archive.js";
 import {
@@ -137,7 +133,11 @@ export async function readHostRuntimeVersion(
   if (entry.cloud !== "docker") {
     return (
       (await fetchCurrentVersion(getGatewayUrl(entry))) ??
-      (isLocalRuntimeEntry(entry) ? entry.runtimeVersion : undefined)
+      (entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+        ? entry.runtimeVersion
+        : undefined)
     );
   }
   try {
@@ -459,12 +459,15 @@ export async function restoreHostTeleportTarget(
   if (await storageFor(entry).running()) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
-  const originalRuntime = isLocalRuntimeEntry(entry)
-    ? {
-        runtimeVersion: entry.runtimeVersion,
-        runtimeInstallDir: entry.runtimeInstallDir,
-      }
-    : undefined;
+  const originalRuntime =
+    entry.cloud !== "cloud" &&
+    entry.cloud !== "custom" &&
+    entry.cloud !== "baseten"
+      ? {
+          runtimeVersion: entry.runtimeVersion,
+          runtimeInstallDir: entry.runtimeInstallDir,
+        }
+      : undefined;
   const replaceContainers = async (
     opts: Parameters<typeof startContainers>[0],
   ) => {
@@ -514,7 +517,11 @@ export async function restoreHostTeleportTarget(
         }
         await startContainers(previous, (message) => console.log(message));
       }
-      if (isLocalRuntimeEntry(entry)) {
+      if (
+        entry.cloud !== "cloud" &&
+        entry.cloud !== "custom" &&
+        entry.cloud !== "baseten"
+      ) {
         entry.runtimeVersion = originalRuntime?.runtimeVersion;
         entry.runtimeInstallDir = originalRuntime?.runtimeInstallDir;
       }

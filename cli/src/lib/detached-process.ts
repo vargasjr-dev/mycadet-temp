@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { closeSync } from "node:fs";
 import { join } from "node:path";
 
-import { isCompiledCli } from "./local.js";
+import { isCompiledCli } from "./remotes/local.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import { openLogFile, resetLogFile } from "./xdg-log.js";
 

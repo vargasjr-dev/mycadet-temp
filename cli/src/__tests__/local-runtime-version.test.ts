@@ -1,9 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import type { LocalRuntimeAssistant } from "@mycadet/local-mode/contract";
+import type {
+  LocalAssistant,
+  DockerAssistant,
+  AppleContainerAssistant,
+} from "@mycadet/local-mode/contract";
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
-import { ensureLocalRuntime } from "../lib/local.js";
+import { ensureLocalRuntime } from "../lib/remotes/local.js";
 
 // Only `instanceDir` is read, and only after the validation guard passes —
 // invalid versions throw before any filesystem access, so a minimal stub is
@@ -40,7 +44,10 @@ describe("ensureLocalRuntime version guard", () => {
     for (const version of MALICIOUS_VERSIONS) {
       expect(() =>
         ensureLocalRuntime(
-          entry as LocalRuntimeAssistant & { daemonPort: number },
+          entry as
+            | LocalAssistant
+            | DockerAssistant
+            | (AppleContainerAssistant & { daemonPort: number }),
           version,
         ),
       ).toThrow(`Invalid runtime version '${version}'`);

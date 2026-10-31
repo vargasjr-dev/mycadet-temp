@@ -1,8 +1,5 @@
 import { existsSync, readFileSync } from "fs";
-import {
-  getGatewayUrl,
-  isLocalRuntimeEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
@@ -35,7 +32,13 @@ type ActiveCallLease = {
 };
 
 function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (!isLocalRuntimeEntry(entry)) {
+  if (
+    !(
+      entry.cloud !== "cloud" &&
+      entry.cloud !== "custom" &&
+      entry.cloud !== "baseten"
+    )
+  ) {
     throw new Error(`'${entry.assistantId}' is not an on-machine assistant.`);
   }
   return getLocalInstanceDir(entry);
