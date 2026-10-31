@@ -290,7 +290,7 @@ beforeEach(() => {
     failWrite = reject;
   });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
@@ -978,8 +978,8 @@ describe("document session chat handoff", () => {
             useResolvedAssistantStore.setState({
               assistant: {
                 cloud: "local",
+                port: 0,
                 assistantId: "assistant-2",
-                port: 7830,
               },
             });
           }
@@ -1078,8 +1078,8 @@ describe("document PDF export saves", () => {
           act(() =>
             useResolvedAssistantStore.getState().setAssistant({
               cloud: "local",
+              port: 0,
               assistantId: "assistant-2",
-              port: 7830,
             }),
           );
         }
@@ -1180,8 +1180,8 @@ describe("desktop document feedback", () => {
         act(() =>
           useResolvedAssistantStore.getState().setAssistant({
             cloud: "local",
+            port: 0,
             assistantId: "assistant-2",
-            port: 7830,
           }),
         );
       } else {

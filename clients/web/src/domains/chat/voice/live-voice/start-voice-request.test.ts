@@ -151,7 +151,7 @@ function identityHydrated(version: string = SUPPORTED_VERSION): void {
     name: "Ada",
   });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
 }
 
@@ -215,7 +215,7 @@ beforeEach(() => {
     version: null,
     name: null,
   });
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useConversationStore.getState().reset();
   useConversationStore
     .getState()
@@ -387,7 +387,7 @@ describe("a request that cannot be served yet stays parked", () => {
     // timeout with `version` still null. The eligibility gate would read the
     // conservative `false` and throw the command away.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
     });
     registerStarter();
 
@@ -412,7 +412,7 @@ describe("a request that cannot be served yet stays parked", () => {
     identityHydrated();
     registerStarter();
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
     });
 
     usePendingDeepLinkStore
@@ -1066,7 +1066,7 @@ describe("state read before the preflight is re-read after it", () => {
     const { drain, release } = await drainBlockedOnPreflight();
 
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
     });
     release();
     await drain;
@@ -1080,7 +1080,7 @@ describe("state read before the preflight is re-read after it", () => {
 
     // Back on the assistant the press was made for, the next drain serves it.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
     });
     await drainPendingVoiceStart(navigate);
     expectStartedOnFreshDraft();
@@ -1096,7 +1096,7 @@ describe("state read before the preflight is re-read after it", () => {
     const { drain, release } = await drainBlockedOnPreflight();
 
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
     });
     release();
     await drain;

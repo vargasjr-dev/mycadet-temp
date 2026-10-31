@@ -31,7 +31,13 @@ const pendingSaves = new Map<
 let sessionGeneration = 0;
 
 useResolvedAssistantStore.subscribe((state, previous) => {
-  if (state.assistant === null && previous.assistant !== null) {
+  // Back to the unresolved shell is the nullable world's "assistant gone" —
+  // a logout. The assistant id itself never switches within a live bundle,
+  // so a real-to-real stamp is none of the drains' business.
+  if (
+    state.assistant.assistantId === "" &&
+    previous.assistant.assistantId !== ""
+  ) {
     sessionGeneration += 1;
     pendingSaves.clear();
   }

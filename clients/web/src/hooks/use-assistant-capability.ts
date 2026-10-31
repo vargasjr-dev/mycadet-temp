@@ -2,7 +2,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { getAssistantHealthz } from "@/assistant/api";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 type AssistantCapability = keyof NonNullable<
   HealthzGetResponse["capabilities"]
@@ -22,7 +22,7 @@ type AssistantCapability = keyof NonNullable<
  * route — don't trip the gated accessor's throw.
  */
 export function useAssistantCapabilityQuery(capability: AssistantCapability) {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   return useQuery({
     ...assistantCapabilityOptions(capability, assistantId),
     enabled: assistantId != null,

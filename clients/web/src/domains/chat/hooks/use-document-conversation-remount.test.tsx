@@ -168,7 +168,7 @@ beforeEach(() => {
   load.mockClear();
   write.mockClear();
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useViewerStore.setState({
     mainView: "chat",

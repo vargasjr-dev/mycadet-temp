@@ -122,7 +122,7 @@ beforeEach(() => {
   // the fallback branch is reached (not short-circuited as inactive).
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+    .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
   useConversationStore.getState().setActiveConversationId("conv-A");
   useChatSessionStore.setState({
     snapshot: null,

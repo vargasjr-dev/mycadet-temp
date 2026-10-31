@@ -23,7 +23,6 @@ const ASSISTANT_ID = "asst-1";
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
-  useResolvedAssistantId: () => ASSISTANT_ID,
 }));
 
 const { PluginDetailPage } =

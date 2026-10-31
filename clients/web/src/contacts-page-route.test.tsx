@@ -49,14 +49,6 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
       },
       () => activeAssistantId,
     ),
-  useResolvedAssistantId: () =>
-    useSyncExternalStore(
-      (onStoreChange: () => void) => {
-        activeAssistantListeners.add(onStoreChange);
-        return () => activeAssistantListeners.delete(onStoreChange);
-      },
-      () => activeAssistantId,
-    ),
 }));
 
 mock.module("@/domains/contacts/contacts-page", () => ({

@@ -38,7 +38,7 @@ import {
   isRemovableSkill,
   skillDetailBackState,
 } from "@/utils/skills";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface SkillDetailPanelProps {
   skillId: string;
@@ -50,7 +50,7 @@ export function SkillDetailPanel({ skillId, onClose }: SkillDetailPanelProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
 
   const skillQuery = useQuery({

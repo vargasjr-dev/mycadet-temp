@@ -146,7 +146,7 @@ beforeEach(() => {
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
   });
 });
 
@@ -161,7 +161,7 @@ afterEach(() => {
 describe("useOpenAppFromChat", () => {
   test("no-ops when there is no active assistant", async () => {
     // GIVEN no assistant is selected
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const { result } = renderOpenApp(CHAT_PATH);
 
     // WHEN a surface asks to open an app

@@ -46,7 +46,7 @@ import { configGet } from "@/generated/daemon/sdk.gen";
 import { inferenceProviderconnectionsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
 import { toast } from "@mycadet/design-library/components/toast";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface OpenProfileQuickAddArgs {
   /**
@@ -82,7 +82,7 @@ const ProfileQuickAddContext =
 
 export function ProfileQuickAddProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
 
   const configMutation = useLlmConfigPatch();
   const [isOpen, setIsOpen] = useState(false);

@@ -31,7 +31,7 @@ import {
 } from "@/lib/tts/use-cloud-voices";
 
 import { useSerializedConfigSelection } from "@/components/speech/use-serialized-config-selection";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 // Module-level so `select` identity only tracks real state (see
 // `useSerializedConfigSelection`).
@@ -82,7 +82,7 @@ export function useCloudVoiceSelection(
   // through `useActiveAssistantId()`: the call bar mounts this hook in the
   // root layout, where welcome and onboarding have no assistant yet — the
   // `enabled` option keeps those pre-assistant mounts fetch-free.
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const enabled = (options.enabled ?? true) && assistantId != null;
 
   const { data: providerCatalog, isLoading: catalogLoading } = useQuery({

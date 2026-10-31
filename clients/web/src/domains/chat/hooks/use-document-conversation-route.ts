@@ -28,12 +28,12 @@ import {
   returnFromDocument,
 } from "../document-conversation-navigation";
 import { useOverlayEscape } from "./use-overlay-escape";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Owns document URL intent inside the existing conversation session. */
 export function useDocumentConversationRoute() {
   const { t } = useTranslation("chat");
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const { conversationId } = useParams<{ conversationId: string }>();
   const location = useLocation();
   const { pathname, search, state: navigationState } = location;

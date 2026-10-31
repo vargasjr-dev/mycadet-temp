@@ -55,7 +55,7 @@ import {
   useViewerStore,
 } from "@/stores/viewer-store";
 import type { DisplayAttachment } from "@/types/attachment-types";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface ChatInfoPanelProps {
   payload: ChatInfoPayload;
@@ -71,7 +71,7 @@ export function ChatInfoPanel({
 }: ChatInfoPanelProps) {
   const { t } = useTranslation("chat");
   const { assistantId, conversationId } = payload;
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   const openDocument = useOpenDocumentFromChat(
     assistantId,
     useViewerStore.getState().closeChatInfo,
@@ -135,10 +135,11 @@ export function ChatInfoPanel({
   }, [clearConversation, conversationId, unseenDocuments]);
 
   // The panel is about one assistant's conversation and its tiles reach that
-  // assistant's apps, so it does not outlive a switch away from it. A cleared
-  // id is a teardown or a gap between two connects, not a switch.
+  // assistant's apps, so it does not outlive a switch away from it. The empty
+  // id is the unresolved shell (the platform's pre-projection window), not a
+  // switch: the panel's surface is not even mounted there.
   useEffect(() => {
-    if (activeAssistantId !== null && activeAssistantId !== assistantId) {
+    if (activeAssistantId && activeAssistantId !== assistantId) {
       useViewerStore.getState().closeChatInfo();
     }
   }, [activeAssistantId, assistantId]);

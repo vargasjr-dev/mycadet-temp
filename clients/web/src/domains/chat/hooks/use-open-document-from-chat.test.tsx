@@ -54,7 +54,7 @@ beforeEach(() => {
   conversation = useConversationStore.getState();
   viewer = useViewerStore.getState();
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useConversationStore.setState({ activeConversationId: "conv-origin" });
   useViewerStore.setState({ mainView: "chat", openedDocumentState: null });
@@ -145,11 +145,9 @@ describe("mobile chat document entry", () => {
     });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
     act(() =>
-      useResolvedAssistantStore.getState().setAssistant({
-        cloud: "local",
-        assistantId: "assistant-2",
-        port: 7830,
-      }),
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "local", port: 0, assistantId: "assistant-2" }),
     );
     await act(async () => {
       resolveLoad({ data: documentData });
@@ -186,8 +184,8 @@ describe("mobile chat document entry", () => {
           act(() =>
             useResolvedAssistantStore.getState().setAssistant({
               cloud: "local",
+              port: 0,
               assistantId: "assistant-2",
-              port: 7830,
             }),
           );
         }

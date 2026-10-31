@@ -32,7 +32,6 @@ import { MemoryRouter } from "react-router";
 // BYO branch.
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "asst-test",
-  useResolvedAssistantId: () => "asst-test",
 }));
 const voiceSelection: UseCloudVoiceSelection = {
   available: false,

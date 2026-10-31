@@ -15,11 +15,7 @@ function PreviewFixture() {
     const initialSession = useDesktopPreviewStore.getState().session;
     const previousAssistant = useResolvedAssistantStore.getState().assistant;
     useResolvedAssistantStore.setState({
-      assistant: {
-        cloud: "local",
-        assistantId: "assistant-example",
-        port: 7830,
-      },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-example" },
     });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });

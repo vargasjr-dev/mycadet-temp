@@ -25,11 +25,14 @@ const health = mock(async () => {
 mock.module("@/assistant/api", () => ({ getAssistantHealthz: health }));
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {
-    use: { assistant: () => (assistantId ? { cloud: "local", assistantId } : null) },
+    use: {
+      assistant: () =>
+        assistantId ? { cloud: "local", port: 0, assistantId } : null,
+    },
   },
 }));
 mock.module("@/assistant/use-active-assistant-id", () => ({
-  useResolvedAssistantId: () => assistantId,
+  useActiveAssistantId: () => assistantId,
 }));
 const { useAssistantCapabilityQuery } =
   await import("./use-assistant-capability");

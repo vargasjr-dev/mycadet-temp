@@ -118,7 +118,6 @@ mock.module("react-router", () => ({
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => assistantStub.assistantId,
-  useResolvedAssistantId: () => assistantStub.assistantId,
 }));
 
 // Mocked rather than driven via `setState`: zustand v5 serves

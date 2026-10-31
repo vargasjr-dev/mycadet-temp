@@ -5,21 +5,21 @@ import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useActiveAssistantId } from "./use-active-assistant-id";
 
 afterEach(() => {
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("useActiveAssistantId", () => {
   test("returns the active id when the gate has resolved", () => {
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
+      .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
     const { result } = renderHook(() => useActiveAssistantId());
     expect(result.current).toBe("asst-1");
   });
 
-  test("throws when no assistant is resolved (the store is empty)", () => {
-    expect(() => {
-      renderHook(() => useActiveAssistantId());
-    }).toThrow(/no resolved assistant/);
+  test("returns the unresolved shell's empty id when no assistant is stamped", () => {
+    useResolvedAssistantStore.getState().resetAssistant();
+    const { result } = renderHook(() => useActiveAssistantId());
+    expect(result.current).toBe("");
   });
 });

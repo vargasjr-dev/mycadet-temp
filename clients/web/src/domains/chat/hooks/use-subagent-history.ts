@@ -14,13 +14,13 @@ import {
   useSubagentStore,
   type SubagentEntry,
 } from "@/domains/chat/subagent-store";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function useSubagentHistory(
   entry: Pick<SubagentEntry, "subagentId" | "conversationId" | "history">,
   assistantId?: string | null,
 ): () => Promise<void> {
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   const resolvedAssistantId = assistantId ?? activeAssistantId;
   const { subagentId, conversationId } = entry;
   const historyMissing = entry.history === null;

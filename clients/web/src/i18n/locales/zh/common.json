@@ -505,11 +505,6 @@
     "titleNamed": "{assistantName} 需要更多算力",
     "upgrade": "升级"
   },
-  "retireConfirmDialog": {
-    "confirmLabel": "停用",
-    "message": "这将永久停用此助手及其所有数据。您需要重新完成引导流程才能创建新助手。此操作无法撤销。",
-    "title": "停用助手"
-  },
   "rootHydrateFallback": {
     "loadingAria": "正在加载"
   },

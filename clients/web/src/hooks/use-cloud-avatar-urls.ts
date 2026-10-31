@@ -6,8 +6,7 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { resolveCloudAssistantId } from "@/stores/resolved-assistant-store";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type CloudAvatarUrls = ReadonlyMap<string, string>;
 
@@ -21,8 +20,8 @@ export const CLOUD_AVATAR_URLS_STALE_TIME_MS = 60_000;
  * resolves its organization through that selection, and a switch re-scopes
  * the list with the request header.
  */
-export function cloudAvatarUrlsQueryKey(assistantId: string | null) {
-  return ["cloudAvatarUrls", assistantId ?? "none"] as const;
+export function cloudAvatarUrlsQueryKey(assistantId: string) {
+  return ["cloudAvatarUrls", assistantId] as const;
 }
 
 const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
@@ -61,7 +60,7 @@ export function supersedeCloudAvatar(
   queryClient: QueryClient,
   assistantId: string,
 ): void {
-  suppressCloudAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
+  suppressCloudAvatarUrl(queryClient, assistantId);
 }
 
 /**
@@ -92,7 +91,7 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  * and this lookup keeps that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   const query = useQuery<CloudAvatarUrls>({
     queryKey: cloudAvatarUrlsQueryKey(activeAssistantId),
     queryFn: fetchCloudAvatarUrls,

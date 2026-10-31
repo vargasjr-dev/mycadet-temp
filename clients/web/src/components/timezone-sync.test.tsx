@@ -61,13 +61,13 @@ beforeEach(() => {
   patchMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
   });
 });
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 function lastBody() {
@@ -118,7 +118,7 @@ describe("TimezoneSync", () => {
   });
 
   test("no PATCH when no assistant id is available", async () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     renderSync();
     await new Promise((r) => setTimeout(r, 10));
     expect(patchMock).not.toHaveBeenCalled();

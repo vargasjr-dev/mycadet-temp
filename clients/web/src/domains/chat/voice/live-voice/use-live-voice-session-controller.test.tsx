@@ -205,7 +205,7 @@ beforeEach(() => {
   __resetPendingDeepLinkForTesting();
   useConversationStore.getState().reset();
   useAssistantIdentityStore.setState({ assistantId: null, version: null });
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   interruptionHandlers = [];
   onNativeAndroid = false;
   onNativeIOS = false;
@@ -288,7 +288,7 @@ describe("starter registration", () => {
       version: "0.10.12",
     });
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
     });
     useConversationStore.getState().setActiveConversationId("conv-1");
     usePendingDeepLinkStore
@@ -349,7 +349,7 @@ describe("re-draining on an assistant switch", () => {
   function activeAssistant(assistantId: string): void {
     useAssistantIdentityStore.setState({ assistantId, version: "0.10.12" });
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: assistantId, port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: assistantId },
     });
   }
 
@@ -424,7 +424,7 @@ describe("re-draining on an assistant switch", () => {
       .setPendingVoiceStart({ entry: "deep_link" });
     act(() => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
       });
     });
     await flushDrains();

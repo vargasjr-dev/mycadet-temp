@@ -33,7 +33,7 @@ import { useConversationStore } from "@/stores/conversation-store";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
 import type { Conversation } from "@/types/conversation-types";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 // ---------------------------------------------------------------------------
 // Return type
@@ -78,7 +78,7 @@ export function useChatUIState(): ChatUIState {
   const activeToolCallCount = useTurnStore.use.activeToolCallCount();
   const statusText = useTurnStore.use.statusText();
 
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const activeConversationId = useConversationStore.use.activeConversationId();
 
   // All message-derived checks read the rendered transcript (the materialized

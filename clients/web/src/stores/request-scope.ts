@@ -11,7 +11,7 @@
  */
 import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { requestScopeKey } from "@/utils/request-scope-key";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * The scope a request made right now would carry.
@@ -27,6 +27,6 @@ export function currentRequestScopeKey(): string {
 
 /** Subscribe to {@link currentRequestScopeKey}. */
 export function useRequestScopeKey(): string {
-  const activeAssistantId = useResolvedAssistantId();
+  const activeAssistantId = useActiveAssistantId();
   return requestScopeKey({ assistantId: activeAssistantId });
 }

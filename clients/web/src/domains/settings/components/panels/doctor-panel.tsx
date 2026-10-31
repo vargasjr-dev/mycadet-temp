@@ -60,7 +60,7 @@ import { ApiError, extractErrorMessage } from "@/utils/api-errors";
 import { useTranslation } from "@/i18n";
 import { isPointerCoarse } from "@/utils/pointer";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 // ---------------------------------------------------------------------------
 // UserOutcomePromptEntry
@@ -90,7 +90,7 @@ function UserOutcomePromptEntry({
 
 export function DoctorPanel() {
   const { t } = useTranslation("settings");
-  const assistantId = useResolvedAssistantId() ?? "";
+  const assistantId = useActiveAssistantId();
 
   // Store state — client-owned values only
   const storeEntries = useDoctorPanelStore.use.entries();

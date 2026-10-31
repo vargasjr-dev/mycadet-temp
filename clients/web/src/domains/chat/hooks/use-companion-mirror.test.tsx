@@ -133,7 +133,7 @@ afterEach(() => {
   clearWatchRetro();
   isPopout = false;
   useAssistantIdentityStore.getState().clearIdentity();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useTurnStore.getState().resetTurn();
   useConversationStore.setState({ processingConversationIds: new Set() });
   useChatSessionStore.setState({ snapshot: null } as never);
@@ -454,7 +454,7 @@ describe("the capture target the companion mirror publishes", () => {
 
   test("says a session cannot be aimed until the assistant's version says so", async () => {
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
     });
     render(<Mirror />);
     expect(latest().watchTargets).toBe(false);
@@ -470,7 +470,7 @@ describe("the capture target the companion mirror publishes", () => {
 
   test("does not let one assistant's version aim another's sessions", async () => {
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
     });
     render(<Mirror />);
     act(() => {

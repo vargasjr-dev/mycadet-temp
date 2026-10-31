@@ -42,7 +42,7 @@ async function isProcessing(inputs: {
   // test reflect exactly the inputs given (the version set by `setVersion` is
   // intentionally preserved).
   useConversationStore.getState().reset();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -59,7 +59,7 @@ async function isProcessing(inputs: {
 
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
+    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
   useConversationStore.getState().setActiveConversationId(CONVERSATION_ID);
   if (inputs.isMarkedProcessingLocally) {
     useConversationStore.getState().markConversationProcessing(CONVERSATION_ID);
@@ -86,14 +86,14 @@ async function isProcessing(inputs: {
 beforeEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
   useConversationStore.getState().reset();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 afterEach(() => {
   cleanup();
   useAssistantIdentityStore.getState().clearIdentity();
   useConversationStore.getState().reset();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 // Exhaustive truth-table for the underlying semver gate lives in

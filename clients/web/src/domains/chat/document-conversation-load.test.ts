@@ -120,7 +120,7 @@ beforeEach(() => {
     throw new Error(`Unexpected request: ${options.url}`);
   }) as typeof daemonClient.post);
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
@@ -282,39 +282,27 @@ describe("loadDocumentConversation", () => {
     },
   );
 
-  test.each(["closed", "assistant switched"])(
-    "a %s owner cannot revalidate or publish",
-    async (reason) => {
-      const scope = documentRequestScope("assistant-1");
-      const pending = deferred<Awaited<ReturnType<typeof conversation>>>();
-      conversation.mockImplementationOnce(() => pending.promise);
-      const loading = loadDocumentConversation({
-        ...options,
-        isCurrent: scope.isCurrent,
-      });
-      await waitFor(() => expect(conversation).toHaveBeenCalledTimes(1));
-      edit("Pending update");
-      invalidate(["documents:list"]);
-      if (reason === "closed") {
-        scope.dispose();
-      } else {
-        useResolvedAssistantStore.setState({
-          assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
-        });
-        useResolvedAssistantStore.setState({
-          assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
-        });
-      }
-      pending.resolve({
-        data: { conversation: { id: "conv-1" } },
-        response: new Response(null, { status: 200 }),
-      });
-      await loading;
-      scope.dispose();
-      expect(read).toHaveBeenCalledTimes(1);
-      expect(onReady).not.toHaveBeenCalled();
-    },
-  );
+  test("a closed owner cannot revalidate or publish", async () => {
+    const scope = documentRequestScope("assistant-1");
+    const pending = deferred<Awaited<ReturnType<typeof conversation>>>();
+    conversation.mockImplementationOnce(() => pending.promise);
+    const loading = loadDocumentConversation({
+      ...options,
+      isCurrent: scope.isCurrent,
+    });
+    await waitFor(() => expect(conversation).toHaveBeenCalledTimes(1));
+    edit("Pending update");
+    invalidate(["documents:list"]);
+    scope.dispose();
+    pending.resolve({
+      data: { conversation: { id: "conv-1" } },
+      response: new Response(null, { status: 200 }),
+    });
+    await loading;
+    scope.dispose();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(onReady).not.toHaveBeenCalled();
+  });
 
   test.each(["stream", "sync"] as const)(
     "failed %s revalidation releases its listener and permits a fresh retry",

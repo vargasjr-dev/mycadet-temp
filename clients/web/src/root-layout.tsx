@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
 import { ShareFeedbackModalLazy } from "@/components/share-feedback-modal-lazy";
@@ -54,7 +53,10 @@ import { useOnboardingWindowSize } from "@/hooks/use-onboarding-window-size";
 import { useConversationSync } from "@/hooks/use-conversation-sync";
 import { useLegacyPinMigration } from "@/hooks/use-legacy-pin-migration";
 import { useWorkspaceTheme } from "@/hooks/use-workspace-theme";
-import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getActiveAssistantId,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
@@ -88,16 +90,13 @@ import { RoutePendingIndicator } from "@/components/route-pending-indicator";
 import { UpdateToast } from "@/components/update-toast";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
-import { retireAssistant } from "@/assistant/retire-service";
-import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
-import { toast } from "@mycadet/design-library/components/toast";
 import { answerDictationOffer } from "@/domains/chat/voice/dictation-offer-actions";
 import { answerCompanionPopover } from "@/domains/chat/companion-popover-actions";
 import { toggleCompanionPicker } from "@/domains/chat/companion-popover";
 import { useCompanionPickers } from "@/domains/chat/hooks/use-companion-pickers";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notification-avatar";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * App-level layout route. Owns four cross-route concerns:
@@ -129,7 +128,6 @@ export function RootLayout() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   // The local assistant's cloud identity registers when the session is
   // present; the bootstrap owns its own signed-out story (the registration
   // call fails and stops). The menu's Log In/Log Out toggle is Electron
@@ -158,7 +156,7 @@ export function RootLayout() {
   // never takes the keys.
   useCallChords();
 
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const activeAssistant = useResolvedAssistantStore.use.assistant();
   const assistantVersion = useAssistantIdentityStore.use.version();
   const connectionFallback =
@@ -329,11 +327,6 @@ export function RootLayout() {
   useCompanionPickers();
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  // Id of the assistant a tray "Retire <assistant>…" command targets. The tray
-  // dispatches by id; the destructive confirmation lives here in the layout so
-  // the retire can run without first routing the user to settings.
-  const [retireId, setRetireId] = useState<string | null>(null);
-  const [retirePending, setRetirePending] = useState(false);
   useCadetCommands({
     openSettings: () => {
       void navigate(routes.settings.root);
@@ -345,11 +338,6 @@ export function RootLayout() {
       hardNavigate(routes.account.logout);
     },
     shareFeedback: () => setFeedbackOpen(true),
-    retireAssistant: (command) => {
-      if (command.kind === "retireAssistant") {
-        setRetireId(command.assistantId);
-      }
-    },
     quickInputSubmit: (command) => {
       if (command.kind !== "quickInputSubmit") {
         return;
@@ -407,10 +395,7 @@ export function RootLayout() {
       // silent. Every request this app makes is scoped to the active assistant,
       // so opening another assistant's conversation id lands on a thread that
       // does not exist rather than on the report.
-      if (
-        retro.assistantId !==
-        getActiveAssistantId()
-      ) {
+      if (retro.assistantId !== getActiveAssistantId()) {
         return;
       }
       // The full navigation rather than a bare route push. The report is a
@@ -487,27 +472,6 @@ export function RootLayout() {
       void navigate(to);
     },
   });
-
-  const handleConfirmRetire = async () => {
-    if (!retireId) {
-      return;
-    }
-    setRetirePending(true);
-    const outcome = await retireAssistant(queryClient, retireId);
-    if (outcome.ok) {
-      setRetireId(null);
-      setRetirePending(false);
-      // The post-retire route can be the app bundle's welcome screen — a
-      // cross-bundle target riding the full-page bounce.
-      if (!hardNavigateIfCrossBundle(outcome.nextRoute)) {
-        navigate(outcome.nextRoute, { replace: true });
-      }
-      return;
-    }
-    toast.error(outcome.error);
-    setRetirePending(false);
-    setRetireId(null);
-  };
 
   // When the iOS keyboard opens, the system scrolls the layout viewport
   // down by `offsetTop` to keep the focused input visible. Size the outer
@@ -620,16 +584,6 @@ export function RootLayout() {
           activeConversationId={activeConversationId}
         />
       ) : null}
-
-      {/* Destructive confirmation for the tray "Retire <assistant>…" command.
-          Mirrors the settings RetireAssistant dialog so a retire triggered from
-          the menu bar carries the same irreversible-action warning. */}
-      <RetireConfirmDialog
-        open={retireId !== null}
-        isPending={retirePending}
-        onConfirm={handleConfirmRetire}
-        onCancel={() => setRetireId(null)}
-      />
     </div>
   );
 }

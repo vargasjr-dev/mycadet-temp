@@ -286,7 +286,7 @@ beforeEach(() => {
   useViewerStore.setState({ closeChatInfo, loadApp, loadDocument });
   // The shared opener the app tiles go through reads the active assistant.
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
   });
 });
 
@@ -396,7 +396,7 @@ describe("ChatInfoPanel top level", () => {
 
     await act(async () => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
       });
     });
 
@@ -407,14 +407,14 @@ describe("ChatInfoPanel top level", () => {
     await renderChatInfo();
 
     await act(async () => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
 
     expect(closeChatInfo).not.toHaveBeenCalled();
 
     await act(async () => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
       });
     });
 
@@ -425,7 +425,7 @@ describe("ChatInfoPanel top level", () => {
   // still has to refuse: its app id belongs to the payload's assistant.
   test("opens no app while its assistant is not the active one", async () => {
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
     });
 
     await renderChatInfo();

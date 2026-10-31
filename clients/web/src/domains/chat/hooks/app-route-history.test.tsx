@@ -201,7 +201,7 @@ beforeEach(() => {
   openRequests = 0;
   viewport.set({ narrow: false, coarsePointer: false });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
   });
   useConversationStore.setState({ activeConversationId: CONV_ID });
   spyOn(daemonClient, "post").mockImplementation((async (options: {
@@ -640,7 +640,7 @@ describe("app route history", () => {
     // stay the previous assistant's while every other action uses the new one.
     await act(async () => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "asst-2", port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
       });
     });
 

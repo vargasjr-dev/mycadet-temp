@@ -28,7 +28,7 @@ import {
   type BackgroundTaskEntry,
 } from "@/domains/chat/background-task-store";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 type BackgroundToolsData = NonNullable<
   Awaited<ReturnType<typeof backgroundtoolsGet>>["data"]
@@ -154,7 +154,7 @@ export async function reconcileBackgroundTasks(
 export function useBackgroundTaskRehydration(
   conversationId: string | null,
 ): void {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
 
   useEffect(() => {
     if (!assistantId || !conversationId) {

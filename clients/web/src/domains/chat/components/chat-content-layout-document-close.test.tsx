@@ -110,7 +110,7 @@ function renderLayout(url: string, previousEntries: string[] = []) {
 beforeEach(() => {
   viewport.set({ narrow: false, coarsePointer: false });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({

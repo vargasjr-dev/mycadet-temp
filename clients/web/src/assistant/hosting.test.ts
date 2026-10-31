@@ -18,8 +18,8 @@ import {
   useAssistantHosting,
 } from "@/assistant/hosting";
 
-/** Stamp (or clear) the served assistant. */
-function setServedEntry(entry: LockfileAssistant | null) {
+/** Stamp the served assistant. */
+function setServedEntry(entry: LockfileAssistant) {
   act(() => {
     useResolvedAssistantStore.getState().setAssistant(entry);
   });
@@ -28,7 +28,7 @@ function setServedEntry(entry: LockfileAssistant | null) {
 beforeEach(() => {
   injectedConfig = { remote: "local", assistantId: "asst-local" };
   injectedConfigMock.mockClear();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 afterEach(() => {
@@ -43,7 +43,7 @@ describe("useAssistantHosting", () => {
   });
 
   test("answers a self-hosted entry's own topology", () => {
-    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
+    setServedEntry({ cloud: "local", port: 0, assistantId: "asst-local" });
     const { result } = renderHook(() => useAssistantHosting());
     expect(result.current).toBe("local");
   });
@@ -58,8 +58,11 @@ describe("useAssistantHosting", () => {
     expect(result.current).toBe("cloud");
   });
 
-  test("an unstamped surface reads cloud-hosted (the pre-stamp fallback)", () => {
-    setServedEntry(null);
+  test("the unresolved shell reads cloud-hosted (the pre-projection window)", () => {
+    setServedEntry({
+      cloud: "cloud",
+      assistantId: "",
+    });
     const { result } = renderHook(() => useAssistantHosting());
     expect(result.current).toBe("cloud");
   });
@@ -68,7 +71,7 @@ describe("useAssistantHosting", () => {
 describe("useActiveAssistantIsSelfHosted", () => {
   test("true for a self-hosted entry", () => {
     injectedConfig = { remote: "docker", assistantId: "asst-local" };
-    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
+    setServedEntry({ cloud: "local", port: 0, assistantId: "asst-local" });
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(true);
   });
@@ -89,7 +92,7 @@ describe("useActiveAssistantIsCloudHosted", () => {
 
   test("false for a self-hosted entry", () => {
     injectedConfig = { remote: "local", assistantId: "asst-local" };
-    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
+    setServedEntry({ cloud: "local", port: 0, assistantId: "asst-local" });
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
     expect(result.current).toBe(false);
   });

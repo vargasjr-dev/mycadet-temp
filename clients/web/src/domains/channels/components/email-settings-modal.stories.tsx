@@ -110,7 +110,7 @@ const meta: Meta<typeof EmailSettingsModal> = {
     // section only renders against a gateway new enough to serve it; the
     // story stands in for both.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
     });
     const previous = useAssistantIdentityStore.getState().version;
     useAssistantIdentityStore.setState({ version: TRUST_FLOORS_VERSION });

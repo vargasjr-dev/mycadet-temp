@@ -22,7 +22,7 @@ const ASSISTANT_ID = "asst_story";
 const SKILL_ID = "release-triage";
 
 useResolvedAssistantStore.setState({
-  assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+  assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
 });
 
 const SKILL_MD = `---

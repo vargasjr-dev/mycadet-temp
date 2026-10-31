@@ -29,7 +29,7 @@ import {
 } from "@/utils/avatar-app-icon";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import { Button } from "@mycadet/design-library/components/button";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Size of the row's thumbnail, sitting beside a single-line control. */
 const ROW_PREVIEW_SIZE = 32;
@@ -150,7 +150,7 @@ function primaryIconGround(
 }
 
 export function AppIconRow() {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const sync = useAppIconSync(assistantId);
 
   // The catalog and the picker below belong to a row that actually draws, so

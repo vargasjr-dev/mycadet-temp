@@ -86,7 +86,7 @@ beforeEach(() => {
   useChatSessionStore.getState().setOptimisticSends([]);
   useChatSessionStore.getState().setError(null);
   useComposerStore.getState().setInput("");
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
   useViewerStore.getState().reset();
 
   daemonClient.post = mock(async () => {

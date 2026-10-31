@@ -81,13 +81,13 @@ beforeEach(() => {
   captureErrorMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
   });
 });
 
 afterEach(() => {
   cleanup();
-  useResolvedAssistantStore.getState().setAssistant(null);
+  useResolvedAssistantStore.getState().resetAssistant();
 });
 
 describe("TimezoneSection", () => {
@@ -115,7 +115,7 @@ describe("TimezoneSection", () => {
   });
 
   test("with no assistant id, writes the device setting and skips the PATCH", () => {
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
     const { getByText } = render(<TimezoneSection />);
     fireEvent.click(getByText("pick-zone"));
 
@@ -190,7 +190,7 @@ describe("TimezoneSection", () => {
     );
 
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-A", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "asst-A" },
     });
     const { getByText, rerender } = render(<TimezoneSection />);
 
@@ -205,7 +205,7 @@ describe("TimezoneSection", () => {
     // (b) Switch the active assistant to B and re-render so `assistantIdRef`
     // picks up the new id via its effect.
     useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "asst-B", port: 7830 },
+      assistant: { cloud: "local", port: 0, assistantId: "asst-B" },
     });
     rerender(<TimezoneSection />);
 

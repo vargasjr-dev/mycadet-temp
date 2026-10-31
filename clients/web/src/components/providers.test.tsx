@@ -68,7 +68,7 @@ beforeEach(() => {
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-123", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-123" },
   });
 });
 
@@ -89,7 +89,7 @@ describe("AppProviders cache scope", () => {
     ).toHaveLength(1);
     act(() => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "assistant-456", port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: "assistant-456" },
       });
     });
     expect(assetEvents()).toHaveLength(0);
@@ -103,7 +103,7 @@ describe("AppProviders cache scope", () => {
 
     act(() => {
       useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", assistantId: "assistant-456", port: 7830 },
+        assistant: { cloud: "local", port: 0, assistantId: "assistant-456" },
       });
     });
 

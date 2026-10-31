@@ -160,7 +160,7 @@ function renderPage(
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
   });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;

@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getActiveAssistant } from "@/lib/local-mode";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   listPairedDevicesHost,
   revokePairedDeviceHost,
   type LocalPairedDeviceRecord,
 } from "@/runtime/local-mode-host";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 export interface PairedDevicesController {
   /**
@@ -95,29 +94,21 @@ export function usePairedDevices({
     };
   }, []);
 
-  const refresh = useCallback(
-    (assistantId = getActiveAssistant()?.assistantId) => {
-      if (!assistantId) {
+  const refresh = useCallback((assistantId: string) => {
+    // Rows fetched for a different assistant must not render as the new
+    // selection's while the fetch is in flight.
+    setList((prev) => (prev && prev.assistantId !== assistantId ? null : prev));
+    const seq = ++fetchSeqRef.current;
+    void listPairedDevicesHost(assistantId).then((result) => {
+      if (!mountedRef.current || seq !== fetchSeqRef.current) {
         return;
       }
-      // Rows fetched for a different assistant must not render as the new
-      // selection's while the fetch is in flight.
-      setList((prev) =>
-        prev && prev.assistantId !== assistantId ? null : prev,
-      );
-      const seq = ++fetchSeqRef.current;
-      void listPairedDevicesHost(assistantId).then((result) => {
-        if (!mountedRef.current || seq !== fetchSeqRef.current) {
-          return;
-        }
-        setList(result.ok ? { assistantId, devices: result.devices } : null);
-      });
-    },
-    [],
-  );
+      setList(result.ok ? { assistantId, devices: result.devices } : null);
+    });
+  }, []);
 
   // The served assistant — the shell stamped it; there is no selection.
-  const assistantId = useResolvedAssistantStore.use.assistant()?.assistantId;
+  const assistantId = useActiveAssistantId();
 
   useEffect(() => {
     // A selection switch invalidates any open confirm dialog.
@@ -146,15 +137,18 @@ export function usePairedDevices({
   useEffect(() => {
     if (pollWhilePairing && !isRevoking) {
       wasPollingRef.current = true;
-      const id = setInterval(() => refresh(), PAIRING_POLL_INTERVAL_MS);
+      const id = setInterval(
+        () => refresh(assistantId),
+        PAIRING_POLL_INTERVAL_MS,
+      );
       return () => clearInterval(id);
     }
     if (!pollWhilePairing && wasPollingRef.current) {
       wasPollingRef.current = false;
-      refresh();
+      refresh(assistantId);
     }
     return undefined;
-  }, [pollWhilePairing, isRevoking, refresh]);
+  }, [pollWhilePairing, isRevoking, refresh, assistantId]);
 
   // Each row's activity label is formatted from the `lastUsedAt` this fetch
   // sampled, so an expanded list ages one fixed instant and ends up claiming
@@ -168,9 +162,19 @@ export function usePairedDevices({
     if (!isExpanded || !hasDevices || pollWhilePairing || isRevoking) {
       return undefined;
     }
-    const id = setInterval(() => refresh(), ACTIVITY_REFRESH_INTERVAL_MS);
+    const id = setInterval(
+      () => refresh(assistantId),
+      ACTIVITY_REFRESH_INTERVAL_MS,
+    );
     return () => clearInterval(id);
-  }, [isExpanded, hasDevices, pollWhilePairing, isRevoking, refresh]);
+  }, [
+    isExpanded,
+    hasDevices,
+    pollWhilePairing,
+    isRevoking,
+    refresh,
+    assistantId,
+  ]);
 
   const requestRevoke = useCallback((device: LocalPairedDeviceRecord) => {
     setRevokeError(null);
@@ -198,12 +202,12 @@ export function usePairedDevices({
       setIsRevoking(false);
       if (result.ok) {
         setConfirmTarget(null);
-        refresh();
+        refresh(assistantId);
       } else {
         setRevokeError(result.error);
       }
     });
-  }, [list, confirmTarget, isRevoking, refresh]);
+  }, [list, confirmTarget, isRevoking, refresh, assistantId]);
 
   return {
     devices: list?.devices ?? null,

@@ -42,7 +42,7 @@ import { NotificationsBellDetail } from "./notifications-bell-detail";
 import { NotificationsBellEmptyState } from "./notifications-bell-empty-state";
 import { NotificationsBellList } from "./notifications-bell-list";
 import { NotificationsBellPanel } from "./notifications-bell-panel";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 // The detail's content budget stays fixed so every notification renders in the
 // same frame. Its footer sits outside this region.
@@ -106,7 +106,7 @@ export function NotificationsBell() {
   const isTouchMobile = useTouchMobile();
   const { t } = useTranslation("home");
   const navigate = useNavigate();
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const feedQuery = useHomeFeedQuery(assistantId);
   const supportsBulkStatus = useSupportsBulkFeedStatus();
 

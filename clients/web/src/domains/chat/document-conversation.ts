@@ -13,7 +13,7 @@ import {
 } from "@/lib/backwards-compat/utils";
 import { MIN_VERSION } from "@/lib/backwards-compat/server-minted-conversation";
 import { resolveSupportsDocumentConversationLink } from "@/lib/backwards-compat/document-conversation-link";
-import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import {
   getEditChatConversationId,
   setEditChatConversationId,
@@ -34,20 +34,17 @@ interface DocumentConversationOptions {
   isCurrent: () => boolean;
 }
 
-/** A scope is invalid permanently after an assistant switch, including A-B-A. */
+/**
+ * A request scope: live until disposed. A new assistant id never arrives by
+ * switching — it loads a whole new web bundle — so there is no store watch
+ * here, only the unmount/dispose gate the callers own.
+ */
 export function documentRequestScope(assistantId: string) {
-  let current =
-    getActiveAssistantId() === assistantId;
-  const unsubscribe = useResolvedAssistantStore.subscribe((state) => {
-    if (state.assistant?.assistantId !== assistantId) {
-      current = false;
-    }
-  });
+  let current = getActiveAssistantId() === assistantId;
   return {
     isCurrent: () => current,
     dispose: () => {
       current = false;
-      unsubscribe();
     },
   };
 }

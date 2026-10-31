@@ -12,7 +12,7 @@ import {
 import { appEntryState } from "@/utils/app-navigation";
 import { currentPathname } from "@/utils/conversation-navigation";
 import { appIdForPath, conversationIdForPath, routes } from "@/utils/routes";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * Open an app in the split "edit" view — chat on the left, app on the right —
@@ -35,7 +35,7 @@ import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
  * Library app view (`LibraryDetailPage`).
  */
 export function useEditApp(): (app: OpenedAppState) => void {
-  const assistantId = useResolvedAssistantId();
+  const assistantId = useActiveAssistantId();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { pathname } = useLocation();

@@ -45,7 +45,7 @@ function deferred<T>() {
 
 function selectOwner(owner = OWNER) {
   useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", assistantId: owner.assistantId, port: 7830 },
+    assistant: { cloud: "local", port: 0, assistantId: owner.assistantId },
   });
   useConversationStore.setState({ activeConversationId: owner.conversationId });
   useViewerStore.setState({
@@ -209,11 +209,7 @@ describe("shared document preparation and composer submit", () => {
         }
         if (change === "assistant") {
           useResolvedAssistantStore.setState({
-            assistant: {
-              cloud: "local",
-              assistantId: "assistant-2",
-              port: 7830,
-            },
+            assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
           });
         }
         if (change === "conversation") {
@@ -382,11 +378,7 @@ describe("shared document preparation and composer submit", () => {
       act(() => {
         if (change === "assistant") {
           useResolvedAssistantStore.setState({
-            assistant: {
-              cloud: "local",
-              assistantId: "assistant-2",
-              port: 7830,
-            },
+            assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
           });
         }
         if (change === "conversation") {

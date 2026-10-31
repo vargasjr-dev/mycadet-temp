@@ -9,7 +9,7 @@ import { routes } from "@/utils/routes";
 
 import { AssistantEmailIntroModal } from "./assistant-email-intro-modal";
 import { resolveAssistantEmailIntro } from "./resolve-assistant-email-intro";
-import { useResolvedAssistantId } from "@/assistant/use-active-assistant-id";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface GateProps {
   assistantId: string;
@@ -74,8 +74,8 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
  */
 export function AssistantEmailIntro() {
   const { seen, markSeen } = useFeatureIntroSeen("assistant-email");
-  const assistantId = useResolvedAssistantId();
-  if (seen || assistantId === null) {
+  const assistantId = useActiveAssistantId();
+  if (seen || !assistantId) {
     return null;
   }
   return (

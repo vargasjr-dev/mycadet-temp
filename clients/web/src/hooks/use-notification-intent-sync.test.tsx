@@ -396,7 +396,7 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -594,7 +594,7 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(null);
+      useResolvedAssistantStore.getState().resetAssistant();
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

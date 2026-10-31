@@ -193,13 +193,13 @@ describe("useCloudAvatarUrls", () => {
     act(() =>
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "local", assistantId: "asst-2", port: 7830 }),
+        .setAssistant({ cloud: "local", port: 0, assistantId: "asst-2" }),
     );
 
     await waitFor(() => {
       expect(listAssistants).toHaveBeenCalledTimes(2);
     });
-    useResolvedAssistantStore.getState().setAssistant(null);
+    useResolvedAssistantStore.getState().resetAssistant();
   });
 
   test("never writes the resolved-assistants store", async () => {
@@ -269,9 +269,9 @@ describe("suppressCloudAvatarUrl", () => {
     });
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
-    expect(
-      queryClient.getQueryState(cloudAvatarUrlsQueryKey(null))?.status,
-    ).toBe("success");
+    expect(queryClient.getQueryState(cloudAvatarUrlsQueryKey(""))?.status).toBe(
+      "success",
+    );
   });
 
   test("a list started inside the window still omits the id; one after it carries it again", async () => {
@@ -309,24 +309,21 @@ describe("suppressCloudAvatarUrl", () => {
 });
 
 describe("supersedeCloudAvatar", () => {
-  const PAIRED_UUID = "11111111-2222-4333-8444-555555555555";
-
-  test("a row with a known platform id is suppressed under it", () => {
-    useResolvedAssistantStore.getState().setAssistant({
-      cloud: "custom",
-      assistantId: "paired-slug",
-      ipAddress: "10.0.0.1",
-      port: 443,
-      cloudAssistantId: PAIRED_UUID,
-    });
+  test("suppresses the passed id from every cached map", () => {
     const queryClient = new QueryClient();
-    const key = cloudAvatarUrlsQueryKey(null);
-    queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
+    const key = cloudAvatarUrlsQueryKey("");
+    queryClient.setQueryData(
+      key,
+      new Map([
+        ["paired-slug", WITH_AVATAR],
+        ["sibling", WITH_AVATAR],
+      ]),
+    );
 
     supersedeCloudAvatar(queryClient, "paired-slug");
 
-    expect(
-      queryClient.getQueryData<Map<string, string>>(key)?.has(PAIRED_UUID),
-    ).toBe(false);
+    const urls = queryClient.getQueryData<Map<string, string>>(key);
+    expect(urls?.has("paired-slug")).toBe(false);
+    expect(urls?.get("sibling")).toBe(WITH_AVATAR);
   });
 });

@@ -255,25 +255,9 @@ describe("PairedDevicesSection", () => {
     ).toBeTruthy();
   });
 
-  test("revokes against the assistant the rendered list was fetched for, not the current selection", async () => {
-    await renderExpanded([device()]);
-
-    // The fetch-time selection read moves before the reactive slice
-    // republishes (only the raw read flips here, not `selectionStore`); the
-    // rendered rows (and the confirm target) still belong to "self".
-    selectedAssistantId = "other";
-    fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
-    clickConfirm();
-
-    await waitFor(() =>
-      expect(revokeCalls).toEqual([
-        { assistantId: "self", hashedDeviceId: HASH_A },
-      ]),
-    );
-    // The post-revoke refresh re-reads the selection and fetches its list.
-    await waitFor(() => expect(listCalls).toEqual(["self", "other"]));
-  });
-
+  // A store switch refetches for the new assistant, closes any open confirm
+  // dialog, and revokes nothing: the revoke always targets the id the
+  // rendered list was fetched for, and the switch invalidates that list.
   test("a selection switch refetches for the new assistant and closes the confirm dialog", async () => {
     await renderExpanded([device()]);
 
