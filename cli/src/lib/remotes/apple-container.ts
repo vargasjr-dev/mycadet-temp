@@ -7,6 +7,7 @@ import { createConnection } from "net";
 import { existsSync } from "fs";
 
 import {
+  type AppleContainerAssistant,
   isAppleContainerEntry,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
@@ -21,6 +22,12 @@ export async function execAppleContainer(
   command: string[],
   service: string,
 ): Promise<void> {
+  if (!isAppleContainerEntry(entry)) {
+    console.error(
+      `'${entry.assistantId}' is not an apple-container assistant.`,
+    );
+    process.exit(1);
+  }
   return runAppleContainerExec(entry, command, service, (data) =>
     process.stdout.write(data),
   );
@@ -34,7 +41,7 @@ export async function execAppleContainer(
  * command's stdout; its last line is the challenge JSON.
  */
 export async function appleContainerPair(
-  entry: LockfileAssistant,
+  entry: AppleContainerAssistant,
 ): Promise<string> {
   const chunks: Buffer[] = [];
   await runAppleContainerExec(
@@ -47,17 +54,11 @@ export async function appleContainerPair(
 }
 
 async function runAppleContainerExec(
-  entry: LockfileAssistant,
+  entry: AppleContainerAssistant,
   command: string[],
   service: string,
   onOutput: (data: Buffer) => void,
 ): Promise<void> {
-  if (!isAppleContainerEntry(entry)) {
-    console.error(
-      `'${entry.assistantId}' is not an apple-container assistant.`,
-    );
-    process.exit(1);
-  }
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(

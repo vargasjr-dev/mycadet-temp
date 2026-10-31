@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import {
-  getGuardianAccessToken,
   isActiveAssistant,
   readLockfile,
   stripSensitiveFields,
@@ -21,7 +20,6 @@ import {
   configureCliPaths,
   type CliPaths,
   type LockfileWriteResult,
-  type TokenResult,
   type UpgradeOptions,
   type WakeOptions,
 } from "@mycadet/local-mode";
@@ -209,13 +207,6 @@ async function upgrade(
   }
 }
 
-/** Read a guardian token for the trusted main-process bearer mint. */
-export async function getLocalGuardianAccessToken(
-  assistantId: string,
-): Promise<TokenResult> {
-  return getGuardianAccessToken(assistantId);
-}
-
 // A persisted assistant entry as it crosses the IPC boundary. The
 // package's lockfile parser owns the real field-level contract; here we
 // only assert the renderer sent an object, so unknown/forward-compat
@@ -301,7 +292,6 @@ export const installLocalMode = (): void => {
     stripSensitiveFields(lockfile);
     return lockfile;
   });
-
 
   ipc(
     "cadet:localMode:unpair",

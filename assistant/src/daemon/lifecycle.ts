@@ -87,7 +87,6 @@ import {
   registerWatcherProviders,
 } from "./providers-setup.js";
 import { startResourcePressureGuardForLifecycle } from "./resource-pressure-guard-lifecycle.js";
-import { writeSelfWrapper } from "./self-wrapper.js";
 import { installShutdownHandlers } from "./shutdown-handlers.js";
 import { broadcastDaemonStatus } from "./status.js";
 
@@ -113,9 +112,6 @@ export async function runDaemon(): Promise<void> {
   // whatever was in the live environment at process spawn.
   loadDotEnv();
   validateEnv();
-  // The daemon writes its own developer-facing `assistant` wrapper now that
-  // the environment is final — see self-wrapper.ts.
-  writeSelfWrapper();
   log.info(
     {
       version: APP_VERSION,

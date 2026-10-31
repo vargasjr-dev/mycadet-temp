@@ -357,10 +357,7 @@ describe("devices middleware", () => {
 
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ ok: true, devices: [DEVICE] });
-      expect(runDevicesListMock).toHaveBeenCalledWith(
-        { command: "cadet", baseArgs: [] },
-        "asst-1",
-      );
+      expect(runDevicesListMock).toHaveBeenCalledWith("asst-1");
     });
 
     test("run-helper failure yields ok:false with no status field", async () => {
@@ -452,11 +449,7 @@ describe("devices middleware", () => {
 
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ ok: true });
-      expect(runDevicesRevokeMock).toHaveBeenCalledWith(
-        { command: "cadet", baseArgs: [] },
-        "asst-1",
-        "hash-a",
-      );
+      expect(runDevicesRevokeMock).toHaveBeenCalledWith("asst-1", "hash-a");
     });
 
     test("run-helper failure yields ok:false with no status field", async () => {

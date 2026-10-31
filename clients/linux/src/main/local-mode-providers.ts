@@ -28,8 +28,6 @@ configureCliPaths({
   prepare: ensureCliInstalled,
 });
 
-export { resolveCliInvocation };
-
 export const installLinuxLocalModeProviders = (
   registry: DesktopCapabilityRegistry,
 ): void => {

@@ -16,8 +16,6 @@ import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
 } from "../environments/paths.js";
-
-export { ASSISTANT_INTERNAL_PORT, GATEWAY_INTERNAL_PORT };
 import {
   attemptFailedStateRestore,
   broadcastUpgradeEvent,

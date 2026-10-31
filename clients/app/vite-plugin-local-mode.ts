@@ -6,7 +6,6 @@ import type { Plugin, Connect, ViteDevServer } from "vite";
 
 import {
   resolveLocalConfigFromEnv,
-  resolveDevCliInvocation,
   isLoopbackAddr,
   headerHostIsLoopback,
   originIsAllowed,
@@ -27,7 +26,6 @@ import {
   resolveAssistantRetireProxyDecision,
   readGatewayTargets,
   authorizePairedForwardHeaders,
-  type CliInvocation,
 } from "@mycadet/local-mode";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
@@ -76,7 +74,6 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
 
 export function localModePlugin(env: Record<string, string>): Plugin {
   const config = resolveLocalConfigFromEnv();
-  const baseDir = path.resolve(import.meta.dirname, "..", "..");
 
   const configJson = JSON.stringify({
     cloudUrl: config.cloudUrl,
@@ -99,8 +96,8 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(lockfileMiddleware());
       server.middlewares.use(unpairMiddleware());
       server.middlewares.use(pairingMiddleware());
-      server.middlewares.use(devicesMiddleware(baseDir));
-      server.middlewares.use(gatewayProxyMiddleware(baseDir, env));
+      server.middlewares.use(devicesMiddleware());
+      server.middlewares.use(gatewayProxyMiddleware(env));
       server.middlewares.use(accountSpaFallback(server));
     },
   };
@@ -438,7 +435,7 @@ function pairingMiddleware(): Connect.NextHandleFunction {
 // Paired-device management via the CLI (`cadet devices … --json`). POST-only
 // (the renderer's postLocalCommand always POSTs); run-helper results respond
 // 200 with `ok` discriminating success so all hosts share one wire shape.
-function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
+function devicesMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const isRevoke = requestPathname(req) === "/v1/devices/revoke";
     if (!isRevoke && requestPathname(req) !== "/v1/devices") {
@@ -477,26 +474,13 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
         revokeHash = hashedDeviceId;
       }
 
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
+      if (revokeHash !== null) {
+        void runDevicesRevoke(assistantId, revokeHash).then((result) => {
+          respondJson(res, 200, result);
         });
         return;
       }
-
-      if (revokeHash !== null) {
-        void runDevicesRevoke(invocation, assistantId, revokeHash).then(
-          (result) => {
-            respondJson(res, 200, result);
-          },
-        );
-        return;
-      }
-      void runDevicesList(invocation, assistantId).then((result) => {
+      void runDevicesList(assistantId).then((result) => {
         respondJson(res, 200, result);
       });
     });
@@ -504,7 +488,6 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
 }
 
 function gatewayProxyMiddleware(
-  baseDir: string,
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -522,16 +505,7 @@ function gatewayProxyMiddleware(
       if (rejectUnlessLocalEndpointRequest(req, res)) {
         return;
       }
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          detail: err instanceof Error ? err.message : String(err),
-        });
-        return;
-      }
-      runRetire(invocation, retireDecision.assistantId).then((result) => {
+      runRetire(retireDecision.assistantId).then((result) => {
         if (result.ok) {
           res.statusCode = 204;
           res.end();
@@ -576,10 +550,7 @@ function gatewayProxyMiddleware(
       // The trusted dev-server host owns the Authorization header: it
       // overwrites whatever the renderer sent with the bearer it mints
       // from the on-disk guardian token — the browser never holds one.
-      const lease = async () => {
-        const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-        return getGuardianAccessToken(decision.assistantId, invocation);
-      };
+      const lease = () => getGuardianAccessToken(decision.assistantId);
       const mint =
         decision.path !== "/auth/token"
           ? loopbackGatewayBearer(port, lease)
@@ -616,15 +587,6 @@ function gatewayProxyMiddleware(
       return;
     }
 
-    let invocation: CliInvocation;
-    try {
-      invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-    } catch (err) {
-      res.statusCode = 500;
-      res.end(err instanceof Error ? err.message : String(err));
-      return;
-    }
-
     const target = new URL(decision.target.runtimeUrl);
     const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers)) {
@@ -642,7 +604,7 @@ function gatewayProxyMiddleware(
     void authorizePairedForwardHeaders(
       decision.assistantId,
       headers,
-      (assistantId) => getGuardianAccessToken(assistantId, invocation),
+      getGuardianAccessToken,
     ).then((result) => {
       if (!result.ok) {
         res.statusCode = result.status;
