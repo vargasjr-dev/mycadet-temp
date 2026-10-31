@@ -155,6 +155,8 @@
         "@capawesome/capacitor-file-picker": "8.0.4",
         "@mycadet/app": "workspace:*",
         "@mycadet/environments": "workspace:*",
+        "@mycadet/shared": "workspace:*",
+        "@types/bun": "1.3.14",
         "capacitor-plugin-safe-area": "5.0.0",
         "typescript": "5.9.3",
       },
