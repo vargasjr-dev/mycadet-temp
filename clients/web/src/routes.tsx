@@ -21,7 +21,6 @@ import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
 function FloatingHydrateFallback() {
   return null;
 }
-import { ActiveAssistantGate } from "@/components/layout/active-assistant-gate";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
 
@@ -338,11 +337,10 @@ export const routeTree = [
       {
         ErrorBoundary: RouteErrorBoundary,
         children: [
-          // Settings and logs require a resolved assistant. The gate
-          // defers child rendering until the lifecycle reaches active,
-          // so route components can use useActiveAssistantId().
+          // Settings and logs assume the resolved assistant the serving
+          // shell loaded web with — route components read a non-null
+          // assistantId via useActiveAssistantId().
           {
-            Component: ActiveAssistantGate,
             children: [
               // Settings routes — full-screen overlay panel (no ChatLayout sidebar).
               // SidebarShell provides its own layout with back-arrow, sidebar nav,
@@ -582,10 +580,8 @@ export const routeTree = [
               {
                 ErrorBoundary: RouteErrorBoundary,
                 children: [
-                  // ChatPage / DocumentViewerPage own their own lifecycle UI
-                  // (loading screens, hatching, version-selection, errors) and
-                  // must render in every assistant state — they are NOT placed
-                  // under <ActiveAssistantGate>.
+                  // ChatPage / DocumentViewerPage render for the resolved
+                  // assistant the serving shell loaded web with.
                   { index: true, Component: ConversationRedirect },
                   {
                     path: "conversations/:conversationId",
@@ -630,12 +626,10 @@ export const routeTree = [
                         ),
                     },
                   },
-                  // Everything below requires a resolved assistantId AND an
-                  // active daemon. The gate defers child rendering until the
-                  // lifecycle resolves so route components can rely on a
-                  // non-null assistantId via useActiveAssistantId().
+                  // Everything below assumes the resolved assistant the
+                  // serving shell loaded web with — route components rely on
+                  // a non-null assistantId via useActiveAssistantId().
                   {
-                    Component: ActiveAssistantGate,
                     children: [
                       {
                         lazy: {

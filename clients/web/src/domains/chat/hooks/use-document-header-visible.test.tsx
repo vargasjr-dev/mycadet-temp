@@ -16,19 +16,7 @@ import {
   useNavigate,
 } from "react-router";
 
-import { useSyncExternalStore } from "react";
-
-import type { AssistantResolutionState } from "@/assistant/types";
 import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-store";
-
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-const resolutionListeners = new Set<() => void>();
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-  for (const listener of resolutionListeners) {
-    listener();
-  }
-}
 
 
 /**
@@ -37,33 +25,11 @@ function setResolutionState(next: AssistantResolutionState) {
  * active id; the cloud world (no assistantId) synthesizes none, so the
  * active row reads cloud-hosted.
  */
-function setHosting(kind: "local" | "cloud") {
-  if (kind === "local") {
-    window.__CADET_CONFIG__ = { remote: "local", assistantId: "asst-local" };
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-local" });
-  } else {
-    useResolvedAssistantsStore.setState({ activeAssistantId: "asst-platform" });
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () =>
-    ({
-      state: useSyncExternalStore(
-        (cb) => {
-          resolutionListeners.add(cb);
-          return () => resolutionListeners.delete(cb);
-        },
-        () => resolutionState,
-      ),
-    }) as { state: AssistantResolutionState },
-  useAssistantBootResolution: () => ({ state: resolutionState }),
-}));
-
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { setHosting } from "@/assistant/hosting.test-helper";
 
 import type * as ActiveChat from "../active-chat-view";
 import { ChatLayoutHeader } from "../chat-layout-header";
@@ -194,7 +160,6 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  setResolutionState({ kind: "active" });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
@@ -210,39 +175,17 @@ afterEach(() => {
   cleanup();
   queryClient.clear();
   viewport.restore();
-  setResolutionState({ kind: "loading" });
   useResolvedAssistantsStore.setState(initialSelection, true);
   useChatLayoutSlotsStore.setState(initialSlots, true);
 });
 
 describe("document navigation header handoff", () => {
-  const states: AssistantResolutionState[] = [
-    { kind: "loading" },
-    { kind: "error", message: "Assistant unavailable" },
-    { kind: "initializing" },
-    { kind: "cleaning_up" },
-  ];
-  test.each(states)(
-    "keeps navigation for a cold document link in $kind",
-    (assistantState) => {
-      setResolutionState(assistantState);
-      const router = renderPage();
-      fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-      expect(toggleSidebar).toHaveBeenCalledTimes(1);
-      expect(
-        Boolean(screen.queryByRole("button", { name: "Close document" })),
-      ).toBe(false);
-      router.dispose();
-    },
-  );
-
   // Session auth is the app shell's concern; web no longer renders an auth
   // phase, so only web-owned pre-mount guards remain.
   test.each(["self-hosted-error", "first-message"])(
     "keeps navigation before the document host mounts during %s",
     (guard) => {
       if (guard.startsWith("self-hosted")) {
-        setResolutionState({ kind: "active" });
         setHosting("local");
       }
       if (guard === "self-hosted-error") {
@@ -268,18 +211,6 @@ describe("document navigation header handoff", () => {
       expect(
         screen.getByRole("button", { name: "Close document" }),
       ).toBeTruthy();
-      expect(
-        Boolean(screen.queryByRole("button", { name: "Open navigation" })),
-      ).toBe(false);
-      act(() => {
-        setResolutionState({ kind: "error", message: "Disconnected" });
-      });
-      expect(
-        screen.getByRole("button", { name: "Open navigation" }),
-      ).toBeTruthy();
-      act(() => {
-        setResolutionState({ kind: "active" });
-      });
       expect(
         Boolean(screen.queryByRole("button", { name: "Open navigation" })),
       ).toBe(false);

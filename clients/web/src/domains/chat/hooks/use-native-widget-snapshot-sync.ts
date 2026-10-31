@@ -302,7 +302,6 @@ export function useNativeWidgetSnapshotSync(
   assistantId: string | null,
   conversations: Conversation[],
   conversationGroups: ConversationGroup[],
-  isAssistantActive: boolean,
   inputsResolved: boolean,
 ): void {
   // What the App Group is known to hold, so an unchanged payload costs no
@@ -342,7 +341,7 @@ export function useNativeWidgetSnapshotSync(
   const unreadCount = useUnreadConversationCount(
     assistantId,
     conversations,
-    isWidgetSnapshotSyncAvailable() && isAssistantActive,
+    isWidgetSnapshotSyncAvailable(),
   );
   // The active assistant's avatar, off the same query and through the same
   // resolvers `RootLayout` publishes from, so the widget can never draw a
@@ -588,11 +587,7 @@ export function useNativeWidgetSnapshotSync(
   // `generatedAt` through the effect above, so restarting the window from that
   // write is what the timer would be counting from anyway.
   useEffect(() => {
-    if (
-      !isWidgetSnapshotSyncAvailable() ||
-      !snapshotResolved ||
-      !isAssistantActive
-    ) {
+    if (!isWidgetSnapshotSyncAvailable() || !snapshotResolved) {
       return;
     }
     const heartbeat = setInterval(() => {
@@ -613,7 +608,6 @@ export function useNativeWidgetSnapshotSync(
   }, [
     assistantId,
     snapshotResolved,
-    isAssistantActive,
     avatarSource,
     avatarAccentHex,
     sendSnapshot,

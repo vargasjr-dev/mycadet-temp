@@ -51,7 +51,6 @@ function renderSend(initial: Props) {
     (p: Props) =>
       useShareInboxSend({
         assistantId: "assistant-1",
-        isAssistantActive: true,
         activeConversationId: p.activeConversationId,
         conversationExistsOnServer: p.conversationExistsOnServer,
         sendMessage,

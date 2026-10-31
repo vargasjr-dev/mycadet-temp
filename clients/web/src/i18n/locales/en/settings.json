@@ -115,7 +115,6 @@
     "version": "Version"
   },
   "assistantTerminalPanel": {
-    "loading": "Loading terminal...",
     "noAssistant": "No assistant found. Hatch an assistant to use the terminal.",
     "subtitle": "Interactive shell session on your assistant machine",
     "targetContainer": "Target container",

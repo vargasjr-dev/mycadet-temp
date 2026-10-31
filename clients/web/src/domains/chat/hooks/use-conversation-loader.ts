@@ -36,7 +36,6 @@ import { useNavigate } from "react-router";
 
 import { useConversationHistory } from "@/domains/chat/hooks/use-conversation-history";
 import { useTurnTimeout } from "@/domains/chat/hooks/use-turn-timeout";
-import type { AssistantStateKind } from "@/domains/chat/types";
 import { shouldSuppressGenericChatErrorNotice } from "@/domains/chat/utils/error-classification";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -57,7 +56,6 @@ const CONVERSATION_LIST_LOAD_FAILED_CODE = "CONVERSATION_LIST_LOAD_FAILED";
 interface UseConversationLoaderParams {
   // Identity / routing
   assistantId: string | null;
-  assistantStateKind: AssistantStateKind;
   activeConversationId: string | null;
   /** Conversation id from the URL path param (e.g. `/assistant/conversations/:conversationId`). */
   urlConversationId: string | null;
@@ -99,7 +97,6 @@ interface UseConversationLoaderParams {
  */
 export function useConversationLoader({
   assistantId,
-  assistantStateKind,
   activeConversationId,
   urlConversationId,
   searchParams,
@@ -167,10 +164,7 @@ export function useConversationLoader({
   // already have. A genuine "no data at all" failure surfaces via the banner
   // consumer below.
   // -------------------------------------------------------------------------
-  const conversationListQuery = useConversationListQuery(
-    assistantId,
-    assistantStateKind === "active",
-  );
+  const conversationListQuery = useConversationListQuery(assistantId);
   const queryConversations = conversationListQuery.conversations;
   const conversationListError = conversationListQuery.error;
   const conversationListIsError = conversationListQuery.isError;
@@ -191,11 +185,11 @@ export function useConversationLoader({
       firstRefreshTickRef.current = false;
       return;
     }
-    if (assistantStateKind !== "active" || !assistantId) {
+    if (!assistantId) {
       return;
     }
     void invalidateConversationQueries(queryClient, assistantId);
-  }, [refreshEpoch, assistantStateKind, assistantId, queryClient]);
+  }, [refreshEpoch, assistantId, queryClient]);
 
   // -------------------------------------------------------------------------
   // 401 auth-failure toast
@@ -232,9 +226,6 @@ export function useConversationLoader({
   // -------------------------------------------------------------------------
   const isResumeGraceActive = useResumeGrace();
   useEffect(() => {
-    if (assistantStateKind !== "active") {
-      return;
-    }
     const isAuthFail =
       conversationListError instanceof ApiError &&
       conversationListError.status === 401;
@@ -274,7 +265,6 @@ export function useConversationLoader({
         );
     }
   }, [
-    assistantStateKind,
     queryConversations,
     conversationListError,
     conversationListIsError,
@@ -299,9 +289,6 @@ export function useConversationLoader({
   // -------------------------------------------------------------------------
   const lastAppliedUrlConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (assistantStateKind !== "active") {
-      return;
-    }
     if (!assistantId) {
       return;
     }
@@ -431,7 +418,6 @@ export function useConversationLoader({
     };
   }, [
     assistantId,
-    assistantStateKind,
     urlConversationId,
     searchParams,
     navigate,
@@ -463,7 +449,6 @@ export function useConversationLoader({
   // -------------------------------------------------------------------------
   const historyResult = useConversationHistory({
     assistantId,
-    assistantStateKind,
     activeConversationId,
   });
 

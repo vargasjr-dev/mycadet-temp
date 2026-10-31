@@ -109,7 +109,6 @@ function mountHook() {
     () =>
       useAttentionTracking({
         assistantId: "asst-1",
-        assistantStateKind: "active",
         isTranscriptOnScreen: true,
       }),
     { wrapper },

@@ -155,22 +155,11 @@ afterEach(() => {
 });
 
 describe("useConversationSync", () => {
-  test("does not fire when assistant is not active", () => {
-    const queryClient = freshQueryClient();
-    const spy = mock(() => Promise.resolve());
-    queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync("asst-1", false), {
-      wrapper: createWrapper(queryClient),
-    });
-    emit(syncEvent([SYNC_TAGS.conversationsList]));
-    expect(spy).not.toHaveBeenCalled();
-  });
-
   test("does not fire when assistantId is null", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync(null, true), {
+    renderHook(() => useConversationSync(null), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.conversationsList]));
@@ -182,7 +171,7 @@ describe("useConversationSync", () => {
     queryClient.setQueryData(conversationListQueryKey("asst-1"), listPage([]));
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.conversationsList]));
@@ -247,7 +236,7 @@ describe("useConversationSync", () => {
         ],
         hasMore: true,
       }) as ListFirstPage;
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.conversationsList]));
@@ -295,7 +284,7 @@ describe("useConversationSync", () => {
     const invalidateSpy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = invalidateSpy as never;
 
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent(["conversation:conv-1:metadata"]));
@@ -347,7 +336,7 @@ describe("useConversationSync", () => {
       throw new ConversationNotFoundError("conv-1");
     };
 
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent(["conversation:conv-1:metadata"]));
@@ -365,7 +354,7 @@ describe("useConversationSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent(["conversation:abc:messages"]));
@@ -389,7 +378,7 @@ describe("useConversationSync", () => {
     queryClient.setQueryData(conversationListQueryKey("asst-1"), listPage([]));
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emitOpened("error");
@@ -436,7 +425,7 @@ describe("useConversationSync", () => {
     queryClient.setQueryData(conversationListQueryKey("asst-1"), listPage([]));
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emitOpened("fresh");
@@ -457,7 +446,7 @@ describe("useConversationSync", () => {
       conversationId,
     ) => ({ conversationId, title: "Any" });
 
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent(["conversation:conv-1:metadata"]));
@@ -483,7 +472,7 @@ describe("useConversationSync", () => {
     const invalidateSpy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = invalidateSpy as never;
 
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent(["conversation:conv-1:metadata"]));
@@ -512,7 +501,7 @@ describe("useConversationSync", () => {
         } as Conversation,
       ]),
     );
-    renderHook(() => useConversationSync("asst-1", true), {
+    renderHook(() => useConversationSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.event", {

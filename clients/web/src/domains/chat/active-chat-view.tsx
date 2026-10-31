@@ -66,7 +66,6 @@ import { useChatDebugRegistration } from "@/domains/chat/hooks/use-chat-debug-re
 import { useAppRouteSync } from "@/domains/chat/hooks/use-app-route-sync";
 import { useDeepLinkApp } from "@/domains/chat/hooks/use-deep-link-app";
 import { useScrollToMessageParam } from "@/domains/chat/hooks/use-scroll-to-message";
-import { useAssistantResolution } from "@/assistant/queries";
 import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
@@ -118,7 +117,6 @@ export function ActiveChatView() {
     appId?: string;
   }>();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const { state: assistantState } = useAssistantResolution();
   const turnPhase = useTurnStore.use.phase();
 
   // -------------------------------------------------------------------------
@@ -245,7 +243,6 @@ export function ActiveChatView() {
   const activeConversation = useActiveConversation(
     assistantId,
     activeConversationId,
-    true,
   );
 
   // Avatar — called here so the cache is warm; ChatMainPanel has
@@ -262,7 +259,6 @@ export function ActiveChatView() {
     historyResult,
   } = useConversationLoader({
     assistantId,
-    assistantStateKind: assistantState.kind,
     activeConversationId,
     urlConversationId: urlConversationId ?? null,
     searchParams,
@@ -296,7 +292,6 @@ export function ActiveChatView() {
     reconcileActiveConversation,
   } = useMessageLifecycle({
     assistantId,
-    assistantStateKind: assistantState.kind,
     activeConversationId,
     conversationExistsOnServer,
     latestPageOldestTimestamp:
@@ -334,14 +329,12 @@ export function ActiveChatView() {
   // existence verdict and `sendMessage`, hence this placement.
   useDeepLinkThreadSend({
     assistantId,
-    isAssistantActive: assistantState.kind === "active",
     activeConversationId,
     conversationExistsOnServer,
     sendMessage,
   });
   useShareInboxSend({
     assistantId,
-    isAssistantActive: assistantState.kind === "active",
     activeConversationId,
     conversationExistsOnServer,
     sendMessage,
@@ -359,7 +352,6 @@ export function ActiveChatView() {
     navigationState: location.state,
     sendMessage,
     prefillComposer: prefillComposerFromUrl,
-    assistantActive: assistantState.kind === "active",
     getPendingInitialMessage: () =>
       peekPendingPreChatContext()?.initialMessage ?? undefined,
     getPendingInitialMessageHidden: () =>

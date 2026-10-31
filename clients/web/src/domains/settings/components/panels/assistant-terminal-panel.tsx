@@ -17,9 +17,8 @@ export function AssistantTerminalPanel() {
   // exec connection against a self-hosted target. The assistant is the
   // shell's — the boot resolution owns the id, the panel runs its own fetch
   // for nothing.
-  const { state, result } = useAssistantResolution();
+  const { result } = useAssistantResolution();
   const assistantId = result?.ok ? result.data.id : null;
-  const loading = state.kind === "loading";
   const [service, setService] = useState<TerminalService>("assistant");
 
   const terminalServiceOptions = useMemo(
@@ -69,12 +68,7 @@ export function AssistantTerminalPanel() {
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />
-          {t("assistantTerminalPanel.loading")}
-        </div>
-      ) : !assistantId ? (
+      {!assistantId ? (
         <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 text-body-medium-lighter text-[var(--content-tertiary)]">
           <div className="flex items-center gap-2 px-1 py-0.5">
             <Terminal className="h-4 w-4 shrink-0" />

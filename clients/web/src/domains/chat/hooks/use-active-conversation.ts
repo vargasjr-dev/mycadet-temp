@@ -33,13 +33,11 @@ import { refreshConversationRow } from "@/utils/conversation-cache-mutations";
 export function useActiveConversation(
   assistantId: string | null,
   conversationId: string | null | undefined,
-  enabled: boolean,
+  /** `false` subscribes read-only: no single-row fetch for a cache miss. */
+  allowFetch = true,
 ): Conversation | undefined {
   const queryClient = useQueryClient();
-  const { conversations: foreground } = useConversationListQuery(
-    assistantId,
-    enabled,
-  );
+  const { conversations: foreground } = useConversationListQuery(assistantId);
   // Read-only subscriptions (`enabled: false`): reflect background, scheduled,
   // and archived rows already in cache — including the single row fetched below
   // — without triggering any lazy list fetch.
@@ -69,7 +67,7 @@ export function useActiveConversation(
 
   const fetchedConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!enabled || !assistantId || !conversationId) {
+    if (!allowFetch || !assistantId || !conversationId) {
       return;
     }
     if (activeConversation) {
@@ -93,7 +91,7 @@ export function useActiveConversation(
         });
       },
     );
-  }, [enabled, assistantId, conversationId, activeConversation, queryClient]);
+  }, [allowFetch, assistantId, conversationId, activeConversation, queryClient]);
 
   return activeConversation;
 }

@@ -23,11 +23,7 @@ import { z } from "zod";
 
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
-import {
-  getServedLockfile,
-  getLockfileAssistant,
-  isLocalAssistant,
-} from "@/lib/local-mode";
+import { getServedLockfile, getLockfileAssistant } from "@/lib/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
@@ -90,21 +86,6 @@ export function resolveCloudAssistantId(assistantId: string): string {
     .getState()
     .assistants.find((a) => a.id === assistantId);
   return row ? platformIdFor(row) : assistantId;
-}
-
-/**
- * Whether this device has some transport to the assistant: the cloud proxy
- * (cloud and paired entries), a lockfile entry (`cloud` is only ever set from
- * the lockfile, so its presence means a local/paired transport exists here),
- * or a cloud-registered public ingress (`ingressUrl`, the phone-to-Mac
- * self-hosted path). A local API entry with none of these is unreachable from
- * this client (the cloud proxy 404s), so list surfaces should not offer
- * it.
- */
-export function isConnectableFromThisDevice(a: ResolvedAssistant): boolean {
-  const entry = getLockfileAssistant(a.id);
-  const isLocalEntry = !!entry && isLocalAssistant(entry);
-  return !isLocalEntry || a.cloud != null || a.ingressUrl != null;
 }
 
 /**
@@ -226,7 +207,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
                 : undefined,
             };
           })
-          .filter(isConnectableFromThisDevice),
       }),
 
     markHydrated: () => set({ assistantsHydrated: true }),

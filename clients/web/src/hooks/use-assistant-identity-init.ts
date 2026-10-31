@@ -32,7 +32,6 @@ import { fetchAssistantIdentity } from "@/assistant/identity";
 import { consumePendingAssistantName } from "@/domains/chat/prechat";
 import { identityGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import type { AssistantResolutionState } from "@/assistant/types";
 
 /** Build the generated query key for identity. Exported for invalidation sites. */
 export function assistantIdentityQueryKey(assistantId: string | null) {
@@ -41,21 +40,17 @@ export function assistantIdentityQueryKey(assistantId: string | null) {
 
 interface UseAssistantIdentityInitParams {
   assistantId: string | null;
-  assistantStateKind: AssistantResolutionState["kind"];
   ownerScopeId?: string | null;
 }
 
 export function useAssistantIdentityInit({
   assistantId,
-  assistantStateKind,
   ownerScopeId,
 }: UseAssistantIdentityInitParams) {
   // Identity is fetchable whenever the daemon proxy can answer for the
-  // assistant — true for "active" (whatever remote serves it). The other
-  // lifecycle states (initializing, cleaning_up, retired, error, etc.)
-  // can't satisfy the identity endpoint.
+  // assistant — the web bundle exists only for a resolved assistant, so
+  // the id is the whole gate.
   const canFetchIdentity =
-    assistantStateKind === "active" &&
     Boolean(assistantId) &&
     (ownerScopeId === undefined || Boolean(ownerScopeId));
   const ownerKey =

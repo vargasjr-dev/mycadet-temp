@@ -59,7 +59,6 @@ export function useChatHeaderRegistration({
   const activeConversation = useActiveConversation(
     assistantId,
     activeConversationId,
-    true,
   );
 
   // Channel header tag derivation. Slack keeps its richer label (channel

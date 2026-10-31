@@ -445,7 +445,6 @@ function render(initialProps: Props) {
         props.assistantId === undefined ? ASSISTANT_ID : props.assistantId,
         props.conversations,
         props.conversationGroups,
-        props.isAssistantActive ?? true,
         props.inputsResolved,
       ),
     {
@@ -1110,38 +1109,6 @@ describe("useNativeWidgetSnapshotSync", () => {
     expect(syncedSnapshots).toHaveLength(1);
   });
 
-  it("arms no heartbeat once the assistant stops being active", async () => {
-    // The queries keep serving their cached rows with neither pending nor
-    // error set, so resolution outlives the assistant and only the gate those
-    // queries run under can say the data is still being kept current.
-    const { rerender } = render({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      inputsResolved: true,
-    });
-    await settle();
-    const beforeInactive = liveHeartbeats()[0];
-
-    rerender({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      isAssistantActive: false,
-      inputsResolved: true,
-    });
-    expect(beforeInactive?.cleared).toBe(true);
-    expect(liveHeartbeats()).toHaveLength(0);
-
-    // The assistant comes back, and so does the freshness the widgets read.
-    rerender({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      inputsResolved: true,
-    });
-    expect(liveHeartbeats()).toHaveLength(1);
-    fireHeartbeat();
-    expect(syncedSnapshots).toHaveLength(2);
-    expect(syncedSnapshots[1]?.conversations[0]?.id).toBe("c1");
-  });
 
   it("drops the previous assistant's payload from the heartbeat on a switch", async () => {
     const { rerender } = render({

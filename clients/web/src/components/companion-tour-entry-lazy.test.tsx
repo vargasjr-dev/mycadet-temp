@@ -42,7 +42,7 @@ describe("CompanionTourEntry", () => {
   test("does not subscribe or render outside Electron", () => {
     electron = false;
 
-    render(<CompanionTourEntry ready />);
+    render(<CompanionTourEntry />);
 
     expect(announcementReads).toBe(0);
     expect(screen.queryByText("Tour announcement")).toBeNull();
@@ -51,30 +51,20 @@ describe("CompanionTourEntry", () => {
   test("does not subscribe or render in a pop-out window", () => {
     popout = true;
 
-    render(<CompanionTourEntry ready />);
+    render(<CompanionTourEntry />);
 
     expect(announcementReads).toBe(0);
     expect(screen.queryByText("Tour announcement")).toBeNull();
   });
 
-  test("waits for assistant selection before showing a pending tour", async () => {
-    announcementOpen = true;
-    const view = render(<CompanionTourEntry ready={false} />);
-    expect(screen.queryByText("Tour announcement")).toBeNull();
-    view.rerender(<CompanionTourEntry ready />);
-    expect(await screen.findByText("Tour announcement")).toBeDefined();
-    view.rerender(<CompanionTourEntry ready={false} />);
-    expect(screen.queryByText("Tour announcement")).toBeNull();
-  });
-
   test("loads the modal only when the announcement is open", async () => {
-    const view = render(<CompanionTourEntry ready />);
+    const view = render(<CompanionTourEntry />);
 
     expect(announcementReads).toBe(1);
     expect(screen.queryByText("Tour announcement")).toBeNull();
 
     announcementOpen = true;
-    view.rerender(<CompanionTourEntry ready />);
+    view.rerender(<CompanionTourEntry />);
 
     expect(await screen.findByText("Tour announcement")).toBeDefined();
   });

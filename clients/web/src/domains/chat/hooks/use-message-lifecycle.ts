@@ -31,7 +31,6 @@ import type {
 
 export interface UseMessageLifecycleParams {
   assistantId: string | null;
-  assistantStateKind: string;
   activeConversationId: string | null;
   conversationExistsOnServer: boolean;
   latestPageOldestTimestamp: number | null;
@@ -58,7 +57,6 @@ export interface UseMessageLifecycleReturn {
 
 export function useMessageLifecycle({
   assistantId,
-  assistantStateKind,
   activeConversationId,
   conversationExistsOnServer,
   latestPageOldestTimestamp,
@@ -100,8 +98,7 @@ export function useMessageLifecycle({
   // 3. SSE subscription lifecycle — subscribes, filters, and tears down
   //    the bus-owned SSE for the active conversation.
   useEventStream({
-    assistantStateKind,
-    assistantId,
+      assistantId,
     activeConversationId,
     conversationExistsOnServer,
     handleStreamEvent,

@@ -39,7 +39,6 @@ export interface UseAutoSendEffectsOptions {
    */
   prefillComposer: (content: string) => void;
   /** Whether the assistant resolution is active (the daemon can serve). */
-  assistantActive: boolean;
   /** Reads the staged pre-chat initial message from sessionStorage. */
   getPendingInitialMessage: () => string | undefined;
   /**
@@ -58,7 +57,6 @@ export function useAutoSendEffects({
   navigationState,
   sendMessage,
   prefillComposer,
-  assistantActive,
   getPendingInitialMessage,
   getPendingInitialMessageHidden,
 }: UseAutoSendEffectsOptions): void {
@@ -137,9 +135,6 @@ export function useAutoSendEffects({
     ) {
       return;
     }
-    if (!assistantActive) {
-      return;
-    }
     const message = getPendingInitialMessageRef.current();
     if (!message) {
       return;
@@ -157,5 +152,5 @@ export function useAutoSendEffects({
     // a check-in CTA the user clicked), and the analytics classifier does not
     // treat them as scripted either.
     void sendMessage(message, [], { hidden, scripted: true });
-  }, [activeConversationId, assistantId, assistantActive, sendMessage]);
+  }, [activeConversationId, assistantId, sendMessage]);
 }

@@ -203,7 +203,6 @@ function renderHistory() {
     () =>
       useConversationHistory({
         assistantId: "asst-1",
-        assistantStateKind: "active",
         activeConversationId: "conv-A",
       }),
     { wrapper: Wrapper },
@@ -212,17 +211,13 @@ function renderHistory() {
 
 function renderHistoryAcrossLifecycle() {
   return renderHook(
-    ({ assistantStateKind }: { assistantStateKind: "loading" | "active" }) =>
+    () =>
       useConversationHistory({
         assistantId: "asst-1",
-        assistantStateKind,
         activeConversationId: "conv-A",
       }),
     {
       wrapper: Wrapper,
-      initialProps: {
-        assistantStateKind: "loading" as "loading" | "active",
-      },
     },
   );
 }
@@ -280,7 +275,7 @@ describe("secret and confirmation recovery", () => {
       }
       const { rerender } = renderHistoryAcrossLifecycle();
 
-      rerender({ assistantStateKind: "active" });
+      rerender({});
 
       await waitFor(() => {
         expect(

@@ -33,11 +33,8 @@ import { soundsConfigGetOptions } from "@/generated/daemon/@tanstack/react-query
 const RANDOM_SOUND_MIN_MS = 5 * 60 * 1000;
 const RANDOM_SOUND_MAX_MS = 30 * 60 * 1000;
 
-export function useSoundEffects(
-  assistantId: string | null,
-  isAssistantActive: boolean,
-): void {
-  const enabled = isAssistantActive && !!assistantId;
+export function useSoundEffects(assistantId: string | null): void {
+  const enabled = !!assistantId;
 
   const { data: config } = useQuery({
     ...soundsConfigGetOptions({ path: { assistant_id: assistantId ?? "" } }),

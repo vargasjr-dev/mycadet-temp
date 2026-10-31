@@ -137,7 +137,6 @@ function ConversationRouteWithLoader() {
 
   useConversationLoader({
     assistantId,
-    assistantStateKind: "active",
     activeConversationId: conversationId ?? null,
     urlConversationId: conversationId ?? null,
     searchParams: new URLSearchParams(),

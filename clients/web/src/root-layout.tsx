@@ -143,7 +143,7 @@ export function RootLayout() {
       unsubResume();
     };
   }, []);
-  const { state: bootState } = useAssistantBootResolution();
+  useAssistantBootResolution();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
   // from any route — including setMainView("chat") calls made while the chat
@@ -178,8 +178,6 @@ export function RootLayout() {
   const notificationCloudAssistantId =
     resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
-  const assistantStateKind = bootState.kind;
-  const isAssistantActive = assistantStateKind === "active";
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -187,21 +185,20 @@ export function RootLayout() {
   // No-ops until an assistant id resolves in a fetchable lifecycle state.
   const { notificationName } = useAssistantIdentityInit({
     assistantId,
-    assistantStateKind,
     ownerScopeId: notificationScopeId,
   });
-  useAssistantResourceSync(assistantId, isAssistantActive);
-  useConversationSync(assistantId, isAssistantActive);
-  useWorkspaceTheme(assistantId, isAssistantActive);
+  useAssistantResourceSync(assistantId);
+  useConversationSync(assistantId);
+  useWorkspaceTheme(assistantId);
   // Drains the browser-local pinned-app list this assistant owns into the
   // daemon. Mounted here rather than on the chat layout because it is a
   // one-shot per assistant and must run whichever route the user lands on.
-  useLegacyPinMigration(assistantId, isAssistantActive);
+  useLegacyPinMigration(assistantId);
   useNotificationIntentSync(assistantId);
   useWebPresenceReport(assistantId);
   usePushRegistration(assistantId);
   useNotificationTapNavigation();
-  useSoundEffects(assistantId, isAssistantActive);
+  useSoundEffects(assistantId);
   useDocumentEditorSync();
   useBookmarksSync();
   // The end of a watch session's summary, which arrives on the assistant's
@@ -228,14 +225,10 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    // Keyed on the boot resolution, not a session flag: retain the previous
-    // owners while the resolution is still loading, drop them when it fails
-    // (there is nothing to key scopes on), and map the resolved assistants
-    // otherwise.
-    if (assistantStateKind === "loading") {
-      return null;
-    }
-    if (assistantStateKind === "error" || !assistantsHydrated) {
+    // Keyed on hydration: until the store's roster is hydrated there is
+    // nothing to key scopes on. The web bundle exists only for a resolved
+    // assistant, so there is no resolution state to wait on.
+    if (!assistantsHydrated) {
       return [];
     }
     return assistants
@@ -246,13 +239,7 @@ export function RootLayout() {
         return scopeId ? { scopeId, assistantId: assistant.id } : null;
       })
       .filter((owner) => owner !== null);
-  }, [
-    assistantId,
-    assistants,
-    assistantsHydrated,
-    assistantStateKind,
-    connectionFallback,
-  ]);
+  }, [assistantId, assistants, assistantsHydrated, connectionFallback]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {
       return;
@@ -295,7 +282,7 @@ export function RootLayout() {
       avatarReady: avatar.isSuccess,
     },
   );
-  useElectronIdentitySync(isAssistantActive);
+  useElectronIdentitySync();
 
   // Size the Electron main window to the onboarding layout (440×630
   // default) while on an onboarding step, and back to the main-app size
@@ -303,7 +290,7 @@ export function RootLayout() {
   // navigation across the whole onboarding flow.
   useOnboardingWindowSize();
 
-  useEventBusInit({ assistantId, isAssistantActive });
+  useEventBusInit({ assistantId });
   // Download outcome toasts (`download.started` / `download.done`). Mounted
   // at the root because downloads start from every domain (chat attachments,
   // workspace files, invoices, inspector exports).
@@ -619,12 +606,9 @@ export function RootLayout() {
       {/* Headless: keeps daemon config.ui.detectedTimezone fresh on
           focus/zone change. No-ops until an assistant id resolves. */}
       <TimezoneSync />
-      <GlobalPushToTalkBridge
-        assistantId={assistantId}
-        enabled={isAssistantActive}
-      />
+      <GlobalPushToTalkBridge assistantId={assistantId} />
 
-      <CompanionTourEntry avatar={avatar} ready={isAssistantActive} />
+      <CompanionTourEntry avatar={avatar} />
 
       {/* The app dimmed while the companion introduces itself over this
           window. Inert off Electron and on the shells with no surface. */}

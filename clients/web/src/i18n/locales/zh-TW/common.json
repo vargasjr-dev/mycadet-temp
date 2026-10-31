@@ -5,11 +5,6 @@
     "taglineWindows": "您 Windows PC 的 AI 助理",
     "version": "版本"
   },
-  "activeAssistantGate": {
-    "connecting": "正在連線至您的助理…",
-    "errorTitle": "無法連線至您的助理",
-    "retry": "重試"
-  },
   "addCredentialModal": {
     "cancel": "取消",
     "credentialSaved": "憑證已儲存。",

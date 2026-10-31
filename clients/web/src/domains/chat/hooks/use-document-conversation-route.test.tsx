@@ -139,7 +139,6 @@ function Harness() {
   const onboardingDraftConversationIdRef = useRef<string | null>(null);
   useConversationLoader({
     assistantId: "assistant-1",
-    assistantStateKind: "active",
     activeConversationId: useConversationStore.use.activeConversationId(),
     urlConversationId: conversationId ?? null,
     searchParams,

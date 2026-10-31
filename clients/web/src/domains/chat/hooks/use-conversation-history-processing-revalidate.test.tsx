@@ -107,7 +107,6 @@ function renderHistory() {
     () =>
       useConversationHistory({
         assistantId: "asst-1",
-        assistantStateKind: "active",
         activeConversationId: "conv-A",
       }),
     { wrapper: Wrapper },

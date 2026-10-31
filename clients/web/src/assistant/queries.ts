@@ -1,90 +1,33 @@
 /**
  * TanStack Query layer for the assistant resolution resource.
  *
- * The web bundle is focused on one assistant whose auth is constant at
- * initial iframe load, so there is no runtime session lifecycle to manage —
- * no retry budgets, no watchdogs, no reachability polling. What remains is
- * the boot resolution: fetch `/assistant/` once (re-fetched on selection
- * change, retry, and while a transient phase is expected to resolve) and
- * project the result into the resolved-assistants store and the self-hosted
- * connection slots the request interceptor reads.
+ * The web bundle exists only for a resolved assistant — the shell that
+ * mounts it (the app bundle's iframe, the gateway-served host page) has
+ * already resolved the assistant, picked the selection, and settled auth.
+ * There is no resolution state machine here: no retry budgets, no
+ * watchdogs, no polling, no failure renderings. What remains is the
+ * projection fetch: `/assistant/` is fetched (re-fetched on selection
+ * change or retry) and projected into the resolved-assistants store.
  *
- * `useAssistantBootResolution` mounts the resolution + its two projection
- * effects (the app root and standalone windows like the command palette);
+ * `useAssistantBootResolution` mounts the fetch + its projection effect
+ * (the app root and standalone windows like the command palette);
  * `useAssistantResolution` is the read-only view every other consumer uses.
  *
  * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults}
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 
 import { getAssistant, type GetAssistantResult } from "@/assistant/api";
-import {
-  resolveAssistantLifecycleState,
-  TRANSPORT_ERROR_MESSAGE,
-} from "@/assistant/lifecycle";
-import type { AssistantResolutionState } from "@/assistant/types";
 import {
   useGatedSelectedAssistantId,
   resolveSelectedAssistantId,
 } from "@/assistant/selection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import {
-  getLocalAssistants,
-  isServedGatewayRuntime,
-  isLocalClient,
-  getActiveAssistant,
-} from "@/lib/local-mode";
+import { getLocalAssistants } from "@/lib/local-mode";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
-
-/**
- * Polling cadence while the assistant is in a transient lifecycle
- * phase. The daemon's startup is sub-second on healthy machines, so
- * 3 seconds gives margin on slow disks while keeping mobile data
- * costs reasonable.
- */
-export const POLL_INTERVAL_MS = 3000;
-
-/**
- * Lifecycle phases where we expect the assistant to transition soon
- * (typically within a few poll cycles). Other phases are stable; we
- * stop polling once we land in one of them so the tab isn't fetching
- * forever in the background.
- *
- * These are **lifecycle kinds** (the discriminator on
- * `AssistantResolutionState`), not raw server status strings.
- * Raw → kind mappings happen in `resolveAssistantLifecycleState`:
- *   - server `status: "initializing"`  → kind `initializing`
- *   - server `status: "to_be_deleted"` → kind `cleaning_up`
- *   - server `status: "active"`        → kind `active` / `self_hosted`
- *   - 404                              → kind `auto_hatch`
- *   - other non-OK                     → kind `error`
- */
-const TRANSIENT_PHASES: ReadonlySet<
-  Exclude<AssistantResolutionState, { kind: "loading" | "error" }>["kind"]
-> = new Set(["initializing", "cleaning_up"]);
-
-/**
- * The query's `refetchInterval` decision in a form callers can test
- * directly. Returns the cadence (ms) to poll at, or `false` to stop
- * polling. Lives at module scope so the unit tests can exercise the
- * same code path the runtime uses — duplicating the logic in a test
- * helper would let `TRANSIENT_PHASES` drift silently when a new
- * transient phase is added.
- */
-export function pollIntervalFor(
-  result: GetAssistantResult | undefined,
-): number | false {
-  if (!result) {
-    return false;
-  }
-  const phase = resolveAssistantLifecycleState(result);
-  return TRANSIENT_PHASES.has(phase.kind as "initializing")
-    ? POLL_INTERVAL_MS
-    : false;
-}
 
 /**
  * Cache key for the `/assistant/` resolution.
@@ -162,17 +105,16 @@ export async function recheckAssistant(
 }
 
 export interface AssistantResolutionResult {
-  state: AssistantResolutionState;
   result: GetAssistantResult | undefined;
   selectedCloudAssistantId: string | null;
   refetch: ReturnType<typeof useQuery<GetAssistantResult>>["refetch"];
 }
 
 /**
- * The read-only view of the boot resolution. Shared cache — every consumer
- * sees the same answer without issuing its own fetch. The resolution runs
- * unconditionally: the web bundle is served for exactly one assistant, and
- * by the time it loads that assistant is resolved.
+ * The read-only view of the projection fetch. Shared cache — every consumer
+ * sees the same answer without issuing its own fetch. The web bundle exists
+ * only for a resolved assistant, so there is no state machine on top: the
+ * result is data to project, not a lifecycle to render.
  */
 export function useAssistantResolution(): AssistantResolutionResult {
   const selectedCloudAssistantId = useSelectedCloudAssistantId();
@@ -181,39 +123,10 @@ export function useAssistantResolution(): AssistantResolutionResult {
     queryKey: assistantQueryKey(selectedCloudAssistantId),
     queryFn: () => getAssistant(selectedCloudAssistantId ?? undefined),
     retry: false,
-    refetchInterval: (q) => pollIntervalFor(q.state.data),
     refetchOnWindowFocus: false,
   });
 
-  const state = useMemo<AssistantResolutionState>(() => {
-    // Gateway-auth mode resolves the assistant locally — the gateway issues
-    // the session token directly and there is nothing to fetch. The served
-    // plane answers by construction; a local plane answers from the
-    // lockfile roster the boot hydrated synchronously. The platform plane
-    // derives from the fetch below.
-    if (
-      isServedGatewayRuntime() ||
-      (isLocalClient() && getActiveAssistant() != null)
-    ) {
-      return { kind: "active" };
-    }
-    if (query.isPending) {
-      return { kind: "loading" };
-    }
-    if (query.isError) {
-      // A thrown fetch is a transport failure (the request never got an HTTP
-      // answer) — the chat surface renders it with reconnecting copy.
-      return {
-        kind: "error",
-        transient: true,
-        message: TRANSPORT_ERROR_MESSAGE,
-      };
-    }
-    return resolveAssistantLifecycleState(query.data);
-  }, [query.isPending, query.isError, query.data]);
-
   return {
-    state,
     result: query.data,
     selectedCloudAssistantId,
     refetch: query.refetch,

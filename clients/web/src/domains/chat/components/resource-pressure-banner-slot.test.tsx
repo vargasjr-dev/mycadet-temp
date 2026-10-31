@@ -93,7 +93,6 @@ function monitorResult(
 
 function slot(
   status: ResourcePressureStatus | null,
-  assistantStateKind = "active",
   assistantId: string | null = "assistant-1",
   hidden = false,
   assistantName: string | null = null,
@@ -104,7 +103,6 @@ function slot(
         resourcePressure={monitorResult(status)}
         assistantId={assistantId}
         assistantName={assistantName}
-        assistantStateKind={assistantStateKind}
         hidden={hidden}
       />
     </MemoryRouter>
@@ -149,12 +147,6 @@ describe("ResourcePressureBannerSlot", () => {
     expect(screen.getByRole("button", { name: "Upgrade" })).toBeTruthy();
   });
 
-  test("hides the Upgrade action for non-active assistant states", () => {
-    render(slot(elevatedStatus, "retired"));
-
-    expect(queryBanner()).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Upgrade" })).toBeNull();
-  });
 
   test("dismiss hides the banner and persists a 7-day cooldown", () => {
     render(slot(elevatedStatus));
@@ -191,14 +183,12 @@ describe("ResourcePressureBannerSlot", () => {
           resourcePressure={monitorResult(elevatedStatus)}
           assistantId="assistant-1"
           assistantName={null}
-          assistantStateKind="active"
-        />
+          />
         <ResourcePressureBannerSlot
           resourcePressure={monitorResult(elevatedStatus)}
           assistantId="assistant-1"
           assistantName={null}
-          assistantStateKind="active"
-        />
+          />
       </MemoryRouter>,
     );
 
@@ -263,25 +253,15 @@ describe("ResourcePressureBannerSlot", () => {
     expect(screen.queryByText(/\d+%/)).toBeNull();
   });
 
-  test("the body drops the upgrade clause when there is no upgrade path", () => {
-    render(slot(elevatedStatus, "retired"));
-
-    expect(
-      screen.getByText(
-        "Your assistant is working hard and reaching its current resource limits.",
-      ),
-    ).toBeTruthy();
-    expect(screen.queryByText(/upgrade/i)).toBeNull();
-  });
 
   test("the title uses the assistant's name when one is set", () => {
-    render(slot(elevatedStatus, "active", "assistant-1", false, "Vel"));
+    render(slot(elevatedStatus, "assistant-1", false, "Vel"));
 
     expect(screen.getByText("Vel needs more power")).toBeTruthy();
   });
 
   test("the title falls back to generic copy without a name", () => {
-    render(slot(elevatedStatus, "active", "assistant-1", false, "  "));
+    render(slot(elevatedStatus, "assistant-1", false, "  "));
 
     expect(screen.getByText("Your assistant needs more power")).toBeTruthy();
   });
@@ -298,31 +278,31 @@ describe("ResourcePressureBannerSlot", () => {
     expect(queryBanner()).toBeNull();
 
     // THEN assistant-2's stored suppress governs after the switch
-    view.rerender(slot(elevatedStatus, "active", "assistant-2"));
+    view.rerender(slot(elevatedStatus, "assistant-2"));
     expect(queryBanner()).toBeNull();
 
     // AND assistant-3, with no stored state, does not inherit assistant-1's
     // in-memory dismiss
-    view.rerender(slot(elevatedStatus, "active", "assistant-3"));
+    view.rerender(slot(elevatedStatus, "assistant-3"));
     expect(queryBanner()).toBeTruthy();
   });
 
   test("a stored suppress applies once a null assistant id resolves", () => {
     localStorage.setItem(SUPPRESSED_KEY, "true");
-    const view = render(slot(elevatedStatus, "active", null));
+    const view = render(slot(elevatedStatus, null));
 
-    view.rerender(slot(elevatedStatus, "active", "assistant-1"));
+    view.rerender(slot(elevatedStatus, "assistant-1"));
     expect(queryBanner()).toBeNull();
   });
 
   test("a checked but undismissed suppress box does not follow an assistant switch", () => {
-    const view = render(slot(elevatedStatus, "active", "assistant-1"));
+    const view = render(slot(elevatedStatus, "assistant-1"));
 
     // Check "Don't show again" on assistant-1 but switch away before
     // dismissing; the keyed banner remounts, so assistant-2's dismiss is a
     // plain cooldown, not a permanent suppress inherited from assistant-1.
     fireEvent.click(screen.getByRole("checkbox", { name: "Don't show again" }));
-    view.rerender(slot(elevatedStatus, "active", "assistant-2"));
+    view.rerender(slot(elevatedStatus, "assistant-2"));
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
 
@@ -341,7 +321,7 @@ describe("ResourcePressureBannerSlot", () => {
   });
 
   test("hidden renders nothing even while elevated", () => {
-    render(slot(elevatedStatus, "active", "assistant-1", true));
+    render(slot(elevatedStatus, "assistant-1", true));
 
     expect(queryBanner()).toBeNull();
   });
@@ -355,8 +335,8 @@ describe("ResourcePressureBannerSlot", () => {
 
     // Yield to a disk banner (slot stays mounted, hidden), then take the
     // space back: the in-memory dismissal fallback must still hold.
-    view.rerender(slot(elevatedStatus, "active", "assistant-1", true));
-    view.rerender(slot(elevatedStatus, "active", "assistant-1", false));
+    view.rerender(slot(elevatedStatus, "assistant-1", true));
+    view.rerender(slot(elevatedStatus, "assistant-1", false));
     expect(queryBanner()).toBeNull();
   });
 

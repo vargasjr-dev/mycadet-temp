@@ -145,7 +145,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({
@@ -163,22 +163,11 @@ describe("useAssistantResourceSync", () => {
       });
     });
   });
-  test("does not fire when assistant is not active", () => {
-    const queryClient = freshQueryClient();
-    const spy = mock(() => Promise.resolve());
-    queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", false), {
-      wrapper: createWrapper(queryClient),
-    });
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
-    expect(spy).not.toHaveBeenCalled();
-  });
-
   test("does not fire when assistantId is null", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync(null, true), {
+    renderHook(() => useAssistantResourceSync(null), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
@@ -189,7 +178,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
@@ -207,7 +196,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.assistantIdentity]) as unknown as AssistantEvent);
@@ -228,7 +217,7 @@ describe("useAssistantResourceSync", () => {
       calls.push([arg]);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(
@@ -267,7 +256,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -289,7 +278,7 @@ describe("useAssistantResourceSync", () => {
       calls.push([arg]);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.assistantConfig]) as unknown as AssistantEvent);
@@ -317,7 +306,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
@@ -348,7 +337,7 @@ describe("useAssistantResourceSync", () => {
       ).predicate;
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -371,7 +360,7 @@ describe("useAssistantResourceSync", () => {
   test("invalidates both documents key shapes on documents:list sync tag", async () => {
     const queryClient = freshQueryClient();
     const predicates = capturePredicates(queryClient);
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -391,7 +380,7 @@ describe("useAssistantResourceSync", () => {
   test("reconciles both documents key shapes on non-fresh sse.opened reconnect", async () => {
     const queryClient = freshQueryClient();
     const predicates = capturePredicates(queryClient);
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -412,7 +401,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.pluginsList]) as unknown as AssistantEvent);
@@ -448,7 +437,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
@@ -495,7 +484,7 @@ describe("useAssistantResourceSync", () => {
       const options = { queryKey, queryFn, staleTime: 60_000 };
       const observer = new QueryObserver(queryClient, options);
       const unsubscribe = observer.subscribe(() => {});
-      renderHook(() => useAssistantResourceSync("asst-1", true), {
+      renderHook(() => useAssistantResourceSync("asst-1"), {
         wrapper: createWrapper(queryClient),
       });
       expect(queryFn).not.toHaveBeenCalled();
@@ -520,7 +509,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const queryKey = ["assistant-capability", "composerSettings", "asst-1"];
     queryClient.setQueryData(queryKey, false);
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.closed", { reason: "connection lost" });
@@ -549,7 +538,7 @@ describe("useAssistantResourceSync", () => {
       staleTime: 60_000,
     });
     const unsubscribe = observer.subscribe(() => {});
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
@@ -563,7 +552,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const queryKey = ["assistant-capability", "composerSettings", "asst-1"];
     queryClient.setQueryData(queryKey, true);
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-2", cause: "error" });
@@ -575,7 +564,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-1", cause: "fresh" });
@@ -614,7 +603,7 @@ describe("useAssistantResourceSync", () => {
         expect(configFetches).toBe(1);
         expect(soundsFetches).toBe(1);
       });
-      renderHook(() => useAssistantResourceSync("asst-1", true), {
+      renderHook(() => useAssistantResourceSync("asst-1"), {
         wrapper: createWrapper(queryClient),
       });
 
@@ -655,7 +644,7 @@ describe("useAssistantResourceSync", () => {
     });
     unsubscribe();
 
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     publish("sse.opened", { assistantId: "asst-1", cause: "error" });
@@ -687,7 +676,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -714,7 +703,7 @@ describe("useAssistantResourceSync", () => {
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
     const { unmount } = renderHook(
-      () => useAssistantResourceSync("asst-1", true),
+      () => useAssistantResourceSync("asst-1"),
       { wrapper: createWrapper(queryClient) },
     );
 
@@ -738,7 +727,7 @@ describe("useAssistantResourceSync", () => {
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
     const { rerender } = renderHook(
-      ({ id }: { id: string }) => useAssistantResourceSync(id, true),
+      ({ id }: { id: string }) => useAssistantResourceSync(id),
       {
         wrapper: createWrapper(queryClient),
         initialProps: { id: "asst-1" },
@@ -791,7 +780,7 @@ describe("useAssistantResourceSync", () => {
         expect(newFetches).toBe(1);
       });
       const { rerender } = renderHook(
-        ({ id }: { id: string }) => useAssistantResourceSync(id, true),
+        ({ id }: { id: string }) => useAssistantResourceSync(id),
         {
           wrapper: createWrapper(queryClient),
           initialProps: { id: "asst-1" },
@@ -830,7 +819,7 @@ describe("useAssistantResourceSync", () => {
         expect(fetches).toBe(1);
       });
       const { unmount } = renderHook(
-        () => useAssistantResourceSync("asst-1", true),
+        () => useAssistantResourceSync("asst-1"),
         { wrapper: createWrapper(queryClient) },
       );
 
@@ -852,7 +841,7 @@ describe("useAssistantResourceSync", () => {
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
     const { unmount } = renderHook(
-      () => useAssistantResourceSync("asst-1", true),
+      () => useAssistantResourceSync("asst-1"),
       { wrapper: createWrapper(queryClient) },
     );
 
@@ -879,7 +868,7 @@ describe("useAssistantResourceSync", () => {
       ).predicate;
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({
@@ -917,7 +906,7 @@ describe("useAssistantResourceSync", () => {
       }
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({
@@ -944,7 +933,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({
@@ -970,7 +959,7 @@ describe("useAssistantResourceSync", () => {
       calls.push(arg);
       return Promise.resolve();
     }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -989,7 +978,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({ type: "identity_changed" } as unknown as AssistantEvent);
@@ -1004,7 +993,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
@@ -1024,7 +1013,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];
     queryClient.invalidateQueries = recordInvalidations(calls) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({ type: "avatar_updated" } as unknown as AssistantEvent);
@@ -1055,7 +1044,7 @@ describe("useAssistantResourceSync", () => {
       useResolvedAssistantsStore.getState().assistants[0]?.avatarUrl;
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -1084,7 +1073,7 @@ describe("useAssistantResourceSync", () => {
         ["asst-2", "https://cdn.example/b.png"],
       ]),
     );
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -1117,7 +1106,7 @@ describe("useAssistantResourceSync", () => {
       key,
       new Map([["uuid-1", "https://cdn.example/a.png"]]),
     );
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
 
@@ -1133,7 +1122,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({ type: "avatar_updated" } as unknown as AssistantEvent);
@@ -1148,7 +1137,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     emit({
@@ -1159,31 +1148,11 @@ describe("useAssistantResourceSync", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  test("unsubscribes from the bus when isAssistantActive flips true -> false", () => {
-    const queryClient = freshQueryClient();
-    const spy = mock(() => Promise.resolve());
-    queryClient.invalidateQueries = spy as never;
-    const { rerender } = renderHook(
-      ({ active }: { active: boolean }) =>
-        useAssistantResourceSync("asst-1", active),
-      {
-        wrapper: createWrapper(queryClient),
-        initialProps: { active: true },
-      },
-    );
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
-    expect(spy).toHaveBeenCalled();
-    spy.mockClear();
-    rerender({ active: false });
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
-    expect(spy).not.toHaveBeenCalled();
-  });
-
   test("self-echo suppression: ignores sync_changed from same client", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     const selfEvent = {
@@ -1198,7 +1167,7 @@ describe("useAssistantResourceSync", () => {
     const queryClient = freshQueryClient();
     const spy = mock(() => Promise.resolve());
     queryClient.invalidateQueries = spy as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
+    renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
     const otherEvent = {

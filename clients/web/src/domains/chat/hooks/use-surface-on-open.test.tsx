@@ -55,7 +55,6 @@ function renderSurfaceOnOpen(
     (props: { activeConversation: Conversation | undefined }) =>
       useSurfaceOnOpen({
         assistantId: ASSISTANT_ID,
-        assistantStateKind: "active",
         activeConversationId: props.activeConversation?.conversationId ?? null,
         activeConversation: props.activeConversation,
       }),
