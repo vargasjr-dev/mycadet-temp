@@ -12,6 +12,7 @@ import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
   formatAssistantLookupError,
@@ -20,7 +21,6 @@ import {
   loadAllAssistants,
   lookupAssistantByIdentifier,
   readRootProcesses,
-  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { getLocalInstanceDir } from "../lib/remotes/local";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";

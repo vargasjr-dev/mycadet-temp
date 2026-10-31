@@ -247,13 +247,6 @@ export const ContainerInfoSchema = z.object({
   assistantImage: z.string(),
   gatewayImage: z.string(),
   cesImage: z.string(),
-  /**
-   * Host-side port the assistant HTTP API is published on. Dynamically
-   * allocated at hatch time so concurrent instances don't collide on the
-   * default (7821). Stored so rollback/upgrade can rebind the same port
-   * instead of re-allocating (which could grab a different port if another
-   * process took it in the interim).
-   */
 });
 export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
 

@@ -25,7 +25,7 @@ import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
-import { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };

@@ -18,6 +18,7 @@ import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import { resolveVersion } from "@mycadet/shared/version";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   clearAppProcessRecord,
   getAssistantDisplayName,
@@ -25,7 +26,6 @@ import {
   readRootProcesses,
   resolveTargetAssistant,
   stampRootProcess,
-  type LockfileAssistant,
 } from "../assistant-config.js";
 import {
   getGatewayUrl,

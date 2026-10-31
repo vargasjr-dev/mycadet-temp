@@ -42,7 +42,9 @@ beforeEach(() => {
   nextData = undefined;
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "asst-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "asst-1", port: 7830 },
+  });
 });
 
 afterEach(() => {

@@ -253,7 +253,9 @@ beforeEach(() => {
   viewer = useViewerStore.getState();
   conversation = useConversationStore.getState();
   useConversationStore.setState({ activeConversationId: null });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useUnseenDocumentChangesStore.setState({ changedDocuments: {} });
   useViewerStore.setState({
     mainView: "chat",

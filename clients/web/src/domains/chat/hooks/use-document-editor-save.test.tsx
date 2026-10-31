@@ -64,7 +64,9 @@ function renderSave() {
 }
 
 beforeEach(() => {
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   saveDocumentContent.mockReset();
   saveDocumentContent.mockImplementation(async () => {});
   captureError.mockClear();
@@ -137,12 +139,16 @@ describe("useDocumentEditorSave", () => {
     act(() => result.current.changeContent("Assistant one's body"));
     unmount();
     await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-2" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-2", port: 7830 },
+    });
     await waitForDocumentSaves({ ...TARGET, assistantId: "assistant-2" });
     await waitForDocumentSaves({ ...TARGET, surfaceId: "surface-2" });
     await waitForDocumentSaves(TARGET, () => false);
     expect(saveDocumentContent).toHaveBeenCalledTimes(1);
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+    });
     await waitForDocumentSaves(TARGET);
     expect(saveDocumentContent.mock.calls[1]).toEqual([
       TARGET,
@@ -168,7 +174,9 @@ describe("useDocumentEditorSave", () => {
         await expect(waitForDocumentSaves(TARGET)).rejects.toThrow("offline");
       }
       useResolvedAssistantStore.getState().setAssistant(null);
-      useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+      useResolvedAssistantStore.setState({
+        assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+      });
       if (stage === "before unmount") {
         await expect(result.current.flushPendingSave()).rejects.toThrow(
           "session has ended",

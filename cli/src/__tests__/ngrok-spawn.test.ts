@@ -10,7 +10,7 @@ import {
   ngrokOnlineEndpoint,
   staleTrackedNgrokAgent,
 } from "../lib/tunnels/ngrok.js";
-import type { TunnelProcessRecord } from "../lib/assistant-config.js";
+import type { TunnelProcessRecord } from "@mycadet/local-mode/contract";
 
 describe("buildNgrokSpawnArgs", () => {
   test("spawns a plain http agent against the loopback edge", () => {

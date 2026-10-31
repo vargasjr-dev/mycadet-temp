@@ -207,8 +207,6 @@ export async function upgradeDocker(
     // use default
   }
 
-  // Recover the assistant host port from the entry, fall back to default.
-
   // Capture complete persistent roots before replacing any services.
   await broadcastUpgradeEvent(
     gatewayUrl,

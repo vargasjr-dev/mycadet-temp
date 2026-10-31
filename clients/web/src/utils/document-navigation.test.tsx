@@ -124,7 +124,9 @@ let pendingSessionRead: Promise<void> | null;
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",

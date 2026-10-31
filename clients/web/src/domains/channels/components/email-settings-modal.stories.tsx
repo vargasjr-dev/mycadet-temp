@@ -109,7 +109,9 @@ const meta: Meta<typeof EmailSettingsModal> = {
     // The body reads the active assistant off the store, and the trust-floor
     // section only renders against a gateway new enough to serve it; the
     // story stands in for both.
-    useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+    useResolvedAssistantStore.setState({
+      assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+    });
     const previous = useAssistantIdentityStore.getState().version;
     useAssistantIdentityStore.setState({ version: TRUST_FLOORS_VERSION });
     return () => {

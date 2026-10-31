@@ -2,8 +2,9 @@ import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as assistants from "../lib/assistant-config.js";
 import * as host from "../lib/host-teleport.js";
 import { parseArgs, teleport } from "../commands/teleport.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
-const entry: assistants.LockfileAssistant = {
+const entry: LockfileAssistant = {
   assistantId: "source-1",
   name: "source",
   cloud: "local",

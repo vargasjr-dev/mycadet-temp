@@ -81,7 +81,9 @@ const { useResolvedAssistantStore } =
   await import("@/stores/resolved-assistant-store");
 
 function renderSelection() {
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "local", assistantId: ASSISTANT_ID });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "local", assistantId: ASSISTANT_ID, port: 7830 });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

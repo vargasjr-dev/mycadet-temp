@@ -18,8 +18,6 @@ import {
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
-export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
-
 import {
   resolveAssistantsDir,
   resolveConfigDir,
@@ -390,14 +388,10 @@ function conversationKeyPath(assistantId: string): string {
  * available when `probePort()` returns false (nothing listening). Scans up to
  * 100 ports above the base before giving up.
  */
-async function findAvailablePort(
-  basePort: number,
-  excludedPorts: number[] = [],
-): Promise<number> {
+async function findAvailablePort(basePort: number): Promise<number> {
   const maxOffset = 100;
   for (let offset = 0; offset < maxOffset; offset++) {
     const port = basePort + offset;
-    if (excludedPorts.includes(port)) continue;
     const inUse = await probePort(port);
     if (!inUse) return port;
   }
@@ -424,18 +418,14 @@ export async function allocateLocalPlacement(
   mkdirSync(instanceDir, { recursive: true });
 
   // The probe is the source of truth — anything actually listening claims
-  // its port, whether that listener is another assistant or not. Only this
-  // allocation's own three ports need excluding from each other.
+  // its port, whether that listener is another assistant or not.
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
-  const gatewayPort = await findAvailablePort(basePorts.gateway, [daemonPort]);
-  const cesPort = await findAvailablePort(basePorts.ces, [
-    daemonPort,
-    gatewayPort,
-  ]);
+  const gatewayPort = await findAvailablePort(basePorts.gateway);
+  const cesPort = await findAvailablePort(basePorts.ces);
 
   return {
     instanceDir,

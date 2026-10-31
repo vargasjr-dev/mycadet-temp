@@ -8,7 +8,7 @@ import {
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import { getDaemonPidPath, getLocalInstanceDir } from "../lib/remotes/local.js";
-import { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
   drainAssistant,

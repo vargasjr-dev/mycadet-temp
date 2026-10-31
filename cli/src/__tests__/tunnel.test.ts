@@ -36,7 +36,7 @@ import {
   stampRootProcess,
 } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };

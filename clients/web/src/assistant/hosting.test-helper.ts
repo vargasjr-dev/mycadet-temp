@@ -16,6 +16,7 @@ export function setHosting(
     useResolvedAssistantStore.getState().setAssistant({
       cloud: "local",
       assistantId,
+      port: 7830,
     });
   } else {
     useResolvedAssistantStore.getState().setAssistant({

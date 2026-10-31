@@ -10,13 +10,13 @@ import { spawnSync } from "child_process";
 
 import cliPkg from "../../package.json";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";

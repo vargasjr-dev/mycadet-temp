@@ -121,7 +121,9 @@ function renderPanel(
 beforeEach(() => {
   skillPayload = makeSkillDetail();
   skillError = null;
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+  });
 });
 
 afterEach(() => {

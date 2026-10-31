@@ -25,7 +25,7 @@ import {
   sleepContainers,
   startContainers,
 } from "../lib/docker.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 
 const entry: LockfileAssistant = {
@@ -279,7 +279,6 @@ test("create-only provisioning creates every target container without starting s
     {
       createOnly: true,
       gatewayPort: 7830,
-      assistantPort: 3001,
       imageTags: {
         assistant: "assistant:target",
         gateway: "gateway:target",

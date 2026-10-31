@@ -40,7 +40,7 @@ export const createBundleHostProvider = (
     }
     return {
       assistantId: entry.assistantId,
-      gatewayUrl: getGatewayUrl(entry),
+      baseUrl: getGatewayUrl(entry),
     };
   },
   acquireGatewayToken: async (assistantId) => {

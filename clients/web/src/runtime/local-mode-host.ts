@@ -14,7 +14,6 @@ import type {
 import { parseLockfile } from "@mycadet/local-mode/contract";
 import type {
   Lockfile,
-  LockfileAssistant,
   LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 

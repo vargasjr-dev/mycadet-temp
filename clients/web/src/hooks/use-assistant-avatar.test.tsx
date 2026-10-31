@@ -1,4 +1,4 @@
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -21,10 +21,7 @@ import {
 import { MIN_VERSION } from "@/lib/backwards-compat/avatar-state-manifest";
 import { chooserRowAvatarCacheQueryKey } from "@/lib/persist-last-seen-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import {
-  useResolvedAssistantStore,
-  
-} from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const components: CharacterComponents = {
   bodyShapes: [

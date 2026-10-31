@@ -12,8 +12,12 @@ const meta: Meta<typeof WebFetchCard> = {
       // The card reads the active assistant id from the resolved-assistants
       // store; seed it so `useActiveAssistantId()` doesn't throw.
       useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "story-assistant" },
-    });
+        assistant: {
+          cloud: "local",
+          assistantId: "story-assistant",
+          port: 7830,
+        },
+      });
       return (
         <div style={{ maxWidth: 640, padding: 24 }}>
           <Story />

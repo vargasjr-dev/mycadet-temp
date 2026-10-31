@@ -167,7 +167,9 @@ beforeEach(() => {
   entryMode = "conversation";
   load.mockClear();
   write.mockClear();
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useViewerStore.setState({
     mainView: "chat",
     openedDocumentState: null,

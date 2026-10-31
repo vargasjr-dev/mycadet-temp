@@ -106,12 +106,11 @@ mock.module("@/stores/resolved-assistant-store", () => ({
     use: {
       assistant: () =>
         selectedAssistantId
-          ? { cloud: "local", assistantId: selectedAssistantId }
+          ? { cloud: "local", assistantId: selectedAssistantId, port: 7830 }
           : null,
     },
   },
 }));
-
 
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => null,

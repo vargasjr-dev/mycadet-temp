@@ -13,11 +13,11 @@ import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { GATEWAY_PORT } from "../constants.js";
+import { type TunnelProcessRecord } from "@mycadet/local-mode/contract";
 import {
   clearRootProcess,
   readRootProcesses,
   stampRootProcess,
-  type TunnelProcessRecord,
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import { resolveConfigDir, resolveDataDir } from "@mycadet/local-mode";

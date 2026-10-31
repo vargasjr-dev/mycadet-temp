@@ -67,7 +67,9 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-123" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-123", port: 7830 },
+  });
 });
 
 afterEach(() => {
@@ -87,8 +89,8 @@ describe("AppProviders cache scope", () => {
     ).toHaveLength(1);
     act(() => {
       useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-456" },
-    });
+        assistant: { cloud: "local", assistantId: "assistant-456", port: 7830 },
+      });
     });
     expect(assetEvents()).toHaveLength(0);
   });
@@ -101,8 +103,8 @@ describe("AppProviders cache scope", () => {
 
     act(() => {
       useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", assistantId: "assistant-456" },
-    });
+        assistant: { cloud: "local", assistantId: "assistant-456", port: 7830 },
+      });
     });
 
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();

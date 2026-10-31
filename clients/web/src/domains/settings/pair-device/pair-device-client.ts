@@ -29,7 +29,7 @@ import type {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { hasLocalGateway, getActiveAssistant } from "@/lib/local-mode";
+import { expectsLocalGateway, getActiveAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
@@ -95,7 +95,7 @@ export interface PairDeviceTarget {
 
 /**
  * Resolve the selected assistant's scoped remote-web base, or `null` when
- * device pairing isn't available from here. `hasLocalGateway` is true only in
+ * device pairing isn't available from here. `expectsLocalGateway` is true only in
  * desktop/local mode (never remote-gateway or platform mode) for an
  * on-machine assistant with a recorded loopback gateway — exactly the cases
  * where a host-presence mint is possible — so a `null` here doubles as the
@@ -106,7 +106,7 @@ export function resolvePairDeviceTarget(): PairDeviceTarget | null {
     return null;
   }
   const assistant = getActiveAssistant();
-  if (!assistant || !hasLocalGateway(assistant)) {
+  if (!assistant || !expectsLocalGateway(assistant)) {
     return null;
   }
   return {

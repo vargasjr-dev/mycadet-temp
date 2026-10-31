@@ -109,7 +109,9 @@ function renderLayout(url: string, previousEntries: string[] = []) {
 
 beforeEach(() => {
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useConversationStore.setState({ activeConversationId: "conv-1" });
   useViewerStore.setState({
     mainView: "chat",
@@ -144,10 +146,7 @@ afterEach(() => {
 });
 
 describe("desktop document drawer dismissal", () => {
-  test.each([
-    "ready",
-    "loading",
-  ])(
+  test.each(["ready", "loading"])(
     "browser Back clears the %s document before another conversation mounts",
     async (phase) => {
       let finishLoad: (() => void) | undefined;

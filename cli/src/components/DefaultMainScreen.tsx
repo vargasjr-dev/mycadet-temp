@@ -12,8 +12,8 @@ import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  type LockfileAssistant,
 } from "../lib/assistant-config";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { checkHealth } from "../lib/health-check";
 import {
   guardianTokenDueForRenewal,
@@ -825,9 +825,6 @@ interface DefaultMainScreenProps {
   /** Identity and placement come from the entry; the header derives the
    *  assistant id, display name, and gateway URL from it. */
   entry: LockfileAssistant;
-  /** Ad-hoc `--url` targets have no registered entry; their transport URL
-   *  overrides the entry-derived one. */
-  runtimeUrl?: string;
   healthStatus?: string;
 }
 
@@ -871,12 +868,11 @@ function CompactHeader({
 
 function DefaultMainScreen({
   entry,
-  runtimeUrl: runtimeUrlOverride,
   healthStatus,
 }: DefaultMainScreenProps): ReactElement {
   const assistantId = entry.assistantId;
   const assistantName = getAssistantDisplayName(entry);
-  const runtimeUrl = runtimeUrlOverride ?? getGatewayUrl(entry);
+  const runtimeUrl = getGatewayUrl(entry);
   const accentColor = "magenta";
   const caps = getTerminalCapabilities();
   const headerSep = caps.unicodeSupported ? "─" : "-";
@@ -1011,10 +1007,9 @@ export function render(
     lookup.status === "found"
       ? lookup.entry
       : { assistantId, cloud: "cloud", name: assistantName };
-  const { unmount } = inkRender(
-    <DefaultMainScreen entry={entry} runtimeUrl={runtimeUrl} />,
-    { exitOnCtrlC: false },
-  );
+  const { unmount } = inkRender(<DefaultMainScreen entry={entry} />, {
+    exitOnCtrlC: false,
+  });
   unmount();
 
   if (isCompact) {
@@ -2366,7 +2361,6 @@ function ChatApp({
                 name: liveAssistantName,
               }
         }
-        runtimeUrl={runtimeUrl}
         healthStatus={healthStatus}
       />
 

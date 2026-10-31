@@ -7,7 +7,7 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";

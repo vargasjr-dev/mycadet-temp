@@ -27,12 +27,12 @@
 
 import { isCloudHome } from "../cloud-values.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveTargetAssistant,
-  type LockfileAssistant,
 } from "../assistant-config.js";
 import { readCloudToken } from "../cloud-client.js";
 import {

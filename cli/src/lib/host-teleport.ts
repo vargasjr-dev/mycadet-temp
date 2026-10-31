@@ -2,7 +2,7 @@ import { rm } from "node:fs/promises";
 import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
-import type { LockfileAssistant } from "./assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
   removeLockfileAssistant,
@@ -79,18 +79,7 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  version: async (entry) =>
-    (await fetchCurrentVersion(getGatewayUrl(entry))) ??
-    (entry.cloud !== "cloud" &&
-    entry.cloud !== "custom" &&
-    entry.cloud !== "baseten"
-      ? entry.runtimeVersion
-      : undefined) ??
-    (entry.cloud === "docker"
-      ? entry.containerInfo?.gatewayImage.match(
-          /:v?(\d+\.\d+\.\d+(?:-[\w.-]+)?)$/,
-        )?.[1]
-      : undefined),
+  version: async (entry) => await fetchCurrentVersion(getGatewayUrl(entry)),
   hatch: async (env, name, initialArchive) => {
     const instanceName = generateInstanceName(name ?? null);
     if (findAssistantByName(instanceName)) {

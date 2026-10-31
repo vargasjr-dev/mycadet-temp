@@ -4,6 +4,7 @@ import { cliCommand } from "../lib/cli-name.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   extractHostFromEntry,
   formatAssistantLookupError,
@@ -12,7 +13,6 @@ import {
   loadAllAssistants,
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {

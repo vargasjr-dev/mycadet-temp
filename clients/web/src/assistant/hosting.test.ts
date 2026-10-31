@@ -10,7 +10,7 @@ mock.module("@/lib/injected-config", () => ({
   readInjectedConfig: injectedConfigMock,
 }));
 
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   useActiveAssistantIsCloudHosted,
@@ -43,7 +43,7 @@ describe("useAssistantHosting", () => {
   });
 
   test("answers a self-hosted entry's own topology", () => {
-    setServedEntry({ cloud: "local", assistantId: "asst-local" });
+    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
     const { result } = renderHook(() => useAssistantHosting());
     expect(result.current).toBe("local");
   });
@@ -68,7 +68,7 @@ describe("useAssistantHosting", () => {
 describe("useActiveAssistantIsSelfHosted", () => {
   test("true for a self-hosted entry", () => {
     injectedConfig = { remote: "docker", assistantId: "asst-local" };
-    setServedEntry({ cloud: "local", assistantId: "asst-local" });
+    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
     const { result } = renderHook(() => useActiveAssistantIsSelfHosted());
     expect(result.current).toBe(true);
   });
@@ -89,7 +89,7 @@ describe("useActiveAssistantIsCloudHosted", () => {
 
   test("false for a self-hosted entry", () => {
     injectedConfig = { remote: "local", assistantId: "asst-local" };
-    setServedEntry({ cloud: "local", assistantId: "asst-local" });
+    setServedEntry({ cloud: "local", assistantId: "asst-local", port: 7830 });
     const { result } = renderHook(() => useActiveAssistantIsCloudHosted());
     expect(result.current).toBe(false);
   });

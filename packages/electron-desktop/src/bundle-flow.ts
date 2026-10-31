@@ -16,9 +16,7 @@ import { unpackBundle, type BundleScanData } from "./bundle-manager";
 import { getBundlePlatform, type ActiveBundleGateway } from "./bundle-platform";
 import { openBundleWindow } from "./bundle-window";
 
-export type ActiveGateway = ActiveBundleGateway;
-
-export function resolveActiveGateway(): ActiveGateway | null {
+export function resolveActiveGateway(): ActiveBundleGateway | null {
   return getBundlePlatform().resolveActiveGateway();
 }
 
@@ -66,11 +64,7 @@ export async function handleBundleFile(filePath: string): Promise<void> {
   }
 
   const token = await acquireGatewayToken(gateway.assistantId);
-  const scanData = await scanBundleViaGateway(
-    filePath,
-    gateway.gatewayUrl,
-    token,
-  );
+  const scanData = await scanBundleViaGateway(filePath, gateway.baseUrl, token);
   if (!scanData) {
     dialog.showErrorBox("Cannot open bundle", "Failed to scan bundle.");
     return;

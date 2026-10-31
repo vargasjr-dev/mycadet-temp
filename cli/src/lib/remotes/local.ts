@@ -55,7 +55,7 @@ import {
   findAssistantByName,
   setActiveAssistant,
 } from "../assistant-config.js";
-import type { LockfileAssistant } from "../assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type {
   LocalAssistant,
   DockerAssistant,
@@ -779,6 +779,23 @@ async function freshSpawnServesRuntimePort(
  * subsystem failure) is reported as the startup failure it is instead of an
  * optimistic line about an assistant that is not running.
  */
+export async function reportFreshSpawnReadiness(
+  spawn: DaemonSpawn,
+  pidFile: string,
+  daemonPort: number,
+  readiness: DaemonReadiness,
+  requireReady = false,
+): Promise<void> {
+  if (!(await freshSpawnServesRuntimePort(spawn, pidFile, daemonPort))) {
+    if (requireReady) {
+      throw new Error("Assistant exited during startup and is not running.");
+    }
+    console.log("   ⚠️  Assistant exited during startup and is not running\n");
+    return;
+  }
+  logDaemonReadiness(readiness, requireReady);
+}
+
 /**
  * The instance's data root: the recorded instanceDir, or the shared state
  * root for legacy entries predating per-instance dirs.
@@ -805,23 +822,6 @@ export function getDaemonPidPath(
   entry?: LockfileAssistant | undefined,
 ): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
-}
-
-export async function reportFreshSpawnReadiness(
-  spawn: DaemonSpawn,
-  pidFile: string,
-  daemonPort: number,
-  readiness: DaemonReadiness,
-  requireReady = false,
-): Promise<void> {
-  if (!(await freshSpawnServesRuntimePort(spawn, pidFile, daemonPort))) {
-    if (requireReady) {
-      throw new Error("Assistant exited during startup and is not running.");
-    }
-    console.log("   ⚠️  Assistant exited during startup and is not running\n");
-    return;
-  }
-  logDaemonReadiness(readiness, requireReady);
 }
 
 function logAssistantAlreadyRunning(

@@ -5,9 +5,11 @@ import {
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
+} from "./assistant-config.js";
+import {
   type LockfileAssistant,
   type TunnelProcessRecord,
-} from "./assistant-config.js";
+} from "@mycadet/local-mode/contract";
 import { cliCommand } from "./cli-name.js";
 import {
   isLocalEntry,

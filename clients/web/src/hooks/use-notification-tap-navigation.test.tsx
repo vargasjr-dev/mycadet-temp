@@ -1,4 +1,4 @@
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
@@ -15,10 +15,7 @@ import {
   type NotificationTapHandler,
   type NotificationTapPayload,
 } from "@/runtime/notification-taps";
-import {
-  useResolvedAssistantStore,
-  
-} from "@/stores/resolved-assistant-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_A: LockfileAssistant = {
   assistantId: "assistant-a",

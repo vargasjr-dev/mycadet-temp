@@ -131,7 +131,9 @@ function renderSurface({
   useResolvedAssistantStore
     .getState()
     .setAssistant(
-      noAssistant ? null : { cloud: "local", assistantId: ASSISTANT_ID },
+      noAssistant
+        ? null
+        : { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
     );
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

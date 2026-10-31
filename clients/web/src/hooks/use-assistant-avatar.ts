@@ -18,9 +18,12 @@ import {
 import { deleteLastSeenAvatar } from "@/lib/avatar-last-seen-cache";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
-import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getActiveAssistantId,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type {
   AvatarRead,
   AvatarState,
@@ -514,8 +517,7 @@ export function useAssistantAvatar(
       // assistant is active when the request goes out, so a read that was
       // issued for the active assistant is its avatar even if the user has
       // switched away by the time it lands (a reconnect sweep, say).
-      const isActiveRead =
-        id === getActiveAssistantId();
+      const isActiveRead = id === getActiveAssistantId();
       const [components, { state, traits, imageUrl }] = await Promise.all([
         fetchCharacterComponents(id),
         supportsManifest

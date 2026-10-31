@@ -174,7 +174,7 @@ beforeEach(() => {
   window.sessionStorage.clear();
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", assistantId: "asst-1" });
+    .setAssistant({ cloud: "local", assistantId: "asst-1", port: 7830 });
   useAssistantIdentityStore.setState({
     assistantId: "asst-1",
     version: "0.11.12",

@@ -215,7 +215,9 @@ function seedViewMode(assistantId: string, mode: SidebarViewMode): void {
   /* `useAssistantCapability` keys on the active assistant from this store, not
      on the id the story passes as a prop, so the seeded `appPins` answer is
      only found once the store agrees which assistant is active. */
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: assistantId } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: assistantId, port: 7830 },
+  });
 }
 
 /**

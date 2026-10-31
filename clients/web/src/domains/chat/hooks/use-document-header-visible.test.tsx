@@ -18,7 +18,6 @@ import {
 
 import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-store";
 
-
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
  * resolution kind. A local stamp synthesizes a self-hosted entry for the
@@ -160,7 +159,9 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
   firstMessageSetup = false;

@@ -12,7 +12,7 @@ import {
 import { dockerResourceNames } from "../lib/docker.js";
 import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 
 const entry: LockfileAssistant = {

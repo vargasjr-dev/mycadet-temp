@@ -19,7 +19,7 @@ import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
 import { isDockerEntry, saveLockfileAssistant } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "./assistant-config";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
 import { buildServiceRunArgs } from "./statefulset.js";
@@ -821,8 +821,6 @@ export async function startContainers(
     extraAssistantEnv?: Record<string, string>;
     extraGatewayEnv?: Record<string, string>;
     gatewayPort: number;
-    /** Defaults to the fixed in-container assistant port. */
-    assistantPort?: number;
     imageTags: Record<ServiceName, string>;
     instanceName: string;
     res: ReturnType<typeof dockerResourceNames>;
@@ -1195,7 +1193,6 @@ function startFileWatcher(opts: {
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort: number;
-  assistantPort: number;
   imageTags: Record<ServiceName, string>;
   instanceName: string;
   repoRoot: string;
@@ -1806,7 +1803,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         res,
         netnsContainer: params.netnsContainer,
         assistantCaCertPath: params.assistantCaCertPath,
-        assistantPort,
       });
 
       await new Promise<void>((resolve) => {

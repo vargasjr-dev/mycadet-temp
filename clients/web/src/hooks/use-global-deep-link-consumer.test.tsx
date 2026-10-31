@@ -170,7 +170,9 @@ const resetStores = () => {
  */
 const seedEligibleAssistant = (version = "0.10.12") => {
   useAssistantIdentityStore.setState({ assistantId: "assistant-1", version });
-  useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: "assistant-1" } });
+  useResolvedAssistantStore.setState({
+    assistant: { cloud: "local", assistantId: "assistant-1", port: 7830 },
+  });
 };
 
 beforeEach(() => {

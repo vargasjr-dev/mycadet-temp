@@ -21,7 +21,9 @@ import { SkillDetailPanel } from "./skill-detail-panel";
 const ASSISTANT_ID = "asst_story";
 const SKILL_ID = "release-triage";
 
-useResolvedAssistantStore.setState({ assistant: { cloud: "local", assistantId: ASSISTANT_ID } });
+useResolvedAssistantStore.setState({
+  assistant: { cloud: "local", assistantId: ASSISTANT_ID, port: 7830 },
+});
 
 const SKILL_MD = `---
 name: Release triage

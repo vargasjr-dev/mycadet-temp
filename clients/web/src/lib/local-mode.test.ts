@@ -58,7 +58,7 @@ mock.module("@/runtime/local-mode-host", () => ({
 import {
   getActiveAssistant,
   hasGatewayAddress,
-  hasLocalGateway,
+  expectsLocalGateway,
   getLocalAssistants,
   getServedLockfile,
   getCloudAssistants,
@@ -204,7 +204,7 @@ describe("served config synthesis", () => {
     // A plain local serve: the renderer holds no transport URL and the host
     // routes same-origin, so the served entry carries a LOCAL gateway
     // address through its recorded port.
-    expect(hasLocalGateway()).toBe(true);
+    expect(expectsLocalGateway()).toBe(true);
     expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
 
     stampServed({ assistantId: "served-1", remote: "docker" });
@@ -274,7 +274,7 @@ describe("remote gateway mode", () => {
     ]);
     // The serving edge IS the gateway - but the served-gateway arm keys on
     // the runtime, not the entry's port.
-    expect(hasLocalGateway()).toBe(false);
+    expect(expectsLocalGateway()).toBe(false);
   });
 });
 
@@ -615,10 +615,10 @@ describe("assistant classification", () => {
   });
 });
 
-describe("hasLocalGateway", () => {
+describe("expectsLocalGateway", () => {
   test("is true for a local assistant with a recorded port", () => {
     enableLocalMode();
-    expect(hasLocalGateway(localA)).toBe(true);
+    expect(expectsLocalGateway(localA)).toBe(true);
   });
 
   test("is true for a docker assistant's recorded loopback port", () => {
@@ -630,7 +630,7 @@ describe("hasLocalGateway", () => {
       cloud: "docker",
       port: 7930,
     } as LockfileAssistant;
-    expect(hasLocalGateway(docker)).toBe(true);
+    expect(expectsLocalGateway(docker)).toBe(true);
   });
 
   test("accepts 127.0.0.1 as a loopback runtimeUrl host", () => {
@@ -640,7 +640,7 @@ describe("hasLocalGateway", () => {
       cloud: "docker",
       port: 7931,
     } as LockfileAssistant;
-    expect(hasLocalGateway(docker)).toBe(true);
+    expect(expectsLocalGateway(docker)).toBe(true);
   });
 
   test("is true for a recorded resources.gatewayPort", () => {
@@ -650,12 +650,12 @@ describe("hasLocalGateway", () => {
       cloud: "local",
       port: 7830,
     } as LockfileAssistant;
-    expect(hasLocalGateway(entry)).toBe(true);
+    expect(expectsLocalGateway(entry)).toBe(true);
   });
 
   test("is false for a cloud assistant", () => {
     enableLocalMode();
-    expect(hasLocalGateway(platform)).toBe(false);
+    expect(expectsLocalGateway(platform)).toBe(false);
   });
 
   test("is false for a remote (paired) assistant", () => {
@@ -666,12 +666,12 @@ describe("hasLocalGateway", () => {
       ipAddress: "p.example.com",
       port: 443,
     } as LockfileAssistant;
-    expect(hasLocalGateway(paired)).toBe(false);
+    expect(expectsLocalGateway(paired)).toBe(false);
   });
 
   test("is false outside local mode even for a local assistant with a port", () => {
     disableLocalMode();
-    expect(hasLocalGateway(localA)).toBe(false);
+    expect(expectsLocalGateway(localA)).toBe(false);
   });
 
   test("is false in a served-gateway runtime (the runtime's own vision covers it)", () => {
@@ -679,12 +679,12 @@ describe("hasLocalGateway", () => {
       remote: "docker",
       assistantId: "edge-1",
     };
-    expect(hasLocalGateway()).toBe(false);
+    expect(expectsLocalGateway()).toBe(false);
   });
 
   test("defaults to the selected assistant - the served entry, port 0, is live topology", () => {
     stampServed({ assistantId: "served-1" });
-    expect(hasLocalGateway()).toBe(true);
+    expect(expectsLocalGateway()).toBe(true);
   });
 });
 
@@ -880,7 +880,7 @@ describe("primeLocalGatewayConnection", () => {
     expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
     // The local selection's data-plane signal is topology, not the slot.
-    expect(hasLocalGateway(getActiveAssistant())).toBe(true);
+    expect(expectsLocalGateway(getActiveAssistant())).toBe(true);
   });
 });
 

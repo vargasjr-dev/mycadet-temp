@@ -193,7 +193,7 @@ describe("useCloudAvatarUrls", () => {
     act(() =>
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "local", assistantId: "asst-2" }),
+        .setAssistant({ cloud: "local", assistantId: "asst-2", port: 7830 }),
     );
 
     await waitFor(() => {

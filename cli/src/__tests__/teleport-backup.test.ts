@@ -10,7 +10,7 @@ import {
 } from "bun:test";
 
 import * as cloudClient from "../lib/cloud-client.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   createPlatformBackup,
   listPlatformBackups,
