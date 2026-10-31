@@ -8,7 +8,6 @@ import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guar
 import { isCloudClientConfigured } from "../cloud/client.js";
 import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
-import { writeSelfWrapper } from "./self-wrapper.js";
 import {
   getConfig,
   hasPendingDefaultWorkspaceConfig,
@@ -88,6 +87,7 @@ import {
   registerWatcherProviders,
 } from "./providers-setup.js";
 import { startResourcePressureGuardForLifecycle } from "./resource-pressure-guard-lifecycle.js";
+import { writeSelfWrapper } from "./self-wrapper.js";
 import { installShutdownHandlers } from "./shutdown-handlers.js";
 import { broadcastDaemonStatus } from "./status.js";
 

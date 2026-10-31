@@ -1179,15 +1179,16 @@ describe("cadet wake — app server restore", () => {
 
     test("continues past a failing assistant and exits 1", async () => {
       mockColdStart();
+      // A real wake failure for the first entry: the CES sibling's spawn
+      // dies. (The entry's own shape can't be the failure anymore — a
+      // missing instanceDir falls back to the shared data root — so the
+      // failure comes from a start the wake actually performs.)
+      startCesMock.mockRejectedValueOnce(new Error("ces spawn failed"));
       loadAllAssistantsMock.mockReturnValue([
-        // Missing resources is a deliberate refusal for this entry.
-        {
-          assistantId: "wake-all-1",
-          cloud: "local",
-          port: 7830,
-        },
+        makeAllEntry("wake-all-1", join(tempDir, "instance-1")),
         makeAllEntry("wake-all-2", join(tempDir, "instance-2")),
       ]);
+      mkdirSync(join(tempDir, "instance-1"), { recursive: true });
       mkdirSync(join(tempDir, "instance-2"), { recursive: true });
       process.argv = ["bun", "cadet", "wake", "--all"];
 
@@ -1206,9 +1207,10 @@ describe("cadet wake — app server restore", () => {
         exitSpy.mockRestore();
       }
 
-      // The healthy assistant was still started.
-      expect(startCesMock).toHaveBeenCalledTimes(1);
-      expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
+      // Both assistants attempted their starts; only the first's CES spawn
+      // failed, and the loop moved on to start the healthy one fully.
+      expect(startCesMock).toHaveBeenCalledTimes(2);
+      expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
       expect(startGatewayMock).toHaveBeenCalledTimes(1);
     });
 
