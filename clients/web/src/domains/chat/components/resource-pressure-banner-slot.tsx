@@ -21,8 +21,6 @@ import {
   setLocalNumber,
   watchSetting,
 } from "@/utils/local-settings";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 // setTimeout treats delays above 2^31 - 1 ms as 0; longer waits re-arm in
@@ -203,7 +201,6 @@ export function ResourcePressureBannerSlot({
         key={assistantId ?? "no-assistant"}
         assistantName={assistantName}
         onDismiss={dismiss}
-        onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
       />
     </div>
   );

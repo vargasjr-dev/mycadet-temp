@@ -17,7 +17,7 @@ import {
 } from "react-router";
 
 import { useAutoGreetGate } from "@/domains/chat/hooks/use-auto-greet-gate";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -116,7 +116,7 @@ export function ActiveChatView() {
     conversationId?: string;
     appId?: string;
   }>();
-  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const assistantId = useActiveAssistantId();
   const turnPhase = useTurnStore.use.phase();
 
   // -------------------------------------------------------------------------

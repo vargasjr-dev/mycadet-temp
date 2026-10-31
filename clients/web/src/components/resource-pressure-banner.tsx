@@ -3,7 +3,9 @@ import { useState } from "react";
 
 import { Button, Checkbox, Notice } from "@mycadet/design-library";
 
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { useTranslation } from "@/i18n";
+import { openExternalUrl } from "@/runtime/browser";
 
 export interface ResourcePressureBannerProps {
   /**
@@ -17,15 +19,10 @@ export interface ResourcePressureBannerProps {
    * should suppress the banner permanently, not just for the cooldown period.
    */
   onDismiss: (permanent: boolean) => void;
-  /**
-   * Navigates to the plans page. Null hides the Upgrade button and drops
-   * the body's upgrade clause (native Android and non-active assistants).
-   */
-  onUpgrade: (() => void) | null;
 }
 
 export function ResourcePressureBanner(props: ResourcePressureBannerProps) {
-  const { assistantName, onDismiss, onUpgrade } = props;
+  const { assistantName, onDismiss } = props;
   const { t } = useTranslation();
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -36,9 +33,7 @@ export function ResourcePressureBanner(props: ResourcePressureBannerProps) {
 
   // Which signal tripped and how hard is deliberately not surfaced; the
   // banner is a plan-headroom nudge, not a metrics readout.
-  const body = onUpgrade
-    ? t("resourcePressureBanner.body")
-    : t("resourcePressureBanner.bodyNoUpgrade");
+  const body = t("resourcePressureBanner.body");
 
   return (
     <Notice
@@ -52,11 +47,13 @@ export function ResourcePressureBanner(props: ResourcePressureBannerProps) {
       <div className="flex flex-col gap-3">
         <p className="m-0">{body}</p>
         <div className="flex flex-wrap items-center gap-2">
-          {onUpgrade ? (
-            <Button variant="outlined" size="compact" onClick={onUpgrade}>
-              {t("resourcePressureBanner.upgrade")}
-            </Button>
-          ) : null}
+          <Button
+            variant="outlined"
+            size="compact"
+            onClick={() => void openExternalUrl(cloudAccountBillingUrl())}
+          >
+            {t("resourcePressureBanner.upgrade")}
+          </Button>
           <Checkbox
             className="ml-auto"
             checked={dontShowAgain}

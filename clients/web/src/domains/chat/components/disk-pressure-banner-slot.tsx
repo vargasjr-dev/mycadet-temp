@@ -152,7 +152,6 @@ export interface DiskPressureBannerSlotProps {
    * shared with the precedence gate so both read the same dismissal state.
    */
   visibility: DiskPressureBannerVisibility;
-  /** `"active"` for cloud-hosted assistants that have an upgrade path. */
 }
 
 // ---------------------------------------------------------------------------

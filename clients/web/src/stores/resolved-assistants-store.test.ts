@@ -446,9 +446,10 @@ describe("setFromApi connectability", () => {
     const assistants = useResolvedAssistantsStore.getState().assistants;
     expect(assistants.map((a) => a.id)).toEqual(["asst-cloud", "asst-unknown"]);
     const unknown = assistants.find((a) => a.id === "asst-unknown");
-    // Cloud-world-only row: no lockfile entry, so no remote of its own.
+    // Cloud-world-only row: no lockfile entry, so the remote normalizes to
+    // "cloud" — the row exists only in the cloud-served world.
     expect(getLockfileAssistant("asst-unknown")).toBeUndefined();
-    expect(unknown?.cloud).toBeUndefined();
+    expect(unknown?.cloud).toBe("cloud");
     expect(useResolvedAssistantsStore.getState().assistantsHydrated).toBe(true);
   });
 

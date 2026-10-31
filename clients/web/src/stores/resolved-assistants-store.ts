@@ -219,7 +219,9 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             name: a.name,
             hatchedAt: a.created,
             onboardedAt: entry?.onboardedAt,
-            cloud: entry?.cloud,
+            // Rows absent from the lockfile exist only in the cloud-served
+            // world — the remote normalizes to "cloud".
+            cloud: entry?.cloud ?? "cloud",
             runtimeVersion: entryRuntimeVersion(entry),
             runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
             cloudAssistantId: entryCloudAssistantId(entry),
@@ -256,7 +258,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
           const next = [...state.assistants];
           next[idx] = {
             ...entry,
-            cloud: lockfileEntry?.cloud ?? prior.cloud,
+            cloud: lockfileEntry?.cloud ?? prior.cloud ?? "cloud",
             organizationId: prior.organizationId,
             runtimeVersion:
               entryRuntimeVersion(lockfileEntry) ?? prior.runtimeVersion,
@@ -279,7 +281,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             ...state.assistants,
             {
               ...entry,
-              cloud: lockfileEntry?.cloud,
+              cloud: lockfileEntry?.cloud ?? "cloud",
               organizationId: lockfileEntryOrganizationId(lockfileEntry),
               runtimeVersion: entryRuntimeVersion(lockfileEntry),
               runtimeUrl: lockfileEntry

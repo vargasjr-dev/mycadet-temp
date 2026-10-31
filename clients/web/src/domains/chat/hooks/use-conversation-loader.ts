@@ -55,7 +55,8 @@ const CONVERSATION_LIST_LOAD_FAILED_CODE = "CONVERSATION_LIST_LOAD_FAILED";
 
 interface UseConversationLoaderParams {
   // Identity / routing
-  assistantId: string | null;
+  /** The active assistant — always defined within the web bundle. */
+  assistantId: string;
   activeConversationId: string | null;
   /** Conversation id from the URL path param (e.g. `/assistant/conversations/:conversationId`). */
   urlConversationId: string | null;
@@ -109,7 +110,7 @@ export function useConversationLoader({
   // -------------------------------------------------------------------------
   // Internal refs
   // -------------------------------------------------------------------------
-  const assistantIdRef = useRef<string | null>(assistantId);
+  const assistantIdRef = useRef(assistantId);
   useLayoutEffect(() => {
     assistantIdRef.current = assistantId;
   }, [assistantId]);
@@ -122,9 +123,6 @@ export function useConversationLoader({
   // refetch through the same `conversationListOptions` queryFn used at boot.
   // -------------------------------------------------------------------------
   const refreshConversations = useCallback(async () => {
-    if (!assistantId) {
-      return;
-    }
     try {
       await invalidateConversationQueries(queryClient, assistantId);
     } catch (err) {
@@ -139,31 +137,6 @@ export function useConversationLoader({
       });
   }, [assistantId, queryClient]);
 
-  // -------------------------------------------------------------------------
-  // Conversation list query subscription
-  //
-  // The conversation list is owned by `useConversationListQuery`, which
-  // fetches the foreground conversations for the given `assistantId`.
-  // Background and scheduled jobs load separately via
-  // `useBackgroundConversationListQuery`, gated on the sidebar revealing
-  // those sections, so a large background backlog never blocks the initial
-  // render. Sibling consumers in `ChatLayout` and `ChatPage` mount the same
-  // foreground query; they all share one cache entry under
-  // `conversationListQueryKey(assistantId)`, so dedupe and structural-sharing
-  // are automatic.
-  //
-  // The query owns:
-  // - fetch initiation (on first subscribe + on invalidations below)
-  // - retry semantics (React Query defaults)
-  // - error state (surfaced as `query.isError` / `query.error`)
-  // - cache lifetime (`data` from the last successful fetch is preserved
-  //   across subsequent failed refetches)
-  //
-  // We never `try/catch` a fetch here. A failed refetch keeps the previously
-  // cached `data` available, so the UI keeps showing the conversations we
-  // already have. A genuine "no data at all" failure surfaces via the banner
-  // consumer below.
-  // -------------------------------------------------------------------------
   const conversationListQuery = useConversationListQuery(assistantId);
   const queryConversations = conversationListQuery.conversations;
   const conversationListError = conversationListQuery.error;
@@ -183,9 +156,6 @@ export function useConversationLoader({
   useEffect(() => {
     if (firstRefreshTickRef.current) {
       firstRefreshTickRef.current = false;
-      return;
-    }
-    if (!assistantId) {
       return;
     }
     void invalidateConversationQueries(queryClient, assistantId);
@@ -289,10 +259,6 @@ export function useConversationLoader({
   // -------------------------------------------------------------------------
   const lastAppliedUrlConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!assistantId) {
-      return;
-    }
-
     const explicitConversationId = urlConversationId;
     const currentConversationId =
       useConversationStore.getState().activeConversationId;
