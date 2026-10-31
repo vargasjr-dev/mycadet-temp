@@ -218,6 +218,7 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' clients/app/package.json > tmp && mv tmp clients/app/package.json
           jq --arg v "$VERSION" '.version = $v' clients/ios/package.json > tmp && mv tmp clients/ios/package.json
           jq --arg v "$VERSION" '.version = $v' clients/android/package.json > tmp && mv tmp clients/android/package.json
+          jq --arg v "$VERSION" '.version = $v' qa/package.json > tmp && mv tmp qa/package.json
 
           # Bump meta-package dependency versions
           jq --arg v "$VERSION" '

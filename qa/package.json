@@ -1,0 +1,11 @@
+{
+  "name": "@mycadet/qa",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Cadet QA sandbox — one Baseten image that builds and drives the desktop, Android, and web clients headless",
+  "devDependencies": {
+    "@mycadet/shared": "workspace:*",
+    "@types/bun": "1.3.14",
+    "typescript": "5.9.3"
+  }
+}

@@ -835,6 +835,15 @@
         "typescript": "5.9.3",
       },
     },
+    "qa": {
+      "name": "@mycadet/qa",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@mycadet/shared": "workspace:*",
+        "@types/bun": "1.3.14",
+        "typescript": "5.9.3",
+      },
+    },
   },
   "trustedDependencies": [
     "@playwright/browser-chromium",
@@ -1264,6 +1273,8 @@
     "@mycadet/macos": ["@mycadet/macos@workspace:clients/macos"],
 
     "@mycadet/native-sidecar": ["@mycadet/native-sidecar@workspace:packages/native-sidecar"],
+
+    "@mycadet/qa": ["@mycadet/qa@workspace:qa"],
 
     "@mycadet/service-contracts": ["@mycadet/service-contracts@workspace:packages/service-contracts"],
 
