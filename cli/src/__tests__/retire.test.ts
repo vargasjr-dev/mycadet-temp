@@ -8,17 +8,10 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { loadAllAssistants } from "../lib/assistant-config.js";
 import * as loopbackFetchModule from "../lib/loopback-fetch.js";
 import * as cloudClientModule from "../lib/cloud-client.js";
@@ -92,14 +85,6 @@ import { retire } from "../commands/retire.js";
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
 let consoleWarnSpy: ReturnType<typeof spyOn>;
-
-function writeLockfile(entries: LockfileAssistant[]): void {
-  mkdirSync(join(testDir, "cadet"), { recursive: true });
-  writeFileSync(
-    join(testDir, "cadet", "lockfile.json"),
-    JSON.stringify({ assistants: entries }, null, 2) + "\n",
-  );
-}
 
 function readLockfile(): string {
   return readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8");
@@ -381,7 +366,6 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    const entry = readEntry("assistant-1");
     const before = readLockfile();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
 
@@ -399,7 +383,6 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    const entry = readEntry("assistant-1");
     const before = readLockfile();
     setInteractiveTerminal();
     process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];

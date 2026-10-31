@@ -17,7 +17,6 @@ import {
 } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
 import {
-  isDockerEntry,
   isLocalEntry,
   isLocalRuntimeEntry,
 } from "@mycadet/local-mode/contract";

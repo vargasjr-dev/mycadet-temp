@@ -15,7 +15,6 @@ import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 
-import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";

@@ -1,5 +1,4 @@
 import { describe, test, expect, beforeEach, afterAll, mock } from "bun:test";
-import type { Remote } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,7 +26,6 @@ import {
   setActiveAssistant,
   getActiveAssistant,
   removeLockfileAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";

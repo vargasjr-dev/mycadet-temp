@@ -7,14 +7,13 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
   getActiveAssistant,
   setActiveAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { use } from "../commands/use.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
@@ -26,24 +25,6 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
-
-function writeLockfile(
-  entries: LockfileAssistant[],
-  activeAssistant?: string,
-): void {
-  mkdirSync(join(testDir, "cadet"), { recursive: true });
-  writeFileSync(
-    join(testDir, "cadet", "lockfile.json"),
-    JSON.stringify(
-      {
-        assistants: entries,
-        ...(activeAssistant ? { activeAssistant } : {}),
-      },
-      null,
-      2,
-    ),
-  );
-}
 
 describe("cadet use", () => {
   beforeEach(() => {

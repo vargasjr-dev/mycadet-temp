@@ -30,8 +30,6 @@ import {
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
   loadAllAssistants,
-  getActiveAssistant,
-  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 

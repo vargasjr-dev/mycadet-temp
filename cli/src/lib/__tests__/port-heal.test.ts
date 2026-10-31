@@ -3,8 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, test } from "bun:test";
 
-import type { LocalAssistant } from "@mycadet/local-mode/contract";
-
 import { healConflictedLocalPorts } from "../port-heal.js";
 import {
   makeEntry,

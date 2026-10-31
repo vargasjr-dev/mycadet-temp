@@ -6,10 +6,7 @@ import {
   type LockfileAssistant,
   resolveTargetAssistant,
 } from "../../lib/assistant-config.js";
-import {
-  isLocalRuntimeEntry,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,

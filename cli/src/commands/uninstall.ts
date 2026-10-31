@@ -16,7 +16,6 @@ import {
 import { retireDocker } from "../lib/docker.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
 import {
-  isDockerEntry,
   isLocalRuntimeEntry,
   resolveConfigDir,
   resolveDataDir,

@@ -10,13 +10,9 @@ import {
 } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
-import {
-  getDaemonPidPath,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
-import { resolveLockfilePath } from "@mycadet/local-mode";
+import { getDaemonPidPath } from "../lib/assistant-config.js";
 import {
   makeEntry,
   readEntry,
@@ -80,14 +76,6 @@ afterAll(() => {
 import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
-
-function writeLockfile(entries: LockfileAssistant[]): void {
-  mkdirSync(dirname(resolveLockfilePath()), { recursive: true });
-  writeFileSync(
-    resolveLockfilePath(),
-    JSON.stringify({ assistants: entries }, null, 2) + "\n",
-  );
-}
 
 describe("retireLocal — CES sibling stop", () => {
   beforeAll(() => {

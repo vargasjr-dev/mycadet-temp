@@ -13,10 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import cliPkg from "../../package.json";
-import {
-  getLocalInstanceDir,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { getLocalInstanceDir } from "../lib/assistant-config.js";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
