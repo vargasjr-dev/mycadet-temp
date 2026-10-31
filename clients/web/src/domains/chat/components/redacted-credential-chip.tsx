@@ -75,10 +75,9 @@ export function RedactedCredentialChip({
   neutralized,
 }: RedactedCredentialChipProps) {
   const { t } = useTranslation("chat");
-  // Raw nullable read on purpose: transcripts render on pre-active paths
-  // (ChatPage loading/connecting) outside `ActiveAssistantGate`, where the
-  // throwing `useActiveAssistantId()` would crash the view. A null id simply
-  // renders the non-revealable badge until the assistant is active.
+  // The guaranteed read: the store is non-optional, and the unresolved
+  // shell's empty id (the platform's pre-projection window) simply renders
+  // the non-revealable badge until the projection stamps the real identity.
   const activeAssistantId = useActiveAssistantId();
   // Prefer the transcript's own assistant; the global active assistant is only
   // a fallback for callers that render before an explicit id is available.
@@ -96,7 +95,10 @@ export function RedactedCredentialChip({
 
   const label = type ?? "Secret";
   const revealable =
-    service !== undefined && field !== undefined && assistantId != null;
+    service !== undefined &&
+    field !== undefined &&
+    assistantId != null &&
+    assistantId !== "";
   const name = revealable ? `${service}:${field}` : label;
 
   const hide = useCallback(() => {

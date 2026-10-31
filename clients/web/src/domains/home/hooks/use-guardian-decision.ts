@@ -208,7 +208,7 @@ export function useGuardianDecision(): {
   return {
     decide,
     isPending: decision.isPending,
-    canDecide: assistantId !== null,
+    canDecide: Boolean(assistantId),
     outcomes,
     pendingRequestIds,
     decidedRequestIds,

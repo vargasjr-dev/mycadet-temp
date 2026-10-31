@@ -17,9 +17,9 @@ describe("useActiveAssistantId", () => {
     expect(result.current).toBe("asst-1");
   });
 
-  test("throws when no assistant is resolved (the store is empty)", () => {
-    expect(() => {
-      renderHook(() => useActiveAssistantId());
-    }).toThrow(/no resolved assistant/);
+  test("returns the unresolved shell's empty id when no assistant is stamped", () => {
+    useResolvedAssistantStore.getState().resetAssistant();
+    const { result } = renderHook(() => useActiveAssistantId());
+    expect(result.current).toBe("");
   });
 });

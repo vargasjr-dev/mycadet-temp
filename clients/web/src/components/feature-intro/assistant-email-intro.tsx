@@ -75,7 +75,7 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
 export function AssistantEmailIntro() {
   const { seen, markSeen } = useFeatureIntroSeen("assistant-email");
   const assistantId = useActiveAssistantId();
-  if (seen || assistantId === null) {
+  if (seen || !assistantId) {
     return null;
   }
   return (
