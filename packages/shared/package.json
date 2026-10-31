@@ -5,6 +5,7 @@
   "exports": {
     ".": "./github-repository.ts",
     "./github-repository": "./github-repository.ts",
+    "./providers/baseten": "./providers/baseten.ts",
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
     "./version": "./version.ts"
   }
