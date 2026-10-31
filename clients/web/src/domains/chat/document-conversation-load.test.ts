@@ -15,6 +15,7 @@ import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { DocumentContent } from "@/types/document-types";
 import { setEditChatConversationId } from "@/utils/edit-chat-session";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const original: DocumentContent = {
   success: true,
@@ -119,9 +120,7 @@ beforeEach(() => {
     }
     throw new Error(`Unexpected request: ${options.url}`);
   }) as typeof daemonClient.post);
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useSetupLocalAssistant("assistant-1");
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",

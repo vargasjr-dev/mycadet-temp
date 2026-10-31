@@ -5,7 +5,7 @@ import { useState } from "react";
 import { exportLocalDebugBundle } from "./diagnostic-export";
 import { assistantsDebugBundleUploadUrlCreate } from "@/generated/api/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { expectsLocalGateway, getActiveAssistant } from "@/lib/local-mode";
+import { getActiveAssistant } from "@/lib/local-mode";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 
@@ -13,13 +13,11 @@ export function DebugBundleExport({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const [sentAt, setSentAt] = useState<Date | null>(null);
   const selectedAssistant = getActiveAssistant();
-  const hasLocalDaemon = expectsLocalGateway(selectedAssistant);
-  const canExport = hasLocalDaemon;
 
   const exportBundle = useMutation({
     mutationFn: async () => {
       if (!selectedAssistant) {
-        throw new Error("no local assistant");
+        throw new Error("no assistant");
       }
       const { data } = await assistantsDebugBundleUploadUrlCreate({
         path: { id: assistantId },
@@ -46,37 +44,31 @@ export function DebugBundleExport({ assistantId }: { assistantId: string }) {
       <p className="text-body-small-lighter text-[var(--content-tertiary)]">
         {t("debugBundleExport.description")}
       </p>
-      {canExport ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button
-            variant="outlined"
-            size="compact"
-            disabled={exportBundle.isPending}
-            onClick={() => exportBundle.mutate()}
-          >
-            {exportBundle.isPending && (
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-            )}
-            {exportBundle.isPending
-              ? t("debugBundleExport.exporting")
-              : t("debugBundleExport.export")}
-          </Button>
-          {sentAt !== null && !exportBundle.isPending && (
-            <p className="text-body-small-lighter text-[var(--content-tertiary)]">
-              {t("debugBundleExport.sentAt", {
-                time: sentAt.toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                }),
-              })}
-            </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outlined"
+          size="compact"
+          disabled={exportBundle.isPending}
+          onClick={() => exportBundle.mutate()}
+        >
+          {exportBundle.isPending && (
+            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
           )}
-        </div>
-      ) : (
-        <p className="mt-2 text-body-small-lighter text-[var(--content-tertiary)]">
-          {t("debugBundleExport.useDesktopApp")}
-        </p>
-      )}
+          {exportBundle.isPending
+            ? t("debugBundleExport.exporting")
+            : t("debugBundleExport.export")}
+        </Button>
+        {sentAt !== null && !exportBundle.isPending && (
+          <p className="text-body-small-lighter text-[var(--content-tertiary)]">
+            {t("debugBundleExport.sentAt", {
+              time: sentAt.toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              }),
+            })}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

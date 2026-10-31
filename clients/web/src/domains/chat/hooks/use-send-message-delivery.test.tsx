@@ -20,6 +20,7 @@ import { MemoryRouter } from "react-router";
 import { createElement, type ReactNode } from "react";
 
 import type { PostMessageResult } from "@/domains/chat/api/messages";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 // ---------------------------------------------------------------------------
 // Module mocks — control the send seam and stub side-effect-only deps so the
@@ -73,8 +74,6 @@ mock.module("@/utils/fetch-conversation-detail", () => ({
 
 const { useSendMessage } =
   await import("@/domains/chat/hooks/use-send-message");
-const { useResolvedAssistantStore } =
-  await import("@/stores/resolved-assistant-store");
 const { useConversationStore } = await import("@/stores/conversation-store");
 const { useChatSessionStore } =
   await import("@/domains/chat/chat-session-store");
@@ -120,9 +119,7 @@ beforeEach(() => {
   deleteQueuedMessageMock = mock(async () => true);
   // Scope check: the send's assistant/conversation must be the active ones so
   // the fallback branch is reached (not short-circuited as inactive).
-  useResolvedAssistantStore
-    .getState()
-    .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
+  useSetupLocalAssistant("asst-1");
   useConversationStore.getState().setActiveConversationId("conv-A");
   useChatSessionStore.setState({
     snapshot: null,

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import {
   chmod,
@@ -26,8 +26,60 @@ import {
   stageRootArchive,
   STATE_ROOTS,
   validateRootArchive,
-  type RootBackupOps,
 } from "../lib/root-backup.js";
+import * as sleepModule from "../commands/sleep.js";
+
+// The backup/restore lifecycle constructs its own storage and sleep now, so
+// the tests simulate service state through the real seams: the storage
+// prototype's methods and the sleep module's assistant entrypoint.
+const realRunning = LocalRootStorage.prototype.running;
+const realCapture = LocalRootStorage.prototype.capture;
+const realReplace = LocalRootStorage.prototype.replace;
+const runningMock = spyOn(LocalRootStorage.prototype, "running");
+const captureMock = spyOn(LocalRootStorage.prototype, "capture");
+const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
+const resumeMock = spyOn(LocalRootStorage.prototype, "resume");
+const sleepMock = spyOn(sleepModule, "sleepAssistant");
+
+let running: boolean | undefined;
+let onCapture: ((path: string) => void) | undefined;
+let onReplace: ((path: string) => void) | undefined;
+let onResume: (() => void) | undefined;
+let onSleep: (() => void) | undefined;
+
+runningMock.mockImplementation(async function (this: LocalRootStorage) {
+  if (running === undefined) return realRunning.call(this);
+  return running;
+});
+captureMock.mockImplementation(async function (
+  this: LocalRootStorage,
+  path: string,
+) {
+  onCapture?.(path);
+  return realCapture.call(this, path);
+});
+replaceMock.mockImplementation(async function (
+  this: LocalRootStorage,
+  path: string,
+) {
+  onReplace?.(path);
+  return realReplace.call(this, path);
+});
+resumeMock.mockImplementation(async () => {
+  running = true;
+  onResume?.();
+});
+sleepMock.mockImplementation(async () => {
+  onSleep?.();
+});
+
+afterEach(() => {
+  running = undefined;
+  onCapture = undefined;
+  onReplace = undefined;
+  onResume = undefined;
+  onSleep = undefined;
+});
 
 const scratch: string[] = [];
 async function fixture() {
@@ -184,41 +236,28 @@ describe("root tar backup", () => {
   });
 
   test("resumes services before compression, but never captures after failed graceful shutdown", async () => {
-    const { entry, file, root } = await fixture();
-    let running = true;
+    const { entry, file } = await fixture();
+    running = true;
     const events: string[] = [];
-    const storage = new LocalRootStorage(entry);
-    const ops: RootBackupOps = {
-      storage: {
-        running: async () => running,
-        capture: async (path) => {
-          events.push("capture");
-          expect(running).toBe(false);
-          await storage.capture(path);
-        },
-        replace: (path) => storage.replace(path),
-      },
-      sleep: async () => {
-        events.push("sleep");
-        running = false;
-      },
-      wake: async () => {
-        events.push("wake");
-        running = true;
-        expect(
-          await readFile(join(root, "workspace", "notes.md"), "utf8"),
-        ).toBe("source notes");
-      },
-      save: () => {},
+    onSleep = () => {
+      events.push("sleep");
+      running = false;
     };
-    await createRootBackup(entry, file, ops);
+    onCapture = () => {
+      events.push("capture");
+      expect(running).toBe(false);
+    };
+    onResume = () => {
+      events.push("wake");
+    };
+    await createRootBackup(entry, file);
     expect(events).toEqual(["sleep", "capture", "wake"]);
     events.length = 0;
-    ops.sleep = async () => {
+    onSleep = () => {
       events.push("sleep");
       throw new Error("refused shutdown");
     };
-    await expect(createRootBackup(entry, file, ops)).rejects.toThrow(
+    await expect(createRootBackup(entry, file)).rejects.toThrow(
       "refused shutdown",
     );
     expect(events).toEqual(["sleep", "wake"]);
@@ -230,19 +269,12 @@ describe("root tar backup", () => {
     await writeFile(join(root, "workspace", "notes.md"), "newer destination");
     await writeFile(join(root, "ces-data", "stale.json"), "remove me");
     const recovery = join(dir, "recovery.tar.gz");
-    const storage = new LocalRootStorage(entry);
-    const ops: RootBackupOps = {
-      storage,
-      sleep: async () => {
-        throw new Error("already stopped");
-      },
-      wake: async () => {
-        throw new Error("must stay stopped");
-      },
-      save: () => {},
+    running = false;
+    onResume = () => {
+      throw new Error("must stay stopped");
     };
     expect(
-      await restoreRootBackup(entry, file, { recoveryPath: recovery }, ops),
+      await restoreRootBackup(entry, file, { recoveryPath: recovery }),
     ).toBe(recovery);
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "source notes",
@@ -258,17 +290,14 @@ describe("root tar backup", () => {
     const { entry, file, root } = await fixture();
     await createRootBackup(entry, file);
     await writeFile(join(root, "workspace", "notes.md"), "destination");
-    const ops: RootBackupOps = {
-      storage: new LocalRootStorage(entry),
-      sleep: async () => {
-        throw new Error("must not stop");
-      },
-      wake: async () => {},
-      save: () => {
-        throw new Error("must not save");
-      },
+    running = false;
+    onResume = () => {
+      throw new Error("must not wake");
     };
-    await restoreRootBackup(entry, file, { dryRun: true }, ops);
+    onSleep = () => {
+      throw new Error("must not stop");
+    };
+    await restoreRootBackup(entry, file, { dryRun: true });
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "destination",
     );
@@ -278,34 +307,19 @@ describe("root tar backup", () => {
     const { entry, file, root, dir } = await fixture();
     await createRootBackup(entry, file);
     await writeFile(join(root, "workspace", "notes.md"), "destination");
-    const storage = new LocalRootStorage(entry);
-    let attempts = 0,
-      running = true;
-    const ops: RootBackupOps = {
-      storage: {
-        running: async () => running,
-        capture: (path) => storage.capture(path),
-        replace: async (path) => {
-          attempts++;
-          await storage.replace(path);
-          if (attempts === 1) throw new Error("partial restore failure");
-        },
-      },
-      sleep: async () => {
-        running = false;
-      },
-      wake: async () => {
-        running = true;
-      },
-      save: () => {},
+    let attempts = 0;
+    running = true;
+    onSleep = () => {
+      running = false;
+    };
+    onReplace = () => {
+      attempts++;
+      if (attempts === 1) throw new Error("partial restore failure");
     };
     await expect(
-      restoreRootBackup(
-        entry,
-        file,
-        { recoveryPath: join(dir, "recovery.tar.gz") },
-        ops,
-      ),
+      restoreRootBackup(entry, file, {
+        recoveryPath: join(dir, "recovery.tar.gz"),
+      }),
     ).rejects.toThrow("partial restore failure");
     expect(attempts).toBe(2);
     expect(running).toBe(true);
@@ -393,28 +407,21 @@ describe("root tar backup", () => {
   test("interrupted startup leaves restored services stopped and keeps the recovery archive", async () => {
     const { entry, root, file, dir } = await fixture();
     await createRootBackup(entry, file);
-    const storage = new LocalRootStorage(entry);
-    let running = true,
-      sleeps = 0;
-    const ops: RootBackupOps = {
-      storage: {
-        running: async () => running,
-        capture: (path) => storage.capture(path),
-        replace: (path) => storage.replace(path),
-      },
-      sleep: async () => {
-        running = false;
-        sleeps++;
-      },
-      wake: async () => {
-        running = true;
-        throw new Error("failed startup");
-      },
-      save: () => {},
+    running = true;
+    let sleeps = 0,
+      wakes = 0;
+    onSleep = () => {
+      running = false;
+      sleeps++;
+    };
+    onResume = () => {
+      wakes++;
+      if (wakes === 1) throw new Error("failed startup");
+      running = true;
     };
     const recovery = join(dir, "recovery.tar.gz");
     await expect(
-      restoreRootBackup(entry, file, { recoveryPath: recovery }, ops),
+      restoreRootBackup(entry, file, { recoveryPath: recovery }),
     ).rejects.toThrow("services were stopped");
     expect(running).toBe(false);
     expect(sleeps).toBe(2);
@@ -425,7 +432,7 @@ describe("root tar backup", () => {
   });
   test("concurrent captures of one installation are serialized by an operation lock", async () => {
     const { entry, file, dir } = await fixture();
-    const storage = new LocalRootStorage(entry);
+    running = false;
     let release!: () => void;
     let started!: () => void;
     const waiting = new Promise<void>((done) => {
@@ -434,25 +441,21 @@ describe("root tar backup", () => {
     const capturing = new Promise<void>((done) => {
       started = done;
     });
-    const ops: RootBackupOps = {
-      storage: {
-        running: async () => false,
-        capture: async (path) => {
-          started();
-          await waiting;
-          await storage.capture(path);
-        },
-        replace: (path) => storage.replace(path),
-      },
-      sleep: async () => {},
-      wake: async () => {},
-      save: () => {},
+    let firstCaptureCalled = false;
+    onCapture = () => {
+      if (!firstCaptureCalled) {
+        firstCaptureCalled = true;
+        started();
+        void waiting.then(() => {
+          /* released below */
+        });
+      }
     };
-    const first = createRootBackup(entry, file, ops);
+    const first = createRootBackup(entry, file);
     await capturing;
     try {
       await expect(
-        createRootBackup(entry, join(dir, "second.tar.gz"), ops),
+        createRootBackup(entry, join(dir, "second.tar.gz")),
       ).rejects.toThrow("Another backup/restore");
     } finally {
       release();
@@ -463,28 +466,17 @@ describe("root tar backup", () => {
   test("deferred recovery restore keeps services stopped so its caller can select the runtime", async () => {
     const { entry, file, dir } = await fixture();
     await createRootBackup(entry, file);
-    const storage = new LocalRootStorage(entry);
-    let running = true;
-    const ops: RootBackupOps = {
-      storage: {
-        running: async () => running,
-        capture: (path) => storage.capture(path),
-        replace: (path) => storage.replace(path),
-      },
-      sleep: async () => {
-        running = false;
-      },
-      wake: async () => {
-        throw new Error("caller owns restart");
-      },
-      save: () => {},
+    running = true;
+    onSleep = () => {
+      running = false;
     };
-    await restoreRootBackup(
-      entry,
-      file,
-      { recoveryPath: join(dir, "recovery.tar.gz"), resume: false },
-      ops,
-    );
+    onResume = () => {
+      throw new Error("caller owns restart");
+    };
+    await restoreRootBackup(entry, file, {
+      recoveryPath: join(dir, "recovery.tar.gz"),
+      resume: false,
+    });
     expect(running).toBe(false);
   });
 });

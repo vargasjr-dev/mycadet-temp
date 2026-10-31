@@ -2421,14 +2421,11 @@ export async function hatchLocal(
   // and its cloud credentials injected — the same post-login flow
   // `cadet login` runs — so messages route through the cloud connection
   // immediately after hatch. Non-fatal: the assistant is up either way.
-  if (provider === "cadet" && readCloudToken()) {
+  const cloudToken = readCloudToken();
+  if (provider === "cadet" && cloudToken) {
     try {
-      const token = readCloudToken()!;
-      const user = await fetchCurrentUser(token);
-      await registerLocalAssistantWithCloud(token, user, {
-        bearerToken: guardianAccessToken,
-        log: (m) => reporter.log(m),
-      });
+      const user = await fetchCurrentUser(cloudToken);
+      await registerLocalAssistantWithCloud(user, (m) => reporter.log(m));
     } catch {
       // Non-fatal — `cadet login` can complete the registration later.
     }
@@ -2707,7 +2704,7 @@ export async function wakeLocal(
   // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.
-  await restoreAppServerAndAutoTunnel(entry);
+  await restoreAppServerAndAutoTunnel();
 
   if (daemonMigrationsFailed) {
     console.log(

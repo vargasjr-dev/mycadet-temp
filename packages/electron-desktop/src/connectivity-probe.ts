@@ -1,8 +1,6 @@
 import { app, BrowserWindow, net, powerMonitor } from "electron";
 
 import { readLockfile } from "@mycadet/local-mode";
-import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
-
 import { setBackendReachable } from "./status";
 
 const PROBE_INTERVAL_MS = 10_000;
@@ -12,48 +10,23 @@ let probeTimer: ReturnType<typeof setInterval> | null = null;
 let probing = false;
 
 /**
- * The outcome of trying to resolve a probe target from the lockfile.
- *
- * - `"local"`: the active assistant runs its gateway on a loopback port
- *   of this machine; the caller should fetch the returned URL and set
- *   reachability from the response.
- * - `"non-local"`: the active assistant is cloud-hosted or self-hosted
- *   remote; there is no local gateway to probe, and any prior
- *   `backendReachable = false` from a stale local-assistant entry should
- *   be cleared. Non-local assistant health is tracked separately via the
- *   platform's operational-status polling.
- * - `"unknown"`: the lockfile could not be read, there is no active
- *   assistant, or the active entry is a local runtime without a gateway
- *   port. The caller should not change the reachability state, because
- *   it cannot prove either direction.
+ * The active assistant's loopback gateway healthz URL, or undefined when
+ * there is nothing on this machine to probe: no active entry, a non-loopback
+ * cloud (its health rides the platform's operational-status polling), or an
+ * entry whose gateway port is not recorded.
  */
-type ProbeTarget =
-  | { kind: "local"; url: string }
-  | { kind: "non-local" }
-  | { kind: "unknown" };
-
-function resolveProbeTarget(): ProbeTarget {
+function activeLoopbackGatewayHealthz(): string | undefined {
   const { assistants, activeAssistant } = readLockfile();
-  if (!activeAssistant) {
-    return { kind: "unknown" };
-  }
   const entry = assistants.find((a) => a.assistantId === activeAssistant);
-  if (!entry) {
-    return { kind: "unknown" };
-  }
   // Cloud wins over resources: merges can leave a stale gatewayPort on a
   // non-local entry, and it must not be loopback-probed.
-  if (!isLoopbackGatewayCloud(entry.cloud)) {
-    return { kind: "non-local" };
+  if (!entry || (entry.cloud !== "local" && entry.cloud !== "docker")) {
+    return undefined;
   }
-  const port = "port" in entry ? entry.port : undefined;
-  if (port) {
-    return {
-      kind: "local",
-      url: `http://127.0.0.1:${port}/healthz`,
-    };
+  if (!entry.port) {
+    return undefined;
   }
-  return { kind: "unknown" };
+  return `http://127.0.0.1:${entry.port}/healthz`;
 }
 
 async function runProbeOnce(): Promise<void> {
@@ -62,16 +35,12 @@ async function runProbeOnce(): Promise<void> {
   }
   probing = true;
   try {
-    const target = resolveProbeTarget();
-    if (target.kind === "unknown") {
-      return;
-    }
-    if (target.kind === "non-local") {
-      setBackendReachable(true);
+    const url = activeLoopbackGatewayHealthz();
+    if (!url) {
       return;
     }
     const ok = await net
-      .fetch(target.url, {
+      .fetch(url, {
         method: "GET",
         signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
       })

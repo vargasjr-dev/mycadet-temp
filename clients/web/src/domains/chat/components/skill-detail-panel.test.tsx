@@ -32,6 +32,7 @@ import type {
   SkillsByIdGetResponse,
 } from "@/generated/daemon/types.gen";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const ASSISTANT_ID = "asst-1";
 const SKILL_ID = "skill-1";
@@ -121,9 +122,7 @@ function renderPanel(
 beforeEach(() => {
   skillPayload = makeSkillDetail();
   skillError = null;
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-  });
+  useSetupLocalAssistant(ASSISTANT_ID);
 });
 
 afterEach(() => {

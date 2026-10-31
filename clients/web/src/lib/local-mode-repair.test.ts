@@ -32,14 +32,11 @@ mock.module("@/lib/self-hosted/connection", () => ({
   setSelfHostedConnection: () => {},
 }));
 
-const {
-  primeLocalGatewayConnectionWithRepair,
-  primeLocalGatewayConnectionWithStartupRetry,
-  LOCAL_GATEWAY_STARTUP_RETRY,
-} = await import("@/lib/local-mode");
+const { primeLocalGatewayConnectionWithRepair, LOCAL_GATEWAY_RESTART_RETRY } =
+  await import("@/lib/local-mode");
 
-// Keep the ride-out loops fast: many attempts, no real wait between them.
-LOCAL_GATEWAY_STARTUP_RETRY.intervalMs = 0;
+// Keep the ride-out loop fast: many attempts, no real wait between them.
+LOCAL_GATEWAY_RESTART_RETRY.intervalMs = 0;
 
 function selectLocalAssistant(): void {
   // The host stamps the served assistant; the renderer synthesizes it.
@@ -85,38 +82,27 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     expect(probeCalls).toBe(2);
   });
 
-  test("a starting gateway that later answers reconnects without waking", async () => {
-    // Login Item cold boot: the gateway binds its port while the ride-out is
-    // already running. Waiting heals it; a plain wake would restart an
-    // already-starting gateway.
+  test("a starting gateway wakes once, then rides out the restart and reconnects", async () => {
+    // A loaded web bundle guarantees a cadet gateway that started, so there
+    // is no boot startup window to wait out: the first prime's 503
+    // "starting" is a repairable failure, the wake restarts the gateway, and
+    // the post-wake ride-out lands once it is back.
     probeImpl = async () =>
       probeCalls < 3 ? probeStatus(503, "starting")() : probeOk();
 
     await primeLocalGatewayConnectionWithRepair();
 
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
+    expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
     expect(probeCalls).toBe(3);
   });
 
-  test("a transport error that later succeeds reconnects without waking", async () => {
+  test("a transport error wakes once, then reconnects on the post-wake probe", async () => {
+    // A loaded web bundle guarantees a cadet gateway that started, so the
+    // first prime is a single attempt: a transport failure is a stopped
+    // gateway, the repair wakes it, and the post-wake ride-out lands once
+    // the restarted gateway is back.
     probeImpl = async () => {
-      if (probeCalls < 3) {
-        throw new TypeError("Failed to fetch");
-      }
-      return probeOk();
-    };
-
-    await primeLocalGatewayConnectionWithRepair();
-
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(probeCalls).toBe(3);
-  });
-
-  test("a transport error that survives the ride-out wakes once, then reconnects", async () => {
-    probeImpl = async () => {
-      // The pre-wake ride-out budget is spent on transport failures; the
-      // post-wake retry lands once the gateway is back.
-      if (probeCalls <= LOCAL_GATEWAY_STARTUP_RETRY.attempts) {
+      if (probeCalls <= LOCAL_GATEWAY_RESTART_RETRY.attempts) {
         throw new TypeError("Failed to fetch");
       }
       return probeOk();
@@ -125,7 +111,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    expect(probeCalls).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts + 1);
+    expect(probeCalls).toBe(LOCAL_GATEWAY_RESTART_RETRY.attempts + 1);
   });
 
   test("a still-failing retry surfaces the original error and wakes only once", async () => {
@@ -246,114 +232,5 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
     // One pre-wake probe plus one terminal post-wake probe.
     expect(probeCalls).toBe(2);
-  });
-});
-
-describe("primeLocalGatewayConnectionWithStartupRetry", () => {
-  test("rides out a still-starting gateway (503) without waking, then connects", async () => {
-    probeImpl = async () =>
-      probeCalls < 3 ? probeStatus(503, "starting")() : probeOk();
-
-    await primeLocalGatewayConnectionWithStartupRetry();
-
-    // Boot must never spawn an assistant process: the plain prime rides out
-    // the window.
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(probeCalls).toBe(3);
-  });
-
-  test("does not ride out a probe 401, surfaces immediately", async () => {
-    // A 401 from the readiness probe is not a starting gateway — waiting
-    // cannot heal it, so the boot surfaces instead of stalling the budget.
-    probeImpl = probeStatus(401, "spent credential");
-
-    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(host.GuardianTokenError);
-    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
-      401,
-    );
-    expect(probeCalls).toBe(1);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("does not ride out a 403 boundary refusal, surfaces immediately", async () => {
-    probeImpl = probeStatus(403, "Forbidden");
-
-    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(host.GuardianTokenError);
-    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
-      403,
-    );
-    // A loopback-boundary refusal is terminal. No repair can change it.
-    expect(probeCalls).toBe(1);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("rides out a transport error (Login Item port not bound yet) without waking, then connects", async () => {
-    probeImpl = async () => {
-      if (probeCalls < 3) {
-        throw new TypeError("Failed to fetch");
-      }
-      return probeOk();
-    };
-
-    await primeLocalGatewayConnectionWithStartupRetry();
-
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(probeCalls).toBe(3);
-  });
-
-  test("a gateway that never answers spends the transport budget, then falls through without waking", async () => {
-    // A thrown transport error is how both a starting Login Item and a stopped
-    // assistant look. Boot rides the budget (never waking) so a starting
-    // gateway can bind its port. A stopped assistant still reaches the chooser
-    // after the budget, where connect-with-repair may wake it.
-    probeImpl = async () => {
-      throw new TypeError("Failed to fetch");
-    };
-
-    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(TypeError);
-    expect(probeCalls).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("does not ride out a probe 404, surfaces immediately", async () => {
-    probeImpl = probeStatus(404, "no such route");
-
-    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(host.GuardianTokenError);
-    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
-      404,
-    );
-    expect(probeCalls).toBe(1);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("does not ride out a probe 500, surfaces immediately", async () => {
-    probeImpl = probeStatus(500, "Assistant gateway is unreachable");
-
-    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(host.GuardianTokenError);
-    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
-      500,
-    );
-    expect(probeCalls).toBe(1);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
   });
 });

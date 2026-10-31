@@ -57,7 +57,7 @@ export interface HostTeleportOps {
   retire(entry: LockfileAssistant): Promise<void>;
 }
 
-function storageFor(entry: LockfileAssistant): HostStorage {
+export function storageFor(entry: LockfileAssistant): HostStorage {
   return entry.cloud === "docker"
     ? new DockerRootStorage(entry)
     : new LocalRootStorage(entry);

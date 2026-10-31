@@ -38,6 +38,7 @@ import {
   openDocumentFromChat,
   useOpenAppFromChat,
 } from "./use-open-app-from-chat";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 // We can't safely `mock.module(...)` core stores like viewer/conversation
 // because Bun module mocks are process-global. They leak into every
@@ -145,9 +146,7 @@ beforeEach(() => {
     setEditingConversationId:
       setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
   });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-  });
+  useSetupLocalAssistant(ASSISTANT_ID);
 });
 
 afterEach(() => {

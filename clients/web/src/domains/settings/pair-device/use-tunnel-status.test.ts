@@ -20,6 +20,7 @@ import {
   installIngressProbe,
   VERSION_BELOW_INGRESS_STATUS,
 } from "./pair-device-test-helpers";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const ASSISTANT_ID = "asst-1";
 const PUBLIC_URL = "https://foo.ts.net";
@@ -60,9 +61,7 @@ async function settle() {
 
 beforeEach(() => {
   resetProbe();
-  useResolvedAssistantStore
-    .getState()
-    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
+  useSetupLocalAssistant(ASSISTANT_ID);
   useAssistantIdentityStore
     .getState()
     .setIdentity("Test", MIN_VERSION, ASSISTANT_ID);

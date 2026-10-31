@@ -37,9 +37,6 @@ mock.module(
   "@/lib/local-mode",
   (): Partial<typeof LocalMode> => ({
     getLocalAssistants: () => [],
-    expectsLocalGateway: (() => false) as unknown as Partial<
-      typeof import("@/lib/local-mode")
-    >["expectsLocalGateway"],
     getServedLockfile: () => ({ assistants: [], activeAssistant: null }),
     getCloudAssistants: () => [],
     getActiveAssistant: () => undefined,

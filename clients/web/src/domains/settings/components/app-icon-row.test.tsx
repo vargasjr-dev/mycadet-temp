@@ -149,6 +149,7 @@ const getInfoMock = mock(async () => {
 });
 
 import * as platformDetection from "@/runtime/platform-detection";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 mock.module("@capacitor/app", () => ({ App: { getInfo: getInfoMock } }));
 mock.module("@/runtime/app-icon", () => ({ getAppIconState, setAppIcon }));
@@ -326,9 +327,7 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: ALL_ICONS };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-  });
+  useSetupLocalAssistant("asst-1");
 });
 
 afterEach(() => {

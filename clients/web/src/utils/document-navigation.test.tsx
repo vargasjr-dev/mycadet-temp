@@ -41,6 +41,7 @@ import type * as Viewer from "@/domains/chat/components/document-viewer-containe
 import { useOpenDocumentFromChat } from "@/domains/chat/hooks/use-open-app-from-chat";
 import { useDocumentConversationRoute } from "@/domains/chat/hooks/use-document-conversation-route";
 import { DocumentChatContent } from "@/domains/chat/components/document-chat-content";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 mock.module(
   "@/domains/library/library-view",
@@ -124,9 +125,7 @@ let pendingSessionRead: Promise<void> | null;
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useSetupLocalAssistant("assistant-1");
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",

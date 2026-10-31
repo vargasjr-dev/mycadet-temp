@@ -22,6 +22,7 @@ import type * as DocumentComments from "../api/document-comments";
 import type { DocumentViewerContainerHandle } from "./document-viewer-container";
 import type * as DocumentCommentPanel from "./document-comment-panel";
 import type * as TiptapDocumentEditor from "./tiptap-document-editor";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const downloadDocumentPdf = mock(
   async (
@@ -111,9 +112,7 @@ async function exportFromMenu() {
 }
 
 beforeEach(() => {
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useSetupLocalAssistant("assistant-1");
   downloadDocumentPdf.mockReset();
   downloadDocumentPdf.mockImplementation(async () => {});
   captureError.mockClear();

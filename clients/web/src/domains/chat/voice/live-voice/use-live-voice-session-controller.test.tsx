@@ -98,6 +98,7 @@ import {
   FakeClient,
   FakePlayer,
 } from "@/domains/chat/voice/live-voice/live-voice-fakes.test-helper";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 // Imported after the connection mock so the real connection.ts never enters
 // the static import graph.
@@ -287,9 +288,7 @@ describe("starter registration", () => {
       assistantId: "assistant-1",
       version: "0.10.12",
     });
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-    });
+    useSetupLocalAssistant("assistant-1");
     useConversationStore.getState().setActiveConversationId("conv-1");
     usePendingDeepLinkStore
       .getState()
@@ -423,9 +422,7 @@ describe("re-draining on an assistant switch", () => {
       .getState()
       .setPendingVoiceStart({ entry: "deep_link" });
     act(() => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-      });
+      useSetupLocalAssistant("assistant-2");
     });
     await flushDrains();
 

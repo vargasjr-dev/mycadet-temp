@@ -53,9 +53,7 @@ mock.module(
     }),
     // Sibling test files in this suite mock the same module and share a
     // process; keep the export their modules import so relinking succeeds.
-    expectsLocalGateway: (() => false) as unknown as Partial<
-      typeof import("@/lib/local-mode")
-    >["expectsLocalGateway"],
+    hasGatewayAddress: () => false,
   }),
 );
 

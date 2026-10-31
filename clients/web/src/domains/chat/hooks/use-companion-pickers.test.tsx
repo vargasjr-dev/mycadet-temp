@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 /** The options the voice hook was last handed. */
 let voiceHookOptions: ({ enabled?: boolean } | undefined)[] = [];
@@ -57,9 +58,7 @@ describe("useCompanionPickers", () => {
   });
 
   test("asks for voices only during a call, and says whether there are any", () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-    });
+    useSetupLocalAssistant("asst-1");
     renderHook(() => useCompanionPickers());
     expect(voiceHookOptions.at(-1)?.enabled ?? true).toBe(false);
     expect(useCompanionPopoverStore.getState().voicesPickable).toBe(false);
@@ -73,9 +72,7 @@ describe("useCompanionPickers", () => {
 
   test("offers no voices for an assistant without a catalog", () => {
     catalogAvailable = false;
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-    });
+    useSetupLocalAssistant("asst-1");
     useLiveVoiceStore.setState({ state: "listening" });
 
     renderHook(() => useCompanionPickers());

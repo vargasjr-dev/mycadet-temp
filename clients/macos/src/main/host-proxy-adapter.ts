@@ -55,11 +55,7 @@ export const installHostProxyBridge = (
         return { ok: false, status: 500, error: (err as Error).message };
       }
 
-      const result = await getGuardianAccessToken(
-        assistantId,
-        invocation,
-        true,
-      );
+      const result = await getGuardianAccessToken(assistantId, invocation);
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {
           assistantId,

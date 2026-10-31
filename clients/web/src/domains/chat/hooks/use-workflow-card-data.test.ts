@@ -20,6 +20,7 @@ import type {
   WorkflowEntry,
   WorkflowLeaf,
 } from "@/domains/chat/workflow-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const NOW = 1700000000000;
 
@@ -322,9 +323,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
     useWorkflowStore.setState({ hydrateRunIfNeeded: spy });
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-    });
+    useSetupLocalAssistant("asst-1");
 
     const { result } = renderHook(() => useWorkflowCardData("wf-absent"));
 
@@ -338,9 +337,7 @@ describe("useWorkflowCardData — hydration wiring", () => {
   test("does not hydrate when an entry already exists", () => {
     const realHydrate = useWorkflowStore.getState().hydrateRunIfNeeded;
     const spy = mock(async (_assistantId: string, _runId: string) => {});
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-    });
+    useSetupLocalAssistant("asst-1");
     useWorkflowStore
       .getState()
       .startRun({ runId: "wf-present", timestamp: NOW });

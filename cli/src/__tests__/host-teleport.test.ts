@@ -7,6 +7,7 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
+  storageFor,
   teleportHostInstallation,
   TeleportRecoveryError,
   type HostTeleportOps,
@@ -22,9 +23,7 @@ let directory: string,
   source: LockfileAssistant,
   target: LocalAssistant,
   ops: HostTeleportOps;
-let order: string[],
-  running: Map<string, boolean>,
-  stores: Map<string, LocalRootStorage>;
+let order: string[], running: Map<string, boolean>;
 let log: ReturnType<typeof spyOn>, previousLockDir: string | undefined;
 const options = { dryRun: false, keepSource: false };
 async function instance(
@@ -66,7 +65,7 @@ beforeEach(async () => {
   process.env.XDG_DATA_HOME = directory;
   previousLockDir = process.env.XDG_CONFIG_HOME;
   process.env.XDG_CONFIG_HOME = join(directory, "registry");
-  source = await instance("source", "docker", 7);
+  source = await instance("source", "local", 7);
   target = (await instance("target", "local", 3)) as LocalAssistant;
   saveLockfileAssistant(source);
   saveLockfileAssistant(target);
@@ -75,61 +74,41 @@ beforeEach(async () => {
     ["source", true],
     ["target", true],
   ]);
-  stores = new Map();
   log = spyOn(console, "log").mockImplementation(() => {});
-  ops = {
-    storage: (entry) => {
-      let storage = stores.get(entry.assistantId);
-      if (!storage) {
-        storage = new LocalRootStorage(entry);
-        storage.running = async () => {
-          storage!.initialRunning ??= new Set(
-            running.get(entry.assistantId)
-              ? ["assistant", "gateway", "ces"]
-              : [],
-          );
-          return running.get(entry.assistantId) ?? false;
-        };
-        storage.resume = async () => {
-          order.push(`wake:${entry.assistantId}`);
-          running.set(entry.assistantId, true);
-        };
-        stores.set(entry.assistantId, storage);
-      }
-      return storage;
+  // Simulated service state rides the storage prototype: the backup/restore
+  // fns construct their own LocalRootStorage now, so the liveness override
+  // has to reach them all.
+  spyOn(LocalRootStorage.prototype, "running").mockImplementation(
+    async function (this: LocalRootStorage) {
+      return running.get(this.entry.assistantId) ?? false;
     },
+  );
+  spyOn(LocalRootStorage.prototype, "resume").mockImplementation(
+    async function (this: LocalRootStorage) {
+      order.push(`wake:${this.entry.assistantId}`);
+      running.set(this.entry.assistantId, true);
+    },
+  );
+  ops = {
+    storage: (entry) => storageFor(entry),
     sleep: mock(async (entry) => {
       order.push(`sleep:${entry.assistantId}`);
       running.set(entry.assistantId, false);
     }),
     backup: mock(async (entry) => {
-      const file = join(directory, `${entry.assistantId}.tar.gz`),
-        storage = ops.storage(entry);
-      await createRootBackup({ ...entry, cloud: "local" }, file, {
-        storage,
-        sleep: () => ops.sleep(entry),
-        wake: () => storage.resume(),
-        save: saveLockfileAssistant,
-      });
+      const file = join(directory, `${entry.assistantId}.tar.gz`);
+      await createRootBackup({ ...entry, cloud: "local" }, file);
       order.push(`backup:${entry.assistantId}`);
       return file;
     }),
     version: mock(async () => "0.12.9"),
     hatch: mock(async () => target),
     restore: mock(async (entry, archive) => {
-      const storage = ops.storage(entry);
-      await restoreRootBackup(
-        entry,
-        archive,
-        { resume: false, recoveryPath: join(directory, "pre-restore.tar.gz") },
-        {
-          storage,
-          sleep: () => ops.sleep(entry),
-          wake: () => storage.resume(),
-          save: saveLockfileAssistant,
-        },
-      );
-      await storage.resume();
+      await restoreRootBackup({ ...entry, cloud: "local" }, archive, {
+        resume: false,
+        recoveryPath: join(directory, "pre-restore.tar.gz"),
+      });
+      await storageFor(entry).resume();
       order.push(`restore:${entry.assistantId}`);
     }),
     retire: mock(async (entry) => {
@@ -294,9 +273,14 @@ test("new target receives safety tar at hatch and becomes ready before source re
   expect(ops.restore).not.toHaveBeenCalled();
 });
 test("failed new target readiness cleans it up before waking source", async () => {
-  ops.storage(target).resume = async () => {
-    throw new Error("migration failed");
-  };
+  const resume = spyOn(LocalRootStorage.prototype, "resume");
+  resume.mockImplementation(async function (this: LocalRootStorage) {
+    if (this.entry.assistantId === "target") {
+      throw new Error("migration failed");
+    }
+    order.push(`wake:${this.entry.assistantId}`);
+    running.set(this.entry.assistantId, true);
+  });
   await expect(
     teleportHostInstallation(source, "local", "fresh-target", options, ops),
   ).rejects.toThrow("migration failed");
@@ -369,25 +353,13 @@ test("holds source and target operation locks through import and releases them a
   await importing;
   try {
     for (const entry of [source, target]) {
-      const storage = ops.storage(entry);
       await expect(
-        createRootBackup(entry, join(directory, "competing.tar.gz"), {
-          storage,
-          sleep: () => ops.sleep(entry),
-          wake: () => storage.resume(),
-          save: saveLockfileAssistant,
-        }),
+        createRootBackup(entry, join(directory, "competing.tar.gz")),
       ).rejects.toThrow("Another backup/restore owns");
     }
   } finally {
     release();
   }
   await transfer;
-  const storage = ops.storage(source);
-  await createRootBackup(source, join(directory, "after.tar.gz"), {
-    storage,
-    sleep: () => ops.sleep(source),
-    wake: () => storage.resume(),
-    save: saveLockfileAssistant,
-  });
+  await createRootBackup(source, join(directory, "after.tar.gz"));
 });

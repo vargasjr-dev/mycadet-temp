@@ -72,7 +72,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 503 is an unreachable gateway, not a spent token", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation, true);
+    const pending = getGuardianAccessToken("asst-1", invocation);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -90,7 +90,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 401 is a spent credential", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation, true);
+    const pending = getGuardianAccessToken("asst-1", invocation);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -108,7 +108,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 403 is a local confidentiality refusal, not a spent credential", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation, true);
+    const pending = getGuardianAccessToken("asst-1", invocation);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -126,7 +126,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("an unlabeled non-zero CLI exit is a 503, not a 401", async () => {
-    const pending = getGuardianAccessToken("asst-1", invocation, true);
+    const pending = getGuardianAccessToken("asst-1", invocation);
     await tick();
     lastChild.stderr.emit(
       "data",

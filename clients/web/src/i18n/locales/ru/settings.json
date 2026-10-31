@@ -293,8 +293,7 @@
     "sentAt": "Отправлено в Cadet в {time}.",
     "toastFailed": "Отладочный пакет не был отправлен.",
     "toastFailedWithReason": "Отладочный пакет не был отправлен: {reason}",
-    "toastSent": "Отладочный пакет отправлен в Cadet.",
-    "useDesktopApp": "Экспортируйте из настольного приложения Cadet на компьютере, где работает этот ассистент."
+    "toastSent": "Отладочный пакет отправлен в Cadet."
   },
   "debugControlsPanel": {
     "backups": "Резервные копии",

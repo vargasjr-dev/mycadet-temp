@@ -29,7 +29,7 @@ import type {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { expectsLocalGateway, getActiveAssistant } from "@/lib/local-mode";
+import { getActiveAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
@@ -95,18 +95,18 @@ export interface PairDeviceTarget {
 
 /**
  * Resolve the selected assistant's scoped remote-web base, or `null` when
- * device pairing isn't available from here. `expectsLocalGateway` is true only in
- * desktop/local mode (never remote-gateway or platform mode) for an
- * on-machine assistant with a recorded loopback gateway — exactly the cases
- * where a host-presence mint is possible — so a `null` here doubles as the
- * section's visibility gate.
+ * there is no assistant to pair. Device pairing works for every assistant
+ * entry: the scoped data plane is plain same-origin `/v1`, so any entry the
+ * bundle resolved can host a pairing — a `null` here is only the
+ * not-yet-resolved pre-projection window, doubling as the section's
+ * visibility gate.
  */
 export function resolvePairDeviceTarget(): PairDeviceTarget | null {
   if (typeof window === "undefined") {
     return null;
   }
   const assistant = getActiveAssistant();
-  if (!assistant || !expectsLocalGateway(assistant)) {
+  if (!assistant) {
     return null;
   }
   return {

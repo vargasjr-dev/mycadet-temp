@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 interface CancelCall {
   path?: Record<string, string>;
@@ -55,9 +56,7 @@ beforeEach(() => {
   nextData = { cancelled: true };
   nextOk = true;
   nextStatus = 200;
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-  });
+  useSetupLocalAssistant("asst-1");
 });
 
 afterEach(() => {

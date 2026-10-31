@@ -199,21 +199,15 @@ test("failure during Docker replacement recovers prior roots before restarting",
   for (const root of STATE_ROOTS)
     await writeFile(join(directory, root, "value"), "destination");
   failWrite = 2;
+  // The real resume probes readiness through docker exec after the restart.
+  commands.on(
+    "docker",
+    (args) => args[0] === "exec" && args.includes("--eval"),
+    () => ({ stdout: "ready" }),
+  );
   const recovery = join(directory, "recovery.tar.gz");
   await expect(
-    restoreRootBackup(
-      entry,
-      file,
-      { recoveryPath: recovery },
-      {
-        storage,
-        sleep: () => sleepContainers(names, { timeoutMs: 100 }),
-        wake: async () => {
-          for (const container of containers) running.set(container, true);
-        },
-        save: () => {},
-      },
-    ),
+    restoreRootBackup(entry, file, { recoveryPath: recovery }),
   ).rejects.toThrow("injected volume replacement failure");
   expect(await storage.running()).toBe(true);
   const previous = await stageRootArchive(recovery, directory);

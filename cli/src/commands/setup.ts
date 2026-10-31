@@ -5,7 +5,6 @@ import {
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import {
-  loadAssistantBearerToken,
   leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
@@ -126,13 +125,11 @@ async function resolveSetupBearerToken(
       return leasedToken.accessToken;
     }
   } catch {
-    // Fall through to any lockfile bearer token, or let the setup request
-    // surface the gateway's auth error below.
+    // Fall through, or let the setup request surface the gateway's auth
+    // error below.
   }
 
-  return entry.cloud === "cloud"
-    ? loadAssistantBearerToken(entry.assistantId)
-    : undefined;
+  return undefined;
 }
 
 export const setup = Object.assign(

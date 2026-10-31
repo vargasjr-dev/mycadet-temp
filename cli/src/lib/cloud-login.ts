@@ -16,7 +16,7 @@ import type { AddressInfo } from "net";
 import { resolveAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
-import { computeDeviceId, loadAssistantBearerToken } from "./guardian-token.js";
+import { computeDeviceId, loadGuardianToken } from "./guardian-token.js";
 import { openBrowser } from "./open-browser.js";
 import {
   fetchCurrentUser,
@@ -338,19 +338,28 @@ export function describeLoginError(error: unknown): string {
   );
 }
 
+/** The guardian bearer recorded beside the lockfile, for gateway calls. */
+function guardianBearer(assistantId: string): string | undefined {
+  return loadGuardianToken(assistantId)?.accessToken;
+}
+
 /**
  * Register the active self-hosted assistant with the cloud and inject
  * cloud credentials into its runtime — the post-login half of the desktop
  * app's LocalAssistantBootstrapService flow. Extracted so `cadet hatch` can
  * complete the same flow right after an interactive login on the Cadet Cloud
- * provider path. Non-fatal by design; callers log failures.
+ * provider path. Non-fatal by design; callers log failures. Reads the cloud
+ * session token and the guardian bearer from their disk files.
  */
 export async function registerLocalAssistantWithCloud(
-  token: string,
   user: { id: string; email: string },
-  options: { bearerToken?: string; log?: (message: string) => void } = {},
+  log: (message: string) => void = console.log,
 ): Promise<void> {
-  const log = options.log ?? console.log;
+  // Both credentials come from disk: the cloud session token saved by
+  // `cadet login`, and the guardian bearer beside the lockfile — the same
+  // credential the assistant's gateway leases.
+  const token = readCloudToken();
+  if (!token) return;
   const entry = resolveAssistant();
 
   // Skip managed ("cadet") assistants — they are handled by the cloud.
@@ -362,10 +371,7 @@ export async function registerLocalAssistantWithCloud(
   const clientInstallationId = computeDeviceId();
   const [assistantVersion, ingressUrl] = await Promise.all([
     fetchCurrentVersion(gatewayUrl),
-    fetchAssistantIngressUrl(
-      gatewayUrl,
-      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
-    ),
+    fetchAssistantIngressUrl(gatewayUrl, guardianBearer(entry.assistantId)),
   ]);
   const cloudUrl = getCloudUrl();
   const registration = await ensureSelfHostedLocalRegistration(
@@ -393,8 +399,7 @@ export async function registerLocalAssistantWithCloud(
   const resolved = await resolveAssistantApiKeyForInjection({
     registrationApiKey: registration.assistant_api_key,
     runtimeUrl: gatewayUrl,
-    bearerToken:
-      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
+    bearerToken: guardianBearer(entry.assistantId),
     token,
     organizationId: orgId,
     clientInstallationId,
@@ -410,8 +415,7 @@ export async function registerLocalAssistantWithCloud(
   // mirroring the desktop app's LocalAssistantBootstrapService flow.
   const allInjected = await injectCredentialsIntoAssistant({
     gatewayUrl: gatewayUrl,
-    bearerToken:
-      options.bearerToken ?? loadAssistantBearerToken(entry.assistantId),
+    bearerToken: guardianBearer(entry.assistantId),
     assistantApiKey,
     cloudAssistantId: registration.assistant.id,
     organizationId: orgId,

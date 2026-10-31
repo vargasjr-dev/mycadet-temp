@@ -38,6 +38,7 @@ import {
   seedChatInfoConversation,
   seedTranscriptMessages,
 } from "./chat-info.test-helper";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const restoreDomStubs = installChatInfoDomStubs();
 const viewport = viewportAxesStub();
@@ -131,9 +132,7 @@ beforeEach(() => {
     openedDocumentState: null,
   });
   useConversationStore.setState({ activeConversationId: "conv-1" });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useSetupLocalAssistant("assistant-1");
   conversationExists = true;
   documentLoad = new Promise((resolve, reject) => {
     finishLoad = resolve;

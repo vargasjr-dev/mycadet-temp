@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 interface PatchArgs {
   url: string;
@@ -80,9 +81,7 @@ beforeEach(() => {
   setDeviceSettingMock.mockClear();
   captureErrorMock.mockClear();
   patchMock.mockImplementation(async () => ({ data: {} }));
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "asst-1" },
-  });
+  useSetupLocalAssistant("asst-1");
 });
 
 afterEach(() => {
@@ -189,9 +188,7 @@ describe("TimezoneSection", () => {
         }),
     );
 
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-A" },
-    });
+    useSetupLocalAssistant("asst-A");
     const { getByText, rerender } = render(<TimezoneSection />);
 
     // (a) Start a change for assistant A: the first PATCH fires and stays in
@@ -204,9 +201,7 @@ describe("TimezoneSection", () => {
 
     // (b) Switch the active assistant to B and re-render so `assistantIdRef`
     // picks up the new id via its effect.
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "asst-B" },
-    });
+    useSetupLocalAssistant("asst-B");
     rerender(<TimezoneSection />);
 
     // (c) Change the timezone again while A's PATCH is still in flight: this

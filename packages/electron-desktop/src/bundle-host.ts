@@ -46,11 +46,7 @@ export const createBundleHostProvider = (
   acquireGatewayToken: async (assistantId) => {
     try {
       const invocation = await resolveInvocation();
-      const result = await getGuardianAccessToken(
-        assistantId,
-        invocation,
-        true,
-      );
+      const result = await getGuardianAccessToken(assistantId, invocation);
       return result.ok ? result.accessToken : null;
     } catch {
       return null;

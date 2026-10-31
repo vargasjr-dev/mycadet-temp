@@ -771,9 +771,10 @@ export async function withRootOperationLock<T>(
 export async function createRootBackup(
   entry: LockfileAssistant,
   output: string,
-  ops = defaultOps(entry),
 ): Promise<void> {
-  return withRootOperationLock(entry, () => captureBackup(entry, output, ops));
+  return withRootOperationLock(entry, () =>
+    captureBackup(entry, output, defaultOps(entry)),
+  );
 }
 
 async function captureBackup(
@@ -823,10 +824,9 @@ export async function restoreRootBackup(
   entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
-  ops = defaultOps(entry),
 ): Promise<string | undefined> {
   return withRootOperationLock(entry, () =>
-    restoreBackup(entry, file, options, ops),
+    restoreBackup(entry, file, options, defaultOps(entry)),
   );
 }
 

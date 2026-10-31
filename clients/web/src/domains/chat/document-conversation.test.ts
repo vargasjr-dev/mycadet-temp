@@ -26,6 +26,7 @@ import {
   getEditChatConversationId,
   setEditChatConversationId,
 } from "@/utils/edit-chat-session";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 const {
   documentRequestScope,
   resolveDocumentConversation,
@@ -40,9 +41,7 @@ let identity: ReturnType<typeof useAssistantIdentityStore.getState>;
 beforeEach(() => {
   selection = useResolvedAssistantStore.getState();
   identity = useAssistantIdentityStore.getState();
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useSetupLocalAssistant("assistant-1");
   useAssistantIdentityStore.setState({
     assistantId: "assistant-1",
     version: "0.11.12",

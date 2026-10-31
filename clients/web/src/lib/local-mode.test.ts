@@ -58,7 +58,6 @@ mock.module("@/runtime/local-mode-host", () => ({
 import {
   getActiveAssistant,
   hasGatewayAddress,
-  expectsLocalGateway,
   getLocalAssistants,
   getServedLockfile,
   getCloudAssistants,
@@ -72,9 +71,7 @@ import {
   isCloudAssistant,
   isRetryablePairingFailure,
   hasAssistants,
-  LOCAL_GATEWAY_STARTUP_RETRY,
   primeLocalGatewayConnection,
-  primeLocalGatewayConnectionWithStartupRetry,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
 } from "@/lib/local-mode";
@@ -204,7 +201,6 @@ describe("served config synthesis", () => {
     // A plain local serve: the renderer holds no transport URL and the host
     // routes same-origin, so the served entry carries a LOCAL gateway
     // address through its recorded port.
-    expect(expectsLocalGateway()).toBe(true);
     expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
 
     stampServed({ assistantId: "served-1", remote: "docker" });
@@ -274,7 +270,7 @@ describe("remote gateway mode", () => {
     ]);
     // The serving edge IS the gateway - but the served-gateway arm keys on
     // the runtime, not the entry's port.
-    expect(expectsLocalGateway()).toBe(false);
+    expect(hasGatewayAddress(getActiveAssistant())).toBe(false);
   });
 });
 
@@ -615,79 +611,6 @@ describe("assistant classification", () => {
   });
 });
 
-describe("expectsLocalGateway", () => {
-  test("is true for a local assistant with a recorded port", () => {
-    enableLocalMode();
-    expect(expectsLocalGateway(localA)).toBe(true);
-  });
-
-  test("is true for a docker assistant's recorded loopback port", () => {
-    // Docker entries record the published gateway as a loopback runtimeUrl and
-    // carry no `resources` block.
-    enableLocalMode();
-    const docker = {
-      assistantId: "dk",
-      cloud: "docker",
-      port: 7930,
-    } as LockfileAssistant;
-    expect(expectsLocalGateway(docker)).toBe(true);
-  });
-
-  test("accepts 127.0.0.1 as a loopback runtimeUrl host", () => {
-    enableLocalMode();
-    const docker = {
-      assistantId: "dk",
-      cloud: "docker",
-      port: 7931,
-    } as LockfileAssistant;
-    expect(expectsLocalGateway(docker)).toBe(true);
-  });
-
-  test("is true for a recorded resources.gatewayPort", () => {
-    enableLocalMode();
-    const entry = {
-      assistantId: "x",
-      cloud: "local",
-      port: 7830,
-    } as LockfileAssistant;
-    expect(expectsLocalGateway(entry)).toBe(true);
-  });
-
-  test("is false for a cloud assistant", () => {
-    enableLocalMode();
-    expect(expectsLocalGateway(platform)).toBe(false);
-  });
-
-  test("is false for a remote (paired) assistant", () => {
-    enableLocalMode();
-    const paired = {
-      assistantId: "p",
-      cloud: "custom",
-      ipAddress: "p.example.com",
-      port: 443,
-    } as LockfileAssistant;
-    expect(expectsLocalGateway(paired)).toBe(false);
-  });
-
-  test("is false outside local mode even for a local assistant with a port", () => {
-    disableLocalMode();
-    expect(expectsLocalGateway(localA)).toBe(false);
-  });
-
-  test("is false in a served-gateway runtime (the runtime's own vision covers it)", () => {
-    window.__CADET_CONFIG__ = {
-      remote: "docker",
-      assistantId: "edge-1",
-    };
-    expect(expectsLocalGateway()).toBe(false);
-  });
-
-  test("defaults to the selected assistant - the served entry, port 0, is live topology", () => {
-    stampServed({ assistantId: "served-1" });
-    expect(expectsLocalGateway()).toBe(true);
-  });
-});
-
 describe("hasGatewayAddress", () => {
   test("is true for a custom remote with a usable recorded address", () => {
     enableLocalMode();
@@ -880,46 +803,6 @@ describe("primeLocalGatewayConnection", () => {
     expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
     // The local selection's data-plane signal is topology, not the slot.
-    expect(expectsLocalGateway(getActiveAssistant())).toBe(true);
-  });
-});
-
-describe("primeLocalGatewayConnectionWithStartupRetry (paired target)", () => {
-  // The startup ride-out exists for the LOCAL gateway's Login Item window.
-  // Paired failures (failed host credential read, remote transport error) fall
-  // through promptly to the chooser instead of stalling the boot retry budget
-  // on a machine that waiting cannot start.
-  test("a failing paired credential read is not ridden out", async () => {
-    enableLocalMode();
-    const fetchMock = mock(
-      async () => new Response("Guardian token not found", { status: 404 }),
-    );
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    const start = Date.now();
-    await expect(
-      primeLocalGatewayConnectionWithStartupRetry(pairedEntry),
-    ).rejects.toBeInstanceOf(localModeHost.GuardianTokenError);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-    expect(Date.now() - start).toBeLessThan(
-      LOCAL_GATEWAY_STARTUP_RETRY.intervalMs,
-    );
-  });
-
-  test("a remote transport failure is not ridden out either", async () => {
-    enableLocalMode();
-    const fetchMock = mock(async () => {
-      throw new TypeError("Failed to fetch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await expect(
-      primeLocalGatewayConnectionWithStartupRetry(pairedEntry),
-    ).rejects.toThrow("Failed to fetch");
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
+    expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
   });
 });

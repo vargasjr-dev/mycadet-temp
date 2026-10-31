@@ -12,8 +12,9 @@ import {
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "./cli-name.js";
 import {
+  isCloudEntry,
+  isDockerEntry,
   isLocalEntry,
-  GATEWAY_PORT,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
@@ -26,6 +27,7 @@ import {
   type AppServer,
 } from "./servers/nginx.js";
 import { waitForDaemonReady } from "./http-client.js";
+import { GATEWAY_PORT } from "./constants.js";
 import {
   confirmStopAnswer,
   isNgrokEndpointOnlineError,
@@ -193,36 +195,6 @@ const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 /**
  * A tunnelable assistant plus the gateway port and workspace the edge fronts.
  */
-export interface LocalTunnelTarget {
-  entry: LockfileAssistant;
-  gatewayPort: number;
-}
-
-/**
- * Map an entry to its local tunnel target, or null when it has no locally
- * reachable gateway (e.g. cloud-hosted). On-machine entries carry
- * their own gateway port and instance workspace. Local container entries
- * (docker, apple-container) run locally without host resources: their
- * gateway port comes from their recorded runtime url and their ingress
- * state lives in the default workspace.
- */
-export function toLocalTunnelTarget(
-  entry: LockfileAssistant,
-): LocalTunnelTarget | null {
-  if (isLocalEntry(entry) && entry.instanceDir) {
-    return { entry, gatewayPort: entry.port };
-  }
-  if (
-    entry.cloud !== "cloud" &&
-    entry.cloud !== "custom" &&
-    entry.cloud !== "baseten" &&
-    entry.port !== undefined
-  ) {
-    return { entry, gatewayPort: entry.port };
-  }
-  return null;
-}
-
 /**
  * Make sure nginx is installed for the app server, offering to install it
  * when missing. Exits the process when nginx cannot be found or installed —
@@ -261,13 +233,10 @@ export async function ensureNginxForEdge(): Promise<string> {
 export async function notifyAllLocalGatewaysOfPublicUrl(
   publicUrl: string,
 ): Promise<void> {
-  const targets = loadAllAssistants()
-    .map(toLocalTunnelTarget)
-    .filter((target): target is LocalTunnelTarget => target !== null);
   await Promise.all(
-    targets.map((target) =>
-      notifyGatewayOfPublicUrl(publicUrl, target.entry.assistantId),
-    ),
+    loadAllAssistants()
+      .filter(isLocalEntry)
+      .map((entry) => notifyGatewayOfPublicUrl(publicUrl, entry.assistantId)),
   );
 }
 
@@ -445,37 +414,24 @@ function survivingAppServerPort(): number | null {
 }
 
 /**
- * Bring the nginx edge back up after a wake or local upgrade. The edge is
- * wanted when the root lockfile records one — the `app` entry the restore
- * flow stamps when it establishes the edge. `ensureAppServer` owns the reuse
- * decision (and resolves the assistant it fronts from the lockfile), so a
- * running edge is adopted only while its gateway upstream and injected SPA
- * config fingerprint match what this restore asks for; an edge that drifted
- * in either respect (a renamed assistant, a changed hub URL) is restarted
- * rather than adopted, which is what keeps a wake from serving a config the
- * current CLI would never generate.
- *
- * Several of those failures leave the old edge serving (the web-dist preflight
- * bails before it is stopped; a drifted edge whose stop fails is reported as
- * stale), and tunneling the gateway directly would take the edge's
- * sensitive-route denylist out from in front of the tunnel. So a failure warns
- * and reports a surviving SPA edge as the target instead.
- *
- * Returns the loopback port a tunnel should front — always defined: the
- * app server's own port when it runs, else the gateway's (webhook delivery
- * survives without an edge; the web app does not).
+ * Loopback gateway port of the target assistant — what a tunnel fronts when
+ * no app server edge survives to front instead. A cloud entry has no loopback
+ * gateway; the global default keeps the return a number.
  */
-export async function restoreAppServer(
-  entry: LockfileAssistant,
-): Promise<number> {
+function targetGatewayPort(): number {
+  const entry = resolveTargetAssistant();
+  return isCloudEntry(entry) ? GATEWAY_PORT : entry.port;
+}
+
+/**
+ * Bring the nginx edge back up after a wake or local upgrade; a drifted or
+ * failed edge warns and reports the surviving port rather than failing the
+ * wake. Returns the loopback port a tunnel should front — the App Server
+ * manages its own port, completely agnostic of the cadet gateway port.
+ */
+export async function restoreAppServer(): Promise<number> {
   if (!wantsAppServer()) {
-    return (
-      (entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-        ? entry.port
-        : undefined) ?? GATEWAY_PORT
-    );
+    return targetGatewayPort();
   }
   let appServer: AppServer;
   try {
@@ -490,15 +446,7 @@ export async function restoreAppServer(
     console.warn(
       `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
-    return (
-      survivingPort ??
-      (entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-        ? entry.port
-        : undefined) ??
-      GATEWAY_PORT
-    );
+    return survivingPort ?? targetGatewayPort();
   }
   console.log(
     `   App server ${appServer.started ? "started" : "already running"} on 127.0.0.1:${appServer.port}.`,
@@ -521,14 +469,7 @@ export async function restoreContainerAppServer(
   entry: LockfileAssistant,
   gatewayReadyTimeoutMs = 0,
 ): Promise<void> {
-  if (
-    !(
-      entry.cloud !== "cloud" &&
-      entry.cloud !== "custom" &&
-      entry.cloud !== "baseten"
-    ) ||
-    entry.port === undefined
-  ) {
+  if (!isDockerEntry(entry)) {
     return;
   }
   const gatewayPort = entry.port;
@@ -551,7 +492,7 @@ export async function restoreContainerAppServer(
     );
     return;
   }
-  await restoreAppServerAndAutoTunnel(entry);
+  await restoreAppServerAndAutoTunnel();
 }
 
 /**
@@ -563,15 +504,13 @@ export async function restoreContainerAppServer(
  *    tunnel takes),
  * 3. save the tunnel's ingress url to each assistant.
  */
-export async function restoreAppServerAndAutoTunnel(
-  entry: LockfileAssistant,
-): Promise<void> {
+export async function restoreAppServerAndAutoTunnel(): Promise<void> {
   // 1. Ensure the app server is started.
-  const appServerPort = await restoreAppServer(entry);
+  const appServerPort = await restoreAppServer();
   // 2. Ensure the tunnel is started at it: lockfile.json records which
   //    tunnel we expect connected to the app server, so only that provider's
   //    own start piece runs — pointed at the app server's port.
-  const publicUrl = await ensureTunnel(appServerPort, entry.assistantId);
+  const publicUrl = await ensureTunnel(appServerPort);
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
@@ -591,10 +530,7 @@ export async function restoreAppServerAndAutoTunnel(
  * resurrects it. Returns the established URL, or null when nothing was
  * started.
  */
-async function ensureTunnel(
-  targetPort: number,
-  assistantId?: string,
-): Promise<string | null> {
+async function ensureTunnel(targetPort: number): Promise<string | null> {
   const expected = readRootProcesses().tunnel;
   if (!expected?.provider) {
     return null;
@@ -609,7 +545,9 @@ async function ensureTunnel(
   try {
     const result = await providers[expected.provider]?.run({
       port: targetPort,
-      assistantId,
+      // The tunnel is a root resource; the target assistant only names the
+      // token/notify seams for the re-established run.
+      assistantId: resolveTargetAssistant().assistantId,
     });
     if (!result) return null;
     // The run owns nothing in this process — the agent is detached — but an

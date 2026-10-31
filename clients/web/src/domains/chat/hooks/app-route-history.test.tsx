@@ -60,6 +60,7 @@ import { useAppRouteSync } from "./use-app-route-sync";
 import { useAppViewerRouteHandlers } from "./use-app-viewer-route-handlers";
 import { useConversationLoader } from "./use-conversation-loader";
 import { useOpenAppFromChat } from "./use-open-app-from-chat";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const ASSISTANT_ID = "asst-1";
 const APP_ID = "app-1";
@@ -200,9 +201,7 @@ beforeEach(() => {
   holdOpens = false;
   openRequests = 0;
   viewport.set({ narrow: false, coarsePointer: false });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-  });
+  useSetupLocalAssistant(ASSISTANT_ID);
   useConversationStore.setState({ activeConversationId: CONV_ID });
   spyOn(daemonClient, "post").mockImplementation((async (options: {
     url: string;
@@ -639,9 +638,7 @@ describe("app route history", () => {
     // A switch leaves this route mounted, so the app on screen would otherwise
     // stay the previous assistant's while every other action uses the new one.
     await act(async () => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", port: 0, assistantId: "asst-2" },
-      });
+      useSetupLocalAssistant("asst-2");
     });
 
     await waitFor(() =>

@@ -16,6 +16,7 @@ import {
   removeLifecycleDiagnostics,
 } from "@/lib/diagnostics";
 import { ApiError } from "@/utils/api-errors";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 // The quick-add controller runs a daemon query and pulls in the settings
 // domain's profile editor; neither participates in cache scoping.
@@ -24,8 +25,6 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 }));
 
 const { AppProviders } = await import("@/components/providers");
-const { useResolvedAssistantStore } =
-  await import("@/stores/resolved-assistant-store");
 
 const PROBE_KEY = ["org-scoped-probe"];
 const ASSET_FAILURE_OPTIONS = {
@@ -67,9 +66,7 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-123" },
-  });
+  useSetupLocalAssistant("assistant-123");
 });
 
 afterEach(() => {
@@ -88,9 +85,7 @@ describe("AppProviders cache scope", () => {
       ),
     ).toHaveLength(1);
     act(() => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", port: 0, assistantId: "assistant-456" },
-      });
+      useSetupLocalAssistant("assistant-456");
     });
     expect(assetEvents()).toHaveLength(0);
   });
@@ -102,9 +97,7 @@ describe("AppProviders cache scope", () => {
     });
 
     act(() => {
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", port: 0, assistantId: "assistant-456" },
-      });
+      useSetupLocalAssistant("assistant-456");
     });
 
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();

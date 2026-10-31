@@ -18,6 +18,7 @@ import {
   pushSseEvent,
   resetSseDebugStateForTests,
 } from "@/lib/streaming/stream-debug";
+import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 let selfLookupSupported = true;
 mock.module("@/lib/backwards-compat/subagent-detail-self-lookup", () => ({
@@ -2787,9 +2788,7 @@ describe("reconcileFromDaemon", () => {
 
   it("discards a snapshot when the assistant changes without a conversation reset", async () => {
     const previous = useResolvedAssistantStore.getState().assistant;
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-    });
+    useSetupLocalAssistant("assistant-1");
     try {
       reconcileReply = {
         ok: true,
@@ -2799,9 +2798,7 @@ describe("reconcileFromDaemon", () => {
         "assistant-1",
         "conv-parent",
       );
-      useResolvedAssistantStore.setState({
-        assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-      });
+      useSetupLocalAssistant("assistant-2");
       await pending;
       expect(getState().byId["sa-old"]).toBeUndefined();
     } finally {
