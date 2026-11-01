@@ -13,7 +13,6 @@ import { basename, dirname, join } from "path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import {
   cliCommand,
-  generateLocalSecret,
   getArchivePath,
   getLocalInstanceDir,
   getMetadataPath,
