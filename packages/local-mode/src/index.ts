@@ -66,6 +66,10 @@ export {
   isDockerEntry,
   isLocalEntry,
   LockfileAssistantSchema,
+  MachineMemoryPolicySchema,
+  MachinePolicySchema,
+  MACHINE_APPLICABILITY,
+  getMachinePolicy,
   parseLockfile,
 } from "./lockfile-contract";
 export type {
@@ -78,6 +82,9 @@ export type {
   CustomAssistant,
   BasetenAssistant,
   LockfileWriteResult,
+  MachinePolicy,
+  MachineMemoryPolicy,
+  MachineApplicability,
 } from "./lockfile-contract";
 export type { LockfileAssistantPatch } from "./lockfile";
 export {

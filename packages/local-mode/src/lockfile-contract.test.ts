@@ -3,10 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
   LockfileAssistantSchema,
   LockfileSchema,
+  MachinePolicySchema,
+  MACHINE_APPLICABILITY,
   RemoteSchema,
   KNOWN_REMOTES,
   GATEWAY_PORT,
   getGatewayUrl,
+  getMachinePolicy,
   parseLockfile,
   stripSensitiveFields,
   SENSITIVE_KEYS,
@@ -429,5 +432,153 @@ describe("getGatewayUrl", () => {
     expect(parsed.assistants).toEqual([
       { assistantId: "asst_new", cloud: "local", port: GATEWAY_PORT },
     ]);
+  });
+});
+
+describe("machine policy", () => {
+  test("round-trips a fully-populated policy through parseLockfile", () => {
+    const raw = {
+      activeAssistant: "asst_m1",
+      assistants: [
+        {
+          assistantId: "asst_m1",
+          name: "Sized",
+          cloud: "docker",
+          port: 7830,
+          machine: {
+            memory: { high: 6 * 1024 ** 3, max: 8 * 1024 ** 3 },
+          },
+        },
+      ],
+    };
+    expect(parseLockfile(raw)).toEqual(raw as Lockfile);
+  });
+
+  test("keeps entries without a machine section (absent = runtime defaults)", () => {
+    const parsed = parseLockfile({
+      assistants: [{ assistantId: "asst_m2", cloud: "local", port: 7830 }],
+    });
+    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+  });
+
+  test("a policy violating high <= max quarantines to defaults, entry survives", () => {
+    const parsed = parseLockfile({
+      assistants: [
+        {
+          assistantId: "asst_m3",
+          cloud: "docker",
+          port: 7830,
+          machine: {
+            memory: { high: 10 * 1024 ** 3, max: 8 * 1024 ** 3 },
+          },
+        },
+      ],
+    });
+    // The write path rejects this loudly; the parse path keeps the assistant
+    // but falls back to the defaults so one bad section can't drop the entry.
+    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]).toMatchObject({
+      assistantId: "asst_m3",
+      cloud: "docker",
+      port: 7830,
+    });
+  });
+
+  test("unknown machine keys quarantine the section (strict at the boundary)", () => {
+    const parsed = parseLockfile({
+      assistants: [
+        {
+          assistantId: "asst_m4",
+          cloud: "local",
+          port: 7830,
+          machine: { memoryy: { max: 1024 } } as Record<string, unknown>,
+        },
+      ],
+    });
+    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]).toMatchObject({ assistantId: "asst_m4" });
+  });
+
+  test("a non-object machine section quarantines the same way", () => {
+    const parsed = parseLockfile({
+      assistants: [
+        {
+          assistantId: "asst_m5",
+          cloud: "local",
+          port: 7830,
+          machine: "12GiB" as unknown as Record<string, unknown>,
+        },
+      ],
+    });
+    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]).toMatchObject({ assistantId: "asst_m5" });
+  });
+
+  test("accepts high without max and max without high", () => {
+    for (const memory of [{ high: 6 * 1024 ** 3 }, { max: 8 * 1024 ** 3 }]) {
+      const parsed = parseLockfile({
+        assistants: [
+          {
+            assistantId: "asst_m6",
+            cloud: "local",
+            port: 7830,
+            machine: { memory },
+          },
+        ],
+      });
+      expect(getMachinePolicy(parsed.assistants[0]!)).toEqual({ memory });
+    }
+  });
+
+  test("rejects non-positive and non-integer byte values", () => {
+    for (const memory of [
+      { max: 0 },
+      { max: -1 },
+      { high: 1.5 },
+      { max: Number.NaN },
+    ]) {
+      const parsed = parseLockfile({
+        assistants: [
+          {
+            assistantId: "asst_m7",
+            cloud: "local",
+            port: 7830,
+            machine: { memory },
+          },
+        ],
+      });
+      expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    }
+  });
+});
+
+describe("MachinePolicySchema", () => {
+  test("accepts a valid policy and pins the cross-field issue path", () => {
+    expect(
+      MachinePolicySchema.safeParse({
+        memory: { high: 6 * 1024 ** 3, max: 8 * 1024 ** 3 },
+      }).success,
+    ).toBe(true);
+
+    const invalid = MachinePolicySchema.safeParse({
+      memory: { high: 9 * 1024 ** 3, max: 8 * 1024 ** 3 },
+    });
+    expect(invalid.success).toBe(false);
+    if (!invalid.success) {
+      expect(invalid.error.issues[0]?.path).toEqual(["memory", "high"]);
+    }
+  });
+});
+
+describe("MACHINE_APPLICABILITY", () => {
+  test("covers every known remote", () => {
+    expect(Object.keys(MACHINE_APPLICABILITY).sort()).toEqual(
+      [...KNOWN_REMOTES].sort(),
+    );
+  });
+
+  test("pins the materialization semantics that exist today", () => {
+    expect(MACHINE_APPLICABILITY.docker).toBe("cgroup");
+    expect(MACHINE_APPLICABILITY.local).toBe("process-hint");
   });
 });
