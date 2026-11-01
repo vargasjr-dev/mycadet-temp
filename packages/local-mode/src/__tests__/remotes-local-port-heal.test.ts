@@ -3,12 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, test } from "bun:test";
 
-import { healConflictedLocalPorts } from "../port-heal.js";
-import {
-  makeEntry,
-  readEntry,
-  readLocalEntry,
-} from "../../__tests__/helpers/lockfile-entry.js";
+import { healConflictedLocalPorts } from "../remotes/local/port-heal";
+import { makeEntry, readEntry, readLocalEntry } from "./helpers/lockfile-entry";
 
 // The fixture helper writes through the real lockfile path — isolate it.
 const testDir = mkdtempSync(join(tmpdir(), "port-heal-test-"));

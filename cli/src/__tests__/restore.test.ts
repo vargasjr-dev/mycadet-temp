@@ -22,17 +22,13 @@ import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as localModule from "../lib/remotes/local.js";
+import * as localModule from "@mycadet/local-mode";
 import * as stepRunnerModule from "../lib/step-runner.js";
 import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
-const realLocal = {
-  startLocalDaemon: localModule.startLocalDaemon,
-  startGateway: localModule.startGateway,
-  startCes: localModule.startCes,
-};
+const realLocal = { ...localModule };
 const realExec = stepRunnerModule.exec;
 
 // Prevent real daemon / gateway / CES from starting
@@ -46,8 +42,9 @@ const startCesMock = mock(async () => {});
 const execMock = mock(async (_cmd: string, _args: string[]) => {});
 
 beforeAll(() => {
-  mock.module("../lib/remotes/local.js", () => ({
-    generateLocalSigningKey: () => "deadbeefdeadbeefdeadbeefdeadbeef",
+  mock.module("@mycadet/local-mode", () => ({
+    ...localModule,
+    generateLocalSecret: mock(() => "deadbeefdeadbeefdeadbeefdeadbeef"),
     startLocalDaemon: startLocalDaemonMock,
     startGateway: startGatewayMock,
     startCes: startCesMock,
@@ -56,7 +53,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  mock.module("../lib/remotes/local.js", () => realLocal);
+  mock.module("@mycadet/local-mode", () => realLocal);
   mock.module("../lib/step-runner.js", () => ({ exec: realExec }));
 });
 

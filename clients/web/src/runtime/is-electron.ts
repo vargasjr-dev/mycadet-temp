@@ -201,7 +201,6 @@ declare global {
         }>;
         listDevices?(assistantId: string): Promise<LocalListDevicesResult>;
         readLockfile(): Promise<Lockfile>;
-        retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
         revokeDevice?(
           assistantId: string,
           hashedDeviceId: string,

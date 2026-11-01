@@ -34,7 +34,7 @@ import {
   readRootProcesses,
   stampRootProcess,
 } from "../lib/assistant-config.js";
-import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type {
   LocalAssistant,
   LockfileAssistant,

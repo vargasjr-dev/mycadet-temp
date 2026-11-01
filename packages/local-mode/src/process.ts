@@ -3,6 +3,11 @@ import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { platform } from "node:os";
 
 import { DAEMON_STOP_TIMEOUT_MS } from "./lifecycle-budgets";
+import {
+  httpHealthCheck,
+  probeDaemonReadinessWithRetry,
+  waitForDaemonReady,
+} from "./daemon-readiness";
 
 /**
  * Process inspection and stopping for PID-tracked local services (daemon,
@@ -354,4 +359,148 @@ export async function stopProcessGracefully(
   );
   if (!stopped) throw new Error(`${label} did not stop gracefully.`);
   return stopped;
+}
+
+/** The executable's on-disk name for the host platform (`bun` vs `bun.exe`). */
+export function executableName(
+  name: string,
+  hostPlatform: NodeJS.Platform = platform(),
+): string {
+  return hostPlatform === "win32" && !name.endsWith(".exe")
+    ? `${name}.exe`
+    : name;
+}
+
+/** The PATH list separator for the host platform (`:` posix, `;` win32). */
+export function pathListDelimiter(
+  hostPlatform: NodeJS.Platform = platform(),
+): string {
+  return hostPlatform === "win32" ? ";" : ":";
+}
+
+export type HttpProbeEndpoint = "healthz" | "readyz";
+
+/** Discriminated union: when `alive` is true, `pid` is guaranteed non-null. */
+export type ProcessHealthResult =
+  | { alive: true; healthy: boolean; pid: number }
+  | { alive: false; healthy: false; pid: null };
+
+/**
+ * Check if a PID file's process is alive AND responding to HTTP health checks.
+ *
+ * Combines PID existence check with an HTTP `/healthz` probe. A process that
+ * exists but does not respond (hung, deadlocked, at 100% CPU) returns
+ * `alive: true, healthy: false` — callers should kill and restart it.
+ */
+export async function isProcessHealthy(
+  pidFile: string,
+  healthPort: number,
+  timeoutMs: number = 3000,
+): Promise<ProcessHealthResult> {
+  const { alive, pid } = isProcessAlive(pidFile);
+  if (!alive || pid === null) {
+    return { alive: false, healthy: false, pid: null };
+  }
+
+  const healthy = await httpHealthCheck(healthPort, timeoutMs);
+  return { alive: true, healthy, pid };
+}
+
+/**
+ * Outcome of {@link resolveProcessState}. Callers switch on `status`:
+ * - `"healthy"` — process is alive and ready; `pid` is the live PID.
+ * - `"unready"` — process is alive and healthy, but DB migrations were still
+ *   running when the readiness wait elapsed.
+ * - `"migration_failed"` — process is alive and healthy, but its DB migrations
+ *   failed: a terminal state that never recovers without a restart. The
+ *   process is kept alive (same keep-alive rule as `"unready"`).
+ * - `"stuck"`: process is unresponsive and could not be terminated.
+ * - `"needs_start"`: process was dead, hung (and killed), or a stale PID
+ *   was cleaned up. Caller should start a fresh process.
+ */
+export type ProcessState =
+  | { status: "healthy"; pid: number }
+  | { status: "unready"; pid: number }
+  | { status: "migration_failed"; pid: number }
+  | { status: "stuck"; pid: number }
+  | { status: "needs_start"; pid: number | null };
+
+/**
+ * Determine whether a PID-tracked process is alive and healthy. If the process
+ * exists but is unresponsive, waits up to `readinessWaitMs` (default 60s —
+ * matches the spawner's own `waitForDaemonReady` timeout so a concurrent
+ * caller never kills a process the spawner is still waiting on) for it to
+ * start answering health checks. If it remains unresponsive, verifies it
+ * belongs to Cadet before killing it, then cleans up the PID file.
+ *
+ * When callers pass the `"readyz"` readiness endpoint, this also CLASSIFIES
+ * DB migration readiness with a single `/readyz` probe (read from the body —
+ * the status code stays 200 during migrations for k8s). It never waits for
+ * readiness: the kill/keep decision depends only on the health check, and
+ * callers that want to wait out a migration own that wait themselves. A
+ * health-checking process is kept alive when migrations are running or
+ * failed.
+ */
+export async function resolveProcessState(
+  pidFile: string,
+  healthPort: number,
+  label: string,
+  readinessWaitMs: number = 60_000,
+  readinessEndpoint: HttpProbeEndpoint = "healthz",
+): Promise<ProcessState> {
+  const result = await isProcessHealthy(pidFile, healthPort);
+
+  if (!result.alive) {
+    return { status: "needs_start", pid: null };
+  }
+
+  if (!result.healthy) {
+    // Alive but not healthy — may still be starting up.
+    const becameHealthy = await waitForDaemonReady(
+      healthPort,
+      readinessWaitMs,
+      "healthz",
+    );
+    if (!becameHealthy) {
+      // Genuinely hung — kill if it belongs to Cadet, otherwise just clean up.
+      if (isCadetProcess(result.pid)) {
+        console.log(
+          `${label} process alive (pid ${result.pid}) but not responding — killing and restarting...`,
+        );
+        const stopped = await stopProcess(result.pid, label);
+        if (!stopped && isProcessAlive(pidFile).alive) {
+          return { status: "stuck", pid: result.pid };
+        }
+      } else {
+        console.log(
+          `Stale PID file (pid ${result.pid} is not a Cadet process) — cleaning up...`,
+        );
+      }
+      removeFiles(pidFile);
+      return { status: "needs_start", pid: result.pid };
+    }
+  }
+
+  if (readinessEndpoint !== "healthz") {
+    const readiness = await probeDaemonReadinessWithRetry(healthPort);
+    if (readiness === "failed") {
+      return { status: "migration_failed", pid: result.pid };
+    }
+    if (readiness === "unreachable") {
+      // The daemon answered the health check moments ago but not /readyz —
+      // it may have died in between (e.g. OOM during a heavy migration).
+      // Re-verify liveness before reporting it alive, so callers don't skip
+      // starting a replacement for a dead process.
+      if (!isProcessAlive(pidFile).alive) {
+        removeFiles(pidFile);
+        return { status: "needs_start", pid: result.pid };
+      }
+      return { status: "unready", pid: result.pid };
+    }
+    if (readiness !== "ready") {
+      return { status: "unready", pid: result.pid };
+    }
+  }
+
+  return { status: "healthy", pid: result.pid };
 }

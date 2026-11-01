@@ -8,7 +8,12 @@ import {
 } from "fs";
 import { dirname, join } from "path";
 
-import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
+import {
+  findAvailablePort,
+  getDefaultPorts,
+  readLockfile,
+  withLockfileLock,
+} from "@mycadet/local-mode";
 import {
   type AppProcessRecord,
   type LocalAssistant,
@@ -22,8 +27,6 @@ import {
   resolveConfigDir,
   resolveLockfilePath,
 } from "@mycadet/local-mode";
-import { getDefaultPorts } from "./environments/paths.js";
-import { probePort } from "./port-probe.js";
 
 /** Either lockfile-root process record, keyed by `RootProcessKind`. */
 export type RootProcessRecord = TunnelProcessRecord | AppProcessRecord;
@@ -260,23 +263,6 @@ function conversationKeyPath(assistantId: string): string {
     "assistants",
     assistantId,
     "conversation-key",
-  );
-}
-
-/**
- * Scan upward from `basePort` to find an available port. A port is considered
- * available when `probePort()` returns false (nothing listening). Scans up to
- * 100 ports above the base before giving up.
- */
-export async function findAvailablePort(basePort: number): Promise<number> {
-  const maxOffset = 100;
-  for (let offset = 0; offset < maxOffset; offset++) {
-    const port = basePort + offset;
-    const inUse = await probePort(port);
-    if (!inUse) return port;
-  }
-  throw new Error(
-    `Could not find an available port scanning from ${basePort} to ${basePort + maxOffset - 1}`,
   );
 }
 

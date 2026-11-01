@@ -27,7 +27,7 @@ import {
   sleepDocker,
 } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
-import { classifyReadyzResponse } from "./http-client.js";
+import { classifyReadyzResponse } from "@mycadet/local-mode";
 import { resolveImageRefs } from "./cloud-releases.js";
 import { z } from "zod";
 

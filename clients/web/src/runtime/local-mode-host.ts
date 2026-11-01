@@ -53,11 +53,6 @@ export interface LocalHatchResult {
   error?: string;
 }
 
-export interface LocalWakeResult {
-  ok: boolean;
-  error?: string;
-}
-
 export interface LocalUpgradeResult {
   ok: boolean;
   version?: string;
@@ -391,27 +386,6 @@ export async function revokePairedDeviceHost(
     "/v1/devices/revoke",
     { assistantId, hashedDeviceId },
     LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Wake (start/restart) a local assistant's daemon and gateway by POSTing
- * the wake operation to the serving host — the same scoped surface on every
- * host, the route table answering before the gateway data-plane planner.
- *
- * This is the non-destructive repair primitive: it revives a stopped or
- * unresolved assistant in place without touching its data or identity.
- * A plain wake is the safe auto-repair primitive: it restores a guardian
- * token only when the current environment's config dir has none (copied
- * from a sibling environment).
- */
-export async function wakeLocalAssistantHost(
-  assistantId: string,
-): Promise<LocalWakeResult> {
-  return postLocalCommand<LocalWakeResult>(
-    `/v1/assistants/${encodeURIComponent(assistantId)}/wake/`,
-    undefined,
-    "Wake failed. Try running cadet wake in your terminal.",
   );
 }
 

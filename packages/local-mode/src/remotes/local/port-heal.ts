@@ -1,9 +1,9 @@
-import { loadAllAssistants } from "@mycadet/local-mode";
-import { findOpenPort } from "./port-allocator.js";
-import { getDefaultPorts } from "./environments/paths.js";
-import { findPidListeningOnPort } from "./remotes/local.js";
-import { isCadetProcess } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { loadAllAssistants } from "../../operations/lookup";
+import { findOpenPort } from "../../ports";
+import { getDefaultPorts } from "../../ports";
+import { findPidListeningOnPort } from "./common";
+import { isCadetProcess } from "../../process";
+import type { LockfileAssistant } from "../../lockfile-contract";
 
 /**
  * Wake-time port auto-heal (the other half of the port de-clash).

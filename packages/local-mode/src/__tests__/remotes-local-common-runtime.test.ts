@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
-import { ensureLocalRuntime } from "../lib/remotes/local.js";
+import { ensureLocalRuntime } from "../remotes/local/common";
 
 // Only `instanceDir` is read, and only after the validation guard passes —
 // invalid versions throw before any filesystem access, so a minimal stub is

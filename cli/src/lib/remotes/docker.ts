@@ -522,7 +522,6 @@ import { buildHatchConfigValues, writeInitialConfig } from "../config-utils";
 import { printInstanceDetails } from "../instance-details";
 import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
-import { getDefaultPorts } from "../environments/paths.js";
 import { green, yellow } from "../color.js";
 import { leaseGuardianToken } from "../guardian-token";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
@@ -542,14 +541,14 @@ import {
   shouldPromptForHatchProvider,
 } from "../provider-secrets.js";
 import { checkProviderApiKey } from "../api-key-check.js";
-import { findOpenPort } from "../port-allocator.js";
+import { findOpenPort } from "@mycadet/local-mode";
 import { exec, execOutput, execWithStdin } from "../step-runner";
 import {
   closeLogFile,
   openLogFile,
   resetLogFile,
   writeToLogFile,
-} from "../xdg-log";
+} from "@mycadet/local-mode";
 
 export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
@@ -566,7 +565,7 @@ export function dockerhubImages(
   };
 }
 
-import { classifyReadyzResponse } from "../http-client.js";
+import { classifyReadyzResponse, getDefaultPorts } from "@mycadet/local-mode";
 
 /** Max time to wait for the assistant container to emit the readiness sentinel. */
 export const DOCKER_READY_TIMEOUT_MS = 5 * 60 * 1000;
@@ -595,7 +594,6 @@ export function resolveAvatarDevicePath(
 const COLIMA_DEFAULT_MEMORY_GIB = 8;
 
 /** Directory for user-local binary installs (no sudo required). */
-
 
 /**
  * Returns the macOS architecture suffix used by GitHub release artifacts.
@@ -757,7 +755,6 @@ async function installDockerToolchain(): Promise<void> {
   console.log("  ✅ Docker toolchain installed to ~/.local/bin/");
 }
 
-
 export interface HatchDockerParams {
   /** Instance display name. Defaults to an auto-generated name. */
   name?: string | null;
@@ -831,7 +828,6 @@ export function resolveDockerProviderCredentialSetupAction(options: {
   if (!options.guardianAccessToken) return "missing-token";
   return "configure";
 }
-
 
 /**
  * Checks whether the `docker` CLI and daemon are available on the system.
@@ -1274,7 +1270,6 @@ export async function recreateDockerContainers(
     containerInfo: info,
   });
 }
-
 
 /**
  * Capture the current image references for running service containers.

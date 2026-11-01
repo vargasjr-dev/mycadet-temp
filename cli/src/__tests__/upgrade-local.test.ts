@@ -13,14 +13,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import cliPkg from "../../package.json";
-import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import * as guardianToken from "../lib/guardian-token.js";
-import * as local from "../lib/remotes/local.js";
+import * as local from "@mycadet/local-mode";
 import * as localMode from "@mycadet/local-mode";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
@@ -30,6 +30,8 @@ const realLocalMode = { ...localModeModule };
 const realBackupOps = { ...backupOps };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
+import * as cliLocal from "../lib/remotes/local.js";
+const realCliLocal = { ...cliLocal };
 const realLoopbackMode = { ...localMode };
 const realNgrok = { ...ngrok };
 const realUpgradeLifecycle = { ...upgradeLifecycle };
@@ -110,18 +112,14 @@ const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
 const startGatewayMock = mock<typeof local.startGateway>(
   async () => "http://127.0.0.1:7830",
 );
-const stopLocalProcessesMock = mock<typeof local.stopLocalProcesses>(
+const stopLocalProcessesMock = mock<typeof cliLocal.stopLocalProcesses>(
   async () => {},
 );
 const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/remotes/local.js", () => ({
-  ...realLocal,
-  ensureLocalRuntime: ensureLocalRuntimeMock,
-  startLocalDaemon: startLocalDaemonMock,
-  startGateway: startGatewayMock,
+  ...realCliLocal,
   stopLocalProcesses: stopLocalProcessesMock,
-  startCes: startCesMock,
 }));
 
 const loopbackSafeFetchMock = mock<typeof localMode.loopbackSafeFetch>(
@@ -145,6 +143,10 @@ mock.module("@mycadet/local-mode", () => ({
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
+  ensureLocalRuntime: ensureLocalRuntimeMock,
+  startLocalDaemon: startLocalDaemonMock,
+  startGateway: startGatewayMock,
+  startCes: startCesMock,
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
@@ -310,7 +312,8 @@ afterAll(() => {
   mock.module("../lib/assistant-config", () => realAssistantConfig);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
-  mock.module("../lib/remotes/local.js", () => realLocal);
+  mock.module("@mycadet/local-mode", () => realLocal);
+  mock.module("../lib/remotes/local.js", () => realCliLocal);
   mock.module("@mycadet/local-mode", () => realLoopbackMode);
   mock.module("../lib/tunnels/ngrok.js", () => realNgrok);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);

@@ -10,7 +10,7 @@ import {
   getActiveAssistant,
   isLocalAssistant,
   isLocalClient,
-  primeLocalGatewayConnectionWithRepair,
+  primeLocalGatewayConnection,
 } from "@/lib/local-mode";
 import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -556,7 +556,7 @@ async function ensureGatewayAccess(
   let actorToken = getSelfHostedActorToken();
 
   if (options.allowGatewayRepair && (!gatewayUrl || !actorToken)) {
-    await primeLocalGatewayConnectionWithRepair(assistant);
+    await primeLocalGatewayConnection(assistant);
     gatewayUrl = getSelfHostedIngressUrl();
     actorToken = getSelfHostedActorToken();
   }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { getDefaultPorts } from "../paths.js";
+import { getDefaultPorts } from "@mycadet/local-mode";
 
 describe("SEEDS port blocks", () => {
   afterEach(() => {

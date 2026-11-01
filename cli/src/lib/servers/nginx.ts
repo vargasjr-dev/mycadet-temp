@@ -39,7 +39,7 @@ import {
   type IngressState,
 } from "@mycadet/local-mode";
 import { resolveLogDir } from "@mycadet/local-mode";
-import { waitForDaemonReady } from "../http-client.js";
+import { waitForDaemonReady } from "@mycadet/local-mode";
 import { resolveEdgeClientDists } from "../web-dist.js";
 
 // The edge's read/stop surface lives in `@mycadet/local-mode` (the retire

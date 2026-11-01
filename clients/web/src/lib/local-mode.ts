@@ -22,13 +22,11 @@ import {
 import { probeAssistantReadyzHost } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import {
-  GuardianTokenError,
   loadLockfileHost,
   pairingCancelHost,
   pairingPollHost,
   pairingStartHost,
   unpairAssistantHost,
-  wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
 import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
 import { LocalPairingFailure } from "@mycadet/ipc-contract";
@@ -480,131 +478,4 @@ export async function primeLocalGatewayConnection(
     url: window.location.origin,
     token: null,
   });
-}
-
-/**
- * Classify a connect failure as something a plain `wake` can fix. A `403`
- * is a loopback-boundary refusal, a security decision wake cannot change, so
- * it surfaces as-is. Remaining failures (an unresolved port, or an
- * unreachable/stopped gateway) are what `wake` can fix by re-seeding the
- * token and restarting the assistant + gateway.
- */
-function isRepairableConnectError(error: unknown): boolean {
-  if (error instanceof GuardianTokenError) {
-    return error.status !== 403;
-  }
-  return true;
-}
-
-/**
- * Retry budget for riding out a wake-restarted gateway's come-back window:
- * the just-run `wake` restarts the gateway in place, so the immediately
- * following prime races the port re-binding — the probe fails for tens of
- * seconds (port not bound yet), then answers transiently (a `503`
- * "starting"). Mutable so tests can shrink the window.
- */
-export const LOCAL_GATEWAY_RESTART_RETRY = {
-  attempts: 90,
-  intervalMs: 1_000,
-};
-
-/** Guardian refresh `503`: the loopback gateway is unreachable or still starting. */
-function isTransientGuardianTokenError(error: unknown): boolean {
-  return error instanceof GuardianTokenError && error.status === 503;
-}
-
-/**
- * A `wake`-restarted gateway that hasn't finished coming back up: it refuses
- * connections (a thrown transport error) or answers `503`/`5xx`. A `403`
- * loopback-boundary refusal is terminal. An unresolved local gateway (no
- * recorded port) falls through — the just-run `wake` either established one
- * or the failure is elsewhere.
- */
-function isGatewayRestartTransient(error: unknown): boolean {
-  if (error instanceof GuardianTokenError) {
-    return isTransientGuardianTokenError(error);
-  }
-  if (error instanceof UnresolvedLocalGatewayError) {
-    return false;
-  }
-  // A thrown fetch/transport error: the gateway isn't accepting connections
-  // yet as it restarts.
-  return true;
-}
-
-/**
- * Prime the local gateway connection, retrying on a bounded interval while
- * the failure is a transient one (`shouldRideOut`) — the wake-restart window
- * the caller rides out. The last error propagates once the retry budget is
- * spent or the failure is not a ride-out-able one, so the existing
- * connect-error classification is preserved.
- */
-async function primeLocalGatewayWithRestartRideout(
-  target: LockfileAssistant | undefined,
-  shouldRideOut: (error: unknown) => boolean,
-): Promise<void> {
-  const { attempts, intervalMs } = LOCAL_GATEWAY_RESTART_RETRY;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      await primeLocalGatewayConnection(target);
-      return;
-    } catch (error) {
-      if (attempt >= attempts || !shouldRideOut(error)) {
-        throw error;
-      }
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    }
-  }
-}
-
-/**
- * Prime the local gateway connection, transparently repairing the assistant in
- * place when the prime fails for a reason a plain `wake` can fix.
- *
- * This mirrors the native client's bootstrap, which revives a stopped or
- * unresolved local assistant before the failure ever reaches the user. A
- * loaded web bundle guarantees a cadet gateway that started — soon the bundle
- * is served by the gateway itself — so the first pass is a single prime. A
- * repairable failure (unreachable gateway, unresolved port) runs a plain
- * `wake` (restarts the assistant + gateway, leaving the assistant's data and
- * identity untouched), then primes again, riding out the wake-restart window.
- * A non-repairable failure, a wake that itself fails, or a still-failing
- * retry propagate the original error so the existing connect-error UI
- * surfaces it unchanged.
- */
-export async function primeLocalGatewayConnectionWithRepair(
-  target?: LockfileAssistant,
-): Promise<void> {
-  const assistant = target ?? getActiveAssistant();
-  try {
-    await primeLocalGatewayConnection(assistant);
-    return;
-  } catch (error) {
-    // Wake operates only on plain local assistants: spawning it for a
-    // non-local target would burn time on a refusal, so their failures
-    // propagate untouched. The recovery decision is remote-agnostic — the
-    // local-topology check is the whole gate.
-    if (!assistant || !isLocalAssistant(assistant)) {
-      throw error;
-    }
-    if (!isRepairableConnectError(error)) {
-      throw error;
-    }
-    const assistantId = assistant.assistantId;
-    const repair = await wakeLocalAssistantHost(assistantId);
-    if (!repair.ok) {
-      throw error;
-    }
-    // Wake restarts the assistant + gateway, so the retry races the gateway
-    // coming back up. A single prime here fails while it is still starting and
-    // the connect dead-ends to the recovery controls. Ride out that restart
-    // window instead, so a persisted local assistant reconnects on its own.
-    // The served entry is all the renderer ever knows (the host owns the
-    // roster): the wake's effect shows up in the host-routed probe, not in
-    // any renderer-visible field.
-    await primeLocalGatewayWithRestartRideout(
-      assistant,
-      isGatewayRestartTransient,
-    );
-  }
 }

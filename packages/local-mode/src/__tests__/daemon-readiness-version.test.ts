@@ -1,5 +1,5 @@
 import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
-import { fetchCurrentVersion } from "../http-client.js";
+import { fetchCurrentVersion } from "../daemon-readiness";
 
 const request = spyOn(globalThis, "fetch");
 afterEach(() => request.mockReset());

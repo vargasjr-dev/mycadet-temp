@@ -1,4 +1,4 @@
-import type { ChildProcess } from "child_process";
+import type { ChildProcess } from "node:child_process";
 import {
   closeSync,
   copyFileSync,
@@ -8,10 +8,10 @@ import {
   statSync,
   writeFileSync,
   writeSync,
-} from "fs";
-import { join } from "path";
+} from "node:fs";
+import { join } from "node:path";
 
-import { resolveLogDir } from "@mycadet/local-mode";
+import { resolveLogDir } from "./config";
 
 /** Regex matching pino-pretty's short time prefix, e.g. `[12:07:37.467] `. */
 const PINO_TIME_RE = /^\[\d{2}:\d{2}:\d{2}\.\d{3}\]\s*/;

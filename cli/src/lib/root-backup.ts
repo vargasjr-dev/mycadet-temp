@@ -19,23 +19,24 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
-  isProcessAlive,
   dockerResourceNames,
+  getDaemonPidPath,
+  getLocalInstanceDir,
   isLocalEntry,
+  isProcessAlive,
+  probePort,
   saveLockfileAssistant,
+  startCes,
+  startGateway,
+  startLocalDaemon,
+  waitForDaemonMigrationsReady,
+  waitForDaemonReady,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
-import { probePort } from "./port-probe.js";
-import {
-  waitForDaemonReady,
-  waitForDaemonMigrationsReady,
-} from "./http-client.js";
-import { startCes, startGateway, startLocalDaemon } from "./remotes/local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,

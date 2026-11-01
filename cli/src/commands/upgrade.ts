@@ -57,14 +57,15 @@ import {
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";
-import { fetchCurrentVersion } from "../lib/http-client.js";
+import { fetchCurrentVersion } from "@mycadet/local-mode";
 import {
   ensureLocalRuntime,
+  generateLocalSecret,
   startCes,
   startGateway,
   startLocalDaemon,
-  stopLocalProcesses,
-} from "../lib/remotes/local.js";
+} from "@mycadet/local-mode";
+import { stopLocalProcesses } from "../lib/remotes/local.js";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
 import { leaseGuardianToken } from "../lib/guardian-token.js";
 
