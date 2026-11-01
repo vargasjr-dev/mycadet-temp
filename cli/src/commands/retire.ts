@@ -8,7 +8,7 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  retireAssistantEntry,
+  retireAssistant,
 } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
@@ -191,7 +191,7 @@ async function retireInner(): Promise<void> {
   // removal, and the dock-label sentinel — the same headless core the
   // hosts' retire route runs. Failures come back structured; the exit-code
   // UX is this command's.
-  const result = await retireAssistantEntry(entry);
+  const result = await retireAssistant(entry);
   if (!result.ok) {
     console.error(`Error: ${result.error}`);
     process.exit(1);

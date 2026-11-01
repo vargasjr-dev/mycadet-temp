@@ -40,7 +40,7 @@ const realRootSigningKey = { ...rootSigningKey };
 
 const resolveTargetAssistantMock =
   mock<typeof assistantConfig.resolveTargetAssistant>();
-const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
+const loadAllAssistantsMock = mock<typeof localModeModule.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
@@ -58,13 +58,12 @@ const getDaemonPidPathMock = mock<typeof local.getDaemonPidPath>((entry) =>
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   saveLockfileAssistant: saveLockfileAssistantMock,
+  loadAllAssistants: loadAllAssistantsMock,
 }));
 
 mock.module("../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
   resolveTargetAssistant: resolveTargetAssistantMock,
-  loadAllAssistants: loadAllAssistantsMock,
-  saveLockfileAssistant: saveLockfileAssistantMock,
 }));
 
 const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(

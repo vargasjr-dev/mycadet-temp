@@ -10,16 +10,15 @@ import {
   mkdirSync,
 } from "fs";
 import { dirname } from "path";
-import { cliCommand } from "./cli-name.js";
 
 import {
   cloudAuthHeaders,
   cloudTokenPath,
   getCloudUrl,
   invalidateOrgIdCache,
+  loopbackSafeFetch,
 } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "./environments/resolve.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
 
 const CloudErrorDetailSchema = z.object({
@@ -49,40 +48,6 @@ export function clearCloudToken(): void {
     unlinkSync(cloudTokenPath());
   } catch {
     // already doesn't exist
-  }
-}
-
-// The platform credential and auth-header machinery lives in
-// `@mycadet/local-mode` (the retire operation resolves its own credentials);
-// re-exported here for this module's many consumers.
-export {
-  getCloudUrl,
-  readCloudToken,
-  authHeadersForKnownOrganization,
-  invalidateOrgIdCache,
-  fetchOrganizationId,
-} from "@mycadet/local-mode";
-
-/**
- * The full set of headers for an authenticated platform API request,
- * wrapped with the CLI's login recovery hint: auth errors (401 / 403) from
- * the org-ID fetch are re-thrown with the invoking binary's `login` command,
- * so callers surface one useful line instead of classifying statuses.
- */
-export async function authHeaders(
-  token: string,
-  cloudUrl?: string,
-): Promise<Record<string, string>> {
-  try {
-    return await cloudAuthHeaders(token, cloudUrl);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("401") || msg.includes("403")) {
-      throw new Error(
-        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
-      );
-    }
-    throw new Error(`Failed to fetch organization: ${msg}`);
   }
 }
 
@@ -516,7 +481,7 @@ export async function hatchAssistant(
 
   const response = await loopbackSafeFetch(url, {
     method: "POST",
-    headers: await authHeaders(token, cloudUrl),
+    headers: await cloudAuthHeaders(token, cloudUrl),
     body: JSON.stringify({}),
     signal: AbortSignal.timeout(300_000),
   });
@@ -575,7 +540,7 @@ export async function checkExistingCloudAssistant(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) {
@@ -611,7 +576,7 @@ export async function fetchCloudAssistants(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return [];
@@ -645,7 +610,7 @@ export async function fetchAssistantDetail(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return null;
@@ -679,7 +644,7 @@ export async function fetchUpgradeInProgress(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return null;
@@ -753,7 +718,7 @@ export async function rollbackCloudAssistant(
     `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/rollback/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify(version ? { version } : {}),
     },
   );
@@ -815,7 +780,7 @@ export async function platformImportPreflightFromGcs(
     `${resolvedUrl}/v1/migrations/import-preflight-from-gcs/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       signal: AbortSignal.timeout(30 * 60_000),
       body: JSON.stringify({ bundle_key: bundleKey }),
     },
@@ -837,7 +802,7 @@ export async function platformImportBundleFromGcs(
     `${resolvedUrl}/v1/migrations/import-from-gcs/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify({ bundle_key: bundleKey }),
       signal: AbortSignal.timeout(30 * 60_000),
     },
@@ -1024,7 +989,7 @@ export async function cloudRequestSignedUrl(
   const doRequest = async (): Promise<Response> =>
     loopbackSafeFetch(`${resolvedUrl}/v1/migrations/signed-url/`, {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify(body),
     });
 
@@ -1087,7 +1052,7 @@ export async function cloudPollJobStatus(
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/jobs/${jobId}/`,
     {
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     },
   );
 

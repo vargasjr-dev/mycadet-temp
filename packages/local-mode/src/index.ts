@@ -37,6 +37,7 @@ export {
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
 export {
+  cliCommandName,
   defaultEnvironmentFilePath,
   ownVersion,
   readDefaultEnvironment,
@@ -86,19 +87,10 @@ export {
 } from "./cli-invocation";
 export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
+export { matchOperatorRequest } from "./operations/routes";
+export type { OperatorRoute, OperatorMatch } from "./operations/routes";
 export {
-  forwardOperatorRequest,
-  matchOperatorRequest,
-  executeOperatorMatch,
-} from "./operations/routes";
-export type {
-  OperatorRoute,
-  OperatorMatch,
-  OperatorDeps,
-  OperatorEntryLookup,
-} from "./operations/routes";
-export {
-  retireAssistantEntry,
+  retireAssistant,
   isHostExecutableRetireEntry,
 } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";

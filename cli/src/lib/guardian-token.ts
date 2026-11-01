@@ -20,12 +20,12 @@ import {
   guardianBootstrapSecretPath,
   guardianTokenPath,
   isConfidentialRefreshUrl,
+  loopbackSafeFetch,
   resolveConfigDir,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
 
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
 
 /**

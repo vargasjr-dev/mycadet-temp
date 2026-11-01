@@ -9,12 +9,10 @@ import {
 } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { getActiveAssistant } from "@mycadet/local-mode";
 import { join } from "node:path";
 
-import {
-  getActiveAssistant,
-  setActiveAssistant,
-} from "../lib/assistant-config.js";
+import { setActiveAssistant } from "../lib/assistant-config.js";
 import { use } from "../commands/use.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 

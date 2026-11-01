@@ -13,11 +13,7 @@ import { retireLocal } from "../remotes/local/retire";
 import { retireDocker } from "../remotes/docker/retire";
 import { retireAppleContainer } from "../remotes/apple-container/retire";
 import { retireCustom } from "../remotes/custom/retire";
-import {
-  retireCloudEntry,
-  unregisterSelfHostedLocalPlatformRecord,
-} from "../remotes/cloud/retire";
-import { stopContainerAppServer } from "../ingress";
+import { retireCloudEntry } from "../remotes/cloud/retire";
 
 /**
  * The retire OPERATION: the headless core of `cadet retire`, moved out of the
@@ -43,17 +39,20 @@ export type RetireResult =
  * the bundle's one endpoint holds for every entry type.
  */
 export function isHostExecutableRetireEntry(entry: LockfileAssistant): boolean {
-  return isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "apple-container";
+  return (
+    isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "apple-container"
+  );
 }
 
 /**
- * Retire one assistant entry: per-cloud teardown, then the lockfile removal
+ * Retire one assistant entry: per-cloud teardown (each remote's retire
+ * method owns its process and edge stops, first), then the lockfile removal
  * and the dock-display-name sentinel cleanup. Never throws and never exits
  * the process — failures (including the not-logged-in cloud leg and an
  * unknown remote type) come back structured so both the CLI's exit-code UX
  * and the route's wire mapping render the same detail.
  */
-export async function retireAssistantEntry(
+export async function retireAssistant(
   entry: LockfileAssistant,
 ): Promise<RetireResult> {
   try {
@@ -62,27 +61,20 @@ export async function retireAssistantEntry(
 
     if (cloud === "apple-container") {
       await retireAppleContainer(assistantId, entry);
-      await stopContainerAppServer(entry);
     } else if (cloud === "docker") {
       await retireDocker(assistantId);
-      await stopContainerAppServer(entry);
     } else if (cloud === "local") {
-      try {
-        await unregisterSelfHostedLocalPlatformRecord(entry);
-      } catch (error) {
-        console.warn(
-          `⚠️  Platform self-hosted unregister failed; continuing local retire: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-      }
       await retireLocal(assistantId, entry);
     } else if (cloud === "custom") {
       await retireCustom(entry);
     } else if (isCloudEntry(entry)) {
       await retireCloudEntry(entry);
     } else {
-      return { ok: false, status: 400, error: `Unknown remote type '${cloud}'.` };
+      return {
+        ok: false,
+        status: 400,
+        error: `Unknown remote type '${cloud}'.`,
+      };
     }
 
     removeLockfileAssistant(assistantId);

@@ -16,7 +16,6 @@ import {
   runDevicesList,
   runDevicesRevoke,
   matchOperatorRequest,
-  executeOperatorMatch,
   pairingCancel,
   pairingPoll,
   pairingStart,
@@ -500,10 +499,7 @@ function devicesMiddleware(): Connect.NextHandleFunction {
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
-    const match = matchOperatorRequest(
-      requestPathname(req),
-      req.method ?? "GET",
-    );
+    const match = matchOperatorRequest(requestPathname(req), req.method);
     if (!match) {
       return next();
     }
@@ -512,7 +508,8 @@ function operatorMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
-    void executeOperatorMatch(match)
+    void match.route
+      .run(match.assistantId)
       .then((response) => {
         if (!response) {
           return next();

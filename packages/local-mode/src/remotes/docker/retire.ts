@@ -2,6 +2,7 @@ import { exec } from "../../exec";
 import { stopProcess, isCadetProcess } from "../../process";
 import { findAssistantByName } from "../../operations/lookup";
 import { isDockerEntry } from "../../lockfile-contract";
+import { stopContainerAppServer } from "../../ingress";
 
 /**
  * The docker topology's retire leg: stop the instance's file watcher, remove
@@ -42,8 +43,15 @@ export async function removeContainer(containerName: string): Promise<void> {
 export async function retireDocker(name: string): Promise<void> {
   console.log(`\u{1F5D1}\ufe0f  Stopping Docker containers for '${name}'...\n`);
 
-  // Stop the file watcher process if one is tracked for this instance.
+  // Stop the nginx edge fronting this instance's published port FIRST —
+  // while the gateway it fronts is still up to answer the edge's health
+  // state, and so nothing routes to containers about to be removed.
   const entry = findAssistantByName(name);
+  if (entry) {
+    await stopContainerAppServer(entry);
+  }
+
+  // Stop the file watcher process if one is tracked for this instance.
   const watcherPid =
     entry && isDockerEntry(entry) && typeof entry.watcherPid === "number"
       ? entry.watcherPid

@@ -10,9 +10,9 @@ import {
 } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { loadAllAssistants } from "@mycadet/local-mode";
 import { join } from "node:path";
 
-import { loadAllAssistants } from "../lib/assistant-config.js";
 import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
@@ -30,7 +30,7 @@ const originalStdoutWrite = process.stdout.write;
 // site) while the lookup/display helpers stay real, reading the sandboxed
 // lockfile.
 const realLocalMode = { ...(await import("@mycadet/local-mode")) };
-const retireAssistantEntryMock = mock(
+const retireAssistantMock = mock(
   async (): Promise<
     { ok: true } | { ok: false; status: number; error: string }
   > => ({
@@ -40,7 +40,7 @@ const retireAssistantEntryMock = mock(
 
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
-  retireAssistantEntry: retireAssistantEntryMock,
+  retireAssistant: retireAssistantMock,
 }));
 
 afterAll(() => {
@@ -115,8 +115,8 @@ describe("cadet retire", () => {
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);
     }) as typeof process.exit;
-    retireAssistantEntryMock.mockReset();
-    retireAssistantEntryMock.mockResolvedValue({ ok: true });
+    retireAssistantMock.mockReset();
+    retireAssistantMock.mockResolvedValue({ ok: true });
     setTerminalMode(false);
     consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -151,7 +151,7 @@ describe("cadet retire", () => {
 
     await retire();
 
-    expect(retireAssistantEntryMock).toHaveBeenCalledWith(entry);
+    expect(retireAssistantMock).toHaveBeenCalledWith(entry);
     // The lockfile removal is the OPERATION's act (pinned in the package
     // suite, which runs the real dispatch) — the stubbed command must not
     // have touched it.
@@ -166,7 +166,7 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    retireAssistantEntryMock.mockResolvedValue({
+    retireAssistantMock.mockResolvedValue({
       ok: false,
       status: 500,
       error: "Failed to archive /data: disk full",
@@ -189,7 +189,7 @@ describe("cadet retire", () => {
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
-    expect(retireAssistantEntryMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     const output = consoleErrorSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Refusing to retire without confirmation");
@@ -211,7 +211,7 @@ describe("cadet retire", () => {
     });
 
     await expect(pending).rejects.toThrow("process.exit:1");
-    expect(retireAssistantEntryMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
       "Retire cancelled.",
@@ -233,7 +233,7 @@ describe("cadet retire", () => {
     });
 
     await pending;
-    expect(retireAssistantEntryMock).toHaveBeenCalledWith(entry);
+    expect(retireAssistantMock).toHaveBeenCalledWith(entry);
   });
 
   test("ambiguous display names fail before deleting", async () => {
@@ -244,7 +244,7 @@ describe("cadet retire", () => {
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
-    expect(retireAssistantEntryMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     const output = consoleErrorSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Multiple assistants match 'Example Assistant'");

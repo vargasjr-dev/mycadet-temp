@@ -1,10 +1,6 @@
 import type { LockfileAssistant } from "../lockfile-contract";
-import { readLockfile } from "../lockfile";
-import {
-  isHostExecutableRetireEntry,
-  retireAssistantEntry,
-} from "./retire";
-import type { RetireResult } from "./retire";
+import { findAssistantByName } from "./lookup";
+import { isHostExecutableRetireEntry, retireAssistant } from "./retire";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -16,10 +12,9 @@ import type { RetireResult } from "./retire";
  * operation).
  *
  * `matchOperatorRequest` is PURE in the URL — the hot path of every other
- * request never touches the lockfile. `executeOperatorMatch` resolves the
- * entry (through the injectable {@link OperatorDeps.findEntry} — the
- * Electron host prefers its watched in-memory snapshot, the default reads
- * the lockfile on disk) and runs the operation.
+ * request never touches the lockfile. A match runs through
+ * `match.route.run(match.assistantId)` directly: the routes import the
+ * modules they need, no injection surface.
  */
 
 export interface OperatorRoute {
@@ -31,28 +26,8 @@ export interface OperatorRoute {
    * the pre-existing chain answers instead — the cloud's 404 for a stale id,
    * the data-plane forward for a platform-hosted entry.
    */
-  run: (assistantId: string, deps: OperatorDeps) => Promise<Response | null>;
+  run: (assistantId: string) => Promise<Response | null>;
 }
-
-/** The lockfile lookup an operation resolves its target entry through. */
-export type OperatorEntryLookup = (
-  assistantId: string,
-) => LockfileAssistant | undefined;
-
-export interface OperatorDeps {
-  /** The retire operation itself (injectable so hosts' tests can stub it). */
-  retire: (entry: LockfileAssistant) => Promise<RetireResult>;
-  /** The entry lookup (injectable — watched snapshot vs. disk). */
-  findEntry: OperatorEntryLookup;
-}
-
-const defaultFindEntry: OperatorEntryLookup = (assistantId) =>
-  readLockfile().assistants.find((entry) => entry.assistantId === assistantId);
-
-const defaultDeps: OperatorDeps = {
-  retire: retireAssistantEntry,
-  findEntry: defaultFindEntry,
-};
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
 
@@ -65,15 +40,12 @@ const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
  * cloud error shape, so the confirmation dialog renders the same detail
  * either way.
  */
-async function runRetireRoute(
-  assistantId: string,
-  deps: OperatorDeps,
-): Promise<Response | null> {
-  const entry = deps.findEntry(assistantId);
+async function runRetireRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
   if (!entry || !isHostExecutableRetireEntry(entry)) {
     return null;
   }
-  const result = await deps.retire(entry);
+  const result = await retireAssistant(entry);
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
@@ -114,29 +86,4 @@ export function matchOperatorRequest(
     }
   }
   return null;
-}
-
-/** Execute a match: run the route, or pass (null) when it declines. */
-export function executeOperatorMatch(
-  match: OperatorMatch,
-  deps: OperatorDeps = defaultDeps,
-): Promise<Response | null> {
-  return match.route.run(match.assistantId, deps);
-}
-
-/**
- * Match and execute in one hop — the mount the Electron `app://` handler
- * uses (its WebRequest frame guard already ran). Null passes the request on
- * to the gateway data-plane planner / cloud forward unchanged.
- */
-export async function forwardOperatorRequest(
-  request: Request,
-  deps: Partial<OperatorDeps> = {},
-): Promise<Response | null> {
-  const match = matchOperatorRequest(
-    new URL(request.url).pathname,
-    request.method,
-  );
-  if (!match) return null;
-  return executeOperatorMatch(match, { ...defaultDeps, ...deps });
 }

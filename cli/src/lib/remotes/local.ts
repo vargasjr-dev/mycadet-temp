@@ -32,7 +32,7 @@ import {
   removeIpcEndpointFile,
   resolveIpcEndpoint,
 } from "@mycadet/ipc-server-utils";
-import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { isValidReleaseVersion, readCloudToken } from "@mycadet/local-mode";
 
 /**
  * cwd for every service spawn — the XDG data home
@@ -117,7 +117,7 @@ import {
   ensureCloudLoginInteractive,
   registerLocalAssistantWithCloud,
 } from "../cloud-login.js";
-import { fetchCurrentUser, readCloudToken } from "../cloud-client.js";
+import { fetchCurrentUser } from "../cloud-client.js";
 import { withLocalHatchLock } from "../local-hatch-lock.js";
 import { generateInstanceName } from "../random-name.js";
 import { healConflictedLocalPorts } from "../port-heal.js";

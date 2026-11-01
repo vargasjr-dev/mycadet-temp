@@ -26,6 +26,8 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 const realProcess = { ...(await import("../process")) };
 const realIngress = { ...(await import("../ingress")) };
 const realArchive = { ...(await import("../remotes/local/archive")) };
+const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
+const realCloudAuth = { ...(await import("../cloud-auth")) };
 
 const stopProcessByPidFileMock = mock(
   async (
@@ -58,12 +60,45 @@ mock.module("../remotes/local/archive", () => ({
   getMetadataPath: () => join(retiredStagingDir, "test-assistant.meta.json"),
 }));
 
+// The self-hosted platform unregister rides INSIDE retireLocal (the local
+// retire leg owns it now), so the platform seams it dials are pinned here.
+const loopbackSafeFetchMock = mock(
+  async (): Promise<Response> => new Response(null, { status: 204 }),
+);
+const readCloudTokenMock = mock((): string | null => null);
+const authHeadersForKnownOrganizationMock = mock(
+  (token: string, organizationId: string) => ({
+    "Content-Type": "application/json",
+    "X-Session-Token": token,
+    "Cadet-Organization-Id": organizationId,
+  }),
+);
+const cloudAuthHeadersMock = mock(async () => ({
+  "Content-Type": "application/json",
+  "X-Session-Token": "session-token",
+}));
+const resolveCloudUrlMock = mock(() => "https://platform.example.test");
+
+mock.module("../loopback-fetch", () => ({
+  ...realLoopbackFetch,
+  loopbackSafeFetch: loopbackSafeFetchMock,
+}));
+mock.module("../cloud-auth", () => ({
+  ...realCloudAuth,
+  readCloudToken: readCloudTokenMock,
+  authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
+  cloudAuthHeaders: cloudAuthHeadersMock,
+  resolveCloudUrl: resolveCloudUrlMock,
+}));
+
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
   mock.module("../process", () => realProcess);
   mock.module("../ingress", () => realIngress);
   mock.module("../remotes/local/archive", () => realArchive);
+  mock.module("../loopback-fetch", () => realLoopbackFetch);
+  mock.module("../cloud-auth", () => realCloudAuth);
 });
 
 import { getRetireArchiveCommand, retireLocal } from "../remotes/local/retire";
@@ -207,5 +242,183 @@ test("uses a Windows-native archive process", () => {
     CADET_RETIRE_ARCHIVE_PARENT: "C:\\Users\\Example User\\Cadet\\retired",
     CADET_RETIRE_STAGING_NAME: "assistant & data.tar.gz.staging",
     CADET_RETIRE_STAGING_DIR: stagingDir,
+  });
+});
+
+describe("retireLocal — the self-hosted platform unregister", () => {
+  const unregisterDir = mkdtempSync(join(tmpdir(), "retire-unregister-"));
+  const silentReporter = {
+    progress: () => {},
+    log: () => {},
+    warn: () => {},
+    error: () => {},
+  };
+
+  beforeAll(() => {
+    process.env.XDG_CONFIG_HOME = unregisterDir;
+  });
+
+  beforeEach(() => {
+    loopbackSafeFetchMock.mockReset();
+    loopbackSafeFetchMock.mockResolvedValue(
+      new Response(null, { status: 204 }),
+    );
+    readCloudTokenMock.mockReset();
+    readCloudTokenMock.mockReturnValue(null);
+    cloudAuthHeadersMock.mockReset();
+    cloudAuthHeadersMock.mockResolvedValue({
+      "Content-Type": "application/json",
+      "X-Session-Token": "session-token",
+    });
+    authHeadersForKnownOrganizationMock.mockReset();
+    authHeadersForKnownOrganizationMock.mockImplementation(
+      (token: string, organizationId: string) => ({
+        "Content-Type": "application/json",
+        "X-Session-Token": token,
+        "Cadet-Organization-Id": organizationId,
+      }),
+    );
+    resolveCloudUrlMock.mockReset();
+    resolveCloudUrlMock.mockReturnValue("https://platform.example.test");
+    delete process.env.CADET_CLOUD_TOKEN;
+    delete process.env.CADET_PLATFORM_TOKEN;
+
+    rmSync(join(unregisterDir, "retired"), { recursive: true, force: true });
+  });
+
+  afterAll(() => {
+    delete process.env.CADET_CLOUD_TOKEN;
+    delete process.env.CADET_PLATFORM_TOKEN;
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
+    }
+    rmSync(unregisterDir, { recursive: true, force: true });
+  });
+
+  test("unregisters the cloud record straight from the lockfile entry", async () => {
+    makeEntry({
+      assistantId: "test-assistant",
+      instanceDir: join(unregisterDir, "instance"),
+      cloudAssistantId: "cloud-asst-1",
+      cloudOrganizationId: "org-123",
+    });
+    readCloudTokenMock.mockReturnValue("session-token");
+    const entry = readLocalEntry("test-assistant");
+
+    await retireLocal("test-assistant", entry, silentReporter);
+
+    // The cloud record resolves from the entry + env — no gateway credential
+    // store is consulted.
+    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": "session-token",
+          "Cadet-Organization-Id": "org-123",
+        },
+      },
+    );
+  });
+
+  test("resolves the organization via the cloud when the entry omits it", async () => {
+    makeEntry({
+      assistantId: "test-assistant",
+      instanceDir: join(unregisterDir, "instance"),
+      cloudAssistantId: "cloud-asst-1",
+    });
+    readCloudTokenMock.mockReturnValue("session-token");
+    const entry = readLocalEntry("test-assistant");
+
+    await retireLocal("test-assistant", entry, silentReporter);
+
+    expect(cloudAuthHeadersMock).toHaveBeenCalledWith(
+      "session-token",
+      "https://platform.example.test",
+    );
+    expect(authHeadersForKnownOrganizationMock).not.toHaveBeenCalled();
+    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": "session-token",
+        },
+      },
+    );
+  });
+
+  test("skips the cloud unregister when no assistant id is bound", async () => {
+    makeEntry({
+      assistantId: "test-assistant",
+      instanceDir: join(unregisterDir, "instance"),
+    });
+    readCloudTokenMock.mockReturnValue("session-token");
+    const entry = readLocalEntry("test-assistant");
+
+    await retireLocal("test-assistant", entry, silentReporter);
+
+    expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
+  });
+
+  test("uses the injected platform token from the app host", async () => {
+    makeEntry({
+      assistantId: "test-assistant",
+      instanceDir: join(unregisterDir, "instance"),
+      cloudAssistantId: "cloud-asst-1",
+      cloudOrganizationId: "org-123",
+    });
+    process.env.CADET_PLATFORM_TOKEN = "host-session-token";
+    readCloudTokenMock.mockReturnValue(null);
+    const entry = readLocalEntry("test-assistant");
+
+    await retireLocal("test-assistant", entry, silentReporter);
+
+    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": "host-session-token",
+          "Cadet-Organization-Id": "org-123",
+        },
+      },
+    );
+  });
+
+  test("continues the local teardown when the cloud unregister fails", async () => {
+    makeEntry({
+      assistantId: "test-assistant",
+      instanceDir: join(unregisterDir, "instance"),
+      cloudAssistantId: "cloud-asst-1",
+      cloudOrganizationId: "org-123",
+    });
+    readCloudTokenMock.mockReturnValue("session-token");
+    loopbackSafeFetchMock.mockResolvedValue(
+      new Response("platform unavailable", { status: 503 }),
+    );
+    const entry = readLocalEntry("test-assistant");
+    const warns: string[] = [];
+    const warnSpy = spyOn(console, "warn").mockImplementation(
+      (...args: unknown[]) => {
+        warns.push(args.map(String).join(" "));
+      },
+    );
+
+    try {
+      await retireLocal("test-assistant", entry, silentReporter);
+    } finally {
+      warnSpy.mockRestore();
+    }
+
+    expect(warns.join("\n")).toContain(
+      "Platform self-hosted unregister failed (503): platform unavailable",
+    );
+    expect(warns.join("\n")).toContain("continuing local retire");
   });
 });

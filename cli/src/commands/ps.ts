@@ -10,16 +10,19 @@ import {
 } from "@mycadet/service-contracts/ingress";
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
-import { resolveLogDir } from "@mycadet/local-mode";
-
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
   lookupAssistantByIdentifier,
+  readCloudToken,
+  resolveLogDir,
+} from "@mycadet/local-mode";
+
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import {
+  findAssistantByName,
   readRootProcesses,
 } from "../lib/assistant-config";
 import { getLocalInstanceDir } from "../lib/remotes/local";
@@ -32,7 +35,6 @@ import {
   fetchGatewayPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
-import { readCloudToken } from "../lib/cloud-client";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
 import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";

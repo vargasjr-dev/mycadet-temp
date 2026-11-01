@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 
 import { isAppleContainerEntry } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
+import { stopContainerAppServer } from "../../ingress";
 
 /**
  * The apple-container topology's retire leg: send a retire command to the
@@ -28,6 +29,11 @@ export async function retireAppleContainer(
       `'${entry.assistantId}' is not an apple-container assistant.`,
     );
   }
+
+  // Stop the nginx edge fronting this instance's published port FIRST —
+  // before the pod it fronts is torn down inside the container.
+  await stopContainerAppServer(entry);
+
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     throw new Error(

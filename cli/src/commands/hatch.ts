@@ -5,6 +5,7 @@ import cliPkg from "../../package.json";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {
+  readCloudToken,
   saveLockfileAssistant,
   validateAssistantName,
 } from "@mycadet/local-mode";
@@ -14,7 +15,7 @@ import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/remotes/docker.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
-import { hatchAssistant, readCloudToken } from "../lib/cloud-client";
+import { hatchAssistant } from "../lib/cloud-client";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
 

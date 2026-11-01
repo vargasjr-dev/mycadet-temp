@@ -131,26 +131,12 @@ export function stampAppBuiltSha(builtSha: string): void {
   });
 }
 
-// The assistant bookkeeping the lifecycle operations share (name-or-id
-// lookup, display naming, entry removal, active-assistant reads) lives in
-// `@mycadet/local-mode` now — the hosts call it in-process. Re-exported here
-// for this module's remaining consumers.
 import {
   formatAssistantLookupError,
   getActiveAssistant,
   loadAllAssistants,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
-export {
-  loadAllAssistants,
-  lookupAssistantByIdentifier,
-  formatAssistantLookupError,
-  getAssistantDisplayName,
-  removeLockfileAssistant,
-  getActiveAssistant,
-  extractHostFromEntry,
-} from "@mycadet/local-mode";
-export type { AssistantLookupResult } from "@mycadet/local-mode";
 
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();

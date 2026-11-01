@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { resolveConfigDir, resolveLocalConfigFromEnv } from "./config";
+import { cliCommandName } from "./environment";
 import { readLockfile } from "./lockfile";
 import { loopbackSafeFetch } from "./loopback-fetch";
 
@@ -13,9 +14,9 @@ import { loopbackSafeFetch } from "./loopback-fetch";
  * the Electron session token through the spawn's env; the operation reads
  * the same precedence itself).
  *
- * The CLI's `cloud-client.ts` re-exports these and wraps the one
- * CLI-flavored piece (the `cadet login` recovery hint keyed to the invoking
- * binary's name) on top.
+ * The one CLI-flavored piece rides inside: auth errors (401 / 403) from the
+ * org-ID fetch re-throw with the invoking binary's `login` hint, so callers
+ * surface one useful line instead of classifying statuses.
  */
 
 const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
@@ -44,7 +45,9 @@ export function readCloudToken(): string | null {
 export function resolveCloudUrl(): string {
   const url = readLockfile().cloudBaseUrl;
   const lockfileUrl = typeof url === "string" ? url.trim() : undefined;
-  return (lockfileUrl && lockfileUrl) || resolveLocalConfigFromEnv().cloudUrl;
+  return (
+    (lockfileUrl && lockfileUrl) || resolveLocalConfigFromEnv().cloudUrl.trim()
+  );
 }
 
 const VAK_PREFIX = "vak_";
@@ -141,10 +144,28 @@ export async function fetchOrganizationId(
  * the `Cadet-Organization-Id` fetched from the cloud (cached 60s per
  * (token, cloudUrl)).
  *
- * Errors propagate raw; the CLI's cloud client wraps them with the
- * invoking binary's login hint.
+ * Errors re-throw with the invoking binary's `login` recovery hint on
+ * auth failures (401 / 403); anything else propagates the underlying
+ * message.
  */
 export async function cloudAuthHeaders(
+  token: string,
+  cloudUrl?: string,
+): Promise<Record<string, string>> {
+  try {
+    return await resolveAuthHeaders(token, cloudUrl);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("401") || msg.includes("403")) {
+      throw new Error(
+        `Authentication failed. Run '${cliCommandName()} login' to refresh.`,
+      );
+    }
+    throw new Error(`Failed to fetch organization: ${msg}`);
+  }
+}
+
+async function resolveAuthHeaders(
   token: string,
   cloudUrl?: string,
 ): Promise<Record<string, string>> {

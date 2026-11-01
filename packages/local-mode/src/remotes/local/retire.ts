@@ -14,13 +14,16 @@ import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
+import { unregisterSelfHostedLocalPlatformRecord } from "../cloud/retire";
 
 /**
- * The local topology's retire leg: stop the daemon/gateway/CES siblings and
- * the ingress edge, then move the instance directory aside and archive it in
- * the background. The move-aside is the safety-critical half — if it fails,
- * the error propagates (a failed archive must NOT leave the entry removed,
- * or the next hatch inherits stale SOUL.md/IDENTITY.md/memories).
+ * The local topology's retire leg: unregister the platform's self-hosted
+ * record (warn-and-continue — a failed unregister must not block the local
+ * teardown), stop the daemon/gateway/CES siblings and the ingress edge, then
+ * move the instance directory aside and archive it in the background. The
+ * move-aside is the safety-critical half — if it fails, the error propagates
+ * (a failed archive must NOT leave the entry removed, or the next hatch
+ * inherits stale SOUL.md/IDENTITY.md/memories).
  */
 
 export interface RetireLocalResult {
@@ -94,6 +97,19 @@ export async function retireLocal(
   reporter: LifecycleReporter = consoleLifecycleReporter,
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
+
+  // Unregister the platform's self-hosted record first (it keys off the
+  // entry, not the instance dir) — warn-and-continue: a failed unregister
+  // (not logged in, offline) must not block the local teardown.
+  try {
+    await unregisterSelfHostedLocalPlatformRecord(entry);
+  } catch (error) {
+    console.warn(
+      `⚠️  Platform self-hosted unregister failed; continuing local retire: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 
   if (!isLocalEntry(entry)) {
     throw new Error(`'${name}' is not a local assistant.`);

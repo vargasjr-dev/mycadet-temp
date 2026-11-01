@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { loopbackSafeFetch } from "@mycadet/local-mode";
 
 export type HttpProbeEndpoint = "healthz" | "readyz";
 

@@ -1,10 +1,8 @@
 import {
   authorizePairedForwardHeaders,
   getGuardianAccessToken,
-  forwardOperatorRequest,
   loopbackGatewayBearer,
   readGatewayTargets,
-  readLockfile,
   resolveGatewayProxyTarget,
   sanitizePairedForwardHeaders,
   type TokenResult,
@@ -179,35 +177,10 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
   return readGatewayTargets();
 };
 
-/**
- * The operator entry lookup for the host's retire mount: prefer the watcher's
- * in-memory snapshot (the same preference the gateway planner's target map
- * uses), falling back to the lockfile on disk for the window before the
- * watcher installs.
- */
-const operatorEntryLookup = (
-  assistantId: string,
-): LockfileAssistant | undefined => {
-  const watched = getWatchedLockfileSnapshot();
-  const assistants = watched ? watched.assistants : readLockfile().assistants;
-  return assistants.find((entry) => entry.assistantId === assistantId);
-};
-
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
-  // The operator routes ride AHEAD of the data-plane planner: an on-machine
-  // entry's retire DELETE is answered host-side by the headless retire
-  // operation (in-process — no CLI spawn), so the bundle's one endpoint
-  // holds for every entry type. A pass (unknown id, platform-hosted entry)
-  // falls through to the planner untouched.
-  const operator = await forwardOperatorRequest(request, {
-    findEntry: operatorEntryLookup,
-  });
-  if (operator) {
-    return operator;
-  }
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
     // The trusted main-process proxy reads the paired bearer through the

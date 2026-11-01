@@ -3,13 +3,16 @@ import { cliCommand } from "../lib/cli-name.js";
 import { basename, dirname, join, sep } from "path";
 import { fileURLToPath } from "url";
 
-import { loadAllAssistants } from "../lib/assistant-config.js";
 import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
-import { retireDocker, retireLocal } from "@mycadet/local-mode";
+import {
+  loadAllAssistants,
+  retireDocker,
+  retireLocal,
+} from "@mycadet/local-mode";
 import { getSharedStateDir } from "../lib/environments/paths.js";
 import {
   resolveConfigDir,

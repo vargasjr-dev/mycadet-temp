@@ -11,9 +11,8 @@ import {
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
-import {
-  forwardGatewayRequest,
-} from "@mycadet/electron-desktop/gateway-forward";
+import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
+import { forwardOperatorRequest } from "@mycadet/electron-desktop/operator-forward";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
@@ -125,6 +124,13 @@ const registerAppProtocol = (): void => {
   const indexHtml = path.join(rendererRoot, "index.html");
 
   protocol.handle(APP_PROTOCOL, async (request) => {
+    // The operator routes ride ahead of the gateway proxy: an on-machine
+    // entry's retire DELETE is answered host-side, everything else passes.
+    const operated = await forwardOperatorRequest(request);
+    if (operated) {
+      return operated;
+    }
+
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
     // (mirrors the Vite dev-server proxy).
     const proxied = await forwardGatewayRequest(request, net.fetch);
@@ -185,9 +191,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerCadetProtocol(
-      path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
-    );
+    registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
     installPermissionHandler(resolveAllowedOrigin);
     installCsp();
     if (app.isPackaged) {

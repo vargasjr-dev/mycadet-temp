@@ -8,11 +8,11 @@ import {
 } from "react";
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
-import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-} from "../lib/assistant-config";
+} from "@mycadet/local-mode";
+import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { checkHealth } from "../lib/health-check";
 import {

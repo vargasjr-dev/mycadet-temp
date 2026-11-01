@@ -40,6 +40,7 @@
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
     "./gateway-forward": "./src/gateway-forward.ts",
+    "./operator-forward": "./src/operator-forward.ts",
     "./global-shortcuts": "./src/global-shortcuts.ts",
     "./helper-toast-request": "./src/helper-toast-request.ts",
     "./host-proxy/cu-executor": "./src/host-proxy/cu-executor.ts",

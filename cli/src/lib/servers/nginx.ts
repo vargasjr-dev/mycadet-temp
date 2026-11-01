@@ -18,8 +18,6 @@ import { cloudAssistantHubUrl } from "@mycadet/environments";
 import { resolveVersion } from "@mycadet/shared/version";
 
 import {
-  getAssistantDisplayName,
-  lookupAssistantByIdentifier,
   readRootProcesses,
   resolveTargetAssistant,
   stampRootProcess,
@@ -30,11 +28,13 @@ import {
   type Remote,
 } from "@mycadet/local-mode/contract";
 import {
+  getAssistantDisplayName,
   getIngressPaths,
+  getIngressPid,
   ingressStatePath,
   isIngressRunning,
+  lookupAssistantByIdentifier,
   readIngressState,
-  getIngressPid,
   stopIngressNginx,
   type IngressState,
 } from "@mycadet/local-mode";

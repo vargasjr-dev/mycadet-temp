@@ -23,13 +23,6 @@ const getStoredPairedGuardianAccessToken = mock(
   async (_assistantId: string, _runtimeUrl: string): Promise<TokenResult> =>
     tokenResult,
 );
-// The scoped surface's retire arm runs the headless retire operation
-// host-side; the mock replaces the operation so tests observe the call
-// instead of running it.
-type RetireResult = { ok: true } | { ok: false; status: number; error: string };
-const retireAssistantEntryMock = mock(
-  async (): Promise<RetireResult> => ({ ok: true }),
-);
 let localTokenResult: TokenResult = { ok: true, accessToken: "local-guardian" };
 const getGuardianAccessToken = mock(
   async (_assistantId: string): Promise<TokenResult> => localTokenResult,
@@ -38,7 +31,6 @@ mock.module("@mycadet/local-mode", () => ({
   ...localModeShared,
   getGuardianAccessToken,
   getPairedGuardianAccessToken: getStoredPairedGuardianAccessToken,
-  retireAssistantEntry: retireAssistantEntryMock,
 }));
 
 const { forwardGatewayRequest } = await import("./gateway-forward");
@@ -97,12 +89,6 @@ beforeEach(() => {
   localTokenResult = { ok: true, accessToken: "local-guardian" };
   getStoredPairedGuardianAccessToken.mockClear();
   getGuardianAccessToken.mockClear();
-  retireAssistantEntryMock.mockClear();
-  retireAssistantEntryMock.mockImplementation(
-    async (): Promise<RetireResult> => ({
-      ok: true,
-    }),
-  );
   clearLoopbackGatewayBearerCache();
 });
 
@@ -479,54 +465,4 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       }
     },
   );
-});
-
-describe("forwardGatewayRequest — the scoped surface's retire arm", () => {
-  test("an on-machine entry's retire DELETE runs the retire operation in-process instead of forwarding", async () => {
-    const entry = { assistantId: "abc", cloud: "local", port: 8080 };
-    watchedSnapshot = { assistants: [entry] };
-    const { fetcher, calls } = recorder();
-    const response = await forwardGatewayRequest(
-      request("/v1/assistants/abc/retire/", { method: "DELETE" }),
-      fetcher,
-    );
-    expect(retireAssistantEntryMock).toHaveBeenCalledWith(entry);
-    expect(calls).toEqual([]);
-    expect(response?.status).toBe(204);
-  });
-
-  test("a retire failure answers the cloud error shape the dialog renders", async () => {
-    watchedSnapshot = {
-      assistants: [{ assistantId: "abc", cloud: "local", port: 8080 }],
-    };
-    retireAssistantEntryMock.mockImplementationOnce(async () => ({
-      ok: false,
-      status: 500,
-      error: "no such assistant",
-    }));
-    const { fetcher, calls } = recorder();
-    const response = await forwardGatewayRequest(
-      request("/v1/assistants/abc/retire/", { method: "DELETE" }),
-      fetcher,
-    );
-    expect(calls).toEqual([]);
-    expect(response?.status).toBe(500);
-    expect(await response?.json()).toEqual({ detail: "no such assistant" });
-  });
-
-  test("a cloud entry's retire passes through to the endpoint's forward", async () => {
-    watchedSnapshot = {
-      assistants: [{ assistantId: "abc", cloud: "cloud" }],
-    };
-    const { fetcher, calls } = recorder();
-    const response = await forwardGatewayRequest(
-      request("/v1/assistants/abc/retire/", { method: "DELETE" }),
-      fetcher,
-    );
-    // Cloud rows ride the host's cloud forward in the caller; the gateway
-    // planner stays out of the way.
-    expect(retireAssistantEntryMock).not.toHaveBeenCalled();
-    expect(calls).toEqual([]);
-    expect(response).toBeNull();
-  });
 });

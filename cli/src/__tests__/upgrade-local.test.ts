@@ -21,7 +21,7 @@ import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as local from "../lib/remotes/local.js";
-import * as loopbackFetch from "../lib/loopback-fetch.js";
+import * as localMode from "@mycadet/local-mode";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
 
@@ -30,28 +30,23 @@ const realLocalMode = { ...localModeModule };
 const realBackupOps = { ...backupOps };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
-const realLoopbackFetch = { ...loopbackFetch };
+const realLoopbackMode = { ...localMode };
 const realNgrok = { ...ngrok };
 const realUpgradeLifecycle = { ...upgradeLifecycle };
 
 const findAssistantByNameMock =
   mock<typeof assistantConfig.findAssistantByName>();
 const lookupAssistantByIdentifierMock =
-  mock<typeof assistantConfig.lookupAssistantByIdentifier>();
-const getActiveAssistantMock = mock<typeof assistantConfig.getActiveAssistant>(
+  mock<typeof localModeModule.lookupAssistantByIdentifier>();
+const getActiveAssistantMock = mock<typeof localModeModule.getActiveAssistant>(
   () => "local-assistant",
 );
-const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
+const loadAllAssistantsMock = mock<typeof localModeModule.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
   typeof localModeModule.saveLockfileAssistant
 >(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
-
-mock.module("@mycadet/local-mode", () => ({
-  ...realLocalMode,
-  saveLockfileAssistant: saveLockfileAssistantMock,
-}));
 
 mock.module("../lib/assistant-config", () => ({
   ...realAssistantConfig,
@@ -144,7 +139,7 @@ mock.module("../lib/remotes/local.js", () => ({
   startCes: startCesMock,
 }));
 
-const loopbackSafeFetchMock = mock<typeof loopbackFetch.loopbackSafeFetch>(
+const loopbackSafeFetchMock = mock<typeof localMode.loopbackSafeFetch>(
   async () =>
     ({
       ok: true,
@@ -158,9 +153,13 @@ const loopbackSafeFetchMock = mock<typeof loopbackFetch.loopbackSafeFetch>(
     }) as Response,
 );
 
-mock.module("../lib/loopback-fetch.js", () => ({
-  ...realLoopbackFetch,
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
   loopbackSafeFetch: loopbackSafeFetchMock,
+  lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
+  getActiveAssistant: getActiveAssistantMock,
+  loadAllAssistants: loadAllAssistantsMock,
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
@@ -330,12 +329,11 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config", () => realAssistantConfig);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
   mock.module("../lib/remotes/local.js", () => realLocal);
-  mock.module("../lib/loopback-fetch.js", () => realLoopbackFetch);
+  mock.module("@mycadet/local-mode", () => realLoopbackMode);
   mock.module("../lib/tunnels/ngrok.js", () => realNgrok);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);
 });

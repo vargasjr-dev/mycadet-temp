@@ -8,6 +8,7 @@ import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-p
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
 import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
+import { forwardOperatorRequest } from "@mycadet/electron-desktop/operator-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
@@ -304,6 +305,13 @@ const registerAppProtocol = (): void => {
       return new Response(configJson, {
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    // The operator routes ride ahead of the gateway proxy: an on-machine
+    // entry's retire DELETE is answered host-side, everything else passes.
+    const operated = await forwardOperatorRequest(request);
+    if (operated) {
+      return operated;
     }
 
     // Forward the id-keyed gateway proxy to its lockfile-resolved target

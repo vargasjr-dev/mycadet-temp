@@ -10,7 +10,7 @@ import {
   type LockfileAssistant,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
 import { restoreContainerAppServer } from "../tunnel.js";
 import {
   ASSISTANT_INTERNAL_PORT,
@@ -32,7 +32,6 @@ import {
 } from "../upgrade-lifecycle.js";
 import { createBackup, pruneOldBackups, restoreBackup } from "../backup-ops.js";
 import { emitCliError } from "../cli-error.js";
-import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { resolveImageRefs } from "../cloud-releases.js";
 import { compareVersions, versionsEqual } from "../version-compat.js";
 

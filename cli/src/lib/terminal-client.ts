@@ -6,9 +6,12 @@
  * the web UI's xterm.js terminal uses.
  */
 
-import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { authHeaders, getCloudUrl } from "./cloud-client.js";
 import { z } from "zod";
+import {
+  cloudAuthHeaders,
+  getCloudUrl,
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 
 const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
 
@@ -41,7 +44,7 @@ export async function createTerminalSession(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify(body),
     },
   );
@@ -69,7 +72,7 @@ export async function closeTerminalSession(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/`,
     {
       method: "DELETE",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     },
   );
   // 404 = already closed, treat as success
@@ -96,7 +99,7 @@ export async function sendTerminalInput(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/input/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify({ data }),
     },
   );
@@ -120,7 +123,7 @@ export async function resizeTerminalSession(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/resize/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify({ cols, rows }),
     },
   );
@@ -150,7 +153,7 @@ export async function* subscribeTerminalEvents(
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/events/`,
     {
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       signal,
     },
   );

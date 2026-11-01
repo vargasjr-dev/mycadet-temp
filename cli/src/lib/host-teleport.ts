@@ -3,11 +3,7 @@ import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  findAssistantByName,
-  removeLockfileAssistant,
-  setActiveAssistant,
-} from "./assistant-config.js";
+import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
 import {
   dockerResourceNames,
@@ -16,6 +12,7 @@ import {
 } from "./remotes/docker.js";
 import { hatchLocal } from "./remotes/local.js";
 import {
+  removeLockfileAssistant,
   retireDocker,
   retireLocal,
   validateAssistantName,
