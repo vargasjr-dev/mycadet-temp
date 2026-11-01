@@ -216,10 +216,10 @@ test("graceful shutdown failure never captures a live installation", async () =>
   );
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("graceful timeout");
+  ).rejects.toThrow("Source services are still running; teleport aborted.");
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("graceful timeout");
+  ).rejects.toThrow("Source services are still running; teleport aborted.");
   expect(ops.backup).not.toHaveBeenCalled();
   expect(ops.retire).not.toHaveBeenCalled();
 });
