@@ -107,15 +107,9 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
-  // NOTE: the retention prune deliberately does NOT run here (field feedback
-  // item 8 — it stretched first boot). The main process runs it on a
-  // background interval; a dedicated monitoring worker is the follow-up
-  // wiring (out of scope for now).
 }
 
-/**
- * Cadence for the background retention sweep — see startLogRetentionSweep.
- */
+/** How often the main process's background log-retention sweep runs. */
 export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 /**

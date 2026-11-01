@@ -12,7 +12,6 @@
  * these tests observe has to come from the client deciding for itself.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { GatewayConfig } from "../config.js";
 import { makeGatewayConfig } from "./helpers/gateway-config.js";
 import type { NormalizedSlackEvent } from "../slack/message-schemas.js";
 import {

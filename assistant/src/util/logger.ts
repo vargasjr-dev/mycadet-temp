@@ -218,20 +218,7 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildRotatingLogger(config);
-  // NOTE: log-retention pruning deliberately does NOT run here — it used to,
-  // and the synchronous sweep stretched every first boot (field feedback
-  // item 8), worst on freshly-migrated assistants with a deep log history.
-  // The daemon's monitoring sweep (startLogRetentionSweep in lifecycle.ts)
-  // owns it now, off the critical path.
 }
-
-/**
- * How often the background retention sweep runs. The sweep itself is one
- * readdir + stat per dated file, so hourly is far more frequent than the
- * day-granularity cutoff needs — the point is only that it never happens
- * on the boot path.
- */
-export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 function getRootLogger(): Logger {
   if (activeLogFileConfig) {

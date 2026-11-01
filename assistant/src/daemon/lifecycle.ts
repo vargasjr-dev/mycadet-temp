@@ -49,13 +49,7 @@ import {
   getDotEnvPath,
   getWorkspaceDir,
 } from "../util/layout.js";
-import {
-  getLogger,
-  initLogger,
-  LOG_RETENTION_SWEEP_INTERVAL_MS,
-  pruneOldLogFiles,
-  type LogFileConfig,
-} from "../util/logger.js";
+import { getLogger, initLogger } from "../util/logger.js";
 import { DAEMON_OOM_SCORE_ADJ, setOomScoreAdj } from "../util/oom-priority.js";
 import { APP_VERSION } from "../version.js";
 import { drainOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";
@@ -95,35 +89,6 @@ import {
 import { startResourcePressureGuardForLifecycle } from "./resource-pressure-guard-lifecycle.js";
 import { installShutdownHandlers } from "./shutdown-handlers.js";
 import { broadcastDaemonStatus } from "./status.js";
-
-/**
- * Background log-retention sweep (field feedback item 8): the prune used to
- * run synchronously inside initLogger — off the critical path now. First run
- * is one full interval after boot; the retention cutoff is day-granular, so
- * the hourly cadence is generous. The interval is unref'd so it never holds
- * the process open. (A dedicated monitoring worker is the follow-up wiring,
- * out of scope for now.)
- */
-export function startLogRetentionSweep(config: {
-  dir?: string;
-  retentionDays: number;
-}): void {
-  if (!config.dir) return;
-  const interval = setInterval(() => {
-    try {
-      const removed = pruneOldLogFiles(config.dir!, config.retentionDays);
-      if (removed > 0) {
-        log.info(
-          { removed, retentionDays: config.retentionDays },
-          "Pruned old log files",
-        );
-      }
-    } catch (err) {
-      log.warn({ err }, "Log retention sweep failed");
-    }
-  }, LOG_RETENTION_SWEEP_INTERVAL_MS);
-  interval.unref();
-}
 
 const log = getLogger("lifecycle");
 
@@ -614,7 +579,6 @@ export async function runDaemon(): Promise<void> {
       dir: config.logFile.dir,
       retentionDays: config.logFile.retentionDays,
     });
-    startLogRetentionSweep(config.logFile);
   }
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).

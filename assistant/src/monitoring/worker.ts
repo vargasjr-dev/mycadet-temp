@@ -27,6 +27,10 @@ import {
   type FileDescriptorMonitorHandle,
   startFileDescriptorMonitor,
 } from "./file-descriptors.js";
+import {
+  type LogRetentionSweeperHandle,
+  startLogRetentionSweeper,
+} from "./log-retention-sweeper.js";
 import { type MountWatchHandle, startMountWatch } from "./mount-watch.js";
 import {
   type PluginAutoUpdateHandle,
@@ -76,6 +80,7 @@ async function main(): Promise<void> {
   let autoUpdate: PluginAutoUpdateHandle | null = null;
   let recovery: RecoveryHandle | null = null;
   let workspaceGitHeartbeat: WorkspaceGitHeartbeatHandle | null = null;
+  let logRetentionSweeper: LogRetentionSweeperHandle | null = null;
 
   let shuttingDown = false;
   let disposePidGuard: (() => void) | null = null;
@@ -93,6 +98,7 @@ async function main(): Promise<void> {
     }
     workspaceGitHeartbeat = null;
     recovery?.stop();
+    logRetentionSweeper?.stop();
     autoUpdate?.stop();
     sourceWatch?.stop();
     mountWatch?.stop();
@@ -142,6 +148,9 @@ async function main(): Promise<void> {
   // the daemon; this timer must not run there because large `git add` /
   // `git commit` work stalls the event loop.
   workspaceGitHeartbeat = startWorkspaceGitHeartbeat();
+  // Log retention rides the worker so the sweep never touches the daemon's
+  // boot path (field feedback item 8).
+  logRetentionSweeper = startLogRetentionSweeper(config.logFile);
 
   process.on("SIGUSR1", () => {
     log.info("Received SIGUSR1 — refreshing database connections");

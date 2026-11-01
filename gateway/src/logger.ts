@@ -155,13 +155,7 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
   );
 }
 
-/**
- * Cadence for the background retention sweep (field feedback item 8): the
- * prune left the boot path AND the date-rollover path (a getLogger() call
- * just after midnight UTC would otherwise sweep on a request). The gateway
- * main process owns the interval now; a dedicated monitoring worker is the
- * follow-up wiring (out of scope for now).
- */
+/** How often the main process's background log-retention sweep runs. */
 export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 function ensureCurrentDate(): void {
@@ -174,10 +168,6 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
-  // NOTE: the retention prune deliberately does NOT run here (field feedback
-  // item 8 — the synchronous sweep stretched every first wake). The gateway
-  // main process runs it on a background interval; a dedicated monitoring
-  // worker is the follow-up wiring (out of scope for now).
 }
 
 /**
