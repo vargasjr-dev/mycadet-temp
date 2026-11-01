@@ -519,14 +519,17 @@ import { arch, platform } from "os";
 import { dirname, join, resolve } from "path";
 
 import { setActiveAssistant } from "../assistant-config";
-import { buildHatchConfigValues, writeInitialConfig } from "../config-utils";
+import {
+  buildHatchConfigValues,
+  writeInitialConfig,
+} from "@mycadet/local-mode";
 import { printInstanceDetails } from "../instance-details";
 import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
 import { green, yellow } from "../color.js";
 import { leaseGuardianToken } from "../guardian-token";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
-import { generateInstanceName } from "../random-name";
+import { generateInstanceName } from "@mycadet/local-mode";
 import {
   HOST_IMAGE_LOADER_URL,
   isLocalBuildRef,

@@ -1,6 +1,5 @@
-import { execFileSync } from "child_process";
-import { createHash, randomUUID } from "crypto";
-import { z } from "zod";
+import { execFileSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import {
   closeSync,
   mkdirSync,
@@ -10,9 +9,9 @@ import {
   unlinkSync,
   utimesSync,
   writeFileSync,
-} from "fs";
-import { hostname, platform, userInfo } from "os";
-import { dirname, join } from "path";
+} from "node:fs";
+import { hostname, platform, userInfo } from "node:os";
+import { dirname, join } from "node:path";
 
 const DEFAULT_TIMEOUT_MS = 240_000;
 const DEFAULT_RETRY_MS = 100;
@@ -94,15 +93,25 @@ function errnoCode(error: unknown): string | undefined {
   return error.code;
 }
 
-const LockOwnerFileSchema = z.object({
-  pid: z.number().int().positive(),
-  processStartedAt: z.string().min(1).optional().catch(undefined),
-  token: z.string().min(1),
-});
-
 function parseOwner(raw: string): LockOwner | undefined {
   try {
-    return LockOwnerFileSchema.parse(JSON.parse(raw));
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    const pid = value.pid;
+    const token = value.token;
+    if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0) {
+      return undefined;
+    }
+    if (typeof token !== "string" || token.length === 0) {
+      return undefined;
+    }
+    const processStartedAt = value.processStartedAt;
+    return {
+      pid,
+      token,
+      ...(typeof processStartedAt === "string" && processStartedAt.length > 0
+        ? { processStartedAt }
+        : {}),
+    };
   } catch {}
   return undefined;
 }

@@ -28,7 +28,7 @@ import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
-import { generateInstanceName } from "./random-name.js";
+import { generateInstanceName } from "@mycadet/local-mode";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
 type HostEnvironment = "local" | "docker";

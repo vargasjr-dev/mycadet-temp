@@ -1,6 +1,6 @@
-import { writeFileSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 /**
  * Convert flat dot-notation key=value pairs into a nested config object.

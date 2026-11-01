@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test";
 import {
   generateRandomSuffix,
   generateInstanceName,
-} from "../lib/random-name.js";
+} from "../remotes/local/naming";
 
 describe("generateRandomSuffix", () => {
   test("returns a string in adjective-noun-nanoid format", () => {
