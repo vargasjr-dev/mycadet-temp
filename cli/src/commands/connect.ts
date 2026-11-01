@@ -1,5 +1,5 @@
 import { connectImport } from "./connect/import.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 
 function printUsage(): void {
   console.log(`Usage: ${cliCommand()} connect [beta] <subcommand>`);

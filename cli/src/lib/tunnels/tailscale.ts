@@ -1,5 +1,5 @@
 import { stampRootProcess } from "../assistant-config.js";
-import { readProcessCommandLine, stopProcess } from "../process.js";
+import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
 import type {
   TunnelProvider,
   ProviderStopOptions,
@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
 import { GATEWAY_PORT } from "../constants.js";
-import { cliCommand } from "../cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 // ── Tailscale CLI discovery + invocation ────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { gatewayToken } from "./gateway/token.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 
 function printUsage(): void {
   console.log(`Usage: ${cliCommand()} gateway <subcommand>`);

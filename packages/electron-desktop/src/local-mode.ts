@@ -9,7 +9,6 @@ import {
   runDevicesList,
   runDevicesRevoke,
   runHatch,
-  runSleep,
   runUpgrade,
   runWake,
   pairingCancel,
@@ -119,21 +118,6 @@ async function hatch(remote?: string): Promise<HatchResult> {
     return result.ok
       ? { ok: true, assistantId: result.assistantId }
       : { ok: false, error: result.error };
-  } catch (err) {
-    return { ok: false, error: (err as Error).message };
-  }
-}
-
-interface SleepResult {
-  ok: boolean;
-  error?: string;
-}
-
-/** Stop a local assistant's daemon and gateway. Mirrors `hatch`'s never-reject contract. */
-async function sleep(assistantId: string): Promise<SleepResult> {
-  try {
-    const result = await runSleep(assistantId);
-    return result.ok ? { ok: true } : { ok: false, error: result.error };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -374,13 +358,6 @@ export const installLocalMode = (): void => {
   ipc("cadet:localMode:pairingCancel", oneOptionalStringArgs, ([handle]) => ({
     ok: pairingCancel(handle),
   }));
-
-  ipc("cadet:localMode:sleep", assistantIdArgs, ([assistantId]) => {
-    if (!assistantId) {
-      return { ok: false, error: "Missing assistantId" };
-    }
-    return sleep(assistantId);
-  });
 
   ipc("cadet:localMode:listDevices", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {

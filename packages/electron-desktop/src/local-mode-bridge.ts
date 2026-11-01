@@ -21,7 +21,6 @@ export const createLocalModeBridge = (
   readLockfile: () => ipc.invoke("cadet:localMode:readLockfile"),
   revokeDevice: (assistantId, hashedDeviceId) =>
     ipc.invoke("cadet:localMode:revokeDevice", assistantId, hashedDeviceId),
-  sleep: (assistantId) => ipc.invoke("cadet:localMode:sleep", assistantId),
   status: (assistantId) => ipc.invoke("cadet:localMode:status", assistantId),
   unpair: (assistantId) => ipc.invoke("cadet:localMode:unpair", assistantId),
   upgrade: (assistantId, options) =>

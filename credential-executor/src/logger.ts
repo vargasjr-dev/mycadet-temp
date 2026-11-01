@@ -107,17 +107,10 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
-
-  if (config.dir && config.retentionDays > 0) {
-    const removed = pruneOldLogFiles(config.dir, config.retentionDays);
-    if (removed > 0) {
-      rootLogger.info(
-        { removed, retentionDays: config.retentionDays },
-        "Pruned old log files",
-      );
-    }
-  }
 }
+
+/** How often the main process's background log-retention sweep runs. */
+export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
  * Returns a lazy proxy logger that always delegates to the **current**

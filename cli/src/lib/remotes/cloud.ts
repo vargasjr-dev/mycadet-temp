@@ -3,7 +3,7 @@
  * commands ride the platform's terminal-session exec API — the same seam
  * `cadet exec` drives for these topologies.
  */
-import { getCloudUrl, readCloudToken } from "../cloud-client.js";
+import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { execViaTerminalSession } from "../terminal-session.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 

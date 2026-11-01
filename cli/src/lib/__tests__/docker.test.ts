@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, test, expect } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import {
   AVATAR_DEVICE_ENV_VAR,
   collectWatchTargets,
-  dockerResourceNames,
   ensureDockerDaemonRunning,
   pullImage,
   resolveAvatarDevicePath,

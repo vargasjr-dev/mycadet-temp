@@ -8,8 +8,8 @@
  * Electron.app, then launches `electron-vite dev`. No dev servers run:
  * the renderer loads the same `app://mycadet.ai` origin packaged builds
  * serve, with the protocol handler in `src/main/index.ts` reading the
- * freshly built source-tree dists (see `resolveAppDistRoot` /
- * `resolveWebDistRoot`).
+ * freshly built source-tree dists (the shared handler's dev arms in
+ * `@mycadet/electron-desktop/app-protocol-forward`).
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";

@@ -1,17 +1,18 @@
-import { isCloudHome } from "../lib/cloud-values.js";
-import { cliCommand } from "../lib/cli-name.js";
-
 import {
+  cliCommand,
   getActiveAssistant,
+  getCloudUrl,
   loadAllAssistants,
+  readCloudToken,
   removeLockfileAssistant,
-  setActiveAssistant,
-} from "../lib/assistant-config";
+} from "@mycadet/local-mode";
+import { isCloudHome } from "../lib/cloud-values.js";
+
+import { setActiveAssistant } from "../lib/assistant-config";
 import {
   clearCloudToken,
-  fetchCurrentUser,
   fetchCloudAssistants,
-  readCloudToken,
+  fetchCurrentUser,
   saveCloudToken,
 } from "../lib/cloud-client";
 import {
@@ -19,7 +20,6 @@ import {
   registerLocalAssistantWithCloud,
   workosPkceLogin,
 } from "../lib/cloud-login.js";
-import { getCloudUrl } from "../lib/cloud-client";
 import { syncCloudAssistants } from "../lib/sync-cloud-assistants";
 
 export const login = Object.assign(

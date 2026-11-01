@@ -9,6 +9,9 @@ export class FakeChild extends EventEmitter {
   stdout = new EventEmitter();
   stderr = new EventEmitter();
   kill = mock(() => true);
+  // Detached spawns (the retire archive's background tar) unref the child so
+  // the parent can exit first.
+  unref = mock(() => {});
 }
 
 /** Any stand-in for `spawn`; each suite records the arguments it asserts on. */

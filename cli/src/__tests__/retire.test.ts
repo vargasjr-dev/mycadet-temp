@@ -10,75 +10,42 @@ import {
 } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { loadAllAssistants } from "@mycadet/local-mode";
 import { join } from "node:path";
 
-import { loadAllAssistants } from "../lib/assistant-config.js";
-import * as loopbackFetchModule from "../lib/loopback-fetch.js";
-import * as cloudClientModule from "../lib/cloud-client.js";
-import * as retireLocalModule from "../lib/retire-local.js";
-import {
-  makeEntry,
-  readEntry,
-} from "./helpers/lockfile-entry.js";
+import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
-const originalPlatformToken = process.env.CADET_PLATFORM_TOKEN;
 const originalStdinIsTTY = process.stdin.isTTY;
 const originalStdoutIsTTY = process.stdout.isTTY;
 const originalStdinIsRaw = process.stdin.isRaw;
 const originalSetRawMode = process.stdin.setRawMode;
 const originalStdoutWrite = process.stdout.write;
-const realRetireLocalModule = { ...retireLocalModule };
-const realCloudClientModule = { ...cloudClientModule };
-const realLoopbackFetchModule = { ...loopbackFetchModule };
 
-const retireLocalMock = mock(async () => {});
-const readCloudTokenMock = mock((): string | null => null);
-const authHeadersMock = mock(async () => ({
-  "Content-Type": "application/json",
-  "X-Session-Token": "session-token",
-}));
-const authHeadersForKnownOrganizationMock = mock(
-  (token: string, organizationId: string) => ({
-    "Content-Type": "application/json",
-    "X-Session-Token": token,
-    "Cadet-Organization-Id": organizationId,
+// The command delegates the teardown to the package's retire operation; the
+// mock replaces the operation at the package seam (the command's import
+// site) while the lookup/display helpers stay real, reading the sandboxed
+// lockfile.
+const realLocalMode = { ...(await import("@mycadet/local-mode")) };
+const retireAssistantMock = mock(
+  async (): Promise<
+    { ok: true } | { ok: false; status: number; error: string }
+  > => ({
+    ok: true,
   }),
 );
-const getCloudUrlMock = mock(() => "https://platform.example.com");
-const readGatewayCredentialMock = mock(
-  async (
-    _gatewayUrl: string,
-    _name: string,
-    _bearerToken?: string,
-  ): Promise<{ value: string | null; unreachable: boolean }> => ({
-    value: null,
-    unreachable: false,
-  }),
-);
-const loopbackSafeFetchMock = mock(
-  async (): Promise<Response> => new Response(null, { status: 204 }),
-);
 
-mock.module("../lib/retire-local.js", () => ({
-  ...realRetireLocalModule,
-  retireLocal: retireLocalMock,
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  retireAssistant: retireAssistantMock,
 }));
 
-mock.module("../lib/cloud-client.js", () => ({
-  authHeaders: authHeadersMock,
-  authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
-  getCloudUrl: getCloudUrlMock,
-  readGatewayCredential: readGatewayCredentialMock,
-  readCloudToken: readCloudTokenMock,
-}));
-
-mock.module("../lib/loopback-fetch.js", () => ({
-  loopbackSafeFetch: loopbackSafeFetchMock,
-}));
+afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
+});
 
 import { retire } from "../commands/retire.js";
 
@@ -137,7 +104,6 @@ function restoreTerminal(): void {
 describe("cadet retire", () => {
   beforeEach(() => {
     process.env.XDG_CONFIG_HOME = testDir;
-    delete process.env.CADET_PLATFORM_TOKEN;
     for (const name of [
       join("cadet", "lockfile.json"),
       ".cadet.lock.json",
@@ -149,34 +115,8 @@ describe("cadet retire", () => {
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);
     }) as typeof process.exit;
-    retireLocalMock.mockReset();
-    retireLocalMock.mockResolvedValue(undefined);
-    readCloudTokenMock.mockReset();
-    readCloudTokenMock.mockReturnValue(null);
-    authHeadersMock.mockReset();
-    authHeadersMock.mockResolvedValue({
-      "Content-Type": "application/json",
-      "X-Session-Token": "session-token",
-    });
-    authHeadersForKnownOrganizationMock.mockReset();
-    authHeadersForKnownOrganizationMock.mockImplementation(
-      (token: string, organizationId: string) => ({
-        "Content-Type": "application/json",
-        "X-Session-Token": token,
-        "Cadet-Organization-Id": organizationId,
-      }),
-    );
-    getCloudUrlMock.mockReset();
-    getCloudUrlMock.mockReturnValue("https://platform.example.com");
-    readGatewayCredentialMock.mockReset();
-    readGatewayCredentialMock.mockResolvedValue({
-      value: null,
-      unreachable: false,
-    });
-    loopbackSafeFetchMock.mockReset();
-    loopbackSafeFetchMock.mockResolvedValue(
-      new Response(null, { status: 204 }),
-    );
+    retireAssistantMock.mockReset();
+    retireAssistantMock.mockResolvedValue({ ok: true });
     setTerminalMode(false);
     consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -193,18 +133,10 @@ describe("cadet retire", () => {
   });
 
   afterAll(() => {
-    mock.module("../lib/retire-local.js", () => realRetireLocalModule);
-    mock.module("../lib/cloud-client.js", () => realCloudClientModule);
-    mock.module("../lib/loopback-fetch.js", () => realLoopbackFetchModule);
     if (originalConfigHome === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {
       process.env.XDG_CONFIG_HOME = originalConfigHome;
-    }
-    if (originalPlatformToken === undefined) {
-      delete process.env.CADET_PLATFORM_TOKEN;
-    } else {
-      process.env.CADET_PLATFORM_TOKEN = originalPlatformToken;
     }
     rmSync(testDir, { recursive: true, force: true });
   });
@@ -219,146 +151,32 @@ describe("cadet retire", () => {
 
     await retire();
 
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
+    expect(retireAssistantMock).toHaveBeenCalledWith(entry);
+    // The lockfile removal is the OPERATION's act (pinned in the package
+    // suite, which runs the real dispatch) — the stubbed command must not
+    // have touched it.
+    expect(loadAllAssistants()).toHaveLength(1);
     const output = consoleLogSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Name: Example Assistant");
     expect(output).toContain("ID: assistant-1");
-    expect(output).toContain("Removed Example Assistant from config.");
   });
 
-  test("local retire unregisters the cloud record straight from the lockfile entry", async () => {
-    makeEntry({
-      assistantId: "assistant-1",
-      name: "Example Assistant",
-      cloudAssistantId: "cloud-asst-1",
-      cloudOrganizationId: "org-123",
-    });
-    const entry = readEntry("assistant-1");
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    // The cloud record resolves from the entry + env — the local gateway
-    // credential store is never consulted.
-    expect(readGatewayCredentialMock).not.toHaveBeenCalled();
-    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Token": "session-token",
-          "Cadet-Organization-Id": "org-123",
-        },
-      },
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-  });
-
-  test("local retire resolves the organization via the cloud when the entry omits it", async () => {
-    makeEntry({
-      assistantId: "assistant-1",
-      name: "Example Assistant",
-      cloudAssistantId: "cloud-asst-1",
-    });
-    const entry = readEntry("assistant-1");
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(authHeadersMock).toHaveBeenCalledWith(
-      "session-token",
-      "https://platform.example.test",
-    );
-    expect(authHeadersForKnownOrganizationMock).not.toHaveBeenCalled();
-    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Token": "session-token",
-        },
-      },
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-  });
-
-  test("local retire skips the cloud unregister when no assistant id is bound", async () => {
+  test("a failed operation prints the error and exits 1", async () => {
     makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
-    const entry = readEntry("assistant-1");
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-  });
-
-  test("local retire uses injected platform token from the app host", async () => {
-    makeEntry({
-      assistantId: "assistant-1",
-      name: "Example Assistant",
-      cloudAssistantId: "cloud-asst-1",
-      cloudOrganizationId: "org-123",
+    retireAssistantMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: "Failed to archive /data: disk full",
     });
-    const entry = readEntry("assistant-1");
-    process.env.CADET_PLATFORM_TOKEN = "host-session-token";
-    readCloudTokenMock.mockReturnValue(null);
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
-    await retire();
+    await expect(retire()).rejects.toThrow("process.exit:1");
 
-    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Token": "host-session-token",
-          "Cadet-Organization-Id": "org-123",
-        },
-      },
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-  });
-
-  test("local retire continues when the cloud unregister fails", async () => {
-    makeEntry({
-      assistantId: "assistant-1",
-      name: "Example Assistant",
-      cloudAssistantId: "cloud-asst-1",
-      cloudOrganizationId: "org-123",
-    });
-    const entry = readEntry("assistant-1");
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    loopbackSafeFetchMock.mockResolvedValue(
-      new Response("platform unavailable", { status: 503 }),
-    );
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "Platform self-hosted unregister failed (503): platform unavailable",
-    );
+    const output = consoleErrorSpy.mock.calls.flat().join("\n");
+    expect(output).toContain("Error: Failed to archive /data: disk full");
   });
 
   test("non-interactive retire without --yes fails before deleting", async () => {
@@ -371,7 +189,7 @@ describe("cadet retire", () => {
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
-    expect(retireLocalMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     const output = consoleErrorSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Refusing to retire without confirmation");
@@ -393,7 +211,7 @@ describe("cadet retire", () => {
     });
 
     await expect(pending).rejects.toThrow("process.exit:1");
-    expect(retireLocalMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
       "Retire cancelled.",
@@ -415,8 +233,7 @@ describe("cadet retire", () => {
     });
 
     await pending;
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
+    expect(retireAssistantMock).toHaveBeenCalledWith(entry);
   });
 
   test("ambiguous display names fail before deleting", async () => {
@@ -427,7 +244,7 @@ describe("cadet retire", () => {
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
-    expect(retireLocalMock).not.toHaveBeenCalled();
+    expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     const output = consoleErrorSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Multiple assistants match 'Example Assistant'");

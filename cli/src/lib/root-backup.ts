@@ -27,9 +27,9 @@ import {
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
-import { dockerResourceNames } from "./remotes/docker.js";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import { execOutput } from "./step-runner.js";
-import { isProcessAlive } from "./process.js";
+import { isProcessAlive } from "@mycadet/local-mode";
 import { probePort } from "./port-probe.js";
 import {
   waitForDaemonReady,
@@ -41,7 +41,7 @@ import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
 } from "./environments/paths.js";
-import { sleepAssistant } from "../commands/sleep.js";
+import { sleepAssistant } from "@mycadet/local-mode";
 import { wakeAssistant } from "../commands/wake.js";
 
 export const STATE_ROOTS = [
@@ -731,12 +731,13 @@ function defaultOps(entry: LockfileAssistant): RootBackupOps {
       : new LocalRootStorage(entry);
   return {
     storage,
-    sleep: () =>
-      sleepAssistant(entry, {
+    sleep: async () => {
+      await sleepAssistant(entry, {
         force: false,
         wait: false,
         waitMs: null,
-      }),
+      });
+    },
     wake: () => storage.resume(),
     save: saveLockfileAssistant,
   };

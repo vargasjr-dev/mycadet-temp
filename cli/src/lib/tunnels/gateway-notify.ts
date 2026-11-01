@@ -5,11 +5,13 @@
  * tunnel`'s tunnel level, or the daemon's auto-tunnel) calls this.
  */
 
-import { lookupAssistantByIdentifier } from "../assistant-config.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  lookupAssistantByIdentifier,
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 import { GATEWAY_PORT } from "../constants.js";
 import { loadGuardianToken } from "../guardian-token.js";
-import { loopbackSafeFetch } from "../loopback-fetch.js";
 
 /**
  * Where the gateway for this run's assistant answers. The entry's recorded

@@ -1,4 +1,4 @@
-import { loadAllAssistants } from "../lib/assistant-config.js";
+import { loadAllAssistants } from "@mycadet/local-mode";
 
 /**
  * Commands whose first positional argument is an assistant name — completing

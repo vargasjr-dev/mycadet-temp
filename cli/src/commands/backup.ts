@@ -1,9 +1,8 @@
+import { cliCommand, readCloudToken } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
-import { cliCommand } from "../lib/cli-name.js";
 import { join } from "node:path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { formatSize, getBackupsDir } from "../lib/backup-ops.js";
-import { readCloudToken } from "../lib/cloud-client.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { createRootBackup } from "../lib/root-backup.js";
 import { createPlatformBackup } from "../lib/teleport-backup.js";

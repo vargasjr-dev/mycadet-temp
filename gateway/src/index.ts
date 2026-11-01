@@ -15,9 +15,7 @@ import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
@@ -174,7 +172,13 @@ import {
   createChannelPermissionOverrideDeleteHandler,
   createChannelPermissionResolveHandler,
 } from "./http/routes/channel-permission-overrides.js";
-import { getLogger, initLogger } from "./logger.js";
+import {
+  getLogger,
+  initLogger,
+  LOG_RETENTION_SWEEP_INTERVAL_MS,
+  pruneOldLogFiles,
+  type LogFileConfig,
+} from "./logger.js";
 import {
   bindCloudIdentityCredentialCache,
   ensureCloudIdentityIds,
@@ -391,9 +395,35 @@ function getClientIp(
  */
 const INBOUND_DEDUP_CLEANUP_INTERVAL_MS = 60 * 60 * 1_000;
 
+/**
+ * Background log-retention sweep (field feedback item 8): the prune used to
+ * run inside initLogger — and on every UTC rollover inside getLogger() —
+ * both on hot paths. The gateway main process owns the interval now; a
+ * dedicated monitoring worker is the follow-up wiring (out of scope for
+ * now). Unref'd so it never holds the process open.
+ */
+function startLogRetentionSweep(config: LogFileConfig): void {
+  if (!config.dir) return;
+  const interval = setInterval(() => {
+    try {
+      const removed = pruneOldLogFiles(config.dir!, config.retentionDays);
+      if (removed > 0) {
+        log.info(
+          { removed, retentionDays: config.retentionDays },
+          "Pruned old log files",
+        );
+      }
+    } catch (err) {
+      log.warn({ err }, "Log retention sweep failed");
+    }
+  }, LOG_RETENTION_SWEEP_INTERVAL_MS);
+  interval.unref();
+}
+
 async function main() {
   const config = loadConfig();
   initLogger(config.logFile);
+  startLogRetentionSweep(config.logFile);
 
   log.info("Starting Cadet Gateway...");
 

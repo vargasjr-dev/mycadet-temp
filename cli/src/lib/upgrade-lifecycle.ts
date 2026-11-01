@@ -8,22 +8,21 @@ import { join } from "path";
 import cliPkg from "../../package.json";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import {
   captureImageRefs,
   DOCKER_READY_TIMEOUT_MS,
-  dockerResourceNames,
   pullImage,
   startContainers,
   stopContainers,
-  sleepContainers,
   wakeContainers,
 } from "./remotes/docker.js";
 import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
-import { resolveDataDir } from "@mycadet/local-mode";
+import { resolveDataDir, sleepContainers } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
@@ -40,7 +39,6 @@ import {
 } from "./statefulset.js";
 import { execOutput } from "./step-runner.js";
 import { compareVersions } from "./version-compat.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 // ---------------------------------------------------------------------------
 // Failure log capture

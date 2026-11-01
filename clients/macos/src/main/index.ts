@@ -1,29 +1,16 @@
 import "./env-seed";
-import { app, net, Notification, protocol, session, shell } from "electron";
-import { pathToFileURL } from "node:url";
+import { app, Notification, protocol, session, shell } from "electron";
 import path from "node:path";
 
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
-import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
-import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
-import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
-import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
-import {
-  resolveLocalConfigFromEnv,
-  readLockfile,
-  servedConfigFromLockfile,
-} from "@mycadet/local-mode";
-
-import {
-  getVersionInfo,
-  openAboutWindow,
-} from "@mycadet/electron-desktop/about";
+import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
+import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { installAbout } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
@@ -230,131 +217,6 @@ protocol.registerSchemesAsPrivileged([
 // the launching URL — the #1 deep-link bug in Electron apps.
 installDeepLinks();
 installFileOpen();
-
-// Serve the app/web split over `app://mycadet.ai/...`:
-//
-// - The app shell (`@mycadet/app` standalone build, root-based) is the MAIN
-//   window's renderer. Its paths resolve against `appDistRoot` with no mount
-//   prefix; extension-less misses fall back to the app dist's index.html so
-//   the shell's client routes survive reload / deep-link.
-// - The `/assistant` mount serves the web bundle (`clients/web`, base
-//   `/assistant/`) for the windows that still render web routes (about,
-//   command palette, companion, popouts) and as the local-assistant iframe
-//   content the app shell frames. The package no longer ships a web dist —
-//   the web UI is iframed from the assistant's own version — so packaged
-//   requests under the mount 404 until those windows move to the
-//   assistant-served bundle (dev keeps the source-tree dist). Route-like web
-//   paths fall back to the web dist's index.html; missing web assets 404 so a
-//   stale or partial deploy surfaces as a load error rather than silently
-//   serving HTML with a wrong Content-Type.
-//
-// Reference: https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler
-// `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built HTML
-// emits asset URLs like `/assistant/assets/index.js`. The web renderer files
-// on disk live directly under `webDistRoot`, NOT under `webDistRoot/assistant/`.
-// The mount is passed separately so the protocol handler strips it before
-// path resolution.
-const resolveAppDistRoot = (): string => {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "app-dist");
-  }
-  // Dev source tree: clients/app/dist/standalone — requires `bun run build`
-  // in clients/app/ (the standalone target's outDir).
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "app", "dist", "standalone");
-};
-
-const resolveWebDistRoot = (): string => {
-  // Packaged builds stopped shipping web-dist (the web bundle is iframed from
-  // the assistant's version); dev reads the source-tree build.
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "web-dist");
-  }
-  // Dev source tree: clients/web/dist — requires `bun run build` in clients/web/.
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "web", "dist");
-};
-
-const registerAppProtocol = (): void => {
-  const appDistRoot = resolveAppDistRoot();
-  const appIndexHtml = path.join(appDistRoot, "index.html");
-  const webDistRoot = resolveWebDistRoot();
-  const webIndexHtml = path.join(webDistRoot, "index.html");
-  const { cloudUrl } = resolveLocalConfigFromEnv();
-  // Single origin: the injected config carries THIS host's origin as
-  // `baseUrl` — the renderer's one origin for API, auth, and the assistant
-  // mount. `cloudUrl` stays a host-side forward target only; it never
-  // crosses into the renderer.
-  const configJson = JSON.stringify({
-    baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
-    deviceId: getDeviceId() ?? undefined,
-    version: getVersionInfo().version,
-    ...servedConfigFromLockfile(readLockfile()),
-  }).replace(/</g, "\\u003c");
-
-  protocol.handle(APP_PROTOCOL, async (request) => {
-    const url = new URL(request.url);
-    if (url.host !== APP_HOST) {
-      return new Response("Forbidden", { status: 403 });
-    }
-    if (
-      url.pathname === "/assistant/__config" ||
-      url.pathname === "/__config"
-    ) {
-      return new Response(configJson, {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Forward the id-keyed gateway proxy to its lockfile-resolved target
-    // (mirrors the Vite dev-server proxy).
-    const proxied = await forwardGatewayRequest(request, net.fetch);
-    if (proxied) return proxied;
-
-    // Cloud API and authentication routes forward through the shared
-    // cloud forward — everything it matches rides the cloud.
-    const cloudProxied = await forwardCloudRequest({
-      request,
-      cloudBase: cloudUrl,
-      fetcher: net.fetch,
-      allowedOrigin: resolveAllowedOrigin(),
-      log,
-    });
-    if (cloudProxied) return cloudProxied;
-
-    // The `/assistant` mount serves the web bundle (auxiliary windows and
-    // the local-assistant iframe); every other path is the app shell.
-    const isWebMount = new URL(request.url).pathname.startsWith("/assistant");
-    const asset = await planAppProtocolAssetRequest({
-      rendererRoot: isWebMount ? webDistRoot : appDistRoot,
-      indexHtml: isWebMount ? webIndexHtml : appIndexHtml,
-      requestUrl: request.url,
-      mountPrefix: isWebMount ? "/assistant" : undefined,
-      allowedOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-    });
-    if (asset.kind === "forbidden") {
-      return new Response("Forbidden", { status: 403 });
-    }
-    if (asset.kind === "fetch") {
-      const response = await net.fetch(pathToFileURL(asset.path).toString());
-      if (asset.path !== appIndexHtml && asset.path !== webIndexHtml) {
-        return response;
-      }
-      const html = await response.text();
-      const headers = new Headers(response.headers);
-      headers.delete("content-length");
-      headers.set("content-type", "text/html; charset=utf-8");
-      return new Response(
-        html.replace(
-          "</head>",
-          `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
-        ),
-        { status: response.status, headers },
-      );
-    }
-    return new Response("Not Found", { status: 404 });
-  });
-};
 
 // ---------------------------------------------------------------------------
 // App lifecycle

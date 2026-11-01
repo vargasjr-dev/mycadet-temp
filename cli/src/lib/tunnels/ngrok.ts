@@ -20,10 +20,13 @@ import {
   stampRootProcess,
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
-import { resolveConfigDir, resolveDataDir } from "@mycadet/local-mode";
-import { cliCommand } from "../cli-name.js";
-import { loopbackSafeFetch } from "../loopback-fetch.js";
-import { readProcessCommandLine, stopProcess } from "../process.js";
+import {
+  cliCommand,
+  loopbackSafeFetch,
+  resolveConfigDir,
+  resolveDataDir,
+} from "@mycadet/local-mode";
+import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
 import { z } from "zod";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
 import type {

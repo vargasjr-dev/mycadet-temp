@@ -53,11 +53,11 @@ let logDir: string;
 
 beforeAll(() => {
   logDir = mkdtempSync(join(tmpdir(), "gw-telegram-drop-"));
-  initLogger({ dir: logDir, retentionDays: 0 });
+  initLogger({ dir: logDir, retentionDays: 30 });
 });
 
 afterAll(() => {
-  initLogger({ dir: undefined, retentionDays: 0 });
+  initLogger({ dir: undefined, retentionDays: 30 });
   rmSync(logDir, { recursive: true, force: true });
 });
 

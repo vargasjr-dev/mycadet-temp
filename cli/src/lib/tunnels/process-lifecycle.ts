@@ -1,4 +1,4 @@
-import { stopProcess } from "../process.js";
+import { stopProcess } from "@mycadet/local-mode";
 import type { ProviderStopOptions } from "../tunnel.js";
 
 /** Stop only an identified provider process and retain state on termination failure. */

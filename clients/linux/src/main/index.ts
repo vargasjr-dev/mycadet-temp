@@ -1,7 +1,6 @@
 import "./env-seed";
 
-import { app, net, protocol, session, shell } from "electron";
-import { pathToFileURL } from "node:url";
+import { app, protocol, session, shell } from "electron";
 import path from "node:path";
 
 import {
@@ -11,14 +10,10 @@ import {
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
-import {
-  forwardGatewayRequest,
-} from "@mycadet/electron-desktop/gateway-forward";
+import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
-import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import {
@@ -99,69 +94,6 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-// Serve clients/web/dist/ as static files via `app://mycadet.ai/...`. Route-like
-// paths (no file extension, or `.html`) fall back to index.html so React
-// Router can handle client-side routes on reload; requests for missing
-// static assets return 404 so a stale or partial deploy surfaces as a load
-// error rather than silently serving HTML with a wrong Content-Type.
-// `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built HTML
-// emits asset URLs like `/assistant/assets/index.js` while the files on disk
-// live directly under `rendererRoot`; the mount prefix is stripped before
-// path resolution.
-//
-const RENDERER_MOUNT = "/assistant";
-
-const resolveRendererRoot = (): string => {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "web-dist");
-  }
-  // Dev source tree: clients/web/dist. Requires `bun run build` in clients/web/.
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "web", "dist");
-};
-
-const registerAppProtocol = (): void => {
-  const rendererRoot = resolveRendererRoot();
-  const indexHtml = path.join(rendererRoot, "index.html");
-
-  protocol.handle(APP_PROTOCOL, async (request) => {
-    // Forward the id-keyed gateway proxy to its lockfile-resolved target
-    // (mirrors the Vite dev-server proxy).
-    const proxied = await forwardGatewayRequest(request, net.fetch);
-    if (proxied) {
-      return proxied;
-    }
-
-    // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the
-    // cloud so managed mode and desktop replay ingest work.
-    const cloudProxied = await forwardCloudRequest({
-      request,
-      cloudBase: resolvedConfig.cloudUrl,
-      fetcher: net.fetch,
-      allowedOrigin: resolveAllowedOrigin(),
-      log,
-    });
-    if (cloudProxied) {
-      return cloudProxied;
-    }
-
-    const asset = await planAppProtocolAssetRequest({
-      rendererRoot,
-      indexHtml,
-      requestUrl: request.url,
-      mountPrefix: RENDERER_MOUNT,
-      allowedOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-    });
-    if (asset.kind === "forbidden") {
-      return new Response("Forbidden", { status: 403 });
-    }
-    if (asset.kind === "fetch") {
-      return net.fetch(pathToFileURL(asset.path).toString());
-    }
-    return new Response("Not Found", { status: 404 });
-  });
-};
-
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv();
 handleSync("cadet:config:get", () => ({
@@ -185,9 +117,7 @@ app
         resolveAllowedOrigin,
       });
     }
-    registerCadetProtocol(
-      path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
-    );
+    registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
     installPermissionHandler(resolveAllowedOrigin);
     installCsp();
     if (app.isPackaged) {

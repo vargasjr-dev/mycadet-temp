@@ -1,5 +1,5 @@
 import { existsSync } from "fs";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand, getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { join } from "path";
 
 import { isCloudHome } from "../lib/cloud-values.js";
@@ -7,13 +7,12 @@ import { spawn } from "child_process";
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
-import { dockerResourceNames } from "../lib/remotes/docker.js";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import type { ServiceName } from "../lib/remotes/docker.js";
 import {
   execAppleContainer,
   sshAppleContainer,
 } from "../lib/remotes/apple-container.js";
-import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import {
   interactiveSession,
   nonInteractiveExec,

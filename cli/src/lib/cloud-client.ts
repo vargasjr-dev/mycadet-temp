@@ -4,19 +4,21 @@ import {
 } from "@mycadet/service-contracts/cloud-credential";
 import {
   chmodSync,
-  readFileSync,
   writeFileSync,
   unlinkSync,
   existsSync,
   mkdirSync,
 } from "fs";
-import { join, dirname } from "path";
-import { cliCommand } from "./cli-name.js";
+import { dirname } from "path";
 
-import { getLockfilePlatformBaseUrl } from "./assistant-config.js";
-import { resolveConfigDir } from "@mycadet/local-mode";
+import {
+  cloudAuthHeaders,
+  cloudTokenPath,
+  getCloudUrl,
+  invalidateOrgIdCache,
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "./environments/resolve.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
 
 const CloudErrorDetailSchema = z.object({
@@ -27,57 +29,12 @@ const InProgressResponseSchema = z.object({
   in_progress: z.boolean().optional(),
 });
 
-function getCloudTokenPath(): string {
-  return join(resolveConfigDir(), "cloud-token");
-}
-
-/**
- * Resolve the cloud API base URL. Resolution order:
- *   1. `cloudBaseUrl` persisted on the lockfile by
- *      {@link syncConfigToLockfile} when the active assistant was last
- *      hatched/waked. This is the source of truth for "what URL does the
- *      currently-active assistant target" — reading the workspace
- *      `config.json` directly is incorrect for multi-instance and
- *      non-production XDG layouts because the CLI process has no way to
- *      know which instance to read from without first consulting the
- *      lockfile anyway.
- *   2. `CADET_CLOUD_URL` env var (explicit override, e.g. in CI).
- *   3. The current environment's seed URL (e.g. `https://dev-cloud.mycadet.ai`
- *      for `CADET_ENVIRONMENT=dev`, `https://cloud.mycadet.ai` for prod).
- *      This makes the CLI environment-aware when no lockfile entry exists yet.
- */
-export function getCloudUrl(): string {
-  const lockfileUrl = getLockfilePlatformBaseUrl();
-  return (
-    lockfileUrl ||
-    process.env.CADET_CLOUD_URL?.trim() ||
-    getCurrentEnvironment().cloudUrl
-  );
-}
-
-/**
- * Resolve the web app (Next.js) base URL for browser-facing pages like
- * `/account/login`. Mirrors `CadetEnvironment.resolvedWebURL` on the
- * Swift side.
- *
- * Resolution order:
- *   1. `CADET_WEB_URL` env var (explicit override)
- *   2. The current environment's seed web URL
- */
 export function getWebUrl(): string {
   return process.env.CADET_WEB_URL?.trim() || getCurrentEnvironment().webUrl;
 }
 
-export function readCloudToken(): string | null {
-  try {
-    return readFileSync(getCloudTokenPath(), "utf-8").trim();
-  } catch {
-    return null;
-  }
-}
-
 export function saveCloudToken(token: string): void {
-  const tokenPath = getCloudTokenPath();
+  const tokenPath = cloudTokenPath();
   const dir = dirname(tokenPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
@@ -88,115 +45,9 @@ export function saveCloudToken(token: string): void {
 
 export function clearCloudToken(): void {
   try {
-    unlinkSync(getCloudTokenPath());
+    unlinkSync(cloudTokenPath());
   } catch {
     // already doesn't exist
-  }
-}
-
-const VAK_PREFIX = "vak_";
-
-/**
- * Sync helper – returns only the token-based auth header.
- *
- * Used internally by {@link fetchOrganizationId} (which cannot call the
- * async {@link authHeaders} without creating a cycle) and by functions
- * that already have an org ID in hand.
- */
-function tokenAuthHeader(token: string): Record<string, string> {
-  if (token.startsWith(VAK_PREFIX)) {
-    return { Authorization: `Bearer ${token}` };
-  }
-  return { "X-Session-Token": token };
-}
-
-export function authHeadersForKnownOrganization(
-  token: string,
-  organizationId: string,
-): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...tokenAuthHeader(token),
-  };
-  if (!token.startsWith(VAK_PREFIX)) {
-    headers["Cadet-Organization-Id"] = organizationId;
-  }
-  return headers;
-}
-
-/** Module-level cache for org IDs to avoid redundant fetches in polling loops. */
-const orgIdCache = new Map<string, { orgId: string; expiresAt: number }>();
-const ORG_ID_CACHE_TTL_MS = 60_000; // 60 seconds
-
-/**
- * Drop the cached org ID for a given (token, cloudUrl) pair. Used by the
- * one-shot 401-retry path: a 401 on a session-token request frequently means
- * the cached `Cadet-Organization-Id` header is stale (e.g. user switched
- * orgs in another tab). Clearing the entry forces the next `authHeaders`
- * call to refetch the org ID from the cloud.
- *
- * Exported so cloud API consumers can implement the
- * same retry pattern without needing direct access to the cache map.
- */
-export function invalidateOrgIdCache(token: string, cloudUrl?: string): void {
-  orgIdCache.delete(`${token}::${cloudUrl ?? ""}`);
-}
-
-/**
- * Returns the full set of headers needed for an authenticated platform
- * API request:
- *
- * - `Content-Type: application/json`
- * - The appropriate auth header (`Authorization: Bearer` for `vak_`
- *   API keys, `X-Session-Token` for session tokens).
- * - `Cadet-Organization-Id` – fetched from the cloud.  Only
- *   included for session-token callers; API keys are already org-scoped.
- *
- * The org ID is cached per (token, cloudUrl) for 60 seconds to avoid
- * redundant HTTP requests in tight polling loops.
- *
- * Auth errors (401 / 403) from the org-ID fetch are wrapped in a
- * user-friendly Error message before re-throwing, so callers can surface
- * a useful message without doing their own classification. Callers that
- * handle the throw (e.g. `syncCloudAssistants`) stay silent on stderr;
- * callers that let it bubble get a single clean line from the top-level
- * runner.
- */
-export async function authHeaders(
-  token: string,
-  cloudUrl?: string,
-): Promise<Record<string, string>> {
-  const base: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...tokenAuthHeader(token),
-  };
-
-  if (token.startsWith(VAK_PREFIX)) {
-    // API keys are org-scoped – no need to fetch the org ID.
-    return base;
-  }
-
-  const cacheKey = `${token}::${cloudUrl ?? ""}`;
-  const cached = orgIdCache.get(cacheKey);
-  if (cached && Date.now() < cached.expiresAt) {
-    return { ...base, "Cadet-Organization-Id": cached.orgId };
-  }
-
-  try {
-    const orgId = await fetchOrganizationId(token, cloudUrl);
-    orgIdCache.set(cacheKey, {
-      orgId,
-      expiresAt: Date.now() + ORG_ID_CACHE_TTL_MS,
-    });
-    return { ...base, "Cadet-Organization-Id": orgId };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("401") || msg.includes("403")) {
-      throw new Error(
-        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
-      );
-    }
-    throw new Error(`Failed to fetch organization: ${msg}`);
   }
 }
 
@@ -241,10 +92,6 @@ const SecretReadResponseSchema = z
 
 const AssistantDetailResponseSchema = z.object({
   current_release_version: z.string().nullable().optional(),
-});
-
-const OrganizationListResponseSchema = z.object({
-  results: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
 });
 
 const AllauthSessionResponseSchema = z.object({
@@ -634,7 +481,7 @@ export async function hatchAssistant(
 
   const response = await loopbackSafeFetch(url, {
     method: "POST",
-    headers: await authHeaders(token, cloudUrl),
+    headers: await cloudAuthHeaders(token, cloudUrl),
     body: JSON.stringify({}),
     signal: AbortSignal.timeout(300_000),
   });
@@ -693,7 +540,7 @@ export async function checkExistingCloudAssistant(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) {
@@ -729,7 +576,7 @@ export async function fetchCloudAssistants(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return [];
@@ -763,7 +610,7 @@ export async function fetchAssistantDetail(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return null;
@@ -797,7 +644,7 @@ export async function fetchUpgradeInProgress(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
     if (!response.ok) return null;
@@ -815,44 +662,6 @@ export interface PlatformUser {
   id: string;
   email: string;
   display: string;
-}
-
-export async function fetchOrganizationId(
-  token: string,
-  cloudUrl?: string,
-): Promise<string> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
-  const url = `${resolvedUrl}/v1/organizations/`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    PLATFORM_FETCH_TIMEOUT_MS,
-  );
-
-  try {
-    const response = await loopbackSafeFetch(url, {
-      signal: controller.signal,
-      headers: { ...tokenAuthHeader(token) },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch organizations from ${resolvedUrl} (${response.status}). Try logging in again.`,
-      );
-    }
-
-    const parsed = OrganizationListResponseSchema.safeParse(
-      await response.json(),
-    );
-    const orgId = parsed.success ? parsed.data.results?.[0]?.id : undefined;
-    if (!orgId) {
-      throw new Error("No organization found for this account.");
-    }
-    return orgId;
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 export async function fetchCurrentUser(
@@ -909,7 +718,7 @@ export async function rollbackCloudAssistant(
     `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/rollback/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify(version ? { version } : {}),
     },
   );
@@ -971,7 +780,7 @@ export async function platformImportPreflightFromGcs(
     `${resolvedUrl}/v1/migrations/import-preflight-from-gcs/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       signal: AbortSignal.timeout(30 * 60_000),
       body: JSON.stringify({ bundle_key: bundleKey }),
     },
@@ -993,7 +802,7 @@ export async function platformImportBundleFromGcs(
     `${resolvedUrl}/v1/migrations/import-from-gcs/`,
     {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify({ bundle_key: bundleKey }),
       signal: AbortSignal.timeout(30 * 60_000),
     },
@@ -1180,7 +989,7 @@ export async function cloudRequestSignedUrl(
   const doRequest = async (): Promise<Response> =>
     loopbackSafeFetch(`${resolvedUrl}/v1/migrations/signed-url/`, {
       method: "POST",
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify(body),
     });
 
@@ -1243,7 +1052,7 @@ export async function cloudPollJobStatus(
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/jobs/${jobId}/`,
     {
-      headers: await authHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
     },
   );
 

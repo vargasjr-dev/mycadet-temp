@@ -1,12 +1,9 @@
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
 
-import {
-  loadAllAssistants,
-  resolveTargetAssistant,
-} from "../lib/assistant-config.js";
+import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import {
-  dockerResourceNames,
   isNoSuchContainerError,
   recreateDockerContainers,
   wakeContainers,

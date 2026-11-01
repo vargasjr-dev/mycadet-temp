@@ -24,10 +24,12 @@ import {
   allocateLocalPlacement,
   resolveTargetAssistant,
   setActiveAssistant,
+} from "../lib/assistant-config.js";
+import {
   getActiveAssistant,
   removeLockfileAssistant,
-} from "../lib/assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
 import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";

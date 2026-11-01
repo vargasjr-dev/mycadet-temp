@@ -29,8 +29,7 @@
  */
 
 import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
-
-import { authHeaders } from "../cloud-client.js";
+import { cloudAuthHeaders } from "@mycadet/local-mode";
 
 /** Production tunnel, when the cloud host implies nothing more specific. */
 const DEFAULT_TUNNEL_HOST = "tunnel.mycadet.ai";
@@ -142,10 +141,10 @@ export async function mintTunnelWsToken(args: {
   sessionToken: string;
 }): Promise<string> {
   const url = `${args.cloudUrl.replace(/\/+$/, "")}/v1/auth/live-voice-token/`;
-  // `authHeaders` resolves `Cadet-Organization-Id`, which the endpoint needs
+  // `cloudAuthHeaders` resolves `Cadet-Organization-Id`, which the endpoint needs
   // to scope the token, and which is cached per token so a session does not
   // pay for an extra round trip.
-  const headers = await authHeaders(args.sessionToken, args.cloudUrl);
+  const headers = await cloudAuthHeaders(args.sessionToken, args.cloudUrl);
 
   let response: Response;
   try {

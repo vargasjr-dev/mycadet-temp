@@ -29,6 +29,7 @@ import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import {
@@ -104,10 +105,10 @@ const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
     started: true,
   }),
 );
-const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
+const isIngressRunningMock = mock<typeof localModeModule.isIngressRunning>(
   () => false,
 );
-const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
+const readIngressStateMock = mock<typeof localModeModule.readIngressState>(
   () => null,
 );
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
@@ -117,6 +118,9 @@ mock.module("../lib/servers/nginx.js", () => ({
   ...realNginxIngress,
   ensureAppServer: ensureAppServerMock,
   getNginxVersion: getNginxVersionMock,
+}));
+mock.module("@mycadet/local-mode", () => ({
+  ...localModeModule,
 }));
 
 const { tunnel } = await import("../commands/tunnel.js");

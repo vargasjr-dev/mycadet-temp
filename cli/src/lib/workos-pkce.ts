@@ -4,8 +4,8 @@
 
 import crypto from "node:crypto";
 
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
+import { loopbackSafeFetch } from "@mycadet/local-mode";
 
 const WORKOS_API_BASE_URL = "https://api.workos.com";
 const PROVIDER_ID = "workos";

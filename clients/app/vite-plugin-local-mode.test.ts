@@ -472,3 +472,71 @@ describe("devices middleware", () => {
     });
   });
 });
+
+describe("operator middleware — the scoped surface's retire arm", () => {
+  beforeEach(() => {
+    fs.rmSync(lockfilePath, { force: true });
+    fs.rmSync(path.join(configDir, "dock-display-name"), {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  test("an on-machine entry's retire DELETE runs the headless operation in-process", async () => {
+    const instanceDir = path.join(tempDir, "instance-asst-1");
+    fs.mkdirSync(instanceDir, { recursive: true });
+    writeLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "local",
+        port: 7830,
+        instanceDir,
+      },
+    ]);
+
+    const result = await dispatch(
+      "/v1/assistants/asst-1/retire/",
+      { origin: "http://127.0.0.1:5173", "sec-fetch-site": "same-origin" },
+      { method: "DELETE" },
+    );
+
+    // The operation ran against the sandboxed fixture: nothing to stop or
+    // archive, the entry removed, a bodyless 204 for the bundle's null.
+    expect(result.status).toBe(204);
+    const lockfile = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
+      assistants: unknown[];
+    };
+    expect(lockfile.assistants).toEqual([]);
+  });
+
+  test("a cross-origin retire DELETE is refused before the operation runs", async () => {
+    writeLockfile([{ assistantId: "asst-1", cloud: "local", port: 7830 }]);
+
+    const result = await dispatch(
+      "/v1/assistants/asst-1/retire/",
+      { origin: "https://evil.example", "sec-fetch-site": "cross-site" },
+      { method: "DELETE" },
+    );
+
+    expect(result.status).toBe(403);
+    const lockfile = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
+      assistants: unknown[];
+    };
+    expect(lockfile.assistants).toHaveLength(1);
+  });
+
+  test("a platform-hosted entry's retire passes through to the cloud forward", async () => {
+    writeLockfile([{ assistantId: "asst-cloud", cloud: "cloud" }]);
+
+    const result = await dispatch(
+      "/v1/assistants/asst-cloud/retire/",
+      { origin: "http://127.0.0.1:5173", "sec-fetch-site": "same-origin" },
+      { method: "DELETE" },
+    );
+
+    // Not this host's to retire: the operator route passes, the gateway
+    // proxy passes (cloud entries ride the platform session), and the dev
+    // `/v1` proxy answers — the end of this chain is a 404.
+    expect(result.status).toBe(404);
+  });
+});

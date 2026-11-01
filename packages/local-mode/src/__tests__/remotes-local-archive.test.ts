@@ -4,7 +4,7 @@ import { win32 } from "node:path";
 import {
   resolveRetiredFilePath,
   validateAssistantName,
-} from "../lib/retire-archive.js";
+} from "../remotes/local/archive";
 
 describe("validateAssistantName", () => {
   test("accepts valid names", () => {

@@ -218,18 +218,6 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildRotatingLogger(config);
-
-  // Use the resolved dir (may differ from config.dir when containerized)
-  const resolvedDir = activeLogFileConfig?.dir;
-  if (resolvedDir && config.retentionDays > 0) {
-    const removed = pruneOldLogFiles(resolvedDir, config.retentionDays);
-    if (removed > 0) {
-      rootLogger.info(
-        { removed, retentionDays: config.retentionDays },
-        "Pruned old log files",
-      );
-    }
-  }
 }
 
 function getRootLogger(): Logger {

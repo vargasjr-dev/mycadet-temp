@@ -1,55 +1,12 @@
-import { existsSync, readFileSync } from "fs";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { cliCommand } from "../lib/cli-name.js";
-import { join } from "path";
-
 import {
+  cliCommand,
   loadAllAssistants,
-  resolveTargetAssistant,
-} from "../lib/assistant-config.js";
-import { getDaemonPidPath, getLocalInstanceDir } from "../lib/remotes/local.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { dockerResourceNames, sleepContainers } from "../lib/remotes/docker.js";
-import {
-  drainAssistant,
-  type DrainOutcome,
   parseWaitDuration,
-} from "../lib/drain.js";
-import { loadGuardianToken } from "../lib/guardian-token.js";
-import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
-import {
-  isProcessAlive,
-  stopProcessByPidFile,
-  stopProcessGracefully,
-} from "../lib/process";
-import { resolveFreshBearerToken } from "./client.js";
+  sleepAssistant,
+  type SleepResult,
+} from "@mycadet/local-mode";
 
-const ACTIVE_CALL_LEASES_FILE = "active-call-leases.json";
-
-type ActiveCallLease = {
-  callSessionId: string;
-};
-
-function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
-  const path = join(cadetDir, ACTIVE_CALL_LEASES_FILE);
-  if (!existsSync(path)) {
-    return [];
-  }
-
-  const raw = JSON.parse(readFileSync(path, "utf-8")) as {
-    version?: number;
-    leases?: Array<{ callSessionId?: unknown }>;
-  };
-  if (raw.version !== 1 || !Array.isArray(raw.leases)) {
-    throw new Error(`Invalid active call lease file at ${path}`);
-  }
-
-  return raw.leases.filter(
-    (lease): lease is ActiveCallLease =>
-      typeof lease?.callSessionId === "string" &&
-      lease.callSessionId.length > 0,
-  );
-}
+import { resolveTargetAssistant } from "../lib/assistant-config.js";
 
 export const sleep = Object.assign(
   async function sleep(): Promise<void> {
@@ -146,24 +103,36 @@ export const sleep = Object.assign(
       process.exit(1);
     }
 
+    // Ctrl-C during a `--wait` drain aborts it (the operation releases the
+    // quiesce lease and reports cancelled) instead of killing the stop
+    // midway. One controller serves the whole command; every drain shares it.
+    const drainAbort = new AbortController();
+    process.once("SIGINT", () => drainAbort.abort());
+    const options = {
+      force,
+      wait,
+      waitMs,
+      signal: drainAbort.signal,
+      log: (line: string): void => console.log(line),
+    };
+
     if (all) {
-      await sleepAll({ force, wait, waitMs });
+      await sleepAll(options);
       return;
     }
 
     const entry = resolveTargetAssistant(nameArg);
-    try {
-      await sleepAssistant(entry, { force, wait, waitMs });
-    } catch (err) {
-      if (err instanceof SleepExit) {
-        console.log(err.message);
-        process.exit(err.exitCode);
-      }
-      console.error(
-        `Error: ${err instanceof Error ? err.message : String(err)}`,
+    if (entry.cloud === "docker" && wait) {
+      console.log(
+        "--wait is not supported for Docker assistants yet — stopping containers now.",
       );
-      process.exit(1);
     }
+    const result = await sleepAssistant(entry, options);
+    if (!result.ok) {
+      console.error(`Error: ${result.error}`);
+    }
+    narrate(result);
+    process.exit(exitCodeFor(result));
   },
   { description: "Stop the assistant process" },
 );
@@ -172,28 +141,16 @@ type SleepOptions = {
   force: boolean;
   wait: boolean;
   waitMs: number | null;
+  signal: AbortSignal;
+  log: (line: string) => void;
 };
-
-/**
- * Carries a deliberate exit outcome (a cancelled drain) across the
- * per-assistant boundary so the callers can exit with the right code
- * instead of treating it as a stop failure.
- */
-class SleepExit extends Error {
-  constructor(
-    readonly exitCode: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
 
 /**
  * Stop every assistant this CLI's environment knows about — `--all`. The
  * CLI only ever reaches one environment, so this is the current env's
- * lockfile. Same per-assistant stop as the single path, but one
- * assistant's failure (or an unmanageable runtime) never blocks the
- * others; a failure only decides the exit code.
+ * lockfile. Same per-assistant stop as the single path, but one assistant's
+ * failure (or an unmanageable runtime) never blocks the others; a failure
+ * only decides the exit code.
  */
 async function sleepAll(opts: SleepOptions): Promise<void> {
   const entries = loadAllAssistants();
@@ -215,226 +172,62 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
       );
       continue;
     }
-    try {
-      await sleepAssistant(entry, opts);
-    } catch (err) {
-      if (err instanceof SleepExit) {
-        // A cancelled drain is the user asking to stop — honor it immediately.
-        console.log(err.message);
-        process.exit(err.exitCode);
-      }
-      failures++;
-      console.error(
-        `Error: failed to stop '${entry.assistantId}': ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+    if (entry.cloud === "docker" && opts.wait) {
+      console.log(
+        "--wait is not supported for Docker assistants yet — stopping containers now.",
       );
     }
+    const result = await sleepAssistant(entry, opts);
+    if (result.ok && result.cancelled) {
+      // A cancelled drain is the user asking to stop — honor it immediately.
+      console.log("Sleep cancelled — the assistant is still running.");
+      process.exit(130);
+    }
+    if (!result.ok) {
+      failures++;
+      console.error(
+        `Error: failed to stop '${entry.assistantId}': ${result.error}`,
+      );
+      continue;
+    }
+    narrate(result);
   }
   if (failures > 0) {
     process.exit(1);
   }
 }
 
-/**
- * Stop one assistant. Throws on hard errors (active call leases, missing
- * resources, unmanageable runtimes) so the caller decides between exiting
- * (single-assistant path) and continuing to the next entry (`--all`).
- */
-export async function sleepAssistant(
-  entry: LockfileAssistant,
-  opts: SleepOptions,
-): Promise<void> {
-  const { force, wait, waitMs } = opts;
-
-  if (entry.cloud === "docker") {
-    if (wait) {
-      console.log(
-        "--wait is not supported for Docker assistants yet — stopping containers now.",
-      );
-    }
-    const res = dockerResourceNames(entry.assistantId);
-    await sleepContainers(res);
+/** Map the operation's structured result onto the command's narration. */
+function narrate(result: SleepResult): void {
+  if (!result.ok) return;
+  if (result.cancelled) {
+    console.log("Sleep cancelled — the assistant is still running.");
+    return;
+  }
+  if (result.kind === "containers") {
     console.log("Docker containers stopped.");
     return;
   }
-
-  if (entry.cloud === "apple-container") {
-    throw new Error(
-      `'${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to stop it.`,
-    );
+  for (const note of result.notes) {
+    console.log(note);
   }
-
-  if (entry.cloud !== "local") {
-    throw new Error(
-      `'cadet sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
-    );
-  }
-
-  if (process.platform === "win32") {
-    throw new Error(
-      "Graceful-only shutdown is not supported for Windows local services.",
-    );
-  }
-  const assistantPidFile = getDaemonPidPath(entry);
-  const cadetDir = getLocalInstanceDir(entry);
-  const gatewayPidFile = join(cadetDir, "gateway.pid");
-
-  if (!force) {
-    const assistantAlive = isProcessAlive(assistantPidFile).alive;
-    if (assistantAlive) {
-      let leases: ActiveCallLease[];
-      try {
-        leases = readActiveCallLeases(cadetDir);
-      } catch (err) {
-        throw new Error(
-          `${
-            err instanceof Error ? err.message : String(err)
-          }. Use 'cadet sleep --force' to override if you want to stop the assistant anyway.`,
-        );
-      }
-      if (leases.length > 0) {
-        const activeIds = leases.map((lease) => lease.callSessionId);
-        throw new Error(
-          `assistant is staying awake for active phone calls (${activeIds.join(
-            ", ",
-          )}). Use 'cadet sleep --force' to stop it anyway.`,
-        );
-      }
-    }
-  }
-
-  if (wait) {
-    const outcome = await runDrainPhase(entry, assistantPidFile, waitMs);
-    if (outcome === "cancelled") {
-      throw new SleepExit(
-        130,
-        "Sleep cancelled — the assistant is still running.",
-      );
-    }
-  }
-
-  const assistantStopped = await stopProcessByPidFile(
-    assistantPidFile,
-    "assistant",
-    undefined,
-    DAEMON_STOP_TIMEOUT_MS,
-    stopProcessGracefully,
+  console.log(
+    result.services.assistant === "stopped"
+      ? "Assistant stopped."
+      : "Assistant is not running.",
   );
-  if (!assistantStopped) {
-    console.log("Assistant is not running.");
-  } else {
-    console.log("Assistant stopped.");
-  }
-
-  // Stop gateway — use a longer timeout because the gateway has a configurable
-  // drain window (5s) before it exits.
-  const gatewayStopped = await stopProcessByPidFile(
-    gatewayPidFile,
-    "gateway",
-    undefined,
-    7000,
-    stopProcessGracefully,
+  console.log(
+    result.services.gateway === "stopped"
+      ? "Gateway stopped."
+      : "Gateway is not running.",
   );
-  if (!gatewayStopped) {
-    console.log("Gateway is not running.");
-  } else {
-    console.log("Gateway stopped.");
-  }
-
-  // Stop the CES sibling — it is stopped by its PID file, a no-op when the
-  // PID file is absent (e.g. the sibling was never started or already exited).
-  const cesPidFile = join(cadetDir, "ces.pid");
-  const cesStopped = await stopProcessByPidFile(
-    cesPidFile,
-    "credential-executor",
-    undefined,
-    DAEMON_STOP_TIMEOUT_MS,
-    stopProcessGracefully,
-  );
-  if (cesStopped) {
+  if (result.services.ces === "stopped") {
     console.log("credential-executor stopped.");
   }
 }
 
-/**
- * Wait for the assistant's in-flight background work (heartbeats, memory
- * jobs, schedule runs, active conversation turns) to finish before the stop.
- * Every failure mode falls back to a normal stop with a note — a drain must
- * never make `cadet sleep` less reliable than it is without `--wait`.
- */
-async function runDrainPhase(
-  entry: LockfileAssistant,
-  assistantPidFile: string,
-  waitMs: number | null,
-): Promise<DrainOutcome | "skipped"> {
-  if (!isProcessAlive(assistantPidFile).alive) {
-    return "skipped";
-  }
-  const baseUrl = getGatewayUrl(entry);
-  const stored = loadGuardianToken(entry.assistantId)?.accessToken;
-  if (!baseUrl || !stored) {
-    console.log(
-      "Cannot reach the assistant API to wait for background work (missing URL or guardian token) — stopping without waiting.",
-    );
-    return "skipped";
-  }
-  // A token past its renewal point would 401 and read as "unreachable",
-  // silently skipping the wait — refresh-and-fall-back like other CLI
-  // request paths.
-  const token = await resolveFreshBearerToken(
-    baseUrl,
-    entry.assistantId,
-    stored,
-    entry.cloud,
-  );
-  if (!token) {
-    console.log(
-      "Cannot reach the assistant API to wait for background work (missing URL or guardian token) — stopping without waiting.",
-    );
-    return "skipped";
-  }
-
-  console.log(
-    waitMs == null
-      ? "Waiting for the assistant to finish background work (Ctrl-C cancels)…"
-      : `Waiting up to ${Math.round(waitMs / 1000)}s for the assistant to finish background work (Ctrl-C cancels)…`,
-  );
-
-  const controller = new AbortController();
-  const onSigint = (): void => controller.abort();
-  process.once("SIGINT", onSigint);
-  try {
-    const outcome = await drainAssistant({
-      baseUrl,
-      token,
-      deadlineAt: waitMs == null ? null : Date.now() + waitMs,
-      signal: controller.signal,
-    });
-    switch (outcome) {
-      case "drained":
-        console.log("Background work finished — stopping now.");
-        break;
-      case "timeout":
-        console.log(
-          "Wait limit reached — stopping now. Interrupted background jobs resume after the next start.",
-        );
-        break;
-      case "unsupported":
-        console.log(
-          "This assistant version does not support --wait — stopping without waiting.",
-        );
-        break;
-      case "unreachable":
-        console.log(
-          "Could not reach the assistant to check background work — stopping without waiting.",
-        );
-        break;
-      case "cancelled":
-        break;
-    }
-    return outcome;
-  } finally {
-    process.removeListener("SIGINT", onSigint);
-  }
+/** 130 for a user-cancelled wait, 1 for a failed stop, 0 otherwise. */
+function exitCodeFor(result: SleepResult): number {
+  if (!result.ok) return 1;
+  return result.cancelled ? 130 : 0;
 }

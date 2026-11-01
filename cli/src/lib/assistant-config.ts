@@ -15,7 +15,6 @@ import {
   type Lockfile,
   type LockfileAssistant,
   type TunnelProcessRecord,
-  getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
 import {
@@ -25,19 +24,6 @@ import {
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
 import { probePort } from "./port-probe.js";
-
-/**
- * Per-instance resource paths and ports. Each local assistant instance gets
- * its own directory tree, ports, and socket so multiple instances can run
- * side-by-side without conflicts. The contract models every field, optional
- * fields are optional everywhere, and code that needs one guards once and
- * falls back (see {@link getLocalInstanceDir} / {@link getDaemonPidPath}).
- */
-
-export type AssistantLookupResult =
-  | { status: "found"; entry: LockfileAssistant }
-  | { status: "not_found" }
-  | { status: "ambiguous"; matches: LockfileAssistant[] };
 
 /** Either lockfile-root process record, keyed by `RootProcessKind`. */
 export type RootProcessRecord = TunnelProcessRecord | AppProcessRecord;
@@ -145,32 +131,12 @@ export function stampAppBuiltSha(builtSha: string): void {
   });
 }
 
-/**
- * Release the edge's process entry — the record and its riding build stamp
- * go with it.
- */
-export function clearAppProcessRecord(expectedPid?: number): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    const record = data.app;
-    if (
-      record === undefined ||
-      (expectedPid !== undefined && record.pid !== expectedPid)
-    )
-      return;
-    delete data.app;
-    writeLockfileUnlocked(data);
-  });
-}
-
-/**
- * Try to extract a port number from a URL string (e.g. `http://localhost:7830`).
- * Returns undefined if the URL is malformed or has no explicit port.
- */
-
-export function loadAllAssistants(): LockfileAssistant[] {
-  return readLockfile().assistants;
-}
+import {
+  formatAssistantLookupError,
+  getActiveAssistant,
+  loadAllAssistants,
+  lookupAssistantByIdentifier,
+} from "@mycadet/local-mode";
 
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
@@ -189,78 +155,6 @@ export function findAssistantByName(name: string): LockfileAssistant | null {
   return (
     loadAllAssistants().find((entry) => entry.assistantId === name) ?? null
   );
-}
-
-export function getAssistantDisplayName(entry: LockfileAssistant): string {
-  return entry.name?.trim() || entry.assistantId;
-}
-
-function getAssistantDisplayNameCandidates(entry: LockfileAssistant): string[] {
-  const name = entry.name?.trim();
-  return name ? [name] : [];
-}
-
-export function lookupAssistantByIdentifier(
-  identifier: string,
-): AssistantLookupResult {
-  const entries = loadAllAssistants();
-  const exactId = entries.find((entry) => entry.assistantId === identifier);
-  if (exactId) {
-    return { status: "found", entry: exactId };
-  }
-
-  const displayMatches = entries.filter((entry) =>
-    getAssistantDisplayNameCandidates(entry).includes(identifier),
-  );
-  if (displayMatches.length === 1) {
-    return { status: "found", entry: displayMatches[0] };
-  }
-  if (displayMatches.length > 1) {
-    return { status: "ambiguous", matches: displayMatches };
-  }
-
-  return { status: "not_found" };
-}
-
-export function formatAssistantLookupError(
-  identifier: string,
-  result: AssistantLookupResult = lookupAssistantByIdentifier(identifier),
-): string {
-  if (result.status === "ambiguous") {
-    const matches = result.matches
-      .map(
-        (entry) => `${getAssistantDisplayName(entry)} (${entry.assistantId})`,
-      )
-      .join(", ");
-    return `Multiple assistants match '${identifier}': ${matches}. Use the assistant ID to disambiguate.`;
-  }
-
-  return `No assistant found with name or ID '${identifier}'.`;
-}
-
-export function removeLockfileAssistant(assistantId: string): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    const entries = data.assistants.filter(
-      (e) => e.assistantId !== assistantId,
-    );
-    data.assistants = entries;
-    // Reassign active assistant if it matches the removed entry
-    if (data.activeAssistant === assistantId) {
-      const remaining = entries[0];
-      if (remaining) {
-        data.activeAssistant = String(remaining.assistantId);
-      } else {
-        data.activeAssistant = null;
-      }
-    }
-    writeLockfileUnlocked(data);
-  });
-}
-
-export function getActiveAssistant(): string | null {
-  const data = readLockfile();
-  return data.activeAssistant ?? null;
 }
 
 export function setActiveAssistant(assistantId: string): void {
@@ -336,20 +230,6 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
     }
   }
   process.exit(1);
-}
-
-/**
- * Extract the remote host for an entry: the hostname of the gateway
- * address the entry derives. One seam so the runtimeUrl death (a later
- * PR) rewires a single site instead of every ssh flow.
- */
-export function extractHostFromEntry(entry: LockfileAssistant): string {
-  const gatewayUrl = getGatewayUrl(entry);
-  try {
-    return new URL(gatewayUrl).hostname;
-  } catch {
-    return gatewayUrl.replace(/^https?:\/\//, "").split(":")[0];
-  }
 }
 
 /**

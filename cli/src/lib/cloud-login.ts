@@ -14,17 +14,19 @@ import { createServer } from "http";
 import type { AddressInfo } from "net";
 
 import { resolveAssistant } from "./assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import {
+  fetchOrganizationId,
+  getCloudUrl,
+  readCloudToken,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
 import { computeDeviceId, loadGuardianToken } from "./guardian-token.js";
 import { openBrowser } from "./open-browser.js";
 import {
-  fetchCurrentUser,
-  fetchOrganizationId,
   ensureSelfHostedLocalRegistration,
-  getCloudUrl,
+  fetchCurrentUser,
   injectCredentialsIntoAssistant,
-  readCloudToken,
   saveCloudToken,
 } from "./cloud-client.js";
 import { fetchAssistantIngressUrl } from "./upgrade-lifecycle.js";

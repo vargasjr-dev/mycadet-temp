@@ -28,7 +28,7 @@ import {
   removeIpcEndpointFile,
   resolveIpcEndpoint,
 } from "@mycadet/ipc-server-utils";
-import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { isValidReleaseVersion, readCloudToken } from "@mycadet/local-mode";
 
 /**
  * cwd for every service spawn — the XDG data home
@@ -75,14 +75,13 @@ import {
   waitForDaemonReady,
 } from "../http-client.js";
 import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
+import { isProcessAlive, stopProcessByPidFile } from "@mycadet/local-mode";
 import {
-  type ProcessState,
   executableName,
-  isProcessAlive,
   pathListDelimiter,
   resolveProcessState,
-  stopProcessByPidFile,
   stopProcessGracefully,
+  type ProcessState,
 } from "../process.js";
 import { stripVersionPrefix } from "../version-compat.js";
 import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "../xdg-log.js";
@@ -113,7 +112,7 @@ import {
   ensureCloudLoginInteractive,
   registerLocalAssistantWithCloud,
 } from "../cloud-login.js";
-import { fetchCurrentUser, readCloudToken } from "../cloud-client.js";
+import { fetchCurrentUser } from "../cloud-client.js";
 import { withLocalHatchLock } from "../local-hatch-lock.js";
 import { generateInstanceName } from "../random-name.js";
 import { healConflictedLocalPorts } from "../port-heal.js";

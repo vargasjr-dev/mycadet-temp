@@ -3,21 +3,17 @@ import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  findAssistantByName,
-  removeLockfileAssistant,
-  setActiveAssistant,
-} from "./assistant-config.js";
+import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import {
-  dockerResourceNames,
-  hatchDocker,
-  retireDocker,
-  startContainers,
-} from "./remotes/docker.js";
+import { dockerResourceNames } from "@mycadet/local-mode";
+import { hatchDocker, startContainers } from "./remotes/docker.js";
 import { hatchLocal } from "./remotes/local.js";
-import { retireLocal } from "./retire-local.js";
-import { validateAssistantName } from "./retire-archive.js";
+import {
+  removeLockfileAssistant,
+  retireDocker,
+  retireLocal,
+  validateAssistantName,
+} from "@mycadet/local-mode";
 import {
   DockerRootStorage,
   LocalRootStorage,
@@ -31,7 +27,7 @@ import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "./http-client.js";
 import { compareVersions } from "./version-compat.js";
-import { sleepAssistant } from "../commands/sleep.js";
+import { sleepAssistant } from "@mycadet/local-mode";
 import { generateInstanceName } from "./random-name.js";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
@@ -65,8 +61,9 @@ export function storageFor(entry: LockfileAssistant): HostStorage {
 
 const defaultOps: HostTeleportOps = {
   storage: storageFor,
-  sleep: (entry) =>
-    sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
+  sleep: async (entry) => {
+    await sleepAssistant(entry, { force: false, wait: false, waitMs: null });
+  },
   backup: async (entry) => {
     const archive = await createBackup(entry.assistantId, {
       prefix: `${entry.assistantId}-pre-teleport`,

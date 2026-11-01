@@ -1,13 +1,12 @@
 import {
-  ensureAppServer,
   getIngressPaths,
   isIngressRunning,
   readIngressState,
   stopIngressNginx,
-  type AppServer,
-} from "../lib/servers/nginx.js";
+} from "@mycadet/local-mode";
+import { ensureAppServer, type AppServer } from "\.\./lib/servers/nginx\.js";
 import { ensureNginxForEdge } from "../lib/tunnel.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {

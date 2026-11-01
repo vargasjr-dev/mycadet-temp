@@ -19,12 +19,13 @@ import { join } from "node:path";
 
 import * as tunnelLib from "../lib/tunnel.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
+import * as localMode from "@mycadet/local-mode";
 
 const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
 const ensureAppServerMock = mock(nginxIngress.ensureAppServer);
-const isIngressRunningMock = mock(nginxIngress.isIngressRunning);
-const readIngressStateMock = mock(nginxIngress.readIngressState);
-const stopIngressNginxMock = mock(nginxIngress.stopIngressNginx);
+const isIngressRunningMock = mock(localMode.isIngressRunning);
+const readIngressStateMock = mock(localMode.readIngressState);
+const stopIngressNginxMock = mock(localMode.stopIngressNginx);
 
 mock.module("../lib/tunnel.js", () => ({
   ...tunnelLib,
@@ -33,6 +34,9 @@ mock.module("../lib/tunnel.js", () => ({
 mock.module("../lib/servers/nginx.js", () => ({
   ...nginxIngress,
   ensureAppServer: ensureAppServerMock,
+}));
+mock.module("@mycadet/local-mode", () => ({
+  ...localMode,
   isIngressRunning: isIngressRunningMock,
   readIngressState: readIngressStateMock,
   stopIngressNginx: stopIngressNginxMock,
@@ -41,6 +45,7 @@ mock.module("../lib/servers/nginx.js", () => ({
 afterAll(() => {
   mock.module("../lib/tunnel.js", () => tunnelLib);
   mock.module("../lib/servers/nginx.js", () => nginxIngress);
+  mock.module("@mycadet/local-mode", () => localMode);
 });
 
 import { app } from "../commands/app.js";

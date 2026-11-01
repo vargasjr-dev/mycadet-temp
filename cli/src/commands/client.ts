@@ -3,14 +3,18 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
+  resolveAssistant,
+  resolveConversationKey,
+} from "../lib/assistant-config";
+import {
+  fetchOrganizationId,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  resolveAssistant,
-  resolveConversationKey,
-} from "../lib/assistant-config";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+  readCloudToken,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
@@ -24,11 +28,7 @@ import {
   getClientRegistrationHeaders,
 } from "../lib/client-identity";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import {
-  fetchOrganizationId,
-  fetchCloudAssistants,
-  readCloudToken,
-} from "../lib/cloud-client";
+import { fetchCloudAssistants } from "../lib/cloud-client";
 import { tuiLog } from "../lib/tui-log";
 
 const ANSI = {

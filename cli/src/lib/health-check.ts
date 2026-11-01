@@ -1,7 +1,11 @@
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { z } from "zod";
+import {
+  cloudAuthHeaders,
+  loopbackSafeFetch,
+  readCloudToken,
+} from "@mycadet/local-mode";
 
 const HealthResponseSchema = z.object({
   status: z.string().optional(),
@@ -169,13 +173,12 @@ export async function fetchCloudPs(
 ): Promise<ManagedPsResponse | null> {
   const runtimeUrl = getGatewayUrl(entry);
 
-  const { readCloudToken, authHeaders } = await import("./cloud-client.js");
   const token = readCloudToken();
   if (!token) return null;
 
   let headers: Record<string, string>;
   try {
-    headers = await authHeaders(token, runtimeUrl);
+    headers = await cloudAuthHeaders(token, runtimeUrl);
   } catch {
     return null;
   }
@@ -223,7 +226,6 @@ export async function checkCloudHealth(
 ): Promise<HealthCheckResult> {
   const runtimeUrl = getGatewayUrl(entry);
 
-  const { readCloudToken } = await import("./cloud-client.js");
   const token = readCloudToken();
   if (!token) {
     return {
@@ -234,8 +236,7 @@ export async function checkCloudHealth(
 
   let headers: Record<string, string>;
   try {
-    const { authHeaders } = await import("./cloud-client.js");
-    headers = await authHeaders(token, runtimeUrl);
+    headers = await cloudAuthHeaders(token, runtimeUrl);
   } catch (err) {
     return {
       status: "error (auth)",

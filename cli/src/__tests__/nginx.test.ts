@@ -110,17 +110,19 @@ afterAll(() => {
 });
 
 import {
-  buildNginxConfig,
   getIngressPaths,
-  hasIpv6Loopback,
-  buildRemoteWebIndexHtml,
-  MAX_PRESERVED_MODULE_PRELOADS,
-  ensureAppServer,
   readIngressState,
-  startAppServer,
   stopContainerAppServer,
   stopIngressNginx,
-} from "../lib/servers/nginx.js";
+} from "@mycadet/local-mode";
+import {
+  MAX_PRESERVED_MODULE_PRELOADS,
+  buildNginxConfig,
+  buildRemoteWebIndexHtml,
+  ensureAppServer,
+  hasIpv6Loopback,
+  startAppServer,
+} from "\.\./lib/servers/nginx\.js";
 import { findAppDistDir, findWebDistDir } from "../lib/web-dist.js";
 
 const originalKill = process.kill;

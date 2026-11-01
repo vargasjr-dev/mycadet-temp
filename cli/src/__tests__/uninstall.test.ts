@@ -33,7 +33,12 @@ const ORIGINAL_ARGV = process.argv;
 const retireDockerCalls: string[] = [];
 let onRetireDocker: ((name: string) => void) | undefined;
 
-mock.module("../lib/remotes/docker.js", () => ({
+// uninstall imports the retirement legs from the package now; the mock
+// replaces retireDocker at that seam (the one retirement path with
+// observable side effects) while the rest of the surface stays real.
+const realLocalMode = { ...(await import("@mycadet/local-mode")) };
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
   retireDocker: (name: string) => {
     retireDockerCalls.push(name);
     onRetireDocker?.(name);

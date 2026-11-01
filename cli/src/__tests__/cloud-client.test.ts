@@ -10,14 +10,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { mock } from "bun:test";
 
 import {
   clearCloudToken,
   fetchAssistantDetail,
   fetchUpgradeInProgress,
-  getCloudUrl,
-  readCloudToken,
   saveCloudToken,
 } from "../lib/cloud-client.js";
 

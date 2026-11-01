@@ -26,9 +26,10 @@ process.env.XDG_CONFIG_HOME = testDir;
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as healthCheck from "../lib/health-check.js";
 import * as cloudClient from "../lib/cloud-client.js";
+import * as localMode from "@mycadet/local-mode";
 
 const loadAllAssistantsMock = spyOn(
-  assistantConfig,
+  localMode,
   "loadAllAssistants",
 ).mockReturnValue([]);
 const readRootProcessesMock = spyOn(
@@ -36,15 +37,15 @@ const readRootProcessesMock = spyOn(
   "readRootProcesses",
 ).mockReturnValue({});
 const getActiveAssistantMock = spyOn(
-  assistantConfig,
+  localMode,
   "getActiveAssistant",
 ).mockReturnValue(null);
-const getCloudUrlMock = spyOn(cloudClient, "getCloudUrl").mockReturnValue(
+const getCloudUrlMock = spyOn(localMode, "getCloudUrl").mockReturnValue(
   "http://platform.test",
 );
 
 // Per-test toggle for `readCloudToken`.
-const readCloudTokenMock = spyOn(cloudClient, "readCloudToken").mockReturnValue(
+const readCloudTokenMock = spyOn(localMode, "readCloudToken").mockReturnValue(
   null,
 );
 

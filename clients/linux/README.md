@@ -1,10 +1,12 @@
 # Cadet Assistant - Linux (Electron)
 
 The Linux desktop client. Like `clients/macos` and `clients/windows`, this is
-an Electron shell around the `clients/web` renderer: in dev it loads the Vite
-dev server (or vel's edge proxy when `vel up` is running), and in packaged
-builds it serves a bundled `resources/web-dist` over a privileged `app://`
-protocol. Packaged builds are AppImages.
+an Electron shell whose main window renders the `@mycadet/app` shell (which
+iframes the `clients/web` bundle on the `/assistant` mount): in dev it loads
+the Vite dev server (or vel's edge proxy when `vel up` is running), and in
+packaged builds the shared `app://` protocol handler serves the bundled
+`resources/app-dist` shell and `resources/web-dist` bundle. Packaged builds
+are AppImages.
 
 This is the first iteration toward a Linux distribution. It re-homes the
 community Linux packaging work from
