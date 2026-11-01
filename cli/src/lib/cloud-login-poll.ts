@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { loopbackSafeFetch } from "@mycadet/local-mode";
-import { cliCommand } from "./cli-name.js";
+import { cliCommand, loopbackSafeFetch } from "@mycadet/local-mode";
 
 const requestSchema = z.object({
   request_id: z.string().regex(/^[a-f0-9]{64}$/),

@@ -1,4 +1,5 @@
 import {
+  cliCommand,
   getActiveAssistant,
   getCloudUrl,
   loadAllAssistants,
@@ -6,7 +7,6 @@ import {
   removeLockfileAssistant,
 } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
-import { cliCommand } from "../lib/cli-name.js";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {

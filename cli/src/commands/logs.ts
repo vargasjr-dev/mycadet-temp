@@ -1,5 +1,4 @@
 import { spawn } from "child_process";
-import { cliCommand } from "../lib/cli-name.js";
 import { createReadStream, existsSync, statSync } from "fs";
 import { createInterface } from "readline";
 import { watch } from "fs";
@@ -8,7 +7,11 @@ import { join } from "path";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
-import { extractHostFromEntry, resolveLogDir } from "@mycadet/local-mode";
+import {
+  cliCommand,
+  extractHostFromEntry,
+  resolveLogDir,
+} from "@mycadet/local-mode";
 import { execOutput } from "../lib/step-runner";
 
 // ── Arg parsing ─────────────────────────────────────────────────

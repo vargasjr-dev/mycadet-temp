@@ -13,12 +13,12 @@
  */
 
 import {
+  cliCommand,
   extractHostFromEntry,
   getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
-import { cliCommand } from "../lib/cli-name.js";
 import { spawn } from "child_process";
 
 import { resolveAssistant } from "../lib/assistant-config";

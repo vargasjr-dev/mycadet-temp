@@ -21,11 +21,11 @@ import {
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import {
+  cliCommand,
   loopbackSafeFetch,
   resolveConfigDir,
   resolveDataDir,
 } from "@mycadet/local-mode";
-import { cliCommand } from "../cli-name.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import { z } from "zod";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";

@@ -1,4 +1,5 @@
 import {
+  cliCommand,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -6,7 +7,6 @@ import {
 } from "@mycadet/local-mode";
 import { setActiveAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { cliCommand } from "../lib/cli-name.js";
 
 export const use = Object.assign(
   async function use(): Promise<void> {

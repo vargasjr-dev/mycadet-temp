@@ -1,10 +1,10 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import { isCloudHome } from "../lib/cloud-values.js";
-import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {
+  cliCommand,
   readCloudToken,
   saveLockfileAssistant,
   validateAssistantName,

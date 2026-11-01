@@ -3,7 +3,7 @@ import {
   getGatewayUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 import {
   leaseGuardianToken,
   loadGuardianToken,

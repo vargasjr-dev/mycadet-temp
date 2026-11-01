@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { loadAllAssistants } from "@mycadet/local-mode";
+import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
 import {
   clearRootProcess,
   readRootProcesses,
@@ -10,7 +10,6 @@ import {
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
-import { cliCommand } from "./cli-name.js";
 import {
   isDockerEntry,
   isLocalEntry,

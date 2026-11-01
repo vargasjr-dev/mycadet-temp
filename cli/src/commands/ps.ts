@@ -1,6 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getIngressPaths, readIngressState } from "../lib/servers/nginx.js";
-import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
@@ -11,6 +10,7 @@ import {
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
+  cliCommand,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,

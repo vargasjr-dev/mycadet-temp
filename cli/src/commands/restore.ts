@@ -1,6 +1,5 @@
 import { isCloudHome } from "../lib/cloud-values.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { cliCommand } from "../lib/cli-name.js";
 import {
   existsSync,
   mkdirSync,
@@ -14,6 +13,7 @@ import { basename, dirname, join } from "path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import {
+  cliCommand,
   getArchivePath,
   getMetadataPath,
   readCloudToken,

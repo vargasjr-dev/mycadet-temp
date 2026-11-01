@@ -1,4 +1,3 @@
-import { cliCommand } from "../lib/cli-name.js";
 import { upgradeDocker } from "../lib/remotes/docker.js";
 import {
   getGatewayUrl,
@@ -14,6 +13,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import {
+  cliCommand,
   cloudAuthHeaders,
   formatAssistantLookupError,
   getActiveAssistant,

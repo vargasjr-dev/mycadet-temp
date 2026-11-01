@@ -1,6 +1,5 @@
 import { existsSync } from "fs";
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand, getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { join } from "path";
 
 import { isCloudHome } from "../lib/cloud-values.js";

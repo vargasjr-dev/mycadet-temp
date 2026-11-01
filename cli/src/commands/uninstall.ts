@@ -1,5 +1,4 @@
 import { existsSync, readFileSync, renameSync, rmSync, unlinkSync } from "fs";
-import { cliCommand } from "../lib/cli-name.js";
 import { basename, dirname, join, sep } from "path";
 import { fileURLToPath } from "url";
 
@@ -9,6 +8,7 @@ import {
 } from "../lib/confirm-action.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
+  cliCommand,
   loadAllAssistants,
   retireDocker,
   retireLocal,

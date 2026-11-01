@@ -2,13 +2,13 @@ import { z } from "zod";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   authHeadersForKnownOrganization,
+  cliCommand,
   cloudAuthHeaders,
   getAssistantDisplayName,
   getCloudUrl,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config.js";

@@ -1,5 +1,4 @@
-import { loadAllAssistants } from "@mycadet/local-mode";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";

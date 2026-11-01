@@ -1,5 +1,5 @@
 import { teleportHostInstallation } from "../lib/host-teleport.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommand } from "@mycadet/local-mode";
 import { findAssistantByName } from "../lib/assistant-config.js";
 
 function printHelp(): void {
