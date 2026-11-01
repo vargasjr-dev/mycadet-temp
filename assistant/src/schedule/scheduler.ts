@@ -16,10 +16,8 @@ import { isLifecycleQuiesced } from "../persistence/lifecycle-quiesce.js";
 import type { TurnFailure } from "../persistence/turn-outcome.js";
 import { invalidateAssistantInferredItemsForConversation } from "../plugins/defaults/memory/task-memory-cleanup.js";
 import { dispatchProviderResolvable } from "../providers/provider-resolvability.js";
-import {
-  hasPendingAgentWake,
-  wakeAgentForOpportunity,
-} from "../runtime/agent-wake.js";
+import { wakeAgentForOpportunity } from "../runtime/agent-wake.js";
+import { hasPendingAgentWake } from "../runtime/agent-wake-queue.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import {
   type BackgroundJobErrorKind,

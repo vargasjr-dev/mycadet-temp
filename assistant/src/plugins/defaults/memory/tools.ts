@@ -13,8 +13,8 @@ import { invalidToolInputResult, throwIfCancelled } from "@mycadet/plugin-api";
 import { RememberInputSchema } from "../../../api/remember-tool.js";
 import { getConfig, getConfigReadOnly } from "../../../config/loader.js";
 import { usesConceptPageMemory } from "../../../config/memory-v3-gate.js";
-import { RiskLevel } from "../../../permissions/types.js";
 import { resolveCapabilities } from "../../../runtime/capabilities.js";
+import { RiskLevel } from "../../../tools/tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

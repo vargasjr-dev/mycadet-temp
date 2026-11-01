@@ -14,12 +14,12 @@
 import { randomUUID } from "node:crypto";
 
 import { isGuardianRequestExpired } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 import {
   createGuardianRequest,
   listGuardianRequestsOrEmpty,
 } from "../channels/gateway-guardian-requests.js";
-import type { ChannelId } from "../channels/types.js";
 import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import {

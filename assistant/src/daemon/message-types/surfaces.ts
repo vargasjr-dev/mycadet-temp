@@ -1,85 +1,13 @@
 // Surface types, UI surface lifecycle messages.
 
-import type { UISurfaceCompleteEvent } from "../../api/events/ui-surface-complete.js";
-import type { UISurfaceDismissEvent } from "../../api/events/ui-surface-dismiss.js";
 import type { UISurfaceShowEvent } from "../../api/events/ui-surface-show.js";
-import type { UISurfaceUndoResultEvent } from "../../api/events/ui-surface-undo-result.js";
-import type { UISurfaceUpdateEvent } from "../../api/events/ui-surface-update.js";
-import type {
-  AnySurfaceData,
-  CardSurfaceData,
-  ChoiceSurfaceData,
-  ConfirmationSurfaceData,
-  CopyBlockSurfaceData,
-  DocumentPreviewSurfaceData,
-  DynamicPageSurfaceData,
-  FileUploadSurfaceData,
-  FormSurfaceData,
-  ListSurfaceData,
-  SurfaceData,
-  SurfaceDataByType,
-  SurfaceType,
-  TableSurfaceData,
-  VisualSurfaceData,
-  WorkResultSurfaceData,
-} from "../../api/surfaces.js";
+import type { SurfaceDataByType, SurfaceType } from "../../api/surfaces.js";
 
 // Surface `data` shapes are wire payloads owned by `@mycadet/assistant-api`
 // (`api/surfaces.ts`) — one canonical Zod schema per surface type, with the
 // types inferred from the schemas. Re-exported so the daemon's surface
 // protocol barrel (`message-protocol.ts`) keeps surfacing them to daemon
 // consumers under their canonical names.
-export {
-  CardSurfaceDataSchema,
-  type ChoiceOption,
-  ChoiceSurfaceDataSchema,
-  ConfirmationSurfaceDataSchema,
-  CopyBlockSurfaceDataSchema,
-  DocumentPreviewSurfaceDataSchema,
-  type DynamicPagePreview,
-  DynamicPageSurfaceDataSchema,
-  FileUploadSurfaceDataSchema,
-  type FormField,
-  type FormPage,
-  FormSurfaceDataSchema,
-  type ListItem,
-  ListSurfaceDataSchema,
-  safeParseSurfaceData,
-  SURFACE_TYPES,
-  SurfaceTypeSchema,
-  type TableCellValue,
-  type TableColumn,
-  type TableRow,
-  TableSurfaceDataSchema,
-  VisualSurfaceDataSchema,
-  type WorkResultDiff,
-  type WorkResultItem,
-  type WorkResultMetadata,
-  type WorkResultMetric,
-  type WorkResultSection,
-  type WorkResultSectionType,
-  type WorkResultStatus,
-  WorkResultSurfaceDataSchema,
-  type WorkResultTone,
-} from "../../api/surfaces.js";
-export type {
-  AnySurfaceData,
-  CardSurfaceData,
-  ChoiceSurfaceData,
-  ConfirmationSurfaceData,
-  CopyBlockSurfaceData,
-  DocumentPreviewSurfaceData,
-  DynamicPageSurfaceData,
-  FileUploadSurfaceData,
-  FormSurfaceData,
-  ListSurfaceData,
-  SurfaceData,
-  SurfaceDataByType,
-  SurfaceType,
-  TableSurfaceData,
-  VisualSurfaceData,
-  WorkResultSurfaceData,
-};
 
 // === Surface type definitions ===
 
@@ -96,14 +24,6 @@ export const INTERACTIVE_SURFACE_TYPES: SurfaceType[] = [
 // single-sourced from their canonical `api/events` wire schemas; re-exported so
 // the daemon's surface protocol barrel keeps surfacing them under their
 // canonical names.
-export type { SurfaceAction } from "../../api/events/ui-surface-show.js";
-export type {
-  UISurfaceCompleteEvent,
-  UISurfaceDismissEvent,
-  UISurfaceShowEvent,
-  UISurfaceUndoResultEvent,
-  UISurfaceUpdateEvent,
-};
 
 // Surface actions (user clicks) and undo requests are served by the HTTP
 // surface-action routes (`surface-actions`, `surfaces/:id/undo`), not by client

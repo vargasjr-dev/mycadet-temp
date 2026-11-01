@@ -1,4 +1,5 @@
 import { isInviteCodeRedemptionEnabled } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { resolveTwilioPhoneNumber } from "../calls/twilio-config.js";
@@ -11,7 +12,6 @@ import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { resolveWhatsAppDisplayNumber } from "./channel-invite-transports/whatsapp.js";
 import type {
   ChannelHealth,
-  ChannelId,
   ChannelProbe,
   ChannelProbeContext,
   ChannelReadinessSnapshot,

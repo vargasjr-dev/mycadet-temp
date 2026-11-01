@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import { getConfig } from "../../../../config/loader.js";
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   ACTOR_PRINCIPALS,
   type RoutePolicy,
@@ -36,7 +36,6 @@ import {
 // Re-exported so IPC clients (the `assistant memory ingest` CLI) can chunk
 // their input to the same cap the route enforces, without reaching past this
 // route module into the substrate.
-export { MAX_INGEST_PAGES_PER_CALL };
 
 const MemoryIngestParamsSchema = z.object({
   /** Pages to ingest; `content` is the full page markdown (frontmatter + body). */

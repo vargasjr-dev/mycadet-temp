@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 
 import { safeStringSlice } from "@mycadet/plugin-api";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getLogger } from "../logging.js";
 import { getWorkspaceDir } from "../paths.js";
 import { readPage } from "../substrate/page-store.js";

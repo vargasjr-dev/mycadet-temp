@@ -7,7 +7,8 @@
  */
 
 import { getConfiguredProvider } from "../providers/provider-send-message.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { truncate } from "../util/truncate.js";
 import type { Message as ProviderMessage } from "./provider-types.js";
 

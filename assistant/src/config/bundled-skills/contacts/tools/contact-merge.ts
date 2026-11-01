@@ -1,8 +1,8 @@
 import type { ContactRead } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import { cliIpcCall } from "../../../../ipc/cli-client.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { resolveGuardianName } from "../../../../prompts/user-reference.js";
-import { throwIfCancelled } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

@@ -1,12 +1,5 @@
 import { spawn } from "node:child_process";
 
-export {
-  buildShellInvocation,
-  buildShellSpawnFlags,
-  pathListDelimiter,
-  prependUniquePathEntries,
-} from "@mycadet/environments/shell";
-
 export interface ShellProcessStartWatch {
   didStart(): boolean;
 }

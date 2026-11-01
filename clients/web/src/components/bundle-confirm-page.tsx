@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useTranslation } from "@/i18n";
 import { formatFileSize } from "@/utils/format-file-size";
-import type { BundleScanData } from "@/runtime/is-electron";
+import { BundleScanData } from "@mycadet/ipc-contract";
 import { cn } from "@/utils/misc";
 
 const TRUST_BADGE: Record<

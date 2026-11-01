@@ -23,12 +23,6 @@ import {
 } from "@/generated/daemon/sdk.gen";
 import { assertHasResponse } from "@/utils/api-errors";
 
-export {
-  PERSONALITY_AXIS_IDS,
-  PERSONALITY_SLIDER_DEFAULT,
-  PERSONALITY_SLIDERS_PATH,
-} from "@mycadet/assistant-api";
-
 export type PersonalitySliderValues = Record<string, number>;
 
 export function personalitySlidersQueryKey(assistantId: string) {

@@ -17,7 +17,8 @@ import {
   test,
 } from "bun:test";
 
-import { RiskLevel, type ScopeOption } from "../permissions/types.js";
+import type { ScopeOption } from "../tools/tool-types.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { ToolExecutionResult } from "../tools/types.js";
 import {
   installThresholdReaderMock,

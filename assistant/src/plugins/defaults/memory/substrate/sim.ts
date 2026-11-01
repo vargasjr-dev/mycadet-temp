@@ -35,7 +35,7 @@
 //   the score is consumed only as a per-turn ordering signal, not compared
 //   across turns.
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { isEmbeddingDimensionAvailable } from "../../../../persistence/embeddings/embedding-backend.js";
 import { applyCorrectionIfCalibrated } from "../anisotropy.js";
 import { embedWithBackend } from "../embeddings.js";

@@ -43,8 +43,6 @@ import {
   stripInternalSpeechMarkers,
 } from "./voice-control-protocol.js";
 
-export { ESCALATE_VERDICT_TOKEN, HOLD_VERDICT_TOKEN };
-
 export function leadingEscalationToken(text: string): string | undefined {
   const leading = text.trimStart();
   return ESCALATE_VERDICT_TOKENS.find((token) => leading.startsWith(token));

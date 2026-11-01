@@ -3,8 +3,8 @@ import { z } from "zod";
 import { startCall } from "../../calls/call-domain.js";
 import { findActiveSession } from "../../channels/gateway-verification-sessions.js";
 import { getConfig } from "../../config/loader.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { normalizePhoneNumber } from "../../util/phone.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

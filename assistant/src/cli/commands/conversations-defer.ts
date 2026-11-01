@@ -6,8 +6,6 @@ import { log } from "../logger.js";
 import { resolveConversationId } from "../utils/conversation-id.js";
 import { parseDuration } from "../utils/parse-duration.js";
 
-export { parseDuration };
-
 // ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------

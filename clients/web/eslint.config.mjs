@@ -9,7 +9,7 @@ import { noCrossDomainImports } from "./eslint-rules/no-cross-domain-imports.mjs
 import { noEmDash } from "./eslint-rules/no-em-dash.mjs";
 import { noUntranslatedStrings } from "./eslint-rules/no-untranslated-strings.mjs";
 import { preferDesignLibraryControls } from "./eslint-rules/prefer-design-library-controls.mjs";
-import mycadet from "../../packages/eslint-plugin/index.mjs";
+import { noReExports } from "@mycadet/shared/eslint/no-re-exports";
 
 // ---------------------------------------------------------------------------
 // no-restricted-syntax rule sets
@@ -517,8 +517,8 @@ const eslintConfig = defineConfig([
     // Re-export shims are outlawed: consumers import from the defining
     // module, and only index files aggregate a public surface. Warning
     // level with a pinned count — each PR chips away at the remainder.
-    plugins: { "@mycadet": mycadet },
-    rules: { "@mycadet/no-re-exports": "warn" },
+    plugins: { "@mycadet": { rules: { "no-re-exports": noReExports } } },
+    rules: { "@mycadet/no-re-exports": "error" },
   },
 ]);
 

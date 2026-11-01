@@ -2,9 +2,9 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentLoop } from "../agent/loop.js";
+import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";
-import type { DiskPressureStatus } from "../daemon/disk-pressure-guard.js";
 
 type Context = Conversation;
 

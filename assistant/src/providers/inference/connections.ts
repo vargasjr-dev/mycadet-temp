@@ -11,8 +11,6 @@ import {
   isCadetCloudConnection,
 } from "../cadet-model-routing.js";
 import { clearConnectionProviderCache } from "../registry.js";
-
-export { CADET_CLOUD_CONNECTION_NAME };
 import {
   type Auth,
   AuthSchema,

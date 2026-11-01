@@ -6,7 +6,8 @@ import { loadAllAssistants } from "./assistant-config.js";
 import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { stopIngressNginx } from "./servers/nginx.js";
-import { DAEMON_STOP_TIMEOUT_MS, stopProcessByPidFile } from "./process.js";
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
+import { stopProcessByPidFile } from "./process.js";
 import { getArchivePath, getMetadataPath } from "./retire-archive.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {

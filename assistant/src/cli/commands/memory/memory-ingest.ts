@@ -171,7 +171,7 @@ export function registerMemoryIngestCommand(memory: Command): void {
       // lazily so the CLI module keeps daemon internals out of its static
       // import graph (see src/cli/AGENTS.md).
       const { MAX_INGEST_PAGES_PER_CALL } =
-        await import("../../../plugins/defaults/memory/src/memory-ingest-routes.js");
+        await import("../../../plugins/defaults/memory/substrate/ingest.js");
 
       let pages: IngestPage[];
       try {

@@ -11,7 +11,8 @@
  * ID as-is after whitespace trimming.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { normalizePhoneNumber } from "./phone.js";
 
 /** Channels whose raw sender IDs are phone numbers. */

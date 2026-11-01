@@ -18,7 +18,7 @@ import {
   startCall,
 } from "../../calls/call-domain.js";
 import { getConfig } from "../../config/loader.js";
-import { VALID_CALLER_IDENTITY_MODES } from "../../config/schema.js";
+import { VALID_CALLER_IDENTITY_MODES } from "../../config/schemas/calls.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, ForbiddenError, RouteError } from "./errors.js";

@@ -1,7 +1,7 @@
 import type { ChannelConversationType } from "@mycadet/gateway-client";
 
 import type { RoomAdmissionDropReason } from "../channels/room-admission.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 import { admitTelegramMessage, toAdmissionCandidate } from "./admit.js";
 import type { TelegramBotIdentity } from "./bot-identity.js";
 import {

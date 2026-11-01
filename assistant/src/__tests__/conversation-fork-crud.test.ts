@@ -24,7 +24,7 @@ import {
   listConversationAttachments,
   updateMessageMetadata,
 } from "../persistence/conversation-crud.js";
-import { getConversationDirPath } from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
 import {
   COMPUTER_USE_SCREENSHOT_ATTACHMENT_IDS_KEY,
   computerUseScreenshotAttachmentIdsFromMetadata,

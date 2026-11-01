@@ -3,11 +3,8 @@ import { existsSync } from "node:fs";
 
 import type { RerankDtype } from "../../../../config/schemas/memory-v2.js";
 import { EmbeddingRuntimeManager } from "../../../../persistence/embeddings/embedding-runtime-manager.js";
-import {
-  PromiseGuard,
-  workerComputeEnv,
-  workerMemoryEnv,
-} from "../host-utils.js";
+import { PromiseGuard } from "../../../../util/promise-guard.js";
+import { workerComputeEnv, workerMemoryEnv } from "../host-utils.js";
 import { getLogger } from "../logging.js";
 import { getEmbeddingModelsDir } from "../paths.js";
 

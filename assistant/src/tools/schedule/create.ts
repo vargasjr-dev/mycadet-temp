@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { resolveCapabilities } from "../../runtime/capabilities.js";
 import { validateScheduleInferenceProfile } from "../../schedule/inference-profile.js";
 import { formatIntegrationSummary } from "../../schedule/integration-status.js";
@@ -21,7 +22,7 @@ import {
   resolveCapabilities as resolveWorkflowCapabilities,
 } from "../../workflows/capabilities.js";
 import { resolveGroupReference } from "../conversation-groups/group_shared.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

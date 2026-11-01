@@ -43,7 +43,6 @@ import {
   generateScopeOptions,
 } from "../../permissions/checker.js";
 import { resolveGuardianPersonaPath } from "../../prompts/persona-resolver.js";
-import type { ToolDefinition } from "../../providers/types.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { parseToolManifestFile } from "../../skills/tool-manifest.js";
 import { getSubagentManager } from "../../subagent/index.js";
@@ -68,6 +67,7 @@ import {
   ACTIVITY_SKIP_SET,
   injectActivityField,
 } from "../../tools/schema-transforms.js";
+import { ToolDefinition } from "../../tools/tool-types.js";
 import { pathExists } from "../../util/fs.js";
 import { getWorkspaceDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";

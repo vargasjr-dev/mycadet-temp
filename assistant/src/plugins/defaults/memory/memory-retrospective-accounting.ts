@@ -38,13 +38,13 @@ import {
   getMessagesAfter,
   type MessageRow,
 } from "../../../persistence/conversation-crud.js";
+import { messagesAfterBoundFilter } from "../../../persistence/conversation-lineage.js";
 import {
   messageMetadataIsAmbientSightKeep,
   SIGHT_FRAME_ATTACHMENT_IDS_KEY,
 } from "../../../persistence/conversation-types.js";
 import { getDb } from "../../../persistence/db-connection.js";
 import {
-  messagesAfterBoundFilter,
   type MessagesAfterRef,
   resolveMessagesAfterBound,
 } from "../../../persistence/message-cursor.js";

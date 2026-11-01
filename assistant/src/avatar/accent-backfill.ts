@@ -7,6 +7,7 @@
  * store's client and platform fan-out.
  */
 import type { AvatarAccent } from "@mycadet/avatar-manifest";
+import type { AvatarState } from "@mycadet/avatar-manifest";
 
 import { getAvatarImagePath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
@@ -15,7 +16,7 @@ import {
   derivedAccent,
   paletteAccent,
 } from "./avatar-accent.js";
-import { type AvatarState, writeManifest } from "./avatar-manifest.js";
+import { writeManifest } from "./avatar-manifest.js";
 import { readContainedAvatarRaster } from "./ensure-raster.js";
 
 const log = getLogger("accent-backfill");

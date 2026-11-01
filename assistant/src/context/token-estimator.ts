@@ -8,12 +8,8 @@ import {
   estimateOpenAICompatAudioTokens,
   isOpenAICompatInlineAudio,
 } from "../providers/openai/input-audio.js";
-import type {
-  ContentBlock,
-  Message,
-  Provider,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { ContentBlock, Message, Provider } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { getCorrection } from "./estimator-calibration.js";
 import { parseImageDimensions } from "./image-dimensions.js";
 

@@ -4,7 +4,7 @@
  * it; the `bun:test` stubs live in `attachment-test-helpers.tsx`.
  */
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 /**
  * Tiny generated 96x96 PNGs, one per hue, used wherever a story needs a real

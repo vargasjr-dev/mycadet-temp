@@ -1,4 +1,4 @@
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 
 /**
  * A single inbound email attachment, inlined as base64 by the upstream

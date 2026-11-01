@@ -18,6 +18,8 @@
  * On any parse or resolution failure we abort the compaction and return
  * `compacted: false` — never silently lose messages.
  */
+import type { TrustClass } from "@mycadet/gateway-client";
+
 import { repairHistory } from "../agent/history-repair/history-repair.js";
 import { optimizeImageForTransport } from "../agent/image-optimize.js";
 import type { CompactionConfig } from "../config/schemas/compaction.js";
@@ -35,10 +37,9 @@ import type {
   Message,
   Provider,
   ProviderResponse,
-  ToolDefinition,
 } from "../providers/types.js";
-import { type TrustClass } from "../runtime/actor-trust-resolver.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   hasValidJpegStructure,
   sniffImageMimeType,

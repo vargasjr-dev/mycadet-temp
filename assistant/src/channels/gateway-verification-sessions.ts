@@ -39,8 +39,6 @@ import type { ZodType } from "zod";
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 import { composeApprovalMessage } from "../runtime/approval-message-composer.js";
 
-export type { VerificationSessionWire } from "@mycadet/gateway-client";
-
 export interface CreateVerificationSessionResult {
   challengeId: string;
   secret: string;

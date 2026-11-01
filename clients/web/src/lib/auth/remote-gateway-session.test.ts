@@ -4,11 +4,11 @@ import {
   activateRemoteGatewaySession,
   createRemoteWebPairingChallenge,
   exchangeRemoteWebPairingToken,
-  parseRemoteWebPairingParams,
   remoteGatewayApiPath,
   remoteGatewayPublicPathPrefix,
   RemoteWebPairingError,
 } from "@/lib/auth/remote-gateway-session";
+import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -213,5 +213,4 @@ describe("remote gateway token exchange", () => {
     );
     expect(localStorage.getItem("cadet:gw:token")).toBeNull();
   });
-
 });

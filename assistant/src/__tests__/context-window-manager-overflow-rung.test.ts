@@ -85,7 +85,8 @@ mock.module(
 );
 
 import { ContextWindowManager } from "../plugins/defaults/compaction/window-manager.js";
-import type { Message, Provider, ToolDefinition } from "../providers/types.js";
+import type { Message, Provider } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 function makeProvider(): Provider {
   return {

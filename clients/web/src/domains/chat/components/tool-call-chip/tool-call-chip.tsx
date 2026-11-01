@@ -48,10 +48,8 @@ import {
 } from "@/domains/chat/hooks/use-elapsed-time";
 
 import type { ConfirmationDecision } from "@/types/event-types";
-import type {
-  AllowlistOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { perceivedStartedAt } from "@/domains/chat/utils/tool-call-status";

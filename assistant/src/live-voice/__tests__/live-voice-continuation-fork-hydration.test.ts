@@ -26,10 +26,11 @@ import {
   test,
 } from "bun:test";
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import type { Conversation } from "../../daemon/conversation.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 import type { Message } from "../../providers/types.js";
-import type { TrustClass } from "../../runtime/trust-class.js";
 
 let forkMocksActive = false;
 

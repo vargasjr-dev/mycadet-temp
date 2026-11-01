@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { bootstrapPlugins } from "../daemon/external-plugins-bootstrap.js";
+import { InitContext } from "../plugin-api/types.js";
 import {
   clearInjectorRegistry,
   getRegisteredInjectors,
@@ -34,7 +35,7 @@ import {
   registerPlugin,
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
-import type { InitContext, Injector, Plugin } from "../plugins/types.js";
+import type { Injector, Plugin } from "../plugins/types.js";
 
 // Redirect plugin storage creation into a per-process temp tree so the test
 // never touches a developer's real ~/.cadet.

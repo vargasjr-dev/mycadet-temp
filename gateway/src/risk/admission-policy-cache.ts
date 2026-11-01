@@ -1,7 +1,7 @@
+import type { AdmissionPolicy } from "@mycadet/gateway-client";
 import {
   ADMISSION_POLICY_DEFAULT,
   AdmissionPolicyStore,
-  type AdmissionPolicy,
 } from "../db/admission-policy-store.js";
 import { isChannelId, type ChannelId } from "../channels/types.js";
 import { isAdmissionPolicyExemptChannel } from "@mycadet/gateway-client";

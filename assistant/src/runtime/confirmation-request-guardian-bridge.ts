@@ -12,7 +12,8 @@
  * guardian requests.
  */
 
-import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
+import { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { buildCadetCardAffinity } from "../notifications/cadet-card-affinity.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";

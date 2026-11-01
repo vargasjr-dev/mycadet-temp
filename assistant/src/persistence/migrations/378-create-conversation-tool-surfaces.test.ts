@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateCreateConversationToolSurfaces } from "./378-create-conversation-tool-surfaces.js";
 
 function createTestDb() {

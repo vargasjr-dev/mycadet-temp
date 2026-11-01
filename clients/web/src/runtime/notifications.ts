@@ -78,8 +78,6 @@ import { isClientAttended } from "@/runtime/window-attention";
 import { useConversationStore } from "@/stores/conversation-store";
 import { isConversationChatPath } from "@/utils/routes";
 
-export type { NotificationTapPayload } from "@/runtime/notification-taps";
-
 /**
  * Capacitor / APNs category for the "Go to Conversation" action. Must stay
  * aligned with `NotificationCategories.intentIdentifier` in the iOS shell and

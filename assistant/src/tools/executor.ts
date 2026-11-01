@@ -441,7 +441,6 @@ function describeThrownValue(err: unknown): string {
 
 // Re-export from the canonical source so existing consumers of
 // `executor.ts` continue to work without changing their imports.
-export { isSideEffectTool } from "./side-effects.js";
 
 /**
  * Compute the effective per-tool execution timeout in milliseconds.

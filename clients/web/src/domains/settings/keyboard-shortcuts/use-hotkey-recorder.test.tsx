@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import type { ResolvedHotkey } from "@/runtime/hotkeys";
+import { ResolvedHotkey } from "@mycadet/ipc-contract";
 
 const catalog: ResolvedHotkey[] = [
   {
@@ -37,9 +37,8 @@ mock.module("@/runtime/hotkeys", () => ({
   onHotkeysChange,
 }));
 
-const { useHotkeyRecorder } = await import(
-  "@/domains/settings/keyboard-shortcuts/use-hotkey-recorder"
-);
+const { useHotkeyRecorder } =
+  await import("@/domains/settings/keyboard-shortcuts/use-hotkey-recorder");
 
 const onBound = mock((_key: string) => {});
 

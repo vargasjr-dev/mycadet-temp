@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import { RiskLevel } from "../tools/tool-types.js";
 import type { ApprovalContext, ApprovalDecision } from "./approval-policy.js";
 import { DefaultApprovalPolicy } from "./approval-policy.js";
-import { RiskLevel } from "./types.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

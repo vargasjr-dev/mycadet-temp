@@ -15,14 +15,12 @@ import {
   toOutlookFileAttachments,
 } from "../../../../messaging/providers/outlook/client.js";
 import type { OutlookDraftMessage } from "../../../../messaging/providers/outlook/types.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import {
   isProactivelyAddressable,
   sendChannelText,
 } from "../../../../runtime/channel-send.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

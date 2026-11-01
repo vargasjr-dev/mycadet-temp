@@ -1,5 +1,6 @@
 import type { SkillSource } from "../../config/skills.js";
 import { loadSkillCatalog } from "../../config/skills.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { MEMORY_RETROSPECTIVE_ORIGIN } from "../../plugins/defaults/memory/memory-retrospective-constants.js";
 import { nearestExistingSkills } from "../../plugins/defaults/memory/v3/candidate-match.js";
 import {
@@ -12,7 +13,6 @@ import {
   type StoredCloudSkill,
 } from "../../skills/cloud-store.js";
 import { readInstallMeta } from "../../skills/install-meta.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import type { OwnerInfo, ToolContext, ToolExecutionResult } from "../types.js";
 
 /**

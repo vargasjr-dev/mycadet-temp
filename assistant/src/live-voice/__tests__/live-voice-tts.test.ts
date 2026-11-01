@@ -27,11 +27,10 @@ let config = makeConfig();
 // Real-catalog tests exercise the actual provider adapters, which read
 // credentials and config through these modules.
 
-const {
-  LiveVoiceTtsError,
-  resolveLanguageVoiceOverride,
-  streamLiveVoiceTtsAudio,
-} = await import("../live-voice-tts.js");
+const { LiveVoiceTtsError, streamLiveVoiceTtsAudio } =
+  await import("../live-voice-tts.js");
+const { resolveLanguageVoiceOverride } =
+  await import("../../tts/language-voices.js");
 
 beforeEach(() => {
   config = makeConfig();

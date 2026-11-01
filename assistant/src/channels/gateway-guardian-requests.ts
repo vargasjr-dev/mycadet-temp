@@ -49,17 +49,6 @@ import type { ZodType } from "zod";
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 import { getLogger } from "../util/logger.js";
 
-export type {
-  CreateGuardianRequestIpcParams,
-  DecideGuardianRequestIpcParams,
-  DecideGuardianRequestIpcResponse,
-  GuardianRequestAclOutcome,
-  GuardianRequestDeliveryWire,
-  GuardianRequestPatch,
-  GuardianRequestStatus,
-  GuardianRequestWire,
-} from "@mycadet/gateway-client";
-
 const log = getLogger("gateway-guardian-requests");
 
 /**

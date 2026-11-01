@@ -15,8 +15,8 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 const pointerText = wrapMemoryPointerBlock(
   "Already in context above, relevant again this turn:\nmemory/concepts/plans.md § Alpha",

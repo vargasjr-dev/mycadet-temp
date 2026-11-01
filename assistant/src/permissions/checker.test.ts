@@ -180,6 +180,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { buildPolicyContext } from "../tools/policy-context.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext } from "../tools/types.js";
 import {
   check,
@@ -187,7 +188,6 @@ import {
   generateScopeOptions,
   isInstalledStaticSkillLoad,
 } from "./checker.js";
-import { RiskLevel } from "./types.js";
 
 // ── Test suite ───────────────────────────────────────────────────────────────
 

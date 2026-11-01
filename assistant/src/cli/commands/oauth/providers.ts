@@ -1,8 +1,8 @@
 import { type Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
+import { getCliLogger } from "../../../util/logger.js";
 import { subcommand } from "../../lib/cli-command-help.js";
-import { getCliLogger } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
 
 const log = getCliLogger("cli");

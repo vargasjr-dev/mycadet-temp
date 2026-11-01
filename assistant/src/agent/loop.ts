@@ -52,7 +52,6 @@ import type {
   ProviderResponse,
   SendMessageOptions,
   TextContent,
-  ToolDefinition,
   ToolResultContent,
 } from "../providers/types.js";
 import { NATIVE_WEB_SEARCH_TOOL_NAME } from "../providers/types.js";
@@ -72,6 +71,7 @@ import {
   applySubstitutions,
 } from "../tools/sensitive-output-placeholders.js";
 import { recoverSkillExecuteEnvelope } from "../tools/skills/execute.js";
+import type { ToolDefinition } from "../tools/tool-types.js";
 import {
   abortedToolResultText,
   isPreemptedByNewMessage,
@@ -255,8 +255,6 @@ interface CompactionAttempt {
   /** Whether the ladder applied its terminal auto-compress-latest-turn rung. */
   autoCompressApplied: boolean;
 }
-
-export type { AgentLoopExitReason };
 
 /**
  * Why a mid-loop compaction ran: `"budget"` for the proactive estimate gate,

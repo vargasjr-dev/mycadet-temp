@@ -49,7 +49,8 @@ mock.module("../../verification-outbound-actions.js", () => ({
   RESEND_COOLDOWN_MS: 60_000,
 }));
 
-import type { VerificationSessionWire } from "../../../channels/gateway-verification-sessions.js";
+import { VerificationSessionWire } from "@mycadet/gateway-client";
+
 import type { BootstrapInterceptParams } from "./bootstrap-intercept.js";
 import { handleBootstrapIntercept } from "./bootstrap-intercept.js";
 

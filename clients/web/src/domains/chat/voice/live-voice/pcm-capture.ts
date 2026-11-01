@@ -47,7 +47,6 @@ import {
 
 // Re-exported for capture consumers (e.g. use-live-voice.ts) so they don't need
 // to reach into the protocol module. Canonical definition lives in protocol.ts.
-export { LIVE_VOICE_AUDIO_FORMAT };
 
 // Matches `use-audio-amplitude.ts` (and the macOS AudioEngineController):
 // EMA with alpha 0.5, scaled by 14 and clamped to 1.0.

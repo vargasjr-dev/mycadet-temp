@@ -93,8 +93,6 @@ import {
   resolveAttachmentFilename,
 } from "@mycadet/service-contracts/attachment-naming";
 
-export { inferMimeType, resolveAttachmentFilename };
-
 export function classifyKind(mimeType: string): "image" | "video" | "document" {
   if (mimeType.startsWith("image/")) {
     return "image";

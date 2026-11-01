@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-  ContentBlock,
-  Message,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { ContentBlock, Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -216,10 +213,8 @@ mock.module("@google/genai", () => {
 // Import providers after mocking
 import { FireworksProvider } from "../providers/fireworks/client.js";
 import { GeminiProvider } from "../providers/gemini/client.js";
-import {
-  OpenAIChatCompletionsProvider,
-  OpenAIResponsesProvider,
-} from "../providers/openai/client.js";
+import { OpenAIChatCompletionsProvider } from "../providers/openai/chat-completions-provider.js";
+import { OpenAIResponsesProvider } from "../providers/openai/responses-provider.js";
 import { credentialKey } from "../security/credential-key.js";
 // ---------------------------------------------------------------------------
 // App-side web_search provider adapters (Brave/Perplexity/Tavily)

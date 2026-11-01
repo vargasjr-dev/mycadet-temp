@@ -27,10 +27,8 @@ import {
   squareLabels,
 } from "@/domains/chat/components/chat-attachments/attachment-test-helpers";
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";
-import type {
-  DisplayAttachment,
-  DisplayMessage,
-} from "@/domains/chat/types/types";
+import type { DisplayMessage } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 const restorePreviewModal = mockAttachmentPreviewModal();
 

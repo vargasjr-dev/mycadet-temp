@@ -17,7 +17,8 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { PluginLogger, PostToolUseContext } from "../plugin-api/types.js";
+import { PluginLogger } from "../hooks/types.js";
+import { PostToolUseContext } from "../hooks/types.js";
 import postToolUse, {
   resetTaskProgressNudgeStateForTests,
   TASK_PROGRESS_NUDGE_ROUND_THRESHOLD,

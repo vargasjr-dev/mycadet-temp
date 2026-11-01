@@ -484,6 +484,3 @@ export function ToolProgressCardShell({
     </div>
   );
 }
-
-export { HeaderStepCarousel } from "@/domains/chat/components/tool-progress-card/header-step-carousel";
-export { ThreeDotIndicator } from "@/domains/chat/components/tool-progress-card/three-dot-indicator";

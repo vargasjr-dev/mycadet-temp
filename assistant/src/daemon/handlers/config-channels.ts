@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import type { GuardianDelivery } from "@mycadet/gateway-client";
 import { hashVerificationSecret } from "@mycadet/gateway-client";
 import { MarkChannelRevokedIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { startVerificationCall } from "../../calls/call-domain.js";
@@ -15,7 +17,6 @@ import {
   revokePendingSessions,
   updateSessionDelivery,
 } from "../../channels/gateway-verification-sessions.js";
-import { CHANNEL_IDS, type ChannelId } from "../../channels/types.js";
 import {
   findContactChannel,
   getChannelById,

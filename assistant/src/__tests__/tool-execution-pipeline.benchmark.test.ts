@@ -94,9 +94,9 @@ mock.module("../ipc/gateway-client.js", () => ({
 
 import { check, classifyRisk } from "../permissions/checker.js";
 import { PermissionPrompter } from "../permissions/prompter.js";
-import { RiskLevel } from "../permissions/types.js";
 import { scanText } from "../security/secret-scanner.js";
 import { ToolExecutor } from "../tools/executor.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 // ---------------------------------------------------------------------------

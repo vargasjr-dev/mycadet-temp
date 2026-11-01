@@ -21,11 +21,8 @@ import {
   getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config";
-import {
-  type GuardianTokenData,
-  computeDeviceId,
-  loadGuardianToken,
-} from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
+import { computeDeviceId, loadGuardianToken } from "../lib/guardian-token.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   CLI_INTERFACE_ID,

@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import type { ResolvedHotkey } from "@/runtime/hotkeys";
+import { ResolvedHotkey } from "@mycadet/ipc-contract";
 
 const hotkey = (
   key: string,

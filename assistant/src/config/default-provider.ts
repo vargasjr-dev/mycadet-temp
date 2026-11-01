@@ -22,8 +22,6 @@ import {
   type LLMProvider,
 } from "./schemas/llm.js";
 
-export { resolveDefaultConnectionName } from "./default-provider-resolution.js";
-
 /**
  * The blob as raw config carries it, for the re-save: only the selection
  * fields are typed, every other stored field passes through untouched.

@@ -8,9 +8,9 @@ import {
   getUpdateState,
   installUpdate,
   onUpdateState,
-  type UpdateState,
-  type UpdateStatus,
 } from "@/runtime/auto-update";
+import type { UpdateState } from "@mycadet/ipc-contract";
+import type { UpdateStatus } from "@mycadet/ipc-contract";
 
 const TOAST_ID = "app-update";
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
-import type { InteractiveUiResult } from "../runtime/interactive-ui.js";
+import { InteractiveUiResult } from "../runtime/interactive-ui-types.js";
 
 let broadcastImpl: (msg: AssistantEvent) => void = () => {};
 setBroadcastOverrideForTesting((msg: AssistantEvent) => broadcastImpl(msg));

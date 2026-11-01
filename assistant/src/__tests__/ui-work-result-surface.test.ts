@@ -1,18 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
+import { SurfaceType } from "../api/surfaces.js";
+import { WorkResultSurfaceData } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type {
-  SurfaceType,
-  UiSurfaceShow,
-  UiSurfaceShowWorkResult,
-  WorkResultSurfaceData,
-} from "../daemon/message-protocol.js";
-import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-protocol.js";
+import { UiSurfaceShow } from "../daemon/message-types/surfaces.js";
+import { UiSurfaceShowWorkResult } from "../daemon/message-types/surfaces.js";
+import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-types/surfaces.js";
 import { uiShowTool } from "../tools/ui-surface/definitions.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 

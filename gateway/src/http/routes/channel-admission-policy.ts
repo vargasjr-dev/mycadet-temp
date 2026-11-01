@@ -18,9 +18,9 @@ import {
   ADMISSION_POLICY_VALUES,
   AdmissionPolicyStore,
   isExemptChannelType,
-  type AdmissionPolicy,
   type AdmissionPolicyRow,
 } from "../../db/admission-policy-store.js";
+import type { AdmissionPolicy } from "@mycadet/gateway-client";
 import { invalidateAdmissionPolicyCache } from "../../risk/admission-policy-cache.js";
 import {
   CHANNEL_IDS,

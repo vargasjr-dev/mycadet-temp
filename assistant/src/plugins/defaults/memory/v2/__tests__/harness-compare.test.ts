@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import {
   getDb,
   getMemorySqlite,

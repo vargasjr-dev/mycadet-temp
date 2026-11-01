@@ -1513,5 +1513,3 @@ export function backfillAppConversationIds(): void {
     log.error({ err }, "Failed to backfill app conversationIds");
   }
 }
-
-export type { EditEngineResult };

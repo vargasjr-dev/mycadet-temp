@@ -37,6 +37,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { FeedItem } from "../api/responses/home.js";
+import type { FeedItemStatus } from "../api/responses/home.js";
+import type { FeedItemUrgency } from "../api/responses/home.js";
 import {
   type FeedItemGuardianRequest,
   isPendingGuardianFeedItem,
@@ -44,13 +47,7 @@ import {
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import {
-  type FeedItem,
-  type FeedItemStatus,
-  type FeedItemUrgency,
-  type HomeFeedFile,
-  parseFeedFile,
-} from "./feed-types.js";
+import { type HomeFeedFile, parseFeedFile } from "./feed-types.js";
 
 const log = getLogger("home-feed-writer");
 

@@ -16,12 +16,12 @@
  * read it back.
  */
 
+import type { GuardianRequestDeliveryWire } from "@mycadet/gateway-client";
 import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import {
   createGuardianRequestDelivery,
   getGuardianRequestOrNull,
-  type GuardianRequestDeliveryWire,
   updateGuardianRequestDelivery,
 } from "../channels/gateway-guardian-requests.js";
 import { getLogger } from "../util/logger.js";

@@ -25,13 +25,14 @@ const broadcastMessageMock = mock(
 setBroadcastOverrideForTesting(broadcastMessageMock);
 
 import { HookEventSchema } from "../api/events/hook-event.js";
-import type { UserPromptSubmitContext } from "../plugin-api/types.js";
+import { UserPromptSubmitContext } from "../hooks/types.js";
+import { HookFunction } from "../plugin-api/types.js";
 import { runHook } from "../plugins/pipeline.js";
 import {
   registerPlugin,
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
-import type { HookFunction, Plugin } from "../plugins/types.js";
+import type { Plugin } from "../plugins/types.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 
 // Point the workspace at an empty temp dir so the user-land hook loader finds

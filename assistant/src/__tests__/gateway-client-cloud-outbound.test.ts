@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
-  ChannelDeliveryError,
-  deliverChannelReply,
-} from "../runtime/gateway-client.js";
+import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
+
+import { deliverChannelReply } from "../runtime/gateway-client.js";
 
 type FetchCall = {
   url: string;

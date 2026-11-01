@@ -18,11 +18,11 @@ import {
   withChatInfoStoryClient,
 } from "@/domains/chat/components/chat-info-story-fixtures";
 import {
-  CHAT_INFO_BODY_WIDTH_PX,
   makeAppSummary,
   makeChatInfoQueryClient,
   seedChatInfoConversation,
 } from "@/domains/chat/components/chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 
 import { ChatInfoAppTile } from "./chat-info-app-tile";
 

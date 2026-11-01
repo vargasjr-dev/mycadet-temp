@@ -25,7 +25,7 @@ import {
 
 import type { QuestionResponseEntry } from "@/domains/chat/api/event-types";
 import { QuestionPromptCard } from "@/domains/chat/components/question-prompt-card";
-import type { QuestionEntry } from "@/types/interaction-ui-types";
+import { QuestionEntry } from "@mycadet/assistant-api";
 
 const ENTRY: QuestionEntry = {
   id: "q1",

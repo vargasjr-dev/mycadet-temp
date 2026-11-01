@@ -21,20 +21,20 @@ import {
   resetConversationNoticesForTests,
 } from "../daemon/conversation-notices.js";
 import { desktopAutomationLease } from "../desktop/desktop-automation-lease.js";
+import { UserPromptSubmitContext } from "../hooks/types.js";
 import type { EmitSignalParams } from "../notifications/emit-signal.js";
 import type { AttentionState } from "../persistence/conversation-attention-store.js";
 import type { MessageRow } from "../persistence/conversation-crud.js";
 import { getConversationDirName } from "../persistence/conversation-directories.js";
-import type { UserPromptSubmitContext } from "../plugin-api/types.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import { registerPlugin } from "../plugins/registry.js";
 import type {
   Message,
   Provider,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   resolveUsageAttribution,
   type UsageAttributionInput,

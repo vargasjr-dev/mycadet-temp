@@ -4,7 +4,6 @@ import { type AbortReason, isAbortReason } from "../../util/abort-reasons.js";
 // may import from, so host tools and plugin tools share a single
 // implementation. Re-exported here because this is where host tools look for
 // the cancellation vocabulary.
-export { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 
 /**
  * Extract the tagged {@link AbortReason} from a thrown value: the value

@@ -12,8 +12,9 @@ import {
   type SourceMetadata,
   type TrustVerdict,
 } from "@mycadet/gateway-client";
+import { VerificationSessionWire } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { VerificationSessionWire } from "../../../channels/gateway-verification-sessions.js";
 import {
   createOutboundSessionConditional,
   findActiveSession,
@@ -21,7 +22,6 @@ import {
   resolveBootstrapToken,
 } from "../../../channels/gateway-verification-sessions.js";
 import { audienceForReader } from "../../../channels/message-audience.js";
-import type { ChannelId } from "../../../channels/types.js";
 import {
   channelStatusToMemberStatus,
   isKeptOutStatus,

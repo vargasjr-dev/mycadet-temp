@@ -1,10 +1,11 @@
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { consumeGrantForInvocation } from "../approvals/approval-primitive.js";
 import {
   getGuardianRequestOrNull,
   updateGuardianRequest,
 } from "../channels/gateway-guardian-requests.js";
 import { isToolAllowedInChannel } from "../channels/permission-profiles.js";
-import type { ChannelId } from "../channels/types.js";
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled } from "../config/memory-v3-gate.js";
 import type { AutoApproveThreshold } from "../permissions/approval-policy.js";

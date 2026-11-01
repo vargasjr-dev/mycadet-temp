@@ -7,7 +7,7 @@ import {
   downCreateConversationModeSessions,
   migrateCreateConversationModeSessions,
 } from "../persistence/migrations/381-create-conversation-mode-sessions.js";
-import * as schema from "../persistence/schema.js";
+import * as schema from "../persistence/schema/index.js";
 
 function createPreMigrationDb() {
   const sqlite = new Database(":memory:");

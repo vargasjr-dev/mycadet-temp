@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { TrustClass } from "./actor-trust-resolver.js";
+import { TrustClass } from "@mycadet/gateway-client";
+
 import { type CapabilitySet, resolveCapabilities } from "./capabilities.js";
 
 /**

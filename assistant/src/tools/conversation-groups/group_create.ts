@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { createGroup, listGroups } from "../../persistence/group-crud.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { publishConversationListChanged } from "../../runtime/sync/resource-sync-events.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

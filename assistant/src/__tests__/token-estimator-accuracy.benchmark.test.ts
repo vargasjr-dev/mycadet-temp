@@ -12,7 +12,8 @@ import {
   estimatePromptTokens,
   estimateToolsTokens,
 } from "../context/token-estimator.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = "claude-sonnet-4-20250514";

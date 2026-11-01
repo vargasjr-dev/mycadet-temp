@@ -3,6 +3,7 @@ import { v4 as uuid, v7 as uuidv7 } from "uuid";
 import { z } from "zod";
 
 import { SurfaceActionSchema } from "../api/events/ui-surface-show.js";
+import { SurfaceAction } from "../api/events/ui-surface-show.js";
 import type { AssistantEvent } from "../api/index.js";
 import {
   CardSurfaceDataSchema,
@@ -18,6 +19,17 @@ import {
   safeParseSurfaceData,
   SurfaceTypeSchema,
 } from "../api/surfaces.js";
+import { AnySurfaceData } from "../api/surfaces.js";
+import { CardSurfaceData } from "../api/surfaces.js";
+import { ChoiceSurfaceData } from "../api/surfaces.js";
+import { ConfirmationSurfaceData } from "../api/surfaces.js";
+import { DynamicPagePreview } from "../api/surfaces.js";
+import { DynamicPageSurfaceData } from "../api/surfaces.js";
+import { FormSurfaceData } from "../api/surfaces.js";
+import { SurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
+import { TableColumn } from "../api/surfaces.js";
+import { TableRow } from "../api/surfaces.js";
 import {
   getApp,
   getAppDirPath,
@@ -49,6 +61,7 @@ import { computerUseTarget } from "../tools/computer-use/target.js";
 import type { ToolExecutionResult } from "../tools/types.js";
 import { getLogger } from "../util/logger.js";
 import { isPlainObject } from "../util/object.js";
+import { safeStringSlice } from "../util/unicode.js";
 import type { Conversation } from "./conversation.js";
 import { buildConversationErrorMessage } from "./conversation-error.js";
 import { launchConversation } from "./conversation-launch.js";
@@ -61,39 +74,15 @@ import {
 } from "./conversation-surface-state.js";
 import { HostCuProxy } from "./host-cu-proxy.js";
 import { resolveHostCuTarget } from "./host-cu-target.js";
-import type {
-  AnySurfaceData,
-  CardSurfaceData,
-  ChoiceSurfaceData,
-  ConfirmationSurfaceData,
-  DynamicPagePreview,
-  DynamicPageSurfaceData,
-  FormSurfaceData,
-  SurfaceAction,
-  SurfaceData,
-  SurfaceType,
-  TableColumn,
-  TableRow,
-  UiSurfaceShow,
-} from "./message-protocol.js";
-import { INTERACTIVE_SURFACE_TYPES } from "./message-protocol.js";
 import { isRowVisibleToUntrustedActor } from "./message-provenance.js";
+import type { UserMessageAttachment } from "./message-types/shared.js";
+import { UiSurfaceShow } from "./message-types/surfaces.js";
+import { INTERACTIVE_SURFACE_TYPES } from "./message-types/surfaces.js";
 import { bestEffortModeSessionTracking } from "./mode-session-tracking.js";
 import type { TrustContext } from "./trust-context-types.js";
 import { restingTrust } from "./trust-context-types.js";
 import { turnActorPrincipalId } from "./turn-actor.js";
 import { virtualDesktopContext } from "./virtual-desktop-context.js";
-export {
-  buildSurfaceShowPair,
-  type CurrentTurnSurface,
-  parseSurfaceShowPair,
-  restoreSurfaceStateEntry,
-  type StoredSurfaceAction,
-  type SurfaceShowPair,
-  type SurfaceStateEntry,
-} from "./conversation-surface-state.js";
-import { safeStringSlice } from "../util/unicode.js";
-import type { UserMessageAttachment } from "./message-types/shared.js";
 
 /**
  * Prefix of the synthetic user-message text this module writes when a surface

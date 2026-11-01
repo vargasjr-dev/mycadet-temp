@@ -5,7 +5,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getWorkspaceConfigPath } from "../../util/layout.js";
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateRewriteBalancedEconomyProfilePins } from "./296-rewrite-balanced-economy-profile-pins.js";
 
 function writeWorkspaceConfig(config: Record<string, unknown>): void {

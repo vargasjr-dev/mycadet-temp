@@ -82,8 +82,9 @@ mock.module("../channels/gateway-guardian-requests.js", () => ({
   },
 }));
 
+import { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import { notifyExpiredGuardianRequest } from "../approvals/guardian-expiry-notifier.js";
-import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { runGuardianExpirySweep } from "../runtime/routes/guardian-expiry-sweep.js";

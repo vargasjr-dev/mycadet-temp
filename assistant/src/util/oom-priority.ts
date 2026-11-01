@@ -19,10 +19,6 @@
 
 import { writeFileSync } from "node:fs";
 
-import { CHILD_OOM_SCORE_ADJ } from "@mycadet/environments/shell";
-
-export { CHILD_OOM_SCORE_ADJ };
-
 /** Strongly avoided but still killable as a last resort, unlike -1000. */
 export const DAEMON_OOM_SCORE_ADJ = -700;
 /** The monitor records the kill, so it outlives everything but the daemon. */

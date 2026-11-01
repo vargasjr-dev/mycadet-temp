@@ -30,10 +30,8 @@ import {
   deleteConversation,
   updateConversationTitle,
 } from "../persistence/conversation-crud.js";
-import {
-  getConversationDirPath,
-  syncMessageToDisk,
-} from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
+import { syncMessageToDisk } from "../persistence/conversation-disk-view.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 await initializeDb();

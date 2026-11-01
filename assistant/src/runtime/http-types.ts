@@ -1,30 +1,25 @@
 /**
  * Shared types for the runtime HTTP server and its route handlers.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
+import type { AssistantEvent } from "../api/index.js";
 import type {
   ConversationMessage,
   ConversationMessageAttachment,
 } from "../api/responses/conversation-message.js";
-import type { ChannelId, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type {
   ConversationCreateOptions,
   SlackInboundMessageMetadata,
 } from "../daemon/handlers/shared.js";
+import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { SupportedLocale } from "../i18n/index.js";
-
 // Re-export so route modules (background-dispatch, etc.) can pull the type
 // from the runtime barrel without reaching into daemon internals.
-export type { SlackInboundMessageMetadata };
-import type { AssistantEvent } from "../api/index.js";
 import type { AssistantEventHub } from "./assistant-event-hub.js";
-
-export type {
-  ApprovalCopyGenerator,
-  ComposeApprovalMessageGenerativeOptions,
-} from "./message-composer-types.js";
-import type { TrustContext } from "../daemon/trust-context-types.js";
 
 // ---------------------------------------------------------------------------
 // Approval conversation flow types

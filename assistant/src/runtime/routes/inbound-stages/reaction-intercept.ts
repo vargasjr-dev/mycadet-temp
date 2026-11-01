@@ -28,9 +28,10 @@ import {
   type InboundReactionPayload,
   resolveInboundEventKind,
 } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { pickReactionEmojiFields } from "@mycadet/service-contracts/reactions";
 
-import type { ChannelId, InterfaceId } from "../../../channels/types.js";
+import type { InterfaceId } from "../../../channels/types.js";
 import { createApprovalCopyGenerator } from "../../../daemon/approval-generators.js";
 import { findConversation } from "../../../daemon/conversation-registry.js";
 import { getDiskPressureStatus } from "../../../daemon/disk-pressure-guard.js";

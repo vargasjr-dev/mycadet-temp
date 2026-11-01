@@ -28,6 +28,7 @@
 
 import { describe, expect, test } from "bun:test";
 
+import type { CesTransport } from "@mycadet/ces-client/rpc-client";
 import {
   CES_PROTOCOL_VERSION,
   CesRpcMethod,
@@ -35,10 +36,7 @@ import {
   HandshakeRequestSchema,
 } from "@mycadet/service-contracts/credential-rpc";
 
-import {
-  type CesTransport,
-  createCesClient,
-} from "../credential-execution/client.js";
+import { createCesClient } from "../credential-execution/client.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

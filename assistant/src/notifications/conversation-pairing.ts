@@ -29,9 +29,11 @@
  * 4. A fresh background conversation, bound under that namespace.
  */
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import type { ConversationStrategy } from "../channels/config.js";
 import { getConversationStrategy } from "../channels/config.js";
-import { type ChannelId, isChannelId } from "../channels/types.js";
 import {
   addMessage,
   createConversation,

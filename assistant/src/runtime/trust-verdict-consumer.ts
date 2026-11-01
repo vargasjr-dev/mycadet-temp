@@ -11,8 +11,8 @@
 
 import type { TrustVerdict } from "@mycadet/gateway-client";
 import { isTrustClass } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { ChannelId } from "../channels/types.js";
 import { channelStatusToMemberStatus } from "../contacts/member-status.js";
 import type {
   ChannelPolicy,

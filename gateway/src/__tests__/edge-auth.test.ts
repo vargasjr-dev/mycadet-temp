@@ -37,7 +37,9 @@ mock.module("../credential-reader.js", () => ({
   ...actualCredentialReader,
   readCredential: (key: string) => mockReadCredential(key),
 }));
-mock.module("../cloud-user-id.js", () => ({
+const realCloudIdentity = { ...(await import("../cloud-identity.js")) };
+mock.module("../cloud-identity.js", () => ({
+  ...realCloudIdentity,
   readStoredCloudUserId: async () => {
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };

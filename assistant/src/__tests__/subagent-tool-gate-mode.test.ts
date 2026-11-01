@@ -20,8 +20,9 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { SkillProjectionCache } from "../daemon/conversation-skill-tools.js";
 import type { PermissionPrompter } from "../permissions/prompter.js";
 import type { SecretPrompter } from "../permissions/secret-prompter.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import type { ToolExecutor } from "../tools/executor.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 // ---------------------------------------------------------------------------
@@ -103,8 +104,8 @@ import {
   createToolExecutor,
   createWireToolSurfaceRecorder,
   isRefusedInReadOnlyPass,
-  type SubagentToolStats,
 } from "../daemon/conversation-tool-setup.js";
+import type { SubagentToolStats } from "../daemon/tool-setup-types.js";
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,

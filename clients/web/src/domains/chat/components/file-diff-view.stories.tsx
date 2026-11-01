@@ -37,7 +37,7 @@ export const Mixed: Story = {
     oldText:
       'import { usePointerCoarse } from "@/utils/pointer";\n\nconst coarse = usePointerCoarse();\nif (coarse) {\n  return <Text />;\n}\n',
     newText:
-      'import { useHoverCapable } from "@/hooks/use-hover-affordance";\n\nconst hoverCapable = useHoverCapable();\nif (!hoverCapable) {\n  return <Text />;\n}\n',
+      'import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability";\n\nconst hoverCapable = useHoverCapable();\nif (!hoverCapable) {\n  return <Text />;\n}\n',
   },
 };
 

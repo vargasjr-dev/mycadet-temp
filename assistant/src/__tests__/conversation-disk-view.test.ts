@@ -25,10 +25,10 @@ import {
   relinkAttachments,
   updateMessageContent,
 } from "../persistence/conversation-crud.js";
+import { getConversationDirName } from "../persistence/conversation-directories.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
 import {
   flattenContentBlocks,
-  getConversationDirName,
-  getConversationDirPath,
   initConversationDir,
   rebuildConversationDiskViewFromDbState,
   removeConversationDir,

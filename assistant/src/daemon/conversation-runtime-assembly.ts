@@ -9,6 +9,8 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 
 import { TrustClassSchema } from "@mycadet/gateway-client";
+import { TrustClass } from "@mycadet/gateway-client";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
 
 import {
   getApp,
@@ -17,7 +19,7 @@ import {
   resolveAppDir,
   resolveAppSource,
 } from "../apps/app-store.js";
-import { type ChannelId, parseInterfaceId } from "../channels/types.js";
+import { parseInterfaceId } from "../channels/types.js";
 import { resolveDefaultProfileForProvider } from "../config/default-profile-catalog.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { getConfig } from "../config/loader.js";
@@ -87,7 +89,6 @@ import type {
   TurnContext,
 } from "../plugins/types.js";
 import type { ContentBlock, Message } from "../providers/types.js";
-import type { TrustClass } from "../runtime/actor-trust-resolver.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
 import type { SubagentState } from "../subagent/types.js";
 import { TERMINAL_STATUSES } from "../subagent/types.js";
@@ -102,7 +103,7 @@ import {
   resolveSightKeepLatestFrames,
   stripAgedSightFrames,
 } from "./conversation-sight-frames.js";
-import type { SurfaceShowPair } from "./conversation-surfaces.js";
+import { SurfaceShowPair } from "./conversation-surface-state.js";
 import { canonicalizeTimeZone, formatTurnTimestamp } from "./date-context.js";
 import type {} from "./message-protocol.js";
 import { filterMessagesForUntrustedActor } from "./message-provenance.js";
@@ -111,7 +112,6 @@ import { timeLatencySubSpan } from "./turn-latency-sub-spans.js";
 
 // The compaction strip lives in the compaction layer (`context/`) so the agent
 // loop can own it; re-exported here for this module's existing consumers.
-export { stripInjectionsForCompaction } from "../context/strip-injections.js";
 
 const log = getLogger("conversation-runtime-assembly");
 

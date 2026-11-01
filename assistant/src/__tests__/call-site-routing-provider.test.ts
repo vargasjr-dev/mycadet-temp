@@ -18,7 +18,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { CallSiteRoutingProvider } from "../providers/call-site-routing.js";
-import { ConnectionResolutionError } from "../providers/connection-resolution.js";
+import { ConnectionResolutionError } from "../providers/routing-identity.js";
 import type {
   Message,
   Provider,

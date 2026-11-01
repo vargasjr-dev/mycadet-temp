@@ -16,8 +16,8 @@ import {
   fetchChannelHistorySince,
   fetchThreadRepliesSince,
   runWithConcurrency,
-  type SlackHistoryMessage,
 } from "./slack-web.js";
+import type { SlackHistoryMessage } from "./message-schemas.js";
 import { isSlackDmChannel, isSlackMpimChannel } from "./channel.js";
 import type { ChannelConnectionHealth } from "../channels/types.js";
 import { parseSlackEnvelope } from "./envelope.js";

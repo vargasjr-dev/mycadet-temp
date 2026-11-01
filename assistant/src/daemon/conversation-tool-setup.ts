@@ -8,10 +8,7 @@
 
 import type { AssistantEvent } from "../api/index.js";
 import { shouldUseVirtualDesktopBrowser } from "../browser/virtual-desktop-target.js";
-import {
-  type HostProxyCapability,
-  supportsHostProxy,
-} from "../channels/types.js";
+import { supportsHostProxy } from "../channels/types.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled } from "../config/memory-v3-gate.js";
@@ -27,7 +24,7 @@ import {
 import { getBindingByConversation } from "../persistence/external-conversation-store.js";
 import { getAllDefaultPluginNames } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import { registerConversationSender } from "../tools/browser/browser-screencast.js";
 import { supportsClientOsForSkillTool } from "../tools/client-os.js";
 import type { ToolExecutor } from "../tools/executor.js";
@@ -52,6 +49,7 @@ import type {
   ProxyApprovalCallback,
   ProxyApprovalRequest,
 } from "../tools/tool-types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   isDiskPressureCleanupToolName,
   type OwnerKind,
@@ -59,6 +57,7 @@ import {
   type ToolExecutionResult,
 } from "../tools/types.js";
 import { loadWorkspaceTools } from "../tools/workspace-tools/loader.js";
+import type { HostProxyCapability } from "../types/host-capabilities.js";
 import {
   resolveUsageAttribution,
   type UsageAttributionSnapshot,
@@ -71,10 +70,8 @@ import {
 import type { Conversation } from "./conversation.js";
 import { resolveTurnClientOs } from "./conversation-client-surface.js";
 import { projectSkillTools } from "./conversation-skill-tools.js";
-import {
-  restoreSurfaceStateEntry,
-  surfaceProxyResolver,
-} from "./conversation-surfaces.js";
+import { restoreSurfaceStateEntry } from "./conversation-surface-state.js";
+import { surfaceProxyResolver } from "./conversation-surfaces.js";
 import {
   isDoordashCommand,
   markDoordashStepInProgress,
@@ -86,11 +83,6 @@ import { virtualDesktopContext } from "./virtual-desktop-context.js";
 const log = getLogger("conversation-tool-setup");
 
 import type { SubagentToolStats } from "./tool-setup-types.js";
-export type {
-  SubagentToolGateMode,
-  SubagentToolStats,
-  WakeToolContextPin,
-} from "./tool-setup-types.js";
 
 // ── resolveConversationAttribution ───────────────────────────────────
 

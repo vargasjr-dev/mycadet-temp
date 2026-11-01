@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { FeedItem } from "../../home/feed-types.js";
+import { FeedItem } from "../../api/responses/home.js";
 import type { NotificationSignal } from "../signal.js";
 import type {
   NotificationDecision,
@@ -52,11 +52,14 @@ mock.module("../../runtime/sync/resource-sync-events.js", () => ({
 // Both factories spread the actual module: the module under test reaches
 // feed-writer through `guardian-feed-projection` too, and the real
 // feed-writer needs `parseFeedFile` from feed-types, so a partial factory
-// would fail at import time on any export it omitted.
-const actualFeedTypes = await import("../../home/feed-types.js");
-mock.module("../../home/feed-types.js", () => ({
-  ...actualFeedTypes,
-  feedItemSchema: {
+// would fail at import time on any export it omitted. The schema rejection
+// seam sits on `api/responses/home.js` — the module the code under test now
+// imports its schemas from.
+const actualHome = await import("../../api/responses/home.js");
+mock.module("../../api/responses/home.js", () => ({
+  ...actualHome,
+  FeedItemSchema: {
+    ...actualHome.FeedItemSchema,
     parse: (item: unknown) => {
       if (feedItemSchemaShouldReject) {
         throw new Error("simulated schema rejection");

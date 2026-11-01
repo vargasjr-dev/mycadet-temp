@@ -2,7 +2,7 @@
 // Memory substrate — Config tuning resolver
 // ---------------------------------------------------------------------------
 
-import type { MemoryConfig } from "../../../../config/types.js";
+import { MemoryConfig } from "../../../../config/schemas/memory.js";
 
 /**
  * Effective substrate tunables after namespace resolution. Key names match

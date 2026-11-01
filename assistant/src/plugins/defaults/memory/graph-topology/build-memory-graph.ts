@@ -16,7 +16,7 @@
  */
 
 import { isV3TierActive } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getWorkspaceDir } from "../paths.js";
 import { isSkillSlug } from "../substrate/capability-slugs.js";
 import { getPageIndex, type PageIndexEntry } from "../substrate/page-index.js";

@@ -18,7 +18,6 @@ export const ACP_CLAUDE_OAUTH_MISSING_CODE = "acp_claude_oauth_missing";
  * so there is no failed tool call for the missing-token machinery to key on;
  * the affordance anchors to the run's spawning tool call instead.
  */
-export { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 
 /**
  * Hidden continuation prompt sent on the user's behalf once the inline Connect

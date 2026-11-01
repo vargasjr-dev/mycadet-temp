@@ -9,7 +9,7 @@
  * path.
  */
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import type { EverInjectedEntry } from "../../substrate/types.js";
 import type { RouterTurnPair } from "../router.js";
 import type { RetrievalCost } from "./harness-types.js";

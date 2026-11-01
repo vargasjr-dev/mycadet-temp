@@ -23,7 +23,7 @@
  * `trust-context-resolver.ts`).
  */
 
-import type { TrustClass } from "./actor-trust-resolver.js";
+import { TrustClass } from "@mycadet/gateway-client";
 
 /**
  * Outcome when an actor invokes a tool that requires guardian approval.

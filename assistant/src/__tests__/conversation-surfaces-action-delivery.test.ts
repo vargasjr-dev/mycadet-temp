@@ -18,9 +18,10 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) =>
 const { createSurfaceMutex, handleSurfaceAction, surfaceProxyResolver } =
   await import("../daemon/conversation-surfaces.js");
 
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
-import type { SurfaceType, UiSurfaceShow } from "../daemon/message-protocol.js";
 import type { UserMessageAttachment } from "../daemon/message-types/shared.js";
+import { UiSurfaceShow } from "../daemon/message-types/surfaces.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 

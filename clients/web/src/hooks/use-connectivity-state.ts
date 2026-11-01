@@ -5,10 +5,8 @@ import {
   getConnectivityState,
   retryConnectivity,
   subscribeToConnectivity,
-  type ConnectivityState,
 } from "@/runtime/connectivity";
-
-export type { ConnectivityState };
+import type { ConnectivityState } from "@mycadet/ipc-contract";
 
 const RECOVERY_DEBOUNCE_MS = 2_000;
 

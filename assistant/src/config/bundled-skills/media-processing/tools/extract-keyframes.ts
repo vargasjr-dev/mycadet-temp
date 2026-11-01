@@ -4,10 +4,8 @@ import {
   getKeyframesForAsset,
   getMediaAssetById,
 } from "../../../../persistence/media-store.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,
@@ -16,8 +14,6 @@ import {
   preprocessForAsset,
   type PreprocessOptions,
 } from "../services/preprocess.js";
-
-export { preprocessForAsset } from "../services/preprocess.js";
 
 export async function run(
   input: Record<string, unknown>,

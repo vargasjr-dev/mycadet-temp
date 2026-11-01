@@ -1,7 +1,7 @@
 import { z } from "zod";
 
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { getSubagentManager } from "../../subagent/index.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

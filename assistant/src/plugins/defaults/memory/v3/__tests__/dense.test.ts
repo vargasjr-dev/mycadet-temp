@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 
 // Keep the real exports (e.g. getQdrantClient) so this partial mock is harmless
 // when section-dense-store's transitive imports pull them in; only

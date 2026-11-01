@@ -25,7 +25,8 @@
  * nothing a retry could ever deliver.
  */
 
-import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
+import { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../runtime/assistant-scope.js";
 import { deliverChannelReply } from "../runtime/gateway-client.js";
 import { introductionMode } from "../runtime/introduction-policy.js";

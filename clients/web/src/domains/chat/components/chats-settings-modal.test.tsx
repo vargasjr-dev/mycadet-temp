@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import {
   ChatsSettingsModal,
   type ChatsSettingsModalProps,
-  type ChatsSettingsValues,
 } from "./chats-settings-modal";
+import type { ChatsSettingsValues } from "./chats-settings-form";
 
 const DEFAULTS: ChatsSettingsValues = {
   newMessageEnabled: true,
@@ -207,5 +207,4 @@ describe("ChatsSettingsModal", () => {
       button.remove();
     }
   });
-
 });

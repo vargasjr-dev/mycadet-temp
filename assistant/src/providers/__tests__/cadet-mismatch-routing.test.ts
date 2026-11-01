@@ -54,11 +54,9 @@ mock.module("../connection-model-compat.js", () => ({
   describeSubscriptionModelIncompatibility: () => null,
 }));
 
-import {
-  ConnectionResolutionError,
-  tryResolveProviderForConnectionName,
-} from "../connection-resolution.js";
+import { tryResolveProviderForConnectionName } from "../connection-resolution.js";
 import type { ProvidersConfig } from "../registry.js";
+import { ConnectionResolutionError } from "../routing-identity.js";
 
 const config = {} as unknown as ProvidersConfig;
 const cadetConn: Connection = {

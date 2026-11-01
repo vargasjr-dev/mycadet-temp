@@ -13,8 +13,9 @@
  * context management.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type { AssistantEvent } from "../api/index.js";
-import type { ChannelId } from "../channels/types.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import type { UserMessageAttachment } from "../daemon/message-types/shared.js";
 import type { ContentBlock, MediaSource } from "../providers/types.js";

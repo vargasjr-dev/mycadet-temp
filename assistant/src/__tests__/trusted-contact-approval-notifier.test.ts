@@ -121,7 +121,8 @@ mock.module("../prompts/user-reference.js", () => ({
 }));
 
 // Import module under test AFTER mocks are set up
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   getGuardianDelivery,
   guardianForChannel,

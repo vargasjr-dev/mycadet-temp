@@ -1,7 +1,7 @@
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { estimateTextTokens } from "../../context/token-estimator.js";
 import { getMemoryDb } from "../../persistence/db-connection.js";
 import { asString, truncate } from "../../persistence/job-utils.js";

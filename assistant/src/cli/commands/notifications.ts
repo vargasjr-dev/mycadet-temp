@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import type { FeedItem } from "../../home/feed-types.js";
+import type { FeedItem } from "../../api/responses/home.js";
 import {
   cliIpcCall,
   exitCodeFromIpcResult,

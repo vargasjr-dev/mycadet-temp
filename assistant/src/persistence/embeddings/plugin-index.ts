@@ -30,7 +30,7 @@
 import { randomUUID } from "node:crypto";
 
 import { getConfig } from "../../config/loader.js";
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { BackendUnavailableError } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
 import { embedWithRetry } from "./embed.js";

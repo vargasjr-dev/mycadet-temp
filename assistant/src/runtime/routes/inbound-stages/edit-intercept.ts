@@ -15,7 +15,8 @@
  * resolves that message before it records anything, and an edit with no
  * resolvable target is dropped.
  */
-import type { ChannelId } from "../../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { findConversation } from "../../../daemon/conversation-registry.js";
 import {
   mergeSlackMetadata,

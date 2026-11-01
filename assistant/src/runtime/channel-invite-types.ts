@@ -4,8 +4,7 @@
  */
 
 import type { CommandIntent, SourceMetadata } from "@mycadet/gateway-client";
-
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 export interface InviteShareLink {
   /** The full URL the recipient can open to redeem the invite. */

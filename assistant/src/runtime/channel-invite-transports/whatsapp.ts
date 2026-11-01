@@ -8,7 +8,8 @@
  * `undefined` (triggering generic instructions) when not configured.
  */
 
-import type { ChannelId } from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { getConfig } from "../../config/loader.js";
 import type { ChannelInviteAdapter } from "../channel-invite-types.js";
 

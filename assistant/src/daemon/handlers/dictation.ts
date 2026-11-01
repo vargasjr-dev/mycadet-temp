@@ -1,4 +1,4 @@
-import type { DictationRequest } from "../message-protocol.js";
+import { DictationRequest } from "../message-types/diagnostics.js";
 
 // Action verbs for fast heuristic fallback (used when LLM classifier is unavailable)
 const ACTION_VERBS = [

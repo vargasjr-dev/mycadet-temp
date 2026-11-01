@@ -5,7 +5,7 @@ import {
   type TelegramNormalization,
 } from "../telegram/normalize.js";
 import { verifyWebhookSecret } from "../telegram/verify.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 
 /** The event a normalization produced, failing the test if it dropped. */
 function eventOf(result: TelegramNormalization): GatewayInboundEvent {

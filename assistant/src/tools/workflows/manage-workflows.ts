@@ -17,10 +17,11 @@ import { z } from "zod";
 
 import { getConversationProfilesForProvider } from "../../config/default-profile-catalog.js";
 import { getConfig } from "../../config/loader.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { callerOwnsWorkflowRun } from "../../workflows/capabilities.js";
 import type { WorkflowRun } from "../../workflows/journal-store.js";
 import { getWorkflowRunManager } from "../../workflows/run-manager.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

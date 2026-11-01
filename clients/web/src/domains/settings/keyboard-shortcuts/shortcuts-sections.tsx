@@ -1,7 +1,7 @@
 import { RotateCcw, X } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 
-import { type ResolvedHotkey } from "@/runtime/hotkeys";
+import type { ResolvedHotkey } from "@mycadet/ipc-contract";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 import { Card } from "@mycadet/design-library/components/card";

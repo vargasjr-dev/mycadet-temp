@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
-import type { HotkeyEvent } from "@/runtime/hotkey";
+import { HotkeyEvent } from "@mycadet/ipc-contract";
 
 let chordSupported = false;
 let chordRegistrationSucceeds = true;

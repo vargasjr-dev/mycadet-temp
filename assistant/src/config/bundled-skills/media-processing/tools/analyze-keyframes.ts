@@ -2,11 +2,9 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { getMediaAssetById } from "../../../../persistence/media-store.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { getProviderKeyAsync } from "../../../../security/secure-keys.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

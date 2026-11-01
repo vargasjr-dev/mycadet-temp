@@ -11,13 +11,11 @@
  * Guardian decisions additionally verify the actor is the bound guardian
  * via the `requireGuardian` route flag.
  */
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import { GuardianActionDecisionRequestSchema } from "../../api/requests/guardian-actions.js";
-import {
-  type GuardianRequestWire,
-  listPendingRequestsByScope,
-} from "../../channels/gateway-guardian-requests.js";
+import { listPendingRequestsByScope } from "../../channels/gateway-guardian-requests.js";
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { buildAccessRequestInviteDirective } from "../../notifications/access-request-copy.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";

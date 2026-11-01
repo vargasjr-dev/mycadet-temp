@@ -74,25 +74,23 @@ mock.module(
 );
 
 import type { TrustClass, TrustVerdict } from "@mycadet/gateway-client";
+import { isChannelId } from "@mycadet/service-contracts/channels";
 
-import { isChannelId } from "../../channels/types.js";
 import { findContactChannel } from "../../contacts/contact-store.js";
 import type {
   ApprovalConversationGenerator,
-  ApprovalCopyGenerator,
   MessageProcessor,
 } from "../../runtime/http-types.js";
 import { getCachedMemberAcl } from "../../runtime/member-verdict-cache.js";
+import { ApprovalCopyGenerator } from "../../runtime/message-composer-types.js";
 import {
   handleChannelDeliveryAck as _handleChannelDeliveryAck,
   handleListDeadLetters as _handleListDeadLetters,
   handleReplayDeadLetters as _handleReplayDeadLetters,
 } from "../../runtime/routes/channel-delivery-routes.js";
-import {
-  handleChannelInbound as _handleChannelInbound,
-  handleDeleteConversation as _handleDeleteConversation,
-} from "../../runtime/routes/channel-inbound-routes.js";
 import { RouteError } from "../../runtime/routes/errors.js";
+import { handleDeleteConversation as _handleDeleteConversation } from "../../runtime/routes/inbound-conversation.js";
+import { handleChannelInbound as _handleChannelInbound } from "../../runtime/routes/inbound-message-handler.js";
 import { deriveGuardianForChannel } from "./derive-guardian-delivery.js";
 
 /**
@@ -231,8 +229,6 @@ export function resolveLocalTrustVerdict(input: {
 
   return verdict;
 }
-
-export { seedContactChannel } from "./seed-contact-channel.js";
 
 // ---------------------------------------------------------------------------
 // handleDeleteConversation adapter

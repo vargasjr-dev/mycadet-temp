@@ -29,7 +29,6 @@
     "packages/electron-desktop",
     "packages/electron-utils",
     "packages/environments",
-    "packages/eslint-plugin",
     "packages/gateway-client",
     "packages/ipc-contract",
     "packages/ipc-server-utils",

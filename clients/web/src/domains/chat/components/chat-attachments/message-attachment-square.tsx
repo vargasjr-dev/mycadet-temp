@@ -10,7 +10,7 @@ import {
   formatAttachmentSize,
   middleTruncate,
 } from "@/utils/attachment-utils";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import { useIsNativePlatform } from "@/runtime/native-auth";
 import { cn } from "@/utils/misc";
 

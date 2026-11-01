@@ -1,23 +1,22 @@
 /**
  * Approval prompt delivery: rich UI (buttons) with plain-text fallback.
  */
-import type { ChannelId } from "../../channels/types.js";
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { channelSupportsInlineOptions } from "../../daemon/channel-ui-capability.js";
 import { recordApprovalCardDelivery } from "../../notifications/guardian-delivery-recorder.js";
 import { redactSecrets } from "../../security/secret-scanner.js";
 import { getLogger } from "../../util/logger.js";
-import type { ApprovalMessageContext } from "../approval-message-composer.js";
 import { composeApprovalMessageGenerative } from "../approval-message-composer.js";
-import type {
-  ApprovalUIMetadata,
-  ChannelApprovalPrompt,
-} from "../channel-approval-types.js";
+import type { ChannelApprovalPrompt } from "../channel-approval-types.js";
 import {
   deliverApprovalPrompt,
   deliverChannelReply,
 } from "../gateway-client.js";
 import { buildActionLegend } from "../guardian-decision-types.js";
-import type { ApprovalCopyGenerator } from "../http-types.js";
+import { ApprovalMessageContext } from "../message-composer-types.js";
+import { ApprovalCopyGenerator } from "../message-composer-types.js";
 import { requiredDecisionKeywords } from "./channel-route-shared.js";
 
 const log = getLogger("runtime-http");

@@ -12,6 +12,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { OpenPanelEvent } from "../api/events/open-panel.js";
 import type { AssistantEvent } from "../api/index.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
@@ -19,7 +20,6 @@ import {
   openChannelSetupPanel,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeContext(

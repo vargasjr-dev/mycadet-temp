@@ -58,8 +58,6 @@ import {
 import type { ToolDetailPayload } from "@/stores/viewer-store";
 import { readToolInputString } from "@/domains/chat/utils/tool-input";
 
-export type { ToolCallCardData, ToolCallCardStep };
-
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -754,7 +752,9 @@ export function useSubagentCardData(
   subagentId: string,
 ): ToolCallCardData | null {
   const entry = useSubagentStore((state) => state.byId[subagentId]);
-  const assistantId = useResolvedAssistantStore((s) => s.assistant?.assistantId ?? null);
+  const assistantId = useResolvedAssistantStore(
+    (s) => s.assistant?.assistantId ?? null,
+  );
   // A boolean dep, not `entry`: per-tick identity bumps (usage, status) must
   // not re-run the effect; only the loading-detail state flipping should.
   const needsDetail = entry !== undefined && isLoadingDetail(entry);

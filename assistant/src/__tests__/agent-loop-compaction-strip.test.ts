@@ -15,7 +15,7 @@ import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type { AgentEvent } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import type { ContextWindowConfig } from "../config/types.js";
+import { ContextWindowConfig } from "../config/schemas/inference.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {

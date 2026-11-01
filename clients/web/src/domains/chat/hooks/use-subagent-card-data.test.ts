@@ -13,9 +13,9 @@ import {
   computeSubagentCardData,
   computeSubagentSteps,
   mapToolEventToStep,
-  type ToolCallCardStep,
   type ToolMeta,
 } from "@/domains/chat/hooks/use-subagent-card-data";
+import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils";
 import {
   groupStepsByPhase,
   phaseFromStep,

@@ -1,6 +1,8 @@
 // User/assistant messages, tool results, confirmations, secrets, errors, and generation lifecycle.
 
-import type { ChannelId, InterfaceId } from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
+import type { InterfaceId } from "../../channels/types.js";
 import type { CommandIntent, UserMessageAttachment } from "./shared.js";
 
 // === Client → Server ===

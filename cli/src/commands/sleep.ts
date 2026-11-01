@@ -16,8 +16,8 @@ import {
   parseWaitDuration,
 } from "../lib/drain.js";
 import { loadGuardianToken } from "../lib/guardian-token.js";
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
 import {
-  DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
   stopProcessByPidFile,
   stopProcessGracefully,

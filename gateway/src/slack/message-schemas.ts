@@ -7,7 +7,7 @@ import type {
   ReactionRemovedEvent as SlackApiReactionRemovedEvent,
 } from "@slack/types";
 import type { RouteResult } from "../routing/types.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 import type {
   Expect,
   ModeledKeysAreOfficial,

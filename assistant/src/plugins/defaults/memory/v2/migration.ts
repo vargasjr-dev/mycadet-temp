@@ -24,7 +24,7 @@ import { join } from "node:path";
 import type { Provider } from "@mycadet/plugin-api";
 import { getConfiguredProvider } from "@mycadet/plugin-api";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   type DrizzleDb,
   getSqliteFrom,

@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { SurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import { createApp } from "../apps/app-store.js";
 import {
   clearConversations,
   setConversation,
 } from "../daemon/conversation-registry.js";
 import { applyRuntimeInjections } from "../daemon/conversation-runtime-assembly.js";
-import type { SurfaceData, SurfaceType } from "../daemon/message-protocol.js";
 import { registerDefaultPluginInjectors } from "../plugins/defaults/index.js";
 import type { Message } from "../providers/types.js";
 import { asConversation } from "./helpers/mock-conversation.js";

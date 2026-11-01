@@ -3,6 +3,7 @@ import * as path from "node:path";
 
 import { v4 as uuid } from "uuid";
 
+import { RecordingOptions } from "../../api/events/recording.js";
 import { attachFileBackedAttachmentToMessage } from "../../persistence/attachments-store.js";
 import {
   addMessage,
@@ -10,7 +11,7 @@ import {
 } from "../../persistence/conversation-crud.js";
 import { syncMessageToDisk } from "../../persistence/conversation-disk-view.js";
 import { broadcastMessage } from "../../runtime/assistant-event-hub.js";
-import type { RecordingOptions, RecordingStatus } from "../message-protocol.js";
+import { RecordingStatus } from "../message-types/computer-use.js";
 import { log } from "./shared.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────

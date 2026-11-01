@@ -7,7 +7,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import type { GuardianTokenData } from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

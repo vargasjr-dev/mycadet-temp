@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-  Message,
-  ProviderEvent,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { Message, ProviderEvent } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { ProviderError } from "../util/errors.js";
 
@@ -98,7 +95,7 @@ mock.module("openai", () => ({
 }));
 
 // Import after mocking
-import { OpenAIResponsesProvider as ReExportedResponsesProvider } from "../providers/openai/client.js";
+import { OpenAIResponsesProvider as ReExportedResponsesProvider } from "../providers/openai/responses-provider.js";
 import { OpenAIResponsesProvider } from "../providers/openai/responses-provider.js";
 
 // ---------------------------------------------------------------------------

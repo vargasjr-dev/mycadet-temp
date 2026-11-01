@@ -16,8 +16,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { stripInjectionsForCompaction } from "../context/strip-injections.js";
 import { formatCleanResult } from "../daemon/conversation-process.js";
-import { stripInjectionsForCompaction } from "../daemon/conversation-runtime-assembly.js";
 import type { Message } from "../providers/types.js";
 
 describe("formatCleanResult", () => {

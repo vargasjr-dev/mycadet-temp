@@ -21,7 +21,6 @@ import {
 
 // Re-exported for consumers that reason about "is a just-issued code still
 // redeemable" (e.g. the access-request handshake window).
-export { CHALLENGE_TTL_MS } from "@mycadet/gateway-client";
 
 // ---------------------------------------------------------------------------
 // Types

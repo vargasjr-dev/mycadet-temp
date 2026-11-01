@@ -20,7 +20,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getDb } from "../../../../persistence/db-connection.js";
 import {
   durableEmbeddingCacheExtras,
@@ -39,9 +39,9 @@ import {
   upsertEmbedConceptPageJob,
 } from "../../../../persistence/jobs-store.js";
 import { memoryEmbeddings } from "../../../../persistence/schema/index.js";
+import { BackendUnavailableError } from "../../../../util/errors.js";
 import { applyCorrectionIfCalibrated } from "../anisotropy.js";
 import { embedWithBackend } from "../embeddings.js";
-import { BackendUnavailableError } from "../host-utils.js";
 import { getLogger } from "../logging.js";
 import { memoryDbOrNull } from "../memory-db.js";
 import { getWorkspaceDir } from "../paths.js";

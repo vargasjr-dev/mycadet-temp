@@ -165,6 +165,8 @@ mock.module("../../channel-reply-delivery.js", () => ({
   },
 }));
 
+import { hasDeliverableAssistantText } from "@mycadet/service-contracts/no-response";
+
 import type { Conversation } from "../../../daemon/conversation.js";
 import { CONVERSATION_BUSY_MESSAGE } from "../../../daemon/conversation-messaging.js";
 import {
@@ -173,7 +175,6 @@ import {
 } from "../../../daemon/conversation-registry.js";
 import type { TrustContext } from "../../../daemon/trust-context-types.js";
 import type { MessageProcessor } from "../../http-types.js";
-import { hasDeliverableAssistantText } from "../../no-response.js";
 import {
   isBoundGuardianActor,
   processChannelMessageInBackground,

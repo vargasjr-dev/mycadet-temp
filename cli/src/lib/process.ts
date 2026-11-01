@@ -305,7 +305,6 @@ export async function resolveProcessState(
  * commands derive their own timeouts from it: a wrapper that expires first
  * kills the CLI before this ceiling is ever reached.
  */
-export { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
 
 /**
  * Stop a process by PID: SIGTERM, wait up to `timeoutMs`, then SIGKILL if still alive.

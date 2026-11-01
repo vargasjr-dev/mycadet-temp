@@ -40,7 +40,7 @@ import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
 import { getIsCloud } from "../../cloud-url.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
-import { readStoredCloudUserId } from "../../cloud-user-id.js";
+import { readStoredCloudUserId } from "../../cloud-identity.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const TUNNEL_USER_ID_HEADER = "x-tunnel-user-id";

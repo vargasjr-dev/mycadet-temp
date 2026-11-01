@@ -10,9 +10,9 @@
  * This module is side-effect free: importing it does not register any plugin.
  */
 
+import { TrustClass } from "@mycadet/gateway-client";
 import type { Message } from "@mycadet/plugin-api";
 
-import type { TrustClass } from "../../../runtime/actor-trust-resolver.js";
 import { PluginExecutionError } from "../../types.js";
 import { getContextWindowManager } from "./manager-store.js";
 import type {

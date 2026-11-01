@@ -159,7 +159,6 @@ export function isMobileBrowser(): boolean {
  * `ClientOs` in `assistant/src/channels/types.ts`).
  */
 export type ClientOs = ElectronHostOS | "ios" | "android" | "web";
-export type { ElectronHostOS };
 
 const CLIENT_OS_DISPLAY_NAMES: Readonly<Record<ClientOs, string>> = {
   macos: "macOS",

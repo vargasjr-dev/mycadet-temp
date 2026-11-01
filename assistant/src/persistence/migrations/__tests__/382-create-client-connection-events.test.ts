@@ -9,7 +9,7 @@ import { describe, expect, test } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getSqliteFrom } from "../../db-connection.js";
-import * as schema from "../../schema.js";
+import * as schema from "../../schema/index.js";
 import { migrateCreateClientConnectionEvents } from "../382-create-client-connection-events.js";
 
 function createTestDb() {

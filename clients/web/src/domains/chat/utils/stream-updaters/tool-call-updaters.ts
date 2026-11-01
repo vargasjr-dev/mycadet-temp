@@ -14,11 +14,9 @@ import type {
   ConversationContentBlock,
   ModeSession,
 } from "@mycadet/assistant-api";
-import type {
-  AllowlistOption,
-  DirectoryScopeOption,
-  RiskScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { DirectoryScopeOption } from "@mycadet/assistant-api";
+import { RiskScopeOption } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { ToolActivityMetadata } from "@mycadet/assistant-api";
 import {

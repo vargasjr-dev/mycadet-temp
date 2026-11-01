@@ -74,8 +74,8 @@ import {
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
 } from "../http-client.js";
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
 import {
-  DAEMON_STOP_TIMEOUT_MS,
   type ProcessState,
   executableName,
   isProcessAlive,
@@ -1878,11 +1878,7 @@ export async function startGateway(
 
   const runtimeGatewayDir = !watch ? localRuntimeGatewayDir(entry) : undefined;
   const gatewayBinary = compiledSibling("cadet-gateway");
-  if (
-    !runtimeGatewayDir &&
-    existsSync(gatewayBinary) &&
-    !watch
-  ) {
+  if (!runtimeGatewayDir && existsSync(gatewayBinary) && !watch) {
     // Use the compiled gateway binary when available. In watch mode, skip
     // the bundled binary and use source (bun --watch only works with source
     // files).
@@ -2082,11 +2078,7 @@ export async function hatchLocal(
         // Picking Cadet Cloud should feel like signing in, not like a
         // mystery later — open the browser login right here. Non-TTY
         // runs (including the desktop's in-process hatch) skip it.
-        if (
-          picked === "cadet" &&
-          process.stdin.isTTY &&
-          !readCloudToken()
-        ) {
+        if (picked === "cadet" && process.stdin.isTTY && !readCloudToken()) {
           reporter.log("");
           reporter.log(
             "Cadet Cloud selected — opening your browser to log in...",

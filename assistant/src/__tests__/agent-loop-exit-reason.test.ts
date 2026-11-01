@@ -23,7 +23,7 @@ import type {
   CheckpointInfo,
 } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import type { ContextWindowConfig } from "../config/types.js";
+import { ContextWindowConfig } from "../config/schemas/inference.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {
@@ -41,8 +41,8 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 // The agent loop runs the default post-compaction re-injection through the
 // `post-compact` hook chain when it compacts in place. Register a test hook on

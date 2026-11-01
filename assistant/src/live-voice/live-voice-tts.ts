@@ -74,8 +74,6 @@ interface ResolvedStreamingTtsProvider {
   providerConfig: Record<string, unknown>;
 }
 
-export { resolveLanguageVoiceOverride };
-
 export async function streamLiveVoiceTtsAudio(
   options: LiveVoiceTtsOptions,
 ): Promise<LiveVoiceTtsResult> {

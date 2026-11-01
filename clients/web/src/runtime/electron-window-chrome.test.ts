@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { TitleBarOverlayTheme } from "@mycadet/ipc-contract";
 
-import type { ElectronHostOS } from "@/runtime/platform-detection";
+import { ElectronHostOS } from "@mycadet/ipc-contract";
 
 /**
  * happy-dom keeps each mutation listener's report callback in a `WeakRef`

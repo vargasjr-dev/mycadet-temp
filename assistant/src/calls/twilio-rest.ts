@@ -65,8 +65,6 @@ export async function hasTwilioCredentials(): Promise<boolean> {
   }
 }
 
-export { twilioAuthHeader, twilioBaseUrl };
-
 export interface TwilioPhoneNumber {
   phoneNumber: string;
   friendlyName: string;

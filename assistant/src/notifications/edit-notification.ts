@@ -8,12 +8,10 @@
  * carry that metadata, only body/title.
  */
 
+import type { FeedItem } from "../api/responses/home.js";
+import type { FeedItemStatus } from "../api/responses/home.js";
+import type { FeedItemUrgency } from "../api/responses/home.js";
 import { findConversation } from "../daemon/conversation-registry.js";
-import {
-  type FeedItem,
-  type FeedItemStatus,
-  type FeedItemUrgency,
-} from "../home/feed-types.js";
 import { patchFeedItemContent } from "../home/feed-writer.js";
 import { updateMessageContent } from "../persistence/conversation-crud.js";
 import { enqueueLexicalIndexForMessage } from "../persistence/job-handlers/message-lexical.js";

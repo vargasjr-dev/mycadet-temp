@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { parseDuration } from "../cli/commands/conversations-defer.js";
+import { parseDuration } from "../cli/utils/parse-duration.js";
 
 // ---------------------------------------------------------------------------
 // Mocks for CLI command tests — declared before importing registerCommand

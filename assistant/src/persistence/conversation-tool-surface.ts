@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { eq, sql } from "drizzle-orm";
 
-import type { ToolDefinition } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { getDb } from "./db-connection.js";
 import { conversationToolSurfaces } from "./schema/index.js";
 

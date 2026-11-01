@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { DictationOverlayState } from "@/runtime/is-electron";
+import { DictationOverlayState } from "@mycadet/ipc-contract";
 
 let currentState: DictationOverlayState | null = null;
 const requestStopMock = mock(() => undefined);

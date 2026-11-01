@@ -10,8 +10,8 @@
  */
 
 import type { CommandIntent, SourceMetadata } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { ChannelId } from "../../channels/types.js";
 import {
   invalidateConfigCache,
   loadRawConfig,

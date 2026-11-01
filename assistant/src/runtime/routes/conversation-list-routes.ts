@@ -10,9 +10,9 @@
  * GET    /v1/conversations/:id          — conversation detail
  */
 
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
-import { CHANNEL_IDS } from "../../channels/types.js";
 import { localeFromAcceptLanguage } from "../../i18n/index.js";
 import { channelBindingSchema } from "../../messaging/channel-binding-schema.js";
 import {

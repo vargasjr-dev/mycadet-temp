@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { DictationOverlayMessage } from "@/runtime/is-electron";
+import { DictationOverlayMessage } from "@mycadet/ipc-contract";
 
 const messages: DictationOverlayMessage[] = [];
 

@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import { RouteError } from "../../../../../runtime/routes/errors.js";
 
 class FakeIngestLockedError extends Error {

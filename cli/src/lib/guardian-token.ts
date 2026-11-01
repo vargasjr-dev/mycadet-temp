@@ -66,8 +66,6 @@ function parseGuardianTokenFields(value: unknown): Partial<GuardianTokenData> {
 
 const DEVICE_ID_SALT = "mycadet-host-id";
 
-export type { GuardianTokenData };
-
 function getGuardianTokenPath(assistantId: string): string {
   // Resolve via the shared @mycadet/local-mode resolver — the same one every
   // host-seam reader (`getGuardianAccessToken`) uses — so the token is always

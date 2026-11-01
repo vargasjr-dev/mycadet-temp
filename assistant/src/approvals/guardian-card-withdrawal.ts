@@ -22,11 +22,11 @@
  * Every surface is attempted independently; one failure never blocks the rest.
  */
 
+import type { GuardianRequestDeliveryWire } from "@mycadet/gateway-client";
+import type { GuardianRequestStatus } from "@mycadet/gateway-client";
 import { DELIVERY_STATUS } from "@mycadet/gateway-client";
 
 import {
-  type GuardianRequestDeliveryWire,
-  type GuardianRequestStatus,
   listGuardianRequestDeliveries,
   updateGuardianRequestDelivery,
 } from "../channels/gateway-guardian-requests.js";

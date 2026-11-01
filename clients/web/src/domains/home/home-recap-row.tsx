@@ -2,7 +2,7 @@ import { MessageSquare } from "lucide-react";
 import { useMemo } from "react";
 
 import { SwipeActionReveal } from "@/components/swipe-action-reveal";
-import { useHoverCapable } from "@/hooks/use-hover-affordance";
+import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability";
 import { useLongPressSheet } from "@/hooks/use-long-press-sheet";
 import { useTranslation } from "@/i18n";
 import { formatRelativeDate } from "@/utils/format-date";

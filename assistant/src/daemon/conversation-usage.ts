@@ -4,13 +4,13 @@ import { updateConversationUsage } from "../persistence/conversation-crud.js";
 import { recordUsageEvent } from "../persistence/llm-usage-store.js";
 import type { UsageActor } from "../usage/actors.js";
 import { resolveUsageAttribution } from "../usage/attribution.js";
+import { UsageAttributionInput } from "../usage/attribution.js";
+import { UsageAttributionSnapshot } from "../usage/attribution.js";
 import { extractRawUsage } from "../usage/pricing.js";
 import type {
   AnthropicCacheCreationTokenDetails,
   PricingResult,
   PricingUsage,
-  UsageAttributionInput,
-  UsageAttributionSnapshot,
 } from "../usage/types.js";
 import { getLogger } from "../util/logger.js";
 import {
@@ -21,7 +21,7 @@ import {
   isRetryableSqliteError,
   withSqliteRetry,
 } from "../util/sqlite-retry.js";
-import type { UsageStats } from "./message-protocol.js";
+import { UsageStats } from "./message-types/shared.js";
 
 const log = getLogger("conversation-usage");
 

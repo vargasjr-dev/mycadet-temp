@@ -33,10 +33,8 @@ import type {
   VoiceLiveActivityContent,
   VoiceLiveActivityStart,
 } from "@/runtime/native-live-activity";
-import type {
-  VoiceActivityContent,
-  VoiceActivityStart,
-} from "@/runtime/is-electron";
+import { VoiceActivityContent } from "@mycadet/ipc-contract";
+import { VoiceActivityStart } from "@mycadet/ipc-contract";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
 
 // Typed to the real bridge signatures so the recorded payloads stay checked.
@@ -789,7 +787,9 @@ describe("ending the activity", () => {
     renderMirror();
     await setPhase("listening");
 
-    await settled(() => useLiveVoiceStore.getState().fail("tunnel unreachable"));
+    await settled(() =>
+      useLiveVoiceStore.getState().fail("tunnel unreachable"),
+    );
 
     expect(endVoiceLiveActivity).toHaveBeenCalledTimes(1);
     expect(updateVoiceLiveActivity).not.toHaveBeenCalled();

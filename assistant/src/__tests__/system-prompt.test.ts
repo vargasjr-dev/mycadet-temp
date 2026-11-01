@@ -58,8 +58,9 @@ mock.module("../oauth/oauth-store.js", () => ({
 }));
 
 // Import after mock
-const { buildSystemPrompt, ensurePromptFiles, stripCommentLines } =
+const { buildSystemPrompt, ensurePromptFiles } =
   await import("../prompts/system-prompt.js");
+const { stripCommentLines } = await import("../util/strip-comment-lines.js");
 const { SYSTEM_PROMPT_CACHE_BOUNDARY } =
   await import("../prompts/cache-boundary.js");
 

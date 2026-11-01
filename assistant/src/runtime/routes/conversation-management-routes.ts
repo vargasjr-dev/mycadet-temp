@@ -49,8 +49,6 @@ import {
   deleteConversation,
   forkConversation as forkConversationInStore,
   getConversation,
-  isBackgroundEventMetadata,
-  isEchoSuppressedUserMessage,
   setConversationEnabledPlugins,
   setConversationSurfaced,
   unarchiveConversation,
@@ -62,6 +60,8 @@ import {
   setConversationKeyIfAbsent,
 } from "../../persistence/conversation-key-store.js";
 import type { NonScheduledConversationType } from "../../persistence/conversation-types.js";
+import { isBackgroundEventMetadata } from "../../persistence/conversation-types.js";
+import { isEchoSuppressedUserMessage } from "../../persistence/conversation-types.js";
 import { enqueueMemoryJob } from "../../persistence/jobs-store.js";
 import { deleteSchedule, getSchedule } from "../../schedule/schedule-store.js";
 import { UserError } from "../../util/errors.js";

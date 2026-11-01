@@ -124,13 +124,13 @@ mock.module("@anthropic-ai/sdk", () => ({
 
 import { AssistantConfigSchema } from "../config/schema.js";
 import { LLMSchema } from "../config/schemas/llm.js";
-import { ConnectionResolutionError } from "../providers/connection-resolution.js";
 import {
   getProvider,
   getProviderRoutingSource,
   initializeProviders,
   listProviders,
 } from "../providers/registry.js";
+import { ConnectionResolutionError } from "../providers/routing-identity.js";
 import { credentialKey } from "../security/credential-key.js";
 
 // ---------------------------------------------------------------------------

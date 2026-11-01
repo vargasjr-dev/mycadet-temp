@@ -14,8 +14,8 @@ import {
   classifyConversationError,
   isUserCancellation,
 } from "../daemon/conversation-error.js";
-import { ConnectionResolutionError } from "../providers/connection-resolution.js";
 import { normalizeOpenAIAPIError } from "../providers/openai/api-error-normalization.js";
+import { ConnectionResolutionError } from "../providers/routing-identity.js";
 import {
   type AbortReasonKind,
   createAbortReason,

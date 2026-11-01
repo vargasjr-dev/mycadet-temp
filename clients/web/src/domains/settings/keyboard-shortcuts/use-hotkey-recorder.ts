@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  getHotkeys,
-  onHotkeysChange,
-  setHotkey,
-  type ResolvedHotkey,
-} from "@/runtime/hotkeys";
+import { getHotkeys, onHotkeysChange, setHotkey } from "@/runtime/hotkeys";
+import type { ResolvedHotkey } from "@mycadet/ipc-contract";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 
 import {

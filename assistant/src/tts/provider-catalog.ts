@@ -27,13 +27,6 @@ import { fishAudioTtsProviderDefinition } from "./providers/fish-audio-provider.
 import { xaiTtsProviderDefinition } from "./providers/xai-provider.js";
 import type { TtsProvider, TtsProviderId } from "./types.js";
 
-export type {
-  TtsMediaStreamOutputFormat,
-  TtsMediaStreamPlayback,
-  TtsProviderCatalogEntry,
-  TtsProviderDefinition,
-} from "./provider-definition.js";
-
 // ---------------------------------------------------------------------------
 // Catalog data
 // ---------------------------------------------------------------------------

@@ -5,8 +5,8 @@ import {
   createConversation,
   getAssistantMessageIdsInTurn,
   PROVIDER_ERROR_MESSAGE_KIND,
-  SYSTEM_CARD_MESSAGE_KIND,
 } from "../persistence/conversation-crud.js";
+import { SYSTEM_CARD_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { getDb, getLogsDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import {

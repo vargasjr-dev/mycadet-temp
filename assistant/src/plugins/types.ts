@@ -12,8 +12,8 @@
 import type { CompactionCircuitClosedEvent } from "../api/events/compaction-circuit-closed.js";
 import type { CompactionCircuitOpenEvent } from "../api/events/compaction-circuit-open.js";
 import type { HookEventOwner } from "../api/events/hook-event.js";
+import { AssistantConfig } from "../config/schema.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
-import type { AssistantConfig } from "../config/types.js";
 import type {
   ChannelCapabilities,
   InboundActorContext,
@@ -81,12 +81,6 @@ export interface PluginCredentialKeyPattern {
 // Defined in `assistant/src/plugin-api/types.ts` and re-exported here so
 // existing internal call sites keep working. Plugin authors import these from
 // `@mycadet/plugin-api`.
-export type {
-  HookFunction,
-  InitContext,
-  ShutdownContext,
-  ShutdownReason,
-} from "../plugin-api/types.js";
 
 /**
  * The complete set of compaction circuit-breaker transition events:

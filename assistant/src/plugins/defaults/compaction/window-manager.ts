@@ -14,6 +14,7 @@
  * marker is wrapped around the assistant-role memory message we emit on
  * successful compaction so those code paths keep working unchanged.
  */
+import { TrustClass } from "@mycadet/gateway-client";
 import type {
   ContentBlock,
   LLMCallSite,
@@ -23,7 +24,7 @@ import type {
 
 import { getConfig } from "../../../config/loader.js";
 import type { CompactionConfig } from "../../../config/schemas/compaction.js";
-import type { ContextWindowConfig } from "../../../config/types.js";
+import { ContextWindowConfig } from "../../../config/schemas/inference.js";
 import {
   type CompactionRunArgs,
   type CompactionRunResult,
@@ -40,8 +41,7 @@ import {
 } from "../../../context/token-estimator.js";
 import { findConversationOrSubagent } from "../../../daemon/conversation-registry.js";
 import type { InjectionMode } from "../../../daemon/conversation-runtime-assembly.js";
-import type { ToolDefinition } from "../../../providers/types.js";
-import type { TrustClass } from "../../../runtime/actor-trust-resolver.js";
+import { ToolDefinition } from "../../../tools/tool-types.js";
 import { getLogger } from "../../../util/logger.js";
 import {
   createInitialReducerState,
@@ -55,7 +55,6 @@ import { resolveOverflowAction } from "./overflow-policy.js";
 
 const log = getLogger("context-window");
 
-export { CONTEXT_SUMMARY_MARKER };
 const INTERNAL_CONTEXT_SUMMARY_MESSAGES = new WeakSet<Message>();
 
 // ---------------------------------------------------------------------------

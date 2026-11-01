@@ -10,7 +10,7 @@ import {
   PairDeviceError,
   type DevicePairing,
 } from "./pair-device-client";
-import { resolvePublicBaseUrl } from "./pair-device-url";
+import { resolvePublicBaseUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 /** localStorage key for the last public URL that successfully minted a code. */
 const PUBLIC_BASE_URL_STORAGE_KEY = "cadet:pair-device:public-base-url";

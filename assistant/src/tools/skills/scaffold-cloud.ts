@@ -9,6 +9,7 @@ import { refreshSkillCapabilityMemories } from "../../daemon/skill-memory-refres
 import { sanitizeMultilineMessagePreview } from "../../notifications/notification-utils.js";
 import { getConversation } from "../../persistence/conversation-crud.js";
 import { upsertSkillCardInsertJob } from "../../persistence/jobs-store.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { MEMORY_RETROSPECTIVE_ORIGIN } from "../../plugins/defaults/memory/memory-retrospective-constants.js";
 import { recordSkillUpdate } from "../../plugins/defaults/memory/skill-update-receipt-job.js";
 import {
@@ -17,7 +18,6 @@ import {
 } from "../../skills/cloud-store.js";
 import { readInstallMeta } from "../../skills/install-meta.js";
 import { getLogger } from "../../util/logger.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 
 const log = getLogger("scaffold-cloud-skill");

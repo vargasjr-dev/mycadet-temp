@@ -35,10 +35,8 @@ mock.module("../cloud-proxy/context.js", () => ({
   }),
 }));
 
-import {
-  ConnectionResolutionError,
-  preflightResolvedConfig,
-} from "../connection-resolution.js";
+import { preflightResolvedConfig } from "../connection-resolution.js";
+import { ConnectionResolutionError } from "../routing-identity.js";
 
 const resolved = (overrides: Partial<Record<string, string>> = {}) => ({
   provider: "anthropic",

@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -36,7 +37,6 @@ const stopProcessByPidFileMock = mock(
   ): Promise<boolean> => true,
 );
 
-const { DAEMON_STOP_TIMEOUT_MS } = realProcess;
 const stopOrphanedDaemonProcessesMock = mock(
   async (_excludePids?: ReadonlySet<string>): Promise<boolean> => false,
 );

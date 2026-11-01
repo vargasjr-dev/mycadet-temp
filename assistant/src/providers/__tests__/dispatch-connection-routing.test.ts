@@ -95,12 +95,10 @@ mock.module("../registry.js", () => ({
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
-import {
-  ConnectionResolutionError,
-  resolveRoutingIdentity,
-  tryResolveProviderForConnectionName,
-} from "../connection-resolution.js";
+import { tryResolveProviderForConnectionName } from "../connection-resolution.js";
 import { getConfiguredProvider } from "../provider-send-message.js";
+import { ConnectionResolutionError } from "../routing-identity.js";
+import { resolveRoutingIdentity } from "../routing-identity.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

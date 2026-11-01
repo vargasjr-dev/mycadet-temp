@@ -1,4 +1,5 @@
-import { isElectron, type ResolvedHotkey } from "@/runtime/is-electron";
+import { isElectron } from "@/runtime/is-electron";
+import { type ResolvedHotkey } from "@mycadet/ipc-contract";
 
 /**
  * Runtime wrapper for the Electron Keyboard Shortcuts bridge
@@ -16,7 +17,6 @@ import { isElectron, type ResolvedHotkey } from "@/runtime/is-electron";
  * don't release together, so a newer renderer can run against an older
  * preload).
  */
-export type { ResolvedHotkey };
 
 /** Fetch the resolved catalog of rebindable commands and their bindings. */
 export async function getHotkeys(): Promise<ResolvedHotkey[]> {

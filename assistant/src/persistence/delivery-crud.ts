@@ -5,6 +5,7 @@
  * finding messages by source identifiers, and managing raw payload storage.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import {
   and,
   desc,
@@ -18,10 +19,9 @@ import {
 } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
-import type { ChannelId } from "../channels/types.js";
+import { SlackInboundMessageMetadata } from "../daemon/handlers/shared.js";
 import type { ProviderMessageMetadata } from "../messaging/provider-message-metadata.js";
 import { readProviderMetadata } from "../messaging/read-provider-metadata.js";
-import type { SlackInboundMessageMetadata } from "../runtime/http-types.js";
 import { parseJsonSafe } from "../util/json.js";
 import { isPlainObject } from "../util/object.js";
 import { selectProviderMetaCandidateMetadata } from "./conversation-crud.js";
@@ -32,13 +32,11 @@ import {
 } from "./conversation-key-store.js";
 import type { NonScheduledConversationType } from "./conversation-types.js";
 import { getDb } from "./db-connection.js";
-import {
-  channelInboundEvents,
-  channelOutboundPosts,
-  conversationKeys,
-  conversations,
-  messages,
-} from "./schema.js";
+import { channelInboundEvents } from "./schema/index.js";
+import { channelOutboundPosts } from "./schema/index.js";
+import { conversationKeys } from "./schema/index.js";
+import { conversations } from "./schema/index.js";
+import { messages } from "./schema/index.js";
 
 export interface InboundResult {
   accepted: boolean;

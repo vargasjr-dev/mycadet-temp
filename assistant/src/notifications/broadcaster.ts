@@ -9,12 +9,12 @@
  *   4. Records a delivery audit row in the deliveries-store
  */
 
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
+import { isChannelId } from "@mycadet/service-contracts/channels";
 import { v4 as uuid } from "uuid";
 
-import { isChannelId } from "../channels/types.js";
 import { getGuardianDelivery } from "../contacts/guardian-delivery-reader.js";
 import { getConversation } from "../persistence/conversation-crud.js";
-import type { ApprovalUIMetadata } from "../runtime/channel-approval-types.js";
 import { getLogger } from "../util/logger.js";
 import {
   buildAccessRequestReplyMechanics,

@@ -3,12 +3,10 @@ import { access, mkdir, readdir, readFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { resolveBatchTranscriber } from "../../../../providers/speech-to-text/resolve.js";
 import type { BatchTranscriber } from "../../../../stt/types.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

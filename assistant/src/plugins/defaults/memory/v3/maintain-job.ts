@@ -84,7 +84,7 @@ import {
 } from "@mycadet/plugin-api";
 
 import { isMemoryV3Live } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getMemoryCheckpoint } from "../../../../persistence/checkpoints.js";
 import { EmbeddingBackendUnavailableError } from "../../../../persistence/embeddings/embedding-backend.js";
 import { EmbeddingBillingBlockError } from "../../../../persistence/embeddings/embedding-billing-breaker.js";

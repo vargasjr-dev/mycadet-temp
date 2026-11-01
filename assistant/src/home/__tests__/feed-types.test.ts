@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { type FeedItem, feedItemSchema, parseFeedFile } from "../feed-types.js";
+import type { FeedItem } from "../../api/responses/home.js";
+import { FeedItemSchema as feedItemSchema } from "../../api/responses/home.js";
+import { parseFeedFile } from "../feed-types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

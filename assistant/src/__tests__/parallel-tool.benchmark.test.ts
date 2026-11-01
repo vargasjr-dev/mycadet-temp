@@ -8,9 +8,9 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
 import { CANCELLED_UNSETTLED_TOOL_RESULT } from "../tools/execution-timeout.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers (mirrors agent-loop.test.ts patterns)

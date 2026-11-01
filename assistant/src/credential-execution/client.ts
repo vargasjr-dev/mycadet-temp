@@ -18,16 +18,6 @@ import {
 
 import { getLogger } from "../util/logger.js";
 
-export {
-  type CesRpcClient as CesClient,
-  type CesRpcClientConfig as CesClientConfig,
-  CesClientError,
-  type CesRpcHandshakeOptions as CesClientHandshakeOptions,
-  CesHandshakeError,
-  type CesTransport,
-  CesTransportError,
-} from "@mycadet/ces-client/rpc-client";
-
 const log = getLogger("ces-rpc-client");
 
 /**

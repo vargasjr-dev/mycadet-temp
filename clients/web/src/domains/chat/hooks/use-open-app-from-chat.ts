@@ -39,11 +39,11 @@ import {
   loadDocumentConversation,
 } from "../document-conversation";
 import {
-  documentReturnPath,
   getDocumentConversationRoute,
   navigateToDocumentConversation,
   setDocumentConversationPresentation,
 } from "../document-conversation-navigation";
+import { documentReturnPath } from "@/utils/document-navigation";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Opens the document `surfaceId` under `assistantId` in the viewer panel. */

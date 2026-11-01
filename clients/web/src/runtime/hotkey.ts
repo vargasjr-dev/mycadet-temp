@@ -7,9 +7,8 @@ import type {
   VoiceModeChord,
 } from "@mycadet/ipc-contract";
 
-import { isElectron, type HotkeyEvent } from "@/runtime/is-electron";
-
-export type { HotkeyEvent };
+import { isElectron } from "@/runtime/is-electron";
+import { type HotkeyEvent } from "@mycadet/ipc-contract";
 
 export function supportsVoiceModeChord(): boolean {
   return (

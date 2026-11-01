@@ -11,14 +11,14 @@
 import { describe, expect, test } from "bun:test";
 
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import { RiskLevel } from "../permissions/types.js";
+import type { InitContext } from "../plugin-api/types.js";
 import {
-  type InitContext,
   type Plugin,
   PluginExecutionError,
   type PluginManifest,
   type TurnContext,
 } from "../plugins/types.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool } from "../tools/types.js";
 
 const sampleTrust: TrustContext = {

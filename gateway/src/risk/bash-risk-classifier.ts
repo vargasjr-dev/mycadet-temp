@@ -48,9 +48,6 @@ export function escalateOne(risk: Risk): Risk {
   }
 }
 
-// Re-export riskOrd and maxRisk for tests and consumers that import from here.
-export { riskOrd, maxRisk };
-
 // ── Compiled regex cache ─────────────────────────────────────────────────────
 // Arg rules declare their `valuePattern` as a regex string in the command
 // registry, which is static, so a compiled RegExp is valid for the life of the

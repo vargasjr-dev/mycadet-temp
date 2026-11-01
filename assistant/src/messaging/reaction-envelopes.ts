@@ -8,12 +8,12 @@
  * write Slack's own envelope, which `readProviderMetadata` maps on read; the
  * Slack transcript reads the neutral envelope through its Slack view.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import {
   pickReactionEmojiFields,
   type ReactionEmojiFields,
 } from "@mycadet/service-contracts/reactions";
 
-import type { ChannelId } from "../channels/types.js";
 import type { ProviderMessageMetadata } from "./provider-message-metadata.js";
 import type { SlackMessageMetadata } from "./providers/slack/message-metadata.js";
 import { writeSlackMetadata } from "./providers/slack/message-metadata.js";

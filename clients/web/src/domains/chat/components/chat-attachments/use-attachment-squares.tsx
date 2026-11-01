@@ -21,7 +21,7 @@
 import { useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import { downloadAttachment } from "@/domains/chat/components/chat-attachments/download-attachment";
 import {

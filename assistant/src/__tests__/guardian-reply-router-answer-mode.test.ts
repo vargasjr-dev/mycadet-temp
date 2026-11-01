@@ -16,7 +16,8 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
+import { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 
 // Capture decisions instead of running the real primitive (CAS + resolvers).

@@ -7,8 +7,8 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../../providers/types.js";
+import { ToolDefinition } from "../../tools/tool-types.js";
 
 /**
  * Records the arguments of a single `provider.sendMessage` invocation so tests

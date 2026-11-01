@@ -8,18 +8,16 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import type { AgentEvent, PreparedModelCall } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import type {
-  PostModelCallContext,
-  PreModelCallContext,
-} from "../plugin-api/types.js";
+import { PostModelCallContext } from "../hooks/types.js";
+import { PreModelCallContext } from "../hooks/types.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import { registerPlugin } from "../plugins/registry.js";
 import type {
   ContentBlock,
   Message,
   ProviderResponse,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   createMockProvider,
   textResponse,

@@ -177,8 +177,6 @@ function parseArgs(): HatchArgs {
   };
 }
 
-export { hatchLocal };
-
 function getCliVersion(): string {
   return cliPkg.version ?? "unknown";
 }

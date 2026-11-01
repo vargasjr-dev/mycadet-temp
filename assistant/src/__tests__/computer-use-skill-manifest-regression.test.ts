@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterAll, describe, expect, test } from "bun:test";
 
-import { RiskLevel } from "../permissions/types.js";
 import {
   __resetRegistryForTesting,
   getTool,
@@ -10,6 +9,7 @@ import {
   registerSkillTools,
   unregisterSkillTools,
 } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool } from "../tools/types.js";
 import {
   COMPUTER_USE_TOOL_COUNT,

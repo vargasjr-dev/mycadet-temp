@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 // Mock credential metadata so tests don't depend on local persisted state.
 mock.module("../tools/credentials/metadata-store.js", () => ({

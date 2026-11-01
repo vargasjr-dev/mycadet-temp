@@ -33,9 +33,9 @@
  * tool-registry lookup.
  */
 
+import { TrustClass } from "@mycadet/gateway-client";
 import { z } from "zod";
 
-import type { TrustClass } from "../runtime/actor-trust-resolver.js";
 import { resolveExecutionTarget } from "../tools/execution-target.js";
 import {
   getCoreToolOverride,

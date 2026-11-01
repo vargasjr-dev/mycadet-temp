@@ -11,11 +11,9 @@ import {
   mapImageGenError,
 } from "../../../../media/image-service.js";
 import { getFilePathBySourcePath } from "../../../../persistence/attachments-store.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { ImageContent } from "../../../../providers/types.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import { sandboxPolicy } from "../../../../tools/shared/filesystem/path-policy.js";
 import type {
   ToolContext,

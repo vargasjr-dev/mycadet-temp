@@ -5,8 +5,9 @@
  * This module is the top-level dispatcher. It delegates plain-text messages to
  * the conversational engine in guardian-text-engine-strategy.ts.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { audienceForReader } from "../../channels/message-audience.js";
-import type { ChannelId } from "../../channels/types.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 import { editChannelMessage } from "../../messaging/providers/index.js";
 import { getLogger } from "../../util/logger.js";
@@ -18,11 +19,9 @@ import {
   handleChannelDecision,
 } from "../channel-approvals.js";
 import { deliverChannelReply } from "../gateway-client.js";
-import type {
-  ApprovalConversationGenerator,
-  ApprovalCopyGenerator,
-} from "../http-types.js";
+import type { ApprovalConversationGenerator } from "../http-types.js";
 import { findLocalGuardianPrincipalId } from "../local-actor-identity.js";
+import { ApprovalCopyGenerator } from "../message-composer-types.js";
 import { parseApprovalIntent } from "../nl-approval-parser.js";
 import { handleGuardianTextEngineDecision } from "./approval-strategies/guardian-text-engine-strategy.js";
 import {
@@ -51,7 +50,6 @@ export interface ApprovalInterceptionParams {
 }
 
 import type { ApprovalInterceptionResult } from "./approval-interception-types.js";
-export type { ApprovalInterceptionResult } from "./approval-interception-types.js";
 
 /**
  * Check for pending approvals and handle inbound messages accordingly.

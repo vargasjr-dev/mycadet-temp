@@ -26,10 +26,8 @@ import {
 } from "@/domains/chat/utils/tool-call-card-utils";
 import { useToolCallCardDataFromItems } from "@/domains/chat/hooks/use-tool-call-card-data";
 import type { ConfirmationDecision } from "@/types/event-types";
-import type {
-  AllowlistOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import { truncate } from "@/domains/chat/utils/truncate";
 import { isToolCallRunning } from "@/domains/chat/utils/tool-call-status";

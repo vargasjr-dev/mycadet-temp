@@ -15,15 +15,18 @@
  * - conversation-usage.ts        — recordUsage
  */
 
+import type { TrustClass } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { repairHistory } from "../agent/history-repair/history-repair.js";
 import type { AgentLoopConfig, PreparedModelCall } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
 import type { AssistantActivityStateEvent } from "../api/events/assistant-activity-state.js";
 import type { ConfirmationStateChangedEvent } from "../api/events/confirmation-state-changed.js";
 import type { AssistantEvent } from "../api/index.js";
+import { SurfaceType } from "../api/surfaces.js";
 import { syncTerminalGuardianRequestStatus } from "../approvals/guardian-request-status-sync.js";
 import type {
-  ChannelId,
   InterfaceId,
   TurnChannelContext,
   TurnInterfaceContext,
@@ -41,6 +44,7 @@ import {
   derefToolResultReReads,
   postTurnTruncateToolResults,
 } from "../context/post-turn-tool-result-truncation.js";
+import { stripInjectionsForCompaction } from "../context/strip-injections.js";
 import type { SupportedLocale } from "../i18n/index.js";
 import { readProviderMetadata } from "../messaging/read-provider-metadata.js";
 import { isGuardianCardRow } from "../notifications/approval-card-data.js";
@@ -99,17 +103,17 @@ import {
   type SystemPromptPersonaOverride,
 } from "../prompts/system-prompt.js";
 import type { ContentBlock, Message } from "../providers/types.js";
-import type { Provider, ToolDefinition } from "../providers/types.js";
-import { type TrustClass } from "../runtime/actor-trust-resolver.js";
+import type { Provider } from "../providers/types.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import type { AuthContext } from "../runtime/auth/types.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
-import type { InteractiveUiResult } from "../runtime/interactive-ui.js";
+import { InteractiveUiResult } from "../runtime/interactive-ui-types.js";
 import { publishSyncInvalidation } from "../runtime/sync/sync-publisher.js";
 import { getSubagentManager } from "../subagent/index.js";
 import type { SubagentState } from "../subagent/types.js";
 import { ToolExecutor } from "../tools/executor.js";
 import { getAllToolDefinitions } from "../tools/registry.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
 import type { AbortReason } from "../util/abort-reasons.js";
 import { getLogger } from "../util/logger.js";
@@ -167,23 +171,17 @@ import {
   getSlackWatermarkAdvanceForRowPrefix,
   type InboundActorContext,
   loadSlackChronologicalContext,
-  stripInjectionsForCompaction,
 } from "./conversation-runtime-assembly.js";
 import type { SkillProjectionCache } from "./conversation-skill-tools.js";
+import type { SurfaceStateEntry } from "./conversation-surface-state.js";
+import { restoreSurfaceStateEntry } from "./conversation-surface-state.js";
 import {
   createSurfaceMutex,
   flushPendingSurfaceDataPersists,
   handleSurfaceAction as handleSurfaceActionImpl,
   handleSurfaceUndo as handleSurfaceUndoImpl,
-  restoreSurfaceStateEntry,
   type SurfaceActionResult,
-  type SurfaceStateEntry,
 } from "./conversation-surfaces.js";
-import type {
-  SubagentToolGateMode,
-  SubagentToolStats,
-  WakeToolContextPin,
-} from "./conversation-tool-setup.js";
 import {
   canSpawnSubagentsForTurn,
   createResolveToolsCallback,
@@ -193,15 +191,18 @@ import {
 import { canonicalizeTimeZone } from "./date-context.js";
 import { HostCuProxy } from "./host-cu-proxy.js";
 import { shouldAttachHostProxyForCapability } from "./host-proxy-preactivation.js";
-import type { SurfaceType, UsageStats } from "./message-protocol.js";
 import { filterMessagesForUntrustedActor } from "./message-provenance.js";
 import type { ConversationTransportMetadata } from "./message-types/conversations.js";
 import { isHostProxyTransport } from "./message-types/conversations.js";
+import { UsageStats } from "./message-types/shared.js";
 import { conversationMetadataSyncTag } from "./message-types/sync.js";
 import { bestEffortModeSessionTracking } from "./mode-session-tracking.js";
 import { renderReactionHistoryText } from "./reaction-history-render.js";
 import type { QueuedReactionRecord } from "./reaction-record.js";
 import { startsNewTurn } from "./summarize-boundary.js";
+import { SubagentToolGateMode } from "./tool-setup-types.js";
+import { SubagentToolStats } from "./tool-setup-types.js";
+import { WakeToolContextPin } from "./tool-setup-types.js";
 
 const log = getLogger("conversation");
 const PROMPT_CACHE_WARM_MAX_TOKENS = 16;
@@ -254,11 +255,6 @@ export interface CompactionSizing {
   forceOverrideProfile?: boolean;
 }
 
-export { findLastUndoableUserMessageIndex } from "./conversation-history.js";
-export type {
-  QueueDrainReason,
-  QueuePolicy,
-} from "./conversation-queue-manager.js";
 import { isPersonalMemoryAllowed } from "./trust-context.js";
 import type { TrustContext } from "./trust-context-types.js";
 import { turnActorPrincipalId } from "./turn-actor.js";

@@ -1,6 +1,6 @@
 import { refreshSkillCapabilityMemories } from "../../daemon/skill-memory-refresh.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { deleteCloudSkill } from "../../skills/cloud-store.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 
 /**

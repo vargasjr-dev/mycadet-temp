@@ -8,7 +8,7 @@ import {
   isMemoryV3Live,
   usesConceptPageMemory,
 } from "../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import {
   checkDiskPressureBackgroundGate,
   diskPressureBackgroundSkipLogFields,
@@ -34,7 +34,6 @@ import {
 } from "../../../persistence/embeddings/embedding-billing-breaker.js";
 import { QdrantCircuitOpenError } from "../../../persistence/embeddings/qdrant-circuit-breaker.js";
 import {
-  BackendUnavailableError,
   classifyError,
   RETRY_MAX_ATTEMPTS,
   retryDelayForAttempt,
@@ -59,6 +58,7 @@ import {
   resetRunningJobsToPending,
   SLOW_LLM_JOB_TYPES,
 } from "../../../persistence/jobs-store.js";
+import { BackendUnavailableError } from "../../../util/errors.js";
 import { isJobQueueResolution, type JobHandler } from "../../types.js";
 import { sweepOrphanConversationMemoryTables } from "./conversation-memory-orphan-sweep.js";
 import { getLogger } from "./logging.js";

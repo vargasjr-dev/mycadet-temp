@@ -20,11 +20,8 @@ import {
 } from "../context/post-turn-tool-result-truncation.js";
 import { spoolAndStubOversizedToolResults } from "../context/tool-result-spool.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
-import type {
-  ContentBlock,
-  Message,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { ContentBlock, Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   createMockProvider,
   textResponse,

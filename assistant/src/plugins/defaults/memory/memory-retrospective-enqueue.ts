@@ -32,6 +32,8 @@
 // hooks ran (crash / IPC drop) and the conversation then went idle. See
 // `memory-retrospective-sweep.ts`.
 
+import type { TrustClass } from "@mycadet/gateway-client";
+
 import { getConfig } from "../../../config/loader.js";
 import {
   getConversation,
@@ -42,7 +44,6 @@ import {
   isMemoryEnabled,
   upsertMemoryRetrospectiveJob,
 } from "../../../persistence/jobs-store.js";
-import { type TrustClass } from "../../../runtime/actor-trust-resolver.js";
 import { resolveCapabilities } from "../../../runtime/capabilities.js";
 import { getLogger } from "./logging.js";
 import { hasQualifyingUserMessageAfter } from "./memory-retrospective-accounting.js";

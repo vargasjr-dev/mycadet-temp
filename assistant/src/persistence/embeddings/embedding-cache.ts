@@ -18,7 +18,7 @@ import { and, eq } from "drizzle-orm";
 import { getLogger } from "../../util/logger.js";
 import type { getDb } from "../db-connection.js";
 import { blobToVector, vectorToBlob } from "../job-utils.js";
-import { memoryEmbeddings } from "../schema.js";
+import { memoryEmbeddings } from "../schema/index.js";
 
 const log = getLogger("memory-embedding-cache");
 

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateMemoryV3SelectionsMessageIdAndSections } from "./283-memory-v3-selections-message-id-and-sections.js";
 
 function createTestDb() {

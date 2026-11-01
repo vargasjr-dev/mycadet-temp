@@ -1,11 +1,11 @@
 import * as appStore from "../../../../apps/app-store.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppUpdateInput } from "../../../../tools/apps/executors.js";
 import { executeAppUpdate } from "../../../../tools/apps/executors.js";
 import {
   missingAppIdError,
   resolveAppId,
 } from "../../../../tools/apps/resolve-app-id.js";
-import { throwIfCancelled } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

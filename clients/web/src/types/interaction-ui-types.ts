@@ -4,15 +4,6 @@
  * SSR dependencies.
  */
 
-export type {
-  AllowlistOption,
-  DirectoryScopeOption,
-  QuestionEntry,
-  QuestionOption,
-  RiskScopeOption,
-  ScopeOption,
-} from "@mycadet/assistant-api";
-
 import type {
   AllowlistOption,
   DirectoryScopeOption,

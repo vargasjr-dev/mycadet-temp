@@ -4,9 +4,9 @@ import { syncTerminalGuardianRequestStatus } from "../../approvals/guardian-requ
 import {
   clearAll,
   getConversation,
-  isSuppressedQueuedMessage,
 } from "../../persistence/conversation-crud.js";
 import { resolveConversationId } from "../../persistence/conversation-key-store.js";
+import { isSuppressedQueuedMessage } from "../../persistence/conversation-types.js";
 import { broadcastMessage } from "../../runtime/assistant-event-hub.js";
 import { resolveCapabilities } from "../../runtime/capabilities.js";
 import * as pendingInteractions from "../../runtime/pending-interactions.js";
@@ -31,8 +31,8 @@ import {
   clearAllActiveConversations,
   getOrCreateConversation,
 } from "../conversation-store.js";
-import type { ConfirmationResponse } from "../message-protocol.js";
-import { normalizeConversationType } from "../message-protocol.js";
+import { ConfirmationResponse } from "../message-types/messages.js";
+import { normalizeConversationType } from "../message-types/shared.js";
 import { INTERNAL_GUARDIAN_TRUST_CONTEXT } from "../trust-context.js";
 import { log } from "./shared.js";
 

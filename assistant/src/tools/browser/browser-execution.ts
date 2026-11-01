@@ -16,6 +16,8 @@ import {
   formatLoggedInBrowserOffer,
   shouldOfferLoggedInBrowser,
 } from "../capability-offer.js";
+import { CHROME_EXTENSION_INSTALL_HINT } from "../capability-offer.js";
+import { DESKTOP_APP_INSTALL_HINT } from "../capability-offer.js";
 import { credentialBroker } from "../credentials/broker.js";
 import { BROWSER_FILL_CAPABILITY } from "../credentials/tool-policy.js";
 import {
@@ -35,7 +37,7 @@ import {
 } from "./auth-detector.js";
 import type { RouteHandler } from "./browser-manager.js";
 import { browserManager } from "./browser-manager.js";
-import { type BrowserMode, normalizeBrowserMode } from "./browser-mode.js";
+import { normalizeBrowserMode } from "./browser-mode.js";
 import { BROWSER_MODE } from "./browser-mode-constants.js";
 import {
   ensureScreencast,
@@ -49,8 +51,6 @@ import {
   BROWSER_STATUS_MODES,
   type BrowserStatusMode,
   CDP_INSPECT_STATUS_DISCOVERY_CODE,
-  CHROME_EXTENSION_INSTALL_HINT,
-  DESKTOP_APP_INSTALL_HINT,
 } from "./browser-status-constants.js";
 import {
   formatAxSnapshot,
@@ -80,6 +80,7 @@ import {
   getCdpClient,
   isDesktopAutoCooldownActive,
 } from "./cdp-client/factory.js";
+import type { BrowserMode } from "./cdp-client/types.js";
 import type {
   AttemptDiagnostic,
   CdpClient,

@@ -15,6 +15,7 @@
  * invalidate it explicitly so suggestions track integration state.
  */
 
+import { SuggestedPrompt } from "../api/responses/home.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { getConfig } from "../config/loader.js";
 import { buildSystemPrompt } from "../prompts/system-prompt.js";
@@ -22,7 +23,6 @@ import { getConfiguredProvider } from "../providers/provider-send-message.js";
 import { runBtwSidechain } from "../runtime/btw-sidechain.js";
 import { formatIntegrationSummary } from "../schedule/integration-status.js";
 import { getLogger } from "../util/logger.js";
-import type { SuggestedPrompt } from "./feed-types.js";
 import {
   readCachedPrompts,
   writeCachedPrompts,

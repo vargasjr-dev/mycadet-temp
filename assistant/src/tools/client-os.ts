@@ -1,6 +1,5 @@
 import {
   type ClientOs,
-  type HostProxyCapability,
   type InterfaceId,
   parseClientOs,
   supportsHostProxy,
@@ -10,6 +9,7 @@ import {
   supportsVirtualDesktopComputerUse,
 } from "../desktop/virtual-desktop-feature.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
+import type { HostProxyCapability } from "../types/host-capabilities.js";
 import type { ToolContext } from "./types.js";
 
 interface HostClientContext {

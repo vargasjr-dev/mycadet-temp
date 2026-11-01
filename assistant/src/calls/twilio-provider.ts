@@ -1,14 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { twilioAuthHeader } from "@mycadet/twilio-client";
+import { twilioBaseUrl } from "@mycadet/twilio-client";
+
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { ProviderError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
-import {
-  getTwilioCredentials,
-  twilioAuthHeader,
-  twilioBaseUrl,
-} from "./twilio-rest.js";
+import { getTwilioCredentials } from "./twilio-rest.js";
 import type { InitiateCallOptions, VoiceProvider } from "./voice-provider.js";
 
 const log = getLogger("twilio-provider");

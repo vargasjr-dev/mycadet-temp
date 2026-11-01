@@ -25,11 +25,9 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { PluginLogger } from "../hooks/types.js";
+import { PostModelCallContext } from "../hooks/types.js";
 import { INTERNAL_NUDGE_OUTPUT_SUPPRESSION } from "../plugin-api/constants.js";
-import type {
-  PluginLogger,
-  PostModelCallContext,
-} from "../plugin-api/types.js";
 import postModelCall, {
   SURFACE_COMPLETION_NUDGE_TEXT,
 } from "../plugins/defaults/surface-completion-nudge/hooks/post-model-call.js";

@@ -19,7 +19,7 @@
  * @module
  */
 
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import { getCatalogProvider } from "../tts/provider-catalog.js";
 import { resolveTtsConfig } from "../tts/tts-config-resolver.js";
 import type { TtsCallMode, TtsProviderId } from "../tts/types.js";

@@ -10,9 +10,9 @@
 import { getDb } from "../../persistence/db-connection.js";
 import type { OAuth2TokenResult } from "../../security/oauth2.js";
 import { getLogger } from "../../util/logger.js";
+import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "./auth.js";
 import {
   CHATGPT_SUBSCRIPTION_AUTH_INPUT,
-  CHATGPT_SUBSCRIPTION_CONNECTION_NAME,
   storeChatgptSubscriptionCredentials,
 } from "./chatgpt-subscription-credentials.js";
 import {

@@ -1,11 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  buildRemoteWebPairingUrl,
-  isLoopbackUrl,
-  normalizePairingBaseUrl,
-  resolvePublicBaseUrl,
-} from "./pair-device-url";
+import { isLoopbackPublicUrl as isLoopbackUrl } from "@mycadet/service-contracts/remote-web-pairing";
+import { buildRemoteWebPairingUrl } from "@mycadet/service-contracts/remote-web-pairing";
+import { normalizePairingBaseUrl } from "@mycadet/service-contracts/remote-web-pairing";
+import { resolvePublicBaseUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 describe("normalizePairingBaseUrl", () => {
   test("strips query, hash, and the assistant path segment", () => {

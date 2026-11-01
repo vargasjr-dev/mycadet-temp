@@ -4,10 +4,8 @@ import { Typography } from "@mycadet/design-library";
 
 import { MessageAttachmentSquare } from "@/domains/chat/components/chat-attachments/message-attachment-square";
 import { useAttachmentSquares } from "@/domains/chat/components/chat-attachments/use-attachment-squares";
-import type {
-  DisplayAttachment,
-  DisplayMessage,
-} from "@/domains/chat/types/types";
+import type { DisplayMessage } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import { formatLocale, useTranslation } from "@/i18n";
 import {
   formatCompactLocalDate,

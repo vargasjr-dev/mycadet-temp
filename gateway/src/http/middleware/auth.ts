@@ -17,7 +17,7 @@ import { AuthFallbackLogThrottle } from "../../auth-fallback-log-throttle.js";
 import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
 import { getIsCloud } from "../../cloud-url.js";
 import { getLogger } from "../../logger.js";
-import { readStoredCloudUserId } from "../../cloud-user-id.js";
+import { readStoredCloudUserId } from "../../cloud-identity.js";
 import { isLoopbackPeer } from "../../util/is-loopback-address.js";
 import { requestArrivedViaEdgeProxy } from "../edge-forwarded-header.js";
 

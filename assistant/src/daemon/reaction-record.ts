@@ -15,17 +15,15 @@
  * what the channel's adapter said the spelling means, so a reader renders
  * the assistant's reaction the way it renders anyone else's.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import {
   pickReactionEmojiFields,
   type ReactionEmojiFields,
 } from "@mycadet/service-contracts/reactions";
 
-import type { ChannelId } from "../channels/types.js";
 import { buildNeutralReactionMeta } from "../messaging/reaction-envelopes.js";
-import {
-  addMessage,
-  REACTION_MESSAGE_KIND,
-} from "../persistence/conversation-crud.js";
+import { addMessage } from "../persistence/conversation-crud.js";
+import { REACTION_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("reaction-record");

@@ -5,7 +5,8 @@
  * Extracted from inbound-message-handler.ts to keep the top-level handler
  * focused on orchestration.
  */
-import type { ChannelId } from "../../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type { TrustContext } from "../../../daemon/trust-context-types.js";
 import { recordConversationSeenSignal } from "../../../persistence/conversation-attention-store.js";
 import {

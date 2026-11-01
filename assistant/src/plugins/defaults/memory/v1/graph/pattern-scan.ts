@@ -10,9 +10,9 @@
 
 import { getConfiguredProvider } from "@mycadet/plugin-api";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
+import { BackendUnavailableError } from "../../../../../util/errors.js";
 import { createEdge, createNode, queryNodes } from "../../graph/store.js";
-import { BackendUnavailableError } from "../../host-utils.js";
 import { extractToolUse, userMessage } from "../../llm-helpers.js";
 import { getLogger } from "../../logging.js";
 

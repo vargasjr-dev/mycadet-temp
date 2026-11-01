@@ -14,23 +14,18 @@ import type {
   ChannelDeliveryResult,
   ChannelReplyPayload,
 } from "@mycadet/gateway-client";
-import {
-  ChannelDeliveryError,
-  deliverChannelReply as _deliverChannelReply,
-} from "@mycadet/gateway-client/http-delivery";
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
+import { deliverChannelReply as _deliverChannelReply } from "@mycadet/gateway-client/http-delivery";
 
 import {
   deliverDirect,
   isDirectDelivery,
 } from "../messaging/providers/index.js";
 import { getLogger } from "../util/logger.js";
-import type { ApprovalUIMetadata } from "./channel-approval-types.js";
 
 const log = getLogger("gateway-client");
 
 // Re-export the error class and types so existing import sites are unchanged.
-export { ChannelDeliveryError };
-export type { ChannelDeliveryResult, ChannelReplyPayload };
 
 export async function deliverChannelReply(
   callbackUrl: string,

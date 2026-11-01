@@ -122,10 +122,8 @@ import {
 } from "@/domains/chat/utils/error-classification";
 import { openUrlInPopupOrTab } from "@/domains/chat/utils/oauth-popup-links";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import type {
-  DisplayAttachment,
-  DisplayMessage,
-} from "@/domains/chat/types/types";
+import type { DisplayMessage } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import type { TranscriptItem } from "@/domains/chat/transcript/types";
 import type { HistoryPaginationResult } from "@/domains/chat/transcript/use-history-pagination";
 import type { SessionDisclosureState } from "@/domains/chat/transcript/use-session-disclosure-state";
@@ -166,8 +164,6 @@ import { isNativeMobile } from "@/runtime/platform-detection";
 import { useConversationStore } from "@/stores/conversation-store";
 import { paneState } from "@/stores/pane-state";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
-
-
 
 // ---------------------------------------------------------------------------
 // Props — only values that cannot be owned locally
@@ -740,18 +736,18 @@ export function ChatMainPanel({
   const buildReprovisionAssistantKeyAction = () => (
     // The Doctor re-issues the key for any assistant — cloud or self-hosted —
     // so the banner always hands over to it.
-      <Button asChild variant="outlined" size="compact">
-        <Link
-          to={`${routes.settings.debug}?tab=doctor`}
-          onClick={() =>
-            useDoctorHandoffStore
-              .getState()
-              .setPendingPrompt("Help me re-provision my assistant's API key")
-          }
-        >
-          {t("chatRouteContent.askTheDoctor")}
-        </Link>
-      </Button>
+    <Button asChild variant="outlined" size="compact">
+      <Link
+        to={`${routes.settings.debug}?tab=doctor`}
+        onClick={() =>
+          useDoctorHandoffStore
+            .getState()
+            .setPendingPrompt("Help me re-provision my assistant's API key")
+        }
+      >
+        {t("chatRouteContent.askTheDoctor")}
+      </Link>
+    </Button>
   );
 
   // Blocked automatic opens (see `handleOpenUrl`) carry the URL in

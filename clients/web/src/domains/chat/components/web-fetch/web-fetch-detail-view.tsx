@@ -16,7 +16,8 @@ import { useMemo } from "react";
 import type { WebFetchMetadata } from "@mycadet/assistant-api";
 import { CardRoot, Notice, Typography } from "@mycadet/design-library";
 
-import { ExternalAnchor, isWebUrl } from "@/components/external-anchor";
+import { ExternalAnchor } from "@/components/external-anchor";
+import { isWebUrl } from "@mycadet/design-library/components/external-anchor";
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import {
   ClampedContent,

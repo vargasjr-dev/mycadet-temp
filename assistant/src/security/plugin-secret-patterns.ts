@@ -36,9 +36,8 @@
  * expects — the restricted grammar is what makes the native compile safe.
  */
 
+import { SecretPrefixPattern } from "@mycadet/service-contracts/secret-detection";
 import { RE2JS } from "re2js";
-
-import type { SecretPrefixPattern } from "./secret-patterns.js";
 
 // ---------------------------------------------------------------------------
 // Validation limits

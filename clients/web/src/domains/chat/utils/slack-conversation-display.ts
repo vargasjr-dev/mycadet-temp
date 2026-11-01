@@ -2,11 +2,9 @@ import type {
   Conversation,
   ConversationChannelBinding,
 } from "@/types/conversation-types";
-import {
-  getExternalLinkUrl,
-  type DisplayMessage,
-  type ExternalSourceLink,
-} from "@/domains/chat/types/types";
+import { type DisplayMessage } from "@/domains/chat/types/types";
+import type { ExternalSourceLink } from "@/utils/external-source-link";
+import { getExternalLinkUrl } from "@/utils/external-source-link";
 
 export type SlackDisplayConversation = Pick<
   Conversation,

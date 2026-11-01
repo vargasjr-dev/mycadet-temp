@@ -21,7 +21,7 @@ import { getConfigReadOnly } from "../../config/loader.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
-import { dispatchProviderResolvable } from "../connection-resolution.js";
+import { dispatchProviderResolvable } from "../provider-resolvability.js";
 import {
   createTimeout,
   getConfiguredProvider,

@@ -15,7 +15,8 @@
  * replayed from the stored payload is fenced exactly as its first run, and the
  * boundary cannot be skipped on a retry or crash-recovery path.
  */
-import type { ChannelId } from "../../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type {
   SlackAppContext,
   SlackAppContextEntity,

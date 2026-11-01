@@ -1,5 +1,5 @@
 import { ensureCloudIdentityIds } from "../config/cloud-identity.js";
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import { getMcpServerManager } from "../mcp/manager.js";
 import { startConfiguredMcpServers } from "../mcp/startup.js";
 import { gmailMessagingProvider } from "../messaging/providers/gmail/adapter.js";

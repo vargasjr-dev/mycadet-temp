@@ -12,12 +12,6 @@ import type {
   ComposeApprovalMessageGenerativeOptions,
 } from "./message-composer-types.js";
 
-export type {
-  ApprovalMessageContext,
-  ApprovalMessageScenario,
-  ComposeApprovalMessageGenerativeOptions,
-} from "./message-composer-types.js";
-
 const log = getLogger("approval-message-composer");
 
 // ---------------------------------------------------------------------------

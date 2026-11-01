@@ -7,6 +7,11 @@ import {
 } from "@mycadet/local-mode/contract";
 
 import * as localModeHost from "@/runtime/local-mode-host";
+import type {
+  LocalPairingStartResult,
+  LocalPairingPollResult,
+  LocalPairingFailure,
+} from "@mycadet/ipc-contract";
 
 const loadLockfileHost = mock(async (): Promise<Lockfile> => {
   throw new Error("host down");
@@ -22,7 +27,7 @@ const unpairAssistantHost = mock(
 );
 
 const pairingStartHost = mock(
-  async (_address: string): Promise<localModeHost.LocalPairingStartResult> => ({
+  async (_address: string): Promise<LocalPairingStartResult> => ({
     ok: true as const,
     handle: "handle-1",
     userCode: null,
@@ -32,10 +37,7 @@ const pairingStartHost = mock(
 );
 
 const pairingPollHost = mock(
-  async (
-    _handle: string,
-    _name?: string,
-  ): Promise<localModeHost.LocalPairingPollResult> => ({
+  async (_handle: string, _name?: string): Promise<LocalPairingPollResult> => ({
     ok: true as const,
     status: "imported" as const,
     assistantId: "paired-new",
@@ -540,15 +542,13 @@ describe("assistant pairing", () => {
       expect(
         isRetryablePairingFailure({
           reason,
-        } as localModeHost.LocalPairingFailure),
+        } as LocalPairingFailure),
       ).toBe(retryable);
     },
   );
 
   test("a host too old to name a reason ends the attempt", () => {
-    expect(
-      isRetryablePairingFailure({} as localModeHost.LocalPairingFailure),
-    ).toBe(false);
+    expect(isRetryablePairingFailure({} as LocalPairingFailure)).toBe(false);
   });
 });
 

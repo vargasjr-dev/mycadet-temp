@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
+import { SurfaceType } from "../api/surfaces.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { seedApp } from "./helpers/seed-app.js";
 

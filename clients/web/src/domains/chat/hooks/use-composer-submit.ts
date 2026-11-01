@@ -39,7 +39,7 @@ import { finishActiveDictation } from "@/domains/chat/voice/finish-dictation";
 import { conversationsByIdUndoPost } from "@/generated/daemon/sdk.gen";
 import { haptic } from "@/utils/haptics";
 import { isPointerCoarse } from "@/utils/pointer";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 // ---------------------------------------------------------------------------
 // Params & return type

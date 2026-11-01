@@ -4,13 +4,13 @@
  * guardian-approval-interception.ts.
  */
 import type { MessageAudience } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import type pino from "pino";
 
-import type { ChannelId } from "../../channels/types.js";
-import type { ApprovalMessageContext } from "../approval-message-composer.js";
 import { composeApprovalMessageGenerative } from "../approval-message-composer.js";
 import { deliverChannelReply } from "../gateway-client.js";
-import type { ApprovalCopyGenerator } from "../http-types.js";
+import { ApprovalMessageContext } from "../message-composer-types.js";
+import { ApprovalCopyGenerator } from "../message-composer-types.js";
 
 // ---------------------------------------------------------------------------
 // Deduplication for "already resolved" ephemeral messages

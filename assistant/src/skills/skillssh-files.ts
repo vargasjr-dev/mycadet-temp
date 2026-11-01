@@ -18,13 +18,13 @@ import {
   MAX_INLINE_TEXT_SIZE,
 } from "../runtime/routes/workspace-utils.js";
 import { getLogger } from "../util/logger.js";
-import type { SkillFileEntry } from "./catalog-files.js";
 import {
   hasHiddenOrSkippedSegment,
   sanitizeRelativePath,
   SKIP_DIRS,
 } from "./catalog-files.js";
 import type { SkillFileProvider } from "./skill-file-provider.js";
+import { SkillFileEntry } from "./skill-file-types.js";
 import type { GitHubContentsEntry } from "./skillssh-registry.js";
 import {
   findSkillDirInTree,

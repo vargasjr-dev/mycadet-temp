@@ -1,3 +1,4 @@
+import { TrustClass } from "@mycadet/gateway-client";
 import {
   type ContentBlock,
   extractTextFromStoredMessageContent,
@@ -11,7 +12,7 @@ import {
   isMemoryV1Active,
   usesConceptPageMemory,
 } from "../../../config/memory-v3-gate.js";
-import type { MemoryConfig } from "../../../config/types.js";
+import { MemoryConfig } from "../../../config/schemas/memory.js";
 import {
   getMemoryCheckpoint,
   setMemoryCheckpoint,
@@ -23,7 +24,6 @@ import {
   upsertDebouncedJob,
 } from "../../../persistence/jobs-store.js";
 import { memorySegments, messages } from "../../../persistence/schema/index.js";
-import type { TrustClass } from "../../../runtime/actor-trust-resolver.js";
 import { isAutoAnalysisConversation } from "../../../runtime/services/auto-analysis-guard.js";
 import { getLogger } from "./logging.js";
 import { memoryDbOrNull } from "./memory-db.js";

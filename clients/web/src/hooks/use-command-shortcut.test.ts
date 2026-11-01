@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { ResolvedHotkey } from "@/runtime/hotkeys";
+import { ResolvedHotkey } from "@mycadet/ipc-contract";
 
 /**
  * Which accelerator a command has depends on the host, so both are simulated

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@/domains/settings/ai/codex-subscription-models";
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@/assistant/llm-model-catalog";
 // The daemon's allowlist is the source of truth for what the Codex endpoint
 // serves; the web copy exists because the client cannot import daemon source
 // at runtime. This parity check makes drift a test failure instead of a

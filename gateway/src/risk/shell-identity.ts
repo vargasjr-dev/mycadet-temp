@@ -1,12 +1,9 @@
 import {
   type CommandSegment,
-  type DangerousPattern,
   parse,
   type ParsedCommand,
 } from "./shell-parser.js";
-import type { AllowlistOption } from "./risk-types.js";
-
-export type { ParsedCommand };
+import { type AllowlistOption, type DangerousPattern } from "./risk-types.js";
 
 // ── Shell parse result cache ─────────────────────────────────────────────────
 // Shell parsing via web-tree-sitter WASM is deterministic — the same command

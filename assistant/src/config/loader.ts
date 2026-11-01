@@ -20,7 +20,7 @@ import { getLogger } from "../util/logger.js";
 import { validateChatSettingsWrite } from "./chat-settings.js";
 import { pruneSeededCallsiteDefaultsFromConfig } from "./prune-seeded-callsite-defaults.js";
 import { AssistantConfigSchema } from "./schema.js";
-import type { AssistantConfig } from "./types.js";
+import { AssistantConfig } from "./schema.js";
 
 const log = getLogger("config");
 

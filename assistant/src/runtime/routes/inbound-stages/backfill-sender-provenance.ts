@@ -16,11 +16,12 @@
  * member-verdict cache for that sender, as a live inbound read does.
  */
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import { readInboundTrust } from "../../../calls/inbound-trust-reader.js";
 import type { ActorAuthorProvenance } from "../../../daemon/message-provenance.js";
 import type { Message as ProviderMessage } from "../../../messaging/provider-types.js";
 import { inboundIdentitiesMatch } from "../../../util/canonicalize-identity.js";
-import type { TrustClass } from "../../trust-class.js";
 import {
   verdictMemberFromVerdict,
   verdictUsability,

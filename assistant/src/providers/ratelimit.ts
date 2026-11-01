@@ -1,4 +1,4 @@
-import type { RateLimitConfig } from "../config/types.js";
+import { RateLimitConfig } from "../config/schemas/timeouts.js";
 import { RateLimitError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import type {

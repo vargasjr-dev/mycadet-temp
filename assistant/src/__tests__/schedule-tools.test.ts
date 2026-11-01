@@ -1,7 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-import { RiskLevel } from "../permissions/types.js";
 import { ensureGroupMigration } from "../persistence/conversation-group-migration.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -20,6 +19,7 @@ import { executeScheduleCreate as rawExecuteScheduleCreate } from "../tools/sche
 import { executeScheduleDelete } from "../tools/schedule/delete.js";
 import { executeScheduleList } from "../tools/schedule/list.js";
 import { executeScheduleUpdate } from "../tools/schedule/update.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext } from "../tools/types.js";
 
 await initializeDb();

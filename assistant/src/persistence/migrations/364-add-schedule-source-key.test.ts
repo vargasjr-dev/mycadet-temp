@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateAddScheduleSourceKey } from "./364-add-schedule-source-key.js";
 
 const NEW_COLUMNS = ["source_key", "definition_hash", "user_enabled"];

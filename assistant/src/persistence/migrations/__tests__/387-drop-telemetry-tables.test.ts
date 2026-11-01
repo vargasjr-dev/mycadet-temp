@@ -15,7 +15,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 // the file at the SAME resolved path so the assertions and the migration can't
 // disagree about which file is the telemetry DB.
 import { getTelemetryDbPath } from "../../../util/telemetry-db-path.js";
-import * as schema from "../../schema.js";
+import * as schema from "../../schema/index.js";
 import { migrateDropTelemetryTables } from "../387-drop-telemetry-tables.js";
 
 function createTestDb() {

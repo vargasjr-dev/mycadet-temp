@@ -65,7 +65,6 @@ function classifyByName(name: string): boolean {
  * the handler module.
  */
 import type { SkillFileEntry } from "./skill-file-types.js";
-export type { SkillFileEntry } from "./skill-file-types.js";
 
 // ─── Platform response contracts ─────────────────────────────────────────────
 //

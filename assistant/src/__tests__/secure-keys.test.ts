@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
-
 // ---------------------------------------------------------------------------
 // Mock logger (no-op — compatible with other test files' identical mock)
 // ---------------------------------------------------------------------------
-import type { CesClient } from "../credential-execution/client.js";
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
+import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
+
 import {
   _resetBackend,
   deleteSecureKeyAsync,

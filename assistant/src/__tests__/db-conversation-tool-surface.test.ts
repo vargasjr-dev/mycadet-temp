@@ -25,7 +25,7 @@ import { clearStoredDb, setStoredDb } from "../persistence/db-singleton.js";
 import { migrateCreateConversationToolSurfaces } from "../persistence/migrations/378-create-conversation-tool-surfaces.js";
 import { migrateConversationToolSurfacesDelegateIndependentTasks } from "../persistence/migrations/380-conversation-tool-surfaces-delegate-independent-tasks.js";
 import * as schema from "../persistence/schema/index.js";
-import type { ToolDefinition } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 let sqlite: Database;
 

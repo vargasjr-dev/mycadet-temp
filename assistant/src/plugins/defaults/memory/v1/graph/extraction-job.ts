@@ -6,7 +6,7 @@
 // - End-of-conversation extraction (full transcript)
 // ---------------------------------------------------------------------------
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import {
   getMemoryCheckpoint,
   setMemoryCheckpoint,

@@ -1,10 +1,11 @@
 /**
  * Shared types, constants, and utilities used across channel route modules.
  */
-import type { ChannelId } from "../../channels/types.js";
+import type { ApprovalUIMetadata } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   type ApprovalDecisionResult,
-  type ApprovalUIMetadata,
   isApprovalAction,
 } from "../channel-approval-types.js";
 

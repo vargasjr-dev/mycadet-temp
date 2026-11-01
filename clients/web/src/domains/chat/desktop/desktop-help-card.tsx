@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 
 import type { QuestionResponseEntry } from "@/domains/chat/api/event-types";
 import { useTranslation } from "@/i18n";
-import type { QuestionEntry } from "@/types/interaction-ui-types";
+import { QuestionEntry } from "@mycadet/assistant-api";
 
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";

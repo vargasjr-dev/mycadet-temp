@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import type {
   AddMessageOptions,
   ConversationRow,

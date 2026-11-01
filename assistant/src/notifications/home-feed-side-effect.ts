@@ -10,14 +10,12 @@
  * mirrors the high-signal subset of that traffic into the home feed so
  * the macOS Home page surfaces them alongside other activity.
  */
-import {
-  type FeedItem,
-  type FeedItemCategory,
-  type FeedItemDetailPanelKind,
-  feedItemSchema,
-  type FeedItemUpdate,
-  feedItemUpdateSchema,
-} from "../home/feed-types.js";
+import type { FeedItem } from "../api/responses/home.js";
+import type { FeedItemCategory } from "../api/responses/home.js";
+import type { FeedItemDetailPanelKind } from "../api/responses/home.js";
+import type { FeedItemUpdate } from "../api/responses/home.js";
+import { FeedItemSchema as feedItemSchema } from "../api/responses/home.js";
+import { FeedItemUpdateSchema as feedItemUpdateSchema } from "../api/responses/home.js";
 import { appendFeedItem } from "../home/feed-writer.js";
 import {
   addMessage,

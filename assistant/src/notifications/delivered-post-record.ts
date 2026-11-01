@@ -15,7 +15,8 @@
  * the channel never accepted can never read as something the assistant said.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { findConversation } from "../daemon/conversation-registry.js";
 import { INTERNAL_GUARDIAN_TRUST_CONTEXT } from "../daemon/trust-context.js";
 import type { ProviderMessageMetadata } from "../messaging/provider-message-metadata.js";

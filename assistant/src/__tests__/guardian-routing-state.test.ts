@@ -19,12 +19,12 @@ import {
 } from "../runtime/trust-context-resolver.js";
 import {
   handleChannelInbound,
-  seedContactChannel,
   setAdapterProcessMessage,
 } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
 import { bridgeState } from "./helpers/gateway-guardian-requests-store-bridge.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

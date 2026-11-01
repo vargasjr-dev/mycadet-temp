@@ -12,7 +12,7 @@ import { mockAttachmentPreviewModal } from "@/domains/chat/components/chat-attac
 
 const restorePreviewModal = mockAttachmentPreviewModal();
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import type { AttachmentSquareLabels } from "@/domains/chat/components/chat-attachments/message-attachment-square";
 import { useAttachmentSquares } from "@/domains/chat/components/chat-attachments/use-attachment-squares";

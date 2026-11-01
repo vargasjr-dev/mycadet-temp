@@ -12,8 +12,8 @@
  */
 
 import type { GuardianDelivery } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { ChannelId } from "../channels/types.js";
 import { guardianForChannel } from "../contacts/guardian-delivery-reader.js";
 import type { GuardianResolutionSource } from "../notifications/signal.js";
 

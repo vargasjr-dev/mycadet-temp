@@ -1,4 +1,5 @@
-import type { ChannelId } from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type { CallbackContext } from "./channel-transport.js";
 
 /**

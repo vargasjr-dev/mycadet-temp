@@ -13,10 +13,10 @@ import { NotFound } from "@/components/not-found";
 import {
   activateRemoteGatewaySession,
   exchangeRemoteWebPairingToken,
-  parseRemoteWebPairingParams,
   remoteGatewayPublicBaseUrl,
   RemoteWebPairingError,
 } from "@/lib/auth/remote-gateway-session";
+import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 import {
   getRemoteGatewayAssistantName,
   getRemoteGatewayHubUrl,

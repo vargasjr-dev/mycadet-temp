@@ -14,12 +14,13 @@
 import { randomUUID } from "node:crypto";
 
 import { isGuardianRequestExpired } from "@mycadet/gateway-client";
+import { CHALLENGE_TTL_MS } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 import {
   createGuardianRequest,
   listGuardianRequestsOrEmpty,
 } from "../channels/gateway-guardian-requests.js";
-import type { ChannelId } from "../channels/types.js";
 import { getGuardianDelivery } from "../contacts/guardian-delivery-reader.js";
 import { isKeptOutStatus } from "../contacts/member-status.js";
 import type { ChannelStatus } from "../contacts/types.js";
@@ -34,7 +35,6 @@ import { IntegrityError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { resolveAnchoredGuardian } from "./anchored-guardian.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "./assistant-scope.js";
-import { CHALLENGE_TTL_MS } from "./channel-verification-service.js";
 import {
   type AccessRequestTrigger,
   introductionMode,
@@ -47,8 +47,6 @@ const log = getLogger("access-request-helper");
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export type { AccessRequestTrigger } from "./introduction-policy.js";
 
 export interface AccessRequestParams {
   sourceChannel: ChannelId;

@@ -40,7 +40,7 @@ mock.module("../v1/jobs/embed-pkb-file.js", () => ({
 }));
 
 // ── Import handlers after mocks are set up ─────────────────────────────────────
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   handleDeleteMemory,
   handleListMemory,

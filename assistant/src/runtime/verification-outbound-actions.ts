@@ -15,6 +15,7 @@
 import { randomBytes } from "node:crypto";
 
 import { hashVerificationSecret } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 import { startVerificationCall } from "../calls/call-domain.js";
 import {
@@ -24,7 +25,6 @@ import {
   updateSessionDelivery,
   updateSessionStatus,
 } from "../channels/gateway-verification-sessions.js";
-import type { ChannelId } from "../channels/types.js";
 import { openDiscordDmChannel } from "../messaging/providers/discord/api.js";
 import { sendDiscordReply } from "../messaging/providers/discord/send.js";
 import { sendSlackReply } from "../messaging/providers/slack/send.js";

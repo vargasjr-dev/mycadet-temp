@@ -14,7 +14,7 @@ import {
   updateConversationModeSessionBoundaries,
 } from "./conversation-mode-sessions.js";
 import { migrateCreateConversationModeSessions } from "./migrations/381-create-conversation-mode-sessions.js";
-import * as schema from "./schema.js";
+import * as schema from "./schema/index.js";
 
 function createStore() {
   const sqlite = new Database(":memory:");

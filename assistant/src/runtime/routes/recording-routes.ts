@@ -14,6 +14,7 @@
 
 import { z } from "zod";
 
+import { RecordingOptions } from "../../api/events/recording.js";
 import {
   getActiveRestartToken,
   handleRecordingPause,
@@ -23,10 +24,7 @@ import {
   handleRecordingStop,
   isRecordingIdle,
 } from "../../daemon/handlers/recording.js";
-import type {
-  RecordingOptions,
-  RecordingStatus,
-} from "../../daemon/message-protocol.js";
+import { RecordingStatus } from "../../daemon/message-types/computer-use.js";
 import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {

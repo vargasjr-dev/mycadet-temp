@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getSqliteFrom } from "../../db-connection.js";
-import * as schema from "../../schema.js";
+import * as schema from "../../schema/index.js";
 import { migrateInviteContactId } from "../157-invite-contact-id.js";
 import { tableExists, tableHasColumn } from "../schema-introspection.js";
 

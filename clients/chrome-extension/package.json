@@ -13,6 +13,7 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@mycadet/shared": "workspace:*",
     "@tailwindcss/vite": "4.2.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",

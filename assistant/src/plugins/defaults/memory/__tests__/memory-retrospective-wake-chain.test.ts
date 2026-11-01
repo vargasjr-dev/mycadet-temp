@@ -54,12 +54,12 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../../../../providers/types.js";
 // Capture the real wake before the module mock below re-links the module
 // for every importer (including memory-retrospective-job).
 import { wakeAgentForOpportunity as importedWake } from "../../../../runtime/agent-wake.js";
 import * as realAgentWakeModule from "../../../../runtime/agent-wake.js";
+import { ToolDefinition } from "../../../../tools/tool-types.js";
 import {
   MEMORY_RETROSPECTIVE_FORK_SOURCE,
   MEMORY_RETROSPECTIVE_GROUP_ID,

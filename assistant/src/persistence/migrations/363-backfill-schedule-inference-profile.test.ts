@@ -20,7 +20,7 @@ mock.module("../../schedule/inference-profile.js", () => ({
     resolveDurableProfile(target) ?? resolvedDefault,
 }));
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateBackfillScheduleInferenceProfile } from "./363-backfill-schedule-inference-profile.js";
 
 function createTestDb(withProfileColumn = true) {

@@ -23,7 +23,7 @@
 import type { ContentBlock } from "@mycadet/plugin-api";
 import { and, desc, eq, lte } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import type { DrizzleDb } from "../../../../../persistence/db-connection.js";
 import { messages } from "../../../../../persistence/schema/index.js";
 import { memorySqliteOrNull } from "../../memory-db.js";

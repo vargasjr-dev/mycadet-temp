@@ -13,7 +13,7 @@
  */
 
 import { getConfig } from "../config/loader.js";
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import { pinnedListeningLanguage } from "../providers/speech-to-text/provider-catalog.js";
 import { sttCatalogKeyForRole } from "../stt/roles.js";
 import { resolveLanguageVoiceOverride } from "../tts/language-voices.js";

@@ -1,4 +1,4 @@
-import type { ModelPricingOverride } from "../config/schema.js";
+import { ModelPricingOverride } from "../config/schemas/inference.js";
 import { isAnthropicDelegatingGateway } from "../providers/anthropic-gateway-shared.js";
 import type {
   CatalogModel,

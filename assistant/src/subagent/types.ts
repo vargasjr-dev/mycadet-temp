@@ -6,7 +6,7 @@
  * back to the parent's client socket wrapped in `subagent_event` envelopes.
  */
 
-import type { UsageStats } from "../daemon/message-protocol.js";
+import { UsageStats } from "../daemon/message-types/shared.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { Message } from "../providers/types.js";
 

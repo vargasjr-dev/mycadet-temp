@@ -1,11 +1,9 @@
 import {
-  CHANNEL_IDS,
   type ChannelId,
   isChannelId,
 } from "@mycadet/service-contracts/channels";
 
 import {
-  HOST_PROXY_CAPABILITIES,
   HOST_PROXY_SUPPORT,
   hostProxyCapabilities,
   type HostProxyCapability,
@@ -16,7 +14,6 @@ import {
 // The assistant understands the full canonical channel set, so it adopts the
 // shared vocabulary wholesale. `parseChannelId` stays local — it is only used
 // daemon-side and is a thin convenience over the shared guard.
-export { CHANNEL_IDS, type ChannelId, isChannelId };
 
 export function parseChannelId(value: unknown): ChannelId | null {
   return isChannelId(value) ? value : null;
@@ -299,14 +296,6 @@ export function isInteractiveInterface(id: InterfaceId): boolean {
  * render it in `assistant clients` help without hoisting this daemon module.
  * Re-exported here because this is where interface vocabulary is consumed.
  */
-export {
-  HOST_PROXY_CAPABILITIES,
-  HOST_PROXY_SUPPORT,
-  hostProxyCapabilities,
-  type HostProxyCapability,
-  type HostProxyInterfaceId,
-  isHostProxyInterfaceId,
-};
 
 // Every key of the capability table must be a real interface id. The table
 // itself cannot state this: it lives in a leaf module that must not import

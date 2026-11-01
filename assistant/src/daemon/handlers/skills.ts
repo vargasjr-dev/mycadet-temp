@@ -34,7 +34,6 @@ import {
   getCachedCatalogSync,
   getCatalog,
 } from "../../skills/catalog-cache.js";
-import type { SkillFileEntry } from "../../skills/catalog-files.js";
 import {
   catalogSkillToSlim,
   createCadetCatalogProvider,
@@ -72,8 +71,9 @@ import {
 import type { SkillInstallMeta } from "../../skills/install-meta.js";
 import { readInstallMeta } from "../../skills/install-meta.js";
 import type { SkillFileProvider } from "../../skills/skill-file-provider.js";
+import { SkillFileEntry } from "../../skills/skill-file-types.js";
+import { SkillAuditData } from "../../skills/skillssh-audit-types.js";
 import { createSkillsShProvider } from "../../skills/skillssh-files.js";
-import type { SkillAuditData } from "../../skills/skillssh-registry.js";
 import {
   fetchSkillAudits,
   installExternalSkill,

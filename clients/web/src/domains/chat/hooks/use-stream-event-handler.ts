@@ -93,13 +93,6 @@ import {
 } from "@/domains/chat/utils/stream-handlers/workflow-handlers";
 import type { StreamHandlerContext } from "@/domains/chat/utils/stream-handlers/types";
 
-export type {
-  ChatError,
-  PendingConfirmationState,
-  PendingContactRequestState,
-  PendingSecretState,
-} from "@/domains/chat/types";
-
 import type { AssistantEvent } from "@/types/event-types";
 
 // ---------------------------------------------------------------------------

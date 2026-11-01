@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { getBundledSkillsDir, type SkillToolEntry } from "../config/skills.js";
-import { RiskLevel } from "../permissions/types.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import { resolveSubagentRole } from "../subagent/role-resolution.js";
 import type { SubagentRole } from "../subagent/types.js";
@@ -14,6 +13,7 @@ import {
   createSkillTool,
   createSkillToolsFromManifest,
 } from "../tools/skills/skill-tool-factory.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { ToolContext } from "../tools/types.js";
 
 // ---------------------------------------------------------------------------

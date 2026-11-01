@@ -4,11 +4,11 @@ import { dirname, isAbsolute } from "node:path";
 
 import { supportsHostProxy } from "../../channels/types.js";
 import { HostTransferProxy } from "../../daemon/host-transfer-proxy.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { assistantEventHub } from "../../runtime/assistant-event-hub.js";
 import { formatDesktopAppRequired } from "../capability-offer.js";
 import { declareDaemonActivityField } from "../schema-transforms.js";
 import { sandboxPolicy } from "../shared/filesystem/path-policy.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

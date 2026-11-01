@@ -62,7 +62,7 @@ mock.module("../../embeddings/messages-lexical-index.js", () => ({
 // its other named exports that the db-init import graph pulls in.
 import { resetDbForTesting } from "../../../__tests__/db-test-helpers.js";
 import { DEFAULT_CONFIG } from "../../../config/defaults.js";
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import { getDb } from "../../db-connection.js";
 import { initializeDb } from "../../db-init.js";
 import { generateSparseEmbedding } from "../../embeddings/embedding-backend.js";

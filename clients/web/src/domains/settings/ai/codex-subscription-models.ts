@@ -7,8 +7,6 @@ import type {
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
 
-export { CODEX_SUBSCRIPTION_MODEL_IDS };
-
 /** The provider's catalog models a ChatGPT subscription can dispatch. */
 export function codexServableModels(
   provider: ConnectionProvider,

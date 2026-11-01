@@ -43,9 +43,9 @@ import { useRef } from "react";
 import {
   applyTimelineEvent,
   computeSubagentSteps,
-  type ToolCallCardStep,
   type ToolMeta,
 } from "@/domains/chat/hooks/use-subagent-card-data";
+import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils";
 import { classifyEventsDiff } from "@/domains/chat/subagent-projection-diff";
 import type { SubagentTimelineEvent } from "@/domains/chat/subagent-store";
 

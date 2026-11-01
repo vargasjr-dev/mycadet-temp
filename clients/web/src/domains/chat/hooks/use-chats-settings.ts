@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
-  ChatsSettingsChanges,
   ChatsSettingsLoadState,
   ChatsSettingsModalProps,
 } from "@/domains/chat/components/chats-settings-modal";
+import { ChatsSettingsChanges } from "../components/chats-settings-form";
 import {
   configGetOptions,
   configGetSetQueryData,

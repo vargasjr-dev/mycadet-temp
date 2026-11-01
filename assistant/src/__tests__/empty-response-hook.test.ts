@@ -30,24 +30,21 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { REFUSAL_FALLBACK_TEXT } from "@mycadet/plugin-api";
+
 import {
   computeRefusedExchangeDrops,
   quarantineRefusedExchanges,
 } from "../context/refusal-quarantine.js";
+import { PluginLogger } from "../hooks/types.js";
+import { PostModelCallContext } from "../hooks/types.js";
+import { StopContext } from "../hooks/types.js";
+import { UserPromptSubmitContext } from "../hooks/types.js";
 import {
   HOOKS,
   INTERNAL_NUDGE_OUTPUT_SUPPRESSION,
 } from "../plugin-api/constants.js";
-import type {
-  PluginLogger,
-  PostModelCallContext,
-  StopContext,
-  UserPromptSubmitContext,
-} from "../plugin-api/types.js";
-import {
-  NUDGE_TEXT,
-  REFUSAL_FALLBACK_TEXT,
-} from "../plugins/defaults/empty-response/hooks/post-model-call.js";
+import { NUDGE_TEXT } from "../plugins/defaults/empty-response/hooks/post-model-call.js";
 import postModelCall from "../plugins/defaults/empty-response/hooks/post-model-call.js";
 import stop from "../plugins/defaults/empty-response/hooks/stop.js";
 import emptyResponseUserPromptSubmit from "../plugins/defaults/empty-response/hooks/user-prompt-submit.js";

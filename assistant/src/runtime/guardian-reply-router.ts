@@ -34,6 +34,7 @@
  * to allow for incremental migration and independent testability.
  */
 
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
 import { isGuardianRequestExpired } from "@mycadet/gateway-client";
 
 import {
@@ -48,7 +49,6 @@ import type {
 import {
   getGuardianRequestByCodeOrNull,
   getGuardianRequestOrNull,
-  type GuardianRequestWire,
   listGuardianRequestsOrEmpty,
 } from "../channels/gateway-guardian-requests.js";
 import {

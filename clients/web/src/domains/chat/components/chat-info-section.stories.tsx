@@ -25,7 +25,7 @@ import {
   inChatInfoDrawerColumn,
   inChatInfoPhonePage,
 } from "@/domains/chat/components/chat-info-story-fixtures";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import {
   ChatInfoSection,

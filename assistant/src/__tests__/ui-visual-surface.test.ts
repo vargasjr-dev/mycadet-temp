@@ -15,13 +15,13 @@ import { describe, expect, test } from "bun:test";
 
 import { UISurfaceShowEventSchema } from "../api/events/ui-surface-show.js";
 import type { AssistantEvent } from "../api/index.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
-import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-protocol.js";
+import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-types/surfaces.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { uiShowTool } from "../tools/ui-surface/definitions.js";
 import { validateVisualHtml } from "../tools/ui-surface/visual-validation.js";

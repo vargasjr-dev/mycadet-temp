@@ -120,7 +120,7 @@ mock.module("../registry.js", () => ({
 
 import { LLMSchema } from "../../config/schemas/llm.js";
 import { wrapWithCallSiteRouting } from "../call-site-routing.js";
-import { ConnectionResolutionError } from "../connection-resolution.js";
+import { ConnectionResolutionError } from "../routing-identity.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

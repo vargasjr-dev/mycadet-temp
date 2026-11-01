@@ -1,6 +1,5 @@
-import { isElectron, type ConnectivityState } from "@/runtime/is-electron";
-
-export type { ConnectivityState };
+import { isElectron } from "@/runtime/is-electron";
+import { type ConnectivityState } from "@mycadet/ipc-contract";
 
 /**
  * Subscribe to connectivity state changes from the Electron host.

@@ -4,11 +4,11 @@
  * The caller supplies the hub, so this helper holds no runtime import into
  * `src/` and stays safe for the test preload's import graph.
  */
-import type { HostProxyCapability, InterfaceId } from "../../channels/types.js";
-import type {
-  AssistantEventHub,
-  DesktopPresenceState,
-} from "../../runtime/assistant-event-hub.js";
+import { DesktopPresenceState } from "@mycadet/service-contracts/desktop-presence";
+
+import type { InterfaceId } from "../../channels/types.js";
+import type { AssistantEventHub } from "../../runtime/assistant-event-hub.js";
+import { HostProxyCapability } from "../../types/host-capabilities.js";
 
 export interface RegisterHubClientArgs {
   hub: AssistantEventHub;

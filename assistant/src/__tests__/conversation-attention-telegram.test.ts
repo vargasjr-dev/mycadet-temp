@@ -33,10 +33,8 @@ import {
 } from "../persistence/schema/index.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

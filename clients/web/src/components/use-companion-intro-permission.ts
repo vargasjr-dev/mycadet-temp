@@ -18,9 +18,9 @@ import {
   openSystemPermissionSettings,
   requestSystemPermission,
   subscribeToSystemPermissions,
-  type SystemPermissionsState,
-  type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
+import type { SystemPermissionStateItem } from "@mycadet/ipc-contract";
+import type { SystemPermissionsState } from "@mycadet/ipc-contract";
 
 export type CompanionIntroPermissionKind =
   | "microphone"

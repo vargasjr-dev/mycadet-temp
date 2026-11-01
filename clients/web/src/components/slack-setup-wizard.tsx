@@ -16,8 +16,6 @@ import { useTranslation } from "@/i18n";
 import { openExternalUrl } from "@/runtime/browser";
 import { buildSlackManifest } from "@/utils/slack-manifest";
 
-export type { MutationStatus };
-
 /**
  * Slack's create-app entry point. Deliberately carries no `manifest_json`
  * payload: Slack's modal intercepts this URL and ignores the parameter, so

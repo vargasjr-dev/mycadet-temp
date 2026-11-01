@@ -2,18 +2,17 @@
  * Periodic retry sweep for failed channel inbound events.
  */
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import type { AssistantEvent } from "../api/index.js";
 import { audienceForReader } from "../channels/message-audience.js";
-import {
-  type ChannelId,
-  isChannelId,
-  parseChannelId,
-  parseInterfaceId,
-} from "../channels/types.js";
+import { parseChannelId, parseInterfaceId } from "../channels/types.js";
 import { isConversationBusyError } from "../daemon/conversation-messaging.js";
 import { findConversation } from "../daemon/conversation-registry.js";
 import { getDiskPressureStatus } from "../daemon/disk-pressure-guard.js";
 import { classifyDiskPressureTurnPolicy } from "../daemon/disk-pressure-policy.js";
+import { SlackInboundMessageMetadata } from "../daemon/handlers/shared.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import {
   type ProviderMessageMetadata,
@@ -43,10 +42,7 @@ import {
 } from "./channel-reply-delivery.js";
 import { finalizeEventDelivery } from "./finalize-event-delivery.js";
 import { deliverChannelReply } from "./gateway-client.js";
-import type {
-  MessageProcessor,
-  SlackInboundMessageMetadata,
-} from "./http-types.js";
+import type { MessageProcessor } from "./http-types.js";
 import { prepareChannelInboundContent } from "./routes/inbound-stages/inbound-content-prep.js";
 import { resolveRoutingStateFromRuntime } from "./trust-context-resolver.js";
 

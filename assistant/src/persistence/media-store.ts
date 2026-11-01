@@ -9,7 +9,9 @@ import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 import { getDb } from "./db-connection.js";
-import { mediaAssets, mediaKeyframes, processingStages } from "./schema.js";
+import { mediaAssets } from "./schema/index.js";
+import { mediaKeyframes } from "./schema/index.js";
+import { processingStages } from "./schema/index.js";
 
 // ---------------------------------------------------------------------------
 // Types

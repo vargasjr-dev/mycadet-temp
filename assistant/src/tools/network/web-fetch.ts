@@ -10,7 +10,6 @@ import type {
   WebFetchProviderId,
 } from "../../api/events/tool-result.js";
 import { getConfig } from "../../config/loader.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { getProviderKeyAsync } from "../../security/secure-keys.js";
 import { wrapUntrustedContent } from "../../security/untrusted-content.js";
 import { faviconUrlForDomain } from "../../util/favicon.js";
@@ -22,6 +21,7 @@ import {
   sleep,
 } from "../../util/retry.js";
 import { safeStringSlice } from "../../util/unicode.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

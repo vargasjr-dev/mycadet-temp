@@ -31,7 +31,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-import { RiskLevel } from "../permissions/types.js";
 import {
   __clearRegistryForTesting,
   getCoreToolOverride,
@@ -41,6 +40,7 @@ import {
   getWorkspaceToolNames,
   registerTool,
 } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import {
   __resetWorkspaceToolCacheForTesting,

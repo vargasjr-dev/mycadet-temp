@@ -25,7 +25,6 @@ import { executeDesktopBrowserOperation } from "../../desktop/desktop-browser-op
 import type { ContentBlock } from "../../providers/types.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { resolveBrowserExecutionContext } from "./browser-context.js";
-export { browserCliConversationKey } from "./browser-context.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ── Param validation ─────────────────────────────────────────────────

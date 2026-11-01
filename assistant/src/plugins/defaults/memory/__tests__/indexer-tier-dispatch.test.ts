@@ -26,7 +26,7 @@ mock.module("../../../../persistence/embeddings/qdrant-client.js", () => ({
 
 import { setConfig } from "../../../../__tests__/helpers/set-config.js";
 import { getConfig } from "../../../../config/loader.js";
-import type { MemoryConfig } from "../../../../config/types.js";
+import { MemoryConfig } from "../../../../config/schemas/memory.js";
 import { getMemoryCheckpoint } from "../../../../persistence/checkpoints.js";
 import {
   getDb,

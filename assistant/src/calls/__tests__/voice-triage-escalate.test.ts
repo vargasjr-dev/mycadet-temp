@@ -2,12 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import { DEEPGRAM_MULTI_LANGUAGE_CODES } from "../../providers/speech-to-text/deepgram.js";
 import { SCREEN_ACTION_VERDICT_TOKEN } from "../voice-control-protocol.js";
+import { ESCALATE_VERDICT_TOKEN } from "../voice-control-protocol.js";
+import { HOLD_VERDICT_TOKEN } from "../voice-control-protocol.js";
 import {
   capEscalationBridge,
   classifyFrontDoorLeading,
   createFrontDoorStreamGate,
   createFrontDoorVerdictMachine,
-  ESCALATE_VERDICT_TOKEN,
   escalatedContinuationRule,
   ESCALATION_CONTINUATION_CONTENT,
   FALLBACK_ESCALATION_BRIDGE,
@@ -15,7 +16,6 @@ import {
   fallbackEscalationBridgeFor,
   frontDoorCapabilityDigest,
   frontDoorDecisionRule,
-  HOLD_VERDICT_TOKEN,
   isEscalationBridgeComplete,
   MAX_ESCALATION_BRIDGE_CHARS,
   needsFallbackBridge,

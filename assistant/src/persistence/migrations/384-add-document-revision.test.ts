@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateAddDocumentWorkspacePath } from "./360-add-document-workspace-path.js";
 import { migrateAddDocumentRevision } from "./384-add-document-revision.js";
 

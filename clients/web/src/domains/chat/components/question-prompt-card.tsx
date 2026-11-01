@@ -24,7 +24,7 @@ import { useQuestionCardMinimize } from "@/domains/chat/hooks/use-question-card-
 import { useTranslation } from "@/i18n";
 import { useIsCompactWidth } from "@/hooks/use-compact-width";
 import { useOptionHotkeys } from "@/hooks/use-option-hotkeys";
-import type { QuestionEntry } from "@/types/interaction-ui-types";
+import { QuestionEntry } from "@mycadet/assistant-api";
 import { usePointerCoarse } from "@/utils/pointer";
 import { Button, Card, cn, Typography } from "@mycadet/design-library";
 

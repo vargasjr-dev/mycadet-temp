@@ -5,4 +5,3 @@
  * without mocking all of `node:fs` — which causes bun's test runner to hang
  * on exit.
  */
-export { existsSync, readFileSync } from "node:fs";

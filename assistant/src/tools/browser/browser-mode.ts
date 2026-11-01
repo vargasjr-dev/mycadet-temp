@@ -16,7 +16,6 @@ import { BROWSER_MODE } from "./browser-mode-constants.js";
 import type { BrowserMode } from "./cdp-client/types.js";
 
 /** Canonical browser mode values. Re-exported from cdp-client/types. */
-export type { BrowserMode } from "./cdp-client/types.js";
 
 /** All accepted values (canonical + aliases). */
 const ALIAS_MAP: Record<string, BrowserMode> = {

@@ -8,9 +8,9 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { createMockProvider } from "../__tests__/helpers/mock-provider.js";
-import { RiskLevel } from "../permissions/types.js";
 import type { ContentBlock, ProviderResponse } from "../providers/types.js";
 import { registerTool } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { AgentLoop } from "./loop.js";
 

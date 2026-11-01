@@ -15,7 +15,7 @@ import {
   setDictationOverlayInteractive,
   subscribeToDictationOverlayState,
 } from "@/runtime/dictation-overlay";
-import type { DictationOverlayState } from "@/runtime/is-electron";
+import { DictationOverlayState } from "@mycadet/ipc-contract";
 import { useTranslation } from "@/i18n";
 
 /**

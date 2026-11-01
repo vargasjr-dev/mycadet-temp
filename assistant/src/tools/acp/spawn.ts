@@ -5,7 +5,6 @@ import { z } from "zod";
 import { markAcpConnectCardRaised } from "../../acp/acp-connect-card-state.js";
 import {
   ACP_AUTH_RECOVERY_GUIDANCE,
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
   CLAUDE_ACP_COMMAND,
   isAcpAuthRequired,
 } from "../../acp/auth-required.js";
@@ -17,8 +16,10 @@ import {
 } from "../../acp/prepare-agent-env.js";
 import { formatResolveFailure } from "../../acp/resolve-agent.js";
 import { claudeResumeHint } from "../../acp/resume-hint.js";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "../../api/events/acp-auth-required.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { FailedDependencyError } from "../../runtime/routes/errors.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

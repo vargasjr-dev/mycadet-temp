@@ -4,8 +4,8 @@ import type {
   ContentBlock,
   Message,
   ProviderEvent,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 // ---------------------------------------------------------------------------
 // Mock Anthropic SDK — must be before importing the provider

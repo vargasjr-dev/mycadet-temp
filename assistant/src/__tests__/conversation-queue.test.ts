@@ -357,8 +357,9 @@ mock.module("../agent/loop.js", () => ({
 // Import Conversation AFTER mocks are registered.
 // ---------------------------------------------------------------------------
 
-import type { QueueDrainReason, QueuePolicy } from "../daemon/conversation.js";
 import { Conversation } from "../daemon/conversation.js";
+import { QueueDrainReason } from "../daemon/conversation-queue-manager.js";
+import { QueuePolicy } from "../daemon/conversation-queue-manager.js";
 import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 
 type ConversationWithWorkspaceDeps = Conversation & {

@@ -9,12 +9,12 @@ import {
   type QuestionPromptOutcome,
   type QuestionPromptParamsEntry,
 } from "../../permissions/question-prompter.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { DESKTOP_HELP_GUIDANCE } from "../../util/browser-human-verification.js";
 import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

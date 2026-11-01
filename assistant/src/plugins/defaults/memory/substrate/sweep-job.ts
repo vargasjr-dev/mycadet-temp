@@ -35,7 +35,7 @@ import { and, desc, eq, gt, notInArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { warmGuardianBindings } from "../../../../contacts/guardian-delivery-reader.js";
 import { emitBackgroundFailureSignal } from "../../../../notifications/background-failure-signal.js";
 import { getDb } from "../../../../persistence/db-connection.js";

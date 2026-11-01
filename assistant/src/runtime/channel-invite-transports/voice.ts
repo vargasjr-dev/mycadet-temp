@@ -11,7 +11,8 @@
  * voice-code path rather than generic token extraction.
  */
 
-import type { ChannelId } from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type {
   ChannelInviteAdapter,
   InviteShareLink,

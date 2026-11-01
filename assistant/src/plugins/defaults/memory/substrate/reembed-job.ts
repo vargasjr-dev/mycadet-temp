@@ -9,7 +9,7 @@
  * and workspace migrations that need every page re-indexed.
  */
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
 import { enqueueEmbedConceptPageJob } from "../jobs/embed-concept-page.js";
 import { getLogger } from "../logging.js";

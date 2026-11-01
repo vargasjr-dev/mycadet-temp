@@ -30,8 +30,6 @@ import type {
   UpdateTrustRuleBody,
 } from "@/types/trust-rules";
 
-export { ApiError };
-
 export interface FetchTrustRulesParams {
   origin?: TrustRuleOrigin;
   tool?: string;

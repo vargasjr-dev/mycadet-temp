@@ -7,12 +7,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-  SystemPermissionKind,
-  SystemPermissionStateItem,
-  SystemPermissionStatus,
-  SystemPermissionsState,
-} from "@/runtime/system-permissions";
+import { SystemPermissionKind } from "@mycadet/ipc-contract";
+import { SystemPermissionStateItem } from "@mycadet/ipc-contract";
+import { SystemPermissionStatus } from "@mycadet/ipc-contract";
+import { SystemPermissionsState } from "@mycadet/ipc-contract";
 
 let state: SystemPermissionsState | null;
 let supported = true;

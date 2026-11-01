@@ -8,8 +8,8 @@ import {
   leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
-  type GuardianTokenData,
 } from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 import {
   ensureProviderApiKey,
   formatProviderName,

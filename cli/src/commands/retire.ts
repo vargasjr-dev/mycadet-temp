@@ -34,8 +34,6 @@ import { retireAppleContainer } from "../lib/retire-apple-container.js";
 import { exec } from "../lib/step-runner.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
-export { retireLocal };
-
 interface RetireArgs {
   name?: string;
   source?: string;

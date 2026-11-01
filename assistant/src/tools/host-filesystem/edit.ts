@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { supportsHostProxy } from "../../channels/types.js";
 import { HostFileProxy } from "../../daemon/host-file-proxy.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { assistantEventHub } from "../../runtime/assistant-event-hub.js";
 import { formatDesktopAppRequired } from "../capability-offer.js";
 import { FileSystemOps } from "../shared/filesystem/file-ops-service.js";
@@ -12,6 +11,7 @@ import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

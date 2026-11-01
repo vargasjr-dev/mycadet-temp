@@ -20,7 +20,6 @@ import { shortSha } from "@/lib/plugins/utils";
 
 // Re-exported so this module is also a valid import path for `shortSha`
 // (callers and tests reference it both here and from `./utils`).
-export { shortSha };
 
 interface UsePluginDetailOptions {
   /** Invoked after a successful installation. */

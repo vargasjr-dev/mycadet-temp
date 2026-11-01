@@ -10,15 +10,13 @@ import type {
   Playbook,
   PlaybookAutonomyLevel,
 } from "../../../../playbooks/types.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import {
   createNode,
   updateNode,
 } from "../../../../plugins/defaults/memory/graph/store.js";
 import type { NewNode } from "../../../../plugins/defaults/memory/graph/types.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

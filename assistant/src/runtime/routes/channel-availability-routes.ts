@@ -15,13 +15,13 @@
  * surfaced for setup/verification at all?".
  */
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { discoverPluginChannels } from "../../channels/plugin-channel-declarations.js";
 import {
   type AvailableChannel,
   CHANNEL_METADATA,
-  type ChannelId,
   type ChannelInfo,
 } from "../../channels/types.js";
 import { resolveConfiguredByoEmailService } from "../../email/byo-email-credential.js";

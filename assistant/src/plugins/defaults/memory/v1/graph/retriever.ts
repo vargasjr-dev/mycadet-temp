@@ -15,7 +15,7 @@ import {
 import { selectedBackendSupportsMultimodal } from "@mycadet/plugin-api";
 
 import { usesConceptPageMemory } from "../../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import { embedWithRetry } from "../../../../../persistence/embeddings/embed.js";
 import { generateSparseEmbedding } from "../../../../../persistence/embeddings/embedding-backend.js";
 import type { QdrantSparseVector } from "../../../../../persistence/embeddings/qdrant-client.js";

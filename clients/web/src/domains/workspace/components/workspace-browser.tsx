@@ -11,10 +11,8 @@ import type { FileViewMode } from "@/components/file-view-mode";
 import { isMarkdown } from "@/components/file-markdown";
 import { useSideListRoom } from "@/hooks/use-side-list-room";
 import { WorkspaceFileViewer } from "@/domains/workspace/components/workspace-file-viewer";
-import {
-  WorkspaceTree,
-  type WorkspaceSortMode,
-} from "@/domains/workspace/components/workspace-tree";
+import { WorkspaceTree } from "@/domains/workspace/components/workspace-tree";
+import type { WorkspaceSortMode } from "@/domains/workspace/utils/sort-entries";
 
 import { WorkspaceFilePicker } from "./workspace-file-picker";
 import "./workspace-browser.css";

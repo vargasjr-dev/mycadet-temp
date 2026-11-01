@@ -22,7 +22,7 @@ mock.module("../../config.js", () => ({
 }));
 
 import { DEFAULT_CONFIG } from "../../../../../config/defaults.js";
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import { getMemoryDb } from "../../../../../persistence/db-connection.js";
 import { initializeDb } from "../../../../../persistence/db-init.js";
 import {

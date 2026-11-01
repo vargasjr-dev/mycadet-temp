@@ -17,7 +17,8 @@ const isReadyFn = mock((): boolean => true);
 // ---------------------------------------------------------------------------
 
 // Import after mocking
-import type { CesClient } from "../credential-execution/client.js";
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
+
 import { CesRpcCredentialBackend } from "../security/ces-rpc-credential-backend.js";
 
 // ---------------------------------------------------------------------------

@@ -23,12 +23,10 @@
  * {@link sendVoiceActivityControl}.
  */
 
-import {
-  isElectron,
-  type VoiceActivityContent,
-  type VoiceActivityControl,
-  type VoiceActivityStart,
-} from "@/runtime/is-electron";
+import { isElectron } from "@/runtime/is-electron";
+import type { VoiceActivityContent } from "@mycadet/ipc-contract";
+import type { VoiceActivityControl } from "@mycadet/ipc-contract";
+import type { VoiceActivityStart } from "@mycadet/ipc-contract";
 
 type VoiceActivityBridge = NonNullable<
   NonNullable<Window["cadet"]>["voiceActivity"]

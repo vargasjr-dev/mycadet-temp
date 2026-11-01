@@ -3,8 +3,9 @@
  * the conversational approval engine when an approvalConversationGenerator is
  * available. Classifies natural language and responds conversationally.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { audienceForReader } from "../../../channels/message-audience.js";
-import type { ChannelId } from "../../../channels/types.js";
 import { getLogger } from "../../../util/logger.js";
 import { runApprovalConversationTurn } from "../../approval-conversation-turn.js";
 import type {
@@ -16,8 +17,8 @@ import { deliverChannelReply } from "../../gateway-client.js";
 import type {
   ApprovalConversationContext,
   ApprovalConversationGenerator,
-  ApprovalCopyGenerator,
 } from "../../http-types.js";
+import { ApprovalCopyGenerator } from "../../message-composer-types.js";
 import type { ApprovalInterceptionResult } from "../approval-interception-types.js";
 import { deliverStaleApprovalReply } from "../guardian-approval-reply-helpers.js";
 

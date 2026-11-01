@@ -17,11 +17,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Import types statically (mock.module only affects runtime bindings)
-import type {
-  CancellationReason,
-  InteractiveUiRequest,
-} from "../interactive-ui.js";
-import type { InteractiveUiResult } from "../interactive-ui.js";
+import { CancellationReason } from "../interactive-ui-types.js";
+import { InteractiveUiRequest } from "../interactive-ui-types.js";
+import { InteractiveUiResult } from "../interactive-ui-types.js";
 
 // ---------------------------------------------------------------------------
 // Mock state

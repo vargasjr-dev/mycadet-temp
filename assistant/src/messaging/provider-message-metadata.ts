@@ -1,7 +1,6 @@
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { ReactionEmojiFieldsSchema } from "@mycadet/service-contracts/reactions";
 import { z } from "zod";
-
-import { CHANNEL_IDS } from "../channels/types.js";
 
 /**
  * What a stored channel message row knows about itself, in terms no single

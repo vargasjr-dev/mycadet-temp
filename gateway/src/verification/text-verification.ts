@@ -30,10 +30,10 @@ import {
   resolveCanonicalPrincipal,
   revokeExistingChannelGuardian,
 } from "./binding-helpers.js";
+import { hashVerificationSecret } from "@mycadet/gateway-client";
 import {
   extractEmailReplyBody,
   parseVerificationCode,
-  hashVerificationSecret,
 } from "./code-parsing.js";
 import {
   findContactChannelByAddress,

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import type { AssistantEvent, AssistantEventEnvelope } from "../api/index.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
   handleSurfaceAction,
 } from "../daemon/conversation-surfaces.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 

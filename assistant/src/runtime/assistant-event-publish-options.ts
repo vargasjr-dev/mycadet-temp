@@ -9,7 +9,8 @@
 
 import { z } from "zod";
 
-import { HOST_PROXY_CAPABILITIES, INTERFACE_IDS } from "../channels/types.js";
+import { INTERFACE_IDS } from "../channels/types.js";
+import { HOST_PROXY_CAPABILITIES } from "../types/host-capabilities.js";
 
 export const AssistantEventPublishOptionsSchema = z.object({
   targetCapability: z.enum(HOST_PROXY_CAPABILITIES).optional(),

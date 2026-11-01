@@ -20,9 +20,10 @@ import { z } from "zod";
 import { findConversation } from "../../daemon/conversation-registry.js";
 import { FALLBACK_TURN_TRUST } from "../../daemon/trust-context.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { CapabilityManifestSchema } from "../../workflows/capabilities.js";
 import { getWorkflowRunManager } from "../../workflows/run-manager.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

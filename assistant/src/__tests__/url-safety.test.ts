@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import { looksLikeHostPortShorthand } from "@mycadet/service-contracts/url-normalization";
+import { looksLikePathOnlyInput } from "@mycadet/service-contracts/url-normalization";
+
 import {
   buildHostHeader,
   extractEmbeddedIPv4FromIPv6,
@@ -8,8 +11,6 @@ import {
   isPrivateIPv4,
   isPrivateIPv6,
   isPrivateOrLocalHost,
-  looksLikeHostPortShorthand,
-  looksLikePathOnlyInput,
   parseUrl,
   resolveRequestAddress,
   sanitizeUrlForOutput,

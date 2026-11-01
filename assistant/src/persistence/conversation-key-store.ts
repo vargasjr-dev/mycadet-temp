@@ -7,10 +7,10 @@
  * first contact.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
-import type { ChannelId } from "../channels/types.js";
 import { cleanupBootstrapFiles } from "../prompts/bootstrap-cleanup.js";
 import { getCurrentSeq } from "../runtime/assistant-stream-state.js";
 import { getLogger } from "../util/logger.js";

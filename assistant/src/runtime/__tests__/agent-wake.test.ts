@@ -20,7 +20,7 @@
 
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-import type { DiskPressureStatus } from "../../daemon/disk-pressure-guard.js";
+import { DiskPressureStatus } from "../../api/events/disk-pressure-status-changed.js";
 import { desktopAutomationLease } from "../../desktop/desktop-automation-lease.js";
 import { hasPendingAgentWake } from "../agent-wake-queue.js";
 

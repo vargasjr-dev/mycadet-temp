@@ -1,11 +1,11 @@
+import { preprocessForAsset } from "../../config/bundled-skills/media-processing/services/preprocess.js";
 import {
   type PipelineStageName,
   runPipeline,
   type StageHandler,
 } from "../../config/bundled-skills/media-processing/services/processing-pipeline.js";
+import { reduceForAsset } from "../../config/bundled-skills/media-processing/services/reduce.js";
 import { mapSegmentsForAsset } from "../../config/bundled-skills/media-processing/tools/analyze-keyframes.js";
-import { preprocessForAsset } from "../../config/bundled-skills/media-processing/tools/extract-keyframes.js";
-import { reduceForAsset } from "../../config/bundled-skills/media-processing/tools/query-media-events.js";
 import { getConfig } from "../../config/loader.js";
 import { selectedBackendSupportsMultimodal } from "../../persistence/embeddings/embedding-backend.js";
 import { asString } from "../../persistence/job-utils.js";

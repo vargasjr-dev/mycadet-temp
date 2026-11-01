@@ -34,7 +34,7 @@ import { join, resolve, sep } from "node:path";
 import { stringifyMessageContent } from "@mycadet/plugin-api";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import type { getDb } from "../../../../persistence/db-connection.js";
 import { embedWithRetry } from "../../../../persistence/embeddings/embed.js";
 import {

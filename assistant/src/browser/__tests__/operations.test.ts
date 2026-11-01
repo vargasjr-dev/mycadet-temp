@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { BROWSER_OPERATION_META } from "../operation-meta.js";
 import {
-  BROWSER_OPERATION_META,
   browserOperationLifecycle,
   executeBrowserOperation,
 } from "../operations.js";

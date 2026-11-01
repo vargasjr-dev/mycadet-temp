@@ -33,7 +33,7 @@ import { getActiveAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
-import { buildRemoteWebPairingUrl } from "./pair-device-url";
+import { buildRemoteWebPairingUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 const PAIRING_CHALLENGE_PATH = "/pairing-challenge";
 const PAIRING_VERIFICATION_PATH = "/pairing-verification";

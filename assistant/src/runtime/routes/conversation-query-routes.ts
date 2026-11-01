@@ -103,10 +103,10 @@ import { getMemoryRecallLogByMessageIds } from "../../plugins/defaults/memory/me
 import { getMemoryV2ActivationLogByMessageIds } from "../../plugins/defaults/memory/v2/activation-log-store.js";
 import { getMemoryV3SelectionForInspectorByMessageIds } from "../../plugins/defaults/memory/v3/selection-log-store.js";
 import { CLOUD_ROUTABLE_PROVIDERS } from "../../providers/cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../../providers/inference/auth.js";
 import {
-  CADET_CLOUD_CONNECTION_NAME,
   createConnection,
   getConnection,
   LEGACY_MANAGED_CONNECTION_NAMES,

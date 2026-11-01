@@ -14,7 +14,7 @@ const workspaceDir = testDir;
 const conversationsDir = join(workspaceDir, "conversations");
 mkdirSync(conversationsDir, { recursive: true });
 
-import { getConversationDirPath } from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import {

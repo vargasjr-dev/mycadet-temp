@@ -29,10 +29,10 @@ import {
   isAdmissionPolicyExemptChannel,
   TRUST_CLASS_RANK,
 } from "@mycadet/gateway-client";
+import { TrustClass } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { ChannelId } from "../../../channels/types.js";
 import type { ChannelStatus } from "../../../contacts/types.js";
-import type { TrustClass } from "../../actor-trust-resolver.js";
 
 // ---------------------------------------------------------------------------
 // Types

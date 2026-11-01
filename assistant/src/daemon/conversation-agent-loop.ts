@@ -7,20 +7,20 @@
  * runAgentLoop method here, passing itself as the loop context.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
+import { isNoResponseOnlyText } from "@mycadet/service-contracts/no-response";
 import { v4 as uuid } from "uuid";
 
 import { onActivationTurnComplete } from "../activation/turn-hooks.js";
 import { repairHistoryForRun } from "../agent/history-repair/history-repair.js";
 import type {
   AgentEvent,
-  AgentLoopExitReason,
   CheckpointDecision,
   PreparedModelCall,
 } from "../agent/loop.js";
 import { createAssistantMessage } from "../agent/message-types.js";
 import type { AssistantEvent } from "../api/index.js";
 import type {
-  ChannelId,
   InterfaceId,
   TurnChannelContext,
   TurnInterfaceContext,
@@ -41,6 +41,7 @@ import type { LLMCallSite } from "../config/schemas/llm.js";
 import { desktopAutomationLease } from "../desktop/desktop-automation-lease.js";
 import { writeRelationshipState } from "../home/relationship-state-writer.js";
 import type { UserPromptSubmitInputContext } from "../hooks/types.js";
+import { AgentLoopExitReason } from "../hooks/types.js";
 import type { SupportedLocale } from "../i18n/index.js";
 import {
   addMessage,
@@ -57,7 +58,7 @@ import {
   updateConversationSlackContextWatermark,
   updateMessageMetadata,
 } from "../persistence/conversation-crud.js";
-import { isReplaceableTitle } from "../persistence/conversation-title-service.js";
+import { isReplaceableTitle } from "../persistence/conversation-title-placeholders.js";
 import { NO_RESPONSE_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import {
   backfillMessageIdOnLogs,
@@ -69,10 +70,10 @@ import type { ConversationGraphMemory } from "../plugins/defaults/memory/graph/c
 import { enqueueMemoryRetrospectiveOnCompaction } from "../plugins/defaults/memory/memory-retrospective-enqueue.js";
 import { runHook } from "../plugins/pipeline.js";
 import {
-  dispatchProviderResolvable,
   isCloudConnectionRoute,
   resolveEntryConnectionName,
 } from "../providers/connection-resolution.js";
+import { dispatchProviderResolvable } from "../providers/provider-resolvability.js";
 import {
   ConnectionResolutionError,
   resolveRoutingIdentity,
@@ -80,7 +81,6 @@ import {
 import type { ContentBlock, Message } from "../providers/types.js";
 import type { Provider } from "../providers/types.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
-import { isNoResponseOnlyText } from "../runtime/no-response.js";
 import { getByConversation as getPendingInteractionsByConversation } from "../runtime/pending-interactions.js";
 import { publishConversationMessagesChanged } from "../runtime/sync/resource-sync-events.js";
 import {
@@ -133,7 +133,7 @@ import {
   resolveTurnInboundActorContext,
   type SlackChronologicalContext,
 } from "./conversation-runtime-assembly.js";
-import type { CurrentTurnSurface } from "./conversation-surfaces.js";
+import { CurrentTurnSurface } from "./conversation-surface-state.js";
 import {
   blockingPendingSurfaceIds,
   hasBlockingPendingSurface,
@@ -152,7 +152,7 @@ import {
   registerInflightTurn,
   unregisterInflightTurn,
 } from "./inflight-turn-registry.js";
-import type { UsageStats } from "./message-protocol.js";
+import { UsageStats } from "./message-types/shared.js";
 import { bestEffortModeSessionTracking } from "./mode-session-tracking.js";
 import {
   persistReactionRecords,

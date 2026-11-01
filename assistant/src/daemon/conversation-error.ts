@@ -14,9 +14,9 @@ import {
   isImageUnprocessableError,
   isImageUnsupportedFormatError,
 } from "../plugins/defaults/image-recovery/detect.js";
-import { ConnectionResolutionError } from "../providers/connection-resolution.js";
 import { PROVIDER_CATALOG } from "../providers/model-catalog.js";
 import { getProviderRoutingSource } from "../providers/registry.js";
+import { ConnectionResolutionError } from "../providers/routing-identity.js";
 import { isAbortReason } from "../util/abort-reasons.js";
 import {
   type ProviderCredentialSource,

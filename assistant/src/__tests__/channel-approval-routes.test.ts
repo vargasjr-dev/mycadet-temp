@@ -74,13 +74,11 @@ import * as gatewayClient from "../runtime/gateway-client.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { _setTestPollMaxWait } from "../runtime/routes/channel-route-shared.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
 import { bridgeState } from "./helpers/gateway-guardian-requests-store-bridge.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

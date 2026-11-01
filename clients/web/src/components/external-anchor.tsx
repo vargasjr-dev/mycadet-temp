@@ -5,11 +5,6 @@ import {
 
 import { handleNativeAnchorClick } from "@/utils/native-anchor";
 
-export {
-  ExternalLinkGlyph,
-  isWebUrl,
-} from "@mycadet/design-library/components/external-anchor";
-
 export function ExternalAnchor({
   onOpen,
   ...props

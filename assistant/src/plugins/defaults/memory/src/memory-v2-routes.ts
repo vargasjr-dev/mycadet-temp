@@ -10,7 +10,7 @@ import { z } from "zod";
 import { getUserSelectableProfilesForProvider } from "../../../../config/default-profile-catalog.js";
 import { getConfig } from "../../../../config/loader.js";
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getDb } from "../../../../persistence/db-connection.js";
 import {
   enqueueMemoryJob,

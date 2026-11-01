@@ -11,12 +11,9 @@ import {
 import { computeSkillHash, writeInstallMeta } from "./install-meta.js";
 import type {
   AuditResponse,
-  PartnerAudit,
   RiskLevel,
   SkillAuditData,
 } from "./skillssh-audit-types.js";
-
-export type { AuditResponse, PartnerAudit, RiskLevel, SkillAuditData };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

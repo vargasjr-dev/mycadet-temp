@@ -47,7 +47,6 @@ import {
   type SkillToolManifest,
 } from "../config/skills.js";
 import * as permissions from "../permissions/checker.js";
-import { RiskLevel } from "../permissions/types.js";
 import { getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { BadRequestError, NotFoundError } from "../runtime/routes/errors.js";
@@ -55,6 +54,7 @@ import { ROUTES } from "../runtime/routes/settings-routes.js";
 import type { RouteHandlerArgs } from "../runtime/routes/types.js";
 import { registerSkillTools, unregisterSkillTools } from "../tools/registry.js";
 import { createSkillToolsFromManifest } from "../tools/skills/skill-tool-factory.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 
 await initializeDb();

@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-  ApprovalMessageContext,
-  ApprovalMessageScenario,
-} from "../runtime/approval-message-composer.js";
 import {
   composeApprovalMessage,
   getFallbackMessage,
 } from "../runtime/approval-message-composer.js";
+import { ApprovalMessageContext } from "../runtime/message-composer-types.js";
+import { ApprovalMessageScenario } from "../runtime/message-composer-types.js";
 
 // ---------------------------------------------------------------------------
 // Every scenario must produce a non-empty string

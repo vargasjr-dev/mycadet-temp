@@ -28,9 +28,6 @@ import * as hostTruncate from "../../../util/truncate.js";
 import * as hostWorkerCompute from "../../../util/worker-compute.js";
 import * as hostWorkerMemory from "../../../util/worker-memory.js";
 
-export { BackendUnavailableError } from "../../../util/errors.js";
-export { PromiseGuard } from "../../../util/promise-guard.js";
-
 export function isAbortReason(value: unknown): value is AbortReason {
   return hostAbortReasons.isAbortReason(value);
 }

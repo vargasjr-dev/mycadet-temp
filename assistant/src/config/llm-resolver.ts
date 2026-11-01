@@ -10,10 +10,8 @@ import {
   isModelInCatalog,
 } from "../providers/model-catalog.js";
 import { CALL_SITE_DEFAULTS } from "./call-site-defaults.js";
-import {
-  isDefaultProfileKey,
-  resolveDefaultProfileForProvider,
-} from "./default-profile-catalog.js";
+import { resolveDefaultProfileForProvider } from "./default-profile-catalog.js";
+import { isDefaultProfileKey } from "./default-profile-names.js";
 import {
   type LLMCallSite,
   LLMConfigBase,

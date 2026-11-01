@@ -24,7 +24,8 @@ import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // Seed the workspace config for real: a named profile the tests pin as the

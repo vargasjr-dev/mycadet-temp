@@ -16,7 +16,6 @@
 import { v4 as uuid } from "uuid";
 
 import type { AssistantEvent } from "../api/index.js";
-import type { HostProxyCapability } from "../channels/types.js";
 import {
   assistantEventHub,
   broadcastMessage,
@@ -24,6 +23,7 @@ import {
 import { snapshotHostProxyActorPrincipalId } from "../runtime/auth/same-actor.js";
 import type { PendingInteraction } from "../runtime/pending-interactions.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 import { AssistantError, ErrorCode } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 

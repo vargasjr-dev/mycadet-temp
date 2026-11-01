@@ -4,9 +4,9 @@ import {
 } from "../../config/schemas/mcp.js";
 import type { McpToolAnnotations } from "../../mcp/client.js";
 import type { McpServerManager } from "../../mcp/manager.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { toProviderSafeToolName } from "../provider-tool-name.js";
 import { schemaDefinesProperty } from "../schema-transforms.js";
+import { RiskLevel } from "../tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../types.js";
 
 const riskMap: Record<string, RiskLevel> = {

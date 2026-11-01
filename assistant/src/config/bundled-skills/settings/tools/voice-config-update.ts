@@ -1,11 +1,11 @@
 import { normalizeActivationKey } from "../../../../daemon/handlers/config-voice.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import {
   DEEPGRAM_MULTI_LANGUAGE_CODES,
   DEEPGRAM_NOVA3_MONOLINGUAL_CODES,
 } from "../../../../providers/speech-to-text/deepgram.js";
 import { listProviderModelFamilies } from "../../../../providers/speech-to-text/provider-catalog.js";
 import type { SttProviderId } from "../../../../stt/types.js";
-import { throwIfCancelled } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

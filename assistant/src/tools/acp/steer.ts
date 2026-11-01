@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { getAcpSessionManager } from "../../acp/index.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

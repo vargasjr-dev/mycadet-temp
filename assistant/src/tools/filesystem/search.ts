@@ -4,13 +4,13 @@ import { basename, join, relative } from "node:path";
 import { minimatch } from "minimatch";
 import { RE2JS } from "re2js";
 
-import { RiskLevel } from "../../permissions/types.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { declareDaemonActivityField } from "../schema-transforms.js";
 import {
   isDeniedBasename,
   sandboxPolicy,
 } from "../shared/filesystem/path-policy.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

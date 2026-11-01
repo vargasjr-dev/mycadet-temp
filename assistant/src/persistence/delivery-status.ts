@@ -14,8 +14,8 @@ import {
   RETRY_MAX_ATTEMPTS,
   retryDelayForAttempt,
 } from "./job-utils.js";
-import type { ChannelDeliveryStatus } from "./schema.js";
-import { channelInboundEvents } from "./schema.js";
+import { ChannelDeliveryStatus } from "./schema/index.js";
+import { channelInboundEvents } from "./schema/index.js";
 
 /**
  * Whether a delivery status means the row owes no further delivery.

@@ -20,17 +20,14 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import type {
-  SecureKeyBackend,
-  SecureKeyDeleteResult,
-} from "@mycadet/credential-storage";
+import type { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 
+import { ACP_OAUTH_TOKEN_FIELD, ACP_SERVICE } from "../acp/acp-credentials.js";
 import { getIsContainerized } from "../config/env-registry.js";
 import {
   openCesRpcSession,
   reconnectCesRpcSession,
 } from "../credential-execution/ces-connect.js";
-import { type CesClient } from "../credential-execution/client.js";
 import { discoverCes } from "../credential-execution/executable-discovery.js";
 import { getAnyProviderEnvVar } from "../providers/provider-env-vars.js";
 import { getLogger } from "../util/logger.js";
@@ -44,18 +41,11 @@ import type {
 import { createUnavailableBackend } from "./credential-backend.js";
 import { credentialKey } from "./credential-key.js";
 
-export type {
-  CredentialListResult,
-  DeleteResult,
-} from "./credential-backend.js";
-import { ACP_OAUTH_TOKEN_FIELD, ACP_SERVICE } from "../acp/acp-credentials.js";
-
 /**
  * Re-export shared-package secure-key abstractions so downstream consumers
  * can import from this module without a direct @mycadet/credential-storage
  * dependency.
  */
-export type { SecureKeyBackend, SecureKeyDeleteResult };
 
 export interface SecureKeyResult {
   value: string | undefined;

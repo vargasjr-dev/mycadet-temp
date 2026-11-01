@@ -1,9 +1,9 @@
 import { describe, test, expect } from "bun:test";
 
+import { hashVerificationSecret } from "@mycadet/gateway-client";
 import {
   extractEmailReplyBody,
   parseVerificationCode,
-  hashVerificationSecret,
 } from "../verification/code-parsing.js";
 import { canonicalizeInboundIdentity } from "../verification/identity.js";
 import type { IdentityMatchSession } from "../verification/identity-match.js";

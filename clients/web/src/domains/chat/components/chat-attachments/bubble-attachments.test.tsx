@@ -5,7 +5,7 @@ import { mockAttachmentPreviewModal } from "@/domains/chat/components/chat-attac
 
 const restorePreviewModal = mockAttachmentPreviewModal();
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import { BubbleAttachments } from "@/domains/chat/components/chat-attachments/bubble-attachments";
 

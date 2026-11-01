@@ -5,9 +5,9 @@
  * remains clean and extensible.
  */
 
+import { CardSurfaceData } from "../api/surfaces.js";
 import { isPlainObject } from "../util/object.js";
 import type { Conversation } from "./conversation.js";
-import type { CardSurfaceData } from "./message-protocol.js";
 
 interface DoordashStep {
   label: string;

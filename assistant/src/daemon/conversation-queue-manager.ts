@@ -13,8 +13,8 @@ import type {
 import type { SupportedLocale } from "../i18n/index.js";
 import type { AuthContext } from "../runtime/auth/types.js";
 import { getLogger } from "../util/logger.js";
-import type { UserMessageAttachment } from "./message-protocol.js";
 import type { ConversationTransportMetadata } from "./message-types/conversations.js";
+import { UserMessageAttachment } from "./message-types/shared.js";
 import type { TrustContext } from "./trust-context-types.js";
 
 const log = getLogger("conversation-queue");

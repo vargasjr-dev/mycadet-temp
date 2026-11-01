@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ChannelId } from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 // Gateway guardian-delivery list: null = couldn't determine (gateway
 // unreachable), [] = authoritatively no guardian, one active entry = bound.

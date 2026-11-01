@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { addMessage, getMessages } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import { conversations } from "../persistence/schema.js";
+import { conversations } from "../persistence/schema/index.js";
 
 await initializeDb();
 

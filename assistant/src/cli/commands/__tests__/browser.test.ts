@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
-import { BROWSER_OPERATION_META } from "../../../browser/operations.js";
+import { BROWSER_OPERATION_META } from "../../../browser/operation-meta.js";
 import { BROWSER_OPERATIONS } from "../../../browser/types.js";
 
 // ---------------------------------------------------------------------------

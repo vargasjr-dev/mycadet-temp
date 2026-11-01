@@ -36,7 +36,7 @@ import type { TrustRulePayload } from "@/domains/chat/rule-editor-actions";
 import { getRiskToleranceHint, toRiskLevel } from "@/domains/chat/utils/risk";
 
 import type { RuleEditorContext } from "@/domains/chat/rule-editor-store";
-import type { AllowlistOption } from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
 import type { TrustRuleRisk } from "@/types/trust-rules";
 import { useTranslation } from "@/i18n";
 

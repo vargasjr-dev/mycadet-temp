@@ -64,8 +64,8 @@ export interface TranscriptRowProps {
     riskLevel?: string;
     riskReason?: string;
     input?: Record<string, unknown>;
-    allowlistOptions: import("@/types/interaction-ui-types").AllowlistOption[];
-    scopeOptions: import("@/types/interaction-ui-types").ScopeOption[];
+    allowlistOptions: import("@mycadet/assistant-api").AllowlistOption[];
+    scopeOptions: import("@mycadet/assistant-api").ScopeOption[];
   }) => void;
   unknownNudgeToolCallIds?: Set<string>;
   onDismissUnknownNudge?: (toolCallId: string) => void;

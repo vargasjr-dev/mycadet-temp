@@ -57,7 +57,8 @@ mock.module("../calls/call-store.js", () => ({
   expirePendingQuestions: () => {},
 }));
 
-import { isPrivateAddress, RuntimeHttpServer } from "../runtime/http-server.js";
+import { RuntimeHttpServer } from "../runtime/http-server.js";
+import { isPrivateAddress } from "../runtime/middleware/auth.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -11,7 +11,7 @@
  * appending a duplicate.
  */
 
-import type { FeedItem } from "./feed-types.js";
+import { FeedItem } from "../api/responses/home.js";
 import { appendFeedItem } from "./feed-writer.js";
 
 /**

@@ -17,10 +17,8 @@
 import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
-import type {
-  AllowlistOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import type {
   TrustRuleItem,
   TrustRuleRisk,

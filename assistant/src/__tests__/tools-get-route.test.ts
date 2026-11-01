@@ -17,7 +17,6 @@ import {
   clearConversations,
   setConversation,
 } from "../daemon/conversation-registry.js";
-import { RiskLevel } from "../permissions/types.js";
 import { ROUTES } from "../runtime/routes/settings-routes.js";
 import {
   __resetRegistryForTesting,
@@ -27,6 +26,7 @@ import {
   registerTool,
   registerWorkspaceTools,
 } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { getWorkspacePluginsDir } from "../util/layout.js";
 

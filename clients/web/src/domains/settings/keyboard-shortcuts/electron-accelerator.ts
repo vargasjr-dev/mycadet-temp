@@ -1,5 +1,5 @@
-import type { ResolvedHotkey } from "@/runtime/hotkeys";
-import type { ElectronHostOS } from "@/runtime/platform-detection";
+import { ResolvedHotkey } from "@mycadet/ipc-contract";
+import { ElectronHostOS } from "@mycadet/ipc-contract";
 
 /**
  * Converts a captured browser `KeyboardEvent` into an Electron

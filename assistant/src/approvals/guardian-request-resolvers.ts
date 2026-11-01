@@ -16,13 +16,11 @@
  */
 
 import type { CreateOutboundSessionIpcResponse } from "@mycadet/gateway-client";
+import { GuardianRequestAclOutcome } from "@mycadet/gateway-client";
+import { GuardianRequestWire } from "@mycadet/gateway-client";
 import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { answerCall } from "../calls/call-domain.js";
-import type {
-  GuardianRequestAclOutcome,
-  GuardianRequestWire,
-} from "../channels/gateway-guardian-requests.js";
 import { getGuardianRequestOrNull } from "../channels/gateway-guardian-requests.js";
 import { audienceForReader } from "../channels/message-audience.js";
 import { findContactChannel } from "../contacts/contact-store.js";

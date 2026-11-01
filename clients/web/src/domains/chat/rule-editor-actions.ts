@@ -30,10 +30,8 @@ import { clearConfirmationByRequestId } from "@/domains/chat/utils/send-message-
 import { deriveCommandText } from "@/domains/chat/utils/chat";
 import { toRiskLevel } from "@/domains/chat/utils/risk";
 import { submitConfirmation } from "@/domains/chat/api/interactions";
-import type {
-  AllowlistOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import type { TrustRuleItem, TrustRuleRisk } from "@/types/trust-rules";
 
 // ---------------------------------------------------------------------------

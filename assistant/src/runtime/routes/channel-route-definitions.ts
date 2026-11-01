@@ -9,10 +9,8 @@ import {
   handleListDeadLetters,
   handleReplayDeadLetters,
 } from "./channel-delivery-routes.js";
-import {
-  handleChannelInbound,
-  handleDeleteConversation,
-} from "./channel-inbound-routes.js";
+import { handleDeleteConversation } from "./inbound-conversation.js";
+import { handleChannelInbound } from "./inbound-message-handler.js";
 import type { RouteDefinition } from "./types.js";
 
 export const CHANNEL_ROUTES: RouteDefinition[] = [

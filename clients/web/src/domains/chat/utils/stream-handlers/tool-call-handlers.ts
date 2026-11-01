@@ -1,8 +1,6 @@
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import {
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
-  ACP_CLAUDE_OAUTH_MISSING_CODE,
-} from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_OAUTH_MISSING_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import type { StreamHandlerContext } from "@/domains/chat/utils/stream-handlers/types";
 import type {
   ToolResultEvent,

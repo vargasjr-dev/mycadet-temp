@@ -1,4 +1,4 @@
-import type { CesClient } from "./client.js";
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 
 export interface AwaitCesClientWithTimeoutOptions {
   timeoutMs?: number;

@@ -22,14 +22,11 @@ import {
   refreshGuardianToken,
   refreshGuardianTokenResult,
   saveGuardianToken,
-  type GuardianTokenData,
 } from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";
-import {
-  makeEntry,
-  readEntry,
-} from "./helpers/lockfile-entry.js";
+import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();
@@ -320,9 +317,7 @@ describe("refreshGuardianToken", () => {
     });
 
     makeEntry({ assistantId: "px" });
-    const err = await leaseGuardianToken(
-      readEntry("px")!,
-    ).then(
+    const err = await leaseGuardianToken(readEntry("px")!).then(
       () => null,
       (e: unknown) => e,
     );

@@ -20,7 +20,7 @@ import {
   type UploadedAttachment,
 } from "@/domains/chat/composer-store";
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import type { EmailReference } from "@/types/email-reference";
 import { registerPushToTalkTarget } from "@/domains/chat/voice/push-to-talk-target";
 import { useVoiceRecordingStore } from "@/domains/chat/voice/voice-recording-store";

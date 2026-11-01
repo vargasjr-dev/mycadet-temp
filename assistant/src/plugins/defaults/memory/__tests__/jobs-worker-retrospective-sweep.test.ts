@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 
 import { applyNestedDefaults } from "../../../../config/loader.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   getMemoryCheckpoint,
   setMemoryCheckpoint,

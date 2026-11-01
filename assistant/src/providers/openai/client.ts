@@ -1,31 +1,9 @@
 import OpenAI from "openai";
 
 import { getLogger } from "../../util/logger.js";
-import {
-  OpenAIChatCompletionsProvider,
-  type OpenAIChatCompletionsProviderOptions,
-} from "./chat-completions-provider.js";
-import {
-  OpenAIResponsesProvider,
-  type OpenAIResponsesProviderOptions,
-} from "./responses-provider.js";
 
 // Re-export the canonical names so callers that know about the new transport
 // class can import directly from `openai/client.js`.
-export {
-  OpenAIChatCompletionsProvider,
-  type OpenAIChatCompletionsProviderOptions,
-  OpenAIResponsesProvider,
-  type OpenAIResponsesProviderOptions,
-};
-
-// Backward-compatible aliases: existing code that references `OpenAIProvider`
-// or `OpenAICompatibleProviderOptions` from this module keeps compiling
-// without any import changes.
-export {
-  type OpenAIChatCompletionsProviderOptions as OpenAICompatibleProviderOptions,
-  OpenAIChatCompletionsProvider as OpenAIProvider,
-};
 
 const log = getLogger("openai-client");
 

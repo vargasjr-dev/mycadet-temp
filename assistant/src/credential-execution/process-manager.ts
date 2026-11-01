@@ -17,9 +17,10 @@
 import { createConnection, type Socket } from "node:net";
 import { StringDecoder } from "node:string_decoder";
 
+import { CesTransport } from "@mycadet/ces-client/rpc-client";
+
 import type { AssistantConfig } from "../config/schema.js";
 import { getLogger } from "../util/logger.js";
-import type { CesTransport } from "./client.js";
 import {
   discoverCesWithRetry,
   type DiscoveryResult,

@@ -22,7 +22,7 @@ import {
   CircuitBreakerOpenError,
 } from "../runtime/client.js";
 import type { RuntimeInboundResponse } from "../runtime/client.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 import { tryInviteRedemptionIntercept } from "../verification/invite-redemption.js";
 import { tryTextVerificationIntercept } from "../verification/text-verification.js";
 

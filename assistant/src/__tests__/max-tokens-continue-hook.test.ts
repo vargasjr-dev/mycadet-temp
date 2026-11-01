@@ -23,12 +23,10 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { PluginLogger } from "../hooks/types.js";
+import { PostModelCallContext } from "../hooks/types.js";
+import { StopContext } from "../hooks/types.js";
 import { INTERNAL_NUDGE_OUTPUT_SUPPRESSION } from "../plugin-api/constants.js";
-import type {
-  PluginLogger,
-  PostModelCallContext,
-  StopContext,
-} from "../plugin-api/types.js";
 import {
   hasMaxTokensContinueBudget,
   MAX_TOKENS_AUTO_CONTINUES,

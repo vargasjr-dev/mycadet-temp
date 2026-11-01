@@ -32,13 +32,13 @@
  *   - Scoped grant minting only on explicit approve for requests with tool metadata
  */
 
+import type { DecideGuardianRequestIpcResponse } from "@mycadet/gateway-client";
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
 import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import {
   decideGuardianRequest,
-  type DecideGuardianRequestIpcResponse,
   getGuardianRequest,
-  type GuardianRequestWire,
 } from "../channels/gateway-guardian-requests.js";
 import {
   APPROVAL_ACTION_SET,

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateToolInvocationsCreatedAtIdIndex } from "./276-tool-invocations-created-at-id-index.js";
 
 function createTestDb() {

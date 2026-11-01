@@ -21,10 +21,8 @@ import {
   type SurfaceAction,
   SurfaceActionSchema,
 } from "../api/events/ui-surface-show.js";
-import {
-  type CardSurfaceData,
-  CardSurfaceDataSchema,
-} from "../daemon/message-types/surfaces.js";
+import type { CardSurfaceData } from "../api/surfaces.js";
+import { CardSurfaceDataSchema } from "../api/surfaces.js";
 
 // ── Seed content block schema ─────────────────────────────────────────────────
 

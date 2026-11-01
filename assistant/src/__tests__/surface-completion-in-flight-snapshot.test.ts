@@ -32,6 +32,7 @@ const {
   handleToolResult,
 } = await import("../daemon/conversation-agent-loop-handlers.js");
 
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type {
   EventHandlerDeps,
@@ -39,7 +40,6 @@ import type {
 } from "../daemon/conversation-agent-loop-handlers.js";
 import type { CurrentTurnSurface } from "../daemon/conversation-surface-state.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
 import {
   ensureConversationExists,
   getMessageById,

@@ -20,6 +20,8 @@ import { computeSkillVersionHash } from "../skills/version-hash.js";
 import type { ManifestOverride } from "../tools/execution-target.js";
 import { getTool, getToolOwner, resolveTool } from "../tools/registry.js";
 import { resolveRealPath } from "../tools/shared/filesystem/path-policy.js";
+import type { ScopeOption } from "../tools/tool-types.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool } from "../tools/types.js";
 import {
   getMonitoringDataDir,
@@ -39,12 +41,7 @@ import {
   getAutoApproveThreshold,
   refreshAutoApproveThreshold,
 } from "./gateway-threshold-reader.js";
-import {
-  type PermissionCheckResult,
-  type PolicyContext,
-  RiskLevel,
-  type ScopeOption,
-} from "./types.js";
+import { type PermissionCheckResult, type PolicyContext } from "./types.js";
 import {
   isPathWithinWorkspaceRoot,
   isWorkspaceScopedInvocation,

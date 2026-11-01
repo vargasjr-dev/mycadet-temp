@@ -37,7 +37,7 @@ import {
   isV3TierActive,
   usesConceptPageMemory,
 } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   generateSparseEmbedding,
   getMemoryBackendStatus,

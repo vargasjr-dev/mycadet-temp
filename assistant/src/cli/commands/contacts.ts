@@ -1,6 +1,6 @@
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import type { Command } from "commander";
 
-import type { ChannelId } from "../../channels/types.js";
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
 import { canonicalizeInboundIdentity } from "../../util/canonicalize-identity.js";
 import {

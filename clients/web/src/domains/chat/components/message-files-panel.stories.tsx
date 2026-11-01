@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import {
   makeDisplayAttachment,

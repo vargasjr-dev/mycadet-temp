@@ -9,6 +9,7 @@
  */
 
 import type { LLMCallSite } from "../config/schemas/llm.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { normalizeTitle } from "../util/short-title.js";
 import {
   createTimeout,
@@ -16,7 +17,7 @@ import {
   extractToolUse,
   userMessage,
 } from "./provider-send-message.js";
-import type { Provider, ToolDefinition } from "./types.js";
+import type { Provider } from "./types.js";
 
 export interface ShortLabelTool {
   name: string;

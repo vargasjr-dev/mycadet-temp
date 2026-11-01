@@ -1,17 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
+import { ListSurfaceData } from "../api/surfaces.js";
+import { TableColumn } from "../api/surfaces.js";
+import { TableRow } from "../api/surfaces.js";
+import { TableSurfaceData } from "../api/surfaces.js";
+import type { SurfaceShowPair } from "../daemon/conversation-surface-state.js";
 import {
   buildDeselectionDescription,
   describeTableRow,
   formatDeselectionList,
-  type SurfaceShowPair,
 } from "../daemon/conversation-surfaces.js";
-import type {
-  ListSurfaceData,
-  TableColumn,
-  TableRow,
-  TableSurfaceData,
-} from "../daemon/message-types/surfaces.js";
 
 const cols: TableColumn[] = [
   { id: "sender", label: "Sender" },

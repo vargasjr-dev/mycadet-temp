@@ -7,8 +7,6 @@ import type {
 } from "./conversation-mode-session.js";
 import { claimModeSessionTurn } from "./mode-session-tracking.js";
 
-export type { BrowserOperationLifecycle } from "../browser/operations.js";
-
 type ModeSessionCoordinator = Pick<
   ConversationModeSessionCoordinator,
   | "activateSource"

@@ -53,7 +53,6 @@ import {
   extractAttachmentStoredPaths,
   extractImageSourcePaths,
   getConversation,
-  isSuppressedQueuedMessage,
   provenanceFromTrustContext,
   setConversationOriginChannelIfUnset,
   setConversationOriginInterfaceIfUnset,
@@ -64,6 +63,7 @@ import {
   syncMessageToDisk,
   updateMetaFile,
 } from "../persistence/conversation-disk-view.js";
+import { isSuppressedQueuedMessage } from "../persistence/conversation-types.js";
 import {
   isEchoSuppressedUserMessage,
   SIGHT_FRAME_ATTACHMENT_IDS_KEY,
@@ -82,9 +82,9 @@ import type {
   TurnWorkOrigin,
 } from "./conversation-queue-manager.js";
 import type { SlackInboundMessageMetadata } from "./handlers/shared.js";
-import type { UserMessageAttachment } from "./message-protocol.js";
 import { actorAuthorProvenance } from "./message-provenance.js";
 import type { ConversationTransportMetadata } from "./message-types/conversations.js";
+import { UserMessageAttachment } from "./message-types/shared.js";
 import { bestEffortModeSessionTracking } from "./mode-session-tracking.js";
 import {
   assembleUserContentBlocks,

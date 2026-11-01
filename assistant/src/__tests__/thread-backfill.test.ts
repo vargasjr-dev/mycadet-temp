@@ -117,9 +117,9 @@ import {
 } from "../runtime/routes/inbound-message-handler.js";
 import {
   handleChannelInbound,
-  seedContactChannel,
   setAdapterProcessMessage,
 } from "./helpers/channel-test-adapter.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

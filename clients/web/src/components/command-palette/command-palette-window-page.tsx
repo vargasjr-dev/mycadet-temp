@@ -12,7 +12,7 @@ import {
   dismissCommandPaletteWindow,
   selectCommandPaletteCommand,
 } from "@/runtime/command-palette-window";
-import type { CadetCommand } from "@/runtime/is-electron";
+import { CadetCommand } from "@mycadet/ipc-contract";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const noop = (): void => undefined;

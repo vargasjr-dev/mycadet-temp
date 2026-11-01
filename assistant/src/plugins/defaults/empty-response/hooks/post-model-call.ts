@@ -65,7 +65,6 @@ import {
 // REFUSAL_FALLBACK_TEXT from this module; the definition lives in the host's
 // `context/refusal-quarantine.ts` alongside its detector (single source of
 // truth).
-export { REFUSAL_FALLBACK_TEXT };
 
 /**
  * Canonical nudge text for an empty turn after tool use. Must stay verbatim so

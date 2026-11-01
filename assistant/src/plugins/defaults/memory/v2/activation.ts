@@ -27,7 +27,7 @@
 //     restriction. Pages outside the candidate set decay via `d · A(n, t)`
 //     for the next turn and drop below `epsilon` if no longer relevant.
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { isEmbeddingDimensionAvailable } from "../../../../persistence/embeddings/embedding-backend.js";
 import { applyCorrectionIfCalibrated } from "../anisotropy.js";
 import { embedWithBackend } from "../embeddings.js";

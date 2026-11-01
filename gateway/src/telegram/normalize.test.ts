@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 import {
   normalizeTelegramUpdate,
   type TelegramDropReason,

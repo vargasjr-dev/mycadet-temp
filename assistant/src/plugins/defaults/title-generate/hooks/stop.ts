@@ -22,9 +22,9 @@ import type { HookFunction, Message, StopContext } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
 import { getConversation } from "../../../../persistence/conversation-crud.js";
+import { isReplaceableTitle } from "../../../../persistence/conversation-title-placeholders.js";
 import {
   AUTO_TITLE_DETERMINISTIC,
-  isReplaceableTitle,
   queueRegenerateConversationTitle,
 } from "../../../../persistence/conversation-title-service.js";
 

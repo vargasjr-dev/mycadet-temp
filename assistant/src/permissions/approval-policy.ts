@@ -1,5 +1,5 @@
+import { RiskLevel } from "../tools/tool-types.js";
 import type { OwnerKind } from "../tools/types.js";
-import { RiskLevel } from "./types.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

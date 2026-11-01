@@ -8,13 +8,14 @@
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import type {
   ActorContext,
   ResolverContext,
   ResolverDecision,
 } from "../approvals/guardian-request-resolvers.js";
 import { getResolver } from "../approvals/guardian-request-resolvers.js";
-import type { GuardianRequestWire } from "../channels/gateway-guardian-requests.js";
 import type { QuestionPromptResult } from "../permissions/question-prompter.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 

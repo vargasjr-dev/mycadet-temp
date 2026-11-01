@@ -10,6 +10,7 @@ import {
   type RecentSimilarSpawns,
   type SimilarSpawnTally,
 } from "../../persistence/subagent-store.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import type { Message } from "../../providers/types.js";
 import { buildAdvisorContext } from "../../subagent/consult-context.js";
 import {
@@ -30,7 +31,7 @@ import {
   type SubagentRole,
 } from "../../subagent/types.js";
 import { getLogger } from "../../util/logger.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

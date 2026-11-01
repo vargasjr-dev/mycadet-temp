@@ -10,12 +10,6 @@ import {
 import { BadRequestError, NotFoundError } from "./errors.js";
 import type { RouteHandlerArgs } from "./types.js";
 
-export {
-  type DeliverReplyOptions,
-  deliverReplyViaCallback,
-} from "../channel-reply-delivery.js";
-export { finalizeEventDelivery } from "../finalize-event-delivery.js";
-
 // ---------------------------------------------------------------------------
 // Dead letter management
 // ---------------------------------------------------------------------------

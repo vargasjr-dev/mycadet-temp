@@ -41,7 +41,7 @@ import { safeStringSlice } from "../../util/unicode.js";
 import { estimateBase64Bytes } from "../assistant-attachments.js";
 import { conversationSupportsDynamicUi } from "../channel-ui-capability.js";
 import { findConversation } from "../conversation-registry.js";
-import type { ConversationTransportMetadata } from "../message-protocol.js";
+import { ConversationTransportMetadata } from "../message-types/conversations.js";
 import type { TrustContext } from "../trust-context-types.js";
 
 const log = getLogger("handlers");

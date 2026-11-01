@@ -181,8 +181,9 @@ mock.module("../../desktop/desktop-browser-operations.js", () => ({
 }));
 
 // Import after mocking — now from the shared routes location
-const { ROUTES, browserCliConversationKey } =
-  await import("../../runtime/routes/browser-routes.js");
+const { ROUTES } = await import("../../runtime/routes/browser-routes.js");
+const { browserCliConversationKey } =
+  await import("../../runtime/routes/browser-context.js");
 
 const browserExecuteHandler = ROUTES.find(
   (r) => r.operationId === "browser_execute",

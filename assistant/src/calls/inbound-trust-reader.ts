@@ -21,8 +21,8 @@ import {
   ResolveInboundTrustResponseSchema,
   type TrustVerdict,
 } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
-import type { ChannelId } from "../channels/types.js";
 import { ipcCall } from "../ipc/gateway-client.js";
 import { setMemberVerdict } from "../runtime/member-verdict-cache.js";
 import { getChannelAdmissionPolicy } from "./channel-admission-reader.js";

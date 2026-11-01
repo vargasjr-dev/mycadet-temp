@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { listProviderModelFamilies } from "../../providers/speech-to-text/provider-catalog.js";
 import {
-  STT_ROLE_REQUIREMENTS,
   STT_ROLES,
   type SttRole,
   sttRoleCapabilityGap,
@@ -177,7 +176,6 @@ function describeSelection(selection: {
 }
 
 /** Re-exported so config consumers need not reach into the stt module. */
-export { STT_ROLE_REQUIREMENTS, STT_ROLES, type SttRole };
 
 /**
  * Canonical STT service configuration.

@@ -21,6 +21,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { bootstrapPlugins } from "../daemon/external-plugins-bootstrap.js";
 import { HOOKS } from "../plugin-api/constants.js";
+import type { InitContext } from "../plugin-api/types.js";
 import { registerDefaultPlugins } from "../plugins/defaults/index.js";
 import { runHook } from "../plugins/pipeline.js";
 import {
@@ -29,7 +30,7 @@ import {
   registerPlugin,
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
-import { type InitContext, type Plugin } from "../plugins/types.js";
+import { type Plugin } from "../plugins/types.js";
 import { APP_VERSION } from "../version.js";
 
 // Redirect plugin storage directory creation into a per-process temp tree so

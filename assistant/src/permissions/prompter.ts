@@ -5,10 +5,12 @@ import { getConfig } from "../config/loader.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { redactSensitiveFields } from "../security/redaction.js";
 import type { ExecutionTarget } from "../tools/tool-types.js";
+import { AllowlistOption } from "../tools/tool-types.js";
+import { ScopeOption } from "../tools/tool-types.js";
 import { AssistantError, ErrorCode } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { createGuardianRequestForConfirmation } from "./confirmation-guardian-request.js";
-import type { AllowlistOption, ScopeOption, UserDecision } from "./types.js";
+import type { UserDecision } from "./types.js";
 
 const log = getLogger("permission-prompter");
 

@@ -22,10 +22,10 @@ import {
   test,
 } from "bun:test";
 
+import { AvatarState } from "@mycadet/avatar-manifest";
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
 import * as realCloudClient from "../cloud/client.js";
-import type { AvatarState } from "./avatar-manifest.js";
 import * as realAvatarManifest from "./avatar-manifest.js";
 import * as realEnsureRaster from "./ensure-raster.js";
 import * as realResvgLazy from "./resvg-lazy.js";

@@ -23,10 +23,12 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { parsePluginPresentation } from "../plugins/external-plugin-loader.js";
 import { listInstalledPluginDirs } from "../plugins/installed-plugin-dirs.js";
-import { type AvailableChannel, isChannelId } from "./types.js";
+import { type AvailableChannel } from "./types.js";
 
 /**
  * The declaration that makes a plugin a channel. Owned by the gateway, which

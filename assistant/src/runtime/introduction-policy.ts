@@ -127,12 +127,6 @@ export function parseRequesterSignals(
 // (`binding-strength-contract.ts`); the gateway ACL write path enforces
 // demotion refusal on the same values (LUM-2505). Re-exported here so
 // introduction-card call sites keep importing them from this module.
-export {
-  bindingStrengthForVerifiedVia,
-  VERIFIED_VIA_CHALLENGE,
-} from "@mycadet/gateway-client";
-export { VERIFIED_VIA_CHANNEL_CLAIM, VERIFIED_VIA_MANUAL };
-export type { BindingStrength };
 
 /**
  * Whether the cloud itself vouches for the requester's identity inside the

@@ -11,6 +11,7 @@
  * type safety but always allow the request through.
  */
 
+import type { TrustClass } from "@mycadet/gateway-client";
 import {
   DEFAULT_ROUTE_TRUST_CLASSES,
   routeAdmitsTrustClass,
@@ -19,7 +20,7 @@ import {
 
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { getLogger } from "../../util/logger.js";
-import { isContactTrustClass, type TrustClass } from "../trust-class.js";
+import { isContactTrustClass } from "../trust-class.js";
 import { isNarrowScopeProfile } from "./scopes.js";
 import type { AuthContext, PrincipalType, Scope } from "./types.js";
 
