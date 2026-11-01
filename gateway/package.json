@@ -1,7 +1,10 @@
 {
   "name": "@mycadet/gateway",
   "version": "0.13.0",
-  "repository": { "type": "git", "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -22,7 +25,7 @@
     "test": "bun run scripts/run-tests.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 13",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "typecheck": "bunx tsc --noEmit"
   },
