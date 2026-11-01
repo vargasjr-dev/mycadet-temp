@@ -6,19 +6,46 @@ import { useTranslation } from "@/i18n";
 import { isCliWakeableAssistant } from "@/lib/local-mode";
 import {
   isLocalModeHostAvailable,
-  sleepLocalAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { toast } from "@mycadet/design-library/components/toast";
 
+/**
+ * The restart's first half: sleep the assistant through the scoped surface's
+ * one operator endpoint (the `POST /v1/assistants/{id}/sleep/` route),
+ * answered host-side by whichever serving host mounts the operator route
+ * table. Sleeping is an operator command, not an assistant-host command —
+ * the web bundle POSTs it directly rather than going through a seam. The
+ * route answers a bodyless 204 on success; failures carry `{ detail }`.
+ */
+async function sleepAssistantOperator(
+  assistantId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/sleep`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    },
+  );
+  if (res.status === 204) {
+    return { ok: true };
+  }
+  const parsed = (await res.json().catch(() => null)) as {
+    detail?: string;
+  } | null;
+  return { ok: false, error: parsed?.detail };
+}
+
 async function restartLocalAssistant(
   assistantId: string,
   failStop: string,
   failStart: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sleepResult = await sleepLocalAssistantHost(assistantId);
+  const sleepResult = await sleepAssistantOperator(assistantId);
   if (!sleepResult.ok) {
     return {
       ok: false,

@@ -11,6 +11,7 @@ import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
   cliCommand,
+  dockerResourceNames,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -35,7 +36,7 @@ import {
   fetchGatewayPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
-import { dockerResourceNames } from "../lib/remotes/docker.js";
+
 import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";
 import { execOutput } from "../lib/step-runner";

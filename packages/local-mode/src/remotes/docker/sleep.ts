@@ -1,3 +1,4 @@
+import type { LockfileAssistant } from "../../lockfile-contract";
 import { exec, execOutput } from "../../exec";
 import { dockerResourceNames } from "./retire";
 
@@ -7,10 +8,10 @@ import { dockerResourceNames } from "./retire";
  * container that refuses to stop inside the timeout throws (docker
  * assistants have no escalation).
  *
- * Shared by the sleep operation and the CLI's upgrade flow (which stops
- * containers before recreating them).
+ * Private stop primitive — consumers go through `sleepDocker`, which
+ * derives the resource names from the entry.
  */
-export async function sleepContainers(
+async function sleepContainers(
   res: ReturnType<typeof dockerResourceNames>,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
@@ -60,8 +61,8 @@ export async function sleepContainers(
  * containers by their derived resource names.
  */
 export async function sleepDocker(
-  instanceName: string,
+  entry: LockfileAssistant,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
-  await sleepContainers(dockerResourceNames(instanceName), options);
+  await sleepContainers(dockerResourceNames(entry.assistantId), options);
 }

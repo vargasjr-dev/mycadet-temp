@@ -14,6 +14,7 @@
 
 import {
   cliCommand,
+  dockerResourceNames,
   extractHostFromEntry,
   getCloudUrl,
   readCloudToken,
@@ -22,7 +23,7 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { spawn } from "child_process";
 
 import { resolveAssistant } from "../lib/assistant-config";
-import { dockerResourceNames } from "../lib/remotes/docker.js";
+
 import { sshAppleContainer } from "../lib/remotes/apple-container.js";
 import {
   closeTerminalSession,

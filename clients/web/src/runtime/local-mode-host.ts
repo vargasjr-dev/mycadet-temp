@@ -57,11 +57,6 @@ export interface LocalHatchResult {
   error?: string;
 }
 
-export interface LocalSleepResult {
-  ok: boolean;
-  error?: string;
-}
-
 export interface LocalWakeResult {
   ok: boolean;
   error?: string;
@@ -404,22 +399,6 @@ export async function revokePairedDeviceHost(
   return postLocalCommand<LocalRevokeDeviceResult>(
     "/v1/devices/revoke",
     { assistantId, hashedDeviceId },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Stop a local assistant's daemon and gateway — the scoped surface's one
- * sleep endpoint, answered host-side by whichever serving host can (the
- * Electron `app://` handler and the dev middleware mount the same operator
- * route table). Used as the first half of a restart (sleep → wake).
- */
-export async function sleepLocalAssistantHost(
-  assistantId: string,
-): Promise<LocalSleepResult> {
-  return postLocalCommand<LocalSleepResult>(
-    `/v1/assistants/${encodeURIComponent(assistantId)}/sleep`,
-    {},
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
 }

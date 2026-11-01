@@ -17,7 +17,6 @@ const {
   listPairedDevicesHost,
   revokePairedDeviceHost,
   upgradeLocalAssistantHost,
-  sleepLocalAssistantHost,
   wakeLocalAssistantHost,
   getLocalAssistantStatusHost,
   readAssistantAvatarHost,
@@ -58,36 +57,6 @@ function inElectronWith(bridge: Record<string, unknown>): void {
   runningInElectron = true;
   (window as { cadet?: unknown }).cadet = { localMode: bridge };
 }
-
-describe("sleepLocalAssistantHost", () => {
-  test("POSTs the scoped surface's one sleep endpoint on the web/dev host", async () => {
-    onViteDevHost();
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    expect(await sleepLocalAssistantHost("a 1")).toEqual({ ok: true });
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/v1/assistants/a%201/sleep");
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({});
-  });
-
-  test("POSTs the same endpoint on the Electron host — the bridge arm is gone", async () => {
-    inElectronWith({
-      sleep: mock(async () => {
-        throw new Error("the localMode bridge must not be reached");
-      }),
-    });
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    expect(await sleepLocalAssistantHost("a-1")).toEqual({ ok: true });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-});
 
 describe("hatchLocalAssistant", () => {
   test("web/dev host POSTs to the local-mode middleware and returns its JSON", async () => {

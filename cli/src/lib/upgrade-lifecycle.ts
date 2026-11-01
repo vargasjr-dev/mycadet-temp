@@ -15,14 +15,17 @@ import { getOrCreateHostDeviceId } from "./device-id.js";
 import {
   captureImageRefs,
   DOCKER_READY_TIMEOUT_MS,
-  dockerResourceNames,
   pullImage,
   startContainers,
   stopContainers,
   wakeContainers,
 } from "./remotes/docker.js";
 import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
-import { resolveDataDir, sleepContainers } from "@mycadet/local-mode";
+import {
+  dockerResourceNames,
+  resolveDataDir,
+  sleepDocker,
+} from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
@@ -518,7 +521,7 @@ export async function rollbackMigrations(
  */
 export async function attemptFailedStateRestore(opts: {
   runtimeUrl: string;
-  assistantId: string;
+  entry: LockfileAssistant;
   backupPath: string;
   /** Label for log lines, e.g. "pre-upgrade" or "pre-rollback". */
   backupLabel: string;
@@ -529,16 +532,20 @@ export async function attemptFailedStateRestore(opts: {
     `📦 Reverted stack not ready — attempting ${opts.backupLabel} backup restore...`,
   );
   console.log(`   Source: ${opts.backupPath}`);
-  const restored = await restoreBackup(opts.assistantId, opts.backupPath, {
-    resume: false,
-  });
+  const restored = await restoreBackup(
+    opts.entry.assistantId,
+    opts.backupPath,
+    {
+      resume: false,
+    },
+  );
   if (!restored) {
     return { restored: false, ready: false };
   }
   console.log(
     "   Backup imported — restarting containers to complete recovery...",
   );
-  await sleepContainers(opts.res);
+  await sleepDocker(opts.entry);
   await stopContainers(opts.res);
   await startContainers(opts.containerOptions, (msg) => console.log(msg));
   return { restored: true, ready: await waitForReady(opts.runtimeUrl) };
@@ -747,7 +754,7 @@ export async function performDockerRollback(
 
   // Stop containers, migrate security files, start with target images
   console.log("🛑 Stopping existing containers...");
-  await sleepContainers(res);
+  await sleepDocker(entry);
   await stopContainers(res);
   console.log("✅ Containers stopped\n");
 
@@ -857,7 +864,7 @@ export async function performDockerRollback(
           );
         }
 
-        await sleepContainers(res);
+        await sleepDocker(entry);
         await stopContainers(res);
 
         await startContainers(
@@ -879,7 +886,7 @@ export async function performDockerRollback(
         if (!revertReady && preRollbackBackupPath) {
           const recovery = await attemptFailedStateRestore({
             runtimeUrl: gatewayUrl,
-            assistantId: entry.assistantId,
+            entry,
             backupPath: preRollbackBackupPath,
             backupLabel: "pre-rollback",
             res,

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
+import * as localMode from "@mycadet/local-mode";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   storageFor,
@@ -60,6 +61,10 @@ async function instance(
   };
 }
 const previousDataHome = process.env.XDG_DATA_HOME;
+// The teleport flow calls sleepAssistant directly now (the ops seam is
+// gone), so the sleep events ride a namespace spy.
+const sleepMock = spyOn(localMode, "sleepAssistant");
+
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "host-teleport-"));
   process.env.XDG_DATA_HOME = directory;
@@ -75,6 +80,16 @@ beforeEach(async () => {
     ["target", true],
   ]);
   log = spyOn(console, "log").mockImplementation(() => {});
+  sleepMock.mockImplementation(async (entry) => {
+    order.push(`sleep:${entry.assistantId}`);
+    running.set(entry.assistantId, false);
+    return {
+      ok: true,
+      kind: "services",
+      services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
+      notes: [],
+    } as never;
+  });
   // Simulated service state rides the storage prototype: the backup/restore
   // fns construct their own LocalRootStorage now, so the liveness override
   // has to reach them all.
@@ -91,10 +106,6 @@ beforeEach(async () => {
   );
   ops = {
     storage: (entry) => storageFor(entry),
-    sleep: mock(async (entry) => {
-      order.push(`sleep:${entry.assistantId}`);
-      running.set(entry.assistantId, false);
-    }),
     backup: mock(async (entry) => {
       const file = join(directory, `${entry.assistantId}.tar.gz`);
       await createRootBackup({ ...entry, cloud: "local" }, file);
@@ -199,9 +210,13 @@ test("source backup failure wakes source without touching target", async () => {
   expect(ops.retire).not.toHaveBeenCalled();
 });
 test("graceful shutdown failure never captures a live installation", async () => {
-  ops.sleep = mock(async () => {
-    throw new Error("graceful timeout");
-  });
+  sleepMock.mockImplementation(
+    async () =>
+      ({ ok: false, status: 500, error: "graceful timeout" }) as never,
+  );
+  await expect(
+    teleportHostInstallation(source, "local", "target", options, ops),
+  ).rejects.toThrow("graceful timeout");
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
   ).rejects.toThrow("graceful timeout");
@@ -209,7 +224,11 @@ test("graceful shutdown failure never captures a live installation", async () =>
   expect(ops.retire).not.toHaveBeenCalled();
 });
 test("source that fails to stop is rejected even if sleep returned", async () => {
-  ops.sleep = mock(async () => {});
+  // The sleep operation reports success without actually stopping anything —
+  // the flow's own stopped-check must still reject the capture.
+  sleepMock.mockImplementation(
+    async () => ({ ok: true, kind: "containers" }) as never,
+  );
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
   ).rejects.toThrow("still running");

@@ -1,7 +1,7 @@
 import type { LockfileAssistant } from "../lockfile-contract";
 import { findAssistantByName } from "./lookup";
-import { isHostExecutableRetireEntry, retireAssistant } from "./retire";
-import { isHostExecutableSleepEntry, sleepAssistant } from "./sleep";
+import { retireAssistant } from "./retire";
+import { sleepAssistant } from "./sleep";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -43,7 +43,7 @@ const SLEEP_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/sleep\/?$/;
  */
 async function runRetireRoute(assistantId: string): Promise<Response | null> {
   const entry = findAssistantByName(assistantId);
-  if (!entry || !isHostExecutableRetireEntry(entry)) {
+  if (!entry) {
     return null;
   }
   const result = await retireAssistant(entry);
@@ -66,7 +66,7 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
  */
 async function runSleepRoute(assistantId: string): Promise<Response | null> {
   const entry = findAssistantByName(assistantId);
-  if (!entry || !isHostExecutableSleepEntry(entry)) {
+  if (!entry) {
     return null;
   }
   const result = await sleepAssistant(entry, { force: false, wait: false });

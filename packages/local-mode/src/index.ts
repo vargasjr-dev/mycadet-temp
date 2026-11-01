@@ -89,20 +89,13 @@ export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
 export { matchOperatorRequest } from "./operations/routes";
 export type { OperatorRoute, OperatorMatch } from "./operations/routes";
-export {
-  retireAssistant,
-  isHostExecutableRetireEntry,
-} from "./operations/retire";
+export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
-export {
-  sleepAssistant,
-  isHostExecutableSleepEntry,
-  type SleepOptions,
-} from "./operations/sleep";
+export { sleepAssistant, type SleepOptions } from "./operations/sleep";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
-export { sleepContainers, sleepDocker } from "./remotes/docker/sleep";
+export { sleepDocker } from "./remotes/docker/sleep";
 export {
   loadAllAssistants,
   lookupAssistantByIdentifier,

@@ -12,11 +12,16 @@ const pull = spyOn(docker, "pullImage");
 const wake = spyOn(docker, "wakeContainers");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
-const sleep = spyOn(localMode, "sleepContainers");
+const sleep = spyOn(localMode, "sleepDocker");
 const stop = spyOn(docker, "stopContainers");
 const start = spyOn(docker, "startContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
-const res = docker.dockerResourceNames("recovery");
+const res = localMode.dockerResourceNames("recovery");
+const entry: LockfileAssistant = {
+  assistantId: "recovery",
+  cloud: "docker",
+  port: 7830,
+};
 const containerOptions = {
   gatewayPort: 7830,
   assistantPort: 3001,
@@ -83,7 +88,7 @@ test("failed-state recovery restores tar roots while stopped before restarting o
   expect(
     await lifecycle.attemptFailedStateRestore({
       runtimeUrl: "http://127.0.0.1:7830",
-      assistantId: "recovery",
+      entry,
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
       res,
@@ -107,7 +112,7 @@ test("failed root restore does not restart a partial installation", async () => 
   expect(
     await lifecycle.attemptFailedStateRestore({
       runtimeUrl: "http://127.0.0.1:7830",
-      assistantId: "recovery",
+      entry,
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
       res,
@@ -128,11 +133,7 @@ test("versioned restore installs roots into stopped target containers before fir
       stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
     }),
   );
-  const entry: LockfileAssistant = {
-    assistantId: "recovery",
-    cloud: "docker",
-    port: 7830,
-  };
+
   capture.mockImplementation(async () => {
     events.push("capture-safety");
     return "/tmp/pre-rollback.tar.gz";

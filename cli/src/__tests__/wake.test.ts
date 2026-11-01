@@ -15,6 +15,7 @@ import { join } from "node:path";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/remotes/docker.js";
+import * as localMode from "@mycadet/local-mode";
 import * as guardianToken from "../lib/guardian-token.js";
 import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -66,17 +67,20 @@ mock.module("../lib/assistant-config.js", () => ({
   resolveTargetAssistant: resolveTargetAssistantMock,
 }));
 
-const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(
-  realDocker.dockerResourceNames,
+const dockerResourceNamesMock = mock<typeof localMode.dockerResourceNames>(
+  localMode.dockerResourceNames,
 );
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
 const recreateDockerContainersMock = mock<
   typeof docker.recreateDockerContainers
 >(async () => {});
 
+mock.module("@mycadet/local-mode", () => ({
+  ...localMode,
+  dockerResourceNames: dockerResourceNamesMock,
+}));
 mock.module("../lib/remotes/docker.js", () => ({
   ...realDocker,
-  dockerResourceNames: dockerResourceNamesMock,
   wakeContainers: wakeContainersMock,
   recreateDockerContainers: recreateDockerContainersMock,
 }));
