@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -11,7 +11,12 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { guardianTokenPath, resolveConfigDir } from "@mycadet/local-mode";
+import {
+  guardianTokenPath,
+  resolveConfigDir,
+  type PairDeviceIdentity,
+  type PairOperationResult,
+} from "@mycadet/local-mode";
 
 import {
   getOrCreatePersistedDeviceId,
@@ -27,6 +32,21 @@ import type { GuardianTokenData } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";
 import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
+
+// The lease's pair door is the package operation — mock it at the seam and
+// feed the gateway's real pair shapes through it. The exec transports that
+// carry the command are pinned in the package's own pair suites.
+type PairDeviceFn = (
+  entry: unknown,
+  device: PairDeviceIdentity,
+) => Promise<PairOperationResult>;
+const pairDeviceMock = mock<PairDeviceFn>(async () => ({
+  ok: true,
+  response: {},
+}));
+mock.module("../../../packages/local-mode/src/operations/pair", () => ({
+  pairDevice: pairDeviceMock,
+}));
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();
@@ -50,6 +70,7 @@ describe("guardian-token paths are env-scoped", () => {
   let savedEnv: string | undefined;
 
   beforeEach(() => {
+    pairDeviceMock.mockReset();
     savedXdg = process.env.XDG_CONFIG_HOME;
     savedEnv = process.env.CADET_ENVIRONMENT;
     tempHome = mkdtempSync(join(tmpdir(), "cli-guardian-token-test-"));
@@ -265,31 +286,31 @@ describe("refreshGuardianToken", () => {
   });
 
   test("leases against the gateway's real pair shape — refreshAfter arrives as a number", async () => {
+    // The gateway's device-bound pair response maps onto the lease's field
+    // names (token → accessToken, guardianId → guardianPrincipalId);
+    // refreshAfter serializes as a NUMBER of ms (mintRefreshToken), and the
+    // strict lease check rejects a response missing any field. A string-only
+    // schema read that number as malformed, so every real hatch failed its
+    // lease while the ISO-string test doubles here stayed green.
     globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/readyz")) {
         return new Response("", { status: 404 }); // no starting gate — proceed
       }
-      return new Response(
-        JSON.stringify({
-          // The gateway's device-bound pair response maps onto the lease's
-          // field names (token → accessToken, guardianId → guardianPrincipalId);
-          // refreshAfter serializes as a NUMBER of ms (mintRefreshToken), and
-          // the strict lease check rejects a response missing any field. A
-          // string-only schema read that number as malformed, so every real
-          // hatch failed its lease while the ISO-string test doubles here
-          // stayed green.
-          token: "access-lease",
-          expiresAt: Date.now() + 60 * 60 * 1000,
-          refreshToken: "refresh-lease",
-          refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
-          refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
-          guardianId: "principal-lease",
-          isNew: true,
-          mintedOverPriorEvidence: false,
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
+      throw new Error("the lease must not pair over fetch");
+    });
+    pairDeviceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        token: "access-lease",
+        expiresAt: Date.now() + 60 * 60 * 1000,
+        refreshToken: "refresh-lease",
+        refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
+        guardianId: "principal-lease",
+        isNew: true,
+        mintedOverPriorEvidence: false,
+      },
     });
 
     makeEntry({ assistantId: "px" });
@@ -308,14 +329,15 @@ describe("refreshGuardianToken", () => {
       if (url.endsWith("/readyz")) {
         return new Response("", { status: 404 });
       }
-      return new Response(
-        JSON.stringify({
-          guardianId: "principal-lease",
-          token: 42,
-          refreshToken: "refresh-lease",
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
+      throw new Error("the lease must not pair over fetch");
+    });
+    pairDeviceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        guardianId: "principal-lease",
+        token: 42,
+        refreshToken: "refresh-lease",
+      },
     });
 
     makeEntry({ assistantId: "px" });

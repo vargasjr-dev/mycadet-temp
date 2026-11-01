@@ -397,6 +397,33 @@ export async function handlePair(
  * consistent across the token's life (rather than 24h at mint then 30d after
  * the first refresh).
  */
+export function deviceBoundPairPayload(opts: {
+  guardianPrincipalId: string;
+  assistantId: string;
+  deviceId: string;
+  platform: string;
+  clientReportedName?: string;
+  isNew: boolean;
+}): Record<string, unknown> {
+  const pair = mintAndRecordDeviceBoundTokenPair({
+    guardianPrincipalId: opts.guardianPrincipalId,
+    deviceId: opts.deviceId,
+    platform: opts.platform,
+    identity: { clientReportedName: opts.clientReportedName },
+  });
+
+  return {
+    token: pair.accessToken,
+    expiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
+    refreshToken: pair.refreshToken,
+    refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
+    refreshAfter: new Date(pair.refreshAfter).toISOString(),
+    guardianId: opts.guardianPrincipalId,
+    assistantId: opts.assistantId,
+    isNew: opts.isNew,
+  };
+}
+
 function mintDeviceBoundPairResponse(opts: {
   guardianPrincipalId: string;
   assistantId: string;
@@ -407,13 +434,6 @@ function mintDeviceBoundPairResponse(opts: {
   clientReportedName?: string;
   isNew: boolean;
 }): Response {
-  const pair = mintAndRecordDeviceBoundTokenPair({
-    guardianPrincipalId: opts.guardianPrincipalId,
-    deviceId: opts.deviceId,
-    platform: opts.platform,
-    identity: { clientReportedName: opts.clientReportedName },
-  });
-
   log.info(
     {
       interfaceId: opts.interfaceId,
@@ -425,16 +445,41 @@ function mintDeviceBoundPairResponse(opts: {
   );
 
   return Response.json(
-    {
-      token: pair.accessToken,
-      expiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
-      refreshToken: pair.refreshToken,
-      refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
-      refreshAfter: new Date(pair.refreshAfter).toISOString(),
-      guardianId: opts.guardianPrincipalId,
+    deviceBoundPairPayload({
+      guardianPrincipalId: opts.guardianPrincipalId,
       assistantId: opts.assistantId,
+      deviceId: opts.deviceId,
+      platform: opts.platform,
+      clientReportedName: opts.clientReportedName,
       isNew: opts.isNew,
-    },
+    }),
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+/**
+ * The `gateway pairing mint --device-id` CLI door: the guardian lease's
+ * device-bound mint executed DIRECTLY in this process — process execution
+ * is the presence proof, so there is no HTTP and no loopback check. The
+ * client-side pair operation runs this command (host spawn or docker exec);
+ * the minted payload prints as single-line JSON on stdout. Same bootstrap
+ * semantics as the route's cli branch: the guardian resolves or mints with
+ * the caller's execution as the evidence.
+ */
+export async function mintCliPairPayload(opts: {
+  deviceId: string;
+  platform: string;
+  clientReportedName?: string;
+}): Promise<Record<string, unknown>> {
+  const guardian = await resolveOrCreateCadetGuardian({
+    allowMintWithEvidence: true,
+  });
+  return deviceBoundPairPayload({
+    guardianPrincipalId: guardian.guardianPrincipalId,
+    assistantId: getExternalAssistantId(),
+    deviceId: opts.deviceId,
+    platform: opts.platform,
+    clientReportedName: opts.clientReportedName,
+    isNew: guardian.isNew,
+  });
 }
