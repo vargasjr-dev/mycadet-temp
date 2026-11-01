@@ -68,8 +68,6 @@ export {
   LockfileAssistantSchema,
   MachineMemoryPolicySchema,
   MachinePolicySchema,
-  MACHINE_APPLICABILITY,
-  getMachinePolicy,
   parseLockfile,
 } from "./lockfile-contract";
 export type {
@@ -100,6 +98,15 @@ export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
+export {
+  machineGet,
+  machineResetKey,
+  machineSetKey,
+  formatMachineBytes,
+  parseMachineBytes,
+  type MachineGetResult,
+  type MachineMutationResult,
+} from "./operations/machine";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
 export { sleepDocker } from "./remotes/docker/sleep";

@@ -9,7 +9,6 @@ import {
   KNOWN_REMOTES,
   GATEWAY_PORT,
   getGatewayUrl,
-  getMachinePolicy,
   parseLockfile,
   stripSensitiveFields,
   SENSITIVE_KEYS,
@@ -458,7 +457,7 @@ describe("machine policy", () => {
     const parsed = parseLockfile({
       assistants: [{ assistantId: "asst_m2", cloud: "local", port: 7830 }],
     });
-    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]!.machine).toBeUndefined();
   });
 
   test("a policy violating high <= max quarantines to defaults, entry survives", () => {
@@ -476,7 +475,7 @@ describe("machine policy", () => {
     });
     // The write path rejects this loudly; the parse path keeps the assistant
     // but falls back to the defaults so one bad section can't drop the entry.
-    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]!.machine).toBeUndefined();
     expect(parsed.assistants[0]).toMatchObject({
       assistantId: "asst_m3",
       cloud: "docker",
@@ -495,7 +494,7 @@ describe("machine policy", () => {
         },
       ],
     });
-    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]!.machine).toBeUndefined();
     expect(parsed.assistants[0]).toMatchObject({ assistantId: "asst_m4" });
   });
 
@@ -510,7 +509,7 @@ describe("machine policy", () => {
         },
       ],
     });
-    expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+    expect(parsed.assistants[0]!.machine).toBeUndefined();
     expect(parsed.assistants[0]).toMatchObject({ assistantId: "asst_m5" });
   });
 
@@ -526,7 +525,7 @@ describe("machine policy", () => {
           },
         ],
       });
-      expect(getMachinePolicy(parsed.assistants[0]!)).toEqual({ memory });
+      expect(parsed.assistants[0]!.machine).toEqual({ memory });
     }
   });
 
@@ -547,7 +546,7 @@ describe("machine policy", () => {
           },
         ],
       });
-      expect(getMachinePolicy(parsed.assistants[0]!)).toBeUndefined();
+      expect(parsed.assistants[0]!.machine).toBeUndefined();
     }
   });
 });
