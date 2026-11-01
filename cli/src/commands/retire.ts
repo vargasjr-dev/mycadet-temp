@@ -16,12 +16,6 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { printInstanceDetails } from "../lib/instance-details.js";
-import {
-  openLogFile,
-  closeLogFile,
-  resetLogFile,
-  writeToLogFile,
-} from "../lib/xdg-log.js";
 
 interface RetireArgs {
   name?: string;
@@ -68,51 +62,9 @@ function printRetireTarget(entry: LockfileAssistant): void {
   console.log("");
 }
 
-/** Patch console methods to also append output to the given log file descriptor. */
-function teeConsoleToLogFile(fd: number | "ignore"): void {
-  if (fd === "ignore") return;
-
-  const origLog = console.log.bind(console);
-  const origWarn = console.warn.bind(console);
-  const origError = console.error.bind(console);
-
-  const timestamp = () => new Date().toISOString();
-
-  console.log = (...args: unknown[]) => {
-    origLog(...args);
-    writeToLogFile(fd, `[${timestamp()}] ${args.map(String).join(" ")}\n`);
-  };
-  console.warn = (...args: unknown[]) => {
-    origWarn(...args);
-    writeToLogFile(
-      fd,
-      `[${timestamp()}] WARN: ${args.map(String).join(" ")}\n`,
-    );
-  };
-  console.error = (...args: unknown[]) => {
-    origError(...args);
-    writeToLogFile(
-      fd,
-      `[${timestamp()}] ERROR: ${args.map(String).join(" ")}\n`,
-    );
-  };
-}
-
 export const retire = Object.assign(
   async function retire(): Promise<void> {
-    if (process.env.CADET_DESKTOP_APP) {
-      resetLogFile("retire.log");
-    }
-    const logFd = process.env.CADET_DESKTOP_APP
-      ? openLogFile("retire.log")
-      : "ignore";
-    teeConsoleToLogFile(logFd);
-
-    try {
-      await retireInner();
-    } finally {
-      closeLogFile(logFd);
-    }
+    await retireInner();
   },
   { description: "Delete an assistant instance" },
 );

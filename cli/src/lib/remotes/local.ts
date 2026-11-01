@@ -8,20 +8,16 @@ import {
 } from "child_process";
 import { createHash, randomBytes } from "crypto";
 import {
-  appendFileSync,
   existsSync,
-  lstatSync,
   mkdirSync,
   readFileSync,
-  readlinkSync,
-  symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "fs";
 import { createRequire } from "module";
 import { Socket } from "net";
 import { homedir, platform, tmpdir } from "os";
-import { basename, dirname, isAbsolute, join, resolve } from "path";
+import { dirname, isAbsolute, join, resolve } from "path";
 
 import {
   findAssistantCommand,
@@ -185,24 +181,6 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   );
 }
 
-/**
- * True when this process is a compiled standalone binary (desktop app or
- * `bun build --compile` CLI) rather than a script executed by a plain `bun`
- * binary (source tree, bunx, npm/global install).
- *
- * Only a compiled binary may trust product siblings in
- * `dirname(process.execPath)`: under plain bun that directory is bun's own
- * bin dir (e.g. `~/.bun/bin`), where bin links of globally-installed packages
- * (`assistant`, `credential-executor`) collide with app-bundle binary names
- * and point at whatever version happens to be installed globally.
- */
-export function isCompiledCli(): boolean {
-  const execBase = basename(process.execPath).replace(/\.exe$/i, "");
-  return (
-    execBase !== "bun" && execBase !== "bunx" && !execBase.startsWith("bun-")
-  );
-}
-
 function compiledSibling(name: string): string {
   return join(dirname(process.execPath), executableName(name, platform()));
 }
@@ -210,9 +188,6 @@ function compiledSibling(name: string): string {
 function envWithCompiledRuntimeNodePath(
   env: Record<string, string>,
 ): Record<string, string> {
-  if (!isCompiledCli()) {
-    return env;
-  }
   return {
     ...env,
     NODE_PATH: join(dirname(process.execPath), "node_modules"),
@@ -220,10 +195,6 @@ function envWithCompiledRuntimeNodePath(
 }
 
 function resolveBunExecutable(): string {
-  if (!isCompiledCli()) {
-    return process.execPath;
-  }
-
   const envBun = process.env.CADET_BUN;
   if (envBun && existsSync(envBun)) return envBun;
 
@@ -1045,7 +1016,7 @@ function resolveGatewayDir(
 
   // Compiled binary: gateway/ bundled adjacent to the CLI executable.
   const binGateway = join(dirname(process.execPath), "gateway");
-  if (isCompiledCli() && isGatewaySourceDir(binGateway)) {
+  if (isGatewaySourceDir(binGateway)) {
     return binGateway;
   }
 
@@ -1227,8 +1198,8 @@ export async function startCes(
   let ces;
   const runtimeCesDir = !watch ? localRuntimeCesDir(entry) : undefined;
   const cesBinary = compiledSibling("credential-executor");
-  if (!runtimeCesDir && isCompiledCli() && existsSync(cesBinary) && !watch) {
-    // Compiled binary alongside the CLI (desktop app / compiled CLI).
+  if (!runtimeCesDir && existsSync(cesBinary) && !watch) {
+    // Compiled binary alongside the CLI.
     const cesLogFd = openLogFile("hatch.log");
     ces = spawn(cesBinary, [], {
       cwd: spawnStateRoot(),
@@ -1573,12 +1544,10 @@ export async function startLocalDaemon(
   }
 
   const foreground = options?.foreground ?? false;
-  // Check for a compiled daemon binary adjacent to the CLI executable.
-  // This covers both the desktop app (CADET_DESKTOP_APP) and the case where
-  // the user runs the compiled CLI directly from the terminal (e.g. via a
-  // /usr/local/bin/cadet symlink into the app bundle).
+  // Check for a compiled daemon binary adjacent to the CLI executable
+  // (the compiled CLI run directly from the terminal).
   const daemonBinary = compiledSibling("cadet-daemon");
-  if (isCompiledCli() && existsSync(daemonBinary) && !watch) {
+  if (existsSync(daemonBinary) && !watch) {
     // In watch mode, skip the bundled binary and use source (bun --watch
     // only works with source files, not compiled binaries).
 
@@ -1680,7 +1649,6 @@ export async function startLocalDaemon(
         "LANG",
         "CADET_DEBUG",
         "CADET_DEV",
-        "CADET_DESKTOP_APP",
         "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
         "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
         "CADET_WORKSPACE_DIR",
@@ -1912,13 +1880,12 @@ export async function startGateway(
   const gatewayBinary = compiledSibling("cadet-gateway");
   if (
     !runtimeGatewayDir &&
-    isCompiledCli() &&
     existsSync(gatewayBinary) &&
     !watch
   ) {
-    // Use the compiled gateway binary when available (desktop app or compiled
-    // CLI invoked from the terminal). In watch mode, skip the bundled binary
-    // and use source (bun --watch only works with source files).
+    // Use the compiled gateway binary when available. In watch mode, skip
+    // the bundled binary and use source (bun --watch only works with source
+    // files).
     const gatewayLogFd = openRuntimeLogFile(
       getLocalInstanceDir(entry),
       "gateway",
@@ -2022,96 +1989,6 @@ export async function stopLocalProcesses(
   );
 }
 
-/**
- * Attempts to place a symlink at the given path pointing to cliBinary.
- * Returns true if the symlink was created (or already correct), false on failure.
- */
-function trySymlink(cliBinary: string, symlinkPath: string): boolean {
-  try {
-    // Use lstatSync (not existsSync) to detect dangling symlinks —
-    // existsSync follows symlinks and returns false for broken links.
-    try {
-      const stats = lstatSync(symlinkPath);
-      if (!stats.isSymbolicLink()) {
-        // Real file — don't overwrite (developer's local install)
-        return false;
-      }
-      // Already a symlink — skip if it already points to our binary
-      const dest = readlinkSync(symlinkPath);
-      if (dest === cliBinary) return true;
-      // Stale or dangling symlink — remove before creating new one
-      unlinkSync(symlinkPath);
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") return false;
-      // Path doesn't exist — proceed to create symlink
-    }
-
-    const dir = join(symlinkPath, "..");
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-    symlinkSync(cliBinary, symlinkPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Ensures ~/.local/bin is present in the user's shell profile so that
- * symlinks placed there are on PATH in new terminal sessions.
- */
-function ensureLocalBinInShellProfile(localBinDir: string): void {
-  const shell = process.env.SHELL ?? "";
-  const home = homedir();
-  // Determine the appropriate shell profile to modify
-  const profilePath = shell.endsWith("/zsh")
-    ? join(home, ".zshrc")
-    : shell.endsWith("/bash")
-      ? join(home, ".bash_profile")
-      : null;
-  if (!profilePath) return;
-
-  try {
-    const contents = existsSync(profilePath)
-      ? readFileSync(profilePath, "utf-8")
-      : "";
-    // Check if ~/.local/bin is already referenced in PATH exports
-    if (contents.includes(localBinDir)) return;
-    const line = `\nexport PATH="${localBinDir}:\$PATH"\n`;
-    appendFileSync(profilePath, line);
-    console.log(`   Added ${localBinDir} to ${profilePath}`);
-  } catch {
-    // Not critical — user can add it manually
-  }
-}
-
-function installCLISymlink(): void {
-  const cliBinary = process.execPath;
-  if (!cliBinary || !existsSync(cliBinary)) return;
-
-  // Preferred location — works on most Macs where /usr/local/bin exists
-  const preferredPath = "/usr/local/bin/cadet";
-  if (trySymlink(cliBinary, preferredPath)) {
-    console.log(`   Symlinked ${preferredPath} → ${cliBinary}`);
-    return;
-  }
-
-  // Fallback — use ~/.local/bin which is user-writable and doesn't need root.
-  // On some Macs /usr/local doesn't exist and creating it requires admin privileges.
-  const localBinDir = join(homedir(), ".local", "bin");
-  const fallbackPath = join(localBinDir, "cadet");
-  if (trySymlink(cliBinary, fallbackPath)) {
-    console.log(`   Symlinked ${fallbackPath} → ${cliBinary}`);
-    ensureLocalBinInShellProfile(localBinDir);
-    return;
-  }
-
-  console.log(
-    `   ⚠ Could not create symlink for cadet CLI (tried ${preferredPath} and ${fallbackPath})`,
-  );
-}
-
 export interface HatchLocalParams {
   /** Instance display name. Defaults to an auto-generated name. */
   name?: string | null;
@@ -2203,11 +2080,10 @@ export async function hatchLocal(
         precollectedApiKey = await collectProviderApiKey(picked);
 
         // Picking Cadet Cloud should feel like signing in, not like a
-        // mystery later — open the browser login right here. Skipped for
-        // the desktop app (it runs its own login UI) and non-TTY runs.
+        // mystery later — open the browser login right here. Non-TTY
+        // runs (including the desktop's in-process hatch) skip it.
         if (
           picked === "cadet" &&
-          !process.env.CADET_DESKTOP_APP &&
           process.stdin.isTTY &&
           !readCloudToken()
         ) {
@@ -2228,11 +2104,7 @@ export async function hatchLocal(
       }
     }
 
-    if (
-      !apiKeyCheck.hasKey &&
-      !pickedProvider &&
-      !process.env.CADET_DESKTOP_APP
-    ) {
+    if (!apiKeyCheck.hasKey && !pickedProvider) {
       reporter.warn(
         "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
       );
@@ -2336,10 +2208,6 @@ export async function hatchLocal(
         );
       }
     }
-  }
-
-  if (process.env.CADET_DESKTOP_APP) {
-    installCLISymlink();
   }
 
   if (provider !== undefined && provider !== null && !guardianAccessToken) {

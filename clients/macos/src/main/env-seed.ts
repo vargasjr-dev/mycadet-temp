@@ -2,8 +2,6 @@
 // is seeded before any other module reads it at module scope.
 declare const __CADET_ENVIRONMENT__: string;
 
-process.env.CADET_DESKTOP_APP = "1";
-
 if (
   typeof __CADET_ENVIRONMENT__ === "string" &&
   !process.env.CADET_ENVIRONMENT
