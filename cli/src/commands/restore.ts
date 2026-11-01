@@ -18,9 +18,7 @@ import {
   getMetadataPath,
   readCloudToken,
   saveLockfileAssistant,
-  startCes,
-  startGateway,
-  startLocalDaemon,
+  wakeAssistant,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { exec } from "../lib/step-runner.js";
@@ -504,14 +502,10 @@ async function recoverFromArchive(name: string): Promise<void> {
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
   saveLockfileAssistant(entry);
-  // Start CES sibling + daemon + gateway in parallel, the way the
-  // Docker topology brings its sibling processes up together. startCes
-  // always launches the CES sibling.
-  await Promise.all([
-    startCes(false, entry),
-    startLocalDaemon(false, entry),
-    startGateway(false, entry),
-  ]);
+  // wakeAssistant is the one revive seam: the local leg brings CES sibling,
+  // daemon, and gateway up in parallel (the way the Docker topology starts
+  // its sibling containers together) and self-heals anything already alive.
+  await wakeAssistant(entry);
 
   unlinkSync(archivePath);
   unlinkSync(metadataPath);

@@ -37,6 +37,10 @@ const startGatewayMock = mock<typeof localModule.startGateway>(
   async () => "http://127.0.0.1:7831",
 );
 const startCesMock = mock(async () => {});
+// The restore tail is the one revive seam now — pin the op, not the legs.
+const wakeAssistantMock = mock<typeof localModule.wakeAssistant>(async () => ({
+  ok: true,
+}));
 
 // Capture exec calls without running real tar
 const execMock = mock(async (_cmd: string, _args: string[]) => {});
@@ -48,6 +52,7 @@ beforeAll(() => {
     startLocalDaemon: startLocalDaemonMock,
     startGateway: startGatewayMock,
     startCes: startCesMock,
+    wakeAssistant: wakeAssistantMock,
   }));
   mock.module("../lib/step-runner.js", () => ({ exec: execMock }));
 });
@@ -238,11 +243,9 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     // Archive cleaned up
     expect(existsSync(archivePath)).toBe(false);
 
-    // Daemon and gateway were started
-    expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
-    expect(startGatewayMock).toHaveBeenCalledTimes(1);
-    expect(startGatewayMock.mock.calls[0]).toEqual([
-      false,
+    // The revive seam ran against the recovered entry
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(1);
+    expect(wakeAssistantMock.mock.calls[0]).toEqual([
       expect.objectContaining({ instanceDir: expect.any(String) }),
     ]);
   });

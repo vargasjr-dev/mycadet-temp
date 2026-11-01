@@ -57,14 +57,13 @@ import {
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";
-import { fetchCurrentVersion } from "@mycadet/local-mode";
 import {
   ensureLocalRuntime,
-  startCes,
-  startGateway,
-  startLocalDaemon,
+  fetchCurrentVersion,
+  restartUpgradedLocalProcesses,
+  stopLocalProcesses,
+  wakeAssistant,
 } from "@mycadet/local-mode";
-import { stopLocalProcesses } from "../lib/remotes/local.js";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
 import { leaseGuardianToken } from "../lib/guardian-token.js";
 
@@ -386,24 +385,7 @@ async function upgradeLocal(
     console.log("✅ Local assistant processes stopped\n");
 
     console.log("🚀 Starting upgraded local assistant...");
-    const previousAppVersion = process.env.APP_VERSION;
-    process.env.APP_VERSION = stripVersionPrefix(targetVersion);
-    try {
-      // Bring CES, daemon, and gateway up in parallel, the way the Docker
-      // topology starts its sibling processes together. startCes always
-      // launches the CES sibling.
-      await Promise.all([
-        startCes(false, upgradedEntry),
-        startLocalDaemon(false, upgradedEntry),
-        startGateway(false, upgradedEntry),
-      ]);
-    } finally {
-      if (previousAppVersion === undefined) {
-        delete process.env.APP_VERSION;
-      } else {
-        process.env.APP_VERSION = previousAppVersion;
-      }
-    }
+    await restartUpgradedLocalProcesses(upgradedEntry, targetVersion);
     await ensureGuardianTokenAfterLocalUpgrade(entry);
     console.log("✅ Local assistant processes started\n");
 
@@ -438,11 +420,7 @@ async function upgradeLocal(
           `Local recovery failed; services remain stopped. Backup: ${backupPath}`,
           { cause: error },
         );
-      await Promise.all([
-        startCes(false, entry),
-        startLocalDaemon(false, entry),
-        startGateway(false, entry),
-      ]);
+      await wakeAssistant(entry);
       if (!(await waitForReady(adminUrl)))
         throw new Error(
           `Previous local runtime did not recover. Backup: ${backupPath}`,
