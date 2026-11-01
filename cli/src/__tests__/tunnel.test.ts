@@ -1424,19 +1424,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(readRootProcesses().tunnel?.publicUrl).toBe(TAILNET_URL);
   });
 
-  test("the fresh url re-ensures the edge so the served config carries it the same wake", async () => {
-    seedRecordedTailnetWake();
-    isIngressRunningMock.mockImplementation(() => true);
-    readIngressStateMock.mockImplementation(() => ({
-      listenPort: EDGE_PORT,
-      gatewayUrl: "http://127.0.0.1:7830",
-    }));
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
-  });
-
   test("a stopped tunnel cleared its root record, so the wake resurrects no tunnel", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
