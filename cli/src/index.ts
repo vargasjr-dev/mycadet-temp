@@ -29,6 +29,7 @@ import { retire } from "./commands/retire";
 import { restart } from "./commands/restart";
 import { setup } from "./commands/setup";
 import { sleep } from "./commands/sleep";
+import { machine } from "./commands/machine";
 import { debug } from "./commands/debug";
 import { teleport } from "./commands/teleport";
 import { terminal } from "./commands/terminal";
@@ -60,6 +61,7 @@ const commands = {
   login,
   logs,
   logout,
+  machine,
   message,
   pair,
   ps,

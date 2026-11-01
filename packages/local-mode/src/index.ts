@@ -67,8 +67,6 @@ export {
   LockfileAssistantSchema,
   MachineMemoryPolicySchema,
   MachinePolicySchema,
-  MACHINE_APPLICABILITY,
-  getMachinePolicy,
   parseLockfile,
 } from "./lockfile-contract";
 export type {
@@ -162,6 +160,12 @@ export {
 export {
 } from "./guardian-token";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
+export {
+  machineGet,
+  machineResetKey,
+  machineSetKey,
+  type MachineMutationResult,
+} from "./operations/machine";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
 export { sleepDocker } from "./remotes/docker/sleep";

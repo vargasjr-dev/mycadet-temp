@@ -494,18 +494,6 @@ export function isCloudEntry(
   return entry.cloud === "cloud";
 }
 
-/**
- * The stored `machine` policy for an entry, exactly as validated — no default
- * resolution here. Falling back to runtime defaults is the reader's decision
- * (the apply layer pairs this with the spec defaults it owns), so callers that
- * need to distinguish an unset section from a set one can.
- */
-export function getMachinePolicy(
-  entry: LockfileAssistant,
-): MachinePolicy | undefined {
-  return entry.machine;
-}
-
 /** Whether the entry is a docker-hosted assistant. */
 export function isDockerEntry(
   entry: LockfileAssistant,
