@@ -1,27 +1,20 @@
-import { readFileSync } from "node:fs";
-
 import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
 import { readRootProcesses } from "../lib/assistant-config";
-import { relaunchDetached } from "../lib/detached-process.js";
 import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
-  adoptedTunnelStopNotice,
   clearReservedDomain,
   ensureNginxForEdge,
-  offerStopNgrokHolder,
   providerSupportsReservedDomain,
   runProviderTunnel,
   stopTunnelProcess,
-  summarizeStartupFailure,
 } from "../lib/tunnel.js";
-import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
 import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
 import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
@@ -33,7 +26,6 @@ interface TunnelArgs {
   provider: TunnelProviderName;
   domain: string | null;
   clearDomain: boolean;
-  foreground: boolean;
 }
 
 function parseArgs(): TunnelArgs {
@@ -42,7 +34,6 @@ function parseArgs(): TunnelArgs {
   let provider: TunnelProviderName | null = null;
   let domain: string | null = null;
   let clearDomain = false;
-  let foreground = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -96,23 +87,18 @@ function parseArgs(): TunnelArgs {
         "                                tunnel without one. Cannot be combined with --domain.",
       );
       console.log(
-        `  --foreground                  Stream the tunnel's logs to this terminal. By default the tunnel`,
+        "The tunnel runs in the background: the command returns after printing",
       );
       console.log(
-        "                                runs in the background: the command returns after printing the public",
+        "the public URL, and logs stream to tunnel.log in the CLI log directory.",
       );
       console.log(
-        `                                URL, and logs stream to tunnel.log in the CLI log directory. A background`,
+        `Stop the tunnel with \`${cliCommand()} tunnel stop\`, except when it`,
       );
       console.log(
-        "                                tunnel stops with `${cliCommand()} tunnel stop`, except when it adopted an already-running",
+        "adopted an already-running tunnel (started outside this command):",
       );
-      console.log(
-        "                                tunnel (started outside this command): killing the supervisor then",
-      );
-      console.log(
-        "                                leaves that tunnel running.",
-      );
+      console.log("killing the supervisor then leaves that tunnel running.");
       console.log("");
       console.log("Providers:");
       for (const name of TUNNEL_PROVIDERS) {
@@ -174,8 +160,6 @@ function parseArgs(): TunnelArgs {
       i++;
     } else if (arg === "--clear-domain") {
       clearDomain = true;
-    } else if (arg === "--foreground") {
-      foreground = true;
     } else if (arg.startsWith("-")) {
       console.error(`Error: Unknown option '${arg}'.`);
       process.exit(1);
@@ -221,108 +205,10 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  return { provider, domain, clearDomain, foreground };
+  return { provider, domain, clearDomain };
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-// Generous cap so a slow provider handshake (e.g. cloudflared's own ~30s
-// quick-tunnel timeout) still counts as a successful, if slow, start.
-const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
-// Matches the "just established" line every provider prints, or the adoption
-// line printed when a run adopts an already-running agent's tunnel (captured
-// separately since that case does not own the tunnel it adopted).
-const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
-
-/**
- * Re-invoke `cadet tunnel --foreground` as a detached background process via
- * `relaunchDetached`, waiting for the child to either print its
- * "Tunnel established" or adopted-tunnel line (readiness) or exit early
- * (failure), so a misconfigured provider still fails loudly in the terminal
- * that ran `cadet tunnel`.
- *
- * The log file is the fixed `tunnel.log` so there is one stable path to tail;
- * concurrent tunnel runs share (and truncate) it.
- */
-async function spawnDetachedTunnel(): Promise<void> {
-  const childArgs: string[] = ["tunnel"];
-  for (const arg of process.argv.slice(3)) {
-    if (arg === "--foreground") {
-      continue;
-    }
-    childArgs.push(arg);
-  }
-  childArgs.push("--foreground");
-
-  let publicUrl: string | undefined;
-  let adopted = false;
-
-  // One confirm-first round for a held ngrok domain: the detached child has
-  // no TTY, so the prompt inside its own spawn loop can never fire — the
-  // heal can only happen HERE, in the terminal that ran the command.
-  for (let holderStops = 0; ; holderStops++) {
-    const { child, logPath, ready, exitCode } = await relaunchDetached({
-      args: childArgs,
-      logFile: "tunnel.log",
-      timeoutMs: TUNNEL_BACKGROUND_START_TIMEOUT_MS,
-      isReady: (logPath) => {
-        let logText = "";
-        try {
-          logText = readFileSync(logPath, "utf-8");
-        } catch {
-          // Log file not written yet. Keep polling.
-        }
-        const established = TUNNEL_ESTABLISHED_RE.exec(logText);
-        if (established) {
-          publicUrl = established[1];
-          return true;
-        }
-        const adoptedMatch = ADOPTED_TUNNEL_RE.exec(logText);
-        if (adoptedMatch) {
-          publicUrl = adoptedMatch[1];
-          adopted = true;
-          return true;
-        }
-        return false;
-      },
-    });
-
-    if (exitCode !== undefined) {
-      let logText = "";
-      try {
-        logText = readFileSync(logPath, "utf-8");
-      } catch {
-        // Log file not readable — the summary falls back to none.
-      }
-      if (holderStops < 1 && (await offerStopNgrokHolder(logText))) {
-        adopted = false;
-        publicUrl = undefined;
-        continue;
-      }
-      const reason = summarizeStartupFailure(logText);
-      console.error(
-        `Error (${exitCode ?? "unknown"}): tunnel process exited during startup${reason ? `: ${reason}` : "."}`,
-      );
-      console.error(`Logs: ${logPath}`);
-      process.exit(1);
-    }
-
-    if (!ready) {
-      console.log(
-        `Tunnel is still starting up after ${TUNNEL_BACKGROUND_START_TIMEOUT_MS / 1000}s. Check progress: ${logPath}`,
-      );
-    } else if (publicUrl) {
-      console.log(`Tunnel established: ${publicUrl}`);
-    }
-    console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
-    if (adopted) {
-      console.log(adoptedTunnelStopNotice(child.pid));
-    } else {
-      console.log(`Stop with: ${cliCommand()} tunnel stop`);
-    }
-    return;
-  }
-}
-
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
@@ -376,12 +262,7 @@ export const tunnel = Object.assign(
       console.error(`       ${cliCommand()} tunnel stop`);
       process.exit(1);
     }
-    const { provider, domain, clearDomain, foreground } = parseArgs();
-
-    if (!foreground) {
-      await spawnDetachedTunnel();
-      return;
-    }
+    const { provider, domain, clearDomain } = parseArgs();
 
     if (PROVIDER_META[provider].comingSoon) {
       throw cadetTunnelComingSoonError(provider);

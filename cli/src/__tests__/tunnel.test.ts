@@ -12,7 +12,6 @@ import {
 import * as childProcess from "node:child_process";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
 import {
-  appendFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -31,7 +30,6 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import { resolveLogDir } from "@mycadet/local-mode";
 import {
   readRootProcesses,
   stampRootProcess,
@@ -50,10 +48,9 @@ const realNginxIngress = { ...nginxIngress };
 const realTailscaleTunnel = { ...tailscaleTunnel };
 const realChildProcess = { ...childProcess };
 
-/** What a mocked provider run hands back: a URL and an already-settled exit. */
+/** What a mocked provider run hands back: the URL it established or adopted. */
 const fakeTunnelResult = (publicUrl: string) => ({
   publicUrl,
-  waitForExit: Promise.resolve(),
 });
 
 const runCloudflareTunnelMock = mock<
@@ -280,7 +277,6 @@ describe("app server targeting", () => {
       "start",
       "--provider",
       "tailscale",
-      "--foreground",
     ];
     // The ngrok config file lives under the XDG config dir; a fresh one per
     // test keeps the saved-domain state hermetic. Set it before seeding the
@@ -342,15 +338,7 @@ describe("app server targeting", () => {
   test("targets the edge port returned by ensureAppServer for ngrok", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
@@ -362,15 +350,7 @@ describe("app server targeting", () => {
   test("the tunnel level notifies every local gateway of the public URL", async () => {
     const second = makeLocalEntry("assistant-2");
     writeLockfile([makeLocalEntry(), second]);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -390,15 +370,7 @@ describe("app server targeting", () => {
   test("an active cloud assistant still tunnels the edge", async () => {
     const cloud = makeCloudEntry();
     writeLockfile([cloud, makeLocalEntry()], cloud.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
     expect(logs).not.toContain("Tunneling the local assistant");
@@ -420,15 +392,7 @@ describe("app server targeting", () => {
       ],
       "docker-1",
     );
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -439,15 +403,7 @@ describe("app server targeting", () => {
   test("an active docker assistant tunnels on a bare invocation", async () => {
     const docker = makeDockerEntry();
     writeLockfile(docker, docker.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -460,15 +416,7 @@ describe("app server targeting", () => {
     // yet the tunnel fronts the app server — the machine-level edge resolves
     // whatever it fronts, and no assistant classification gates the start.
     writeLockfile(makeCloudEntry());
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
@@ -487,7 +435,6 @@ describe("app server targeting", () => {
       "cloud-1",
       "--provider",
       "ngrok",
-      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -501,15 +448,7 @@ describe("app server targeting", () => {
   test("an apple-container assistant set active tunnels the edge port", async () => {
     const local = makeLocalEntry();
     writeLockfile([local, makeAppleContainerEntry()], "apple-1");
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -527,7 +466,6 @@ describe("app server targeting", () => {
       "start",
       "--provider",
       "cloudflare",
-      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -546,7 +484,6 @@ describe("app server targeting", () => {
       "start",
       "--provider",
       "tailscale",
-      "--foreground",
     ];
     ensureAppServerMock.mockResolvedValue({
       port: EDGE_PORT,
@@ -562,7 +499,7 @@ describe("app server targeting", () => {
   test("a bare invocation tunnels the default provider", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "start", "--foreground"];
+    process.argv = ["bun", "cadet", "tunnel", "start"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -583,7 +520,6 @@ describe("app server targeting", () => {
       "start",
       "--provider",
       "tailscale",
-      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -594,15 +530,7 @@ describe("app server targeting", () => {
   test("ngrok fronts the edge with the lockfile's active assistant", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -610,15 +538,7 @@ describe("app server targeting", () => {
   });
 
   test("missing nginx aborts before any provider spawn", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
     ensureAppServerMock.mockRejectedValue(
       new Error(
         "nginx is not installed, so the app server cannot start. " +
@@ -639,15 +559,7 @@ describe("app server targeting", () => {
   });
 
   test("rejects an unknown --provider with a stale-CLI hint", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "bogus",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "bogus"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -671,7 +583,6 @@ describe("app server targeting", () => {
           "start",
           "--provider",
           provider,
-          "--foreground",
         ];
 
         const { exited, errors } = await runTunnelExpectingExit1();
@@ -696,7 +607,6 @@ describe("app server targeting", () => {
       "ngrok",
       "--domain",
       "foo.ngrok.app",
-      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -717,7 +627,6 @@ describe("app server targeting", () => {
       "cloudflare",
       "--domain",
       "foo.ngrok.app",
-      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -744,7 +653,6 @@ describe("app server targeting", () => {
       "--provider",
       "ngrok",
       "--clear-domain",
-      "--foreground",
     ];
 
     const logs = await runTunnelCapturingLogs();
@@ -767,7 +675,6 @@ describe("app server targeting", () => {
       "--domain",
       "foo.ngrok.app",
       "--clear-domain",
-      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -786,7 +693,6 @@ describe("app server targeting", () => {
       "--provider",
       "cloudflare",
       "--clear-domain",
-      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -808,7 +714,6 @@ describe("app server targeting", () => {
       "--provider",
       "ngrok",
       "--domain",
-      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -821,15 +726,7 @@ describe("app server targeting", () => {
   test("a not-yet-implemented provider error carries the stale-CLI hint", async () => {
     // `cadet` stays valid-but-unimplemented, so it hits this path rather
     // than the unknown-provider one.
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "cadet",
-      "--foreground",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "cadet"];
 
     let err: Error | undefined;
     try {
@@ -1291,35 +1188,29 @@ describe("ngrok --domain spawn args", () => {
   });
 });
 
-describe("tunnel background mode", () => {
+describe("tunnel start runs the providers directly", () => {
   const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
-
-  function makeFakeChild(pid: number): ChildProcess {
-    const child = new realChildProcess.ChildProcess();
-    // kill() stays stubbed: the fake pid must never be signaled for real.
-    // stdout/stderr: the real class resolves them through a getter over the
-    // internal spawn handle, so null-shadow them via defineProperty — an
-    // Object.assign [[Set]] through the getter-only accessor throws.
-    Object.defineProperty(child, "stdout", { value: null });
-    Object.defineProperty(child, "stderr", { value: null });
-    return Object.assign(child, { pid, kill: () => true });
-  }
 
   const spawnMock = mock(
     (
       _command: string,
       _args: readonly string[],
       _options?: SpawnOptions,
-    ): ChildProcess => makeFakeChild(9999),
+    ): ChildProcess => {
+      const child = new realChildProcess.ChildProcess();
+      // kill() stays stubbed: the fake pid must never be signaled for real.
+      // stdout/stderr: the real class resolves them through a getter over the
+      // internal spawn handle, so null-shadow them via defineProperty — an
+      // Object.assign [[Set]] through the getter-only accessor throws.
+      Object.defineProperty(child, "stdout", { value: null });
+      Object.defineProperty(child, "stderr", { value: null });
+      return Object.assign(child, { pid: 9999, kill: () => true });
+    },
   );
-
-  function detachedLogPath(): string {
-    return join(resolveLogDir(), "tunnel.log");
-  }
 
   beforeAll(() => {
     // The edge-targeting describe's afterAll restores the REAL provider
-    // modules; re-establish the fakes the foreground test here needs.
+    // modules; re-establish the fakes these tests need.
     mock.module("../lib/tunnels/ngrok", () => ({
       ...realNgrok,
       runNgrokTunnel: runNgrokTunnelMock,
@@ -1376,96 +1267,36 @@ describe("tunnel background mode", () => {
     }
   });
 
-  test("runs detached by default: re-invokes itself as a detached child and reports readiness", async () => {
+  test("starts the tunnel in this process — no self-relaunch — and returns while the agent lives", async () => {
     process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-
-    // Simulate the detached child writing its readiness line to the log file
-    // the moment it is spawned.
-    spawnMock.mockImplementationOnce(() => {
-      appendFileSync(
-        detachedLogPath(),
-        "Tunnel established: https://foo.ngrok.app\n",
-      );
-      return makeFakeChild(9999);
+    // The provider narrates its own establishment (the command adds nothing
+    // around it).
+    runNgrokTunnelMock.mockImplementation(async () => {
+      console.log("Tunnel established: https://test.example.ngrok.dev");
+      return fakeTunnelResult("https://test.example.ngrok.dev");
     });
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [, args, opts] = spawnMock.mock.calls[0];
-    expect(args).toContain("tunnel");
-    expect(args).toContain("--provider");
-    expect(args).toContain("ngrok");
-    // The child runs the foreground path (it IS the background daemon); the
-    // parent must not hand the default through or the child would daemonize
-    // again.
-    expect(args).toContain("--foreground");
-    expect(opts?.detached).toBe(true);
-
-    expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
-    expect(logs).toContain("Running in background (pid 9999)");
-    expect(logs).toContain("Stop with: cadet tunnel stop");
-
-    // The parent hands the actual tunnel workflow off to the child: it never
-    // runs the provider or edge setup itself.
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
-  });
-
-  test("--foreground runs the tunnel in this process instead of a detached child", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    await runTunnelCapturingLogs();
-
+    // The command never re-invokes itself: it calls the provider directly
+    // (which spawns the detached agent) and returns as soon as the tunnel
+    // establishes — the agent outlives the process.
     expect(spawnMock).not.toHaveBeenCalled();
-    expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(runNgrokTunnelMock).toHaveBeenCalled();
+    expect(ensureAppServerMock).toHaveBeenCalledTimes(1);
+    expect(runNgrokTunnelMock).toHaveBeenCalledTimes(1);
+    expect(logs).toContain(
+      "Tunnel established: https://test.example.ngrok.dev",
+    );
   });
 
-  test("reports an early child exit instead of hanging", async () => {
+  test("a provider failure surfaces loudly instead of being swallowed", async () => {
     process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-    spawnMock.mockImplementationOnce(() => {
-      const child = makeFakeChild(4242);
-      // Listeners attach synchronously right after spawn() returns; defer the
-      // exit so they're in place before it fires.
-      setTimeout(() => child.emit("exit", 1), 0);
-      return child;
-    });
+    runNgrokTunnelMock.mockRejectedValue(new Error("ngrok is not installed."));
 
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain("Error (1): tunnel process exited during startup");
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
-  test("an adopted ngrok tunnel gets an accurate stop message, not a false kill claim", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-    spawnMock.mockImplementationOnce(() => {
-      appendFileSync(
-        detachedLogPath(),
-        "Found existing ngrok tunnel: https://already-up.ngrok.app\n",
-      );
-      return makeFakeChild(5555);
-    });
-
-    const logs = await runTunnelCapturingLogs();
-
-    expect(logs).toContain("Tunnel established: https://already-up.ngrok.app");
-    expect(logs).toContain("Running in background (pid 5555)");
-    // The supervisor did not spawn this ngrok agent, so killing it must not
-    // be advertised as the way to stop the tunnel.
-    expect(logs).not.toContain("Stop with: kill 5555");
-    expect(logs).toContain("only");
-    expect(logs).toContain("stops this supervisor, not the ngrok tunnel");
+    await expect(runTunnelCapturingLogs()).rejects.toThrow(
+      "ngrok is not installed.",
+    );
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 });
 
@@ -1511,7 +1342,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
         startedAt: new Date().toISOString(),
         publicUrl: TAILNET_URL,
       });
-      return { publicUrl: TAILNET_URL, waitForExit: Promise.resolve() };
+      return { publicUrl: TAILNET_URL };
     });
     isIngressRunningMock.mockReset();
     isIngressRunningMock.mockImplementation(() => false);

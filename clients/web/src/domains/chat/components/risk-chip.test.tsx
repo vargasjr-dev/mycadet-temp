@@ -10,9 +10,13 @@ import { cleanup, render } from "@testing-library/react";
 
 let hoverCapable = true;
 
-const actualHoverAffordance = await import("@/hooks/use-hover-affordance");
-mock.module("@/hooks/use-hover-affordance", () => ({
-  ...actualHoverAffordance,
+// RiskChip imports the signal from the defining module (the local
+// use-hover-affordance wrapper is not in its import graph), so the seam is
+// seated there.
+const actualHoverCapability =
+  await import("@mycadet/design-library/utils/hover-capability");
+mock.module("@mycadet/design-library/utils/hover-capability", () => ({
+  ...actualHoverCapability,
   useHoverCapable: () => hoverCapable,
 }));
 

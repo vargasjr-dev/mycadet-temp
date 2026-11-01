@@ -333,8 +333,7 @@ export async function runTailscaleTunnel(
   // exits; no signal handling is registered and nothing is held open — a
   // run must be safe to invoke from a host process (the wake/upgrade
   // restore). Stopping is the stop path: `cadet tunnel stop`.
-  const waitForExit = new Promise<void>(() => {});
-  return { publicUrl, waitForExit };
+  return { publicUrl };
 }
 
 /** Per-provider copy `cadet tunnel`'s help renders for tailscale. */

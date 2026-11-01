@@ -26,7 +26,7 @@ import {
   resolveConfigDir,
   resolveDataDir,
 } from "@mycadet/local-mode";
-import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
+import { readProcessCommandLine } from "@mycadet/local-mode";
 import { z } from "zod";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
 import type {
@@ -614,50 +614,6 @@ async function stopConfirmedNgrokAgent(
   return stale;
 }
 
-/**
- * The pid of the tracked ngrok agent holding the tunnel, for a caller OUTSIDE
- * the spawn loop — the detached tunnel process has no TTY, so the foreground
- * `cadet tunnel` command is where a confirm-first stop can ask. Returns null
- * when the lockfile names no live holder; externally started agents are never
- * touched.
- */
-export async function ngrokHolderPid(
-  matchesPid: (pid: number) => boolean = isNgrokProcess,
-): Promise<number | null> {
-  return (
-    staleTrackedNgrokAgent(readRootProcesses().tunnel, matchesPid)?.pid ?? null
-  );
-}
-
-/**
- * Stop the holder pid once the user confirmed it: verify it still names an
- * ngrok process (PID reuse guard), signal it, and drop the lockfile record
- * when it is the one being stopped. The caller asks first — this only runs
- * after a yes came back.
- */
-export async function stopNgrokHolderPid(
-  pid: number,
-  matchesPid: (pid: number) => boolean = isNgrokProcess,
-): Promise<boolean> {
-  try {
-    if (!matchesPid(pid)) return false;
-    if (!(await stopProcess(pid, "tunnel ngrok agent"))) return false;
-  } catch {
-    return false;
-  }
-  const record = readRootProcesses().tunnel;
-  if (record?.pid === pid) clearRootProcess("tunnel", pid);
-  return true;
-}
-
-/**
- * Matches the adoption line the tunnel workflows print when they find an
- * already-running tunnel, so the detached-tunnel supervisor can detect
- * adoption without this module's implementation details leaking into the
- * command layer.
- */
-export const ADOPTED_TUNNEL_RE = /Found existing ngrok tunnel: (\S+)/;
-
 /** Whether a tunnel public URL's host equals the given reserved domain. */
 function urlMatchesDomain(publicUrl: string, domain: string): boolean {
   try {
@@ -869,10 +825,10 @@ export async function runNgrokTunnel(
     );
     console.log(`Stop it with \`${cliCommand()} tunnel stop\`.`);
 
-    // The adopted agent belongs to another process; there is nothing to
-    // await, and no signal handling is registered — a run must be safe to
-    // invoke from a host process (the wake/upgrade restore).
-    return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
+    // The adopted agent belongs to another process; nothing is held open —
+    // a run must be safe to invoke from a host process (the wake/upgrade
+    // restore).
+    return { publicUrl: existingUrl };
   }
 
   // A live agent tunneling a different local port is not a blocker: ngrok
@@ -1096,14 +1052,10 @@ export async function runNgrokTunnel(
       `The agent runs detached (log: ${ngrokLogPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
     );
 
-    // Settles when the detached agent exits. No process-level signal
-    // handling is registered: a run must be safe to invoke from a host
-    // process (the wake/upgrade restore), and the detached agent outlives
-    // the CLI either way.
-    const waitForExit = new Promise<void>((resolve) => {
-      ngrokProcess.on("exit", () => resolve());
-    });
-    return { publicUrl, waitForExit };
+    // No process-level signal handling is registered: a run must be safe
+    // to invoke from a host process (the wake/upgrade restore), and the
+    // detached agent outlives the CLI either way.
+    return { publicUrl };
   }
   // Unreachable: the loop only exits via a return or a throw.
   throw new Error("ngrok tunnel did not start.");

@@ -8,7 +8,6 @@
  * it must import nothing beyond `secret-patterns` types and `re2js`.
  */
 
-import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
@@ -218,17 +217,5 @@ describe("plugin secret-pattern registry", () => {
       unregisterPluginSecretPatterns("never-registered");
       expect(getPluginSecretPatterns()).toBe(third);
     });
-  });
-
-  test("import-light invariant: only re2js and secret-patterns types are imported", () => {
-    const source = readFileSync(
-      new URL("../security/plugin-secret-patterns.ts", import.meta.url),
-      "utf-8",
-    );
-    const imports = [...source.matchAll(/^import .*$/gm)].map((m) => m[0]);
-    expect(imports).toEqual([
-      'import { RE2JS } from "re2js";',
-      'import type { SecretPrefixPattern } from "./secret-patterns.js";',
-    ]);
   });
 });

@@ -50,6 +50,14 @@ mock.module("../credential-reader.js", () => ({
   }),
 }));
 
+// config-file-utils imports getWorkspaceDir from the defining module (the
+// credential-reader re-export is gone), so the seam must be seated there.
+const realPaths = await import("../paths.js");
+mock.module("../paths.js", () => ({
+  ...realPaths,
+  getWorkspaceDir: () => workspaceDir,
+}));
+
 mock.module("../db/webhook-ingress-route-store.js", () => ({
   listWebhookIngressRoutes: () => {
     if (webhookRouteReadError) {

@@ -151,7 +151,6 @@ mock.module("../lib/remotes/local", () => ({
 
 const ngrokRunMock = mock<typeof ngrok.runNgrokTunnel>(async () => ({
   publicUrl: "https://tunnel.example.com",
-  waitForExit: Promise.resolve(),
 }));
 
 mock.module("../lib/tunnels/ngrok", () => ({
@@ -314,7 +313,6 @@ beforeEach(() => {
   ngrokRunMock.mockReset();
   ngrokRunMock.mockImplementation(async () => ({
     publicUrl: "https://tunnel.example.com",
-    waitForExit: Promise.resolve(),
   }));
   ensureAppServerMock.mockReset();
   ensureAppServerMock.mockResolvedValue({

@@ -235,7 +235,7 @@ export async function runCloudflareTunnel(
       console.log(`Found existing cloudflare tunnel: ${existingUrl}`);
       // Not our child process; nothing to await, and no signal handling is
       // registered — a run must be safe to invoke from a host process.
-      return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
+      return { publicUrl: existingUrl };
     }
   }
 
@@ -306,12 +306,9 @@ export async function runCloudflareTunnel(
     `The agent runs detached (log: ${logPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
   );
 
-  // Settles when the detached agent exits. No process-level signal handling
-  // is registered: the detached agent outlives the CLI either way.
-  const waitForExit = new Promise<void>((resolve) => {
-    child.on("exit", () => resolve());
-  });
-  return { publicUrl, waitForExit };
+  // No process-level signal handling is registered: the detached agent
+  // outlives the CLI either way.
+  return { publicUrl };
 }
 
 /** Per-provider copy `cadet tunnel`'s help renders for cloudflare. */

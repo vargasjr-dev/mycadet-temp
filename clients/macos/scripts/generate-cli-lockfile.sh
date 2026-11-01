@@ -31,13 +31,13 @@ case "$CADET_ENVIRONMENT" in
 esac
 SPEC="${VERSION:-$DEFAULT_TAG}"
 
-echo "Generating CLI lockfile for cadet@$SPEC ..."
+echo "Generating CLI lockfile for mycadet@$SPEC ..."
 
 rm -rf "$SEED_DIR"
 mkdir -p "$SEED_DIR"
 
 cat > "$SEED_DIR/package.json" <<EOF
-{"dependencies":{"cadet":"$SPEC"}}
+{"dependencies":{"mycadet":"$SPEC"}}
 EOF
 
 (cd "$SEED_DIR" && bun install --ignore-scripts)

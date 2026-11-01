@@ -28,16 +28,11 @@ import {
 } from "\./servers/nginx\.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
-  confirmStopAnswer,
-  isNgrokEndpointOnlineError,
-  ngrokHolderPid,
-  ngrokOnlineEndpoint,
   NGROK_TUNNEL_META,
   NGROK_PROVIDER,
   saveNgrokDomain,
-  stopNgrokHolderPid,
 } from "./tunnels/ngrok.js";
-import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
+import { ensureBinaryInstalled } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import { type TunnelProviderName } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
@@ -56,46 +51,6 @@ import {
  * default, at which point only this constant flips.
  */
 export const DEFAULT_TUNNEL_PROVIDER: TunnelProviderName = "ngrok";
-
-/**
- * Confirm-first heal for a held ngrok domain, run by the FOREGROUND `cadet
- * tunnel` command: the detached tunnel process has no TTY, so its #402/#406
- * prompt can never fire — a 334 there surfaces here instead, in the
- * terminal that ran the command. When the startup log shows the collision
- * and the lockfile records a live tracked agent, ask before stopping it;
- * externally started agents are never touched. Returns whether the caller
- * should relaunch the tunnel.
- */
-export async function offerStopNgrokHolder(logText: string): Promise<boolean> {
-  if (!isNgrokEndpointOnlineError(logText)) return false;
-  if (!("isTTY" in process.stdin && process.stdin.isTTY)) return false;
-  const endpoint = ngrokOnlineEndpoint(logText);
-  const pid = await ngrokHolderPid();
-  if (pid === null) return false;
-  console.error(
-    `\nngrok refused the tunnel: ${endpoint ?? "the ngrok endpoint"} is already online.`,
-  );
-  console.error(
-    `An ngrok agent from an earlier run (pid ${pid}) is holding your free ngrok domain.`,
-  );
-  const answer = await readLineText(
-    "Stop the other ngrok tunnel and start a new one pointing at this installation? [Y/n] ",
-  );
-  if (!confirmStopAnswer(answer)) {
-    console.error(
-      "Keeping the other ngrok agent. Stop it yourself (its terminal, or `pkill ngrok`) and re-run this command.",
-    );
-    return false;
-  }
-  if (!(await stopNgrokHolderPid(pid))) {
-    console.error(
-      `Could not stop the old ngrok agent (pid ${pid}). Stop it yourself and re-run this command.`,
-    );
-    return false;
-  }
-  console.log("Stopped the old ngrok agent. Retrying the tunnel...");
-  return true;
-}
 
 /** Per-provider copy `cadet tunnel`'s help renders. */
 export interface ProviderMeta {
@@ -151,13 +106,13 @@ export interface ProviderTunnelOptions {
 
 /**
  * What every tunnel provider's run hands back: the public URL it established
- * or adopted, and the promise that settles when the run ends. Conformance is
- * the point — the tunnel level can notify the gateway the same way no matter
- * which provider ran.
+ * or adopted. Conformance is the point — the tunnel level can notify the
+ * gateway the same way no matter which provider ran. The run never holds the
+ * calling process open: every provider's tunnel lives in a detached agent
+ * (or in tailscaled), so the caller exits as soon as the run returns.
  */
 export interface ProviderTunnelResult {
   publicUrl: string;
-  waitForExit: Promise<void>;
 }
 
 export interface ProviderStopOptions {
@@ -250,7 +205,6 @@ export async function runProviderTunnel(
   const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
   await refreshEdgeWithEstablishedUrl();
-  await result.waitForExit;
   return { publicUrl: result.publicUrl };
 }
 
@@ -311,55 +265,6 @@ export async function stopTunnelProcess(): Promise<boolean> {
   const stopped = await providers[provider].stop({ record: recorded });
   clearRootProcess("tunnel", recorded.pid);
   return stopped;
-}
-
-/**
- * The `cadet tunnel --detach` copy for a run that adopted an already-running
- * agent: killing the supervisor does not stop a tunnel it did not spawn.
- */
-export function adoptedTunnelStopNotice(pid: number | undefined): string {
-  return (
-    `That ngrok agent was already running outside this command, so \`kill ${pid}\` only ` +
-    "stops this supervisor, not the ngrok tunnel or its saved ingress URL. Stop the ngrok agent " +
-    "directly to end the tunnel."
-  );
-}
-
-/**
- * Pull the single most meaningful failure line out of a tunnel log so the
- * `cadet tunnel` wrapper can name why the child died instead of only pointing
- * at the log file. Priority: nginx emerg/bind failures, ngrok error codes,
- * auth/usage failures, then any generic error/fatal/failed line — the LAST
- * match wins (the freshest), capped to keep the console line readable. Falls
- * back to the last non-empty log line, or null for an empty log.
- */
-export function summarizeStartupFailure(logText: string): string | null {
-  const lines = logText
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length === 0) {
-    return null;
-  }
-  const patterns: RegExp[] = [
-    /\[emerg\]/,
-    /bind\(\).*failed/i,
-    /address already in use/i,
-    /ERR_NGROK_\d+/,
-    /authtoken|authentication failed|usage limit|unauthorized/i,
-    /\berror\b|\bfatal\b|\bfailed\b/i,
-  ];
-  const cap = (line: string): string =>
-    line.length > 200 ? `${line.slice(0, 200)}…` : line;
-  for (const pattern of patterns) {
-    const matches = lines.filter((line) => pattern.test(line));
-    const last = matches.at(-1);
-    if (last !== undefined) {
-      return cap(last);
-    }
-  }
-  const lastLine = lines.at(-1);
-  return lastLine === undefined ? null : cap(lastLine);
 }
 
 /** Matches the Docker hatch path's service-readiness allowance. */
@@ -548,10 +453,6 @@ async function ensureTunnel(targetPort: number): Promise<string | null> {
       port: targetPort,
     });
     if (!result) return null;
-    // The run owns nothing in this process — the agent is detached — but an
-    // unhandled rejection from a settling exit promise must not crash the
-    // host (wake/upgrade) either.
-    result.waitForExit.catch(() => {});
     return result.publicUrl;
   } catch (err) {
     console.warn(

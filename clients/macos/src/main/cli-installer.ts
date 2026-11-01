@@ -472,12 +472,12 @@ async function bunInstallCli(): Promise<void> {
     const seeded = seedCliLockfile(installDir);
     const args = seeded
       ? ["install", "--frozen-lockfile", "--ignore-scripts"]
-      : ["add", `cadet@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
+      : ["add", `@mycadet/cli@${PINNED_CLI_VERSION}`, "--ignore-scripts"];
     await runBun(args, installDir);
   } else {
     // Unpinned: float to the environment's dist-tag, falling back to the seeded
     // frozen lockfile (resolved at build time) when the registry is unreachable.
-    const spec = `cadet@${getCliDistTag()}`;
+    const spec = `@mycadet/cli@${getCliDistTag()}`;
     try {
       await runBun(["add", spec, "--ignore-scripts"], installDir);
     } catch (err) {
