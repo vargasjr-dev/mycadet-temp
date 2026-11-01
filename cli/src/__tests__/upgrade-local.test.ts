@@ -112,14 +112,19 @@ const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
 const startGatewayMock = mock<typeof local.startGateway>(
   async () => "http://127.0.0.1:7830",
 );
-const stopLocalProcessesMock = mock<typeof cliLocal.stopLocalProcesses>(
+const stopLocalProcessesMock = mock<typeof local.stopLocalProcesses>(
   async () => {},
 );
 const startCesMock = mock<typeof local.startCes>(async () => {});
+const restartUpgradedLocalProcessesMock = mock<
+  typeof local.restartUpgradedLocalProcesses
+>(async () => {});
+const wakeAssistantMock = mock<typeof local.wakeAssistant>(async () => ({
+  ok: true,
+}));
 
 mock.module("../lib/remotes/local.js", () => ({
   ...realCliLocal,
-  stopLocalProcesses: stopLocalProcessesMock,
 }));
 
 const loopbackSafeFetchMock = mock<typeof localMode.loopbackSafeFetch>(
@@ -140,6 +145,9 @@ mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   saveLockfileAssistant: saveLockfileAssistantMock,
   loopbackSafeFetch: loopbackSafeFetchMock,
+  stopLocalProcesses: stopLocalProcessesMock,
+  restartUpgradedLocalProcesses: restartUpgradedLocalProcessesMock,
+  wakeAssistant: wakeAssistantMock,
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
@@ -392,19 +400,12 @@ describe("cadet upgrade local", () => {
       cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       { force: false },
     );
-    expect(startLocalDaemonMock).toHaveBeenCalledWith(
-      false,
+    expect(restartUpgradedLocalProcessesMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
-    );
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({
-        instanceDir: tempDir,
-        runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
-      }),
+      cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -433,11 +434,11 @@ describe("cadet upgrade local", () => {
     expect(pruneOldBackupsMock).not.toHaveBeenCalled();
     expect(restoreBackupMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).toHaveBeenCalled();
-    expect(startLocalDaemonMock).toHaveBeenCalled();
+    expect(restartUpgradedLocalProcessesMock).toHaveBeenCalled();
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
-    startLocalDaemonMock.mockRejectedValueOnce(
+    restartUpgradedLocalProcessesMock.mockRejectedValueOnce(
       new Error("target startup failed"),
     );
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
@@ -446,8 +447,7 @@ describe("cadet upgrade local", () => {
       "/tmp/local-pre-upgrade.tar.gz",
       { resume: false },
     );
-    expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
-    expect(startCesMock).toHaveBeenCalledTimes(2);
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(1);
     expect(stopLocalProcessesMock).toHaveBeenCalledTimes(2);
     expect(waitForReadyMock).toHaveBeenCalled();
   });

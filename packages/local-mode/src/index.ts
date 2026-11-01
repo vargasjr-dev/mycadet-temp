@@ -109,6 +109,10 @@ export {
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
 export {
+  restartUpgradedLocalProcesses,
+  stopLocalProcesses,
+} from "./remotes/local/upgrade";
+export {
   ensureLocalRuntime,
   getLocalRuntimeInstallDir,
   type LocalRuntimeInstall,
@@ -159,8 +163,7 @@ export {
   pipeToLogFile,
   openRuntimeLogFile,
 } from "./xdg-log";
-export {
-} from "./guardian-token";
+export {} from "./guardian-token";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";

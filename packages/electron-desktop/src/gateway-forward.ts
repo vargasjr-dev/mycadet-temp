@@ -153,11 +153,12 @@ async function authorizeGatewayForwardPlan(
   return plan;
 }
 
-/** Injectable stand-in for Electron's `net.fetch`. */
-export type GatewayForwardFetcher = (
-  url: string,
-  init?: RequestInit & { duplex?: "half" },
-) => Promise<Response>;
+/**
+ * The forward's fetcher is the local-mode bearer seam's own shape — the same
+ * `(input: string, init?: RequestInit)` the bearer callsites narrow to.
+ * Electron's `net.fetch` satisfies it in production; tests stand in.
+ */
+type ForwardFetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
 /**
  * The gateway target map for a forward: the lockfile's assistant entries ARE
@@ -179,7 +180,7 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
 
 export const forwardGatewayRequest = async (
   request: Request,
-  fetcher: GatewayForwardFetcher,
+  fetcher: ForwardFetcher,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
@@ -207,7 +208,7 @@ export const forwardGatewayRequest = async (
 export function executeGatewayForwardPlan(
   plan: GatewayForwardPlan,
   request: Pick<Request, "body">,
-  fetcher: GatewayForwardFetcher,
+  fetcher: ForwardFetcher,
   retryOptions: ForwardFetchRetryOptions = {},
 ): Promise<Response> | Response | null {
   switch (plan.kind) {
@@ -257,7 +258,7 @@ export function executeGatewayForwardPlan(
 async function executeLoopbackForward(
   plan: Extract<GatewayForwardPlan, { kind: "forward"; remote: false }>,
   request: Pick<Request, "body">,
-  fetcher: GatewayForwardFetcher,
+  fetcher: ForwardFetcher,
 ): Promise<Response> {
   const lease: GuardianTokenLease = () =>
     getGuardianAccessToken(plan.assistantId);

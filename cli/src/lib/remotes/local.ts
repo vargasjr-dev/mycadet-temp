@@ -7,24 +7,18 @@ import {
 } from "../assistant-config.js";
 import type {
   LocalAssistant,
-  DockerAssistant,
-  AppleContainerAssistant,
   LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   readCloudToken,
-  resolveDataDir,
   resolveLogDir,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import {
-  DAEMON_STOP_TIMEOUT_MS,
-  getDaemonPidPath,
   getLocalInstanceDir,
   gatewayCliInvocation,
-  stopProcessByPidFile,
-  stopProcessGracefully,
+  stopLocalProcesses,
 } from "@mycadet/local-mode";
 import {
   setStartupLogging,
@@ -73,39 +67,6 @@ import cliPkg from "../../../package.json";
  * When `entry` is provided, uses instance-specific paths instead of
  * the default ~/.cadet/ paths.
  */
-export async function stopLocalProcesses(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): Promise<void> {
-  const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
-  const daemonPidFile = getDaemonPidPath(entry);
-  await stopProcessByPidFile(
-    daemonPidFile,
-    "daemon",
-    undefined,
-    DAEMON_STOP_TIMEOUT_MS,
-    stopProcessGracefully,
-  );
-
-  const gatewayPidFile = join(cadetDir, "gateway.pid");
-  await stopProcessByPidFile(
-    gatewayPidFile,
-    "gateway",
-    undefined,
-    7000,
-    stopProcessGracefully,
-  );
-
-  // Stop the CES sibling if one was launched. No-op when the
-  // PID file is absent.
-  const cesPidFile = join(cadetDir, "ces.pid");
-  await stopProcessByPidFile(
-    cesPidFile,
-    "credential-executor",
-    undefined,
-    DAEMON_STOP_TIMEOUT_MS,
-    stopProcessGracefully,
-  );
-}
 
 export interface HatchLocalParams {
   /** Instance display name. Defaults to an auto-generated name. */
