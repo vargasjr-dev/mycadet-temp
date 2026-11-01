@@ -1,7 +1,4 @@
-import {
-  cliCommandName as cliCommand,
-  readCloudToken,
-} from "@mycadet/local-mode";
+import { cliCommand, readCloudToken } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { findAssistantByName } from "../lib/assistant-config.js";

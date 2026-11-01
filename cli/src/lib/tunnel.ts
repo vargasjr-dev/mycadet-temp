@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import {
-  cliCommandName as cliCommand,
-  loadAllAssistants,
-} from "@mycadet/local-mode";
+import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
 import {
   clearRootProcess,
   readRootProcesses,

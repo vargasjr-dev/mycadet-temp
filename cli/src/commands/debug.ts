@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   authHeadersForKnownOrganization,
-  cliCommandName as cliCommand,
+  cliCommand,
   cloudAuthHeaders,
   getAssistantDisplayName,
   getCloudUrl,

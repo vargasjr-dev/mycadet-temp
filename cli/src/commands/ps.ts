@@ -10,7 +10,7 @@ import {
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,

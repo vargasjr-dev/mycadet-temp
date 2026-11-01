@@ -1,4 +1,4 @@
-import { cliCommandName as cliCommand } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
 
 export function logHatchNextSteps(log: (message: string) => void): void {
   const command = cliCommand();

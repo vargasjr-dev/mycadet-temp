@@ -13,7 +13,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   cloudAuthHeaders,
   formatAssistantLookupError,
   getActiveAssistant,

@@ -1,9 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import {
-  cliCommandName as cliCommand,
-  loadAllAssistants,
-} from "@mycadet/local-mode";
+import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
 import { join } from "path";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";

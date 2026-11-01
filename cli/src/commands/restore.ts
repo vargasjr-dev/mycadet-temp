@@ -13,7 +13,7 @@ import { basename, dirname, join } from "path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   getArchivePath,
   getMetadataPath,
   readCloudToken,

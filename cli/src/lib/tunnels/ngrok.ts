@@ -21,7 +21,7 @@ import {
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   loopbackSafeFetch,
   resolveConfigDir,
   resolveDataDir,

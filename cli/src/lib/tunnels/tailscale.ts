@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
 import { GATEWAY_PORT } from "../constants.js";
-import { cliCommandName as cliCommand } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 // ── Tailscale CLI discovery + invocation ────────────────────────────────────
 

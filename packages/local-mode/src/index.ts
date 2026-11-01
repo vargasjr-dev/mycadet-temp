@@ -37,7 +37,7 @@ export {
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
 export {
-  cliCommandName,
+  cliCommand,
   defaultEnvironmentFilePath,
   ownVersion,
   readDefaultEnvironment,

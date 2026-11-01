@@ -8,7 +8,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   extractHostFromEntry,
   resolveLogDir,
 } from "@mycadet/local-mode";

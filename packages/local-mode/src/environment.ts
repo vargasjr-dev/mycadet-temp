@@ -113,7 +113,7 @@ export function resolveEnvironmentName(): string {
  * auth-header resolution raises), so both packages resolve it through this
  * one rule instead of duplicating it.
  */
-export function cliCommandName(): string {
+export function cliCommand(): string {
   const name = resolveEnvironmentName();
   return name === PRODUCTION_ENVIRONMENT_NAME ? "cadet" : `cadet-${name}`;
 }

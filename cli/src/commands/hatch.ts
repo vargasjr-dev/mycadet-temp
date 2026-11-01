@@ -4,7 +4,7 @@ import cliPkg from "../../package.json";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   readCloudToken,
   saveLockfileAssistant,
   validateAssistantName,

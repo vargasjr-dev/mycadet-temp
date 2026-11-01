@@ -7,7 +7,7 @@ import {
   type AppServer,
 } from "../lib/servers/nginx.js";
 import { ensureNginxForEdge } from "../lib/tunnel.js";
-import { cliCommandName as cliCommand } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {

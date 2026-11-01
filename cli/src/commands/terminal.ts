@@ -13,7 +13,7 @@
  */
 
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   extractHostFromEntry,
   getCloudUrl,
   readCloudToken,

@@ -18,10 +18,7 @@ import { join } from "node:path";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
-import {
-  cliCommandName as cliCommand,
-  resolveDataDir,
-} from "@mycadet/local-mode";
+import { cliCommand, resolveDataDir } from "@mycadet/local-mode";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
 

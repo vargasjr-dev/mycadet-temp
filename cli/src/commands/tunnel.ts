@@ -23,7 +23,7 @@ import {
 } from "../lib/tunnel.js";
 import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
 import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
-import { cliCommandName as cliCommand } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
 // The accepted `--provider` values ARE the shared registry, so validation

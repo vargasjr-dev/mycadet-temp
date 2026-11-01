@@ -1,5 +1,5 @@
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   formatGuardianRefreshCliFailure,
 } from "@mycadet/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";

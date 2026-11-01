@@ -8,7 +8,7 @@ import {
 } from "../lib/confirm-action.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   loadAllAssistants,
   retireDocker,
   retireLocal,

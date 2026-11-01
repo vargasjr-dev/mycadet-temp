@@ -1,5 +1,5 @@
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,

@@ -2,7 +2,7 @@ import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 import {
-  cliCommandName as cliCommand,
+  cliCommand,
   dockerResourceNames,
   formatAssistantLookupError,
   getActiveAssistant,

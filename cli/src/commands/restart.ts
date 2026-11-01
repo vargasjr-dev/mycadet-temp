@@ -1,5 +1,5 @@
 import { sleep } from "./sleep.js";
-import { cliCommandName as cliCommand } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
 import { wake } from "./wake.js";
 
 export const restart = Object.assign(
