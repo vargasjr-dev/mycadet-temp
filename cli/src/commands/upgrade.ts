@@ -13,7 +13,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   cloudAuthHeaders,
   formatAssistantLookupError,
   getActiveAssistant,
@@ -102,7 +102,7 @@ function parseArgs(): UpgradeArgs {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
-      console.log(`Usage: ${cliCommandName()} upgrade [<name>] [options]`);
+      console.log(`Usage: ${cliCommand()} upgrade [<name>] [options]`);
       console.log("");
       console.log("Upgrade an assistant to a newer version.");
       console.log(

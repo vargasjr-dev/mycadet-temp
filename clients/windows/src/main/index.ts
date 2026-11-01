@@ -103,16 +103,6 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-// Serve clients/web/dist/ as static files via `app://mycadet.ai/...`. Route-like
-// paths (no file extension, or `.html`) fall back to index.html so React
-// Router can handle client-side routes on reload; requests for missing
-// static assets return 404 so a stale or partial deploy surfaces as a load
-// error rather than silently serving HTML with a wrong Content-Type.
-// `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built HTML
-// emits asset URLs like `/assistant/assets/index.js` while the files on disk
-// live directly under `rendererRoot`; the mount prefix is stripped before
-// path resolution.
-//
 const resolveRendererRoot = (): string => {
   if (app.isPackaged) {
     // The renderer bundle ships once, inside the CLI runtime (see
@@ -126,14 +116,7 @@ const resolveRendererRoot = (): string => {
 };
 
 const registerAppProtocol = (): void => {
-  registerAppProtocolForwarding({
-    appProtocol: APP_PROTOCOL,
-    appHost: APP_HOST,
-    rendererRoot: resolveRendererRoot(),
-    cloudUrl: resolvedConfig.cloudUrl,
-    resolveAllowedOrigin,
-    log,
-  });
+  registerAppProtocolForwarding({ webDistRoot: resolveRendererRoot() });
 };
 
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.

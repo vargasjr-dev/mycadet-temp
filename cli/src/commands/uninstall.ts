@@ -8,7 +8,7 @@ import {
 } from "../lib/confirm-action.js";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   loadAllAssistants,
   retireDocker,
   retireLocal,
@@ -203,7 +203,7 @@ export const uninstall = Object.assign(
   async function uninstall(): Promise<void> {
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommandName()} uninstall [--yes]`);
+      console.log(`Usage: ${cliCommand()} uninstall [--yes]`);
       console.log("");
       console.log(
         "Remove Cadet entirely: retire any remaining assistants, delete every location it uses for this environment (assistant state, retired archives, config, logs), and remove the Cadet installation itself.",

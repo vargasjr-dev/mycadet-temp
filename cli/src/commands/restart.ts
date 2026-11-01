@@ -1,5 +1,5 @@
 import { sleep } from "./sleep.js";
-import { cliCommandName } from "@mycadet/local-mode";
+import { cliCommandName as cliCommand } from "@mycadet/local-mode";
 import { wake } from "./wake.js";
 
 export const restart = Object.assign(
@@ -7,7 +7,7 @@ export const restart = Object.assign(
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
       console.log(
-        `Usage: ${cliCommandName()} restart [<name> | --all] [--force] [--wait [<duration>]] [--repair-guardian]`,
+        `Usage: ${cliCommand()} restart [<name> | --all] [--force] [--wait [<duration>]] [--repair-guardian]`,
       );
       console.log("");
       console.log("Sleep, then wake the assistant.");

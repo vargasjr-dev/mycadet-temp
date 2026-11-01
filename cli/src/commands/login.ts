@@ -1,5 +1,5 @@
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   getActiveAssistant,
   getCloudUrl,
   loadAllAssistants,
@@ -28,7 +28,7 @@ export const login = Object.assign(
 
     if (args.includes("--help") || args.includes("-h")) {
       console.log(
-        `Usage: ${cliCommandName()} login [--token <session-token>] [--force]`,
+        `Usage: ${cliCommand()} login [--token <session-token>] [--force]`,
       );
       console.log("");
       console.log("Log in to Cadet Cloud.");
@@ -46,9 +46,9 @@ export const login = Object.assign(
       );
       console.log("");
       console.log("Examples:");
-      console.log(`  ${cliCommandName()} login`);
-      console.log(`  ${cliCommandName()} login --token <session-token>`);
-      console.log(`  ${cliCommandName()} login --force`);
+      console.log(`  ${cliCommand()} login`);
+      console.log(`  ${cliCommand()} login --token <session-token>`);
+      console.log(`  ${cliCommand()} login --force`);
       process.exit(0);
     }
 
@@ -146,7 +146,7 @@ export const logout = Object.assign(
   async function logout(): Promise<void> {
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommandName()} logout`);
+      console.log(`Usage: ${cliCommand()} logout`);
       console.log("");
       console.log("Log out of Cadet Cloud, remove the stored session token,");
       console.log("and remove cloud assistants from the local lockfile.");
@@ -176,7 +176,7 @@ export const whoami = Object.assign(
   async function whoami(): Promise<void> {
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommandName()} whoami`);
+      console.log(`Usage: ${cliCommand()} whoami`);
       console.log("");
       console.log("Show the currently logged-in Cadet Cloud user.");
       process.exit(0);

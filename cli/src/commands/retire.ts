@@ -2,7 +2,7 @@ import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   dockerResourceNames,
   formatAssistantLookupError,
   getActiveAssistant,
@@ -73,7 +73,7 @@ async function retireInner(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      `Usage: ${cliCommandName()} retire [<name-or-id>] [--source <source>] [--yes]`,
+      `Usage: ${cliCommand()} retire [<name-or-id>] [--source <source>] [--yes]`,
     );
     console.log("");
     console.log("Delete an assistant instance and archive its data.");
@@ -103,7 +103,7 @@ async function retireInner(): Promise<void> {
       "Error: No assistant specified and no active assistant. Pass a name or ID, or pick one with `cadet use <name>`.",
     );
     console.error(
-      `Usage: ${cliCommandName()} retire <name-or-id> [--source <source>] [--yes]`,
+      `Usage: ${cliCommand()} retire <name-or-id> [--source <source>] [--yes]`,
     );
     process.exit(1);
   }
@@ -112,7 +112,7 @@ async function retireInner(): Promise<void> {
   if (lookup.status !== "found") {
     console.error(formatAssistantLookupError(name, lookup));
     console.error(
-      `Run '${cliCommandName()} hatch' first, or check the instance name.`,
+      `Run '${cliCommand()} hatch' first, or check the instance name.`,
     );
     process.exit(1);
   }

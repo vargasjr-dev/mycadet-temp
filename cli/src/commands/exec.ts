@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
@@ -76,7 +76,7 @@ export const exec = Object.assign(
       rawArgs.length === 0
     ) {
       console.log(
-        `Usage: ${cliCommandName()} exec [<name>] [--service <svc>] [-it] -- <command...>`,
+        `Usage: ${cliCommand()} exec [<name>] [--service <svc>] [-it] -- <command...>`,
       );
       console.log("");
       console.log("Execute a command inside an assistant's container.");
@@ -107,11 +107,11 @@ export const exec = Object.assign(
       console.log("  credential-executor");
       console.log("");
       console.log("Examples:");
-      console.log(`  ${cliCommandName()} exec -- ls -la /workspace`);
-      console.log(`  ${cliCommandName()} exec -- cat /workspace/NOW.md`);
-      console.log(`  ${cliCommandName()} exec -it -- /bin/bash`);
+      console.log(`  ${cliCommand()} exec -- ls -la /workspace`);
+      console.log(`  ${cliCommand()} exec -- cat /workspace/NOW.md`);
+      console.log(`  ${cliCommand()} exec -it -- /bin/bash`);
       console.log(
-        `  ${cliCommandName()} exec --service gateway -- cat /tmp/gateway.log`,
+        `  ${cliCommand()} exec --service gateway -- cat /tmp/gateway.log`,
       );
       process.exit(0);
     }
@@ -120,7 +120,7 @@ export const exec = Object.assign(
       console.error(
         red(
           "Error: missing '--' separator before command.\n" +
-            `Usage: ${cliCommandName()} exec [<name>] -- <command...>`,
+            `Usage: ${cliCommand()} exec [<name>] -- <command...>`,
         ),
       );
       process.exit(1);

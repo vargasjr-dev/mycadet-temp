@@ -13,7 +13,7 @@ import { basename, dirname, join } from "path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   getArchivePath,
   getMetadataPath,
   readCloudToken,
@@ -42,7 +42,7 @@ import {
 
 function printUsage(): void {
   console.log(
-    `Usage: ${cliCommandName()} restore <name> [--from <path>] [--dry-run]`,
+    `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,
   );
   console.log("");
   console.log(
@@ -63,15 +63,13 @@ function printUsage(): void {
   );
   console.log("");
   console.log("Examples:");
-  console.log(`  ${cliCommandName()} restore my-retired-assistant`);
+  console.log(`  ${cliCommand()} restore my-retired-assistant`);
+  console.log(`  ${cliCommand()} restore my-assistant --from backup.tar.gz`);
   console.log(
-    `  ${cliCommandName()} restore my-assistant --from backup.tar.gz`,
+    `  ${cliCommand()} restore my-cloud-assistant --from backup.tar.gz`,
   );
   console.log(
-    `  ${cliCommandName()} restore my-cloud-assistant --from backup.tar.gz`,
-  );
-  console.log(
-    `  ${cliCommandName()} restore my-assistant --from backup.tar.gz --dry-run`,
+    `  ${cliCommand()} restore my-assistant --from backup.tar.gz --dry-run`,
   );
 }
 
@@ -167,7 +165,7 @@ async function restorePlatform(
   // Step 1 — Authenticate
   const token = readCloudToken();
   if (!token) {
-    console.error(`Not logged in. Run '${cliCommandName()} login' first.`);
+    console.error(`Not logged in. Run '${cliCommand()} login' first.`);
     process.exit(1);
   }
 
@@ -208,7 +206,7 @@ async function restorePlatform(
       preflightResult.statusCode === 403
     ) {
       console.error(
-        `Authentication failed. Run '${cliCommandName()} login' to refresh.`,
+        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
       );
       process.exit(1);
     }
@@ -318,7 +316,7 @@ async function restorePlatform(
 
   if (importResult.statusCode === 401 || importResult.statusCode === 403) {
     console.error(
-      `Authentication failed. Run '${cliCommandName()} login' to refresh.`,
+      `Authentication failed. Run '${cliCommand()} login' to refresh.`,
     );
     process.exit(1);
   }
@@ -564,9 +562,7 @@ export const restore = Object.assign(
     const entry = findAssistantByName(name);
     if (!entry) {
       console.error(`Error: No assistant found with name '${name}'.`);
-      console.error(
-        `Run '${cliCommandName()} ps' to see available assistants.`,
-      );
+      console.error(`Run '${cliCommand()} ps' to see available assistants.`);
       process.exit(1);
     }
 

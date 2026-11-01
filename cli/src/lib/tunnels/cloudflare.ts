@@ -18,7 +18,10 @@ import { join } from "node:path";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
-import { cliCommandName, resolveDataDir } from "@mycadet/local-mode";
+import {
+  cliCommandName as cliCommand,
+  resolveDataDir,
+} from "@mycadet/local-mode";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
 
@@ -303,7 +306,7 @@ export async function runCloudflareTunnel(
   console.log("Tunnel recorded in the lockfile.");
   console.log("");
   console.log(
-    `The agent runs detached (log: ${logPath}). Stop it with \`${cliCommandName()} tunnel stop\`.`,
+    `The agent runs detached (log: ${logPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
   );
 
   // Settles when the detached agent exits. No process-level signal handling

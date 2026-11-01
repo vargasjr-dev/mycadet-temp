@@ -8,7 +8,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   extractHostFromEntry,
   resolveLogDir,
 } from "@mycadet/local-mode";
@@ -27,7 +27,7 @@ interface LogsArgs {
 }
 
 function printHelp(): void {
-  console.log(`Usage: ${cliCommandName()} logs [<name>] [options]`);
+  console.log(`Usage: ${cliCommand()} logs [<name>] [options]`);
   console.log("");
   console.log("View logs from an assistant instance.");
   console.log("");

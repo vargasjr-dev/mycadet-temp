@@ -1,5 +1,5 @@
 import {
-  cliCommandName,
+  cliCommandName as cliCommand,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -13,7 +13,7 @@ export const use = Object.assign(
     const args = process.argv.slice(3);
 
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommandName()} use [<name-or-id>]`);
+      console.log(`Usage: ${cliCommand()} use [<name-or-id>]`);
       console.log("");
       console.log("Set the active assistant for commands.");
       console.log("");

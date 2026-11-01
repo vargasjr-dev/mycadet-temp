@@ -1,8 +1,8 @@
 import { connectImport } from "./connect/import.js";
-import { cliCommandName } from "@mycadet/local-mode";
+import { cliCommandName as cliCommand } from "@mycadet/local-mode";
 
 function printUsage(): void {
-  console.log(`Usage: ${cliCommandName()} connect [beta] <subcommand>`);
+  console.log(`Usage: ${cliCommand()} connect [beta] <subcommand>`);
   console.log("");
   console.log("Connect to an assistant paired from another machine.");
   console.log("");

@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from "fs";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { cliCommandName, loadAllAssistants } from "@mycadet/local-mode";
+import {
+  cliCommandName as cliCommand,
+  loadAllAssistants,
+} from "@mycadet/local-mode";
 import { join } from "path";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
@@ -53,7 +56,7 @@ export const sleep = Object.assign(
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
       console.log(
-        `Usage: ${cliCommandName()} sleep [<name> | --all] [--force] [--wait [<duration>]]`,
+        `Usage: ${cliCommand()} sleep [<name> | --all] [--force] [--wait [<duration>]]`,
       );
       console.log("");
       console.log(
@@ -196,7 +199,7 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
     console.error(
-      `Error: no assistants found. Run '${cliCommandName()} hatch' first.`,
+      `Error: no assistants found. Run '${cliCommand()} hatch' first.`,
     );
     process.exit(1);
   }
