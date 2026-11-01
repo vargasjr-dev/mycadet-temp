@@ -12,7 +12,7 @@
  * these tests observe has to come from the client deciding for itself.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { GatewayConfig } from "../config.js";
+import { makeGatewayConfig } from "./helpers/gateway-config.js";
 import type { NormalizedSlackEvent } from "../slack/message-schemas.js";
 import {
   DEFAULT_PONG_DEADLINE_MS,
@@ -157,29 +157,6 @@ class FakeSocket implements SlackSocketLike {
     this.readyState = 3; // WebSocket.CLOSED
     this.emit("close", { code, reason });
   }
-}
-
-function makeGatewayConfig(): GatewayConfig {
-  return {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
-    gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-    logFile: { dir: undefined, retentionDays: 30 },
-    maxAttachmentBytes: {
-      telegram: 50 * 1024 * 1024,
-      slack: 100 * 1024 * 1024,
-      whatsapp: 16 * 1024 * 1024,
-      default: 50 * 1024 * 1024,
-    },
-    maxAttachmentConcurrency: 3,
-    maxWebhookPayloadBytes: 1024 * 1024,
-    port: 7830,
-    routingEntries: [],
-    runtimeInitialBackoffMs: 500,
-    runtimeMaxRetries: 2,
-    runtimeProxyRequireAuth: false,
-    runtimeTimeoutMs: 30000,
-    trustProxy: false,
-  } as unknown as GatewayConfig;
 }
 
 function makeConfig(): SlackSocketModeConfig {

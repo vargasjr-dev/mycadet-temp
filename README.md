@@ -32,6 +32,8 @@
 | **Channels**               | One assistant with one memory, reachable from the macOS or Windows app, Telegram, or Slack. Start a thought in one channel and pick it up in another.                                                                                                                                                                                     |
 | **Multi-provider support** | Works with Anthropic, OpenAI, Google Gemini, Fireworks, OpenRouter, MiniMax, [Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=cadet), and any OpenAI-compatible endpoint. Local models run through Ollama. Embeddings run on local ONNX by default and fall back to cloud providers automatically. |
 
+> Supported filesystem: ext4 only, for now.
+
 ## Foundational documents
 
 The canonical sources for who we are and how we talk about what we're building. The docs site at [mycadet.ai/docs](https://mycadet.ai/docs) is a rendered view of these files.

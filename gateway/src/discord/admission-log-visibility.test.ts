@@ -31,13 +31,13 @@ let logDir: string;
 
 beforeAll(() => {
   logDir = mkdtempSync(join(tmpdir(), "gw-discord-admission-"));
-  initLogger({ dir: logDir, retentionDays: 0 });
+  initLogger({ dir: logDir, retentionDays: 30 });
 });
 
 afterAll(() => {
   // Restore the stdout-only logger so a sibling file sharing this process does
   // not keep writing into a directory that is about to be removed.
-  initLogger({ dir: undefined, retentionDays: 0 });
+  initLogger({ dir: undefined, retentionDays: 30 });
   rmSync(logDir, { recursive: true, force: true });
 });
 
