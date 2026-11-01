@@ -26,6 +26,15 @@ import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
 import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
+/**
+ * Set on the detached child spawned by `tunnel start`: the child re-enters
+ * this same command and must run the tunnel loop itself instead of spawning
+ * another child. An environment marker rather than a CLI flag — the flag
+ * surface stays clean (there is no user-facing foreground mode; the tunnel
+ * always runs in the background).
+ */
+const TUNNEL_DETACHED_CHILD_ENV = "CADET_TUNNEL_DETACHED_CHILD";
+
 // The accepted `--provider` values ARE the shared registry, so validation
 // here cannot drift from what the workspace config accepts.
 
@@ -33,7 +42,6 @@ interface TunnelArgs {
   provider: TunnelProviderName;
   domain: string | null;
   clearDomain: boolean;
-  foreground: boolean;
 }
 
 function parseArgs(): TunnelArgs {
@@ -42,7 +50,6 @@ function parseArgs(): TunnelArgs {
   let provider: TunnelProviderName | null = null;
   let domain: string | null = null;
   let clearDomain = false;
-  let foreground = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -96,23 +103,18 @@ function parseArgs(): TunnelArgs {
         "                                tunnel without one. Cannot be combined with --domain.",
       );
       console.log(
-        `  --foreground                  Stream the tunnel's logs to this terminal. By default the tunnel`,
+        "The tunnel runs in the background: the command returns after printing",
       );
       console.log(
-        "                                runs in the background: the command returns after printing the public",
+        "the public URL, and logs stream to tunnel.log in the CLI log directory.",
       );
       console.log(
-        `                                URL, and logs stream to tunnel.log in the CLI log directory. A background`,
+        `Stop the tunnel with \`${cliCommand()} tunnel stop\`, except when it`,
       );
       console.log(
-        "                                tunnel stops with `${cliCommand()} tunnel stop`, except when it adopted an already-running",
+        "adopted an already-running tunnel (started outside this command):",
       );
-      console.log(
-        "                                tunnel (started outside this command): killing the supervisor then",
-      );
-      console.log(
-        "                                leaves that tunnel running.",
-      );
+      console.log("killing the supervisor then leaves that tunnel running.");
       console.log("");
       console.log("Providers:");
       for (const name of TUNNEL_PROVIDERS) {
@@ -174,8 +176,6 @@ function parseArgs(): TunnelArgs {
       i++;
     } else if (arg === "--clear-domain") {
       clearDomain = true;
-    } else if (arg === "--foreground") {
-      foreground = true;
     } else if (arg.startsWith("-")) {
       console.error(`Error: Unknown option '${arg}'.`);
       process.exit(1);
@@ -221,7 +221,7 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  return { provider, domain, clearDomain, foreground };
+  return { provider, domain, clearDomain };
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
@@ -234,24 +234,17 @@ const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
 const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
 
 /**
- * Re-invoke `cadet tunnel --foreground` as a detached background process via
- * `relaunchDetached`, waiting for the child to either print its
- * "Tunnel established" or adopted-tunnel line (readiness) or exit early
- * (failure), so a misconfigured provider still fails loudly in the terminal
- * that ran `cadet tunnel`.
+ * Re-invoke `cadet tunnel start` (verbatim args, plus the detached-child env
+ * marker) as a background process via `relaunchDetached`, waiting for the
+ * child to either print its "Tunnel established" or adopted-tunnel line
+ * (readiness) or exit early (failure), so a misconfigured provider still
+ * fails loudly in the terminal that ran `cadet tunnel`.
  *
  * The log file is the fixed `tunnel.log` so there is one stable path to tail;
  * concurrent tunnel runs share (and truncate) it.
  */
 async function spawnDetachedTunnel(): Promise<void> {
-  const childArgs: string[] = ["tunnel"];
-  for (const arg of process.argv.slice(3)) {
-    if (arg === "--foreground") {
-      continue;
-    }
-    childArgs.push(arg);
-  }
-  childArgs.push("--foreground");
+  const childArgs: string[] = ["tunnel", ...process.argv.slice(3)];
 
   let publicUrl: string | undefined;
   let adopted = false;
@@ -262,6 +255,7 @@ async function spawnDetachedTunnel(): Promise<void> {
   for (let holderStops = 0; ; holderStops++) {
     const { child, logPath, ready, exitCode } = await relaunchDetached({
       args: childArgs,
+      env: { [TUNNEL_DETACHED_CHILD_ENV]: "1" },
       logFile: "tunnel.log",
       timeoutMs: TUNNEL_BACKGROUND_START_TIMEOUT_MS,
       isReady: (logPath) => {
@@ -376,9 +370,12 @@ export const tunnel = Object.assign(
       console.error(`       ${cliCommand()} tunnel stop`);
       process.exit(1);
     }
-    const { provider, domain, clearDomain, foreground } = parseArgs();
+    const { provider, domain, clearDomain } = parseArgs();
 
-    if (!foreground) {
+    // Without the marker this invocation is the terminal-facing parent: it
+    // spawns the detached tunnel child and reports on its startup. The child
+    // re-enters here with the marker set and falls through to the loop.
+    if (process.env[TUNNEL_DETACHED_CHILD_ENV] !== "1") {
       await spawnDetachedTunnel();
       return;
     }
