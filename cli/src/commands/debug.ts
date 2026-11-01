@@ -2,13 +2,13 @@ import { z } from "zod";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   authHeadersForKnownOrganization,
+  cliCommandName,
   cloudAuthHeaders,
   getAssistantDisplayName,
   getCloudUrl,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
@@ -69,7 +69,7 @@ export const debug = Object.assign(
 
     const cloudToken = readCloudToken();
     if (!cloudToken) {
-      console.error(`Not logged in. Run '${cliCommand()} login' first.`);
+      console.error(`Not logged in. Run '${cliCommandName()} login' first.`);
       process.exit(1);
     }
     // The self-hosted registration fields ride the local-runtime and platform

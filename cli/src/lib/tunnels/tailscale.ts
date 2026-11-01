@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
 import { GATEWAY_PORT } from "../constants.js";
-import { cliCommand } from "../cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 // ── Tailscale CLI discovery + invocation ────────────────────────────────────
 
@@ -322,11 +322,11 @@ export async function runTailscaleTunnel(
     "This URL is reachable only from devices signed in to your tailnet.",
   );
   console.log(
-    `For public webhook ingress, run \`${cliCommand()} tunnel start --help\` to see the public providers.`,
+    `For public webhook ingress, run \`${cliCommandName()} tunnel start --help\` to see the public providers.`,
   );
   console.log("");
   console.log(
-    `The serve persists in tailscaled after this command exits. Stop it with \`${cliCommand()} tunnel stop\`.`,
+    `The serve persists in tailscaled after this command exits. Stop it with \`${cliCommandName()} tunnel stop\`.`,
   );
 
   // The serve itself lives in tailscaled and persists after this process

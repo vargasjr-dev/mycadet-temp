@@ -1,4 +1,5 @@
 import {
+  cliCommandName,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -6,14 +7,13 @@ import {
 } from "@mycadet/local-mode";
 import { setActiveAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { cliCommand } from "../lib/cli-name.js";
 
 export const use = Object.assign(
   async function use(): Promise<void> {
     const args = process.argv.slice(3);
 
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommand()} use [<name-or-id>]`);
+      console.log(`Usage: ${cliCommandName()} use [<name-or-id>]`);
       console.log("");
       console.log("Set the active assistant for commands.");
       console.log("");

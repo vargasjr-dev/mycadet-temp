@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { loopbackSafeFetch } from "@mycadet/local-mode";
-import { cliCommand } from "./cli-name.js";
+import { cliCommandName, loopbackSafeFetch } from "@mycadet/local-mode";
 
 const requestSchema = z.object({
   request_id: z.string().regex(/^[a-f0-9]{64}$/),
@@ -53,7 +52,7 @@ export async function pollingCloudLogin(
         return resultSchema.parse(await response.json()).session_token;
       if (response.status === 410)
         throw new Error(
-          `Login request expired. Run ${cliCommand()} login again.`,
+          `Login request expired. Run ${cliCommandName()} login again.`,
         );
       if (response.status !== 202)
         throw new Error(`Login polling failed (${response.status}).`);

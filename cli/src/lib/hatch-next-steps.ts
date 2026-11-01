@@ -1,7 +1,7 @@
-import { cliCommand } from "./cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 
 export function logHatchNextSteps(log: (message: string) => void): void {
-  const command = cliCommand();
+  const command = cliCommandName();
   log("Next steps:");
   log(
     `  - Run \`${command} client\` to interact with your cadet via the terminal`,

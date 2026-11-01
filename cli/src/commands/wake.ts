@@ -1,5 +1,4 @@
-import { loadAllAssistants } from "@mycadet/local-mode";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommandName, loadAllAssistants } from "@mycadet/local-mode";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -19,7 +18,7 @@ export const wake = Object.assign(
   async function wake(): Promise<void> {
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommand()} wake [<name> | --all] [options]`);
+      console.log(`Usage: ${cliCommandName()} wake [<name> | --all] [options]`);
       console.log("");
       console.log("Start the assistant and gateway processes.");
       console.log("");
@@ -100,7 +99,7 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
     console.error(
-      `Error: no assistants found. Run '${cliCommand()} hatch' first.`,
+      `Error: no assistants found. Run '${cliCommandName()} hatch' first.`,
     );
     process.exit(1);
   }

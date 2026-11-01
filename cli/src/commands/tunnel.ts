@@ -23,7 +23,7 @@ import {
 } from "../lib/tunnel.js";
 import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
 import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
 // The accepted `--provider` values ARE the shared registry, so validation
@@ -48,7 +48,7 @@ function parseArgs(): TunnelArgs {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
       console.log(
-        `Usage: ${cliCommand()} tunnel start --provider <provider> [options]\n       ${cliCommand()} tunnel stop`,
+        `Usage: ${cliCommandName()} tunnel start --provider <provider> [options]\n       ${cliCommandName()} tunnel stop`,
       );
       console.log("");
       console.log("Front a locally running assistant with an HTTPS tunnel.");
@@ -86,7 +86,7 @@ function parseArgs(): TunnelArgs {
         "  --domain <domain>             Reserved domain to bind, for providers that support",
       );
       console.log(
-        "                                one. Saved to the workspace config so `${cliCommand()} wake` restores",
+        "                                one. Saved to the workspace config so `${cliCommandName()} wake` restores",
       );
       console.log("                                reuse it.");
       console.log(
@@ -105,7 +105,7 @@ function parseArgs(): TunnelArgs {
         `                                URL, and logs stream to tunnel.log in the CLI log directory. A background`,
       );
       console.log(
-        "                                tunnel stops with `${cliCommand()} tunnel stop`, except when it adopted an already-running",
+        "                                tunnel stops with `${cliCommandName()} tunnel stop`, except when it adopted an already-running",
       );
       console.log(
         "                                tunnel (started outside this command): killing the supervisor then",
@@ -126,20 +126,20 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Examples:");
       console.log(
-        `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`,
+        `  $ ${cliCommandName()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`,
       );
       const domainExample =
         PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
       if (domainExample) {
         console.log(
-          `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
+          `  $ ${cliCommandName()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
         );
         console.log(
-          `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --clear-domain`,
+          `  $ ${cliCommandName()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --clear-domain`,
         );
       }
-      console.log(`  $ ${cliCommand()} tunnel start --provider cloudflare`);
-      console.log(`  $ ${cliCommand()} tunnel stop`);
+      console.log(`  $ ${cliCommandName()} tunnel start --provider cloudflare`);
+      console.log(`  $ ${cliCommandName()} tunnel stop`);
       process.exit(0);
     } else if (arg === "--provider") {
       const next = args[i + 1];
@@ -216,7 +216,7 @@ function parseArgs(): TunnelArgs {
   );
   if (positional !== undefined) {
     console.error(
-      `Error: Unknown argument '${positional}'. ${cliCommand()} tunnel takes no assistant name — it fronts the active assistant; use \`${cliCommand()} tunnel start\` or \`${cliCommand()} tunnel stop\`.`,
+      `Error: Unknown argument '${positional}'. ${cliCommandName()} tunnel takes no assistant name — it fronts the active assistant; use \`${cliCommandName()} tunnel start\` or \`${cliCommandName()} tunnel stop\`.`,
     );
     process.exit(1);
   }
@@ -317,7 +317,7 @@ async function spawnDetachedTunnel(): Promise<void> {
     if (adopted) {
       console.log(adoptedTunnelStopNotice(child.pid));
     } else {
-      console.log(`Stop with: ${cliCommand()} tunnel stop`);
+      console.log(`Stop with: ${cliCommandName()} tunnel stop`);
     }
     return;
   }
@@ -346,14 +346,14 @@ export const tunnel = Object.assign(
     if (subcommand === "stop") {
       const args = process.argv.slice(4);
       if (args.includes("--help") || args.includes("-h")) {
-        console.log(`Usage: ${cliCommand()} tunnel stop`);
+        console.log(`Usage: ${cliCommandName()} tunnel stop`);
         console.log(
           "Stop the recorded Cadet-managed tunnel, keeping nginx and the saved domain.",
         );
         return;
       }
       if (args.length > 0)
-        throw new Error(`Usage: ${cliCommand()} tunnel stop`);
+        throw new Error(`Usage: ${cliCommandName()} tunnel stop`);
       await stopTunnelFlow();
       return;
     }
@@ -370,10 +370,10 @@ export const tunnel = Object.assign(
         console.error(`Error: Unknown argument '${subcommand}'.`);
       }
       console.error(
-        `Usage: ${cliCommand()} tunnel start --provider <provider> [options]`,
+        `Usage: ${cliCommandName()} tunnel start --provider <provider> [options]`,
       );
-      console.error(`       ${cliCommand()} tunnel status`);
-      console.error(`       ${cliCommand()} tunnel stop`);
+      console.error(`       ${cliCommandName()} tunnel status`);
+      console.error(`       ${cliCommandName()} tunnel stop`);
       process.exit(1);
     }
     const { provider, domain, clearDomain, foreground } = parseArgs();

@@ -7,12 +7,12 @@ import {
   type AppServer,
 } from "../lib/servers/nginx.js";
 import { ensureNginxForEdge } from "../lib/tunnel.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status`,
+    `Usage: ${cliCommandName()} app start [options]\n       ${cliCommandName()} app stop\n       ${cliCommandName()} app status`,
   );
   console.log("");
   console.log(
@@ -24,7 +24,7 @@ function printAppHelp(): void {
   console.log("APIs & webhooks to the correct Cadet.");
   console.log("");
   console.log(
-    `The App server is spun up automatically as part of the \`${cliCommand()} tunnel start\` command.`,
+    `The App server is spun up automatically as part of the \`${cliCommandName()} tunnel start\` command.`,
   );
   process.exit(0);
 }
@@ -44,7 +44,7 @@ async function startAppEdge(): Promise<void> {
   console.log(
     `${edge.started ? "Started" : "Reusing"} the app edge on 127.0.0.1:${edge.port}.`,
   );
-  console.log(`Stop with: ${cliCommand()} app stop`);
+  console.log(`Stop with: ${cliCommandName()} app stop`);
 }
 
 /** `cadet app stop`: take the nginx edge down. */

@@ -1,6 +1,8 @@
-import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
+import {
+  cliCommandName,
+  formatGuardianRefreshCliFailure,
+} from "@mycadet/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { cliCommand } from "../../lib/cli-name.js";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../../lib/assistant-config.js";
@@ -17,7 +19,7 @@ import { generateLocalSecret } from "../../lib/remotes/local.js";
 
 function printUsage(): void {
   console.log(
-    `Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`,
+    `Usage: ${cliCommandName()} gateway token <subcommand> [assistantId]`,
   );
   console.log("");
   console.log("Manage gateway authentication tokens.");
@@ -127,7 +129,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
+        `Run \`${cliCommandName()} gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);

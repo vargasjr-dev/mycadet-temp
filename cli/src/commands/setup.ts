@@ -3,7 +3,7 @@ import {
   getGatewayUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 import {
   leaseGuardianToken,
   loadGuardianToken,
@@ -137,7 +137,7 @@ export const setup = Object.assign(
     const args = process.argv.slice(3);
 
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommand()} setup [--provider <provider>]`);
+      console.log(`Usage: ${cliCommandName()} setup [--provider <provider>]`);
       console.log("");
       console.log("Configure a provider API key on the active assistant.");
       console.log("");
@@ -154,9 +154,9 @@ export const setup = Object.assign(
       console.log("  - Otherwise prompts securely without echoing the key.");
       console.log("");
       console.log("Examples:");
-      console.log(`  ${cliCommand()} setup`);
-      console.log(`  ANTHROPIC_API_KEY=... ${cliCommand()} setup`);
-      console.log(`  ${cliCommand()} setup --provider openai`);
+      console.log(`  ${cliCommandName()} setup`);
+      console.log(`  ANTHROPIC_API_KEY=... ${cliCommandName()} setup`);
+      console.log(`  ${cliCommandName()} setup --provider openai`);
       process.exit(0);
     }
 

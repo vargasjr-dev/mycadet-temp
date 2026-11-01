@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { loadAllAssistants } from "@mycadet/local-mode";
+import { cliCommandName, loadAllAssistants } from "@mycadet/local-mode";
 import {
   clearRootProcess,
   readRootProcesses,
@@ -10,7 +10,6 @@ import {
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
-import { cliCommand } from "./cli-name.js";
 import {
   isDockerEntry,
   isLocalEntry,
@@ -387,12 +386,12 @@ function tunnelRestartCommand(): string {
   try {
     const record = readRootProcesses().tunnel;
     if (record?.provider) {
-      return `${cliCommand()} tunnel start --provider ${record.provider}`;
+      return `${cliCommandName()} tunnel start --provider ${record.provider}`;
     }
   } catch {
     // An unreadable lockfile names no provider; the help pointer still holds.
   }
-  return `${cliCommand()} tunnel --help`;
+  return `${cliCommandName()} tunnel --help`;
 }
 
 /**

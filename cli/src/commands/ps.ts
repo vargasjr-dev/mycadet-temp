@@ -1,6 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getIngressPaths, readIngressState } from "../lib/servers/nginx.js";
-import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
@@ -11,6 +10,7 @@ import {
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
+  cliCommandName,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -338,7 +338,7 @@ export async function printRootProcessDetail(
     console.log("App edge (nginx):");
     if (!app?.pid) {
       console.log(
-        `  not recorded — start one with \`${cliCommand()} app start\``,
+        `  not recorded — start one with \`${cliCommandName()} app start\``,
       );
       return true;
     }
@@ -368,7 +368,7 @@ export async function printRootProcessDetail(
     );
     if (!tunnel) {
       console.log(
-        `  not recorded — start one with \`${cliCommand()} tunnel start\``,
+        `  not recorded — start one with \`${cliCommandName()} tunnel start\``,
       );
       return true;
     }
@@ -539,7 +539,7 @@ export const ps = Object.assign(
   async function ps(): Promise<void> {
     const args = process.argv.slice(3);
     if (args.includes("--help") || args.includes("-h")) {
-      console.log(`Usage: ${cliCommand()} ps [<name-or-id>] [--verbose]`);
+      console.log(`Usage: ${cliCommandName()} ps [<name-or-id>] [--verbose]`);
       console.log("");
       console.log(
         "List all assistants, or show processes for a specific assistant.",

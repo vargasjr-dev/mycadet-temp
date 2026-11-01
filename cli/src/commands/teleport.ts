@@ -1,10 +1,10 @@
 import { teleportHostInstallation } from "../lib/host-teleport.js";
-import { cliCommand } from "../lib/cli-name.js";
+import { cliCommandName } from "@mycadet/local-mode";
 import { findAssistantByName } from "../lib/assistant-config.js";
 
 function printHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} teleport --from <assistant> <--local | --docker> [name] [--keep-source] [--dry-run]`,
+    `Usage: ${cliCommandName()} teleport --from <assistant> <--local | --docker> [name] [--keep-source] [--dry-run]`,
   );
   console.log(
     "Move the whole installation between local and Docker storage using root tar archives.",

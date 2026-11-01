@@ -21,11 +21,11 @@ import {
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import {
+  cliCommandName,
   loopbackSafeFetch,
   resolveConfigDir,
   resolveDataDir,
 } from "@mycadet/local-mode";
-import { cliCommand } from "../cli-name.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import { z } from "zod";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
@@ -320,7 +320,7 @@ function findAdoptableTunnel(
 
 /** Recovery copy for a saved domain whose reservation may have lapsed. */
 function savedDomainRecoveryHint(domain: string): string {
-  return `The saved ngrok domain '${domain}' (${ngrokConfigPath()}) may no longer be reserved. Run \`${cliCommand()} tunnel start --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
+  return `The saved ngrok domain '${domain}' (${ngrokConfigPath()}) may no longer be reserved. Run \`${cliCommandName()} tunnel start --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
 }
 
 const NGROK_TUNNEL_NAME = "cadet";
@@ -867,7 +867,7 @@ export async function runNgrokTunnel(
     console.log(
       "Adopted agents do not appear in `cadet ps` because this run does not own the process.",
     );
-    console.log(`Stop it with \`${cliCommand()} tunnel stop\`.`);
+    console.log(`Stop it with \`${cliCommandName()} tunnel stop\`.`);
 
     // The adopted agent belongs to another process; there is nothing to
     // await, and no signal handling is registered — a run must be safe to
@@ -1093,7 +1093,7 @@ export async function runNgrokTunnel(
     console.log("Tunnel recorded in the lockfile.");
     console.log("");
     console.log(
-      `The agent runs detached (log: ${ngrokLogPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
+      `The agent runs detached (log: ${ngrokLogPath}). Stop it with \`${cliCommandName()} tunnel stop\`.`,
     );
 
     // Settles when the detached agent exits. No process-level signal

@@ -1,10 +1,10 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import { isCloudHome } from "../lib/cloud-values.js";
-import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {
+  cliCommandName,
   readCloudToken,
   saveLockfileAssistant,
   validateAssistantName,
@@ -46,7 +46,7 @@ function parseArgs(): HatchArgs {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
-      console.log(`Usage: ${cliCommand()} hatch [options]`);
+      console.log(`Usage: ${cliCommandName()} hatch [options]`);
       console.log("");
       console.log("Create a new assistant instance.");
       console.log("");
