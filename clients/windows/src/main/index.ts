@@ -8,7 +8,7 @@ import {
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
-import { registerAppProtocolForwarding } from "@mycadet/electron-desktop/app-protocol-forward";
+import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
@@ -34,9 +34,9 @@ import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
 
 /**
- * Windows shell for the Cadet: a hardened BrowserWindow loading
- * the clients/web renderer (Vite dev server in dev, `app://` static serving
- * of `resources/cli-runtime/web-dist` in packaged builds). Every desktop
+ * Windows shell for the Cadet: a hardened BrowserWindow whose main window
+ * renders the app shell (Vite dev server in dev, `app://` static serving
+ * through the shared app-protocol handler in packaged builds). Every desktop
  * capability is a module under `./features/`, composed through the capability
  * registry once the app is ready; `docs/parity-matrix.md` maps them to their
  * macOS counterparts.
@@ -102,22 +102,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-const resolveRendererRoot = (): string => {
-  if (app.isPackaged) {
-    // The renderer bundle ships once, inside the CLI runtime (see
-    // scripts/package-runtime.ts); the installed copy under userData is a
-    // clone of this directory.
-    return path.join(process.resourcesPath, "cli-runtime", "web-dist");
-  }
-  // Dev source tree: clients/web/dist. Requires `bun run build` in clients/web/.
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "web", "dist");
-};
-
-const registerAppProtocol = (): void => {
-  registerAppProtocolForwarding({ webDistRoot: resolveRendererRoot() });
-};
 
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv();

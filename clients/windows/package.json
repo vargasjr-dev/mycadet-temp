@@ -23,6 +23,7 @@
     "test:native-helper": "bun scripts/build-native-helper.ts --test",
     "test:preview-handler": "bun scripts/build-preview-handler.ts --test-architecture && bun scripts/build-preview-handler.ts --native-test",
     "build:web": "cd ../web && bun install && bun run openapi-ts && bun run build && cd ../windows && mkdir -p resources && rm -rf resources/web-dist && cp -R ../web/dist resources/web-dist",
+    "build:app": "cd ../app && bun install && bun run build && cd ../windows && mkdir -p resources && rm -rf resources/app-dist && cp -R ../app/dist/standalone resources/app-dist",
     "pack": "bun scripts/pack.ts",
     "pack:debug": "bun scripts/pack.ts --debug"
   },
