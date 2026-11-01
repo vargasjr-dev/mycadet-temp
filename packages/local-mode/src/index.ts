@@ -106,10 +106,8 @@ export {
   isNoSuchContainerError,
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
-export {
-  restartUpgradedLocalProcesses,
-  stopLocalProcesses,
-} from "./remotes/local/upgrade";
+
+export { hatchLocalProcesses } from "./remotes/local/hatch";
 export {
   ensureLocalRuntime,
   getLocalRuntimeInstallDir,
@@ -117,9 +115,6 @@ export {
   gatewayCliInvocation,
   resolveCesSocketPath,
   setStartupLogging,
-  startCes,
-  startLocalDaemon,
-  startGateway,
   findPidListeningOnPort,
   discoverPublicUrl,
   isAssistantWatchModeAvailable,

@@ -130,10 +130,10 @@ function checkVersion(
 }
 
 async function startAndCheck(storage: HostStorage): Promise<void> {
-  storage.initialRunning =
-    storage instanceof DockerRootStorage
-      ? new Set(Object.values(storage.containers))
-      : new Set(["ces", "assistant", "gateway"]);
+  // The local storage's resume always wakes — nothing to pre-seed. Docker's
+  // resume still triages by container, so it keeps the full running set.
+  if (storage instanceof DockerRootStorage)
+    storage.initialRunning = new Set(Object.values(storage.containers));
   await storage.resume();
 }
 

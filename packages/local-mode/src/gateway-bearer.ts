@@ -1,4 +1,5 @@
 import type { TokenResult } from "./guardian-token";
+import type { Fetch } from "@mycadet/shared/fetch";
 
 /**
  * Host-side custody of the local gateway bearer.
@@ -49,7 +50,7 @@ export function clearLoopbackGatewayBearerCache(): void {
 async function mintBearer(
   port: number,
   leaseGuardianToken: GuardianTokenLease,
-  fetcher: (input: string, init?: RequestInit) => Promise<Response>,
+  fetcher: Fetch,
 ): Promise<MintedGatewayBearer | null> {
   let guardianToken: string;
   try {
@@ -99,7 +100,7 @@ export interface LoopbackGatewayBearerOptions {
    * Injectable for tests; defaults to the global fetch. A plain callable —
    * the Electron forward threads its own recorded fetcher through.
    */
-  fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
+  fetcher?: Fetch;
 }
 
 /**

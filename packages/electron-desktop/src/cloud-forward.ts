@@ -1,3 +1,5 @@
+import type { Fetch } from "@mycadet/shared/fetch";
+
 /**
  * The desktop protocol handler's cloud-API proxy: `/v1/*`, `/_allauth/*`,
  * and `/accounts/*` requests forward through one `forwardCloudRequest`
@@ -20,12 +22,6 @@ export interface CloudForwardAllowedOrigin {
   host: string;
 }
 
-/** Injectable stand-in for Electron's `net.fetch`. */
-export type CloudForwardFetcher = (
-  url: string,
-  init: RequestInit & { duplex?: "half" },
-) => Promise<Response>;
-
 export interface ForwardCloudRequestArgs {
   /** The renderer request received by the protocol handler. */
   request: Request;
@@ -33,7 +29,7 @@ export interface ForwardCloudRequestArgs {
   cloudBase: string;
   allowedOrigin?: CloudForwardAllowedOrigin;
   /** The caller's `net.fetch`; tests inject a recorder. */
-  fetcher: CloudForwardFetcher;
+  fetcher: Fetch;
   /** Extra attempts after the first failure. */
   retries?: number;
   retryDelayMs?: number;
