@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
   clearLoopbackGatewayBearerCache,
@@ -46,6 +46,14 @@ beforeEach(() => {
 
 afterEach(() => {
   clearLoopbackGatewayBearerCache();
+});
+
+// bun runs every test file in one process with a shared loader: without this,
+// the module-eval stub above (which throws once its response queue empties)
+// outlives this file and starves every later real-fetch suite (e.g. the
+// daemon-readiness probe classifies its own loopback server as unreachable).
+afterAll(() => {
+  globalThis.fetch = realFetch;
 });
 
 describe("loopbackGatewayBearer", () => {
