@@ -273,8 +273,16 @@ describe("gateway pairing mint --device-id", () => {
     expect(typeof payload.token).toBe("string");
     expect(typeof payload.refreshToken).toBe("string");
     expect(payload.guardianId).toBeTruthy();
-    expect(payload.assistantId).toBeTruthy();
-    expect(payload.isNew).toBe(true);
+    // The wire contract is credentials + guardianId — no assistantId (the
+    // caller chose the gateway) and no isNew (the mint's business).
+    expect(Object.keys(payload).sort()).toEqual([
+      "expiresAt",
+      "guardianId",
+      "refreshAfter",
+      "refreshToken",
+      "refreshTokenExpiresAt",
+      "token",
+    ]);
     // The mint landed in the gateway DB the running server reads.
     const rows = getGatewayDb()
       .select({ id: actorTokenRecords.id })

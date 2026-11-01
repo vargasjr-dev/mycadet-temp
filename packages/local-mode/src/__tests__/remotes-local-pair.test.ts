@@ -28,11 +28,11 @@ mock.module("../remotes/local/common", () => ({
 
 const { pairLocal } = await import("../remotes/local/pair");
 
-const entry = {
+const entry: LocalAssistant = {
   assistantId: "asst-local",
   cloud: "local",
   port: 7830,
-} as unknown as LocalAssistant;
+};
 
 afterAll(() => {
   mock.module("../exec", () => realExec);

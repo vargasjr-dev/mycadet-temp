@@ -20,7 +20,7 @@ function printUsage(): void {
     "  contacts    Manage the contact ACL with list, get, set-risk-threshold",
   );
   console.log(
-    "  pairing     Pairing challenges + the guardian lease (mint [--device-id <id>] | list [--json])",
+    "  pairing     Pairing challenges (mint [--device-id <id>] | list [--json])",
   );
 }
 

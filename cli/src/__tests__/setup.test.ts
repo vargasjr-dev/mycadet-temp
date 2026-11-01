@@ -68,7 +68,6 @@ function guardianTokenFixture(
     refreshToken: "refresh-token",
     refreshTokenExpiresAt: new Date(Date.now() + 120_000).toISOString(),
     refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
     deviceId: "device-123",
     leasedAt: new Date().toISOString(),
     ...overrides,
@@ -271,7 +270,6 @@ describe("setup command", () => {
         refreshTokenExpiresAt: t.refreshTokenExpiresAt,
         refreshAfter: t.refreshAfter,
         guardianId: t.guardianPrincipalId,
-        isNew: t.isNew,
       },
     });
     installFetchStub();
@@ -312,7 +310,6 @@ describe("setup command", () => {
         refreshTokenExpiresAt: t.refreshTokenExpiresAt,
         refreshAfter: t.refreshAfter,
         guardianId: t.guardianPrincipalId,
-        isNew: t.isNew,
       },
     });
 

@@ -58,7 +58,6 @@ function makeTokenData(suffix: string): GuardianTokenData {
     refreshToken: `refresh-${suffix}`,
     refreshTokenExpiresAt: oneHourFromNow,
     refreshAfter: oneHourFromNow,
-    isNew: true,
     deviceId: `device-${suffix}`,
     leasedAt: now,
   };
@@ -231,7 +230,6 @@ describe("refreshGuardianToken", () => {
       refreshToken: "old-ref",
       refreshTokenExpiresAt: refreshExpiresAt,
       refreshAfter: "",
-      isNew: false,
       deviceId: "dev",
       leasedAt: new Date().toISOString(),
       pairedGatewayUrl: "https://gw.example.com",
@@ -308,7 +306,6 @@ describe("refreshGuardianToken", () => {
         refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
         refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
         guardianId: "principal-lease",
-        isNew: true,
         mintedOverPriorEvidence: false,
       },
     });
@@ -596,7 +593,6 @@ describe("guardianTokenDueForRenewal", () => {
       refreshToken: "r",
       refreshTokenExpiresAt: FUTURE,
       refreshAfter: "",
-      isNew: false,
       deviceId: "d",
       leasedAt: new Date().toISOString(),
       ...over,

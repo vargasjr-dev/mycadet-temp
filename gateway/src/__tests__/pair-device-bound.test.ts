@@ -251,8 +251,17 @@ describe("/v1/pair cli interface", () => {
     expect(typeof body.expiresAt).toBe("string");
     expect(body.guardianId).toBe(GUARDIAN_ID);
     expect(typeof body.refreshToken).toBe("string");
-    // The guardian already existed (seeded) — not a bootstrap mint.
-    expect(body.isNew).toBe(false);
+    // The device-bound wire contract: credentials + guardianId — no
+    // assistantId (the caller chose the gateway) and no isNew (the mint's
+    // business). The guardian already existed (seeded).
+    expect(Object.keys(body).sort()).toEqual([
+      "expiresAt",
+      "guardianId",
+      "refreshAfter",
+      "refreshToken",
+      "refreshTokenExpiresAt",
+      "token",
+    ]);
 
     const tokens = activeTokens();
     expect(tokens).toHaveLength(1);
@@ -289,7 +298,6 @@ describe("/v1/pair cli interface", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
 
-    expect(body.isNew).toBe(true);
     expect(body.guardianId).not.toBe("local");
     const guardianPrincipalId = body.guardianId as string;
 
@@ -308,7 +316,7 @@ describe("/v1/pair cli interface", () => {
     expect(tokens[0].hashedDeviceId).toBe(hashToken("device-first"));
   });
 
-  test("re-pairing resolves the existing guardian (isNew: false) — re-pair IS the repair", async () => {
+  test("re-pairing resolves the existing guardian — re-pair IS the repair", async () => {
     getGatewayDb().delete(contactChannels).run();
     getGatewayDb().delete(contacts).run();
 
@@ -317,7 +325,6 @@ describe("/v1/pair cli interface", () => {
       LOOPBACK_IP,
     );
     const firstBody = (await first.json()) as Record<string, unknown>;
-    expect(firstBody.isNew).toBe(true);
 
     const second = await handlePair(
       makeCliRequest({ deviceId: "device-first" }),
@@ -325,7 +332,6 @@ describe("/v1/pair cli interface", () => {
     );
     expect(second.status).toBe(200);
     const secondBody = (await second.json()) as Record<string, unknown>;
-    expect(secondBody.isNew).toBe(false);
     expect(secondBody.guardianId).toBe(firstBody.guardianId);
   });
 

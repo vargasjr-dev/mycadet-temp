@@ -23,7 +23,7 @@
  *
  * Response body: `{ token, expiresAt, guardianId, assistantId }`. The
  * device-bound path (a `deviceId` is supplied) additionally returns
- * `{ refreshToken, refreshTokenExpiresAt, refreshAfter, isNew }` so the client
+ * `{ refreshToken, refreshTokenExpiresAt, refreshAfter }` so the client
  * can renew via `/v1/guardian/refresh` instead of re-pairing. The `cli`
  * interface is also the gateway's bootstrap door: it mints the guardian
  * principal when none exists (loopback presence is the evidence), which is
@@ -294,14 +294,11 @@ export async function handlePair(
     if (deviceId) {
       return mintDeviceBoundPairResponse({
         guardianPrincipalId,
-        assistantId,
         deviceId,
         platform: bodyPlatform ?? interfaceId,
         interfaceId,
         clientId,
         clientReportedName: bodyClientReportedName,
-        // Extensions pair after the CLI hatched — the guardian always exists.
-        isNew: false,
       });
     }
 
@@ -365,8 +362,6 @@ export async function handlePair(
     });
     return mintDeviceBoundPairResponse({
       guardianPrincipalId: guardian.guardianPrincipalId,
-      isNew: guardian.isNew,
-      assistantId,
       deviceId,
       platform: bodyPlatform ?? "cli",
       interfaceId,
@@ -397,14 +392,32 @@ export async function handlePair(
  * consistent across the token's life (rather than 24h at mint then 30d after
  * the first refresh).
  */
+/**
+ * The device-bound pair response's wire shape — what `/v1/pair`'s device-bound
+ * arm and the `gateway pairing mint --device-id` CLI door both emit, and what
+ * the CLI's guardian lease maps into its token file. The access/refresh
+ * credentials plus `guardianId` are the whole contract: the caller chose the
+ * assistant (its own `assistantId` adds nothing about the guardian or their
+ * device) and whether the mint created the guardian is the mint's business.
+ */
+export interface DeviceBoundPairPayload {
+  token: string;
+  /** ISO-8601 instant the access token expires. */
+  expiresAt: string;
+  refreshToken: string;
+  /** ISO-8601 instant the device-bound refresh token expires. */
+  refreshTokenExpiresAt: string;
+  /** ISO-8601 instant after which the client should refresh the session. */
+  refreshAfter: string;
+  guardianId: string;
+}
+
 export function deviceBoundPairPayload(opts: {
   guardianPrincipalId: string;
-  assistantId: string;
   deviceId: string;
   platform: string;
   clientReportedName?: string;
-  isNew: boolean;
-}): Record<string, unknown> {
+}): DeviceBoundPairPayload {
   const pair = mintAndRecordDeviceBoundTokenPair({
     guardianPrincipalId: opts.guardianPrincipalId,
     deviceId: opts.deviceId,
@@ -419,20 +432,16 @@ export function deviceBoundPairPayload(opts: {
     refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
     refreshAfter: new Date(pair.refreshAfter).toISOString(),
     guardianId: opts.guardianPrincipalId,
-    assistantId: opts.assistantId,
-    isNew: opts.isNew,
   };
 }
 
 function mintDeviceBoundPairResponse(opts: {
   guardianPrincipalId: string;
-  assistantId: string;
   deviceId: string;
   platform: string;
   interfaceId: string;
   clientId: string | null;
   clientReportedName?: string;
-  isNew: boolean;
 }): Response {
   log.info(
     {
@@ -447,11 +456,9 @@ function mintDeviceBoundPairResponse(opts: {
   return Response.json(
     deviceBoundPairPayload({
       guardianPrincipalId: opts.guardianPrincipalId,
-      assistantId: opts.assistantId,
       deviceId: opts.deviceId,
       platform: opts.platform,
       clientReportedName: opts.clientReportedName,
-      isNew: opts.isNew,
     }),
     { headers: { "Cache-Control": "no-store" } },
   );
@@ -470,16 +477,14 @@ export async function mintCliPairPayload(opts: {
   deviceId: string;
   platform: string;
   clientReportedName?: string;
-}): Promise<Record<string, unknown>> {
+}): Promise<DeviceBoundPairPayload> {
   const guardian = await resolveOrCreateCadetGuardian({
     allowMintWithEvidence: true,
   });
   return deviceBoundPairPayload({
     guardianPrincipalId: guardian.guardianPrincipalId,
-    assistantId: getExternalAssistantId(),
     deviceId: opts.deviceId,
     platform: opts.platform,
     clientReportedName: opts.clientReportedName,
-    isNew: guardian.isNew,
   });
 }

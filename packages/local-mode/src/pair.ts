@@ -264,7 +264,6 @@ export function pairAssistant({ credentials, name }: PairOptions): PairResult {
       refreshToken: credentials.refreshToken ?? "",
       refreshTokenExpiresAt: credentials.refreshTokenExpiresAt ?? 0,
       refreshAfter: credentials.refreshAfter ?? "",
-      isNew: false,
       deviceId: credentials.deviceId ?? "",
       leasedAt: new Date(now).toISOString(),
       pairedGatewayUrl: credentials.gatewayUrl,

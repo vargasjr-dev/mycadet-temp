@@ -84,7 +84,6 @@ function makeGuardianToken(
     refreshToken: "refresh-token",
     refreshTokenExpiresAt: new Date(now + 3_600_000).toISOString(),
     refreshAfter: new Date(now + 30_000).toISOString(),
-    isNew: false,
     deviceId: "device-id",
     leasedAt: new Date(now).toISOString(),
     ...overrides,
@@ -92,7 +91,7 @@ function makeGuardianToken(
 }
 
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
-  async () => makeGuardianToken({ isNew: true }),
+  async () => makeGuardianToken(),
 );
 
 mock.module("../lib/guardian-token.js", () => ({
@@ -258,7 +257,7 @@ beforeEach(() => {
   restoreBackupMock.mockReset();
   restoreBackupMock.mockResolvedValue(true);
   leaseGuardianTokenMock.mockReset();
-  leaseGuardianTokenMock.mockResolvedValue(makeGuardianToken({ isNew: true }));
+  leaseGuardianTokenMock.mockResolvedValue(makeGuardianToken());
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,

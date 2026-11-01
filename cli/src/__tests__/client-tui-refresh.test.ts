@@ -46,7 +46,6 @@ function seed(opts: {
     refreshToken: opts.refreshToken,
     refreshTokenExpiresAt: future(),
     refreshAfter: opts.refreshAfter,
-    isNew: false,
     deviceId: "dev",
     leasedAt: new Date().toISOString(),
   });
