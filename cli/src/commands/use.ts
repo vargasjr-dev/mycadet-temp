@@ -1,10 +1,10 @@
 import {
   formatAssistantLookupError,
-  getAssistantDisplayName,
   getActiveAssistant,
+  getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  setActiveAssistant,
-} from "../lib/assistant-config.js";
+} from "@mycadet/local-mode";
+import { setActiveAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { cliCommand } from "../lib/cli-name.js";
 

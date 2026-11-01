@@ -104,3 +104,16 @@ export function resolveEnvironmentName(): string {
     PRODUCTION_ENVIRONMENT_NAME
   );
 }
+
+/**
+ * The binary name the user actually invokes: production keeps the bare
+ * `cadet`, every other environment installs as `cadet-<env>` — the same rule
+ * the CLI's help text and recovery hints follow. Local-mode surfaces the
+ * same name in its own user-facing strings (the `login` recovery hint the
+ * auth-header resolution raises), so both packages resolve it through this
+ * one rule instead of duplicating it.
+ */
+export function cliCommandName(): string {
+  const name = resolveEnvironmentName();
+  return name === PRODUCTION_ENVIRONMENT_NAME ? "cadet" : `cadet-${name}`;
+}

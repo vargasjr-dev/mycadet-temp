@@ -14,13 +14,14 @@ import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 
-import type { DeviceRecord } from "@mycadet/local-mode";
+import {
+  DeviceRecord,
+  getAssistantDisplayName,
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  getAssistantDisplayName,
-  resolveTargetAssistant,
-} from "../lib/assistant-config";
+import { resolveTargetAssistant } from "../lib/assistant-config";
 import {
   type GuardianTokenData,
   computeDeviceId,
@@ -38,7 +39,6 @@ import {
 import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),

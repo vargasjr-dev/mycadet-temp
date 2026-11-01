@@ -15,15 +15,12 @@
 
 import { isCloudHome } from "./cloud-values.js";
 import {
+  getCloudUrl,
   loadAllAssistants,
   removeLockfileAssistant,
-} from "./assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
-import {
-  fetchCurrentUser,
-  fetchCloudAssistants,
-  getCloudUrl,
-} from "./cloud-client.js";
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
+import { fetchCloudAssistants, fetchCurrentUser } from "./cloud-client.js";
 
 export type SyncLogger = (message: string) => void;
 

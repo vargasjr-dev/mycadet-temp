@@ -1,183 +1,26 @@
-import { isCloudHome } from "../lib/cloud-values.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
-import { existsSync, unlinkSync } from "fs";
-import { join } from "path";
 
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  extractHostFromEntry,
+  dockerResourceNames,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
-  loadAllAssistants,
   lookupAssistantByIdentifier,
-  removeLockfileAssistant,
-} from "../lib/assistant-config.js";
+  retireAssistant,
+} from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
-import { resolveConfigDir } from "@mycadet/local-mode";
 import { printInstanceDetails } from "../lib/instance-details.js";
-import {
-  authHeaders,
-  authHeadersForKnownOrganization,
-  getCloudUrl,
-  readCloudToken,
-} from "../lib/cloud-client.js";
-import { retireDocker, dockerResourceNames } from "../lib/remotes/docker.js";
-import { stopContainerAppServer } from "../lib/servers/nginx.js";
-import { retireLocal } from "../lib/retire-local.js";
-import { retireAppleContainer } from "../lib/retire-apple-container.js";
-import { exec } from "../lib/step-runner.js";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
-
-export { retireLocal };
 
 interface RetireArgs {
   name?: string;
   source?: string;
   yes: boolean;
-}
-
-const CLOUD_TOKEN_ENV = "CADET_CLOUD_TOKEN";
-const LEGACY_CLOUD_TOKEN_ENV = "CADET_PLATFORM_TOKEN";
-
-function readPlatformRetireToken(): string | null {
-  const envToken = (
-    process.env[CLOUD_TOKEN_ENV] ?? process.env[LEGACY_CLOUD_TOKEN_ENV]
-  )?.trim();
-  if (envToken) return envToken;
-  return readCloudToken();
-}
-
-function nonEmptyString(value: string | null | undefined): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
-async function deleteCloudAssistant(
-  assistantId: string,
-  options: {
-    token: string;
-    cloudUrl?: string;
-    organizationId?: string;
-    label: string;
-    successMessage: string;
-    alreadyGoneMessage: string;
-  },
-): Promise<void> {
-  const cloudUrl = options.cloudUrl || getCloudUrl();
-  const url = `${cloudUrl}/v1/assistants/${encodeURIComponent(assistantId)}/retire/`;
-  const headers = options.organizationId
-    ? authHeadersForKnownOrganization(options.token, options.organizationId)
-    : await authHeaders(options.token, cloudUrl);
-
-  const response = await loopbackSafeFetch(url, {
-    method: "DELETE",
-    headers,
-  });
-
-  if (!response.ok && response.status !== 404) {
-    const body = await response.text();
-    throw new Error(`${options.label} failed (${response.status}): ${body}`);
-  }
-
-  if (response.status === 404) {
-    console.log(options.alreadyGoneMessage);
-  } else {
-    console.log(options.successMessage);
-  }
-}
-
-async function unregisterSelfHostedLocalPlatformRecord(
-  entry: LockfileAssistant,
-): Promise<void> {
-  const token = readPlatformRetireToken();
-  if (!token) return;
-
-  const cloudAssistantId =
-    entry.cloud === "custom" || entry.cloud === "baseten"
-      ? undefined
-      : nonEmptyString(entry.cloudAssistantId);
-  if (!cloudAssistantId) return;
-
-  await deleteCloudAssistant(cloudAssistantId, {
-    token,
-    cloudUrl: getCloudUrl(),
-    organizationId:
-      entry.cloud === "custom" || entry.cloud === "baseten"
-        ? undefined
-        : (nonEmptyString(entry.cloudOrganizationId) ?? undefined),
-    label: "Platform self-hosted unregister",
-    successMessage: "✅ Platform self-hosted registration unregistered.",
-    alreadyGoneMessage:
-      "✅ Platform self-hosted registration already unregistered (404).",
-  });
-}
-
-async function retireCustom(entry: LockfileAssistant): Promise<void> {
-  const host = extractHostFromEntry(entry);
-  const sshHost = `root@${host}`;
-
-  console.log(`\u{1F5D1}\ufe0f  Retiring custom instance on ${sshHost}...\n`);
-
-  const remoteCmd = [
-    "bunx cadet sleep 2>/dev/null || true",
-    "pkill -f gateway 2>/dev/null || true",
-    "rm -rf ~/.cadet",
-  ].join(" && ");
-
-  try {
-    await exec("ssh", [
-      "-o",
-      "StrictHostKeyChecking=no",
-      "-o",
-      "UserKnownHostsFile=/dev/null",
-      "-o",
-      "ConnectTimeout=10",
-      "-o",
-      "LogLevel=ERROR",
-      sshHost,
-      remoteCmd,
-    ]);
-  } catch (error) {
-    console.warn(
-      `\u26a0\ufe0f  Remote cleanup may have partially failed: ${error instanceof Error ? error.message : error}`,
-    );
-  }
-
-  console.log(`\u2705 Custom instance retired.`);
-}
-
-async function retireCloud(entry: LockfileAssistant): Promise<void> {
-  console.log("\u{1F5D1}\ufe0f  Retiring Cadet Cloud-hosted instance...\n");
-
-  const token = readPlatformRetireToken();
-  if (!token) {
-    console.error(
-      "Error: Not logged in. Run `cadet login --token <token>` first.",
-    );
-    process.exit(1);
-  }
-
-  try {
-    await deleteCloudAssistant(entry.assistantId, {
-      token,
-      cloudUrl: getGatewayUrl(entry),
-      label: "Platform retire",
-      successMessage: "\u2705 Platform-hosted instance retired.",
-      alreadyGoneMessage:
-        "\u2705 Platform-hosted instance already retired (404) \u2014 cleaning up local state.",
-    });
-  } catch (error) {
-    console.error(
-      `Error: ${error instanceof Error ? error.message : String(error)}`,
-    );
-    process.exit(1);
-  }
 }
 
 function parseRetireArgs(args: string[]): RetireArgs {
@@ -275,8 +118,6 @@ async function retireInner(): Promise<void> {
   }
 
   const entry = lookup.entry;
-  const assistantId = entry.assistantId;
-  const cloud = entry.cloud;
 
   printRetireTarget(entry);
 
@@ -298,46 +139,13 @@ async function retireInner(): Promise<void> {
     }
   }
 
-  if (cloud === "apple-container") {
-    await retireAppleContainer(assistantId, entry);
-    await stopContainerAppServer(entry);
-  } else if (cloud === "docker") {
-    await retireDocker(assistantId);
-    await stopContainerAppServer(entry);
-  } else if (cloud === "local") {
-    try {
-      await unregisterSelfHostedLocalPlatformRecord(entry);
-    } catch (error) {
-      console.warn(
-        `⚠️  Platform self-hosted unregister failed; continuing local retire: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-    await retireLocal(assistantId, entry);
-  } else if (cloud === "custom") {
-    await retireCustom(entry);
-  } else if (isCloudHome(cloud)) {
-    await retireCloud(entry);
-  } else {
-    console.error(`Error: Unknown remote type '${cloud}'.`);
+  // The operation owns the teardown: per-cloud dispatch, the lockfile entry
+  // removal, and the dock-label sentinel — the same headless core the
+  // hosts' retire route runs. Failures come back structured; the exit-code
+  // UX is this command's.
+  const result = await retireAssistant(entry);
+  if (!result.ok) {
+    console.error(`Error: ${result.error}`);
     process.exit(1);
-  }
-
-  removeLockfileAssistant(assistantId);
-  console.log(`Removed ${getAssistantDisplayName(entry)} from config.`);
-
-  // When no assistants remain, remove the dock-display-name sentinel so
-  // the dock label falls back to "Cadet" instead of using the
-  // retired assistant's name.
-  if (loadAllAssistants().length === 0) {
-    const dockLabelFile = join(resolveConfigDir(), "dock-display-name");
-    if (existsSync(dockLabelFile)) {
-      try {
-        unlinkSync(dockLabelFile);
-      } catch {
-        // Best-effort — the macOS app will also reset this on next launch.
-      }
-    }
   }
 }

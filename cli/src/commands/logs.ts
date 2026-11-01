@@ -6,12 +6,9 @@ import { watch } from "fs";
 import { join } from "path";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  extractHostFromEntry,
-  resolveAssistant,
-} from "../lib/assistant-config";
+import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
-import { resolveLogDir } from "@mycadet/local-mode";
+import { extractHostFromEntry, resolveLogDir } from "@mycadet/local-mode";
 import { execOutput } from "../lib/step-runner";
 
 // ── Arg parsing ─────────────────────────────────────────────────

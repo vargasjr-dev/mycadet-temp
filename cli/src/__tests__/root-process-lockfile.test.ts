@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
 import {
-  clearAppProcessRecord,
   clearRootProcess,
   readAppBuiltSha,
   readRootProcesses,
   stampAppBuiltSha,
   stampRootProcess,
 } from "../lib/assistant-config.js";
+import { clearAppProcessRecord } from "@mycadet/local-mode";
 
 // Create a temp directory and set XDG_CONFIG_HOME so the real lockfile
 // helpers resolve inside it (the sleep.test.ts fixture pattern).

@@ -1,4 +1,4 @@
-import { getCurrentEnvironment } from "./environments/resolve.js";
+import { cliCommandName } from "@mycadet/local-mode";
 
 /**
  * The binary name the user actually invokes: production keeps the bare
@@ -7,8 +7,10 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
  * Help text, usage lines, and recovery hints must render THIS name — a
  * hardcoded `cadet` in `cadet-local`'s output tells the user to run a
  * binary that does not exist for them.
+ *
+ * Delegates to local-mode's `cliCommandName` — the platform seam raises the
+ * same `login` recovery hint and both must name the same binary.
  */
 export function cliCommand(): string {
-  const env = getCurrentEnvironment();
-  return env.name === "production" ? "cadet" : `cadet-${env.name}`;
+  return cliCommandName();
 }

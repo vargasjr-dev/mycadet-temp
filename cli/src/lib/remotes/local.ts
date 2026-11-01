@@ -28,7 +28,7 @@ import {
   removeIpcEndpointFile,
   resolveIpcEndpoint,
 } from "@mycadet/ipc-server-utils";
-import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { isValidReleaseVersion, readCloudToken } from "@mycadet/local-mode";
 
 /**
  * cwd for every service spawn — the XDG data home
@@ -113,7 +113,7 @@ import {
   ensureCloudLoginInteractive,
   registerLocalAssistantWithCloud,
 } from "../cloud-login.js";
-import { fetchCurrentUser, readCloudToken } from "../cloud-client.js";
+import { fetchCurrentUser } from "../cloud-client.js";
 import { withLocalHatchLock } from "../local-hatch-lock.js";
 import { generateInstanceName } from "../random-name.js";
 import { healConflictedLocalPorts } from "../port-heal.js";
@@ -1878,11 +1878,7 @@ export async function startGateway(
 
   const runtimeGatewayDir = !watch ? localRuntimeGatewayDir(entry) : undefined;
   const gatewayBinary = compiledSibling("cadet-gateway");
-  if (
-    !runtimeGatewayDir &&
-    existsSync(gatewayBinary) &&
-    !watch
-  ) {
+  if (!runtimeGatewayDir && existsSync(gatewayBinary) && !watch) {
     // Use the compiled gateway binary when available. In watch mode, skip
     // the bundled binary and use source (bun --watch only works with source
     // files).
@@ -2082,11 +2078,7 @@ export async function hatchLocal(
         // Picking Cadet Cloud should feel like signing in, not like a
         // mystery later — open the browser login right here. Non-TTY
         // runs (including the desktop's in-process hatch) skip it.
-        if (
-          picked === "cadet" &&
-          process.stdin.isTTY &&
-          !readCloudToken()
-        ) {
+        if (picked === "cadet" && process.stdin.isTTY && !readCloudToken()) {
           reporter.log("");
           reporter.log(
             "Cadet Cloud selected — opening your browser to log in...",

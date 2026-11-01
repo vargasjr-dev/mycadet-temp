@@ -6,9 +6,9 @@
  * cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
+import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
-import { getCloudUrl, readCloudToken } from "./cloud-client.js";
 import {
   closeTerminalSession,
   createTerminalSession,

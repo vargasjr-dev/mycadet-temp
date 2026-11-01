@@ -1,12 +1,10 @@
 import { existsSync, readFileSync } from "fs";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { loadAllAssistants } from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
-import {
-  loadAllAssistants,
-  resolveTargetAssistant,
-} from "../lib/assistant-config.js";
+import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { getDaemonPidPath, getLocalInstanceDir } from "../lib/remotes/local.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { dockerResourceNames, sleepContainers } from "../lib/remotes/docker.js";

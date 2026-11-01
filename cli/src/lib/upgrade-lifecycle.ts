@@ -8,7 +8,7 @@ import { join } from "path";
 import cliPkg from "../../package.json";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
@@ -40,7 +40,6 @@ import {
 } from "./statefulset.js";
 import { execOutput } from "./step-runner.js";
 import { compareVersions } from "./version-compat.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 // ---------------------------------------------------------------------------
 // Failure log capture

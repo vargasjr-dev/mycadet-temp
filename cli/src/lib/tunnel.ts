@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
+import { loadAllAssistants } from "@mycadet/local-mode";
 import {
   clearRootProcess,
-  loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
 } from "./assistant-config.js";

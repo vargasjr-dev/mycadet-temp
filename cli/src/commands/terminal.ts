@@ -12,16 +12,17 @@
  *   cadet terminal list                — List tmux sessions
  */
 
+import {
+  extractHostFromEntry,
+  getCloudUrl,
+  readCloudToken,
+} from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { spawn } from "child_process";
 
-import {
-  extractHostFromEntry,
-  resolveAssistant,
-} from "../lib/assistant-config";
+import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/remotes/docker.js";
-import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/remotes/apple-container.js";
 import {
   closeTerminalSession,

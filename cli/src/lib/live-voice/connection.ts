@@ -25,16 +25,16 @@
  * passes by construction, and there is nothing new to provision here.
  */
 
-import { isCloudHome } from "../cloud-values.js";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  resolveTargetAssistant,
-} from "../assistant-config.js";
-import { readCloudToken } from "../cloud-client.js";
+  readCloudToken,
+} from "@mycadet/local-mode";
+import { isCloudHome } from "../cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import { resolveTargetAssistant } from "../assistant-config.js";
 import {
   guardianTokenDueForRenewal,
   loadGuardianToken,

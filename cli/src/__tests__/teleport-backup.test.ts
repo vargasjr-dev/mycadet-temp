@@ -9,23 +9,23 @@ import {
   test,
 } from "bun:test";
 
-import * as cloudClient from "../lib/cloud-client.js";
+import * as localMode from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   createPlatformBackup,
   listPlatformBackups,
 } from "../lib/teleport-backup.js";
 
-const authHeadersSpy = spyOn(cloudClient, "authHeaders").mockResolvedValue({
+const authHeadersSpy = spyOn(localMode, "cloudAuthHeaders").mockResolvedValue({
   "Content-Type": "application/json",
   "X-Session-Token": "test-cloud-token",
   "Cadet-Organization-Id": "org-1",
 });
 const invalidateOrgIdCacheSpy = spyOn(
-  cloudClient,
+  localMode,
   "invalidateOrgIdCache",
 ).mockImplementation(() => {});
-const getCloudUrlSpy = spyOn(cloudClient, "getCloudUrl").mockReturnValue(
+const getCloudUrlSpy = spyOn(localMode, "getCloudUrl").mockReturnValue(
   "https://cloud.mycadet.ai",
 );
 

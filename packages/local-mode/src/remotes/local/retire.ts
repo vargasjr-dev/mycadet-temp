@@ -1,18 +1,30 @@
-import { spawn } from "child_process";
-import { existsSync, mkdirSync, renameSync, writeFileSync } from "fs";
-import { basename, dirname, join, win32 } from "path";
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, win32 } from "node:path";
 
-import { loadAllAssistants } from "./assistant-config.js";
-import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { stopIngressNginx } from "./servers/nginx.js";
-import { DAEMON_STOP_TIMEOUT_MS, stopProcessByPidFile } from "./process.js";
-import { getArchivePath, getMetadataPath } from "./retire-archive.js";
-import { isLocalEntry } from "@mycadet/local-mode/contract";
+import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
+import { stopIngressNginx } from "../../ingress";
+import { stopProcessByPidFile } from "../../process";
+import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
+import { loadAllAssistants } from "../../operations/lookup";
+import { getArchivePath, getMetadataPath } from "./archive";
+import { isLocalEntry } from "../../lockfile-contract";
+import type { LockfileAssistant } from "../../lockfile-contract";
 import {
   consoleLifecycleReporter,
   type LifecycleReporter,
-} from "./lifecycle-reporter.js";
+} from "../../lifecycle-reporter";
+import { unregisterSelfHostedLocalPlatformRecord } from "../cloud/retire";
+
+/**
+ * The local topology's retire leg: unregister the platform's self-hosted
+ * record (warn-and-continue — a failed unregister must not block the local
+ * teardown), stop the daemon/gateway/CES siblings and the ingress edge, then
+ * move the instance directory aside and archive it in the background. The
+ * move-aside is the safety-critical half — if it fails, the error propagates
+ * (a failed archive must NOT leave the entry removed, or the next hatch
+ * inherits stale SOUL.md/IDENTITY.md/memories).
+ */
 
 export interface RetireLocalResult {
   assistantId: string;
@@ -85,6 +97,19 @@ export async function retireLocal(
   reporter: LifecycleReporter = consoleLifecycleReporter,
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
+
+  // Unregister the platform's self-hosted record first (it keys off the
+  // entry, not the instance dir) — warn-and-continue: a failed unregister
+  // (not logged in, offline) must not block the local teardown.
+  try {
+    await unregisterSelfHostedLocalPlatformRecord(entry);
+  } catch (error) {
+    console.warn(
+      `⚠️  Platform self-hosted unregister failed; continuing local retire: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 
   if (!isLocalEntry(entry)) {
     throw new Error(`'${name}' is not a local assistant.`);

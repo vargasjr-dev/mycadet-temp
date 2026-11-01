@@ -31,17 +31,17 @@ import {
   type RemoteWebPairingVerificationResponse,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { extractFlag } from "../lib/arg-utils.js";
-import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  resolveAssistant,
-} from "../lib/assistant-config.js";
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
+import { extractFlag } from "../lib/arg-utils.js";
+import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import { resolveAssistant } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerPair } from "../lib/remotes/docker.js";
 import { appleContainerPair } from "../lib/remotes/apple-container.js";
 import { localPair } from "../lib/remotes/local.js";

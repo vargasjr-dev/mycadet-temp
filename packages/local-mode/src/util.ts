@@ -9,7 +9,7 @@ const CLI_PACKAGE_NAME = "@mycadet/cli";
  * leading arguments that precede the subcommand. Each host resolves its own
  * invocation — the dev hosts run the CLI from source via `bun run <entry>`,
  * a packaged host would point at its bundled runtime — and the shared
- * lifecycle ops (`runHatch`, `runRetire`, guardian-token refresh) append
+ * lifecycle ops (`runHatch`, guardian-token refresh) append
  * their subcommand args to `baseArgs`.
  */
 export interface CliInvocation {

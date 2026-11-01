@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
+  VersionMismatchError,
   cloudPollJobStatus,
   cloudRequestSignedUrl,
-  VersionMismatchError,
   type UnifiedJobStatus,
 } from "../cloud-client.js";
 

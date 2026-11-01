@@ -17,6 +17,12 @@
  * `{cloudUrl}/v1/assistants/<id>/<rest>` with the stored cloud credential.
  */
 
+import {
+  cloudAuthHeaders,
+  invalidateOrgIdCache,
+  loopbackSafeFetch,
+  readCloudToken,
+} from "@mycadet/local-mode";
 import { isCloudHome } from "./cloud-values.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
@@ -25,12 +31,6 @@ import {
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "./guardian-token.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
-import {
-  authHeaders,
-  invalidateOrgIdCache,
-  readCloudToken,
-} from "./cloud-client.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -136,7 +136,7 @@ export class AssistantClient {
   }
 
   /**
-   * Auth headers for the current mode. `authHeaders` picks the right scheme for
+   * Auth headers for the current mode. `cloudAuthHeaders` picks the right scheme for
    * the cloud credential (`Authorization: Bearer` for `vak_` API keys,
    * `X-Session-Token` + `Cadet-Organization-Id` for session tokens) and caches
    * the org-id lookup, so the result is memoized per client and a failure is
@@ -160,7 +160,7 @@ export class AssistantClient {
 
     if (!this.platformHeaders) {
       this.token = this.requirePlatformToken();
-      this.platformHeaders = authHeaders(this.token, this.runtimeUrl)
+      this.platformHeaders = cloudAuthHeaders(this.token, this.runtimeUrl)
         .then((resolved) => {
           // request() owns Content-Type (bodyless requests must not carry one).
           const headers = { ...resolved };

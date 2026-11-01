@@ -1,4 +1,5 @@
 import { existsSync } from "fs";
+import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
@@ -13,7 +14,6 @@ import {
   execAppleContainer,
   sshAppleContainer,
 } from "../lib/remotes/apple-container.js";
-import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import {
   interactiveSession,
   nonInteractiveExec,

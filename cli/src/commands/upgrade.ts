@@ -11,22 +11,23 @@ import { spawnSync } from "child_process";
 import cliPkg from "../../package.json";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import { findAssistantByName } from "../lib/assistant-config";
+import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import {
-  findAssistantByName,
+  cloudAuthHeaders,
   formatAssistantLookupError,
   getActiveAssistant,
+  getCloudUrl,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-} from "../lib/assistant-config";
-import { type LocalAssistant } from "@mycadet/local-mode/contract";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+  loopbackSafeFetch,
+  readCloudToken,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases";
 import {
-  authHeaders,
   fetchAssistantDetail,
   fetchUpgradeInProgress,
-  getCloudUrl,
-  readCloudToken,
 } from "../lib/cloud-client";
 import { checkCloudHealth } from "../lib/health-check.js";
 import {
@@ -57,7 +58,6 @@ import {
   versionsEqual,
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "../lib/http-client.js";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
   generateLocalSecret,
   ensureLocalRuntime,
@@ -678,7 +678,7 @@ async function upgradeCloud(
     console.log(`   ${currentVersion} → ${resolution.target}\n`);
   }
 
-  const headers = await authHeaders(token, gatewayUrl);
+  const headers = await cloudAuthHeaders(token, gatewayUrl);
 
   const url = `${gatewayUrl || getCloudUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
   const body: { version?: string } = {};

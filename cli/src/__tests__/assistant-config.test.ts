@@ -23,15 +23,17 @@ const prevConfigHome = process.env.XDG_CONFIG_HOME;
 process.env.XDG_CONFIG_HOME = testDir;
 
 import {
-  loadLatestAssistant,
   findAssistantByName,
+  loadLatestAssistant,
+} from "../lib/assistant-config.js";
+import {
   formatAssistantLookupError,
   getAssistantDisplayName,
+  loadAllAssistants,
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
-  loadAllAssistants,
-} from "../lib/assistant-config.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 
 afterAll(() => {
   if (prevConfigHome === undefined) {
@@ -49,8 +51,6 @@ function writeLockfile(data: unknown): void {
     JSON.stringify(data, null, 2),
   );
 }
-
-
 
 describe("assistant-config", () => {
   beforeEach(() => {
@@ -130,8 +130,8 @@ describe("assistant-config", () => {
     mkdirSync(lockDir, { recursive: true });
     try {
       const start = Date.now();
-      expect(
-        () => saveLockfileAssistant(makeEntryObject({ assistantId: "contended-1" })),
+      expect(() =>
+        saveLockfileAssistant(makeEntryObject({ assistantId: "contended-1" })),
       ).toThrow(/Timed out acquiring lockfile lock/);
       expect(Date.now() - start).toBeLessThan(2_000);
       expect(loadAllAssistants()).toEqual([]);
@@ -142,7 +142,7 @@ describe("assistant-config", () => {
 
   test("findAssistantByName returns matching entry", () => {
     makeEntry({ assistantId: "alpha" });
-      makeEntry({ assistantId: "beta" });
+    makeEntry({ assistantId: "beta" });
     const result = findAssistantByName("beta");
     expect(result).not.toBeNull();
     expect(result!.assistantId).toBe("beta");
@@ -151,14 +151,14 @@ describe("assistant-config", () => {
   test("getAssistantDisplayName prefers the entry's name", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
     expect(getAssistantDisplayName(readEntry("assistant-1")!)).toBe("Alice");
-    expect(getAssistantDisplayName(makeEntryObject({ assistantId: "assistant-3" }))).toBe(
-      "assistant-3",
-    );
+    expect(
+      getAssistantDisplayName(makeEntryObject({ assistantId: "assistant-3" })),
+    ).toBe("assistant-3");
   });
 
   test("findAssistantByName only resolves assistant IDs", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
-      makeEntry({ assistantId: "assistant-2", name: "Bob" });
+    makeEntry({ assistantId: "assistant-2", name: "Bob" });
 
     expect(findAssistantByName("Alice")).toBeNull();
     expect(findAssistantByName("assistant-1")?.assistantId).toBe("assistant-1");
@@ -166,7 +166,7 @@ describe("assistant-config", () => {
 
   test("lookupAssistantByIdentifier resolves a unique display name", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
-      makeEntry({ assistantId: "assistant-2", name: "Bob" });
+    makeEntry({ assistantId: "assistant-2", name: "Bob" });
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("found");
@@ -188,7 +188,7 @@ describe("assistant-config", () => {
 
   test("ambiguous display name lookup is explicit", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
-      makeEntry({ assistantId: "assistant-2", name: "Alice" });
+    makeEntry({ assistantId: "assistant-2", name: "Alice" });
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("ambiguous");
@@ -208,8 +208,8 @@ describe("assistant-config", () => {
 
   test("removeLockfileAssistant removes matching entry", () => {
     makeEntry({ assistantId: "a" });
-      makeEntry({ assistantId: "b" });
-      makeEntry({ assistantId: "c" });
+    makeEntry({ assistantId: "b" });
+    makeEntry({ assistantId: "c" });
     removeLockfileAssistant("b");
     const all = loadAllAssistants();
     expect(all).toHaveLength(2);
@@ -218,20 +218,14 @@ describe("assistant-config", () => {
 
   test("removeLockfileAssistant reassigns activeAssistant to remaining entry", () => {
     makeEntry({ assistantId: "a" });
-      makeEntry({ assistantId: "b" });
-      makeEntry({ assistantId: "only" });
-      makeEntry({ assistantId: "a" });
-      makeEntry({ assistantId: "b" });
-      makeEntry({ assistantId: "c" });
-      makeEntry({ assistantId: "old", 
-          hatchedAt: "2024-01-01T00:00:00Z",
-        });
-      makeEntry({ assistantId: "new", 
-          hatchedAt: "2025-06-15T00:00:00Z",
-        });
-      makeEntry({ assistantId: "mid", 
-          hatchedAt: "2024-06-15T00:00:00Z",
-        });
+    makeEntry({ assistantId: "b" });
+    makeEntry({ assistantId: "only" });
+    makeEntry({ assistantId: "a" });
+    makeEntry({ assistantId: "b" });
+    makeEntry({ assistantId: "c" });
+    makeEntry({ assistantId: "old", hatchedAt: "2024-01-01T00:00:00Z" });
+    makeEntry({ assistantId: "new", hatchedAt: "2025-06-15T00:00:00Z" });
+    makeEntry({ assistantId: "mid", hatchedAt: "2024-06-15T00:00:00Z" });
     const latest = loadLatestAssistant();
     expect(latest).not.toBeNull();
     expect(latest!.assistantId).toBe("new");
@@ -239,9 +233,7 @@ describe("assistant-config", () => {
 
   test("loadLatestAssistant handles entries without hatchedAt", () => {
     makeEntry({ assistantId: "no-date" });
-      makeEntry({ assistantId: "with-date", 
-          hatchedAt: "2025-01-01T00:00:00Z",
-        });
+    makeEntry({ assistantId: "with-date", hatchedAt: "2025-01-01T00:00:00Z" });
     const latest = loadLatestAssistant();
     expect(latest!.assistantId).toBe("with-date");
   });

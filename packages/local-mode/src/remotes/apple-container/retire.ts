@@ -1,17 +1,21 @@
-import { createConnection } from "net";
-import { existsSync } from "fs";
+import { createConnection } from "node:net";
+import { existsSync } from "node:fs";
 
-import {
-  isAppleContainerEntry,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
+import { isAppleContainerEntry } from "../../lockfile-contract";
+import type { LockfileAssistant } from "../../lockfile-contract";
+import { stopContainerAppServer } from "../../ingress";
 
 /**
- * Retire an Apple Container assistant by sending a retire command to the
+ * The apple-container topology's retire leg: send a retire command to the
  * macOS app via the management socket. The app handles the full lifecycle:
  * stop the pod, archive the instance directory, remove the guardian token,
  * deregister from the cloud, and remove the lockfile entry.
+ *
+ * Headless contract: guard failures THROW (the route maps them to the wire;
+ * the CLI surfaces them as its exit-1 error) — this module never exits the
+ * process it runs in.
  */
+
 export async function retireAppleContainer(
   name: string,
   entry: LockfileAssistant,
@@ -21,32 +25,34 @@ export async function retireAppleContainer(
   );
 
   if (!isAppleContainerEntry(entry)) {
-    console.error(
+    throw new Error(
       `'${entry.assistantId}' is not an apple-container assistant.`,
     );
-    process.exit(1);
   }
+
+  // Stop the nginx edge fronting this instance's published port FIRST —
+  // before the pod it fronts is torn down inside the container.
+  await stopContainerAppServer(entry);
+
   const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
-    console.error(
+    throw new Error(
       `No management socket found for '${name}'.\n` +
         "The assistant may not be running. If the macOS app is closed, " +
         "open it and try again.",
     );
-    process.exit(1);
   }
 
   if (!existsSync(mgmtSocket)) {
-    console.error(
+    throw new Error(
       `Management socket not found at ${mgmtSocket}.\n` +
         "The assistant may have been stopped. Open the macOS app and try again.",
     );
-    process.exit(1);
   }
 
   const handshake = JSON.stringify({ action: "retire" }) + "\n";
 
-  return new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const socket = createConnection({ path: mgmtSocket }, () => {
       socket.write(handshake);
     });
@@ -57,11 +63,10 @@ export async function retireAppleContainer(
 
     socket.setTimeout(TIMEOUT_MS);
     socket.on("timeout", () => {
-      console.error(
-        "Timed out waiting for retire response from the macOS app.",
-      );
       socket.destroy();
-      process.exit(1);
+      reject(
+        new Error("Timed out waiting for retire response from the macOS app."),
+      );
     });
 
     socket.on("data", (data: Buffer) => {

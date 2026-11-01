@@ -9,13 +9,13 @@ import {
 } from "@mycadet/local-mode/teleport-backup-policy";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
 import {
-  authHeaders,
+  cloudAuthHeaders,
   getCloudUrl,
   invalidateOrgIdCache,
-} from "./cloud-client.js";
-import { z } from "zod";
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 
 const ManagedBackupEntrySchema = z.object({
   snapshot_name: z.string().optional(),
@@ -55,7 +55,7 @@ async function platformBackupRequest(
     loopbackSafeFetch(cloudBackupsUrl(entry), {
       method,
       headers: {
-        ...(await authHeaders(token, getCloudUrl())),
+        ...(await cloudAuthHeaders(token, getCloudUrl())),
         Accept: "application/json",
       },
     });

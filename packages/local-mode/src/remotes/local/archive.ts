@@ -1,7 +1,13 @@
-import { mkdirSync } from "fs";
-import { join, posix, win32 } from "path";
+import { mkdirSync } from "node:fs";
+import { join, posix, win32 } from "node:path";
 
-import { resolveDataDir } from "@mycadet/local-mode";
+import { resolveDataDir } from "../../config";
+
+/**
+ * Where retired instances' data lives: the XDG data dir's `retired/` folder,
+ * holding the background tar archive and the entry metadata JSON per
+ * assistant.
+ */
 
 function isPathInside(
   parent: string,

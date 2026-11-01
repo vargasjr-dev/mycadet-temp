@@ -15,7 +15,7 @@ import {
   stripSensitiveFields,
   runDevicesList,
   runDevicesRevoke,
-  runRetire,
+  matchOperatorRequest,
   pairingCancel,
   pairingPoll,
   pairingStart,
@@ -23,7 +23,6 @@ import {
   getGuardianAccessToken,
   loopbackGatewayBearer,
   resolveGatewayProxyTarget,
-  resolveAssistantRetireProxyDecision,
   readGatewayTargets,
   authorizePairedForwardHeaders,
 } from "@mycadet/local-mode";
@@ -97,6 +96,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(unpairMiddleware());
       server.middlewares.use(pairingMiddleware());
       server.middlewares.use(devicesMiddleware());
+      server.middlewares.use(operatorMiddleware());
       server.middlewares.use(gatewayProxyMiddleware(env));
       server.middlewares.use(accountSpaFallback(server));
     },
@@ -487,35 +487,56 @@ function devicesMiddleware(): Connect.NextHandleFunction {
   };
 }
 
+/**
+ * The operator routes: the headless lifecycle operations the dev server
+ * answers in-process (today: the scoped surface's retire arm). The match is
+ * pure in the URL — the hot path of every other request never touches the
+ * lockfile — and the same-origin guard fronts the EXECUTION: a cross-origin
+ * retire DELETE is refused here, never executed, never forwarded. A pass
+ * (unknown id, platform-hosted entry) falls through to the gateway proxy,
+ * whose cloud forward keeps the bundle's one endpoint holding for every
+ * entry type.
+ */
+function operatorMiddleware(): Connect.NextHandleFunction {
+  return (req, res, next) => {
+    const match = matchOperatorRequest(requestPathname(req), req.method);
+    if (!match) {
+      return next();
+    }
+
+    if (rejectUnlessLocalEndpointRequest(req, res)) {
+      return;
+    }
+
+    void match.route
+      .run(match.assistantId)
+      .then((response) => {
+        if (!response) {
+          return next();
+        }
+        res.statusCode = response.status;
+        const contentType = response.headers.get("content-type");
+        if (contentType) {
+          res.setHeader("Content-Type", contentType);
+        }
+        if (response.status === 204) {
+          res.end();
+          return;
+        }
+        void response.text().then((body) => res.end(body));
+      })
+      .catch(() => {
+        if (!res.headersSent) {
+          respondJson(res, 500, { detail: "Operator request failed" });
+        }
+      });
+  };
+}
+
 function gatewayProxyMiddleware(
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
-    // The scoped surface's retire arm: an on-machine entry is retired by the
-    // host CLI here rather than forwarded to a gateway that cannot retire
-    // itself, so the bundle's one endpoint holds for every entry type. The
-    // shared decision bails before touching the lockfile unless the request
-    // is a retire-shaped DELETE.
-    const retireDecision = resolveAssistantRetireProxyDecision(
-      requestPathname(req),
-      req.method ?? "GET",
-      () => readLockfile(),
-    );
-    if (retireDecision.kind === "retireLocal") {
-      if (rejectUnlessLocalEndpointRequest(req, res)) {
-        return;
-      }
-      runRetire(retireDecision.assistantId).then((result) => {
-        if (result.ok) {
-          res.statusCode = 204;
-          res.end();
-          return;
-        }
-        respondJson(res, result.status, { detail: result.error });
-      });
-      return;
-    }
-
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
     // rides one id-keyed proxy for every assistant gateway. The lockfile
     // resolves the id to a loopback port (locally hatched) or the recorded

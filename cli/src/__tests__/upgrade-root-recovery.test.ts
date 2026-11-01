@@ -4,7 +4,6 @@ import * as docker from "../lib/remotes/docker.js";
 import * as lifecycle from "../lib/upgrade-lifecycle.js";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
-import * as loopback from "../lib/loopback-fetch.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const capture = spyOn(backups, "createBackup");
@@ -16,7 +15,7 @@ const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(docker, "sleepContainers");
 const stop = spyOn(docker, "stopContainers");
 const start = spyOn(docker, "startContainers");
-const fetch = spyOn(loopback, "loopbackSafeFetch");
+const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = docker.dockerResourceNames("recovery");
 const containerOptions = {
   gatewayPort: 7830,

@@ -1,3 +1,4 @@
+import { loopbackSafeFetch } from "@mycadet/local-mode";
 /**
  * Drain phase for `cadet sleep --wait`.
  *
@@ -9,8 +10,6 @@
  * legitimately run for many minutes, and a silent wait is indistinguishable
  * from a hang.
  */
-
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 const QUIESCE_TTL_MS = 60_000;
 const QUIESCE_REFRESH_INTERVAL_MS = 20_000;

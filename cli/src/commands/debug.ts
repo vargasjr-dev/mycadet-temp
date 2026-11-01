@@ -1,21 +1,19 @@
 import { z } from "zod";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import {
+  authHeadersForKnownOrganization,
+  cloudAuthHeaders,
+  getAssistantDisplayName,
+  getCloudUrl,
+  loopbackSafeFetch,
+  readCloudToken,
+} from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  getAssistantDisplayName,
-  resolveTargetAssistant,
-} from "../lib/assistant-config.js";
+import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { loadGuardianToken, leaseGuardianToken } from "../lib/guardian-token";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
-import {
-  authHeaders,
-  authHeadersForKnownOrganization,
-  getCloudUrl,
-  readCloudToken,
-} from "../lib/cloud-client.js";
 
 // Renew a cached guardian token that is about to lapse instead of starting
 // a long export on it.
@@ -95,7 +93,7 @@ export const debug = Object.assign(
     const accessToken = await daemonAccessToken(entry, reference, false);
     const headers = organizationId
       ? authHeadersForKnownOrganization(cloudToken, organizationId)
-      : await authHeaders(cloudToken, cloudUrl);
+      : await cloudAuthHeaders(cloudToken, cloudUrl);
     const urlResponse = await loopbackSafeFetch(
       `${cloudUrl}/v1/assistants/${encodeURIComponent(cloudAssistantId)}/debug-bundle-upload-url/`,
       { method: "POST", headers },
