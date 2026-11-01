@@ -60,7 +60,6 @@ import {
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import {
   ensureLocalRuntime,
-  generateLocalSecret,
   startCes,
   startGateway,
   startLocalDaemon,

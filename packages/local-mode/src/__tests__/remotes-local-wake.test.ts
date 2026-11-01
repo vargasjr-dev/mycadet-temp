@@ -18,7 +18,6 @@ import { join } from "node:path";
 const realProcess = { ...(await import("../process")) };
 const realCommon = { ...(await import("../remotes/local/common")) };
 const realPorts = { ...(await import("../ports")) };
-const realGuardianToken = { ...(await import("../guardian-token")) };
 const realReadiness = { ...(await import("../daemon-readiness")) };
 
 const probeDaemonReadinessWithRetryMock = mock<
@@ -64,9 +63,6 @@ mock.module("../ports", () => ({
   findAvailablePort: findAvailablePortMock,
 }));
 
-const generateLocalSecretMock = mock<typeof realCommon.generateLocalSecret>(
-  () => "generated-bootstrap-secret",
-);
 const isAssistantWatchModeAvailableMock = mock<
   typeof realCommon.isAssistantWatchModeAvailable
 >(() => false);
@@ -83,7 +79,6 @@ const startCesMock = mock<typeof realCommon.startCes>(async () => {});
 
 mock.module("../remotes/local/common", () => ({
   ...realCommon,
-  generateLocalSecret: generateLocalSecretMock,
   isAssistantWatchModeAvailable: isAssistantWatchModeAvailableMock,
   isGatewayWatchModeAvailable: isGatewayWatchModeAvailableMock,
   startLocalDaemon: startLocalDaemonMock,
@@ -91,27 +86,14 @@ mock.module("../remotes/local/common", () => ({
   startCes: startCesMock,
 }));
 
-// The leg reads and backfills the bootstrap secret through the shared seam.
-const bootstrapSecrets = new Map<string, string>();
-mock.module("../guardian-token", () => ({
-  ...realGuardianToken,
-  loadGuardianBootstrapSecret: (assistantId: string) =>
-    bootstrapSecrets.get(assistantId),
-  saveGuardianBootstrapSecret: (assistantId: string, secret: string) => {
-    bootstrapSecrets.set(assistantId, secret);
-  },
-}));
-
 afterAll(() => {
   mock.module("../process", () => realProcess);
   mock.module("../ports", () => realPorts);
   mock.module("../remotes/local/common", () => realCommon);
-  mock.module("../guardian-token", () => realGuardianToken);
   mock.module("../daemon-readiness", () => realReadiness);
 });
 
 import type { LocalAssistant } from "../lockfile-contract";
-import { saveGuardianBootstrapSecret } from "../guardian-token";
 import { wakeLocal } from "../remotes/local/wake";
 
 let tempDir: string;
@@ -157,8 +139,6 @@ beforeEach(() => {
   );
   stopProcessByPidFileMock.mockReset();
   stopProcessByPidFileMock.mockResolvedValue(true);
-  generateLocalSecretMock.mockReset();
-  generateLocalSecretMock.mockReturnValue("generated-bootstrap-secret");
   isAssistantWatchModeAvailableMock.mockReset();
   isAssistantWatchModeAvailableMock.mockReturnValue(false);
   isGatewayWatchModeAvailableMock.mockReset();
@@ -175,7 +155,6 @@ beforeEach(() => {
   probeDaemonReadinessWithRetryMock.mockResolvedValue("ready");
   waitForDaemonMigrationsReadyMock.mockReset();
   waitForDaemonMigrationsReadyMock.mockResolvedValue("ready");
-  bootstrapSecrets.clear();
 });
 
 afterEach(() => {
@@ -184,22 +163,12 @@ afterEach(() => {
 });
 
 describe("wakeLocal — the in-process local wake leg", () => {
-  test("restarts a running gateway without watch mode when backfilling the bootstrap secret", async () => {
+  test("keeps a running gateway exactly as-is — no bootstrap-secret backfill", async () => {
     await wakeLocal(localEntry);
 
-    expect(bootstrapSecrets.get(localEntry.assistantId)).toBe(
-      "generated-bootstrap-secret",
-    );
-    expect(stopProcessByPidFileMock).toHaveBeenCalledWith(
-      join(tempDir, "gateway.pid"),
-      "gateway",
-    );
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({ instanceDir: tempDir }),
-      {
-        bootstrapSecret: "generated-bootstrap-secret",
-      },
+    expect(startGatewayMock).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Gateway already running"),
     );
   });
 
@@ -227,10 +196,6 @@ describe("wakeLocal — the in-process local wake leg", () => {
   });
 
   test("does not duplicate an assistant already classified as stuck", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     resolveProcessStateMock.mockImplementation(
       async (_pidFile, _port, label) =>
         label === "Assistant"
@@ -247,10 +212,6 @@ describe("wakeLocal — the in-process local wake leg", () => {
   });
 
   test("does not duplicate an assistant when a watch restart cannot stop it", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     isAssistantWatchModeAvailableMock.mockReturnValue(true);
     stopProcessByPidFileMock.mockResolvedValue(false);
     isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
@@ -264,10 +225,6 @@ describe("wakeLocal — the in-process local wake leg", () => {
   });
 
   test("does not duplicate a gateway already classified as stuck", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     resolveProcessStateMock.mockImplementation(
       async (_pidFile, _port, label) =>
         label === "Gateway"
@@ -284,10 +241,6 @@ describe("wakeLocal — the in-process local wake leg", () => {
   });
 
   test("does not duplicate a gateway when a watch restart cannot stop it", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     isGatewayWatchModeAvailableMock.mockReturnValue(true);
     stopProcessByPidFileMock.mockResolvedValue(false);
     isProcessAliveMock.mockImplementation((pidFile) =>

@@ -111,7 +111,6 @@ export {
 export { wakeLocal } from "./remotes/local/wake";
 export {
   ensureLocalRuntime,
-  generateLocalSecret,
   getLocalRuntimeInstallDir,
   type LocalRuntimeInstall,
   gatewayCliInvocation,
@@ -162,8 +161,6 @@ export {
   openRuntimeLogFile,
 } from "./xdg-log";
 export {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
 } from "./guardian-token";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";

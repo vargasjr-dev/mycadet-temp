@@ -11,7 +11,6 @@ import {
 
 import {
   basetenTokenPath,
-  guardianBootstrapSecretPath,
   guardianTokenPath,
 } from "./config";
 import { readLockfile } from "./lockfile";
@@ -412,32 +411,4 @@ function refreshToken(
       });
     });
   });
-}
-
-/**
- * Read a previously persisted guardian bootstrap secret for the assistant —
- * the hatch-minted secret the gateway holds; wake backfills one when the
- * environment's config dir has none.
- */
-export function loadGuardianBootstrapSecret(
-  assistantId: string,
-): string | undefined {
-  try {
-    const raw = fs
-      .readFileSync(guardianBootstrapSecretPath(assistantId), "utf-8")
-      .trim();
-    return raw || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** Persist a freshly minted guardian bootstrap secret (0700 dir, 0600 file). */
-export function saveGuardianBootstrapSecret(
-  assistantId: string,
-  secret: string,
-): void {
-  const tokenPath = guardianBootstrapSecretPath(assistantId);
-  fs.mkdirSync(path.dirname(tokenPath), { recursive: true });
-  fs.writeFileSync(tokenPath, secret);
 }

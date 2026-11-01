@@ -27,7 +27,6 @@ import {
   stopProcessGracefully,
 } from "@mycadet/local-mode";
 import {
-  generateLocalSecret,
   setStartupLogging,
   startCes,
   startGateway,
@@ -36,7 +35,6 @@ import {
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
-  saveGuardianBootstrapSecret,
 } from "../guardian-token.js";
 import {
   consoleLifecycleReporter,

@@ -16,15 +16,10 @@ import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
 } from "../../daemon-readiness";
-import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../../guardian-token";
 import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
 import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
 import {
-  generateLocalSecret,
   isAssistantWatchModeAvailable,
   isGatewayWatchModeAvailable,
   startCes,
@@ -165,14 +160,6 @@ async function wakeLocalSteps(
     }
   }
 
-  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
-  let bootstrapSecretBackfilled = false;
-  if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSecret();
-    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
-    bootstrapSecretBackfilled = true;
-  }
-
   if (!daemonRunning) {
     // Spin up CES and the daemon in parallel, the way the Docker topology
     // brings its sibling containers up together — the assistant polls for the
@@ -240,28 +227,13 @@ async function wakeLocalSteps(
         );
         return false;
       }
-      await startGateway(restartWithWatch, entry, {
-        bootstrapSecret,
-      });
+      await startGateway(restartWithWatch, entry);
       return true;
     };
-    const needsRestart = bootstrapSecretBackfilled && gatewayAlive;
     if (gatewayStuck) {
       console.log(
         `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
       );
-    } else if (needsRestart) {
-      const restartWithWatch = watch && isGatewayWatchModeAvailable();
-      if (restartWithWatch) {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) — restarting to apply bootstrap secret...`,
-        );
-      } else {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) — restarting without watch mode to apply bootstrap secret...`,
-        );
-      }
-      gatewayStarted = await restartGateway(restartWithWatch);
     } else if (gatewayAlive) {
       if (watch && isGatewayWatchModeAvailable()) {
         console.log(
@@ -278,7 +250,7 @@ async function wakeLocalSteps(
         }
       }
     } else {
-      await startGateway(watch, entry, { bootstrapSecret });
+      await startGateway(watch, entry);
       gatewayStarted = true;
     }
   }

@@ -1,6 +1,6 @@
 import { execFileSync, spawn, spawnSync, execSync } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -25,10 +25,6 @@ import {
 
 import { resolveDataDir, resolveLogDir } from "../../config";
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../../guardian-token";
 import { saveLockfileAssistant } from "../../lockfile";
 import {
   GATEWAY_PORT,
@@ -526,10 +522,6 @@ function resolveDaemonMainPath(assistantIndex: string): string {
  * guardian bootstrap secret). Not a signing key — the gateway owns the
  * signing key end-to-end; the CLI never touches it.
  */
-export function generateLocalSecret(): string {
-  return randomBytes(32).toString("hex");
-}
-
 type DaemonStartOptions = {
   foreground?: boolean;
   defaultWorkspaceConfigPath?: string;
@@ -1744,7 +1736,6 @@ export async function startGateway(
   watch: boolean = false,
   entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   options?: {
-    bootstrapSecret?: string;
     requireReady?: boolean;
   },
 ): Promise<string> {
@@ -1772,9 +1763,6 @@ export async function startGateway(
     // Pass gateway operational settings via env vars so the CLI does not
     // need direct access to the workspace config file.
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
-    ...(options?.bootstrapSecret
-      ? { GUARDIAN_BOOTSTRAP_SECRET: options.bootstrapSecret }
-      : {}),
     ...(watch
       ? {
           CADET_DEV: "1",
