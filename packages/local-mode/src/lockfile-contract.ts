@@ -251,6 +251,73 @@ export const ContainerInfoSchema = z.object({
 export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
 
 /**
+ * Host-independent resource policy for one assistant's machine allocation —
+ * what the allocation *should be*, as opposed to the record fields (ports,
+ * instanceDir, containerInfo) that describe what *is*. The section rides
+ * every topology's entry: the stored shape is the same everywhere, while how
+ * a policy materializes differs per remote (see {@link MACHINE_APPLICABILITY}).
+ *
+ * The schema is strict — unknown keys are rejected — because the write path
+ * (future `cadet machine set`, daemon PATCH, cloud API) is the loud validator:
+ * a typo'd knob must fail at the boundary, never silently degrade to the
+ * runtime default. Parse time is deliberately softer: the field is embedded
+ * with `.catch(undefined)`, so a malformed or unrecognized section from a
+ * hand-edit or a different build quarantines to the defaults while the
+ * entry itself survives, and the drift is visible to readers instead of
+ * costing the assistant its identity fields.
+ */
+export const MachineMemoryPolicySchema = z
+  .strictObject({
+    /**
+     * Soft limit in bytes: where the runtime should start reclaiming early
+     * and smoothly (cgroup v2 `memory.high` on docker remotes). Absent =
+     * unconstrained.
+     */
+    high: z.number().int().positive().optional(),
+    /** Hard limit in bytes: the backstop the runtime may not exceed
+     * (cgroup v2 `memory.max` on docker remotes). Absent = unconstrained. */
+    max: z.number().int().positive().optional(),
+  })
+  .superRefine((memory, context) => {
+    if (
+      memory.high !== undefined &&
+      memory.max !== undefined &&
+      memory.high > memory.max
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["high"],
+        message: `memory.high (${memory.high}) must not exceed memory.max (${memory.max})`,
+      });
+    }
+  });
+export type MachineMemoryPolicy = z.infer<typeof MachineMemoryPolicySchema>;
+
+/** The `machine` section: one key per resource knob, added as they migrate here. */
+export const MachinePolicySchema = z.strictObject({
+  memory: MachineMemoryPolicySchema.optional(),
+});
+export type MachinePolicy = z.infer<typeof MachinePolicySchema>;
+
+/**
+ * How a stored `machine` policy materializes per remote topology. The store
+ * is host-independent — this table is the one place that says what a policy
+ * *means* on each remote, so the apply layer and readers derive semantics
+ * from it instead of re-deciding per call site. Remotes gain real
+ * applicability as their apply paths land (cloud/gVisor, apple-container).
+ */
+export type MachineApplicability = "cgroup" | "process-hint" | "unsupported";
+
+export const MACHINE_APPLICABILITY = {
+  local: "process-hint",
+  docker: "cgroup",
+  "apple-container": "unsupported",
+  cloud: "unsupported",
+  custom: "unsupported",
+  baseten: "unsupported",
+} as const satisfies Record<Remote, MachineApplicability>;
+
+/**
  * The fields every topology actually uses: the identity every reader looks
  * entries up by, the display name, and the hatch/onboarding/conversation
  * bookkeeping that is topology-agnostic.
@@ -273,6 +340,13 @@ const BaseAssistantSchema = z.object({
   onboardedAt: z.string().optional(),
   /** PID of the file watcher process for instances hatched with --watch. */
   watcherPid: z.number().optional(),
+  /**
+   * Host-independent resource policy for this assistant's machine allocation
+   * (see {@link MachinePolicySchema} for the strict-at-write, fallback-at-parse
+   * contract, and {@link MACHINE_APPLICABILITY} for how it materializes per
+   * remote). Absent = the runtime's own defaults apply.
+   */
+  machine: MachinePolicySchema.optional().catch(undefined),
 });
 
 /**
@@ -418,6 +492,18 @@ export function isCloudEntry(
   entry: LockfileAssistant,
 ): entry is CloudAssistant {
   return entry.cloud === "cloud";
+}
+
+/**
+ * The stored `machine` policy for an entry, exactly as validated — no default
+ * resolution here. Falling back to runtime defaults is the reader's decision
+ * (the apply layer pairs this with the spec defaults it owns), so callers that
+ * need to distinguish an unset section from a set one can.
+ */
+export function getMachinePolicy(
+  entry: LockfileAssistant,
+): MachinePolicy | undefined {
+  return entry.machine;
 }
 
 /** Whether the entry is a docker-hosted assistant. */
