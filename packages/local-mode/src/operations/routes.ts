@@ -48,6 +48,14 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
   if (!entry) {
     return null;
   }
+  // A platform-hosted entry is not this host's to retire: the host holds no
+  // machine token for it, so the operation's cloud leg could never succeed —
+  // the pre-existing chain's forward carries the bundle's session instead.
+  // The host-executable set (loopback-gateway clouds, apple-container, and
+  // the ssh-managed custom remote) answers here.
+  if (entry.cloud === "cloud" || entry.cloud === "baseten") {
+    return null;
+  }
   const result = await retireAssistant(entry);
   if (result.ok) {
     return new Response(null, { status: 204 });

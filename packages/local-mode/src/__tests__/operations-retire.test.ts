@@ -287,19 +287,19 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     expect(await response?.json()).toEqual({ detail: "no such assistant" });
   });
 
-  test("a platform-hosted entry retires through the operation's cloud leg", async () => {
+  test("a platform-hosted entry passes through to the session-carrying forward", async () => {
     writeLockfile({ assistants: [cloudEntry], activeAssistant: null });
     readCloudTokenMock.mockReturnValue("platform-token");
 
-    const response = await matchOperatorRequest(
-      "/v1/assistants/asst-cloud/retire/",
-      "DELETE",
-    )!.route.run("asst-cloud");
-
-    expect(response?.status).toBe(204);
-    // The platform unregistration rode the (mocked) cloud API and the local
-    // bookkeeping completed — the entry is gone from the lockfile.
-    expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([]);
+    // The host holds no machine token for a platform entry — running the
+    // cloud leg here could only fail. The pass lets the pre-existing chain's
+    // forward carry the bundle's session to the platform instead.
+    expect(
+      await matchOperatorRequest(
+        "/v1/assistants/asst-cloud/retire/",
+        "DELETE",
+      )!.route.run("asst-cloud"),
+    ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
     expect(retireDockerMock).not.toHaveBeenCalled();
   });
