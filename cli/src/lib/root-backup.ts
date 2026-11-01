@@ -22,13 +22,9 @@ import {
   dockerResourceNames,
   getDaemonPidPath,
   getLocalInstanceDir,
-  isLocalEntry,
   isProcessAlive,
   probePort,
   saveLockfileAssistant,
-  startCes,
-  startGateway,
-  startLocalDaemon,
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
   type DockerAssistant,
@@ -320,33 +316,8 @@ export class LocalRootStorage implements RootStorage {
     return running.size > 0;
   }
   async resume(): Promise<void> {
-    if (this.initialRunning?.size === 3) {
-      await wakeAssistant(this.entry, {
-        watch: false,
-        foreground: false,
-      });
-      await this.checkReady();
-      return;
-    }
-    const entry = this.localEntry;
-    if (
-      this.initialRunning?.has("ces") &&
-      !isProcessAlive(join(this.root, "ces.pid")).alive
-    )
-      await startCes(false, entry);
-    // The daemon lifecycle is local-only; a docker root's assistant service
-    // is the container, not a host daemon.
-    if (
-      isLocalEntry(entry) &&
-      this.initialRunning?.has("assistant") &&
-      !isProcessAlive(getDaemonPidPath(entry)).alive
-    )
-      await startLocalDaemon(false, entry);
-    if (
-      this.initialRunning?.has("gateway") &&
-      !isProcessAlive(join(this.root, "gateway.pid")).alive
-    )
-      await startGateway(false, entry);
+    const wake = await wakeAssistant(this.entry);
+    if (!wake.ok) throw new Error(wake.error);
     await this.checkReady();
   }
   private async checkReady(): Promise<void> {

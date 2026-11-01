@@ -22,38 +22,32 @@ import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as localModule from "@mycadet/local-mode";
 import * as stepRunnerModule from "../lib/step-runner.js";
+import * as wakeModule from "../commands/wake.js";
 import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
-const realLocal = { ...localModule };
 const realExec = stepRunnerModule.exec;
 
-// Prevent real daemon / gateway / CES from starting
-const startLocalDaemonMock = mock(async () => {});
-const startGatewayMock = mock<typeof localModule.startGateway>(
-  async () => "http://127.0.0.1:7831",
-);
-const startCesMock = mock(async () => {});
+// Prevent a real wake (daemon / gateway / CES spawn) during recovery
+const wakeAssistantMock = mock(async (_entry: LockfileAssistant) => ({
+  ok: true as const,
+}));
 
 // Capture exec calls without running real tar
 const execMock = mock(async (_cmd: string, _args: string[]) => {});
 
 beforeAll(() => {
-  mock.module("@mycadet/local-mode", () => ({
-    ...localModule,
-    generateLocalSecret: mock(() => "deadbeefdeadbeefdeadbeefdeadbeef"),
-    startLocalDaemon: startLocalDaemonMock,
-    startGateway: startGatewayMock,
-    startCes: startCesMock,
+  mock.module("../commands/wake.js", () => ({
+    ...wakeModule,
+    wakeAssistant: wakeAssistantMock,
   }));
   mock.module("../lib/step-runner.js", () => ({ exec: execMock }));
 });
 
 afterAll(() => {
-  mock.module("@mycadet/local-mode", () => realLocal);
+  mock.module("../commands/wake.js", () => wakeModule);
   mock.module("../lib/step-runner.js", () => ({ exec: realExec }));
 });
 
@@ -127,9 +121,7 @@ beforeEach(() => {
   });
 
   execMock.mockClear();
-  startLocalDaemonMock.mockClear();
-  startGatewayMock.mockClear();
-  startCesMock.mockClear();
+  wakeAssistantMock.mockClear();
 });
 
 afterEach(() => {
@@ -238,13 +230,11 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     // Archive cleaned up
     expect(existsSync(archivePath)).toBe(false);
 
-    // Daemon and gateway were started
-    expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
-    expect(startGatewayMock).toHaveBeenCalledTimes(1);
-    expect(startGatewayMock.mock.calls[0]).toEqual([
-      false,
+    // The recovered assistant was woken once
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(1);
+    expect(wakeAssistantMock.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({ instanceDir: expect.any(String) }),
-    ]);
+    );
   });
 
   test("creates parent directories of instanceDir when they do not exist", async () => {

@@ -58,14 +58,9 @@ import {
   versionsEqual,
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
-import {
-  ensureLocalRuntime,
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "@mycadet/local-mode";
+import { ensureLocalRuntime } from "@mycadet/local-mode";
+import { wakeAssistant } from "../commands/wake.js";
 import { stopLocalProcesses } from "../lib/remotes/local.js";
-import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
 import { leaseGuardianToken } from "../lib/guardian-token.js";
 
 interface UpgradeArgs {
@@ -389,14 +384,8 @@ async function upgradeLocal(
     const previousAppVersion = process.env.APP_VERSION;
     process.env.APP_VERSION = stripVersionPrefix(targetVersion);
     try {
-      // Bring CES, daemon, and gateway up in parallel, the way the Docker
-      // topology starts its sibling processes together. startCes always
-      // launches the CES sibling.
-      await Promise.all([
-        startCes(false, upgradedEntry),
-        startLocalDaemon(false, upgradedEntry),
-        startGateway(false, upgradedEntry),
-      ]);
+      const wake = await wakeAssistant(upgradedEntry);
+      if (!wake.ok) throw new Error(wake.error);
     } finally {
       if (previousAppVersion === undefined) {
         delete process.env.APP_VERSION;
@@ -406,8 +395,6 @@ async function upgradeLocal(
     }
     await ensureGuardianTokenAfterLocalUpgrade(entry);
     console.log("✅ Local assistant processes started\n");
-
-    await restoreAppServerAndAutoTunnel();
 
     console.log("Waiting for assistant to become ready...");
     const ready = await waitForReady(adminUrl);
@@ -438,11 +425,8 @@ async function upgradeLocal(
           `Local recovery failed; services remain stopped. Backup: ${backupPath}`,
           { cause: error },
         );
-      await Promise.all([
-        startCes(false, entry),
-        startLocalDaemon(false, entry),
-        startGateway(false, entry),
-      ]);
+      const wake = await wakeAssistant(entry);
+      if (!wake.ok) throw new Error(wake.error);
       if (!(await waitForReady(adminUrl)))
         throw new Error(
           `Previous local runtime did not recover. Backup: ${backupPath}`,

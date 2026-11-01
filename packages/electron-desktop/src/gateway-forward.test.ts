@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import * as localModeShared from "@mycadet/local-mode";
 import { PROXY_ERROR_HEADER, PROXY_NETWORK_ERROR_CODE } from "./cloud-forward";
-import type { GatewayForwardFetcher } from "./gateway-forward";
+import type { net } from "electron";
 
 type TokenResult =
   | { ok: true; accessToken: string }
@@ -52,7 +52,8 @@ const recorder = (response = new Response("ok")) => {
     url: string;
     init?: RequestInit & { duplex?: "half" };
   }> = [];
-  const fetcher: GatewayForwardFetcher = async (url, init) => {
+  const fetcher: typeof net.fetch = async (input, init) => {
+    const url = String(input);
     calls.push({ url, init });
     if (new URL(url).pathname === "/auth/token") {
       return Response.json({
@@ -270,7 +271,8 @@ describe("forwardGatewayRequest — loopback forwards", () => {
   test("re-mints once and retries a bodyless forward the gateway 401s", async () => {
     let forwards = 0;
     const calls: Array<{ url: string; init?: RequestInit }> = [];
-    const fetcher: GatewayForwardFetcher = async (url, init) => {
+    const fetcher: typeof net.fetch = async (input, init) => {
+      const url = String(input);
       calls.push({ url, init });
       if (new URL(url).pathname === "/auth/token") {
         return Response.json({
@@ -297,7 +299,8 @@ describe("forwardGatewayRequest — loopback forwards", () => {
 
   test("does not retry a bodied forward the gateway 401s", async () => {
     let forwards = 0;
-    const fetcher: GatewayForwardFetcher = async (url) => {
+    const fetcher: typeof net.fetch = async (input) => {
+      const url = String(input);
       if (new URL(url).pathname === "/auth/token") {
         return Response.json({
           token: MINTED_BEARER,

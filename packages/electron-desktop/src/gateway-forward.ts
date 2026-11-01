@@ -1,3 +1,5 @@
+import type { net } from "electron";
+
 import {
   authorizePairedForwardHeaders,
   getGuardianAccessToken,
@@ -153,12 +155,6 @@ async function authorizeGatewayForwardPlan(
   return plan;
 }
 
-/** Injectable stand-in for Electron's `net.fetch`. */
-export type GatewayForwardFetcher = (
-  url: string,
-  init?: RequestInit & { duplex?: "half" },
-) => Promise<Response>;
-
 /**
  * The gateway target map for a forward: the lockfile's assistant entries ARE
  * the targets. Prefer the watcher's in-memory snapshot so gateway requests
@@ -179,7 +175,7 @@ const readForwardTargets = (): Map<string, LockfileAssistant> => {
 
 export const forwardGatewayRequest = async (
   request: Request,
-  fetcher: GatewayForwardFetcher,
+  fetcher: typeof net.fetch,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
@@ -207,7 +203,7 @@ export const forwardGatewayRequest = async (
 export function executeGatewayForwardPlan(
   plan: GatewayForwardPlan,
   request: Pick<Request, "body">,
-  fetcher: GatewayForwardFetcher,
+  fetcher: typeof net.fetch,
   retryOptions: ForwardFetchRetryOptions = {},
 ): Promise<Response> | Response | null {
   switch (plan.kind) {
@@ -228,7 +224,7 @@ export function executeGatewayForwardPlan(
           // fetch spec whenever a `ReadableStream` body is supplied.
           ...(plan.hasBody ? { duplex: "half" as const } : {}),
           redirect: "manual",
-        });
+        } as RequestInit & { duplex?: "half" });
       return fetchForwardPlanWithRetry(plan, doFetch, {
         retries: 1,
         onError: (err, attempt) => {
@@ -257,7 +253,7 @@ export function executeGatewayForwardPlan(
 async function executeLoopbackForward(
   plan: Extract<GatewayForwardPlan, { kind: "forward"; remote: false }>,
   request: Pick<Request, "body">,
-  fetcher: GatewayForwardFetcher,
+  fetcher: typeof net.fetch,
 ): Promise<Response> {
   const lease: GuardianTokenLease = () =>
     getGuardianAccessToken(plan.assistantId);
@@ -277,7 +273,7 @@ async function executeLoopbackForward(
       body: plan.hasBody ? request.body : undefined,
       ...(plan.hasBody ? { duplex: "half" as const } : {}),
       redirect: "manual",
-    });
+    } as RequestInit & { duplex?: "half" });
   const response = await doFetch();
   if (response.status !== 401 || !bearer || plan.hasBody) {
     return response;

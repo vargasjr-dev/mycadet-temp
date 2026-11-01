@@ -23,6 +23,7 @@ import * as guardianToken from "../lib/guardian-token.js";
 import * as local from "@mycadet/local-mode";
 import * as localMode from "@mycadet/local-mode";
 import * as ngrok from "../lib/tunnels/ngrok.js";
+import * as wakeModule from "../commands/wake.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
 
 const realAssistantConfig = { ...assistantConfig };
@@ -106,16 +107,12 @@ const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }),
 );
-const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
-  async () => {},
-);
-const startGatewayMock = mock<typeof local.startGateway>(
-  async () => "http://127.0.0.1:7830",
-);
+const wakeAssistantMock = mock<
+  () => Promise<{ ok: true } | { ok: false; error: string }>
+>(async () => ({ ok: true }));
 const stopLocalProcessesMock = mock<typeof cliLocal.stopLocalProcesses>(
   async () => {},
 );
-const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/remotes/local.js", () => ({
   ...realCliLocal,
@@ -144,9 +141,11 @@ mock.module("@mycadet/local-mode", () => ({
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
-  startLocalDaemon: startLocalDaemonMock,
-  startGateway: startGatewayMock,
-  startCes: startCesMock,
+}));
+
+mock.module("../commands/wake.js", () => ({
+  ...wakeModule,
+  wakeAssistant: wakeAssistantMock,
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
@@ -263,14 +262,10 @@ beforeEach(() => {
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }));
-  startLocalDaemonMock.mockReset();
-  startLocalDaemonMock.mockResolvedValue(undefined);
-  startGatewayMock.mockReset();
-  startGatewayMock.mockResolvedValue("http://127.0.0.1:7830");
   stopLocalProcessesMock.mockReset();
   stopLocalProcessesMock.mockResolvedValue(undefined);
-  startCesMock.mockReset();
-  startCesMock.mockResolvedValue(undefined);
+  wakeAssistantMock.mockReset();
+  wakeAssistantMock.mockImplementation(async () => ({ ok: true }));
   loopbackSafeFetchMock.mockReset();
   loopbackSafeFetchMock.mockResolvedValue({
     ok: true,
@@ -316,6 +311,7 @@ afterAll(() => {
   mock.module("../lib/remotes/local.js", () => realCliLocal);
   mock.module("@mycadet/local-mode", () => realLoopbackMode);
   mock.module("../lib/tunnels/ngrok.js", () => realNgrok);
+  mock.module("../commands/wake.js", () => wakeModule);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);
 });
 
@@ -392,15 +388,7 @@ describe("cadet upgrade local", () => {
       cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       { force: false },
     );
-    expect(startLocalDaemonMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({
-        instanceDir: tempDir,
-        runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
-      }),
-    );
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
+    expect(wakeAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
@@ -433,21 +421,21 @@ describe("cadet upgrade local", () => {
     expect(pruneOldBackupsMock).not.toHaveBeenCalled();
     expect(restoreBackupMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).toHaveBeenCalled();
-    expect(startLocalDaemonMock).toHaveBeenCalled();
+    expect(wakeAssistantMock).toHaveBeenCalled();
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
-    startLocalDaemonMock.mockRejectedValueOnce(
-      new Error("target startup failed"),
-    );
+    wakeAssistantMock.mockResolvedValueOnce({
+      ok: false,
+      error: "target startup failed",
+    });
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
     expect(restoreBackupMock).toHaveBeenCalledWith(
       "local-assistant",
       "/tmp/local-pre-upgrade.tar.gz",
       { resume: false },
     );
-    expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
-    expect(startCesMock).toHaveBeenCalledTimes(2);
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(2);
     expect(stopLocalProcessesMock).toHaveBeenCalledTimes(2);
     expect(waitForReadyMock).toHaveBeenCalled();
   });
@@ -464,8 +452,7 @@ describe("cadet upgrade local", () => {
 
     expect(stopLocalProcessesMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
+    expect(wakeAssistantMock).not.toHaveBeenCalled();
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain("Already on");
   });
 });
