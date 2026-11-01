@@ -18,9 +18,6 @@ import {
   test,
 } from "bun:test";
 
-import { testSecurityDir } from "../../__tests__/test-preload.js";
-import { join } from "node:path";
-
 // Swappable assistant-DB backend — the guardian mint reads the assistant
 // mirror through the proxy; give it a minimal in-memory schema.
 type AssistantBackend = {
@@ -29,7 +26,7 @@ type AssistantBackend = {
   exec: (sql: string) => void;
 };
 
-let assistantBackend: AssistantBackend = {
+const assistantBackend: AssistantBackend = {
   query: () => [],
   run: () => ({ changes: 0 }),
   exec: () => {},
