@@ -209,14 +209,6 @@ export async function captureContainerEnv(
  * Security contract: the returned env is memory-only — never persist it to
  * disk, and log counts only, never values.
  */
-/**
- * Env keys retired from the spec whose stale captured values must never
- * replay onto a replacement container. GUARDIAN_BOOTSTRAP_SECRET's mechanism
- * is gone (pairing is the bootstrap door); outgoing containers hatched by
- * older releases still carry it, and it must die with them.
- */
-const RETIRED_ENV_KEYS = ["GUARDIAN_BOOTSTRAP_SECRET"] as const;
-
 export function buildReplayEnv(
   capturedEnv: Record<string, string>,
   service: ServiceName,
@@ -228,10 +220,7 @@ export function buildReplayEnv(
   );
   return Object.fromEntries(
     Object.entries(capturedEnv).filter(
-      ([key]) =>
-        !always.has(key) &&
-        !hostManaged.has(key) &&
-        !(RETIRED_ENV_KEYS as readonly string[]).includes(key),
+      ([key]) => !always.has(key) && !hostManaged.has(key),
     ),
   );
 }

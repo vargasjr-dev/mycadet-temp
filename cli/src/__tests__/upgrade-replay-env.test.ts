@@ -17,9 +17,8 @@ afterEach(() => {
 });
 
 describe("buildReplayEnv", () => {
-  test("gateway: drops secrets, statics, retired keys, and PATH; keeps the rest", () => {
+  test("gateway: drops secrets, statics, and PATH; keeps the rest", () => {
     const captured = {
-      GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
@@ -31,16 +30,6 @@ describe("buildReplayEnv", () => {
       CADET_TELEMETRY: "1",
       CADET_DEVICE_ID: "abc",
     });
-  });
-
-  test("gateway: the retired GUARDIAN_BOOTSTRAP_SECRET never replays", () => {
-    // Captured from a container hatched by an older release — the mechanism
-    // is gone (pairing is the bootstrap door); the key must die with it.
-    const replay = buildReplayEnv(
-      { GUARDIAN_BOOTSTRAP_SECRET: "stale" },
-      "gateway",
-    );
-    expect(replay).toEqual({});
   });
 
   test("gateway: captured CADET_CLOUD_URL dropped when set on host", () => {
@@ -68,14 +57,11 @@ describe("buildReplayEnv", () => {
     const captured = {
       CADET_ASSISTANT_NAME: "my-assistant",
       GATEWAY_INTERNAL_URL: "http://localhost:8080",
-      GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
       PATH: "/usr/bin",
       MY_CUSTOM_FLAG: "yes",
       ANTHROPIC_API_KEY: "sk-captured",
     };
-    // (GUARDIAN_BOOTSTRAP_SECRET drops via the retired-key list — containers
-    // hatched before the retirement still carry it.)
 
     expect(buildReplayEnv(captured, "assistant")).toEqual({
       MY_CUSTOM_FLAG: "yes",

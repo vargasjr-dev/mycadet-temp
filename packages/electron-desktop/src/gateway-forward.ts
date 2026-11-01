@@ -156,7 +156,7 @@ async function authorizeGatewayForwardPlan(
 /** Injectable stand-in for Electron's `net.fetch`. */
 export type GatewayForwardFetcher = (
   url: string,
-  init: RequestInit & { duplex?: "half" },
+  init?: RequestInit & { duplex?: "half" },
 ) => Promise<Response>;
 
 /**
@@ -261,15 +261,9 @@ async function executeLoopbackForward(
 ): Promise<Response> {
   const lease: GuardianTokenLease = () =>
     getGuardianAccessToken(plan.assistantId);
-  // The mint dials the same network seam as the forward, so a recorded or
-  // stubbed fetcher sees both hops.
-  const mintFetcher = (input: string, init?: RequestInit) =>
-    fetcher(input, init ?? {});
   const injectable = new URL(plan.url).pathname !== "/auth/token";
   const bearer = injectable
-    ? await loopbackGatewayBearer(plan.target.port, lease, {
-        fetcher: mintFetcher,
-      })
+    ? await loopbackGatewayBearer(plan.target.port, lease, { fetcher })
     : null;
   if (injectable && bearer) {
     plan.headers.set("authorization", `Bearer ${bearer}`);
@@ -290,7 +284,7 @@ async function executeLoopbackForward(
   }
   const fresh = await loopbackGatewayBearer(plan.target.port, lease, {
     forceMint: true,
-    fetcher: mintFetcher,
+    fetcher,
   });
   if (!fresh || fresh === bearer) {
     return response;

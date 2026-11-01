@@ -21,7 +21,6 @@ import { createHostUiSnapshotExecutor } from "@mycadet/electron-desktop/host-pro
 
 import { RENDERER_BASE_PROD } from "./app-config";
 import { showCompanionCoachmarks } from "./companion-window";
-import { hostAppControlExecutor } from "./executors/host-app-control-executor";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
 import {
@@ -74,7 +73,6 @@ export const installHostProxyBridge = (): (() => void) => {
       host_cu: createHostCuExecutor({
         showCoachmarks: showCompanionCoachmarks,
       }),
-      host_app_control: hostAppControlExecutor,
       host_ui_snapshot: uiSnapshotExecutor,
     },
     teardownExecutors: () => {
