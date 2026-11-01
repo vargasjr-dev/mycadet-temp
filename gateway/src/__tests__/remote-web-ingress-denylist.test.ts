@@ -58,9 +58,7 @@ function extractUnprotectedStaticV1Routes(): string[] {
       // unversioned shape and the matcher strips the prefix from either
       // spelling. Canonicalize to the versioned spelling the denylist
       // (and the schema) write.
-      const canonical = path.startsWith("/v1/")
-        ? path
-        : `/v1${path}`;
+      const canonical = path.startsWith("/v1/") ? path : `/v1${path}`;
       if (PROVIDER_VALIDATED_WEBHOOK_PREFIXES.some((p) => path.startsWith(p)))
         return [];
       if (UNVERSIONED_PUBLIC_SURFACES.includes(path)) return [];
@@ -72,7 +70,9 @@ function extractUnprotectedStaticV1Routes(): string[] {
 }
 
 function sensitiveRoutesSource(): string {
-  const start = nginxIngressSource.indexOf("const SENSITIVE_GATEWAY_ROUTES = [");
+  const start = nginxIngressSource.indexOf(
+    "const SENSITIVE_GATEWAY_ROUTES = [",
+  );
   expect(start).toBeGreaterThanOrEqual(0);
   const end = nginxIngressSource.indexOf("] as const", start);
   return nginxIngressSource.slice(start, end);
