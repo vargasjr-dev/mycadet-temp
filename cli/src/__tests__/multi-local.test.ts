@@ -16,7 +16,7 @@ await mockOsHomedir(() => () => testDir);
 const probePortMock = mock<(port: number, host?: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
-mock.module("../lib/port-probe.js", () => ({
+mock.module("../../../packages/local-mode/src/port-probe", () => ({
   probePort: probePortMock,
 }));
 

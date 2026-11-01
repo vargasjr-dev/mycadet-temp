@@ -374,12 +374,6 @@ const writePairedLockfileAssistant = (assistantId: string): void => {
 };
 const unpair = (assistantId?: unknown): WriteResult =>
   handlers["cadet:localMode:unpair"](allowedEvent, assistantId) as WriteResult;
-const wake = (assistantId?: unknown, options?: unknown): Promise<unknown> =>
-  handlers["cadet:localMode:wake"](
-    allowedEvent,
-    assistantId,
-    options,
-  ) as Promise<unknown>;
 const upgrade = (assistantId?: unknown, options?: unknown): Promise<unknown> =>
   handlers["cadet:localMode:upgrade"](
     allowedEvent,
@@ -786,47 +780,6 @@ describe("cadet:localMode:pairing handlers", () => {
   });
 });
 
-describe("cadet:localMode:wake handler", () => {
-  test("forwards repairGuardian to runWake — the repair rides the wake", async () => {
-    const pending = wake("asst-1", { repairGuardian: true });
-    await tick();
-    expect(spawnArgs[0]).toEqual([
-      "bun",
-      ["run", path.join("/repo", "cli", "src", "index.ts"), "wake", "asst-1"],
-    ]);
-    lastChild.emit("close", 0);
-    await tick(); // the chain spawns the gateway's own re-lease
-    lastChild.emit("close", 0);
-    expect(await pending).toEqual({ ok: true });
-  });
-
-  test("a single-argument invoke still resolves ok with no options forwarded", async () => {
-    const pending = handlers["cadet:localMode:wake"](
-      allowedEvent,
-      "asst-1",
-    ) as Promise<unknown>;
-    await tick();
-    expect(spawnArgs[0]).toEqual([
-      "bun",
-      ["run", path.join("/repo", "cli", "src", "index.ts"), "wake", "asst-1"],
-    ]);
-    lastChild.emit("close", 0);
-    expect(await pending).toEqual({ ok: true });
-  });
-
-  test("rejects malformed options without spawning", async () => {
-    expect(() => wake("asst-1", "repair-please")).toThrow();
-    expect(spawnArgs).toHaveLength(0);
-  });
-
-  test("rejects a missing assistant id without spawning", async () => {
-    expect(await wake(undefined, { repairGuardian: true })).toEqual({
-      ok: false,
-      error: "Missing assistantId",
-    });
-    expect(spawnArgs).toHaveLength(0);
-  });
-});
 
 describe("cadet:localMode:upgrade handler", () => {
   beforeEach(() => {

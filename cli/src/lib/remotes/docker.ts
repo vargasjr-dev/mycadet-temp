@@ -40,6 +40,12 @@ import { createBackup, pruneOldBackups, restoreBackup } from "../backup-ops.js";
 import { emitCliError } from "../cli-error.js";
 import { resolveImageRefs } from "../cloud-releases.js";
 import { compareVersions, versionsEqual } from "../version-compat.js";
+import {
+  ensureDockerDaemonRunning,
+  ensureLocalBinOnPath,
+  startColimaAndAwaitDaemon,
+  LOCAL_BIN_DIR,
+} from "@mycadet/local-mode";
 
 export async function upgradeDocker(
   entry: DockerAssistant,
@@ -516,7 +522,6 @@ import { buildHatchConfigValues, writeInitialConfig } from "../config-utils";
 import { printInstanceDetails } from "../instance-details";
 import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
-import { getDefaultPorts } from "../environments/paths.js";
 import { green, yellow } from "../color.js";
 import { leaseGuardianToken } from "../guardian-token";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
@@ -536,14 +541,14 @@ import {
   shouldPromptForHatchProvider,
 } from "../provider-secrets.js";
 import { checkProviderApiKey } from "../api-key-check.js";
-import { findOpenPort } from "../port-allocator.js";
+import { findOpenPort } from "@mycadet/local-mode";
 import { exec, execOutput, execWithStdin } from "../step-runner";
 import {
   closeLogFile,
   openLogFile,
   resetLogFile,
   writeToLogFile,
-} from "../xdg-log";
+} from "@mycadet/local-mode";
 
 export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
@@ -560,7 +565,7 @@ export function dockerhubImages(
   };
 }
 
-import { classifyReadyzResponse } from "../http-client.js";
+import { classifyReadyzResponse, getDefaultPorts } from "@mycadet/local-mode";
 
 /** Max time to wait for the assistant container to emit the readiness sentinel. */
 export const DOCKER_READY_TIMEOUT_MS = 5 * 60 * 1000;
@@ -589,12 +594,6 @@ export function resolveAvatarDevicePath(
 const COLIMA_DEFAULT_MEMORY_GIB = 8;
 
 /** Directory for user-local binary installs (no sudo required). */
-
-const LOCAL_BIN_DIR = join(
-  process.env.HOME || process.env.USERPROFILE || ".",
-  ".local",
-  "bin",
-);
 
 /**
  * Returns the macOS architecture suffix used by GitHub release artifacts.
@@ -756,17 +755,6 @@ async function installDockerToolchain(): Promise<void> {
   console.log("  ✅ Docker toolchain installed to ~/.local/bin/");
 }
 
-/**
- * Ensures ~/.local/bin/ is on PATH for this process so that docker, colima,
- * and limactl are discoverable.
- */
-function ensureLocalBinOnPath(): void {
-  const currentPath = process.env.PATH || "";
-  if (!currentPath.includes(LOCAL_BIN_DIR)) {
-    process.env.PATH = `${LOCAL_BIN_DIR}:${currentPath}`;
-  }
-}
-
 export interface HatchDockerParams {
   /** Instance display name. Defaults to an auto-generated name. */
   name?: string | null;
@@ -841,76 +829,6 @@ export function resolveDockerProviderCredentialSetupAction(options: {
   return "configure";
 }
 
-/** Time to wait for the Docker daemon to answer `docker info` after a Colima start. */
-const COLIMA_SETTLE_TIMEOUT_MS = 15_000;
-
-/** Poll `docker info` until the daemon answers or the timeout elapses. */
-async function waitForDockerDaemon(
-  execFn: typeof exec,
-  timeoutMs: number,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    try {
-      await execFn("docker", ["info"]);
-      return true;
-    } catch {
-      if (Date.now() >= deadline) return false;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-  }
-}
-
-/**
- * Start Colima and wait for the Docker daemon to actually answer.
- *
- * `colima start` exiting 0 only means Colima's own state file says the VM is
- * up — that state can be stale (zombie VM after a host sleep or crash), in
- * which case start is a no-op ("already running, ignoring") while the daemon
- * inside stays dead. So success is decided by re-probing `docker info`, and a
- * failed probe triggers the manual-fix cycle: force-stop and start fresh.
- * Never `colima delete` — the VM disk holds every container image and volume.
- * `startArgs` carries extra flags (e.g. `--memory`) for a first start; the
- * wake path starts an existing instance bare.
- */
-async function startColimaAndAwaitDaemon(
-  execFn: typeof exec,
-  log: (msg: string) => void,
-  opts: { startArgs?: string[]; settleTimeoutMs?: number } = {},
-): Promise<void> {
-  const startArgs = opts.startArgs ?? [];
-  const settleTimeoutMs = opts.settleTimeoutMs ?? COLIMA_SETTLE_TIMEOUT_MS;
-
-  try {
-    await execFn("colima", ["start", ...startArgs]);
-  } catch (err) {
-    // exec captures the child's output and only surfaces it in the error —
-    // print it so a failed start is never silent.
-    log(`⚠️  colima start failed: ${err instanceof Error ? err.message : err}`);
-  }
-
-  if (await waitForDockerDaemon(execFn, settleTimeoutMs)) return;
-
-  log(
-    "🔄 Colima state looks stale — restarting the VM (colima stop --force, then start)...",
-  );
-  await execFn("colima", ["stop", "--force"]).catch(() => {});
-  try {
-    await execFn("colima", ["start", ...startArgs]);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Failed to restart Colima. Please run 'colima stop --force && colima start' manually.\n${message}`,
-    );
-  }
-  if (!(await waitForDockerDaemon(execFn, settleTimeoutMs))) {
-    throw new Error(
-      "Docker daemon is still not reachable after restarting Colima. " +
-        "Check `colima status` and `docker info`, then try again.",
-    );
-  }
-}
-
 /**
  * Checks whether the `docker` CLI and daemon are available on the system.
  * Installs Colima and Docker via direct binary download if missing (no sudo
@@ -981,7 +899,7 @@ async function ensureDockerInstalled(): Promise<void> {
     }
 
     console.log("🚀 Docker daemon not running. Starting Colima...");
-    await startColimaAndAwaitDaemon(exec, console.log, {
+    await startColimaAndAwaitDaemon(console.log, {
       startArgs: ["--memory", String(COLIMA_DEFAULT_MEMORY_GIB)],
     });
   }
@@ -1351,45 +1269,6 @@ export async function recreateDockerContainers(
     daemonPort: entry.daemonPort ?? assistantPort,
     containerInfo: info,
   });
-}
-
-/**
- * Ensure a Docker daemon is reachable before waking an instance's containers
- * (macOS only — on Linux the daemon runs natively).
- *
- * If a daemon is already reachable, reuse it and return: `hatch` created the
- * containers under whatever `docker context` was active at the time (Docker
- * Desktop, an already-running Colima, a remote context, …), and `docker start`
- * targets the active context. Unconditionally starting Colima would switch the
- * active context to `colima` and point `docker start` at a VM that never held
- * those containers — so Colima is only started as a fallback when no daemon is
- * reachable at all (the toolchain `hatch` installs on macOS when Docker Desktop
- * isn't present). This mirrors {@link ensureDockerInstalled}, which likewise
- * only starts Colima when `docker info` fails.
- *
- * `execFn` is injectable so unit tests can drive the probe outcomes without a
- * real Docker/Colima toolchain; production callers use the real {@link exec}.
- * Assumes the toolchain is already installed (handled during hatch).
- */
-export async function ensureDockerDaemonRunning(
-  execFn: typeof exec = exec,
-  opts: { settleTimeoutMs?: number } = {},
-): Promise<void> {
-  ensureLocalBinOnPath();
-
-  // A reachable daemon — Docker Desktop, a running Colima, or any other active
-  // context — is exactly what hatch used. Reuse it rather than forcing Colima.
-  try {
-    await execFn("docker", ["info"]);
-    return;
-  } catch {
-    // No daemon reachable — fall through to the Colima fallback below.
-  }
-
-  // Deliberately no `colima status` probe: it trusts Colima's own state file,
-  // which can be stale (zombie VM) — daemon reachability is the oracle.
-  console.log("🚀 Docker daemon not running. Starting Colima...");
-  await startColimaAndAwaitDaemon(execFn, console.log, opts);
 }
 
 /**

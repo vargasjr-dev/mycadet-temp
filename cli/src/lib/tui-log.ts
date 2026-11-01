@@ -21,7 +21,7 @@ import {
   openLogFile,
   resetLogFile,
   writeToLogFile,
-} from "./xdg-log.js";
+} from "@mycadet/local-mode";
 
 const LOG_FILE = "client-cli.log";
 

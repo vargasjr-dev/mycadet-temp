@@ -91,16 +91,6 @@ import type {
   LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 
-/**
- * Options for `localMode.wake`. `repairGuardian` re-provisions a
- * missing/expired guardian token via the CLI's `--repair-guardian` — it
- * revokes the assistant's other device-bound tokens, so callers must gate it
- * behind explicit user confirmation, never silent auto-repair.
- */
-export interface LocalWakeOptions {
-  repairGuardian?: boolean;
-}
-
 export interface LocalUpgradeOptions {
   version?: string;
   latest?: boolean;
@@ -452,10 +442,6 @@ export interface CadetBridge {
     pairingPoll(handle: string, name?: string): Promise<LocalPairingPollResult>;
     /** Forget a pending pairing session. */
     pairingCancel(handle: string): Promise<{ ok: boolean }>;
-    wake(
-      assistantId: string,
-      options?: LocalWakeOptions,
-    ): Promise<{ ok: boolean; error?: string }>;
     upgrade(
       assistantId: string,
       options?: LocalUpgradeOptions,

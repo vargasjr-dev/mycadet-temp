@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
-import { resolveCesSocketPath, startCes } from "../remotes/local.js";
+import { resolveCesSocketPath, startCes } from "../remotes/local/common";
 
 // ---------------------------------------------------------------------------
 // Mocks

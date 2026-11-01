@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { loopbackSafeFetch } from "@mycadet/local-mode";
+
+import { loopbackSafeFetch } from "./loopback-fetch";
 
 export type HttpProbeEndpoint = "healthz" | "readyz";
 
@@ -62,7 +63,7 @@ export async function waitForDaemonReady(
  * Migration-aware daemon readiness, derived from the `/readyz` BODY rather
  * than its status code. The status code is the k8s contract — 200 while
  * migrations run so the pod stays in service, 503 only on migration failure —
- * so `response.ok` alone cannot distinguish "ready" from "still migrating".
+ * so `response.ok` alone cannot distinguish ready from still migrating.
  */
 export type DaemonReadiness = "ready" | "migrating" | "failed" | "unreachable";
 

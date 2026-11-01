@@ -30,7 +30,7 @@ import {
   saveCloudToken,
 } from "./cloud-client.js";
 import { fetchAssistantIngressUrl } from "./upgrade-lifecycle.js";
-import { fetchCurrentVersion } from "./http-client.js";
+import { fetchCurrentVersion } from "@mycadet/local-mode";
 import {
   CALLBACK_PATH,
   buildAuthorizeUrl,

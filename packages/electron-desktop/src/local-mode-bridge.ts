@@ -25,6 +25,4 @@ export const createLocalModeBridge = (
   unpair: (assistantId) => ipc.invoke("cadet:localMode:unpair", assistantId),
   upgrade: (assistantId, options) =>
     ipc.invoke("cadet:localMode:upgrade", assistantId, options),
-  wake: (assistantId, options) =>
-    ipc.invoke("cadet:localMode:wake", assistantId, options),
 });

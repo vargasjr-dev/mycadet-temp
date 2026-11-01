@@ -63,7 +63,6 @@ import type {
   LocalReadAssistantAvatarResult,
   LocalRevokeDeviceResult,
   LocalUpgradeOptions,
-  LocalWakeOptions,
   NotificationActionEvent,
   PowerEvent,
   VoiceModeChord,
@@ -202,7 +201,6 @@ declare global {
         }>;
         listDevices?(assistantId: string): Promise<LocalListDevicesResult>;
         readLockfile(): Promise<Lockfile>;
-        retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
         revokeDevice?(
           assistantId: string,
           hashedDeviceId: string,
@@ -215,10 +213,6 @@ declare global {
         ): Promise<LocalPairingPollResult>;
         pairingCancel?(handle: string): Promise<{ ok: boolean }>;
         sleep?(assistantId: string): Promise<{ ok: boolean; error?: string }>;
-        wake?(
-          assistantId: string,
-          options?: LocalWakeOptions,
-        ): Promise<{ ok: boolean; error?: string }>;
         upgrade?(
           assistantId: string,
           options?: LocalUpgradeOptions,

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getLocalInstanceDir } from "../lib/remotes/local.js";
+import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
@@ -216,10 +216,10 @@ test("graceful shutdown failure never captures a live installation", async () =>
   );
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("graceful timeout");
+  ).rejects.toThrow("Source services are still running; teleport aborted.");
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("graceful timeout");
+  ).rejects.toThrow("Source services are still running; teleport aborted.");
   expect(ops.backup).not.toHaveBeenCalled();
   expect(ops.retire).not.toHaveBeenCalled();
 });

@@ -16,6 +16,7 @@
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",
     "@mycadet/environments": "workspace:*",
+    "@mycadet/ipc-server-utils": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "@mycadet/shared": "workspace:*",
     "nanoid": "5.1.7",

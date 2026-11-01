@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createServer, type Server } from "net";
 
-import { findOpenPort } from "../port-allocator.js";
+import { findOpenPort } from "../ports";
 
 const HOST = "127.0.0.1";
 

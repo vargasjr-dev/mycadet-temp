@@ -11,8 +11,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import type { DrainOptions, DrainOutcome } from "../remotes/local/drain";
-
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
 // shared loader, and `mock.restore()` does not undo `mock.module()`.
@@ -28,8 +26,8 @@ const isProcessAliveMock = mock(
   }),
 );
 const stopProcessByPidFileMock = mock(async () => true);
-const drainAssistantMock = mock(
-  async (_opts: DrainOptions): Promise<DrainOutcome> => "drained",
+const drainAssistantMock = mock<typeof realDrain.drainAssistant>(
+  async () => "drained",
 );
 const loadGuardianTokenMock = mock((): { accessToken: string } | null => ({
   accessToken: "test-guardian-token",

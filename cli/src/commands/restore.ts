@@ -11,20 +11,18 @@ import {
 import { basename, dirname, join } from "path";
 
 import { findAssistantByName } from "../lib/assistant-config.js";
-import { getLocalInstanceDir } from "../lib/remotes/local.js";
 import {
   cliCommand,
   getArchivePath,
+  getLocalInstanceDir,
   getMetadataPath,
   readCloudToken,
   saveLockfileAssistant,
+  startCes,
+  startGateway,
+  startLocalDaemon,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  startCes,
-  startLocalDaemon,
-  startGateway,
-} from "../lib/remotes/local.js";
 import { exec } from "../lib/step-runner.js";
 import {
   cloudPollJobStatus,

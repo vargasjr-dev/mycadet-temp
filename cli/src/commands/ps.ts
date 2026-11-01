@@ -26,7 +26,7 @@ import {
   findAssistantByName,
   readRootProcesses,
 } from "../lib/assistant-config";
-import { getLocalInstanceDir } from "../lib/remotes/local";
+import { getLocalInstanceDir } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";

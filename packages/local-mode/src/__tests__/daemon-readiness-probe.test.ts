@@ -13,7 +13,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
   probeDaemonReadiness,
   waitForDaemonMigrationsReady,
-} from "../lib/http-client.js";
+} from "../daemon-readiness";
 
 type ReadyzResponder = () => Response;
 

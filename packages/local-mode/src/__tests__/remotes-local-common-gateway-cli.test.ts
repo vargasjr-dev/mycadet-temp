@@ -5,7 +5,7 @@ import type {
   DockerAssistant,
   AppleContainerAssistant,
 } from "@mycadet/local-mode/contract";
-import { gatewayCliInvocation } from "../remotes/local.js";
+import { gatewayCliInvocation } from "../remotes/local/common";
 
 function fakeEntry(
   instanceDir: string,

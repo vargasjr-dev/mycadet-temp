@@ -25,8 +25,8 @@ import {
   ensureAppServer,
   getNginxVersion,
   type AppServer,
-} from "\./servers/nginx\.js";
-import { waitForDaemonReady } from "./http-client.js";
+} from "./servers/nginx.js";
+import { waitForDaemonReady } from "@mycadet/local-mode";
 import {
   NGROK_TUNNEL_META,
   NGROK_PROVIDER,

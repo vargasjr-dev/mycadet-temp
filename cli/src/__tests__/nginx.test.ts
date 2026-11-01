@@ -24,7 +24,7 @@ import {
 } from "bun:test";
 
 import { resolveLockfilePath } from "@mycadet/local-mode";
-import * as httpClient from "../lib/http-client.js";
+import * as httpClient from "@mycadet/local-mode";
 import * as versionModule from "@mycadet/shared/version";
 import * as assistantConfigModule from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -73,7 +73,7 @@ const waitForDaemonReadyMock = mock<typeof httpClient.waitForDaemonReady>(
   async () => true,
 );
 
-mock.module("../lib/http-client.js", () => ({
+mock.module("@mycadet/local-mode", () => ({
   ...httpClient,
   waitForDaemonReady: waitForDaemonReadyMock,
 }));
@@ -104,7 +104,7 @@ mock.module("../lib/assistant-config.js", () => ({
 afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:fs", () => realFs);
-  mock.module("../lib/http-client.js", () => realHttpClient);
+  mock.module("@mycadet/local-mode", () => realHttpClient);
   mock.module("@mycadet/shared/version", () => realVersionModule);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
 });

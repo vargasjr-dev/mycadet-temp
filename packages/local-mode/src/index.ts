@@ -98,6 +98,69 @@ export type { OperatorRoute, OperatorMatch } from "./operations/routes";
 export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
+export { wakeAssistant, type WakeResult } from "./operations/wake";
+export { wakeDocker } from "./remotes/docker/wake";
+export {
+  ensureDockerDaemonRunning,
+  startColimaAndAwaitDaemon,
+  ensureLocalBinOnPath,
+  LOCAL_BIN_DIR,
+  isNoSuchContainerError,
+} from "./remotes/docker/common";
+export { wakeLocal } from "./remotes/local/wake";
+export {
+  ensureLocalRuntime,
+  getLocalRuntimeInstallDir,
+  type LocalRuntimeInstall,
+  gatewayCliInvocation,
+  resolveCesSocketPath,
+  setStartupLogging,
+  startCes,
+  startLocalDaemon,
+  startGateway,
+  findPidListeningOnPort,
+  discoverPublicUrl,
+  isAssistantWatchModeAvailable,
+  isGatewayWatchModeAvailable,
+} from "./remotes/local/common";
+export {
+  healConflictedLocalPorts,
+  type PortHealMove,
+  type PortHealResult,
+  type PortHealDeps,
+} from "./remotes/local/port-heal";
+export {
+  DEFAULT_PORTS,
+  getDefaultPorts,
+  findOpenPort,
+  findAvailablePort,
+  probePort,
+  ASSISTANT_INTERNAL_PORT,
+  GATEWAY_INTERNAL_PORT,
+} from "./ports";
+export {
+  buildDaemonUrl,
+  httpHealthCheck,
+  waitForDaemonReady,
+  classifyReadyzResponse,
+  probeDaemonReadiness,
+  probeDaemonReadinessWithRetry,
+  waitForDaemonMigrationsReady,
+  fetchCurrentVersion,
+  type DaemonReadiness,
+  type HttpProbeEndpoint,
+} from "./daemon-readiness";
+export {
+  openLogFile,
+  resetLogFile,
+  archiveLogFile,
+  closeLogFile,
+  writeToLogFile,
+  pipeToLogFile,
+  openRuntimeLogFile,
+} from "./xdg-log";
+export {
+} from "./guardian-token";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
@@ -156,8 +219,18 @@ export {
   removeFiles,
   stopProcess,
   stopProcessByPidFile,
+  stopProcessGracefully,
+  executableName,
+  pathListDelimiter,
+  isProcessHealthy,
+  resolveProcessState,
 } from "./process";
-export type { TasklistProcess, ProcessAliveResult } from "./process";
+export type {
+  TasklistProcess,
+  ProcessAliveResult,
+  ProcessHealthResult,
+  ProcessState,
+} from "./process";
 export { readWindowsProcesses } from "./process";
 export { loopbackSafeFetch, isLoopbackUrl } from "./loopback-fetch";
 export {
@@ -191,8 +264,6 @@ export type {
   PairingPollOptions,
   PairingPollResult,
 } from "./pair";
-export { runWake } from "./wake";
-export type { WakeOptions, WakeResult } from "./wake";
 export { runDevicesList, runDevicesRevoke } from "./devices";
 export type {
   DeviceRecord,
@@ -200,6 +271,7 @@ export type {
   DevicesRevokeResult,
 } from "./devices";
 export { runUpgrade, isValidReleaseVersion } from "./upgrade";
+export { stripVersionPrefix } from "./version";
 export type { UpgradeOptions, UpgradeResult } from "./upgrade";
 export { getLocalAssistantStatus } from "./status";
 export { readLockfileAssistantAvatar } from "./avatar";

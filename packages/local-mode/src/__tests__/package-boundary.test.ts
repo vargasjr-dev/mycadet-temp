@@ -3,14 +3,15 @@
  *
  * This package is the shared local-assistant host surface. It sits one layer
  * above @mycadet/environments, @mycadet/service-contracts, and the
- * source-only @mycadet/avatar-manifest (its only allowed @mycadet
- * dependencies) and uses node builtins for filesystem, child-process, and
- * network work.
+ * source-only @mycadet/avatar-manifest and @mycadet/ipc-server-utils (its
+ * only allowed @mycadet dependencies) and uses node builtins for filesystem,
+ * child-process, and network work.
  *
  * Enforces that the package:
  * 1. Imports only node builtins, its own relative modules,
  *    `@mycadet/environments`, `@mycadet/service-contracts` (the pairing wire
- *    contracts), `@mycadet/avatar-manifest`, `zod` (the lockfile contract's
+ *    contracts), `@mycadet/avatar-manifest`, `@mycadet/ipc-server-utils` (the
+ *    CES/assistant IPC endpoint resolver), `zod` (the lockfile contract's
  *    schema library), and `nanoid` (pair's fallback local-id generator);
  *    nothing else.
  * 2. Declares exactly those runtime dependencies.
@@ -28,6 +29,7 @@ const ALLOWED_PACKAGES = new Set([
   "@mycadet/environments",
   "@mycadet/service-contracts",
   "@mycadet/avatar-manifest",
+  "@mycadet/ipc-server-utils",
   "@mycadet/shared",
   "zod",
   "nanoid",
@@ -117,6 +119,7 @@ describe("package boundary", () => {
     expect(pkg.dependencies ?? {}).toEqual({
       "@mycadet/avatar-manifest": "workspace:*",
       "@mycadet/environments": "workspace:*",
+      "@mycadet/ipc-server-utils": "workspace:*",
       "@mycadet/service-contracts": "workspace:*",
       "@mycadet/shared": "workspace:*",
       nanoid: "5.1.7",

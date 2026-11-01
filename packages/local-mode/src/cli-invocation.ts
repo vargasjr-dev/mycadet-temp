@@ -2,7 +2,7 @@
  * The CLI-invocation resolution, inlined into the library that runs the CLI.
  *
  * Some local-mode lifecycle op (`runHatch`,
- * `runUpgrade`, `runWake`) spawns the `cadet` CLI as a subprocess; WHERE the
+ * `runUpgrade`) spawns the `cadet` CLI as a subprocess; WHERE the
  * CLI lives is this resolution, not each host's concern: the
  * `CADET_CLI_PATH` override wins, then the host's installed/dev candidates
  * (a packaged desktop app carries its own installer and resources — passed

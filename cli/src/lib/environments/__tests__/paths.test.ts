@@ -34,9 +34,9 @@ afterAll(() => {
 
 // Imports that depend on the mocked `os` module must come after the
 // mock.module() calls above.
-const { getDefaultPorts, getInputHistoryPath, getSharedStateDir } =
-  await import("../paths.js");
+const { getInputHistoryPath, getSharedStateDir } = await import("../paths.js");
 const {
+  getDefaultPorts,
   resolveAssistantsDir,
   resolveConfigDir,
   resolveEnvironmentName,

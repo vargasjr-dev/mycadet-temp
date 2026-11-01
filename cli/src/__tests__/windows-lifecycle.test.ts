@@ -4,15 +4,16 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  executableName,
   isCadetCommandLine,
   isCadetWindowsProcess,
   isProcessAlive,
   parseTasklistCsv,
   stopProcess,
+  pathListDelimiter,
   stopProcessByPidFile,
   windowsCommandLineLookupArgs,
 } from "@mycadet/local-mode";
-import { executableName, pathListDelimiter } from "../lib/process";
 import { parseRemotePs } from "../lib/process-utils";
 
 test("uses Windows executable suffixes without changing Unix names", () => {

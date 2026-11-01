@@ -17,7 +17,6 @@ const {
   listPairedDevicesHost,
   revokePairedDeviceHost,
   upgradeLocalAssistantHost,
-  wakeLocalAssistantHost,
   getLocalAssistantStatusHost,
   readAssistantAvatarHost,
   probeAssistantReadyzHost,
@@ -485,74 +484,6 @@ describe("revokePairedDeviceHost", () => {
   });
 });
 
-describe("wakeLocalAssistantHost", () => {
-  test("web/dev host POSTs the conductor's wake route for the assistant", async () => {
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    expect(await wakeLocalAssistantHost("a-1")).toEqual({ ok: true });
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/v1/assistants/a-1/wake/");
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({});
-  });
-
-  test("web/dev host forwards repairGuardian when the caller opts in", async () => {
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await wakeLocalAssistantHost("a-1", { repairGuardian: true });
-
-    const [, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(JSON.parse(init.body as string)).toEqual({
-      repairGuardian: true,
-    });
-  });
-
-  test("Electron host wakes through the bridge and never touches fetch", async () => {
-    const wake = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ wake });
-
-    expect(await wakeLocalAssistantHost("a-1")).toEqual({ ok: true });
-    expect(wake).toHaveBeenCalledWith("a-1", undefined);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("Electron host forwards repairGuardian to the bridge", async () => {
-    const wake = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ wake });
-
-    expect(
-      await wakeLocalAssistantHost("a-1", { repairGuardian: true }),
-    ).toEqual({ ok: true });
-    expect(wake).toHaveBeenCalledWith("a-1", { repairGuardian: true });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the wake channel reports an unsupported failure", async () => {
-    // The macOS app and web bundle don't release together: a newer renderer
-    // can run against a preload that predates the wake IPC channel.
-    setElectronBridge({});
-
-    const result = await wakeLocalAssistantHost("a-1");
-    expect(result.ok).toBe(false);
-  });
-});
-
 describe("upgradeLocalAssistantHost", () => {
   test("web/dev host POSTs the assistant id and options to the upgrade middleware", async () => {
     const fetchMock = mock(async () => ({
@@ -818,33 +749,6 @@ describe("web/dev transport resilience", () => {
         throw new SyntaxError("The string did not match the expected pattern.");
       },
     })) as unknown as typeof fetch;
-
-  test("wake returns a failure result instead of throwing on a non-JSON body", async () => {
-    globalThis.fetch = nonJsonResponse();
-    const result = await wakeLocalAssistantHost("a-1");
-    expect(result.ok).toBe(false);
-  });
-
-  test("wake short-circuits without a request when no local-mode host is available", async () => {
-    delete (window as WindowWithConfig).__CADET_CONFIG__;
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run when the host is unavailable");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    const result = await wakeLocalAssistantHost("a-1");
-    expect(result.ok).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("wake returns a failure result when the fetch itself rejects", async () => {
-    globalThis.fetch = mock(async () => {
-      throw new TypeError("Load failed");
-    }) as unknown as typeof fetch;
-
-    const result = await wakeLocalAssistantHost("a-1");
-    expect(result.ok).toBe(false);
-  });
 
   test("status returns a failure result instead of throwing on a non-JSON body", async () => {
     globalThis.fetch = nonJsonResponse();

@@ -9,7 +9,10 @@ import {
   isLoopbackPublicUrl,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { guardianTokenPath, basetenTokenPath } from "./config";
+import {
+  basetenTokenPath,
+  guardianTokenPath,
+} from "./config";
 import { readLockfile } from "./lockfile";
 import type { CliInvocation } from "./util";
 import { resolveCliInvocation } from "./cli-invocation";

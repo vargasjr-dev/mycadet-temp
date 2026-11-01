@@ -1,30 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "path";
 
-import { getCurrentEnvironment } from "./resolve.js";
-import type { PortMap } from "@mycadet/environments";
-
-const DEFAULT_PORTS: Readonly<PortMap> = {
-  daemon: 7821,
-  gateway: 7830,
-  qdrant: 6333,
-  ces: 8090,
-  outboundProxy: 8080,
-  tcp: 8765,
-};
-
-/**
- * Default port set for an environment.
- * Seed entries for non-prod environments come with separate port ranges
- * to avoid collisions in multi-env / multi-instance setups.
- * Longer term, consider allocating ports dynamically at hatch/wake time.
- */
-export function getDefaultPorts(): PortMap {
-  return {
-    ...DEFAULT_PORTS,
-    ...(getCurrentEnvironment().portsOverride ?? {}),
-  };
-}
+import { DEFAULT_PORTS } from "@mycadet/local-mode";
 
 /**
  * The interactive CLI's shared state directory — `$XDG_STATE_HOME/cadet`.

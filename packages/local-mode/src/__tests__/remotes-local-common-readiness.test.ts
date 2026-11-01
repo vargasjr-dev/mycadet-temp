@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import {
   type DaemonSpawn,
   reportFreshSpawnReadiness,
-} from "../remotes/local.js";
+} from "../remotes/local/common";
 
 // Above every platform default pid ceiling, so no live process owns it.
 const DEAD_PID = 999999;

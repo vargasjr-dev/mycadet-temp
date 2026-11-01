@@ -6,7 +6,6 @@ import type {
   LocalReadAssistantAvatarResult,
   LocalRevokeDeviceResult,
   LocalUpgradeOptions,
-  LocalWakeOptions,
 } from "@mycadet/ipc-contract";
 import { parseLockfile } from "@mycadet/local-mode/contract";
 import type {
@@ -51,11 +50,6 @@ import { isElectron } from "@/runtime/is-electron";
 export interface LocalHatchResult {
   ok: boolean;
   assistantId?: string;
-  error?: string;
-}
-
-export interface LocalWakeResult {
-  ok: boolean;
   error?: string;
 }
 
@@ -172,6 +166,11 @@ async function requestLocalCommand<T extends { ok: boolean }>(
     res = await fetch(path, init);
   } catch {
     return { ok: false, error: unavailableError };
+  }
+  // The operator routes answer success with a bodyless 204 — a parse of
+  // nothing must not read as a structured failure.
+  if (res.status === 204) {
+    return { ok: true } as T;
   }
   const parsed = (await res.json().catch(() => null)) as T | null;
   return parsed ?? { ok: false, error: unavailableError };
@@ -387,46 +386,6 @@ export async function revokePairedDeviceHost(
     "/v1/devices/revoke",
     { assistantId, hashedDeviceId },
     LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Wake (start/restart) a local assistant's daemon and gateway. Both hosts
- * drive the Cadet CLI's `wake` in a trusted process and return the same
- * `{ ok, error }` contract.
- *
- * This is the non-destructive repair primitive: it revives a stopped or
- * unresolved assistant in place without touching its data or identity, the
- * counterpart to the local-mode retire bridge's destructive removal.
- * A plain wake (no options) is the safe auto-repair primitive. It restores a
- * guardian token only when the current environment's config dir has none
- * (copied from a sibling environment); a token the gateway rejects at the
- * `/auth/token` mint survives it untouched, and only `repairGuardian: true`
- * clears that. That option re-provisions the guardian token and revokes the
- * assistant's other device-bound tokens, so it must only be passed from
- * explicitly user-confirmed flows — never from silent auto-repair paths.
- * Older Electron hosts that predate this IPC channel resolve `wake` as
- * `undefined`; callers treat that as a no-op repair and fall through to the
- * underlying connect error. Older preloads whose `wake` takes one parameter
- * silently ignore the extra options argument at the JS level, so a plain
- * wake still succeeds — the same graceful degradation for version skew.
- */
-export async function wakeLocalAssistantHost(
-  assistantId: string,
-  options?: LocalWakeOptions,
-): Promise<LocalWakeResult> {
-  if (isElectron()) {
-    const wake = window.cadet!.localMode.wake;
-    if (!wake) {
-      return { ok: false, error: "Wake is not supported by this app version" };
-    }
-    return wake(assistantId, options);
-  }
-
-  return postLocalCommand<LocalWakeResult>(
-    `/v1/assistants/${encodeURIComponent(assistantId)}/wake/`,
-    { repairGuardian: options?.repairGuardian },
-    "Wake failed. Try running cadet wake in your terminal.",
   );
 }
 

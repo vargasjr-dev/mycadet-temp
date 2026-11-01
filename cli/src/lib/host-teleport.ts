@@ -25,7 +25,7 @@ import {
 import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset.js";
 import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
-import { fetchCurrentVersion } from "./http-client.js";
+import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant } from "@mycadet/local-mode";
 import { generateInstanceName } from "./random-name.js";
@@ -100,11 +100,7 @@ const defaultOps: HostTeleportOps = {
     } catch (error) {
       const entry = findAssistantByName(instanceName);
       if (entry) {
-        await sleepAssistant(entry, {
-          force: false,
-          wait: false,
-          waitMs: null,
-        });
+        await sleepAssistant(entry);
         await defaultOps.retire(entry);
       }
       throw error;
@@ -120,18 +116,6 @@ const defaultOps: HostTeleportOps = {
     removeLockfileAssistant(entry.assistantId);
   },
 };
-
-/**
- * Stop an installation's services through the sleep operation. A structured
- * failure (an active call lease, a refused stop) aborts the teleport — a
- * live installation must never be captured.
- */
-async function stopServices(entry: LockfileAssistant): Promise<void> {
-  const result = await sleepAssistant(entry);
-  if (!result.ok) {
-    throw new Error(result.error);
-  }
-}
 
 function checkVersion(
   source: string | undefined,
@@ -213,7 +197,7 @@ async function performHostTeleport(
   let target: LockfileAssistant | undefined;
   let ready = false;
   try {
-    await stopServices(source);
+    await sleepAssistant(source);
     if (await sourceStorage.running()) {
       throw new Error("Source services are still running; teleport aborted.");
     }
@@ -224,7 +208,7 @@ async function performHostTeleport(
       const targetStorage = ops.storage(target);
       const targetWasRunning = await targetStorage.running();
       try {
-        await stopServices(target);
+        await sleepAssistant(target);
         if (await targetStorage.running()) {
           throw new Error(
             "Target services are still running; teleport aborted.",
@@ -267,7 +251,7 @@ async function performHostTeleport(
   } catch (error) {
     if (!ready) {
       if (target && !existing) {
-        await stopServices(target);
+        await sleepAssistant(target);
         await ops.retire(target);
       }
       if (sourceWasRunning) {

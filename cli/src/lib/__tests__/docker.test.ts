@@ -5,7 +5,6 @@ import { join } from "path";
 import {
   AVATAR_DEVICE_ENV_VAR,
   collectWatchTargets,
-  ensureDockerDaemonRunning,
   pullImage,
   resolveAvatarDevicePath,
   resolveDockerHatchMode,
@@ -396,107 +395,6 @@ describe("collectWatchTargets", () => {
     // THEN absent paths are not emitted
     expect(dirs).toEqual([join(repoRoot, "packages", "contracts-only", "src")]);
     expect(files).toEqual([join(repoRoot, "gateway", "package.json")]);
-  });
-});
-
-/**
- * Build a STATEFUL fake `exec` modeling the Docker daemon + Colima interplay:
- * `docker info` succeeds only while `daemonUp`; a `colima start` heals the
- * daemon (unless the fake is told to model the zombie state, where Colima's
- * state file says "already running, ignoring" but the daemon stays dead —
- * only the stop → start cycle recovers). Injected into
- * `ensureDockerDaemonRunning` so these cases need no `mock.module` (which is
- * process-global and would leak across the CLI's single-process test run) and
- * no real Docker/Colima subprocesses.
- */
-function fakeExec(
-  opts: {
-    /** Daemon already reachable when the test starts. */
-    daemonUpAtStart?: boolean;
-    /** `colima start` exits nonzero instead of healing. */
-    startFails?: boolean;
-    /** First `colima start` is a zombie no-op that does NOT heal the daemon. */
-    zombieFirstStart?: boolean;
-  } = {},
-) {
-  const calls: Array<{ cmd: string; args: string[] }> = [];
-  let daemonUp = opts.daemonUpAtStart ?? false;
-  let starts = 0;
-  const exec = async (cmd: string, args: string[] = []): Promise<void> => {
-    calls.push({ cmd, args });
-    if (cmd === "docker" && args[0] === "info") {
-      if (!daemonUp) throw new Error("Cannot connect to the Docker daemon");
-      return;
-    }
-    if (cmd === "colima" && args[0] === "start") {
-      starts++;
-      if (opts.startFails) throw new Error("colima start exited 1");
-      if (!opts.zombieFirstStart || starts > 1) daemonUp = true;
-      return;
-    }
-    if (cmd === "colima" && args[0] === "stop") {
-      daemonUp = false;
-      return;
-    }
-  };
-  const ran = (cmd: string, sub: string): boolean =>
-    calls.some((c) => c.cmd === cmd && c.args[0] === sub);
-  return { exec, ran };
-}
-
-describe("ensureDockerDaemonRunning", () => {
-  // Regression: waking an instance hatched under Docker Desktop must NOT start
-  // Colima, because that switches the active `docker context` and points
-  // `docker start` at a VM that never held the instance's containers.
-  test("reuses an already-reachable daemon (e.g. Docker Desktop) and never touches Colima", async () => {
-    const { exec, ran } = fakeExec({ daemonUpAtStart: true });
-
-    await ensureDockerDaemonRunning(exec);
-
-    expect(ran("docker", "info")).toBe(true);
-    expect(ran("colima", "start")).toBe(false);
-    expect(ran("colima", "stop")).toBe(false);
-  });
-
-  test("starts Colima when no daemon is reachable and confirms the daemon answered", async () => {
-    const { exec, ran } = fakeExec();
-
-    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
-
-    expect(ran("docker", "info")).toBe(true);
-    expect(ran("colima", "start")).toBe(true);
-    expect(ran("colima", "stop")).toBe(false);
-  });
-
-  // Regression (v0.12.8 release feedback): a zombie Colima — stale state file
-  // saying "already running" while the daemon inside is dead — used to sail
-  // through wake (no `colima status` oracle anymore) and leave every later
-  // docker command dying on the unreachable socket.
-  test("recovers a zombie Colima: start no-ops, daemon stays dead → stop --force → start → daemon up", async () => {
-    const { exec, ran } = fakeExec({ zombieFirstStart: true });
-
-    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
-
-    expect(ran("colima", "start")).toBe(true);
-    expect(ran("colima", "stop")).toBe(true);
-  });
-
-  test("never deletes the Colima VM — the VM disk holds every image and volume", async () => {
-    const { exec, ran } = fakeExec({ zombieFirstStart: true });
-
-    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
-
-    expect(ran("colima", "delete")).toBe(false);
-  });
-
-  test("throws an actionable error when even the restart cannot bring the daemon up", () => {
-    // A start that always exits nonzero: the first failure surfaces its
-    // output, the recovery stop+start runs, and the final wait still finds
-    // no daemon → the helper throws instead of letting hatch proceed.
-    const { exec } = fakeExec({ startFails: true });
-    expect(
-      ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 }),
-    ).rejects.toThrow(/Failed to restart Colima/);
   });
 });
 

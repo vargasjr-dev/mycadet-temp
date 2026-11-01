@@ -1,4 +1,43 @@
-import { createServer } from "net";
+import { createServer } from "node:net";
+
+import { SEEDS, type PortMap } from "@mycadet/environments";
+
+import { resolveEnvironmentName } from "./environment";
+import { probePort } from "./port-probe";
+
+export { probePort };
+
+/**
+ * The default port set for an environment, and the port allocators the
+ * lifecycle operations share (hatch's placement, wake's port heal, the
+ * daemon/gateway starts). Environment-scoped seeds shift the base blocks
+ * (non-prod environments get separate ranges so multi-env setups never
+ * collide); the allocators walk upward from a base so sibling instances
+ * land on legible consecutive ports.
+ */
+export const DEFAULT_PORTS: Readonly<PortMap> = {
+  daemon: 7821,
+  gateway: 7830,
+  qdrant: 6333,
+  ces: 8090,
+  outboundProxy: 8080,
+  tcp: 8765,
+};
+
+/** Default port set for the current environment (seed overrides applied). */
+export function getDefaultPorts(): PortMap {
+  const seed = SEEDS[resolveEnvironmentName()];
+  return {
+    ...DEFAULT_PORTS,
+    ...(seed?.portsOverride ?? {}),
+  };
+}
+
+/** Named constants derived from {@link DEFAULT_PORTS}: the ports the
+ * assistant and gateway services bind inside their container or process,
+ * stable across environments. */
+export const ASSISTANT_INTERNAL_PORT = DEFAULT_PORTS.daemon;
+export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
 
 /**
  * Walks upward from `preferred` and returns the first host port that the
@@ -6,13 +45,6 @@ import { createServer } from "net";
  * host-side port instead of always grabbing the env-default (e.g. 7830 /
  * 20100), which collides with any other local assistant — eval-spawned or
  * otherwise — already bound there.
- *
- * The previous design (`evals/src/lib/orphan-cleanup.ts`) tried to fix this
- * by sweeping dead eval-run resources before the next hatch. That only
- * helped when the conflict came from a prior eval run; an unrelated local
- * `cadet hatch` holding the port wedged the whole flow. Discovering an
- * open port at hatch time is the proper fix and lets us delete the cleanup
- * pre-flight entirely.
  *
  * Walks linearly from `preferred` upward rather than asking the kernel for
  * an arbitrary ephemeral port (`listen(0)`) so the resulting port stays
@@ -44,7 +76,7 @@ export async function findOpenPort(
     if (port > 65535) break;
     if (exclude.has(port)) continue;
     try {
-      await probePort(port, host);
+      await probeBindPort(port, host);
       return port;
     } catch (err) {
       lastError = err as Error;
@@ -67,7 +99,7 @@ export async function findOpenPort(
  * the probe server before resolving so we don't leak the port we just
  * proved was free.
  */
-function probePort(port: number, host: string): Promise<void> {
+function probeBindPort(port: number, host: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const server = createServer();
     const cleanup = (cb: () => void): void => {
@@ -92,4 +124,21 @@ function isPortInUseError(err: unknown): boolean {
     return code === "EADDRINUSE" || code === "EADDRNOTAVAIL";
   }
   return false;
+}
+
+/**
+ * Scan upward from `basePort` to find an available port. A port is considered
+ * available when `probePort()` returns false (nothing listening). Scans up to
+ * 100 ports above the base before giving up.
+ */
+export async function findAvailablePort(basePort: number): Promise<number> {
+  const maxOffset = 100;
+  for (let offset = 0; offset < maxOffset; offset++) {
+    const port = basePort + offset;
+    const inUse = await probePort(port);
+    if (!inUse) return port;
+  }
+  throw new Error(
+    `Could not find an available port scanning from ${basePort} to ${basePort + maxOffset - 1}`,
+  );
 }
