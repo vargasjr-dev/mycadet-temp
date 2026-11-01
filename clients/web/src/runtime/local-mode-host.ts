@@ -409,21 +409,14 @@ export async function revokePairedDeviceHost(
 }
 
 /**
- * Stop a local assistant's daemon and gateway. Both hosts drive the Cadet
- * CLI's `sleep --force` in a trusted process and return the same `{ ok, error }`
- * contract. Used as the first half of a restart (sleep → wake).
+ * Stop a local assistant's daemon and gateway — the scoped surface's one
+ * sleep endpoint, answered host-side by whichever serving host can (the
+ * Electron `app://` handler and the dev middleware mount the same operator
+ * route table). Used as the first half of a restart (sleep → wake).
  */
 export async function sleepLocalAssistantHost(
   assistantId: string,
 ): Promise<LocalSleepResult> {
-  if (isElectron()) {
-    const sleep = window.cadet!.localMode.sleep;
-    if (!sleep) {
-      return { ok: false, error: "Sleep is not supported by this app version" };
-    }
-    return sleep(assistantId);
-  }
-
   return postLocalCommand<LocalSleepResult>(
     `/v1/assistants/${encodeURIComponent(assistantId)}/sleep`,
     {},

@@ -106,7 +106,6 @@ export const DOWNLOADS_REVEAL = "cadet:downloads:reveal";
 export const LOCAL_MODE_HATCH = "cadet:localMode:hatch";
 export const LOCAL_MODE_READ_LOCKFILE = "cadet:localMode:readLockfile";
 export const LOCAL_MODE_UNPAIR = "cadet:localMode:unpair";
-export const LOCAL_MODE_SLEEP = "cadet:localMode:sleep";
 export const LOCAL_MODE_WAKE = "cadet:localMode:wake";
 export const LOCAL_MODE_UPGRADE = "cadet:localMode:upgrade";
 export const LOCAL_MODE_STATUS = "cadet:localMode:status";

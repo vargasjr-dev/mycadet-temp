@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { drainAssistant, parseWaitDuration } from "../lib/drain.js";
+import { drainAssistant, parseWaitDuration } from "../remotes/local/drain";
 
 const BASE = "http://127.0.0.1:7823";
 

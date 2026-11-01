@@ -30,7 +30,7 @@ import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "./http-client.js";
 import { compareVersions } from "./version-compat.js";
-import { sleepAssistant } from "../commands/sleep.js";
+import { sleepAssistant } from "@mycadet/local-mode";
 import { generateInstanceName } from "./random-name.js";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
@@ -64,8 +64,9 @@ export function storageFor(entry: LockfileAssistant): HostStorage {
 
 const defaultOps: HostTeleportOps = {
   storage: storageFor,
-  sleep: (entry) =>
-    sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
+  sleep: async (entry) => {
+    await sleepAssistant(entry, { force: false, wait: false, waitMs: null });
+  },
   backup: async (entry) => {
     const archive = await createBackup(entry.assistantId, {
       prefix: `${entry.assistantId}-pre-teleport`,

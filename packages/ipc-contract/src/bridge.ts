@@ -452,7 +452,6 @@ export interface CadetBridge {
     pairingPoll(handle: string, name?: string): Promise<LocalPairingPollResult>;
     /** Forget a pending pairing session. */
     pairingCancel(handle: string): Promise<{ ok: boolean }>;
-    sleep(assistantId: string): Promise<{ ok: boolean; error?: string }>;
     wake(
       assistantId: string,
       options?: LocalWakeOptions,
