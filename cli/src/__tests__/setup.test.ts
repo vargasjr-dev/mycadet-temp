@@ -16,14 +16,24 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { setup } from "../commands/setup.js";
-import * as stepRunnerModule from "../lib/step-runner.js";
+import type {
+  PairDeviceIdentity,
+  PairOperationResult,
+} from "@mycadet/local-mode";
 
-// The docker lease's pair rides the docker-exec seam — capture-spread the
-// real module so `exec` stays live and `execOutput` is observable.
-const execOutputMock = mock<typeof stepRunnerModule.execOutput>(async () => "");
-mock.module("../lib/step-runner.js", () => ({
-  ...stepRunnerModule,
-  execOutput: execOutputMock,
+// The lease's pair door is the package operation — mock it at the seam and
+// observe the (entry, device) wiring. Transport shapes are pinned in the
+// package's own operations-pair suite.
+type PairDeviceFn = (
+  entry: LockfileAssistant,
+  device: PairDeviceIdentity,
+) => Promise<PairOperationResult>;
+const pairDeviceMock = mock<PairDeviceFn>(async () => ({
+  ok: true,
+  response: {},
+}));
+mock.module("../../../packages/local-mode/src/operations/pair", () => ({
+  pairDevice: pairDeviceMock,
 }));
 
 interface RecordedFetchCall {
@@ -93,10 +103,7 @@ function writeFullLockfile(data: Record<string, unknown>): void {
 }
 
 function installFetchStub(
-  options: {
-    leasedToken?: GuardianTokenData;
-    refreshedToken?: GuardianTokenData;
-  } = {},
+  options: { refreshedToken?: GuardianTokenData } = {},
 ) {
   fetchCalls = [];
   globalThis.fetch = (async (input, init) => {
@@ -122,32 +129,6 @@ function installFetchStub(
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }
-
-    if (url.endsWith("/v1/pair")) {
-      if (!options.leasedToken) {
-        return new Response(JSON.stringify({ error: "not allowed" }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      // The pair route's device-bound response shape (token/guardianId names).
-      const t = options.leasedToken;
-      return new Response(
-        JSON.stringify({
-          token: t.accessToken,
-          expiresAt: t.accessTokenExpiresAt,
-          refreshToken: t.refreshToken,
-          refreshTokenExpiresAt: t.refreshTokenExpiresAt,
-          refreshAfter: t.refreshAfter,
-          guardianId: t.guardianPrincipalId,
-          isNew: t.isNew,
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
     }
 
     if (url.endsWith("/v1/config/llm/default-provider")) {
@@ -200,7 +181,7 @@ describe("setup command", () => {
   afterEach(() => {
     process.argv = originalArgv;
     globalThis.fetch = originalFetch;
-    execOutputMock.mockReset();
+    pairDeviceMock.mockReset();
     setOptionalEnv("ANTHROPIC_API_KEY", originalEnv.anthropicApiKey);
     setOptionalEnv("OPENAI_API_KEY", originalEnv.openaiApiKey);
     setOptionalEnv("XDG_CONFIG_HOME", originalEnv.xdgConfigHome);
@@ -276,22 +257,36 @@ describe("setup command", () => {
       daemonPort: 8501,
       cesPort: 9002,
     });
-    installFetchStub({
-      leasedToken: guardianTokenFixture({
-        accessToken: "leased-guardian-token",
-      }),
+    // The operation owns the pair transport — answer it with /v1/pair's
+    // device-bound response shape. The lease probes /readyz first to wait
+    // out the gateway's "starting" gate, hands the entry + the cli device
+    // identity to the operation, then rides the returned credential.
+    const t = guardianTokenFixture({ accessToken: "leased-guardian-token" });
+    pairDeviceMock.mockResolvedValue({
+      ok: true,
+      response: {
+        token: t.accessToken,
+        expiresAt: t.accessTokenExpiresAt,
+        refreshToken: t.refreshToken,
+        refreshTokenExpiresAt: t.refreshTokenExpiresAt,
+        refreshAfter: t.refreshAfter,
+        guardianId: t.guardianPrincipalId,
+        isNew: t.isNew,
+      },
     });
+    installFetchStub();
 
     await setup();
 
-    // The lease probes /readyz first to wait out the gateway's "starting"
-    // gate instead of burning retry attempts against it.
     expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/readyz");
-    expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/pair");
-    expect(fetchCalls[2].url).toBe(
+    expect(pairDeviceMock).toHaveBeenCalledTimes(1);
+    const [entryArg, deviceArg] = pairDeviceMock.mock.calls[0]!;
+    expect(entryArg.assistantId).toBe("assistant-123");
+    expect(deviceArg.platform).toBe("cli");
+    expect(fetchCalls[1].url).toBe(
       "http://127.0.0.1:3000/v1/config/llm/default-provider",
     );
-    expect(fetchCalls[2].headers.get("Authorization")).toBe(
+    expect(fetchCalls[1].headers.get("Authorization")).toBe(
       "Bearer leased-guardian-token",
     );
   });
@@ -304,12 +299,13 @@ describe("setup command", () => {
       port: 7831,
       daemonPort: 7821,
     });
-    // The docker lease pairs from INSIDE the gateway container (docker-exec
-    // presence proof), so the fetch stub never sees it — the exec boundary is
-    // the seam. Answer it with /v1/pair's device-bound response shape.
+    // The op owns the transport (in-container exec for docker) — answer it
+    // with /v1/pair's device-bound response shape and pin the WIRING: the
+    // lease hands the entry + the cli device identity to the operation.
     const t = guardianTokenFixture({ accessToken: "leased-docker-token" });
-    execOutputMock.mockResolvedValue(
-      `200\n${JSON.stringify({
+    pairDeviceMock.mockResolvedValue({
+      ok: true,
+      response: {
         token: t.accessToken,
         expiresAt: t.accessTokenExpiresAt,
         refreshToken: t.refreshToken,
@@ -317,24 +313,18 @@ describe("setup command", () => {
         refreshAfter: t.refreshAfter,
         guardianId: t.guardianPrincipalId,
         isNew: t.isNew,
-      })}`,
-    );
+      },
+    });
 
     await setup();
 
     expect(fetchCalls[0].url).toBe("http://127.0.0.1:7831/readyz");
-    expect(execOutputMock).toHaveBeenCalledTimes(1);
-    const call = execOutputMock.mock.calls[0];
-    if (!call) throw new Error("expected one docker-exec call");
-    const [cmd, args] = call;
-    expect(cmd).toBe("docker");
-    expect(args.slice(0, 4)).toEqual([
-      "exec",
-      "assistant-123-gateway",
-      "bun",
-      "-e",
-    ]);
-    expect(String(args[4])).toContain("/v1/pair");
+    expect(pairDeviceMock).toHaveBeenCalledTimes(1);
+    const call = pairDeviceMock.mock.calls[0];
+    if (!call) throw new Error("expected one pairDevice call");
+    const [entryArg, deviceArg] = call;
+    expect(entryArg.assistantId).toBe("assistant-123");
+    expect(deviceArg.platform).toBe("cli");
     // The leased token is persisted and rides the following setup calls.
     expect(loadGuardianToken("assistant-123")?.accessToken).toBe(
       "leased-docker-token",
