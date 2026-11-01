@@ -1,5 +1,3 @@
-import { unlinkSync } from "node:fs";
-
 import { SEEDS } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
@@ -82,28 +80,6 @@ export function basetenTokenPath(assistantId: string): string {
     assistantId,
     "baseten-token.json",
   );
-}
-
-/**
- * Remove a retired guardian bootstrap secret file, if present. The secret
- * mechanism is gone (pairing is the bootstrap door); pre-retirement installs
- * still carry the xdg file on disk, so a successful lease unlinks it
- * best-effort — the credential must not rot on disk unread.
- */
-export function deleteGuardianBootstrapSecret(assistantId: string): void {
-  assertSafePathSegment(assistantId, "assistant ID");
-  try {
-    unlinkSync(
-      joinLocalPath(
-        resolveConfigDir(),
-        "assistants",
-        assistantId,
-        "guardian-bootstrap-secret",
-      ),
-    );
-  } catch {
-    // Absent or unreadable — nothing to clean.
-  }
 }
 
 /**

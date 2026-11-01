@@ -11,7 +11,7 @@
  * macOS lists and checks it apart from Cadet, and the app being allowed says
  * nothing about whether a capture here will be (see
  * `screen-recording-permission.ts`). The process is not
- * spawned until the first `cu.perform` / `appControl.perform` call, so users
+ * spawned until the first `cu.perform` call, so users
  * who never invoke computer use pay nothing.
  */
 

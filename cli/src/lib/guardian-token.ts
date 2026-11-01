@@ -17,7 +17,6 @@ import { hostname, platform } from "os";
 import { dirname, join } from "path";
 
 import {
-  deleteGuardianBootstrapSecret,
   dockerResourceNames,
   guardianTokenPath,
   isConfidentialRefreshUrl,
@@ -661,9 +660,6 @@ export async function leaseGuardianToken(
   };
 
   saveGuardianToken(assistantId, tokenData);
-  // The retired bootstrap secret must not rot on disk unread — pre-retirement
-  // installs still carry the xdg file; a successful lease retires it.
-  deleteGuardianBootstrapSecret(assistantId);
   return tokenData;
 }
 

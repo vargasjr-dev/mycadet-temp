@@ -774,9 +774,6 @@ final class MacHelper: @unchecked Sendable {
             case "ax.candidates":
                 dispatchAxCandidates(line: line)
                 return
-            case "appControl.perform":
-                dispatchAppControlPerform(line: line)
-                return
             case "captureSources.raise":
                 dispatchCaptureSourcesRaise(line: line)
                 return
@@ -1183,53 +1180,6 @@ final class MacHelper: @unchecked Sendable {
                 self.writeResponse(JsonRpcCodec.errorResponse(
                     id: id,
                     code: code,
-                    message: error.localizedDescription
-                ))
-            }
-        }
-    }
-
-    private func dispatchAppControlPerform(line: String) {
-        Task { @MainActor in
-            let object = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any]
-            let id = object?["id"] ?? NSNull()
-            let params = object?["params"] as? [String: Any] ?? [:]
-            guard let requestId = params["requestId"] as? String else {
-                self.writeResponse(JsonRpcCodec.errorResponse(
-                    id: id,
-                    code: JsonRpcErrorCode.invalidParams,
-                    message: "appControl.perform requires requestId"
-                ))
-                return
-            }
-            // The daemon sends `{requestId, conversationId, toolName, input:{...}}`
-            // where `input` already carries the `tool` discriminator. Decode from
-            // that sub-dict, falling back to the top-level params (so a toolName
-            // discriminator can still be derived).
-            let toolDict = params["input"] as? [String: Any] ?? params
-            do {
-                let input = try HostAppControlInput.from(dictionary: toolDict)
-                let payload = await AppControlExecutor.perform(
-                    requestId: requestId,
-                    input: input
-                )
-                self.writeResponse(
-                    JsonRpcCodec.successResponse(id: id, result: payload.toDictionary())
-                )
-            } catch let error as JsonRpcDispatchError {
-                let message: String
-                if case let .invalidParams(reason) = error { message = reason }
-                else if case let .internalError(reason) = error { message = reason }
-                else { message = "Invalid params" }
-                self.writeResponse(JsonRpcCodec.errorResponse(
-                    id: id,
-                    code: JsonRpcErrorCode.invalidParams,
-                    message: message
-                ))
-            } catch {
-                self.writeResponse(JsonRpcCodec.errorResponse(
-                    id: id,
-                    code: JsonRpcErrorCode.internalError,
                     message: error.localizedDescription
                 ))
             }

@@ -97,13 +97,6 @@ describe("buildServiceRunArgs — assistant", () => {
     expect(portIndex).toBeGreaterThan(0);
     expect(args[portIndex - 1]).toBe("-p");
   });
-
-  test("never forwards GUARDIAN_BOOTSTRAP_SECRET into any container (the mechanism is retired — pairing is the bootstrap door)", () => {
-    const args = buildAssistantArgs();
-    expect(args.some((a) => a.startsWith("GUARDIAN_BOOTSTRAP_SECRET="))).toBe(
-      false,
-    );
-  });
 });
 
 describe("resolveDockerProviderCredentialSetupAction", () => {
