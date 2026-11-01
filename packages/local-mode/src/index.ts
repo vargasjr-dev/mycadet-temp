@@ -107,7 +107,6 @@ export {
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
 
-export { hatchLocalProcesses } from "./remotes/local/hatch";
 export {
   ensureLocalRuntime,
   getLocalRuntimeInstallDir,

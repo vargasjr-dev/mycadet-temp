@@ -18,8 +18,8 @@ import {
 import {
   getLocalInstanceDir,
   gatewayCliInvocation,
-  hatchLocalProcesses,
   sleepAssistant,
+  wakeLocal,
 } from "@mycadet/local-mode";
 import { setStartupLogging } from "@mycadet/local-mode";
 import {
@@ -192,8 +192,10 @@ export async function hatchLocal(
       ).initializeRootArchive(entry, params.initialArchive);
     }
     try {
-      reporter.progress(4, 6, "Starting gateway...");
-      await hatchLocalProcesses(entry, { watch, defaultWorkspaceConfigPath });
+      reporter.progress(4, 6, "Starting assistant...");
+      // The wake leg owns starting — the hatch only threads the fresh
+      // daemon's first-boot config through.
+      await wakeLocal(entry, { watch, defaultWorkspaceConfigPath });
     } catch (error) {
       reporter.error(
         `\n❌ Local assistant startup failed — stopping partial processes.`,

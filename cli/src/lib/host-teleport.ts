@@ -27,7 +27,7 @@ import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
-import { sleepAssistant } from "@mycadet/local-mode";
+import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
 import { generateInstanceName } from "./random-name.js";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
@@ -129,14 +129,6 @@ function checkVersion(
   }
 }
 
-async function startAndCheck(storage: HostStorage): Promise<void> {
-  // The local storage's resume always wakes — nothing to pre-seed. Docker's
-  // resume still triages by container, so it keeps the full running set.
-  if (storage instanceof DockerRootStorage)
-    storage.initialRunning = new Set(Object.values(storage.containers));
-  await storage.resume();
-}
-
 export async function teleportHostInstallation(
   source: LockfileAssistant,
   targetEnv: HostEnvironment,
@@ -218,14 +210,16 @@ async function performHostTeleport(
         await ops.restore(target, archive, recovery);
       } catch (error) {
         if (targetWasRunning && !(error instanceof TeleportRecoveryError)) {
-          await targetStorage.resume();
+          const woken = await wakeAssistant(target);
+          if (!woken.ok) throw new Error(woken.error);
         }
         throw error;
       }
     } else {
       target = await ops.hatch(targetEnv, targetName, archive);
       checkVersion(sourceVersion, await ops.version(target));
-      await startAndCheck(ops.storage(target));
+      const hatched = await wakeAssistant(target);
+      if (!hatched.ok) throw new Error(hatched.error);
     }
     ready = true;
     setActiveAssistant(target.assistantId);
@@ -255,7 +249,8 @@ async function performHostTeleport(
         await ops.retire(target);
       }
       if (sourceWasRunning) {
-        await sourceStorage.resume();
+        const woken = await wakeAssistant(source);
+        if (!woken.ok) throw new Error(woken.error);
       }
     }
     throw error;
@@ -433,7 +428,8 @@ export async function restoreHostTeleportTarget(
       await replaceContainers(previous);
     }
     await restoreRootBackup(entry, archive, { resume: false });
-    await startAndCheck(storageFor(entry));
+    const woken = await wakeAssistant(entry);
+    if (!woken.ok) throw new Error(woken.error);
   } catch (error) {
     try {
       await sleepAssistant(entry);

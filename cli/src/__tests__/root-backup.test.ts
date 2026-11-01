@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import {
   chmod,
@@ -38,8 +38,13 @@ const realReplace = LocalRootStorage.prototype.replace;
 const runningMock = spyOn(LocalRootStorage.prototype, "running");
 const captureMock = spyOn(LocalRootStorage.prototype, "capture");
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
-const resumeMock = spyOn(LocalRootStorage.prototype, "resume");
 const sleepMock = spyOn(localMode, "sleepAssistant");
+// The flow's wake hook is the CLI wrapper's wakeAssistant now — module-mocked
+// here so the real wrapper never runs.
+const wakeMock = mock(async (_entry: { assistantId: string }) => ({
+  ok: true as const,
+}));
+mock.module("../commands/wake.js", () => ({ wakeAssistant: wakeMock }));
 
 let running: boolean | undefined;
 let onCapture: ((path: string) => void) | undefined;
@@ -65,9 +70,10 @@ replaceMock.mockImplementation(async function (
   onReplace?.(path);
   return realReplace.call(this, path);
 });
-resumeMock.mockImplementation(async () => {
+wakeMock.mockImplementation(async () => {
   running = true;
   onResume?.();
+  return { ok: true as const };
 });
 sleepMock.mockImplementation(async () => {
   onSleep?.();
