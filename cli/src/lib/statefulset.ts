@@ -8,11 +8,13 @@
 
 import { existsSync } from "fs";
 
+import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
 } from "./environments/paths.js";
-import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import { assistantMemoryRunArgs } from "./memory-sizing.js";
+import type { AssistantMemorySettings } from "./memory-sizing.js";
 
 const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
 
@@ -284,6 +286,11 @@ export interface BuildServiceRunArgsOpts extends DockerRunSecrets {
    * signed by a CA outside the default trust set.
    */
   assistantCaCertPath?: string;
+  /**
+   * Assistant container memory sizing (see `memory-sizing.ts`). Absent or
+   * null ⇒ the container runs unlimited (docker's default), as it always has.
+   */
+  assistantMemory?: AssistantMemorySettings | null;
 }
 
 interface BuilderManagedEnvKeys {
@@ -474,6 +481,8 @@ export function buildServiceRunArgs(
             `NODE_EXTRA_CA_CERTS=${ASSISTANT_EXTRA_CA_TARGET}`,
           );
         }
+
+        args.push(...assistantMemoryRunArgs(opts.assistantMemory ?? null));
       }
 
       // Image is always last

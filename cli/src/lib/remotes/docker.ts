@@ -546,6 +546,13 @@ import { checkProviderApiKey } from "../api-key-check.js";
 import { findOpenPort } from "../port-allocator.js";
 import { exec, execOutput, execWithStdin } from "../step-runner";
 import {
+  MEMORY_HIGH_ENV_VAR,
+  MEMORY_MAX_ENV_VAR,
+  MEMORY_PROFILE_ENV_VAR,
+  resolveAssistantMemorySettings,
+} from "../memory-sizing.js";
+import type { AssistantMemorySettings } from "../memory-sizing.js";
+import {
   closeLogFile,
   openLogFile,
   resetLogFile,
@@ -594,6 +601,51 @@ export function resolveAvatarDevicePath(
 
 /** Default memory (GiB) allocated to the Colima VM. */
 const COLIMA_DEFAULT_MEMORY_GIB = 8;
+
+/**
+ * Read the Docker daemon's total memory (the VM's — the resource the
+ * containers share). Returns null when it cannot be read; callers that need
+ * it for an explicitly requested sizing profile turn that into an error
+ * (see `resolveAssistantMemory`).
+ */
+export async function getDockerDaemonTotalMemoryBytes(): Promise<
+  number | null
+> {
+  try {
+    const raw = await execOutput("docker", [
+      "info",
+      "--format",
+      "{{.MemTotal}}",
+    ]);
+    const bytes = Math.floor(Number.parseFloat(raw.trim()));
+    return Number.isFinite(bytes) && bytes > 0 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the assistant container's memory sizing from the guardian's
+ * environment (`CADET_DOCKER_MEMORY_PROFILE` /
+ * `CADET_DOCKER_MEMORY_MAX` / `CADET_DOCKER_MEMORY_HIGH` — see
+ * `memory-sizing.ts`). Null = no sizing: the container runs unlimited,
+ * exactly as before this knob existed.
+ */
+export async function resolveAssistantMemory(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<AssistantMemorySettings | null> {
+  const requested =
+    env[MEMORY_PROFILE_ENV_VAR] ??
+    env[MEMORY_MAX_ENV_VAR] ??
+    env[MEMORY_HIGH_ENV_VAR];
+  if (!requested) {
+    return null;
+  }
+  return resolveAssistantMemorySettings(
+    env,
+    await getDockerDaemonTotalMemoryBytes(),
+  );
+}
 
 /** Directory for user-local binary installs (no sudo required). */
 
@@ -1234,6 +1286,7 @@ export async function startContainers(
   const runArgs = buildServiceRunArgs({
     ...opts,
     avatarDevicePath: resolveAvatarDevicePath(),
+    assistantMemory: await resolveAssistantMemory(),
   });
   for (const service of SERVICE_START_ORDER) {
     const args = runArgs[service]();
@@ -1601,6 +1654,8 @@ function startFileWatcher(opts: {
   res: ReturnType<typeof dockerResourceNames>;
   netnsContainer?: string;
   assistantCaCertPath?: string;
+  /** Memory sizing for rebuilt containers (resolved once by the caller). */
+  assistantMemory?: AssistantMemorySettings | null;
 }): () => void {
   const { gatewayPort, imageTags, instanceName, repoRoot, res } = opts;
 
@@ -1623,6 +1678,7 @@ function startFileWatcher(opts: {
     avatarDevicePath: resolveAvatarDevicePath(),
     netnsContainer: opts.netnsContainer,
     assistantCaCertPath: opts.assistantCaCertPath,
+    assistantMemory: opts.assistantMemory,
   });
   const containerForService: Record<ServiceName, string> = {
     assistant: res.assistantContainer,
@@ -2193,6 +2249,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         res,
         netnsContainer: params.netnsContainer,
         assistantCaCertPath: params.assistantCaCertPath,
+        assistantMemory: await resolveAssistantMemory(),
       });
 
       await new Promise<void>((resolve) => {
