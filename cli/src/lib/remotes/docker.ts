@@ -1891,7 +1891,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (!mode.build || !repoRoot) {
-
       // Allow explicit image overrides via environment variables.
       // When all three are set, skip version-based resolution entirely.
       const envAssistant = process.env.CADET_ASSISTANT_IMAGE;

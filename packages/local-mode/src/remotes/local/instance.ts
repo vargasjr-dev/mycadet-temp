@@ -31,6 +31,8 @@ export function getLocalInstanceDir(
  * the instance's workspace directory. Falls back to the XDG data root's
  * workspace when the entry carries no instance dir.
  */
-export function getDaemonPidPath(entry?: LockfileAssistant | undefined): string {
+export function getDaemonPidPath(
+  entry?: LockfileAssistant | undefined,
+): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }
