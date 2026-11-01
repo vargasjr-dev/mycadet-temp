@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { LockfileAssistant } from "../lockfile-contract";
+import type { LocalAssistant } from "../lockfile-contract";
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -32,7 +32,7 @@ const entry = {
   assistantId: "asst-local",
   cloud: "local",
   port: 7830,
-} as unknown as LockfileAssistant;
+} as unknown as LocalAssistant;
 
 afterAll(() => {
   mock.module("../exec", () => realExec);
@@ -52,7 +52,7 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     });
   });
 
-  test("runs `gateway pair` with the device identity as flags", async () => {
+  test("runs `gateway pairing mint` with the device identity as flags", async () => {
     execOutputMock.mockResolvedValue(JSON.stringify({ token: "t" }));
     const result = await pairLocal(entry, {
       platform: "cli",
@@ -65,7 +65,8 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(args).toEqual([
       "run",
       "/fake/gateway/src/cli/index.ts",
-      "pair",
+      "pairing",
+      "mint",
       "--platform",
       "cli",
       "--device-id",
@@ -85,7 +86,8 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(execOutputMock.mock.calls[0]![1]).toEqual([
       "run",
       "/fake/gateway/src/cli/index.ts",
-      "pair",
+      "pairing",
+      "mint",
       "--platform",
       "cli",
       "--device-id",

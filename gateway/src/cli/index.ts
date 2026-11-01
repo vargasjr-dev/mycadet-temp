@@ -8,7 +8,6 @@
  */
 
 import { runContactsCommand } from "./contacts.js";
-import { runPairCommand } from "./pair.js";
 import { runPairingCommand } from "./pairing.js";
 
 function printUsage(): void {
@@ -21,10 +20,7 @@ function printUsage(): void {
     "  contacts    Manage the contact ACL with list, get, set-risk-threshold",
   );
   console.log(
-    "  pairing     Remote-web pairing challenges (mint <url> | list [--json])",
-  );
-  console.log(
-    "  pair        Mint a device-bound guardian credential (single-line JSON)",
+    "  pairing     Pairing challenges + the guardian lease (mint [--device-id <id>] | list [--json])",
   );
 }
 
@@ -38,11 +34,6 @@ if (command === "--help" || command === "-h" || !command) {
 
 if (command === "contacts") {
   const code = await runContactsCommand(args.slice(1));
-  process.exit(code);
-}
-
-if (command === "pair") {
-  const code = await runPairCommand(args.slice(1));
   process.exit(code);
 }
 

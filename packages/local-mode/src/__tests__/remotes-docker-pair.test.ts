@@ -30,7 +30,7 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
     execOutputMock.mockResolvedValue("");
   });
 
-  test("docker-execs `gateway pair` with the device identity as flags", async () => {
+  test("docker-execs `gateway pairing mint` with the device identity as flags", async () => {
     execOutputMock.mockResolvedValue(JSON.stringify({ token: "t" }));
     const result = await pairDocker(entry, {
       platform: "cli",
@@ -40,15 +40,16 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
     expect(execOutputMock).toHaveBeenCalledTimes(1);
     const [command, args, options] = execOutputMock.mock.calls[0]!;
     expect(command).toBe("docker");
-    // The container's WORKDIR is the gateway package, so `bun run
-    // src/cli/index.ts` resolves exactly like the server's own run command.
+    // `bun run gateway` resolves the gateway package's own bin
+    // (node_modules/.bin) from the container's WORKDIR.
     expect(args).toEqual([
       "exec",
       "assistant-123-gateway",
       "bun",
       "run",
-      "src/cli/index.ts",
-      "pair",
+      "gateway",
+      "pairing",
+      "mint",
       "--platform",
       "cli",
       "--device-id",

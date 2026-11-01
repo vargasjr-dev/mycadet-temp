@@ -458,13 +458,13 @@ function mintDeviceBoundPairResponse(opts: {
 }
 
 /**
- * The `gateway pair` CLI door: the guardian lease's device-bound mint
- * executed DIRECTLY in this process — process execution is the presence
- * proof, so there is no HTTP and no loopback check. The client-side pair
- * operation runs this command (host spawn or docker exec); the minted
- * payload prints as single-line JSON on stdout. Same bootstrap semantics as
- * the route's cli branch: the guardian resolves or mints with the caller's
- * execution as the evidence.
+ * The `gateway pairing mint --device-id` CLI door: the guardian lease's
+ * device-bound mint executed DIRECTLY in this process — process execution
+ * is the presence proof, so there is no HTTP and no loopback check. The
+ * client-side pair operation runs this command (host spawn or docker exec);
+ * the minted payload prints as single-line JSON on stdout. Same bootstrap
+ * semantics as the route's cli branch: the guardian resolves or mints with
+ * the caller's execution as the evidence.
  */
 export async function mintCliPairPayload(opts: {
   deviceId: string;

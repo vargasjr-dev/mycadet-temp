@@ -7,7 +7,7 @@ import {
   mock,
   test,
 } from "bun:test";
-import type { LockfileAssistant } from "../lockfile-contract";
+import type { LocalAssistant, LockfileAssistant } from "../lockfile-contract";
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -41,7 +41,7 @@ const localEntry = (overrides: Record<string, unknown> = {}) =>
     cloud: "local",
     port: 7830,
     ...overrides,
-  }) as unknown as LockfileAssistant;
+  }) as unknown as LocalAssistant;
 
 const dockerEntry = localEntry({ cloud: "docker" }) as LockfileAssistant;
 
