@@ -27,11 +27,11 @@ import {
   STATE_ROOTS,
   validateRootArchive,
 } from "../lib/root-backup.js";
-import * as sleepModule from "../commands/sleep.js";
+import * as localMode from "@mycadet/local-mode";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
-// prototype's methods and the sleep module's assistant entrypoint.
+// prototype's methods and the local-mode package's assistant entrypoint.
 const realRunning = LocalRootStorage.prototype.running;
 const realCapture = LocalRootStorage.prototype.capture;
 const realReplace = LocalRootStorage.prototype.replace;
@@ -39,7 +39,7 @@ const runningMock = spyOn(LocalRootStorage.prototype, "running");
 const captureMock = spyOn(LocalRootStorage.prototype, "capture");
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
 const resumeMock = spyOn(LocalRootStorage.prototype, "resume");
-const sleepMock = spyOn(sleepModule, "sleepAssistant");
+const sleepMock = spyOn(localMode, "sleepAssistant");
 
 let running: boolean | undefined;
 let onCapture: ((path: string) => void) | undefined;
@@ -71,6 +71,7 @@ resumeMock.mockImplementation(async () => {
 });
 sleepMock.mockImplementation(async () => {
   onSleep?.();
+  return { ok: true, kind: "containers" };
 });
 
 afterEach(() => {

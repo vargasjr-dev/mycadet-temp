@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { platform } from "node:os";
 
+import { DAEMON_STOP_TIMEOUT_MS } from "./lifecycle-budgets";
+
 /**
  * Process inspection and stopping for PID-tracked local services (daemon,
  * gateway, credential-executor, file watcher) and the ingress edge.
@@ -327,5 +329,29 @@ export async function stopProcessByPidFile(
   if (stopped || !isProcessAlive(pidFile).alive) {
     removeFiles(pidFile, extraCleanupFiles);
   }
+  return stopped;
+}
+
+/**
+ * The graceful-only stop strategy the sleep operation passes to
+ * `stopProcessByPidFile`: SIGTERM with the escalation disabled, and a
+ * refusal (throw) when the process survives its timeout — sleep must never
+ * SIGKILL a daemon mid-write.
+ */
+export async function stopProcessGracefully(
+  pid: number,
+  label: string,
+  timeoutMs: number = DAEMON_STOP_TIMEOUT_MS,
+): Promise<boolean> {
+  const stopped = await stopProcess(
+    pid,
+    label,
+    timeoutMs,
+    undefined,
+    undefined,
+    undefined,
+    true,
+  );
+  if (!stopped) throw new Error(`${label} did not stop gracefully.`);
   return stopped;
 }

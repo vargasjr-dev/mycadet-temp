@@ -41,7 +41,7 @@ import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
 } from "./environments/paths.js";
-import { sleepAssistant } from "../commands/sleep.js";
+import { sleepAssistant } from "@mycadet/local-mode";
 import { wakeAssistant } from "../commands/wake.js";
 
 export const STATE_ROOTS = [
@@ -731,12 +731,13 @@ function defaultOps(entry: LockfileAssistant): RootBackupOps {
       : new LocalRootStorage(entry);
   return {
     storage,
-    sleep: () =>
-      sleepAssistant(entry, {
+    sleep: async () => {
+      await sleepAssistant(entry, {
         force: false,
         wait: false,
         waitMs: null,
-      }),
+      });
+    },
     wake: () => storage.resume(),
     save: saveLockfileAssistant,
   };

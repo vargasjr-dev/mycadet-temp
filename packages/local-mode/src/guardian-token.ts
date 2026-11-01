@@ -53,6 +53,22 @@ export function saveGuardianToken(
 }
 
 /**
+ * Read a previously persisted guardian token for the given assistant.
+ * Returns the parsed token data, or null if the file does not exist or is
+ * unreadable.
+ */
+export function loadGuardianToken(
+  assistantId: string,
+): GuardianTokenData | null {
+  try {
+    const raw = fs.readFileSync(guardianTokenPath(assistantId), "utf-8");
+    return JSON.parse(raw) as GuardianTokenData;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Persist the Baseten sandbox access token a hatch exchanged for an
  * assistant, at {@link basetenTokenPath} under the guardian token's
  * 0600/0700 discipline. Read by the desktop proxy's forward planner — the

@@ -19,11 +19,10 @@ import {
   pullImage,
   startContainers,
   stopContainers,
-  sleepContainers,
   wakeContainers,
 } from "./remotes/docker.js";
 import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
-import { resolveDataDir } from "@mycadet/local-mode";
+import { resolveDataDir, sleepContainers } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";

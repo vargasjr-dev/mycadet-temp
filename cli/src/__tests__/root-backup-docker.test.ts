@@ -20,11 +20,8 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
-import {
-  dockerResourceNames,
-  sleepContainers,
-  startContainers,
-} from "../lib/remotes/docker.js";
+import { dockerResourceNames, startContainers } from "../lib/remotes/docker.js";
+import { sleepContainers } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 

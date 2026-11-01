@@ -1,15 +1,15 @@
 import type { LockfileAssistant } from "../lockfile-contract";
 import { findAssistantByName } from "./lookup";
 import { isHostExecutableRetireEntry, retireAssistant } from "./retire";
+import { isHostExecutableSleepEntry, sleepAssistant } from "./sleep";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
  * lifecycle cores the serving host (Electron `app://` handler, Vite dev
  * middleware) mounts before the gateway data-plane planner. One entry per
- * operation; today that is exactly one, the scoped surface's retire arm.
- * Future operations join as new rows (and the gateway proxy itself becomes
- * the LAST row — the catch-all forward — once every scoped route is an
- * operation).
+ * operation; today that is retire and sleep. Future operations join as new
+ * rows (and the gateway proxy itself becomes the LAST row — the catch-all
+ * forward — once every scoped route is an operation).
  *
  * `matchOperatorRequest` is PURE in the URL — the hot path of every other
  * request never touches the lockfile. A match runs through
@@ -30,6 +30,7 @@ export interface OperatorRoute {
 }
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
+const SLEEP_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/sleep\/?$/;
 
 /**
  * The scoped surface's retire arm. A `DELETE` on
@@ -55,8 +56,32 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
   });
 }
 
+/**
+ * The scoped surface's sleep arm. A `POST` on `/v1/assistants/{id}/sleep/`
+ * for an entry this host can stop (local/docker) is answered host-side —
+ * a bodyless 204 parses as the web bundle's success null; a failure (an
+ * active call lease, a windows shutdown) carries the operation's message
+ * and status. Entries the host cannot stop pass through, and the
+ * pre-existing chain answers.
+ */
+async function runSleepRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry || !isHostExecutableSleepEntry(entry)) {
+    return null;
+  }
+  const result = await sleepAssistant(entry, { force: false, wait: false });
+  if (result.ok) {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 const ROUTES: OperatorRoute[] = [
   { method: "DELETE", pattern: RETIRE_PATTERN, run: runRetireRoute },
+  { method: "POST", pattern: SLEEP_PATTERN, run: runSleepRoute },
 ];
 
 /** A matched operator request: the route and its decoded target id. */

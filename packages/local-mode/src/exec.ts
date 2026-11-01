@@ -65,3 +65,41 @@ export function exec(
     child.on("error", reject);
   });
 }
+
+/**
+ * Run a child to completion and resolve with its stdout. Non-zero exits
+ * reject with the same secret-safe message as {@link exec} — the caller
+ * inspects the message for the diagnostic substrings it cares about.
+ */
+export function execOutput(
+  command: string,
+  args: string[],
+  options: { cwd?: string } = {},
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    });
+
+    let stdout = "";
+    child.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    let stderr = "";
+    child.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(buildExecErrorMessage(command, code, stderr, stdout)));
+      }
+    });
+    child.on("error", reject);
+  });
+}

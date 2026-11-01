@@ -95,6 +95,15 @@ export {
 } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export {
+  sleepAssistant,
+  isHostExecutableSleepEntry,
+  type SleepOptions,
+} from "./operations/sleep";
+export type { SleepResult, SleepServiceStop } from "./operations/sleep";
+export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
+export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
+export { sleepContainers, sleepDocker } from "./remotes/docker/sleep";
+export {
   loadAllAssistants,
   lookupAssistantByIdentifier,
   formatAssistantLookupError,
@@ -183,8 +192,6 @@ export type {
   PairingPollOptions,
   PairingPollResult,
 } from "./pair";
-export { runSleep } from "./sleep";
-export type { SleepResult } from "./sleep";
 export { runWake } from "./wake";
 export type { WakeOptions, WakeResult } from "./wake";
 export { runDevicesList, runDevicesRevoke } from "./devices";

@@ -1,4 +1,4 @@
-import { loopbackSafeFetch } from "@mycadet/local-mode";
+import { loopbackSafeFetch } from "../../loopback-fetch";
 /**
  * Drain phase for `cadet sleep --wait`.
  *
