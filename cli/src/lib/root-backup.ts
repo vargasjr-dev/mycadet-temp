@@ -19,6 +19,7 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
+  dockerResourceNames,
   isLocalEntry,
   saveLockfileAssistant,
   type DockerAssistant,
@@ -27,7 +28,6 @@ import {
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
-import { dockerResourceNames } from "./remotes/docker.js";
 import { execOutput } from "./step-runner.js";
 import { isProcessAlive } from "./process.js";
 import { probePort } from "./port-probe.js";
@@ -719,7 +719,6 @@ async function pruneTransient(root: string, relative = ""): Promise<void> {
 
 export interface RootBackupOps {
   storage: RootStorage;
-  sleep: () => Promise<void>;
   wake: () => Promise<void>;
   save: (entry: LockfileAssistant) => void;
 }
@@ -731,13 +730,6 @@ function defaultOps(entry: LockfileAssistant): RootBackupOps {
       : new LocalRootStorage(entry);
   return {
     storage,
-    sleep: async () => {
-      await sleepAssistant(entry, {
-        force: false,
-        wait: false,
-        waitMs: null,
-      });
-    },
     wake: () => storage.resume(),
     save: saveLockfileAssistant,
   };
@@ -808,7 +800,7 @@ async function captureBackup(
   try {
     running = await ops.storage.running();
     stopped = running;
-    if (running) await ops.sleep();
+    if (running) await sleepAssistant(entry);
     stopped = true;
     await assertStopped(ops.storage);
     await ops.storage.capture(stage);
@@ -878,7 +870,7 @@ async function restoreBackup(
     if (options.dryRun) return undefined;
     running = await ops.storage.running();
     stopped = running;
-    if (running) await ops.sleep();
+    if (running) await sleepAssistant(entry);
     stopped = true;
     await assertStopped(ops.storage);
     await mkdir(snapshot, { mode: 0o700 });
@@ -913,7 +905,7 @@ async function restoreBackup(
         stopped = false;
       } catch (error) {
         try {
-          await ops.sleep();
+          await sleepAssistant(entry);
         } catch (stopError) {
           throw new AggregateError(
             [error, stopError],

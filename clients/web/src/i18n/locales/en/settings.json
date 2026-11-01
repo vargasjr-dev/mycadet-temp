@@ -320,9 +320,7 @@
     "loadFailedToast": "Failed to load assistant info",
     "loading": "Loading assistant info...",
     "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
-    "restartDescription": "Restart the assistant machine. It will be briefly unavailable during the restart.",
-    "restartTitle": "Restart Assistant",
-    "subtitle": "Manage backups and restart your assistant.",
+    "subtitle": "Manage your assistant backups.",
     "title": "General"
   },
   "doctorChatBlocks": {
@@ -1058,16 +1056,6 @@
     "runAtAria": "Run at {time}",
     "skipped": "Skipped",
     "title": "Recent runs"
-  },
-  "restartAssistant": {
-    "button": "Restart",
-    "confirmLabel": "Restart",
-    "confirmMessage": "Are you sure you want to restart this assistant? It will be briefly unavailable during the restart.",
-    "confirmTitle": "Restart Assistant",
-    "failStart": "Failed to start assistant.",
-    "failStop": "Failed to stop assistant.",
-    "toastFailed": "Failed to restart assistant.",
-    "toastRestarting": "Assistant is restarting."
   },
   "riskToleranceSettings": {
     "advanced": "Advanced",

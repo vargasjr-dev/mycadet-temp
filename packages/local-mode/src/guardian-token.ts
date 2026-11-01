@@ -18,21 +18,25 @@ const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
 const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
 
 /** The persisted shape of an assistant's guardian token file. */
-export interface GuardianTokenData {
-  guardianPrincipalId: string;
-  accessToken: string;
+export const GuardianTokenFileSchema = z.object({
+  guardianPrincipalId: z.string(),
+  accessToken: z.string(),
   /** ISO date string or epoch-ms number as returned by the gateway. */
-  accessTokenExpiresAt: string | number;
-  refreshToken: string;
+  accessTokenExpiresAt: z.union([z.string(), z.number()]),
+  refreshToken: z.string(),
   /** ISO date string or epoch-ms number as returned by the gateway. */
-  refreshTokenExpiresAt: string | number;
-  refreshAfter: string;
-  isNew: boolean;
-  deviceId: string;
-  leasedAt: string;
+  refreshTokenExpiresAt: z.union([z.string(), z.number()]),
+  refreshAfter: z.string(),
+  isNew: z.boolean(),
+  deviceId: z.string(),
+  leasedAt: z.string(),
   /** Remote gateway bound to a credential imported through the pairing flow. */
-  pairedGatewayUrl?: string;
-}
+  pairedGatewayUrl: z.string().optional(),
+});
+
+export interface GuardianTokenData extends z.infer<
+  typeof GuardianTokenFileSchema
+> {}
 
 /**
  * Persist an assistant's guardian token where every host-seam reader resolves
@@ -61,8 +65,13 @@ export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
   try {
-    const raw = fs.readFileSync(guardianTokenPath(assistantId), "utf-8");
-    return JSON.parse(raw) as GuardianTokenData;
+    const parsed = GuardianTokenFileSchema.safeParse(
+      JSON.parse(fs.readFileSync(guardianTokenPath(assistantId), "utf-8")),
+    );
+    if (parsed.success) {
+      return parsed.data;
+    }
+    return null;
   } catch {
     return null;
   }

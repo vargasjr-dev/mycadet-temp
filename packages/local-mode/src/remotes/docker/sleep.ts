@@ -1,16 +1,18 @@
+import type { LockfileAssistant } from "../../lockfile-contract";
 import { exec, execOutput } from "../../exec";
-import { dockerResourceNames } from "./retire";
+import { dockerResourceNames, removeContainer } from "./retire";
 
 /**
- * SIGTERM each of an instance's service containers and wait for them to
- * exit. Missing or already-stopped containers are expected and skipped; a
- * container that refuses to stop inside the timeout throws (docker
- * assistants have no escalation).
+ * SIGTERM each of an instance's service containers, wait for them to exit,
+ * then remove them — the wake recreates what it needs (containers hold no
+ * state; the volumes do). Missing or already-stopped containers are
+ * expected and skipped; a container that refuses to stop inside the timeout
+ * throws (docker assistants have no escalation).
  *
- * Shared by the sleep operation and the CLI's upgrade flow (which stops
- * containers before recreating them).
+ * Private stop primitive — consumers go through `sleepDocker`, which
+ * derives the resource names from the entry.
  */
-export async function sleepContainers(
+async function sleepContainers(
   res: ReturnType<typeof dockerResourceNames>,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
@@ -43,6 +45,7 @@ export async function sleepContainers(
           throw new Error(`${container} did not stop gracefully.`);
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
+      await removeContainer(container);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message.toLowerCase() : String(err);
@@ -57,11 +60,12 @@ export async function sleepContainers(
 
 /**
  * The docker topology's sleep leg: stop the instance's three service
- * containers by their derived resource names.
+ * containers (gracefully, then remove them — the wake recreates what it
+ * needs) by their derived resource names.
  */
 export async function sleepDocker(
-  instanceName: string,
+  entry: LockfileAssistant,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
-  await sleepContainers(dockerResourceNames(instanceName), options);
+  await sleepContainers(dockerResourceNames(entry.assistantId), options);
 }

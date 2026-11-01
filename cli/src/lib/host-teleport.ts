@@ -2,14 +2,11 @@ import { rm } from "node:fs/promises";
 import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import {
-  dockerResourceNames,
-  hatchDocker,
-  startContainers,
-} from "./remotes/docker.js";
+import { hatchDocker, startContainers } from "./remotes/docker.js";
 import { hatchLocal } from "./remotes/local.js";
 import {
   removeLockfileAssistant,
@@ -40,7 +37,6 @@ export class TeleportRecoveryError extends AggregateError {}
 
 export interface HostTeleportOps {
   storage(entry: LockfileAssistant): HostStorage;
-  sleep(entry: LockfileAssistant): Promise<void>;
   backup(entry: LockfileAssistant): Promise<string>;
   version(entry: LockfileAssistant): Promise<string | undefined>;
   hatch(
@@ -64,9 +60,6 @@ export function storageFor(entry: LockfileAssistant): HostStorage {
 
 const defaultOps: HostTeleportOps = {
   storage: storageFor,
-  sleep: async (entry) => {
-    await sleepAssistant(entry, { force: false, wait: false, waitMs: null });
-  },
   backup: async (entry) => {
     const archive = await createBackup(entry.assistantId, {
       prefix: `${entry.assistantId}-pre-teleport`,
@@ -107,7 +100,11 @@ const defaultOps: HostTeleportOps = {
     } catch (error) {
       const entry = findAssistantByName(instanceName);
       if (entry) {
-        await defaultOps.sleep(entry);
+        await sleepAssistant(entry, {
+          force: false,
+          wait: false,
+          waitMs: null,
+        });
         await defaultOps.retire(entry);
       }
       throw error;
@@ -123,6 +120,18 @@ const defaultOps: HostTeleportOps = {
     removeLockfileAssistant(entry.assistantId);
   },
 };
+
+/**
+ * Stop an installation's services through the sleep operation. A structured
+ * failure (an active call lease, a refused stop) aborts the teleport — a
+ * live installation must never be captured.
+ */
+async function stopServices(entry: LockfileAssistant): Promise<void> {
+  const result = await sleepAssistant(entry);
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+}
 
 function checkVersion(
   source: string | undefined,
@@ -204,7 +213,7 @@ async function performHostTeleport(
   let target: LockfileAssistant | undefined;
   let ready = false;
   try {
-    await ops.sleep(source);
+    await stopServices(source);
     if (await sourceStorage.running()) {
       throw new Error("Source services are still running; teleport aborted.");
     }
@@ -215,7 +224,7 @@ async function performHostTeleport(
       const targetStorage = ops.storage(target);
       const targetWasRunning = await targetStorage.running();
       try {
-        await ops.sleep(target);
+        await stopServices(target);
         if (await targetStorage.running()) {
           throw new Error(
             "Target services are still running; teleport aborted.",
@@ -258,7 +267,7 @@ async function performHostTeleport(
   } catch (error) {
     if (!ready) {
       if (target && !existing) {
-        await ops.sleep(target);
+        await stopServices(target);
         await ops.retire(target);
       }
       if (sourceWasRunning) {
@@ -443,7 +452,7 @@ export async function restoreHostTeleportTarget(
     await startAndCheck(storageFor(entry));
   } catch (error) {
     try {
-      await defaultOps.sleep(entry);
+      await sleepAssistant(entry);
       if (previous) {
         // Failed creation can leave an incomplete service group.
         for (const container of [

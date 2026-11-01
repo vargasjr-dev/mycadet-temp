@@ -314,9 +314,7 @@
     "loadFailedToast": "加载助手信息失败",
     "loading": "正在加载助手信息...",
     "noAssistant": "未找到助手。孵化一个助手以访问调试控制。",
-    "restartDescription": "重启助手机器。重启期间它将暂时不可用。",
-    "restartTitle": "重启助手",
-    "subtitle": "管理备份并重启您的助手。",
+    "subtitle": "管理您的助手备份。",
     "title": "通用"
   },
   "doctorChatBlocks": {
@@ -967,16 +965,6 @@
     "runAtAria": "运行于 {time}",
     "skipped": "已跳过",
     "title": "最近运行"
-  },
-  "restartAssistant": {
-    "button": "重启",
-    "confirmLabel": "重启",
-    "confirmMessage": "您确定要重启此助手吗？重启期间它将短暂不可用。",
-    "confirmTitle": "重启助手",
-    "failStart": "启动助手失败。",
-    "failStop": "停止助手失败。",
-    "toastFailed": "重启助手失败。",
-    "toastRestarting": "助手正在重启。"
   },
   "riskToleranceSettings": {
     "advanced": "高级",

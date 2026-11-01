@@ -6,11 +6,17 @@
  */
 import cliPkg from "../../../package.json";
 import {
+  dockerResourceNames,
+  loopbackSafeFetch,
+  removeContainer,
+  saveLockfileAssistant,
+  sleepDocker,
+} from "@mycadet/local-mode";
+import {
   type DockerAssistant,
   type LockfileAssistant,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
-import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
 import { restoreContainerAppServer } from "../tunnel.js";
 import {
   ASSISTANT_INTERNAL_PORT,
@@ -229,8 +235,7 @@ export async function upgradeDocker(
   );
 
   console.log("🛑 Stopping existing containers...");
-  await sleepContainers(res);
-  await stopContainers(res);
+  await sleepDocker(entry);
   console.log("✅ Containers stopped\n");
 
   console.log("🚀 Starting upgraded containers...");
@@ -329,8 +334,7 @@ export async function upgradeDocker(
           );
         }
 
-        await sleepContainers(res);
-        await stopContainers(res);
+        await sleepDocker(entry);
 
         await startContainers(
           {
@@ -351,7 +355,7 @@ export async function upgradeDocker(
         if (!rollbackReady && backupPath) {
           const recovery = await attemptFailedStateRestore({
             runtimeUrl: gatewayUrl,
-            assistantId: entry.assistantId,
+            entry,
             backupPath,
             backupLabel: "pre-upgrade",
             res,
@@ -993,16 +997,6 @@ async function ensureDockerInstalled(): Promise<void> {
     });
   }
 }
-
-/** Derive the Docker resource names from the instance name. */
-// The retire leg (resource naming, container/volume removal) lives in
-// `@mycadet/local-mode` now — the retire operation runs it in-process.
-import {
-  dockerResourceNames,
-  removeContainer,
-  sleepContainers,
-} from "@mycadet/local-mode";
-export { dockerResourceNames };
 
 /** Silently attempt to stop and remove a Docker container. */
 
