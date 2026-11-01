@@ -24,14 +24,12 @@ import {
   getLocalInstanceDir,
   isProcessAlive,
   probePort,
-  saveLockfileAssistant,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
-import {} from "./environments/paths.js";
 import { sleepAssistant } from "@mycadet/local-mode";
 import { wakeAssistant } from "../commands/wake.js";
 
@@ -569,27 +567,17 @@ async function pruneTransient(root: string, relative = ""): Promise<void> {
   }
 }
 
-export interface RootBackupOps {
-  storage: RootStorage;
-  wake: () => Promise<void>;
-  save: (entry: LockfileAssistant) => void;
+function storageFor(entry: LockfileAssistant): RootStorage {
+  return entry.cloud === "docker"
+    ? new DockerRootStorage(entry)
+    : new LocalRootStorage(entry);
 }
 
-function defaultOps(entry: LockfileAssistant): RootBackupOps {
-  const storage =
-    entry.cloud === "docker"
-      ? new DockerRootStorage(entry)
-      : new LocalRootStorage(entry);
-  return {
-    storage,
-    wake: async () => {
-      // A failed wake throws so the cycle's finally retries the recovery
-      // wake — the old resume's throw path, kept.
-      const woken = await wakeAssistant(entry);
-      if (!woken.ok) throw new Error(woken.error);
-    },
-    save: saveLockfileAssistant,
-  };
+// A failed wake throws so the cycle's finally retries the recovery wake —
+// the old resume's throw path, kept.
+async function wakeOrFail(entry: LockfileAssistant): Promise<void> {
+  const woken = await wakeAssistant(entry);
+  if (!woken.ok) throw new Error(woken.error);
 }
 
 async function assertStopped(storage: RootStorage): Promise<void> {
@@ -639,37 +627,35 @@ export async function createRootBackup(
   entry: LockfileAssistant,
   output: string,
 ): Promise<void> {
-  return withRootOperationLock(entry, () =>
-    captureBackup(entry, output, defaultOps(entry)),
-  );
+  return withRootOperationLock(entry, () => captureBackup(entry, output));
 }
 
 async function captureBackup(
   entry: LockfileAssistant,
   output: string,
-  ops: RootBackupOps,
 ): Promise<void> {
-  ops.storage.assertBackupTarget(output);
+  const storage = storageFor(entry);
+  storage.assertBackupTarget(output);
   const stage = await mkdtemp(join(tmpdir(), "cadet-backup-"));
   await chmod(stage, 0o700);
   let running = false;
   let stopped = false;
   try {
-    running = await ops.storage.running();
+    running = await storage.running();
     stopped = running;
     if (running) await sleepAssistant(entry);
     stopped = true;
-    await assertStopped(ops.storage);
-    await ops.storage.capture(stage);
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
+    await storage.capture(stage);
+    await assertStopped(storage);
     if (running) {
-      await ops.wake();
+      await wakeOrFail(entry);
       stopped = false;
     }
     await packRoot(stage, output);
   } finally {
     try {
-      if (running && stopped) await ops.wake();
+      if (running && stopped) await wakeOrFail(entry);
     } finally {
       await rm(stage, { recursive: true, force: true });
     }
@@ -682,7 +668,7 @@ export async function restoreRootBackup(
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
 ): Promise<string | undefined> {
   return withRootOperationLock(entry, () =>
-    restoreBackup(entry, file, options, defaultOps(entry)),
+    restoreBackup(entry, file, options),
   );
 }
 
@@ -712,8 +698,8 @@ async function restoreBackup(
   entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean },
-  ops: RootBackupOps,
 ): Promise<string | undefined> {
+  const storage = storageFor(entry);
   const stage = await stageRootArchive(file);
   const source = join(stage, "state");
   const snapshot = join(stage, "previous");
@@ -723,15 +709,15 @@ async function restoreBackup(
   let running = false;
   let recoveryPath: string | undefined;
   try {
-    await ops.storage.prepareRestore?.(source);
+    await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
-    running = await ops.storage.running();
+    running = await storage.running();
     stopped = running;
     if (running) await sleepAssistant(entry);
     stopped = true;
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
     await mkdir(snapshot, { mode: 0o700 });
-    await ops.storage.capture(snapshot);
+    await storage.capture(snapshot);
     recoveryPath =
       options.recoveryPath ??
       join(
@@ -739,14 +725,14 @@ async function restoreBackup(
         `${entry.assistantId}-pre-restore-${Date.now()}.tar.gz`,
       );
     await packRoot(snapshot, recoveryPath);
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
     replacing = true;
     try {
-      await ops.storage.replace(source);
+      await storage.replace(source);
       restored = true;
     } catch (error) {
       try {
-        await ops.storage.replace(snapshot);
+        await storage.replace(snapshot);
         replacing = false;
       } catch (rollbackError) {
         throw new AggregateError(
@@ -758,7 +744,7 @@ async function restoreBackup(
     }
     if (running && options.resume !== false) {
       try {
-        await ops.wake();
+        await wakeOrFail(entry);
         stopped = false;
       } catch (error) {
         try {
@@ -786,7 +772,7 @@ async function restoreBackup(
         !restored &&
         options.resume !== false
       )
-        await ops.wake();
+        await wakeOrFail(entry);
     } finally {
       await rm(stage, { recursive: true, force: true });
     }
