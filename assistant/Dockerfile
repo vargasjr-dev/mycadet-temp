@@ -26,6 +26,7 @@ COPY --parents clients/*/package.json ./
 COPY cli/package.json ./cli/
 COPY gateway/package.json ./gateway/
 COPY credential-executor/package.json ./credential-executor/
+COPY qa/package.json ./qa/
 COPY assistant/package.json ./assistant/
 COPY assistant/src/api/package.json ./assistant/src/api/
 COPY --parents packages/*/package.json ./

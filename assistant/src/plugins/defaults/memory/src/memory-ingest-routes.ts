@@ -33,9 +33,12 @@ import {
   MAX_INGEST_PAGES_PER_CALL,
 } from "../substrate/ingest.js";
 
-// Re-exported so IPC clients (the `assistant memory ingest` CLI) can chunk
+// Surfaced so IPC clients (the `assistant memory ingest` CLI) can chunk
 // their input to the same cap the route enforces, without reaching past this
-// route module into the substrate.
+// route module into the substrate. Aliased rather than re-exported — the
+// no-re-exports rule bans pass-through exports outside index files; host
+// code depends on the plugin spine (the memory tier boundary guard).
+export const ROUTE_MAX_INGEST_PAGES = MAX_INGEST_PAGES_PER_CALL;
 
 const MemoryIngestParamsSchema = z.object({
   /** Pages to ingest; `content` is the full page markdown (frontmatter + body). */

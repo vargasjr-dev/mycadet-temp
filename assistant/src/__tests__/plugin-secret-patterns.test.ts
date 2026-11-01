@@ -228,7 +228,7 @@ describe("plugin secret-pattern registry", () => {
     const imports = [...source.matchAll(/^import .*$/gm)].map((m) => m[0]);
     expect(imports).toEqual([
       'import { RE2JS } from "re2js";',
-      'import type { SecretPrefixPattern } from "./secret-patterns.js";',
+      'import type { SecretPrefixPattern } from "@mycadet/service-contracts/secret-detection";',
     ]);
   });
 });
