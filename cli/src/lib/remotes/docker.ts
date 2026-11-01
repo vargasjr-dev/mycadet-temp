@@ -11,6 +11,7 @@ import {
   removeContainer,
   saveLockfileAssistant,
   sleepDocker,
+  wakeAssistant,
 } from "@mycadet/local-mode";
 import {
   type DockerAssistant,
@@ -1910,12 +1911,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     setActiveAssistant(instanceName);
 
     if (params.initialArchive) {
-      const { initializeRootArchive, DockerRootStorage } =
-        await import("../root-backup.js");
+      const { initializeRootArchive } = await import("../root-backup.js");
       await initializeRootArchive(dockerEntry, params.initialArchive);
-      const storage = new DockerRootStorage(dockerEntry);
-      storage.initialRunning = new Set(Object.values(storage.containers));
-      await storage.resume();
+      // The wake is the one revive seam; readiness is the health check's
+      // job now, not the storage layer's.
+      await wakeAssistant(dockerEntry);
     }
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;

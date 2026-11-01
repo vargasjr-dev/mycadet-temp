@@ -64,6 +64,11 @@ const previousDataHome = process.env.XDG_DATA_HOME;
 // The teleport flow calls sleepAssistant directly now (the ops seam is
 // gone), so the sleep events ride a namespace spy.
 const sleepMock = spyOn(localMode, "sleepAssistant");
+// Same for wake: the flow calls the package's wakeAssistant (the one
+// revive seam), so the wake events ride a namespace spy like sleep.
+// Re-created per test (and restored per afterEach) so the co-run suites
+// see the real operation.
+let wakeMock: ReturnType<typeof spyOn<typeof localMode, "wakeAssistant">>;
 
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "host-teleport-"));
@@ -80,6 +85,7 @@ beforeEach(async () => {
     ["target", true],
   ]);
   log = spyOn(console, "log").mockImplementation(() => {});
+  wakeMock = spyOn(localMode, "wakeAssistant");
   sleepMock.mockImplementation(async (entry) => {
     order.push(`sleep:${entry.assistantId}`);
     running.set(entry.assistantId, false);
@@ -98,12 +104,11 @@ beforeEach(async () => {
       return running.get(this.entry.assistantId) ?? false;
     },
   );
-  spyOn(LocalRootStorage.prototype, "resume").mockImplementation(
-    async function (this: LocalRootStorage) {
-      order.push(`wake:${this.entry.assistantId}`);
-      running.set(this.entry.assistantId, true);
-    },
-  );
+  wakeMock.mockImplementation(async (entry) => {
+    order.push(`wake:${entry.assistantId}`);
+    running.set(entry.assistantId, true);
+    return { ok: true as const };
+  });
   ops = {
     storage: (entry) => storageFor(entry),
     backup: mock(async (entry) => {
@@ -119,7 +124,7 @@ beforeEach(async () => {
         resume: false,
         recoveryPath: join(directory, "pre-restore.tar.gz"),
       });
-      await storageFor(entry).resume();
+      await wakeMock(entry);
       order.push(`restore:${entry.assistantId}`);
     }),
     retire: mock(async (entry) => {
@@ -134,6 +139,9 @@ afterEach(async () => {
     process.env.XDG_DATA_HOME = previousDataHome;
   }
   log.mockRestore();
+  // The namespace spy must not leak into the other teleport suites that
+  // share this process.
+  wakeMock.mockRestore();
   if (previousLockDir === undefined) {
     delete process.env.XDG_CONFIG_HOME;
   } else {
@@ -292,13 +300,13 @@ test("new target receives safety tar at hatch and becomes ready before source re
   expect(ops.restore).not.toHaveBeenCalled();
 });
 test("failed new target readiness cleans it up before waking source", async () => {
-  const resume = spyOn(LocalRootStorage.prototype, "resume");
-  resume.mockImplementation(async function (this: LocalRootStorage) {
-    if (this.entry.assistantId === "target") {
+  wakeMock.mockImplementation(async (entry) => {
+    if (entry.assistantId === "target") {
       throw new Error("migration failed");
     }
-    order.push(`wake:${this.entry.assistantId}`);
-    running.set(this.entry.assistantId, true);
+    order.push(`wake:${entry.assistantId}`);
+    running.set(entry.assistantId, true);
+    return { ok: true as const };
   });
   await expect(
     teleportHostInstallation(source, "local", "fresh-target", options, ops),

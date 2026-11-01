@@ -13,6 +13,7 @@ import {
 import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
 import { dockerResourceNames } from "@mycadet/local-mode";
 
@@ -45,6 +46,7 @@ const rootContainer = {
 };
 let directory: string, archive: string, recovery: string;
 let commands: ReturnType<typeof mockCommands>;
+let wakeSpy: ReturnType<typeof spyOn> | undefined;
 let log: ReturnType<typeof spyOn>;
 let failReadiness: boolean, failEveryWrite: boolean, writes: number;
 let states: Map<string, ReturnType<typeof inspection>>;
@@ -242,6 +244,8 @@ afterEach(async () => {
   } else {
     process.env.XDG_DATA_HOME = previousDataHome;
   }
+  wakeSpy?.mockRestore();
+  wakeSpy = undefined;
   commands.restore();
   log.mockRestore();
   await rm(directory, { recursive: true, force: true });
@@ -277,7 +281,11 @@ test("recreates immutable identity overrides and imports all roots before first 
   expect(installs.every(({ index }) => index < firstStart)).toBe(true);
 });
 test("readiness failure restores original ciphertext, gateway identity, and stopped containers", async () => {
-  failReadiness = true;
+  // The in-container probes died with the resume method; the wake's own
+  // readiness failure is the trigger now.
+  wakeSpy = spyOn(localMode, "wakeAssistant").mockRejectedValue(
+    new Error("containers did not become ready"),
+  );
   await expect(
     restoreHostTeleportTarget(entry, archive, recovery),
   ).rejects.toThrow("did not become ready");

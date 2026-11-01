@@ -25,18 +25,13 @@ import {
   isProcessAlive,
   probePort,
   saveLockfileAssistant,
-  waitForDaemonMigrationsReady,
-  waitForDaemonReady,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
-import {
-  ASSISTANT_INTERNAL_PORT,
-  GATEWAY_INTERNAL_PORT,
-} from "./environments/paths.js";
+import {} from "./environments/paths.js";
 import { sleepAssistant } from "@mycadet/local-mode";
 import { wakeAssistant } from "../commands/wake.js";
 
@@ -313,35 +308,6 @@ export class LocalRootStorage implements RootStorage {
     }
     return running.size > 0;
   }
-  async resume(): Promise<void> {
-    // wakeAssistant is the one revive seam: whatever the backup paused, the
-    // leg's self-heal brings it back (dead siblings relaunch, live processes
-    // stay) — a backup cycle leaves the assistant fully running either way.
-    await wakeAssistant(this.entry);
-    await this.checkReady();
-  }
-  private async checkReady(): Promise<void> {
-    // Unconditional: resume always wakes, so everything is expected up.
-    const entry = this.localEntry;
-    if (
-      entry.daemonPort !== undefined &&
-      (await waitForDaemonMigrationsReady(
-        entry.daemonPort,
-        Date.now() + 60_000,
-      )) !== "ready"
-    ) {
-      throw new Error(
-        "Assistant did not become ready after restoring its running state.",
-      );
-    }
-    for (const [service, port] of [
-      ["gateway", entry.port],
-      ["ces", entry.cesPort],
-    ] as const) {
-      if (port !== undefined && !(await waitForDaemonReady(port)))
-        throw new Error(`${service} did not become healthy after restart.`);
-    }
-  }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
       const source = join(this.root, root);
@@ -480,7 +446,6 @@ const dockerOps: DockerBackupOps = {
 
 export class DockerRootStorage implements RootStorage {
   readonly containers: Record<StateRoot, string>;
-  initialRunning?: Set<string>;
   constructor(
     readonly entry: LockfileAssistant,
     readonly ops: DockerBackupOps = dockerOps,
@@ -520,83 +485,7 @@ export class DockerRootStorage implements RootStorage {
         );
       }
     }
-    this.initialRunning ??= new Set(
-      containers.filter((_, index) => states[index]!.State.Running),
-    );
     return states.some((state) => state.State.Running);
-  }
-  async resume(): Promise<void> {
-    if (this.initialRunning?.size === 3) {
-      await wakeAssistant(this.entry, {
-        watch: false,
-        foreground: false,
-      });
-    } else {
-      for (const container of new Set(Object.values(this.containers))) {
-        if (
-          this.initialRunning?.has(container) &&
-          !(await this.inspect(container)).State.Running
-        ) {
-          await this.ops.output("docker", ["start", container]);
-        }
-      }
-    }
-    // Probe inside the destination containers, so remote Docker contexts work
-    // without assuming their published ports are reachable on this CLI host.
-    const endpoints = [
-      [this.containers.workspace, ASSISTANT_INTERNAL_PORT, "readyz"],
-      [this.containers["gateway-security"], GATEWAY_INTERNAL_PORT, "healthz"],
-      [this.containers["ces-security"], 8090, "healthz"],
-    ] as const;
-    await Promise.all(
-      endpoints.map(async ([container, defaultPort, endpoint]) => {
-        if (!this.initialRunning?.has(container)) return;
-        const state = await this.inspect(container);
-        const portVariable =
-          container === this.containers.workspace
-            ? "RUNTIME_HTTP_PORT="
-            : "GATEWAY_PORT=";
-        const configuredPort =
-          container === this.containers["ces-security"]
-            ? undefined
-            : state.Config.Env.find((value) =>
-                value.startsWith(portVariable),
-              )?.split("=")[1];
-        const port = configuredPort ? Number(configuredPort) : defaultPort;
-        if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
-          throw new Error(`Invalid health port for ${container}.`);
-        const deadline = Date.now() + 60_000;
-        const script =
-          'const url=process.argv.at(-1); const r=await fetch(url,{signal:AbortSignal.timeout(1500)}); if(!r.ok)process.exit(1); if(url.endsWith("/readyz")){const b=await r.json(); if(b.dbMigrations?.state==="failed"){console.error("migration_failed");process.exit(2)} if(b.ready===false)process.exit(1)} console.log("ready")';
-        while (true) {
-          try {
-            await this.ops.output(
-              "docker",
-              [
-                "exec",
-                container,
-                "bun",
-                "--eval",
-                script,
-                `http://127.0.0.1:${port}/${endpoint}`,
-              ],
-              { timeoutMs: 3000 },
-            );
-            return;
-          } catch (error) {
-            if (
-              String(error).includes("migration_failed") ||
-              Date.now() >= deadline
-            )
-              throw new Error(
-                `${container} did not become ready after restart.`,
-                { cause: error },
-              );
-            await new Promise((done) => setTimeout(done, 250));
-          }
-        }
-      }),
-    );
   }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
@@ -693,7 +582,12 @@ function defaultOps(entry: LockfileAssistant): RootBackupOps {
       : new LocalRootStorage(entry);
   return {
     storage,
-    wake: () => storage.resume(),
+    wake: async () => {
+      // A failed wake throws so the cycle's finally retries the recovery
+      // wake — the old resume's throw path, kept.
+      const woken = await wakeAssistant(entry);
+      if (!woken.ok) throw new Error(woken.error);
+    },
     save: saveLockfileAssistant,
   };
 }
