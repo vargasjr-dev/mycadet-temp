@@ -836,6 +836,13 @@ export type StartAppServerResult =
       /** SPA dist directory served by the edge. */
       webDistDir: string;
       version: string;
+      /**
+       * The checkout HEAD the dists were built at, so the edge's lockfile
+       * record carries the build stamp from birth — `stampAppProcessEntry`
+       * replaces the record wholesale, and a stamp that only lands via
+       * `stampAppBuiltSha` before the record exists is dropped.
+       */
+      builtSha: string | null;
     }
   | {
       status: "already-running";
@@ -897,7 +904,7 @@ export async function startAppServer(opts: {
   if (recorded) {
     listenPort = recorded.listenPort;
   }
-  const { webDistDir, appDistDir } = await resolveEdgeClientDists();
+  const { webDistDir, appDistDir, builtSha } = await resolveEdgeClientDists();
   if (!webDistDir) {
     return { status: "web-dist-missing" };
   }
@@ -1063,6 +1070,7 @@ export async function startAppServer(opts: {
         listenPort,
         webDistDir,
         version: nginxVersion,
+        builtSha,
       };
     }
     if (Date.now() >= deadline) {
@@ -1094,15 +1102,19 @@ export async function startAppServer(opts: {
  * cannot be attributed, so it is left alone.
  */
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
-function stampAppProcessEntry(port: number): void {
+function stampAppProcessEntry(port: number, builtSha?: string | null): void {
   const pid = getIngressPid();
-  if (pid !== null) {
-    stampRootProcess("app", {
-      pid,
-      startedAt: new Date().toISOString(),
-      port,
-    });
-  }
+  if (pid === null) return;
+  // `stampRootProcess` replaces the record wholesale, so the build stamp
+  // must be carried forward explicitly — a fresh record without it makes
+  // the next dist resolve read "no build stamp" and rebuild.
+  const carried = builtSha ?? readRootProcesses().app?.builtSha;
+  stampRootProcess("app", {
+    pid,
+    startedAt: new Date().toISOString(),
+    port,
+    ...(carried ? { builtSha: carried } : {}),
+  });
 }
 
 /** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */
@@ -1159,7 +1171,7 @@ export async function ensureAppServer(): Promise<AppServer> {
 
   switch (result.status) {
     case "started":
-      stampAppProcessEntry(result.listenPort);
+      stampAppProcessEntry(result.listenPort, result.builtSha);
       return {
         port: result.listenPort,
         started: true,

@@ -4,13 +4,13 @@ import { describe, test } from "bun:test";
 
 import type { z } from "zod";
 
+import { callEndInputSchema } from "../../config/bundled-skills/phone-calls/tools/call-end.js";
+import { callStartInputSchema } from "../../config/bundled-skills/phone-calls/tools/call-start.js";
+import { callStatusInputSchema } from "../../config/bundled-skills/phone-calls/tools/call-status.js";
 import { acpAbortInputSchema } from "../acp/abort.js";
 import { acpSpawnInputSchema } from "../acp/spawn.js";
 import { acpStatusInputSchema } from "../acp/status.js";
 import { acpSteerInputSchema } from "../acp/steer.js";
-import { callEndInputSchema } from "../calls/call-end.js";
-import { callStartInputSchema } from "../calls/call-start.js";
-import { callStatusInputSchema } from "../calls/call-status.js";
 import { followupCreateInputSchema } from "../followups/followup_create.js";
 import { followupListInputSchema } from "../followups/followup_list.js";
 import { followupResolveInputSchema } from "../followups/followup_resolve.js";

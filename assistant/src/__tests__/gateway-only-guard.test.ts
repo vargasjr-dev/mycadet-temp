@@ -87,6 +87,9 @@ const INTERPOLATED_PORT_ALLOWLIST = new Set([
   "clients/macos/src/main/bundle-flow.ts",
   // Desktop clients connect to local assistants through their loopback gateway.
   "packages/electron-desktop/src/host-proxy/router.ts",
+  // The docker pair leg dials the gateway's in-container loopback by design:
+  // the docker exec IS the presence proof (see the pair-op door).
+  "packages/local-mode/src/remotes/docker/pair.ts",
 ]);
 
 /** Shared violation filter: exempt test files, gateway internals, and allowlisted paths. */

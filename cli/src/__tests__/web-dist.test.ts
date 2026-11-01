@@ -172,7 +172,11 @@ describe("resolveEdgeClientDists", () => {
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha,
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -197,6 +201,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(web, "dist"),
       appDistDir: join(app, "dist", "standalone"),
+      builtSha: fixtureHeadSha,
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
@@ -267,7 +272,11 @@ describe("resolveEdgeClientDists", () => {
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha,
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -306,7 +315,11 @@ describe("resolveEdgeClientDists", () => {
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: null, appDistDir: null });
+    expect(resolved).toEqual({
+      webDistDir: null,
+      appDistDir: null,
+      builtSha: null,
+    });
     expect(spawnMock.mock.calls).toHaveLength(0);
   });
 
@@ -385,6 +398,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(npmWebDir, "dist"),
       appDistDir: appDist,
+      builtSha: fixtureHeadSha,
     });
     expect(bunCalls()).toHaveLength(0);
   });

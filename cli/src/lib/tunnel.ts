@@ -232,6 +232,16 @@ async function refreshEdgeWithEstablishedUrl(): Promise<void> {
   try {
     await ensureAppServer();
   } catch {
+    // A failed re-ensure can be more than drift: the drift restart stops the
+    // old edge before spawning the replacement, and a failed replacement
+    // rolls back (stopping the new one too). In that state NOTHING is in
+    // front of the tunnel — the agent forwards to a dead port — so exiting
+    // green would hide a dead tunnel behind a success message.
+    if (!isIngressRunning()) {
+      throw new Error(
+        "The app server went down while refreshing the served tunnel URL — nothing is behind the tunnel now. Re-run `cadet tunnel start`.",
+      );
+    }
     // The running edge stays in front of the tunnel; the fresh config lands
     // via the next invocation's fingerprint drift instead.
   }

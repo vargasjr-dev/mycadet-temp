@@ -267,7 +267,12 @@ function isStale(
  */
 export async function resolveEdgeClientDists(
   options: DistBuildOptions = {},
-): Promise<{ webDistDir: string | null; appDistDir: string | null }> {
+): Promise<{
+  webDistDir: string | null;
+  appDistDir: string | null;
+  /** The checkout HEAD the dists were (re)built at, when git-anchored. */
+  builtSha: string | null;
+}> {
   const arms = {
     web: await resolveDistArm("web", options),
     app: await resolveDistArm("app", options),
@@ -316,5 +321,6 @@ export async function resolveEdgeClientDists(
   return {
     webDistDir: arms.web.distDir ?? (builtAny ? findWebDistDir(options) : null),
     appDistDir: arms.app.distDir ?? (builtAny ? findAppDistDir(options) : null),
+    builtSha: headSha,
   };
 }

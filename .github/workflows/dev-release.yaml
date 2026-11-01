@@ -788,7 +788,7 @@ jobs:
     # yet, so expect a red job here until they land.
     continue-on-error: true
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 60
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
     # the renderer below.
     environment: dev
