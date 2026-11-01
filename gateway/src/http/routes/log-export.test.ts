@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import type { GatewayConfig } from "../../config.js";
+import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be registered before importing the handler
@@ -94,29 +95,12 @@ const { createLogExportHandler } = await import("./log-export.js");
 
 let tmpLogDir: string;
 
-const baseConfig: GatewayConfig = {
-  assistantRuntimeBaseUrl: "http://localhost:7821",
-  gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-  logFile: { dir: undefined },
-  maxAttachmentBytes: {
-    telegram: 50 * 1024 * 1024,
-    slack: 100 * 1024 * 1024,
-    whatsapp: 16 * 1024 * 1024,
-    default: 50 * 1024 * 1024,
-  },
-  maxAttachmentConcurrency: 3,
-  maxWebhookPayloadBytes: 1024 * 1024,
-  port: 7830,
-  routingEntries: [],
-  runtimeInitialBackoffMs: 500,
-  runtimeMaxRetries: 2,
+const baseConfig: GatewayConfig = makeGatewayConfig({
   runtimeProxyRequireAuth: true,
-  runtimeTimeoutMs: 30000,
-  trustProxy: false,
-};
+});
 
 function configWithLogDir(dir: string): GatewayConfig {
-  return { ...baseConfig, logFile: { dir } };
+  return { ...baseConfig, logFile: { dir, retentionDays: 30 } };
 }
 
 /** Convert a Node Buffer to a plain ArrayBuffer (avoids SharedArrayBuffer TS errors). */

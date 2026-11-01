@@ -62,6 +62,7 @@ function prettyOpts(extra?: PrettyOptions): PrettyOptions {
 
 export type LogFileConfig = {
   dir: string | undefined;
+  retentionDays: number;
 };
 
 const LOG_FILE_PREFIX = "assistant-";
@@ -86,6 +87,34 @@ function logFilePathForDate(dir: string, date: Date): string {
  */
 export function getCurrentLogFilePath(): string {
   return logFilePathForDate(getLogsDir(), new Date());
+}
+
+export function pruneOldLogFiles(dir: string, retentionDays: number): number {
+  if (!existsSync(dir)) {
+    return 0;
+  }
+
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
+  cutoff.setUTCHours(0, 0, 0, 0);
+
+  let removed = 0;
+  for (const name of readdirSync(dir)) {
+    const match = LOG_FILE_PATTERN.exec(name);
+    if (!match) {
+      continue;
+    }
+    const fileDate = new Date(match[1] + "T00:00:00Z");
+    if (fileDate < cutoff) {
+      try {
+        unlinkSync(join(dir, name));
+        removed++;
+      } catch {
+        // best-effort
+      }
+    }
+  }
+  return removed;
 }
 
 let rootLogger: Logger | null = null;
@@ -189,7 +218,20 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildRotatingLogger(config);
+  // NOTE: log-retention pruning deliberately does NOT run here — it used to,
+  // and the synchronous sweep stretched every first boot (field feedback
+  // item 8), worst on freshly-migrated assistants with a deep log history.
+  // The daemon's monitoring sweep (startLogRetentionSweep in lifecycle.ts)
+  // owns it now, off the critical path.
 }
+
+/**
+ * How often the background retention sweep runs. The sweep itself is one
+ * readdir + stat per dated file, so hourly is far more frequent than the
+ * day-granularity cutoff needs — the point is only that it never happens
+ * on the boot path.
+ */
+export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 function getRootLogger(): Logger {
   if (activeLogFileConfig) {
@@ -257,7 +299,7 @@ function getRootLogger(): Logger {
       }
 
       // Register state so ensureCurrentDate() rebuilds across UTC midnight.
-      activeLogFileConfig = { dir: logDir };
+      activeLogFileConfig = { dir: logDir, retentionDays: 0 };
       activeLogDate = formatDate(new Date());
     } catch {
       rootLogger = pino(

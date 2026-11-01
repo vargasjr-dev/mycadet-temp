@@ -28,7 +28,7 @@ function makeConfig(): GatewayConfig {
   return {
     assistantRuntimeBaseUrl: "http://localhost:7821",
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-    logFile: { dir: undefined },
+    logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: {
       telegram: 20 * 1024 * 1024,
       slack: 100 * 1024 * 1024,

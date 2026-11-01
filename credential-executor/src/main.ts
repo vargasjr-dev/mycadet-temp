@@ -29,7 +29,12 @@ import {
 } from "@mycadet/ipc-server-utils";
 
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
-import { initLogger, getLogger } from "./logger.js";
+import {
+  getLogger,
+  initLogger,
+  LOG_RETENTION_SWEEP_INTERVAL_MS,
+  pruneOldLogFiles,
+} from "./logger.js";
 import {
   getBootstrapSocketPath,
   getCesDataRoot,
@@ -325,7 +330,28 @@ function startHealthServer(
 async function main(): Promise<void> {
   ensureDataDirs();
 
-  initLogger({ dir: getCesLogDir() });
+  initLogger({ dir: getCesLogDir(), retentionDays: 30 });
+  startLogRetentionSweep();
+
+  /**
+   * Background log-retention sweep (field feedback item 8): the prune left
+   * initLogger's critical path. This process is short-lived — the interval is
+   * unref'd so it never blocks exit; it simply prunes opportunistically while
+   * the process is alive.
+   */
+  function startLogRetentionSweep(): void {
+    const interval = setInterval(() => {
+      try {
+        const removed = pruneOldLogFiles(getCesLogDir(), 30);
+        if (removed > 0) {
+          log.info({ removed }, "Pruned old CES log files");
+        }
+      } catch (err) {
+        log.warn({ err }, "CES log retention sweep failed");
+      }
+    }, LOG_RETENTION_SWEEP_INTERVAL_MS);
+    interval.unref();
+  }
 
   log.info(`Starting CES v${CES_PROTOCOL_VERSION} (socket transport)`);
 
@@ -344,11 +370,7 @@ async function main(): Promise<void> {
   // cwd fallback convention) — see paths.ts.
   const secureKeyBackend = createLocalSecureKeyBackend(getSecurityDir());
 
-  await runCesMigrations(
-    getCesDataRoot(),
-    secureKeyBackend,
-    CES_MIGRATIONS,
-  );
+  await runCesMigrations(getCesDataRoot(), secureKeyBackend, CES_MIGRATIONS);
   log.info("CES startup: migrations complete");
 
   initMetadataStore(getCesDataRoot());

@@ -57,7 +57,7 @@ afterAll(() => {
   // Detach the module-level rootLogger from the temp dirs we're about to
   // delete. Without this, a later flush (or the test runner's shutdown)
   // could try to write into a removed directory.
-  initLogger({ dir: undefined });
+  initLogger({ dir: undefined, retentionDays: 0 });
   rmSync(dirA, { recursive: true, force: true });
   rmSync(dirB, { recursive: true, force: true });
 });
@@ -69,7 +69,7 @@ describe("getLogger() proxy rebind", () => {
     // before `initLogger()` boots in daemon startup.
     const log = getLogger("early-binding");
 
-    initLogger({ dir: dirA });
+    initLogger({ dir: dirA, retentionDays: 0 });
 
     log.info("first: should land in dirA");
 
@@ -77,12 +77,12 @@ describe("getLogger() proxy rebind", () => {
   });
 
   test("subsequent log calls follow rootLogger swaps from initLogger()", async () => {
-    initLogger({ dir: dirA });
+    initLogger({ dir: dirA, retentionDays: 0 });
     const log = getLogger("rebind-target");
     log.info("warm-up against dirA so the child is cached");
     await waitForDailyLogFile(dirA);
 
-    initLogger({ dir: dirB });
+    initLogger({ dir: dirB, retentionDays: 0 });
     log.info("post-swap: should land in dirB if the proxy rebound");
 
     await waitForDailyLogFile(dirB);

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { GatewayConfig } from "../../config.js";
+import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 
@@ -73,26 +74,9 @@ mock.module("../../whatsapp/verify.js", () => ({
 
 const { createWhatsAppWebhookHandler } = await import("./whatsapp-webhook.js");
 
-const baseConfig: GatewayConfig = {
-  assistantRuntimeBaseUrl: "http://localhost:7821",
-  gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-  logFile: { dir: undefined },
-  maxAttachmentBytes: {
-    telegram: 50 * 1024 * 1024,
-    slack: 100 * 1024 * 1024,
-    whatsapp: 16 * 1024 * 1024,
-    default: 50 * 1024 * 1024,
-  },
-  maxAttachmentConcurrency: 3,
-  maxWebhookPayloadBytes: 1024 * 1024,
-  port: 7830,
-  routingEntries: [],
-  runtimeInitialBackoffMs: 500,
-  runtimeMaxRetries: 2,
+const baseConfig: GatewayConfig = makeGatewayConfig({
   runtimeProxyRequireAuth: true,
-  runtimeTimeoutMs: 30000,
-  trustProxy: false,
-};
+});
 
 /** Create mock caches for the WhatsApp webhook handler. */
 function makeCaches() {

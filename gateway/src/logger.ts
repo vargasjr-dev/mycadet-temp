@@ -13,6 +13,7 @@ import { logSerializers } from "./log-redact.js";
 
 export type LogFileConfig = {
   dir: string | undefined;
+  retentionDays: number;
 };
 
 /**
@@ -59,6 +60,35 @@ function jsonLogFilePathForDate(dir: string, date: Date): string {
     dir,
     `${LOG_FILE_PREFIX}${formatDate(date)}${LOG_FILE_JSON_SUFFIX}`,
   );
+}
+
+export function pruneOldLogFiles(dir: string, retentionDays: number): number {
+  if (!existsSync(dir)) return 0;
+  // Disabled retention is a no-op. Guarding here (not just in the `prune()`
+  // wrapper) lets tests exercise the disable path directly without going
+  // through `initLogger`, which is module-level state.
+  if (retentionDays <= 0) return 0;
+
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
+  cutoff.setUTCHours(0, 0, 0, 0);
+
+  let removed = 0;
+  for (const name of readdirSync(dir)) {
+    const match =
+      LOG_FILE_PATTERN.exec(name) ?? LOG_FILE_JSON_PATTERN.exec(name);
+    if (!match) continue;
+    const fileDate = new Date(match[1] + "T00:00:00Z");
+    if (fileDate < cutoff) {
+      try {
+        unlinkSync(join(dir, name));
+        removed++;
+      } catch {
+        // best-effort
+      }
+    }
+  }
+  return removed;
 }
 
 let rootLogger: pino.Logger | null = null;
@@ -126,11 +156,13 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
 }
 
 /**
- * Best-effort retention sweep removed outright (field feedback item 8 —
- * the first-boot prune stretched every wake). Daily files roll over via
- * `ensureCurrentDate`; old files simply accumulate until the operator
- * cleans them.
+ * Cadence for the background retention sweep (field feedback item 8): the
+ * prune left the boot path AND the date-rollover path (a getLogger() call
+ * just after midnight UTC would otherwise sweep on a request). The gateway
+ * main process owns the interval now; a dedicated monitoring worker is the
+ * follow-up wiring (out of scope for now).
  */
+export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 function ensureCurrentDate(): void {
   if (!activeConfig?.dir || !activeLogDate) return;
@@ -142,6 +174,10 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
+  // NOTE: the retention prune deliberately does NOT run here (field feedback
+  // item 8 — the synchronous sweep stretched every first wake). The gateway
+  // main process runs it on a background interval; a dedicated monitoring
+  // worker is the follow-up wiring (out of scope for now).
 }
 
 /**

@@ -12,6 +12,7 @@ import { logSerializers } from "./log-redact.js";
 
 export type LogFileConfig = {
   dir: string | undefined;
+  retentionDays: number;
 };
 
 const LOG_FILE_PREFIX = "ces-";
@@ -27,6 +28,30 @@ function formatDate(date: Date): string {
 
 function logFilePathForDate(dir: string, date: Date): string {
   return join(dir, `${LOG_FILE_PREFIX}${formatDate(date)}${LOG_FILE_SUFFIX}`);
+}
+
+export function pruneOldLogFiles(dir: string, retentionDays: number): number {
+  if (!existsSync(dir)) return 0;
+
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - retentionDays);
+  cutoff.setUTCHours(0, 0, 0, 0);
+
+  let removed = 0;
+  for (const name of readdirSync(dir)) {
+    const match = LOG_FILE_PATTERN.exec(name);
+    if (!match) continue;
+    const fileDate = new Date(match[1] + "T00:00:00Z");
+    if (fileDate < cutoff) {
+      try {
+        unlinkSync(join(dir, name));
+        removed++;
+      } catch {
+        // best-effort
+      }
+    }
+  }
+  return removed;
 }
 
 let rootLogger: pino.Logger | null = null;
@@ -82,7 +107,16 @@ function ensureCurrentDate(): void {
 
 export function initLogger(config: LogFileConfig): void {
   rootLogger = buildLogger(config);
+  // NOTE: the retention prune deliberately does NOT run here (field feedback
+  // item 8 — it stretched first boot). The main process runs it on a
+  // background interval; a dedicated monitoring worker is the follow-up
+  // wiring (out of scope for now).
 }
+
+/**
+ * Cadence for the background retention sweep — see startLogRetentionSweep.
+ */
+export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
  * Returns a lazy proxy logger that always delegates to the **current**

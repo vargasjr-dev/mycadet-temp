@@ -53,11 +53,11 @@ let logDir: string;
 
 beforeAll(() => {
   logDir = mkdtempSync(join(tmpdir(), "gw-telegram-drop-"));
-  initLogger({ dir: logDir });
+  initLogger({ dir: logDir, retentionDays: 30 });
 });
 
 afterAll(() => {
-  initLogger({ dir: undefined });
+  initLogger({ dir: undefined, retentionDays: 30 });
   rmSync(logDir, { recursive: true, force: true });
 });
 
@@ -83,7 +83,7 @@ function makeConfig(): GatewayConfig {
     runtimeMaxRetries: 2,
     runtimeInitialBackoffMs: 500,
     maxWebhookPayloadBytes: 1048576,
-    logFile: { dir: undefined },
+    logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: {
       telegram: 50 * 1024 * 1024,
       slack: 100 * 1024 * 1024,
