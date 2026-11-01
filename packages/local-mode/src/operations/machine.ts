@@ -132,7 +132,9 @@ function writeMachinePolicy(
  * Set one machine key (`memory.max` / `memory.high`) to a parsed byte size
  * and store the merged, validated section. The value grammar is
  * {@link parseMachineBytes}'; cross-field rules (high ≤ max) are the
- * schema's — this never re-derives them.
+ * schema's — this never re-derives them. A set whose value is already
+ * stored is a no-op: no lock write, no pending narration — re-stating a
+ * pin is not a change.
  */
 export function machineSetKey(
   entry: LockfileAssistant,
@@ -154,8 +156,17 @@ export function machineSetKey(
       error: `Invalid size '${rawValue}'. Use bytes, or a suffix like 512MiB, 8GiB, 1TiB (1024-based) or 100MB, 2GB (1000-based).`,
     };
   }
-  const [section, key] = keyPath.split(".") as ["memory", "max" | "high"];
-  const memory = { ...entry.machine?.memory, [key]: bytes };
+  const key = keyPath.split(".")[1] as "max" | "high";
+  if (entry.machine?.memory?.[key] === bytes) {
+    return {
+      ok: true,
+      machine: entry.machine,
+      value: bytes,
+      note: "Already stored — no change.",
+    };
+  }
+  const [section, memoryKey] = keyPath.split(".") as ["memory", "max" | "high"];
+  const memory = { ...entry.machine?.memory, [memoryKey]: bytes };
   const result = writeMachinePolicy(entry, { ...entry.machine, memory });
   if (result.ok) return { ...result, value: bytes };
   return result;

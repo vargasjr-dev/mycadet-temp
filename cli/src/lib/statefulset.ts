@@ -13,6 +13,10 @@ import {
   GATEWAY_INTERNAL_PORT,
 } from "./environments/paths.js";
 import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import {
+  machineMemoryRunArgs,
+  type MachineMemoryPolicy,
+} from "@mycadet/local-mode";
 
 const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
 
@@ -281,6 +285,13 @@ export interface BuildServiceRunArgsOpts extends DockerRunSecrets {
    * signed by a CA outside the default trust set.
    */
   assistantCaCertPath?: string;
+  /**
+   * The assistant's stored machine memory policy (`entry.machine.memory`).
+   * Absent or null ⇒ the container runs unlimited (docker's default), as it
+   * always has. Flags land on the ASSISTANT container only — the gateway
+   * and credential-executor are never sized by the assistant's policy.
+   */
+  assistantMemory?: MachineMemoryPolicy | null;
 }
 
 interface BuilderManagedEnvKeys {
@@ -471,6 +482,8 @@ export function buildServiceRunArgs(
             `NODE_EXTRA_CA_CERTS=${ASSISTANT_EXTRA_CA_TARGET}`,
           );
         }
+
+        args.push(...machineMemoryRunArgs(opts.assistantMemory ?? null));
       }
 
       // Image is always last

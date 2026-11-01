@@ -169,6 +169,13 @@ export {
   machineSetKey,
   type MachineMutationResult,
 } from "./operations/machine";
+export { planMachine } from "./operations/machine-plan";
+export type {
+  MachinePlanResult,
+  MachinePlanChange,
+  AppliedMemoryState,
+} from "./operations/machine-plan";
+export { machineMemoryRunArgs } from "./remotes/docker/memory";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
 export { sleepDocker } from "./remotes/docker/sleep";

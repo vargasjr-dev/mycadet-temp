@@ -423,7 +423,10 @@ export async function restoreHostTeleportTarget(
     ]) {
       await execOutput("docker", ["rm", container]);
     }
-    await startContainers(opts, (message) => console.log(message));
+    await startContainers(
+      { ...opts, assistantMemory: entry.machine?.memory ?? null },
+      (message) => console.log(message),
+    );
   };
   try {
     if (previous) {
@@ -454,7 +457,10 @@ export async function restoreHostTeleportTarget(
             }
           }
         }
-        await startContainers(previous, (message) => console.log(message));
+        await startContainers(
+          { ...previous, assistantMemory: entry.machine?.memory ?? null },
+          (message) => console.log(message),
+        );
       }
       if (
         entry.cloud !== "cloud" &&
