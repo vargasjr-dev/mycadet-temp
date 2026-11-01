@@ -20,9 +20,8 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
-import { dockerResourceNames } from "@mycadet/local-mode";
 import { startContainers } from "../lib/remotes/docker.js";
-import { sleepContainers } from "@mycadet/local-mode";
+import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
 
@@ -166,7 +165,7 @@ async function archive() {
   const capture = join(directory, "capture");
   await mkdir(capture);
   const storage = new DockerRootStorage(entry);
-  await sleepContainers(names, { timeoutMs: 100 });
+  await sleepDocker(entry, { timeoutMs: 100 });
   await storage.capture(capture);
   const file = join(directory, "backup.tar.gz");
   await packRoot(capture, file);
@@ -246,7 +245,7 @@ test("default Docker sleep aborts a graceful timeout without forcing termination
     (args) => args[0] === "kill",
     () => ({}),
   );
-  await expect(sleepContainers(names, { timeoutMs: 0 })).rejects.toThrow(
+  await expect(sleepDocker(entry, { timeoutMs: 0 })).rejects.toThrow(
     "did not stop gracefully",
   );
   expect(running.get(names.assistantContainer)).toBe(true);

@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, test, expect } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { dockerResourceNames } from "@mycadet/local-mode";
 import {
   AVATAR_DEVICE_ENV_VAR,
   collectWatchTargets,
@@ -13,6 +12,7 @@ import {
   resolveDockerProviderCredentialSetupAction,
   type ServiceName,
 } from "../remotes/docker.js";
+import { dockerResourceNames } from "@mycadet/local-mode";
 import { ASSISTANT_INTERNAL_PORT } from "../environments/paths.js";
 import { buildServiceRunArgs } from "../statefulset.js";
 

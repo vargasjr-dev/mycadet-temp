@@ -314,9 +314,7 @@
     "loadFailedToast": "載入助理資訊失敗",
     "loading": "正在載入助理資訊...",
     "noAssistant": "未找到助理。孵化一個助理以存取偵錯控制項。",
-    "restartDescription": "重新啟動助理機器。重新啟動期間將暫時無法使用。",
-    "restartTitle": "重新啟動助理",
-    "subtitle": "管理備份並重新啟動您的助理。",
+    "subtitle": "管理您的助理備份。",
     "title": "一般"
   },
   "doctorChatBlocks": {
@@ -967,16 +965,6 @@
     "runAtAria": "執行於 {time}",
     "skipped": "已略過",
     "title": "最近執行"
-  },
-  "restartAssistant": {
-    "button": "重新啟動",
-    "confirmLabel": "重新啟動",
-    "confirmMessage": "您確定要重新啟動此助理嗎？重新啟動期間它將會短暫無法使用。",
-    "confirmTitle": "重新啟動助理",
-    "failStart": "啟動助理失敗。",
-    "failStop": "停止助理失敗。",
-    "toastFailed": "重新啟動助理失敗。",
-    "toastRestarting": "助理正在重新啟動。"
   },
   "riskToleranceSettings": {
     "advanced": "進階",

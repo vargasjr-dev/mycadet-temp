@@ -16,6 +16,7 @@ import { hostname } from "node:os";
 
 import {
   DeviceRecord,
+  dockerResourceNames,
   getAssistantDisplayName,
   loopbackSafeFetch,
 } from "@mycadet/local-mode";
@@ -35,7 +36,6 @@ import {
 } from "../lib/confirm-action.js";
 import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
-import { dockerResourceNames } from "@mycadet/local-mode";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),

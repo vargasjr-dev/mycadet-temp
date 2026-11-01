@@ -45,16 +45,6 @@ export interface SleepOptions {
 }
 
 /**
- * Entry clouds THIS machine can sleep directly: the host owns their process
- * tree (pid-file stops) or their containers. Every other entry (apple-container's
- * app-managed lifecycle, cloud/custom/baseten hosts) is not this host's to
- * stop — the route passes through and the pre-existing chain answers.
- */
-export function isHostExecutableSleepEntry(entry: LockfileAssistant): boolean {
-  return entry.cloud === "local" || entry.cloud === "docker";
-}
-
-/**
  * Sleep one assistant entry: per-cloud stop (the local leg drains then
  * stops the process tree; the docker leg SIGTERMs the containers). Never
  * throws and never exits the process — failures come back structured so
@@ -67,7 +57,7 @@ export async function sleepAssistant(
 ): Promise<SleepResult> {
   try {
     if (entry.cloud === "docker") {
-      await sleepDocker(entry.assistantId);
+      await sleepDocker(entry);
       return { ok: true, kind: "containers" };
     }
     if (entry.cloud === "local") {
@@ -76,7 +66,7 @@ export async function sleepAssistant(
     return {
       ok: false,
       status: 400,
-      error: `'${cliCommand()} sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
+      error: `'${cliCommand()} sleep' is unsupported for a ${entry.cloud} assistant.`,
     };
   } catch (err) {
     return {

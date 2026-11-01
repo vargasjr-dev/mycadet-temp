@@ -6,9 +6,10 @@ import { join } from "path";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config";
-import { dockerResourceNames } from "@mycadet/local-mode";
+
 import {
   cliCommand,
+  dockerResourceNames,
   extractHostFromEntry,
   resolveLogDir,
 } from "@mycadet/local-mode";

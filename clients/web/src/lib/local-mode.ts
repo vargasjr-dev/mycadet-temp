@@ -307,12 +307,6 @@ export function isCloudAssistant(a: LockfileAssistant): boolean {
  * guardian-repair affordances are limited to them. A missing gateway port does
  * NOT disqualify: wake is what (re)establishes it.
  */
-export function isCliWakeableAssistant(assistantId: string): boolean {
-  const entry = getServedLockfile().assistants.find(
-    (a) => a.assistantId === assistantId,
-  );
-  return !!entry && isLocalAssistant(entry);
-}
 
 export function getLocalAssistants(): LockfileAssistant[] {
   return getServedLockfile().assistants.filter(isLocalAssistant);
@@ -586,11 +580,10 @@ export async function primeLocalGatewayConnectionWithRepair(
     await primeLocalGatewayConnection(assistant);
     return;
   } catch (error) {
-    // Wake operates only on plain local assistants (see
-    // `isCliWakeableAssistant`): spawning it for a non-local target would
-    // burn time on a refusal, so their failures propagate untouched. The
-    // recovery decision is remote-agnostic — the local-topology check is
-    // the whole gate.
+    // Wake operates only on plain local assistants: spawning it for a
+    // non-local target would burn time on a refusal, so their failures
+    // propagate untouched. The recovery decision is remote-agnostic — the
+    // local-topology check is the whole gate.
     if (!assistant || !isLocalAssistant(assistant)) {
       throw error;
     }

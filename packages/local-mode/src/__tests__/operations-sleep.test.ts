@@ -72,11 +72,7 @@ afterAll(() => {
 
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
-import {
-  isHostExecutableSleepEntry,
-  sleepAssistant,
-  type SleepResult,
-} from "../operations/sleep";
+import { sleepAssistant, type SleepResult } from "../operations/sleep";
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
@@ -361,7 +357,9 @@ describe("sleepAssistant — the dispatch", () => {
       ok: true,
       kind: "containers",
     });
-    expect(sleepDockerMock).toHaveBeenCalledWith("asst-docker");
+    expect(sleepDockerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
+    );
   });
 
   test("entries this machine cannot stop come back structured", async () => {
@@ -373,54 +371,10 @@ describe("sleepAssistant — the dispatch", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(400);
-      expect(result.error).toContain("only works with local and docker");
+      expect(result.error).toBe(
+        "'cadet sleep' is unsupported for a cloud assistant.",
+      );
     }
-  });
-});
-
-describe("isHostExecutableSleepEntry", () => {
-  test("local and docker entries are", () => {
-    expect(
-      isHostExecutableSleepEntry({
-        assistantId: "a",
-        cloud: "local",
-        port: 7830,
-      } as never),
-    ).toBe(true);
-    expect(
-      isHostExecutableSleepEntry({
-        assistantId: "a",
-        cloud: "docker",
-        port: 7831,
-      } as never),
-    ).toBe(true);
-  });
-
-  test("apple-container, platform-hosted, and paired entries are not", () => {
-    expect(
-      isHostExecutableSleepEntry({
-        assistantId: "a",
-        cloud: "apple-container",
-        port: 7832,
-        mgmtSocket: "/tmp/mgmt.sock",
-      } as never),
-    ).toBe(false);
-    expect(
-      isHostExecutableSleepEntry({ assistantId: "a", cloud: "cloud" } as never),
-    ).toBe(false);
-    expect(
-      isHostExecutableSleepEntry({
-        assistantId: "a",
-        cloud: "baseten",
-      } as never),
-    ).toBe(false);
-    expect(
-      isHostExecutableSleepEntry({
-        assistantId: "a",
-        cloud: "custom",
-        runtimeUrl: "https://gw.example.com",
-      } as never),
-    ).toBe(false);
   });
 });
 
@@ -461,14 +415,31 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(match).not.toBeNull();
     const response = await match!.route.run(match!.assistantId);
     expect(response?.status).toBe(204);
-    expect(sleepDockerMock).toHaveBeenCalledWith("asst-docker");
+    expect(sleepDockerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
+    );
   });
 
-  test("an entry the host cannot stop passes through to the pre-existing chain", async () => {
+  test("a platform-hosted entry is refused with the operation's 400", async () => {
     seedEntry({ assistantId: "asst-cloud", cloud: "cloud" });
 
     const match = matchOperatorRequest(
       "/v1/assistants/asst-cloud/sleep/",
+      "POST",
+    );
+    expect(match).not.toBeNull();
+    const response = await match!.route.run(match!.assistantId);
+    expect(response?.status).toBe(400);
+    const body = (await response!.json()) as { detail: string };
+    expect(body.detail).toBe(
+      "'cadet sleep' is unsupported for a cloud assistant.",
+    );
+    expect(sleepDockerMock).not.toHaveBeenCalled();
+  });
+
+  test("an unknown id passes through to the pre-existing chain", async () => {
+    const match = matchOperatorRequest(
+      "/v1/assistants/no-such-assistant/sleep/",
       "POST",
     );
     expect(match).not.toBeNull();

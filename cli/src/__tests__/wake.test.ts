@@ -15,7 +15,6 @@ import { join } from "node:path";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/remotes/docker.js";
-import * as localModeDocker from "@mycadet/local-mode";
 import * as guardianToken from "../lib/guardian-token.js";
 import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -62,16 +61,19 @@ mock.module("../lib/assistant-config.js", () => ({
 }));
 
 const dockerResourceNamesMock = mock<
-  typeof localModeDocker.dockerResourceNames
->(realLocalMode.dockerResourceNames);
+  typeof localModeModule.dockerResourceNames
+>(localModeModule.dockerResourceNames);
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
 const recreateDockerContainersMock = mock<
   typeof docker.recreateDockerContainers
 >(async () => {});
 
+mock.module("@mycadet/local-mode", () => ({
+  ...localModeModule,
+  dockerResourceNames: dockerResourceNamesMock,
+}));
 mock.module("../lib/remotes/docker.js", () => ({
   ...realDocker,
-  dockerResourceNames: dockerResourceNamesMock,
   wakeContainers: wakeContainersMock,
   recreateDockerContainers: recreateDockerContainersMock,
 }));
@@ -113,11 +115,6 @@ const stopProcessByPidFileMock = mock<
 const isProcessAliveMock = mock<typeof localModeModule.isProcessAlive>(() => ({
   alive: false,
   pid: null,
-}));
-
-mock.module("../lib/process", () => ({
-  ...realProcessLib,
-  resolveProcessState: resolveProcessStateMock,
 }));
 
 const findOpenPortMock = mock<typeof portAllocator.findOpenPort>(
@@ -197,15 +194,19 @@ mock.module("../lib/servers/nginx.js", () => ({
   ensureAppServer: ensureAppServerMock,
 }));
 
-// One registration for the package, placed after every mock const: the
-// lockfile seams stay from the original surface, and the process-stop and
-// ingress seams are here because cli/src/lib/process.ts and
-// servers/nginx.ts no longer re-export them — the wake path imports them
-// from the package directly now.
+// resolveProcessState still lives in cli/src/lib/process.ts (the file owns
+// it) — mock it there. The process-STOP cluster and the ingress reads moved
+// to the package (process.ts and servers/nginx.ts no longer re-export them) —
+// mock those where the wake path imports them now.
+mock.module("../lib/process", () => ({
+  ...realProcessLib,
+  resolveProcessState: resolveProcessStateMock,
+}));
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   saveLockfileAssistant: saveLockfileAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
+  dockerResourceNames: dockerResourceNamesMock,
   stopProcessByPidFile: stopProcessByPidFileMock,
   isProcessAlive: isProcessAliveMock,
   isIngressRunning: isIngressRunningMock,

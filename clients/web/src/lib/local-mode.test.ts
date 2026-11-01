@@ -67,7 +67,6 @@ import {
   cancelAssistantPairing,
   pollAssistantPairing,
   startAssistantPairing,
-  isCliWakeableAssistant,
   isLocalAssistant,
   isCadetCloudRemote,
   isCloudAssistant,
@@ -656,23 +655,6 @@ describe("hasGatewayAddress", () => {
   test("is true for the served entry - a port-0 topology is an address the host resolves", () => {
     stampServed({ assistantId: "served-1" });
     expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
-  });
-});
-
-describe("isCliWakeableAssistant", () => {
-  test("the served local assistant is wakeable (wake establishes its gateway)", () => {
-    stampServed({ assistantId: "served-1" });
-    expect(isCliWakeableAssistant("served-1")).toBe(true);
-  });
-
-  test("a served docker-cloud entry is not CLI-wakeable", () => {
-    stampServed({ assistantId: "served-1", remote: "docker" });
-    expect(isCliWakeableAssistant("served-1")).toBe(false);
-  });
-
-  test("an unknown id is not wakeable", () => {
-    stampServed({ assistantId: "served-1" });
-    expect(isCliWakeableAssistant("nope")).toBe(false);
   });
 });
 

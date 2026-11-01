@@ -2,7 +2,7 @@ import { existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import { resolveConfigDir } from "../config";
-import { isCloudEntry, isLoopbackGatewayCloud } from "../lockfile-contract";
+import { isCloudEntry } from "../lockfile-contract";
 import type { LockfileAssistant } from "../lockfile-contract";
 import {
   getAssistantDisplayName,
@@ -31,18 +31,6 @@ import { retireCloudEntry } from "../remotes/cloud/retire";
 export type RetireResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
-
-/**
- * Entry clouds THIS machine can retire directly: the host owns their
- * teardown (daemon stop, container removal, instance archive). Every other
- * entry retires through the cloud's retire route the same proxy forwards, so
- * the bundle's one endpoint holds for every entry type.
- */
-export function isHostExecutableRetireEntry(entry: LockfileAssistant): boolean {
-  return (
-    isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "apple-container"
-  );
-}
 
 /**
  * Retire one assistant entry: per-cloud teardown (each remote's retire

@@ -18,6 +18,7 @@ const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
 const realCloudAuth = { ...(await import("../cloud-auth")) };
 const realLocalRetire = { ...(await import("../remotes/local/retire")) };
 const realDockerRetire = { ...(await import("../remotes/docker/retire")) };
+const realExec = { ...(await import("../exec")) };
 const realAppleRetire = {
   ...(await import("../remotes/apple-container/retire")),
 };
@@ -48,6 +49,9 @@ const retireLocalMock = mock(
 );
 const retireDockerMock = mock(async (): Promise<void> => {});
 const retireAppleContainerMock = mock(async (): Promise<void> => {});
+const execMock = mock(
+  (_cmd: string, _args: string[]): Promise<string> => Promise.resolve(""),
+);
 
 mock.module("../loopback-fetch", () => ({
   ...realLoopbackFetch,
@@ -59,6 +63,10 @@ mock.module("../cloud-auth", () => ({
   authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
   cloudAuthHeaders: cloudAuthHeadersMock,
   resolveCloudUrl: resolveCloudUrlMock,
+}));
+mock.module("../exec", () => ({
+  ...realExec,
+  exec: execMock,
 }));
 mock.module("../remotes/local/retire", () => ({
   ...realLocalRetire,
@@ -78,6 +86,7 @@ mock.module("../remotes/apple-container/retire", () => ({
 afterAll(() => {
   mock.module("../loopback-fetch", () => realLoopbackFetch);
   mock.module("../cloud-auth", () => realCloudAuth);
+  mock.module("../exec", () => realExec);
   mock.module("../remotes/local/retire", () => realLocalRetire);
   mock.module("../remotes/docker/retire", () => realDockerRetire);
   mock.module("../remotes/apple-container/retire", () => realAppleRetire);
@@ -85,10 +94,7 @@ afterAll(() => {
 
 import { readLockfile } from "../lockfile";
 import type { LockfileAssistant } from "../lockfile-contract";
-import {
-  retireAssistant,
-  isHostExecutableRetireEntry,
-} from "../operations/retire";
+import { retireAssistant } from "../operations/retire";
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
@@ -109,10 +115,12 @@ beforeEach(() => {
     retireLocalMock,
     retireDockerMock,
     retireAppleContainerMock,
+    execMock,
   ]) {
     m.mockReset();
   }
   loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+  execMock.mockResolvedValue("");
   readCloudTokenMock.mockReturnValue(null);
   resolveCloudUrlMock.mockReturnValue("https://platform.example.test");
   authHeadersForKnownOrganizationMock.mockImplementation(
@@ -221,54 +229,6 @@ describe("retireAssistant — the headless dispatch", () => {
   });
 });
 
-describe("isHostExecutableRetireEntry", () => {
-  test("loopback and apple-container entries are host-executable", () => {
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "local",
-        port: 7830,
-      } as never),
-    ).toBe(true);
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "docker",
-        port: 7830,
-      } as never),
-    ).toBe(true);
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "apple-container",
-        port: 7830,
-        mgmtSocket: "/tmp/mgmt.sock",
-      } as never),
-    ).toBe(true);
-  });
-
-  test("platform-hosted and paired entries are not", () => {
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "cloud",
-      } as never),
-    ).toBe(false);
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "baseten",
-      } as never),
-    ).toBe(false);
-    expect(
-      isHostExecutableRetireEntry({
-        assistantId: "a",
-        cloud: "custom",
-      } as never),
-    ).toBe(false);
-  });
-});
-
 describe("the operator route table — the scoped surface's retire arm", () => {
   const localEntry = { assistantId: "asst-local", cloud: "local", port: 7830 };
   const dockerEntry = {
@@ -280,7 +240,8 @@ describe("the operator route table — the scoped surface's retire arm", () => {
   const pairedEntry = {
     assistantId: "asst-paired",
     cloud: "custom",
-    runtimeUrl: "https://gw.example.com",
+    ipAddress: "gw.example.com",
+    port: 7830,
   };
 
   test("non-DELETE methods and non-retire paths never match", () => {
@@ -326,26 +287,34 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     expect(await response?.json()).toEqual({ detail: "no such assistant" });
   });
 
-  test("cloud and custom entries pass through to the endpoint's forward", async () => {
-    writeLockfile({
-      assistants: [cloudEntry, pairedEntry],
-      activeAssistant: null,
-    });
+  test("a platform-hosted entry retires through the operation's cloud leg", async () => {
+    writeLockfile({ assistants: [cloudEntry], activeAssistant: null });
+    readCloudTokenMock.mockReturnValue("platform-token");
 
-    expect(
-      await matchOperatorRequest(
-        "/v1/assistants/asst-cloud/retire/",
-        "DELETE",
-      )!.route.run("asst-cloud"),
-    ).toBeNull();
-    expect(
-      await matchOperatorRequest(
-        "/v1/assistants/asst-paired/retire/",
-        "DELETE",
-      )!.route.run("asst-paired"),
-    ).toBeNull();
+    const response = await matchOperatorRequest(
+      "/v1/assistants/asst-cloud/retire/",
+      "DELETE",
+    )!.route.run("asst-cloud");
+
+    expect(response?.status).toBe(204);
+    // The platform unregistration rode the (mocked) cloud API and the local
+    // bookkeeping completed — the entry is gone from the lockfile.
+    expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([]);
     expect(retireLocalMock).not.toHaveBeenCalled();
     expect(retireDockerMock).not.toHaveBeenCalled();
+  });
+
+  test("a paired entry retires through its ssh leg", async () => {
+    writeLockfile({ assistants: [pairedEntry], activeAssistant: null });
+
+    const response = await matchOperatorRequest(
+      "/v1/assistants/asst-paired/retire/",
+      "DELETE",
+    )!.route.run("asst-paired");
+
+    expect(response?.status).toBe(204);
+    expect(execMock.mock.calls[0]![0]).toBe("ssh");
+    expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([]);
   });
 
   test("an id the lockfile does not know passes", async () => {
