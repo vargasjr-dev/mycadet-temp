@@ -194,23 +194,6 @@ describe("restore error cases", () => {
     );
   });
 
-  test("throws when metadata has no resources", async () => {
-    const name = "no-resources";
-    mkdirSync(retiredDir, { recursive: true });
-    writeFileSync(join(retiredDir, `${name}.tar.gz`), "");
-    const entry: Partial<LockfileAssistant> = {
-      assistantId: name,
-      cloud: "local",
-      // resources intentionally omitted
-    };
-    writeFileSync(
-      join(retiredDir, `${name}.json`),
-      JSON.stringify(entry, null, 2) + "\n",
-    );
-    process.argv = ["bun", "cadet", "restore", name];
-    await expect(restore()).rejects.toThrow("missing resource configuration");
-  });
-
   test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);

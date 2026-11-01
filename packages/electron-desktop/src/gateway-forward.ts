@@ -263,8 +263,8 @@ async function executeLoopbackForward(
     getGuardianAccessToken(plan.assistantId);
   // The mint dials the same network seam as the forward, so a recorded or
   // stubbed fetcher sees both hops.
-  const mintFetcher = (input: RequestInfo | URL, init?: RequestInit) =>
-    fetcher(String(input), init ?? {});
+  const mintFetcher = (input: string, init?: RequestInit) =>
+    fetcher(input, init ?? {});
   const injectable = new URL(plan.url).pathname !== "/auth/token";
   const bearer = injectable
     ? await loopbackGatewayBearer(plan.target.port, lease, {

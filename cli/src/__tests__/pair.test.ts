@@ -52,6 +52,24 @@ mock.module("../lib/step-runner.js", () => ({
   execOutput: mockExecOutput,
 }));
 
+// The cloud-home arms (cloud/custom/baseten) mint through the platform's
+// terminal-session exec API instead of a local subprocess; answer it
+// in-process so the custom-pairing test never touches the network.
+const actualTerminalSession = await import("../lib/terminal-session.js");
+const execViaTerminalSessionMock = mock(
+  async (
+    _assistant: unknown,
+    _command: string[],
+  ): Promise<{ output: string; exitCode: number }> => ({
+    output: "",
+    exitCode: 0,
+  }),
+);
+mock.module("../lib/terminal-session.js", () => ({
+  ...actualTerminalSession,
+  execViaTerminalSession: execViaTerminalSessionMock,
+}));
+
 const { buildAppConnectUrl, pair } = await import("../commands/pair.js");
 
 // Distinct loopback (mint) vs reachable (advertised) URLs to verify the split.
@@ -827,56 +845,63 @@ describe("pair command", () => {
     );
   });
 
-  test("a custom (ssh-managed) assistant pairs through the gateway's own advertised URL", async () => {
+  test("a custom (ssh-managed) assistant mints through the platform exec API and advertises the gateway's own URL", async () => {
     writeFileSync(
       join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
             assistantId: "pair-test",
-            runtimeUrl: LOCAL_URL,
             cloud: "custom",
+            ipAddress: "203.0.113.9",
+            port: 7830,
           },
         ],
         activeAssistant: "pair-test",
       }),
     );
+    // cloudPair requires a cloud login (the exec API authenticates with it).
+    writeFileSync(join(testDir, "cadet", "cloud-token"), "test-cloud-token");
 
-    const calls: Array<[string, RequestInit | undefined]> = [];
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        calls.push([url, init]);
-        if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
-          return challengeResponse(PUBLIC_URL);
-        }
-        if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
-          return approvalResponse(PUBLIC_URL);
-        }
-        return new Response("not found", { status: 404 });
+    // The mint runs ON the assistant's gateway through the platform's
+    // terminal-session exec API; the challenge's verificationUri is the
+    // gateway's own advertised URL.
+    execViaTerminalSessionMock.mockResolvedValueOnce({
+      output: `${JSON.stringify({
+        deviceCode: "device-code",
+        userCode: "ABCD-EFGH",
+        verificationUri: `${PUBLIC_URL}/assistant/pair`,
+        expiresAt: "2026-06-04T00:10:00.000Z",
+        expiresInSeconds: 600,
+      })}\n`,
+      exitCode: 0,
+    });
+
+    const logs: string[] = [];
+    const logSpy = spyOn(console, "log").mockImplementation(
+      (...a: unknown[]) => {
+        logs.push(a.join(" "));
       },
     );
-
-    const logSpy = spyOn(console, "log").mockImplementation(() => {});
 
     process.argv = ["bun", "cadet", "pair"];
     try {
       await pair();
     } finally {
       logSpy.mockRestore();
-      globalThis.fetch = origFetch;
     }
 
-    // Custom entries mint over the gateway's loopback HTTP route; the
-    // gateway self-sources the advertised URL from its own workspace.
-    expect(
-      calls.some(([url]) => url.endsWith("/v1/remote-web/pairing-challenge")),
-    ).toBe(true);
-    expect(
-      calls.some(([url]) =>
-        url.endsWith("/v1/remote-web/pairing-verification"),
-      ),
-    ).toBe(true);
+    expect(execViaTerminalSessionMock).toHaveBeenCalledTimes(1);
+    expect(execViaTerminalSessionMock.mock.calls[0]?.[1]).toEqual([
+      "bun",
+      "run",
+      "src/cli/index.ts",
+      "pairing",
+      "mint",
+    ]);
+    const output = logs.join("\n");
+    expect(output).toContain(
+      `${PUBLIC_URL}/assistant/pair#device_code=device-code`,
+    );
   });
 });

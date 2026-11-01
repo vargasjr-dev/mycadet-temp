@@ -264,12 +264,7 @@ describe("refreshGuardianToken", () => {
     expect(existsSync(lockPath("px"))).toBe(false); // lock released
   });
 
-  test("leases against the gateway's real init shape — refreshAfter arrives as a number", async () => {
-    // The gateway's GuardianBootstrapResult serializes refreshAfter as a
-    // NUMBER of ms (mintRefreshToken), and the strict lease check rejects a
-    // response missing any field. A string-only schema read that number as
-    // malformed, so every real hatch failed its lease while the ISO-string
-    // test doubles here stayed green.
+  test("leases against the gateway's real pair shape — refreshAfter arrives as a number", async () => {
     globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/readyz")) {
@@ -277,12 +272,19 @@ describe("refreshGuardianToken", () => {
       }
       return new Response(
         JSON.stringify({
-          guardianPrincipalId: "principal-lease",
-          accessToken: "access-lease",
-          accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+          // The gateway's device-bound pair response maps onto the lease's
+          // field names (token → accessToken, guardianId → guardianPrincipalId);
+          // refreshAfter serializes as a NUMBER of ms (mintRefreshToken), and
+          // the strict lease check rejects a response missing any field. A
+          // string-only schema read that number as malformed, so every real
+          // hatch failed its lease while the ISO-string test doubles here
+          // stayed green.
+          token: "access-lease",
+          expiresAt: Date.now() + 60 * 60 * 1000,
           refreshToken: "refresh-lease",
           refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
           refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
+          guardianId: "principal-lease",
           isNew: true,
           mintedOverPriorEvidence: false,
         }),
@@ -308,8 +310,8 @@ describe("refreshGuardianToken", () => {
       }
       return new Response(
         JSON.stringify({
-          guardianPrincipalId: "principal-lease",
-          accessToken: 42,
+          guardianId: "principal-lease",
+          token: 42,
           refreshToken: "refresh-lease",
         }),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -327,7 +329,7 @@ describe("refreshGuardianToken", () => {
         `expected GuardianLeasePermanentError, got ${String(err)}`,
       );
     }
-    expect(err.message).toContain("(200)");
+    expect(err.message).toContain("malformed token response");
     expect(err.message).toContain("accessToken arrived as number");
     expect(err.message).toContain("refreshTokenExpiresAt arrived as absent");
   });
