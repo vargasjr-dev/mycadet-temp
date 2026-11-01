@@ -602,10 +602,6 @@ export async function leaseGuardianToken(
   const deviceId = computeDeviceId();
   const clientReportedName = readClientHostname();
 
-  // Pairing IS the lease: the pair operation's transport proves presence
-  // (host-loopback POST for local, in-container exec for docker). This
-  // replaces the retired GUARDIAN_BOOTSTRAP_SECRET handshake on
-  // /v1/guardian/init (deleted); re-pairing IS the repair.
   const paired = await pairDevice(entry, {
     platform: "cli",
     deviceId,

@@ -64,50 +64,31 @@ describe("pairDevice — the credential door routes by remote", () => {
     });
   });
 
-  test("routes a local entry to the loopback leg and hands it the entry", async () => {
+  test("routes a local entry to the local leg and hands it the device identity", async () => {
     const entry = localEntry();
-    const result = await pairDevice(entry, {
+    const device = {
       platform: "cli",
       deviceId: "device-1",
       clientReportedName: "box",
-    });
+    };
+    const result = await pairDevice(entry, device);
     expect(pairLocalMock).toHaveBeenCalledTimes(1);
-    const [entryArg, body] = pairLocalMock.mock.calls[0]!;
+    const [entryArg, deviceArg] = pairLocalMock.mock.calls[0]!;
     expect(entryArg).toBe(entry);
-    expect(JSON.parse(body)).toEqual({
-      platform: "cli",
-      deviceId: "device-1",
-      clientReportedName: "box",
-    });
+    expect(deviceArg).toEqual(device);
     expect(result).toEqual({ ok: true, response: { token: "local" } });
     expect(pairDockerMock).not.toHaveBeenCalled();
   });
 
-  test("routes a docker entry to the exec leg by instance id", async () => {
-    const result = await pairDevice(dockerEntry, {
-      platform: "cli",
-      deviceId: "device-2",
-    });
+  test("routes a docker entry to the docker leg by entry", async () => {
+    const device = { platform: "cli", deviceId: "device-2" };
+    const result = await pairDevice(dockerEntry, device);
     expect(pairDockerMock).toHaveBeenCalledTimes(1);
-    const [assistantId, body] = pairDockerMock.mock.calls[0]!;
-    expect(assistantId).toBe("asst-local");
-    expect(JSON.parse(body)).toEqual({
-      platform: "cli",
-      deviceId: "device-2",
-    });
+    const [entryArg, deviceArg] = pairDockerMock.mock.calls[0]!;
+    expect(entryArg).toBe(dockerEntry);
+    expect(deviceArg).toEqual(device);
     expect(result).toEqual({ ok: true, response: { token: "docker" } });
     expect(pairLocalMock).not.toHaveBeenCalled();
-  });
-
-  test("omits clientReportedName from the body when absent", async () => {
-    await pairDevice(localEntry(), {
-      platform: "chrome-extension",
-      deviceId: "device-3",
-    });
-    expect(JSON.parse(pairLocalMock.mock.calls[0]![1])).toEqual({
-      platform: "chrome-extension",
-      deviceId: "device-3",
-    });
   });
 
   test("refuses remotes without a host-side pair transport", async () => {

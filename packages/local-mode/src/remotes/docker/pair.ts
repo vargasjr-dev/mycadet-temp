@@ -1,49 +1,53 @@
 import { execOutput } from "../../exec";
-import { GATEWAY_INTERNAL_PORT } from "../../ports";
-import type { PairOperationResult } from "../../operations/pair";
+import {
+  pairCliStdoutToResult,
+  type PairDeviceIdentity,
+  type PairOperationResult,
+} from "../../operations/pair";
+import type { LockfileAssistant } from "../../lockfile-contract";
 import { dockerResourceNames } from "./retire";
 
 /**
- * Pair from INSIDE the gateway container (docker topology): the published
- * gateway port is LAN-reachable, so a host-side request arrives from the
- * docker bridge IP and the pair route's loopback guard would refuse it.
- * Docker-exec'ing the pair onto the container's own loopback is the presence
- * proof — the same hatch participation the bootstrap secret used to attest.
- * The exec'd script prints the HTTP status on the first stdout line, the
- * JSON body after. Exec-level failures (docker down, container gone) throw;
- * a answered-but-refused pair comes back structured.
+ * Pair by running the gateway's OWN CLI inside the container (docker
+ * topology): the `gateway pair` command mints in-process — the docker exec
+ * is the local-presence proof, and no localhost fetch is fed through. The
+ * container's WORKDIR is the gateway package, so the CLI entry resolves
+ * exactly like the server's own `bun run`. Prints the pair payload as
+ * single-line JSON on stdout.
  */
 export async function pairDocker(
-  instanceName: string,
-  body: string,
+  entry: LockfileAssistant,
+  device: PairDeviceIdentity,
 ): Promise<PairOperationResult> {
-  const container = dockerResourceNames(instanceName).gatewayContainer;
-  const script = [
-    `const res = await fetch("http://127.0.0.1:${GATEWAY_INTERNAL_PORT}/v1/pair", {`,
-    `  method: "POST",`,
-    `  headers: { "content-type": "application/json", "x-cadet-interface-id": "cli" },`,
-    `  body: ${JSON.stringify(body)},`,
-    `});`,
-    `const text = await res.text();`,
-    `console.log(res.status);`,
-    `console.log(text);`,
-  ].join("\n");
-  const output = await execOutput(
-    "docker",
-    ["exec", container, "bun", "-e", script],
-    {
-      timeoutMs: 30_000,
-    },
-  );
-  const newline = output.indexOf("\n");
-  const status = Number(output.slice(0, newline).trim());
-  const payload = output.slice(newline + 1);
-  if (!Number.isInteger(status) || status < 200 || status >= 300) {
+  const container = dockerResourceNames(entry.assistantId).gatewayContainer;
+  try {
+    const stdout = await execOutput(
+      "docker",
+      [
+        "exec",
+        container,
+        "bun",
+        "run",
+        "src/cli/index.ts",
+        "pair",
+        "--platform",
+        device.platform,
+        "--device-id",
+        device.deviceId,
+        ...(device.clientReportedName
+          ? ["--client-reported-name", device.clientReportedName]
+          : []),
+      ],
+      {
+        timeoutMs: 30_000,
+      },
+    );
+    return pairCliStdoutToResult(stdout);
+  } catch (err) {
     return {
       ok: false,
-      status: Number.isInteger(status) ? status : 0,
-      error: payload,
+      status: 0,
+      error: err instanceof Error ? err.message : String(err),
     };
   }
-  return { ok: true, response: JSON.parse(payload) };
 }
