@@ -314,9 +314,7 @@
     "loadFailedToast": "No se pudo cargar la información del asistente",
     "loading": "Cargando información del asistente...",
     "noAssistant": "No se encontró ningún asistente. Crea un asistente para acceder a los controles de depuración.",
-    "restartDescription": "Reinicia la máquina del asistente. Estará brevemente no disponible durante el reinicio.",
-    "restartTitle": "Reiniciar asistente",
-    "subtitle": "Administra copias de seguridad y reinicia tu asistente.",
+    "subtitle": "Administra las copias de seguridad de tu asistente.",
     "title": "General"
   },
   "doctorChatBlocks": {
@@ -989,16 +987,6 @@
     "runAtAria": "Ejecución a las {time}",
     "skipped": "Saltada",
     "title": "Ejecuciones recientes"
-  },
-  "restartAssistant": {
-    "button": "Reiniciar",
-    "confirmLabel": "Reiniciar",
-    "confirmMessage": "¿Seguro que quieres reiniciar este asistente? Estará brevemente no disponible durante el reinicio.",
-    "confirmTitle": "Reiniciar asistente",
-    "failStart": "No se pudo iniciar el asistente.",
-    "failStop": "No se pudo detener el asistente.",
-    "toastFailed": "No se pudo reiniciar el asistente.",
-    "toastRestarting": "El asistente se está reiniciando."
   },
   "riskToleranceSettings": {
     "advanced": "Avanzado",

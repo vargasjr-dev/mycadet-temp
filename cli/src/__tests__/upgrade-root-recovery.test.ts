@@ -13,7 +13,6 @@ const wake = spyOn(docker, "wakeContainers");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(localMode, "sleepDocker");
-const stop = spyOn(docker, "stopContainers");
 const start = spyOn(docker, "startContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = localMode.dockerResourceNames("recovery");
@@ -47,7 +46,6 @@ beforeEach(() => {
   }));
   restore.mockReset();
   sleep.mockReset();
-  stop.mockReset();
   start.mockReset();
   fetch.mockReset();
   restore.mockImplementation(async () => {
@@ -56,9 +54,6 @@ beforeEach(() => {
   });
   sleep.mockImplementation(async () => {
     events.push("sleep");
-  });
-  stop.mockImplementation(async () => {
-    events.push("remove");
   });
   start.mockImplementation(async () => {
     events.push("start-old-version");
@@ -72,7 +67,6 @@ afterAll(() => {
   for (const spy of [
     restore,
     sleep,
-    stop,
     start,
     fetch,
     capture,
@@ -101,7 +95,6 @@ test("failed-state recovery restores tar roots while stopped before restarting o
   expect(events).toEqual([
     "restore-roots",
     "sleep",
-    "remove",
     "start-old-version",
     "check-ready",
   ]);
@@ -120,7 +113,6 @@ test("failed root restore does not restart a partial installation", async () => 
     }),
   ).toEqual({ restored: false, ready: false });
   expect(start).not.toHaveBeenCalled();
-  expect(stop).not.toHaveBeenCalled();
   expect(fetch).not.toHaveBeenCalled();
 });
 
@@ -175,7 +167,6 @@ test("versioned restore installs roots into stopped target containers before fir
     expect(events).toEqual([
       "capture-safety",
       "sleep",
-      "remove",
       "create-stopped-target",
       "restore-roots",
       "wake-restored-target",

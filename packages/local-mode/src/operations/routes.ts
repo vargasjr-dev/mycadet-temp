@@ -69,7 +69,7 @@ async function runSleepRoute(assistantId: string): Promise<Response | null> {
   if (!entry) {
     return null;
   }
-  const result = await sleepAssistant(entry, { force: false, wait: false });
+  const result = await sleepAssistant(entry);
   if (result.ok) {
     return new Response(null, { status: 204 });
   }

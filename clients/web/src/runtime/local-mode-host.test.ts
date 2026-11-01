@@ -52,12 +52,6 @@ afterEach(() => {
   delete (window as WindowWithConfig).__CADET_CONFIG__;
 });
 
-/** Mark the runtime as an Electron host with the given bridge members. */
-function inElectronWith(bridge: Record<string, unknown>): void {
-  runningInElectron = true;
-  (window as { cadet?: unknown }).cadet = { localMode: bridge };
-}
-
 describe("hatchLocalAssistant", () => {
   test("web/dev host POSTs to the local-mode middleware and returns its JSON", async () => {
     const fetchMock = mock(async () => ({

@@ -236,7 +236,6 @@ export async function upgradeDocker(
 
   console.log("🛑 Stopping existing containers...");
   await sleepDocker(entry);
-  await stopContainers(res);
   console.log("✅ Containers stopped\n");
 
   console.log("🚀 Starting upgraded containers...");
@@ -336,7 +335,6 @@ export async function upgradeDocker(
         }
 
         await sleepDocker(entry);
-        await stopContainers(res);
 
         await startContainers(
           {

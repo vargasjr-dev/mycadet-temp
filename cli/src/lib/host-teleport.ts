@@ -127,11 +127,7 @@ const defaultOps: HostTeleportOps = {
  * live installation must never be captured.
  */
 async function stopServices(entry: LockfileAssistant): Promise<void> {
-  const result = await sleepAssistant(entry, {
-    force: false,
-    wait: false,
-    waitMs: null,
-  });
+  const result = await sleepAssistant(entry);
   if (!result.ok) {
     throw new Error(result.error);
   }
@@ -456,11 +452,7 @@ export async function restoreHostTeleportTarget(
     await startAndCheck(storageFor(entry));
   } catch (error) {
     try {
-      await sleepAssistant(entry, {
-        force: false,
-        wait: false,
-        waitMs: null,
-      });
+      await sleepAssistant(entry);
       if (previous) {
         // Failed creation can leave an incomplete service group.
         for (const container of [

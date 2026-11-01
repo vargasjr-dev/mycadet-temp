@@ -546,7 +546,6 @@ export async function attemptFailedStateRestore(opts: {
     "   Backup imported — restarting containers to complete recovery...",
   );
   await sleepDocker(opts.entry);
-  await stopContainers(opts.res);
   await startContainers(opts.containerOptions, (msg) => console.log(msg));
   return { restored: true, ready: await waitForReady(opts.runtimeUrl) };
 }
@@ -755,7 +754,6 @@ export async function performDockerRollback(
   // Stop containers, migrate security files, start with target images
   console.log("🛑 Stopping existing containers...");
   await sleepDocker(entry);
-  await stopContainers(res);
   console.log("✅ Containers stopped\n");
 
   let ready = false;
@@ -865,7 +863,6 @@ export async function performDockerRollback(
         }
 
         await sleepDocker(entry);
-        await stopContainers(res);
 
         await startContainers(
           {

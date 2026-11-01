@@ -800,8 +800,7 @@ async function captureBackup(
   try {
     running = await ops.storage.running();
     stopped = running;
-    if (running)
-      await sleepAssistant(entry, { force: false, wait: false, waitMs: null });
+    if (running) await sleepAssistant(entry);
     stopped = true;
     await assertStopped(ops.storage);
     await ops.storage.capture(stage);
@@ -871,8 +870,7 @@ async function restoreBackup(
     if (options.dryRun) return undefined;
     running = await ops.storage.running();
     stopped = running;
-    if (running)
-      await sleepAssistant(entry, { force: false, wait: false, waitMs: null });
+    if (running) await sleepAssistant(entry);
     stopped = true;
     await assertStopped(ops.storage);
     await mkdir(snapshot, { mode: 0o700 });
@@ -907,11 +905,7 @@ async function restoreBackup(
         stopped = false;
       } catch (error) {
         try {
-          await sleepAssistant(entry, {
-            force: false,
-            wait: false,
-            waitMs: null,
-          });
+          await sleepAssistant(entry);
         } catch (stopError) {
           throw new AggregateError(
             [error, stopError],

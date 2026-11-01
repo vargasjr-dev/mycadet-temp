@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type Assistant, getAssistant } from "@/assistant/api";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
-import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@mycadet/design-library/components/toast";
@@ -63,20 +62,6 @@ export function DebugControlsPanel() {
         </div>
       ) : assistant ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
-            <div className="min-w-0">
-              <p className="text-body-medium-default text-[var(--content-default)]">
-                {t("debugControlsPanel.restartTitle")}
-              </p>
-              <p className="text-body-small-lighter text-[var(--content-tertiary)]">
-                {t("debugControlsPanel.restartDescription")}
-              </p>
-            </div>
-            <div className="ml-4 shrink-0">
-              <RestartAssistant assistantId={assistant.id} />
-            </div>
-          </div>
-
           <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
             <div className="mb-3 flex items-center gap-2">
               <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />
