@@ -105,8 +105,6 @@ describe("remote web ingress denylist", () => {
     expect(unprotectedV1Routes).toEqual([
       "/v1/devices",
       "/v1/devices/revoke",
-      "/v1/guardian/init",
-      "/v1/guardian/reset-bootstrap",
       "/v1/pair",
       "/v1/remote-web/pairing-challenge",
       "/v1/remote-web/pairing-requests",
