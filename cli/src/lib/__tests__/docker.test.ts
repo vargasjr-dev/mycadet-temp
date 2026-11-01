@@ -98,12 +98,7 @@ describe("buildServiceRunArgs — assistant", () => {
     expect(args[portIndex - 1]).toBe("-p");
   });
 
-  test("forwards GUARDIAN_BOOTSTRAP_SECRET into the assistant container when provided, so the runtime can validate the gateway's x-bootstrap-secret header and close the published-port bypass", () => {
-    const args = buildAssistantArgs({ bootstrapSecret: "super-secret-abc" });
-    expect(args).toContain("GUARDIAN_BOOTSTRAP_SECRET=super-secret-abc");
-  });
-
-  test("omits GUARDIAN_BOOTSTRAP_SECRET when no bootstrapSecret is provided (bare-metal-style caller should not inherit a stale secret)", () => {
+  test("never forwards GUARDIAN_BOOTSTRAP_SECRET into any container (the mechanism is retired — pairing is the bootstrap door)", () => {
     const args = buildAssistantArgs();
     expect(args.some((a) => a.startsWith("GUARDIAN_BOOTSTRAP_SECRET="))).toBe(
       false,

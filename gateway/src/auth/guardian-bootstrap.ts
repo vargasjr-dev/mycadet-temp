@@ -1139,7 +1139,7 @@ async function recoverAbsentCadetGuardianFromActorTokens(): Promise<
  * (`allowMintWithEvidence`); implicit paths throw
  * {@link CadetGuardianMintRefusedError} instead.
  */
-async function resolveOrCreateCadetGuardian(options: {
+export async function resolveOrCreateCadetGuardian(options: {
   allowMintWithEvidence: boolean;
   /**
    * Boot-time backfill only: when the gateway has no cadet guardian binding

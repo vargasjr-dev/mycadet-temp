@@ -59,7 +59,6 @@ import {
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "../lib/http-client.js";
 import {
-  generateLocalSecret,
   ensureLocalRuntime,
   startCes,
   startGateway,
@@ -67,12 +66,7 @@ import {
   stopLocalProcesses,
 } from "../lib/remotes/local.js";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
-import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-  leaseGuardianToken,
-  resetGuardianBootstrap,
-} from "../lib/guardian-token.js";
+import { leaseGuardianToken } from "../lib/guardian-token.js";
 
 interface UpgradeArgs {
   name: string | null;
@@ -262,14 +256,12 @@ export async function targetVersionFromCli(
 
 async function ensureGuardianTokenAfterLocalUpgrade(
   entry: LockfileAssistant,
-  gatewayPort: number,
-  bootstrapSecret?: string,
 ): Promise<void> {
-  const loopbackUrl = `http://127.0.0.1:${gatewayPort}`;
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
+      // Pairing IS the repair — re-pair mints a fresh device-bound pair for
+      // the existing guardian under the loopback presence proof.
       await leaseGuardianToken(entry);
       console.log("   Re-provisioned guardian token.");
       return;
@@ -370,12 +362,6 @@ async function upgradeLocal(
     );
   }
 
-  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
-  if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSecret();
-    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
-  }
-
   await broadcastUpgradeEvent(
     adminUrl,
     entry.assistantId,
@@ -409,7 +395,7 @@ async function upgradeLocal(
       await Promise.all([
         startCes(false, upgradedEntry),
         startLocalDaemon(false, upgradedEntry),
-        startGateway(false, upgradedEntry, { bootstrapSecret }),
+        startGateway(false, upgradedEntry),
       ]);
     } finally {
       if (previousAppVersion === undefined) {
@@ -418,11 +404,7 @@ async function upgradeLocal(
         process.env.APP_VERSION = previousAppVersion;
       }
     }
-    await ensureGuardianTokenAfterLocalUpgrade(
-      entry,
-      entry.port,
-      bootstrapSecret,
-    );
+    await ensureGuardianTokenAfterLocalUpgrade(entry);
     console.log("✅ Local assistant processes started\n");
 
     await restoreAppServerAndAutoTunnel();
@@ -459,7 +441,7 @@ async function upgradeLocal(
       await Promise.all([
         startCes(false, entry),
         startLocalDaemon(false, entry),
-        startGateway(false, entry, { bootstrapSecret }),
+        startGateway(false, entry),
       ]);
       if (!(await waitForReady(adminUrl)))
         throw new Error(

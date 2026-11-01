@@ -1,5 +1,8 @@
 process.title = "cadet-gateway";
 
+import { unlinkSync } from "node:fs";
+import { join } from "node:path";
+
 import { eventRefersToAnotherMessage } from "./channels/inbound-event.js";
 import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
 import { randomBytes } from "node:crypto";
@@ -253,6 +256,7 @@ import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
 import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
+import { getGatewaySecurityDir } from "./paths.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
 import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
 import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
@@ -420,10 +424,32 @@ function startLogRetentionSweep(config: LogFileConfig): void {
   interval.unref();
 }
 
+/**
+ * Remove the retired guardian-bootstrap lock/consumed files, if present.
+ * Best-effort: their absence is the norm (bare-metal installs never had a
+ * consumed file) and a failure to unlink is non-fatal — the files are dead
+ * state no code reads anymore.
+ */
+function cleanupGuardianBootstrapFiles(): void {
+  const securityDir = getGatewaySecurityDir();
+  for (const name of ["guardian-init.lock", "guardian-init-consumed.json"]) {
+    try {
+      unlinkSync(join(securityDir, name));
+    } catch {
+      // Absent or unreadable — nothing to clean.
+    }
+  }
+}
+
 async function main() {
   const config = loadConfig();
   initLogger(config.logFile);
   startLogRetentionSweep(config.logFile);
+
+  // One-time cleanup: GUARDIAN_BOOTSTRAP_SECRET is retired — /v1/guardian/init
+  // and /v1/guardian/reset-bootstrap are gone (pairing is the bootstrap door
+  // now). Their lock/consumed files are dead state; remove them if present.
+  cleanupGuardianBootstrapFiles();
 
   log.info("Starting Cadet Gateway...");
 
@@ -1110,25 +1136,6 @@ async function main() {
     },
 
     // ── Channel verification sessions ──
-    {
-      // Bootstrap endpoint — may be replaced with an SSH-based exchange in the
-      // future so that remote clients never need an exposed HTTP endpoint.
-      path: "/guardian/init",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        channelVerificationSessionProxy.handleGuardianInit(req, getClientIp()),
-    },
-    {
-      path: "/guardian/reset-bootstrap",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        channelVerificationSessionProxy.handleResetBootstrap(
-          getClientIp(),
-          req,
-        ),
-    },
     {
       path: "/channel-verification-sessions",
       method: "POST",

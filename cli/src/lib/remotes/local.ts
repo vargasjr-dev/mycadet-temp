@@ -6,7 +6,7 @@ import {
   spawn,
   spawnSync,
 } from "child_process";
-import { createHash, randomBytes } from "crypto";
+import { createHash } from "crypto";
 import {
   existsSync,
   mkdirSync,
@@ -90,8 +90,6 @@ import { buildHatchConfigValues, writeInitialConfig } from "../config-utils.js";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
 } from "../guardian-token.js";
 import {
   consoleLifecycleReporter,
@@ -562,15 +560,6 @@ function ensureBunInstalled(): void {
 
 function resolveDaemonMainPath(assistantIndex: string): string {
   return join(dirname(assistantIndex), "daemon", "main.ts");
-}
-
-/**
- * Generate a fresh random secret for local lifecycle use (e.g. the
- * guardian bootstrap secret). Not a signing key — the gateway owns the
- * signing key end-to-end; the CLI never touches it.
- */
-export function generateLocalSecret(): string {
-  return randomBytes(32).toString("hex");
 }
 
 type DaemonStartOptions = {
@@ -1815,7 +1804,6 @@ export async function startGateway(
   watch: boolean = false,
   entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
   options?: {
-    bootstrapSecret?: string;
     requireReady?: boolean;
   },
 ): Promise<string> {
@@ -1843,9 +1831,6 @@ export async function startGateway(
     // Pass gateway operational settings via env vars so the CLI does not
     // need direct access to the workspace config file.
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
-    ...(options?.bootstrapSecret
-      ? { GUARDIAN_BOOTSTRAP_SECRET: options.bootstrapSecret }
-      : {}),
     ...(watch
       ? {
           CADET_DEV: "1",
@@ -2120,8 +2105,6 @@ export async function hatchLocal(
         await import("../root-backup.js")
       ).initializeRootArchive(entry, params.initialArchive);
     }
-    const bootstrapSecret = generateLocalSecret();
-    saveGuardianBootstrapSecret(instanceName, bootstrapSecret);
     try {
       // Launch the CES sibling alongside the daemon, in parallel — matching the
       // Docker topology. The assistant does not spawn its own CES, so a freshly
@@ -2144,7 +2127,6 @@ export async function hatchLocal(
 
       reporter.progress(4, 6, "Starting gateway...");
       await startGateway(watch, entry, {
-        bootstrapSecret,
         requireReady: true,
       });
     } catch (error) {
@@ -2364,14 +2346,6 @@ export async function wakeLocal(
     }
   }
 
-  let bootstrapSecret = loadGuardianBootstrapSecret(entry.assistantId);
-  let bootstrapSecretBackfilled = false;
-  if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSecret();
-    saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
-    bootstrapSecretBackfilled = true;
-  }
-
   if (!daemonRunning) {
     // Spin up CES and the daemon in parallel, the way the Docker topology
     // brings its sibling containers up together — the assistant polls for the
@@ -2439,28 +2413,13 @@ export async function wakeLocal(
         );
         return false;
       }
-      await startGateway(restartWithWatch, entry, {
-        bootstrapSecret,
-      });
+      await startGateway(restartWithWatch, entry);
       return true;
     };
-    const needsRestart = bootstrapSecretBackfilled && gatewayAlive;
     if (gatewayStuck) {
       console.log(
         `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
       );
-    } else if (needsRestart) {
-      const restartWithWatch = watch && isGatewayWatchModeAvailable();
-      if (restartWithWatch) {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) — restarting to apply bootstrap secret...`,
-        );
-      } else {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) — restarting without watch mode to apply bootstrap secret...`,
-        );
-      }
-      gatewayStarted = await restartGateway(restartWithWatch);
     } else if (gatewayAlive) {
       if (watch && isGatewayWatchModeAvailable()) {
         console.log(
@@ -2477,7 +2436,7 @@ export async function wakeLocal(
         }
       }
     } else {
-      await startGateway(watch, entry, { bootstrapSecret });
+      await startGateway(watch, entry);
       gatewayStarted = true;
     }
   }

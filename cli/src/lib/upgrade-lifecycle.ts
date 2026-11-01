@@ -209,6 +209,14 @@ export async function captureContainerEnv(
  * Security contract: the returned env is memory-only — never persist it to
  * disk, and log counts only, never values.
  */
+/**
+ * Env keys retired from the spec whose stale captured values must never
+ * replay onto a replacement container. GUARDIAN_BOOTSTRAP_SECRET's mechanism
+ * is gone (pairing is the bootstrap door); outgoing containers hatched by
+ * older releases still carry it, and it must die with them.
+ */
+const RETIRED_ENV_KEYS = ["GUARDIAN_BOOTSTRAP_SECRET"] as const;
+
 export function buildReplayEnv(
   capturedEnv: Record<string, string>,
   service: ServiceName,
@@ -220,14 +228,16 @@ export function buildReplayEnv(
   );
   return Object.fromEntries(
     Object.entries(capturedEnv).filter(
-      ([key]) => !always.has(key) && !hostManaged.has(key),
+      ([key]) =>
+        !always.has(key) &&
+        !hostManaged.has(key) &&
+        !(RETIRED_ENV_KEYS as readonly string[]).includes(key),
     ),
   );
 }
 
 /** Secrets and replay env derived from the outgoing containers. */
 interface ReplayState {
-  bootstrapSecret: string | undefined;
   cesServiceToken: string;
   extraAssistantEnv: Record<string, string>;
   extraGatewayEnv: Record<string, string>;
@@ -235,12 +245,11 @@ interface ReplayState {
 
 /**
  * Derive the secrets and replay env for replacement containers from
- * already-captured assistant/gateway envs. GUARDIAN_BOOTSTRAP_SECRET is only
- * set on the gateway; CES_SERVICE_TOKEN can be generated for older instances.
- * The signing key rides no env — the gateway owns it in its security root
- * CADET_DEVICE_ID is
- * backfilled on the gateway from the host, and the assistant inherits the
- * gateway's value (captured values win) so the pair always matches.
+ * already-captured assistant/gateway envs. CES_SERVICE_TOKEN can be generated
+ * for older instances. The signing key rides no env — the gateway owns it in
+ * its security root. CADET_DEVICE_ID is backfilled on the gateway from the
+ * host, and the assistant inherits the gateway's value (captured values win)
+ * so the pair always matches.
  */
 export function buildReplayState(
   capturedEnv: Record<string, string>,
@@ -253,7 +262,6 @@ export function buildReplayState(
   extraAssistantEnv.CADET_DEVICE_ID ??= extraGatewayEnv.CADET_DEVICE_ID;
 
   return {
-    bootstrapSecret: gatewayEnv["GUARDIAN_BOOTSTRAP_SECRET"],
     cesServiceToken:
       capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
     extraAssistantEnv,
@@ -685,12 +693,8 @@ export async function performDockerRollback(
     );
   }
 
-  const {
-    bootstrapSecret,
-    cesServiceToken,
-    extraAssistantEnv,
-    extraGatewayEnv,
-  } = await captureReplayState(res);
+  const { cesServiceToken, extraAssistantEnv, extraGatewayEnv } =
+    await captureReplayState(res);
 
   // Derive the gateway port from the entry's canonical fields
   let gatewayPort = GATEWAY_INTERNAL_PORT;
@@ -761,7 +765,6 @@ export async function performDockerRollback(
     console.log("Creating stopped containers with the target version...");
     await startContainers(
       {
-        bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
@@ -866,7 +869,6 @@ export async function performDockerRollback(
 
         await startContainers(
           {
-            bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
             extraGatewayEnv,
@@ -888,7 +890,6 @@ export async function performDockerRollback(
             backupLabel: "pre-rollback",
             res,
             containerOptions: {
-              bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,
               extraGatewayEnv,

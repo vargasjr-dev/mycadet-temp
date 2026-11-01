@@ -21,7 +21,6 @@ import {
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
-  generateLocalSecret,
   startCes,
   startLocalDaemon,
   startGateway,
@@ -35,11 +34,6 @@ import {
   platformUploadToSignedUrl,
 } from "../lib/cloud-client.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
-import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../lib/guardian-token.js";
-
 function printUsage(): void {
   console.log(
     `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,
@@ -509,9 +503,6 @@ async function recoverFromArchive(name: string): Promise<void> {
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
   await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
-  const bootstrapSecret =
-    loadGuardianBootstrapSecret(entry.assistantId) ?? generateLocalSecret();
-  saveGuardianBootstrapSecret(entry.assistantId, bootstrapSecret);
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
   saveLockfileAssistant(entry);
@@ -521,7 +512,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   await Promise.all([
     startCes(false, entry),
     startLocalDaemon(false, entry),
-    startGateway(false, entry, { bootstrapSecret }),
+    startGateway(false, entry),
   ]);
 
   unlinkSync(archivePath);

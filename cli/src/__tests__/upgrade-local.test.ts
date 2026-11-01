@@ -89,29 +89,15 @@ function makeGuardianToken(
   };
 }
 
-const bootstrapSecrets = new Map<string, string>();
-const saveGuardianBootstrapSecret = (id: string, secret: string) => {
-  bootstrapSecrets.set(id, secret);
-};
-const loadGuardianBootstrapSecret = (id: string) => bootstrapSecrets.get(id);
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
   async () => makeGuardianToken({ isNew: true }),
 );
-const resetGuardianBootstrapMock = mock<
-  typeof guardianToken.resetGuardianBootstrap
->(async () => {});
 
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
   leaseGuardianToken: leaseGuardianTokenMock,
-  resetGuardianBootstrap: resetGuardianBootstrapMock,
-  saveGuardianBootstrapSecret,
-  loadGuardianBootstrapSecret,
 }));
 
-const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
-  () => "generated-local-secret",
-);
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
   (resources, version) => ({
     version,
@@ -131,7 +117,6 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/remotes/local.js", () => ({
   ...realLocal,
-  generateLocalSigningKey: generateLocalSecretMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
@@ -213,7 +198,6 @@ function makeLocalEntry(): LocalAssistant {
     join(tempDir, "gateway-security", "actor-token-signing-key"),
     Buffer.from("ab".repeat(32), "hex"),
   );
-  saveGuardianBootstrapSecret("local-assistant", "existing-bootstrap-secret");
   return {
     assistantId: "local-assistant",
     cloud: "local",
@@ -273,10 +257,6 @@ beforeEach(() => {
   restoreBackupMock.mockResolvedValue(true);
   leaseGuardianTokenMock.mockReset();
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianToken({ isNew: true }));
-  resetGuardianBootstrapMock.mockReset();
-  resetGuardianBootstrapMock.mockResolvedValue(undefined);
-  generateLocalSecretMock.mockReset();
-  generateLocalSecretMock.mockReturnValue("generated-local-secret");
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
@@ -424,13 +404,6 @@ describe("cadet upgrade local", () => {
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
-      {
-        bootstrapSecret: "existing-bootstrap-secret",
-      },
-    );
-    expect(resetGuardianBootstrapMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "existing-bootstrap-secret",
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
       expect.objectContaining({

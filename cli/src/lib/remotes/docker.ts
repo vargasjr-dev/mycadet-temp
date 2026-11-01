@@ -146,12 +146,8 @@ export async function upgradeDocker(
     }),
   );
 
-  const {
-    bootstrapSecret,
-    cesServiceToken,
-    extraAssistantEnv,
-    extraGatewayEnv,
-  } = await captureReplayState(res);
+  const { cesServiceToken, extraAssistantEnv, extraGatewayEnv } =
+    await captureReplayState(res);
 
   // Notify connected clients that an upgrade is about to begin.
   // This must fire BEFORE any progress broadcasts so the UI sets
@@ -241,7 +237,6 @@ export async function upgradeDocker(
   console.log("🚀 Starting upgraded containers...");
   await startContainers(
     {
-      bootstrapSecret,
       cesServiceToken,
       extraAssistantEnv,
       extraGatewayEnv,
@@ -338,7 +333,6 @@ export async function upgradeDocker(
 
         await startContainers(
           {
-            bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
             extraGatewayEnv,
@@ -360,7 +354,6 @@ export async function upgradeDocker(
             backupLabel: "pre-upgrade",
             res,
             containerOptions: {
-              bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,
               extraGatewayEnv,
@@ -525,11 +518,7 @@ import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
 import { getDefaultPorts } from "../environments/paths.js";
 import { green, yellow } from "../color.js";
-import {
-  leaseGuardianToken,
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../guardian-token";
+import { leaseGuardianToken } from "../guardian-token";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
 import { generateInstanceName } from "../random-name";
 import {
@@ -1216,7 +1205,6 @@ export const SERVICE_START_ORDER: ServiceName[] = [
 export async function startContainers(
   opts: {
     createOnly?: boolean;
-    bootstrapSecret?: string;
     cesServiceToken?: string;
     extraAssistantEnv?: Record<string, string>;
     extraGatewayEnv?: Record<string, string>;
@@ -1340,7 +1328,6 @@ export async function recreateDockerContainers(
   const device = getOrCreateHostDeviceId();
   await startContainers(
     {
-      bootstrapSecret: loadGuardianBootstrapSecret(entry.assistantId),
       extraAssistantEnv: { CADET_DEVICE_ID: device },
       extraGatewayEnv: { CADET_DEVICE_ID: device },
       gatewayPort,
@@ -1542,7 +1529,6 @@ function affectedServices(
  * rebuild the affected images and restart their containers.
  */
 function startFileWatcher(opts: {
-  bootstrapSecret?: string;
   cesServiceToken?: string;
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
@@ -1564,7 +1550,6 @@ function startFileWatcher(opts: {
 
   const configs = serviceImageConfigs(repoRoot, imageTags);
   const runArgs = buildServiceRunArgs({
-    bootstrapSecret: opts.bootstrapSecret,
     cesServiceToken: opts.cesServiceToken,
     extraAssistantEnv: opts.extraAssistantEnv,
     extraGatewayEnv: opts.extraGatewayEnv,
@@ -1990,17 +1975,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
 
     const cesServiceToken = randomBytes(32).toString("hex");
 
-    // When launched by a remote hatch startup script, the env var
-    // GUARDIAN_BOOTSTRAP_SECRET is already set with the laptop's secret.
-    // Generate a new secret for the local docker hatch caller and append
-    // it so the gateway receives a comma-separated list of all expected
-    // bootstrap secrets.
-    const ownSecret = randomBytes(32).toString("hex");
-    saveGuardianBootstrapSecret(instanceName, ownSecret);
-    const preExisting = process.env.GUARDIAN_BOOTSTRAP_SECRET;
-    const bootstrapSecret = preExisting
-      ? `${preExisting},${ownSecret}`
-      : ownSecret;
     const hostDeviceId = getOrCreateHostDeviceId();
     extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;
     // Forward the migration URL allowlists so a daemon inside the container
@@ -2040,7 +2014,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     await startContainers(
       {
         createOnly: !!params.initialArchive,
-        bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
@@ -2134,7 +2107,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       };
       saveLockfileAssistant(watching);
       const stopWatcher = startFileWatcher({
-        bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,

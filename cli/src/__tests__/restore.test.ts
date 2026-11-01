@@ -1,9 +1,5 @@
 import { resolveLockfilePath } from "@mycadet/local-mode";
 import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../lib/guardian-token.js";
-import {
   afterAll,
   afterEach,
   beforeAll,
@@ -33,7 +29,6 @@ import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
 const realLocal = {
-  generateLocalSecret: localModule.generateLocalSecret,
   startLocalDaemon: localModule.startLocalDaemon,
   startGateway: localModule.startGateway,
   startCes: localModule.startCes,
@@ -199,23 +194,6 @@ describe("restore error cases", () => {
     );
   });
 
-  test("throws when metadata has no resources", async () => {
-    const name = "no-resources";
-    mkdirSync(retiredDir, { recursive: true });
-    writeFileSync(join(retiredDir, `${name}.tar.gz`), "");
-    const entry: Partial<LockfileAssistant> = {
-      assistantId: name,
-      cloud: "local",
-      // resources intentionally omitted
-    };
-    writeFileSync(
-      join(retiredDir, `${name}.json`),
-      JSON.stringify(entry, null, 2) + "\n",
-    );
-    process.argv = ["bun", "cadet", "restore", name];
-    await expect(restore()).rejects.toThrow("missing resource configuration");
-  });
-
   test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);
@@ -238,7 +216,6 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
       assistantId: name,
       instanceDir,
     });
-    saveGuardianBootstrapSecret(name, "existing-bootstrap");
     const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
@@ -270,7 +247,6 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
       expect.objectContaining({ instanceDir: expect.any(String) }),
-      { bootstrapSecret: loadGuardianBootstrapSecret(name) },
     ]);
   });
 

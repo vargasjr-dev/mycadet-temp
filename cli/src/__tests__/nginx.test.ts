@@ -348,7 +348,6 @@ describe("buildNginxConfig", () => {
     const deniedLocations = [
       "location = /auth/token { return 404; }",
       "location = /v1/pair { return 404; }",
-      "location = /v1/guardian/init { return 404; }",
       "location = /v1/remote-web/pairing-verification { return 404; }",
     ];
     for (const location of deniedLocations) {
@@ -515,10 +514,6 @@ describe("buildNginxConfig", () => {
       "location = /v1/devices/ { return 404; }",
       "location = /v1/devices/revoke { return 404; }",
       "location = /v1/devices/revoke/ { return 404; }",
-      "location = /v1/guardian/init { return 404; }",
-      "location = /v1/guardian/init/ { return 404; }",
-      "location = /v1/guardian/reset-bootstrap { return 404; }",
-      "location = /v1/guardian/reset-bootstrap/ { return 404; }",
       "location = /v1/remote-web/pairing-requests { return 404; }",
       "location = /v1/remote-web/pairing-requests/ { return 404; }",
       "location = /v1/remote-web/pairing-requests/approve { return 404; }",
@@ -2290,7 +2285,7 @@ describe("the app shell edge", () => {
 
   test("blocks the sensitive gateway routes under both prefixes", () => {
     const conf = appConf();
-    for (const route of ["/v1/pair", "/v1/devices", "/v1/guardian/init"]) {
+    for (const route of ["/v1/pair", "/v1/devices"]) {
       expect(conf).toContain(`location = ${route} { return 404; }`);
       expect(conf).toContain(`location = /web${route} { return 404; }`);
     }

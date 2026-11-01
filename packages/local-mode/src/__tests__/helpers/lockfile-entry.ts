@@ -8,7 +8,7 @@ import {
   type Remote,
 } from "../../lockfile-contract";
 
-import { guardianBootstrapSecretPath, resolveLockfilePath } from "../../config";
+import { resolveLockfilePath } from "../../config";
 
 /**
  * The canonical lockfile-entry fixture — one `makeEntry` for every suite.

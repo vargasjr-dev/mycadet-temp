@@ -35,7 +35,6 @@ import {
   waitForDaemonReady,
   waitForDaemonMigrationsReady,
 } from "./http-client.js";
-import { loadGuardianBootstrapSecret } from "./guardian-token.js";
 import { startCes, startGateway, startLocalDaemon } from "./remotes/local.js";
 import {
   ASSISTANT_INTERNAL_PORT,
@@ -346,11 +345,7 @@ export class LocalRootStorage implements RootStorage {
       this.initialRunning?.has("gateway") &&
       !isProcessAlive(join(this.root, "gateway.pid")).alive
     )
-      await startGateway(false, entry, {
-        bootstrapSecret: loadGuardianBootstrapSecret(
-          this.localEntry.assistantId,
-        ),
-      });
+      await startGateway(false, entry);
     await this.checkReady();
   }
   private async checkReady(): Promise<void> {

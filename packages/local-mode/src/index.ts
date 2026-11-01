@@ -33,7 +33,7 @@ export {
   guardianTokenPath,
   assistantBearerTokenPath,
   basetenTokenPath,
-  guardianBootstrapSecretPath,
+  deleteGuardianBootstrapSecret,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
 export {

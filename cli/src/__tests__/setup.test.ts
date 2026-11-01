@@ -3,6 +3,7 @@ import {
   beforeEach,
   describe,
   expect,
+  mock,
   spyOn,
   test,
   type Mock,
@@ -12,12 +13,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  saveGuardianBootstrapSecret,
-  saveGuardianToken,
-} from "../lib/guardian-token.js";
+import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { setup } from "../commands/setup.js";
+import * as stepRunnerModule from "../lib/step-runner.js";
+
+// The docker lease's pair rides the docker-exec seam — capture-spread the
+// real module so `exec` stays live and `execOutput` is observable.
+const execOutputMock = mock<typeof stepRunnerModule.execOutput>(async () => "");
+mock.module("../lib/step-runner.js", () => ({
+  ...stepRunnerModule,
+  execOutput: execOutputMock,
+}));
 
 interface RecordedFetchCall {
   url: string;
@@ -117,17 +124,30 @@ function installFetchStub(
       });
     }
 
-    if (url.endsWith("/v1/guardian/init")) {
+    if (url.endsWith("/v1/pair")) {
       if (!options.leasedToken) {
         return new Response(JSON.stringify({ error: "not allowed" }), {
-          status: 401,
+          status: 403,
           headers: { "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify(options.leasedToken), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      // The pair route's device-bound response shape (token/guardianId names).
+      const t = options.leasedToken;
+      return new Response(
+        JSON.stringify({
+          token: t.accessToken,
+          expiresAt: t.accessTokenExpiresAt,
+          refreshToken: t.refreshToken,
+          refreshTokenExpiresAt: t.refreshTokenExpiresAt,
+          refreshAfter: t.refreshAfter,
+          guardianId: t.guardianPrincipalId,
+          isNew: t.isNew,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     if (url.endsWith("/v1/config/llm/default-provider")) {
@@ -180,6 +200,7 @@ describe("setup command", () => {
   afterEach(() => {
     process.argv = originalArgv;
     globalThis.fetch = originalFetch;
+    execOutputMock.mockReset();
     setOptionalEnv("ANTHROPIC_API_KEY", originalEnv.anthropicApiKey);
     setOptionalEnv("OPENAI_API_KEY", originalEnv.openaiApiKey);
     setOptionalEnv("XDG_CONFIG_HOME", originalEnv.xdgConfigHome);
@@ -266,7 +287,7 @@ describe("setup command", () => {
     // The lease probes /readyz first to wait out the gateway's "starting"
     // gate instead of burning retry attempts against it.
     expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/readyz");
-    expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/guardian/init");
+    expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/pair");
     expect(fetchCalls[2].url).toBe(
       "http://127.0.0.1:3000/v1/config/llm/default-provider",
     );
@@ -275,7 +296,7 @@ describe("setup command", () => {
     );
   });
 
-  test("uses saved bootstrap secret when leasing a Docker guardian token", async () => {
+  test("leases a Docker guardian token via the pairing flow", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
@@ -283,22 +304,40 @@ describe("setup command", () => {
       port: 7831,
       daemonPort: 7821,
     });
-    saveGuardianBootstrapSecret("assistant-123", "test-bootstrap-secret");
-    installFetchStub({
-      leasedToken: guardianTokenFixture({
-        accessToken: "leased-docker-token",
-      }),
-    });
+    // The docker lease pairs from INSIDE the gateway container (docker-exec
+    // presence proof), so the fetch stub never sees it — the exec boundary is
+    // the seam. Answer it with /v1/pair's device-bound response shape.
+    const t = guardianTokenFixture({ accessToken: "leased-docker-token" });
+    execOutputMock.mockResolvedValue(
+      `200\n${JSON.stringify({
+        token: t.accessToken,
+        expiresAt: t.accessTokenExpiresAt,
+        refreshToken: t.refreshToken,
+        refreshTokenExpiresAt: t.refreshTokenExpiresAt,
+        refreshAfter: t.refreshAfter,
+        guardianId: t.guardianPrincipalId,
+        isNew: t.isNew,
+      })}`,
+    );
 
     await setup();
 
     expect(fetchCalls[0].url).toBe("http://127.0.0.1:7831/readyz");
-    expect(fetchCalls[1].url).toBe("http://127.0.0.1:7831/v1/guardian/init");
-    expect(fetchCalls[1].headers.get("x-bootstrap-secret")).toBe(
-      "test-bootstrap-secret",
-    );
-    expect(fetchCalls[2].headers.get("Authorization")).toBe(
-      "Bearer leased-docker-token",
+    expect(execOutputMock).toHaveBeenCalledTimes(1);
+    const call = execOutputMock.mock.calls[0];
+    if (!call) throw new Error("expected one docker-exec call");
+    const [cmd, args] = call;
+    expect(cmd).toBe("docker");
+    expect(args.slice(0, 4)).toEqual([
+      "exec",
+      "assistant-123-gateway",
+      "bun",
+      "-e",
+    ]);
+    expect(String(args[4])).toContain("/v1/pair");
+    // The leased token is persisted and rides the following setup calls.
+    expect(loadGuardianToken("assistant-123")?.accessToken).toBe(
+      "leased-docker-token",
     );
   });
 

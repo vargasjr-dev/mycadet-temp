@@ -49,7 +49,7 @@ export function clearLoopbackGatewayBearerCache(): void {
 async function mintBearer(
   port: number,
   leaseGuardianToken: GuardianTokenLease,
-  fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  fetcher: (input: string, init?: RequestInit) => Promise<Response>,
 ): Promise<MintedGatewayBearer | null> {
   let guardianToken: string;
   try {
@@ -99,7 +99,7 @@ export interface LoopbackGatewayBearerOptions {
    * Injectable for tests; defaults to the global fetch. A plain callable —
    * the Electron forward threads its own recorded fetcher through.
    */
-  fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+  fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }
 
 /**

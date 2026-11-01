@@ -9,10 +9,7 @@ import {
   type Remote,
 } from "@mycadet/local-mode/contract";
 
-import {
-  guardianBootstrapSecretPath,
-  resolveLockfilePath,
-} from "@mycadet/local-mode";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 
 /**
  * A flat, explicit-optional override set — deliberately NOT a
@@ -27,7 +24,6 @@ export type EntryOverrides = {
   cloud?: Remote;
   instanceDir?: string;
   watcherPid?: number;
-  guardianBootstrapSecret?: string;
   containerInfo?: Partial<ContainerInfo>;
   mgmtSocket?: string;
   bearerToken?: string;
@@ -76,9 +72,6 @@ function readAssistants(): unknown[] {
 export function makeEntryObject(
   overrides: EntryOverrides = {},
 ): LockfileAssistant {
-  const secretPath = guardianBootstrapSecretPath("assistant-1");
-  mkdirSync(dirname(secretPath), { recursive: true });
-  writeFileSync(secretPath, "test-bootstrap-secret");
   return LockfileAssistantSchema.parse({
     assistantId: "assistant-1",
     cloud: "local",
@@ -95,9 +88,6 @@ export function makeEntryObject(
  * `LockfileAssistantSchema` so the shape is always the contract's.
  */
 export function makeEntry(overrides: EntryOverrides = {}): void {
-  const secretPath = guardianBootstrapSecretPath("assistant-1");
-  mkdirSync(dirname(secretPath), { recursive: true });
-  writeFileSync(secretPath, "test-bootstrap-secret");
   const entry = LockfileAssistantSchema.parse({
     assistantId: "assistant-1",
     cloud: "local",

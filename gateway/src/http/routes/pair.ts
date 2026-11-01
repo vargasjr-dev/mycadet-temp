@@ -23,14 +23,20 @@
  *
  * Response body: `{ token, expiresAt, guardianId, assistantId }`. The
  * device-bound path (a `deviceId` is supplied) additionally returns
- * `{ refreshToken, refreshTokenExpiresAt, refreshAfter }` so the client can
- * renew via `/v1/guardian/refresh` instead of re-pairing.
+ * `{ refreshToken, refreshTokenExpiresAt, refreshAfter, isNew }` so the client
+ * can renew via `/v1/guardian/refresh` instead of re-pairing. The `cli`
+ * interface is also the gateway's bootstrap door: it mints the guardian
+ * principal when none exists (loopback presence is the evidence), which is
+ * what retired GUARDIAN_BOOTSTRAP_SECRET — see `handlePair`'s cli branch.
  */
 
 import { and, eq } from "drizzle-orm";
 
 import { LOCAL_ASSISTANT_ID } from "../../assistant-id.js";
-import { mintAndRecordDeviceBoundTokenPair } from "../../auth/guardian-bootstrap.js";
+import {
+  mintAndRecordDeviceBoundTokenPair,
+  resolveOrCreateCadetGuardian,
+} from "../../auth/guardian-bootstrap.js";
 import { CURRENT_POLICY_EPOCH } from "../../auth/policy.js";
 import { mintToken } from "../../auth/token-service.js";
 import { KNOWN_EXTENSION_ORIGINS } from "../../chrome-extension-origins.js";
@@ -294,6 +300,8 @@ export async function handlePair(
         interfaceId,
         clientId,
         clientReportedName: bodyClientReportedName,
+        // Extensions pair after the CLI hatched — the guardian always exists.
+        isNew: false,
       });
     }
 
@@ -323,10 +331,12 @@ export async function handlePair(
     );
   }
 
-  // CLI pairing (e.g. `cadet pair`): a loopback-local caller mints a
-  // device-bound token for another machine. The loopback / X-Forwarded-For /
-  // edge-marker guards above are the boundary. A deviceId is required — CLI
-  // pairing is always device-scoped (and thus revocable).
+  // CLI pairing (e.g. `cadet pair`) AND the CLI's guardian lease: the
+  // loopback / X-Forwarded-For / edge-marker guards above are the boundary.
+  // This path is the gateway's bootstrap door — loopback presence replaces
+  // the retired GUARDIAN_BOOTSTRAP_SECRET (the hatch participants are
+  // host-local or docker-exec'd, and both arrive on loopback). A deviceId is
+  // required — CLI pairing is always device-scoped (and thus revocable).
   if (interfaceId === "cli") {
     // A real `cadet pair` is a terminal process and never sends an Origin
     // header; any Origin means a browser/WebView is calling (e.g. dynamic
@@ -347,8 +357,15 @@ export async function handlePair(
         400,
       );
     }
+    // Resolve the guardian, minting one when the gateway has none — a fresh
+    // install's first lease has no binding yet, and loopback presence is the
+    // evidence that authorizes the mint (the operator-driven bootstrap act).
+    const guardian = await resolveOrCreateCadetGuardian({
+      allowMintWithEvidence: true,
+    });
     return mintDeviceBoundPairResponse({
-      guardianPrincipalId,
+      guardianPrincipalId: guardian.guardianPrincipalId,
+      isNew: guardian.isNew,
       assistantId,
       deviceId,
       platform: bodyPlatform ?? "cli",
@@ -388,6 +405,7 @@ function mintDeviceBoundPairResponse(opts: {
   interfaceId: string;
   clientId: string | null;
   clientReportedName?: string;
+  isNew: boolean;
 }): Response {
   const pair = mintAndRecordDeviceBoundTokenPair({
     guardianPrincipalId: opts.guardianPrincipalId,
@@ -415,6 +433,7 @@ function mintDeviceBoundPairResponse(opts: {
       refreshAfter: new Date(pair.refreshAfter).toISOString(),
       guardianId: opts.guardianPrincipalId,
       assistantId: opts.assistantId,
+      isNew: opts.isNew,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
