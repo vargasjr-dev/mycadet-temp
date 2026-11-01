@@ -11,6 +11,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import "./test-preload.js";
+import * as realCloudIdentity from "../cloud-identity.js";
+import * as realCredentialReader from "../credential-reader.js";
 
 // --- Mocks (set BEFORE importing the module under test) -------------------
 
@@ -18,10 +20,12 @@ let mockReadCredential = mock(
   async (_key: string): Promise<string | undefined> => undefined,
 );
 let mockPlatformUserIdUnreachable = false;
-mock.module("../credential-reader.js", () => ({
-  readCredential: (key: string) => mockReadCredential(key),
-}));
-mock.module("../cloud-user-id.js", () => ({
+// The middleware reads cloud identity via cloud-identity.js (cloud-user-id.ts
+// was a shim that no longer exists); loading the real cloud-identity pulls the
+// real credential-reader, so both mocks spread the real modules and override
+// only the seams under test.
+mock.module("../cloud-identity.js", () => ({
+  ...realCloudIdentity,
   readStoredCloudUserId: async () => {
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
@@ -29,6 +33,10 @@ mock.module("../cloud-user-id.js", () => ({
     const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
   },
+}));
+mock.module("../credential-reader.js", () => ({
+  ...realCredentialReader,
+  readCredential: (key: string) => mockReadCredential(key),
 }));
 
 let mockFindCadetGuardian = mock(
