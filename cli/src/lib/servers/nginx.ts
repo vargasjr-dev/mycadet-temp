@@ -96,8 +96,6 @@ const SENSITIVE_GATEWAY_ROUTES = [
   "/v1/pair/web-init",
   "/v1/devices",
   "/v1/devices/revoke",
-  "/v1/guardian/init",
-  "/v1/guardian/reset-bootstrap",
   "/v1/remote-web/pairing-requests",
   "/v1/remote-web/pairing-requests/approve",
   "/v1/remote-web/pairing-requests/deny",

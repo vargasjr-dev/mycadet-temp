@@ -16,7 +16,6 @@ import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/remotes/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
 import * as local from "../lib/remotes/local.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
@@ -83,24 +82,14 @@ mock.module("../lib/remotes/docker.js", () => ({
 const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(() =>
   makeGuardianTokenData({ accessToken: "existing" }),
 );
-const resetGuardianBootstrapMock = mock<
-  typeof guardianToken.resetGuardianBootstrap
->(async () => {});
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
   async () => makeGuardianTokenData(),
 );
 
-const bootstrapSecrets = new Map<string, string>();
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
   loadGuardianToken: loadGuardianTokenMock,
-  resetGuardianBootstrap: resetGuardianBootstrapMock,
   leaseGuardianToken: leaseGuardianTokenMock,
-  loadGuardianBootstrapSecret: (assistantId: string) =>
-    bootstrapSecrets.get(assistantId),
-  saveGuardianBootstrapSecret: (assistantId: string, secret: string) => {
-    bootstrapSecrets.set(assistantId, secret);
-  },
 }));
 
 const resolveProcessStateMock = mock<typeof processLib.resolveProcessState>(
@@ -136,9 +125,6 @@ mock.module("../lib/root-signing-key.js", () => ({
   persistRootSigningKey: persistRootSigningKeyMock,
 }));
 
-const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
-  () => "generated-bootstrap-secret",
-);
 const isAssistantWatchModeAvailableMock = mock<
   typeof local.isAssistantWatchModeAvailable
 >(() => false);
@@ -155,7 +141,6 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/remotes/local", () => ({
   ...realLocal,
-  generateLocalSecret: generateLocalSecretMock,
   isAssistantWatchModeAvailable: isAssistantWatchModeAvailableMock,
   isGatewayWatchModeAvailable: isGatewayWatchModeAvailableMock,
   startLocalDaemon: startLocalDaemonMock,
@@ -297,8 +282,6 @@ beforeEach(() => {
   stopProcessByPidFileMock.mockResolvedValue(true);
   findOpenPortMock.mockReset();
   findOpenPortMock.mockImplementation(async (port) => port);
-  generateLocalSecretMock.mockReset();
-  generateLocalSecretMock.mockReturnValue("generated-bootstrap-secret");
   isAssistantWatchModeAvailableMock.mockReset();
   isAssistantWatchModeAvailableMock.mockReturnValue(false);
   isGatewayWatchModeAvailableMock.mockReset();
@@ -326,8 +309,6 @@ beforeEach(() => {
   loadGuardianTokenMock.mockReturnValue(
     makeGuardianTokenData({ accessToken: "existing" }),
   );
-  resetGuardianBootstrapMock.mockReset();
-  resetGuardianBootstrapMock.mockResolvedValue(undefined);
   leaseGuardianTokenMock.mockReset();
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianTokenData());
   ngrokRunMock.mockReset();
@@ -371,25 +352,6 @@ afterAll(() => {
 });
 
 describe("cadet wake", () => {
-  test("restarts a running gateway without watch mode when backfilling the bootstrap secret", async () => {
-    await wake();
-
-    expect(bootstrapSecrets.get(localEntry.assistantId)).toBe(
-      "generated-bootstrap-secret",
-    );
-    expect(stopProcessByPidFileMock).toHaveBeenCalledWith(
-      join(tempDir, "gateway.pid"),
-      "gateway",
-    );
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({ instanceDir: tempDir }),
-      {
-        bootstrapSecret: "generated-bootstrap-secret",
-      },
-    );
-  });
-
   test("relaunches CES sibling when daemon is healthy but CES is dead", async () => {
     // Daemon is healthy (default mock) but CES pid says dead.
     // isProcessAliveMock defaults to { alive: false }.
@@ -414,10 +376,6 @@ describe("cadet wake", () => {
   });
 
   test("does not duplicate an assistant already classified as stuck", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     resolveProcessStateMock.mockImplementation(
       async (_pidFile, _port, label) =>
         label === "Assistant"
@@ -434,10 +392,6 @@ describe("cadet wake", () => {
   });
 
   test("does not duplicate an assistant when a watch restart cannot stop it", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     isAssistantWatchModeAvailableMock.mockReturnValue(true);
     stopProcessByPidFileMock.mockResolvedValue(false);
     isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
@@ -451,10 +405,6 @@ describe("cadet wake", () => {
   });
 
   test("does not duplicate a gateway already classified as stuck", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     resolveProcessStateMock.mockImplementation(
       async (_pidFile, _port, label) =>
         label === "Gateway"
@@ -471,10 +421,6 @@ describe("cadet wake", () => {
   });
 
   test("does not duplicate a gateway when a watch restart cannot stop it", async () => {
-    saveGuardianBootstrapSecret(
-      localEntry.assistantId,
-      "existing-bootstrap-secret",
-    );
     isGatewayWatchModeAvailableMock.mockReturnValue(true);
     stopProcessByPidFileMock.mockResolvedValue(false);
     isProcessAliveMock.mockImplementation((pidFile) =>

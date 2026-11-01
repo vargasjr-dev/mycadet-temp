@@ -1,3 +1,5 @@
+import { unlinkSync } from "node:fs";
+
 import { SEEDS } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
@@ -83,20 +85,25 @@ export function basetenTokenPath(assistantId: string): string {
 }
 
 /**
- * The on-disk location of an assistant's guardian bootstrap secret, given an
- * already resolved config dir. Same contract as {@link guardianTokenPath}:
- * the single source of truth for this path. Secrets never live in the
- * lockfile (which crosses the renderer boundary); the hatch/docker/restore
- * writers create the file and every lease-repair reader goes through here.
+ * Remove a retired guardian bootstrap secret file, if present. The secret
+ * mechanism is gone (pairing is the bootstrap door); pre-retirement installs
+ * still carry the xdg file on disk, so a successful lease unlinks it
+ * best-effort — the credential must not rot on disk unread.
  */
-export function guardianBootstrapSecretPath(assistantId: string): string {
+export function deleteGuardianBootstrapSecret(assistantId: string): void {
   assertSafePathSegment(assistantId, "assistant ID");
-  return joinLocalPath(
-    resolveConfigDir(),
-    "assistants",
-    assistantId,
-    "guardian-bootstrap-secret",
-  );
+  try {
+    unlinkSync(
+      joinLocalPath(
+        resolveConfigDir(),
+        "assistants",
+        assistantId,
+        "guardian-bootstrap-secret",
+      ),
+    );
+  } catch {
+    // Absent or unreadable — nothing to clean.
+  }
 }
 
 /**

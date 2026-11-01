@@ -251,6 +251,8 @@ describe("/v1/pair cli interface", () => {
     expect(typeof body.expiresAt).toBe("string");
     expect(body.guardianId).toBe(GUARDIAN_ID);
     expect(typeof body.refreshToken).toBe("string");
+    // The guardian already existed (seeded) — not a bootstrap mint.
+    expect(body.isNew).toBe(false);
 
     const tokens = activeTokens();
     expect(tokens).toHaveLength(1);
@@ -271,6 +273,60 @@ describe("/v1/pair cli interface", () => {
     );
     expect(res.status).toBe(403);
     expect(activeTokens()).toHaveLength(0);
+  });
+
+  test("mints the guardian when the gateway has none — loopback presence is the bootstrap evidence", async () => {
+    // Empty the seeded binding: a fresh install has no guardian yet. The cli
+    // interface is the gateway's bootstrap door (GUARDIAN_BOOTSTRAP_SECRET is
+    // retired) — the mint must create the contact + cadet channel rows.
+    getGatewayDb().delete(contactChannels).run();
+    getGatewayDb().delete(contacts).run();
+
+    const res = await handlePair(
+      makeCliRequest({ deviceId: "device-first" }),
+      LOOPBACK_IP,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+
+    expect(body.isNew).toBe(true);
+    expect(body.guardianId).not.toBe("local");
+    const guardianPrincipalId = body.guardianId as string;
+
+    const guardianRows = getGatewayDb().select().from(contacts).all();
+    expect(guardianRows).toHaveLength(1);
+    expect(guardianRows[0]!.role).toBe("guardian");
+    expect(guardianRows[0]!.principalId).toBe(guardianPrincipalId);
+    const channelRows = getGatewayDb().select().from(contactChannels).all();
+    expect(channelRows).toHaveLength(1);
+    expect(channelRows[0]!.type).toBe("cadet");
+    expect(channelRows[0]!.status).toBe("active");
+
+    // The minted pair is recorded and device-bound.
+    const tokens = activeTokens();
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].hashedDeviceId).toBe(hashToken("device-first"));
+  });
+
+  test("re-pairing resolves the existing guardian (isNew: false) — re-pair IS the repair", async () => {
+    getGatewayDb().delete(contactChannels).run();
+    getGatewayDb().delete(contacts).run();
+
+    const first = await handlePair(
+      makeCliRequest({ deviceId: "device-first" }),
+      LOOPBACK_IP,
+    );
+    const firstBody = (await first.json()) as Record<string, unknown>;
+    expect(firstBody.isNew).toBe(true);
+
+    const second = await handlePair(
+      makeCliRequest({ deviceId: "device-first" }),
+      LOOPBACK_IP,
+    );
+    expect(second.status).toBe(200);
+    const secondBody = (await second.json()) as Record<string, unknown>;
+    expect(secondBody.isNew).toBe(false);
+    expect(secondBody.guardianId).toBe(firstBody.guardianId);
   });
 
   test("rejects a cli request carrying an Origin header (WebView exfiltration vector)", async () => {

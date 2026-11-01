@@ -2092,52 +2092,6 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
       },
-      "/v1/guardian/init": {
-        post: {
-          summary: "Initialize guardian",
-          description:
-            "Authenticated gateway endpoint that initializes the guardian identity and binds it to the assistant runtime.",
-          operationId: "guardianInit",
-          security: [{ BearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { type: "object", additionalProperties: true },
-              },
-            },
-          },
-          responses: {
-            "200": { description: "Guardian initialized" },
-            "400": { description: "Invalid request payload" },
-            "401": {
-              description: "Unauthorized — missing or invalid bearer token",
-            },
-            "503": { description: "Bearer token not configured" },
-            "502": { description: "Failed to reach assistant runtime" },
-            "504": { description: "Assistant runtime request timed out" },
-          },
-        },
-      },
-      "/v1/guardian/reset-bootstrap": {
-        post: {
-          summary: "Reset guardian bootstrap lock",
-          description:
-            "Loopback-only endpoint that removes the guardian-init lock file so that /v1/guardian/init can be called again. When bootstrap secrets are configured, callers must provide a valid x-bootstrap-secret header. Used by the desktop app to recover from a lost actor token.",
-          operationId: "guardianResetBootstrap",
-          responses: {
-            "200": { description: "Lock file removed, or already absent" },
-            "403": {
-              description:
-                "Forbidden — non-loopback origin or invalid bootstrap secret",
-            },
-            "409": {
-              description: "Guardian init is in progress — try again shortly",
-            },
-            "500": { description: "Failed to remove lock file" },
-          },
-        },
-      },
       "/v1/channel-verification-sessions/revoke": {
         post: {
           summary: "Revoke verification binding",
@@ -3249,7 +3203,8 @@ export function buildSchema(): Record<string, unknown> {
         },
         put: {
           summary: "Save the assistant's automatic-upgrade schedule",
-          description: "Full replace — the request body is the complete policy.",
+          description:
+            "Full replace — the request body is the complete policy.",
           operationId: "upgradePolicyPut",
           security: [{ EdgeScoped: [] }],
           requestBody: {
@@ -3257,53 +3212,53 @@ export function buildSchema(): Record<string, unknown> {
             content: {
               "application/json": {
                 schema: {
-                    type: "object",
-                    properties: {
-                      enabled: { type: "boolean" },
-                      timezone: { type: "string", maxLength: 64 },
-                      schedule: {
-                        type: "object",
-                        properties: {
-                          frequency: {
-                            type: "string",
-                            enum: ["daily", "weekly", "monthly"],
-                          },
-                          days_of_week: {
-                            type: "array",
-                            items: { type: "integer", minimum: 0, maximum: 6 },
-                          },
-                          days_of_month: {
-                            type: "array",
-                            items: { type: "integer", minimum: 1, maximum: 31 },
-                          },
-                          window: {
-                            type: "object",
-                            properties: {
-                              start: {
-                                type: "string",
-                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
-                              },
-                              end: {
-                                type: "string",
-                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
-                              },
-                            },
-                            required: ["start", "end"],
-                            additionalProperties: false,
-                          },
+                  type: "object",
+                  properties: {
+                    enabled: { type: "boolean" },
+                    timezone: { type: "string", maxLength: 64 },
+                    schedule: {
+                      type: "object",
+                      properties: {
+                        frequency: {
+                          type: "string",
+                          enum: ["daily", "weekly", "monthly"],
                         },
-                        required: [
-                          "frequency",
-                          "days_of_week",
-                          "days_of_month",
-                          "window",
-                        ],
-                        additionalProperties: false,
+                        days_of_week: {
+                          type: "array",
+                          items: { type: "integer", minimum: 0, maximum: 6 },
+                        },
+                        days_of_month: {
+                          type: "array",
+                          items: { type: "integer", minimum: 1, maximum: 31 },
+                        },
+                        window: {
+                          type: "object",
+                          properties: {
+                            start: {
+                              type: "string",
+                              pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                            },
+                            end: {
+                              type: "string",
+                              pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                            },
+                          },
+                          required: ["start", "end"],
+                          additionalProperties: false,
+                        },
                       },
+                      required: [
+                        "frequency",
+                        "days_of_week",
+                        "days_of_month",
+                        "window",
+                      ],
+                      additionalProperties: false,
                     },
-                    required: ["enabled", "timezone", "schedule"],
-                    additionalProperties: false,
                   },
+                  required: ["enabled", "timezone", "schedule"],
+                  additionalProperties: false,
+                },
               },
             },
           },
@@ -3370,7 +3325,8 @@ export function buildSchema(): Record<string, unknown> {
       },
       "/v1/assistants/{assistantId}/upgrade-policy": {
         get: {
-          summary: "Get the assistant's automatic-upgrade schedule (assistant-scoped)",
+          summary:
+            "Get the assistant's automatic-upgrade schedule (assistant-scoped)",
           description:
             "Returns the stored policy, or the defaults (enabled, weekly, Mon 06:00–08:00 UTC) when none has been saved yet.",
           operationId: "upgradePolicyGetScoped",
@@ -3443,8 +3399,10 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
         put: {
-          summary: "Save the assistant's automatic-upgrade schedule (assistant-scoped)",
-          description: "Full replace — the request body is the complete policy.",
+          summary:
+            "Save the assistant's automatic-upgrade schedule (assistant-scoped)",
+          description:
+            "Full replace — the request body is the complete policy.",
           operationId: "upgradePolicyPutScoped",
           security: [{ EdgeScoped: [] }],
           parameters: [
@@ -3460,53 +3418,53 @@ export function buildSchema(): Record<string, unknown> {
             content: {
               "application/json": {
                 schema: {
-                    type: "object",
-                    properties: {
-                      enabled: { type: "boolean" },
-                      timezone: { type: "string", maxLength: 64 },
-                      schedule: {
-                        type: "object",
-                        properties: {
-                          frequency: {
-                            type: "string",
-                            enum: ["daily", "weekly", "monthly"],
-                          },
-                          days_of_week: {
-                            type: "array",
-                            items: { type: "integer", minimum: 0, maximum: 6 },
-                          },
-                          days_of_month: {
-                            type: "array",
-                            items: { type: "integer", minimum: 1, maximum: 31 },
-                          },
-                          window: {
-                            type: "object",
-                            properties: {
-                              start: {
-                                type: "string",
-                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
-                              },
-                              end: {
-                                type: "string",
-                                pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
-                              },
-                            },
-                            required: ["start", "end"],
-                            additionalProperties: false,
-                          },
+                  type: "object",
+                  properties: {
+                    enabled: { type: "boolean" },
+                    timezone: { type: "string", maxLength: 64 },
+                    schedule: {
+                      type: "object",
+                      properties: {
+                        frequency: {
+                          type: "string",
+                          enum: ["daily", "weekly", "monthly"],
                         },
-                        required: [
-                          "frequency",
-                          "days_of_week",
-                          "days_of_month",
-                          "window",
-                        ],
-                        additionalProperties: false,
+                        days_of_week: {
+                          type: "array",
+                          items: { type: "integer", minimum: 0, maximum: 6 },
+                        },
+                        days_of_month: {
+                          type: "array",
+                          items: { type: "integer", minimum: 1, maximum: 31 },
+                        },
+                        window: {
+                          type: "object",
+                          properties: {
+                            start: {
+                              type: "string",
+                              pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                            },
+                            end: {
+                              type: "string",
+                              pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$",
+                            },
+                          },
+                          required: ["start", "end"],
+                          additionalProperties: false,
+                        },
                       },
+                      required: [
+                        "frequency",
+                        "days_of_week",
+                        "days_of_month",
+                        "window",
+                      ],
+                      additionalProperties: false,
                     },
-                    required: ["enabled", "timezone", "schedule"],
-                    additionalProperties: false,
                   },
+                  required: ["enabled", "timezone", "schedule"],
+                  additionalProperties: false,
+                },
               },
             },
           },

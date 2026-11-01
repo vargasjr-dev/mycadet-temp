@@ -63,7 +63,6 @@ function inspection(service: keyof typeof containers) {
         "CES_SERVICE_TOKEN=internal-test-token",
         "RUNTIME_HTTP_PORT=7821",
         "GATEWAY_PORT=7830",
-        "GUARDIAN_BOOTSTRAP_SECRET=bootstrap-test-secret",
       ],
     },
     HostConfig: {

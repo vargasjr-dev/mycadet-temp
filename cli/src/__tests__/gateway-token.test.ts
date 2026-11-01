@@ -83,18 +83,19 @@ async function runGatewayToken(): Promise<{
   return { exited, logs: logs.join("\n"), errors: errors.join("\n") };
 }
 
-/** Fetch double covering the repair choreography (readyz/reset/init). */
-function mockRepairFetch(initBody: object): void {
+/**
+ * Fetch double covering the repair choreography (readyz/pair). The body is
+ * /v1/pair's device-bound response shape (token/guardianId names) — the lease
+ * maps it onto the persisted token fields.
+ */
+function mockRepairFetch(pairBody: object): void {
   globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith("/readyz")) {
       return new Response("", { status: 404 }); // no starting gate — proceed
     }
-    if (url.endsWith("/v1/guardian/reset-bootstrap")) {
-      return new Response("{}", { status: 200 });
-    }
-    if (url.endsWith("/v1/guardian/init")) {
-      return new Response(JSON.stringify(initBody), {
+    if (url.endsWith("/v1/pair")) {
+      return new Response(JSON.stringify(pairBody), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
@@ -103,13 +104,15 @@ function mockRepairFetch(initBody: object): void {
   });
 }
 
-const FRESH_LEASE = {
-  guardianPrincipalId: "principal-new",
-  accessToken: "fresh-acc",
-  accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+const FRESH_PAIR = {
+  token: "fresh-acc",
+  expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   refreshToken: "fresh-ref",
-  refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
-  refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
+  refreshTokenExpiresAt: new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000,
+  ).toISOString(),
+  refreshAfter: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+  guardianId: "principal-new",
   isNew: false,
 };
 
@@ -192,15 +195,15 @@ describe("gateway token command", () => {
     expect(errors).toContain("No assistant found with name or ID 'nope'");
   });
 
-  test("refresh self-heals an expired credential via the bootstrap reset", async () => {
-    seedLocalEntry({ guardianBootstrapSecret: "boot-secret-1" });
+  test("refresh self-heals an expired credential by re-pairing", async () => {
+    seedLocalEntry();
     saveGuardianToken(
       "px",
       makeGuardianTokenData({
         refreshTokenExpiresAt: new Date(Date.now() - 1000).toISOString(),
       }),
     );
-    mockRepairFetch(FRESH_LEASE);
+    mockRepairFetch(FRESH_PAIR);
 
     process.argv = ["bun", "cadet", "gateway", "token", "refresh"];
     const { exited, logs, errors } = await runGatewayToken();
@@ -215,7 +218,7 @@ describe("gateway token command", () => {
   });
 
   test("refresh reports repair failure and never suggests hatching", async () => {
-    seedLocalEntry({ guardianBootstrapSecret: "boot-secret-1" });
+    seedLocalEntry();
     saveGuardianToken(
       "px",
       makeGuardianTokenData({
@@ -236,8 +239,8 @@ describe("gateway token command", () => {
   });
 
   test("refresh re-provisions when the token file is missing entirely", async () => {
-    seedLocalEntry({ guardianBootstrapSecret: "boot-secret-1" });
-    mockRepairFetch(FRESH_LEASE);
+    seedLocalEntry();
+    mockRepairFetch(FRESH_PAIR);
 
     process.argv = ["bun", "cadet", "gateway", "token", "refresh"];
     const { exited, logs } = await runGatewayToken();

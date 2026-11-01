@@ -1,9 +1,5 @@
 import { resolveLockfilePath } from "@mycadet/local-mode";
 import {
-  loadGuardianBootstrapSecret,
-  saveGuardianBootstrapSecret,
-} from "../lib/guardian-token.js";
-import {
   afterAll,
   afterEach,
   beforeAll,
@@ -33,7 +29,6 @@ import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
 const realLocal = {
-  generateLocalSecret: localModule.generateLocalSecret,
   startLocalDaemon: localModule.startLocalDaemon,
   startGateway: localModule.startGateway,
   startCes: localModule.startCes,
@@ -238,7 +233,6 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
       assistantId: name,
       instanceDir,
     });
-    saveGuardianBootstrapSecret(name, "existing-bootstrap");
     const entry = readLocalEntry(name);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
@@ -270,7 +264,6 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
       expect.objectContaining({ instanceDir: expect.any(String) }),
-      { bootstrapSecret: loadGuardianBootstrapSecret(name) },
     ]);
   });
 

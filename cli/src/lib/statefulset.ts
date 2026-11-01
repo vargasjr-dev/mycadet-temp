@@ -132,7 +132,6 @@ export interface DockerStatefulSetSpec {
 
 /** Secrets injected at container-start time (from hatch / upgrade opts). */
 export interface DockerRunSecrets {
-  bootstrapSecret?: string;
   cesServiceToken?: string;
 }
 
@@ -191,7 +190,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
         { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
-        { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         // Provider API keys — forwarded from host if set
         ...Object.values(PROVIDER_ENV_VAR_NAMES).map(
           (v): HostEnv => ({ kind: "host", name: v }),
@@ -222,7 +220,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "GATEWAY_PORT",              value: `${GATEWAY_INTERNAL_PORT}` },
         { kind: "static", name: "RUNTIME_HTTP_PORT",         value: `${ASSISTANT_INTERNAL_PORT}` },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
-        { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         { kind: "host",   name: "CADET_ENVIRONMENT" },
         { kind: "host",   name: "CADET_CLOUD_URL" },
         { kind: "host",   name: "TUNNEL_BASE_URL" },

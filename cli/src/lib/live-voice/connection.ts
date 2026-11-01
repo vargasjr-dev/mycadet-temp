@@ -18,7 +18,7 @@
  * non-guardian can be stopped.
  *
  * The CLI already holds exactly that credential and has since it first paired:
- * `leaseGuardianToken` POSTs `/v1/guardian/init`, which resolves the *cadet*
+ * `leaseGuardianToken` pairs via `/v1/pair`, which resolves the *cadet*
  * guardian principal and mints an access token subject
  * `actor:<assistantId>:<guardianPrincipalId>`, the same principal
  * `findCadetGuardian()` returns on the other side of the check. So the pin
