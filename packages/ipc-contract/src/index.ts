@@ -24,7 +24,6 @@ export {
   type LocalReadAssistantAvatarResult,
   type LocalRevokeDeviceResult,
   type LocalUpgradeOptions,
-  type LocalWakeOptions,
   type CadetBridge,
   CADET_BRIDGE_KEYS,
 } from "./bridge";

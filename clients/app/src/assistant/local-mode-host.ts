@@ -136,18 +136,6 @@ export async function cancelAssistantPairing(handle: string): Promise<void> {
   }
 }
 
-/** Wake (start/restart) a local assistant's daemon and gateway. */
-export async function wakeLocalAssistantHost(
-  assistantId: string,
-  options?: { repairGuardian?: boolean },
-): Promise<{ ok: boolean; error?: string }> {
-  const wake = window.cadet?.localMode?.wake;
-  if (!wake) {
-    return { ok: false, error: "Wake is not supported by this app version" };
-  }
-  return wake(assistantId, options);
-}
-
 /** Remove a paired entry and its stored guardian token from this device. */
 export async function unpairLocalAssistant(
   assistantId: string,

@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 
-import type { CliInvocation } from "./util";
-import { resolveCliInvocation } from "./cli-invocation";
+import type { LockfileAssistant } from "../../lockfile-contract";
+import { resolveCliInvocation } from "../../cli-invocation";
+import type { CliInvocation } from "../../util";
 
 // `wake` cold-starts a stopped assistant, so it can legitimately run far
 // longer than a teardown like `retire`: the CLI waits up to 60s for the daemon
@@ -11,47 +12,26 @@ import { resolveCliInvocation } from "./cli-invocation";
 // a slow-but-succeeding wake gets killed and misreported as a timeout.
 const WAKE_TIMEOUT_MS = 180_000;
 
-/** The re-lease runs after the wake, inside the same safety-net window. */
-const REPAIR_TIMEOUT_MS = 60_000;
-
 export type WakeResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
 
-export interface WakeOptions {
-  /** Re-provision the guardian credential after the wake (the gateway's bootstrap reset + re-lease, the same machinery `cadet gateway token refresh` runs). Revokes the assistant's other device-bound tokens, so callers must gate this behind explicit user confirmation. */
-  repairGuardian?: boolean;
-}
-
 /**
- * Start (or restart) a local assistant's daemon and gateway via the CLI's
- * `wake`, which also re-seeds the guardian token from a sibling environment.
- *
- * This is the non-destructive repair primitive: it revives a stopped or
- * mis-seeded local assistant in place without touching its data or identity,
- * the same way the native client re-pairs on a failed connection. Mirrors
- * the retire operation's never-reject contract: each host wires transport once
- * and surfaces a structured failure rather than a thrown error.
+ * The local topology's wake leg. INTERIM: the daemon-start core (the
+ * compiled-runtime sibling resolution, the environment-scoped ports, the
+ * app-server edge restore) still lives in the CLI, so the leg drives the
+ * CLI's own `wake` command for the entry — zero drift by construction, since
+ * the spawned process IS the command. This leg is the ROUTE's mechanism: the
+ * `cadet wake` command itself calls its own wakeLocal directly (spawning
+ * itself through the operation would recurse). When the daemon-start
+ * machinery migrates into the package, this leg becomes the in-process
+ * daemon start and the spawn disappears.
  */
-export async function runWake(
-  assistantId: string,
-  options?: WakeOptions,
+export async function wakeLocalServices(
+  entry: LockfileAssistant,
 ): Promise<WakeResult> {
   const resolved = await resolveCliInvocation();
-  return runCli(resolved, ["wake", assistantId], WAKE_TIMEOUT_MS).then(
-    (woken) => {
-      if (!woken.ok || !options?.repairGuardian) {
-        return woken;
-      }
-      // The credential repair is the gateway's own machinery now: the
-      // gateway is up after the wake, so the re-lease runs against it.
-      return runCli(
-        resolved,
-        ["gateway", "token", "refresh", assistantId],
-        REPAIR_TIMEOUT_MS,
-      );
-    },
-  );
+  return runCli(resolved, ["wake", entry.assistantId], WAKE_TIMEOUT_MS);
 }
 
 function runCli(

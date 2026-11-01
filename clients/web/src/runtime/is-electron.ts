@@ -63,7 +63,6 @@ import type {
   LocalReadAssistantAvatarResult,
   LocalRevokeDeviceResult,
   LocalUpgradeOptions,
-  LocalWakeOptions,
   NotificationActionEvent,
   PowerEvent,
   VoiceModeChord,
@@ -215,10 +214,6 @@ declare global {
         ): Promise<LocalPairingPollResult>;
         pairingCancel?(handle: string): Promise<{ ok: boolean }>;
         sleep?(assistantId: string): Promise<{ ok: boolean; error?: string }>;
-        wake?(
-          assistantId: string,
-          options?: LocalWakeOptions,
-        ): Promise<{ ok: boolean; error?: string }>;
         upgrade?(
           assistantId: string,
           options?: LocalUpgradeOptions,

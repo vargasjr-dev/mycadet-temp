@@ -99,6 +99,15 @@ export type { OperatorRoute, OperatorMatch } from "./operations/routes";
 export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
+export { wakeAssistant, type WakeOptions, type WakeResult } from "./operations/wake";
+export {
+  wakeDocker,
+  ensureDockerDaemonRunning,
+  startColimaAndAwaitDaemon,
+  ensureLocalBinOnPath,
+  LOCAL_BIN_DIR,
+  isNoSuchContainerError,
+} from "./remotes/docker/wake";
 export type { SleepResult, SleepServiceStop } from "./operations/sleep";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
 export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
@@ -192,8 +201,6 @@ export type {
   PairingPollOptions,
   PairingPollResult,
 } from "./pair";
-export { runWake } from "./wake";
-export type { WakeOptions, WakeResult } from "./wake";
 export { runDevicesList, runDevicesRevoke } from "./devices";
 export type {
   DeviceRecord,

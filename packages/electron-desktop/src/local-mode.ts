@@ -10,7 +10,6 @@ import {
   runDevicesRevoke,
   runHatch,
   runUpgrade,
-  runWake,
   pairingCancel,
   pairingPoll,
   pairingStart,
@@ -20,7 +19,6 @@ import {
   type CliPaths,
   type LockfileWriteResult,
   type UpgradeOptions,
-  type WakeOptions,
 } from "@mycadet/local-mode";
 import type {
   LocalListDevicesResult,
@@ -51,11 +49,6 @@ import type { IpcHandle } from "./ipc";
 interface HatchResult {
   ok: boolean;
   assistantId?: string;
-  error?: string;
-}
-
-interface WakeResult {
-  ok: boolean;
   error?: string;
 }
 
@@ -142,23 +135,6 @@ async function revokeDevice(
   }
 }
 
-/**
- * Wake (start) a local assistant's daemon and gateway, re-seeding its
- * guardian token. The non-destructive repair primitive. Mirrors `hatch`'s
- * never-reject contract.
- */
-async function wake(
-  assistantId: string,
-  options?: WakeOptions,
-): Promise<WakeResult> {
-  try {
-    const result = await runWake(assistantId, options);
-    return result.ok ? { ok: true } : { ok: false, error: result.error };
-  } catch (err) {
-    return { ok: false, error: (err as Error).message };
-  }
-}
-
 const upgradingLocalAssistantIds = new Set<string>();
 
 async function upgrade(
@@ -214,14 +190,6 @@ const oneOptionalStringArgs = z.tuple([z.string().optional()]);
 const twoOptionalStringArgs = z.tuple([
   z.string().optional(),
   z.string().optional(),
-]);
-
-// `wake` additionally takes an options object so a user-confirmed repair can
-// pass `repairGuardian` through to the CLI's `--repair-guardian` flag. Both
-// members stay optional so older renderers' single-argument invokes parse.
-const wakeArgs = z.tuple([
-  z.string().optional(),
-  z.object({ repairGuardian: z.boolean().optional() }).optional(),
 ]);
 
 const upgradeArgs = z.tuple([
@@ -379,13 +347,6 @@ export const installLocalMode = (): void => {
       return revokeDevice(assistantId, hashedDeviceId);
     },
   );
-
-  ipc("cadet:localMode:wake", wakeArgs, ([assistantId, options]) => {
-    if (!assistantId) {
-      return { ok: false, error: "Missing assistantId" };
-    }
-    return wake(assistantId, options);
-  });
 
   ipc("cadet:localMode:upgrade", upgradeArgs, ([assistantId, options]) => {
     if (!assistantId) {

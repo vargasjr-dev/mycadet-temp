@@ -2,12 +2,13 @@ import type { LockfileAssistant } from "../lockfile-contract";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { sleepAssistant } from "./sleep";
+import { wakeAssistant } from "./wake";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
  * lifecycle cores the serving host (Electron `app://` handler, Vite dev
  * middleware) mounts before the gateway data-plane planner. One entry per
- * operation; today that is retire and sleep. Future operations join as new
+ * operation; today that is retire, sleep, and wake. Future operations join as new
  * rows (and the gateway proxy itself becomes the LAST row — the catch-all
  * forward — once every scoped route is an operation).
  *
@@ -31,6 +32,7 @@ export interface OperatorRoute {
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
 const SLEEP_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/sleep\/?$/;
+const WAKE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/wake\/?$/;
 
 /**
  * The scoped surface's retire arm. A `DELETE` on
@@ -79,9 +81,33 @@ async function runSleepRoute(assistantId: string): Promise<Response | null> {
   });
 }
 
+/**
+ * The scoped surface's wake arm. A `POST` on `/v1/assistants/{id}/wake/`
+ * for an entry this host can start is answered host-side — the
+ * non-destructive repair primitive the web bundle's connect-repair rides.
+ * A docker entry whose containers were never created answers 404 pointing
+ * at the CLI (the recreate needs the container-create builder, still
+ * CLI-side); a bodyless 204 parses as the web bundle's success.
+ */
+async function runWakeRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  const result = await wakeAssistant(entry);
+  if (result.ok) {
+    return new Response(null, { status: 204 });
+  }
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 const ROUTES: OperatorRoute[] = [
   { method: "DELETE", pattern: RETIRE_PATTERN, run: runRetireRoute },
   { method: "POST", pattern: SLEEP_PATTERN, run: runSleepRoute },
+  { method: "POST", pattern: WAKE_PATTERN, run: runWakeRoute },
 ];
 
 /** A matched operator request: the route and its decoded target id. */

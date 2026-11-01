@@ -497,50 +497,21 @@ describe("wakeLocalAssistantHost", () => {
     ];
     expect(url).toBe("/v1/assistants/a-1/wake/");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({});
+    expect(init.body).toBeUndefined();
   });
 
-  test("web/dev host forwards repairGuardian when the caller opts in", async () => {
-    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
+  test("the Electron host wakes through the same route — the bridge arm is gone", async () => {
+    const fetchMock = mock(async () => ({ status: 204 }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    await wakeLocalAssistantHost("a-1", { repairGuardian: true });
+    expect(await wakeLocalAssistantHost("a-1")).toEqual({ ok: true });
 
-    const [, init] = fetchMock.mock.calls[0] as unknown as [
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
       string,
       RequestInit,
     ];
-    expect(JSON.parse(init.body as string)).toEqual({
-      repairGuardian: true,
-    });
-  });
-
-  test("Electron host wakes through the bridge and never touches fetch", async () => {
-    const wake = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ wake });
-
-    expect(await wakeLocalAssistantHost("a-1")).toEqual({ ok: true });
-    expect(wake).toHaveBeenCalledWith("a-1", undefined);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("Electron host forwards repairGuardian to the bridge", async () => {
-    const wake = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ wake });
-
-    expect(
-      await wakeLocalAssistantHost("a-1", { repairGuardian: true }),
-    ).toEqual({ ok: true });
-    expect(wake).toHaveBeenCalledWith("a-1", { repairGuardian: true });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(url).toBe("/v1/assistants/a-1/wake/");
+    expect(init.method).toBe("POST");
   });
 
   test("older Electron shell without the wake channel reports an unsupported failure", async () => {

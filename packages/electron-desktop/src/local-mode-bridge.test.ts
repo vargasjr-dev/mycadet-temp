@@ -8,7 +8,6 @@ test("forwards the complete local-mode namespace through IPC", async () => {
 
   await bridge.hatch("remote");
   await bridge.readLockfile();
-  await bridge.wake("assistant-1", { repairGuardian: true });
   await bridge.upgrade("assistant-1", { latest: true });
   await bridge.status("assistant-1");
   await bridge.unpair("assistant-1");
@@ -18,10 +17,7 @@ test("forwards the complete local-mode namespace through IPC", async () => {
   await bridge.listDevices("assistant-1");
   await bridge.revokeDevice("assistant-1", "hash-1");
 
-  expect(invoke).toHaveBeenCalledTimes(11);
-  expect(invoke).toHaveBeenCalledWith("cadet:localMode:wake", "assistant-1", {
-    repairGuardian: true,
-  });
+  expect(invoke).toHaveBeenCalledTimes(10);
   expect(invoke).toHaveBeenCalledWith(
     "cadet:localMode:revokeDevice",
     "assistant-1",
