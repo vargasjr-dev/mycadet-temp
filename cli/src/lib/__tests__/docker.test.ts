@@ -188,6 +188,29 @@ describe("resolveDockerProviderCredentialSetupAction", () => {
   });
 });
 
+describe("buildServiceRunArgs — assistant memory sizing", () => {
+  test("default launch carries no memory flags — the container runs unlimited as it always has", () => {
+    expect(buildAssistantArgs().some((a) => a === "--memory")).toBe(false);
+    expect(buildAssistantArgs().some((a) => a === "--memory-swap")).toBe(false);
+  });
+
+  test("assistantMemory applies the cap, reservation, and swap pin to the assistant only", () => {
+    const settings = { maxBytes: 14_000_000_000, highBytes: 11_000_000_000 };
+    const assistantArgs = buildAssistantArgs({ assistantMemory: settings });
+    expect(assistantArgs).toContain("--memory");
+    expect(assistantArgs).toContain("14000000000");
+    expect(assistantArgs).toContain("--memory-reservation");
+    expect(assistantArgs).toContain("11000000000");
+    // --memory-swap == --memory: hosts that do provision swap don't silently
+    // get docker's 2× default allowance.
+    expect(assistantArgs).toContain("--memory-swap");
+
+    const gatewayArgs = buildGatewayArgs({ assistantMemory: settings });
+    expect(gatewayArgs.some((a) => a === "--memory")).toBe(false);
+    expect(gatewayArgs.some((a) => a === "--memory-swap")).toBe(false);
+  });
+});
+
 describe("buildServiceRunArgs — gateway", () => {
   const savedTunnelBaseUrl = process.env.TUNNEL_BASE_URL;
 
