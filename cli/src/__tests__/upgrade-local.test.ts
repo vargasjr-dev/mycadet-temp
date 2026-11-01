@@ -106,19 +106,16 @@ const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }),
 );
-const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
-  async () => {},
-);
-const startGatewayMock = mock<typeof local.startGateway>(
-  async () => "http://127.0.0.1:7830",
-);
-const stopLocalProcessesMock = mock<typeof local.stopLocalProcesses>(
-  async () => {},
-);
-const startCesMock = mock<typeof local.startCes>(async () => {});
-const restartUpgradedLocalProcessesMock = mock<
-  typeof local.restartUpgradedLocalProcesses
->(async () => {});
+const sleepAssistantMock = mock<typeof localMode.sleepAssistant>(async () => ({
+  ok: true,
+  kind: "services",
+  services: {
+    assistant: "stopped",
+    gateway: "stopped",
+    ces: "stopped",
+  },
+  notes: [],
+}));
 const wakeAssistantMock = mock<typeof local.wakeAssistant>(async () => ({
   ok: true,
 }));
@@ -145,16 +142,12 @@ mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   saveLockfileAssistant: saveLockfileAssistantMock,
   loopbackSafeFetch: loopbackSafeFetchMock,
-  stopLocalProcesses: stopLocalProcessesMock,
-  restartUpgradedLocalProcesses: restartUpgradedLocalProcessesMock,
+  sleepAssistant: sleepAssistantMock,
   wakeAssistant: wakeAssistantMock,
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
-  startLocalDaemon: startLocalDaemonMock,
-  startGateway: startGatewayMock,
-  startCes: startCesMock,
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
@@ -271,14 +264,15 @@ beforeEach(() => {
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }));
-  startLocalDaemonMock.mockReset();
-  startLocalDaemonMock.mockResolvedValue(undefined);
-  startGatewayMock.mockReset();
-  startGatewayMock.mockResolvedValue("http://127.0.0.1:7830");
-  stopLocalProcessesMock.mockReset();
-  stopLocalProcessesMock.mockResolvedValue(undefined);
-  startCesMock.mockReset();
-  startCesMock.mockResolvedValue(undefined);
+  sleepAssistantMock.mockReset();
+  sleepAssistantMock.mockResolvedValue({
+    ok: true,
+    kind: "services",
+    services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
+    notes: [],
+  });
+  wakeAssistantMock.mockReset();
+  wakeAssistantMock.mockResolvedValue({ ok: true });
   loopbackSafeFetchMock.mockReset();
   loopbackSafeFetchMock.mockResolvedValue({
     ok: true,
@@ -389,23 +383,23 @@ describe("cadet upgrade local", () => {
         prefix: "local-assistant-pre-upgrade",
       }),
     );
-    expect(stopLocalProcessesMock).toHaveBeenCalledWith(
+    expect(sleepAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
+      { force: true },
     );
     expect(ensureLocalRuntimeMock).toHaveBeenCalledWith(
       expect.objectContaining({ instanceDir: tempDir }),
       cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       { force: false },
     );
-    expect(restartUpgradedLocalProcessesMock).toHaveBeenCalledWith(
+    expect(wakeAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
-      cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -434,21 +428,19 @@ describe("cadet upgrade local", () => {
     expect(pruneOldBackupsMock).not.toHaveBeenCalled();
     expect(restoreBackupMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).toHaveBeenCalled();
-    expect(restartUpgradedLocalProcessesMock).toHaveBeenCalled();
+    expect(wakeAssistantMock).toHaveBeenCalled();
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
-    restartUpgradedLocalProcessesMock.mockRejectedValueOnce(
-      new Error("target startup failed"),
-    );
+    wakeAssistantMock.mockRejectedValueOnce(new Error("target startup failed"));
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
     expect(restoreBackupMock).toHaveBeenCalledWith(
       "local-assistant",
       "/tmp/local-pre-upgrade.tar.gz",
       { resume: false },
     );
-    expect(wakeAssistantMock).toHaveBeenCalledTimes(1);
-    expect(stopLocalProcessesMock).toHaveBeenCalledTimes(2);
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(2);
+    expect(sleepAssistantMock).toHaveBeenCalledTimes(2);
     expect(waitForReadyMock).toHaveBeenCalled();
   });
 
@@ -462,10 +454,8 @@ describe("cadet upgrade local", () => {
 
     await upgrade();
 
-    expect(stopLocalProcessesMock).not.toHaveBeenCalled();
+    expect(sleepAssistantMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain("Already on");
   });
 });
@@ -514,8 +504,9 @@ describe("cadet upgrade assistant targeting", () => {
 
     expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("Quill");
     expect(exitSpy).not.toHaveBeenCalled();
-    expect(stopLocalProcessesMock).toHaveBeenCalledWith(
+    expect(sleepAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({ instanceDir: quill.instanceDir }),
+      { force: true },
     );
   });
 
@@ -533,10 +524,11 @@ describe("cadet upgrade assistant targeting", () => {
       "My Assistant",
     );
     expect(exitSpy).not.toHaveBeenCalled();
-    expect(stopLocalProcessesMock).toHaveBeenCalledWith(
+    expect(sleepAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: multiWord.instanceDir,
       }),
+      { force: true },
     );
   });
 
@@ -556,8 +548,9 @@ describe("cadet upgrade assistant targeting", () => {
 
     expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("quill-uuid");
     expect(exitSpy).not.toHaveBeenCalled();
-    expect(stopLocalProcessesMock).toHaveBeenCalledWith(
+    expect(sleepAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({ instanceDir: target.instanceDir }),
+      { force: true },
     );
   });
 
@@ -573,7 +566,7 @@ describe("cadet upgrade assistant targeting", () => {
 
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
 
-    expect(stopLocalProcessesMock).not.toHaveBeenCalled();
+    expect(sleepAssistantMock).not.toHaveBeenCalled();
     const errText = consoleErrorSpy.mock.calls.flat().join("\n");
     expect(errText).toContain("Multiple assistants match 'Quill'");
     expect(errText).toContain("quill-uuid-1");

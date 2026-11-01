@@ -31,12 +31,6 @@ import { makeEntry, readLocalEntry } from "./helpers/lockfile-entry.js";
 const realLocal = { ...localModule };
 const realExec = stepRunnerModule.exec;
 
-// Prevent real daemon / gateway / CES from starting
-const startLocalDaemonMock = mock(async () => {});
-const startGatewayMock = mock<typeof localModule.startGateway>(
-  async () => "http://127.0.0.1:7831",
-);
-const startCesMock = mock(async () => {});
 // The restore tail is the one revive seam now — pin the op, not the legs.
 const wakeAssistantMock = mock<typeof localModule.wakeAssistant>(async () => ({
   ok: true,
@@ -49,9 +43,6 @@ beforeAll(() => {
   mock.module("@mycadet/local-mode", () => ({
     ...localModule,
     generateLocalSecret: mock(() => "deadbeefdeadbeefdeadbeefdeadbeef"),
-    startLocalDaemon: startLocalDaemonMock,
-    startGateway: startGatewayMock,
-    startCes: startCesMock,
     wakeAssistant: wakeAssistantMock,
   }));
   mock.module("../lib/step-runner.js", () => ({ exec: execMock }));
@@ -132,9 +123,6 @@ beforeEach(() => {
   });
 
   execMock.mockClear();
-  startLocalDaemonMock.mockClear();
-  startGatewayMock.mockClear();
-  startCesMock.mockClear();
 });
 
 afterEach(() => {

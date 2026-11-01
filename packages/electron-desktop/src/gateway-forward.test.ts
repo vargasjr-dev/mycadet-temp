@@ -1,3 +1,4 @@
+import type { Fetch } from "@mycadet/shared/fetch";
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import * as localModeShared from "@mycadet/local-mode";

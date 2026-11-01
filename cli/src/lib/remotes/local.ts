@@ -18,14 +18,10 @@ import {
 import {
   getLocalInstanceDir,
   gatewayCliInvocation,
-  stopLocalProcesses,
+  hatchLocalProcesses,
+  sleepAssistant,
 } from "@mycadet/local-mode";
-import {
-  setStartupLogging,
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "@mycadet/local-mode";
+import { setStartupLogging } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -58,15 +54,6 @@ import { execOutput } from "../step-runner.js";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
-
-/**
- * Stop any locally-running daemon and gateway processes
- * and clean up PID files. Called when hatch fails partway through
- * so we don't leave orphaned processes with no lock file entry.
- *
- * When `entry` is provided, uses instance-specific paths instead of
- * the default ~/.cadet/ paths.
- */
 
 export interface HatchLocalParams {
   /** Instance display name. Defaults to an auto-generated name. */
@@ -205,29 +192,8 @@ export async function hatchLocal(
       ).initializeRootArchive(entry, params.initialArchive);
     }
     try {
-      // Launch the CES sibling alongside the daemon, in parallel — matching the
-      // Docker topology. The assistant does not spawn its own CES, so a freshly
-      // hatched instance would otherwise come up with CES unavailable.
-      // startCes always launches the CES sibling.
-      const startupResults = await Promise.allSettled([
-        startCes(watch, entry),
-        startLocalDaemon(watch, entry, {
-          defaultWorkspaceConfigPath,
-          requireReady: true,
-        }),
-      ]);
-      const startupFailure = startupResults.find(
-        (result): result is PromiseRejectedResult =>
-          result.status === "rejected",
-      );
-      if (startupFailure) {
-        throw startupFailure.reason;
-      }
-
       reporter.progress(4, 6, "Starting gateway...");
-      await startGateway(watch, entry, {
-        requireReady: true,
-      });
+      await hatchLocalProcesses(entry, { watch, defaultWorkspaceConfigPath });
     } catch (error) {
       reporter.error(
         `\n❌ Local assistant startup failed — stopping partial processes.`,
@@ -235,7 +201,7 @@ export async function hatchLocal(
       reporter.error(
         `   Logs: ${join(getLocalInstanceDir(entry), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
       );
-      await stopLocalProcesses(entry);
+      await sleepAssistant(entry, { force: true });
       throw error;
     }
 

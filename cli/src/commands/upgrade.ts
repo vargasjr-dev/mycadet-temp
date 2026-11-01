@@ -60,8 +60,7 @@ import {
 import {
   ensureLocalRuntime,
   fetchCurrentVersion,
-  restartUpgradedLocalProcesses,
-  stopLocalProcesses,
+  sleepAssistant,
   wakeAssistant,
 } from "@mycadet/local-mode";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
@@ -381,11 +380,27 @@ async function upgradeLocal(
 
   try {
     console.log("🛑 Stopping local assistant processes...");
-    await stopLocalProcesses(upgradedEntry);
+    // force: the upgrade's teardown must not be refused the way a user's
+    // `cadet sleep` can be — the lease guard protects live calls, but this
+    // stop is the upgrade's own midpoint.
+    const stopped = await sleepAssistant(upgradedEntry, { force: true });
+    if (!stopped.ok) throw new Error(stopped.error);
     console.log("✅ Local assistant processes stopped\n");
 
     console.log("🚀 Starting upgraded local assistant...");
-    await restartUpgradedLocalProcesses(upgradedEntry, targetVersion);
+    // The upgraded daemons must report the version they now run: the child
+    // processes inherit APP_VERSION, pinned around the wake only.
+    const previousAppVersion = process.env.APP_VERSION;
+    process.env.APP_VERSION = stripVersionPrefix(targetVersion);
+    try {
+      await wakeAssistant(upgradedEntry);
+    } finally {
+      if (previousAppVersion === undefined) {
+        delete process.env.APP_VERSION;
+      } else {
+        process.env.APP_VERSION = previousAppVersion;
+      }
+    }
     await ensureGuardianTokenAfterLocalUpgrade(entry);
     console.log("✅ Local assistant processes started\n");
 
@@ -407,7 +422,7 @@ async function upgradeLocal(
     console.error(
       "Local upgrade failed; restoring the previous runtime and service roots...",
     );
-    await stopLocalProcesses(upgradedEntry);
+    await sleepAssistant(upgradedEntry, { force: true });
     entry.runtimeVersion = originalRuntime.runtimeVersion;
     entry.runtimeInstallDir = originalRuntime.runtimeInstallDir;
     saveLockfileAssistant(entry);

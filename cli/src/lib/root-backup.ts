@@ -268,7 +268,6 @@ export interface RootStorage {
 
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
-  initialRunning?: Set<string>;
   private readonly localEntry: LocalAssistant | DockerAssistant;
   constructor(readonly entry: LockfileAssistant) {
     // Local-style roots: plain on-machine instances and docker instances
@@ -312,23 +311,19 @@ export class LocalRootStorage implements RootStorage {
         );
       }
     }
-    this.initialRunning ??= running;
     return running.size > 0;
   }
   async resume(): Promise<void> {
     // wakeAssistant is the one revive seam: whatever the backup paused, the
     // leg's self-heal brings it back (dead siblings relaunch, live processes
     // stay) — a backup cycle leaves the assistant fully running either way.
-    await wakeAssistant(this.entry, {
-      watch: false,
-      foreground: false,
-    });
+    await wakeAssistant(this.entry);
     await this.checkReady();
   }
   private async checkReady(): Promise<void> {
+    // Unconditional: resume always wakes, so everything is expected up.
     const entry = this.localEntry;
     if (
-      this.initialRunning?.has("assistant") &&
       entry.daemonPort !== undefined &&
       (await waitForDaemonMigrationsReady(
         entry.daemonPort,
@@ -343,11 +338,7 @@ export class LocalRootStorage implements RootStorage {
       ["gateway", entry.port],
       ["ces", entry.cesPort],
     ] as const) {
-      if (
-        this.initialRunning?.has(service) &&
-        port !== undefined &&
-        !(await waitForDaemonReady(port))
-      )
+      if (port !== undefined && !(await waitForDaemonReady(port)))
         throw new Error(`${service} did not become healthy after restart.`);
     }
   }
