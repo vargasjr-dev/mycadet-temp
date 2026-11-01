@@ -138,6 +138,10 @@ interface HostTierImportExemption {
  */
 const HOST_TIER_IMPORT_ALLOWLIST: readonly HostTierImportExemption[] = [
   {
+    path: "src/cli/commands/memory/memory-ingest.ts",
+    tiers: ["substrate"],
+  },
+  {
     path: "src/cli/commands/memory/memory-v2-compare-render.ts",
     tiers: ["v2"],
   },

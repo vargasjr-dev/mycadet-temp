@@ -1,39 +1,23 @@
-import { readFileSync } from "node:fs";
-
 import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
 import { readRootProcesses } from "../lib/assistant-config";
-import { relaunchDetached } from "../lib/detached-process.js";
 import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
-  adoptedTunnelStopNotice,
   clearReservedDomain,
   ensureNginxForEdge,
-  offerStopNgrokHolder,
   providerSupportsReservedDomain,
   runProviderTunnel,
   stopTunnelProcess,
-  summarizeStartupFailure,
 } from "../lib/tunnel.js";
-import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
 import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
 import { cliCommand } from "@mycadet/local-mode";
 import { printRootProcessDetail } from "./ps.js";
-
-/**
- * Set on the detached child spawned by `tunnel start`: the child re-enters
- * this same command and must run the tunnel loop itself instead of spawning
- * another child. An environment marker rather than a CLI flag — the flag
- * surface stays clean (there is no user-facing foreground mode; the tunnel
- * always runs in the background).
- */
-const TUNNEL_DETACHED_CHILD_ENV = "CADET_TUNNEL_DETACHED_CHILD";
 
 // The accepted `--provider` values ARE the shared registry, so validation
 // here cannot drift from what the workspace config accepts.
@@ -225,98 +209,6 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-// Generous cap so a slow provider handshake (e.g. cloudflared's own ~30s
-// quick-tunnel timeout) still counts as a successful, if slow, start.
-const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
-// Matches the "just established" line every provider prints, or the adoption
-// line printed when a run adopts an already-running agent's tunnel (captured
-// separately since that case does not own the tunnel it adopted).
-const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
-
-/**
- * Re-invoke `cadet tunnel start` (verbatim args, plus the detached-child env
- * marker) as a background process via `relaunchDetached`, waiting for the
- * child to either print its "Tunnel established" or adopted-tunnel line
- * (readiness) or exit early (failure), so a misconfigured provider still
- * fails loudly in the terminal that ran `cadet tunnel`.
- *
- * The log file is the fixed `tunnel.log` so there is one stable path to tail;
- * concurrent tunnel runs share (and truncate) it.
- */
-async function spawnDetachedTunnel(): Promise<void> {
-  const childArgs: string[] = ["tunnel", ...process.argv.slice(3)];
-
-  let publicUrl: string | undefined;
-  let adopted = false;
-
-  // One confirm-first round for a held ngrok domain: the detached child has
-  // no TTY, so the prompt inside its own spawn loop can never fire — the
-  // heal can only happen HERE, in the terminal that ran the command.
-  for (let holderStops = 0; ; holderStops++) {
-    const { child, logPath, ready, exitCode } = await relaunchDetached({
-      args: childArgs,
-      env: { [TUNNEL_DETACHED_CHILD_ENV]: "1" },
-      logFile: "tunnel.log",
-      timeoutMs: TUNNEL_BACKGROUND_START_TIMEOUT_MS,
-      isReady: (logPath) => {
-        let logText = "";
-        try {
-          logText = readFileSync(logPath, "utf-8");
-        } catch {
-          // Log file not written yet. Keep polling.
-        }
-        const established = TUNNEL_ESTABLISHED_RE.exec(logText);
-        if (established) {
-          publicUrl = established[1];
-          return true;
-        }
-        const adoptedMatch = ADOPTED_TUNNEL_RE.exec(logText);
-        if (adoptedMatch) {
-          publicUrl = adoptedMatch[1];
-          adopted = true;
-          return true;
-        }
-        return false;
-      },
-    });
-
-    if (exitCode !== undefined) {
-      let logText = "";
-      try {
-        logText = readFileSync(logPath, "utf-8");
-      } catch {
-        // Log file not readable — the summary falls back to none.
-      }
-      if (holderStops < 1 && (await offerStopNgrokHolder(logText))) {
-        adopted = false;
-        publicUrl = undefined;
-        continue;
-      }
-      const reason = summarizeStartupFailure(logText);
-      console.error(
-        `Error (${exitCode ?? "unknown"}): tunnel process exited during startup${reason ? `: ${reason}` : "."}`,
-      );
-      console.error(`Logs: ${logPath}`);
-      process.exit(1);
-    }
-
-    if (!ready) {
-      console.log(
-        `Tunnel is still starting up after ${TUNNEL_BACKGROUND_START_TIMEOUT_MS / 1000}s. Check progress: ${logPath}`,
-      );
-    } else if (publicUrl) {
-      console.log(`Tunnel established: ${publicUrl}`);
-    }
-    console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
-    if (adopted) {
-      console.log(adoptedTunnelStopNotice(child.pid));
-    } else {
-      console.log(`Stop with: ${cliCommand()} tunnel stop`);
-    }
-    return;
-  }
-}
-
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
@@ -371,14 +263,6 @@ export const tunnel = Object.assign(
       process.exit(1);
     }
     const { provider, domain, clearDomain } = parseArgs();
-
-    // Without the marker this invocation is the terminal-facing parent: it
-    // spawns the detached tunnel child and reports on its startup. The child
-    // re-enters here with the marker set and falls through to the loop.
-    if (process.env[TUNNEL_DETACHED_CHILD_ENV] !== "1") {
-      await spawnDetachedTunnel();
-      return;
-    }
 
     if (PROVIDER_META[provider].comingSoon) {
       throw cadetTunnelComingSoonError(provider);

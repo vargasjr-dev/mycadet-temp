@@ -102,20 +102,17 @@ mock.module("../../../../ipc/cli-client.js", () => ({
   },
 }));
 
-// The CLI lazily imports the batch cap from the plugin's route module; mock
-// it so the test never loads daemon route internals (config loader, route
-// policy, ...). Only the constant is consumed at runtime - the
-// MemoryIngestResult import is type-only and erased. The value comes from
-// the substrate module (the constant's true owner, cheap to import) so the
-// chunking tests track the real cap instead of a hardcoded copy.
+// The CLI lazily imports the batch cap straight from the plugin's substrate
+// module; mock it so the chunking tests control the cap the CLI chunks by.
+// Only the constant is consumed at runtime - the MemoryIngestResult import
+// is type-only and erased. The value comes from the substrate module itself
+// (the constant's true owner) so the chunking tests track the real cap
+// instead of a hardcoded copy.
 import { MAX_INGEST_PAGES_PER_CALL } from "../../../../plugins/defaults/memory/substrate/ingest.js";
 
-mock.module(
-  "../../../../plugins/defaults/memory/src/memory-ingest-routes.js",
-  () => ({
-    MAX_INGEST_PAGES_PER_CALL,
-  }),
-);
+mock.module("../../../../plugins/defaults/memory/substrate/ingest.js", () => ({
+  MAX_INGEST_PAGES_PER_CALL,
+}));
 
 const capture = (...args: unknown[]) => {
   logOutput.push(args.map(String).join(" "));

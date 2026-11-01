@@ -12,7 +12,6 @@ import {
 import * as childProcess from "node:child_process";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
 import {
-  appendFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -31,7 +30,6 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import { resolveLogDir } from "@mycadet/local-mode";
 import {
   readRootProcesses,
   stampRootProcess,
@@ -50,10 +48,9 @@ const realNginxIngress = { ...nginxIngress };
 const realTailscaleTunnel = { ...tailscaleTunnel };
 const realChildProcess = { ...childProcess };
 
-/** What a mocked provider run hands back: a URL and an already-settled exit. */
+/** What a mocked provider run hands back: the URL it established or adopted. */
 const fakeTunnelResult = (publicUrl: string) => ({
   publicUrl,
-  waitForExit: Promise.resolve(),
 });
 
 const runCloudflareTunnelMock = mock<
@@ -270,16 +267,6 @@ async function runTunnelCapturingLogs(): Promise<string> {
   }
   return logs.join("\n");
 }
-
-// Body-level tests exercise the tunnel loop directly, which only runs when
-// the invocation carries the detached-child marker. The background-mode
-// describe clears it: its tests play the terminal-facing parent.
-beforeEach(() => {
-  process.env.CADET_TUNNEL_DETACHED_CHILD = "1";
-});
-afterEach(() => {
-  delete process.env.CADET_TUNNEL_DETACHED_CHILD;
-});
 
 describe("app server targeting", () => {
   beforeEach(() => {
@@ -1201,35 +1188,29 @@ describe("ngrok --domain spawn args", () => {
   });
 });
 
-describe("tunnel background mode", () => {
+describe("tunnel start runs the providers directly", () => {
   const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
-
-  function makeFakeChild(pid: number): ChildProcess {
-    const child = new realChildProcess.ChildProcess();
-    // kill() stays stubbed: the fake pid must never be signaled for real.
-    // stdout/stderr: the real class resolves them through a getter over the
-    // internal spawn handle, so null-shadow them via defineProperty — an
-    // Object.assign [[Set]] through the getter-only accessor throws.
-    Object.defineProperty(child, "stdout", { value: null });
-    Object.defineProperty(child, "stderr", { value: null });
-    return Object.assign(child, { pid, kill: () => true });
-  }
 
   const spawnMock = mock(
     (
       _command: string,
       _args: readonly string[],
       _options?: SpawnOptions,
-    ): ChildProcess => makeFakeChild(9999),
+    ): ChildProcess => {
+      const child = new realChildProcess.ChildProcess();
+      // kill() stays stubbed: the fake pid must never be signaled for real.
+      // stdout/stderr: the real class resolves them through a getter over the
+      // internal spawn handle, so null-shadow them via defineProperty — an
+      // Object.assign [[Set]] through the getter-only accessor throws.
+      Object.defineProperty(child, "stdout", { value: null });
+      Object.defineProperty(child, "stderr", { value: null });
+      return Object.assign(child, { pid: 9999, kill: () => true });
+    },
   );
-
-  function detachedLogPath(): string {
-    return join(resolveLogDir(), "tunnel.log");
-  }
 
   beforeAll(() => {
     // The edge-targeting describe's afterAll restores the REAL provider
-    // modules; re-establish the fakes the foreground test here needs.
+    // modules; re-establish the fakes these tests need.
     mock.module("../lib/tunnels/ngrok", () => ({
       ...realNgrok,
       runNgrokTunnel: runNgrokTunnelMock,
@@ -1259,7 +1240,6 @@ describe("tunnel background mode", () => {
   });
 
   beforeEach(() => {
-    delete process.env.CADET_TUNNEL_DETACHED_CHILD;
     spawnMock.mockClear();
     runNgrokTunnelMock.mockReset();
     runNgrokTunnelMock.mockResolvedValue(
@@ -1287,89 +1267,36 @@ describe("tunnel background mode", () => {
     }
   });
 
-  test("runs detached by default: re-invokes itself as a detached child and reports readiness", async () => {
+  test("starts the tunnel in this process — no self-relaunch — and returns while the agent lives", async () => {
     process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-
-    // Simulate the detached child writing its readiness line to the log file
-    // the moment it is spawned.
-    spawnMock.mockImplementationOnce(() => {
-      appendFileSync(
-        detachedLogPath(),
-        "Tunnel established: https://foo.ngrok.app\n",
-      );
-      return makeFakeChild(9999);
+    // The provider narrates its own establishment (the command adds nothing
+    // around it).
+    runNgrokTunnelMock.mockImplementation(async () => {
+      console.log("Tunnel established: https://test.example.ngrok.dev");
+      return fakeTunnelResult("https://test.example.ngrok.dev");
     });
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [, args, opts] = spawnMock.mock.calls[0];
-    expect(args).toContain("tunnel");
-    expect(args).toContain("--provider");
-    expect(args).toContain("ngrok");
-    // The child carries the detached-child marker so it runs the tunnel
-    // loop instead of daemonizing again.
-    expect(args).not.toContain("--foreground");
-    expect(opts?.env?.CADET_TUNNEL_DETACHED_CHILD).toBe("1");
-    expect(opts?.detached).toBe(true);
-
-    expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
-    expect(logs).toContain("Running in background (pid 9999)");
-    expect(logs).toContain("Stop with: cadet tunnel stop");
-
-    // The parent hands the actual tunnel workflow off to the child: it never
-    // runs the provider or edge setup itself.
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
-  });
-
-  test("the detached-child marker runs the tunnel in this process instead of spawning", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-    process.env.CADET_TUNNEL_DETACHED_CHILD = "1";
-
-    await runTunnelCapturingLogs();
-
+    // The command never re-invokes itself: it calls the provider directly
+    // (which spawns the detached agent) and returns as soon as the tunnel
+    // establishes — the agent outlives the process.
     expect(spawnMock).not.toHaveBeenCalled();
-    expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(runNgrokTunnelMock).toHaveBeenCalled();
+    expect(ensureAppServerMock).toHaveBeenCalledTimes(1);
+    expect(runNgrokTunnelMock).toHaveBeenCalledTimes(1);
+    expect(logs).toContain(
+      "Tunnel established: https://test.example.ngrok.dev",
+    );
   });
 
-  test("reports an early child exit instead of hanging", async () => {
+  test("a provider failure surfaces loudly instead of being swallowed", async () => {
     process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-    spawnMock.mockImplementationOnce(() => {
-      const child = makeFakeChild(4242);
-      // Listeners attach synchronously right after spawn() returns; defer the
-      // exit so they're in place before it fires.
-      setTimeout(() => child.emit("exit", 1), 0);
-      return child;
-    });
+    runNgrokTunnelMock.mockRejectedValue(new Error("ngrok is not installed."));
 
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain("Error (1): tunnel process exited during startup");
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
-  test("an adopted ngrok tunnel gets an accurate stop message, not a false kill claim", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
-    spawnMock.mockImplementationOnce(() => {
-      appendFileSync(
-        detachedLogPath(),
-        "Found existing ngrok tunnel: https://already-up.ngrok.app\n",
-      );
-      return makeFakeChild(5555);
-    });
-
-    const logs = await runTunnelCapturingLogs();
-
-    expect(logs).toContain("Tunnel established: https://already-up.ngrok.app");
-    expect(logs).toContain("Running in background (pid 5555)");
-    // The supervisor did not spawn this ngrok agent, so killing it must not
-    // be advertised as the way to stop the tunnel.
-    expect(logs).not.toContain("Stop with: kill 5555");
-    expect(logs).toContain("only");
-    expect(logs).toContain("stops this supervisor, not the ngrok tunnel");
+    await expect(runTunnelCapturingLogs()).rejects.toThrow(
+      "ngrok is not installed.",
+    );
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 });
 
@@ -1415,7 +1342,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
         startedAt: new Date().toISOString(),
         publicUrl: TAILNET_URL,
       });
-      return { publicUrl: TAILNET_URL, waitForExit: Promise.resolve() };
+      return { publicUrl: TAILNET_URL };
     });
     isIngressRunningMock.mockReset();
     isIngressRunningMock.mockImplementation(() => false);

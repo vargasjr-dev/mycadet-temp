@@ -170,8 +170,8 @@ export function registerMemoryIngestCommand(memory: Command): void {
       // above this many pages, so the CLI chunks its input to match. Loaded
       // lazily so the CLI module keeps daemon internals out of its static
       // import graph (see src/cli/AGENTS.md).
-      const { ROUTE_MAX_INGEST_PAGES } =
-        await import("../../../plugins/defaults/memory/src/memory-ingest-routes.js");
+      const { MAX_INGEST_PAGES_PER_CALL } =
+        await import("../../../plugins/defaults/memory/substrate/ingest.js");
 
       let pages: IngestPage[];
       try {
@@ -203,7 +203,7 @@ export function registerMemoryIngestCommand(memory: Command): void {
         }
         return;
       }
-      for (const batch of chunk(pages, ROUTE_MAX_INGEST_PAGES)) {
+      for (const batch of chunk(pages, MAX_INGEST_PAGES_PER_CALL)) {
         const r = await cliIpcCall<MemoryIngestResult>(
           "memory_ingest",
           {

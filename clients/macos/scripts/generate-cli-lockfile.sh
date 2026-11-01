@@ -31,7 +31,7 @@ case "$CADET_ENVIRONMENT" in
 esac
 SPEC="${VERSION:-$DEFAULT_TAG}"
 
-echo "Generating CLI lockfile for @mycadet/cli@$SPEC ..."
+echo "Generating CLI lockfile for mycadet@$SPEC ..."
 
 rm -rf "$SEED_DIR"
 mkdir -p "$SEED_DIR"

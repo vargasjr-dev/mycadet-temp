@@ -165,8 +165,7 @@ mock.module("@mycadet/local-mode", () => ({
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
   return {
     publicUrl: "https://tunnel.example.com",
-    waitForExit: Promise.resolve(),
-  } as never;
+  };
 });
 
 mock.module("../lib/tunnels/ngrok.js", () => ({
@@ -306,7 +305,6 @@ beforeEach(() => {
     async () =>
       ({
         publicUrl: "https://tunnel.example.com",
-        waitForExit: Promise.resolve(),
       }) as never,
   );
   broadcastUpgradeEventMock.mockReset();
