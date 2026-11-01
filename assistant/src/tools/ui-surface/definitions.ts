@@ -12,10 +12,10 @@ import {
   coerceSurfaceDataRecord,
   normalizeVisualShowData,
 } from "../../api/surfaces.js";
-import { RiskLevel } from "../../permissions/types.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { isWeakOpenModel } from "../../providers/weak-open-model.js";
 import { desktopClientName } from "../client-os.js";
-import { throwIfCancelled } from "../shared/abort.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

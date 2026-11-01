@@ -5,13 +5,13 @@ import {
   PROVIDER_CATALOG,
 } from "../providers/model-catalog.js";
 import { resolveCallSiteConfig } from "./llm-resolver.js";
+import { ContextWindowConfig } from "./schemas/inference.js";
 import {
   type ContextWindow,
   DEFAULT_CONTEXT_WINDOW_MAX_INPUT_TOKENS,
   type LLMCallSite,
   type LLMConfig,
 } from "./schemas/llm.js";
-import type { ContextWindowConfig } from "./types.js";
 
 export interface EffectiveContextWindow {
   provider: string;

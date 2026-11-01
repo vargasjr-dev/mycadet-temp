@@ -7,7 +7,7 @@ import { Collapsible } from "@mycadet/design-library/components/collapsible";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 
 import { currentLocale, useTranslation, type TFunction } from "@/i18n";
-import type { LocalPairedDeviceRecord } from "@/runtime/local-mode-host";
+import { LocalPairedDeviceRecord } from "@mycadet/ipc-contract";
 
 import { labelFromUserAgent } from "./device-label";
 import { formatRelativeAge, useRelativeAgeTick } from "./relative-age";

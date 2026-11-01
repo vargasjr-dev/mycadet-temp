@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import type { ResolvedHotkey } from "@/runtime/hotkeys";
+import { ResolvedHotkey } from "@mycadet/ipc-contract";
 
 import { eventToAccelerator, findConflict } from "./electron-accelerator";
 

@@ -19,7 +19,6 @@ import type {
   ConversationModeSessionCoordinator,
   ModeSessionSourceHandle,
 } from "../../daemon/conversation-mode-session.js";
-import { RiskLevel } from "../../permissions/types.js";
 import type {
   StreamingTranscriber,
   SttStreamServerEvent,
@@ -30,6 +29,7 @@ import {
   unregisterSkillTools,
 } from "../../tools/registry.js";
 import { finalizeTool } from "../../tools/tool-defaults.js";
+import { RiskLevel } from "../../tools/tool-types.js";
 import { getWorkspaceSkillsDir } from "../../util/layout.js";
 import type { LiveVoiceContinuationJudge } from "../continuation-judge.js";
 import type { LiveVoiceContinuationLabeler } from "../continuation-label.js";

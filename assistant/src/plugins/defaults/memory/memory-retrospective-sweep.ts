@@ -64,7 +64,7 @@
 
 import { and, asc, gt, ne, notInArray } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import { AUTO_ANALYSIS_SOURCE } from "../../../persistence/auto-analysis-constants.js";
 import { getConversationRecentProvenanceTrustClass } from "../../../persistence/conversation-crud.js";
 import { MEMORY_V2_CONSOLIDATION_SOURCE } from "../../../persistence/conversation-types.js";

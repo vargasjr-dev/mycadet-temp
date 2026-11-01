@@ -17,7 +17,7 @@ import {
   forkConversationForRetrospective,
   getMessages,
 } from "../persistence/conversation-crud.js";
-import { getConversationDirPath } from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
 import {
   getDb,
   getLogsDb,

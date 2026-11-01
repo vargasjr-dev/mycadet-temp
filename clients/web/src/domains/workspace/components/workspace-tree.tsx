@@ -67,8 +67,6 @@ import { Modal } from "@mycadet/design-library/components/modal";
 import { PanelItem } from "@mycadet/design-library/components/panel-item";
 import { Typography } from "@mycadet/design-library/components/typography";
 
-export type { WorkspaceSortMode };
-
 // Filtering waits for typing to pause so each keystroke does not rebuild the
 // row list; search reads loaded listings and issues no requests either way.
 const SEARCH_DEBOUNCE_MS = 200;

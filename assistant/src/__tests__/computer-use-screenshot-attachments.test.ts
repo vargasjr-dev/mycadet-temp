@@ -17,10 +17,8 @@ import {
   getMessageById,
   parseMessageMetadata,
 } from "../persistence/conversation-crud.js";
-import {
-  getConversationDirPath,
-  syncMessageToDisk,
-} from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
+import { syncMessageToDisk } from "../persistence/conversation-disk-view.js";
 import { computerUseScreenshotAttachmentIdsFromMetadata } from "../persistence/conversation-types.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";

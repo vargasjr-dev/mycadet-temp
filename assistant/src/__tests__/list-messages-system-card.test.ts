@@ -19,9 +19,9 @@ import { ConversationMessageSchema } from "../api/responses/conversation-message
 import {
   addMessage,
   createConversation,
-  NO_RESPONSE_MESSAGE_KIND,
-  SYSTEM_CARD_MESSAGE_KIND,
 } from "../persistence/conversation-crud.js";
+import { NO_RESPONSE_MESSAGE_KIND } from "../persistence/conversation-types.js";
+import { SYSTEM_CARD_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { handleListMessages } from "../runtime/routes/conversation-routes.js";

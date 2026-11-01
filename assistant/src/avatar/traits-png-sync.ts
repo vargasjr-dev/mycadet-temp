@@ -20,8 +20,6 @@ const log = getLogger("traits-png-sync");
 /** Sidecar filename for the rendered ASCII art. */
 export const ASCII_FILENAME = "character-ascii.txt";
 
-export type { CharacterTraits } from "@mycadet/avatar-manifest";
-
 export type TraitsSyncResult =
   | { ok: true; asciiWritten: boolean }
   | {

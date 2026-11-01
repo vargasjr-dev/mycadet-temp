@@ -107,6 +107,7 @@ import type { SurfaceDataByType } from "../api/surfaces.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { REFUSAL_FALLBACK_TEXT } from "../context/refusal-quarantine.js";
+import { stripInjectionsForCompaction } from "../context/strip-injections.js";
 import {
   clearConversations,
   setConversation,
@@ -135,7 +136,6 @@ import {
   resolveTurnInboundActorContext,
   resolveTurnModelProfileLabel,
   stripChannelCapabilityContext,
-  stripInjectionsForCompaction,
   stripNowScratchpad,
 } from "../daemon/conversation-runtime-assembly.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";

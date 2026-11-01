@@ -47,10 +47,6 @@ import {
   type RuntimeMessage,
   type StatusLine,
 } from "../lib/default-main-screen-formatting.js";
-export {
-  formatTimestamp,
-  type RuntimeMessage,
-} from "../lib/default-main-screen-formatting.js";
 import type { ConversationMessageToolCall } from "@mycadet/assistant-api";
 import { statusEmoji, withStatusEmoji } from "../lib/status-emoji";
 import {

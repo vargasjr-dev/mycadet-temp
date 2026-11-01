@@ -19,6 +19,7 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
+  isProcessAlive,
   dockerResourceNames,
   isLocalEntry,
   saveLockfileAssistant,
@@ -29,7 +30,6 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getDaemonPidPath, getLocalInstanceDir } from "./remotes/local.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
-import { isProcessAlive } from "./process.js";
 import { probePort } from "./port-probe.js";
 import {
   waitForDaemonReady,

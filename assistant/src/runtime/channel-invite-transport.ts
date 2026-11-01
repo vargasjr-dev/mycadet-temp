@@ -12,7 +12,8 @@
  * and invite instruction generation lives in `invite-instruction-generator.ts`.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { discordInviteAdapter } from "./channel-invite-transports/discord.js";
 import { emailInviteAdapter } from "./channel-invite-transports/email.js";
 import { slackInviteAdapter } from "./channel-invite-transports/slack.js";
@@ -23,10 +24,6 @@ import { whatsappInviteAdapter } from "./channel-invite-transports/whatsapp.js";
 // Types
 // ---------------------------------------------------------------------------
 import type { ChannelInviteAdapter } from "./channel-invite-types.js";
-export type {
-  ChannelInviteAdapter,
-  InviteShareLink,
-} from "./channel-invite-types.js";
 
 // ---------------------------------------------------------------------------
 // Registry

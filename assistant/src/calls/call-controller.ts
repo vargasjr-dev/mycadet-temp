@@ -22,6 +22,7 @@ import type {
   VoiceFrontModelConfig,
   VoiceProgressConfig,
 } from "../config/schemas/voice.js";
+import { CONVERSATION_BUSY_MESSAGE } from "../daemon/conversation-messaging.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../runtime/assistant-scope.js";
 import { computeToolApprovalDigest } from "../security/tool-approval-digest.js";
@@ -105,7 +106,6 @@ import {
 } from "./voice-metrics.js";
 import { createProgressCadence } from "./voice-progress-cadence.js";
 import {
-  CONVERSATION_BUSY_MESSAGE,
   startVoiceTurn,
   type VoiceTurnCallbacks,
   type VoiceTurnHandle,

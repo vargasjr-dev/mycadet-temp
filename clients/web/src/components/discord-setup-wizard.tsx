@@ -15,8 +15,6 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";
 import { openExternalUrl } from "@/runtime/browser";
 
-export type { MutationStatus };
-
 const DISCORD_PORTAL_URL = "https://discord.com/developers/applications";
 
 const WIZARD_STEP_IDS = ["create", "connect", "invite", "finish"] as const;

@@ -8,12 +8,13 @@
  * 6-digit code, the existing verification intercept validates it, creates
  * the guardian binding, and sends a success reply.
  */
-import type { VerificationSessionWire } from "../../../channels/gateway-verification-sessions.js";
+import { VerificationSessionWire } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   createOutboundSessionConditional,
   findActiveSession,
 } from "../../../channels/gateway-verification-sessions.js";
-import type { ChannelId } from "../../../channels/types.js";
 import {
   getGuardianDeliveryFresh,
   guardianForChannel,

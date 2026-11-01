@@ -19,15 +19,15 @@ import {
 } from "./connection-model-compat.js";
 import {
   connectionProviderKind,
-  dispatchProviderResolvable,
   expectedVendorProvider,
   resolveEntryConnectionName,
-  resolveRoutingIdentity,
   tryResolveProviderForConnectionName,
 } from "./connection-resolution.js";
 import { listConnections } from "./inference/connections.js";
+import { dispatchProviderResolvable } from "./provider-resolvability.js";
 import { initializeProviders, listProviders } from "./registry.js";
 import { recordProviderRequestDiagnostics } from "./request-diagnostics.js";
+import { resolveRoutingIdentity } from "./routing-identity.js";
 import type {
   ContentBlock,
   Message,

@@ -42,9 +42,9 @@ afterAll(() => {
 import { CADET_CLOUD_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import {
   DefaultProviderSelectionSchema,
-  resolveDefaultConnectionName,
   setDefaultProvider,
 } from "../default-provider.js";
+import { resolveDefaultConnectionName } from "../default-provider-resolution.js";
 import { invalidateConfigCache, loadRawConfig } from "../loader.js";
 import { getSchemaAtPath } from "../schema-utils.js";
 import { isDefaultProviderChoice, LLMSchema } from "../schemas/llm.js";

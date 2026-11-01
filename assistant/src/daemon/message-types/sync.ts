@@ -5,8 +5,6 @@ import {
   SyncChangedEventSchema,
 } from "../../api/events/sync-changed.js";
 
-export { type SyncChangedEvent, SyncChangedEventSchema };
-
 export const SYNC_TAGS = {
   assistantAvatar: "assistant:self:avatar",
   assistantIdentity: "assistant:self:identity",

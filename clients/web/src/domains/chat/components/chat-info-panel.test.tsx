@@ -39,7 +39,6 @@ import {
 
 import {
   attachmentRows,
-  CHAT_INFO_BODY_WIDTH_PX,
   CHAT_INFO_T0,
   chatInfoAppHtmlCacheMock,
   clearTranscriptMessages,
@@ -56,6 +55,7 @@ import {
   seedQueryFailure,
   seedTranscriptMessages,
 } from "@/domains/chat/components/chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import { conversationAttachmentListArgs } from "@/domains/chat/hooks/use-conversation-attachments";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import {

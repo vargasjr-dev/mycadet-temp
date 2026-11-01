@@ -2,20 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
+import { isElectron } from "@/runtime/is-electron";
 import {
-  isElectron,
   type SystemPermissionKind,
   type SystemPermissionStateItem,
   type SystemPermissionsState,
-} from "@/runtime/is-electron";
+} from "@mycadet/ipc-contract";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
-
-export type {
-  SystemPermissionKind,
-  SystemPermissionStateItem,
-  SystemPermissionStatus,
-  SystemPermissionsState,
-} from "@/runtime/is-electron";
 
 export const SYSTEM_PERMISSION_KINDS: SystemPermissionKind[] = [
   "accessibility",

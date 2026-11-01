@@ -14,8 +14,6 @@ import {
 import { useInvalidateHomeFeed } from "./use-home-feed-query";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
-export type { GuardianDecisionOutcome } from "../guardian-decision-store";
-
 /**
  * Reasons that mean the request is no longer anyone's to decide: settled on
  * another surface, gone, or timed out. A surface holding such a request

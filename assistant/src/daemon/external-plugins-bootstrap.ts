@@ -50,6 +50,7 @@ import { join } from "node:path";
 import { getConfig } from "../config/loader.js";
 import type { AssistantConfig } from "../config/schema.js";
 import { HOOKS } from "../plugin-api/constants.js";
+import type { ShutdownContext } from "../plugin-api/types.js";
 import {
   getAllDefaultPlugins,
   registerDefaultPluginInjectors,
@@ -62,11 +63,7 @@ import {
 import { registerDeclaredCredentialKeyPatterns } from "../plugins/mtime-cache.js";
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import { getRegisteredPlugins, unregisterPlugin } from "../plugins/registry.js";
-import {
-  type Plugin,
-  PluginExecutionError,
-  type ShutdownContext,
-} from "../plugins/types.js";
+import { type Plugin, PluginExecutionError } from "../plugins/types.js";
 import { loadUserPlugins } from "../plugins/user-loader.js";
 import { unregisterPluginSecretPatterns } from "../security/plugin-secret-patterns.js";
 import {

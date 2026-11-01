@@ -5,8 +5,6 @@
 // wire schema. `HostUiSnapshotResultPayload` is the HTTP body the client POSTs
 // to /v1/host-ui-snapshot-result — a route contract, not an event.
 
-export type { HostUiSnapshotView } from "../../api/events/host-ui-snapshot.js";
-
 /** Body the desktop client POSTs to /v1/host-ui-snapshot-result. */
 export interface HostUiSnapshotResultPayload {
   requestId: string;

@@ -16,7 +16,7 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Module-level mocks (registered before `await import("../activation.js")`).

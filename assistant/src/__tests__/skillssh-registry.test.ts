@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-  AuditResponse,
-  SkillAuditData,
-  SkillsShSearchResult,
-} from "../skills/skillssh-registry.js";
+import { AuditResponse } from "../skills/skillssh-audit-types.js";
+import { SkillAuditData } from "../skills/skillssh-audit-types.js";
+import type { SkillsShSearchResult } from "../skills/skillssh-registry.js";
 import {
   fetchSkillAudits,
   fetchSkillFromGitHub,

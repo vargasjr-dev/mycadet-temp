@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ResourcePressureStatusChangedEventSchema } from "../api/events/resource-pressure-status-changed.js";
-import type { ResourcePressureStatus } from "../daemon/resource-pressure-guard.js";
+import { ResourcePressureStatus } from "../api/events/resource-pressure-status-changed.js";
 import {
   setBroadcastOverrideForTesting,
   setHubPublishOverrideForTesting,

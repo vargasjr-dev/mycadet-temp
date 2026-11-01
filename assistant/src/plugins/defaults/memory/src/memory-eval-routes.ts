@@ -13,7 +13,7 @@
 import { z } from "zod";
 
 import { getConfig } from "../../../../config/loader.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getDb } from "../../../../persistence/db-connection.js";
 import {
   ACTOR_PRINCIPALS,

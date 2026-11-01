@@ -23,7 +23,9 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 let mockReadCredential = mock(
   async (_key: string): Promise<string | undefined> => TUNNEL_USER_ID,
 );
-mock.module("../cloud-user-id.js", () => ({
+const realCloudIdentity = { ...(await import("../cloud-identity.js")) };
+mock.module("../cloud-identity.js", () => ({
+  ...realCloudIdentity,
   readStoredCloudUserId: async () => ({
     userId: await mockReadCredential("cadet:platform_user_id"),
     unreachable: false,

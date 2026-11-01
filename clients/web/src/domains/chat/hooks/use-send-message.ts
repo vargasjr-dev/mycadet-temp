@@ -33,10 +33,8 @@ import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
 import type { ContextWindowUsage } from "@/domains/chat/components/context-window-indicator";
 
-import type {
-  DisplayAttachment,
-  DisplayMessage,
-} from "@/domains/chat/types/types";
+import type { DisplayMessage } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import { patchTranscriptMessages } from "@/domains/chat/transcript/patch-transcript-messages";
 import { isAsyncChatScopeCurrent } from "@/domains/chat/utils/conversation-scope";
 import { resolveEditChatDraftConversationId } from "@/utils/edit-chat-session";
@@ -342,8 +340,7 @@ export function useSendMessage({
         composerSessionGeneration ===
           useComposerStore.getState().sessionGeneration &&
         isAsyncChatScopeCurrent({
-          currentAssistantId:
-            getActiveAssistantId(),
+          currentAssistantId: getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId,
@@ -376,8 +373,7 @@ export function useSendMessage({
           recordDiagnostic("send_error_ignored_inactive_conversation", {
             assistantId: requestAssistantId,
             conversationId: requestConversationId,
-            activeAssistantId:
-              getActiveAssistantId(),
+            activeAssistantId: getActiveAssistantId(),
             activeConversationId:
               useConversationStore.getState().activeConversationId,
           });
@@ -532,8 +528,7 @@ export function useSendMessage({
           assistantId: postResult.assistantId,
           conversationId: requestConversationId,
           resolvedConversationId: effectiveConversationId,
-          activeAssistantId:
-            getActiveAssistantId(),
+          activeAssistantId: getActiveAssistantId(),
           activeConversationId:
             useConversationStore.getState().activeConversationId,
         });
@@ -660,8 +655,7 @@ export function useSendMessage({
         // Read at answer time rather than at call time, since the round trip
         // is the window the switch happens in.
         const answerIsOnScreen = isAsyncChatScopeCurrent({
-          currentAssistantId:
-            getActiveAssistantId(),
+          currentAssistantId: getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId: activeAssistantId,
@@ -753,8 +747,7 @@ export function useSendMessage({
         composerSessionGeneration ===
           useComposerStore.getState().sessionGeneration &&
         isAsyncChatScopeCurrent({
-          currentAssistantId:
-            getActiveAssistantId(),
+          currentAssistantId: getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
           requestAssistantId: assistantId,

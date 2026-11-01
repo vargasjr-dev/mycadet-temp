@@ -39,10 +39,8 @@ import {
   setDictationOffer,
   setUnplacedDictationOffer,
 } from "@/domains/chat/voice/dictation-offer-store";
-import {
-  findRunningFnClaimant,
-  type FnClaimant,
-} from "@/domains/chat/voice/fn-claimants";
+import { findRunningFnClaimant } from "@/domains/chat/voice/fn-claimants";
+import type { FnClaimant } from "@mycadet/ipc-contract";
 import { useVoiceKey } from "@/domains/chat/voice/use-voice-key";
 import { useVoiceKeyTapStore } from "@/domains/chat/voice/voice-key-tap-store";
 import { useVoiceModeHotkey } from "@/domains/chat/voice/use-voice-mode-hotkey";
@@ -256,7 +254,9 @@ function saveTranscriptDraft(text: string, assistantId: string | null): void {
   composer.saveDraft(conversationKey, nextInput);
 }
 
-export function GlobalPushToTalkBridge({ assistantId }: GlobalPushToTalkBridgeProps) {
+export function GlobalPushToTalkBridge({
+  assistantId,
+}: GlobalPushToTalkBridgeProps) {
   const enabledRef = useRef(true);
   const assistantIdRef = useRef(assistantId);
   const voiceKeyStartPendingRef = useRef(false);

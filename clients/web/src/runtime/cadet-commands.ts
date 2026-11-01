@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
-import { isElectron, type CadetCommand } from "@/runtime/is-electron";
+import { isElectron } from "@/runtime/is-electron";
+import type { CadetCommand } from "@mycadet/ipc-contract";
 
 /**
  * Renderer-side dispatcher for commands sent by the Electron host's

@@ -39,7 +39,7 @@ import { getGatewayDb } from "../db/connection.js";
 import type {
   IdentityBindingStatus,
   VerificationPurpose,
-} from "../db/session-store.js";
+} from "@mycadet/gateway-client";
 import {
   claimBootstrapSession,
   consumeSession,

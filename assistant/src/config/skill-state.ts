@@ -1,5 +1,6 @@
 import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
-import type { AssistantConfig, SkillEntryConfig } from "./schema.js";
+import type { AssistantConfig } from "./schema.js";
+import { SkillEntryConfig } from "./schemas/skills.js";
 import type { SkillSummary } from "./skills.js";
 
 export type SkillState = "enabled" | "disabled";

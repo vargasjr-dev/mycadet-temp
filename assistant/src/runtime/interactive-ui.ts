@@ -40,12 +40,6 @@ import type {
 } from "./interactive-ui-types.js";
 
 // Re-export types and constants so existing consumers don't break.
-export type {
-  CancellationReason,
-  InteractiveUiAction,
-  InteractiveUiRequest,
-  InteractiveUiResult,
-} from "./interactive-ui-types.js";
 
 const log = getLogger("interactive-ui");
 

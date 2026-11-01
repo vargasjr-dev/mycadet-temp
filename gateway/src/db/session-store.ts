@@ -26,12 +26,6 @@ import { channelVerificationSessions } from "./schema.js";
 // Types (single-sourced from the shared contract)
 // ---------------------------------------------------------------------------
 
-export type {
-  IdentityBindingStatus,
-  SessionStatus,
-  VerificationPurpose,
-} from "@mycadet/gateway-client";
-
 /** Session row as the store returns it — identical to the wire DTO. */
 export type VerificationSession = VerificationSessionWire;
 

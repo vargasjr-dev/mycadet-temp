@@ -43,7 +43,7 @@ import {
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { z } from "zod";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Module-level mocks

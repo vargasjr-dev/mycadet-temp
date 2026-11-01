@@ -22,7 +22,6 @@ import type {
   ApprovalReason,
   RiskThreshold,
 } from "../permissions/types.js";
-import { RiskLevel } from "../permissions/types.js";
 import { recordToolDenied } from "../persistence/tool-audit.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
 import { getLogger } from "../util/logger.js";
@@ -30,6 +29,7 @@ import { resolveExecutionTarget } from "./execution-target.js";
 import { getHostShell } from "./host-shell.js";
 import { buildPolicyContext } from "./policy-context.js";
 import { isSideEffectTool } from "./side-effects.js";
+import { RiskLevel } from "./tool-types.js";
 import type { Tool, ToolContext } from "./types.js";
 
 const log = getLogger("permission-checker");

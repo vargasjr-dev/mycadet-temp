@@ -2,10 +2,10 @@
  * CES RPC backend for non-secret credential records (identity + policy).
  */
 
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
-import type { CesClient } from "../credential-execution/client.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("ces-rpc-record-backend");

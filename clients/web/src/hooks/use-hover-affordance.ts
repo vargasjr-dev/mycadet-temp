@@ -19,7 +19,6 @@ import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability"
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/CSS/@media/hover
  */
-export { useHoverCapable };
 
 /**
  * Whether a row should render a control that only hover reveals.

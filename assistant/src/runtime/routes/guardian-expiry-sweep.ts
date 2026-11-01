@@ -26,11 +26,12 @@
  * retries, and expiry only ever moves forward.
  */
 
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import { withdrawGuardianRequestCards } from "../../approvals/guardian-card-withdrawal.js";
 import { notifyExpiredGuardianRequest } from "../../approvals/guardian-expiry-notifier.js";
 import {
   expireGuardianRequest,
-  type GuardianRequestWire,
   listExpiredPendingGuardianRequests,
 } from "../../channels/gateway-guardian-requests.js";
 import { reconcileGuardianFeedProjections } from "../../notifications/guardian-feed-projection.js";

@@ -3,7 +3,8 @@
  * binding. Fails closed to unknown on a missing or null read.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import { getGuardianDelivery } from "../contacts/guardian-delivery-reader.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { canonicalizeInboundIdentity } from "../util/canonicalize-identity.js";

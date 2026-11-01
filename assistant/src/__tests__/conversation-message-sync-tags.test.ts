@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import type { SyncChangedEvent } from "../api/events/sync-changed.js";
 import type { AssistantEventEnvelope } from "../api/index.js";
-import {
-  conversationMessagesSyncTag,
-  type SyncChangedEvent,
-} from "../daemon/message-types/sync.js";
+import { conversationMessagesSyncTag } from "../daemon/message-types/sync.js";
 import {
   assistantEventHub,
   broadcastMessage,

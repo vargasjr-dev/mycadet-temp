@@ -8,7 +8,7 @@
  * including the submit path that decides whether to send a rule hint.
  */
 
-import type { AllowlistOption } from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
 
 /** The payload fields the answer is derived from. */
 export interface RuleOptionSource {

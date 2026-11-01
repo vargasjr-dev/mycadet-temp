@@ -14,7 +14,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { BROWSER_OPERATION_META } from "../browser/operations.js";
+import { BROWSER_OPERATION_META } from "../browser/operation-meta.js";
 import { BROWSER_OPERATIONS } from "../browser/types.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────

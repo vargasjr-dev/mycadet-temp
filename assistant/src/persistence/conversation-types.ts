@@ -7,7 +7,9 @@
 // `resolveConversationKind` classifier, and the pure predicates over a
 // persisted message's `metadata` record.
 
-import { type ChannelId, parseChannelId } from "../channels/types.js";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+
+import { parseChannelId } from "../channels/types.js";
 
 /**
  * Where a conversation came from, stated by whoever creates it.

@@ -37,10 +37,8 @@ import { initializeDb } from "../persistence/db-init.js";
 import { linkMessage, recordInbound } from "../persistence/delivery-crud.js";
 import { messages } from "../persistence/schema/index.js";
 import { _setDeleteLookupConfigForTests } from "../runtime/routes/inbound-message-handler.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

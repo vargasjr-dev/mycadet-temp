@@ -8,6 +8,7 @@
  * they don't shadow more-specific sub-paths like contacts/invites.
  */
 
+import type { InviteWire } from "@mycadet/gateway-client";
 import {
   INVITES_IPC_METHODS,
   RedeemInviteByTokenRequestSchema,
@@ -25,7 +26,6 @@ import { z } from "zod";
 
 import {
   createInvite,
-  type InviteWire,
   listInvites,
   redeemInviteByToken,
   redeemInviteByVoiceCode,

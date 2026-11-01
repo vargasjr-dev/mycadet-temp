@@ -11,21 +11,20 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
+import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellSpawnFlags } from "@mycadet/environments/shell";
+import { prependUniquePathEntries } from "@mycadet/environments/shell";
 import { z } from "zod";
 
 import { supportsHostProxy } from "../../channels/types.js";
 import { getConfig } from "../../config/loader.js";
 import { HostBashProxy } from "../../daemon/host-bash-proxy.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { applyActivePluginName } from "../../plugins/active-plugin-env.js";
 import { wakeAgentForOpportunity } from "../../runtime/agent-wake.js";
 import { broadcastMessage } from "../../runtime/assistant-event-hub.js";
 import { conversationRevealNonce } from "../../runtime/reveal-nonce.js";
 import { redactSecrets } from "../../security/secret-scanner.js";
 import {
-  buildShellInvocation,
-  buildShellSpawnFlags,
-  prependUniquePathEntries,
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
@@ -50,6 +49,7 @@ import {
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
 import { buildSanitizedEnv } from "../terminal/safe-env.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

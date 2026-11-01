@@ -11,11 +11,8 @@ import {
   getConfiguredProvider,
   userMessage,
 } from "../providers/provider-send-message.js";
-import type {
-  Provider,
-  ProviderResponse,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { Provider, ProviderResponse } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason, isAbortReason } from "../util/abort-reasons.js";
 import { getLogger } from "../util/logger.js";
 

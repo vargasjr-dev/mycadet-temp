@@ -85,11 +85,9 @@ import { initializeDb } from "../persistence/db-init.js";
 import { linkMessage, recordInbound } from "../persistence/delivery-crud.js";
 import { messages } from "../persistence/schema/conversations.js";
 import { isReactionEvent } from "../runtime/routes/inbound-stages/reaction-intercept.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

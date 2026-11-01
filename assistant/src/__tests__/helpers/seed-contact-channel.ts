@@ -10,7 +10,8 @@
  * id) — never the ACL columns (incl. principalId), which are gateway-owned.
  */
 
-import { isChannelId } from "../../channels/types.js";
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import { upsertContact } from "../../contacts/contact-store.js";
 import type {
   ChannelPolicy,

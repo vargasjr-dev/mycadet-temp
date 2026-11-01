@@ -37,7 +37,7 @@ import {
 import { isActiveAcpStatus, type AcpRunStatus } from "@/utils/acp-run-status";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
 import { SYNC_TAGS } from "@/lib/sync/types";
-import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 
 interface AcpSessionEventLogItem {
   updateType?: AcpRunRawEvent["updateType"];

@@ -17,18 +17,16 @@ import { describe, expect, test } from "bun:test";
 
 import type pino from "pino";
 
+import { UISurfaceUpdateEvent } from "../api/events/ui-surface-update.js";
 import type { AssistantEvent } from "../api/index.js";
+import { CardSurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
   settleRunningTaskProgressSurfaces,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type {
-  CardSurfaceData,
-  SurfaceType,
-  UISurfaceUpdateEvent,
-} from "../daemon/message-protocol.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 const noopLogger = {

@@ -103,9 +103,9 @@ const {
   surfaceProxyResolver,
 } = await import("../daemon/conversation-surfaces.js");
 
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 

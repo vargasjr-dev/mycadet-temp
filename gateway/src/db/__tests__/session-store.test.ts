@@ -21,7 +21,8 @@ import {
   updateSessionDelivery,
   updateSessionStatus,
 } from "../session-store.js";
-import type { SessionStatus, VerificationSession } from "../session-store.js";
+import type { SessionStatus } from "@mycadet/gateway-client";
+import type { VerificationSession } from "../session-store.js";
 
 // ---------------------------------------------------------------------------
 // Setup / teardown

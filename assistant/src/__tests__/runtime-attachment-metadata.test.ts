@@ -39,10 +39,8 @@ import { resetTestTables } from "../persistence/raw-query.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
-import {
-  resolveLocalTrustVerdict,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { resolveLocalTrustVerdict } from "./helpers/channel-test-adapter.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // Tests call addMessage without skipIndexing — keep memory indexing off so no

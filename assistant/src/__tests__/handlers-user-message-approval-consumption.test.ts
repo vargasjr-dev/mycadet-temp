@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
-import type { ConfirmationResponse } from "../daemon/message-protocol.js";
+import { ConfirmationResponse } from "../daemon/message-types/messages.js";
 import { createGuardianGatewaySim } from "./guardian-gateway-sim.js";
 
 const resolveMock = mock(() => undefined as unknown);

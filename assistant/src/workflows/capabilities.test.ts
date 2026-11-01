@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-import { RiskLevel } from "../permissions/types.js";
 import {
   __clearRegistryForTesting,
   __resetRegistryForTesting,
@@ -9,6 +8,7 @@ import {
 } from "../tools/registry.js";
 import { isSideEffectTool } from "../tools/side-effects.js";
 import type { ExecutionTarget } from "../tools/tool-types.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import {
   CapabilityManifestSchema,

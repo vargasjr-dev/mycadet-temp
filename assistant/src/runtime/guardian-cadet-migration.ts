@@ -7,7 +7,8 @@
  * assistant-side since it reacts to incoming JWT principals.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   findContactByAddress,
   repairChannelAddress,

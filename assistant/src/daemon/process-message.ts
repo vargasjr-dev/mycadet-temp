@@ -5,6 +5,7 @@
  * it through DI. The DaemonServer methods delegate here.
  */
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
 import { v7 as uuidv7 } from "uuid";
 
 import { enrichMessageWithSourcePaths } from "../agent/attachments.js";
@@ -14,7 +15,6 @@ import {
 } from "../agent/message-types.js";
 import type { AssistantEvent } from "../api/index.js";
 import {
-  type ChannelId,
   type InterfaceId,
   parseChannelId,
   parseInterfaceId,

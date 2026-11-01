@@ -23,13 +23,13 @@ import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
 import { CLOUD_ROUTABLE_PROVIDERS } from "../cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../cadet-model-routing.js";
 import { isConnectionCompatibleWithModel } from "../connection-model-compat.js";
 import {
   PROVIDERS_REQUIRING_BASE_URL_AND_MODELS,
   ROUTING_IDENTITY_PROVIDERS,
 } from "./auth.js";
 import {
-  CADET_CLOUD_CONNECTION_NAME,
   createConnection,
   getConnection,
   listConnections,

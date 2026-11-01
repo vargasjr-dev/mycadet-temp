@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getSqliteFrom } from "../../db-connection.js";
-import * as schema from "../../schema.js";
+import * as schema from "../../schema/index.js";
 import { migrateDropContactChannelTelemetry } from "../318-drop-contact-channel-telemetry.js";
 
 function createTestDb() {

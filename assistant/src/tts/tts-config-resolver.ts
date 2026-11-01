@@ -7,7 +7,7 @@
  * have canonical fields materialised.
  */
 
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import type { TtsProviderId } from "./types.js";
 
 // ---------------------------------------------------------------------------

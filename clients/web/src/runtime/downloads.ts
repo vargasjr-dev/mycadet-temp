@@ -1,5 +1,5 @@
 import { isElectron } from "@/runtime/is-electron";
-import type { DownloadDoneEvent } from "@/runtime/is-electron";
+import { DownloadDoneEvent } from "@mycadet/ipc-contract";
 
 /**
  * Per-capability wrapper for the Electron host's download-outcome bridge.
@@ -17,8 +17,6 @@ import type { DownloadDoneEvent } from "@/runtime/is-electron";
  * `download.done` bus event; `use-download-feedback` is the one consumer and
  * owns the resulting toasts.
  */
-
-export type { DownloadDoneEvent };
 
 export function subscribeToDownloadEvents(
   callback: (event: DownloadDoneEvent) => void,

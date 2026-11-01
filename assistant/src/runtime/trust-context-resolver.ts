@@ -9,7 +9,8 @@
  * cannot consume a verdict. Verdict-stamped ingress uses
  * `trustContextFromVerdict` in `trust-verdict-consumer.ts` instead.
  */
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import {
   resolveActorTrust,

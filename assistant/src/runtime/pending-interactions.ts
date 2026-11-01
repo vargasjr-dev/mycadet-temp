@@ -27,8 +27,6 @@ import { assistantEventHub, broadcastMessage } from "./assistant-event-hub.js";
 
 const log = getLogger("pending-interactions");
 
-export type { InteractionResolutionState } from "../api/events/interaction-resolved.js";
-
 export interface ConfirmationDetails {
   toolName: string;
   input: Record<string, unknown>;

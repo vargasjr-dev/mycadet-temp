@@ -1,10 +1,5 @@
-import {
-  isElectron,
-  type UpdateState,
-  type UpdateStatus,
-} from "@/runtime/is-electron";
-
-export type { UpdateState, UpdateStatus };
+import { isElectron } from "@/runtime/is-electron";
+import { type UpdateState } from "@mycadet/ipc-contract";
 
 /**
  * Per-capability wrapper for the Electron host's auto-update bridge.

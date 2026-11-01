@@ -9,6 +9,7 @@
  * false positives on legitimate user input.
  */
 
+import type { SecretPrefixPattern } from "@mycadet/service-contracts/secret-detection";
 import {
   isPlaceholderContext,
   isPlaceholderValue,
@@ -17,14 +18,11 @@ import {
   TOKEN_SHAPE_MAX_LENGTH,
   TOKEN_SHAPE_MIN_LENGTH,
 } from "@mycadet/service-contracts/secret-detection";
+import { PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
 
 import { getConfig } from "../config/loader.js";
 import { memoizePluginPatternDerivation } from "./plugin-secret-patterns.js";
 import { isAllowlisted } from "./secret-allowlist.js";
-import {
-  PREFIX_PATTERNS,
-  type SecretPrefixPattern,
-} from "./secret-patterns.js";
 
 // ---------------------------------------------------------------------------
 // Types

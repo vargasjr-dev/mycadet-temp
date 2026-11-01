@@ -23,7 +23,7 @@ mock.module("../config/env-registry.js", () => ({
 
 const { McpClient } = await import("../mcp/client.js");
 const { createMcpTool } = await import("../tools/mcp/mcp-tool-factory.js");
-const { RiskLevel } = await import("../permissions/types.js");
+const { RiskLevel } = await import("../tools/tool-types.js");
 
 type ServerSource = "workspace" | "plugin";
 

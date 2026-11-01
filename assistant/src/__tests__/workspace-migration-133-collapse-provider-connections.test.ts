@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { AssistantConfigSchema } from "../config/schema.js";
-import { resolveRoutingIdentity } from "../providers/connection-resolution.js";
+import { resolveRoutingIdentity } from "../providers/routing-identity.js";
 import { collapseProviderConnectionsMigration } from "../workspace/migrations/133-collapse-provider-connections.js";
 
 let workspaceDir: string;

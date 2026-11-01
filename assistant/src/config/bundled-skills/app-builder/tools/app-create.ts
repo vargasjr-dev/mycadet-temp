@@ -1,7 +1,7 @@
 import * as appStore from "../../../../apps/app-store.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppCreateInput } from "../../../../tools/apps/executors.js";
 import { executeAppCreate } from "../../../../tools/apps/executors.js";
-import { throwIfCancelled } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

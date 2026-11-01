@@ -3,11 +3,13 @@
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import {
   CLIENT_METADATA_HEADERS,
   type ClientMetadataField,
   sanitizeClientMetadataValue,
 } from "@mycadet/service-contracts/client-metadata";
+import { stripNoResponseMarkers } from "@mycadet/service-contracts/no-response";
 import { pickReactionEmojiFields } from "@mycadet/service-contracts/reactions";
 import { v7 as uuidv7 } from "uuid";
 import { z } from "zod";
@@ -33,7 +35,6 @@ import {
   listPendingRequestsByScopeOrEmpty,
 } from "../../channels/gateway-guardian-requests.js";
 import {
-  CHANNEL_IDS,
   INTERFACE_IDS,
   isInteractiveInterface,
   parseChannelId,
@@ -123,12 +124,8 @@ import {
   getMessages,
   getMessagesPaginated,
   hasMessages,
-  isBackgroundEventMetadata,
   isConversationProcessing,
-  isHiddenMessageMetadata,
   isProviderErrorMetadata,
-  isSuppressedQueuedMessage,
-  isSystemCardMetadata,
   type MessageRow,
   parseMessageMetadata,
   recordConversationPersistedSeq,
@@ -141,6 +138,10 @@ import {
 } from "../../persistence/conversation-key-store.js";
 import { listConversationModeSessionsByIds } from "../../persistence/conversation-mode-sessions.js";
 import { searchConversations } from "../../persistence/conversation-queries.js";
+import { isBackgroundEventMetadata } from "../../persistence/conversation-types.js";
+import { isHiddenMessageMetadata } from "../../persistence/conversation-types.js";
+import { isSuppressedQueuedMessage } from "../../persistence/conversation-types.js";
+import { isSystemCardMetadata } from "../../persistence/conversation-types.js";
 import {
   computerUseScreenshotAttachmentIdsFromMetadata,
   isNoResponseMetadata,
@@ -184,7 +185,6 @@ import {
   resolveActorPrincipalIdForLocalGuardian,
 } from "../local-actor-identity.js";
 import { resolveLocalPrincipalTrustContext } from "../local-principal-trust.js";
-import { stripNoResponseMarkers } from "../no-response.js";
 import * as pendingInteractions from "../pending-interactions.js";
 import {
   publishConversationListAndMetadataChanged,

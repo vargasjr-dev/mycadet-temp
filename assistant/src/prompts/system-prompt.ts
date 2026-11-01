@@ -29,8 +29,6 @@ import { resolveGuardianPersona, resolveUserSlug } from "./persona-resolver.js";
 import { renderWorkspaceSections } from "./sections.js";
 import { isTemplateContent } from "./template-detection.js";
 
-export { isTemplateContent };
-
 const log = getLogger("system-prompt");
 
 const PROMPT_FILES = ["IDENTITY.md", "SOUL.md"] as const;
@@ -510,7 +508,6 @@ export function buildSystemPrompt(options?: BuildSystemPromptOptions): string {
 }
 
 // Re-export from shared util so existing importers don't break.
-export { stripCommentLines } from "../util/strip-comment-lines.js";
 
 export function readPromptFile(path: string): string | null {
   if (!existsSync(path)) {

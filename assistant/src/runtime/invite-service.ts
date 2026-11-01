@@ -7,8 +7,9 @@
  * onto gateway-minted payloads and place outbound invite calls.
  */
 
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import { startInviteCall } from "../calls/call-domain.js";
-import { isChannelId } from "../channels/types.js";
 import { getContact } from "../contacts/contact-store.js";
 import {
   DECLINED_BY_USER_SENTINEL,

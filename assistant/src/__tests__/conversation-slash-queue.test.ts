@@ -2,11 +2,9 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent, AgentLoopRunResult } from "../agent/loop.js";
+import type { SyncChangedEvent } from "../api/events/sync-changed.js";
 import type { AssistantEvent } from "../api/index.js";
-import {
-  conversationMessagesSyncTag,
-  type SyncChangedEvent,
-} from "../daemon/message-types/sync.js";
+import { conversationMessagesSyncTag } from "../daemon/message-types/sync.js";
 import type { Message, ProviderResponse } from "../providers/types.js";
 
 // ---------------------------------------------------------------------------

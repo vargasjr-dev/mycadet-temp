@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-  DynamicPageSurfaceData,
-  UiSurfaceShowDynamicPage,
-} from "../daemon/message-protocol.js";
-import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-protocol.js";
+import { DynamicPageSurfaceData } from "../api/surfaces.js";
+import { UiSurfaceShowDynamicPage } from "../daemon/message-types/surfaces.js";
+import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-types/surfaces.js";
 import { uiShowTool, uiUpdateTool } from "../tools/ui-surface/definitions.js";
 
 // ---------------------------------------------------------------------------

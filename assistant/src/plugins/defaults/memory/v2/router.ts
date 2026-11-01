@@ -40,7 +40,7 @@ import {
 } from "@mycadet/plugin-api";
 import { z } from "zod";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { warmGuardianBindings } from "../../../../contacts/guardian-delivery-reader.js";
 import {
   cachedTextBlock,

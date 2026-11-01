@@ -55,8 +55,9 @@ import {
   extractToolUse,
   getConfiguredProvider,
 } from "../providers/provider-send-message.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";

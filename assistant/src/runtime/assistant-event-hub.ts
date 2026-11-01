@@ -12,15 +12,11 @@
  * Client-oriented queries (list, find-by-capability) are methods on the hub.
  */
 
-import {
-  DESKTOP_PRESENCE_STATES,
-  type DesktopPresenceState,
-} from "@mycadet/service-contracts/desktop-presence";
+import { type DesktopPresenceState } from "@mycadet/service-contracts/desktop-presence";
 
 import type { AssistantEvent } from "../api/index.js";
-import type { HostProxyCapability, InterfaceId } from "../channels/types.js";
-
-export { DESKTOP_PRESENCE_STATES, type DesktopPresenceState };
+import type { InterfaceId } from "../channels/types.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 
 // ---------------------------------------------------------------------------
 // Message type → capability inference

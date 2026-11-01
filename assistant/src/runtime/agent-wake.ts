@@ -72,7 +72,6 @@
 
 import type {
   AgentEvent,
-  AgentLoopExitReason,
   CheckpointDecision,
   CheckpointInfo,
 } from "../agent/loop.js";
@@ -108,6 +107,7 @@ import {
   scopeWakeAllowedTools,
 } from "../daemon/wake-conversation-ops.js";
 import { desktopAutomationLease } from "../desktop/desktop-automation-lease.js";
+import { AgentLoopExitReason } from "../hooks/types.js";
 import { emitBackgroundResultNotification } from "../notifications/background-result-producer.js";
 import {
   recordCompactionEndBestEffort,
@@ -121,13 +121,14 @@ import {
 } from "../persistence/llm-request-log-store.js";
 import { stampTurnOutcome } from "../persistence/turn-outcome.js";
 import type { SystemPromptPersonaOverride } from "../prompts/system-prompt.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import { getScheduleRunStatus } from "../schedule/schedule-store.js";
 import {
   type UntrustedContentSource,
   wrapUntrustedContent,
 } from "../security/untrusted-content.js";
 import type { CompletedBackgroundTool } from "../tools/background-tool-registry.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { getLogger } from "../util/logger.js";
 import { safeStringSlice } from "../util/unicode.js";
 import {
@@ -135,8 +136,6 @@ import {
   runWakeSingleFlight,
   trackAgentWake,
 } from "./agent-wake-queue.js";
-
-export { hasPendingAgentWake } from "./agent-wake-queue.js";
 
 const log = getLogger("agent-wake");
 

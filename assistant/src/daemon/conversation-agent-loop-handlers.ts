@@ -22,7 +22,9 @@ import type {
   WebSearchMetadata,
   WebSearchResultItem,
 } from "../api/events/tool-result.js";
+import { SurfaceAction } from "../api/events/ui-surface-show.js";
 import type { AssistantEvent } from "../api/index.js";
+import { CardSurfaceData } from "../api/surfaces.js";
 import type {
   TurnChannelContext,
   TurnInterfaceContext,
@@ -130,11 +132,7 @@ import {
   finalizeInflightContent,
   type InflightContentWriter,
 } from "./inflight-message-content.js";
-import type {
-  CardSurfaceData,
-  SurfaceAction,
-  UiSurfaceShow,
-} from "./message-protocol.js";
+import { UiSurfaceShow } from "./message-types/surfaces.js";
 import { bestEffortModeSessionTracking } from "./mode-session-tracking.js";
 import { referenceMediaBlocksForPersist } from "./persist-media-references.js";
 import { buildProviderRejectionLogFields } from "./provider-rejection-log-fields.js";

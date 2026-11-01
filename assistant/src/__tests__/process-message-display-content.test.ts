@@ -140,7 +140,7 @@ import type {
 import type { MessagingConversationContext } from "../daemon/conversation-messaging.js";
 import { persistQueuedMessageBody } from "../daemon/conversation-messaging.js";
 import type { MessageQueue } from "../daemon/conversation-queue-manager.js";
-import type { UserMessageAttachment } from "../daemon/message-protocol.js";
+import { UserMessageAttachment } from "../daemon/message-types/shared.js";
 import { processMessage } from "../daemon/process-message.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { Message } from "../providers/types.js";

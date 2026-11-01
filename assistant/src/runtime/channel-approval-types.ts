@@ -16,16 +16,7 @@ import {
 
 import type { GuardianDecisionAction } from "./guardian-decision-types.js";
 
-export type {
-  ApprovalActionOption,
-  ApprovalUIMetadata,
-  PermissionRequestDetails,
-} from "@mycadet/gateway-client";
 // Re-export shared wire types + schemas so existing daemon imports keep working.
-export {
-  ApprovalUIMetadataSchema,
-  PermissionRequestDetailsSchema,
-} from "@mycadet/gateway-client";
 
 // ---------------------------------------------------------------------------
 // Approval actions (daemon-internal)

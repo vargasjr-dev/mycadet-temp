@@ -22,10 +22,8 @@ import {
 } from "../../config/llm-resolver.js";
 import { getConfigReadOnly } from "../../config/loader.js";
 import { type LLMCallSite, LLMCallSiteEnum } from "../../config/schemas/llm.js";
-import {
-  ConnectionResolutionError,
-  preflightResolvedConfig,
-} from "../../providers/connection-resolution.js";
+import { preflightResolvedConfig } from "../../providers/connection-resolution.js";
+import { ConnectionResolutionError } from "../../providers/routing-identity.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";

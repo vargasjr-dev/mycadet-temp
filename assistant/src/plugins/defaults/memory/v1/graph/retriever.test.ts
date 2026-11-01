@@ -77,7 +77,7 @@ mock.module("@mycadet/plugin-api", () => ({
 
 import { resetDbForTesting } from "../../../../../__tests__/db-test-helpers.js";
 import { DEFAULT_CONFIG } from "../../../../../config/defaults.js";
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import { getMemorySqlite } from "../../../../../persistence/db-connection.js";
 import { initializeDb } from "../../../../../persistence/db-init.js";
 import { InContextTracker } from "../../graph/in-context-tracker.js";

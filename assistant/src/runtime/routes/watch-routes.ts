@@ -40,10 +40,10 @@ import type {
 import { getLogger } from "../../util/logger.js";
 import { runWatchRetro } from "../../watch/watch-retro.js";
 import {
-  type HostCaptureTarget,
   WatchSessionManager,
   type WatchSessionSummary,
 } from "../../watch/watch-session-manager.js";
+import type { HostCaptureTarget } from "../host-observe.js";
 
 const log = getLogger("watch-stream");
 

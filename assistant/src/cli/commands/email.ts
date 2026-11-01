@@ -14,12 +14,12 @@ import {
   cliIpcCallStream,
   exitFromIpcResult,
 } from "../../ipc/cli-client.js";
+import { getCliLogger } from "../../util/logger.js";
 import { guessMimeType } from "../../util/mime-type.js";
 import { readStdinSync } from "../../util/read-stdin.js";
 import { resolveBundledCliModule } from "../bundled-modules.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
-import { getCliLogger } from "../logger.js";
 import { shouldOutputJson, writeOutput } from "../output.js";
 import { emailHelp } from "./email.help.js";
 

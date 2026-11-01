@@ -14,8 +14,8 @@ import {
   searchDocumentsByTitle,
   updateDocumentContent,
 } from "../../documents/document-store.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { canActOnPrivilegedDocuments } from "../../runtime/effective-capabilities.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

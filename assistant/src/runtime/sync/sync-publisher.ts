@@ -1,6 +1,6 @@
+import type { SyncChangedEvent } from "../../api/events/sync-changed.js";
 import {
   buildSyncChangedMessage,
-  type SyncChangedEvent,
   type SyncInvalidationTag,
 } from "../../daemon/message-types/sync.js";
 import { getLogger } from "../../util/logger.js";

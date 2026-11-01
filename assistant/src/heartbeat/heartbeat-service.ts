@@ -17,7 +17,7 @@ import {
   GUARDIAN_PERSONA_TEMPLATE,
   resolveGuardianPersona,
 } from "../prompts/persona-resolver.js";
-import { isTemplateContent } from "../prompts/system-prompt.js";
+import { isTemplateContent } from "../prompts/template-detection.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { runBackgroundJob } from "../runtime/background-job-runner.js";
 import { hasReceivedUserMessage } from "../runtime/pre-first-message-gate.js";

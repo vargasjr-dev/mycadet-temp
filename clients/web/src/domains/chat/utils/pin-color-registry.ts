@@ -18,7 +18,7 @@
 import type { CSSProperties } from "react";
 import { panelItemWashStyle } from "@mycadet/design-library";
 
-import { BUNDLED_COLORS } from "@/utils/avatar-bundled-colors";
+import { AVATAR_COLORS as BUNDLED_COLORS } from "@mycadet/avatar-catalog/colors";
 
 /**
  * The name each colour is announced by, as a catalog key rather than the

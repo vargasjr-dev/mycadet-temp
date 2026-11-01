@@ -5,10 +5,9 @@ import {
   escalateOne,
   generateScopeOptions,
   matchesArgRule,
-  maxRisk,
-  riskOrd,
   scopeOptionsToAllowlistOptions,
 } from "./bash-risk-classifier.js";
+import { maxRisk, riskOrd } from "./risk-types.js";
 import { DEFAULT_COMMAND_REGISTRY } from "./command-registry/index.js";
 import type { ArgRule, CommandRiskSpec } from "./risk-types.js";
 import { riskToRiskLevel, RiskLevel } from "./risk-types.js";

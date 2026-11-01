@@ -4,11 +4,8 @@ import type {
 } from "@mycadet/assistant-api";
 import { runtimeAttachmentsToDisplay } from "@/domains/chat/utils/attachment-mapping";
 import { parseAttachmentSummariesFromContent } from "@/domains/chat/utils/parse-attachment-summaries";
-import type {
-  DisplayAttachment,
-  DisplayMessage,
-  Surface,
-} from "@/domains/chat/types/types";
+import type { DisplayMessage, Surface } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import {
   mapRuntimeToolCalls,
   normalizeContentBlocks,

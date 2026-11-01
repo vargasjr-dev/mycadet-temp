@@ -7,9 +7,9 @@
  * graceful fallback.
  */
 
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
-import type { CesClient } from "../credential-execution/client.js";
 import { getLogger } from "../util/logger.js";
 import type {
   CredentialBackend,

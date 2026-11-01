@@ -9,9 +9,10 @@
 
 import { spawn } from "node:child_process";
 
+import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellSpawnFlags } from "@mycadet/environments/shell";
+
 import {
-  buildShellInvocation,
-  buildShellSpawnFlags,
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";

@@ -17,7 +17,7 @@ import {
   test,
 } from "bun:test";
 
-import type { ScopeOption } from "../permissions/types.js";
+import { ScopeOption } from "../tools/tool-types.js";
 import type { ToolExecutionResult } from "../tools/types.js";
 
 // ---------------------------------------------------------------------------

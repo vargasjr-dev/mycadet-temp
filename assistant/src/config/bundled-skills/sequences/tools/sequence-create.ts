@@ -1,9 +1,7 @@
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { createSequence } from "../../../../sequence/store.js";
 import type { SequenceStep } from "../../../../sequence/types.js";
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,

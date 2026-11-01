@@ -84,12 +84,12 @@ mock.module("../util/logger.js", () => ({
 // `secret-prompt-log-hygiene.test.ts`.
 // ---------------------------------------------------------------------------
 
-import type { HostProxyCapability } from "../channels/types.js";
 import type { HostProxyPreactivationTarget } from "../daemon/host-proxy-preactivation.js";
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 
 const {
   evaluateHostProxyAttachment,

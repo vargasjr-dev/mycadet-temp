@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
   isSupported,
-  LIVE_VOICE_AUDIO_FORMAT,
   LiveVoiceAudioCapture,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
+import { LIVE_VOICE_AUDIO_FORMAT } from "@/domains/chat/voice/live-voice/protocol";
 import { setPreferredInputDeviceId } from "@/utils/voice-input-device";
 
 // ---------------------------------------------------------------------------

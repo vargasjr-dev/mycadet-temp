@@ -7,6 +7,7 @@
  * POST   /v1/secrets/read — read (masked or revealed) a secret value
  */
 
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 import { z } from "zod";
 
 import {
@@ -19,7 +20,6 @@ import { syncWorkspaceIdentityToPlatform } from "../../cloud/sync-identity.js";
 import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
-import type { CesClient } from "../../credential-execution/client.js";
 import { scrubStoredCredentialFromTranscripts } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
 import { maybeReseedCapabilitiesAfterCloudCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";

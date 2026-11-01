@@ -14,12 +14,13 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import {
   FALLBACK_TURN_TRUST,
   isPersonalMemoryAllowed,
 } from "../daemon/trust-context.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import type { TrustClass } from "../runtime/actor-trust-resolver.js";
 
 function slack(trustClass: TrustClass): TrustContext {
   return { sourceChannel: "slack", trustClass };

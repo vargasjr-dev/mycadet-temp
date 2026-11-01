@@ -15,8 +15,6 @@ import { credentialKey } from "./credential-key.js";
 import { getLogger } from "./logger.js";
 import { getGatewaySecurityDir } from "./paths.js";
 
-export { getGatewaySecurityDir, getWorkspaceDir } from "./paths.js";
-
 const log = getLogger("credential-reader");
 
 const ALGORITHM = "aes-256-gcm";

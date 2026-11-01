@@ -11,7 +11,8 @@
  * applies its own scoping after this check.
  */
 
-import type { HostProxyCapability, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 import type { AssistantEventPublishOptions } from "./assistant-event-publish-options.js";
 
 /** The connection an event is being delivered to, live or on replay. */

@@ -8,9 +8,9 @@
  * seam and one record.
  */
 
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
-import { CHANNEL_IDS } from "../../channels/types.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   ChannelNotAddressableError,

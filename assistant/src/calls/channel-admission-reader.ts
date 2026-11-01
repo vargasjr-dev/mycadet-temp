@@ -26,9 +26,9 @@ import {
   type AdmissionPolicy,
   isAdmissionPolicy,
 } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
-import type { ChannelId } from "../channels/types.js";
 import { ipcCall } from "../ipc/gateway-client.js";
 
 const CACHE_TTL_MS = 5_000;

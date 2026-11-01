@@ -3,6 +3,7 @@ import type {
   RiskAllowlistOption,
   RiskDirectoryScopeOption,
 } from "@mycadet/gateway-client";
+import { TrustClass } from "@mycadet/gateway-client";
 import { z } from "zod";
 
 import type { AnsweredQuestion } from "../api/events/question-answered.js";
@@ -15,7 +16,6 @@ import {
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import type { SecretPromptResult } from "../permissions/secret-prompt-types.js";
 import type { ContentBlock } from "../providers/types.js";
-import type { TrustClass } from "../runtime/trust-class.js";
 import type { UsageAttributionSnapshot } from "../usage/attribution.js";
 import type {
   DiffInfo,

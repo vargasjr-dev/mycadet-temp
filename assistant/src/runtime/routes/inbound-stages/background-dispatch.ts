@@ -7,17 +7,21 @@
  * Extracted from inbound-message-handler.ts to keep the top-level handler
  * focused on orchestration.
  */
+import { ChannelId } from "@mycadet/service-contracts/channels";
+import { hasDeliverableAssistantText } from "@mycadet/service-contracts/no-response";
+
 import type {
   AssistantActivityPhase,
   AssistantEvent,
 } from "../../../api/index.js";
 import { resolveGuardianPromptDelivery } from "../../../approvals/guardian-channel-delivery.js";
-import type { ChannelId, InterfaceId } from "../../../channels/types.js";
+import type { InterfaceId } from "../../../channels/types.js";
 import {
   getGuardianDelivery,
   guardianForChannel,
 } from "../../../contacts/guardian-delivery-reader.js";
 import { isConversationBusyError } from "../../../daemon/conversation-messaging.js";
+import { SlackInboundMessageMetadata } from "../../../daemon/handlers/shared.js";
 import type { TrustContext } from "../../../daemon/trust-context-types.js";
 import { negotiateLocale } from "../../../i18n/index.js";
 import type { ProviderMessageMetadata } from "../../../messaging/provider-message-metadata.js";
@@ -50,16 +54,12 @@ import {
   getChannelApprovalPrompt,
 } from "../../channel-approvals.js";
 import { createChannelReplySession } from "../../channel-reply-session.js";
+import { finalizeEventDelivery } from "../../finalize-event-delivery.js";
 import { deliverChannelReply } from "../../gateway-client.js";
-import type {
-  ApprovalCopyGenerator,
-  MessageProcessor,
-  SlackInboundMessageMetadata,
-} from "../../http-types.js";
-import { hasDeliverableAssistantText } from "../../no-response.js";
+import type { MessageProcessor } from "../../http-types.js";
+import { ApprovalCopyGenerator } from "../../message-composer-types.js";
 import { isContactTrustClass } from "../../trust-class.js";
 import { resolveRoutingState } from "../../trust-context-resolver.js";
-import { finalizeEventDelivery } from "../channel-delivery-routes.js";
 import { deliverGeneratedApprovalPrompt } from "../guardian-approval-prompt.js";
 import { withChannelTurnAdmission } from "./channel-turn-admission.js";
 

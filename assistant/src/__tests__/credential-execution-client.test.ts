@@ -20,16 +20,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import type { CesTransport } from "@mycadet/ces-client/rpc-client";
+import { CesClientError } from "@mycadet/ces-client/rpc-client";
+import { CesHandshakeError } from "@mycadet/ces-client/rpc-client";
+import { CesTransportError } from "@mycadet/ces-client/rpc-client";
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 import { CES_PROTOCOL_VERSION } from "@mycadet/service-contracts/credential-rpc";
 
-import {
-  CesClientError,
-  CesHandshakeError,
-  type CesTransport,
-  CesTransportError,
-  createCesClient,
-} from "../credential-execution/client.js";
+import { createCesClient } from "../credential-execution/client.js";
 import {
   discoverCes,
   discoverCesWithRetry,

@@ -80,12 +80,10 @@ mock.module("../channels/gateway-guardian-requests.js", () => sim.module);
 import { getResolver } from "../approvals/guardian-request-resolvers.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 import { resetVerificationSessionsSim } from "./helpers/verification-sessions-ipc-sim.js";
 
 await initializeDb();

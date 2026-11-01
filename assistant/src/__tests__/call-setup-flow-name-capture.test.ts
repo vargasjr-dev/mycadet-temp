@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import {
   CallSetupFlow,
   type CallSetupFlowDeps,
@@ -21,7 +23,6 @@ import type {
 import type { CallSession } from "../calls/types.js";
 import type { ChannelStatus } from "../contacts/types.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import type { TrustClass } from "../runtime/trust-class.js";
 
 // ---------------------------------------------------------------------------
 // Fixtures

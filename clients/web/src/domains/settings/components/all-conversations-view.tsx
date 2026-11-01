@@ -14,11 +14,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Archive, RotateCcw, Search } from "lucide-react";
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 
-import {
-  type AllConversationsRow,
-  type ConversationFilter,
-  useAllConversationsData,
-} from "@/domains/settings/hooks/use-all-conversations-data";
+import { useAllConversationsData } from "@/domains/settings/hooks/use-all-conversations-data";
+import type { AllConversationsRow } from "@/domains/settings/hooks/use-all-conversations-data.helpers";
+import type { ConversationFilter } from "@/domains/settings/hooks/use-all-conversations-data.helpers";
 import {
   conversationsByIdArchivePost,
   conversationsByIdUnarchivePost,

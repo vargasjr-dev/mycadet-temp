@@ -7,11 +7,9 @@ import { AllowOptionsMenu } from "@/domains/chat/components/allow-options-menu";
 import { offersRuleOption } from "@/domains/chat/confirmation-decisions";
 import { getRiskBadgeStyle } from "@/domains/chat/utils/risk";
 import type { ConfirmationDecision } from "@/types/event-types";
-import type {
-  AllowlistOption,
-  DirectoryScopeOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { DirectoryScopeOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import { Card } from "@mycadet/design-library";
 
 export interface ConfirmationPromptCardProps {

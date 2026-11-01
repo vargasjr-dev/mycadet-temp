@@ -17,12 +17,13 @@ import {
 } from "@mycadet/plugin-api";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import { getDb } from "../../../../../persistence/db-connection.js";
 import {
   conversations,
   messages,
 } from "../../../../../persistence/schema/index.js";
+import { BackendUnavailableError } from "../../../../../util/errors.js";
 import {
   enqueueGraphNodeEmbed,
   enqueueGraphTriggerEmbed,
@@ -47,7 +48,6 @@ import type {
   SourceType,
   TriggerType,
 } from "../../graph/types.js";
-import { BackendUnavailableError } from "../../host-utils.js";
 import { extractToolUse, userMessage } from "../../llm-helpers.js";
 import { getLogger } from "../../logging.js";
 import { buildIdentityContext } from "../identity-context.js";

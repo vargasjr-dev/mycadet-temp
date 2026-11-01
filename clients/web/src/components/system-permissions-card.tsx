@@ -20,9 +20,9 @@ import {
   openSystemPermissionSettings,
   requestSystemPermission,
   useSystemPermissionsState,
-  type SystemPermissionKind,
-  type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
+import type { SystemPermissionKind } from "@mycadet/ipc-contract";
+import type { SystemPermissionStateItem } from "@mycadet/ipc-contract";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import {
   getDeviceBool,

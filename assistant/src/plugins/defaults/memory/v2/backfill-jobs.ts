@@ -21,7 +21,7 @@ import {
   stringifyMessageContent,
 } from "@mycadet/plugin-api";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { getMemoryDb } from "../../../../persistence/db-connection.js";
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
 import { getLogger } from "../logging.js";

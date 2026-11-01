@@ -33,8 +33,6 @@ import {
   type ModeSessionDescriptor,
 } from "@mycadet/assistant-api";
 
-export type { PaginatedHistoryResult };
-
 const DEFAULT_LATEST_LIMIT = 50;
 const DEFAULT_OLDER_LIMIT = 50;
 

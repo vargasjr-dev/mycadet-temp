@@ -3,7 +3,7 @@ import type {
   CharacterComponents,
   CharacterTraits,
 } from "@/types/avatar";
-import { BUNDLED_COLORS } from "@/utils/avatar-bundled-colors";
+import { AVATAR_COLORS as BUNDLED_COLORS } from "@mycadet/avatar-catalog/colors";
 import { resolveEffectiveTraits } from "@/utils/avatar-render";
 
 /** What the accent is resolved from: the avatar query's cached shape. */

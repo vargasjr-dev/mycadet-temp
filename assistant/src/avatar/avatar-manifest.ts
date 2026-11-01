@@ -21,12 +21,8 @@ import {
   AVATAR_IMAGE_FILENAME,
   AVATAR_MANIFEST_FILENAME,
   AVATAR_TRAITS_FILENAME,
-  type AvatarAccent,
   type AvatarImageMeta,
-  type AvatarKind,
-  type AvatarSource,
   type AvatarState,
-  type CharacterTraits,
   deriveAvatarFromLegacyFiles,
   parseAvatarManifest,
 } from "@mycadet/avatar-manifest";
@@ -36,15 +32,6 @@ import { getLogger } from "../util/logger.js";
 import { paletteAccent } from "./avatar-accent.js";
 
 const log = getLogger("avatar-manifest");
-
-export type {
-  AvatarAccent,
-  AvatarImageMeta,
-  AvatarKind,
-  AvatarSource,
-  AvatarState,
-};
-export type { CharacterTraits };
 
 /** The state an emptied workspace reads as. */
 export const NONE_AVATAR_STATE: Readonly<AvatarState> =

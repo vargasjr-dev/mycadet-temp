@@ -31,7 +31,6 @@ import {
   SAMPLE_PREVIEWS,
 } from "@/domains/chat/components/chat-attachments/attachment-fixtures";
 import {
-  CHAT_INFO_BODY_WIDTH_PX,
   CHAT_INFO_T0,
   CHAT_INFO_TEST_LOCALE,
   installChatInfoDomStubs,
@@ -39,6 +38,7 @@ import {
   makeElementSizeMock,
   makeFrameAsset,
 } from "@/domains/chat/components/chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { t } from "@/i18n";
 import { stubHostLanguage } from "@/i18n/host-language.test-helper";

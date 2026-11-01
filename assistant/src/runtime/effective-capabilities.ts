@@ -16,7 +16,8 @@
  * (capability + guardian-route context → `promptWaitingAllowed`) and predates
  * this module; it stays where it is.
  */
-import type { TrustClass } from "./actor-trust-resolver.js";
+import { TrustClass } from "@mycadet/gateway-client";
+
 import { resolveCapabilities } from "./capabilities.js";
 
 type RawTrustClass = TrustClass | (string & {}) | undefined;

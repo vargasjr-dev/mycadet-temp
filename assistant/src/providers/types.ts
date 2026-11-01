@@ -1,5 +1,4 @@
 import type { ToolDefinition } from "../tools/tool-types.js";
-export type { ToolDefinition };
 
 /**
  * The tool name that activates provider-native web search. Callers append a

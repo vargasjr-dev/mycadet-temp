@@ -10,12 +10,12 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  type ChannelInviteAdapter,
   createInviteAdapterRegistry,
   getInviteAdapterRegistry,
   InviteAdapterRegistry,
   resolveAdapterHandle,
 } from "../runtime/channel-invite-transport.js";
+import type { ChannelInviteAdapter } from "../runtime/channel-invite-types.js";
 
 describe("resolveAdapterHandle", () => {
   test("returns sync handle when only resolveChannelHandle is defined", async () => {

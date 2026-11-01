@@ -6,8 +6,6 @@
 
 import type { CommandIntent, UserMessageAttachment } from "./shared.js";
 
-export type { RecordingOptions } from "../../api/events/recording.js";
-
 // === Client → Server ===
 
 export interface TaskSubmit {

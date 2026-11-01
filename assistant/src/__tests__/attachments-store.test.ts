@@ -29,7 +29,7 @@ import {
   createConversation,
   deleteMessageById,
 } from "../persistence/conversation-crud.js";
-import { getConversationDirPath } from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { rawGet, rawRun } from "../persistence/raw-query.js";

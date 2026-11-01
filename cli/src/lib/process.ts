@@ -21,22 +21,7 @@ import {
 // The process-inspection and stop cluster (command-line reads, cadet
 // verification, SIGTERM→SIGKILL escalation, PID-file stops) lives in
 // `@mycadet/local-mode` now — the lifecycle operations stop processes
-// in-process, and one stop contract serves every caller. Re-exported here so
-// this module's importers stay put during the transition.
-export {
-  isCadetCommandLine,
-  parseTasklistCsv,
-  windowsCommandLineLookupArgs,
-  readProcessCommandLine,
-  readPosixCommandLine,
-  isCadetWindowsProcess,
-  isCadetProcess,
-  isProcessAlive,
-  removeFiles,
-  stopProcess,
-  stopProcessByPidFile,
-} from "@mycadet/local-mode";
-export type { TasklistProcess, ProcessAliveResult } from "@mycadet/local-mode";
+// in-process, and one stop contract serves every caller. Import it directly.
 
 export function executableName(
   name: string,
@@ -177,8 +162,6 @@ export async function resolveProcessState(
 
   return { status: "healthy", pid: result.pid };
 }
-
-export { DAEMON_STOP_TIMEOUT_MS };
 
 /** Stop a service without escalation. Failure preserves PID tracking and aborts capture/replacement. */
 export async function stopProcessGracefully(

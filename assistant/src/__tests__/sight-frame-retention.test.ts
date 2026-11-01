@@ -19,7 +19,7 @@ import {
 } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import { conversations } from "../persistence/schema.js";
+import { conversations } from "../persistence/schema/index.js";
 import type { ContentBlock, Message } from "../providers/types.js";
 import { setConfig } from "./helpers/set-config.js";
 

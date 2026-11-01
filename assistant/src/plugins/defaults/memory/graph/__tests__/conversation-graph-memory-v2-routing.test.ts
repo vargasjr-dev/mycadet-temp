@@ -30,7 +30,7 @@ import {
 import type { Message } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Module mocks (must precede the dynamic imports below)

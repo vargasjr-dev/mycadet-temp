@@ -13,7 +13,7 @@ import {
   isMemoryEnabled,
   usesConceptPageMemory,
 } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { enqueueMemoryJob } from "../../../../persistence/jobs-store.js";
 import { appendBufferAndArchive } from "../buffer-file.js";
 import { formatRememberEntry } from "../buffer-format.js";

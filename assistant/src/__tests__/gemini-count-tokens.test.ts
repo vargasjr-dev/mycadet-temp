@@ -29,7 +29,8 @@ mock.module("@google/genai", () => ({
 }));
 
 import { GeminiProvider } from "../providers/gemini/client.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 const messages: Message[] = [
   { role: "user", content: [{ type: "text", text: "hello" }] },

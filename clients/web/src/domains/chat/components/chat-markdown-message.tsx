@@ -24,7 +24,8 @@ import type { DisplayAttachment } from "@/types/attachment-types";
 import { useAttachmentObjectUrl } from "@/domains/chat/components/chat-attachments/use-attachment-object-url";
 import { useAttachmentPreview } from "@/domains/chat/components/chat-attachments/use-attachment-preview";
 import { defaultUrlTransform } from "react-markdown";
-import { ExternalLinkGlyph, isWebUrl } from "@/components/external-anchor";
+import { ExternalLinkGlyph } from "@mycadet/design-library/components/external-anchor";
+import { isWebUrl } from "@mycadet/design-library/components/external-anchor";
 import { handleNativeAnchorClick } from "@/utils/native-anchor";
 
 import {
@@ -58,8 +59,7 @@ import { useTranslation } from "@/i18n";
 export function isCadetLink(href: string | undefined): boolean {
   return (
     href != null &&
-    (href.startsWith("cadet://workspace/") ||
-      href.startsWith("cadet://host/"))
+    (href.startsWith("cadet://workspace/") || href.startsWith("cadet://host/"))
   );
 }
 

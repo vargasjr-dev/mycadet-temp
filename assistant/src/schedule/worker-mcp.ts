@@ -23,8 +23,6 @@ import {
   markScheduleToolSurfaceStarting,
 } from "./tool-surface-readiness.js";
 
-export { MCP_NOT_READY_DEFER_MS } from "./tool-surface-readiness.js";
-
 const log = getLogger("schedule-worker-mcp");
 
 /**

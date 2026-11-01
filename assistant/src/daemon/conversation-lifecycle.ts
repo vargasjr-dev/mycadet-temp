@@ -4,10 +4,14 @@
  * can delegate without exposing its full surface.
  */
 
+import type { TrustClass } from "@mycadet/gateway-client";
+
 import {
   formatImageSourceAnnotation,
   formatStoredPathAnnotation,
 } from "../agent/attachments.js";
+import { SurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import { getConfig } from "../config/loader.js";
 import { usesConceptPageMemory } from "../config/memory-v3-gate.js";
 import type { PermissionPrompter } from "../permissions/prompter.js";
@@ -19,7 +23,6 @@ import {
 } from "../persistence/jobs-store.js";
 import { disposeContextWindowManager } from "../plugins/defaults/compaction/manager-store.js";
 import type { ContentBlock, Message } from "../providers/types.js";
-import { type TrustClass } from "../runtime/actor-trust-resolver.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
 import { isAutoAnalysisConversation } from "../runtime/services/auto-analysis-guard.js";
 import { unregisterConversationSender } from "../tools/browser/browser-screencast.js";
@@ -39,7 +42,6 @@ import type {
   QueueDrainReason,
 } from "./conversation-queue-manager.js";
 import { resetSkillToolProjection } from "./conversation-skill-tools.js";
-import type { SurfaceData, SurfaceType } from "./message-protocol.js";
 
 const log = getLogger("conversation-lifecycle");
 

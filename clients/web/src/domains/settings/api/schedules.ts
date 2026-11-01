@@ -30,8 +30,6 @@ import type {
   ScheduleUsageSummary,
 } from "@/domains/settings/types/schedules";
 
-export { ApiError };
-
 /** One page of run history plus the cursor for fetching older runs. */
 export interface ScheduleRunsPage {
   runs: ScheduleRun[];

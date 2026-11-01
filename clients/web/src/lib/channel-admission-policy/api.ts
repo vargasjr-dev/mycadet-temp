@@ -29,8 +29,6 @@ import {
   type ChannelPolicyView,
 } from "./types";
 
-export { ApiError };
-
 function isAdmissionPolicy(value: unknown): value is AdmissionPolicy {
   return (
     typeof value === "string" &&

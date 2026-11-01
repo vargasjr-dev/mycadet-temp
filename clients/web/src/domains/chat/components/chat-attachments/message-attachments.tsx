@@ -1,4 +1,4 @@
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import { AttachmentOverflowSquare } from "@/domains/chat/components/chat-attachments/attachment-overflow-square";
 import { useAttachmentSquares } from "@/domains/chat/components/chat-attachments/use-attachment-squares";

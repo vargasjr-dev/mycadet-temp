@@ -1,7 +1,5 @@
-import type {
-  FormField,
-  FormSurfaceData,
-} from "../../daemon/message-protocol.js";
+import { FormField } from "../../api/surfaces.js";
+import { FormSurfaceData } from "../../api/surfaces.js";
 import type { AuthChallenge, AuthField } from "./auth-detector.js";
 
 /**

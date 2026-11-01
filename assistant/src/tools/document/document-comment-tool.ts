@@ -6,7 +6,7 @@ import {
   listComments,
   resolveComment,
 } from "../../documents/document-comments-store.js";
-import { throwIfCancelled } from "../shared/abort.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { invalidToolInputResult } from "../shared/zod-tool-schema.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 import { canAccessDocument, documentNotFound } from "./document-tool.js";

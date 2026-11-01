@@ -28,7 +28,6 @@ import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 
 import {
-  CHAT_INFO_BODY_WIDTH_PX,
   clearTranscriptMessages,
   holdOrgHeaderUnresolved,
   installChatInfoDomStubs,
@@ -38,6 +37,7 @@ import {
   seedChatInfoConversation,
   seedTranscriptMessages,
 } from "./chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const restoreDomStubs = installChatInfoDomStubs();

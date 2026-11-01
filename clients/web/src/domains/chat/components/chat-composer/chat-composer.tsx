@@ -97,9 +97,9 @@ import {
 import {
   EMOJI_MIN_FILTER_LENGTH,
   EMOJI_TRIGGER_RE,
-  type EmojiEntry,
   useEmojiSearch,
 } from "@/domains/chat/components/chat-composer/emoji-catalog";
+import type { EmojiEntry } from "./emoji-catalog-data";
 import { EmojiPickerPopup } from "@/domains/chat/components/chat-composer/emoji-picker-popup";
 import {
   applyMarkdownFormatting,

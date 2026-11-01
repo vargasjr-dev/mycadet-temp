@@ -1,6 +1,5 @@
 import {
   type DiskPressureBlockedCapability,
-  type DiskPressureState,
   type DiskPressureStatus,
 } from "../api/events/disk-pressure-status-changed.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
@@ -36,12 +35,6 @@ export const DISK_PRESSURE_BLOCKED_CAPABILITIES = [
   "background-work",
   "remote-ingress",
 ] as const satisfies readonly DiskPressureBlockedCapability[];
-
-export {
-  type DiskPressureBlockedCapability,
-  type DiskPressureState,
-  type DiskPressureStatus,
-};
 
 export type DiskPressureTransitionResult =
   | { ok: true; status: DiskPressureStatus }

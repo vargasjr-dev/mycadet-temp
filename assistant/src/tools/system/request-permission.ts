@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-import { RiskLevel } from "../../permissions/types.js";
 import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

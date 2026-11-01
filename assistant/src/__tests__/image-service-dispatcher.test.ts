@@ -82,11 +82,8 @@ mock.module("../media/openrouter-image-service.js", () => ({
 }));
 
 // Import after mocking
-import {
-  generateImage,
-  mapImageGenError,
-  providerForModel,
-} from "../media/image-service.js";
+import { generateImage, mapImageGenError } from "../media/image-service.js";
+import { providerForModel } from "../media/types.js";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures

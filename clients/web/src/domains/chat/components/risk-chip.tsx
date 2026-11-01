@@ -21,7 +21,7 @@ import { Tooltip, Typography } from "@mycadet/design-library";
 
 import { RiskBadge } from "@/domains/chat/components/risk-badge";
 import { getRiskToleranceHint } from "@/domains/chat/utils/risk";
-import { useHoverCapable } from "@/hooks/use-hover-affordance";
+import { useHoverCapable } from "@mycadet/design-library/utils/hover-capability";
 
 export function RiskChip({ level }: { level?: string }) {
   const hint = getRiskToleranceHint(level);

@@ -15,7 +15,6 @@ import { join } from "node:path";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/remotes/docker.js";
-import * as localMode from "@mycadet/local-mode";
 import * as guardianToken from "../lib/guardian-token.js";
 import { saveGuardianBootstrapSecret } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -56,27 +55,21 @@ const getDaemonPidPathMock = mock<typeof local.getDaemonPidPath>((entry) =>
   ),
 );
 
-mock.module("@mycadet/local-mode", () => ({
-  ...realLocalMode,
-  saveLockfileAssistant: saveLockfileAssistantMock,
-  loadAllAssistants: loadAllAssistantsMock,
-}));
-
 mock.module("../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
   resolveTargetAssistant: resolveTargetAssistantMock,
 }));
 
-const dockerResourceNamesMock = mock<typeof localMode.dockerResourceNames>(
-  localMode.dockerResourceNames,
-);
+const dockerResourceNamesMock = mock<
+  typeof localModeModule.dockerResourceNames
+>(localModeModule.dockerResourceNames);
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
 const recreateDockerContainersMock = mock<
   typeof docker.recreateDockerContainers
 >(async () => {});
 
 mock.module("@mycadet/local-mode", () => ({
-  ...localMode,
+  ...localModeModule,
   dockerResourceNames: dockerResourceNamesMock,
 }));
 mock.module("../lib/remotes/docker.js", () => ({
@@ -116,19 +109,12 @@ const resolveProcessStateMock = mock<typeof processLib.resolveProcessState>(
     pid: label === "Gateway" ? 456 : 123,
   }),
 );
-const stopProcessByPidFileMock = mock<typeof processLib.stopProcessByPidFile>(
-  async () => true,
-);
-const isProcessAliveMock = mock<typeof processLib.isProcessAlive>(() => ({
+const stopProcessByPidFileMock = mock<
+  typeof localModeModule.stopProcessByPidFile
+>(async () => true);
+const isProcessAliveMock = mock<typeof localModeModule.isProcessAlive>(() => ({
   alive: false,
   pid: null,
-}));
-
-mock.module("../lib/process", () => ({
-  ...realProcessLib,
-  resolveProcessState: resolveProcessStateMock,
-  stopProcessByPidFile: stopProcessByPidFileMock,
-  isProcessAlive: isProcessAliveMock,
 }));
 
 const findOpenPortMock = mock<typeof portAllocator.findOpenPort>(
@@ -196,16 +182,33 @@ const realNginxIngress = { ...nginxIngress };
 const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
   async () => ({ port: 7840, started: true, shellMode: "web" }),
 );
-const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
+const isIngressRunningMock = mock<typeof localModeModule.isIngressRunning>(
   () => false,
 );
-const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
+const readIngressStateMock = mock<typeof localModeModule.readIngressState>(
   () => null,
 );
 
 mock.module("../lib/servers/nginx.js", () => ({
   ...realNginxIngress,
   ensureAppServer: ensureAppServerMock,
+}));
+
+// resolveProcessState still lives in cli/src/lib/process.ts (the file owns
+// it) — mock it there. The process-STOP cluster and the ingress reads moved
+// to the package (process.ts and servers/nginx.ts no longer re-export them) —
+// mock those where the wake path imports them now.
+mock.module("../lib/process", () => ({
+  ...realProcessLib,
+  resolveProcessState: resolveProcessStateMock,
+}));
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
+  loadAllAssistants: loadAllAssistantsMock,
+  dockerResourceNames: dockerResourceNamesMock,
+  stopProcessByPidFile: stopProcessByPidFileMock,
+  isProcessAlive: isProcessAliveMock,
   isIngressRunning: isIngressRunningMock,
   readIngressState: readIngressStateMock,
 }));

@@ -16,7 +16,7 @@
     "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
     "prebuild": "node scripts/copy-skill-assets.mjs",
     "build": "bun install && bun --bun vite build",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 13",
     "audit:cross-domain": "node scripts/audit-cross-domain-imports.mjs",
     "audit:cross-domain:check": "node scripts/audit-cross-domain-imports.mjs --check",
     "pretypecheck": "bun run openapi-ts",

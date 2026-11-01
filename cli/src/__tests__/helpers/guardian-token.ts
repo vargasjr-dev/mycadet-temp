@@ -1,4 +1,4 @@
-import type { GuardianTokenData } from "../../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 
 /**
  * A complete `GuardianTokenData` fixture with per-test overrides — the type's

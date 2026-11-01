@@ -2,14 +2,15 @@
 // Shared embedding utility with retry + exponential backoff
 // ---------------------------------------------------------------------------
 
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { getLogger } from "../../util/logger.js";
 import {
   abortableSleep,
   computeRetryDelay,
   isRetryableNetworkError,
 } from "../../util/retry.js";
-import { type EmbeddingInput, embedWithBackend } from "./embedding-backend.js";
+import { embedWithBackend } from "./embedding-backend.js";
+import type { EmbeddingInput } from "./embedding-types.js";
 
 const log = getLogger("memory-embed");
 

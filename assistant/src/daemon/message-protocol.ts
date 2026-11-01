@@ -7,16 +7,6 @@
  */
 
 // Re-export domain modules (all individual types remain importable)
-export * from "./message-types/computer-use.js";
-export * from "./message-types/conversations.js";
-export * from "./message-types/diagnostics.js";
-export * from "./message-types/host-browser.js";
-export * from "./message-types/messages.js";
-export * from "./message-types/notifications.js";
-export * from "./message-types/shared.js";
-export * from "./message-types/skills.js";
-export * from "./message-types/surfaces.js";
-export * from "./message-types/sync.js";
 
 // Client-message domain aliases for the ClientMessage union.
 import type { _ComputerUseClientMessages } from "./message-types/computer-use.js";

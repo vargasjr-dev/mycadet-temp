@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveRoutingIdentity } from "../../providers/connection-resolution.js";
 import { resolveModelIntent } from "../../providers/model-intents.js";
+import { resolveRoutingIdentity } from "../../providers/routing-identity.js";
 import { CALL_SITE_DEFAULTS } from "../call-site-defaults.js";
 import {
   CODE_DEFAULT_PROFILE_ENTRIES,

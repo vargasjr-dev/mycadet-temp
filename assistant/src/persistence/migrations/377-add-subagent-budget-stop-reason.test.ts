@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateAddSubagentBudgetStopReason } from "./377-add-subagent-budget-stop-reason.js";
 
 function createTestDb() {

@@ -31,7 +31,9 @@ import { getLogger } from "../util/logger.js";
 import { getConversationAttachmentsDirPath } from "./conversation-directories.js";
 import { getDb } from "./db-connection.js";
 import { rawAll, rawGet, rawRun } from "./raw-query.js";
-import { attachments, messageAttachments, messages } from "./schema.js";
+import { attachments } from "./schema/index.js";
+import { messageAttachments } from "./schema/index.js";
+import { messages } from "./schema/index.js";
 
 export interface StoredAttachment {
   id: string;

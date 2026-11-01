@@ -27,8 +27,8 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const userMessage: Message = {

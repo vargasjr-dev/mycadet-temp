@@ -48,6 +48,7 @@ import semver from "semver";
 import { z } from "zod";
 
 import assistantPkg from "../../package.json" with { type: "json" };
+import { HookFunction } from "../plugin-api/types.js";
 import { PLUGIN_SECRET_PATTERN_LIMITS } from "../security/plugin-secret-patterns.js";
 import { finalizeTool } from "../tools/tool-defaults.js";
 import type { Tool, ToolDefinition } from "../tools/types.js";
@@ -58,7 +59,6 @@ import {
 } from "../util/plugin-manifest.js";
 import { registerPlugin } from "./registry.js";
 import type {
-  HookFunction,
   Plugin,
   PluginCredentialKeyPattern,
   PluginHooks,

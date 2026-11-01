@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 import { migrateScheduleSkillScriptHandoff } from "./351-schedule-skill-script-handoff.js";
 import { migrateDropScheduleSkillScriptHandoff } from "./352-drop-schedule-skill-script-handoff.js";
 

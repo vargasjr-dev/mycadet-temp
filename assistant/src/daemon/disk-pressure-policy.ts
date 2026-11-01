@@ -1,8 +1,8 @@
+import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 import type { InterfaceId } from "../channels/types.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
 import { isContactTrustClass } from "../runtime/trust-class.js";
-import type { DiskPressureStatus } from "./disk-pressure-guard.js";
 import type { ConversationType } from "./message-types/shared.js";
 import type { TrustContext } from "./trust-context-types.js";
 

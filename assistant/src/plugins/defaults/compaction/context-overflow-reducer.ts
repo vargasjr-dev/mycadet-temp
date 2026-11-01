@@ -25,9 +25,10 @@
  * `state.exhausted` is true.
  */
 
+import { TrustClass } from "@mycadet/gateway-client";
 import type { Message } from "@mycadet/plugin-api";
 
-import type { ContextWindowConfig } from "../../../config/types.js";
+import { ContextWindowConfig } from "../../../config/schemas/inference.js";
 import {
   estimateContentBlockTokens,
   estimatePromptTokens,
@@ -39,7 +40,6 @@ import {
   stripMediaPayloadsForRetry,
 } from "../../../daemon/conversation-media-retry.js";
 import type { InjectionMode } from "../../../daemon/conversation-runtime-assembly.js";
-import type { TrustClass } from "../../../runtime/actor-trust-resolver.js";
 import { getLogger } from "../../../util/logger.js";
 import { defaultCompact, defaultEmergencyCompact } from "./compact.js";
 import type {

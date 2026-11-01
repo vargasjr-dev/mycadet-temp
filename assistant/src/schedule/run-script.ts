@@ -1,9 +1,8 @@
+import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellSpawnFlags } from "@mycadet/environments/shell";
+
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";
-import {
-  buildShellInvocation,
-  buildShellSpawnFlags,
-  terminateProcessTree,
-} from "../util/host-process.js";
+import { terminateProcessTree } from "../util/host-process.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { safeStringSlice } from "../util/unicode.js";

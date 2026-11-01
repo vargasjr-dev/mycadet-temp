@@ -13,8 +13,6 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";
 import { openExternalUrl } from "@/runtime/browser";
 
-export type { MutationStatus };
-
 const BOTFATHER_URL = "https://t.me/BotFather";
 
 const WIZARD_STEP_IDS = ["create", "connect"] as const;

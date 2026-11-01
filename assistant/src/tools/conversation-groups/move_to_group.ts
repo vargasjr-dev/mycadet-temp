@@ -5,8 +5,8 @@ import {
   getConversation,
   getDisplayMetaForConversations,
 } from "../../persistence/conversation-crud.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { publishConversationListAndMetadataChanged } from "../../runtime/sync/resource-sync-events.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

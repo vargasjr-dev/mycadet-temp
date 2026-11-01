@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { getWorkspaceDir } from "./credential-reader.js";
+import { getWorkspaceDir } from "./paths.js";
 
 export const CONFIG_FILENAME = "config.json";
 

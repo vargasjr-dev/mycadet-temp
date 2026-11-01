@@ -7,10 +7,8 @@
  * video content.
  */
 
-import {
-  isAbortLikeError,
-  throwIfCancelled,
-} from "../../../../tools/shared/abort.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
+import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,
@@ -24,8 +22,6 @@ import {
 // ---------------------------------------------------------------------------
 // Exported function for job handler use (one-shot merge mode)
 // ---------------------------------------------------------------------------
-
-export { reduceForAsset } from "../services/reduce.js";
 
 // ---------------------------------------------------------------------------
 // Tool entry point

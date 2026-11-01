@@ -27,8 +27,8 @@ import {
 } from "bun:test";
 
 import type { AdmissionPolicy, TrustVerdict } from "@mycadet/gateway-client";
+import { TrustClass } from "@mycadet/gateway-client";
 
-import type { TrustClass } from "../../runtime/actor-trust-resolver.js";
 import type { SetupOutcome } from "../call-setup-router.js";
 import type { CallSession } from "../types.js";
 

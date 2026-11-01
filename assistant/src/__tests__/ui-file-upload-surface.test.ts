@@ -1,11 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import { FileUploadSurfaceDataSchema } from "../api/surfaces.js";
-import type {
-  FileUploadSurfaceData,
-  UiSurfaceShowFileUpload,
-} from "../daemon/message-protocol.js";
-import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-protocol.js";
+import { FileUploadSurfaceData } from "../api/surfaces.js";
+import { UiSurfaceShowFileUpload } from "../daemon/message-types/surfaces.js";
+import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-types/surfaces.js";
 import { explicitTools } from "../tools/tool-manifest.js";
 import { uiShowTool } from "../tools/ui-surface/definitions.js";
 

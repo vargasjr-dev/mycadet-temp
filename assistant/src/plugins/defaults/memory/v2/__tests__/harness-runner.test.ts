@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import type { OracleTurn } from "../harness/oracle.js";
 import type { ReconstructedInput } from "../harness/replay-input.js";
 import type {

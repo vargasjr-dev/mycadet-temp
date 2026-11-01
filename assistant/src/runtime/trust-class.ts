@@ -22,8 +22,6 @@
 
 import type { TrustClass } from "@mycadet/gateway-client";
 
-export type { TrustClass };
-
 /**
  * Whether a trust class names a known non-guardian contact — the
  * `trusted_contact` / `unverified_contact` pair whose admission-only

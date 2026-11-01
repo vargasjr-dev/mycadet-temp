@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { PanelItem } from "@mycadet/design-library";
 
-import type { EmojiEntry } from "@/domains/chat/components/chat-composer/emoji-catalog";
+import { EmojiEntry } from "./emoji-catalog-data";
 
 interface EmojiPickerPopupProps {
   entries: EmojiEntry[];

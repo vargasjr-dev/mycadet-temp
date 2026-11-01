@@ -7,12 +7,11 @@
 // history, undo, usage, clear, reorder) is served by the HTTP conversation
 // routes, not by client messages.
 
-import type {
-  ChannelId,
-  HostProxyInterfaceId,
-  InterfaceId,
-} from "../../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
+import type { InterfaceId } from "../../channels/types.js";
 import { supportsHostProxy } from "../../channels/types.js";
+import { HostProxyInterfaceId } from "../../types/host-capabilities.js";
 
 // === Transport metadata ===
 

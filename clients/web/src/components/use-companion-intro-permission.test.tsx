@@ -9,11 +9,9 @@ import {
   test,
 } from "bun:test";
 import type { CompanionIntroBeat } from "@mycadet/ipc-contract";
-import type {
-  SystemPermissionKind,
-  SystemPermissionsState,
-  SystemPermissionStateItem,
-} from "@/runtime/system-permissions";
+import { SystemPermissionKind } from "@mycadet/ipc-contract";
+import { SystemPermissionStateItem } from "@mycadet/ipc-contract";
+import { SystemPermissionsState } from "@mycadet/ipc-contract";
 
 import { permissionItem as item } from "./companion-intro-fixtures";
 
@@ -48,9 +46,7 @@ let setupSupported = false;
 const cancelGuide = mock(() => undefined);
 const beginGuide = mock(async (kind: SystemPermissionKind) => current[kind]);
 const foreground = mock(async () => undefined);
-const frontmost = mock(
-  async (): Promise<string | null> => "com.example.cadet",
-);
+const frontmost = mock(async (): Promise<string | null> => "com.example.cadet");
 mock.module("@/runtime/running-apps", () => ({
   frontmostApp: frontmost,
 }));

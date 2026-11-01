@@ -123,7 +123,7 @@ const { createSurfaceMutex, handleSurfaceAction } =
 type Conversation = import("../../daemon/conversation.js").Conversation;
 type TrustContext = import("../trust-context-types.js").TrustContext;
 type AssistantEvent = import("../../api/index.js").AssistantEvent;
-type SurfaceType = import("../message-protocol.js").SurfaceType;
+type SurfaceType = import("../../api/surfaces.js").SurfaceType;
 
 // ── Harness reset helper ───────────────────────────────────────────
 

@@ -67,9 +67,6 @@ import {
 } from "./routing-identity.js";
 import type { Provider } from "./types.js";
 
-export { ConnectionResolutionError, resolveRoutingIdentity };
-export { dispatchProviderResolvable } from "./provider-resolvability.js";
-
 const log = getLogger("providers/connection-resolution");
 
 /**

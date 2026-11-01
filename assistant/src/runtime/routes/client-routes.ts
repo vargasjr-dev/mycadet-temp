@@ -5,17 +5,15 @@
  * separate registry. Clients register as hub subscribers via SSE /events.
  */
 
+import { DESKTOP_PRESENCE_STATES } from "@mycadet/service-contracts/desktop-presence";
 import { z } from "zod";
 
-import type { HostProxyCapability } from "../../channels/types.js";
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { listClientConnectionHistory } from "../../persistence/client-connection-events-store.js";
+import { HostProxyCapability } from "../../types/host-capabilities.js";
 import { datesToISO } from "../../util/json.js";
 import { getLogger } from "../../util/logger.js";
-import {
-  assistantEventHub,
-  DESKTOP_PRESENCE_STATES,
-} from "../assistant-event-hub.js";
+import { assistantEventHub } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   DEFAULT_HEARTBEAT_INTERVAL_MS,

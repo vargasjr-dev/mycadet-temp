@@ -411,4 +411,3 @@ function isEnabled(value: unknown, ctx: SectionRenderContext): boolean {
 
 // Re-export the registry type so callers (rare) can introspect bundled
 // content without reaching into the templates directory directly.
-export type { BundledSection };

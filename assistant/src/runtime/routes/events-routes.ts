@@ -23,11 +23,12 @@ import { type IntervalHistogram, monitorEventLoopDelay } from "node:perf_hooks";
 import { sanitizeClientMetadataValue } from "@mycadet/service-contracts/client-metadata";
 import { z } from "zod";
 
-import type { HostProxyCapability, InterfaceId } from "../../channels/types.js";
+import type { InterfaceId } from "../../channels/types.js";
 import { parseInterfaceId, supportsHostProxy } from "../../channels/types.js";
 import { notifyContactsChanged } from "../../contacts/notify-contacts-changed.js";
 import { getConversation } from "../../persistence/conversation-crud.js";
 import { getOrCreateConversation } from "../../persistence/conversation-key-store.js";
+import { HostProxyCapability } from "../../types/host-capabilities.js";
 import { getLogger } from "../../util/logger.js";
 import { formatSseFrame, formatSseHeartbeat } from "../assistant-event.js";
 import type {

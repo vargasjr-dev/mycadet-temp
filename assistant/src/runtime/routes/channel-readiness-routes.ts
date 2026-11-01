@@ -5,9 +5,10 @@
  * POST  /v1/channels/readiness/refresh  — invalidate cache and refresh readiness
  */
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
-import { CHANNEL_IDS, type ChannelId } from "../../channels/types.js";
 import { getReadinessService } from "../../daemon/handlers/config-channels.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {

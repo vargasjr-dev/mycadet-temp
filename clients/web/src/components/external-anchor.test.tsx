@@ -26,7 +26,8 @@ mock.module("@/runtime/browser", () => ({
   },
 }));
 
-import { ExternalAnchor, isWebUrl } from "@/components/external-anchor";
+import { ExternalAnchor } from "@/components/external-anchor";
+import { isWebUrl } from "@mycadet/design-library/components/external-anchor";
 import { FileMarkdown } from "@/components/file-markdown";
 
 afterEach(() => {

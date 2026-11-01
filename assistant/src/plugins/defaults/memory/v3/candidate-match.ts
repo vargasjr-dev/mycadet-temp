@@ -22,7 +22,7 @@
 import { listInstalledSkills } from "@mycadet/plugin-api";
 
 import { getConfig } from "../../../../config/loader.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   EMBED_BASE_DELAY_MS,
   EMBED_MAX_RETRIES,

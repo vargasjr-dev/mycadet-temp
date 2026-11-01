@@ -1,8 +1,6 @@
-import {
-  type DiskPressureBlockedCapability,
-  type DiskPressureStatus,
-  getDiskPressureStatus,
-} from "./disk-pressure-guard.js";
+import type { DiskPressureBlockedCapability } from "../api/events/disk-pressure-status-changed.js";
+import type { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
+import { getDiskPressureStatus } from "./disk-pressure-guard.js";
 
 export type DiskPressureBackgroundGateDecision =
   | { action: "allow"; status: DiskPressureStatus }

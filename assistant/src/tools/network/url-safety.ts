@@ -10,7 +10,6 @@ export type ResolveHostAddresses = (hostname: string) => Promise<string[]>;
 // The URL input-shape predicates are defined once, beside the canonicalizer
 // the gateway builds trust-rule patterns with, so what counts as a `host:port`
 // or a path here is what counts there. Re-exported for existing consumers.
-export { looksLikeHostPortShorthand, looksLikePathOnlyInput };
 
 export function parseUrl(input: unknown): URL | null {
   if (typeof input !== "string") {

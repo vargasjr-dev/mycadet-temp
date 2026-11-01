@@ -12,6 +12,7 @@
  * https://docs.slack.dev/reference/block-kit/blocks/card-block
  */
 
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
 import type { Button, CardBlock, ContextBlock, KnownBlock } from "@slack/types";
 
 import {
@@ -19,7 +20,6 @@ import {
   updateSlackMessage,
 } from "../../messaging/providers/slack/send.js";
 import { APPROVAL_INSTRUCTION_BLOCK_ID_PREFIX } from "../../messaging/providers/slack/withdraw.js";
-import type { ApprovalUIMetadata } from "../../runtime/channel-approval-types.js";
 import { getLogger } from "../../util/logger.js";
 import {
   accessRequestCardSubtitle,

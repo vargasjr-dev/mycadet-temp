@@ -22,12 +22,12 @@ import {
   sendChannelReaction,
   supportsChannelReaction,
 } from "../../messaging/providers/index.js";
-import { RiskLevel } from "../../permissions/types.js";
-import { throwIfCancelled } from "../shared/abort.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

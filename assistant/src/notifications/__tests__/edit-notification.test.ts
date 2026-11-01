@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { FeedItem } from "../../home/feed-types.js";
+import { FeedItem } from "../../api/responses/home.js";
 import {
   setBroadcastOverrideForTesting,
   setHubPublishOverrideForTesting,

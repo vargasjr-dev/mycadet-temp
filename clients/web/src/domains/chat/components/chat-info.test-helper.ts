@@ -50,7 +50,6 @@ import * as appHtmlCache from "@/utils/app-html-cache";
 export const CHAT_INFO_T0 = 1_760_000_000_000;
 
 /** Re-exported so a fixture, a test, and the panel cannot drift on the width. */
-export { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 
 /**
  * The narrowest phone the app's designs are drawn for, screen width and all.

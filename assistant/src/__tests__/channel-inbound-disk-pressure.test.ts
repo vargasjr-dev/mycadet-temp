@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
 
-import type { DiskPressureStatus } from "../daemon/disk-pressure-guard.js";
+import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 
 const deliverChannelReplyMock = mock(
   async (_callbackUrl: string, _payload: Record<string, unknown>) => {},
@@ -59,11 +59,11 @@ import { channelInboundEvents, messages } from "../persistence/schema/index.js";
 import { sweepFailedEvents } from "../runtime/channel-retry-sweep.js";
 import {
   handleChannelInbound,
-  seedContactChannel,
   setAdapterProcessMessage,
 } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 import { bridgeState } from "./helpers/gateway-guardian-requests-store-bridge.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

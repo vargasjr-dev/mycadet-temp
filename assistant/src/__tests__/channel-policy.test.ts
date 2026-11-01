@@ -8,6 +8,9 @@
 
 import { describe, expect, test } from "bun:test";
 
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
+
 import {
   type ConversationStrategy,
   getChannelPolicy,
@@ -15,7 +18,6 @@ import {
   getDeliverableChannels,
   isNotificationDeliverable,
 } from "../channels/config.js";
-import { CHANNEL_IDS, type ChannelId } from "../channels/types.js";
 import { getTransportForChannel } from "../messaging/providers/index.js";
 
 describe("channel policy registry", () => {

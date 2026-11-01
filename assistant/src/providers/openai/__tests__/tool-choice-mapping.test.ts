@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { Message, ToolDefinition } from "../../types.js";
+import { ToolDefinition } from "../../../tools/tool-types.js";
+import type { Message } from "../../types.js";
 import {
   isThinkingEnabledOnWire,
   mapNeutralToolChoice,

@@ -14,6 +14,7 @@ import type { Command } from "commander";
 import { cliIpcCall } from "../../ipc/cli-client.js";
 import { stripAnsiAndControlChars } from "../../util/ansi.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
+import { getCliLogger } from "../../util/logger.js";
 import { truncate } from "../../util/truncate.js";
 import { resolveBundledCliModule } from "../bundled-modules.js";
 import { yellow } from "../lib/cli-colors.js";
@@ -54,7 +55,6 @@ import {
 } from "../lib/toggle-plugin.js";
 import type { PluginUninstallWarningKey } from "../lib/uninstall-plugin.js";
 import type { PluginUpgradeResult } from "../lib/upgrade-plugin.js";
-import { getCliLogger } from "../logger.js";
 import { PLUGINS_SEARCH_INSTALL_HINT, pluginsHelp } from "./plugins.help.js";
 
 const loadModule = createRequire(import.meta.url);

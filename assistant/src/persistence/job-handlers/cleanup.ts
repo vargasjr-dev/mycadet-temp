@@ -1,4 +1,4 @@
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { HOOKS } from "../../plugin-api/constants.js";
 import { runHook } from "../../plugins/pipeline.js";
 import { getLogger } from "../../util/logger.js";

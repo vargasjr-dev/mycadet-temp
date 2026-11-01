@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 
 const CONFIG = {
   memory: { qdrant: { url: "http://127.0.0.1:6333", vectorSize: 768 } },

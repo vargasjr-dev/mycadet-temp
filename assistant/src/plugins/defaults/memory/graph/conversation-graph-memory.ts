@@ -22,7 +22,7 @@ import {
   isMemoryEnabled,
   isV2InjectionEngineActive,
 } from "../../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { estimateTextTokens } from "../../../../context/token-estimator.js";
 import { getDb, getMemoryDb } from "../../../../persistence/db-connection.js";
 import { embedWithRetry } from "../../../../persistence/embeddings/embed.js";

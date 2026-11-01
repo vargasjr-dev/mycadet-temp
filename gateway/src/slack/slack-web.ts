@@ -14,7 +14,6 @@ const log = getLogger("slack-web");
  * recovered message's `files` carries the same checked shape a live event's
  * does and the catch-up path can build an event from one without a cast.
  */
-export type { SlackHistoryMessage };
 
 type SlackHistoryResponse = {
   ok: boolean;

@@ -1,4 +1,7 @@
 import type { MessageAudience } from "@mycadet/gateway-client";
+import { ChannelDeliveryResult } from "@mycadet/gateway-client";
+import { containsNoResponseMarker } from "@mycadet/service-contracts/no-response";
+import { stripNoResponseMarkers } from "@mycadet/service-contracts/no-response";
 
 import { stripCadetLinks } from "../daemon/assistant-attachments.js";
 import type { RenderedHistoryContent } from "../daemon/handlers/shared.js";
@@ -13,13 +16,8 @@ import {
 } from "../persistence/conversation-crud.js";
 import { isReactionMessageMetadata } from "../persistence/conversation-types.js";
 import { getLogger } from "../util/logger.js";
-import type { ChannelDeliveryResult } from "./gateway-client.js";
 import { deliverChannelReply } from "./gateway-client.js";
 import type { RuntimeAttachmentMetadata } from "./http-types.js";
-import {
-  containsNoResponseMarker,
-  stripNoResponseMarkers,
-} from "./no-response.js";
 import { makeSentMessageIdReconciler } from "./outbound-post-reconciliation.js";
 
 const log = getLogger("channel-reply-delivery");

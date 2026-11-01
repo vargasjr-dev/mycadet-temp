@@ -1,8 +1,8 @@
 import { z } from "zod";
 
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { deleteSchedule, getSchedule } from "../../schedule/schedule-store.js";
 import { UserError } from "../../util/errors.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

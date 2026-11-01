@@ -9,7 +9,6 @@
 
 import { useEffect, useState } from "react";
 
-export type { EmojiEntry } from "./emoji-catalog-data";
 import type { EmojiEntry } from "./emoji-catalog-data";
 
 /**

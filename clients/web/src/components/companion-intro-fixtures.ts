@@ -1,7 +1,5 @@
-import type {
-  SystemPermissionKind,
-  SystemPermissionStateItem,
-} from "@/runtime/system-permissions";
+import { SystemPermissionKind } from "@mycadet/ipc-contract";
+import { SystemPermissionStateItem } from "@mycadet/ipc-contract";
 import type { CompanionIntroPermission } from "./use-companion-intro-permission";
 
 export function permissionItem(

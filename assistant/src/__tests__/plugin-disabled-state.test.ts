@@ -16,7 +16,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { getHooksFor } from "../hooks/registry.js";
-import { RiskLevel } from "../permissions/types.js";
+import type { HookFunction } from "../plugin-api/types.js";
 import {
   clearInjectorRegistry,
   getRegisteredInjectors,
@@ -28,16 +28,13 @@ import {
   resetPluginRegistryForTests,
   unregisterPlugin,
 } from "../plugins/registry.js";
-import {
-  type HookFunction,
-  type Injector,
-  type Plugin,
-} from "../plugins/types.js";
+import { type Injector, type Plugin } from "../plugins/types.js";
 import {
   getAllToolDefinitions,
   getPluginToolDefinitions,
   registerPluginTools,
 } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 const TEST_WORKSPACE_DIR = join(

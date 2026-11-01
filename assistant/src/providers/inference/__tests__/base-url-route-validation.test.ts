@@ -64,13 +64,13 @@ const {
   parseUrl,
   unwrapBracketedHostname,
   extractEmbeddedIPv4FromIPv6,
-  looksLikeHostPortShorthand,
-  looksLikePathOnlyInput,
   buildHostHeader,
   stripUrlUserinfo,
   sanitizeUrlForOutput,
   sanitizeUrlStringForOutput,
 } = await import("../../../tools/network/url-safety.js");
+const { looksLikeHostPortShorthand, looksLikePathOnlyInput } =
+  await import("@mycadet/service-contracts/url-normalization");
 
 mock.module("../../../tools/network/url-safety.js", () => ({
   isPrivateOrLocalHost: realIsPrivateOrLocalHost,

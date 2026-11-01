@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { HostProxyInterfaceId, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
 import { supportsHostProxy } from "../channels/types.js";
 import type {
   ConversationTransportMetadata,
@@ -8,6 +8,7 @@ import type {
   NonHostProxyTransportMetadata,
 } from "../daemon/message-types/conversations.js";
 import { isHostProxyTransport } from "../daemon/message-types/conversations.js";
+import { HostProxyInterfaceId } from "../types/host-capabilities.js";
 
 // ---------------------------------------------------------------------------
 // supportsHostProxy — runtime behavior

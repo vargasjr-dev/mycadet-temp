@@ -17,10 +17,8 @@ import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
 
-import type {
-  HostUiSnapshotResultPayload,
-  HostUiSnapshotView,
-} from "../../daemon/message-types/host-ui-snapshot.js";
+import { HostUiSnapshotView } from "../../api/events/host-ui-snapshot.js";
+import type { HostUiSnapshotResultPayload } from "../../daemon/message-types/host-ui-snapshot.js";
 import { readWorkspaceTheme } from "../../theme/workspace-theme.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS, LOCAL_PRINCIPALS } from "../auth/route-policy.js";

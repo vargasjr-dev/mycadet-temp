@@ -12,9 +12,9 @@
  */
 
 import type { GuardianDelivery } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 import { isNotificationDeliverable } from "../channels/config.js";
-import type { ChannelId } from "../channels/types.js";
 import { guardianForChannel } from "../contacts/guardian-delivery-reader.js";
 import { getLogger } from "../util/logger.js";
 import type { ChannelDestination, NotificationChannel } from "./types.js";

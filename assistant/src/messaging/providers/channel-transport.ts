@@ -3,10 +3,10 @@ import type {
   ChannelReplyPayload,
   StreamOp,
 } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import type { ReactionEmojiIdentity } from "@mycadet/service-contracts/reactions";
 
 import type { AssistantActivityPhase } from "../../api/index.js";
-import type { ChannelId } from "../../channels/types.js";
 
 /**
  * Per-channel state carried on the gateway callback URL (e.g. Slack `threadTs`,

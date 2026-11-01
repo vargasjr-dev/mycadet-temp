@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { credentialKey } from "../../security/credential-key.js";
 import {
   clearEmbeddingBackendCache,

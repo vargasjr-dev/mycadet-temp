@@ -18,11 +18,8 @@
 import type { OAuth2Config, OAuth2TokenResult } from "../../security/oauth2.js";
 import { setSecureKeyAsync } from "../../security/secure-keys.js";
 import { getLogger } from "../../util/logger.js";
-import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "./auth.js";
 
 const log = getLogger("chatgpt-subscription-credentials");
-
-export { CHATGPT_SUBSCRIPTION_CONNECTION_NAME };
 
 /** OpenAI's Codex OAuth client. PKCE only, no client secret. */
 export const OPENAI_OAUTH_CONFIG: OAuth2Config = {

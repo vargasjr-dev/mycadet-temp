@@ -20,7 +20,7 @@ import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useSlackConversationDisplay } from "@/domains/chat/hooks/use-slack-conversation-display";
 import { formatSlackConversationDisplayLabel } from "@/domains/chat/utils/slack-conversation-display";
-import { getExternalLinkUrl } from "@/domains/chat/types/types";
+import { getExternalLinkUrl } from "@/utils/external-source-link";
 import { isChannelConversation } from "@/domains/chat/utils/conversation-channel";
 import { getChannelBindingDisplayText } from "@/domains/chat/utils/channel-conversation-display";
 import { getChannelLabel } from "@/utils/channel-presentation";

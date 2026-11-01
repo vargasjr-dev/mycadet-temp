@@ -1,6 +1,9 @@
 import { mkdirSync, rmSync } from "node:fs";
 
 import { TrustClassSchema } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
+import { isChannelId } from "@mycadet/service-contracts/channels";
 import {
   and,
   asc,
@@ -28,9 +31,8 @@ import {
   forgetAllActivationConversations,
 } from "../activation/progress-store.js";
 import { TolerantModeSessionSchema } from "../api/mode-session.js";
-import type { ChannelId, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
 import { parseChannelId, parseInterfaceId } from "../channels/types.js";
-import { CHANNEL_IDS, isChannelId } from "../channels/types.js";
 import { getConfig } from "../config/loader.js";
 import { findDisplayTurnEndIndex } from "../conversations/message-consolidation.js";
 import { findConversation } from "../daemon/conversation-registry.js";
@@ -540,13 +542,6 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
  * pull in this module's DB graph, and are re-exported here alongside the
  * schema they read.
  */
-export {
-  isBackgroundEventMetadata,
-  isEchoSuppressedUserMessage,
-  isHiddenMessageMetadata,
-  isSuppressedQueuedMessage,
-  isVoiceSessionUserMessage,
-} from "./conversation-types.js";
 
 /**
  * The system-card `messageKind` marker and its predicate live in the
@@ -554,13 +549,6 @@ export {
  * marker does not pull in this module's DB graph, and are re-exported here
  * alongside the schema that carries them.
  */
-export {
-  isNoResponseMetadata,
-  isSystemCardMetadata,
-  NO_RESPONSE_MESSAGE_KIND,
-  REACTION_MESSAGE_KIND,
-  SYSTEM_CARD_MESSAGE_KIND,
-} from "./conversation-types.js";
 
 /**
  * `messageKind` value marking the synthetic assistant row the agent loop

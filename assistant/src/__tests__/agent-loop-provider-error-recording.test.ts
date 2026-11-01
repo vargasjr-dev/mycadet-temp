@@ -32,8 +32,8 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { ProviderError } from "../util/errors.js";
 
 /**

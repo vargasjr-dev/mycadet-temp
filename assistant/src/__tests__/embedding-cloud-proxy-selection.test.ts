@@ -29,7 +29,7 @@ mock.module("../config/env.js", () => ({
 
 // Feature flag mock — always returns true (flag is GA'ed)
 
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import {
   clearEmbeddingBackendCache,
   selectEmbeddingBackend,

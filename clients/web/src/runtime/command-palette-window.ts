@@ -7,7 +7,8 @@
  * palette without probing `window.cadet` themselves.
  */
 
-import { isElectron, type CadetCommand } from "@/runtime/is-electron";
+import { isElectron } from "@/runtime/is-electron";
+import type { CadetCommand } from "@mycadet/ipc-contract";
 
 export async function openCommandPaletteWindow(): Promise<boolean> {
   if (!isElectron()) {

@@ -71,8 +71,8 @@ import {
   SCOPE_AWARE_TOOLS,
 } from "../permissions/checker.js";
 import { _clearGlobalCacheForTesting } from "../permissions/gateway-threshold-reader.js";
-import { RiskLevel } from "../permissions/types.js";
 import { registerSkillTools, registerTool } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool } from "../tools/types.js";
 import * as platformModule from "../util/layout.js";
 

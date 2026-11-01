@@ -158,8 +158,9 @@ const { _resetAdapterInstallCacheForTests } =
   await import("../../acp/auto-install.js");
 const { ACP_CLAUDE_OAUTH_MISSING_CODE } =
   await import("../../acp/prepare-agent-env.js");
-const { ACP_CLAUDE_AUTH_REQUIRED_CODE, AcpAuthRequiredError } =
-  await import("../../acp/auth-required.js");
+const { ACP_CLAUDE_AUTH_REQUIRED_CODE } =
+  await import("../../api/events/acp-auth-required.js");
+const { AcpAuthRequiredError } = await import("../../acp/auth-required.js");
 const { hasAcpConnectCardRaised } =
   await import("../../acp/acp-connect-card-state.js");
 const { AcpAgentProcess } = await import("../../acp/agent-process.js");

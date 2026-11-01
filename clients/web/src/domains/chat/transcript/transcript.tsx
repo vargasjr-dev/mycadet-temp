@@ -103,8 +103,8 @@ export interface TranscriptProps {
     riskLevel?: string;
     riskReason?: string;
     input?: Record<string, unknown>;
-    allowlistOptions: import("@/types/interaction-ui-types").AllowlistOption[];
-    scopeOptions: import("@/types/interaction-ui-types").ScopeOption[];
+    allowlistOptions: import("@mycadet/assistant-api").AllowlistOption[];
+    scopeOptions: import("@mycadet/assistant-api").ScopeOption[];
   }) => void;
   /** Set of tool-call ids that should display the "command not recognized"
    *  nudge below their chip. */

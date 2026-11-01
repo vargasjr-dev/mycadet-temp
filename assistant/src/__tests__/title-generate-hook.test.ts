@@ -21,6 +21,9 @@
 
 import { beforeAll, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
+import { PluginLogger } from "../hooks/types.js";
+import { StopContext } from "../hooks/types.js";
+import { UserPromptSubmitContext } from "../hooks/types.js";
 // The title service and conversation CRUD are REAL. The queue functions are
 // pass-through spies on the live module namespace: they record the hook's
 // trigger decision while the real service runs (with no provider configured it
@@ -33,11 +36,6 @@ import {
 import * as titleService from "../persistence/conversation-title-service.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { HOOKS } from "../plugin-api/constants.js";
-import type {
-  PluginLogger,
-  StopContext,
-  UserPromptSubmitContext,
-} from "../plugin-api/types.js";
 import { defaultTitleGeneratePlugin } from "../plugins/defaults/index.js";
 import stop from "../plugins/defaults/title-generate/hooks/stop.js";
 import userPromptSubmit from "../plugins/defaults/title-generate/hooks/user-prompt-submit.js";

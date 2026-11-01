@@ -26,8 +26,6 @@ import {
 } from "./tool-caps.js";
 import { loadWorkspaceMcpConfig } from "./workspace-mcp-config.js";
 
-export type { McpStartupSnapshot } from "./tool-caps.js";
-
 const log = getLogger("mcp-startup");
 
 /**

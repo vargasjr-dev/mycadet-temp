@@ -33,8 +33,9 @@ import {
 import type { LoopToolExecutor } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
-import type { Message, Provider, ToolDefinition } from "../providers/types.js";
+import type { Message, Provider } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const tokenEstimatorRealSnapshot = {

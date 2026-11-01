@@ -23,12 +23,11 @@
 
 import { spawn } from "node:child_process";
 
+import { buildShellInvocation } from "@mycadet/environments/shell";
+
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";
 import { stripAnsiSequences } from "../util/ansi.js";
-import {
-  buildShellInvocation,
-  terminateProcessTree,
-} from "../util/host-process.js";
+import { terminateProcessTree } from "../util/host-process.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("inline-command-runner");

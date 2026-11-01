@@ -19,11 +19,7 @@ import { MESSAGE_KEYS, t } from "../../i18n/index.js";
 import { isPluginDisabled } from "../../plugins/disabled-state.js";
 import { PLUGIN_MCP_MANIFEST } from "../../plugins/mcp-servers.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
-import {
-  InvalidPluginNameError,
-  readInstallMeta,
-  sanitizePluginName,
-} from "./install-from-github.js";
+import { readInstallMeta, sanitizePluginName } from "./install-from-github.js";
 
 /** Plugin is not present in the workspace plugins directory. */
 export class PluginNotInstalledError extends Error {
@@ -158,5 +154,3 @@ export async function uninstallPlugin(
     ...(warnings.length > 0 && { warnings }),
   };
 }
-
-export { InvalidPluginNameError };

@@ -33,7 +33,6 @@ import {
 import { attachmentContentQueryKey } from "@/domains/chat/components/chat-attachments/use-attachment-object-url";
 import {
   attachmentRows,
-  CHAT_INFO_BODY_WIDTH_PX,
   CHAT_INFO_NARROW_PHONE_PX,
   CHAT_INFO_T0,
   clearTranscriptMessages,
@@ -52,8 +51,9 @@ import {
   seedQueryFailure,
   seedTranscriptMessages,
 } from "@/domains/chat/components/chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import type { ConversationFileAsset } from "@/domains/chat/hooks/use-conversation-assets";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import { conversationAttachmentListArgs } from "@/domains/chat/hooks/use-conversation-attachments";
 import {
   attachmentsGetInfiniteQueryKey,

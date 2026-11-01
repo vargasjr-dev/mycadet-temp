@@ -15,7 +15,7 @@
 // `[]`. The orchestrator unions the other lanes (needle, edge) plus carry-
 // forward regardless, so a dense outage narrows recall but never breaks a turn.
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { isEmbeddingDimensionAvailable } from "../../../../persistence/embeddings/embedding-backend.js";
 import { embedWithBackend } from "../embeddings.js";
 import { getLogger } from "../logging.js";

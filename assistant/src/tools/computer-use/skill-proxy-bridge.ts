@@ -5,8 +5,8 @@
  * the proxy resolver, which selects the connected or virtual desktop.
  */
 
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { formatDesktopAppRequired } from "../capability-offer.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 
 /**

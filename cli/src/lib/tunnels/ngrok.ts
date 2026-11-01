@@ -26,7 +26,7 @@ import {
   resolveConfigDir,
   resolveDataDir,
 } from "@mycadet/local-mode";
-import { readProcessCommandLine, stopProcess } from "../process.js";
+import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
 import { z } from "zod";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
 import type {

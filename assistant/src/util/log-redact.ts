@@ -10,8 +10,9 @@
  * so they are safe for this hot-path serializer.
  */
 
+import { REDACTION_PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
+
 import { memoizePluginPatternDerivation } from "../security/plugin-secret-patterns.js";
-import { REDACTION_PREFIX_PATTERNS } from "../security/secret-patterns.js";
 
 // ---------------------------------------------------------------------------
 // Sensitive-value patterns (derived from shared REDACTION_PREFIX_PATTERNS)

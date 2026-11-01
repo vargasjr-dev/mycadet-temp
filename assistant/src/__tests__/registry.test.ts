@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-import { RiskLevel } from "../permissions/types.js";
 import {
   __clearRegistryForTesting,
   __resetRegistryForTesting,
@@ -22,6 +21,7 @@ import {
   unregisterWorkspaceTool,
 } from "../tools/registry.js";
 import { explicitTools } from "../tools/tool-manifest.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 // Clean up global registry after this file completes to prevent

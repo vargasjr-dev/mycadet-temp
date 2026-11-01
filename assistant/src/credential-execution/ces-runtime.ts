@@ -1,3 +1,6 @@
+import type { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
+import type { CesRpcHandshakeOptions as CesClientHandshakeOptions } from "@mycadet/ces-client/rpc-client";
+
 import { getCloudAssistantId } from "../config/env.js";
 import type { AssistantConfig } from "../config/schema.js";
 import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
@@ -10,7 +13,6 @@ import {
 } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import { openCesRpcSession, reconnectCesRpcSession } from "./ces-connect.js";
-import { type CesClient, type CesClientHandshakeOptions } from "./client.js";
 import {
   type CesProcessManager,
   createCesProcessManager,

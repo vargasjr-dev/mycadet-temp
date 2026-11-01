@@ -16,7 +16,7 @@ import {
   filterSkillsByEnabledPlugins,
   loadSkillCatalog,
 } from "../config/skills.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import type { ActiveSkillEntry } from "../skills/active-skill-tools.js";
 import { deriveActiveSkills } from "../skills/active-skill-tools.js";
 import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
@@ -30,6 +30,7 @@ import {
   unregisterSkillTools,
 } from "../tools/registry.js";
 import { createSkillToolsFromManifest } from "../tools/skills/skill-tool-factory.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("conversation-skill-tools");

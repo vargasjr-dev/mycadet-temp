@@ -10,13 +10,12 @@
  * client and no reconnect owner).
  */
 
+import type { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
+import type { CesRpcHandshakeOptions as CesClientHandshakeOptions } from "@mycadet/ces-client/rpc-client";
+
 import type { AssistantConfig } from "../config/schema.js";
 import { getLogger } from "../util/logger.js";
-import {
-  type CesClient,
-  type CesClientHandshakeOptions,
-  createCesClient,
-} from "./client.js";
+import { createCesClient } from "./client.js";
 import {
   type CesProcessManager,
   type CesProcessManagerConfig,

@@ -1,12 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
+import { SyncChangedEventSchema } from "../api/events/sync-changed.js";
 import type { AssistantEvent } from "../api/index.js";
-import {
-  buildSyncChangedMessage,
-  conversationMessagesSyncTag,
-  SYNC_TAGS,
-  SyncChangedEventSchema,
-} from "../daemon/message-protocol.js";
+import { SYNC_TAGS } from "../daemon/message-types/sync.js";
+import { buildSyncChangedMessage } from "../daemon/message-types/sync.js";
+import { conversationMessagesSyncTag } from "../daemon/message-types/sync.js";
 
 describe("sync message contract", () => {
   test("sync_changed is assignable to AssistantEvent", () => {

@@ -71,5 +71,3 @@ export function mapImageGenError(
  *   - `gemini-*`            → `gemini`
  *   - anything else (or `undefined`) → the provided `fallback`
  */
-export type { ImageGenCredentials } from "./types.js";
-export { providerForModel } from "./types.js";

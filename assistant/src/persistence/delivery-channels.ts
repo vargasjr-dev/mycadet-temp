@@ -8,7 +8,7 @@
 import { eq } from "drizzle-orm";
 
 import { getDb } from "./db-connection.js";
-import { channelInboundEvents } from "./schema.js";
+import { channelInboundEvents } from "./schema/index.js";
 
 // ── Per-segment delivery progress ──────────────────────────────────
 //

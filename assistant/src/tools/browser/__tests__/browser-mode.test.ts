@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserMode } from "../browser-mode.js";
 import { normalizeBrowserMode } from "../browser-mode.js";
+import { BrowserMode } from "../cdp-client/types.js";
 
 describe("normalizeBrowserMode", () => {
   // ── Defaults ──────────────────────────────────────────────────────────

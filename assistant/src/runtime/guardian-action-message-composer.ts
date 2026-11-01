@@ -8,11 +8,6 @@
  */
 import type { GuardianActionMessageContext } from "./message-composer-types.js";
 
-export type {
-  GuardianActionMessageContext,
-  GuardianActionMessageScenario,
-} from "./message-composer-types.js";
-
 /** Compose the user-facing copy for a guardian action notice. */
 export function composeGuardianActionMessage(
   context: GuardianActionMessageContext,

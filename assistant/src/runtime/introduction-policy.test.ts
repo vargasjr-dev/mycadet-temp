@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
+import { bindingStrengthForVerifiedVia } from "@mycadet/gateway-client";
+import { VERIFIED_VIA_CHANNEL_CLAIM } from "@mycadet/gateway-client";
+import { VERIFIED_VIA_MANUAL } from "@mycadet/gateway-client";
+
 import {
-  bindingStrengthForVerifiedVia,
   buildIntroductionActions,
   isHandshakeOffered,
   isWorkspaceVouchedIdentity,
@@ -9,8 +12,6 @@ import {
   requesterCanCompleteHandshake,
   resolveTrustBinding,
   serializeRequesterSignals,
-  VERIFIED_VIA_CHANNEL_CLAIM,
-  VERIFIED_VIA_MANUAL,
 } from "./introduction-policy.js";
 
 describe("requester signal serialization", () => {

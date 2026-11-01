@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { DiskPressureStatus } from "../daemon/disk-pressure-guard.js";
+import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 import {
   classifyDiskPressureTurnPolicy,
   type DiskPressureTurnMetadata,

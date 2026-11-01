@@ -16,6 +16,8 @@ import {
   isAdmissionPolicy,
   isAdmissionPolicyExemptChannel,
 } from "@mycadet/gateway-client";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
+import { isChannelId } from "@mycadet/service-contracts/channels";
 
 import {
   attachmentsToContentBlocks,
@@ -23,12 +25,7 @@ import {
 } from "../../agent/attachments.js";
 import { listGuardianRequestDeliveriesByChat } from "../../channels/gateway-guardian-requests.js";
 import { audienceForReader } from "../../channels/message-audience.js";
-import {
-  CHANNEL_IDS,
-  INTERFACE_IDS,
-  isChannelId,
-  parseInterfaceId,
-} from "../../channels/types.js";
+import { INTERFACE_IDS, parseInterfaceId } from "../../channels/types.js";
 import { getConfig } from "../../config/loader.js";
 import { channelStatusToMemberStatus } from "../../contacts/member-status.js";
 import {

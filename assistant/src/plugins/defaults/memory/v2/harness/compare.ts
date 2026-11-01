@@ -7,7 +7,7 @@
  * with a stub retriever and a fixture DB — no live router / LLM.
  */
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import type { DrizzleDb } from "../../../../../persistence/db-connection.js";
 import { extractOracleTurns } from "./oracle.js";
 import { reconstructInput } from "./replay-input.js";

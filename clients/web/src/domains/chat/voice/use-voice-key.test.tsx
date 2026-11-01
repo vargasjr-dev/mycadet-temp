@@ -3,7 +3,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 
 import type { HotkeySelectionResult } from "@mycadet/ipc-contract";
 
-import type { HotkeyEvent } from "@/runtime/hotkey";
+import { HotkeyEvent } from "@mycadet/ipc-contract";
 import type { VoiceKey } from "@/utils/voice-key";
 
 let holdSupported = true;

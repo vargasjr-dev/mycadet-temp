@@ -10,11 +10,9 @@ import {
 } from "@testing-library/react";
 import { create } from "zustand";
 
-import type {
-  LocalListDevicesResult,
-  LocalPairedDeviceRecord,
-  LocalRevokeDeviceResult,
-} from "@/runtime/local-mode-host";
+import { LocalListDevicesResult } from "@mycadet/ipc-contract";
+import { LocalPairedDeviceRecord } from "@mycadet/ipc-contract";
+import { LocalRevokeDeviceResult } from "@mycadet/ipc-contract";
 
 import { createTimerHarness } from "./pair-device-test-helpers";
 

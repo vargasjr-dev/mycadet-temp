@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEventEnvelope } from "../api/index.js";
-import type { HostProxyCapability, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import type { AssistantEventPublishOptions } from "../runtime/assistant-event-publish-options.js";
 import { matchesTargeting } from "../runtime/assistant-event-targeting.js";
@@ -17,6 +17,7 @@ import {
   getReplayWindow,
   stampAndBuffer,
 } from "../runtime/assistant-stream-state.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 
 const CONV = "conv-targeting";
 

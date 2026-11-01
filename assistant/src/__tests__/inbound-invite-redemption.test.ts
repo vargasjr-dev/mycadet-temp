@@ -67,11 +67,9 @@ mock.module("../ipc/gateway-client.js", () => ({
 import { findContactChannel } from "../contacts/contact-store.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
 

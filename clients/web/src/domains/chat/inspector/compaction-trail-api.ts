@@ -26,8 +26,6 @@ import {
   fetchCompactionTrail,
 } from "./compaction-trail-fetch";
 
-export { CompactionTrailRequestError };
-
 export function compactionTrailQueryOptions(
   assistantId: string | undefined,
   conversationId: string | undefined,

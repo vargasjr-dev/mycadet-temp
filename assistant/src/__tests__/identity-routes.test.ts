@@ -230,7 +230,7 @@ describe("identity routes — health endpoint", () => {
       const mockClient = {
         isReady: () => true,
         close: () => {},
-      } as unknown as import("../credential-execution/client.js").CesClient;
+      } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
       setCesClient(mockClient);
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
@@ -243,7 +243,7 @@ describe("identity routes — health endpoint", () => {
       const mockClient = {
         isReady: () => false,
         close: () => {},
-      } as unknown as import("../credential-execution/client.js").CesClient;
+      } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
       setCesClient(mockClient);
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
@@ -431,7 +431,7 @@ describe("identity routes — trivial /healthz liveness probe", () => {
         throw new Error("handleHealth must not access CES");
       },
       close: () => {},
-    } as unknown as import("../credential-execution/client.js").CesClient;
+    } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
     setCesClient(explodingClient);
 
     const res = handleHealth();
@@ -507,7 +507,7 @@ describe("identity routes — /readyz readiness gate", () => {
         throw new Error("/readyz must not consult CES");
       },
       close: () => {},
-    } as unknown as import("../credential-execution/client.js").CesClient;
+    } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
     setCesClient(explodingClient);
 
     const res = handleReadyz();

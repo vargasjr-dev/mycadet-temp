@@ -3,11 +3,10 @@ import { join, resolve, sep } from "node:path";
 import { z } from "zod";
 
 import { getAppsDir } from "../../apps/app-store.js";
-import { RiskLevel } from "../../permissions/types.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { enqueuePkbIndexJob } from "../../plugins/defaults/memory/v1/jobs/embed-pkb-file.js";
 import { getWorkspaceDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { throwIfCancelled } from "../shared/abort.js";
 import { FileSystemOps } from "../shared/filesystem/file-ops-service.js";
 import { formatWriteSummary } from "../shared/filesystem/format-diff.js";
 import { sandboxPolicyWithHostFallback } from "../shared/filesystem/path-policy.js";
@@ -15,6 +14,7 @@ import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

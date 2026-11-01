@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import { AgentLoop } from "../agent/loop.js";
-import type { ContextWindowConfig } from "../config/types.js";
+import { ContextWindowConfig } from "../config/schemas/inference.js";
 import { stripAgedSightFrames } from "../daemon/conversation-sight-frames.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";

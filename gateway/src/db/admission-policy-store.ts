@@ -23,7 +23,6 @@ import { type ChannelId, isChannelId } from "../channels/types.js";
  * (storage + kill switch) and the runtime (admission stage) share one
  * canonical type.
  */
-export type { AdmissionPolicy } from "@mycadet/gateway-client";
 
 export const ADMISSION_POLICY_VALUES: ReadonlyArray<AdmissionPolicy> =
   ADMISSION_POLICY_VALUES_CONTRACT;

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import { inferMimeType } from "@mycadet/service-contracts/attachment-naming";
+import { resolveAttachmentFilename } from "@mycadet/service-contracts/attachment-naming";
+
 import {
   type AssistantAttachmentDraft,
   classifyKind,
@@ -10,9 +13,7 @@ import {
   estimateBase64Bytes,
   extractCadetLinks,
   incompleteCadetLinkSuffixLength,
-  inferMimeType,
   MAX_ASSISTANT_ATTACHMENT_BYTES,
-  resolveAttachmentFilename,
   stripCadetLinks,
   validateDrafts,
 } from "../daemon/assistant-attachments.js";

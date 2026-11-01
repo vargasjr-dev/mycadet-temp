@@ -142,8 +142,6 @@ function shouldAttachScreenshot(observation: HostObservationFields): boolean {
   return observation.axDiff?.includes(WHOLE_WINDOW_REPLACEMENT_MARKER) === true;
 }
 
-export type { HostCaptureTarget } from "../runtime/host-observe.js";
-
 /** What a finished session leaves behind for the retrospective to read. */
 export interface WatchSessionSummary {
   readonly sessionId: string;

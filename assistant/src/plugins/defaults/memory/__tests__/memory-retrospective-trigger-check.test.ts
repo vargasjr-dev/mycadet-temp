@@ -14,7 +14,7 @@ mock.module("../memory-retrospective-enqueue.js", () => ({
 
 import { eq } from "drizzle-orm";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import { createConversation } from "../../../../persistence/conversation-crud.js";
 import {
   getDb,

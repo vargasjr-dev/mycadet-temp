@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getLogger, type LogFileConfig } from "./logger.js";
-import { getWorkspaceDir } from "./credential-reader.js";
+import { getWorkspaceDir } from "./paths.js";
 import { getGatewaySecurityDir } from "./paths.js";
 import type { InboundChannelId } from "./channels/inbound-event.js";
 

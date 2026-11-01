@@ -5,9 +5,10 @@
  * imports (memory/conversation-crud → daemon/conversation-runtime-assembly).
  */
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import { isHttpAuthDisabled } from "../config/env.js";
 import { canSeePersonalMemory } from "../runtime/effective-capabilities.js";
-import type { TrustClass } from "../runtime/trust-class.js";
 import type { TrustContext } from "./trust-context-types.js";
 
 /**

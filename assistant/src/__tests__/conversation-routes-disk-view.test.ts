@@ -20,10 +20,8 @@ import {
   getMessages as readPersistedMessages,
   provenanceFromTrustContext,
 } from "../persistence/conversation-crud.js";
-import {
-  getConversationDirPath,
-  syncMessageToDisk,
-} from "../persistence/conversation-disk-view.js";
+import { getConversationDirPath } from "../persistence/conversation-directories.js";
+import { syncMessageToDisk } from "../persistence/conversation-disk-view.js";
 import {
   _resetFirstConversationSeenForTesting,
   getConversationByKey,

@@ -9,12 +9,11 @@
  * own prefix-only path in `util/log-redact.ts`.
  */
 
+import type { SecretPrefixPattern } from "@mycadet/service-contracts/secret-detection";
+import { REDACTION_PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
+
 import { memoizePluginPatternDerivation } from "./plugin-secret-patterns.js";
 import { isAllowlisted } from "./secret-allowlist.js";
-import {
-  REDACTION_PREFIX_PATTERNS,
-  type SecretPrefixPattern,
-} from "./secret-patterns.js";
 
 export interface SecretMatch {
   /** Human-readable type label, e.g. "AWS Access Key" */

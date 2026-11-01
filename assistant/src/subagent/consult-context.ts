@@ -33,8 +33,9 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
+import { TrustClass } from "@mycadet/gateway-client";
+
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import type { TrustClass } from "../runtime/actor-trust-resolver.js";
 import { truncate as truncateText } from "../util/truncate.js";
 
 export interface AdvisorContextSources {

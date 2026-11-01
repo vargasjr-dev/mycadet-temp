@@ -20,7 +20,9 @@
  * pair would break history repair.
  */
 
-import { type ChannelId, isChannelId } from "../channels/types.js";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { isChannelId } from "@mycadet/service-contracts/channels";
+
 import type {
   ProactiveAddress,
   ProactiveTarget,

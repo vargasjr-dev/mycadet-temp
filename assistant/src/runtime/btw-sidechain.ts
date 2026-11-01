@@ -10,8 +10,8 @@ import type {
   Provider,
   ProviderEvent,
   ProviderResponse,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 export interface BtwSidechainConversationLike {
   provider: Provider;

@@ -10,10 +10,8 @@ import {
   isConversationScopedStreamEvent,
   shouldClearFirstMessageGateOnConversationChange,
 } from "@/domains/chat/utils/chat";
-import {
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
-  ACP_CLAUDE_OAUTH_MISSING_CODE,
-} from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_OAUTH_MISSING_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import type { AssistantEvent } from "@/types/event-types";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";

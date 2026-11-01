@@ -26,14 +26,14 @@ import { createPreference } from "../notifications/preferences-store.js";
 import {
   addMessage,
   getMessageById,
-  isEchoSuppressedUserMessage,
-  isHiddenMessageMetadata,
-  isSuppressedQueuedMessage,
   provenanceFromTrustContext,
   recordConversationPersistedSeq,
   setConversationOriginChannelIfUnset,
   setConversationOriginInterfaceIfUnset,
 } from "../persistence/conversation-crud.js";
+import { isEchoSuppressedUserMessage } from "../persistence/conversation-types.js";
+import { isHiddenMessageMetadata } from "../persistence/conversation-types.js";
+import { isSuppressedQueuedMessage } from "../persistence/conversation-types.js";
 import { isReplyPushIneligibleUserMessage } from "../persistence/conversation-types.js";
 import { stampTurnOutcome } from "../persistence/turn-outcome.js";
 import type { ContextWindowResult } from "../plugins/defaults/compaction/window-manager.js";
@@ -65,7 +65,7 @@ import {
 } from "./conversation-slash.js";
 import { getModelInfo } from "./handlers/config-model.js";
 import { preactivateHostProxySkills } from "./host-proxy-preactivation.js";
-import type { UserMessageAttachment } from "./message-protocol.js";
+import { UserMessageAttachment } from "./message-types/shared.js";
 import { buildTransportHints } from "./transport-hints.js";
 import { sameTrustIdentity, type TrustContext } from "./trust-context-types.js";
 import { restingTrust, turnOrRestingTrust } from "./trust-context-types.js";

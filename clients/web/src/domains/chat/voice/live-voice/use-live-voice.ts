@@ -91,9 +91,9 @@ import {
 } from "@/domains/chat/voice/live-voice/live-voice-client";
 import {
   LiveVoiceAudioCapture,
-  LIVE_VOICE_AUDIO_FORMAT,
   type LiveVoiceCaptureResult,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
+import { LIVE_VOICE_AUDIO_FORMAT } from "@/domains/chat/voice/live-voice/protocol";
 import {
   LiveVoiceAudioPlayer,
   type TtsAudioChunk,

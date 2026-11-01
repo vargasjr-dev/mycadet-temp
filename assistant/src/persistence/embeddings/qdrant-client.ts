@@ -6,7 +6,7 @@ import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v4 as uuid } from "uuid";
 
 import { getQdrantHttpPortEnv, getQdrantUrlEnv } from "../../config/env.js";
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 

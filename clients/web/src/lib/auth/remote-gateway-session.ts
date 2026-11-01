@@ -7,11 +7,6 @@ import type {
 
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
-export {
-  parseRemoteWebPairingParams,
-  type RemoteWebPairingParams,
-} from "@mycadet/service-contracts/remote-web-pairing";
-
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;

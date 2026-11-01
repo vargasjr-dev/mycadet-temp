@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import * as processes from "../lib/process.js";
+import * as localMode from "@mycadet/local-mode";
 import {
   TAILSCALE_PROVIDER,
   stopTailscaleTunnel,
@@ -27,9 +27,9 @@ const originalConfig = process.env.XDG_CONFIG_HOME;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 let root = "";
 let workspace = "";
-let stop: ReturnType<typeof spyOn<typeof processes, "stopProcess">>;
+let stop: ReturnType<typeof spyOn<typeof localMode, "stopProcess">>;
 let identity: ReturnType<
-  typeof spyOn<typeof processes, "readProcessCommandLine">
+  typeof spyOn<typeof localMode, "readProcessCommandLine">
 >;
 let logs: ReturnType<typeof spyOn<typeof console, "log">>;
 
@@ -73,8 +73,8 @@ beforeEach(() => {
     startedAt: new Date().toISOString(),
   });
   ngrok.saveNgrokDomain("old.ngrok.app");
-  stop = spyOn(processes, "stopProcess").mockResolvedValue(true);
-  identity = spyOn(processes, "readProcessCommandLine").mockReturnValue(
+  stop = spyOn(localMode, "stopProcess").mockResolvedValue(true);
+  identity = spyOn(localMode, "readProcessCommandLine").mockReturnValue(
     "ngrok http 7840",
   );
   logs = spyOn(console, "log").mockImplementation(() => {});

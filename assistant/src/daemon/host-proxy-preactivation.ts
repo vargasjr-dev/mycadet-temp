@@ -28,9 +28,10 @@
  * where one call site re-adds a skill but another forgets to.
  */
 
-import type { HostProxyCapability, InterfaceId } from "../channels/types.js";
+import type { InterfaceId } from "../channels/types.js";
 import { supportsHostProxy } from "../channels/types.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
+import { HostProxyCapability } from "../types/host-capabilities.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("host-proxy-preactivation");

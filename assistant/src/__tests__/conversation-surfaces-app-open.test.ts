@@ -2,13 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 import { DynamicPagePreviewSchema } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   buildAppOpenPreview,
   createSurfaceMutex,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type { SurfaceType } from "../daemon/message-protocol.js";
 import {
   asConversation,
   mockChannelCapabilities,

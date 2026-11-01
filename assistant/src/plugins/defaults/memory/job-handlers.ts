@@ -18,7 +18,7 @@
  */
 
 import { isMemoryV1Active } from "../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import type { MemoryJob } from "../../../persistence/jobs-store.js";
 import type { JobHandlerEntry, JobQueueResolution } from "../../types.js";
 // The all-tier graph store: `embedGraphNodeJob` serves the V1 section,

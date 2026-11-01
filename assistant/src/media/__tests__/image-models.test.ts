@@ -9,7 +9,7 @@ import {
   resolveImageModel,
   resolveRequestedImageModel,
 } from "../image-models.js";
-import { providerForModel } from "../image-service.js";
+import { providerForModel } from "../types.js";
 
 describe("image model registry", () => {
   test("aliases resolve to concrete model IDs", () => {

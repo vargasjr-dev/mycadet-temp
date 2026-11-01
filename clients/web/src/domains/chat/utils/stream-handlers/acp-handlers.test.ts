@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import {
   handleAcpAuthRequired,
   handleAcpSessionSpawned,

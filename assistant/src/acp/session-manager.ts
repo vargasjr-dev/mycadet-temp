@@ -9,6 +9,7 @@ import { basename } from "node:path";
 import type { SessionConfigOption } from "@agentclientprotocol/sdk";
 import { eq, inArray } from "drizzle-orm";
 
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "../api/events/acp-auth-required.js";
 import type { AcpSessionUpdateEvent } from "../api/events/acp-session-update.js";
 import type { AssistantEvent } from "../api/index.js";
 import { findConversation } from "../daemon/conversation-registry.js";
@@ -26,7 +27,6 @@ import { markAcpConnectCardRaised } from "./acp-connect-card-state.js";
 import { AcpAgentProcess } from "./agent-process.js";
 import {
   ACP_AUTH_RECOVERY_GUIDANCE,
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
   AcpAuthRequiredError,
   CLAUDE_ACP_COMMAND,
   isAcpAuthRequired,

@@ -12,12 +12,10 @@
  * dictation flow degrades gracefully.
  */
 
-import {
-  isElectron,
-  type DictationOverlayHitRegion,
-  type DictationOverlayMessage,
-  type DictationOverlayState,
-} from "@/runtime/is-electron";
+import { isElectron } from "@/runtime/is-electron";
+import type { DictationOverlayHitRegion } from "@mycadet/ipc-contract";
+import type { DictationOverlayMessage } from "@mycadet/ipc-contract";
+import type { DictationOverlayState } from "@mycadet/ipc-contract";
 
 /**
  * Publish the current dictation lifecycle state to the overlay.

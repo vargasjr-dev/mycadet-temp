@@ -5,7 +5,8 @@ import {
   resolveFollowUp,
 } from "../../followups/followup-store.js";
 import type { FollowUp } from "../../followups/types.js";
-import { isAbortLikeError, throwIfCancelled } from "../shared/abort.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
+import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,

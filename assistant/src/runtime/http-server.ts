@@ -26,6 +26,8 @@ import {
 } from "../config/env.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
+// Re-export for consumers
+import { trackDaemonActivity } from "../daemon/activity-trail.js";
 import {
   getDbMigrationReadiness,
   isDbMigrationGateBypassed,
@@ -66,6 +68,7 @@ import { sweepFailedEvents } from "./channel-retry-sweep.js";
 import type { HostCaptureTarget } from "./host-observe.js";
 import { httpError, type HttpErrorCode } from "./http-errors.js";
 import { HttpRouter } from "./http-router.js";
+import type { RuntimeHttpServerOptions } from "./http-types.js";
 import {
   extractBearerToken,
   isLoopbackHost,
@@ -111,12 +114,6 @@ import {
   parseWatchCaptureTarget,
   WatchStreamSession,
 } from "./routes/watch-routes.js";
-
-// Re-export for consumers
-export { isPrivateAddress } from "./middleware/auth.js";
-
-import { trackDaemonActivity } from "../daemon/activity-trail.js";
-import type { RuntimeHttpServerOptions } from "./http-types.js";
 
 const log = getLogger("runtime-http");
 

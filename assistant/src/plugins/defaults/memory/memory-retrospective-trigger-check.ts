@@ -22,7 +22,7 @@
 // count would treat it as unprocessed content and re-wake a retrospective
 // over the assistant's own card. See `memory-retrospective-accounting.ts`.
 
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import { getLogger } from "./logging.js";
 import { countRetrospectiveMessagesAfter } from "./memory-retrospective-accounting.js";
 import { retrospectiveCursor } from "./memory-retrospective-cursor.js";

@@ -12,7 +12,7 @@ import {
   selectedBackendSupportsMultimodal,
 } from "@mycadet/plugin-api";
 
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import type { EmbeddingInput } from "../../../../persistence/embeddings/embedding-types.js";
 import { asString } from "../../../../persistence/job-utils.js";
 import {

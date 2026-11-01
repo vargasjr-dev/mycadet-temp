@@ -12,11 +12,6 @@ import {
   type ChatsSettingsValues,
 } from "./chats-settings-form";
 
-export type {
-  ChatsSettingsChanges,
-  ChatsSettingsValues,
-} from "./chats-settings-form";
-
 export type ChatsSettingsLoadState =
   | { status: "loading" }
   | { status: "error" }

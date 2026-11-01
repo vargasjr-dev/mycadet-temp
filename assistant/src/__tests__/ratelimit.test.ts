@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RateLimitConfig } from "../config/types.js";
+import { RateLimitConfig } from "../config/schemas/timeouts.js";
 import { RateLimitProvider } from "../providers/ratelimit.js";
 import type {
   Message,

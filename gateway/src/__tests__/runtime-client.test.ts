@@ -1,8 +1,6 @@
 import { describe, test, expect, mock, afterEach } from "bun:test";
-import type {
-  RuntimeAttachmentMeta,
-  RuntimeInboundPayload,
-} from "../runtime/client.js";
+import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
+import type { RuntimeAttachmentMeta } from "../runtime/client.js";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey } from "../auth/token-service.js";
 

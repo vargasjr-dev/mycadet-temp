@@ -20,10 +20,10 @@
  *   `ipcCallPersistent("mark_channel_revoked", …)` to `ContactStore.markChannelRevoked`.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { revokePendingSessions } from "../../channels/gateway-verification-sessions.js";
-import type { ChannelId } from "../../channels/types.js";
 import {
   createInboundChallenge,
   getVerificationStatus,

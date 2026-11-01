@@ -6,6 +6,7 @@ import {
   type ThinkingLevel as ThinkingLevelName,
 } from "../../config/schemas/llm.js";
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
+import { ToolDefinition } from "../../tools/tool-types.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
@@ -33,7 +34,6 @@ import type {
   Provider,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../types.js";
 import {
   ContextOverflowError,

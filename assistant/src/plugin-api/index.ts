@@ -105,29 +105,13 @@ export type {
 // pass `"inference"` (the general-purpose call site) and pick the model via the
 // `overrideProfile` option.
 export type { LLMCallSite } from "../config/schemas/llm.js";
+export { RiskLevel } from "../tools/tool-types.js";
 export type {
-  AgentLoopExitReason,
-  ConversationDeletedContext,
-  ConversationsClearedContext,
-  HookBroadcast,
   HookFunction,
   InitContext,
-  MessageDeletedContext,
   ModelProfileInfo,
-  PluginLogger,
-  PostCompactContext,
-  PostModelCallContext,
-  PostModelCallDecision,
-  PostToolUseContext,
-  PreModelCallContext,
   ShutdownContext,
-  StopContext,
-  ToolContext,
-  ToolDefinition,
-  ToolExecutionResult,
-  UserPromptSubmitContext,
 } from "./types.js";
-export { RiskLevel } from "./types.js";
 
 // ─── Runtime handles ─────────────────────────────────────────────────────────
 // Values (not just types) that plugins consume at module-load / init time.
@@ -318,14 +302,6 @@ export { CLI_COMMAND_HELP } from "../cli/index.help.js";
 //     automatically scoped to the calling plugin, that never participates in
 //     agent recall. It is a derived cache of the plugin's own source data.
 //   • `embedAndUpsert` remains the legacy write-only host-recall path.
-export type {
-  EmbedResult,
-  IndexDocumentOptions,
-  IndexDocumentResult,
-  IndexedDocument,
-  IndexHit,
-  QueryIndexOptions,
-} from "../persistence/embeddings/plugin-facade.js";
 export {
   embed,
   embedAndUpsert,
@@ -336,6 +312,14 @@ export {
   removeDocument,
   selectedBackendSupportsMultimodal,
 } from "../persistence/embeddings/plugin-facade.js";
+export type {
+  EmbedResult,
+  IndexDocumentOptions,
+  IndexDocumentResult,
+  IndexedDocument,
+  IndexHit,
+  QueryIndexOptions,
+} from "../persistence/embeddings/plugin-index.js";
 // Embedding input/output value shapes shared by the compute and index APIs.
 export type {
   AudioEmbeddingInput,
@@ -476,9 +460,29 @@ export { PluginTurnNotAdmittedError } from "./plugin-channel-turn-trust.js";
 // Feed inbound frames to `handleMessage` and call `release` when the transport
 // closes. `LiveVoiceServerFrame` types the frames handed to `send`.
 export type {
+  AgentLoopExitReason,
+  ConversationDeletedContext,
+  ConversationsClearedContext,
+  HookBroadcast,
+  MessageDeletedContext,
+  PluginLogger,
+  PostCompactContext,
+  PostModelCallContext,
+  PostModelCallDecision,
+  PostToolUseContext,
+  PreModelCallContext,
+  StopContext,
+  UserPromptSubmitContext,
+} from "../hooks/types.js";
+export type {
   LiveVoiceConnection,
   LiveVoiceFrameSender,
 } from "../live-voice/live-voice-connection.js";
 export { createLiveVoiceConnection } from "../live-voice/live-voice-connection.js";
 export type { LiveVoiceSessionCloseReason } from "../live-voice/live-voice-session-manager.js";
 export type { LiveVoiceServerFrame } from "../live-voice/protocol.js";
+export type {
+  ToolContext,
+  ToolDefinition,
+  ToolExecutionResult,
+} from "../tools/types.js";

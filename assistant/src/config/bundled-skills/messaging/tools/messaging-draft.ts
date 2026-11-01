@@ -3,7 +3,7 @@ import {
   deleteDraft,
   listDrafts,
 } from "../../../../messaging/draft-store.js";
-import { throwIfCancelled } from "../../../../tools/shared/abort.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type {
   ToolContext,
   ToolExecutionResult,

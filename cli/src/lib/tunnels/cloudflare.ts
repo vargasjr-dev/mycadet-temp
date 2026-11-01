@@ -3,7 +3,7 @@ import {
   readRootProcesses,
   stampRootProcess,
 } from "../assistant-config.js";
-import { readProcessCommandLine } from "../process.js";
+import { readProcessCommandLine } from "@mycadet/local-mode";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
 import type {
   TunnelProvider,

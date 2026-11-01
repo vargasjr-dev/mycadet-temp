@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
 import type {
   CardBlock,
   ContextBlock,
@@ -12,7 +13,6 @@ import type {
 import { parseAccessRequestPayload } from "../notifications/access-request-copy.js";
 import { buildApprovalNotificationBlocks } from "../notifications/adapters/slack.js";
 import type { ChannelDeliveryPayload } from "../notifications/types.js";
-import type { ApprovalUIMetadata } from "../runtime/channel-approval-types.js";
 
 /**
  * Pins the Slack approval-card block contract: the title, identity subtitle,

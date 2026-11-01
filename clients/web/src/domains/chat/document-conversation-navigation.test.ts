@@ -6,10 +6,10 @@ import { useViewerStore } from "@/stores/viewer-store";
 
 import {
   documentConversationUrl,
-  documentReturnPath,
   getDocumentConversationRoute,
   returnFromDocument,
 } from "./document-conversation-navigation";
+import { documentReturnPath } from "@/utils/document-navigation";
 
 const conversation = useConversationStore.getState();
 const viewer = useViewerStore.getState();

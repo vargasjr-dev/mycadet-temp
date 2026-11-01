@@ -65,10 +65,8 @@ mock.module("../runtime/approval-message-composer.js", () => ({
 import { findContactChannel } from "../contacts/contact-store.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import {
-  handleChannelInbound,
-  seedContactChannel,
-} from "./helpers/channel-test-adapter.js";
+import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
+import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 import {
   createOutboundSession,
   createOutboundSessionGuarded,

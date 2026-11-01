@@ -12,11 +12,6 @@ import {
 
 import { useUnseenDocumentChangesStore } from "./unseen-document-changes-store";
 
-export {
-  DOCUMENT_RETURN_PARAM,
-  documentReturnPath,
-} from "@/utils/document-navigation";
-
 export const DOCUMENT_PARAM = "document";
 export const DOCUMENT_VIEW_PARAM = "documentView";
 

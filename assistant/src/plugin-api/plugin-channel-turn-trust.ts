@@ -7,9 +7,9 @@
  */
 
 import { meetsAdmissionFloor } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 import { readInboundTrust } from "../calls/inbound-trust-reader.js";
-import type { ChannelId } from "../channels/types.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { trustContextFromVerdict } from "../runtime/trust-verdict-consumer.js";
 

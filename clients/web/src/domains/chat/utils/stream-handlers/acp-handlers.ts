@@ -10,7 +10,7 @@ import type {
 
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 
 export function handleAcpSessionSpawned(event: AcpSessionSpawnedEvent): void {
   useAcpRunStore.getState().spawnRun({

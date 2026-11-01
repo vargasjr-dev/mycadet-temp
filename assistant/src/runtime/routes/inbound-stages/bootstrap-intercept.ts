@@ -11,17 +11,16 @@
  * Extracted from inbound-message-handler.ts to keep the top-level handler
  * focused on orchestration.
  */
-import type {
-  CreateOutboundSessionResult,
-  VerificationSessionWire,
-} from "../../../channels/gateway-verification-sessions.js";
+import { VerificationSessionWire } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
+import type { CreateOutboundSessionResult } from "../../../channels/gateway-verification-sessions.js";
 import {
   bindSessionIdentity,
   createOutboundSessionConditional,
   resolveBootstrapToken,
   updateSessionDelivery,
 } from "../../../channels/gateway-verification-sessions.js";
-import type { ChannelId } from "../../../channels/types.js";
 import { sendTelegramReply } from "../../../messaging/providers/telegram-bot/send.js";
 import { getLogger } from "../../../util/logger.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../../assistant-scope.js";

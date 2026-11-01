@@ -16,8 +16,9 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { PluginLogger } from "../hooks/types.js";
+import { PostToolUseContext } from "../hooks/types.js";
 import { HOOKS } from "../plugin-api/constants.js";
-import type { PluginLogger, PostToolUseContext } from "../plugin-api/types.js";
 import { defaultToolErrorPlugin } from "../plugins/defaults/index.js";
 import postToolUse, {
   TOOL_ERROR_NUDGE_TEXT,

@@ -14,9 +14,9 @@ import { createIncrementalStepProjection } from "@/domains/chat/subagent-step-pr
 import {
   applyTimelineEvent,
   computeSubagentSteps,
-  type ToolCallCardStep,
   type ToolMeta,
 } from "@/domains/chat/hooks/use-subagent-card-data";
+import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils";
 import {
   NOW,
   appendEvent,

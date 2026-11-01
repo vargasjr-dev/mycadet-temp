@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ToolDefinition } from "../providers/types.js";
 import {
   ACTIVITY_SKIP_SET,
   declareDaemonActivityField,
@@ -8,6 +7,7 @@ import {
   schemaDefinesProperty,
   stripActivityField,
 } from "../tools/schema-transforms.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 function makeDef(
   name: string,

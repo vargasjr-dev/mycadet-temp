@@ -160,7 +160,7 @@ import {
   formatModeSelectionFailure,
   parseBrowserMode,
 } from "../tools/browser/browser-execution.js";
-import { CHROME_WEB_STORE_INSTALL_URL } from "../tools/browser/browser-status-constants.js";
+import { CHROME_WEB_STORE_INSTALL_URL } from "../tools/capability-offer.js";
 import type { ToolContext } from "../tools/types.js";
 
 // Restore all module mocks after this file completes so they don't

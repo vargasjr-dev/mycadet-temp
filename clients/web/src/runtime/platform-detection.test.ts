@@ -15,7 +15,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
-import type { ElectronHostOS } from "@/runtime/platform-detection";
+import { ElectronHostOS } from "@mycadet/ipc-contract";
 
 let electron = false;
 let nativePlatform = false;

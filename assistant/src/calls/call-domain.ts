@@ -7,8 +7,8 @@
 
 import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approval-grants.js";
 import { getConfig } from "../config/loader.js";
-import { VALID_CALLER_IDENTITY_MODES } from "../config/schema.js";
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
+import { VALID_CALLER_IDENTITY_MODES } from "../config/schemas/calls.js";
 import { resolveCallbackUrl } from "../inbound/cloud-callback-registration.js";
 import {
   getTwilioStatusCallbackUrl,

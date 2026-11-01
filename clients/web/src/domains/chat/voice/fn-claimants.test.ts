@@ -6,8 +6,9 @@ mock.module("@/runtime/running-apps", () => ({
   quitApp: async () => true,
 }));
 
-const { FN_CLAIMANTS, findRunningFnClaimant } =
+const { findRunningFnClaimant } =
   await import("@/domains/chat/voice/fn-claimants");
+const { FN_CLAIMANTS } = await import("@mycadet/ipc-contract");
 
 describe("the apps that claim Fn", () => {
   beforeEach(() => {

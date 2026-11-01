@@ -5,9 +5,8 @@
  * pull in the trust-resolution machinery in `trust-context.ts`.
  */
 import type { ChannelConversationType } from "@mycadet/gateway-client";
-
-import type { ChannelId } from "../channels/types.js";
-import type { TrustClass } from "../runtime/trust-class.js";
+import { TrustClass } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 export interface TrustContext {
   /** Channel through which the inbound message arrived. */

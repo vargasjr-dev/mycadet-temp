@@ -8,7 +8,6 @@ import type { PartnerAudit } from "../../skills/skillssh-audit-types.js";
 import type { OwnerInfo } from "../../tools/types.js";
 
 // Re-export so consumers can access the audit types from this module.
-export type { PartnerAudit } from "../../skills/skillssh-audit-types.js";
 
 // Skill management (list, detail, install, enable/disable, …) is served by the
 // HTTP skills routes, not by client messages.

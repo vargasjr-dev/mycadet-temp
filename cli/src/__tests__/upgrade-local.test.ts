@@ -18,7 +18,7 @@ import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
-import type { GuardianTokenData } from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as local from "../lib/remotes/local.js";
 import * as localMode from "@mycadet/local-mode";

@@ -2,7 +2,6 @@ import { join, resolve } from "node:path";
 
 import type { SkillToolEntry } from "../../config/skills.js";
 import { getBundledSkillsDir } from "../../config/skills.js";
-import { RiskLevel } from "../../permissions/types.js";
 import {
   coerceArrayShapes,
   coerceStringBooleans,
@@ -14,6 +13,7 @@ import { withActivityProperty } from "../schema-transforms.js";
 import { bundledToolInputMisuseMessage } from "../shared/input-misuse.js";
 import { bundledToolInputRepairs } from "../shared/input-repairs.js";
 import type { ExecutionTarget } from "../tool-types.js";
+import { RiskLevel } from "../tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../types.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
 import { runSkillToolScript } from "./skill-script-runner.js";

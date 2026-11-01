@@ -15,8 +15,8 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   saveGuardianBootstrapSecret,
   saveGuardianToken,
-  type GuardianTokenData,
 } from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "@mycadet/local-mode";
 import { setup } from "../commands/setup.js";
 
 interface RecordedFetchCall {

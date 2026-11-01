@@ -3,9 +3,9 @@ import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import { isCadetCloudRemote } from "@/lib/local-mode";
 import {
   fetchCloudStatus,
-  isUuid,
   resolveLocalAssistantCloudIdentity,
 } from "@/lib/local-cloud-identity";
+import { isUuid } from "@/utils/uuid";
 import { getSelfHostedActorToken } from "@/lib/self-hosted/connection";
 
 /**

@@ -4,8 +4,8 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   listPairedDevicesHost,
   revokePairedDeviceHost,
-  type LocalPairedDeviceRecord,
 } from "@/runtime/local-mode-host";
+import type { LocalPairedDeviceRecord } from "@mycadet/ipc-contract";
 
 export interface PairedDevicesController {
   /**

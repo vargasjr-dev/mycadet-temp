@@ -9,12 +9,12 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as configLoader from "../../config/loader.js";
 import type { AssistantConfig } from "../../config/schema.js";
 import * as disabledState from "../../plugins/disabled-state.js";
-import type { ToolDefinition } from "../../providers/types.js";
 import {
   __clearRegistryForTesting,
   registerMcpTools,
   registerPluginTools,
 } from "../../tools/registry.js";
+import { ToolDefinition } from "../../tools/tool-types.js";
 import type { Tool } from "../../tools/types.js";
 import type { Conversation } from "../conversation.js";
 import { createResolveToolsCallback } from "../conversation-tool-setup.js";

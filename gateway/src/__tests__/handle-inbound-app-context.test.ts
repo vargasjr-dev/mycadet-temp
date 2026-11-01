@@ -12,11 +12,9 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { GatewayConfig } from "../config.js";
-import type {
-  RuntimeInboundPayload,
-  RuntimeInboundResponse,
-} from "../runtime/client.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
+import type { RuntimeInboundResponse } from "../runtime/client.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 
 type FetchFn = (
   input: string | URL | Request,

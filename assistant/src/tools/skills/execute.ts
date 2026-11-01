@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { RiskLevel } from "../../permissions/types.js";
 import { isUnparseableToolArgs } from "../../providers/unparseable-tool-args.js";
 import { declareDaemonActivityField } from "../schema-transforms.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

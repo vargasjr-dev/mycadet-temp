@@ -1,5 +1,5 @@
 import { stampRootProcess } from "../assistant-config.js";
-import { readProcessCommandLine, stopProcess } from "../process.js";
+import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
 import type {
   TunnelProvider,
   ProviderStopOptions,

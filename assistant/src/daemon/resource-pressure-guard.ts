@@ -11,10 +11,7 @@
  * The guard is platform-gated: off-cloud there is no plan allocation to
  * measure against, so the guard stays disabled and samples nothing.
  */
-import {
-  type ResourcePressureState,
-  type ResourcePressureStatus,
-} from "../api/events/resource-pressure-status-changed.js";
+import { type ResourcePressureStatus } from "../api/events/resource-pressure-status-changed.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { getContainerCpuCores } from "../util/cgroup-cpu.js";
@@ -42,8 +39,6 @@ const CPU_PRESSURE_THRESHOLD_PERCENT = 85;
 const CPU_PRESSURE_CLEAR_THRESHOLD_PERCENT = 70;
 const MEMORY_PRESSURE_THRESHOLD_PERCENT = 90;
 const MEMORY_PRESSURE_CLEAR_THRESHOLD_PERCENT = 80;
-
-export { type ResourcePressureState, type ResourcePressureStatus };
 
 interface ResourcePressureMemorySample {
   usageBytes: number;

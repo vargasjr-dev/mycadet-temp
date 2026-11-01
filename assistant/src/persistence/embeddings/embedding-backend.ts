@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { getOllamaBaseUrlEnv } from "../../config/env.js";
 import { resolveCallSiteConfig } from "../../config/llm-resolver.js";
 import { isMemoryEnabled } from "../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../config/types.js";
+import { AssistantConfig } from "../../config/schema.js";
 import { PLATFORM_PROVIDER_META } from "../../providers/cloud-proxy/constants.js";
 import { resolveCloudProxyContext } from "../../providers/cloud-proxy/context.js";
 import { getProviderKeyAsync } from "../../security/secure-keys.js";
@@ -30,14 +30,10 @@ import {
   embeddingInputContentHash,
   type EmbeddingProviderName,
   type EmbeddingRequestOptions,
-  type MultimodalEmbeddingInput,
   normalizeEmbeddingInput,
   type SparseEmbedding,
-  type TextEmbeddingInput,
 } from "./embedding-types.js";
 import { SPARSE_VOCAB_SIZE, tokenHash, tokenize } from "./sparse-tokenize.js";
-
-export type { EmbeddingInput, MultimodalEmbeddingInput, TextEmbeddingInput };
 
 const log = getLogger("memory-embeddings");
 

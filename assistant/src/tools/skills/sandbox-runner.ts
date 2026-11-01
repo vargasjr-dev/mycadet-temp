@@ -3,12 +3,13 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
+import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellSpawnFlags } from "@mycadet/environments/shell";
+
 import { PLUGIN_NAME_ENV } from "../../plugin-api/plugin-name-env.js";
 import { conversationRevealNonce } from "../../runtime/reveal-nonce.js";
 import { computeSkillVersionHash } from "../../skills/version-hash.js";
 import {
-  buildShellInvocation,
-  buildShellSpawnFlags,
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";

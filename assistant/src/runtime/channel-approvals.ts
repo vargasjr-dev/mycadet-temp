@@ -9,6 +9,7 @@
  *   3. Consume user decisions and apply them to the underlying session
  */
 
+import { ApprovalUIMetadata } from "@mycadet/gateway-client";
 import { isDenyingGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { findConversation } from "../daemon/conversation-registry.js";
@@ -17,7 +18,6 @@ import { composeApprovalMessage } from "./approval-message-composer.js";
 import type {
   ApprovalAction,
   ApprovalDecisionResult,
-  ApprovalUIMetadata,
   ChannelApprovalPrompt,
 } from "./channel-approval-types.js";
 import { toApprovalActionOptions } from "./channel-approval-types.js";

@@ -21,11 +21,9 @@ import type {
   PendingConfirmationState,
   PendingSecretState,
 } from "@/domains/chat/types";
-import type {
-  AllowlistOption,
-  DirectoryScopeOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { DirectoryScopeOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 
 const OPTIMISTIC_COMPLETION_SURFACE_TYPES = [
   "choice",

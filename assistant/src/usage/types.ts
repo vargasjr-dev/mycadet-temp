@@ -2,12 +2,6 @@ import type { LLMCallSite } from "../config/schemas/llm.js";
 import type { UsageActor } from "./actors.js";
 import type { UsageAttributionProfileSource } from "./attribution.js";
 
-export type {
-  UsageAttributionInput,
-  UsageAttributionProfileSource,
-  UsageAttributionSnapshot,
-} from "./attribution.js";
-
 /**
  * Anthropic prompt caching exposes write-tier detail so callers can price
  * 5-minute and 1-hour cache writes differently.

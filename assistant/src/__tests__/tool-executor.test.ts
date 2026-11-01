@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type {
-  AllowlistOption,
-  PolicyContext,
-  ScopeOption,
-} from "../permissions/types.js";
-import { RiskLevel } from "../permissions/types.js";
+import type { PolicyContext } from "../permissions/types.js";
+import { AllowlistOption } from "../tools/tool-types.js";
+import { ScopeOption } from "../tools/tool-types.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolExecutionResult } from "../tools/types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 
@@ -140,11 +138,8 @@ mock.module("../tools/shared/filesystem/path-policy.js", () => ({
 
 import { getConfig } from "../config/loader.js";
 import { PermissionPrompter } from "../permissions/prompter.js";
-import {
-  computePerToolTimeoutMs,
-  isSideEffectTool,
-  ToolExecutor,
-} from "../tools/executor.js";
+import { computePerToolTimeoutMs, ToolExecutor } from "../tools/executor.js";
+import { isSideEffectTool } from "../tools/side-effects.js";
 import type { ToolContext } from "../tools/types.js";
 
 function makeContext(overrides?: Partial<ToolContext>): ToolContext {

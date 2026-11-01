@@ -16,7 +16,6 @@
  */
 
 import {
-  APP_ICON_NAMES,
   bridgeEmojiAppIcon,
   isAppIconName,
   type AppIconName,
@@ -300,7 +299,6 @@ const APP_ICONS = {
 } satisfies Record<AppIconName, LucideIcon>;
 
 /** The names the assistant may choose from, in registry order. */
-export { APP_ICON_NAMES };
 
 /** The glyph for an app with no icon, or one whose name is unknown here. */
 export const DEFAULT_APP_ICON: LucideIcon = Rocket;

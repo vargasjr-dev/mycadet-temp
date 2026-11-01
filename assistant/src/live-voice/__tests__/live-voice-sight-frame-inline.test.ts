@@ -205,7 +205,7 @@ import { getConversationAttachmentsDirPath } from "../../persistence/conversatio
 import { sightFrameAttachmentIdsFromMetadata } from "../../persistence/conversation-types.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
-import { attachments } from "../../persistence/schema.js";
+import { attachments } from "../../persistence/schema/index.js";
 import { mediaBlockAttachmentId, type Message } from "../../providers/types.js";
 import {
   persistAmbientSightFrame,

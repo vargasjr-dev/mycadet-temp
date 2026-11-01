@@ -25,8 +25,6 @@ import { isUuid } from "@/utils/uuid";
 
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
-export { isUuid } from "@/utils/uuid";
-
 type LocalCloudStatus = {
   assistantId: string | null;
   baseUrl: string | null;

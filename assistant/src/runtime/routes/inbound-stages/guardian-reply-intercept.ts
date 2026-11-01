@@ -10,12 +10,13 @@
  * focused on orchestration.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   listGuardianRequestsOrEmpty,
   listPendingRequestsByDestinationOrEmpty,
 } from "../../../channels/gateway-guardian-requests.js";
 import { audienceForReader } from "../../../channels/message-audience.js";
-import type { ChannelId } from "../../../channels/types.js";
 import { getLogger } from "../../../util/logger.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../../assistant-scope.js";
 import { deliverChannelReply } from "../../gateway-client.js";

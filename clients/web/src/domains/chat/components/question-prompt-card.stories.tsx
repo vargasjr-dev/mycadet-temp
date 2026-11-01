@@ -22,7 +22,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { userEvent, within } from "storybook/test";
 
 import { QuestionPromptCard } from "@/domains/chat/components/question-prompt-card";
-import type { QuestionEntry } from "@/types/interaction-ui-types";
+import { QuestionEntry } from "@mycadet/assistant-api";
 
 const MARKONE: QuestionEntry = {
   id: "q1",

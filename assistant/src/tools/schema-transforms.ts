@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "../providers/types.js";
+import { ToolDefinition } from "./tool-types.js";
 
 /**
  * Tools that should never have an `activity` field injected into their schema.

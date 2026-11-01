@@ -86,7 +86,7 @@ import { useSupportsRedactedCredentialChips } from "@/lib/backwards-compat/use-s
 import { stopAcpRun } from "@/domains/chat/utils/acp-run-actions";
 import { stopBackgroundTask } from "@/domains/chat/utils/background-task-actions";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { getExternalLinkUrl } from "@/domains/chat/types/types";
+import { getExternalLinkUrl } from "@/utils/external-source-link";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { wireSurfaceToDisplay } from "@/domains/chat/utils/map-runtime-message";
 import { isPointerCoarse } from "@/utils/pointer";

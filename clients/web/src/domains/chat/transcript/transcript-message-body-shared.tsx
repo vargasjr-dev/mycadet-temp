@@ -15,10 +15,8 @@ import {
 } from "@/domains/chat/subagent-store";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { ConfirmationDecision } from "@/types/event-types";
-import type {
-  AllowlistOption,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 
 export interface OpenRuleEditorContext {

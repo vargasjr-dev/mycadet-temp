@@ -29,6 +29,7 @@ import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/servers/nginx.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import {
@@ -104,10 +105,10 @@ const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
     started: true,
   }),
 );
-const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
+const isIngressRunningMock = mock<typeof localModeModule.isIngressRunning>(
   () => false,
 );
-const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
+const readIngressStateMock = mock<typeof localModeModule.readIngressState>(
   () => null,
 );
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
@@ -117,6 +118,13 @@ mock.module("../lib/servers/nginx.js", () => ({
   ...realNginxIngress,
   ensureAppServer: ensureAppServerMock,
   getNginxVersion: getNginxVersionMock,
+}));
+mock.module("@mycadet/local-mode", () => ({
+  ...localModeModule,
+  // servers/nginx.ts no longer re-exports the ingress reads — the tunnel
+  // flow imports them from the package, so mock them here.
+  isIngressRunning: isIngressRunningMock,
+  readIngressState: readIngressStateMock,
 }));
 
 const { tunnel } = await import("../commands/tunnel.js");
@@ -328,6 +336,7 @@ describe("app server targeting", () => {
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
     mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+    mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
   test("targets the edge port returned by ensureAppServer for ngrok", async () => {
@@ -1321,6 +1330,11 @@ describe("tunnel background mode", () => {
       ensureAppServer: ensureAppServerMock,
       getNginxVersion: getNginxVersionMock,
     }));
+    mock.module("@mycadet/local-mode", () => ({
+      ...localModeModule,
+      isIngressRunning: isIngressRunningMock,
+      readIngressState: readIngressStateMock,
+    }));
     mock.module("node:child_process", () => ({
       ...realChildProcess,
       spawn: spawnMock,
@@ -1331,6 +1345,7 @@ describe("tunnel background mode", () => {
     mock.module("node:child_process", () => realChildProcess);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+    mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
   beforeEach(() => {
@@ -1534,6 +1549,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   afterAll(() => {
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
     mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+    mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
   function seedRecordedTailnetWake(): {

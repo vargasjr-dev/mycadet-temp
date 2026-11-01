@@ -36,8 +36,6 @@ import type { ZodType } from "zod";
 
 import { ipcCallPersistentValidated } from "../ipc/gateway-validated-call.js";
 
-export type { InviteWire } from "@mycadet/gateway-client";
-
 /**
  * Call a gateway invite route and validate the response against its contract
  * schema (typed to the invite method union).

@@ -6,12 +6,10 @@
  * inlined in a single consumer.
  */
 
-import type {
-  AllowlistOption,
-  DirectoryScopeOption,
-  QuestionEntry,
-  ScopeOption,
-} from "@/types/interaction-ui-types";
+import { AllowlistOption } from "@mycadet/assistant-api";
+import { DirectoryScopeOption } from "@mycadet/assistant-api";
+import { QuestionEntry } from "@mycadet/assistant-api";
+import { ScopeOption } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
 // State shapes for prompt / error UI

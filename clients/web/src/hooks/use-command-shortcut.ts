@@ -3,11 +3,8 @@ import { DEFAULT_ACCELERATORS } from "@mycadet/ipc-contract";
 import { useSyncExternalStore } from "react";
 
 import { isElectron } from "@/runtime/is-electron";
-import {
-  getHotkeys,
-  onHotkeysChange,
-  type ResolvedHotkey,
-} from "@/runtime/hotkeys";
+import { getHotkeys, onHotkeysChange } from "@/runtime/hotkeys";
+import type { ResolvedHotkey } from "@mycadet/ipc-contract";
 
 /**
  * What a command's keyboard shortcut is on the host this renderer is running

@@ -38,19 +38,19 @@ import {
 } from "./connection-model-compat.js";
 import {
   connectionProviderKind,
-  ConnectionResolutionError,
-  dispatchProviderResolvable,
   expectedVendorProvider,
   isCloudConnectionRoute,
   resolveEntryConnectionName,
   resolveEntryProviderKind,
-  resolveRoutingIdentity,
   tryResolveProviderForConnectionName,
 } from "./connection-resolution.js";
 import { listConnections } from "./inference/connections.js";
+import { dispatchProviderResolvable } from "./provider-resolvability.js";
 import type { ProvidersConfig } from "./registry.js";
 import { shouldUseNativeWebSearch } from "./registry.js";
 import { recordProviderRequestDiagnostics } from "./request-diagnostics.js";
+import { ConnectionResolutionError } from "./routing-identity.js";
+import { resolveRoutingIdentity } from "./routing-identity.js";
 import type {
   Message,
   Provider,

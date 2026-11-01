@@ -6,7 +6,8 @@
  * to compile until a policy is added below.
  */
 
-import { CHANNEL_IDS, type ChannelId } from "./types.js";
+import type { ChannelId } from "@mycadet/service-contracts/channels";
+import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 
 export type ConversationStrategy =
   | "start_new_conversation"

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { RiskLevel } from "../../permissions/types.js";
-import { throwIfCancelled } from "../shared/abort.js";
+import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { FileSystemOps } from "../shared/filesystem/file-ops-service.js";
 import { formatEditDiff } from "../shared/filesystem/format-diff.js";
 import { sandboxPolicyWithHostFallback } from "../shared/filesystem/path-policy.js";
@@ -9,6 +8,7 @@ import {
   invalidToolInputResult,
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

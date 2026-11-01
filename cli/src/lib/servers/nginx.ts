@@ -43,18 +43,8 @@ import { waitForDaemonReady } from "../http-client.js";
 import { resolveEdgeClientDists } from "../web-dist.js";
 
 // The edge's read/stop surface lives in `@mycadet/local-mode` (the retire
-// operation stops the edge in-process); re-exported here for the tunnel and
-// ps surfaces.
-export {
-  getIngressPaths,
-  isIngressRunning,
-  isPidAlive,
-  readIngressState,
-  getIngressPid,
-  stopIngressNginx,
-  stopContainerAppServer,
-} from "@mycadet/local-mode";
-export type { IngressPaths, IngressState } from "@mycadet/local-mode";
+// operation stops the edge in-process); the tunnel and ps surfaces import it
+// from the package directly (already imported above for this file's own use).
 
 /**
  * CLI-managed nginx reverse proxy that fronts the gateway as the canonical

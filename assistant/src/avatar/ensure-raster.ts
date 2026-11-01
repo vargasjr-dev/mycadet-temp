@@ -10,9 +10,11 @@ import {
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative } from "node:path";
 
+import type { AvatarState } from "@mycadet/avatar-manifest";
+
 import { getAvatarImagePath, getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { type AvatarState, readAvatarState } from "./avatar-manifest.js";
+import { readAvatarState } from "./avatar-manifest.js";
 import { writeTraitsAndRenderAvatar } from "./traits-png-sync.js";
 
 const log = getLogger("ensure-raster");

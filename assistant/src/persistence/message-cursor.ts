@@ -16,8 +16,6 @@ import type { LineageBound } from "./conversation-lineage.js";
 import { getDb } from "./db-connection.js";
 import { messages } from "./schema/index.js";
 
-export { messagesAfterBoundFilter } from "./conversation-lineage.js";
-
 /**
  * A `(createdAt, id)` message reference. `createdAt` is null when the holder
  * never recorded it; such a cursor bounds a read only while its row exists.

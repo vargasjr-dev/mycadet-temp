@@ -11,13 +11,13 @@
  * not force a regeneration.
  */
 
+import { SuggestedPrompt } from "../api/responses/home.js";
 import {
   deleteMemoryCheckpoint,
   getMemoryCheckpoint,
   setMemoryCheckpoint,
 } from "../persistence/checkpoints.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
-import type { SuggestedPrompt } from "./feed-types.js";
 
 const LLM_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 

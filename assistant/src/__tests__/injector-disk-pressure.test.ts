@@ -14,16 +14,14 @@ mock.module("../daemon/date-context.js", () => ({
   formatTurnTimestamp: () => FIXED_TURN_TIMESTAMP,
 }));
 
+import { stripInjectionsForCompaction } from "../context/strip-injections.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   clearConversations,
   setConversation,
 } from "../daemon/conversation-registry.js";
 import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembly.js";
-import {
-  applyRuntimeInjections,
-  stripInjectionsForCompaction,
-} from "../daemon/conversation-runtime-assembly.js";
+import { applyRuntimeInjections } from "../daemon/conversation-runtime-assembly.js";
 import {
   type SlackMessageMetadata,
   writeSlackMetadata,

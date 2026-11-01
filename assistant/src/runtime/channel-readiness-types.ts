@@ -1,8 +1,6 @@
 // Channel readiness types — reusable primitive for all channels.
 
-import type { ChannelId } from "../channels/types.js";
-
-export type { ChannelId };
+import { ChannelId } from "@mycadet/service-contracts/channels";
 
 /**
  * Setup progress for a channel: not_configured → incomplete → ready.

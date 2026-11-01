@@ -18,8 +18,9 @@ mock.module("@/generated/gateway/sdk.gen", () => ({
   assistantChannelAdmissionPolicySet: (...args: unknown[]) => mockPut(...args),
 }));
 
-const { fetchChannelPolicies, setChannelPolicy, isInternalChannel, ApiError } =
+const { fetchChannelPolicies, setChannelPolicy, isInternalChannel } =
   await import("./api");
+const { ApiError } = await import("@/utils/api-errors");
 
 function ok<T>(body: T): MockResponse {
   return {

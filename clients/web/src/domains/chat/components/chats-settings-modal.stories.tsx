@@ -16,8 +16,8 @@ import ruChat from "@/i18n/locales/ru/chat.json";
 import {
   ChatsSettingsModal,
   type ChatsSettingsModalProps,
-  type ChatsSettingsValues,
 } from "./chats-settings-modal";
+import type { ChatsSettingsValues } from "./chats-settings-form";
 
 const DEFAULTS: ChatsSettingsValues = {
   newMessageEnabled: true,

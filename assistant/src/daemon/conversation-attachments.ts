@@ -23,7 +23,7 @@ import {
   toolImageFilename,
   validateDrafts,
 } from "./assistant-attachments.js";
-import type { UserMessageAttachment } from "./message-protocol.js";
+import { UserMessageAttachment } from "./message-types/shared.js";
 import {
   generateVideoThumbnail,
   generateVideoThumbnailFromPath,

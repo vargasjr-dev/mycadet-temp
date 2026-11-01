@@ -23,15 +23,6 @@ import type {
  * intentional partial module mocks in tests.
  */
 
-export type {
-  EmbedResult,
-  IndexDocumentOptions,
-  IndexDocumentResult,
-  IndexedDocument,
-  IndexHit,
-  QueryIndexOptions,
-} from "./plugin-index.js";
-
 type EmbeddingTargetType = Parameters<
   typeof import("../job-utils.js").embedAndUpsert
 >[1];

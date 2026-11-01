@@ -20,6 +20,7 @@
  * missing even though the package itself is a plain dependency.
  */
 
+import type { AvatarState } from "@mycadet/avatar-manifest";
 import type { NotificationAvatarMediaType } from "@mycadet/avatar-manifest/notification-avatar";
 import {
   NOTIFICATION_AVATAR_MAX_BYTES,
@@ -31,7 +32,7 @@ import type sharpDefault from "sharp";
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
 import { getLogger } from "../util/logger.js";
 import { paletteAccent } from "./avatar-accent.js";
-import { type AvatarState, readAvatarState } from "./avatar-manifest.js";
+import { readAvatarState } from "./avatar-manifest.js";
 import { ensureAvatarRaster } from "./ensure-raster.js";
 import {
   getResvg,

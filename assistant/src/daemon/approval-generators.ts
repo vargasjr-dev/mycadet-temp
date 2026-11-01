@@ -18,8 +18,8 @@ import type {
   ApprovalConversationDisposition,
   ApprovalConversationGenerator,
   ApprovalConversationResult,
-  ApprovalCopyGenerator,
 } from "../runtime/http-types.js";
+import { ApprovalCopyGenerator } from "../runtime/message-composer-types.js";
 
 // ---------------------------------------------------------------------------
 // Approval conversation generator constants

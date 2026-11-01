@@ -1,6 +1,6 @@
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import { getPublicBaseUrl } from "../inbound/public-ingress-urls.js";
 import { resolveTelephonyCredentialReadiness } from "./telephony-credential-preflight.js";
 

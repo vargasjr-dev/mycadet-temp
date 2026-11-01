@@ -2,7 +2,7 @@ import { loadAllAssistants } from "@mycadet/local-mode";
 import { findOpenPort } from "./port-allocator.js";
 import { getDefaultPorts } from "./environments/paths.js";
 import { findPidListeningOnPort } from "./remotes/local.js";
-import { isCadetProcess } from "./process.js";
+import { isCadetProcess } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 /**

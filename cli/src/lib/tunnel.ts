@@ -17,13 +17,15 @@ import {
 } from "@mycadet/local-mode/contract";
 
 import {
+  isIngressRunning,
+  isPidAlive,
+  readIngressState,
+} from "@mycadet/local-mode";
+import {
   ensureAppServer,
   getNginxVersion,
-  isIngressRunning,
-  readIngressState,
-  isPidAlive,
   type AppServer,
-} from "./servers/nginx.js";
+} from "\./servers/nginx\.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,

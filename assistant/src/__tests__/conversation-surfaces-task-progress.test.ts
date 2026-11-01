@@ -1,18 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
+import { UISurfaceUpdateEvent } from "../api/events/ui-surface-update.js";
 import type { AssistantEvent } from "../api/index.js";
+import { CardSurfaceData } from "../api/surfaces.js";
+import { DynamicPageSurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   createSurfaceMutex,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
-import type {
-  CardSurfaceData,
-  DynamicPageSurfaceData,
-  SurfaceType,
-  UiSurfaceShow,
-  UISurfaceUpdateEvent,
-} from "../daemon/message-protocol.js";
+import { UiSurfaceShow } from "../daemon/message-types/surfaces.js";
 import {
   asConversation,
   mockChannelCapabilities,

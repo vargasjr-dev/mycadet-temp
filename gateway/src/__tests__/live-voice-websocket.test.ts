@@ -32,6 +32,7 @@ let mockFindCadetGuardian = mock(
     principalId: GUARDIAN_PRINCIPAL,
   }),
 );
+const realCloudIdentity = { ...(await import("../cloud-identity.js")) };
 mock.module("../auth/guardian-bootstrap.js", () => ({
   findCadetGuardian: () => mockFindCadetGuardian(),
 }));
@@ -45,7 +46,8 @@ let mockReadCredential = mock(
 mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
 }));
-mock.module("../cloud-user-id.js", () => ({
+mock.module("../cloud-identity.js", () => ({
+  ...realCloudIdentity,
   readStoredCloudUserId: async () => {
     const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };

@@ -5,14 +5,23 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import { ConfigFileCache } from "../../config-file-cache.js";
+import * as realCredentialReader from "../../credential-reader.js";
+import * as realPaths from "../../paths.js";
 import { handleSaveIngressDomain } from "./ingress-domains.js";
 
 // The handler's write path resolves the workspace config through
-// getWorkspaceDir; the mock redirects it into a per-test temp dir.
+// getWorkspaceDir (config-file-utils imports it from ./paths.js —
+// credential-reader.ts no longer re-exports it); the mock redirects it into a
+// per-test temp dir. credential-reader is spread-real so credential-cache's
+// readCredentialResult import still resolves while the route runs.
 let workspaceDir = "";
 
-mock.module("../../credential-reader.js", () => ({
+mock.module("../../paths.js", () => ({
+  ...realPaths,
   getWorkspaceDir: () => workspaceDir,
+}));
+mock.module("../../credential-reader.js", () => ({
+  ...realCredentialReader,
 }));
 
 const SavedIngressSchema = z.looseObject({

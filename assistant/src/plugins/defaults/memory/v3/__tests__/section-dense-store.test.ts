@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 import type { Section } from "../types.js";
 
 mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({

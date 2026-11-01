@@ -79,12 +79,10 @@ const {
   surfaceProxyResolver,
 } = await import("../daemon/conversation-surfaces.js");
 
+import { CardSurfaceData } from "../api/surfaces.js";
+import { SurfaceData } from "../api/surfaces.js";
+import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
-import type {
-  CardSurfaceData,
-  SurfaceData,
-  SurfaceType,
-} from "../daemon/message-protocol.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 

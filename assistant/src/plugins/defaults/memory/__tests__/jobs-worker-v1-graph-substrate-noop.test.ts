@@ -33,7 +33,7 @@ import {
 import { eq } from "drizzle-orm";
 
 import { assertNotLiveDb } from "../../../../__tests__/assert-not-live-db.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
 
 let bootstrapCalls = 0;

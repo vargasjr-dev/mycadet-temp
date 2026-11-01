@@ -18,7 +18,7 @@
 import { z } from "zod";
 
 import { getConfig } from "../../../../config/loader.js";
-import type { AssistantConfig } from "../../../../config/types.js";
+import { AssistantConfig } from "../../../../config/schema.js";
 import {
   ACTOR_PRINCIPALS,
   type RoutePolicy,

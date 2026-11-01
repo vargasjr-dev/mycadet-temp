@@ -7,7 +7,6 @@ import {
   loadSkillBySelector,
   loadSkillCatalog,
 } from "../../config/skills.js";
-import { RiskLevel } from "../../permissions/types.js";
 import {
   autoInstallFromCatalog,
   resolveCatalog,
@@ -27,6 +26,7 @@ import { computeSkillVersionHash } from "../../skills/version-hash.js";
 import { getWorkspaceDirDisplay } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 import { supportsClientOsForSkillTool } from "../client-os.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

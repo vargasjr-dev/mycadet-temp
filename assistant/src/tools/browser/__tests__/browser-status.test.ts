@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { CHROME_EXTENSION_INSTALL_HINT } from "../../capability-offer.js";
+import { DESKTOP_APP_INSTALL_HINT } from "../../capability-offer.js";
 import type { ToolContext } from "../../types.js";
 import {
   BROWSER_STATUS_INPUT_FIELD,
   BROWSER_STATUS_MODE,
-  CHROME_EXTENSION_INSTALL_HINT,
-  DESKTOP_APP_INSTALL_HINT,
 } from "../browser-status-constants.js";
 import { CdpError } from "../cdp-client/errors.js";
 

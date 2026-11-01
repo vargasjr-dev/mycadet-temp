@@ -26,8 +26,6 @@ import {
 } from "./conversation-crud.js";
 import { isReplaceableTitle } from "./conversation-title-placeholders.js";
 
-export { isReplaceableTitle } from "./conversation-title-placeholders.js";
-
 const log = getLogger("conversation-title-service");
 
 // ── Types ────────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { AssistantConfig } from "../../../../../config/types.js";
+import { AssistantConfig } from "../../../../../config/schema.js";
 
 // Spread the real module: the reranker reaches the plugin API, whose import
 const backendState = {

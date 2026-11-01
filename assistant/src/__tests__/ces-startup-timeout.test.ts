@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import type { CesClient } from "../credential-execution/client.js";
+import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
+
 import {
   awaitCesClientWithTimeout,
   DEFAULT_CES_STARTUP_TIMEOUT_MS,

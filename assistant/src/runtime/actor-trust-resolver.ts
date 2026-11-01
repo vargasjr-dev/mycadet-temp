@@ -17,7 +17,9 @@
  *   {@link TrustContext} conversion, shared with the verdict consumer.
  */
 
-import type { ChannelId } from "../channels/types.js";
+import { TrustClass } from "@mycadet/gateway-client";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   guardianForChannel,
   peekCachedGuardianDelivery,
@@ -33,7 +35,6 @@ import type {
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { canonicalizeInboundIdentity } from "../util/canonicalize-identity.js";
 import { getLogger } from "../util/logger.js";
-import type { TrustClass } from "./trust-class.js";
 
 const log = getLogger("actor-trust-resolver");
 
@@ -46,7 +47,6 @@ const log = getLogger("actor-trust-resolver");
  * `@mycadet/gateway-client` and re-exported here for the resolver's
  * consumers.
  */
-export type { TrustClass };
 
 /**
  * Fully resolved trust context from the actor trust resolver.

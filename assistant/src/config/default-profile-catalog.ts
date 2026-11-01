@@ -741,8 +741,6 @@ export function resolveDefaultProfileForProvider(
   );
 }
 
-export { isDefaultProfileKey } from "./default-profile-names.js";
-
 /**
  * The implementation of default profile `key` on `provider`: the named matrix
  * column when the provider has one, the shared BYOK template otherwise.

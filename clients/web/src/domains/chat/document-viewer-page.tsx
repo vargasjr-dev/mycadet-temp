@@ -28,13 +28,13 @@ import {
   startDocumentConversation,
 } from "./document-conversation";
 import {
-  documentReturnPath,
   documentConversationUrl,
-  DOCUMENT_RETURN_PARAM,
   navigateToDocumentConversation,
   showDocumentInConversation,
   returnFromDocument,
 } from "./document-conversation-navigation";
+import { DOCUMENT_RETURN_PARAM } from "@/utils/document-navigation";
+import { documentReturnPath } from "@/utils/document-navigation";
 import { useDocumentCommentEvents } from "./hooks/use-document-comment-events";
 import { useDocumentPdfExport } from "./hooks/use-document-pdf-export";
 import { useUnseenDocumentChangesStore } from "./unseen-document-changes-store";

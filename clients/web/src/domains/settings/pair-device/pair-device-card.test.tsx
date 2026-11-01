@@ -10,7 +10,7 @@ import {
 } from "@testing-library/react";
 
 import { publish, __resetForTesting as resetEventBus } from "@/lib/event-bus";
-import type { LocalListDevicesResult } from "@/runtime/local-mode-host";
+import { LocalListDevicesResult } from "@mycadet/ipc-contract";
 
 import {
   createQueryClientWrapper,

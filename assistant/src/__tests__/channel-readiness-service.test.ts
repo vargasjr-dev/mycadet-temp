@@ -47,7 +47,8 @@ mock.module("../runtime/channel-invite-transports/whatsapp.js", () => ({
   resolveWhatsAppDisplayNumber: () => "",
 }));
 
-import type { ChannelId } from "../channels/types.js";
+import { ChannelId } from "@mycadet/service-contracts/channels";
+
 import {
   ChannelReadinessService,
   createReadinessService,

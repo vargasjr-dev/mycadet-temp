@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { InteractiveUiResult } from "../../runtime/interactive-ui.js";
+import { InteractiveUiResult } from "../../runtime/interactive-ui-types.js";
 
 // ---------------------------------------------------------------------------
 // Mock state — controls what requestInteractiveUi sees

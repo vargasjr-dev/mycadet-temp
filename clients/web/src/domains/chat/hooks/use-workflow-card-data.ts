@@ -33,8 +33,6 @@ import {
   type ToolCallCardStep,
 } from "@/domains/chat/utils/tool-call-card-utils";
 
-export type { ToolCallCardData, ToolCallCardStep };
-
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -268,7 +266,9 @@ export function useWorkflowAgentAvatarSeeds(runId: string): string[] {
  */
 export function useWorkflowCardData(runId: string): ToolCallCardData | null {
   const entry = useWorkflowStore((state) => state.byId[runId]);
-  const assistantId = useResolvedAssistantStore((s) => s.assistant?.assistantId ?? null);
+  const assistantId = useResolvedAssistantStore(
+    (s) => s.assistant?.assistantId ?? null,
+  );
 
   useEffect(() => {
     if (!entry && assistantId) {

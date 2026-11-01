@@ -22,8 +22,8 @@
  * result names the failing comparison, while the HTTP 403 stays generic
  * because it can reach a caller who does not own the target client.
  */
-import type { HostProxyCapability } from "../../channels/types.js";
 import { isHttpAuthDisabled } from "../../config/env.js";
+import { HostProxyCapability } from "../../types/host-capabilities.js";
 import { getLogger } from "../../util/logger.js";
 import type { AssistantEventHub } from "../assistant-event-hub.js";
 import { ForbiddenError } from "../routes/errors.js";

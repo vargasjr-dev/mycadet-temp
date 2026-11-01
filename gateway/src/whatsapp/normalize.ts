@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { getLogger } from "../logger.js";
-import type { GatewayInboundEvent } from "../types.js";
+import type { GatewayInboundEvent } from "../channels/inbound-event.js";
 
 // WhatsApp Cloud API webhook payloads are untrusted external input:
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import { useAttachmentSquares } from "@/domains/chat/components/chat-attachments/use-attachment-squares";
 import { previewEntryKey } from "@/domains/chat/components/chat-attachments/use-failed-preview-ids";

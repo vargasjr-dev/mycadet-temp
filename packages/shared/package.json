@@ -7,6 +7,11 @@
     "./github-repository": "./github-repository.ts",
     "./providers/baseten": "./providers/baseten.ts",
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
-    "./version": "./version.ts"
+    "./version": "./version.ts",
+    "./eslint/no-re-exports": "./eslint/no-re-exports.mjs"
+  },
+  "devDependencies": {
+    "eslint": "10.1.0",
+    "typescript-eslint": "8.58.0"
   }
 }

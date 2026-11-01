@@ -10,29 +10,6 @@
 
 import type { PluginLogger } from "../hooks/types.js";
 
-export type {
-  AgentLoopExitReason,
-  BaseHookContext,
-  ConversationDeletedContext,
-  ConversationsClearedContext,
-  HookBroadcast,
-  MessageDeletedContext,
-  PluginLogger,
-  PostCompactContext,
-  PostModelCallContext,
-  PostModelCallDecision,
-  PostToolUseContext,
-  PreModelCallContext,
-  StopContext,
-  UserPromptSubmitContext,
-} from "../hooks/types.js";
-export { RiskLevel } from "../tools/tool-types.js";
-export type {
-  ToolContext,
-  ToolDefinition,
-  ToolExecutionResult,
-} from "../tools/types.js";
-
 // ─── Hook function ───────────────────────────────────────────────────────────
 
 /**

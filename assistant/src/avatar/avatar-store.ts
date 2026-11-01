@@ -25,6 +25,8 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { AvatarSource } from "@mycadet/avatar-manifest";
+import type { AvatarState } from "@mycadet/avatar-manifest";
 import {
   AVATAR_IMAGE_FILENAME,
   AVATAR_MANIFEST_FILENAME,
@@ -41,8 +43,6 @@ import {
   paletteAccent,
 } from "./avatar-accent.js";
 import {
-  type AvatarSource,
-  type AvatarState,
   computeImageMeta,
   readAvatarState,
   writeManifest,
@@ -50,6 +50,8 @@ import {
 
 /** The sources an image can be set from (everything but the builder render). */
 type ImageSource = Exclude<AvatarSource, "builder">;
+import type { CharacterTraits } from "@mycadet/avatar-manifest";
+
 import {
   describeAvatarState,
   NO_AVATAR_IDENTITY_NOTE,
@@ -57,7 +59,6 @@ import {
 } from "./identity-avatar.js";
 import {
   ASCII_FILENAME,
-  type CharacterTraits,
   type TraitsSyncResult,
   writeTraitsAndRenderAvatar,
 } from "./traits-png-sync.js";

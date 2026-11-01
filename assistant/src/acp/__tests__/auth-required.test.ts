@@ -9,9 +9,9 @@ import { describe, expect, test } from "bun:test";
 import { RequestError } from "@agentclientprotocol/sdk";
 
 import { AcpAuthRequiredEventSchema } from "../../api/events/acp-auth-required.js";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "../../api/events/acp-auth-required.js";
 import { AcpSessionErrorEventSchema } from "../../api/events/acp-session-error.js";
 import {
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
   AcpAuthRequiredError,
   AUTH_REQUIRED_CODE,
   CLAUDE_ACP_COMMAND,

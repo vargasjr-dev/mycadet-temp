@@ -14,11 +14,6 @@ import { isToolCallCompleted } from "@/domains/chat/utils/tool-call-status";
 import type { DisplayAttachment } from "@/types/attachment-types";
 import type { ExternalSourceLink } from "@/utils/external-source-link";
 
-export type { DisplayAttachment } from "@/types/attachment-types";
-
-export type { ExternalSourceLink } from "@/utils/external-source-link";
-export { getExternalLinkUrl } from "@/utils/external-source-link";
-
 export interface SlackMessageSender {
   id?: string;
   externalUserId?: string;

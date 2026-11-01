@@ -8,8 +8,8 @@ import type {
   ProviderEvent,
   ProviderResponse,
   SendMessageOptions,
-  ToolDefinition,
 } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { ProviderError } from "../util/errors.js";
 
@@ -139,7 +139,7 @@ import {
   EMPTY_ASSISTANT_TURN_PLACEHOLDER,
   OpenAIChatCompletionsProvider,
 } from "../providers/openai/chat-completions-provider.js";
-import { OpenAIProvider } from "../providers/openai/client.js";
+import { OpenAIChatCompletionsProvider as OpenAIProvider } from "../providers/openai/chat-completions-provider.js";
 import { OpenRouterProvider } from "../providers/openrouter/client.js";
 
 // ---------------------------------------------------------------------------

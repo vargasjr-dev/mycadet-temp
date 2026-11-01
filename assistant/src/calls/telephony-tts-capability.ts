@@ -25,8 +25,8 @@ import {
   getProviderKeyAsync,
   getSecureKeyAsync,
 } from "../security/secure-keys.js";
-import type { TtsProviderCatalogEntry } from "../tts/provider-catalog.js";
 import { getCatalogProvider } from "../tts/provider-catalog.js";
+import { TtsProviderCatalogEntry } from "../tts/provider-definition.js";
 import { resolveTtsConfig } from "../tts/tts-config-resolver.js";
 
 // ---------------------------------------------------------------------------

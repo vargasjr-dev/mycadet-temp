@@ -7,7 +7,7 @@ import {
 } from "@/domains/chat/composer-store";
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import type { DocumentViewerContainerHandle } from "@/domains/chat/components/document-viewer-container";
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { useViewerStore } from "@/stores/viewer-store";

@@ -27,12 +27,12 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { bootstrapPlugins } from "../daemon/external-plugins-bootstrap.js";
-import { RiskLevel } from "../permissions/types.js";
+import { InitContext } from "../plugin-api/types.js";
 import {
   registerPlugin,
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
-import type { InitContext, Plugin } from "../plugins/types.js";
+import type { Plugin } from "../plugins/types.js";
 import {
   __clearRegistryForTesting,
   __resetRegistryForTesting,
@@ -43,6 +43,7 @@ import {
   registerPluginTools,
   unregisterPluginTools,
 } from "../tools/registry.js";
+import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 // Redirect plugin-storage-directory creation into a per-process temp tree so

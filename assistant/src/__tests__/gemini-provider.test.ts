@@ -5,9 +5,9 @@ import type {
   ContentBlock,
   Message,
   ProviderEvent,
-  ToolDefinition,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../util/errors.js";
 

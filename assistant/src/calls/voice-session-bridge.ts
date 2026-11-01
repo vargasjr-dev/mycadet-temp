@@ -6,6 +6,7 @@
  * simple callbacks suitable for real-time TTS streaming.
  */
 
+import { ChannelId } from "@mycadet/service-contracts/channels";
 import { v7 as uuidv7 } from "uuid";
 
 import type {
@@ -16,7 +17,6 @@ import type {
 } from "../api/index.js";
 import { consumeGrantForInvocation } from "../approvals/approval-primitive.js";
 import type {
-  ChannelId,
   ClientOs,
   InterfaceId,
   TurnChannelContext,
@@ -55,7 +55,7 @@ import {
   updateMessageContent,
 } from "../persistence/conversation-crud.js";
 import { VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND } from "../plugin-api/constants.js";
-import { dispatchProviderResolvable } from "../providers/connection-resolution.js";
+import { dispatchProviderResolvable } from "../providers/provider-resolvability.js";
 import { pinnedListeningLanguage } from "../providers/speech-to-text/provider-catalog.js";
 import type { ContentBlock } from "../providers/types.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
@@ -207,7 +207,6 @@ export const TURN_ABORTED_WAITING_MESSAGE =
  * throw site (`conversation-messaging.ts`); the call controller's
  * lock-contention re-prompt matches on this string.
  */
-export { CONVERSATION_BUSY_MESSAGE };
 
 /**
  * How long startVoiceTurn waits for a prior turn to release the processing
@@ -357,8 +356,6 @@ export interface VoiceTurnCallbacks {
   /** Fired when a tool invocation finishes. */
   tool_result?: (event: VoiceToolResultEvent) => void;
 }
-
-export type { VoiceEscalationTarget } from "./voice-escalation-target.js";
 
 export interface VoiceTurnOptions {
   /** Internal task update delivered through the call, with its original attribution. */

@@ -17,13 +17,6 @@ import {
   type ShareInboxItem,
 } from "@/runtime/share-inbox-parse";
 
-export type {
-  ShareInboxDestination,
-  ShareInboxFileRef,
-  ShareInboxItem,
-} from "@/runtime/share-inbox-parse";
-export { parseShareInboxItem } from "@/runtime/share-inbox-parse";
-
 interface ShareInboxPlugin {
   consume(options: { id?: string }): Promise<{
     ok: boolean;
@@ -48,9 +41,8 @@ export async function readShareInboxFiles(
   if (files.length === 0) {
     return [];
   }
-  const { filesFromNativePaths } = await import(
-    "@/domains/chat/components/chat-attachments/native-attachment-pickers"
-  );
+  const { filesFromNativePaths } =
+    await import("@/domains/chat/components/chat-attachments/native-attachment-pickers");
   return filesFromNativePaths(files);
 }
 

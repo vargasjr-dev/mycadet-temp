@@ -74,15 +74,14 @@ import {
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
 } from "../http-client.js";
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
+import { isProcessAlive, stopProcessByPidFile } from "@mycadet/local-mode";
 import {
-  DAEMON_STOP_TIMEOUT_MS,
-  type ProcessState,
   executableName,
-  isProcessAlive,
   pathListDelimiter,
   resolveProcessState,
-  stopProcessByPidFile,
   stopProcessGracefully,
+  type ProcessState,
 } from "../process.js";
 import { stripVersionPrefix } from "../version-compat.js";
 import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "../xdg-log.js";

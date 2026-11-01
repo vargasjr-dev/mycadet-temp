@@ -12,7 +12,7 @@ import {
   recordClientConnectionEvent,
 } from "../client-connection-events-store.js";
 import { migrateCreateClientConnectionEvents } from "../migrations/382-create-client-connection-events.js";
-import * as schema from "../schema.js";
+import * as schema from "../schema/index.js";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");

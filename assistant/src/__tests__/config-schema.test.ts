@@ -31,13 +31,11 @@ function ensureTestDir(): void {
 }
 
 import { getConfig, invalidateConfigCache } from "../config/loader.js";
-import {
-  AssistantConfigSchema,
-  DEFAULT_ELEVENLABS_VOICE_ID,
-} from "../config/schema.js";
+import { AssistantConfigSchema } from "../config/schema.js";
+import { AssistantConfig } from "../config/schema.js";
+import { DEFAULT_ELEVENLABS_VOICE_ID } from "../config/schemas/elevenlabs.js";
 import { SttServiceSchema } from "../config/schemas/stt.js";
 import { TtsServiceSchema } from "../config/schemas/tts.js";
-import type { AssistantConfig } from "../config/types.js";
 import { listCatalogProviderIds } from "../tts/provider-catalog.js";
 import { resolveTtsConfig } from "../tts/tts-config-resolver.js";
 import { TTS_PROVIDER_IDS } from "../tts/types.js";

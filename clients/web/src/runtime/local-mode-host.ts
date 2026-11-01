@@ -1,9 +1,6 @@
 import type {
   LocalAssistantStatusResult,
   LocalListDevicesResult,
-  LocalPairedDeviceRecord,
-  LocalPairingFailure,
-  LocalPairingFailureReason,
   LocalPairingPollResult,
   LocalPairingStartResult,
   LocalReadAssistantAvatarResult,
@@ -67,16 +64,6 @@ export interface LocalUpgradeResult {
   version?: string;
   error?: string;
 }
-
-export type { LocalAssistantStatusResult };
-export type { LocalListDevicesResult };
-export type { LocalPairedDeviceRecord };
-export type { LocalPairingFailure };
-export type { LocalPairingFailureReason };
-export type { LocalPairingPollResult };
-export type { LocalPairingStartResult };
-export type { LocalRevokeDeviceResult };
-export type { LocalUpgradeOptions };
 
 /**
  * Thrown when a host returns a structured guardian-token failure. Carries the

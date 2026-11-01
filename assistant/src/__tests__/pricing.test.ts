@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ModelPricingOverride } from "../config/schema.js";
+import { ModelPricingOverride } from "../config/schemas/inference.js";
 import type { PricingUsage } from "../usage/types.js";
 import {
   resolvePricing,

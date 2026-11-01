@@ -12,7 +12,7 @@ import {
 
 const restorePreviewModal = mockAttachmentPreviewModal();
 
-import type { DisplayAttachment } from "@/domains/chat/types/types";
+import { DisplayAttachment } from "@/types/attachment-types";
 
 import { MessageAttachments } from "@/domains/chat/components/chat-attachments/message-attachments";
 import { useViewerStore } from "@/stores/viewer-store";

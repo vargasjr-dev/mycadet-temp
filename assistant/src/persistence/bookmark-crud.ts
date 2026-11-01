@@ -4,7 +4,9 @@ import { v4 as uuid } from "uuid";
 import type { DrizzleDb } from "./db-connection.js";
 import { stringifyMessageContent } from "./message-content.js";
 import { messageConversationId } from "./message-reads.js";
-import { conversations, messageBookmarks, messages } from "./schema.js";
+import { conversations } from "./schema/index.js";
+import { messageBookmarks } from "./schema/index.js";
+import { messages } from "./schema/index.js";
 
 /**
  * Wire-shape representation of a bookmark, joined with the bookmarked

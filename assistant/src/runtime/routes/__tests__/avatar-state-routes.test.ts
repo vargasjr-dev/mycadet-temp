@@ -22,7 +22,8 @@ mock.module("../../sync/resource-sync-events.js", () => ({
   },
 }));
 
-import type { AvatarState } from "../../../avatar/avatar-manifest.js";
+import { AvatarState } from "@mycadet/avatar-manifest";
+
 import { writeManifest } from "../../../avatar/avatar-manifest.js";
 import { ROUTES } from "../avatar-routes.js";
 import type { RouteHandlerArgs } from "../types.js";

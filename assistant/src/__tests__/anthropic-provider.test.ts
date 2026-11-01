@@ -2,11 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { Anthropic } from "@anthropic-ai/sdk";
 
-import type {
-  ContentBlock,
-  Message,
-  ToolDefinition,
-} from "../providers/types.js";
+import type { ContentBlock, Message } from "../providers/types.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 
 // ---------------------------------------------------------------------------
 // Mock Anthropic SDK — must be before importing the provider

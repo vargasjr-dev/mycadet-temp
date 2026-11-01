@@ -164,8 +164,6 @@ export class AttachmentValidationError extends Error {
   }
 }
 
-export type { RuntimeInboundPayload } from "@mycadet/gateway-client";
-
 export type RuntimeAttachmentMeta = {
   id: string;
   filename?: string;
@@ -312,7 +310,9 @@ export async function resetConversation(
       url,
       {
         method: "DELETE",
-        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, {
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify({
           sourceChannel,
           conversationExternalId,
@@ -536,7 +536,9 @@ export async function forwardTwilioVoiceWebhook(
       url,
       {
         method: "POST",
-        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, {
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify({ params, originalUrl }),
       },
       config.runtimeTimeoutMs,
@@ -601,7 +603,9 @@ export async function forwardTwilioStatusWebhook(
       url,
       {
         method: "POST",
-        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, {
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify({ params }),
       },
       config.runtimeTimeoutMs,
@@ -646,7 +650,9 @@ export async function uploadAttachment(
       url,
       {
         method: "POST",
-        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, {
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify(input),
       },
       config.runtimeTimeoutMs,
@@ -706,7 +712,9 @@ export async function forwardOAuthCallback(
       url,
       {
         method: "POST",
-        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, {
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify({ state, code, error }),
       },
       config.runtimeTimeoutMs,

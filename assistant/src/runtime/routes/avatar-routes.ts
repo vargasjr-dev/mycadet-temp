@@ -2,16 +2,17 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { getCharacterComponents } from "@mycadet/avatar-catalog";
+import type { AvatarState } from "@mycadet/avatar-manifest";
 import {
   AVATAR_TRAITS_FILENAME,
   normalizeAvatarAccentHex,
 } from "@mycadet/avatar-manifest";
+import { CharacterTraits } from "@mycadet/avatar-manifest";
 import { z } from "zod";
 
 import { backfillAccent } from "../../avatar/accent-backfill.js";
 import { renderCharacterAscii } from "../../avatar/ascii-renderer.js";
 import {
-  type AvatarState,
   deriveStateFromLegacyFiles,
   readManifest,
   writeManifest,
@@ -27,7 +28,6 @@ import {
   ensureAvatarRaster,
   ensureAvatarRasterPath,
 } from "../../avatar/ensure-raster.js";
-import type { CharacterTraits } from "../../avatar/traits-png-sync.js";
 import { detectMediaType } from "../../tools/shared/filesystem/image-read.js";
 import { generateAvatarImage } from "../../tools/system/avatar-generator.js";
 import {

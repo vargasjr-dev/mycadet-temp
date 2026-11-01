@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { REFUSAL_FALLBACK_TEXT } from "@mycadet/plugin-api";
+
 import type {
   AgentEvent,
   CheckpointDecision,
   CheckpointInfo,
 } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import type { PostToolUseContext, StopContext } from "../plugin-api/types.js";
-import { REFUSAL_FALLBACK_TEXT } from "../plugins/defaults/empty-response/hooks/post-model-call.js";
+import { PostToolUseContext } from "../hooks/types.js";
+import { StopContext } from "../hooks/types.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import { registerPlugin } from "../plugins/registry.js";
 import type {
@@ -15,13 +17,13 @@ import type {
   Message,
   Provider,
   ProviderResponse,
-  ToolDefinition,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
 import {
   CANCELLED_TOOL_RESULT,
   CANCELLED_UNSETTLED_TOOL_RESULT,
 } from "../tools/execution-timeout.js";
+import { ToolDefinition } from "../tools/tool-types.js";
 import {
   createMockProvider,
   textResponse,

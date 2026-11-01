@@ -20,10 +20,11 @@
  * the next turn.
  */
 
+import { HookFunction } from "../plugin-api/types.js";
 import { isFirstPartyDefaultPlugin } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { getDiscoveredUserPluginNames } from "../plugins/mtime-cache.js";
-import type { HookEntry, HookFunction } from "../plugins/types.js";
+import type { HookEntry } from "../plugins/types.js";
 import { collectUserHookEntries } from "./hook-loader.js";
 
 // ─── Internal state ──────────────────────────────────────────────────────────

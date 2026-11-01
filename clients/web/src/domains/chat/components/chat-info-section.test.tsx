@@ -23,10 +23,10 @@ import { DETAIL_SHELL_BODY_INSET_PX } from "@/components/detail-shell";
 import { CHAT_INFO_APP_TILE_WIDTH_PX } from "@/domains/chat/components/chat-info-app-tile";
 import { CHAT_INFO_FILE_TILE_WIDTH_PX } from "@/domains/chat/components/chat-info-file-tile";
 import {
-  CHAT_INFO_BODY_WIDTH_PX,
   CHAT_INFO_NARROW_PHONE_PX,
   makeElementSizeMock,
 } from "@/domains/chat/components/chat-info.test-helper";
+import { CHAT_INFO_BODY_WIDTH_PX } from "@/domains/chat/components/chat-info-drawer-width";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 
 const widthRef = { value: CHAT_INFO_BODY_WIDTH_PX };

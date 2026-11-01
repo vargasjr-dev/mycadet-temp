@@ -6,7 +6,7 @@ import { Language, type Node as TSNode, Parser } from "web-tree-sitter";
 
 import { getLogger } from "../logger.js";
 
-import type { DangerousPattern, DangerousPatternType } from "./risk-types.js";
+import type { DangerousPattern } from "./risk-types.js";
 
 const log = getLogger("shell-parser");
 
@@ -38,10 +38,6 @@ class PromiseGuard<T> {
     return this.promise;
   }
 }
-
-// ── Re-export types for consumers ────────────────────────────────────────────
-
-export type { DangerousPattern, DangerousPatternType };
 
 export interface CommandSegment {
   command: string;

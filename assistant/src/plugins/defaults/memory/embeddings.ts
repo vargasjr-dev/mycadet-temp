@@ -1,5 +1,5 @@
 import { getConfig } from "../../../config/loader.js";
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import type {
   EmbeddingInput,
   EmbeddingRequestOptions,

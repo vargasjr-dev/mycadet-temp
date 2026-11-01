@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GuardianRequestWire } from "../../channels/gateway-guardian-requests.js";
+import { GuardianRequestWire } from "@mycadet/gateway-client";
 
 const emitSignalMock = mock(
   (_params: Record<string, unknown>): Promise<Record<string, unknown>> =>

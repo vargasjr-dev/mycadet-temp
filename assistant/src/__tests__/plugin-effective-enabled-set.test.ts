@@ -44,12 +44,13 @@ import {
   resetHookCacheForTests,
 } from "../hooks/hook-loader.js";
 import { getHooksFor, getUserHooksFor } from "../hooks/registry.js";
+import { HookFunction } from "../plugin-api/types.js";
 import { resetPluginCacheForTests } from "../plugins/mtime-cache.js";
 import {
   registerPlugin,
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
-import type { HookFunction, Plugin } from "../plugins/types.js";
+import type { Plugin } from "../plugins/types.js";
 import { getWorkspacePluginsDir } from "../util/layout.js";
 
 // Point the workspace at an empty temp dir so `getHooksFor` -> `getUserHooksFor`

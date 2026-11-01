@@ -14,6 +14,9 @@
  * other surfaces.
  */
 
+import type { GuardianRequestStatus } from "@mycadet/gateway-client";
+import type { GuardianRequestWire } from "@mycadet/gateway-client";
+
 import {
   type FeedItem,
   type FeedItemGuardianIntent,
@@ -22,8 +25,6 @@ import {
 } from "../api/responses/home.js";
 import {
   getGuardianRequest,
-  type GuardianRequestStatus,
-  type GuardianRequestWire,
   listGuardianRequests,
 } from "../channels/gateway-guardian-requests.js";
 import {

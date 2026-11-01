@@ -59,7 +59,7 @@ import {
   parseInterfaceId,
 } from "../../../channels/types.js";
 import { isSkillImprovementActive } from "../../../config/memory-v3-gate.js";
-import type { AssistantConfig } from "../../../config/types.js";
+import { AssistantConfig } from "../../../config/schema.js";
 import { warmGuardianBindings } from "../../../contacts/guardian-delivery-reader.js";
 import { extractTurnContextTimestamp } from "../../../context/compactor.js";
 import {

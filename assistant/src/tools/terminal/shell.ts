@@ -1,18 +1,17 @@
 import { spawn } from "node:child_process";
 
+import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 import { z } from "zod";
 
 import type { BackgroundToolCompletedEvent } from "../../api/events/background-tool-completed.js";
 import { getConfig } from "../../config/loader.js";
-import { RiskLevel } from "../../permissions/types.js";
 import { applyActivePluginName } from "../../plugins/active-plugin-env.js";
 import { wakeAgentForOpportunity } from "../../runtime/agent-wake.js";
 import { broadcastMessage } from "../../runtime/assistant-event-hub.js";
 import { conversationRevealNonce } from "../../runtime/reveal-nonce.js";
 import { redactSecrets } from "../../security/secret-scanner.js";
 import {
-  buildShellInvocation,
-  buildShellSpawnFlags,
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
@@ -43,6 +42,7 @@ import {
   toToolInputSchema,
 } from "../shared/zod-tool-schema.js";
 import type { ProxyEnvVars } from "../tool-types.js";
+import { RiskLevel } from "../tool-types.js";
 import type {
   ToolContext,
   ToolDefinition,

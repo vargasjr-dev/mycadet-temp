@@ -1,4 +1,6 @@
 import type { StreamPlan } from "@mycadet/gateway-client";
+import { NO_RESPONSE_INLINE_RE } from "@mycadet/service-contracts/no-response";
+import { hasDeliverableAssistantText } from "@mycadet/service-contracts/no-response";
 
 import type {
   AssistantEvent,
@@ -15,10 +17,6 @@ import {
 } from "../messaging/providers/index.js";
 import { getLogger } from "../util/logger.js";
 import { needsBoundarySpace } from "../util/text-spacing.js";
-import {
-  hasDeliverableAssistantText,
-  NO_RESPONSE_INLINE_RE,
-} from "./no-response.js";
 import {
   getTaskProgressDataFromToolInput,
   mergeTaskProgressData,

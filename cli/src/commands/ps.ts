@@ -1,5 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { getIngressPaths, readIngressState } from "../lib/servers/nginx.js";
+import { getIngressPaths, readIngressState } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 

@@ -10,10 +10,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { restoreAcpConnectFromHistory } from "@/domains/chat/hooks/restore-acp-connect-from-history";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import {
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
-  ACP_CLAUDE_OAUTH_MISSING_CODE,
-} from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_OAUTH_MISSING_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";
 
@@ -38,13 +36,15 @@ function messagesWithMarker(
   ];
 }
 
-function restore(overrides: {
-  messages?: DisplayMessage[];
-  isCurrent?: () => boolean;
-  checkConnected?: (assistantId: string) => Promise<boolean>;
-  revisionAtRestore?: number;
-  conversationId?: string;
-} = {}) {
+function restore(
+  overrides: {
+    messages?: DisplayMessage[];
+    isCurrent?: () => boolean;
+    checkConnected?: (assistantId: string) => Promise<boolean>;
+    revisionAtRestore?: number;
+    conversationId?: string;
+  } = {},
+) {
   return restoreAcpConnectFromHistory({
     messages:
       overrides.messages ?? messagesWithMarker(ACP_CLAUDE_OAUTH_MISSING_CODE),

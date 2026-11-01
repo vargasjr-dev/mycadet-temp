@@ -16,7 +16,6 @@ import { basename } from "node:path";
 import type { SlimSkillResponse } from "../daemon/message-types/skills.js";
 import { isTextMimeType as isTextMime } from "../runtime/routes/workspace-utils.js";
 import { getLogger } from "../util/logger.js";
-import type { SkillFileEntry } from "./catalog-files.js";
 import {
   clawhubInspect,
   clawhubInspectFile,
@@ -24,6 +23,7 @@ import {
   validateSlug,
 } from "./clawhub.js";
 import type { SkillFileProvider } from "./skill-file-provider.js";
+import { SkillFileEntry } from "./skill-file-types.js";
 
 const log = getLogger("clawhub-files");
 

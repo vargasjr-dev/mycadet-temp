@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
 
-import type { AssistantConfig } from "../config/types.js";
+import { AssistantConfig } from "../config/schema.js";
 import { BackendUnavailableError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { getMemoryDb } from "./db-connection.js";
@@ -20,8 +20,6 @@ import {
 import { withQdrantBreaker } from "./embeddings/qdrant-circuit-breaker.js";
 import { getQdrantClient } from "./embeddings/qdrant-client.js";
 import { memoryEmbeddings } from "./schema/index.js";
-
-export { BackendUnavailableError };
 
 const log = getLogger("memory-jobs-worker");
 

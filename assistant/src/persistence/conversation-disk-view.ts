@@ -31,7 +31,6 @@ import {
   getMessages,
 } from "./conversation-crud.js";
 import {
-  getConversationDirName,
   getConversationDirPath,
   getLegacyConversationDirPath,
   getResolvedConversationDirPath,
@@ -42,8 +41,6 @@ const log = getLogger("conversation-disk-view");
 // ---------------------------------------------------------------------------
 // Directory helpers
 // ---------------------------------------------------------------------------
-
-export { getConversationDirName, getConversationDirPath };
 
 function ensureConversationDirPath(id: string, createdAtMs: number): string {
   const dirPath = getResolvedConversationDirPath(id, createdAtMs);

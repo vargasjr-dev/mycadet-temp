@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import { addDismissedAcpConnectId } from "@/domains/chat/utils/dismissed-acp-connect-storage";
 import { raiseAcpConnectFromSnapshot } from "@/domains/chat/hooks/use-acp-run-rehydration";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";

@@ -3,6 +3,7 @@ import {
   selectWinningProfile,
 } from "../config/llm-resolver.js";
 import { getConfig } from "../config/loader.js";
+import type { ToolDefinition } from "../tools/tool-types.js";
 import {
   resolveUsageAttribution,
   sanitizeUsageMetadataValue,
@@ -57,7 +58,6 @@ import {
   type Provider,
   type ProviderResponse,
   type SendMessageOptions,
-  type ToolDefinition,
 } from "./types.js";
 import { UNPARSEABLE_TOOL_ARGS_SDK_MESSAGE } from "./unparseable-tool-args.js";
 

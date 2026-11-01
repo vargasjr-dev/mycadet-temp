@@ -11,10 +11,8 @@ import type {
   PendingConfirmationState,
   PendingQuestionState,
 } from "@/types/interaction-ui-types";
-import {
-  ACP_CLAUDE_AUTH_REQUIRED_CODE,
-  ACP_CLAUDE_OAUTH_MISSING_CODE,
-} from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_OAUTH_MISSING_CODE } from "@/domains/chat/utils/acp-connect";
+import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { PendingToolConfirmation } from "@mycadet/assistant-api";
 import type { ToolCallRuleContext } from "@/domains/chat/rule-editor-actions";
