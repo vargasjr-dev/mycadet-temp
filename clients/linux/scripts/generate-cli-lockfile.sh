@@ -37,7 +37,7 @@ rm -rf "$SEED_DIR"
 mkdir -p "$SEED_DIR"
 
 cat > "$SEED_DIR/package.json" <<EOF
-{"dependencies":{"@mycadet/cli":"$SPEC"}}
+{"dependencies":{"mycadet":"$SPEC"}}
 EOF
 
 (cd "$SEED_DIR" && bun install --ignore-scripts)

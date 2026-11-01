@@ -46,7 +46,7 @@ let readdirSyncReturn: Array<{ name: string; isDirectory: () => boolean }> = [];
 let readdirSyncError: Error | null = null;
 let writeFileSyncError: Error | null = null;
 // Contents returned by readFileSync (the install package.json stampPackageManager reads).
-let readFileSyncReturn = '{"dependencies":{"@mycadet/cli":"latest"}}';
+let readFileSyncReturn = '{"dependencies":{"mycadet":"latest"}}';
 // Per-path readFileSync overrides (e.g. the .app-version marker). Falls back to
 // readFileSyncReturn.
 const readFileSyncByPath: Record<string, string> = {};
@@ -149,7 +149,7 @@ afterEach(() => {
   readdirSyncReturn.length = 0;
   readdirSyncError = null;
   writeFileSyncError = null;
-  readFileSyncReturn = '{"dependencies":{"@mycadet/cli":"latest"}}';
+  readFileSyncReturn = '{"dependencies":{"mycadet":"latest"}}';
   for (const key of Object.keys(readFileSyncByPath))
     delete readFileSyncByPath[key];
   readFileSyncError = null;
@@ -375,7 +375,7 @@ describe("ensureCliInstalled", () => {
     // reinstall, so the post-install stamp is never reached — heal it here so
     // installs predating the field (or on an older bun) don't drift (LUM-2649).
     existsSyncDefault = true;
-    readFileSyncReturn = '{"dependencies":{"@mycadet/cli":"latest"}}';
+    readFileSyncReturn = '{"dependencies":{"mycadet":"latest"}}';
     readFileSyncByPath[markerPathFor("latest")] = mockAppVersion;
 
     await ensureCliInstalled();
@@ -392,7 +392,7 @@ describe("ensureCliInstalled", () => {
 
   test("does not rewrite an already-stamped install on the upgrade path", async () => {
     existsSyncDefault = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"@mycadet/cli":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"mycadet":"latest"}}`;
     readFileSyncByPath[markerPathFor("latest")] = mockAppVersion;
 
     await ensureCliInstalled();
@@ -724,7 +724,7 @@ describe("ensureCliInstalled", () => {
 
   test("stamps packageManager into the freshly installed package.json", async () => {
     existsSyncDefault = false;
-    readFileSyncReturn = '{"dependencies":{"@mycadet/cli":"latest"}}';
+    readFileSyncReturn = '{"dependencies":{"mycadet":"latest"}}';
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
@@ -740,7 +740,7 @@ describe("ensureCliInstalled", () => {
     const written = JSON.parse(pkgWrites.at(-1)![1]);
     expect(written.packageManager).toBe(`bun@${mockBunVersion}`);
     // Existing fields are preserved.
-    expect(written.dependencies).toEqual({ cadet: "latest" });
+    expect(written.dependencies).toEqual({ mycadet: "latest" });
     expect(renameSyncCalls).toContainEqual([
       `${latestInstallDir}/package.json.tmp`,
       `${latestInstallDir}/package.json`,
@@ -750,7 +750,7 @@ describe("ensureCliInstalled", () => {
   test("does not rewrite package.json when packageManager already matches", async () => {
     existsSyncDefault = false;
     existsSyncByPath[`${latestInstallDir}/package.json`] = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"@mycadet/cli":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"mycadet":"latest"}}`;
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
@@ -802,7 +802,7 @@ describe("ensureCliInstalled", () => {
   test("does not overwrite an existing package.json when anchoring", async () => {
     existsSyncDefault = false;
     existsSyncByPath[`${latestInstallDir}/package.json`] = true;
-    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"@mycadet/cli":"latest"}}`;
+    readFileSyncReturn = `{"packageManager":"bun@${mockBunVersion}","dependencies":{"mycadet":"latest"}}`;
 
     const promise = ensureCliInstalled();
     existsSyncByPath[cliBinPath] = true;
