@@ -1,8 +1,11 @@
-import { createServer, Socket } from "node:net";
+import { createServer } from "node:net";
 
 import { SEEDS, type PortMap } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
+import { probePort } from "./port-probe";
+
+export { probePort };
 
 /**
  * The default port set for an environment, and the port allocators the
@@ -35,29 +38,6 @@ export function getDefaultPorts(): PortMap {
  * stable across environments. */
 export const ASSISTANT_INTERNAL_PORT = DEFAULT_PORTS.daemon;
 export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
-
-const PROBE_TIMEOUT_MS = 750;
-
-/** Whether something is listening on `port` (a connect probe). */
-export function probePort(port: number, host = "127.0.0.1"): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = new Socket();
-    socket.setTimeout(PROBE_TIMEOUT_MS);
-    socket.once("connect", () => {
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once("timeout", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.once("error", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.connect(port, host);
-  });
-}
 
 /**
  * Walks upward from `preferred` and returns the first host port that the
