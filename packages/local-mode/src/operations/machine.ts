@@ -1,4 +1,3 @@
-import { execOutput } from "../exec";
 import { saveLockfileAssistant } from "../lockfile";
 import {
   MACHINE_APPLICABILITY,
@@ -6,17 +5,18 @@ import {
   type LockfileAssistant,
   type MachinePolicy,
 } from "../lockfile-contract";
-import { dockerResourceNames } from "../remotes/docker/retire";
 
 /**
  * The machine OPERATIONS: the headless core of `cadet machine get|set|reset`.
  * The write verbs are pure lockfile mutations — the policy store resolves at
  * write time (the contract's strict schema validates the merged section), and
  * the "pending" narration is the operation's job so the daemon PATCH route
- * (machine-config tranche 4) renders the same semantics. The read verb adds
- * the applied state: for docker remotes the assistant container's actual
- * cgroup flags from `docker inspect`; local remotes apply policy as process
- * hints at worker spawn, so there is no live value to read.
+ * (machine-config tranche 4) renders the same semantics.
+ *
+ * `machineGet` is deliberately simple: it returns the stored policy fields
+ * and nothing else. Remote discrimination, live-state reads, and the
+ * stored-vs-applied comparison belong to `machine plan` (tranche 3), not to
+ * the read verb.
  *
  * Like sleep/retire, operations never throw and never exit the process —
  * failures come back structured so the CLI's exit-code UX and future wire
@@ -46,7 +46,7 @@ const BYTE_UNITS: Record<string, number> = {
 };
 
 /**
- * Parse a human byte size into canonical bytes: bare integers are bytes,
+ * The value grammar `machine set` accepts: bare integers are bytes,
  * `ki|mi|gi|ti` (with optional trailing `b`) are 1024-based, and the bare
  * SI forms `k|m|g|t` (+`b`) are 1000-based — the k8s/docker convention.
  * `undefined` for anything else, so the caller reports the grammar in its
@@ -61,25 +61,18 @@ export function parseMachineBytes(raw: string): number | undefined {
   return bytes;
 }
 
-/** The inverse convenience for narration: exact-fit unit, else raw bytes. */
-export function formatMachineBytes(bytes: number): string {
-  for (const [suffix, unit] of [
-    ["TiB", 1024 ** 4],
-    ["GiB", 1024 ** 3],
-    ["MiB", 1024 ** 2],
-    ["KiB", 1024],
-  ] as const) {
-    if (bytes % unit === 0) return `${bytes / unit}${suffix}`;
-  }
-  return `${bytes}B`;
-}
-
 /** Key paths `machine set` accepts; `machine reset` also takes `memory`. */
 export const MACHINE_SET_PATHS = ["memory.max", "memory.high"] as const;
 export const MACHINE_RESET_PATHS = ["memory", ...MACHINE_SET_PATHS] as const;
 
 export type MachineMutationResult =
-  | { ok: true; machine: MachinePolicy | undefined; note: string }
+  | {
+      ok: true;
+      machine: MachinePolicy | undefined;
+      /** The byte size written by a `set` (absent for a reset). */
+      value?: number;
+      note: string;
+    }
   | { ok: false; status: number; error: string };
 
 /** The pending narration per remote: what it takes for stored policy to bite. */
@@ -94,24 +87,32 @@ function pendingNote(entry: LockfileAssistant): string {
   return "Stored — no apply path for this remote yet.";
 }
 
+function persist(
+  entry: LockfileAssistant,
+  machine: MachinePolicy | undefined,
+): { ok: true } | { ok: false; status: number; error: string } {
+  try {
+    saveLockfileAssistant({ assistantId: entry.assistantId, machine });
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 500,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 /** Validate the merged section and persist it as the entry's machine patch. */
 function writeMachinePolicy(
   entry: LockfileAssistant,
   machine: MachinePolicy | undefined,
 ): MachineMutationResult {
+  // An all-optional section parses `{}` happily — clearing the section must
+  // bypass the schema and write the field away instead.
   if (machine === undefined) {
-    try {
-      saveLockfileAssistant({
-        assistantId: entry.assistantId,
-        machine: undefined,
-      });
-    } catch (err) {
-      return {
-        ok: false,
-        status: 500,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
+    const written = persist(entry, undefined);
+    if (!written.ok) return written;
     return { ok: true, machine: undefined, note: pendingNote(entry) };
   }
   const parsed = MachinePolicySchema.safeParse(machine);
@@ -122,25 +123,15 @@ function writeMachinePolicy(
       error: `Invalid machine policy: ${parsed.error.issues[0]?.message ?? "unknown"}`,
     };
   }
-  try {
-    saveLockfileAssistant({
-      assistantId: entry.assistantId,
-      machine: parsed.data,
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      status: 500,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+  const written = persist(entry, parsed.data);
+  if (!written.ok) return written;
   return { ok: true, machine, note: pendingNote(entry) };
 }
 
 /**
  * Set one machine key (`memory.max` / `memory.high`) to a parsed byte size
  * and store the merged, validated section. The value grammar is
- * {@link parseMachineBytes}'s; cross-field rules (high ≤ max) are the
+ * {@link parseMachineBytes}'; cross-field rules (high ≤ max) are the
  * schema's — this never re-derives them.
  */
 export function machineSetKey(
@@ -165,7 +156,9 @@ export function machineSetKey(
   }
   const [section, key] = keyPath.split(".") as ["memory", "max" | "high"];
   const memory = { ...entry.machine?.memory, [key]: bytes };
-  return writeMachinePolicy(entry, { ...entry.machine, memory });
+  const result = writeMachinePolicy(entry, { ...entry.machine, memory });
+  if (result.ok) return { ...result, value: bytes };
+  return result;
 }
 
 /**
@@ -198,71 +191,15 @@ export function machineResetKey(
   );
 }
 
-/** The applied (materialized) machine state, read from the live remote. */
-export interface MachineAppliedState {
-  /** cgroup memory.max the container was created with; undefined = unlimited. */
-  memoryMax?: number;
-  /** cgroup memory.high the container was created with; undefined = unlimited. */
-  memoryHigh?: number;
-}
-
 export type MachineGetResult =
-  | {
-      ok: true;
-      /** The stored policy, exactly as validated — unset means spec defaults. */
-      stored: MachinePolicy | undefined;
-      /** The live materialized state; absent when it cannot be read. */
-      applied?: MachineAppliedState;
-      /** Why applied is absent, when it is. */
-      note?: string;
-    }
+  | { ok: true; machine: MachinePolicy | undefined }
   | { ok: false; status: number; error: string };
 
 /**
- * Read the stored policy and, where the remote materializes one, the applied
- * state — for docker remotes the assistant container's actual cgroup flags
- * (`docker inspect` HostConfig), so `machine get` shows real drift when the
- * flags were hand-tampered. Local remotes apply policy as process hints at
- * worker spawn; there is no live value to read, so `note` says when they
- * take effect instead.
+ * The stored machine policy for an entry — the policy fields, nothing else.
+ * What a policy MEANS per remote and how stored compares to applied is
+ * `machine plan`'s job (tranche 3).
  */
-export async function machineGet(
-  entry: LockfileAssistant,
-): Promise<MachineGetResult> {
-  const stored = entry.machine;
-  if (entry.cloud === "docker") {
-    const container = dockerResourceNames(entry.assistantId).assistantContainer;
-    try {
-      const out = await execOutput("docker", [
-        "inspect",
-        "--format",
-        "{{.HostConfig.Memory}} {{.HostConfig.MemoryReservation}}",
-        container,
-      ]);
-      const [max, high] = out.trim().split(/\s+/).map(Number);
-      const applied: MachineAppliedState = {
-        memoryMax: max !== undefined && max > 0 ? max : undefined,
-        memoryHigh: high !== undefined && high > 0 ? high : undefined,
-      };
-      return { ok: true, stored, applied };
-    } catch {
-      return {
-        ok: true,
-        stored,
-        note: "Assistant container not found — nothing applied (wake recreates it).",
-      };
-    }
-  }
-  if (entry.cloud === "local") {
-    return {
-      ok: true,
-      stored,
-      note: "Local assistants take these as process hints at worker spawn — no live value to read.",
-    };
-  }
-  return {
-    ok: true,
-    stored,
-    note: `Machine policy is not applied for ${entry.cloud} assistants yet.`,
-  };
+export function machineGet(entry: LockfileAssistant): MachineGetResult {
+  return { ok: true, machine: entry.machine };
 }

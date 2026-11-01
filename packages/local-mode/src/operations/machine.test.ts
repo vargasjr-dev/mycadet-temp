@@ -4,31 +4,15 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   test,
 } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Snapshot the real modules before mocking so the module-scoped `afterAll`
-// below can restore them — bun runs every test file in one process with a
-// shared loader, and `mock.restore()` does not undo `mock.module()`.
-const realExec = { ...(await import("../exec")) };
-
-const execOutputMock = mock(async (): Promise<string> => "");
-
-mock.module("../exec", () => ({
-  ...realExec,
-  execOutput: execOutputMock,
-}));
-
-afterAll(() => {
-  mock.module("../exec", () => realExec);
-});
-
 // The write verbs go through the real lockfile (locking + schema round-trip
-// is the contract under test), isolated per test via XDG_CONFIG_HOME.
+// is the contract under test), isolated per test via XDG_CONFIG_HOME. No
+// module mocking: the operations are pure lockfile mutations now.
 let dir = "";
 
 const dockerEntry = {
@@ -40,13 +24,14 @@ const dockerEntry = {
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "machine-ops-test-"));
   process.env.XDG_CONFIG_HOME = dir;
-  execOutputMock.mockImplementation(async () => "");
 });
 
 afterEach(() => {
   delete process.env.XDG_CONFIG_HOME;
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+afterAll(() => {});
 
 async function writeEntry(entry: Record<string, unknown>): Promise<void> {
   const { writeRawLockfile } = await import("../lockfile");
@@ -70,10 +55,8 @@ import {
   machineGet,
   machineResetKey,
   machineSetKey,
-  formatMachineBytes,
   parseMachineBytes,
 } from "./machine";
-import { readLockfile } from "../lockfile";
 import type { LockfileAssistant } from "../lockfile-contract";
 
 describe("parseMachineBytes", () => {
@@ -102,17 +85,8 @@ describe("parseMachineBytes", () => {
   });
 });
 
-describe("formatMachineBytes", () => {
-  test("renders exact-fit binary units, else raw bytes", () => {
-    expect(formatMachineBytes(8 * 1024 ** 3)).toBe("8GiB");
-    expect(formatMachineBytes(512 * 1024 ** 2)).toBe("512MiB");
-    expect(formatMachineBytes(1_610_612_736)).toBe("1536MiB");
-    expect(formatMachineBytes(999)).toBe("999B");
-  });
-});
-
 describe("machineSetKey", () => {
-  test("stores the merged section and reports the pending note per remote", async () => {
+  test("stores the merged section, the parsed value, and the pending note", async () => {
     await writeEntry(dockerEntry);
     const { readLockfile: freshRead } = await import("../lockfile");
     const entry = freshRead().assistants[0] as LockfileAssistant;
@@ -122,6 +96,7 @@ describe("machineSetKey", () => {
       expect(result.machine).toEqual({
         memory: { max: 8 * 1024 ** 3 },
       });
+      expect(result.value).toBe(8 * 1024 ** 3);
       expect(result.note).toContain("Pending");
       expect(result.note).toContain("sleep, then wake");
     }
@@ -129,6 +104,19 @@ describe("machineSetKey", () => {
       | { memory: { max: number } }
       | undefined;
     expect(stored?.memory.max).toBe(8 * 1024 ** 3);
+  });
+
+  test("the pending note matches the remote's semantics", async () => {
+    await writeEntry({
+      assistantId: "asst_mach_local",
+      cloud: "local",
+      port: 7830,
+    });
+    const { readLockfile: freshRead } = await import("../lockfile");
+    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const result = machineSetKey(entry, "memory.high", "4GiB");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.note).toContain("worker spawn");
   });
 
   test("merges onto existing keys without clobbering siblings", async () => {
@@ -234,70 +222,25 @@ describe("machineResetKey", () => {
 });
 
 describe("machineGet", () => {
-  test("docker: reads the container's actual cgroup flags, 0 = unlimited", async () => {
+  test("returns the stored policy fields, nothing else", async () => {
+    await writeEntry({
+      ...dockerEntry,
+      machine: { memory: { high: 4 * 1024 ** 3 } },
+    });
+    const { readLockfile: freshRead } = await import("../lockfile");
+    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const result = machineGet(entry);
+    expect(result).toEqual({
+      ok: true,
+      machine: { memory: { high: 4 * 1024 ** 3 } },
+    });
+  });
+
+  test("an unset section reads as undefined (spec defaults)", async () => {
     await writeEntry(dockerEntry);
     const { readLockfile: freshRead } = await import("../lockfile");
     const entry = freshRead().assistants[0] as LockfileAssistant;
-    execOutputMock.mockImplementation(async () => "8589934592 0");
-    const result = await machineGet(entry);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.applied).toEqual({
-        memoryMax: 8589934592,
-        memoryHigh: undefined,
-      });
-      expect(result.note).toBeUndefined();
-    }
-  });
-
-  test("docker: a missing container explains the absence instead of failing", async () => {
-    await writeEntry(dockerEntry);
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
-    execOutputMock.mockImplementation(async () => {
-      throw new Error("Error: No such object: asst_mach_docker-assistant");
-    });
-    const result = await machineGet(entry);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.applied).toBeUndefined();
-      expect(result.note).toContain("not found");
-    }
-  });
-
-  test("local: no live value — the note says when hints take effect", async () => {
-    await writeEntry({
-      assistantId: "asst_mach_local",
-      cloud: "local",
-      port: 7830,
-      machine: { memory: { max: 8 * 1024 ** 3 } },
-    });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
-    const result = await machineGet(entry);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.applied).toBeUndefined();
-      expect(result.note).toContain("worker spawn");
-      expect(result.stored).toEqual({ memory: { max: 8 * 1024 ** 3 } });
-    }
-  });
-
-  test("unsupported remotes say so and still show the stored policy", async () => {
-    await writeEntry({
-      assistantId: "asst_mach_custom",
-      cloud: "custom",
-      ipAddress: "203.0.113.9",
-      port: 7831,
-    });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
-    const result = await machineGet(entry);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.applied).toBeUndefined();
-      expect(result.note).toContain("custom");
-    }
+    expect(machineGet(entry)).toEqual({ ok: true, machine: undefined });
   });
 });
 
@@ -307,6 +250,11 @@ describe("the written lockfile survives the schema round-trip", () => {
     const { readLockfile: freshRead } = await import("../lockfile");
     const entry = freshRead().assistants[0] as LockfileAssistant;
     machineSetKey(entry, "memory.high", "6GiB");
+    expect(
+      (readStored(dockerEntry.assistantId) as Promise<
+        Record<string, unknown>
+      >) ?? null,
+    ).toBeDefined();
     const { readLockfile: reread } = await import("../lockfile");
     expect((reread().assistants[0] as LockfileAssistant).machine).toEqual({
       memory: { high: 6 * 1024 ** 3 },

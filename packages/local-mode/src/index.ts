@@ -102,9 +102,6 @@ export {
   machineGet,
   machineResetKey,
   machineSetKey,
-  formatMachineBytes,
-  parseMachineBytes,
-  type MachineGetResult,
   type MachineMutationResult,
 } from "./operations/machine";
 export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
