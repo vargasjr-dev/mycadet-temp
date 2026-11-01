@@ -241,6 +241,11 @@ export type {
 export { readWindowsProcesses } from "./process";
 export { loopbackSafeFetch, isLoopbackUrl } from "./loopback-fetch";
 export {
+  pairDevice,
+  type PairDeviceIdentity,
+  type PairOperationResult,
+} from "./operations/pair";
+export {
   cloudTokenPath,
   readCloudToken,
   resolveCloudUrl as getCloudUrl,

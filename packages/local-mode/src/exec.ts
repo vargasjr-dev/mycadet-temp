@@ -70,11 +70,12 @@ export function exec(
  * Run a child to completion and resolve with its stdout. Non-zero exits
  * reject with the same secret-safe message as {@link exec} — the caller
  * inspects the message for the diagnostic substrings it cares about.
+ * `timeoutMs` kills the child (SIGTERM) and rejects when the deadline passes.
  */
 export function execOutput(
   command: string,
   args: string[],
-  options: { cwd?: string } = {},
+  options: { cwd?: string; timeoutMs?: number } = {},
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -82,6 +83,20 @@ export function execOutput(
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     });
+
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (options.timeoutMs !== undefined) {
+      timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          child.kill("SIGTERM");
+          reject(
+            new Error(`${command} timed out after ${options.timeoutMs}ms`),
+          );
+        }
+      }, options.timeoutMs);
+    }
 
     let stdout = "";
     child.stdout.on("data", (data: Buffer) => {
@@ -94,6 +109,8 @@ export function execOutput(
     });
 
     child.on("close", (code) => {
+      if (timer !== undefined) clearTimeout(timer);
+      if (settled) return;
       if (code === 0) {
         resolve(stdout.trim());
       } else {
