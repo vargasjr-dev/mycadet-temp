@@ -2,9 +2,10 @@
  * Shared application identity constants for the main process.
  *
  * `APP_PROTOCOL` and `APP_HOST` define the custom scheme the packaged
- * renderer is served from; `index.ts` registers it privileged and serves
- * `resources/cli-runtime/web-dist` through it, and `main-window.ts` derives the
- * BrowserWindow load URL and the same-origin navigation guard from it.
+ * renderer is served from; `index.ts` registers it privileged and the shared
+ * app-protocol handler serves both renderer roots through it, and
+ * `main-window.ts` derives the BrowserWindow load URL and the same-origin
+ * navigation guard from it.
  *
  * The renderer-base URLs are derived: `RENDERER_BASE_PROD` is the
  * packaged path the `app://` protocol handler resolves to; the dev
@@ -72,18 +73,23 @@ export const usesAppProtocolRenderer = (isPackaged: boolean): boolean =>
   isPackaged || process.env.CADET_LOCAL_RENDERER === "true";
 
 /**
+ * App-shell base URL for the main window, which renders the app shell
+ * (root-based `@mycadet/app` standalone build — no mount suffix; the
+ * shell iframes the web bundle on the `/assistant` mount). Auxiliary
+ * windows keep `RENDERER_BASE_PROD`, the web routes' base.
+ */
+export const APP_RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}`;
+
+/**
  * SPA-root URL the main BrowserWindow loads.
  *
  * Dev and prod resolve the root document differently. In dev the renderer
  * is served by Vite, whose dev server only serves the app when the request
  * path matches its configured `base` (`/assistant/`) exactly - a slashless
  * `/assistant` returns Vite's "did you mean `/assistant/`?" helper page
- * instead of the SPA. So the dev root carries the trailing slash. In prod
- * the `app://` protocol handler maps the slashless `/assistant` to
- * `index.html`, so `RENDERER_BASE_PROD` loads as-is (a trailing slash would
- * land on the `/assistant/*` NotFound route).
+ * instead of the SPA. So the dev root carries the trailing slash.
  */
 export const getRendererRootUrl = (isPackaged: boolean): string =>
   usesAppProtocolRenderer(isPackaged)
-    ? RENDERER_BASE_PROD
+    ? APP_RENDERER_BASE_PROD
     : `${getDevRendererBase()}/`;

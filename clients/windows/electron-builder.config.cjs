@@ -15,14 +15,9 @@ const productName =
     : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
-  env === "production"
-    ? "ai.mycadet.electron"
-    : `ai.mycadet.electron-${env}`;
+  env === "production" ? "ai.mycadet.electron" : `ai.mycadet.electron-${env}`;
 
-const schemes =
-  env === "production"
-    ? ["cadet"]
-    : [`cadet-${env}`];
+const schemes = env === "production" ? ["cadet"] : [`cadet-${env}`];
 
 const iconEnvironment = ["local", "dev", "staging", "production"].includes(env)
   ? env
@@ -160,6 +155,7 @@ module.exports = {
     { from: "resources/tray.ico", to: "tray.ico" },
     { from: appIcon, to: "icon.ico" },
     { from: "resources/cli-runtime", to: "cli-runtime" },
+    { from: "resources/app-dist", to: "app-dist" },
     // electron-builder excludes a node_modules directory encountered below a
     // broader file matcher. Use it as the matcher root so the CLI runtime's
     // native packages are included in the installed app.

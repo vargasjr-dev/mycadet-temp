@@ -12,14 +12,9 @@ const productName =
     : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
-  env === "production"
-    ? "ai.mycadet.electron"
-    : `ai.mycadet.electron-${env}`;
+  env === "production" ? "ai.mycadet.electron" : `ai.mycadet.electron-${env}`;
 
-const schemes =
-  env === "production"
-    ? ["cadet"]
-    : [`cadet-${env}`];
+const schemes = env === "production" ? ["cadet"] : [`cadet-${env}`];
 
 /** @type {import("electron-builder").Configuration} */
 module.exports = {
@@ -35,6 +30,7 @@ module.exports = {
   extraResources: [
     { from: "resources/bun", to: "bun" },
     { from: "resources/web-dist", to: "web-dist" },
+    { from: "resources/app-dist", to: "app-dist" },
     { from: "resources/cli-lockfile", to: "cli-lockfile" },
     { from: "build/icon.png", to: "icon.png" },
   ],

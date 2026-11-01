@@ -10,7 +10,7 @@ import {
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
-import { registerAppProtocolForwarding } from "@mycadet/electron-desktop/app-protocol-forward";
+import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
@@ -93,19 +93,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-const resolveRendererRoot = (): string => {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "web-dist");
-  }
-  // Dev source tree: clients/web/dist. Requires `bun run build` in clients/web/.
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "web", "dist");
-};
-
-const registerAppProtocol = (): void => {
-  registerAppProtocolForwarding({ webDistRoot: resolveRendererRoot() });
-};
 
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv();

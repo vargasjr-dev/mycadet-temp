@@ -19,6 +19,7 @@
     "test:ci": "bun run --filter=@mycadet/electron-desktop test && bun scripts/run-tests.ts",
     "build:fetch-bun": "bash scripts/fetch-bun.sh",
     "build:web": "cd ../web && bun install && bun run openapi-ts && bun run build && cd ../linux && mkdir -p resources && rm -rf resources/web-dist && cp -R ../web/dist resources/web-dist",
+    "build:app": "cd ../app && bun install && bun run build && cd ../linux && mkdir -p resources && rm -rf resources/app-dist && cp -R ../app/dist/standalone resources/app-dist",
     "pack": "bash scripts/pack.sh",
     "pack:debug": "CADET_ENABLE_CHROME_DEVTOOLS=true bash scripts/pack.sh"
   },

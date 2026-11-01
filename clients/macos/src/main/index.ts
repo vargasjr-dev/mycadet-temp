@@ -9,7 +9,7 @@ import { installPermissionHandler } from "@mycadet/electron-desktop/permissions"
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
-import { registerAppProtocolForwarding } from "@mycadet/electron-desktop/app-protocol-forward";
+import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { installAbout } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
@@ -217,34 +217,6 @@ protocol.registerSchemesAsPrivileged([
 // the launching URL — the #1 deep-link bug in Electron apps.
 installDeepLinks();
 installFileOpen();
-
-const resolveAppDistRoot = (): string => {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "app-dist");
-  }
-  // Dev source tree: clients/app/dist/standalone — requires `bun run build`
-  // in clients/app/ (the standalone target's outDir).
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "app", "dist", "standalone");
-};
-
-const resolveWebDistRoot = (): string => {
-  // Packaged builds stopped shipping web-dist (the web bundle is iframed from
-  // the assistant's version); dev reads the source-tree build.
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "web-dist");
-  }
-  // Dev source tree: clients/web/dist — requires `bun run build` in clients/web/.
-  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
-  return path.join(repoRoot, "clients", "web", "dist");
-};
-
-const registerAppProtocol = (): void => {
-  registerAppProtocolForwarding({
-    appDistRoot: resolveAppDistRoot(),
-    webDistRoot: resolveWebDistRoot(),
-  });
-};
 
 // ---------------------------------------------------------------------------
 // App lifecycle

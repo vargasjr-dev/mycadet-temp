@@ -17,8 +17,7 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
   process.exit(0);
 }
 
-const environmentArgument =
-  argValue("--environment") ?? argValue("--env");
+const environmentArgument = argValue("--environment") ?? argValue("--env");
 const hasEnvironmentArgument = process.argv.some(
   (argument) =>
     argument === "--environment" ||
@@ -34,9 +33,7 @@ if (
   process.exit(1);
 }
 const environment =
-  environmentArgument?.trim() ||
-  process.env.CADET_ENVIRONMENT?.trim() ||
-  "dev";
+  environmentArgument?.trim() || process.env.CADET_ENVIRONMENT?.trim() || "dev";
 const debug = process.argv.includes("--debug");
 const env = {
   ...process.env,
@@ -56,6 +53,7 @@ const runBun = (args: string[]): void => {
 };
 
 runBun(["run", "build:runtime"]);
+runBun(["run", "build:app"]);
 runBun(["run", "build:native-helper"]);
 runBun(["run", "build:preview-handler"]);
 runBun([
