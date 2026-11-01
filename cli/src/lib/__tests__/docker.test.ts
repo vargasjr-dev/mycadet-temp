@@ -98,6 +98,44 @@ describe("buildServiceRunArgs — assistant", () => {
   });
 });
 
+describe("buildServiceRunArgs — machine memory policy", () => {
+  test("no policy = no memory flags, exactly the historical launch", () => {
+    const args = buildAssistantArgs();
+    expect(args).not.toContain("--memory");
+    expect(args).not.toContain("--memory-reservation");
+    expect(args).not.toContain("--memory-swap");
+  });
+
+  test("a stored policy flags the ASSISTANT container only", () => {
+    const max = 8 * 1024 ** 3;
+    const high = 6 * 1024 ** 3;
+    const args = buildAssistantArgs({
+      assistantMemory: { max, high },
+    });
+    expect(args).toContain("--memory");
+    expect(args).toContain(String(max));
+    expect(args).toContain("--memory-swap");
+    expect(args).toContain("--memory-reservation");
+    expect(args).toContain(String(high));
+
+    const gatewayArgs = buildGatewayArgs({
+      assistantMemory: { max, high },
+    });
+    expect(gatewayArgs).not.toContain("--memory");
+    expect(gatewayArgs).not.toContain("--memory-reservation");
+    expect(gatewayArgs).not.toContain("--memory-swap");
+  });
+
+  test("a soft-limit-only policy emits no hard cap", () => {
+    const high = 4 * 1024 ** 3;
+    const args = buildAssistantArgs({ assistantMemory: { high } });
+    expect(args).toContain("--memory-reservation");
+    expect(args).toContain(String(high));
+    expect(args).not.toContain("--memory");
+    expect(args).not.toContain("--memory-swap");
+  });
+});
+
 describe("resolveDockerProviderCredentialSetupAction", () => {
   test("defers provider setup in detached mode", () => {
     expect(

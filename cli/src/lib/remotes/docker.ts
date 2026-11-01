@@ -11,6 +11,7 @@ import {
   removeContainer,
   saveLockfileAssistant,
   sleepDocker,
+  type MachineMemoryPolicy,
 } from "@mycadet/local-mode";
 import {
   type DockerAssistant,
@@ -248,6 +249,7 @@ export async function upgradeDocker(
       extraGatewayEnv,
       gatewayPort,
       imageTags,
+      assistantMemory: entry.machine?.memory ?? null,
       instanceName,
       res,
     },
@@ -346,6 +348,7 @@ export async function upgradeDocker(
             imageTags: previousImageRefs,
             instanceName,
             res,
+            assistantMemory: entry.machine?.memory ?? null,
           },
           (msg) => console.log(msg),
         );
@@ -1132,6 +1135,9 @@ export async function startContainers(
     res: ReturnType<typeof dockerResourceNames>;
     netnsContainer?: string;
     assistantCaCertPath?: string;
+    /** The assistant's stored machine memory policy — flags on the
+     * assistant container only (see `BuildServiceRunArgsOpts`). */
+    assistantMemory?: MachineMemoryPolicy | null;
   },
   log: (msg: string) => void,
 ): Promise<void> {
@@ -1256,6 +1262,7 @@ export async function recreateDockerContainers(
       },
       instanceName: entry.assistantId,
       res,
+      assistantMemory: entry.machine?.memory ?? null,
     },
     log,
   );
@@ -1418,6 +1425,8 @@ function startFileWatcher(opts: {
   res: ReturnType<typeof dockerResourceNames>;
   netnsContainer?: string;
   assistantCaCertPath?: string;
+  /** Resolved once by the caller so policy-derived flags don't flap on rebuild. */
+  assistantMemory?: MachineMemoryPolicy | null;
 }): () => void {
   const { gatewayPort, imageTags, instanceName, repoRoot, res } = opts;
 
@@ -1439,6 +1448,7 @@ function startFileWatcher(opts: {
     avatarDevicePath: resolveAvatarDevicePath(),
     netnsContainer: opts.netnsContainer,
     assistantCaCertPath: opts.assistantCaCertPath,
+    assistantMemory: opts.assistantMemory,
   });
   const containerForService: Record<ServiceName, string> = {
     assistant: res.assistantContainer,
@@ -1898,6 +1908,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         extraGatewayEnv,
         gatewayPort,
         imageTags,
+        assistantMemory: dockerEntry.machine?.memory ?? null,
         instanceName,
         res,
         netnsContainer: params.netnsContainer,
@@ -1996,6 +2007,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         res,
         netnsContainer: params.netnsContainer,
         assistantCaCertPath: params.assistantCaCertPath,
+        assistantMemory: watching.machine?.memory ?? null,
       });
 
       await new Promise<void>((resolve) => {
