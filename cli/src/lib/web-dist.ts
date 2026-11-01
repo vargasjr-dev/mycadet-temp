@@ -265,9 +265,17 @@ function isStale(
  * dist, and is recorded only after every build succeeded so a failed second
  * build can't leave the first bundle's freshness pretending to cover it.
  */
-export async function resolveEdgeClientDists(
+export async function resolveClientDists(
   options: DistBuildOptions = {},
-): Promise<{ webDistDir: string | null; appDistDir: string | null }> {
+): Promise<{
+  webDistDir: string | null;
+  appDistDir: string | null;
+  /**
+   * The checkout HEAD the dists were (re)built at — the empty string when the
+   * checkout has no git anchor (the stamp then stays inert, as before).
+   */
+  builtSha: string;
+}> {
   const arms = {
     web: await resolveDistArm("web", options),
     app: await resolveDistArm("app", options),
@@ -316,5 +324,6 @@ export async function resolveEdgeClientDists(
   return {
     webDistDir: arms.web.distDir ?? (builtAny ? findWebDistDir(options) : null),
     appDistDir: arms.app.distDir ?? (builtAny ? findAppDistDir(options) : null),
+    builtSha: headSha ?? "",
   };
 }

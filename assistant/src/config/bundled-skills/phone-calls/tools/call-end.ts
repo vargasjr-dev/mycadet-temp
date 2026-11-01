@@ -1,14 +1,17 @@
 import { z } from "zod";
 
-import { cancelCall } from "../../calls/call-domain.js";
+import { cancelCall } from "../../../../calls/call-domain.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,
-} from "../shared/zod-tool-schema.js";
-import type { ToolContext, ToolExecutionResult } from "../types.js";
+} from "../../../../tools/shared/zod-tool-schema.js";
+import type {
+  ToolContext,
+  ToolExecutionResult,
+} from "../../../../tools/types.js";
 
 /**
- * Model-input schema, `safeParse`d at the top of {@link executeCallEnd}.
+ * Model-input schema, `safeParse`d at the top of {@link run}.
  * Same in-tool pattern and TOOLS.json drift guard as the other bundled-skill
  * tools. The bespoke required check below keeps its error message for the
  * missing/null/empty cases.
@@ -18,7 +21,7 @@ export const callEndInputSchema = z.looseObject({
   end_reason: nullAsOmitted(z.string()),
 });
 
-export async function executeCallEnd(
+export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {

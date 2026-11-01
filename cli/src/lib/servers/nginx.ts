@@ -40,7 +40,7 @@ import {
 } from "@mycadet/local-mode";
 import { resolveLogDir } from "@mycadet/local-mode";
 import { waitForDaemonReady } from "@mycadet/local-mode";
-import { resolveEdgeClientDists } from "../web-dist.js";
+import { resolveClientDists } from "../web-dist.js";
 
 // The edge's read/stop surface lives in `@mycadet/local-mode` (the retire
 // operation stops the edge in-process); the tunnel and ps surfaces import it
@@ -836,6 +836,14 @@ export type StartAppServerResult =
       /** SPA dist directory served by the edge. */
       webDistDir: string;
       version: string;
+      /**
+       * The checkout HEAD the dists were built at (the empty string when the
+       * checkout has no git anchor), so the edge's lockfile record carries the
+       * build stamp from birth — `stampAppProcessEntry` replaces the record
+       * wholesale, and a stamp that only lands via `stampAppBuiltSha` before
+       * the record exists is dropped.
+       */
+      builtSha: string;
     }
   | {
       status: "already-running";
@@ -897,7 +905,7 @@ export async function startAppServer(opts: {
   if (recorded) {
     listenPort = recorded.listenPort;
   }
-  const { webDistDir, appDistDir } = await resolveEdgeClientDists();
+  const { webDistDir, appDistDir, builtSha } = await resolveClientDists();
   if (!webDistDir) {
     return { status: "web-dist-missing" };
   }
@@ -1063,6 +1071,7 @@ export async function startAppServer(opts: {
         listenPort,
         webDistDir,
         version: nginxVersion,
+        builtSha,
       };
     }
     if (Date.now() >= deadline) {
@@ -1094,15 +1103,26 @@ export async function startAppServer(opts: {
  * cannot be attributed, so it is left alone.
  */
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
-function stampAppProcessEntry(port: number): void {
+function stampAppProcessEntry(
+  result: Extract<StartAppServerResult, { listenPort: number }>,
+): void {
   const pid = getIngressPid();
-  if (pid !== null) {
-    stampRootProcess("app", {
-      pid,
-      startedAt: new Date().toISOString(),
-      port,
-    });
-  }
+  if (pid === null) return;
+  // `stampRootProcess` replaces the record wholesale, so the build stamp
+  // must be carried forward explicitly — a fresh record without it makes
+  // the next dist resolve read "no build stamp" and rebuild. A fresh start
+  // carries the resolve's sha; an already-running edge carries its own
+  // record's forward.
+  const carried =
+    result.status === "started"
+      ? result.builtSha
+      : readRootProcesses().app?.builtSha;
+  stampRootProcess("app", {
+    pid,
+    startedAt: new Date().toISOString(),
+    port: result.listenPort,
+    ...(carried ? { builtSha: carried } : {}),
+  });
 }
 
 /** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */
@@ -1159,7 +1179,7 @@ export async function ensureAppServer(): Promise<AppServer> {
 
   switch (result.status) {
     case "started":
-      stampAppProcessEntry(result.listenPort);
+      stampAppProcessEntry(result);
       return {
         port: result.listenPort,
         started: true,
@@ -1181,7 +1201,7 @@ export async function ensureAppServer(): Promise<AppServer> {
             stuckEdgeRecoveryHint(),
         );
       }
-      stampAppProcessEntry(result.listenPort);
+      stampAppProcessEntry(result);
       return {
         port: result.listenPort,
         started: false,

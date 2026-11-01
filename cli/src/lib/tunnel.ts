@@ -1,26 +1,14 @@
 import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
-import {
-  clearRootProcess,
-  readRootProcesses,
-  resolveTargetAssistant,
-} from "./assistant-config.js";
+import { clearRootProcess, readRootProcesses } from "./assistant-config.js";
 import {
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
-import {
-  isDockerEntry,
-  isLocalEntry,
-  getGatewayUrl,
-} from "@mycadet/local-mode/contract";
+import { isDockerEntry, isLocalEntry } from "@mycadet/local-mode/contract";
 
-import {
-  isIngressRunning,
-  isPidAlive,
-  readIngressState,
-} from "@mycadet/local-mode";
+import { isPidAlive } from "@mycadet/local-mode";
 import {
   ensureAppServer,
   getNginxVersion,
@@ -196,7 +184,7 @@ export async function notifyAllLocalGatewaysOfPublicUrl(
  * Run a tunnel provider by name — the dispatch `cadet tunnel start` uses, so
  * the command layer never names a provider implementation directly. Notifies
  * every local gateway of the resulting public URL identically for each
- * provider, then holds until the run ends.
+ * provider.
  */
 export async function runProviderTunnel(
   provider: TunnelProviderName,
@@ -204,37 +192,7 @@ export async function runProviderTunnel(
 ): Promise<{ publicUrl: string }> {
   const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
-  await refreshEdgeWithEstablishedUrl();
   return { publicUrl: result.publicUrl };
-}
-
-/**
- * Re-ensure the edge right after a tunnel establishes, so the fresh public
- * URL (saved by the provider run) lands in the served config's `cloudUrl` in
- * the same session that created it. A no-op when the run published no public
- * URL — a tailscale pairing-only run, which must never repoint the webhook
- * callback base the saved URL stands for.
- *
- * The saved URL comes from the root lockfile's `tunnel` record — the run
- * stamps it with the URL it published — never from a workspace config: the
- * tunnel layer's own state lives in the lockfile.
- */
-async function refreshEdgeWithEstablishedUrl(): Promise<void> {
-  const savedUrl = readRootProcesses().tunnel?.publicUrl;
-  if (!savedUrl) return;
-  // Only re-ensure an edge that already fronts this assistant's gateway: the
-  // app server resolves the assistant it fronts itself (the lockfile's active
-  // entry), so an edge pointing elsewhere is left alone rather than
-  // repointed from a refresh.
-  const state = isIngressRunning() ? readIngressState() : null;
-  if (state?.gatewayUrl === undefined) return;
-  if (state.gatewayUrl !== getGatewayUrl(resolveTargetAssistant())) return;
-  try {
-    await ensureAppServer();
-  } catch {
-    // The running edge stays in front of the tunnel; the fresh config lands
-    // via the next invocation's fingerprint drift instead.
-  }
 }
 
 /** Map the provider name onto its run — no gateway notification here. */
@@ -420,7 +378,6 @@ export async function restoreAppServerAndAutoTunnel(): Promise<void> {
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
-    await refreshEdgeWithEstablishedUrl();
   }
 }
 

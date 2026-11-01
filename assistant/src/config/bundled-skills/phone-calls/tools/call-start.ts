@@ -1,18 +1,21 @@
 import { z } from "zod";
 
-import { startCall } from "../../calls/call-domain.js";
-import { findActiveSession } from "../../channels/gateway-verification-sessions.js";
-import { getConfig } from "../../config/loader.js";
-import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
-import { normalizePhoneNumber } from "../../util/phone.js";
+import { startCall } from "../../../../calls/call-domain.js";
+import { findActiveSession } from "../../../../channels/gateway-verification-sessions.js";
+import { getConfig } from "../../../../config/loader.js";
+import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import {
   invalidToolInputResult,
   nullAsOmitted,
-} from "../shared/zod-tool-schema.js";
-import type { ToolContext, ToolExecutionResult } from "../types.js";
+} from "../../../../tools/shared/zod-tool-schema.js";
+import type {
+  ToolContext,
+  ToolExecutionResult,
+} from "../../../../tools/types.js";
+import { normalizePhoneNumber } from "../../../../util/phone.js";
 
 /**
- * Model-input schema, `safeParse`d at the top of {@link executeCallStart}.
+ * Model-input schema, `safeParse`d at the top of {@link run}.
  * Same in-tool pattern and TOOLS.json drift guard as the other bundled-skill
  * tools — see the schema block in `tools/document/document-tool.ts` for the
  * framework. The advertised-required fields are required here — schema
@@ -29,7 +32,7 @@ export const callStartInputSchema = z.looseObject({
   ),
 });
 
-export async function executeCallStart(
+export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {

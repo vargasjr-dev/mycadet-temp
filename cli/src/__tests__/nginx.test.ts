@@ -1192,6 +1192,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
+      builtSha: "",
     });
     const buildCalls = spawnMock.mock.calls.filter(
       ([command]) => command === "bun",
@@ -1655,6 +1656,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
+      builtSha: "",
     });
     expect(realFs.readFileSync(getIngressPaths().pidPath, "utf-8").trim()).toBe(
       String(SPAWNED_NGINX_PID),

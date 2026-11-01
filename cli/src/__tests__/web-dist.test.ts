@@ -24,7 +24,7 @@ import {
   stampAppBuiltSha,
   stampRootProcess,
 } from "../lib/assistant-config.js";
-import { resolveEdgeClientDists } from "../lib/web-dist.js";
+import { resolveClientDists } from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
 const spawnMock = mock(childProcess.spawn);
@@ -158,7 +158,7 @@ function seedCheckout(): { root: string; web: string; app: string } {
   return { root, web, app };
 }
 
-describe("resolveEdgeClientDists", () => {
+describe("resolveClientDists", () => {
   test("returns both source-checkout dists without building when present", async () => {
     const { root, web, app } = seedCheckout();
     const webDist = seedWebDist(web);
@@ -167,12 +167,16 @@ describe("resolveEdgeClientDists", () => {
     fixtureHeadSha = null;
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -189,7 +193,7 @@ describe("resolveEdgeClientDists", () => {
       }),
     );
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
@@ -197,6 +201,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(web, "dist"),
       appDistDir: join(app, "dist", "standalone"),
+      builtSha: fixtureHeadSha ?? "",
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
@@ -218,7 +223,7 @@ describe("resolveEdgeClientDists", () => {
 
     // The second resolve finds a fresh stamp and does not rebuild.
     expect(
-      await resolveEdgeClientDists({
+      await resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -237,7 +242,7 @@ describe("resolveEdgeClientDists", () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
@@ -262,12 +267,16 @@ describe("resolveEdgeClientDists", () => {
     stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -281,7 +290,7 @@ describe("resolveEdgeClientDists", () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
@@ -301,12 +310,16 @@ describe("resolveEdgeClientDists", () => {
     const root = makeRoot();
     spawnMock.mockImplementation(unexpectedSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: null, appDistDir: null });
+    expect(resolved).toEqual({
+      webDistDir: null,
+      appDistDir: null,
+      builtSha: "",
+    });
     expect(spawnMock.mock.calls).toHaveLength(0);
   });
 
@@ -317,7 +330,7 @@ describe("resolveEdgeClientDists", () => {
     spawnMock.mockImplementation(fakeSpawn(undefined, 1));
 
     await expect(
-      resolveEdgeClientDists({
+      resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -347,7 +360,7 @@ describe("resolveEdgeClientDists", () => {
     }) as unknown as typeof childProcess.spawn);
 
     await expect(
-      resolveEdgeClientDists({
+      resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -377,7 +390,7 @@ describe("resolveEdgeClientDists", () => {
       throw new Error("unexpected spawn");
     }) as unknown as typeof childProcess.spawn);
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: () => join(npmWebDir, "package.json"),
     });
@@ -385,6 +398,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(npmWebDir, "dist"),
       appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
     });
     expect(bunCalls()).toHaveLength(0);
   });
