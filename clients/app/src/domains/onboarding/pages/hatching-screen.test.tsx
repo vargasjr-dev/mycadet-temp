@@ -1,7 +1,8 @@
 /**
- * Behavioral tests for the hatching screen's app-native port: the local arm
- * rides the shell's operator route (hatch → resolution poll → handoff), and
- * the cloud arm rides the app's own hatch API.
+ * Behavioral tests for the hatching screen's app-native port: the hatch rides
+ * the shell's one operator route — POST /v1/assistants/hatch with the funnel's
+ * hosting choice as the remote param (local, docker, cloud) — then the
+ * resolution poll, then the research handoff.
  *
  * The screen keeps module-level hatch guards, so every test drives the flow to
  * a genuine completion (which releases them) to stay isolated. Self-contained
@@ -26,20 +27,16 @@ import { routes } from "@app/utils/routes";
 const navigateMock = mock((_to: string, _opts?: unknown) => {});
 let searchParams = new URLSearchParams();
 
-const apiActual = await import("@app/assistant/api");
-type HatchResult = Awaited<ReturnType<typeof apiActual.hatchAssistant>>;
 const hatchAssistantMock = mock(
-  async (): Promise<HatchResult> => ({
+  async (
+    _remote?: string,
+  ): Promise<
+    { ok: true; assistantId: string } | { ok: false; error: string }
+  > => ({
     ok: true as const,
-    status: 201,
-    data: { id: "asst-1", name: "Cadet 1" },
+    assistantId: "local-1",
   }),
 );
-
-const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
-  ok: true as const,
-  assistantId: "local-1",
-}));
 
 const resolveActual = await import("@app/assistant/resolve-assistant");
 type Resolution = Awaited<ReturnType<typeof resolveActual.resolveAssistant>>;
@@ -71,7 +68,7 @@ mock.module("react-router", () => ({
 const operationsActual = await import("@app/assistant/operations");
 mock.module("@app/assistant/operations", () => ({
   ...operationsActual,
-  hatchAssistant: hatchLocalAssistantMock,
+  hatchAssistant: hatchAssistantMock,
 }));
 mock.module("@app/assistant/resolve-assistant", () => ({
   ...resolveActual,
@@ -92,11 +89,6 @@ mock.module("@app/assistant/avatar-traits", () => ({
   seedHatchAvatar: seedHatchAvatarMock,
 }));
 
-mock.module("@app/assistant/api", () => ({
-  ...apiActual,
-  hatchAssistant: hatchAssistantMock,
-}));
-
 const { HatchingScreen } =
   await import("@app/domains/onboarding/pages/hatching-screen");
 
@@ -104,7 +96,6 @@ describe("hatching screen", () => {
   beforeEach(() => {
     navigateMock.mockClear();
     hatchAssistantMock.mockClear();
-    hatchLocalAssistantMock.mockClear();
     resolveAssistantMock.mockClear();
     writeSelectionMock.mockClear();
     seedHatchAvatarMock.mockClear();
@@ -123,7 +114,6 @@ describe("hatching screen", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
     expect(hatchAssistantMock).not.toHaveBeenCalled();
-    expect(hatchLocalAssistantMock).not.toHaveBeenCalled();
   });
 
   test("the local hatch polls the resolution endpoint then hands off to research with the hosting + assistant", async () => {
@@ -134,7 +124,7 @@ describe("hatching screen", () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
       timeout: 5000,
     });
-    expect(hatchLocalAssistantMock).toHaveBeenCalledWith(undefined);
+    expect(hatchAssistantMock).toHaveBeenCalledWith("local");
     expect(writeSelectionMock).toHaveBeenCalledWith("local-1");
     // The resolution answered notReady once, so the wait loop polled again.
     expect(resolutionCallCount).toBe(2);
@@ -144,17 +134,33 @@ describe("hatching screen", () => {
     );
   });
 
-  test("the cloud hatch hands off to the research flow", async () => {
+  test("the docker hatch passes the docker remote and carries the hosting choice to research", async () => {
+    searchParams = new URLSearchParams("hosting=docker");
     render(<HatchingScreen />);
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
       timeout: 5000,
     });
-    expect(hatchAssistantMock).toHaveBeenCalled();
+    expect(hatchAssistantMock).toHaveBeenCalledWith("docker");
+    expect(navigateMock).toHaveBeenCalledWith(
+      `${routes.onboarding.research}?hosting=docker&assistant=local-1`,
+      { replace: true },
+    );
+  });
+
+  test("the cloud hatch passes the cloud remote and hands off bare to research", async () => {
+    searchParams = new URLSearchParams("hosting=cadet-cloud");
+    render(<HatchingScreen />);
+
+    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
+      timeout: 5000,
+    });
+    expect(hatchAssistantMock).toHaveBeenCalledWith("cloud");
+    expect(writeSelectionMock).toHaveBeenCalledWith("local-1");
     // The hatch avatar re-home: the freshly hatched assistant's id seeds the
     // random traits on the scoped surface (fire-and-forget, never awaited).
     expect(seedHatchAvatarMock).toHaveBeenCalledWith(
-      "asst-1",
+      "local-1",
       expect.objectContaining({ bodyShape: expect.any(String) }),
     );
     expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
@@ -165,9 +171,9 @@ describe("hatching screen", () => {
   test("a failed cloud hatch surfaces the detail and retry re-fires the hatch", async () => {
     hatchAssistantMock.mockImplementationOnce(async () => ({
       ok: false as const,
-      status: 503,
-      error: { detail: "hatching is unavailable" },
+      error: "hatching is unavailable",
     }));
+    searchParams = new URLSearchParams("hosting=cadet-cloud");
     render(<HatchingScreen />);
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());

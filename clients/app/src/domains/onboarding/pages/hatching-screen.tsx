@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { hatchAssistant as hatchCloudAssistant } from "@app/assistant/api";
 import { seedHatchAvatar } from "@app/assistant/avatar-traits";
 import { hatchAssistant } from "@app/assistant/operations";
 import { resolveAssistant } from "@app/assistant/resolve-assistant";
@@ -10,11 +9,9 @@ import { AccountShell } from "@app/components/account/account-shell";
 import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { useTranslation } from "@app/i18n";
-import { isLocalClient } from "@app/lib/runtime-mode";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
-import { captureError } from "@mycadet/design-library/utils/capture-error";
 import type { CharacterTraits } from "@app/types/avatar";
 import { BUNDLED_COMPONENTS } from "@app/utils/avatar-bundled-components";
 import { randomCharacterTraits } from "@app/utils/avatar-random";
@@ -28,7 +25,7 @@ const COMPLETION_NAVIGATE_DELAY_MS = 800;
 const POLL_INTERVAL_MS = 3000;
 const MAX_HATCH_WAIT_MS = 300_000;
 
-type LocalHatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
+type HatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
 
 // Module-level state so HMR remounts, StrictMode double-mounts, and the
 // shell's session-driven remounts survive without spawning duplicate hatches.
@@ -37,20 +34,17 @@ type LocalHatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
 // guards are released only on failure (so retry re-hatches) and on genuine
 // completion, never in the window between the hatch resolving and the screen
 // navigating away.
-let localHatchPromise: Promise<LocalHatchResult> | null = null;
-// The hosting mode the held localHatchPromise was created with. A held promise
-// only answers for the SAME mode: the guard can outlive a trip through the
+let hatchPromise: Promise<HatchResult> | null = null;
+// The remote the held hatchPromise was created with. A held promise only
+// answers for the SAME remote: the guard can outlive a trip through the
 // hosting screen, where the user may switch modes, and the abandoned mode's
 // assistant must not be adopted for the new choice.
-let localHatchRemote: string | undefined;
-type PlatformHatchResult = Awaited<ReturnType<typeof hatchCloudAssistant>>;
-let cloudHatchPromise: Promise<PlatformHatchResult> | null = null;
+let hatchRemote: string | undefined;
 let hatchTraitsCache: CharacterTraits | null = null;
 
 function releaseHatchGuards(): void {
-  localHatchPromise = null;
-  localHatchRemote = undefined;
-  cloudHatchPromise = null;
+  hatchPromise = null;
+  hatchRemote = undefined;
   hatchTraitsCache = null;
 }
 
@@ -93,13 +87,13 @@ export function interpolateSegmentProgress(
  * `/assistant/onboarding/hatching` — now `/account/onboarding/hatching`,
  * rendered with the account screens' compact chrome.
  *
- * The local arm re-homes onto the shell bridge: the CLI hatch runs in the
- * shell's main process, and the daemon+gateway wait rides the bridge's status
- * probe. The pending provider key stays staged for the downstream apply (same
- * sessionStorage, same origin). Cloud hatches ride the app's own hatch API —
- * the route creates-or-reuses the row and provisions inline, so the POST's
- * answer IS the handoff, and the shell's resolution owns the not-ready states
- * afterwards.
+ * The hatch rides the app bundle's one hatch api — POST /v1/assistants/hatch
+ * with the funnel's hosting choice as the remote param. The hatch operation
+ * discriminates (local, docker, cloud), so this screen never branches on the
+ * mode: it waits the answer out, polls the resolution endpoint until the
+ * hatched assistant answers, and hands off to research. The pending provider
+ * key stays staged for the downstream apply (same sessionStorage, same
+ * origin), and the shell's resolution owns the not-ready states afterwards.
  */
 export function HatchingScreen() {
   const { t } = useTranslation("account");
@@ -107,8 +101,6 @@ export function HatchingScreen() {
   const [searchParams] = useSearchParams();
   const hostingParam = searchParams.get("hosting");
   const failParam = searchParams.get("fail");
-  const useLocalHatch =
-    isLocalClient() && hostingParam !== null && hostingParam !== "cadet-cloud";
   const [hatchTraits] = useState<CharacterTraits>(
     () => (hatchTraitsCache ??= randomCharacterTraits(BUNDLED_COMPONENTS)),
   );
@@ -183,143 +175,104 @@ export function HatchingScreen() {
         // the module-level guards so a later onboarding session hatches a
         // brand-new one instead of reusing this resolved promise and avatar.
         releaseHatchGuards();
-        void (async () => {
-          // A local hatch feeds the research/personality flow. The assistant
-          // is live, so the research route adopts it (its background hatch
-          // resolves the existing local assistant instead of provisioning a
-          // cloud one). The hosting choice carries through so research adopts
-          // exactly this assistant, not whatever a stale selection resolves
-          // to.
-          if (useLocalHatch) {
-            const researchParams = new URLSearchParams();
-            if (hostingParam) {
-              researchParams.set("hosting", hostingParam);
-            }
-            if (readyAssistantId) {
-              researchParams.set("assistant", readyAssistantId);
-            }
-            const researchQs = researchParams.toString();
-            void navigate(
-              `${routes.onboarding.research}${researchQs ? `?${researchQs}` : ""}`,
-              SETUP_NAVIGATE,
-            );
-            return;
+        // A local walk carries the hosting choice + the hatched assistant so
+        // research adopts exactly this assistant, not whatever a stale
+        // selection resolves to (its background hatch resolves the existing
+        // local assistant instead of provisioning a cloud one). A cloud walk
+        // hands off bare — research owns the managed background hatch.
+        if (hostingParam && hostingParam !== "cadet-cloud") {
+          const researchParams = new URLSearchParams({ hosting: hostingParam });
+          if (readyAssistantId) {
+            researchParams.set("assistant", readyAssistantId);
           }
-          void navigate(routes.onboarding.research, SETUP_NAVIGATE);
-        })();
+          void navigate(
+            `${routes.onboarding.research}?${researchParams.toString()}`,
+            SETUP_NAVIGATE,
+          );
+          return;
+        }
+        void navigate(routes.onboarding.research, SETUP_NAVIGATE);
       }, COMPLETION_NAVIGATE_DELAY_MS);
     };
 
     const startHatch = async () => {
       transitionPhase("provisioning");
 
-      // Local/Docker hatch lifecycle: the bridge runs the CLI to spawn the
-      // daemon + gateway, the lockfile reload discovers the new assistant, and
-      // the status probe waits for it to answer before the handoff.
-      if (useLocalHatch) {
-        try {
-          const remote = hostingParam === "docker" ? "docker" : undefined;
-          // A promise held across a retry answers only for the hosting mode it
-          // was created with; a switched mode hatches fresh.
-          if (localHatchPromise && localHatchRemote !== remote) {
-            releaseHatchGuards();
-          }
-          if (!localHatchPromise) {
-            localHatchRemote = remote;
-            localHatchPromise = hatchAssistant(remote);
-          }
-          const result = await localHatchPromise;
-          if (cancelled) {
-            return;
-          }
-          if (!result.ok) {
-            releaseHatchGuards();
-            setError(result.error ?? "Failed to hatch local assistant.");
-            return;
-          }
-          if (result.assistantId) {
-            writeSelectedAssistantId(result.assistantId);
-          }
-          // The CLI's hatch spawns the daemon + gateway as background
-          // processes and exits before they finish starting up — wait for the
-          // lifecycle probe to report healthy before handing off.
-          transitionPhase("connecting");
-          if (result.assistantId) {
-            let gatewayReady = false;
-            while (!cancelled && !gatewayReady) {
-              // The resolution endpoint is the lifecycle read: the serving
-              // host composes the entry's health and auth into the union, so
-              // "ready" means the gateway is answering. A probe that cannot
-              // settle (transport error, timeout) keeps polling within the
-              // deadline below.
-              const resolution = await resolveAssistant({
-                signal: AbortSignal.timeout(10_000),
-              }).catch(() => null);
-              if (resolution?.status === "ready") {
-                gatewayReady = true;
-                break;
-              }
-              if (Date.now() - pollStartMs >= MAX_HATCH_WAIT_MS) {
-                // The hatch succeeded but the gateway never went healthy —
-                // release the guards so "Try again" runs a genuinely fresh
-                // hatch.
-                releaseHatchGuards();
-                setError(
-                  "Your assistant is taking longer than expected. Please try again.",
-                );
-                return;
-              }
-              await new Promise<void>((resolve) => {
-                readyPollTimer = setTimeout(resolve, POLL_INTERVAL_MS);
-              });
-              readyPollTimer = null;
+      try {
+        // The funnel's hosting choice IS the hatch api's remote param — the
+        // hatch operation discriminates (local, docker, cloud), so this
+        // screen never branches on the mode.
+        const remote =
+          hostingParam === "cadet-cloud"
+            ? "cloud"
+            : hostingParam === "docker"
+              ? "docker"
+              : "local";
+        // A promise held across a retry answers only for the hosting mode it
+        // was created with; a switched mode hatches fresh.
+        if (hatchPromise && hatchRemote !== remote) {
+          releaseHatchGuards();
+        }
+        if (!hatchPromise) {
+          hatchRemote = remote;
+          hatchPromise = hatchAssistant(remote);
+        }
+        const result = await hatchPromise;
+        if (cancelled) {
+          return;
+        }
+        if (!result.ok) {
+          releaseHatchGuards();
+          setError(result.error ?? "Failed to hatch your assistant.");
+          return;
+        }
+        if (result.assistantId) {
+          writeSelectedAssistantId(result.assistantId);
+        }
+        // The hatch's answer carries the new assistant; the resolution
+        // poll below waits for it to answer before the handoff.
+        transitionPhase("connecting");
+        if (result.assistantId) {
+          let gatewayReady = false;
+          while (!cancelled && !gatewayReady) {
+            // The resolution endpoint is the lifecycle read: the serving
+            // host composes the entry's health and auth into the union, so
+            // "ready" means the gateway is answering. A probe that cannot
+            // settle (transport error, timeout) keeps polling within the
+            // deadline below.
+            const resolution = await resolveAssistant({
+              signal: AbortSignal.timeout(10_000),
+            }).catch(() => null);
+            if (resolution?.status === "ready") {
+              gatewayReady = true;
+              break;
             }
-            if (cancelled) {
+            if (Date.now() - pollStartMs >= MAX_HATCH_WAIT_MS) {
+              // The hatch succeeded but the assistant never went healthy —
+              // release the guards so "Try again" runs a genuinely fresh
+              // hatch.
+              releaseHatchGuards();
+              setError(
+                "Your assistant is taking longer than expected. Please try again.",
+              );
               return;
             }
+            await new Promise<void>((resolve) => {
+              readyPollTimer = setTimeout(resolve, POLL_INTERVAL_MS);
+            });
+            readyPollTimer = null;
           }
-          handleHatchReady(result.assistantId);
-        } catch {
-          releaseHatchGuards();
           if (cancelled) {
             return;
           }
-          setError(
-            "Failed to hatch local assistant. Check CLI logs for details.",
-          );
         }
-        return;
-      }
-
-      // Cloud hatch. The cloud-hosted-disabled fallback is web-only chrome —
-      // its CTA downloads the desktop app this bundle already runs in.
-      try {
-        if (!cloudHatchPromise) {
-          cloudHatchPromise = hatchCloudAssistant();
-        }
-        const result = await cloudHatchPromise;
-        cloudHatchPromise = null;
+        handleHatchReady(result.assistantId);
+      } catch {
+        releaseHatchGuards();
         if (cancelled) {
           return;
         }
-        if (result.ok) {
-          handleHatchReady(result.data.id);
-          return;
-        }
-        console.warn("Onboarding hatch request failed", {
-          status: result.status,
-          error: result.error,
-        });
-        setError(
-          result.error.detail ||
-            "Failed to start your assistant. Please try again.",
-        );
-      } catch (err) {
-        cloudHatchPromise = null;
-        captureError(err, { context: "onboarding_hatch_assistant" });
-        if (cancelled) {
-          return;
-        }
+        setError("Failed to hatch your assistant. Please try again.");
       }
     };
 
@@ -338,9 +291,9 @@ export function HatchingScreen() {
     attempt,
     failParam,
     hatchTraits,
+    hostingParam,
     navigate,
     transitionPhase,
-    useLocalHatch,
   ]);
 
   useEffect(() => {
@@ -410,9 +363,13 @@ export function HatchingScreen() {
               size="large"
               fullWidth
               onClick={() => {
-                const to = useLocalHatch
-                  ? routes.account.onboarding.hosting
-                  : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
+                // The hosting choice is the walk's data: a local/docker walk
+                // backs up to its hosting step; a cloud walk came through
+                // research and returns there.
+                const to =
+                  hostingParam && hostingParam !== "cadet-cloud"
+                    ? routes.account.onboarding.hosting
+                    : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
                 void navigate(to, SETUP_NAVIGATE);
               }}
             >

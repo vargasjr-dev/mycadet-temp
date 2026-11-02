@@ -21,14 +21,13 @@ export function WelcomeScreen() {
     // `SETUP_NAVIGATE` in `onboarding-navigation.ts`). The list assistants api
     // owns the "already have assistants" answer — no session (the literal
     // no-account path) reads as none, so the flow lands on hosting.
-    void (async () => {
-      const result = await listAssistants();
+    void listAssistants().then((result) => {
       if (result.ok && result.data.length > 0) {
         void navigate(routes.assistant, SETUP_NAVIGATE);
       } else {
         void navigate(routes.account.onboarding.hosting, SETUP_NAVIGATE);
       }
-    })();
+    });
   };
 
   return (

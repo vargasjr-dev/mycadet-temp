@@ -34,9 +34,9 @@ export function useAssistantRequest({
     const controller = new AbortController();
     const settle = (state: AssistantRequestState) => setResult({ key, state });
     settle({ status: "loading" });
-    // The shell is same-origin by construction — every host (the desktop
-    // protocol, the web dev server, the cloud takeover) proxies the API at
-    // the page's own origin. Read inside the effect: SSR renders the shell
+    // The request itself needs no origin — the client reads the page's own
+    // (same-origin by construction: every host proxies the API at the page's
+    // origin). Read here only for the timeout log: SSR renders the shell
     // without a window, and the origin is a browser fact.
     const origin = window.location.origin;
     const timer = setTimeout(() => {
