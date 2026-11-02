@@ -326,7 +326,7 @@ describe("cadet ps <built-in process name> details", () => {
     readRootProcessesMock.mockReturnValue({});
   });
 
-  test("`ps nginx` details the app edge with its listen URL", async () => {
+  test("`ps app` details the app server with its listen URL", async () => {
     readRootProcessesMock.mockReturnValue({
       app: {
         pid: 77,
@@ -334,18 +334,18 @@ describe("cadet ps <built-in process name> details", () => {
         startedAt: "2026-10-20T15:00:00.000Z",
       },
     });
-    process.argv = ["bun", "cadet", "ps", "nginx"];
+    process.argv = ["bun", "cadet", "ps", "app"];
 
     await ps();
 
     const output = stdout.join(NL);
-    expect(output).toContain("App edge (nginx):");
+    expect(output).toContain("App server:");
     expect(output).toContain("http://127.0.0.1:7841");
   });
 
-  test("`ps nginx` with no record points at `cadet app start`", async () => {
+  test("`ps app` with no record points at `cadet app start`", async () => {
     readRootProcessesMock.mockReturnValue({});
-    process.argv = ["bun", "cadet", "ps", "nginx"];
+    process.argv = ["bun", "cadet", "ps", "app"];
 
     await ps();
 

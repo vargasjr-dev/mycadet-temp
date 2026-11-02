@@ -55,7 +55,7 @@ describe("cadet app status", () => {
     await app();
 
     const out = logs.join("\n");
-    expect(out).toContain("App edge (nginx):");
+    expect(out).toContain("App server:");
     expect(out).toContain("Status:");
     expect(out).toContain("not running");
     expect(out).toContain("http://127.0.0.1:7840");
