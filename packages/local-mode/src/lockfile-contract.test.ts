@@ -4,7 +4,7 @@ import {
   LockfileAssistantSchema,
   LockfileSchema,
   MachinePolicySchema,
-  MACHINE_APPLICABILITY,
+  machinePolicyPaths,
   RemoteSchema,
   KNOWN_REMOTES,
   GATEWAY_PORT,
@@ -569,15 +569,23 @@ describe("MachinePolicySchema", () => {
   });
 });
 
-describe("MACHINE_APPLICABILITY", () => {
-  test("covers every known remote", () => {
-    expect(Object.keys(MACHINE_APPLICABILITY).sort()).toEqual(
-      [...KNOWN_REMOTES].sort(),
-    );
+describe("machinePolicyPaths", () => {
+  test("walks the schema: the memory section and its leaves", () => {
+    const { sections, leaves } = machinePolicyPaths();
+    expect(sections).toEqual(["memory"]);
+    expect(leaves.sort()).toEqual(["memory.high", "memory.max"]);
   });
 
-  test("pins the materialization semantics that exist today", () => {
-    expect(MACHINE_APPLICABILITY.docker).toBe("cgroup");
-    expect(MACHINE_APPLICABILITY.local).toBe("process-hint");
+  test("never emits a path the strict schema would reject", () => {
+    const { sections, leaves } = machinePolicyPaths();
+    for (const path of [...sections, ...leaves]) {
+      const candidate = path
+        .split(".")
+        .reduceRight<unknown>(
+          (node, key) => ({ [key]: node }),
+          sections.includes(path) ? {} : 1,
+        );
+      expect(MachinePolicySchema.safeParse(candidate).success).toBe(true);
+    }
   });
 });

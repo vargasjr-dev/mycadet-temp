@@ -81,8 +81,8 @@ export type {
   LockfileWriteResult,
   MachinePolicy,
   MachineMemoryPolicy,
-  MachineApplicability,
 } from "./lockfile-contract";
+export { machinePolicyPaths } from "./lockfile-contract";
 export type { LockfileAssistantPatch } from "./lockfile";
 export {
   configureCliPaths,

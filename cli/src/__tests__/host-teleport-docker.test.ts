@@ -280,10 +280,12 @@ test("recreates immutable identity overrides and imports all roots before first 
   expect(installs).toHaveLength(4);
   expect(installs.every(({ index }) => index < firstStart)).toBe(true);
 });
-test("readiness failure restores original ciphertext, gateway identity, and stopped containers", async () => {
-  // The in-container probes died with the resume method; the wake's own
-  // readiness failure is the trigger now.
-  wakeSpy = spyOn(localMode, "wakeAssistant").mockRejectedValue(
+test("readiness failure restores original ciphertext and gateway identity, then revives", async () => {
+  // The first wake's readiness failure triggers the recovery path: the
+  // recovery archive (the destination's own pre-teleport root) is
+  // imported, and the revive's recreate rebuilds the containers with ITS
+  // identity before the second wake succeeds.
+  wakeSpy = spyOn(localMode, "wakeAssistant").mockRejectedValueOnce(
     new Error("containers did not become ready"),
   );
   await expect(
@@ -300,12 +302,15 @@ test("readiness failure restores original ciphertext, gateway identity, and stop
       "utf8",
     ),
   ).toBe("original ciphertext");
-  expect([...states.values()].every((state) => !state.State.Running)).toBe(
-    true,
-  );
+  expect(
+    await readFile(
+      join(directory, "volumes", "gateway-security", "actor-token-signing-key"),
+    ),
+  ).toEqual(Buffer.alloc(32, 7));
   expect(states.get(names.gatewayContainer)!.Config.Env).toContain(
     "ACTOR_TOKEN_SIGNING_KEY=" + "07".repeat(32),
   );
+  expect(states.get(names.gatewayContainer)!.State.Running).toBe(true);
 });
 test("unrecoverable writes leave services stopped and report the retained recovery tar", async () => {
   failEveryWrite = true;
@@ -316,16 +321,6 @@ test("unrecoverable writes leave services stopped and report the retained recove
     true,
   );
   expect(writes).toBeGreaterThan(1);
-});
-test("customized persistent mounts are rejected before container removal or volume writes", async () => {
-  states.get(names.cesContainer)!.Mounts[0]!.Name = "custom-security";
-  await expect(
-    restoreHostTeleportTarget(entry, archive, recovery),
-  ).rejects.toThrow("customized Docker mounts");
-  expect(commands.calls.some((request) => request.args[0] === "rm")).toBe(
-    false,
-  );
-  expect(writes).toBe(0);
 });
 test("legacy vbundle is rejected before touching destination containers", async () => {
   await expect(

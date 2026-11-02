@@ -1,6 +1,7 @@
 import {
   cliCommand,
   machineGet,
+  machinePolicyPaths,
   machineResetKey,
   machineSetKey,
   planMachine,
@@ -17,9 +18,10 @@ import { wakeAssistant } from "./wake.js";
  * `set`/`reset` write the store and say when the policy takes effect;
  * `plan` is the read-only stored-vs-applied diff (the terraform inspect
  * half, powered by the operation that owns the applied-state reader);
- * `apply` is the CLI's sleep → recreate → wake composition — the daemon
- * cannot recreate its own container, so applying stays a CLI/supervisor
- * flow. The command owns UX (arg parsing, narration, exit codes) and
+ * `apply` is the sleep → wake restart — every remote answers through its
+ * own sleep/wake legs, so apply works everywhere they do. The paths come
+ * from walking the policy schema, so knobs join the surface as the schema
+ * grows. The command owns UX (arg parsing, narration, exit codes) and
  * delegates everything else to the operations.
  */
 
@@ -108,8 +110,10 @@ function appliedLine(applied: {
   return parts.join(", ");
 }
 
-/** The dotted paths `get`/`reset` accept; `set` needs a leaf. */
-const SECTION_PATHS = ["memory", "memory.max", "memory.high"];
+/** The dotted paths the schema walks to, derived dynamically: `get`/`reset`
+ * accept sections and leaves, `set` needs a leaf. */
+const { sections: SECTION_PATHS, leaves: LEAF_PATHS } = machinePolicyPaths();
+const ALL_PATHS = [...SECTION_PATHS, ...LEAF_PATHS];
 
 export const machine = Object.assign(
   async function machine(): Promise<void> {
@@ -140,16 +144,16 @@ export const machine = Object.assign(
       nameArg = first;
     } else if (subcommand !== "set") {
       if (first !== undefined && first.includes(".")) {
-        if (!SECTION_PATHS.includes(first)) {
+        if (!ALL_PATHS.includes(first)) {
           usageError(
-            `Unknown machine path '${first}'. Valid paths: ${SECTION_PATHS.join(", ")}.`,
+            `Unknown machine path '${first}'. Valid paths: ${ALL_PATHS.join(", ")}.`,
           );
         }
         path = first;
         nameArg = second;
       } else if (second !== undefined) {
         usageError(
-          `'${first}' is not a machine path. Valid paths: ${SECTION_PATHS.join(", ")}.`,
+          `'${first}' is not a machine path. Valid paths: ${ALL_PATHS.join(", ")}.`,
         );
       } else {
         nameArg = first;
@@ -163,16 +167,23 @@ export const machine = Object.assign(
         console.error(`Error: ${result.error}`);
         process.exit(1);
       }
-      const paths =
-        path !== undefined
-          ? [path]
-          : SECTION_PATHS.filter((p) => p !== "memory");
+      const paths = path !== undefined ? [path] : LEAF_PATHS;
       console.log(
         `Machine policy for '${entry.assistantId}' (${entry.cloud} assistant):`,
       );
       for (const p of paths) {
-        const leaf = p.split(".")[1] as "max" | "high";
-        console.log(storedLine(p, result.machine?.memory?.[leaf]));
+        const stored = p
+          .split(".")
+          .reduce<unknown>(
+            (node, key) =>
+              node !== undefined && typeof node === "object"
+                ? (node as Record<string, unknown>)[key]
+                : undefined,
+            result.machine,
+          );
+        console.log(
+          storedLine(p, typeof stored === "number" ? stored : undefined),
+        );
       }
       return;
     }
@@ -188,13 +199,25 @@ export const machine = Object.assign(
         `Machine plan for '${entry.assistantId}' (${result.cloud} assistant):`,
       );
       const stored = result.stored;
-      console.log(
-        `  stored:        ${
-          stored
-            ? `memory.max ${stored.max === undefined ? "(default)" : formatMachineBytes(stored.max)}, memory.high ${stored.high === undefined ? "(default)" : formatMachineBytes(stored.high)}`
-            : "none"
-        }`,
-      );
+      const storedSummary = stored
+        ? LEAF_PATHS.map((leaf) => {
+            const value = leaf
+              .split(".")
+              .reduce<unknown>(
+                (node, key) =>
+                  node !== undefined && typeof node === "object"
+                    ? (node as Record<string, unknown>)[key]
+                    : undefined,
+                stored,
+              );
+            return `${leaf} ${
+              typeof value === "number"
+                ? formatMachineBytes(value)
+                : "(default)"
+            }`;
+          }).join(", ")
+        : "none";
+      console.log(`  stored:        ${storedSummary}`);
       console.log(
         `  applied:       ${result.applied ? appliedLine(result.applied) : "nothing live to compare"}`,
       );
@@ -212,26 +235,12 @@ export const machine = Object.assign(
 
     if (subcommand === "apply") {
       const entry = resolveTargetAssistant(nameArg);
-      if (entry.cloud === "local") {
-        console.log(
-          "No restart required — 'local' policy is a process hint that takes effect at the next worker spawn.",
-        );
-        return;
-      }
-      if (entry.cloud !== "docker") {
-        console.error(
-          `Error: '${cliCommand()} machine apply' is unsupported for a ${entry.cloud} assistant.`,
-        );
-        process.exit(1);
-      }
       const stopped = await sleepAssistant(entry);
       if (!stopped.ok) {
         console.error(`Error: ${stopped.error}`);
         process.exit(1);
       }
-      console.log(
-        "Assistant slept — recreating the containers with the stored policy...",
-      );
+      console.log("Assistant slept — restarting with the stored policy...");
       const woken = await wakeAssistant(entry, {
         watch: false,
         foreground: false,

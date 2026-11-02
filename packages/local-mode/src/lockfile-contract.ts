@@ -254,8 +254,8 @@ export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
  * Host-independent resource policy for one assistant's machine allocation —
  * what the allocation *should be*, as opposed to the record fields (ports,
  * instanceDir, containerInfo) that describe what *is*. The section rides
- * every topology's entry: the stored shape is the same everywhere, while how
- * a policy materializes differs per remote (see {@link MACHINE_APPLICABILITY}).
+ * every topology's entry: the stored shape is the same everywhere, while
+ * each remote's plan/apply ops own how it materializes there.
  *
  * The schema is strict — unknown keys are rejected — because the write path
  * (future `cadet machine set`, daemon PATCH, cloud API) is the loud validator:
@@ -300,22 +300,39 @@ export const MachinePolicySchema = z.strictObject({
 export type MachinePolicy = z.infer<typeof MachinePolicySchema>;
 
 /**
- * How a stored `machine` policy materializes per remote topology. The store
- * is host-independent — this table is the one place that says what a policy
- * *means* on each remote, so the apply layer and readers derive semantics
- * from it instead of re-deciding per call site. Remotes gain real
- * applicability as their apply paths land (cloud/gVisor, apple-container).
+ * The dotted paths of the machine policy, walked from the schema itself so
+ * a grown schema joins the `get`/`set`/`reset` surface without any command
+ * or operation learning its field names. Sections are the object nodes
+ * (`memory`); leaves are the scalar knobs (`memory.high`, `memory.max`) —
+ * the settable units.
  */
-export type MachineApplicability = "cgroup" | "process-hint" | "unsupported";
-
-export const MACHINE_APPLICABILITY = {
-  local: "process-hint",
-  docker: "cgroup",
-  "apple-container": "unsupported",
-  cloud: "unsupported",
-  custom: "unsupported",
-  baseten: "unsupported",
-} as const satisfies Record<Remote, MachineApplicability>;
+export function machinePolicyPaths(): {
+  sections: string[];
+  leaves: string[];
+} {
+  const sections: string[] = [];
+  const leaves: string[] = [];
+  const walk = (node: z.ZodType, path: string | undefined): void => {
+    const wrapper = node as unknown as { unwrap?: () => z.ZodType };
+    const inner =
+      typeof wrapper.unwrap === "function" ? wrapper.unwrap() : node;
+    const shape = (
+      inner as unknown as {
+        shape?: Record<string, z.ZodType>;
+      }
+    ).shape;
+    if (shape) {
+      if (path !== undefined) sections.push(path);
+      for (const [key, child] of Object.entries(shape)) {
+        walk(child, path === undefined ? key : `${path}.${key}`);
+      }
+    } else if (path !== undefined) {
+      leaves.push(path);
+    }
+  };
+  walk(MachinePolicySchema, undefined);
+  return { sections, leaves };
+}
 
 /**
  * The fields every topology actually uses: the identity every reader looks
@@ -342,9 +359,9 @@ const BaseAssistantSchema = z.object({
   watcherPid: z.number().optional(),
   /**
    * Host-independent resource policy for this assistant's machine allocation
-   * (see {@link MachinePolicySchema} for the strict-at-write, fallback-at-parse
-   * contract, and {@link MACHINE_APPLICABILITY} for how it materializes per
-   * remote). Absent = the runtime's own defaults apply.
+   * (see {@link MachinePolicySchema} for the strict-at-write,
+   * fallback-at-parse contract; each remote's plan/apply ops own how it
+   * materializes there). Absent = the runtime's own defaults apply.
    */
   machine: MachinePolicySchema.optional().catch(undefined),
 });
