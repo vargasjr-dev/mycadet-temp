@@ -7,91 +7,75 @@ import { getLocalAssistantStatus } from "../status";
 import { runHatch } from "../hatch";
 import { runUpgrade, type UpgradeOptions } from "../upgrade";
 import { unpairAssistant } from "../unpair";
-import { getGatewayHealth } from "../daemon-readiness";
-import { loopbackSafeFetch } from "../loopback-fetch";
-import { getGatewayUrl, isCloudEntry } from "../lockfile-contract";
-import type { LockfileAssistant } from "../lockfile-contract";
 import { servedConfigFromLockfile } from "../served-config";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
+import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
  * lifecycle cores the serving host (Electron `app://` handler, Vite dev
- * middleware) mounts before the gateway data-plane planner. One entry per
- * operation; today that is the assistant resolution, retire, sleep, wake,
- * unpair, upgrade, status, avatar, the devices routes, the remote-web
- * pairing exchange, the hatch, and the lockfile strip. The gateway proxy
- * itself is the LAST row (the catch-all forward) once every scoped route is
- * an operation.
+ * middleware, the CLI edge's operation server) mounts before the gateway
+ * data-plane planner. One entry per operation; today that is the assistant
+ * resolution, retire, sleep, and wake. Future operations join as new rows
+ * (and the gateway proxy itself becomes the LAST row — the catch-all
+ * forward — once every scoped route is an operation).
  *
- * `matchOperatorRequest` is PURE in the URL — the hot path of every other
- * request never touches the lockfile. A match runs through
- * `match.route.run(match.assistantId, request)` directly: the routes import
+ * Patterns are RELATIVE — the tail after the assistant reference. A request
+ * reaches them under any of the four prefixes `matchOperatorRequest` walks
+ * (`/v1/assistant/…`, `/assistant/…`, `/v1/assistants/<id>/…`,
+ * `/assistants/<id>/…`), so the resolution and the lifecycle operations
+ * answer both the unscoped (the operator backend's active assistant) and
+ * the scoped (an explicit id) spelling of the same surface. A matched
+ * request runs through `match.route.run(match)` directly: the routes import
  * the modules they need, no injection surface.
- *
- * The second argument carries the serving host's `Request` — body-carrying
- * rows (pairing, devices, hatch, upgrade) read the JSON body off it;
- * assistant-scoped rows read the decoded path id and ignore it, and the
- * credential-judging rows (the resolution) read the caller's own headers
- * off it — a verdict read host-side without them would be the host's, not
- * the caller's.
  */
+export interface OperatorRequest {
+  /** The scoped rows' decoded target id; the unscoped rows resolve it. */
+  assistantId: string;
+  /**
+   * The caller's headers, forwarded so a credential-judging operation can
+   * send the caller's own proof upstream — a verdict read host-side without
+   * them would be the host's, not the caller's. Absent (direct `run` calls
+   * in tests) resolves to an empty `Headers`.
+   */
+  headers?: Headers;
+  /**
+   * The serving host's own request, carried for the body-carrying rows
+   * (hatch, devices, pairing, upgrade) to read their JSON bodies.
+   */
+  source?: Request;
+}
 
 export interface OperatorRoute {
   method: string;
+  /**
+   * The assistant-scoped rows' RELATIVE tail pattern — matched after a
+   * prefix strips the reference — or the machine-level rows' absolute
+   * pattern.
+   */
   pattern: RegExp;
   /**
+   * True when the pattern is a relative tail under the four assistant
+   * prefixes, false when it is an absolute machine-level path.
+   */
+  scoped: boolean;
+  /**
+   * The literal relative segment the pattern matches ("" for the resolution
+   * root). Kept beside the regex so path-based consumers (the nginx edge's
+   * generated locations) derive from this table without parsing patterns;
+   * a test pins pattern and segment to the same surface.
+   */
+  segment: string;
   /**
    * Answer the request. Returning null means PASS: the request is not this
    * host's to answer (unknown id, or an entry the host cannot retire) and
-   * the pre-existing chain answers instead — the cloud's 404 for a stale id,
-   * the data-plane forward for a platform-hosted entry. Routes whose pattern
-   * has no capture group receive the empty string as `assistantId`.
+   * the pre-existing chain answers instead — the cloud's 404 for a stale
+   * id, the data-plane forward for a platform-hosted entry.
    */
-  run: (assistantId: string, request: Request) => Promise<Response | null>;
-}
-
-const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
-const SLEEP_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/sleep\/?$/;
-const WAKE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/wake\/?$/;
-const UNPAIR_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/unpair\/?$/;
-const UPGRADE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/upgrade\/?$/;
-const STATUS_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/?$/;
-const AVATAR_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/avatar\/get\/?$/;
-const LOCKFILE_PATTERN = /^\/v1\/assistants\/$/;
-const HATCH_PATTERN = /^\/v1\/assistants\/hatch\/?$/;
-const DEVICES_PATTERN = /^\/v1\/devices\/?$/;
-const DEVICES_REVOKE_PATTERN = /^\/v1\/devices\/revoke\/?$/;
-const PAIRING_START_PATTERN = /^\/v1\/remote-web\/pairing-start\/?$/;
-const PAIRING_POLL_PATTERN = /^\/v1\/remote-web\/pairing-poll\/?$/;
-const PAIRING_CANCEL_PATTERN = /^\/v1\/remote-web\/pairing-cancel\/?$/;
-
-const json = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-
-/**
- * Buffer and parse a JSON request body. An empty body resolves to `{}` (the
- * per-field validation reports what's missing); malformed JSON resolves to
- * `null`.
- */
-async function readJsonBody(
-  request: Request,
-): Promise<Record<string, unknown> | null> {
-  const text = await request.text().catch(() => "");
-  if (text.trim().length === 0) {
-    return {};
-  }
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
+  run: (request: OperatorRequest) => Promise<Response | null>;
 }
 
 /**
@@ -103,8 +87,8 @@ async function readJsonBody(
  * cloud error shape, so the confirmation dialog renders the same detail
  * either way.
  */
-async function runRetireRoute(assistantId: string): Promise<Response | null> {
-  const entry = findAssistantByName(assistantId);
+async function runRetireRoute(request: OperatorRequest): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -120,7 +104,10 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return json({ detail: result.error }, result.status);
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 /**
@@ -131,8 +118,8 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
  * and status. Entries the host cannot stop pass through, and the
  * pre-existing chain answers.
  */
-async function runSleepRoute(assistantId: string): Promise<Response | null> {
-  const entry = findAssistantByName(assistantId);
+async function runSleepRoute(request: OperatorRequest): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -140,7 +127,10 @@ async function runSleepRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return json({ detail: result.error }, result.status);
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 /**
@@ -151,8 +141,8 @@ async function runSleepRoute(assistantId: string): Promise<Response | null> {
  * at the CLI (the recreate needs the container-create builder, still
  * CLI-side); a bodyless 204 parses as the web bundle's success.
  */
-async function runWakeRoute(assistantId: string): Promise<Response | null> {
-  const entry = findAssistantByName(assistantId);
+async function runWakeRoute(request: OperatorRequest): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -160,7 +150,35 @@ async function runWakeRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return json({ detail: result.error }, result.status);
+  return new Response(JSON.stringify({ detail: result.error }), {
+    status: result.status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+const json = (body: unknown, status = 200): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+
+/**
+ * Buffer and parse a JSON request body. An empty body resolves to `{}` (the
+ * per-field validation reports what's missing); malformed JSON resolves to
+ * `null`.
+ */
+async function readJsonBody(
+  request: Request | undefined,
+): Promise<Record<string, unknown> | null> {
+  const text = (await request?.text().catch(() => "")) ?? "";
+  if (text.trim().length === 0) {
+    return {};
+  }
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -183,11 +201,8 @@ async function runLockfileRoute(): Promise<Response> {
  * a hatched local assistant runs its own daemon, and the serving host only
  * ever invokes the CLI as a subprocess.
  */
-async function runHatchRoute(
-  _assistantId: string,
-  request: Request,
-): Promise<Response> {
-  const body = (await readJsonBody(request)) ?? {};
+async function runHatchRoute(request: OperatorRequest): Promise<Response> {
+  const body = (await readJsonBody(request.source)) ?? {};
   const remote = typeof body.remote === "string" ? body.remote : undefined;
   try {
     const result = await runHatch({ remote });
@@ -208,12 +223,14 @@ async function runHatchRoute(
  * machine passes — the id-keyed proxy resolves the rest (the conductor's
  * routes for a cloud id).
  */
-async function runUnpairRoute(assistantId: string): Promise<Response | null> {
-  const entry = findAssistantByName(assistantId);
+async function runUnpairRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
   }
-  const result = unpairAssistant(assistantId);
+  const result = unpairAssistant(request.assistantId);
   if (result.ok) {
     return json({ ok: true, lockfile: result.lockfile });
   }
@@ -228,10 +245,9 @@ async function runUnpairRoute(assistantId: string): Promise<Response | null> {
  * reach the renderer.
  */
 async function runPairingStartRoute(
-  _assistantId: string,
-  request: Request,
+  request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request.source);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -258,142 +274,10 @@ async function runPairingStartRoute(
   });
 }
 
-const RESOLUTION_PATTERN = /^\/v1\/assistant\/?$/;
-
-/**
- * The caller's own credential headers, and nothing else. The resolution's
- * verdicts are the CALLER's — the gateway's `/healthz` auth check reads the
- * browser access cookie (or a bearer), so the operation forwards exactly
- * those headers upstream and never the host's own identity.
- */
-function forwardedCredentials(headers: Headers): Record<string, string> {
-  const forwarded: Record<string, string> = {};
-  const cookie = headers.get("cookie");
-  if (cookie) forwarded.cookie = cookie;
-  const authorization = headers.get("authorization");
-  if (authorization) forwarded.authorization = authorization;
-  return forwarded;
-}
-
-function resolutionResponse(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-/**
- * The platform's own detail for a cloud entry, normalized into the
- * resolution union. The cloud's status codes carry the arms the shell
- * renders — 401 no session, 409 still provisioning, 410 gone — and its 200
- * detail carries the identity; the operation translates so every surface
- * answers the SAME union shape.
- */
-async function resolveCloudAssistant(
-  entry: LockfileAssistant,
-  headers: Headers,
-): Promise<Response> {
-  const detailUrl = `${getGatewayUrl(entry).replace(/\/+$/, "")}/v1/assistants/${encodeURIComponent(entry.assistantId ?? "")}/`;
-  try {
-    const response = await loopbackSafeFetch(detailUrl, {
-      headers: { Accept: "application/json", ...forwardedCredentials(headers) },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (response.status === 401) {
-      return resolutionResponse({ status: "unauthenticated" });
-    }
-    if (response.status === 409) {
-      return resolutionResponse({ status: "notReady" });
-    }
-    if (response.status === 410) {
-      return resolutionResponse({ status: "unavailable" });
-    }
-    if (!response.ok) {
-      return resolutionResponse({ status: "notReady" });
-    }
-    const detail = (await response.json().catch(() => null)) as {
-      id?: unknown;
-      version?: unknown;
-      url?: unknown;
-    } | null;
-    if (
-      typeof detail?.id !== "string" ||
-      typeof detail.version !== "string" ||
-      typeof detail.url !== "string"
-    ) {
-      return resolutionResponse({ status: "notReady" });
-    }
-    return resolutionResponse({
-      status: "ready",
-      assistant: { id: detail.id, version: detail.version, url: detail.url },
-    });
-  } catch {
-    return resolutionResponse({ status: "notReady" });
-  }
-}
-
-/**
- * The shell's resolution operation. One `GET /v1/assistant` answers the
- * whole resolution union so the app's hook is one fetch: the lockfile says
- * what is served (empty, a choice list, or the active-or-single entry), and
- * the entry's gateway says who it is and whether the CALLER's credentials
- * authenticate — `getGatewayHealth` rides the entry's gateway `/healthz`
- * (version + verdict in one round-trip; the caller's cookie forwarded, so
- * an authed gateway judges the browser, not the host). A cloud entry has no
- * host-side gateway: the platform's own detail carries the arms, and the
- * operation normalizes it into the same union.
- */
-async function runAssistantResolution(headers: Headers): Promise<Response> {
-  const lockfile = readLockfile();
-  if (lockfile.assistants.length === 0) {
-    return resolutionResponse({ status: "empty" });
-  }
-  const served =
-    lockfile.assistants.find(
-      (assistant) => assistant.assistantId === lockfile.activeAssistant,
-    ) ??
-    (lockfile.assistants.length === 1 ? lockfile.assistants[0] : undefined);
-  if (!served?.assistantId) {
-    // More than one entry and none active: the shell hands off to the
-    // account chooser, which renders these rows.
-    return resolutionResponse({
-      status: "selection",
-      assistants: lockfile.assistants.map((entry) => ({
-        id: entry.assistantId,
-        ...(entry.name ? { name: entry.name } : {}),
-        remote: entry.cloud,
-      })),
-    });
-  }
-  if (isCloudEntry(served)) {
-    return resolveCloudAssistant(served, headers);
-  }
-  const health = await getGatewayHealth(getGatewayUrl(served), {
-    headers: forwardedCredentials(headers),
-  });
-  if (!health.authenticated) {
-    return resolutionResponse({ status: "unauthenticated" });
-  }
-  if (!health.version) {
-    // The gateway answered nothing (unreachable, still booting, or older
-    // than the identity payload) — the assistant is not ready to mount.
-    return resolutionResponse({ status: "notReady" });
-  }
-  return resolutionResponse({
-    status: "ready",
-    assistant: {
-      id: served.assistantId,
-      version: health.version,
-      url: "assistant/",
-    },
-  });
-}
-
 async function runPairingPollRoute(
-  _assistantId: string,
-  request: Request,
+  request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request.source);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -427,10 +311,9 @@ async function runPairingPollRoute(
 }
 
 async function runPairingCancelRoute(
-  _assistantId: string,
-  request: Request,
+  request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request.source);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -444,9 +327,9 @@ async function runPairingCancelRoute(
  */
 async function runDevicesRoute(
   isRevoke: boolean,
-  request: Request,
+  request: OperatorRequest,
 ): Promise<Response> {
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request.source);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -486,14 +369,14 @@ const upgradingLocalAssistantIds = new Set<string>();
  * route.
  */
 async function runUpgradeRoute(
-  assistantId: string,
-  request: Request,
+  request: OperatorRequest,
 ): Promise<Response | null> {
+  const assistantId = request.assistantId;
   const entry = findAssistantByName(assistantId);
   if (!entry) {
     return null;
   }
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request.source);
   const options: UpgradeOptions =
     body === null
       ? {}
@@ -537,7 +420,10 @@ async function runUpgradeRoute(
  * "crashed", it is mid-restart. An id that is not an entry on this machine
  * passes — the data-plane chain forwards it.
  */
-async function runStatusRoute(assistantId: string): Promise<Response | null> {
+async function runStatusRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  const assistantId = request.assistantId;
   const entry = findAssistantByName(assistantId);
   if (!entry) {
     return null;
@@ -553,74 +439,208 @@ async function runStatusRoute(assistantId: string): Promise<Response | null> {
  * sibling still has an avatar in the chooser. An id that is not an entry on
  * this machine passes.
  */
-async function runAvatarRoute(assistantId: string): Promise<Response | null> {
-  const entry = findAssistantByName(assistantId);
+async function runAvatarRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
   }
-  return json(readLockfileAssistantAvatar(assistantId));
+  return json(readLockfileAssistantAvatar(request.assistantId));
 }
 
-const ROUTES: OperatorRoute[] = [
+/** The operator route table, in match order. */
+export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
+  // The shell's resolution: the assistant reference's bare tail answers the
+  // whole union (scoped to an explicit id, or the active one unscoped).
   {
     method: "GET",
-    pattern: RESOLUTION_PATTERN,
-    run: (_assistantId, request) => runAssistantResolution(request.headers),
-  },
-  { method: "GET", pattern: LOCKFILE_PATTERN, run: () => runLockfileRoute() },
-  { method: "POST", pattern: HATCH_PATTERN, run: runHatchRoute },
-  {
-    method: "POST",
-    pattern: DEVICES_PATTERN,
-    run: (_id, request) => runDevicesRoute(false, request),
+    pattern: /^\/?$/,
+    segment: "",
+    scoped: true,
+    run: runResolveRoute,
   },
   {
-    method: "POST",
-    pattern: DEVICES_REVOKE_PATTERN,
-    run: (_id, request) => runDevicesRoute(true, request),
+    method: "GET",
+    pattern: /^\/v1\/assistants\/$/,
+    segment: "",
+    scoped: false,
+    run: () => runLockfileRoute(),
   },
   {
     method: "POST",
-    pattern: PAIRING_START_PATTERN,
+    pattern: /^\/v1\/assistants\/hatch\/?$/,
+    segment: "",
+    scoped: false,
+    run: runHatchRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^\/v1\/devices\/?$/,
+    segment: "",
+    scoped: false,
+    run: (request) => runDevicesRoute(false, request),
+  },
+  {
+    method: "POST",
+    pattern: /^\/v1\/devices\/revoke\/?$/,
+    segment: "",
+    scoped: false,
+    run: (request) => runDevicesRoute(true, request),
+  },
+  {
+    method: "POST",
+    pattern: /^\/v1\/remote-web\/pairing-start\/?$/,
+    segment: "",
+    scoped: false,
     run: runPairingStartRoute,
   },
-  { method: "POST", pattern: PAIRING_POLL_PATTERN, run: runPairingPollRoute },
   {
     method: "POST",
-    pattern: PAIRING_CANCEL_PATTERN,
+    pattern: /^\/v1\/remote-web\/pairing-poll\/?$/,
+    segment: "",
+    scoped: false,
+    run: runPairingPollRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^\/v1\/remote-web\/pairing-cancel\/?$/,
+    segment: "",
+    scoped: false,
     run: runPairingCancelRoute,
   },
-  { method: "DELETE", pattern: RETIRE_PATTERN, run: runRetireRoute },
-  { method: "POST", pattern: SLEEP_PATTERN, run: runSleepRoute },
-  { method: "POST", pattern: WAKE_PATTERN, run: runWakeRoute },
-  { method: "POST", pattern: UNPAIR_PATTERN, run: runUnpairRoute },
-  { method: "POST", pattern: UPGRADE_PATTERN, run: runUpgradeRoute },
-  { method: "GET", pattern: STATUS_PATTERN, run: runStatusRoute },
-  { method: "GET", pattern: AVATAR_PATTERN, run: runAvatarRoute },
+  {
+    method: "DELETE",
+    pattern: /^retire\/?$/,
+    segment: "retire",
+    scoped: true,
+    run: runRetireRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^sleep\/?$/,
+    segment: "sleep",
+    scoped: true,
+    run: runSleepRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^wake\/?$/,
+    segment: "wake",
+    scoped: true,
+    run: runWakeRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^unpair\/?$/,
+    segment: "unpair",
+    scoped: true,
+    run: runUnpairRoute,
+  },
+  {
+    method: "POST",
+    pattern: /^upgrade\/?$/,
+    segment: "upgrade",
+    scoped: true,
+    run: runUpgradeRoute,
+  },
+  // The status read rides its own tail now: the scoped bare detail belongs
+  // to the resolution (the shell's one call).
+  {
+    method: "GET",
+    pattern: /^status\/?$/,
+    segment: "status",
+    scoped: true,
+    run: runStatusRoute,
+  },
+  {
+    method: "GET",
+    pattern: /^avatar\/get\/?$/,
+    segment: "avatar/get",
+    scoped: true,
+    run: runAvatarRoute,
+  },
+];
+
+/**
+ * The four prefix spellings an operator route answers, in match order: the
+ * versioned and unversioned scoped forms (the id is the capture), and the
+ * versioned and unversioned unscoped forms (the bare assistant reference —
+ * the operator backend's ACTIVE assistant). A scoped prefix that matches no
+ * route ends the walk (a scoped path is scoped; the unscoped prefixes can
+ * never own its tail).
+ */
+const OPERATOR_PREFIXES: { pattern: RegExp; scoped: boolean }[] = [
+  { pattern: /^\/v1\/assistants\/([^/?#]+)(?=$|[/?#])/, scoped: true },
+  { pattern: /^\/assistants\/([^/?#]+)(?=$|[/?#])/, scoped: true },
+  { pattern: /^\/v1\/assistant(?=$|[/?#])/, scoped: false },
+  { pattern: /^\/assistant(?=$|[/?#])/, scoped: false },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
 export interface OperatorMatch {
   route: OperatorRoute;
-  /** The scoped rows' decoded target id; the unscoped rows' empty string. */
+  /**
+   * The scoped rows' decoded target id; for an unscoped match, the active
+   * assistant the operator backend has stored (the lockfile's active or
+   * sole entry), empty when there is none to name.
+   */
   assistantId: string;
 }
 
 /**
- * Match a request against the route table. Pure in `pathname` + `method`:
- * no lockfile read, no I/O — the hot path of every non-operator request
- * (static assets, gateway forwards, pairing) pays one regex walk. A scoped
- * row's pattern carries one capture group (the target id); an unscoped row's
- * carries none and decodes no id.
+ * Match a request against the route table: walk the four prefixes, match
+ * the RELATIVE pattern of the first route whose method and tail agree. The
+ * walk itself stays pure in the URL — the hot path of every non-operator
+ * request (static assets, gateway forwards, pairing) pays one regex walk
+ * and no I/O. Only a matched request reads the lockfile (to resolve an
+ * unscoped match's active assistant id).
  */
 export function matchOperatorRequest(
   pathname: string,
   method: string,
 ): OperatorMatch | null {
-  for (const route of ROUTES) {
-    if (method !== route.method) continue;
+  for (const prefix of OPERATOR_PREFIXES) {
+    const prefixMatch = prefix.pattern.exec(pathname);
+    if (!prefixMatch) {
+      continue;
+    }
+    const tail = pathname.slice(prefixMatch[0].length).replace(/^\//, "");
+    for (const route of OPERATOR_ROUTES) {
+      if (
+        !route.scoped ||
+        method !== route.method ||
+        !route.pattern.test(tail)
+      ) {
+        continue;
+      }
+      if (!prefix.scoped) {
+        // An unscoped match names the operator backend's active assistant —
+        // the lockfile's active or sole entry, empty when there is none.
+        return {
+          route,
+          assistantId: servedConfigFromLockfile(readLockfile()).assistantId ?? "",
+        };
+      }
+      try {
+        return { route, assistantId: decodeURIComponent(prefixMatch[1]!) };
+      } catch {
+        // Malformed percent-encoding: not this host's request.
+        return null;
+      }
+    }
+    // A prefixed path matched a prefix but no scoped row: its other
+    // spellings cannot own it either.
+    return null;
+  }
+  for (const route of OPERATOR_ROUTES) {
+    if (route.scoped || method !== route.method) {
+      continue;
+    }
     const match = route.pattern.exec(pathname);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
     try {
       return {
         route,
@@ -634,4 +654,30 @@ export function matchOperatorRequest(
     }
   }
   return null;
+}
+
+/**
+ * The shared operator dispatcher: match a request against the route table
+ * and run the matched route, threading the caller's own headers through.
+ * Returning null means PASS — the request is not an operator request (or no
+ * route owns it) and the serving host's pre-existing chain answers instead.
+ * The serving hosts (the Electron `app://` handler, the Vite dev
+ * middleware, the CLI edge's operation server) all dispatch through this
+ * one function so their mounts cannot drift.
+ */
+export async function forwardOperatorRequest(
+  request: Request,
+): Promise<Response | null> {
+  const match = matchOperatorRequest(
+    new URL(request.url).pathname,
+    request.method,
+  );
+  if (!match) {
+    return null;
+  }
+  return match.route.run({
+    assistantId: match.assistantId,
+    headers: request.headers,
+    source: request,
+  });
 }

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import { loopbackSafeFetch } from "./loopback-fetch";
+import { getGatewayUrl } from "./lockfile-contract";
+import type { LockfileAssistant } from "./lockfile-contract";
 
 export type HttpProbeEndpoint = "healthz" | "readyz";
 
@@ -161,14 +163,15 @@ const GatewayHealthSchema = z.object({
 export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
 
 /**
- * Read the gateway's `/healthz` and return its identity AND the caller's
- * own auth verdict in one round-trip: the version it serves, and whether the
- * request's credentials (the browser access cookie on a same-origin request)
- * authenticate. Best-effort — an unreachable endpoint, a non-2xx, or a
- * malformed body all read as "no version, no verdict" (`authenticated:
- * true`), so callers on servers without the field keep today's behavior.
+ * Read a gateway's `/healthz` by URL and return its identity AND the
+ * caller's own auth verdict in one round-trip: the version it serves, and
+ * whether the request's credentials (the browser access cookie on a
+ * same-origin request) authenticate. Best-effort — an unreachable endpoint,
+ * a non-2xx, or a malformed body all read as "no version, no verdict"
+ * (`authenticated: true`), so callers on servers without the field keep
+ * today's behavior.
  */
-export async function getGatewayHealth(
+async function readGatewayHealth(
   runtimeUrl: string,
   opts: { signal?: AbortSignal; headers?: Record<string, string> } = {},
 ): Promise<GatewayHealth> {
@@ -194,6 +197,18 @@ export async function getGatewayHealth(
 }
 
 /**
+ * Read the ENTRY's gateway `/healthz` — `getGatewayUrl` resolves the
+ * address inside, so consumers pass the lockfile entry and never re-derive
+ * (or re-trim) the URL themselves.
+ */
+export async function getGatewayHealth(
+  entry: LockfileAssistant,
+  opts: { signal?: AbortSignal; headers?: Record<string, string> } = {},
+): Promise<GatewayHealth> {
+  return readGatewayHealth(getGatewayUrl(entry), opts);
+}
+
+/**
  * Best-effort fetch of the running service group version from the gateway
  * `/healthz` endpoint. Returns `undefined` when the endpoint is unreachable
  * or does not include a version field.
@@ -201,6 +216,6 @@ export async function getGatewayHealth(
 export async function fetchCurrentVersion(
   runtimeUrl: string,
 ): Promise<string | undefined> {
-  const health = await getGatewayHealth(runtimeUrl);
+  const health = await readGatewayHealth(runtimeUrl);
   return health.version;
 }

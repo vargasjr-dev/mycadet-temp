@@ -34,6 +34,19 @@ export function getIngressPaths(): IngressPaths {
   };
 }
 
+/**
+ * The unix socket the edge's operation server binds. nginx's operator
+ * locations proxy the public operator paths to it; the deterministic path
+ * (never a port) means the generated conf and the stop path agree without
+ * coordination.
+ */
+export function operationsSocketPath(): string {
+  return join(getIngressPaths().dir, "operations.sock");
+}
+
+/** The CLI flag that turns a cadet process into the edge's operation server. */
+export const OPERATIONS_SERVE_FLAG = "--cadet-operations-serve";
+
 function readPidFile(pidPath: string): number | null {
   try {
     const pid = parseInt(readFileSync(pidPath, "utf-8").trim(), 10);
@@ -110,6 +123,14 @@ export interface IngressState {
    * provably carries the requested config.
    */
   remoteWebConfigHash?: string;
+  /**
+   * The edge's operation server child — the process that runs the local-mode
+   * operator route table behind nginx's operator locations. Undefined for
+   * records that predate the field; an edge without one (or with a dead
+   * one) is treated as drifted and restarted so the served operator paths
+   * provably answer the operations.
+   */
+  operationsPid?: number;
 }
 
 export function ingressStatePath(): string {
@@ -128,10 +149,14 @@ export function readIngressState(): IngressState | null {
   if (typeof listenPort !== "number") return null;
   const gatewayUrl = state.gatewayUrl;
   const remoteWebConfigHash = state.remoteWebConfigHash;
+  const operationsPid = state.operationsPid;
   return {
     listenPort,
     ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
-    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
+    ...(typeof remoteWebConfigHash === "string"
+      ? { remoteWebConfigHash }
+      : {}),
+    ...(typeof operationsPid === "number" ? { operationsPid } : {}),
   };
 }
 
@@ -158,6 +183,25 @@ async function waitForPidExit(
   return !isPidAlive(pid);
 }
 
+/** True when the pid's command line is the edge's operation server child. */
+export function isOperationsServeProcess(pid: number): boolean {
+  try {
+    const output = execFileSync(
+      "ps",
+      ["-ww", "-p", String(pid), "-o", "command="],
+      {
+        encoding: "utf-8",
+        timeout: 3000,
+        stdio: ["ignore", "pipe", "ignore"],
+        windowsHide: true,
+      },
+    );
+    return output.includes(OPERATIONS_SERVE_FLAG);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Stop a running ingress nginx via its pidfile and clear the recorded state.
  * Returns true if a process was stopped.
@@ -165,14 +209,44 @@ async function waitForPidExit(
  * Verifies the PID still belongs to this ingress nginx before killing to avoid
  * hitting an unrelated process if the OS has reused the PID. SIGTERM is nginx
  * fast shutdown; escalate to SIGKILL if it doesn't exit within the timeout.
+ * The edge's operation server child stops with it (its pid rides the same
+ * state record), and its socket is unlinked so the next start binds clean.
  */
 export async function stopIngressNginx(): Promise<boolean> {
   const paths = getIngressPaths();
 
+  const recorded = readIngressState();
+  const operationsPid = recorded?.operationsPid;
+  let stopped = false;
+  if (
+    typeof operationsPid === "number" &&
+    isPidAlive(operationsPid) &&
+    isOperationsServeProcess(operationsPid)
+  ) {
+    try {
+      process.kill(operationsPid, "SIGTERM");
+      if (!(await waitForPidExit(operationsPid, STOP_TIMEOUT_MS))) {
+        try {
+          process.kill(operationsPid, "SIGKILL");
+        } catch {
+          // Already gone.
+        }
+      }
+    } catch {
+      // Already gone.
+    }
+    stopped = true;
+  }
+  try {
+    rmSync(operationsSocketPath(), { force: true });
+  } catch {
+    // Best-effort: the socket is recreated on the next start.
+  }
+
   const pid = readPidFile(paths.pidPath);
   if (pid === null || !isPidAlive(pid) || !isIngressNginxProcess(pid, paths)) {
     clearStoppedIngress(paths.pidPath);
-    return false;
+    return stopped;
   }
 
   try {

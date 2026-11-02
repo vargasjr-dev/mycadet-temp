@@ -15,7 +15,6 @@ const ready = {
   },
 };
 const options = () => ({
-  origin: "https://site.example.com",
   signal: new AbortController().signal,
 });
 function json(value: unknown) {

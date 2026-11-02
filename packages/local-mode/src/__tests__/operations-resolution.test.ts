@@ -45,7 +45,10 @@ afterAll(() => {
 });
 
 import { readLockfile } from "../lockfile";
-import { matchOperatorRequest } from "../operations/routes";
+import {
+  OPERATOR_ROUTES,
+  matchOperatorRequest,
+} from "../operations/routes";
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -79,32 +82,69 @@ const writeLockfile = (data: Record<string, unknown>): void => {
 
 const runResolution = async (
   headers: Record<string, string> = {},
+  requestPath = "/v1/assistant",
 ): Promise<Response> => {
-  const match = matchOperatorRequest("/v1/assistant", "GET");
+  const match = matchOperatorRequest(requestPath, "GET");
   if (!match) throw new Error("the resolution row did not match");
-  return (await match.route.run(match.assistantId, new Headers(headers)))!;
+  return (await match.route.run({
+    assistantId: match.assistantId,
+    headers: new Headers(headers),
+  }))!;
 };
 
 const resolutionBody = async (response: Response): Promise<unknown> =>
   (await response.json()) as unknown;
 
-describe("matchOperatorRequest — the unscoped resolution row", () => {
-  test("matches GET /v1/assistant with and without the trailing slash", () => {
-    const bare = matchOperatorRequest("/v1/assistant", "GET");
-    expect(bare).not.toBeNull();
-    expect(bare?.assistantId).toBe("");
-    expect(matchOperatorRequest("/v1/assistant/", "GET")).not.toBeNull();
+describe("matchOperatorRequest — the four prefixes", () => {
+  test("the resolution answers every assistant-reference spelling", () => {
+    for (const requestPath of [
+      "/v1/assistant",
+      "/v1/assistant/",
+      "/assistant",
+      "/assistant/",
+      "/v1/assistants/a1",
+      "/v1/assistants/a1/",
+      "/assistants/a1",
+      "/assistants/a1/",
+    ]) {
+      expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+    }
   });
 
-  test("does not match other methods or the scoped surface", () => {
+  test("a scoped match carries the decoded id; an unscoped one names the active entry", () => {
+    writeLockfile({
+      assistants: [
+        { assistantId: "a1", cloud: "local", port: 7830 },
+        { assistantId: "a2", cloud: "local", port: 7831 },
+      ],
+      activeAssistant: "a2",
+    });
+    expect(matchOperatorRequest("/v1/assistants/a1/", "GET")?.assistantId).toBe(
+      "a1",
+    );
+    // Unscoped: the operator backend's active assistant, from the lockfile.
+    expect(matchOperatorRequest("/v1/assistant", "GET")?.assistantId).toBe(
+      "a2",
+    );
+  });
+
+  test("does not match other methods or foreign tails", () => {
     expect(matchOperatorRequest("/v1/assistant", "POST")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant", "DELETE")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a", "GET")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant/meta", "GET")).toBeNull();
+    expect(matchOperatorRequest("/v1/assistants/", "GET")).toBeNull();
+    expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
+  });
+
+  test("each route's segment and pattern describe the same surface", () => {
+    for (const route of OPERATOR_ROUTES) {
+      expect(route.pattern.test(route.segment)).toBe(true);
+      expect(route.pattern.test(`${route.segment}/`)).toBe(true);
+    }
   });
 });
 
-describe("runAssistantResolution — the lockfile arms", () => {
+describe("runResolveRoute — the lockfile arms", () => {
   test("an unpaired machine answers empty", async () => {
     const response = await runResolution();
     expect(response.status).toBe(200);
@@ -130,15 +170,16 @@ describe("runAssistantResolution — the lockfile arms", () => {
       status: "ready",
       assistant: { id: "a1", version: "0.13.0", url: "assistant/" },
     });
-    // The health read rides the entry's own gateway, and the caller's
-    // credential headers are forwarded so the verdict is the caller's.
+    // The health read rides the ENTRY (the gateway url is resolved inside),
+    // and the caller's credential headers are forwarded so the verdict is
+    // the caller's.
     expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
+      expect.objectContaining({ assistantId: "a1" }),
       { headers: { cookie: "cadet_web_access=tok" } },
     );
   });
 
-  test("the active entry wins when several are recorded", async () => {
+  test("an explicit id resolves that entry even when another is active", async () => {
     writeLockfile({
       assistants: [
         { assistantId: "a1", cloud: "local", port: 7830 },
@@ -147,20 +188,16 @@ describe("runAssistantResolution — the lockfile arms", () => {
       activeAssistant: "a2",
     });
     getGatewayHealthMock.mockResolvedValue({
-      version: "0.13.0",
+      version: "1.4.0",
       authenticated: true,
     });
 
-    const response = await runResolution();
+    const response = await runResolution({}, "/v1/assistants/a1/");
 
     expect(await resolutionBody(response)).toEqual({
       status: "ready",
-      assistant: { id: "a2", version: "0.13.0", url: "assistant/" },
+      assistant: { id: "a1", version: "1.4.0", url: "assistant/" },
     });
-    expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7831",
-      expect.anything(),
-    );
   });
 
   test("several entries and no active pointer hand off to the chooser", async () => {
@@ -226,13 +263,24 @@ describe("runAssistantResolution — the lockfile arms", () => {
     await runResolution();
 
     expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
+      expect.objectContaining({ assistantId: "a1" }),
       { headers: {} },
     );
   });
+
+  test("an id the lockfile does not know passes (null)", async () => {
+    writeLockfile({
+      assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
+      activeAssistant: null,
+    });
+
+    const response = await runResolution({}, "/v1/assistants/ghost/");
+
+    expect(response).toBeNull();
+  });
 });
 
-describe("runAssistantResolution — the cloud leg", () => {
+describe("runResolveRoute — the cloud leg", () => {
   test("a cloud entry resolves through the platform's own detail", async () => {
     writeLockfile({
       assistants: [{ assistantId: "c1", cloud: "cloud" }],
@@ -266,9 +314,11 @@ describe("runAssistantResolution — the cloud leg", () => {
     });
     const [fetchedUrl, init] = loopbackSafeFetchMock.mock.calls[0]!;
     expect(String(fetchedUrl)).toContain("/v1/assistants/c1/");
+    // Every caller header rides upstream — the platform judges the caller.
     const requestHeaders = new Headers(init?.headers as HeadersInit);
     expect(requestHeaders.get("cookie")).toBe("session=abc");
     expect(requestHeaders.get("authorization")).toBe("Bearer tok");
+    expect(requestHeaders.get("accept")).toBe("application/json");
     expect(getGatewayHealthMock).not.toHaveBeenCalled();
   });
 

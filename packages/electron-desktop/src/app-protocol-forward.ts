@@ -8,8 +8,8 @@ import { type AllowedOrigin } from "./app-origin";
 import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import { forwardGatewayRequest } from "./gateway-forward";
-import { forwardOperatorRequest } from "./operator-forward";
 import {
+  forwardOperatorRequest,
   readLockfile,
   resolveLocalConfigFromEnv,
   servedConfigFromLockfile,

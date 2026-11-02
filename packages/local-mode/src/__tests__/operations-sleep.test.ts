@@ -411,10 +411,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       "POST",
     );
     expect(match).not.toBeNull();
-    const response = await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    );
+    const response = await match!.route.run({ assistantId: match!.assistantId });
     expect(response?.status).toBe(204);
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
@@ -429,10 +426,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       "POST",
     );
     expect(match).not.toBeNull();
-    const response = await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    );
+    const response = await match!.route.run({ assistantId: match!.assistantId });
     expect(response?.status).toBe(400);
     const body = (await response!.json()) as { detail: string };
     expect(body.detail).toBe(
@@ -448,7 +442,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     );
     expect(match).not.toBeNull();
     expect(
-      await match!.route.run(match!.assistantId, new Request("http://local/")),
+      await match!.route.run({ assistantId: match!.assistantId }),
     ).toBeNull();
     expect(sleepDockerMock).not.toHaveBeenCalled();
   });
@@ -468,10 +462,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       "/v1/assistants/asst-local/sleep/",
       "POST",
     );
-    const response = await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    );
+    const response = await match!.route.run({ assistantId: match!.assistantId });
     expect(response?.status).toBe(409);
     const body = (await response!.json()) as { detail: string };
     expect(body.detail).toContain("active phone calls");

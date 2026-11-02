@@ -106,14 +106,22 @@ afterEach(() => {
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
   // The route's own auth machinery probes the cloud session between API
   // calls (see the create-flow pin below) — seed by URL, not FIFO order.
+  let resolutionCalls = 0;
   const router = setup(undefined, true, async (url) => {
     const target = String(url);
-    if (target.includes("/v1/assistants/?")) {
-      return Response.json({
-        results: [{ id: "assistant-1", name: "One" }, { id: "assistant-2" }],
-      });
-    }
     if (target.includes("/v1/assistant")) {
+      // One endpoint: the chooser's first call reads the selection arm, the
+      // picked assistant's re-resolution reads the shell's ready arm.
+      resolutionCalls += 1;
+      if (resolutionCalls === 1) {
+        return Response.json({
+          status: "selection",
+          assistants: [
+            { id: "assistant-1", name: "One" },
+            { id: "assistant-2" },
+          ],
+        });
+      }
       return Response.json(resolution);
     }
     return iframeDocument.clone();
@@ -135,7 +143,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistant",
     "http://localhost:3001/v1/assistant",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
@@ -144,7 +152,8 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
 test("rows render the cloud's synced avatar when the list carries one", async () => {
   request.mockResolvedValueOnce(
     Response.json({
-      results: [
+      status: "selection",
+      assistants: [
         {
           id: "assistant-1",
           name: "One",
@@ -178,7 +187,8 @@ test("rows on a cloud build render the cloud-hosted subtitle with a relative cre
   setup(undefined, false, undefined, { ...host, remote: "cloud" });
   request.mockResolvedValueOnce(
     Response.json({
-      results: [
+      status: "selection",
+      assistants: [
         {
           id: "assistant-1",
           name: "One",
@@ -204,7 +214,8 @@ test("rows on a non-cloud remote render the self-hosted subtitle", async () => {
   // its list rows are the machine's own assistants, not the cloud's.
   request.mockResolvedValueOnce(
     Response.json({
-      results: [{ id: "assistant-1", name: "One" }],
+      status: "selection",
+      assistants: [{ id: "assistant-1", name: "One" }],
     }),
   );
   setup();
@@ -220,7 +231,8 @@ test("each row labels itself with its own remote", async () => {
   setup(undefined, false, undefined, { ...host, remote: "local" });
   request.mockResolvedValueOnce(
     Response.json({
-      results: [
+      status: "selection",
+      assistants: [
         { id: "assistant-1", name: "Cloud one", remote: "cloud" },
         { id: "assistant-2", name: "Own one", remote: "custom" },
         { id: "assistant-3", name: "Fallback", remote: "skynet" },
@@ -238,7 +250,8 @@ test("each row labels itself with its own remote", async () => {
 test("arrow keys move focus across cards without selecting", async () => {
   request.mockResolvedValueOnce(
     Response.json({
-      results: [
+      status: "selection",
+      assistants: [
         { id: "assistant-1", name: "One" },
         { id: "assistant-2", name: "Two" },
       ],
@@ -284,7 +297,10 @@ test("Enter selects the focused card", async () => {
 
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
   request.mockResolvedValueOnce(
-    Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
+    Response.json({
+      status: "selection",
+      assistants: [{ id: "assistant-1", name: "One" }],
+    }),
   );
   setup();
   await screen.findByRole("radio", { name: /^One/ });
@@ -606,31 +622,19 @@ describe("remembered origins", () => {
   describe("with a local-mode host", () => {
     const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
 
-    const hostRealFetch = globalThis.fetch;
-
     function stubCadet(lockfile: unknown, status: unknown): void {
-      // Availability rides the platform stamp; the lockfile and status reads
-      // are the operator routes' GETs.
       Object.defineProperty(window, "cadet", {
         configurable: true,
-        value: { platform: "electron" },
+        value: {
+          platform: "electron",
+          localMode: {
+            // Availability is detected on the pairing channel itself.
+            pairingStart: async () => ({ ok: false, error: "unused" }),
+            readLockfile: async () => lockfile,
+            status: async () => status,
+          },
+        },
       });
-      globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
-        const path = String(input).split("?")[0] ?? "";
-        if (path === "/v1/assistants/") {
-          return new Response(JSON.stringify(lockfile), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-        if (path.match(/^\/v1\/assistants\/[^/]+\/$/)) {
-          return new Response(JSON.stringify(status), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-        // Everything else (the shell's resolution fetch, the iframe doc)
-        // rides the test's own fetch spy.
-        return hostRealFetch(input as RequestInfo, init);
-      }) as unknown as typeof fetch;
     }
 
     afterEach(() => {
@@ -639,7 +643,6 @@ describe("remembered origins", () => {
       } else {
         Reflect.deleteProperty(window, "cadet");
       }
-      globalThis.fetch = hostRealFetch;
       __resetConnectDialogForTesting();
       __resetLocalLockfileForTesting();
     });

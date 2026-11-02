@@ -11,18 +11,19 @@ export type AssistantRequestState =
   | { status: "loading" | "error" };
 
 /**
- * The shell's resolution flow: one same-origin `GET /v1/assistant` — the
+ * The shell's resolution flow: one same-origin resolution request — the
  * serving host's operation composes the whole union (the lockfile's choice,
  * the entry gateway's identity, the caller's own auth verdict) and the hook
- * decodes it. The chooser picks instead of resolving, so it reads the list
+ * decodes it. The chooser picks instead of resolving, so it reads the same
  * endpoint through its own useAssistantChoices hook. The `assistantId` prop
- * keys re-resolution (a chooser hand-off re-runs the flow); the endpoint's
- * answer is the host's truth about what is served.
+ * keys re-resolution (a chooser hand-off re-runs the flow) and rides the
+ * request when present — the endpoint answers the named assistant; without
+ * one it answers the host's truth about what is served.
  */
 export function useAssistantRequest({
   apiBaseUrl = "/",
   assistantId,
-}: Omit<AssistantRequest, "signal" | "origin"> & { assistantId?: string }) {
+}: Omit<AssistantRequest, "signal">) {
   const [attempt, setAttempt] = useState(0);
   const key = JSON.stringify([apiBaseUrl, assistantId, attempt]);
   const [result, setResult] = useState<{
@@ -50,12 +51,11 @@ export function useAssistantRequest({
         if (controller.signal.aborted) {
           return;
         }
-        const request = {
+        return resolveAssistant({
           apiBaseUrl,
-          origin,
+          assistantId,
           signal: controller.signal,
-        };
-        return resolveAssistant(request);
+        });
       })
       .then(
         (value) => {
