@@ -103,7 +103,7 @@ export {
 } from "./operations/hatch";
 export { generateInstanceName } from "./naming";
 export { withLocalHatchLock } from "./remotes/local/hatch-lock";
-export { allocateLocalPlacement } from "./remotes/local/provision";
+export { allocateLocalPlacement } from "./remotes/local/hatch";
 export {
   buildHatchConfigValues,
   writeInitialConfig,
@@ -118,7 +118,7 @@ export {
   isNoSuchContainerError,
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
-export { hatchLocal } from "./remotes/local/provision";
+export { hatchLocal } from "./remotes/local/hatch";
 
 export {
   ensureLocalRuntime,

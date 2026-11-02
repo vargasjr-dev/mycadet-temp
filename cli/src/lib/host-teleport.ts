@@ -38,7 +38,6 @@ export class TeleportRecoveryError extends AggregateError {}
 export interface HostTeleportOps {
   storage(entry: LockfileAssistant): HostStorage;
   backup(entry: LockfileAssistant): Promise<string>;
-  version(entry: LockfileAssistant): Promise<string | undefined>;
   hatch(
     env: HostEnvironment,
     name: string | undefined,
@@ -72,7 +71,6 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  version: async (entry) => await fetchCurrentVersion(getGatewayUrl(entry)),
   hatch: async (env, name, initialArchive) => {
     const instanceName = generateInstanceName(name ?? null);
     if (findAssistantByName(instanceName)) {
@@ -178,10 +176,12 @@ async function performHostTeleport(
     return;
   }
 
-  const sourceVersion = await ops.version(source);
+  const sourceVersion = await fetchCurrentVersion(getGatewayUrl(source));
   checkVersion(
     sourceVersion,
-    existing ? await ops.version(existing) : cliPkg.version,
+    existing
+      ? await fetchCurrentVersion(getGatewayUrl(existing))
+      : cliPkg.version,
   );
   const sourceStorage = ops.storage(source);
   const sourceWasRunning = await sourceStorage.running();
@@ -216,7 +216,10 @@ async function performHostTeleport(
       }
     } else {
       target = await ops.hatch(targetEnv, targetName, archive);
-      checkVersion(sourceVersion, await ops.version(target));
+      checkVersion(
+        sourceVersion,
+        await fetchCurrentVersion(getGatewayUrl(target)),
+      );
       const hatched = await wakeAssistant(target);
       if (!hatched.ok) throw new Error(hatched.error);
     }

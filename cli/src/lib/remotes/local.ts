@@ -92,9 +92,6 @@ export async function hatchLocal(
     throw new Error(hatched.error);
   }
   const assistant = hatched.entry;
-  if (assistant.cloud !== "local") {
-    throw new Error("The local hatch provisioned a non-local entry.");
-  }
   const instanceName = assistant.assistantId;
 
   reporter.log(`🥚 Hatching local assistant: ${instanceName}`);

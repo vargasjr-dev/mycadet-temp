@@ -1,5 +1,5 @@
 import type { LockfileAssistant } from "../lockfile-contract";
-import { hatchLocal } from "../remotes/local/provision";
+import { hatchLocal } from "../remotes/local/hatch";
 
 /**
  * The hatch operation: the scoped surface's provision door. Unlike the
