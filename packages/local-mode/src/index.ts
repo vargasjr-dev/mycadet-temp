@@ -119,6 +119,26 @@ export {
 export { wakeAssistant, type WakeResult } from "./operations/wake";
 export { wakeDocker } from "./remotes/docker/wake";
 export {
+  pullImage,
+  SERVICE_START_ORDER,
+  startContainers,
+  stopContainers,
+} from "./remotes/docker/recreate";
+export {
+  AVATAR_DEVICE_ENV_VAR,
+  DOCKER_STATEFUL_SET_SPEC,
+  buildServiceRunArgs,
+  getBuilderManagedEnvKeys,
+  resolveAvatarDevicePath,
+  type DockerStatefulSetSpec,
+  type ServiceName,
+} from "./remotes/docker/statefulset";
+export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
+export {
+  PROVIDER_ENV_VAR_NAMES,
+  SEARCH_PROVIDER_ENV_VAR_NAMES,
+} from "./provider-env-vars";
+export {
   ensureDockerDaemonRunning,
   startColimaAndAwaitDaemon,
   ensureLocalBinOnPath,

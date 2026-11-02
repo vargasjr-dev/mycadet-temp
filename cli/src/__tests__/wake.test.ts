@@ -14,15 +14,11 @@ import { join } from "node:path";
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
-import * as docker from "../lib/remotes/docker.js";
-import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const realAssistantConfig = { ...assistantConfig };
 const realLocalMode = { ...localModeModule };
-const realDocker = { ...docker };
-const realNgrok = { ...ngrok };
 const realRootSigningKey = { ...rootSigningKey };
 
 const resolveTargetAssistantMock =
@@ -39,18 +35,12 @@ mock.module("../lib/assistant-config.js", () => ({
   resolveTargetAssistant: resolveTargetAssistantMock,
 }));
 
-const wakeLocalMock = mock<typeof localModeModule.wakeLocal>(async () => ({
-  ok: true,
-}));
-const wakeDockerMock = mock<typeof localModeModule.wakeDocker>(async () => ({
-  ok: true,
-}));
-const dockerResourceNamesMock = mock<
-  typeof localModeModule.dockerResourceNames
->(localModeModule.dockerResourceNames);
-const recreateDockerContainersMock = mock<
-  typeof docker.recreateDockerContainers
->(async () => {});
+// The command delegates to the package's wake operation — the arms (local
+// daemon, docker containers, recreate-on-first-wake, narration) live in the
+// package's own suites; this file pins the CLI shell around them.
+const wakeAssistantMock = mock<typeof localModeModule.wakeAssistant>(
+  async () => ({ ok: true }),
+);
 const waitForDaemonReadyMock = mock<typeof localModeModule.waitForDaemonReady>(
   async () => true,
 );
@@ -58,14 +48,8 @@ mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   saveLockfileAssistant: saveLockfileAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  wakeLocal: wakeLocalMock,
-  wakeDocker: wakeDockerMock,
-  dockerResourceNames: dockerResourceNamesMock,
+  wakeAssistant: wakeAssistantMock,
   waitForDaemonReady: waitForDaemonReadyMock,
-}));
-mock.module("../lib/remotes/docker.js", () => ({
-  ...realDocker,
-  recreateDockerContainers: recreateDockerContainersMock,
 }));
 
 // Defaults to the real writer: repair tests assert the key file's contents.
@@ -76,18 +60,6 @@ const persistRootSigningKeyMock = mock<
 mock.module("../lib/root-signing-key.js", () => ({
   ...realRootSigningKey,
   persistRootSigningKey: persistRootSigningKeyMock,
-}));
-
-const ngrokRunMock = mock<typeof ngrok.runNgrokTunnel>(async () => ({
-  publicUrl: "https://tunnel.example.com",
-}));
-
-mock.module("../lib/tunnels/ngrok", () => ({
-  ...realNgrok,
-  NGROK_PROVIDER: {
-    ...realNgrok.NGROK_PROVIDER,
-    run: ngrokRunMock,
-  },
 }));
 
 const { wake } = await import("../commands/wake.js");
@@ -127,26 +99,14 @@ beforeEach(() => {
     ok: true,
     lockfile: { assistants: [], activeAssistant: null },
   }));
-  wakeLocalMock.mockReset();
-  wakeLocalMock.mockResolvedValue({ ok: true });
-  wakeDockerMock.mockReset();
-  wakeDockerMock.mockResolvedValue({ ok: true });
-  dockerResourceNamesMock.mockReset();
-  dockerResourceNamesMock.mockImplementation(
-    localModeModule.dockerResourceNames,
-  );
-  recreateDockerContainersMock.mockReset();
-  recreateDockerContainersMock.mockResolvedValue(undefined);
+  wakeAssistantMock.mockReset();
+  wakeAssistantMock.mockResolvedValue({ ok: true });
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockResolvedValue(true);
   persistRootSigningKeyMock.mockReset();
   persistRootSigningKeyMock.mockImplementation(
     realRootSigningKey.persistRootSigningKey,
   );
-  ngrokRunMock.mockReset();
-  ngrokRunMock.mockImplementation(async () => ({
-    publicUrl: "https://tunnel.example.com",
-  }));
 });
 
 afterEach(() => {
@@ -161,60 +121,62 @@ afterEach(() => {
 afterAll(() => {
   mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
-  mock.module("../lib/remotes/docker.js", () => realDocker);
-  mock.module("../lib/tunnels/ngrok", () => realNgrok);
   mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
 });
 
-describe("cadet wake — the docker recreate arm", () => {
-  const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+describe("cadet wake — the CLI shell around the wake operation", () => {
+  test("a single wake delegates the resolved entry and launch opts", async () => {
+    process.argv = ["bun", "cadet", "wake", "--watch", "local-assistant"];
 
-  afterEach(() => {
-    if (originalWorkspaceDir === undefined) {
-      delete process.env.CADET_WORKSPACE_DIR;
-    } else {
-      process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
+    await wake();
+
+    expect(wakeAssistantMock).toHaveBeenCalledWith(localEntry, {
+      watch: true,
+      foreground: false,
+    });
+    expect(logSpy).toHaveBeenCalledWith("Wake complete.");
+  });
+
+  test("a failed single wake renders the operation's error and exits 1", async () => {
+    wakeAssistantMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: "ces spawn failed",
+    });
+    process.argv = ["bun", "cadet", "wake", "local-assistant"];
+
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`process.exit:${code}`);
+      },
+    );
+
+    try {
+      await expect(wake()).rejects.toThrow("process.exit:1");
+      expect(errorSpy).toHaveBeenCalledWith("Error: ces spawn failed");
+    } finally {
+      exitSpy.mockRestore();
     }
   });
 
-  test("a migrated docker assistant (containers never created) is recreated from the entry", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    const migratedEntry = {
+  test("warns that the launch opts are ignored for Docker instances", async () => {
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
-      cloud: "docker" as const,
+      cloud: "docker",
       port: 7830,
-      containerInfo: {
-        assistantImage: "mycadet/mycadet-assistant:v0.12.7",
-        gatewayImage: "mycadet/mycadet-gateway:v0.12.7",
-        cesImage: "mycadet/mycadet-credential-executor:v0.12.7",
-      },
-    };
-    resolveTargetAssistantMock.mockReturnValue(migratedEntry);
-    // The v0.0.10 run feedback: the containers were never created — the
-    // docker leg answers its structured 404, the command recreates.
-    wakeDockerMock.mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-      error:
-        "the containers for 'docker-1' don't exist yet — run `cadet wake` once to recreate them from the recorded images",
-    });
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
+    } as LockfileAssistant);
+    process.argv = ["bun", "cadet", "wake", "docker-1", "--foreground"];
 
     try {
       await wake();
 
-      expect(recreateDockerContainersMock).toHaveBeenCalledWith(migratedEntry);
-      expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
+      expect(warnSpy).toHaveBeenCalledWith(
+        "Warning: --foreground ignored for Docker instances.",
+      );
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
+      warnSpy.mockRestore();
     }
   });
 });
@@ -247,18 +209,23 @@ describe("cadet wake --all", () => {
 
     await wake();
 
-    expect(wakeLocalMock).toHaveBeenCalledTimes(2);
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(2);
     expect(
-      (wakeLocalMock.mock.calls[0]![0] as LockfileAssistant).assistantId,
+      (wakeAssistantMock.mock.calls[0]![0] as LockfileAssistant).assistantId,
     ).toBe("wake-all-1");
     expect(
-      (wakeLocalMock.mock.calls[1]![0] as LockfileAssistant).assistantId,
+      (wakeAssistantMock.mock.calls[1]![0] as LockfileAssistant).assistantId,
     ).toBe("wake-all-2");
+    // The batch never blocks in the foreground.
+    expect(wakeAssistantMock.mock.calls[0]![1]).toEqual({
+      watch: false,
+      foreground: false,
+    });
   });
 
   test("continues past a failing assistant and exits 1", async () => {
     // A real wake failure for the first entry; the loop still wakes the rest.
-    wakeLocalMock.mockResolvedValueOnce({
+    wakeAssistantMock.mockResolvedValueOnce({
       ok: false,
       status: 500,
       error: "ces spawn failed",
@@ -282,7 +249,7 @@ describe("cadet wake --all", () => {
     }
 
     // Both assistants attempted their wakes.
-    expect(wakeLocalMock).toHaveBeenCalledTimes(2);
+    expect(wakeAssistantMock).toHaveBeenCalledTimes(2);
   });
 
   test("exits 1 when there is nothing to start", async () => {

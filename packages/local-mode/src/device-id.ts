@@ -10,11 +10,11 @@
  * merge the two.
  */
 
-import { randomUUID } from "crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { randomUUID } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
-import { resolveConfigDir } from "@mycadet/local-mode";
+import { resolveConfigDir } from "./config";
 
 let cached: string | undefined;
 

@@ -16,12 +16,9 @@ import { join } from "path";
 let fakeHome: string | undefined;
 await mockOsHomedir((realHomedir) => () => fakeHome ?? realHomedir());
 
-import {
-  getOrCreateHostDeviceId,
-  resetHostDeviceIdCache,
-} from "../lib/device-id.js";
-import { snapshotEnv } from "./helpers/env.js";
-import { mockOsHomedir } from "./helpers/os-mock.js";
+import { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "../device-id";
+import { snapshotEnv } from "./helpers/env";
+import { mockOsHomedir } from "./helpers/os-mock";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;

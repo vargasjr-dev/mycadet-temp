@@ -1,9 +1,10 @@
-import { cliCommand, loadAllAssistants } from "@mycadet/local-mode";
+import {
+  cliCommand,
+  loadAllAssistants,
+  wakeAssistant,
+} from "@mycadet/local-mode";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
-import { wakeDocker, wakeLocal } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { recreateDockerContainers } from "../lib/remotes/docker.js";
 
 export const wake = Object.assign(
   async function wake(): Promise<void> {
@@ -51,11 +52,18 @@ export const wake = Object.assign(
     }
 
     const entry = resolveTargetAssistant(nameArg);
+    if (entry.cloud === "docker" && (watch || foreground)) {
+      const ignored = [watch && "--watch", foreground && "--foreground"]
+        .filter(Boolean)
+        .join(" and ");
+      console.warn(`Warning: ${ignored} ignored for Docker instances.`);
+    }
     const result = await wakeAssistant(entry, { watch, foreground });
     if (!result.ok) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
+    console.log("Wake complete.");
 
     // Foreground blocking is a single-assistant concern (--all refuses the
     // flag), and the docker path already warned that foreground is ignored.
@@ -116,74 +124,4 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
   if (failures > 0) {
     process.exit(1);
   }
-}
-
-type WakeAssistantOptions = {
-  watch?: boolean;
-  foreground?: boolean;
-};
-
-/**
- * Start one assistant and its services. The legs live in @mycadet/local-mode
- * (the same ones the operator route runs); this shell keeps the UX — the
- * docker recreate on first wake, the nginx edge restore, the narration, and
- * the exit codes. The structured failure comes back for the caller to render.
- */
-export async function wakeAssistant(
-  entry: LockfileAssistant,
-  opts: WakeAssistantOptions = {},
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { watch = false, foreground = false } = opts;
-
-  if (entry.cloud === "docker") {
-    if (watch || foreground) {
-      const ignored = [watch && "--watch", foreground && "--foreground"]
-        .filter(Boolean)
-        .join(" and ");
-      console.warn(`Warning: ${ignored} ignored for Docker instances.`);
-    }
-    let result = await wakeDocker(entry);
-    if (!result.ok && isNoSuchContainerResult(result)) {
-      // A migrated install has data in the volumes but containers that were
-      // never created (v0.0.10 run feedback: "No such container"). Recreate
-      // the service group from the entry's recorded images; anything else
-      // is a real wake failure.
-      console.log(
-        `Containers for '${entry.assistantId}' don't exist yet — recreating from the recorded images...`,
-      );
-      await recreateDockerContainers(entry);
-      result = await wakeDocker(entry);
-    }
-    if (!result.ok) return { ok: false, error: result.error };
-    console.log("Docker containers started.");
-    console.log("Wake complete.");
-    return { ok: true };
-  }
-
-  if (entry.cloud === "apple-container") {
-    return {
-      ok: false,
-      error: `'${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to start it.`,
-    };
-  }
-
-  if (entry.cloud === "local") {
-    const result = await wakeLocal(entry, { watch, foreground });
-    if (!result.ok) return { ok: false, error: result.error };
-    console.log("Wake complete.");
-    return { ok: true };
-  }
-
-  // cloud/custom/baseten assistants run where they are — there is no
-  // process on this machine to start.
-  console.log(
-    `'${entry.assistantId}' runs on ${entry.cloud} — nothing to start.`,
-  );
-  return { ok: true };
-}
-
-function isNoSuchContainerResult(
-  result: { ok: true } | { ok: false; status: number; error: string },
-): result is { ok: false; status: 404; error: string } {
-  return !result.ok && result.status === 404;
 }

@@ -31,7 +31,7 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
 import { sleepAssistant } from "@mycadet/local-mode";
-import { wakeAssistant } from "../commands/wake.js";
+import { wakeAssistant } from "@mycadet/local-mode";
 
 export const STATE_ROOTS = [
   "workspace",

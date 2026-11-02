@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { green } from "../../color.js";
-import { PROVIDER_ENV_VAR_NAMES } from "../../../shared/provider-env-vars.js";
+import { PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
 import {
   GATEWAY_PORT,
   getGatewayUrl,
@@ -51,9 +51,7 @@ function collectProviderEnvs() {
  * recorded in the lockfile entry.
  */
 function sandboxGatewayEnvs() {
-  return [
-    { name: "GATEWAY_PORT", value: String(GATEWAY_PORT), secret: false },
-  ];
+  return [{ name: "GATEWAY_PORT", value: String(GATEWAY_PORT), secret: false }];
 }
 
 /**

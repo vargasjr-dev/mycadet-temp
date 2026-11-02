@@ -27,8 +27,8 @@ import {
 import { resolveLockfilePath } from "@mycadet/local-mode";
 import * as httpClient from "@mycadet/local-mode";
 import * as versionModule from "@mycadet/shared/version";
-import * as assistantConfigModule from "../lib/assistant-config.js";
-import * as webDistModule from "../lib/web-dist.js";
+import * as assistantConfigModule from "../../lib/assistant-config.js";
+import * as webDistModule from "../../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
@@ -84,7 +84,7 @@ const resolveTargetAssistantMock = mock(
   assistantConfigModule.resolveTargetAssistant,
 );
 
-mock.module("../lib/assistant-config.js", () => ({
+mock.module("../../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
   resolveTargetAssistant: resolveTargetAssistantMock,
 }));
@@ -94,7 +94,7 @@ mock.module("../lib/assistant-config.js", () => ({
 // (serves the files) test against bytes on disk.
 const resolveClientDistsMock = mock(webDistModule.resolveClientDists);
 
-mock.module("../lib/web-dist.js", () => ({
+mock.module("../../lib/web-dist.js", () => ({
   ...webDistModule,
   resolveClientDists: resolveClientDistsMock,
 }));
@@ -105,24 +105,22 @@ afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
   mock.module("@mycadet/local-mode", () => realHttpClient);
   mock.module("@mycadet/shared/version", () => realVersionModule);
-  mock.module("../lib/assistant-config.js", () => realAssistantConfig);
-  mock.module("../lib/web-dist.js", () => realWebDist);
+  mock.module("../../lib/assistant-config.js", () => realAssistantConfig);
+  mock.module("../../lib/web-dist.js", () => realWebDist);
 });
 
-import {
-  appServerStatePath,
-  getAppServerPaths,
-  readAppServerState,
-} from "../lib/servers/bun.js";
+import { createAppServerHandler } from "../../lib/servers/bun.js";
 import {
   DEFAULT_APP_SERVER_PORT,
   MAX_PRESERVED_MODULE_PRELOADS,
+  appServerStatePath,
   buildRemoteWebIndexHtml,
-  createAppServerHandler,
   ensureAppServer,
   findAvailableServerPort,
+  getAppServerPaths,
+  readAppServerState,
   startAppServer,
-} from "../lib/servers/bun.js";
+} from "../../lib/servers/common.js";
 
 const originalKill = process.kill;
 const originalFetch = globalThis.fetch;
@@ -1595,7 +1593,7 @@ describe("the live server child", () => {
       const child = Bun.spawn(
         [
           process.execPath,
-          fileURLToPath(new URL("../lib/servers/bun.ts", import.meta.url)),
+          fileURLToPath(new URL("../../lib/servers/bun.ts", import.meta.url)),
           getAppServerPaths().dir,
         ],
         {

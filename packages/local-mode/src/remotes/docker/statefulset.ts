@@ -6,15 +6,30 @@
  * the hatch and upgrade flows to build `docker run` argument arrays.
  */
 
-import { existsSync } from "fs";
+import { existsSync } from "node:fs";
 
-import {
-  ASSISTANT_INTERNAL_PORT,
-  GATEWAY_INTERNAL_PORT,
-} from "./environments/paths.js";
-import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import { ASSISTANT_INTERNAL_PORT, GATEWAY_INTERNAL_PORT } from "../../ports";
+import { PROVIDER_ENV_VAR_NAMES } from "../../provider-env-vars";
 
-const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
+/** Env var the assistant reads to discover its virtual-camera device path. */
+export const AVATAR_DEVICE_ENV_VAR = "CADET_AVATAR_DEVICE";
+
+/** Default virtual-camera device path. Overridable via `CADET_AVATAR_DEVICE`. */
+const DEFAULT_AVATAR_DEVICE_PATH = "/dev/video10";
+
+/**
+ * Resolve the avatar device path from the environment. Always returns a
+ * value — the CLI unconditionally passes the device path to the assistant
+ * container; the skill decides whether to use it.
+ */
+export function resolveAvatarDevicePath(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const override = env[AVATAR_DEVICE_ENV_VAR];
+  return override && override.length > 0
+    ? override
+    : DEFAULT_AVATAR_DEVICE_PATH;
+}
 
 /**
  * In-container path the assistant's extra CA bundle is mounted at when

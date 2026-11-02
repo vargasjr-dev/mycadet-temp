@@ -1,5 +1,8 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { getAppServerPaths, readAppServerState } from "../lib/servers/bun.js";
+import {
+  getAppServerPaths,
+  readAppServerState,
+} from "../lib/servers/common.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 

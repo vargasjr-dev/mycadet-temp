@@ -8,19 +8,27 @@ import { wakeDocker } from "../remotes/docker/wake";
  * the non-destructive repair primitive. A local wake revives the daemon
  * stack (healing conflicted ports, backfilling a missing bootstrap secret,
  * restarting the gateway when the secret was just backfilled); a docker wake
- * starts the service containers. Like sleep, the operation is just a
+ * starts the service containers (recreating them from the recorded images
+ * when they were never created). Like sleep, the operation is just a
  * remote -> method router: every unsupported remote refuses the same way.
  */
 export type WakeResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
 
+/** The local daemon's launch modes; the docker containers run detached. */
+export interface WakeAssistantOptions {
+  watch?: boolean;
+  foreground?: boolean;
+}
+
 export async function wakeAssistant(
   entry: LockfileAssistant,
+  opts: WakeAssistantOptions = {},
 ): Promise<WakeResult> {
   switch (entry.cloud) {
     case "local":
-      return await wakeLocal(entry);
+      return await wakeLocal(entry, opts);
     case "docker":
       return await wakeDocker(entry);
     default:

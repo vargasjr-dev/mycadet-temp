@@ -8,12 +8,12 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const capture = spyOn(backups, "createBackup");
 const images = spyOn(docker, "captureImageRefs");
-const pull = spyOn(docker, "pullImage");
+const pull = spyOn(localMode, "pullImage");
 const wake = spyOn(docker, "wakeContainers");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(localMode, "sleepDocker");
-const start = spyOn(docker, "startContainers");
+const start = spyOn(localMode, "startContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = localMode.dockerResourceNames("recovery");
 const entry: LockfileAssistant = {

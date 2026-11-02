@@ -39,12 +39,15 @@ const runningMock = spyOn(LocalRootStorage.prototype, "running");
 const captureMock = spyOn(LocalRootStorage.prototype, "capture");
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
 const sleepMock = spyOn(localMode, "sleepAssistant");
-// The flow's wake hook is the CLI wrapper's wakeAssistant now — module-mocked
-// here so the real wrapper never runs.
+// The flow's wake hook is the package's wake operation — module-mocked here
+// so the real operation never runs.
 const wakeMock = mock(async (_entry: { assistantId: string }) => ({
   ok: true as const,
 }));
-mock.module("../commands/wake.js", () => ({ wakeAssistant: wakeMock }));
+mock.module("@mycadet/local-mode", () => ({
+  ...localMode,
+  wakeAssistant: wakeMock,
+}));
 
 let running: boolean | undefined;
 let onCapture: ((path: string) => void) | undefined;

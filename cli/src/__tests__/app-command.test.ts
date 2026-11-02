@@ -17,14 +17,14 @@ import { join } from "node:path";
 // sibling suites in the same `bun test` run.
 // ---------------------------------------------------------------------------
 
-import * as serversLib from "../lib/servers/bun.js";
+import * as serversLib from "../lib/servers/common.js";
 
 const ensureAppServerMock = mock(serversLib.ensureAppServer);
 const isAppServerRunningMock = mock(serversLib.isAppServerRunning);
 const readAppServerStateMock = mock(serversLib.readAppServerState);
 const stopAppServerMock = mock(serversLib.stopAppServer);
 
-mock.module("../lib/servers/bun.js", () => ({
+mock.module("../lib/servers/common.js", () => ({
   ...serversLib,
   ensureAppServer: ensureAppServerMock,
   isAppServerRunning: isAppServerRunningMock,
@@ -33,7 +33,7 @@ mock.module("../lib/servers/bun.js", () => ({
 }));
 
 afterAll(() => {
-  mock.module("../lib/servers/bun.js", () => serversLib);
+  mock.module("../lib/servers/common.js", () => serversLib);
 });
 
 import { app } from "../commands/app.js";

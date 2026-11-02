@@ -11,15 +11,17 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
-import { getOrCreateHostDeviceId } from "./device-id.js";
 import {
   captureImageRefs,
   DOCKER_READY_TIMEOUT_MS,
+  wakeContainers,
+} from "./remotes/docker.js";
+import {
+  getOrCreateHostDeviceId,
   pullImage,
   startContainers,
   stopContainers,
-  wakeContainers,
-} from "./remotes/docker.js";
+} from "@mycadet/local-mode";
 import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
 import {
   dockerResourceNames,
@@ -39,7 +41,7 @@ import {
   getBuilderManagedEnvKeys,
   type DockerStatefulSetSpec,
   type ServiceName,
-} from "./statefulset.js";
+} from "@mycadet/local-mode";
 import { execOutput } from "./step-runner.js";
 import { compareVersions } from "./version-compat.js";
 

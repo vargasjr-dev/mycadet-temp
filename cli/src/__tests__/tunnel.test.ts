@@ -27,7 +27,7 @@ import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
-import * as serversLib from "../lib/servers/bun.js";
+import * as serversLib from "../lib/servers/common.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import type {
@@ -103,7 +103,7 @@ const isAppServerRunningMock = mock<typeof serversLib.isAppServerRunning>(
 const readAppServerStateMock = mock<typeof serversLib.readAppServerState>(
   () => null,
 );
-mock.module("../lib/servers/bun.js", () => ({
+mock.module("../lib/servers/common.js", () => ({
   ...realServersLib,
   ensureAppServer: ensureAppServerMock,
 }));
@@ -307,7 +307,7 @@ describe("app server targeting", () => {
     mock.module("../lib/tunnels/cloudflare.js", () => realCloudflareTunnel);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
-    mock.module("../lib/servers/bun.js", () => realServersLib);
+    mock.module("../lib/servers/common.js", () => realServersLib);
     mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
@@ -1192,7 +1192,7 @@ describe("tunnel start runs the providers directly", () => {
       runNgrokTunnel: runNgrokTunnelMock,
       NGROK_PROVIDER: { ...realNgrok.NGROK_PROVIDER, run: runNgrokTunnelMock },
     }));
-    mock.module("../lib/servers/bun.js", () => ({
+    mock.module("../lib/servers/common.js", () => ({
       ...realServersLib,
       ensureAppServer: ensureAppServerMock,
     }));
@@ -1210,7 +1210,7 @@ describe("tunnel start runs the providers directly", () => {
   afterAll(() => {
     mock.module("node:child_process", () => realChildProcess);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
-    mock.module("../lib/servers/bun.js", () => realServersLib);
+    mock.module("../lib/servers/common.js", () => realServersLib);
     mock.module("@mycadet/local-mode", () => localModeModule);
   });
 

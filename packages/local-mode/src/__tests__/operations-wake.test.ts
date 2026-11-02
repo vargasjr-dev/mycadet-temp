@@ -150,6 +150,38 @@ describe("the wake operation — a remote -> method router", () => {
     expect(result).toEqual({ ok: true });
     expect(wakeLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-local" }),
+      {},
+    );
+  });
+
+  test("the local leg receives the caller's launch opts", async () => {
+    await wakeAssistant(
+      {
+        assistantId: "asst-local",
+        cloud: "local",
+        port: 7830,
+      } as LockfileAssistant,
+      { watch: true, foreground: true },
+    );
+
+    expect(wakeLocalMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-local" }),
+      { watch: true, foreground: true },
+    );
+  });
+
+  test("the docker leg never sees the launch opts — its containers run detached", async () => {
+    await wakeAssistant(
+      {
+        assistantId: "asst-docker",
+        cloud: "docker",
+        port: 7831,
+      } as LockfileAssistant,
+      { watch: true },
+    );
+
+    expect(wakeDockerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
     );
   });
 
@@ -181,25 +213,6 @@ describe("the wake operation — a remote -> method router", () => {
     expect(result).toEqual({ ok: true });
     expect(wakeDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
-    );
-  });
-
-  test("a docker entry's structured 404 carries the recreate pointer through", async () => {
-    wakeDockerMock.mockResolvedValue({
-      ok: false,
-      status: 404,
-      error:
-        "the containers for 'asst-docker' don't exist yet — run `cadet wake` once to recreate them from the recorded images",
-    });
-    const result = await wakeAssistant({
-      assistantId: "asst-docker",
-      cloud: "docker",
-      port: 7831,
-    } as LockfileAssistant);
-    expect(result.ok).toBe(false);
-    expect((result as { status: number }).status).toBe(404);
-    expect((result as { error: string }).error).toContain(
-      "run `cadet wake` once to recreate",
     );
   });
 

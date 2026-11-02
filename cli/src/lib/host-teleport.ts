@@ -10,7 +10,8 @@ import { dockerResourceNames } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import { hatchDocker, startContainers } from "./remotes/docker.js";
+import { hatchDocker } from "./remotes/docker.js";
+import { startContainers } from "@mycadet/local-mode";
 import {
   allocateLocalPlacement,
   buildHatchConfigValues,
@@ -31,7 +32,7 @@ import {
   STATE_ROOTS,
   withRootOperationLock,
 } from "./root-backup.js";
-import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset.js";
+import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
 import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";

@@ -16,7 +16,7 @@ import {
   getAppServerPaths,
   readAppServerState,
   stopAppServer,
-} from "../lib/servers/bun.js";
+} from "../../lib/servers/common.js";
 
 const realChildProcess = { ...childProcess };
 
