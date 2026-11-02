@@ -27,8 +27,6 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import { subscribe } from "@/lib/event-bus";
-import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { handleToggleWatchCommand } from "@/runtime/watch-command";
 
@@ -128,20 +126,6 @@ export function RootLayout() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  // The local assistant's cloud identity registers when the session is
-  // present; the bootstrap owns its own signed-out story (the registration
-  // call fails and stops). The menu's Log In/Log Out toggle is Electron
-  // main's fact now — derived from the same token store the OAuth flow and
-  // sign-out write — so this bundle probes no session state at all.
-  useEffect(() => {
-    bootstrapLocalAssistantCloudIdentity();
-    const unsubResume = subscribe("app.resume", () => {
-      bootstrapLocalAssistantCloudIdentity();
-    });
-    return () => {
-      unsubResume();
-    };
-  }, []);
   useAssistantBootResolution();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered

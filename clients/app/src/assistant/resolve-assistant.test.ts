@@ -18,9 +18,11 @@ const options = () => ({
 function json(value: unknown) {
   return new Response(JSON.stringify(value));
 }
+/** The gateway's health answer: authenticated, no version stamp. */
+const healthOk = () => json({ status: "ok", authenticated: true });
 
 test("gets a single assistant under the configured API prefix with cookies", async () => {
-  request.mockResolvedValue(json(detail));
+  request.mockResolvedValueOnce(healthOk()).mockResolvedValue(json(detail));
   const input = {
     ...options(),
     apiBaseUrl: "https://assistant.example.com/cloud/tenant/",
@@ -35,7 +37,11 @@ test("gets a single assistant under the configured API prefix with cookies", asy
       url: "https://assistant.example.com/web/1.2.3/assistant/",
     },
   });
-  const [url, init] = request.mock.calls[0];
+  // The identity ping rides the same configured prefix, first.
+  expect(String(request.mock.calls[0][0])).toBe(
+    "https://assistant.example.com/cloud/tenant/healthz",
+  );
+  const [url, init] = request.mock.calls[1];
   expect(String(url)).toBe(
     "https://assistant.example.com/cloud/tenant/v1/assistants/assistant-1/",
   );
@@ -45,19 +51,23 @@ test("gets a single assistant under the configured API prefix with cookies", asy
 
 test("uses the existing list to select one assistant and never calls a resolve endpoint", async () => {
   request
+    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(json({ results: [{ id: detail.id }] }))
     .mockResolvedValueOnce(json(detail));
   expect((await resolveAssistant(options())).status).toBe("ready");
   expect(request.mock.calls.map(([url]) => String(url))).toEqual([
+    "https://site.example.com/healthz",
     "https://site.example.com/v1/assistants/?limit=100&offset=0",
     "https://site.example.com/v1/assistants/assistant-1/",
   ]);
 });
 
 test("empty and multiple lists return states without choosing an arbitrary assistant", async () => {
-  request.mockResolvedValueOnce(json({ results: [] }));
+  request
+    .mockResolvedValueOnce(healthOk())
+    .mockResolvedValueOnce(json({ results: [] }));
   expect(await resolveAssistant(options())).toEqual({ status: "empty" });
-  request.mockResolvedValueOnce(
+  request.mockResolvedValueOnce(healthOk()).mockResolvedValueOnce(
     json({
       results: [
         { id: "one", name: "One" },
@@ -66,11 +76,12 @@ test("empty and multiple lists return states without choosing an arbitrary assis
     }),
   );
   expect((await resolveAssistant(options())).status).toBe("selection");
-  expect(request).toHaveBeenCalledTimes(2);
+  expect(request).toHaveBeenCalledTimes(4);
 });
 
 test("pagination stays on the configured origin instead of following response URLs", async () => {
   request
+    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(
       json({
         results: [{ id: "one" }],
@@ -81,13 +92,14 @@ test("pagination stays on the configured origin instead of following response UR
   expect(
     (await resolveAssistant({ ...options(), apiBaseUrl: "/admin/api" })).status,
   ).toBe("selection");
-  expect(String(request.mock.calls[1][0])).toBe(
+  expect(String(request.mock.calls[2][0])).toBe(
     "https://site.example.com/admin/api/v1/assistants/?limit=100&offset=1",
   );
 });
 
 test("401 is unauthenticated; forbidden and server failures remain errors", async () => {
   for (const status of [401, 403, 500]) {
+    request.mockResolvedValueOnce(healthOk());
     request.mockResolvedValueOnce(new Response(null, { status }));
     const result = resolveAssistant({ ...options(), assistantId: detail.id });
     if (status === 401) {
@@ -110,6 +122,7 @@ test("validates identities, response fields, and API URL configuration", async (
     {},
     null,
   ]) {
+    request.mockResolvedValueOnce(healthOk());
     request.mockResolvedValueOnce(json(payload));
     await expect(
       resolveAssistant({ ...options(), assistantId: detail.id }),
@@ -134,6 +147,7 @@ test("409 and 410 detail responses never mount a stale UI, regardless of body", 
     [410, "unavailable"],
   ] as const) {
     for (const body of [null, JSON.stringify(detail), "not JSON"]) {
+      request.mockResolvedValueOnce(healthOk());
       request.mockResolvedValueOnce(new Response(body, { status: code }));
       expect(
         await resolveAssistant({ ...options(), assistantId: detail.id }),
@@ -144,13 +158,16 @@ test("409 and 410 detail responses never mount a stale UI, regardless of body", 
 
 test("409 and 410 on the list remain errors", async () => {
   for (const status of [409, 410]) {
+    request.mockResolvedValueOnce(healthOk());
     request.mockResolvedValueOnce(new Response(null, { status }));
     await expect(resolveAssistant(options())).rejects.toThrow(String(status));
   }
 });
 
 test("relative iframe URLs retain the host's API prefix", async () => {
-  request.mockResolvedValue(json({ ...detail, url: "web/1.2.3/assistant/" }));
+  request
+    .mockResolvedValueOnce(healthOk())
+    .mockResolvedValue(json({ ...detail, url: "web/1.2.3/assistant/" }));
   expect(
     await resolveAssistant({
       ...options(),
@@ -163,6 +180,36 @@ test("relative iframe URLs retain the host's API prefix", async () => {
       id: detail.id,
       version: "1.2.3",
       url: "https://assistant.example.com/admin/proxy/web/1.2.3/assistant/",
+    },
+  });
+});
+
+test("an unauthenticated health verdict gates the shell before any /v1 call", async () => {
+  request.mockResolvedValueOnce(
+    json({ status: "ok", version: "9.9.9", authenticated: false }),
+  );
+  expect(await resolveAssistant(options())).toEqual({
+    status: "unauthenticated",
+  });
+  // The iframe must never mount on an unverified session: no assistant
+  // request fires at all.
+  expect(request).toHaveBeenCalledTimes(1);
+});
+
+test("the gateway's own version stamp wins over the detail's", async () => {
+  request
+    .mockResolvedValueOnce(
+      json({ status: "ok", version: "9.9.9", authenticated: true }),
+    )
+    .mockResolvedValueOnce(json(detail));
+  expect(
+    await resolveAssistant({ ...options(), assistantId: detail.id }),
+  ).toEqual({
+    status: "ready",
+    assistant: {
+      id: detail.id,
+      version: "9.9.9",
+      url: `https://site.example.com/web/1.2.3/assistant/`,
     },
   });
 });

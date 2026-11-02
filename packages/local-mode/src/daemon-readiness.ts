@@ -144,26 +144,75 @@ export async function waitForDaemonMigrationsReady(
   }
 }
 
-const GatewayHealthSchema = z.object({ version: z.string().min(1).optional() });
+const GatewayHealthSchema = z.object({
+  version: z.string().min(1).optional(),
+  /**
+   * Whether the PING's own credentials (the browser access cookie, or a
+   * bearer) authenticate against the gateway. Optional so servers predating
+   * the field (the cloud's /healthz, older gateways) still parse — see
+   * `pingGatewayHealth` for the verdict contract.
+   */
+  authenticated: z.boolean().optional(),
+});
+
+export interface GatewayHealth {
+  /** The gateway's own version stamp, when it serves one. */
+  version: string | undefined;
+  /**
+   * Whether the caller's credentials authenticate. A server that does not
+   * answer the field gives no verdict and reads as `true` — the /v1 routes'
+   * own 401s stay the signal there. Only a gateway that answers the field
+   * can deliver the strict verdict the app shell's iframe gate needs: the
+   * served /v1 routes can respond 200 unauthenticated (loopback trust), so
+   * the probe is the one reliable signal.
+   */
+  authenticated: boolean;
+}
+
+/**
+ * Ping the gateway's `/healthz` and read back its identity AND the caller's
+ * own auth verdict in one round-trip: the version it serves, and whether the
+ * ping's credentials (the browser access cookie on a same-origin request)
+ * authenticate. Best-effort — an unreachable endpoint, a non-2xx, or a
+ * malformed body all read as "no version, no verdict" (`authenticated:
+ * true`), so callers on servers without the field keep today's behavior.
+ */
+export async function pingGatewayHealth(
+  runtimeUrl: string,
+  opts: { signal?: AbortSignal } = {},
+): Promise<GatewayHealth> {
+  try {
+    const healthUrl = new URL(
+      "healthz",
+      runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
+    );
+    const resp = await loopbackSafeFetch(healthUrl.href, {
+      headers: { Accept: "application/json" },
+      signal: opts.signal ?? AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const parsed = GatewayHealthSchema.safeParse(await resp.json());
+      if (parsed.success) {
+        return {
+          version: parsed.data.version,
+          authenticated: parsed.data.authenticated ?? true,
+        };
+      }
+    }
+  } catch {
+    // Best-effort: no version, no verdict.
+  }
+  return { version: undefined, authenticated: true };
+}
 
 /**
  * Best-effort fetch of the running service group version from the gateway
- * `/healthz` endpoint.  Returns `undefined` when the endpoint is
- * unreachable or does not include a version field.
+ * `/healthz` endpoint. Returns `undefined` when the endpoint is unreachable
+ * or does not include a version field.
  */
 export async function fetchCurrentVersion(
   runtimeUrl: string,
 ): Promise<string | undefined> {
-  try {
-    const resp = await loopbackSafeFetch(`${runtimeUrl}/healthz`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (resp.ok) {
-      const parsed = GatewayHealthSchema.safeParse(await resp.json());
-      return parsed.success ? parsed.data.version : undefined;
-    }
-  } catch {
-    // Best-effort
-  }
-  return undefined;
+  const health = await pingGatewayHealth(runtimeUrl);
+  return health.version;
 }

@@ -1,3 +1,4 @@
+import { pingGatewayHealth } from "@mycadet/local-mode";
 import { z } from "zod";
 
 import {
@@ -110,6 +111,18 @@ export async function resolveAssistant(
   options: AssistantRequest,
 ): Promise<AssistantResolution> {
   const { base, get } = createClient(options);
+  // The gateway health check is the identity ping: its auth verdict is the
+  // one reliable signal the shell has before mounting the assistant's UI —
+  // the /v1 routes can respond 200 without authentication — and its version
+  // stamp is the version of record (replacing the cliPkg-stamped build
+  // resolution). A server that does not answer the fields gives no verdict
+  // and no version; the flow degrades to the detail payload's.
+  const health = await pingGatewayHealth(base.href, {
+    signal: options.signal,
+  });
+  if (!health.authenticated) {
+    return { status: "unauthenticated" };
+  }
   let assistantId = options.assistantId;
   if (!assistantId) {
     const result = await listChoices({ base, get });
@@ -148,7 +161,7 @@ export async function resolveAssistant(
     status: "ready",
     assistant: {
       id: detail.id,
-      version: detail.version,
+      version: health.version ?? detail.version,
       url: new URL(detail.url, base).href,
     },
   };
