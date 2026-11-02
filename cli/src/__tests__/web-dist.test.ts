@@ -24,7 +24,7 @@ import {
   stampAppBuiltSha,
   stampRootProcess,
 } from "../lib/assistant-config.js";
-import { resolveEdgeClientDists } from "../lib/web-dist.js";
+import { resolveClientDists } from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
 const spawnMock = mock(childProcess.spawn);
@@ -114,7 +114,17 @@ function fakeSpawn(
     }
     landBun?.();
     const child = new childProcess.ChildProcess();
-    setTimeout(() => child.emit("exit", bunCode), 10);
+    // The real build spawn pipes both streams (the resolve captures the
+    // output and stays silent); the fake mirrors that shape.
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    Object.defineProperty(child, "stdout", { value: stdout });
+    Object.defineProperty(child, "stderr", { value: stderr });
+    setTimeout(() => {
+      stdout.end();
+      stderr.end();
+      child.emit("exit", bunCode);
+    }, 10);
     return child;
   }) as unknown as typeof childProcess.spawn;
 }
@@ -158,7 +168,7 @@ function seedCheckout(): { root: string; web: string; app: string } {
   return { root, web, app };
 }
 
-describe("resolveEdgeClientDists", () => {
+describe("resolveClientDists", () => {
   test("returns both source-checkout dists without building when present", async () => {
     const { root, web, app } = seedCheckout();
     const webDist = seedWebDist(web);
@@ -167,12 +177,16 @@ describe("resolveEdgeClientDists", () => {
     fixtureHeadSha = null;
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -189,7 +203,7 @@ describe("resolveEdgeClientDists", () => {
       }),
     );
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
@@ -197,6 +211,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(web, "dist"),
       appDistDir: join(app, "dist", "standalone"),
+      builtSha: fixtureHeadSha ?? "",
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
@@ -218,7 +233,7 @@ describe("resolveEdgeClientDists", () => {
 
     // The second resolve finds a fresh stamp and does not rebuild.
     expect(
-      await resolveEdgeClientDists({
+      await resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -237,16 +252,23 @@ describe("resolveEdgeClientDists", () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
     expect(resolved.webDistDir).toBe(join(web, "dist"));
     expect(bunCalls()).toHaveLength(2);
+    // The rebuild is silent apart from the two bookend lines — the build
+    // output itself is captured (surfacing only on failure).
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("older than the current checkout"),
+        call.join(" ").includes("Building client..."),
+      ),
+    ).toBe(true);
+    expect(
+      logSpy.mock.calls.some((call) =>
+        call.join(" ").includes("Clients built."),
       ),
     ).toBe(true);
     logSpy.mockRestore();
@@ -262,12 +284,16 @@ describe("resolveEdgeClientDists", () => {
     stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
+    expect(resolved).toEqual({
+      webDistDir: webDist,
+      appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
+    });
     expect(bunCalls()).toHaveLength(0);
   });
 
@@ -281,7 +307,7 @@ describe("resolveEdgeClientDists", () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
@@ -290,7 +316,12 @@ describe("resolveEdgeClientDists", () => {
     expect(bunCalls()).toHaveLength(2);
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("no build stamp"),
+        call.join(" ").includes("Building client..."),
+      ),
+    ).toBe(true);
+    expect(
+      logSpy.mock.calls.some((call) =>
+        call.join(" ").includes("Clients built."),
       ),
     ).toBe(true);
     logSpy.mockRestore();
@@ -301,12 +332,16 @@ describe("resolveEdgeClientDists", () => {
     const root = makeRoot();
     spawnMock.mockImplementation(unexpectedSpawn());
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toEqual({ webDistDir: null, appDistDir: null });
+    expect(resolved).toEqual({
+      webDistDir: null,
+      appDistDir: null,
+      builtSha: "",
+    });
     expect(spawnMock.mock.calls).toHaveLength(0);
   });
 
@@ -317,7 +352,7 @@ describe("resolveEdgeClientDists", () => {
     spawnMock.mockImplementation(fakeSpawn(undefined, 1));
 
     await expect(
-      resolveEdgeClientDists({
+      resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -335,19 +370,31 @@ describe("resolveEdgeClientDists", () => {
       }
       builds++;
       const child = new childProcess.ChildProcess();
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      Object.defineProperty(child, "stdout", { value: stdout });
+      Object.defineProperty(child, "stderr", { value: stderr });
       // The web build lands; the app build fails — a half-stamped state must
       // never pretend the second bundle is fresh.
       if (builds === 1) {
         seedWebDist(web);
-        setTimeout(() => child.emit("exit", 0), 10);
+        setTimeout(() => {
+          stdout.end();
+          stderr.end();
+          child.emit("exit", 0);
+        }, 10);
       } else {
-        setTimeout(() => child.emit("exit", 1), 10);
+        setTimeout(() => {
+          stdout.end();
+          stderr.end();
+          child.emit("exit", 1);
+        }, 10);
       }
       return child;
     }) as unknown as typeof childProcess.spawn);
 
     await expect(
-      resolveEdgeClientDists({
+      resolveClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
@@ -377,7 +424,7 @@ describe("resolveEdgeClientDists", () => {
       throw new Error("unexpected spawn");
     }) as unknown as typeof childProcess.spawn);
 
-    const resolved = await resolveEdgeClientDists({
+    const resolved = await resolveClientDists({
       startDir: root,
       resolvePackage: () => join(npmWebDir, "package.json"),
     });
@@ -385,6 +432,7 @@ describe("resolveEdgeClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: join(npmWebDir, "dist"),
       appDistDir: appDist,
+      builtSha: fixtureHeadSha ?? "",
     });
     expect(bunCalls()).toHaveLength(0);
   });

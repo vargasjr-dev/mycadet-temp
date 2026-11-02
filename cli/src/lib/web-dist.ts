@@ -140,20 +140,45 @@ function findSourcePackageDir(
   return null;
 }
 
-/** Spawn the source build with inherited stdio so progress streams through. */
+/** Most recent output kept for a failed build's error, so the tail (where
+ * the actual failure lives) survives without unbounded memory. */
+const BUILD_OUTPUT_TAIL_BYTES = 20_000;
+
+/**
+ * Spawn the source build with its output captured: the CLI's own console
+ * stays quiet (the resolve bookends the whole run with one line each), and a
+ * failure surfaces the build's tail in the thrown error — where the actual
+ * failure lives — alongside the manual recipe.
+ */
 function spawnDistBuild(build: DistBuildSpec): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(build.command, build.args, {
       cwd: build.cwd,
       env: { ...process.env },
-      stdio: "inherit",
+      stdio: ["ignore", "pipe", "pipe"],
     });
+    let output = "";
+    const capture = (chunk: Buffer) => {
+      output += chunk.toString();
+      if (output.length > BUILD_OUTPUT_TAIL_BYTES) {
+        output = output.slice(-BUILD_OUTPUT_TAIL_BYTES);
+      }
+    };
+    child.stdout?.on("data", capture);
+    child.stderr?.on("data", capture);
     child.on("error", reject);
     child.on("exit", (code) => {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`exited with code ${code ?? "signal"}`));
+        const tail = output.trim();
+        reject(
+          new Error(
+            tail
+              ? `exited with code ${code ?? "signal"}\n${tail}`
+              : `exited with code ${code ?? "signal"}`,
+          ),
+        );
       }
     });
   });
@@ -265,21 +290,43 @@ function isStale(
  * dist, and is recorded only after every build succeeded so a failed second
  * build can't leave the first bundle's freshness pretending to cover it.
  */
-export async function resolveEdgeClientDists(
+export async function resolveClientDists(
   options: DistBuildOptions = {},
-): Promise<{ webDistDir: string | null; appDistDir: string | null }> {
+): Promise<{
+  webDistDir: string | null;
+  appDistDir: string | null;
+  /**
+   * The checkout HEAD the dists were (re)built at — the empty string when the
+   * checkout has no git anchor (the stamp then stays inert, as before).
+   */
+  builtSha: string;
+}> {
   const arms = {
     web: await resolveDistArm("web", options),
     app: await resolveDistArm("app", options),
   };
   // clients/web and clients/app are siblings of one checkout — either
   // source-built arm anchors the same HEAD.
-  const anchor =
-    (arms.web.sourceBuilt ? arms.web.sourceDir : null) ?? arms.app.sourceDir;
+  // The app bundle is the primary bundle the App Server is tasked with
+  // serving — the build sha anchors to the app arm's checkout alone.
+  const anchor = arms.app.sourceDir;
   const headSha = anchor ? await gitHeadSha(anchor) : null;
   const recordedSha = readAppBuiltSha();
 
+  // A build is pending when an arm has source but no dist, or a stale
+  // source-built dist. Everything else (installed/packaged arms, git-less
+  // trees, a recorded sha still matching HEAD) serves as-is.
+  const pending = (["web", "app"] as const).filter((kind) => {
+    const arm = arms[kind];
+    return (
+      arm.sourceDir !== null &&
+      (arm.distDir === null || isStale(arm, headSha, recordedSha))
+    );
+  });
   let builtAny = false;
+  if (pending.length > 0) {
+    console.log("Building client...");
+  }
   for (const kind of ["web", "app"] as const) {
     const arm = arms[kind];
     const sourceDir = arm.sourceDir;
@@ -288,23 +335,11 @@ export async function resolveEdgeClientDists(
     // An existing dist that isn't stale (installed/packaged arm, git-less
     // tree, or the recorded sha still matching HEAD) serves as-is.
     if (arm.distDir !== null && !isStale(arm, headSha, recordedSha)) continue;
-    if (arm.distDir === null) {
-      console.log(
-        `No built ${kind} bundle found. Building it from the source checkout ` +
-          "now (first run only; this can take a minute)...",
-      );
-    } else {
-      console.log(
-        `The ${kind} bundle is older than the current checkout` +
-          (recordedSha
-            ? ` (built at ${recordedSha.slice(0, 7)})`
-            : " (no build stamp)") +
-          ". Rebuilding it now (this can take a minute)...",
-      );
-    }
     await buildDistFromSource(kind, sourceDir);
     builtAny = true;
-    console.log(`Built the ${kind} bundle.`);
+  }
+  if (builtAny) {
+    console.log("Clients built.");
   }
 
   // Stamp only after every planned build succeeded (a failed build throws
@@ -316,5 +351,6 @@ export async function resolveEdgeClientDists(
   return {
     webDistDir: arms.web.distDir ?? (builtAny ? findWebDistDir(options) : null),
     appDistDir: arms.app.distDir ?? (builtAny ? findAppDistDir(options) : null),
+    builtSha: headSha ?? "",
   };
 }

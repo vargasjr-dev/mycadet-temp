@@ -272,7 +272,6 @@ describe("pairAssistant", () => {
       refreshToken: "",
       refreshTokenExpiresAt: 0,
       refreshAfter: "",
-      isNew: false,
       deviceId: "dev-aaa",
       pairedGatewayUrl: "http://10.0.0.5:7830",
     });
@@ -284,7 +283,6 @@ describe("pairAssistant", () => {
       "refreshToken",
       "refreshTokenExpiresAt",
       "refreshAfter",
-      "isNew",
       "deviceId",
       "leasedAt",
       "pairedGatewayUrl",

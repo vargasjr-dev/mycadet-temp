@@ -17,17 +17,14 @@ import { hostname, platform } from "os";
 import { dirname, join } from "path";
 
 import {
-  dockerResourceNames,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loopbackSafeFetch,
+  pairDevice,
   resolveConfigDir,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
-
-import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
-import { execOutput } from "./step-runner.js";
 
 import { z } from "zod";
 
@@ -55,7 +52,6 @@ const GuardianTokenFieldsSchema = z
       .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
       .optional()
       .catch(undefined),
-    isNew: z.boolean().optional().catch(undefined),
     deviceId: z.string().optional().catch(undefined),
   })
   .catch({});
@@ -498,7 +494,6 @@ export async function refreshGuardianTokenResult(
       refreshTokenExpiresAt:
         parsed.refreshTokenExpiresAt ?? tokenData.refreshTokenExpiresAt,
       refreshAfter: parsed.refreshAfter ?? tokenData.refreshAfter,
-      isNew: false,
       deviceId: tokenData.deviceId,
       leasedAt: new Date().toISOString(),
       pairedGatewayUrl: tokenData.pairedGatewayUrl,
@@ -604,22 +599,15 @@ export async function leaseGuardianToken(
 
   const deviceId = computeDeviceId();
   const clientReportedName = readClientHostname();
-  const body = JSON.stringify({
+
+  const paired = await pairDevice(entry, {
     platform: "cli",
     deviceId,
     clientReportedName,
   });
+  if (!paired.ok) throw new Error(paired.error);
 
-  // Pairing IS the lease: POST /v1/pair proves presence on the gateway's
-  // loopback — the hatch participants are host-local or docker-exec'd, and
-  // both arrive on loopback. This replaces the retired GUARDIAN_BOOTSTRAP_SECRET
-  // handshake on /v1/guardian/init (deleted); re-pairing IS the repair.
-  const rawBody: unknown =
-    entry.cloud === "docker"
-      ? await pairViaDockerExec(entry.assistantId, body)
-      : await pairOverLoopback(gatewayUrl, body);
-
-  const mapped = mapPairResponse(rawBody);
+  const mapped = mapPairResponse(paired.response);
   const parsed = parseGuardianTokenFields(mapped);
   if (
     parsed.guardianPrincipalId == null ||
@@ -627,8 +615,7 @@ export async function leaseGuardianToken(
     parsed.accessTokenExpiresAt == null ||
     parsed.refreshToken == null ||
     parsed.refreshTokenExpiresAt == null ||
-    parsed.refreshAfter == null ||
-    parsed.isNew == null
+    parsed.refreshAfter == null
   ) {
     const raw = z.record(z.string(), z.unknown()).catch({}).parse(mapped);
     const requiredFields: (keyof typeof parsed)[] = [
@@ -638,7 +625,6 @@ export async function leaseGuardianToken(
       "refreshToken",
       "refreshTokenExpiresAt",
       "refreshAfter",
-      "isNew",
     ];
     const unusable = requiredFields
       .filter((field) => parsed[field] == null)
@@ -654,78 +640,12 @@ export async function leaseGuardianToken(
     refreshToken: parsed.refreshToken,
     refreshTokenExpiresAt: parsed.refreshTokenExpiresAt,
     refreshAfter: parsed.refreshAfter,
-    isNew: parsed.isNew,
     deviceId,
     leasedAt: new Date().toISOString(),
   };
 
   saveGuardianToken(assistantId, tokenData);
   return tokenData;
-}
-
-/**
- * Pair over the gateway's published loopback address (local topology — the
- * gateway runs on this host). Throws on a non-OK response.
- */
-async function pairOverLoopback(
-  gatewayUrl: string,
-  body: string,
-): Promise<unknown> {
-  const response = await loopbackSafeFetch(`${gatewayUrl}/v1/pair`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Cadet-Interface-Id": "cli",
-    },
-    body,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`guardian pair failed (${response.status}): ${text}`);
-  }
-  return response.json();
-}
-
-/**
- * Pair from INSIDE the gateway container (docker topology): the published
- * gateway port is LAN-reachable, so a host-side request arrives from the
- * docker bridge IP and the pair route's loopback guard would refuse it.
- * Docker-exec'ing the pair onto the container's own loopback is the presence
- * proof — the same hatch participation the bootstrap secret used to attest.
- * Prints the HTTP status on the first stdout line, the JSON body after.
- */
-async function pairViaDockerExec(
-  assistantId: string,
-  body: string,
-): Promise<unknown> {
-  const container = dockerResourceNames(assistantId).gatewayContainer;
-  const script = [
-    `const res = await fetch("http://127.0.0.1:${GATEWAY_INTERNAL_PORT}/v1/pair", {`,
-    `  method: "POST",`,
-    `  headers: { "content-type": "application/json", "x-cadet-interface-id": "cli" },`,
-    `  body: ${JSON.stringify(body)},`,
-    `});`,
-    `const text = await res.text();`,
-    `console.log(res.status);`,
-    `console.log(text);`,
-  ].join("\n");
-  const output = await execOutput(
-    "docker",
-    ["exec", container, "bun", "-e", script],
-    {
-      timeoutMs: 30_000,
-    },
-  );
-  const newline = output.indexOf("\n");
-  const status = Number(output.slice(0, newline).trim());
-  const payload = output.slice(newline + 1);
-  if (!Number.isInteger(status) || status < 200 || status >= 300) {
-    throw new Error(
-      `guardian pair failed (${status || "no response"}): ${payload}`,
-    );
-  }
-  return JSON.parse(payload);
 }
 
 /**
@@ -741,6 +661,5 @@ function mapPairResponse(raw: unknown): unknown {
     refreshToken: rec.refreshToken,
     refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
     refreshAfter: rec.refreshAfter,
-    isNew: rec.isNew,
   };
 }

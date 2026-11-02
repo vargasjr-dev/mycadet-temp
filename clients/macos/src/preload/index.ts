@@ -6,10 +6,8 @@ import {
   type IpcRendererEvent,
 } from "electron";
 
-import { createLocalModeBridge } from "@mycadet/electron-desktop/local-mode-bridge";
 import { createFileOpenPreloadBridge } from "@mycadet/electron-desktop/file-open-preload";
 
-import type { Lockfile, LockfileWriteResult } from "@mycadet/local-mode";
 import type {
   AppVersionInfo,
   AssistantStatus,
@@ -17,7 +15,6 @@ import type {
   CompanionAnnotationPhase,
   CompanionAnnotationStroke,
   CompanionAnnotationTool,
-  CompanionCoachmark,
   CompanionCapturePick,
   CompanionCaptureSources,
   CompanionContext,
@@ -120,9 +117,6 @@ export type {
   CadetBridge,
   CadetCommand,
 };
-
-const notImplemented = (name: string) => (): Promise<never> =>
-  Promise.reject(new Error(`window.cadet.${name} is not implemented yet`));
 
 const subscribeDictationEvent =
   (channel: string) =>
@@ -359,7 +353,6 @@ const bridge: CadetBridge = {
       ipcRenderer.invoke("cadet:share:file", bytes, filename),
   },
   downloads: createDownloadsBridge(ipcRenderer),
-  localMode: createLocalModeBridge(ipcRenderer),
   mainWindow: {
     ensureVisible: (): Promise<void> =>
       ipcRenderer.invoke("cadet:mainWindow:ensureVisible") as Promise<void>,
@@ -736,7 +729,6 @@ const bridge: CadetBridge = {
 };
 
 contextBridge.exposeInMainWorld("cadet", bridge);
-
 
 declare global {
   interface Window {

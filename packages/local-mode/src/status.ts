@@ -208,19 +208,7 @@ function defaultPorts(): { daemon: number; gateway: number } {
   };
 }
 
-function firstString(...values: unknown[]): string | undefined {
-  for (const value of values) {
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return undefined;
-}
 
-function firstNumber(...values: unknown[]): number | undefined {
-  for (const value of values) {
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-  }
-  return undefined;
-}
 
 // Raw entry from the same authoritative file the parsed data came from.
 function findRawAssistant(
@@ -299,7 +287,6 @@ function resolveStatusResources(entry: LockfileAssistant): StatusResources {
 
 async function runtimeStatusForEntry(
   entry: LockfileAssistant,
-  rawEntry: Record<string, unknown> | null,
 ): Promise<LocalAssistantStatusResult> {
   const resources = resolveStatusResources(entry);
   const observedAtMs = Date.now();
@@ -419,8 +406,5 @@ export async function getLocalAssistantStatus(
     return { ok: false, status: 404, error: "Local assistant not found" };
   }
 
-  return runtimeStatusForEntry(
-    entry,
-    findRawAssistant(result.raw, assistantId),
-  );
+  return runtimeStatusForEntry(entry);
 }

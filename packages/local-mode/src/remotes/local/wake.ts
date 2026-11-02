@@ -30,11 +30,24 @@ import type { WakeResult } from "../../operations/wake";
 
 export async function wakeLocal(
   entry: LockfileAssistant,
-  opts: { watch?: boolean; foreground?: boolean } = {},
+  opts: {
+    watch?: boolean;
+    foreground?: boolean;
+    /** The hatch's fresh-daemon first-boot workspace config (a temp file — CLI-internal, never a route surface). */
+    defaultWorkspaceConfigPath?: string;
+  } = {},
 ): Promise<WakeResult> {
-  const { watch = false, foreground = false } = opts;
+  const {
+    watch = false,
+    foreground = false,
+    defaultWorkspaceConfigPath,
+  } = opts;
   try {
-    return await wakeLocalUnchecked(entry, { watch, foreground });
+    return await wakeLocalUnchecked(entry, {
+      watch,
+      foreground,
+      defaultWorkspaceConfigPath,
+    });
   } catch (err) {
     return {
       ok: false,
@@ -51,9 +64,13 @@ export async function wakeLocal(
  */
 async function wakeLocalUnchecked(
   entry: LockfileAssistant,
-  opts: { watch: boolean; foreground: boolean },
+  opts: {
+    watch: boolean;
+    foreground: boolean;
+    defaultWorkspaceConfigPath?: string;
+  },
 ): Promise<WakeResult> {
-  const { watch, foreground } = opts;
+  const { watch, foreground, defaultWorkspaceConfigPath } = opts;
   if (!isLocalEntry(entry)) {
     throw new WakeRefused(
       `'${entry.assistantId}' is not an on-machine assistant.`,
@@ -61,7 +78,11 @@ async function wakeLocalUnchecked(
   }
 
   try {
-    return await wakeLocalSteps(entry, { watch, foreground });
+    return await wakeLocalSteps(entry, {
+      watch,
+      foreground,
+      defaultWorkspaceConfigPath,
+    });
   } catch (err) {
     if (err instanceof WakeRefused) {
       return { ok: false, status: 400, error: err.message };
@@ -72,9 +93,13 @@ async function wakeLocalUnchecked(
 
 async function wakeLocalSteps(
   entry: LocalAssistant,
-  opts: { watch: boolean; foreground: boolean },
+  opts: {
+    watch: boolean;
+    foreground: boolean;
+    defaultWorkspaceConfigPath?: string;
+  },
 ): Promise<WakeResult> {
-  const { watch, foreground } = opts;
+  const { watch, foreground, defaultWorkspaceConfigPath } = opts;
 
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
@@ -170,7 +195,10 @@ async function wakeLocalSteps(
     // always launches the CES sibling unconditionally.
     await Promise.all([
       startCes(watch, entry),
-      startLocalDaemon(watch, entry, { foreground }),
+      startLocalDaemon(watch, entry, {
+        foreground,
+        defaultWorkspaceConfigPath,
+      }),
     ]);
     // A daemon that aborts during startup (an occupied runtime HTTP port, a
     // fatal subsystem failure) leaves no process behind, and readiness alone

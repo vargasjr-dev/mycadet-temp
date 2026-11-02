@@ -1,4 +1,12 @@
-import type { LockfileAssistant } from "../lockfile-contract";
+import { isActiveAssistant, readLockfile } from "../lockfile";
+import { stripSensitiveFields } from "../util";
+import { pairingCancel, pairingPoll, pairingStart } from "../pair";
+import { runDevicesList, runDevicesRevoke } from "../devices";
+import { readLockfileAssistantAvatar } from "../avatar";
+import { getLocalAssistantStatus } from "../status";
+import { runHatch } from "../hatch";
+import { runUpgrade, type UpgradeOptions } from "../upgrade";
+import { unpairAssistant } from "../unpair";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { sleepAssistant } from "./sleep";
@@ -8,14 +16,17 @@ import { wakeAssistant } from "./wake";
  * The operator ROUTE TABLE: the host-served operations — the headless
  * lifecycle cores the serving host (Electron `app://` handler, Vite dev
  * middleware) mounts before the gateway data-plane planner. One entry per
- * operation; today that is retire, sleep, and wake. Future operations join as new
- * rows (and the gateway proxy itself becomes the LAST row — the catch-all
- * forward — once every scoped route is an operation).
+ * operation. The gateway proxy itself is the LAST row (the catch-all
+ * forward) once every scoped route is an operation.
  *
  * `matchOperatorRequest` is PURE in the URL — the hot path of every other
  * request never touches the lockfile. A match runs through
- * `match.route.run(match.assistantId)` directly: the routes import the
- * modules they need, no injection surface.
+ * `match.route.run(match.assistantId, request)` directly: the routes import
+ * the modules they need, no injection surface.
+ *
+ * The second argument carries the serving host's `Request` — body-carrying
+ * rows (pairing, devices, hatch, upgrade) read the JSON body off it;
+ * assistant-scoped rows read the decoded path id and ignore it.
  */
 
 export interface OperatorRoute {
@@ -25,14 +36,51 @@ export interface OperatorRoute {
    * Answer the request. Returning null means PASS: the request is not this
    * host's to answer (unknown id, or an entry the host cannot retire) and
    * the pre-existing chain answers instead — the cloud's 404 for a stale id,
-   * the data-plane forward for a platform-hosted entry.
+   * the data-plane forward for a platform-hosted entry. Routes whose pattern
+   * has no capture group receive the empty string as `assistantId`.
    */
-  run: (assistantId: string) => Promise<Response | null>;
+  run: (assistantId: string, request: Request) => Promise<Response | null>;
 }
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
 const SLEEP_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/sleep\/?$/;
 const WAKE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/wake\/?$/;
+const UNPAIR_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/unpair\/?$/;
+const UPGRADE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/upgrade\/?$/;
+const STATUS_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/?$/;
+const AVATAR_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/avatar\/get\/?$/;
+const LOCKFILE_PATTERN = /^\/v1\/assistants\/$/;
+const HATCH_PATTERN = /^\/v1\/assistants\/hatch\/?$/;
+const DEVICES_PATTERN = /^\/v1\/devices\/?$/;
+const DEVICES_REVOKE_PATTERN = /^\/v1\/devices\/revoke\/?$/;
+const PAIRING_START_PATTERN = /^\/v1\/remote-web\/pairing-start\/?$/;
+const PAIRING_POLL_PATTERN = /^\/v1\/remote-web\/pairing-poll\/?$/;
+const PAIRING_CANCEL_PATTERN = /^\/v1\/remote-web\/pairing-cancel\/?$/;
+
+const json = (body: unknown, status = 200): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+
+/**
+ * Buffer and parse a JSON request body. An empty body resolves to `{}` (the
+ * per-field validation reports what's missing); malformed JSON resolves to
+ * `null`.
+ */
+async function readJsonBody(
+  request: Request,
+): Promise<Record<string, unknown> | null> {
+  const text = await request.text().catch(() => "");
+  if (text.trim().length === 0) {
+    return {};
+  }
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The scoped surface's retire arm. A `DELETE` on
@@ -60,10 +108,7 @@ async function runRetireRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return new Response(JSON.stringify({ detail: result.error }), {
-    status: result.status,
-    headers: { "content-type": "application/json" },
-  });
+  return json({ detail: result.error }, result.status);
 }
 
 /**
@@ -83,10 +128,7 @@ async function runSleepRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return new Response(JSON.stringify({ detail: result.error }), {
-    status: result.status,
-    headers: { "content-type": "application/json" },
-  });
+  return json({ detail: result.error }, result.status);
 }
 
 /**
@@ -106,16 +148,307 @@ async function runWakeRoute(assistantId: string): Promise<Response | null> {
   if (result.ok) {
     return new Response(null, { status: 204 });
   }
-  return new Response(JSON.stringify({ detail: result.error }), {
-    status: result.status,
-    headers: { "content-type": "application/json" },
+  return json({ detail: result.error }, result.status);
+}
+
+/**
+ * The renderer-safe lockfile: the bare `/v1/assistants/` GET serves the
+ * lockfile read with sensitive fields stripped — the lockfile half of the
+ * renderer's local-mode seam. A query-carrying list request (the SDK's) does
+ * not match this exact path and rides the data-plane chain to the
+ * conductor's list route.
+ */
+async function runLockfileRoute(): Promise<Response> {
+  const lockfile = readLockfile();
+  stripSensitiveFields(lockfile);
+  return json(lockfile);
+}
+
+/**
+ * Provision a local assistant. Never rejects — failures resolve with
+ * `{ ok: false, error }` so the renderer renders the same error UI the
+ * status probe drives. The CLI owns the daemon + gateway process lifecycle:
+ * a hatched local assistant runs its own daemon, and the serving host only
+ * ever invokes the CLI as a subprocess.
+ */
+async function runHatchRoute(
+  _assistantId: string,
+  request: Request,
+): Promise<Response> {
+  const body = (await readJsonBody(request)) ?? {};
+  const remote = typeof body.remote === "string" ? body.remote : undefined;
+  try {
+    const result = await runHatch({ remote });
+    return json(
+      result.ok
+        ? { ok: true, assistantId: result.assistantId }
+        : { ok: false, error: result.error },
+    );
+  } catch (err) {
+    return json({ ok: false, error: (err as Error).message });
+  }
+}
+
+/**
+ * Forget a paired assistant (the `paired` flag): remove its lockfile entry
+ * and delete its stored guardian token on this machine. Client-side only:
+ * the remote assistant is never touched. An id that is not an entry on this
+ * machine passes — the id-keyed proxy resolves the rest (the conductor's
+ * routes for a cloud id).
+ */
+async function runUnpairRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  const result = unpairAssistant(assistantId);
+  if (result.ok) {
+    return json({ ok: true, lockfile: result.lockfile });
+  }
+  return json({ ok: false, error: result.error }, result.status);
+}
+
+/**
+ * The device-code exchange that registers an assistant paired on another
+ * machine: start an attempt from a pasted address, poll it until the host
+ * approves, cancel it on the way out. It runs in the serving host rather
+ * than the renderer, so the device code and the credentials it buy never
+ * reach the renderer.
+ */
+async function runPairingStartRoute(
+  _assistantId: string,
+  request: Request,
+): Promise<Response | null> {
+  const body = await readJsonBody(request);
+  if (!body) {
+    return json({ ok: false, error: "Invalid JSON body" }, 400);
+  }
+  const result = await pairingStart(body.address);
+  if (!result.ok) {
+    // `rejection` rides along so the renderer can show its own localized
+    // copy for a refused address instead of this host's English.
+    return json(
+      {
+        ok: false,
+        reason: result.reason,
+        error: result.error,
+        rejection: result.rejection,
+      },
+      result.status,
+    );
+  }
+  return json({
+    ok: true,
+    handle: result.handle,
+    userCode: result.userCode,
+    expiresAt: result.expiresAt,
+    intervalSeconds: result.intervalSeconds,
   });
 }
 
+async function runPairingPollRoute(
+  _assistantId: string,
+  request: Request,
+): Promise<Response | null> {
+  const body = await readJsonBody(request);
+  if (!body) {
+    return json({ ok: false, error: "Invalid JSON body" }, 400);
+  }
+  const result = await pairingPoll({
+    handle: body.handle,
+    name: body.name,
+  });
+  if (!result.ok) {
+    return json(
+      { ok: false, reason: result.reason, error: result.error },
+      result.status,
+    );
+  }
+  if (result.status === "pending") {
+    return json({
+      ok: true,
+      status: "pending",
+      expiresAt: result.expiresAt,
+      intervalSeconds: result.intervalSeconds,
+    });
+  }
+  // Pairing never defines or saves a lockfile entry — imports create
+  // entries; pairs pair with a defined one. The exchange's identity facts
+  // go back to the page; creating the entry is the import's burden.
+  return json({
+    ok: true,
+    status: "imported",
+    assistantId: result.assistantId,
+    accessOnly: result.accessOnly,
+  });
+}
+
+async function runPairingCancelRoute(
+  _assistantId: string,
+  request: Request,
+): Promise<Response | null> {
+  const body = await readJsonBody(request);
+  if (!body) {
+    return json({ ok: false, error: "Invalid JSON body" }, 400);
+  }
+  return json({ ok: pairingCancel(body.handle) });
+}
+
+/**
+ * Paired-device management via the CLI (`cadet devices … --json`). POST-only
+ * (the renderer always POSTs); run-helper results respond 200 with `ok`
+ * discriminating success so all hosts share one wire shape.
+ */
+async function runDevicesRoute(
+  isRevoke: boolean,
+  request: Request,
+): Promise<Response> {
+  const body = await readJsonBody(request);
+  if (!body) {
+    return json({ ok: false, error: "Invalid JSON body" }, 400);
+  }
+  const assistantId = body.assistantId;
+  if (typeof assistantId !== "string" || !assistantId) {
+    return json({ ok: false, error: "Missing assistantId" }, 400);
+  }
+  if (isRevoke) {
+    const hashedDeviceId = body.hashedDeviceId;
+    if (typeof hashedDeviceId !== "string" || !hashedDeviceId) {
+      return json({ ok: false, error: "Missing hashedDeviceId" }, 400);
+    }
+    try {
+      return json(await runDevicesRevoke(assistantId, hashedDeviceId));
+    } catch (err) {
+      return json({ ok: false, error: (err as Error).message });
+    }
+  }
+  try {
+    return json(await runDevicesList(assistantId));
+  } catch (err) {
+    return json({ ok: false, error: (err as Error).message });
+  }
+}
+
+// The in-flight upgrade set: an upgrade POST flips the status route to
+// `{ ok: true, state: "upgrading" }` until the CLI run settles, and a second
+// upgrade for the same assistant refuses instead of stacking.
+const upgradingLocalAssistantIds = new Set<string>();
+
+/**
+ * Upgrade the active local assistant's runtime through the CLI. The
+ * in-flight set deduplicates concurrent upgrades for one assistant (the
+ * status route reports the same state), and non-local entries are refused
+ * by the operation itself. An id that is not an entry on this machine
+ * passes — cloud ids ride the data-plane chain to the conductor's upgrade
+ * route.
+ */
+async function runUpgradeRoute(
+  assistantId: string,
+  request: Request,
+): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  const body = await readJsonBody(request);
+  const options: UpgradeOptions =
+    body === null
+      ? {}
+      : {
+          ...(typeof body.latest === "boolean" ? { latest: body.latest } : {}),
+          ...(typeof body.version === "string"
+            ? { version: body.version }
+            : {}),
+          ...(typeof body.force === "boolean" ? { force: body.force } : {}),
+        };
+  if (!isActiveAssistant(assistantId)) {
+    return json({
+      ok: false,
+      error: "Can only upgrade the active local assistant",
+    });
+  }
+  if (upgradingLocalAssistantIds.has(assistantId)) {
+    return json({
+      ok: false,
+      error: "An upgrade is already in progress for this assistant.",
+    });
+  }
+  upgradingLocalAssistantIds.add(assistantId);
+  try {
+    const result = await runUpgrade(assistantId, options);
+    if (!result.ok) {
+      return json({ ok: false, error: result.error });
+    }
+    return json(
+      result.version ? { ok: true, version: result.version } : { ok: true },
+    );
+  } finally {
+    upgradingLocalAssistantIds.delete(assistantId);
+  }
+}
+
+/**
+ * The lifecycle probe for a local assistant's daemon and gateway (the
+ * hatching screen polls it until the stack answers). The in-flight upgrade
+ * state outranks the process probe — an upgrading assistant is not
+ * "crashed", it is mid-restart. An id that is not an entry on this machine
+ * passes — the data-plane chain forwards it.
+ */
+async function runStatusRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  if (upgradingLocalAssistantIds.has(assistantId)) {
+    return json({ ok: true, state: "upgrading" });
+  }
+  return json(await getLocalAssistantStatus(assistantId));
+}
+
+/**
+ * Read a local assistant's avatar straight off its workspace, so a sleeping
+ * sibling still has an avatar in the chooser. An id that is not an entry on
+ * this machine passes.
+ */
+async function runAvatarRoute(assistantId: string): Promise<Response | null> {
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  return json(readLockfileAssistantAvatar(assistantId));
+}
+
 const ROUTES: OperatorRoute[] = [
+  { method: "GET", pattern: LOCKFILE_PATTERN, run: () => runLockfileRoute() },
+  { method: "POST", pattern: HATCH_PATTERN, run: runHatchRoute },
+  {
+    method: "POST",
+    pattern: DEVICES_PATTERN,
+    run: (_id, request) => runDevicesRoute(false, request),
+  },
+  {
+    method: "POST",
+    pattern: DEVICES_REVOKE_PATTERN,
+    run: (_id, request) => runDevicesRoute(true, request),
+  },
+  {
+    method: "POST",
+    pattern: PAIRING_START_PATTERN,
+    run: runPairingStartRoute,
+  },
+  { method: "POST", pattern: PAIRING_POLL_PATTERN, run: runPairingPollRoute },
+  {
+    method: "POST",
+    pattern: PAIRING_CANCEL_PATTERN,
+    run: runPairingCancelRoute,
+  },
   { method: "DELETE", pattern: RETIRE_PATTERN, run: runRetireRoute },
   { method: "POST", pattern: SLEEP_PATTERN, run: runSleepRoute },
   { method: "POST", pattern: WAKE_PATTERN, run: runWakeRoute },
+  { method: "POST", pattern: UNPAIR_PATTERN, run: runUnpairRoute },
+  { method: "POST", pattern: UPGRADE_PATTERN, run: runUpgradeRoute },
+  { method: "GET", pattern: STATUS_PATTERN, run: runStatusRoute },
+  { method: "GET", pattern: AVATAR_PATTERN, run: runAvatarRoute },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
@@ -138,7 +471,12 @@ export function matchOperatorRequest(
     const match = route.pattern.exec(pathname);
     if (!match) continue;
     try {
-      return { route, assistantId: decodeURIComponent(match[1]!) };
+      return {
+        route,
+        // No-capture patterns (body-only routes) resolve to "" — the rows
+        // that read an id never match on those patterns.
+        assistantId: match[1] ? decodeURIComponent(match[1]) : "",
+      };
     } catch {
       // Malformed percent-encoding: not this host's request.
       return null;

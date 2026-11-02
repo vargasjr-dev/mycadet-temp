@@ -203,7 +203,11 @@ import { createDiscordInboundEventHandler } from "./discord/forward.js";
 import { handleInbound } from "./handlers/handle-inbound.js";
 import { upsertContactChannel } from "./verification/contact-helpers.js";
 import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
-import { logAuthBypassState } from "./http/middleware/auth.js";
+import {
+  extractBearerToken,
+  isHttpAuthDisabled,
+  logAuthBypassState,
+} from "./http/middleware/auth.js";
 import {
   resolveExtensionOrigin,
   handleExtensionPreflight,
@@ -255,7 +259,11 @@ import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
 import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
-import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
+import {
+  APP_VERSION,
+  VERSION_HEADER_NAME,
+  VERSION_HEADER_VALUE,
+} from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
 
 const log = getLogger("main");
@@ -2025,7 +2033,22 @@ async function main() {
       const includeMigrations =
         url.searchParams.get("include") === "migrations";
       if (!includeMigrations) {
-        return Response.json({ status: "ok" });
+        // The probe doubles as the app shell's identity ping: the version it
+        // serves, and whether the CALLER's own credentials (the browser
+        // access cookie, or a bearer) authenticate. The /v1 routes can serve
+        // 200 unauthenticated over loopback trust, so this verdict is the one
+        // reliable signal a client has before it mounts an authenticated UI.
+        // Probes without credentials (k8s liveness) read authenticated:false —
+        // they only look at the status code.
+        const token = extractBearerToken(req);
+        const authenticated = isHttpAuthDisabled()
+          ? true
+          : token !== null && validateEdgeToken(token).ok;
+        return Response.json({
+          status: "ok",
+          version: APP_VERSION,
+          authenticated,
+        });
       }
       // Fetch the daemon's /v1/health to surface migration state
       // (dbVersion, lastWorkspaceMigrationId) so the CLI can capture

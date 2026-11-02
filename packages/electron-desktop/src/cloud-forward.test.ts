@@ -7,8 +7,8 @@ import {
   isTransientNetworkError,
   PROXY_ERROR_HEADER,
   PROXY_NETWORK_ERROR_CODE,
-  type CloudForwardFetcher,
 } from "./cloud-forward";
+import type { Fetch } from "@mycadet/shared/fetch";
 
 const PLATFORM = "https://cloud.mycadet.ai";
 const GATEWAY = "http://127.0.0.1:20100";
@@ -36,9 +36,9 @@ const request = (
 const recorder = () => {
   const calls: Array<{
     url: string;
-    init: RequestInit & { duplex?: "half" };
+    init: RequestInit | undefined;
   }> = [];
-  const fetcher: CloudForwardFetcher = async (url, init) => {
+  const fetcher: Fetch = async (url, init) => {
     calls.push({ url, init });
     return new Response("forwarded", { status: 200 });
   };
@@ -100,7 +100,7 @@ describe("forwardCloudRequest", () => {
     expect(response?.status).toBe(200);
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/assistants");
-    expect(calls[0]?.init.method).toBe("GET");
+    expect(calls[0]?.init?.method).toBe("GET");
   });
 
   test("forwards /_allauth/* requests to the cloud", async () => {
@@ -174,8 +174,8 @@ describe("forwardCloudRequest", () => {
       cloudBase: PLATFORM,
       fetcher,
     });
-    expect(calls[0]?.init.redirect).toBe("manual");
-    expect(calls[0]?.init.credentials).toBe("omit");
+    expect(calls[0]?.init?.redirect).toBe("manual");
+    expect(calls[0]?.init?.credentials).toBe("omit");
   });
 
   test("forwards unsafe requests from the trusted app origin", async () => {
@@ -337,8 +337,10 @@ describe("forwardCloudRequest", () => {
         cloudBase: PLATFORM,
         fetcher,
       });
-      expect(calls[0]?.init.body).toBeNull();
-      expect(calls[0]?.init.duplex).toBe("half");
+      expect(calls[0]?.init?.body).toBeNull();
+      expect((calls[0]?.init as { duplex?: unknown } | undefined)?.duplex).toBe(
+        "half",
+      );
     }
     for (const method of ["GET", "HEAD"]) {
       const { calls, fetcher } = recorder();
@@ -347,8 +349,10 @@ describe("forwardCloudRequest", () => {
         cloudBase: PLATFORM,
         fetcher,
       });
-      expect(calls[0]?.init.body).toBeUndefined();
-      expect(calls[0]?.init.duplex).toBeUndefined();
+      expect(calls[0]?.init?.body).toBeUndefined();
+      expect(
+        (calls[0]?.init as { duplex?: unknown } | undefined)?.duplex,
+      ).toBeUndefined();
     }
   });
 

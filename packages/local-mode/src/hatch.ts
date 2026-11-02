@@ -5,7 +5,6 @@ import {
   DAEMON_STOP_TIMEOUT_MS,
   HOST_WRAPPER_LONG_HEADROOM_MS,
 } from "./lifecycle-budgets";
-import type { CliInvocation } from "./util";
 import { resolveCliInvocation } from "./cli-invocation";
 
 // A hatch whose daemon comes up but never becomes ready spends the readiness

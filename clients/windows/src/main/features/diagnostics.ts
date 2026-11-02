@@ -14,7 +14,6 @@ import {
 } from "@mycadet/electron-desktop/feedback";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
-import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
 import { WINDOWS_RELEASE_INFO } from "../app-config";
 import { handle, on } from "../ipc.client";

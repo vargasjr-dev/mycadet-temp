@@ -2,8 +2,6 @@ import {
   getGatewayUrl,
   getGuardianAccessToken,
   readLockfile,
-  resolveConfigDir,
-  type CliInvocation,
 } from "@mycadet/local-mode";
 
 import type {

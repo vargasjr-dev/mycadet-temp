@@ -2681,8 +2681,8 @@ describe("Call entrypoint gating", () => {
     // Force config reload
     getConfig();
 
-    const { executeCallStart: _executeCallStart } =
-      await import("../tools/calls/call-start.js");
+    const { run: _runCallStartModule } =
+      await import("../config/bundled-skills/phone-calls/tools/call-start.js");
 
     // The tool is registered via side effect. We need to test the gating logic directly.
     // Since the module registers itself, we test by loading config and checking behavior.

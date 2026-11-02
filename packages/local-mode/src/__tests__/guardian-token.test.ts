@@ -32,7 +32,6 @@ function makeTokenData(over: Partial<GuardianTokenData>): GuardianTokenData {
     refreshToken: "refresh",
     refreshTokenExpiresAt: FUTURE,
     refreshAfter: FUTURE,
-    isNew: false,
     deviceId: "device",
     leasedAt: new Date().toISOString(),
     ...over,

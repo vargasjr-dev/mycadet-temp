@@ -23,7 +23,7 @@
  *
  * Response body: `{ token, expiresAt, guardianId, assistantId }`. The
  * device-bound path (a `deviceId` is supplied) additionally returns
- * `{ refreshToken, refreshTokenExpiresAt, refreshAfter, isNew }` so the client
+ * `{ refreshToken, refreshTokenExpiresAt, refreshAfter }` so the client
  * can renew via `/v1/guardian/refresh` instead of re-pairing. The `cli`
  * interface is also the gateway's bootstrap door: it mints the guardian
  * principal when none exists (loopback presence is the evidence), which is
@@ -294,14 +294,11 @@ export async function handlePair(
     if (deviceId) {
       return mintDeviceBoundPairResponse({
         guardianPrincipalId,
-        assistantId,
         deviceId,
         platform: bodyPlatform ?? interfaceId,
         interfaceId,
         clientId,
         clientReportedName: bodyClientReportedName,
-        // Extensions pair after the CLI hatched — the guardian always exists.
-        isNew: false,
       });
     }
 
@@ -365,8 +362,6 @@ export async function handlePair(
     });
     return mintDeviceBoundPairResponse({
       guardianPrincipalId: guardian.guardianPrincipalId,
-      isNew: guardian.isNew,
-      assistantId,
       deviceId,
       platform: bodyPlatform ?? "cli",
       interfaceId,
@@ -397,16 +392,32 @@ export async function handlePair(
  * consistent across the token's life (rather than 24h at mint then 30d after
  * the first refresh).
  */
-function mintDeviceBoundPairResponse(opts: {
+/**
+ * The device-bound pair response's wire shape — what `/v1/pair`'s device-bound
+ * arm and the `gateway pairing mint --device-id` CLI door both emit, and what
+ * the CLI's guardian lease maps into its token file. The access/refresh
+ * credentials plus `guardianId` are the whole contract: the caller chose the
+ * assistant (its own `assistantId` adds nothing about the guardian or their
+ * device) and whether the mint created the guardian is the mint's business.
+ */
+export interface DeviceBoundPairPayload {
+  token: string;
+  /** ISO-8601 instant the access token expires. */
+  expiresAt: string;
+  refreshToken: string;
+  /** ISO-8601 instant the device-bound refresh token expires. */
+  refreshTokenExpiresAt: string;
+  /** ISO-8601 instant after which the client should refresh the session. */
+  refreshAfter: string;
+  guardianId: string;
+}
+
+export function deviceBoundPairPayload(opts: {
   guardianPrincipalId: string;
-  assistantId: string;
   deviceId: string;
   platform: string;
-  interfaceId: string;
-  clientId: string | null;
   clientReportedName?: string;
-  isNew: boolean;
-}): Response {
+}): DeviceBoundPairPayload {
   const pair = mintAndRecordDeviceBoundTokenPair({
     guardianPrincipalId: opts.guardianPrincipalId,
     deviceId: opts.deviceId,
@@ -414,6 +425,24 @@ function mintDeviceBoundPairResponse(opts: {
     identity: { clientReportedName: opts.clientReportedName },
   });
 
+  return {
+    token: pair.accessToken,
+    expiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
+    refreshToken: pair.refreshToken,
+    refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
+    refreshAfter: new Date(pair.refreshAfter).toISOString(),
+    guardianId: opts.guardianPrincipalId,
+  };
+}
+
+function mintDeviceBoundPairResponse(opts: {
+  guardianPrincipalId: string;
+  deviceId: string;
+  platform: string;
+  interfaceId: string;
+  clientId: string | null;
+  clientReportedName?: string;
+}): Response {
   log.info(
     {
       interfaceId: opts.interfaceId,
@@ -425,16 +454,37 @@ function mintDeviceBoundPairResponse(opts: {
   );
 
   return Response.json(
-    {
-      token: pair.accessToken,
-      expiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
-      refreshToken: pair.refreshToken,
-      refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
-      refreshAfter: new Date(pair.refreshAfter).toISOString(),
-      guardianId: opts.guardianPrincipalId,
-      assistantId: opts.assistantId,
-      isNew: opts.isNew,
-    },
+    deviceBoundPairPayload({
+      guardianPrincipalId: opts.guardianPrincipalId,
+      deviceId: opts.deviceId,
+      platform: opts.platform,
+      clientReportedName: opts.clientReportedName,
+    }),
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+/**
+ * The `gateway pairing mint --device-id` CLI door: the guardian lease's
+ * device-bound mint executed DIRECTLY in this process — process execution
+ * is the presence proof, so there is no HTTP and no loopback check. The
+ * client-side pair operation runs this command (host spawn or docker exec);
+ * the minted payload prints as single-line JSON on stdout. Same bootstrap
+ * semantics as the route's cli branch: the guardian resolves or mints with
+ * the caller's execution as the evidence.
+ */
+export async function mintCliPairPayload(opts: {
+  deviceId: string;
+  platform: string;
+  clientReportedName?: string;
+}): Promise<DeviceBoundPairPayload> {
+  const guardian = await resolveOrCreateCadetGuardian({
+    allowMintWithEvidence: true,
+  });
+  return deviceBoundPairPayload({
+    guardianPrincipalId: guardian.guardianPrincipalId,
+    deviceId: opts.deviceId,
+    platform: opts.platform,
+    clientReportedName: opts.clientReportedName,
+  });
 }

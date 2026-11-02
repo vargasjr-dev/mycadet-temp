@@ -14,10 +14,19 @@
 import {
   isCloudEntry,
   getGatewayUrl,
-  isLoopbackGatewayCloud,
   isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
+import { getGuardianAccessToken, readLockfile } from "@mycadet/local-mode";
+import { hostname } from "node:os";
+
+import { onLockfileChange } from "../lockfile-watcher";
+import { getSessionToken, onSessionTokenChange } from "../session-token-store";
+import {
+  createDesktopPresenceMonitor,
+  type DesktopPresenceLogger,
+} from "../desktop-presence-monitor";
+import { getDeviceId } from "../device-id";
 
 import { HostProxySseClient, type HostProxySseMessage } from "./sse";
 import { HostProxyPoster, type PresenceState } from "./poster";
@@ -57,16 +66,6 @@ export type HostProxyGuardianTokenResult =
   | { ok: false; status: number; error?: string };
 
 export interface HostProxyRuntime {
-  acquireGuardianToken: (
-    assistantId: string,
-  ) => Promise<HostProxyGuardianTokenResult>;
-  getSessionToken: () => string | null;
-  getLockfile: () => Lockfile;
-  onLockfileChange: (listener: (lockfile: Lockfile) => void) => () => void;
-  onSessionTokenChange?: (listener: () => void) => () => void;
-  installPresenceMonitor: (
-    onReport: (state: PresenceState) => void,
-  ) => () => void;
   sseClientHeaders: () => Record<string, string>;
   sseFallbackClientHeaders?: () => Record<string, string>;
   posterClientHeaders: () => Record<string, string>;
@@ -76,8 +75,6 @@ export interface HostProxyRuntime {
 }
 
 export interface HostProxyClientIdentity {
-  getClientId: () => string;
-  getMachineName: () => string;
   interfaceId: string;
   /** Opt in only when the bundled CU executor supports window-only observations. */
   supportsWindowCapture?: boolean;
@@ -95,14 +92,14 @@ export function createHostProxyClientHeaders(
   identity: HostProxyClientIdentity,
 ): Pick<HostProxyRuntime, "posterClientHeaders" | "sseClientHeaders"> {
   const posterClientHeaders = () => ({
-    "X-Cadet-Client-Id": identity.getClientId(),
+    "X-Cadet-Client-Id": getDeviceId(),
   });
   return {
     posterClientHeaders,
     sseClientHeaders: () => ({
       ...posterClientHeaders(),
       "X-Cadet-Interface-Id": identity.interfaceId,
-      "X-Cadet-Machine-Name": identity.getMachineName(),
+      "X-Cadet-Machine-Name": hostname(),
       ...(identity.supportsWindowCapture
         ? { "X-Cadet-Cu-Window-Capture": "1" }
         : {}),
@@ -591,7 +588,17 @@ async function acquireGuardianToken(
   assistantId: string,
 ): Promise<HostProxyGuardianTokenResult> {
   try {
-    return await requireRuntime().acquireGuardianToken(assistantId);
+    // The shared token mint resolves the CLI invocation itself; hosts that
+    // cannot reach a CLI get the package's structured error.
+    const result = await getGuardianAccessToken(assistantId);
+    if (!result.ok) {
+      log.warn("[host-proxy-router] failed to obtain guardian token", {
+        assistantId,
+        status: result.status,
+        error: result.error,
+      });
+    }
+    return result;
   } catch (err) {
     log.error("[host-proxy-router] failed to obtain guardian token", {
       assistantId,
@@ -799,7 +806,7 @@ function connectCloudAssistant(
 ): void {
   if (connections.has(assistantId)) return;
 
-  const sessionToken = requireRuntime().getSessionToken();
+  const sessionToken = getSessionToken();
   if (!sessionToken) {
     log.warn(
       "[host-proxy-router] no session token, skipping cloud connection",
@@ -811,7 +818,7 @@ function connectCloudAssistant(
   const baseUrl = runtimeUrl.replace(/\/$/, "");
 
   const authHeaders = (): Record<string, string> => {
-    const token = requireRuntime().getSessionToken();
+    const token = getSessionToken();
     if (!token) return {};
     const headers: Record<string, string> = { "X-Session-Token": token };
     if (organizationId) headers["Cadet-Organization-Id"] = organizationId;
@@ -877,7 +884,7 @@ function disconnectAssistant(assistantId: string): void {
 
 function handleLockfileChange(lockfile: Lockfile): void {
   const activeIds = new Set<string>();
-  const hasSessionToken = requireRuntime().getSessionToken() !== null;
+  const hasSessionToken = getSessionToken() !== null;
 
   for (const assistant of lockfile.assistants) {
     // Loopback topologies connect at their recorded port; custom remotes
@@ -976,14 +983,13 @@ export function installHostProxyBridge(runtime: HostProxyRuntime): () => void {
       setExecutor(kind, executor);
     }
   }
-  unsubscribe = runtime.onLockfileChange(handleLockfileChange);
-  unsubscribeSessionToken =
-    runtime.onSessionTokenChange?.(() => {
-      handleLockfileChange(runtime.getLockfile());
-    }) ?? null;
+  unsubscribe = onLockfileChange(handleLockfileChange);
+  unsubscribeSessionToken = onSessionTokenChange(() => {
+    handleLockfileChange(readLockfile());
+  });
 
   // Seed from any assistants already present in the lockfile
-  const currentLockfile = runtime.getLockfile();
+  const currentLockfile = readLockfile();
   if (currentLockfile.assistants.length > 0) {
     handleLockfileChange(currentLockfile);
   }
@@ -1001,7 +1007,13 @@ export function installHostProxyBridge(runtime: HostProxyRuntime): () => void {
   // safe direction; losing the app is not. Left null so teardown no-ops.
   stopPresenceMonitor = null;
   try {
-    stopPresenceMonitor = runtime.installPresenceMonitor(reportPresence);
+    // The presence monitor's logger is variadic-rest; the runtime's logger is
+    // (message, context)-shaped — adapt at the seam, once.
+    const presenceLogger: DesktopPresenceLogger = {
+      warn: (...args: unknown[]) => log.warn(String(args[0]), ...args.slice(1)),
+    };
+    stopPresenceMonitor =
+      createDesktopPresenceMonitor(presenceLogger)(reportPresence);
   } catch (err) {
     log.warn("[host-proxy-router] presence monitor install failed", { err });
   }

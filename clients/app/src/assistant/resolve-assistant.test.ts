@@ -35,6 +35,8 @@ test("gets a single assistant under the configured API prefix with cookies", asy
       url: "https://assistant.example.com/web/1.2.3/assistant/",
     },
   });
+  // The resolution is one call: the assistant detail API, on the configured
+  // prefix, with the session cookie and the caller's signal.
   const [url, init] = request.mock.calls[0];
   expect(String(url)).toBe(
     "https://assistant.example.com/cloud/tenant/v1/assistants/assistant-1/",
@@ -86,7 +88,7 @@ test("pagination stays on the configured origin instead of following response UR
   );
 });
 
-test("401 is unauthenticated; forbidden and server failures remain errors", async () => {
+test("a 401 detail is unauthenticated; forbidden and server failures remain errors", async () => {
   for (const status of [401, 403, 500]) {
     request.mockResolvedValueOnce(new Response(null, { status }));
     const result = resolveAssistant({ ...options(), assistantId: detail.id });

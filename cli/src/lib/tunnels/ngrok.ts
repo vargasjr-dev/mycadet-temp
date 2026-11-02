@@ -306,14 +306,14 @@ function findAdoptableTunnel(
   agents: NgrokAgentView[],
   targetPort: number,
   domain?: string,
-): { url: string } | { conflict: string } | null {
+): { url: string; apiAddr: string } | { conflict: string } | null {
   for (const agent of agents) {
     const portMatch = pickMatchingTunnel(agent.tunnels, targetPort);
     if (!portMatch) continue;
     if (domain && !urlMatchesDomain(portMatch, domain)) {
       return { conflict: portMatch };
     }
-    return { url: portMatch };
+    return { url: portMatch, apiAddr: agent.apiAddr };
   }
   return null;
 }
@@ -805,9 +805,25 @@ export async function runNgrokTunnel(
     const existingUrl = adoptable.url;
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
     // Not our child process: a recorded entry would be stale or foreign.
+    // The record still needs the AGENT's pid: every consumer (`tunnel
+    // stop`, the endpoint-online confirm flow) verifies the pid as an
+    // ngrok process before acting, and stamping this short-lived CLI
+    // invocation would fail that check forever — leaving an unstoppable
+    // agent behind. The inspection port names the agent, so lsof finds
+    // it; when that can't be verified, keep the invocation's pid rather
+    // than guessing at another process's.
+    const adoptedPort = Number(adoptable.apiAddr.split(":").pop());
+    const adoptedPid =
+      Number.isInteger(adoptedPort) && adoptedPort > 0
+        ? pidListeningOnPort(adoptedPort)
+        : null;
+    const adoptedRecordPid =
+      adoptedPid !== null && isNgrokProcess(adoptedPid)
+        ? adoptedPid
+        : process.pid;
     clearRootProcess("tunnel");
     stampRootProcess("tunnel", {
-      pid: process.pid,
+      pid: adoptedRecordPid,
       provider: "ngrok",
       startedAt: new Date().toISOString(),
       publicUrl: existingUrl,

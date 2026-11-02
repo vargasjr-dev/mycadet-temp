@@ -25,67 +25,74 @@ type PollReply =
 
 const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
 
-interface BridgeCalls {
+interface HostCalls {
   start: Array<[string]>;
   poll: Array<[string, string?]>;
   cancel: string[];
   pollReplies: PollReply[];
 }
 
-function stubBridge(): BridgeCalls {
-  const calls: BridgeCalls = {
+const realFetch = globalThis.fetch;
+
+function stubHost(): HostCalls {
+  const calls: HostCalls = {
     start: [],
     poll: [],
     cancel: [],
     pollReplies: [],
   };
+  const reply = (body: unknown) =>
+    new Response(JSON.stringify(body), {
+      headers: { "content-type": "application/json" },
+    });
   Object.defineProperty(window, "cadet", {
     configurable: true,
-    value: {
-      platform: "electron",
-      localMode: {
-        pairingStart: async (address: string) => {
-          calls.start.push([address]);
-          return {
-            ok: true,
-            handle: "handle-1",
-            userCode: "ABCD-1234",
-            expiresAt: new Date(Date.now() + 60_000).toISOString(),
-            intervalSeconds: 0,
-          };
-        },
-        pairingPoll: async (handle: string, name?: string) => {
-          calls.poll.push([handle, name]);
-          const reply = calls.pollReplies.shift();
-          if (reply) {
-            return reply;
-          }
-          // Replies exhausted: stay pending (1s cadence) rather than
-          // throwing — an exhausted mock would error-state the dialog mid
-          // test, racing the teardown this assertion pins.
-          return {
-            ok: true,
-            status: "pending",
-            expiresAt: new Date(Date.now() + 60_000).toISOString(),
-            intervalSeconds: 1,
-          };
-        },
-        pairingCancel: async (handle: string) => {
-          calls.cancel.push(handle);
-          return { ok: true };
-        },
-      },
-    },
+    value: { platform: "electron" },
   });
+  globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
+    const path = String(input);
+    const body = init?.body ? (JSON.parse(String(init.body)) as unknown) : {};
+    if (path.endsWith("/pairing-start")) {
+      calls.start.push([(body as { address: string }).address]);
+      return reply({
+        ok: true,
+        handle: "handle-1",
+        userCode: "ABCD-1234",
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        intervalSeconds: 0,
+      });
+    }
+    if (path.endsWith("/pairing-poll")) {
+      const poll = body as { handle: string; name?: string };
+      calls.poll.push([poll.handle, poll.name]);
+      // Replies exhausted: stay pending (1s cadence) rather than erroring —
+      // an exhausted mock would error-state the dialog mid test, racing the
+      // teardown this assertion pins.
+      return reply(
+        calls.pollReplies.shift() ?? {
+          ok: true,
+          status: "pending",
+          expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          intervalSeconds: 1,
+        },
+      );
+    }
+    if (path.endsWith("/pairing-cancel")) {
+      calls.cancel.push((body as { handle: string }).handle);
+      return reply({ ok: true });
+    }
+    return realFetch(input as string, init);
+  }) as unknown as typeof fetch;
   return calls;
 }
 
-function clearBridge(): void {
+function clearHost(): void {
   if (originalCadet) {
     Object.defineProperty(window, "cadet", originalCadet);
   } else {
     Reflect.deleteProperty(window, "cadet");
   }
+  globalThis.fetch = realFetch;
 }
 
 function renderDialog(
@@ -106,12 +113,12 @@ function renderDialog(
 
 afterEach(() => {
   cleanup();
-  clearBridge();
+  clearHost();
   __resetConnectDialogForTesting();
 });
 
 test("renders the form and starts pairing with the pasted address", async () => {
-  const calls = stubBridge();
+  const calls = stubHost();
   calls.pollReplies.push({
     ok: true,
     status: "imported",
@@ -141,21 +148,17 @@ test("renders the form and starts pairing with the pasted address", async () => 
 });
 
 test("a refused address renders the structured rejection copy inline", async () => {
-  const calls = stubBridge();
+  const calls = stubHost();
   calls.start.length = 0;
-  Object.defineProperty(window, "cadet", {
-    configurable: true,
-    value: {
-      platform: "electron",
-      localMode: {
-        pairingStart: async () => ({
-          ok: false,
-          error: "Address refused",
-          rejection: "loopback",
-        }),
-      },
-    },
-  });
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        ok: false,
+        error: "Address refused",
+        rejection: "loopback",
+      }),
+      { headers: { "content-type": "application/json" } },
+    )) as unknown as typeof fetch;
   renderDialog();
 
   fireEvent.change(await screen.findByLabelText("Address or pairing link"), {
@@ -169,7 +172,7 @@ test("a refused address renders the structured rejection copy inline", async () 
 });
 
 test("an access-only import interposes the expiry warning before completing", async () => {
-  const calls = stubBridge();
+  const calls = stubHost();
   calls.pollReplies.push({
     ok: true,
     status: "imported",
@@ -194,7 +197,7 @@ test("an access-only import interposes the expiry warning before completing", as
 });
 
 test("a dismissed dialog cancels the host session so the code cannot be exchanged", async () => {
-  const calls = stubBridge();
+  const calls = stubHost();
   calls.pollReplies.push({
     ok: true,
     status: "pending",

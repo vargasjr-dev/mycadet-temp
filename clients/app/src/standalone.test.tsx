@@ -13,6 +13,7 @@ import { toast } from "@mycadet/design-library/components/toast";
 import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
 import { DesktopChrome } from "./standalone";
 
+const realStandaloneFetch = globalThis.fetch;
 const request = spyOn(globalThis, "fetch");
 
 afterEach(() => {
@@ -89,14 +90,39 @@ describe("the shell's assistant commands", () => {
             return () => {};
           },
         },
-        localMode: {
-          // Availability is detected on the pairing channel itself.
-          pairingStart: async () => ({ ok: false, error: "unused" }),
-          readLockfile: async () => opts.lockfile,
-          status: async (assistantId: string) => opts.status?.(assistantId),
-        },
       },
     });
+    // The lockfile and status reads ride the operator routes' GETs through
+    // the fetch spy: layer an implementation that answers those paths (a
+    // queued mockResolvedValueOnce still wins for the test's own calls).
+    request.mockImplementation(
+      Object.assign(
+        async (
+          input: RequestInfo | URL,
+          init?: RequestInit,
+        ): Promise<Response> => {
+          const path = String(input).split("?")[0] ?? "";
+          if (path === "/v1/assistants/") {
+            return new Response(JSON.stringify(opts.lockfile), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+          const statusMatch = path.match(/^\/v1\/assistants\/([^/]+)\/$/);
+          if (statusMatch) {
+            return new Response(
+              JSON.stringify(
+                opts.status
+                  ? opts.status(decodeURIComponent(statusMatch[1] ?? ""))
+                  : { ok: false },
+              ),
+              { headers: { "content-type": "application/json" } },
+            );
+          }
+          return realStandaloneFetch(input, init);
+        },
+        { preconnect: realStandaloneFetch.preconnect },
+      ),
+    );
     return sink;
   }
 

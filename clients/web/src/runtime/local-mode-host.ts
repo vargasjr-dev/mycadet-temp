@@ -22,29 +22,32 @@ import { isElectron } from "@/runtime/is-electron";
  *
  * Local mode provisions an assistant on the user's own machine by driving the
  * Cadet CLI and reading/writing its lockfile. That work runs in a trusted
- * host process, never the renderer: in the Electron desktop shell it runs in
- * the main process behind `window.cadet.localMode.*`; on the web/dev host it
- * runs in the Vite dev server behind same-origin `/v1` middleware at the
- * conductor's route shapes. This module is the single place that branch
- * lives — feature code imports these named functions and stays host-agnostic,
- * mirroring the per-capability `runtime/` wrapper rule in
+ * host process, never the renderer: in the Electron desktop shell the
+ * serving host answers the operations through its operator routes (the
+ * `app://` handler's route table, mounted ahead of the gateway data-plane
+ * forward); on the web/dev host the Vite dev server answers the same routes
+ * at the conductor's shapes. This module is the single place that transport
+ * choice lives — feature code imports these named functions and stays
+ * host-agnostic, mirroring the per-capability `runtime/` wrapper rule in
  * `clients/web/docs/ELECTRON.md`.
  *
- * Both branches return the same wire contract, so callers never observe which
- * host they're on. The contract types are owned by `@mycadet/local-mode`;
- * import them from the package directly.
+ * Every operation is a plain same-origin fetch to the operation's route, and
+ * both serving hosts answer with the same wire contract, so callers never
+ * observe which host they're on. The contract types are owned by
+ * `@mycadet/ipc-contract`; import them from the package directly.
  *
  * Unlike the host-only wrappers (`dock.ts`, `native-biometric.ts`), these
- * functions are NOT no-ops off Electron — the web/dev branch is a real
- * implementation, because local mode is a first-class web/dev capability, not
- * a desktop-only nicety.
+ * functions are NOT no-ops off a local host — the web/dev branch is a real
+ * implementation, because local mode is a first-class web/dev capability,
+ * not a desktop-only nicety.
  *
  * The gateway *data plane* deliberately has no seam function: callers fetch
- * plain same-origin `/v1/assistants/{assistantId}/...` on both hosts, and each
- * host routes it by the id in the path to the local gateway transparently (the
- * Vite dev middleware on web/dev; the Electron `app://` protocol handler in
- * the desktop shell). The transport branch lives in the host, not the
- * renderer, so the data-plane URL stays byte-identical everywhere.
+ * plain same-origin `/v1/assistants/{assistantId}/...` on every host, and
+ * each host routes it by the id in the path to the local gateway
+ * transparently (the Vite dev middleware on web/dev; the Electron `app://`
+ * protocol handler in the desktop shell). The transport branch lives in the
+ * host, not the renderer, so the data-plane URL stays byte-identical
+ * everywhere.
  */
 
 export interface LocalHatchResult {
@@ -99,18 +102,17 @@ const LOCAL_HOST_UNAVAILABLE_ERROR =
   "The local assistant host isn't available here.";
 
 /**
- * Whether a local-mode host (the Electron IPC bridge or the Vite dev server)
- * backs this runtime and can serve the host's `/v1` lifecycle routes. The
- * cloud web build and the remote-web tunnel
+ * Whether a local-mode host (the Electron `app://` handler or the Vite dev
+ * server) backs this runtime and can serve the host's `/v1` lifecycle
+ * routes. The cloud web build and the remote-web tunnel
  * cannot, yet both still surface local / self-hosted assistants via the cloud
  * `is_local` flag — so callers and UI MUST consult this before offering a local
  * action (wake / hatch / retire).
  *
- * Detected from the runtime config the capable hosts inject
- * (`window.__CADET_CONFIG__`): a "local" remote means a host on this device;
- * a served-remote config (a self-hosted gateway edge or the cloud proxy)
- * means none. The cloud web build injects nothing at all and has no host
- * either — {@link readInjectedConfig} returns `undefined` for that case.
+ * Two hosts qualify: the Electron shell (it serves the operator routes
+ * regardless of which assistant is active — the injected config's `remote`
+ * describes the served entry, not the host), and a host whose injected
+ * config says it serves a local assistant (the dev server's stamp).
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
@@ -179,19 +181,14 @@ async function requestLocalCommand<T extends { ok: boolean }>(
 /**
  * Provision a local assistant.
  *
- * Both hosts spawn the Cadet CLI in a trusted process and return the same
- * `{ ok, assistantId }` contract: the Electron main process behind
- * `window.cadet.localMode.hatch`, the Vite dev server behind the conductor's
- * `POST /v1/assistants/hatch`. Callers reload the lockfile to
- * discover the new assistant regardless of host.
+ * The serving host spawns the Cadet CLI in a trusted process and returns the
+ * `{ ok, assistantId }` contract — the Electron shell behind the operator
+ * routes' hatch row, the Vite dev server behind the same row. Callers reload
+ * the lockfile to discover the new assistant regardless of host.
  */
 export async function hatchLocalAssistant(
   remote?: string,
 ): Promise<LocalHatchResult> {
-  if (isElectron()) {
-    return window.cadet!.localMode.hatch(remote);
-  }
-
   return postLocalCommand<LocalHatchResult>(
     "/v1/assistants/hatch",
     { remote },
@@ -202,14 +199,9 @@ export async function hatchLocalAssistant(
 /**
  * Read the local-assistant lockfile (sensitive fields stripped by the host).
  * Throws on a transport/parse failure so callers can fall back to a cached
- * copy; the Electron main reads the file directly, the dev host serves it from
- * the bare `/v1/assistants/` list route.
+ * copy; the host serves it from the bare `/v1/assistants/` list route.
  */
 export async function loadLockfileHost(): Promise<Lockfile> {
-  if (isElectron()) {
-    return window.cadet!.localMode.readLockfile();
-  }
-
   const res = await fetch("/v1/assistants/");
   if (!res.ok) {
     throw new Error(`lockfile fetch failed: ${res.status}`);
@@ -233,27 +225,15 @@ export async function loadLockfileHost(): Promise<Lockfile> {
 /**
  * Forget a paired assistant (the `paired` flag): remove its lockfile entry and
  * delete its stored guardian token on this machine. Client-side only: the
- * remote assistant is never touched. Both hosts run the shared package op in a
- * trusted process and return the same `LockfileWriteResult` contract; hosts
- * refuse non-paired entries (local/cloud assistants go through
- * the local-mode retire bridge). Older Electron hosts that predate the IPC
- * channel degrade to a structured unsupported error, mirroring
- * {@link sleepLocalAssistantHost}.
+ * remote assistant is never touched. The serving host runs the shared package
+ * op in a trusted process and returns the same `LockfileWriteResult`
+ * contract; hosts refuse non-paired entries (local/cloud assistants go
+ * through the one retire endpoint). An id that is not an entry on the
+ * serving machine passes through to the cloud's own routes.
  */
 export async function unpairAssistantHost(
   assistantId: string,
 ): Promise<LockfileWriteResult> {
-  if (isElectron()) {
-    const unpair = window.cadet!.localMode.unpair;
-    if (!unpair) {
-      return {
-        ok: false,
-        error: "Unpair is not supported by this app version",
-      };
-    }
-    return unpair(assistantId);
-  }
-
   return postLocalCommand<LockfileWriteResult>(
     `/v1/assistants/${encodeURIComponent(assistantId)}/unpair`,
     {},
@@ -261,30 +241,16 @@ export async function unpairAssistantHost(
   );
 }
 
-/** Shared fallback for Electron preloads that predate the pairing channels. */
-const PAIRING_UNSUPPORTED_ERROR =
-  "Connecting a paired assistant is not supported by this app version";
-
 /**
  * Begin pairing with the assistant at `address`, a pairing link copied from
  * its "Pair a device" card or a bare `https://host` URL. The device-code
  * exchange runs in the trusted host, so the renderer holds only the opaque
  * `handle` (and the approval code to display, when the address carried no
- * approved code of its own). Older Electron hosts that predate the IPC
- * channel degrade to a structured unsupported error, mirroring
- * {@link unpairAssistantHost}.
+ * approved code of its own).
  */
 export async function pairingStartHost(
   address: string,
 ): Promise<LocalPairingStartResult> {
-  if (isElectron()) {
-    const pairingStart = window.cadet!.localMode.pairingStart;
-    if (!pairingStart) {
-      return { ok: false, error: PAIRING_UNSUPPORTED_ERROR };
-    }
-    return pairingStart(address);
-  }
-
   return postLocalCommand<LocalPairingStartResult>(
     "/v1/remote-web/pairing-start",
     { address },
@@ -303,14 +269,6 @@ export async function pairingPollHost(
   handle: string,
   name?: string,
 ): Promise<LocalPairingPollResult> {
-  if (isElectron()) {
-    const pairingPoll = window.cadet!.localMode.pairingPoll;
-    if (!pairingPoll) {
-      return { ok: false, error: PAIRING_UNSUPPORTED_ERROR };
-    }
-    return pairingPoll(handle, name);
-  }
-
   return postLocalCommand<LocalPairingPollResult>(
     "/v1/remote-web/pairing-poll",
     { handle, name },
@@ -320,14 +278,9 @@ export async function pairingPollHost(
 
 /**
  * Forget a pending pairing session. Fire-and-forget: a host that never had
- * the session, or is too old to know the channel, has nothing to drop.
+ * the session has nothing to drop.
  */
 export async function pairingCancelHost(handle: string): Promise<void> {
-  if (isElectron()) {
-    await window.cadet!.localMode.pairingCancel?.(handle);
-    return;
-  }
-
   await postLocalCommand<{ ok: boolean }>(
     "/v1/remote-web/pairing-cancel",
     { handle },
@@ -335,30 +288,18 @@ export async function pairingCancelHost(handle: string): Promise<void> {
   );
 }
 
-/** Shared fallback for Electron preloads that predate the devices channels. */
-const DEVICE_MANAGEMENT_UNSUPPORTED_ERROR =
-  "Device management is not supported by this app version";
-
 /**
  * List the devices holding pairing tokens for a local assistant. Device
  * management is host-side only: the gateway's devices routes reject browser
- * origins by design, so the trusted host (Electron main, the Vite dev
+ * origins by design, so the trusted host (the Electron shell, the Vite dev
  * middleware, or the `cadet client` server) spawns the CLI's `devices
- * --json` and returns its result over this seam. Older Electron hosts that
- * predate the IPC channel degrade to a structured unsupported error, which
- * doubles as the UI's visibility gate on those app shells.
+ * --json` and returns its result over this seam. An unavailable host
+ * degrades to a structured error, which doubles as the UI's visibility gate
+ * on those app shells.
  */
 export async function listPairedDevicesHost(
   assistantId: string,
 ): Promise<LocalListDevicesResult> {
-  if (isElectron()) {
-    const listDevices = window.cadet!.localMode.listDevices;
-    if (!listDevices) {
-      return { ok: false, error: DEVICE_MANAGEMENT_UNSUPPORTED_ERROR };
-    }
-    return listDevices(assistantId);
-  }
-
   return postLocalCommand<LocalListDevicesResult>(
     "/v1/devices",
     { assistantId },
@@ -368,20 +309,13 @@ export async function listPairedDevicesHost(
 
 /**
  * Revoke one paired device's tokens; write counterpart of
- * {@link listPairedDevicesHost} (same host-side-only rule and unsupported fallback).
+ * {@link listPairedDevicesHost} (same host-side-only rule and unavailable
+ * fallback).
  */
 export async function revokePairedDeviceHost(
   assistantId: string,
   hashedDeviceId: string,
 ): Promise<LocalRevokeDeviceResult> {
-  if (isElectron()) {
-    const revokeDevice = window.cadet!.localMode.revokeDevice;
-    if (!revokeDevice) {
-      return { ok: false, error: DEVICE_MANAGEMENT_UNSUPPORTED_ERROR };
-    }
-    return revokeDevice(assistantId, hashedDeviceId);
-  }
-
   return postLocalCommand<LocalRevokeDeviceResult>(
     "/v1/devices/revoke",
     { assistantId, hashedDeviceId },
@@ -393,17 +327,6 @@ export async function upgradeLocalAssistantHost(
   assistantId: string,
   options?: LocalUpgradeOptions,
 ): Promise<LocalUpgradeResult> {
-  if (isElectron()) {
-    const upgrade = window.cadet!.localMode.upgrade;
-    if (!upgrade) {
-      return {
-        ok: false,
-        error: "Update and restart the desktop app to enable local upgrades.",
-      };
-    }
-    return upgrade(assistantId, options);
-  }
-
   const body = {
     assistantId,
     ...(options?.latest ? { latest: true } : {}),
@@ -425,18 +348,6 @@ export async function upgradeLocalAssistantHost(
 export async function getLocalAssistantStatusHost(
   assistantId: string,
 ): Promise<LocalAssistantStatusResult> {
-  if (isElectron()) {
-    const status = window.cadet!.localMode.status;
-    if (!status) {
-      return {
-        ok: false,
-        status: 501,
-        error: "Local assistant status is not supported by this app version",
-      };
-    }
-    return status(assistantId);
-  }
-
   if (!isLocalModeHostAvailable()) {
     return { ok: false, status: 0, error: LOCAL_HOST_UNAVAILABLE_ERROR };
   }
@@ -460,31 +371,14 @@ export async function getLocalAssistantStatusHost(
 
 /**
  * Read a local assistant's avatar straight off its workspace on disk, so a
- * sleeping sibling still has an avatar in the chooser. The Electron main
- * process serves it behind `window.cadet.localMode.readAssistantAvatar`, the
- * Vite dev server behind `/v1/assistants/{id}/avatar/get`; both return the
- * ipc-contract shape. Never throws: an older Electron shell without the
- * channel, a rejected bridge call, and a host that cannot serve the read
- * ({@link canReadAvatarFromLocalHost}) all resolve `{ ok: false }`.
+ * sleeping sibling still has an avatar in the chooser. The serving host
+ * answers `/v1/assistants/{id}/avatar/get` with the contract shape. Never
+ * throws: a host that cannot serve the read
+ * ({@link canReadAvatarFromLocalHost}) resolves `{ ok: false }`.
  */
 export async function readAssistantAvatarHost(
   assistantId: string,
 ): Promise<LocalReadAssistantAvatarResult> {
-  if (isElectron()) {
-    const readAssistantAvatar = window.cadet!.localMode.readAssistantAvatar;
-    if (!readAssistantAvatar) {
-      return {
-        ok: false,
-        error: "Assistant avatars are not supported by this app version",
-      };
-    }
-    try {
-      return await readAssistantAvatar(assistantId);
-    } catch (error) {
-      return { ok: false, error: String(error) };
-    }
-  }
-
   if (!canReadAvatarFromLocalHost()) {
     return { ok: false, error: LOCAL_HOST_UNAVAILABLE_ERROR };
   }

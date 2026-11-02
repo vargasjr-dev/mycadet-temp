@@ -21,10 +21,10 @@ mock.module("../../../packages/local-mode/src/port-probe", () => ({
 }));
 
 import {
-  allocateLocalPlacement,
   resolveTargetAssistant,
   setActiveAssistant,
 } from "../lib/assistant-config.js";
+import { allocateLocalPlacement } from "@mycadet/local-mode";
 import {
   getActiveAssistant,
   removeLockfileAssistant,

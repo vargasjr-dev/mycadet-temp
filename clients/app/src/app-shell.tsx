@@ -93,10 +93,10 @@ function AssistantShell({
   // session), the shell replace-navigates to it and shows the state line
   // until the router swaps; the chooser hands the pick back as location
   // state, which AssistantPage feeds in as the assistantId prop.
-  const chooserOwned =
-    state.status === "selection" ||
-    state.status === "empty" ||
-    state.status === "unauthenticated";
+  // selection/empty bounce to the chooser; unauthenticated is an honest
+  // error state (the old web bundle's ActiveAssistantGate treatment) — the
+  // shell must not silently navigate away from a session it couldn't prove.
+  const chooserOwned = state.status === "selection" || state.status === "empty";
   const redirected = useRef(false);
   useEffect(() => {
     if (chooserOwned && !redirected.current) {
@@ -130,7 +130,10 @@ function AssistantShell({
   }
 
   if (state.status !== "ready") {
-    const alert = state.status === "notReady" || state.status === "error";
+    const alert =
+      state.status === "notReady" ||
+      state.status === "error" ||
+      state.status === "unauthenticated";
     return (
       <div
         role={alert ? "alert" : "status"}
@@ -156,7 +159,9 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {(state.status === "error" || state.status === "unavailable") && (
+        {(state.status === "error" ||
+          state.status === "unavailable" ||
+          state.status === "unauthenticated") && (
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={reload} style={quietButton}>
               {t("appShell.retry")}

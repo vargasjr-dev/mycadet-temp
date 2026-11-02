@@ -1,3 +1,4 @@
+import type { Fetch } from "@mycadet/shared/fetch";
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import * as localModeShared from "@mycadet/local-mode";
@@ -7,15 +8,12 @@ type TokenResult =
   | { ok: true; accessToken: string }
   | { ok: false; status: number; error: string };
 
-// The planner reads its target map from the watched lockfile snapshot (the
-// watcher seam) and resolves the paired guardian bearer and the local
-// guardian lease through electron-desktop's local-mode module — both are
-// module-level dependencies of `forwardGatewayRequest`, pinned here so tests
-// never touch disk.
-let watchedSnapshot: { assistants: unknown[] } | null = null;
-mock.module("./lockfile-watcher", () => ({
-  getWatchedLockfileSnapshot: () => watchedSnapshot,
-}));
+// The planner reads its target map fresh from the lockfile (readGatewayTargets)
+// and resolves the paired guardian bearer and the local guardian lease through
+// @mycadet/local-mode — module-level dependencies of `forwardGatewayRequest`,
+// pinned here so tests never touch disk.
+type FixtureEntry = Record<string, unknown>;
+const readGatewayTargets = mock((): Map<string, FixtureEntry> => new Map());
 
 let tokenResult: TokenResult = { ok: true, accessToken: "host-token" };
 const getStoredPairedGuardianAccessToken = mock(
@@ -30,6 +28,7 @@ mock.module("@mycadet/local-mode", () => ({
   ...localModeShared,
   getGuardianAccessToken,
   getPairedGuardianAccessToken: getStoredPairedGuardianAccessToken,
+  readGatewayTargets,
 }));
 
 const { forwardGatewayRequest } = await import("./gateway-forward");
@@ -37,6 +36,16 @@ const { clearLoopbackGatewayBearerCache } = await import("@mycadet/local-mode");
 
 const request = (path: string, init: RequestInit = {}) =>
   new Request(`app://mycadet.ai${path}`, init);
+
+type FixtureLockfile = { assistants: Array<FixtureEntry> };
+
+/** The planner's target map, built from a fixture lockfile the way the real reader builds it from disk. */
+const targetsFrom = (lockfile: FixtureLockfile): Map<string, FixtureEntry> =>
+  new Map(
+    lockfile.assistants.flatMap((entry) =>
+      entry.assistantId ? [[String(entry.assistantId), entry] as const] : [],
+    ),
+  );
 
 const MINTED_BEARER = "host-minted-bearer";
 
@@ -96,7 +105,7 @@ beforeEach(() => {
 
 describe("forwardGatewayRequest — loopback forwards", () => {
   beforeEach(() => {
-    watchedSnapshot = localLockfile;
+    readGatewayTargets.mockImplementation(() => targetsFrom(localLockfile));
   });
 
   test("passes non-gateway requests through without fetching", async () => {
@@ -364,7 +373,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
 
 describe("forwardGatewayRequest — remote (paired) forwards", () => {
   beforeEach(() => {
-    watchedSnapshot = pairedLockfile;
+    readGatewayTargets.mockImplementation(() => targetsFrom(pairedLockfile));
   });
 
   test("forwards to the paired runtime with its host-owned bearer and query", async () => {

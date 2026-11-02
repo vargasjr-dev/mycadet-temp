@@ -1,11 +1,7 @@
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import type {
-  CloudStatusGetResponses,
-  CloudVerifycredentialPostResponses,
-} from "@/generated/daemon/types.gen";
+import type { CloudStatusGetResponses } from "@/generated/daemon/types.gen";
 import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
-import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/credential-verification";
 import {
   getActiveAssistant,
   isLocalAssistant,
@@ -50,39 +46,19 @@ type ReprovisionApiKeyResponse = {
   };
 };
 
-type BootstrapLocalAssistantCloudIdentityOptions = {
-  allowGatewayRepair?: boolean;
-  onError?: (error: unknown) => void;
-};
-
 type ResolveLocalAssistantCloudIdentityOptions = {
   allowGatewayRepair?: boolean;
   /**
    * Whether a stored credential the cloud has rejected may be rotated.
    *
-   * Off by default, so the routine bootstrap never replaces a credential
+   * Off by default, so a routine resolution never replaces a credential
    * unattended. Rotation is a credential mutation and the user is the one who
-   * asks for it, from the repair action on the credential notification or by
-   * signing in from the CLI. The bootstrap's job is to provision what is
-   * missing, not to repair what is broken.
+   * asks for it, by signing in from the CLI.
    */
   rotateRejectedCredential?: boolean;
 };
 
 const cloudAssistantIdCache = new Map<string, Promise<string>>();
-
-/**
- * Backoff schedule for the best-effort bootstrap. After a daemon restart the
- * gateway 502s every proxied /v1/* request (including the secret injection
- * that stores the cloud credentials) until the daemon is listening again —
- * a window observed to last ~90s — so the schedule must outlast it.
- */
-const BOOTSTRAP_RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000, 60_000];
-
-let bootstrapRetryDelaysMs: readonly number[] = BOOTSTRAP_RETRY_DELAYS_MS;
-
-/** Assistants with a bootstrap retry loop currently running. */
-const activeBootstraps = new Set<string>();
 
 /**
  * A key the cloud issued for an assistant that has not been stored yet,
@@ -92,18 +68,6 @@ const activeBootstraps = new Set<string>();
  * repair always asks, because it was asked to. Cleared once the write lands.
  */
 const unstoredProvisionedKeys = new Map<string, string>();
-
-export function resetLocalCloudIdentityCacheForTesting(): void {
-  cloudAssistantIdCache.clear();
-  activeBootstraps.clear();
-  unstoredProvisionedKeys.clear();
-}
-
-export function setBootstrapRetryDelaysForTesting(
-  delays: readonly number[] | null,
-): void {
-  bootstrapRetryDelaysMs = delays ?? BOOTSTRAP_RETRY_DELAYS_MS;
-}
 
 export async function resolveLocalAssistantCloudIdentity(
   assistantId: string,
@@ -144,250 +108,10 @@ export async function resolveLocalAssistantCloudIdentity(
 }
 
 /**
- * Re-resolve this assistant's platform identity from scratch, rotating a
- * rejected cloud credential in the process.
- *
- * The ordinary bootstrap cannot serve an in-session recovery. It runs when a
- * platform session is confirmed and when the assistant changes, so nothing
- * re-runs it when a credential is rejected mid-session, and its per-assistant
- * promise cache would return the already-settled result if anything did. Both
- * are right for a bootstrap and wrong for a repair, so this drops the cache
- * entry and resolves again.
- *
- * Rejects with the underlying reason (no platform session, unreachable
- * gateway, rotation refused) so a caller can show it rather than reporting a
- * failure it cannot explain.
- */
-export type LocalCloudCredentialRecoveryReason =
-  /** Nothing is selected to repair. */
-  | "no_assistant"
-  /**
-   * This client cannot perform the repair for this assistant: it is not the
-   * local client, it is served through a remote gateway, platform features
-   * are off, or the assistant is cloud-hosted and re-provisions its own
-   * key.
-   */
-  | "cannot_act_here"
-  /** The cloud rejected the replacement too. */
-  | "replacement_rejected"
-  /** The replacement was stored but the cloud could not confirm it. */
-  | "unconfirmed";
-
-/**
- * A repair that could not complete, with a typed reason.
- *
- * The reason is the contract; `message` is for logs and error reporting.
- * Surfaces render the reason through their own catalogs, so no English here
- * ever reaches a reader, and platform or transport detail never leaks into
- * user-facing copy.
- */
-export class LocalCloudCredentialRecoveryError extends Error {
-  readonly reason: LocalCloudCredentialRecoveryReason;
-
-  constructor(reason: LocalCloudCredentialRecoveryReason, message: string) {
-    super(message);
-    this.name = "LocalCloudCredentialRecoveryError";
-    this.reason = reason;
-  }
-}
-
-/**
- * The assistant a repair would act on, or null when this client cannot act
- * on it. One predicate for the surface that offers the repair and the repair
- * itself, so a button is never rendered for a repair that would refuse.
- *
- * `resolveLocalAssistantCloudIdentity` returns an id untouched for
- * anything it does not provision for, so a repair not guarded by this would
- * resolve successfully having done nothing. A cloud-hosted assistant is
- * not a gap: the cloud re-provisions its own key, so the repair belongs
- * to nobody here.
- *
- * Scoped to `isLocalGatewayAssistant`, wider than the `isLocalAssistant` set
- * bootstrap provisions for: a local Docker instance is never hatched, woken
- * or retired from here, but rotating and storing its credential is a write
- * over the local gateway it already exposes, the same write a plain local
- * assistant takes, and the CLI login flow repairs it the same way.
- */
-function recoverableLocalAssistant(
-  assistantId?: string,
-): LockfileAssistant | null {
-  const target = assistantId ?? getActiveAssistant()?.assistantId;
-  if (!target || !isLocalClient() || isUuid(target)) {
-    return null;
-  }
-  return resolveLocalAssistant(target, (a) => isLoopbackGatewayCloud(a.cloud));
-}
-
-/** Whether {@link recoverLocalAssistantCloudCredential} can act here. */
-export function canRecoverLocalAssistantCloudCredential(
-  assistantId?: string,
-): boolean {
-  return recoverableLocalAssistant(assistantId) !== null;
-}
-
-export async function recoverLocalAssistantCloudCredential(
-  assistantId?: string,
-): Promise<void> {
-  const target = assistantId ?? getActiveAssistant()?.assistantId;
-  if (!target) {
-    throw new LocalCloudCredentialRecoveryError(
-      "no_assistant",
-      "No assistant is selected.",
-    );
-  }
-
-  const assistant = recoverableLocalAssistant(target);
-  if (!assistant) {
-    throw new LocalCloudCredentialRecoveryError(
-      "cannot_act_here",
-      "This client cannot restore the credential for this assistant.",
-    );
-  }
-
-  cloudAssistantIdCache.delete(assistant.assistantId);
-
-  await resolveLocalAssistantCloudIdentity(target, {
-    allowGatewayRepair: true,
-    rotateRejectedCredential: true,
-  });
-
-  // Storing a credential proves the write landed, not that it authenticates: a
-  // replacement can be rejected in turn. Confirm before the caller reports
-  // success, so a repair that did not repair anything reads as a failure the
-  // reader can see rather than a receipt for something that never happened.
-  //
-  // A daemon that predates the verification route cannot confirm anything,
-  // and its 404 would read as a failed repair after a successful rotation,
-  // inviting another. On those daemons the stored replacement is the repair,
-  // as it always was there. Resolved against a version held for this
-  // assistant: the sync snapshot's false-on-unknown would skip the check on a
-  // daemon that has it, and an unscoped read could let the assistant the user
-  // just switched away from vouch for this one.
-  if (!(await resolveSupportsCredentialVerification(assistant.assistantId))) {
-    return;
-  }
-  const verified = await verifyCloudCredential(assistant);
-  if (verified === "rejected") {
-    throw new LocalCloudCredentialRecoveryError(
-      "replacement_rejected",
-      "The cloud rejected the replacement credential.",
-    );
-  }
-  if (verified !== "valid") {
-    throw new LocalCloudCredentialRecoveryError(
-      "unconfirmed",
-      "The replacement credential was stored but could not be confirmed.",
-    );
-  }
-}
-
-/**
- * Ask the assistant to check its stored cloud credential against the
- * platform. Returns `"unknown"` when the check itself could not be run, which
- * is not evidence either way.
- */
-async function verifyCloudCredential(
-  assistant: LockfileAssistant,
-): Promise<"valid" | "rejected" | "unknown"> {
-  try {
-    const gateway = await ensureGatewayAccess(assistant, {
-      allowGatewayRepair: false,
-    });
-    // Addressed to this assistant's gateway with the token minted for it,
-    // like the status read above, rather than through the daemon client: the
-    // client routes to whichever assistant the app is connected to, and a
-    // repair can run for an assistant before that connection is primed.
-    const response = await fetch(
-      gatewayUrl(gateway.gatewayUrl, "/v1/cloud/verify-credential"),
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${gateway.actorToken}`,
-        },
-        credentials: "omit",
-      },
-    );
-    if (!response.ok) {
-      return "unknown";
-    }
-    // The route's own response shape; the value check keeps a malformed body
-    // from being read as a verdict.
-    const body = (await response.json()) as Partial<
-      CloudVerifycredentialPostResponses[200]
-    >;
-    return body.status === "valid" || body.status === "rejected"
-      ? body.status
-      : "unknown";
-  } catch {
-    return "unknown";
-  }
-}
-
-export function bootstrapLocalAssistantCloudIdentity(
-  assistantId?: string,
-  options: BootstrapLocalAssistantCloudIdentityOptions = {},
-): void {
-  if (!isLocalClient()) {
-    return;
-  }
-
-  let targetAssistantId = assistantId;
-  if (!targetAssistantId) {
-    const assistant = getActiveAssistant();
-    if (!assistant || !isLocalAssistant(assistant)) {
-      return;
-    }
-    targetAssistantId = assistant.assistantId;
-  }
-
-  // One retrying bootstrap per assistant — a second trigger while a loop is
-  // waiting out a backoff delay would race the same registration and
-  // secret-injection flow.
-  if (activeBootstraps.has(targetAssistantId)) {
-    return;
-  }
-  activeBootstraps.add(targetAssistantId);
-  const target = targetAssistantId;
-
-  void (async () => {
-    try {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          await resolveLocalAssistantCloudIdentity(target, {
-            allowGatewayRepair: options.allowGatewayRepair ?? false,
-          });
-          return;
-        } catch (error) {
-          const delayMs = bootstrapRetryDelaysMs[attempt];
-          if (delayMs === undefined) {
-            (
-              options.onError ??
-              ((e: unknown) => {
-                console.warn("local assistant cloud bootstrap failed", e);
-              })
-            )(error);
-            return;
-          }
-          console.warn(
-            `local assistant cloud bootstrap attempt ${attempt + 1} failed, retrying in ${delayMs}ms`,
-            error,
-          );
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-    } finally {
-      activeBootstraps.delete(target);
-    }
-  })();
-}
-
-/**
  * The lockfile entry for `assistantId` when it is the active or selected
- * assistant and `eligible` accepts it, else null. Bootstrap passes
- * `isLocalAssistant`, the assistants the web lifecycle owns; a repair passes
- * `isLocalGatewayAssistant`, every assistant whose gateway this client can
- * write a credential to.
+ * assistant and `eligible` accepts it, else null. The routine resolution
+ * passes `isLocalAssistant`, the assistants the web lifecycle owns; a
+ * credential-rotating one passes every loopback-gateway assistant.
  */
 function resolveLocalAssistant(
   assistantId: string,

@@ -59,10 +59,10 @@ import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
-import { resolveCliInvocation } from "./local-mode.client";
-import { installLocalMode } from "@mycadet/electron-desktop/local-mode";
+import { resolveCliInvocation } from "@mycadet/local-mode";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
 import { installLockfileWatcher } from "@mycadet/electron-desktop/lockfile-watcher";
+import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "./logger";
 import {
@@ -222,182 +222,176 @@ installFileOpen();
 // App lifecycle
 // ---------------------------------------------------------------------------
 
-app
-  .whenReady()
-  .then(async () => {
-    // The instance that lost the single-instance lock is already quitting.
-    // `app.quit()` requests a shutdown rather than halting the module, and a
-    // `ready` that is already queued still fires, so the losing instance gates
-    // its own setup here. Electron's documented single-instance example puts
-    // every `whenReady` side effect behind this same branch.
-    // https://www.electronjs.org/docs/latest/api/app#apprequestsingleinstancelockadditionaldata
-    if (!gotSingleInstanceLock) {
-      return;
-    }
+startApp(log, async () => {
+  // The instance that lost the single-instance lock is already quitting.
+  // `app.quit()` requests a shutdown rather than halting the module, and a
+  // `ready` that is already queued still fires, so the losing instance gates
+  // its own setup here. Electron's documented single-instance example puts
+  // every `whenReady` side effect behind this same branch.
+  // https://www.electronjs.org/docs/latest/api/app#apprequestsingleinstancelockadditionaldata
+  if (!gotSingleInstanceLock) {
+    return;
+  }
 
-    configurePresenceRuntime({ ipc: { handle, on }, logger: log });
+  configurePresenceRuntime({ ipc: { handle, on }, logger: log });
 
-    // Install into /Applications before any other setup. On the first packaged
-    // launch from a mounted DMG (or ~/Downloads), the app silently moves itself
-    // there and relaunches — the "double-click to install" half of the DMG flow.
-    // Skip it when a file or deep link triggered the launch: those events are
-    // buffered in-process and would be lost during the relaunch.
-    if (hasPendingFiles() || hasPendingDeepLinks()) {
-      markRelocationSkipped();
-    } else if (await relocateToApplicationsFolder()) {
-      return;
-    }
+  // Install into /Applications before any other setup. On the first packaged
+  // launch from a mounted DMG (or ~/Downloads), the app silently moves itself
+  // there and relaunches — the "double-click to install" half of the DMG flow.
+  // Skip it when a file or deep link triggered the launch: those events are
+  // buffered in-process and would be lost during the relaunch.
+  if (hasPendingFiles() || hasPendingDeepLinks()) {
+    markRelocationSkipped();
+  } else if (await relocateToApplicationsFolder()) {
+    return;
+  }
 
-    // Dev packs the renderer dists (see `bun run dev`) and serves them
-    // through the same `app://mycadet.ai` origin as packaged builds, so
-    // the handler and the gateway guard are unconditional.
-    registerAppProtocol();
-    installGatewayRequestGuard({
-      appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-      resolveAllowedOrigin,
-    });
-    registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
-    installMacBundleWorkflow();
-    onFileOpen(handleBundleFile);
-    installPermissionHandler(resolveAllowedOrigin);
-    installCsp();
-    installHotkeysIpc();
-    installDiagnosticsIpc();
-    installLocalMode();
-    // Refresh the PATH-wrapper locator every launch so app moves and
-    // version bumps self-heal even if no CLI invocation happens this session.
-    if (app.isPackaged) {
-      writeCliLocator();
-      // Wrapper users also get the pinned CLI provisioned eagerly so a
-      // version bump rewrites the locator now (and prunes old versions)
-      // rather than after the next in-app CLI action.
-      void provisionCliForWrapper()
-        .then((provisioned) =>
-          provisioned ? refreshCliPathMenuState() : undefined,
-        )
-        .catch((err: unknown) => {
-          log.error("[app] startup CLI provisioning failed:", err);
-        });
-    }
-    installLoginItem();
-    installLoginItemIpc();
-    installHotkeyHelper();
-    installCompanionPermissionGuide(installPermissionsService());
-    // Register the identity (assistant name) channel before About, the Tray,
-    // and the main window install so their initial render reflects any name
-    // the renderer publishes during bootstrap.
-    installIdentityIpc();
-    installAbout();
-    installAutoUpdate();
-    installFeedbackIpc();
-    installTextInsertionIpc();
-    installCommandPaletteWindow();
-    installApplicationMenu();
-    // The menu's Log In/Log Out toggle is main's fact: derived from the same
-    // token store the OAuth flow and sign-out write.
-    setHasCloudSession(!!getSessionToken());
-    onSessionTokenChange(() => {
-      setHasCloudSession(!!getSessionToken());
-    });
-    installQuickInput();
-    installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
-    installCompanionWindow();
-    installPopoutWindows();
-    installGlobalShortcuts();
-    // Register the avatar channel before the Dock and Tray install so their
-    // initial render reflects any avatar the renderer publishes during
-    // bootstrap rather than briefly showing the bundled fallback mark.
-    installAvatarIpc();
-    installDock();
-    installShare();
-    // Files renderer downloads into ~/Downloads instead of prompting a Save
-    // panel. Distinct from `installShare`, which is the "send elsewhere" intent.
-    installDownloads({ handle });
-    installPowerEvents();
-    // The addon takes the notifications the assistant avatar can ride on only
-    // when it says it can have them: an unbundled run loads it fine and then
-    // reports unsupported, because UNUserNotificationCenter raises there.
-    // `isSupported` ships with `create` rather than being left to the shared
-    // module's default; see the delegate rule in README.md.
-    const nativeNotifications = isNotifierSupported()
-      ? createNativeNotificationFactory()
-      : null;
-    configureNotifications({
-      ipc: { handle },
-      ensureVisible: ensureMainWindowVisible,
-      logger: log,
-      ...(nativeNotifications ?? {}),
-    });
-    if (nativeNotifications) {
-      // Electron builds its notification presenter lazily, on the first
-      // `Notification.isSupported()` or `new Notification()`, and the presenter
-      // claims the notification center's delegate and discards responses for
-      // identifiers it does not own. Building it here, with nothing on screen,
-      // and re-asserting the addon's delegate straight after leaves the addon
-      // in front of it for the life of the process, forwarding what it does not
-      // own. The categories are then written after the presenter exists, so
-      // Electron's own category read-modify-write cannot land on top of them.
-      Notification.isSupported();
-      ensureNotifierDelegate();
-      registerNativeNotificationCategories();
-      app.on("before-quit", restoreNotifierDelegate);
-    }
-    installNotifications();
-    installWindowAttentionFeature();
-    // Register the status channel before the tray installs so the tray's
-    // initial render reflects any status the renderer publishes during
-    // bootstrap rather than briefly showing the default idle dot.
-    installStatusIpc();
-    installEscapeMonitor();
-    const runProbe = installConnectivityProbe();
-    installConnectivityIpc(runProbe);
-    // Start watching the lockfile before the tray installs so the assistant
-    // switcher submenu has data on its first right-click.
-    const teardownLockfileWatcher = installLockfileWatcher();
-    app.on("before-quit", teardownLockfileWatcher);
-    const teardownHostProxy = installHostProxyBridge();
-    app.on("before-quit", teardownHostProxy);
-    installTray({
-      toggleMainWindow: toggleMainWindowVisibility,
-      ensureMainWindow: ensureMainWindowVisible,
-      openAbout: openAboutWindow,
-    });
-    installNativeAuth();
-    installMainWindow();
-
-    // After the main window, so the surface opens over a running app rather
-    // than being the first thing on screen at launch. Open from here on,
-    // unless the user has hidden it from the tray, and on screen whenever the
-    // app itself is not in front: it stands in for the app while the user is
-    // working somewhere else, and steps off while Cadet is the frontmost app
-    // with its window showing.
-    //
-    // A launch that has nobody signed in yet leaves it closed, and the window
-    // that opens it later is the app's own, once it has an assistant to
-    // publish.
-    syncCompanionSurface();
-
-    // Runs after the main window so the recovery dialog has a window to sit in
-    // front of, and so a user who declines lands on a working app rather than
-    // an empty screen. A packaged app outside /Applications cannot update, and
-    // the relocation at the head of this block is the only thing that would
-    // have fixed it.
-    void promptToRelocateIfStranded().catch((err: unknown) => {
-      log.error("[app] relocation prompt failed:", err);
-    });
-
-    // Dock-icon click / Cmd-Tab re-activation: bring the main window
-    // back to front, recreating it if it was previously closed. The
-    // primitive handles both the destroyed-window and the
-    // visible-but-not-focused cases, so we don't need to branch here
-    // on auxiliary window counts the way the old check did.
-    app.on("activate", () => {
-      ensureMainWindowVisible();
-    });
-  })
-  .catch((err: unknown) => {
-    log.error("[app] whenReady setup failed:", err);
+  // Dev packs the renderer dists (see `bun run dev`) and serves them
+  // through the same `app://mycadet.ai` origin as packaged builds, so
+  // the handler and the gateway guard are unconditional.
+  registerAppProtocol();
+  installGatewayRequestGuard({
+    appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
+    resolveAllowedOrigin,
   });
+  registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
+  installMacBundleWorkflow();
+  onFileOpen(handleBundleFile);
+  installPermissionHandler(resolveAllowedOrigin);
+  installCsp();
+  installHotkeysIpc();
+  installDiagnosticsIpc();
+  // Refresh the PATH-wrapper locator every launch so app moves and
+  // version bumps self-heal even if no CLI invocation happens this session.
+  if (app.isPackaged) {
+    writeCliLocator();
+    // Wrapper users also get the pinned CLI provisioned eagerly so a
+    // version bump rewrites the locator now (and prunes old versions)
+    // rather than after the next in-app CLI action.
+    void provisionCliForWrapper()
+      .then((provisioned) =>
+        provisioned ? refreshCliPathMenuState() : undefined,
+      )
+      .catch((err: unknown) => {
+        log.error("[app] startup CLI provisioning failed:", err);
+      });
+  }
+  installLoginItem();
+  installLoginItemIpc();
+  installHotkeyHelper();
+  installCompanionPermissionGuide(installPermissionsService());
+  // Register the identity (assistant name) channel before About, the Tray,
+  // and the main window install so their initial render reflects any name
+  // the renderer publishes during bootstrap.
+  installIdentityIpc();
+  installAbout();
+  installAutoUpdate();
+  installFeedbackIpc();
+  installTextInsertionIpc();
+  installCommandPaletteWindow();
+  installApplicationMenu();
+  // The menu's Log In/Log Out toggle is main's fact: derived from the same
+  // token store the OAuth flow and sign-out write.
+  setHasCloudSession(!!getSessionToken());
+  onSessionTokenChange(() => {
+    setHasCloudSession(!!getSessionToken());
+  });
+  installQuickInput();
+  installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
+  installCompanionWindow();
+  installPopoutWindows();
+  installGlobalShortcuts();
+  // Register the avatar channel before the Dock and Tray install so their
+  // initial render reflects any avatar the renderer publishes during
+  // bootstrap rather than briefly showing the bundled fallback mark.
+  installAvatarIpc();
+  installDock();
+  installShare();
+  // Files renderer downloads into ~/Downloads instead of prompting a Save
+  // panel. Distinct from `installShare`, which is the "send elsewhere" intent.
+  installDownloads({ handle });
+  installPowerEvents();
+  // The addon takes the notifications the assistant avatar can ride on only
+  // when it says it can have them: an unbundled run loads it fine and then
+  // reports unsupported, because UNUserNotificationCenter raises there.
+  // `isSupported` ships with `create` rather than being left to the shared
+  // module's default; see the delegate rule in README.md.
+  const nativeNotifications = isNotifierSupported()
+    ? createNativeNotificationFactory()
+    : null;
+  configureNotifications({
+    ipc: { handle },
+    ensureVisible: ensureMainWindowVisible,
+    logger: log,
+    ...(nativeNotifications ?? {}),
+  });
+  if (nativeNotifications) {
+    // Electron builds its notification presenter lazily, on the first
+    // `Notification.isSupported()` or `new Notification()`, and the presenter
+    // claims the notification center's delegate and discards responses for
+    // identifiers it does not own. Building it here, with nothing on screen,
+    // and re-asserting the addon's delegate straight after leaves the addon
+    // in front of it for the life of the process, forwarding what it does not
+    // own. The categories are then written after the presenter exists, so
+    // Electron's own category read-modify-write cannot land on top of them.
+    Notification.isSupported();
+    ensureNotifierDelegate();
+    registerNativeNotificationCategories();
+    app.on("before-quit", restoreNotifierDelegate);
+  }
+  installNotifications();
+  installWindowAttentionFeature();
+  // Register the status channel before the tray installs so the tray's
+  // initial render reflects any status the renderer publishes during
+  // bootstrap rather than briefly showing the default idle dot.
+  installStatusIpc();
+  installEscapeMonitor();
+  const runProbe = installConnectivityProbe();
+  installConnectivityIpc(runProbe);
+  // Start watching the lockfile before the tray installs so the assistant
+  // switcher submenu has data on its first right-click.
+  const teardownLockfileWatcher = installLockfileWatcher();
+  app.on("before-quit", teardownLockfileWatcher);
+  const teardownHostProxy = installHostProxyBridge();
+  app.on("before-quit", teardownHostProxy);
+  installTray({
+    toggleMainWindow: toggleMainWindowVisibility,
+    ensureMainWindow: ensureMainWindowVisible,
+    openAbout: openAboutWindow,
+  });
+  installNativeAuth();
+  installMainWindow();
+
+  // After the main window, so the surface opens over a running app rather
+  // than being the first thing on screen at launch. Open from here on,
+  // unless the user has hidden it from the tray, and on screen whenever the
+  // app itself is not in front: it stands in for the app while the user is
+  // working somewhere else, and steps off while Cadet is the frontmost app
+  // with its window showing.
+  //
+  // A launch that has nobody signed in yet leaves it closed, and the window
+  // that opens it later is the app's own, once it has an assistant to
+  // publish.
+  syncCompanionSurface();
+
+  // Runs after the main window so the recovery dialog has a window to sit in
+  // front of, and so a user who declines lands on a working app rather than
+  // an empty screen. A packaged app outside /Applications cannot update, and
+  // the relocation at the head of this block is the only thing that would
+  // have fixed it.
+  void promptToRelocateIfStranded().catch((err: unknown) => {
+    log.error("[app] relocation prompt failed:", err);
+  });
+
+  // Dock-icon click / Cmd-Tab re-activation: bring the main window
+  // back to front, recreating it if it was previously closed. The
+  // primitive handles both the destroyed-window and the
+  // visible-but-not-focused cases, so we don't need to branch here
+  // on auxiliary window counts the way the old check did.
+  app.on("activate", () => {
+    ensureMainWindowVisible();
+  });
+});
 
 app.on("second-instance", (_event, argv) => {
   // Behavior change vs prior code path: previously a second-instance

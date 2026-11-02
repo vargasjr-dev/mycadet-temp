@@ -165,7 +165,7 @@ export function machineSetKey(
       note: "Already stored — no change.",
     };
   }
-  const [section, memoryKey] = keyPath.split(".") as ["memory", "max" | "high"];
+  const [, memoryKey] = keyPath.split(".") as ["memory", "max" | "high"];
   const memory = { ...entry.machine?.memory, [memoryKey]: bytes };
   const result = writeMachinePolicy(entry, { ...entry.machine, memory });
   if (result.ok) return { ...result, value: bytes };

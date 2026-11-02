@@ -1,8 +1,8 @@
 /**
- * The local lockfile arm: the shell's lockfile read over the
- * `window.cadet.localMode.readLockfile` bridge, published as a store so the
- * chooser's lockfile cards (entries imported through the connect flow and
- * the machine's own local assistants) render from one loaded snapshot.
+ * The local lockfile arm: the serving host's lockfile read over the
+ * `/v1/assistants/` operator route, published as a store so the chooser's
+ * lockfile cards (entries imported through the connect flow and the
+ * machine's own local assistants) render from one loaded snapshot.
  *
  * Connect's import writes the entry host-side in the same call that settles
  * the poll, so there is no second source of truth to reconcile — the store
@@ -12,9 +12,9 @@
  * the same degradation web's lockfile store chooses.
  *
  * Port of web's lockfile arm of the resolved-assistants store, scoped to the
- * app bundle's one transport (the Electron bridge). Native shells have no
- * bridge — `loaded` flips true with a null lockfile and the arm renders
- * nothing.
+ * app bundle's one transport (the shell's operator routes). Non-Electron
+ * shells report the host unavailable — `loaded` flips true with a null
+ * lockfile and the arm renders nothing.
  *
  * Leaf module: must not import from chooser/screen modules.
  */

@@ -17,7 +17,6 @@ import { connect } from "./commands/connect";
 import { devices } from "./commands/devices";
 import { events } from "./commands/events";
 import { exec } from "./commands/exec";
-import { gateway } from "./commands/gateway";
 import { hatch } from "./commands/hatch";
 import { login, logout, whoami } from "./commands/login";
 import { logs } from "./commands/logs";
@@ -56,7 +55,6 @@ const commands = {
   devices,
   events,
   exec,
-  gateway,
   hatch,
   login,
   logs,

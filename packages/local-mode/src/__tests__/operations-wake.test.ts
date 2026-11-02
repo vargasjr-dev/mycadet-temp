@@ -264,7 +264,10 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       "POST",
     );
     expect(match).not.toBeNull();
-    const response = await match!.route.run(match!.assistantId);
+    const response = await match!.route.run(
+      match!.assistantId,
+      new Request("http://local/"),
+    );
     expect(response).not.toBeNull();
     expect(response!.status).toBe(204);
   });
@@ -273,7 +276,10 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     seedEntry({ assistantId: "asst-local", cloud: "local", port: 7830 });
     const match = matchOperatorRequest("/v1/assistants/nobody/wake/", "POST");
     expect(match).not.toBeNull();
-    const response = await match!.route.run(match!.assistantId);
+    const response = await match!.route.run(
+      match!.assistantId,
+      new Request("http://local/"),
+    );
     expect(response).toBeNull();
   });
 
@@ -288,7 +294,10 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       "/v1/assistants/asst-local/wake/",
       "POST",
     );
-    const response = (await match!.route.run(match!.assistantId))!;
+    const response = (await match!.route.run(
+      match!.assistantId,
+      new Request("http://local/"),
+    ))!;
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ detail: "wake blew up" });
   });

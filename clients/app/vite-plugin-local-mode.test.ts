@@ -4,6 +4,7 @@
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { EventEmitter, once } from "node:events";
+import { Readable } from "node:stream";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import fs from "node:fs";
@@ -28,11 +29,11 @@ import {
 // stays real so the other middlewares under test keep their behavior.
 let devicesListResult: DevicesListResult = { ok: true, devices: [] };
 let devicesRevokeResult: DevicesRevokeResult = { ok: true };
-const runDevicesListMock = mock((_invocation: unknown, _assistantId: string) =>
+const runDevicesListMock = mock((_assistantId: string) =>
   Promise.resolve(devicesListResult),
 );
 const runDevicesRevokeMock = mock(
-  (_invocation: unknown, _assistantId: string, _hashedDeviceId: string) =>
+  (_assistantId: string, _hashedDeviceId: string) =>
     Promise.resolve(devicesRevokeResult),
 );
 
@@ -92,7 +93,9 @@ function dispatch(
 ): Promise<DispatchResult> {
   const { method = "GET", body, remoteAddress = "127.0.0.1" } = options;
   return new Promise((resolve, reject) => {
-    const emitter = new EventEmitter();
+    // A real Readable: the operator middleware bridges the request body into
+    // its route Request lazily (Readable.toWeb), so the fake must be one.
+    const emitter = new Readable({ read() {} });
     const req = Object.assign(emitter, {
       url,
       method,
@@ -140,13 +143,13 @@ function dispatch(
     };
     next();
     if (method === "POST") {
-      // Body listeners are registered synchronously by the matched middleware;
-      // feed the stream on the next tick.
+      // The route rows (and the gateway proxy) pull the body off the stream;
+      // feed it on the next tick so listeners register first.
       setImmediate(() => {
         if (body !== undefined) {
-          emitter.emit("data", Buffer.from(JSON.stringify(body)));
+          emitter.push(Buffer.from(JSON.stringify(body)));
         }
-        emitter.emit("end");
+        emitter.push(null);
       });
     }
   });
@@ -287,7 +290,7 @@ describe("paired gateway proxy", () => {
   });
 });
 
-describe("devices middleware", () => {
+describe("devices routes (operator rows)", () => {
   beforeEach(() => {
     devicesListResult = { ok: true, devices: [] };
     devicesRevokeResult = { ok: true };
@@ -319,10 +322,10 @@ describe("devices middleware", () => {
       expect(runDevicesListMock).not.toHaveBeenCalled();
     });
 
-    test("rejects non-POST methods", async () => {
+    test("a non-POST method matches no operator row and falls through", async () => {
       const result = await dispatch("/v1/devices");
 
-      expect(result.status).toBe(405);
+      expect(result.status).toBe(404);
       expect(runDevicesListMock).not.toHaveBeenCalled();
     });
 
@@ -396,10 +399,10 @@ describe("devices middleware", () => {
       expect(runDevicesRevokeMock).not.toHaveBeenCalled();
     });
 
-    test("rejects non-POST methods", async () => {
+    test("a non-POST method matches no operator row and falls through", async () => {
       const result = await dispatch("/v1/devices/revoke");
 
-      expect(result.status).toBe(405);
+      expect(result.status).toBe(404);
       expect(runDevicesRevokeMock).not.toHaveBeenCalled();
     });
 

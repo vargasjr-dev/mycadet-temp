@@ -1,6 +1,5 @@
 import {
   afterAll,
-  afterEach,
   beforeEach,
   describe,
   expect,
@@ -13,8 +12,7 @@ import fs from "node:fs";
 import type { Lockfile } from "@mycadet/local-mode/contract";
 
 const CANONICAL_PATH = "/tmp/test-lockfile.json";
-const LEGACY_PATH = "/tmp/test-lockfile-legacy.json";
-let mockPaths = [CANONICAL_PATH];
+let mockLockfilePath = CANONICAL_PATH;
 
 const realLocalMode = await import("@mycadet/local-mode");
 
@@ -25,10 +23,11 @@ mock.module("@mycadet/local-mode/contract", () => ({
   parseLockfile,
 }));
 
-// The watcher resolves candidates through @mycadet/local-mode's ambient
-// resolver; point it at the test's temp paths through the module mock.
+// The watcher resolves the single canonical path through @mycadet/local-mode's
+// ambient resolver; point it at the test's temp path through the module mock.
 mock.module("@mycadet/local-mode", () => ({
-  resolveLockfilePaths: () => mockPaths,
+  ...realLocalMode,
+  resolveLockfilePath: () => mockLockfilePath,
 }));
 
 // Restore the real module once this file finishes so the stub does not leak
@@ -37,12 +36,8 @@ afterAll(() => {
   mock.module("@mycadet/local-mode", () => realLocalMode);
 });
 
-const {
-  installLockfileWatcher,
-  getWatchedLockfile,
-  onLockfileChange,
-  __resetForTesting,
-} = await import("./lockfile-watcher");
+const { installLockfileWatcher, onLockfileChange, __resetForTesting } =
+  await import("./lockfile-watcher");
 
 const SAMPLE_LOCKFILE: Lockfile = {
   assistants: [
@@ -57,381 +52,136 @@ const writeLockfile = (data: Lockfile, path = CANONICAL_PATH): void => {
 };
 
 const removeLockfile = (): void => {
-  for (const p of [CANONICAL_PATH, LEGACY_PATH]) {
-    try {
-      fs.unlinkSync(p);
-    } catch {
-      // already gone
-    }
-  }
+  fs.rmSync(CANONICAL_PATH, { force: true });
 };
 
+const POLL_WINDOW_MS = 750;
+
+const waitForPoll = (): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, POLL_WINDOW_MS));
+
 beforeEach(() => {
+  mockLockfilePath = CANONICAL_PATH;
   __resetForTesting();
-  mockPaths = [CANONICAL_PATH];
   removeLockfile();
 });
 
-afterEach(() => {
-  __resetForTesting();
-  mockPaths = [CANONICAL_PATH];
-  removeLockfile();
-});
+describe("lockfile watcher", () => {
+  test("does not fire listeners at install", () => {
+    // The initial read only primes the mtime baseline so the first poll
+    // doesn't report a spurious change; listeners fire on CHANGES.
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
 
-describe("lockfile-watcher", () => {
-  describe("installLockfileWatcher", () => {
-    test("reads the lockfile synchronously on install and caches the parsed result", () => {
-      /**
-       * Tests that the watcher reads and parses the lockfile immediately at
-       * install time so downstream consumers (tray menu) have data on frame one.
-       */
+    const received: Lockfile[] = [];
+    onLockfileChange((lockfile) => received.push(lockfile));
 
-      // GIVEN a lockfile exists on disk
-      writeLockfile(SAMPLE_LOCKFILE);
+    expect(received).toHaveLength(0);
 
-      // WHEN the watcher is installed
-      const teardown = installLockfileWatcher();
-
-      // THEN the cached lockfile reflects the on-disk content
-      const cached = getWatchedLockfile();
-      expect(cached.assistants).toHaveLength(2);
-      expect(cached.assistants[0]?.name).toBe("Alpha");
-      expect(cached.activeAssistant).toBe("ast-1");
-
-      teardown();
-    });
-
-    test("returns an empty lockfile when the file does not exist", () => {
-      /**
-       * Tests graceful handling when no lockfile exists (first launch before
-       * the CLI creates it).
-       */
-
-      // GIVEN no lockfile on disk
-
-      // WHEN the watcher is installed
-      const teardown = installLockfileWatcher();
-
-      // THEN the cached lockfile is empty
-      const cached = getWatchedLockfile();
-      expect(cached.assistants).toHaveLength(0);
-      expect(cached.activeAssistant).toBeNull();
-
-      teardown();
-    });
-
-    test("retries an initial read after temporary access denial", async () => {
-      writeLockfile(SAMPLE_LOCKFILE);
-      const readSpy = spyOn(fs, "readFileSync").mockImplementationOnce(() => {
-        throw Object.assign(new Error("access denied"), { code: "EACCES" });
-      });
-
-      const teardown = installLockfileWatcher();
-      expect(getWatchedLockfile().assistants).toHaveLength(0);
-
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      expect(getWatchedLockfile()).toEqual(SAMPLE_LOCKFILE);
-      readSpy.mockRestore();
-      teardown();
-    });
-
-    test("teardown clears timers and listeners", () => {
-      /**
-       * Tests that calling the teardown function stops polling and removes
-       * all registered listeners.
-       */
-
-      // GIVEN the watcher is installed with a listener
-      writeLockfile(SAMPLE_LOCKFILE);
-      const teardown = installLockfileWatcher();
-      const listener = mock(() => undefined);
-      onLockfileChange(listener);
-
-      // WHEN teardown is called
-      teardown();
-
-      // THEN subsequent file changes don't fire the listener (we can't
-      // easily test the interval stopped, but we verify listeners are cleared)
-      expect(listener).not.toHaveBeenCalled();
-    });
+    teardown();
   });
 
-  describe("onLockfileChange", () => {
-    test("notifies listeners when mtime changes after debounce", async () => {
-      /**
-       * Tests that writing a new lockfile triggers the change listener
-       * after the poll interval + debounce window.
-       */
+  test("notifies listeners when the lockfile changes after the poll + debounce window", async () => {
+    // GIVEN the watcher is installed on a written lockfile
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
 
-      // GIVEN the watcher is installed with an initial lockfile
-      writeLockfile(SAMPLE_LOCKFILE);
-      const teardown = installLockfileWatcher();
+    const received: Lockfile[] = [];
+    onLockfileChange((lockfile) => received.push(lockfile));
 
-      const received: Lockfile[] = [];
-      onLockfileChange((lockfile) => {
-        received.push(lockfile);
-      });
+    // WHEN the lockfile is updated with a forced mtime bump (so the
+    // filesystem registers a different mtime than the initial read).
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const updated: Lockfile = {
+      assistants: [
+        { assistantId: "ast-3", name: "Gamma", cloud: "local", port: 7830 },
+      ],
+      activeAssistant: "ast-3",
+    };
+    writeLockfile(updated);
+    const now = new Date();
+    fs.utimesSync(CANONICAL_PATH, now, new Date(now.getTime() + 1000));
 
-      // WHEN the lockfile is updated with a forced mtime bump (ensure the
-      // filesystem registers a different mtime than the initial read).
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      const updated: Lockfile = {
-        assistants: [
-          { assistantId: "ast-3", name: "Gamma", cloud: "local", port: 7830 },
-        ],
-        activeAssistant: "ast-3",
-      };
-      writeLockfile(updated);
-      const now = new Date();
-      fs.utimesSync(CANONICAL_PATH, now, new Date(now.getTime() + 1000));
+    // THEN after poll + debounce the listener carries the new content
+    await waitForPoll();
 
-      // THEN after waiting for poll + debounce (500ms + 100ms + buffer)
-      await new Promise((resolve) => setTimeout(resolve, 750));
+    expect(received).toHaveLength(1);
+    expect(received[0]?.assistants[0]?.name).toBe("Gamma");
+    expect(received[0]?.activeAssistant).toBe("ast-3");
 
-      expect(received).toHaveLength(1);
-      expect(received[0]?.assistants[0]?.name).toBe("Gamma");
-      expect(received[0]?.activeAssistant).toBe("ast-3");
-
-      // AND the cached lockfile is also updated
-      expect(getWatchedLockfile().activeAssistant).toBe("ast-3");
-
-      teardown();
-    });
-
-    test("unsubscribe removes the listener", async () => {
-      /**
-       * Tests that calling the unsubscribe function prevents future
-       * notifications to that listener.
-       */
-
-      // GIVEN the watcher is installed with a listener
-      writeLockfile(SAMPLE_LOCKFILE);
-      const teardown = installLockfileWatcher();
-
-      const listener = mock((_lockfile: Lockfile) => undefined);
-      const unsub = onLockfileChange(listener);
-
-      // WHEN the listener is unsubscribed before a change
-      unsub();
-
-      // AND the lockfile is updated
-      writeLockfile({
-        assistants: [],
-        activeAssistant: null,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      // THEN the listener was never called
-      expect(listener).not.toHaveBeenCalled();
-
-      teardown();
-    });
+    teardown();
   });
 
-  describe("getWatchedLockfile", () => {
-    test("returns the empty lockfile before install", () => {
-      /**
-       * Tests that getWatchedLockfile is safe to call even before the watcher
-       * is installed — returns the default empty lockfile.
-       */
+  test("a removed lockfile notifies the empty lockfile", async () => {
+    // The CLI wiping the lockfile is a real state change: listeners hear
+    // "empty" so the tray renders no assistants.
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
 
-      // GIVEN the watcher has not been installed
+    const received: Lockfile[] = [];
+    onLockfileChange((lockfile) => received.push(lockfile));
 
-      // WHEN we read the cached lockfile
-      const cached = getWatchedLockfile();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    removeLockfile();
+    await waitForPoll();
 
-      // THEN it's the empty default
-      expect(cached.assistants).toHaveLength(0);
-      expect(cached.activeAssistant).toBeNull();
-    });
+    expect(received).toHaveLength(1);
+    expect(received[0]?.assistants).toHaveLength(0);
+    expect(received[0]?.activeAssistant).toBeNull();
+
+    teardown();
   });
 
-  describe("legacy path migration", () => {
-    test("seeds cache from legacy path when canonical does not exist", () => {
-      /**
-       * Tests that installs with only the legacy lockfile still populate
-       * the cache on startup, even though polling targets the canonical path.
-       */
+  test("unsubscribe removes the listener", async () => {
+    // GIVEN the watcher is installed with a listener
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
 
-      // GIVEN two candidates where only the legacy path has data
-      mockPaths = [CANONICAL_PATH, LEGACY_PATH];
-      writeLockfile(SAMPLE_LOCKFILE, LEGACY_PATH);
+    const listener = mock((_lockfile: Lockfile) => undefined);
+    const unsub = onLockfileChange(listener);
 
-      // WHEN the watcher is installed
-      const teardown = installLockfileWatcher();
+    // WHEN the listener is unsubscribed before a change
+    unsub();
 
-      // THEN the cache is seeded from the legacy file
-      const cached = getWatchedLockfile();
-      expect(cached.assistants).toHaveLength(2);
-      expect(cached.activeAssistant).toBe("ast-1");
+    // AND the lockfile is updated
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    removeLockfile();
+    await waitForPoll();
 
-      teardown();
+    // THEN the listener was never called
+    expect(listener).not.toHaveBeenCalled();
+
+    teardown();
+  });
+
+  test("teardown clears timers and listeners", () => {
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
+    const listener = mock(() => undefined);
+    onLockfileChange(listener);
+
+    teardown();
+
+    // Subsequent file changes don't fire the cleared listener.
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  test("an unreadable lockfile produces no notification and no crash", async () => {
+    // EACCES/EPERM on the stat or read is ridden out: the next poll retries.
+    writeLockfile(SAMPLE_LOCKFILE);
+    const teardown = installLockfileWatcher();
+
+    const received: Lockfile[] = [];
+    onLockfileChange((lockfile) => received.push(lockfile));
+
+    const statSpy = spyOn(fs, "statSync").mockImplementation(() => {
+      throw Object.assign(new Error("access denied"), { code: "EACCES" });
     });
+    await waitForPoll();
+    statSpy.mockRestore();
 
-    test("detects writes to canonical path after initial legacy-only seed", async () => {
-      /**
-       * Tests that after seeding from legacy, the watcher picks up new
-       * writes to the canonical path (where all write helpers target).
-       */
+    expect(received).toHaveLength(0);
 
-      // GIVEN two candidates where only the legacy path has data initially
-      mockPaths = [CANONICAL_PATH, LEGACY_PATH];
-      writeLockfile(SAMPLE_LOCKFILE, LEGACY_PATH);
-      const teardown = installLockfileWatcher();
-
-      const received: Lockfile[] = [];
-      onLockfileChange((lockfile) => {
-        received.push(lockfile);
-      });
-
-      // WHEN a write creates the canonical file (simulating a CLI write)
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      const updated: Lockfile = {
-        assistants: [
-          {
-            assistantId: "ast-new",
-            name: "NewAssistant",
-            cloud: "local",
-            port: 7830,
-          },
-        ],
-        activeAssistant: "ast-new",
-      };
-      writeLockfile(updated, CANONICAL_PATH);
-
-      // THEN after poll + debounce the change is detected
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      expect(received).toHaveLength(1);
-      expect(received[0]?.assistants[0]?.name).toBe("NewAssistant");
-      expect(getWatchedLockfile().activeAssistant).toBe("ast-new");
-
-      teardown();
-    });
-
-    test("keeps serving the legacy lockfile across polls when the canonical file never appears", async () => {
-      /**
-       * Tests the legacy-only install regression: the first poll finds the
-       * canonical file missing and must fall back to the legacy candidate
-       * instead of clearing the seeded cache to empty.
-       */
-
-      // GIVEN a legacy-only install
-      mockPaths = [CANONICAL_PATH, LEGACY_PATH];
-      writeLockfile(SAMPLE_LOCKFILE, LEGACY_PATH);
-      const teardown = installLockfileWatcher();
-
-      // WHEN several poll intervals elapse with no canonical file
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // THEN the cache still serves the legacy data
-      const cached = getWatchedLockfile();
-      expect(cached.assistants).toHaveLength(2);
-      expect(cached.activeAssistant).toBe("ast-1");
-
-      teardown();
-    });
-
-    test("does not clear a previously-good cache when the canonical file goes transiently missing", async () => {
-      /**
-       * Tests that a transient canonical-file gap falls back to a readable
-       * candidate instead of clearing the cache to empty. Identical content
-       * in the fallback also produces no spurious change notification.
-       */
-
-      // GIVEN canonical and legacy files with the same content
-      mockPaths = [CANONICAL_PATH, LEGACY_PATH];
-      writeLockfile(SAMPLE_LOCKFILE, CANONICAL_PATH);
-      writeLockfile(SAMPLE_LOCKFILE, LEGACY_PATH);
-      const teardown = installLockfileWatcher();
-
-      const listener = mock((_lockfile: Lockfile) => undefined);
-      onLockfileChange(listener);
-
-      // WHEN the canonical file disappears while the legacy file remains
-      fs.unlinkSync(CANONICAL_PATH);
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      // THEN the cache still holds the data and no notification fired
-      expect(getWatchedLockfile().assistants).toHaveLength(2);
-      expect(listener).not.toHaveBeenCalled();
-
-      teardown();
-    });
-
-    test("keeps the last good snapshot during temporary access denial", async () => {
-      writeLockfile(SAMPLE_LOCKFILE);
-      const teardown = installLockfileWatcher();
-      const listener = mock((_lockfile: Lockfile) => undefined);
-      onLockfileChange(listener);
-
-      const readSpy = spyOn(fs, "readFileSync").mockImplementationOnce(() => {
-        throw Object.assign(new Error("access denied"), { code: "EACCES" });
-      });
-      const now = new Date();
-      fs.utimesSync(CANONICAL_PATH, now, new Date(now.getTime() + 1000));
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      expect(getWatchedLockfile()).toEqual(SAMPLE_LOCKFILE);
-      expect(listener).not.toHaveBeenCalled();
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      expect(listener).toHaveBeenCalledTimes(1);
-
-      readSpy.mockRestore();
-      teardown();
-    });
-
-    test("post-unpair canonical file is authoritative over a stale legacy fallback", async () => {
-      /**
-       * Tests unpair safety: a readable canonical file with the entry removed
-       * wins over a legacy file that still lists it, so a stale fallback can
-       * never resurrect an unpaired assistant.
-       */
-
-      // GIVEN a canonical file and a stale legacy file that still has entries
-      mockPaths = [CANONICAL_PATH, LEGACY_PATH];
-      writeLockfile(SAMPLE_LOCKFILE, CANONICAL_PATH);
-      writeLockfile(SAMPLE_LOCKFILE, LEGACY_PATH);
-      const teardown = installLockfileWatcher();
-
-      // WHEN an unpair rewrites the canonical file with the entries removed
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      writeLockfile({ assistants: [], activeAssistant: null }, CANONICAL_PATH);
-      const now = new Date();
-      fs.utimesSync(CANONICAL_PATH, now, new Date(now.getTime() + 1000));
-      await new Promise((resolve) => setTimeout(resolve, 750));
-
-      // THEN the empty canonical file wins despite the populated legacy file
-      const cached = getWatchedLockfile();
-      expect(cached.assistants).toHaveLength(0);
-      expect(cached.activeAssistant).toBeNull();
-
-      teardown();
-    });
-
-    test("clears to empty when no candidate is readable", async () => {
-      /**
-       * Tests that deleting every candidate still clears the cache, with a
-       * single change notification.
-       */
-
-      // GIVEN a canonical-only install with data
-      writeLockfile(SAMPLE_LOCKFILE);
-      const teardown = installLockfileWatcher();
-
-      const listener = mock((_lockfile: Lockfile) => undefined);
-      onLockfileChange(listener);
-
-      // WHEN the only lockfile is deleted
-      fs.unlinkSync(CANONICAL_PATH);
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // THEN the cache is cleared exactly once
-      expect(getWatchedLockfile().assistants).toHaveLength(0);
-      expect(listener).toHaveBeenCalledTimes(1);
-
-      teardown();
-    });
+    teardown();
   });
 });

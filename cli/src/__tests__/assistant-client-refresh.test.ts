@@ -46,7 +46,6 @@ function seedPaired(refreshToken: string, opts?: { due?: boolean }): void {
     refreshToken,
     refreshTokenExpiresAt: refreshToken ? FUTURE : 0,
     refreshAfter: due ? PAST : FUTURE,
-    isNew: false,
     deviceId: "dev",
     leasedAt: new Date().toISOString(),
   });
@@ -211,7 +210,6 @@ describe("AssistantClient 401 -> refresh -> retry", () => {
       refreshToken: "refresh-tok",
       refreshTokenExpiresAt: FUTURE,
       refreshAfter: FUTURE, // fresh — not due for renewal
-      isNew: false,
       deviceId: "dev",
       leasedAt: new Date().toISOString(),
     });

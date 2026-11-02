@@ -7,9 +7,8 @@ import {
   type Lockfile,
   type LockfileAssistant,
 } from "./lockfile-contract";
-import { isCloudEntry, LockfileAssistantSchema } from "./lockfile-contract";
+import { LockfileAssistantSchema } from "./lockfile-contract";
 import { resolveLockfilePath } from "./config";
-import { z } from "zod";
 
 import { withLockfileLock } from "./lockfile-lock";
 import { stripSensitiveFields } from "./util";

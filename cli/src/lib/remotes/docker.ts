@@ -12,6 +12,7 @@ import {
   saveLockfileAssistant,
   sleepDocker,
   type MachineMemoryPolicy,
+  wakeAssistant,
 } from "@mycadet/local-mode";
 import {
   type DockerAssistant,
@@ -521,14 +522,17 @@ import { arch, platform } from "os";
 import { dirname, join, resolve } from "path";
 
 import { setActiveAssistant } from "../assistant-config";
-import { buildHatchConfigValues, writeInitialConfig } from "../config-utils";
+import {
+  buildHatchConfigValues,
+  writeInitialConfig,
+} from "@mycadet/local-mode";
 import { printInstanceDetails } from "../instance-details";
 import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
 import { green, yellow } from "../color.js";
 import { leaseGuardianToken } from "../guardian-token";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
-import { generateInstanceName } from "../random-name";
+import { generateInstanceName } from "@mycadet/local-mode";
 import {
   HOST_IMAGE_LOADER_URL,
   isLocalBuildRef,
@@ -902,7 +906,7 @@ async function ensureDockerInstalled(): Promise<void> {
     }
 
     console.log("🚀 Docker daemon not running. Starting Colima...");
-    await startColimaAndAwaitDaemon(console.log, {
+    await startColimaAndAwaitDaemon({
       startArgs: ["--memory", String(COLIMA_DEFAULT_MEMORY_GIB)],
     });
   }
@@ -1921,12 +1925,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     setActiveAssistant(instanceName);
 
     if (params.initialArchive) {
-      const { initializeRootArchive, DockerRootStorage } =
-        await import("../root-backup.js");
+      const { initializeRootArchive } = await import("../root-backup.js");
       await initializeRootArchive(dockerEntry, params.initialArchive);
-      const storage = new DockerRootStorage(dockerEntry);
-      storage.initialRunning = new Set(Object.values(storage.containers));
-      await storage.resume();
+      // The wake is the one revive seam; readiness is the health check's
+      // job now, not the storage layer's.
+      await wakeAssistant(dockerEntry);
     }
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;

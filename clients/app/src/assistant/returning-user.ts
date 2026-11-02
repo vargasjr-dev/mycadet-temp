@@ -2,7 +2,6 @@ import { readInjectedConfig } from "@app/lib/injected-config";
 import { z } from "zod";
 import { listAssistants } from "@app/assistant/api";
 import { readAssistantCompletion } from "@app/assistant/completion-record";
-import { getElectronBridge } from "@app/runtime/electron-bridge";
 import { isLocalModeHostAvailable } from "@app/runtime/local-host-transport";
 
 const LockfileSchema = z.object({
@@ -57,16 +56,8 @@ async function findReturningUser(signal: AbortSignal): Promise<boolean> {
   }
   if (isLocalModeHostAvailable()) {
     try {
-      const bridge = getElectronBridge();
-      let payload: unknown;
-      if (bridge?.localMode) {
-        payload = await bridge.localMode.readLockfile();
-      } else {
-        const response = await fetch("/v1/assistants/", {
-          signal,
-        });
-        payload = response.ok ? await response.json() : null;
-      }
+      const response = await fetch("/v1/assistants/", { signal });
+      const payload: unknown = response.ok ? await response.json() : null;
       const parsed = LockfileSchema.safeParse(payload);
       if (
         parsed.success &&

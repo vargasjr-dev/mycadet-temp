@@ -196,12 +196,6 @@ test("failure during Docker replacement recovers prior roots before restarting",
   for (const root of STATE_ROOTS)
     await writeFile(join(directory, root, "value"), "destination");
   failWrite = 2;
-  // The real resume probes readiness through docker exec after the restart.
-  commands.on(
-    "docker",
-    (args) => args[0] === "exec" && args.includes("--eval"),
-    () => ({ stdout: "ready" }),
-  );
   const recovery = join(directory, "recovery.tar.gz");
   await expect(
     restoreRootBackup(entry, file, { recoveryPath: recovery }),
@@ -216,27 +210,6 @@ test("failure during Docker replacement recovers prior roots before restarting",
       "destination",
     );
   }
-});
-
-test("restart probes gateway and assistant on their own service ports", async () => {
-  const storage = new DockerRootStorage(entry);
-  expect(await storage.running()).toBe(true);
-  for (const container of containers) running.set(container, false);
-  commands.on(
-    "docker",
-    (args) => args[0] === "exec",
-    () => ({ stdout: "ready" }),
-  );
-  await storage.resume();
-  const probes = commands.calls.filter((call) => call.args[0] === "exec");
-  expect(
-    probes.find((call) => call.args[1] === names.gatewayContainer)?.args.at(-1),
-  ).toBe("http://127.0.0.1:7830/healthz");
-  expect(
-    probes
-      .find((call) => call.args[1] === names.assistantContainer)
-      ?.args.at(-1),
-  ).toBe("http://127.0.0.1:3001/readyz");
 });
 
 test("default Docker sleep aborts a graceful timeout without forcing termination", async () => {

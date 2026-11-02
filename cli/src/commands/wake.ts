@@ -124,8 +124,8 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
 }
 
 type WakeAssistantOptions = {
-  watch: boolean;
-  foreground: boolean;
+  watch?: boolean;
+  foreground?: boolean;
 };
 
 /**
@@ -136,9 +136,9 @@ type WakeAssistantOptions = {
  */
 export async function wakeAssistant(
   entry: LockfileAssistant,
-  opts: WakeAssistantOptions,
+  opts: WakeAssistantOptions = {},
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { watch, foreground } = opts;
+  const { watch = false, foreground = false } = opts;
 
   if (entry.cloud === "docker") {
     if (watch || foreground) {

@@ -1,3 +1,4 @@
+import type { Fetch } from "@mycadet/shared/fetch";
 import {
   authorizePairedForwardHeaders,
   getGuardianAccessToken,
@@ -5,7 +6,6 @@ import {
   readGatewayTargets,
   resolveGatewayProxyTarget,
   sanitizePairedForwardHeaders,
-  type TokenResult,
   type GuardianTokenLease,
   type LockfileAssistant,
   type PairedGuardianTokenProvider,
@@ -15,7 +15,6 @@ import {
   fetchForwardPlanWithRetry,
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
-import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -154,33 +153,16 @@ async function authorizeGatewayForwardPlan(
 }
 
 /**
- * The forward's fetcher is the local-mode bearer seam's own shape — the same
- * `(input: string, init?: RequestInit)` the bearer callsites narrow to.
- * Electron's `net.fetch` satisfies it in production; tests stand in.
- */
-type ForwardFetcher = (url: string, init?: RequestInit) => Promise<Response>;
-
-/**
  * The gateway target map for a forward: the lockfile's assistant entries ARE
- * the targets. Prefer the watcher's in-memory snapshot so gateway requests
- * never read disk; the direct read covers only the window before the watcher
- * installs.
+ * the targets, read fresh — no shared cache to fall out of sync with a
+ * mutation made by this process.
  */
-const readForwardTargets = (): Map<string, LockfileAssistant> => {
-  const watched = getWatchedLockfileSnapshot();
-  if (watched) {
-    return new Map(
-      watched.assistants.flatMap((entry) =>
-        entry.assistantId ? [[entry.assistantId, entry] as const] : [],
-      ),
-    );
-  }
-  return readGatewayTargets();
-};
+const readForwardTargets = (): Map<string, LockfileAssistant> =>
+  readGatewayTargets();
 
 export const forwardGatewayRequest = async (
   request: Request,
-  fetcher: ForwardFetcher,
+  fetcher: Fetch,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
@@ -208,7 +190,7 @@ export const forwardGatewayRequest = async (
 export function executeGatewayForwardPlan(
   plan: GatewayForwardPlan,
   request: Pick<Request, "body">,
-  fetcher: ForwardFetcher,
+  fetcher: Fetch,
   retryOptions: ForwardFetchRetryOptions = {},
 ): Promise<Response> | Response | null {
   switch (plan.kind) {
@@ -258,7 +240,7 @@ export function executeGatewayForwardPlan(
 async function executeLoopbackForward(
   plan: Extract<GatewayForwardPlan, { kind: "forward"; remote: false }>,
   request: Pick<Request, "body">,
-  fetcher: ForwardFetcher,
+  fetcher: Fetch,
 ): Promise<Response> {
   const lease: GuardianTokenLease = () =>
     getGuardianAccessToken(plan.assistantId);

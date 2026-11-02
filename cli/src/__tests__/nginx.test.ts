@@ -1,6 +1,7 @@
 import * as childProcess from "node:child_process";
 import type { SpawnOptions } from "node:child_process";
 import { createHash } from "node:crypto";
+import { PassThrough } from "node:stream";
 import * as fsModule from "node:fs";
 import {
   existsSync,
@@ -1176,7 +1177,17 @@ describe("startAppServer", () => {
         // The auto-build "lands" the bundle and exits cleanly.
         mockWebDistPresent();
         const child = new childProcess.ChildProcess();
-        setTimeout(() => child.emit("exit", 0), 10);
+        // The real build spawn pipes both streams (the resolve captures the
+        // output); the fake mirrors that shape.
+        const stdout = new PassThrough();
+        const stderr = new PassThrough();
+        Object.defineProperty(child, "stdout", { value: stdout });
+        Object.defineProperty(child, "stderr", { value: stderr });
+        setTimeout(() => {
+          stdout.end();
+          stderr.end();
+          child.emit("exit", 0);
+        }, 10);
         return child;
       }
       return nginxSpawn?.(command, args, options ?? {});
@@ -1192,6 +1203,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
+      builtSha: "",
     });
     const buildCalls = spawnMock.mock.calls.filter(
       ([command]) => command === "bun",
@@ -1655,6 +1667,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
+      builtSha: "",
     });
     expect(realFs.readFileSync(getIngressPaths().pidPath, "utf-8").trim()).toBe(
       String(SPAWNED_NGINX_PID),

@@ -144,26 +144,63 @@ export async function waitForDaemonMigrationsReady(
   }
 }
 
-const GatewayHealthSchema = z.object({ version: z.string().min(1).optional() });
+const GatewayHealthSchema = z.object({
+  /** The gateway's own version stamp, when it serves one. */
+  version: z.string().min(1).optional(),
+  /**
+   * Whether the caller's own credentials (the browser access cookie, or a
+   * bearer) authenticate against the gateway. A server that does not answer
+   * the field (the cloud's /healthz, older gateways) gives no verdict and
+   * reads as `true` — the /v1 routes' own 401s stay the signal there. Only a
+   * gateway that answers the field can deliver the strict verdict: the
+   * served /v1 routes can respond 200 unauthenticated (loopback trust).
+   */
+  authenticated: z.boolean().default(true),
+});
+
+export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
+
+/**
+ * Read the gateway's `/healthz` and return its identity AND the caller's
+ * own auth verdict in one round-trip: the version it serves, and whether the
+ * request's credentials (the browser access cookie on a same-origin request)
+ * authenticate. Best-effort — an unreachable endpoint, a non-2xx, or a
+ * malformed body all read as "no version, no verdict" (`authenticated:
+ * true`), so callers on servers without the field keep today's behavior.
+ */
+export async function getGatewayHealth(
+  runtimeUrl: string,
+  opts: { signal?: AbortSignal } = {},
+): Promise<GatewayHealth> {
+  try {
+    const healthUrl = new URL(
+      "healthz",
+      runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
+    );
+    const resp = await loopbackSafeFetch(healthUrl.href, {
+      headers: { Accept: "application/json" },
+      signal: opts.signal ?? AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const parsed = GatewayHealthSchema.safeParse(await resp.json());
+      if (parsed.success) {
+        return parsed.data;
+      }
+    }
+  } catch {
+    // Best-effort: no version, no verdict.
+  }
+  return { version: undefined, authenticated: true };
+}
 
 /**
  * Best-effort fetch of the running service group version from the gateway
- * `/healthz` endpoint.  Returns `undefined` when the endpoint is
- * unreachable or does not include a version field.
+ * `/healthz` endpoint. Returns `undefined` when the endpoint is unreachable
+ * or does not include a version field.
  */
 export async function fetchCurrentVersion(
   runtimeUrl: string,
 ): Promise<string | undefined> {
-  try {
-    const resp = await loopbackSafeFetch(`${runtimeUrl}/healthz`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (resp.ok) {
-      const parsed = GatewayHealthSchema.safeParse(await resp.json());
-      return parsed.success ? parsed.data.version : undefined;
-    }
-  } catch {
-    // Best-effort
-  }
-  return undefined;
+  const health = await getGatewayHealth(runtimeUrl);
+  return health.version;
 }

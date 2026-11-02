@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   isLoopbackPublicUrl,
   parsePairingAddress,
@@ -15,7 +12,6 @@ import {
 } from "@mycadet/service-contracts/remote-web-pairing";
 import { nanoid } from "nanoid";
 
-import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
 import { readLockfile } from "./lockfile";
 
@@ -264,7 +260,6 @@ export function pairAssistant({ credentials, name }: PairOptions): PairResult {
       refreshToken: credentials.refreshToken ?? "",
       refreshTokenExpiresAt: credentials.refreshTokenExpiresAt ?? 0,
       refreshAfter: credentials.refreshAfter ?? "",
-      isNew: false,
       deviceId: credentials.deviceId ?? "",
       leasedAt: new Date(now).toISOString(),
       pairedGatewayUrl: credentials.gatewayUrl,

@@ -38,6 +38,48 @@ const mockInstallPresenceMonitor = mock(
     return mockPresenceTeardown;
   },
 );
+mock.module("electron", () => ({
+  app: {
+    isPackaged: false,
+    getPath: () => import.meta.dir,
+    once: () => undefined,
+  },
+  safeStorage: { isEncryptionAvailable: () => false },
+  powerMonitor: {
+    getSystemIdleState: () => "active",
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  },
+}));
+// The router owns these facts now (they were identical across the three
+// desktops) — the tests stub the modules it imports instead of the runtime.
+const realLocalMode = await import("@mycadet/local-mode");
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  getGuardianAccessToken: mockGetGuardianAccessToken,
+  readLockfile: () => mockCurrentLockfile,
+}));
+mock.module("../lockfile-watcher", () => ({
+  onLockfileChange: (listener: (lockfile: Lockfile) => void) => {
+    lockfileListener = listener;
+    return () => {
+      lockfileListener = null;
+    };
+  },
+}));
+mock.module("../session-token-store", () => ({
+  getSessionToken: () => mockSessionToken,
+  onSessionTokenChange: (listener: () => void) => {
+    sessionTokenListener = listener;
+    return () => {
+      sessionTokenListener = null;
+    };
+  },
+}));
+mock.module("../desktop-presence-monitor", () => ({
+  createDesktopPresenceMonitor: () => mockInstallPresenceMonitor,
+}));
+
 const { HostProxySseClient } = await import("./sse");
 const { HostProxyPoster } = await import("./poster");
 const {
@@ -61,24 +103,6 @@ const unavailableExecutor = {
   handleCancel: () => undefined,
 };
 const testRuntime: HostProxyRuntime = {
-  acquireGuardianToken: async (assistantId) => {
-    return mockGetGuardianAccessToken(assistantId);
-  },
-  getSessionToken: () => mockSessionToken,
-  getLockfile: () => mockCurrentLockfile,
-  onLockfileChange: (listener) => {
-    lockfileListener = listener;
-    return () => {
-      lockfileListener = null;
-    };
-  },
-  onSessionTokenChange: (listener) => {
-    sessionTokenListener = listener;
-    return () => {
-      sessionTokenListener = null;
-    };
-  },
-  installPresenceMonitor: mockInstallPresenceMonitor,
   sseClientHeaders: () => ({
     "X-Cadet-Client-Id": MOCK_DEVICE_ID,
     "X-Cadet-Interface-Id": "macos",

@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 
-import type { CliInvocation } from "./util";
 import { resolveCliInvocation } from "./cli-invocation";
 
 const UPGRADE_TIMEOUT_MS = 20 * 60 * 1000;

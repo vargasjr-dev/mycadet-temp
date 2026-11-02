@@ -1,13 +1,11 @@
 /**
- * The app bundle's local-mode seam: typed wrappers over the `window.cadet`
- * local-mode bridge, the only local-mode transport this bundle has. Web's
- * twin module (clients/web/src/runtime/local-mode-host.ts) falls back to
- * same-origin `/v1` HTTP routes at the conductor's shapes when no bridge
- * exists; the app bundle is never served by a web dev server or a local
- * host, so
- * there is no HTTP arm here — availability is the bridge itself, detected
- * on the pairing channel so an older shell degrades to a structured
- * "unsupported" error instead of a thrown invoke.
+ * The app bundle's local-mode seam: typed wrappers over the same-origin
+ * `/v1` routes the serving host answers through its operator route table —
+ * the Electron shell's `app://` handler (mounted ahead of the gateway
+ * data-plane forward) and, on dev, the Vite dev middleware. There is no
+ * bridge arm: the operations run in the serving host's trusted process, and
+ * the wire contract is the same on every host, so the renderer never learns
+ * which one served it.
  *
  * The pairing exchange itself runs in the shell's main process (the shared
  * host library the web dev server and the CLI web interface also use): the
@@ -37,7 +35,11 @@ export type {
   LocalPairingStartResult,
 };
 
-/** Fallback when a host seam returns no usable message of its own. */
+/** Failure surfaced when no local-mode host backs this runtime. */
+const LOCAL_HOST_UNAVAILABLE_ERROR =
+  "The local assistant host isn't available here.";
+
+/** Fallback when a host returns no usable message of its own. */
 const PAIRING_FALLBACK_ERROR = "Pairing failed. Please try again.";
 
 /** The app bundle's Electron check, mirroring web's `isElectron`. */
@@ -47,13 +49,40 @@ export function isElectronRuntime(): boolean {
 
 /**
  * Whether a local-mode host backs this runtime. Only the Electron shell
- * carries the bridge (the native shells and webview-only builds have no
- * `window.cadet`), and only newer preloads expose the pairing channels —
- * detecting on the channel itself means an older shell reports
- * unavailable rather than failing later mid-exchange.
+ * serves the operator routes to this bundle (the native shells and
+ * webview-only builds have no `window.cadet`), so the check is the platform
+ * itself — the routes need no capability detection.
  */
 export function isLocalModeHostAvailable(): boolean {
-  return isElectronRuntime() && window.cadet?.localMode?.pairingStart != null;
+  return isElectronRuntime();
+}
+
+/**
+ * POST a local-mode command and read back its `{ ok, ... }` result. Always
+ * resolves, never throws: an unavailable host (no request sent) and a non-JSON
+ * response both resolve to `{ ok: false }`.
+ */
+async function postLocalCommand<T extends { ok: boolean }>(
+  path: string,
+  body: unknown,
+): Promise<T | { ok: false; error: string }> {
+  if (!isLocalModeHostAvailable()) {
+    return { ok: false, error: LOCAL_HOST_UNAVAILABLE_ERROR };
+  }
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 204) {
+      return { ok: true } as T;
+    }
+    const parsed = (await res.json().catch(() => null)) as T | null;
+    return parsed ?? { ok: false, error: LOCAL_HOST_UNAVAILABLE_ERROR };
+  } catch {
+    return { ok: false, error: LOCAL_HOST_UNAVAILABLE_ERROR };
+  }
 }
 
 function hostError(result: { error?: string }): string {
@@ -70,25 +99,18 @@ function hostError(result: { error?: string }): string {
 export async function startAssistantPairing(
   address: string,
 ): Promise<LocalPairingStartResult> {
-  const pairingStart = window.cadet?.localMode?.pairingStart;
-  if (!pairingStart) {
-    return {
-      ok: false,
-      error:
-        "Connecting a paired assistant is not supported by this app version",
-    };
-  }
-  const result = await pairingStart(address);
+  const result = await postLocalCommand<LocalPairingStartResult>(
+    "/v1/remote-web/pairing-start",
+    { address },
+  );
   if (!result.ok) {
-    return {
-      ...result,
-      error: hostError(result),
-      // Runtime guard: the rejection rides an untyped host seam, so a
-      // reason no caller has copy for degrades to the host's own message.
-      rejection: isPublicBaseUrlRejection(result.rejection)
+    // Runtime guard: the rejection rides an untyped host response, so a
+    // reason no caller has copy for degrades to the host's own message.
+    const rejection =
+      "rejection" in result && isPublicBaseUrlRejection(result.rejection)
         ? result.rejection
-        : undefined,
-    };
+        : undefined;
+    return { ...result, error: hostError(result), rejection };
   }
   return result;
 }
@@ -102,15 +124,10 @@ export async function pollAssistantPairing(
   handle: string,
   name?: string,
 ): Promise<LocalPairingPollResult> {
-  const pairingPoll = window.cadet?.localMode?.pairingPoll;
-  if (!pairingPoll) {
-    return {
-      ok: false,
-      error:
-        "Connecting a paired assistant is not supported by this app version",
-    };
-  }
-  const result = await pairingPoll(handle, name);
+  const result = await postLocalCommand<LocalPairingPollResult>(
+    "/v1/remote-web/pairing-poll",
+    { handle, name },
+  );
   if (!result.ok) {
     return { ...result, error: hostError(result) };
   }
@@ -130,7 +147,9 @@ export async function pollAssistantPairing(
  */
 export async function cancelAssistantPairing(handle: string): Promise<void> {
   try {
-    await window.cadet?.localMode?.pairingCancel?.(handle);
+    await postLocalCommand<{ ok: boolean }>("/v1/remote-web/pairing-cancel", {
+      handle,
+    });
   } catch {
     // Unreachable session: cancelled, spent, or the host itself is gone.
   }
@@ -140,55 +159,57 @@ export async function cancelAssistantPairing(handle: string): Promise<void> {
 export async function unpairLocalAssistant(
   assistantId: string,
 ): Promise<LockfileWriteResult> {
-  const unpair = window.cadet?.localMode?.unpair;
-  if (!unpair) {
-    return {
-      ok: false,
-      error: "Removing a paired assistant is not supported by this app version",
-    };
-  }
-  return unpair(assistantId);
+  return postLocalCommand<LockfileWriteResult>(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/unpair`,
+    {},
+  );
 }
 
 /** Lifecycle probe for a local assistant's daemon and gateway. */
 export async function statusLocalAssistantHost(
   assistantId: string,
 ): Promise<LocalAssistantStatusResult> {
-  const status = window.cadet?.localMode?.status;
-  if (!status) {
-    return {
-      ok: false,
-      status: 501,
-      error: "Status is not supported by this app version",
-    };
+  if (!isLocalModeHostAvailable()) {
+    return { ok: false, status: 0, error: LOCAL_HOST_UNAVAILABLE_ERROR };
   }
-  return status(assistantId);
+  let res: Response;
+  try {
+    res = await fetch(`/v1/assistants/${encodeURIComponent(assistantId)}/`);
+  } catch {
+    return { ok: false, status: 0, error: LOCAL_HOST_UNAVAILABLE_ERROR };
+  }
+  const parsed = (await res
+    .json()
+    .catch(() => null)) as LocalAssistantStatusResult | null;
+  return (
+    parsed ?? {
+      ok: false,
+      status: res.status,
+      error: LOCAL_HOST_UNAVAILABLE_ERROR,
+    }
+  );
 }
 
 /** The renderer-safe lockfile, parsed through the shared total validation. */
 export async function readLockfileHost(): Promise<Lockfile> {
-  const readLockfile = window.cadet?.localMode?.readLockfile;
-  if (!readLockfile) {
-    throw new Error("The local assistant host isn't available here.");
+  if (!isLocalModeHostAvailable()) {
+    throw new Error(LOCAL_HOST_UNAVAILABLE_ERROR);
   }
-  return parseLockfile(await readLockfile());
+  const res = await fetch("/v1/assistants/");
+  if (!res.ok) {
+    throw new Error(`lockfile fetch failed: ${res.status}`);
+  }
+  return parseLockfile(await res.json());
 }
 
 /**
- * Provision a local assistant. The bridge runs the Cadet CLI in the shell's
- * main process and returns the same `{ ok, assistantId }` contract the CLI's
- * own hatch reports; callers reload the lockfile to discover the new
+ * Provision a local assistant. The serving host runs the Cadet CLI in its
+ * trusted process and returns the same `{ ok, assistantId }` contract the
+ * CLI's own hatch reports; callers reload the lockfile to discover the new
  * assistant regardless.
  */
 export async function hatchLocalAssistantHost(
   remote?: string,
 ): Promise<{ ok: boolean; assistantId?: string; error?: string }> {
-  const hatch = window.cadet?.localMode?.hatch;
-  if (!hatch) {
-    return {
-      ok: false,
-      error: "Hatching a local assistant is not supported by this app version",
-    };
-  }
-  return hatch(remote);
+  return postLocalCommand("/v1/assistants/hatch", { remote });
 }

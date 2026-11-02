@@ -7,10 +7,7 @@ import {
   type NativeImage,
 } from "electron";
 
-import {
-  type Lockfile,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
+import { type Lockfile } from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
   type CompanionSizeAxis,
@@ -141,18 +138,6 @@ export interface TrayHandlers {
    */
   openAbout(): void;
 }
-
-/**
- * Resolve a user-facing display title for a lockfile assistant. Uses the
- * assistant name when present, falling back to a truncated id.
- */
-const assistantDisplayTitle = (assistant: LockfileAssistant): string => {
-  if (assistant.name) {
-    return assistant.name;
-  }
-  const id = assistant.assistantId;
-  return id.length > 12 ? `${id.slice(0, 12)}\u2026` : id;
-};
 
 const buildTrayMenu = (
   handlers: TrayHandlers,

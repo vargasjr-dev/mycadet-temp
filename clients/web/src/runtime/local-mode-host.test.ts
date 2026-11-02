@@ -51,6 +51,27 @@ afterEach(() => {
   delete (window as WindowWithConfig).__CADET_CONFIG__;
 });
 
+/**
+ * A stale shell that still exposes the dead bridge: every method throws if
+ * the renderer ever consults it. The desktop is a fetch host now — these
+ * pins prove the bridge is never reached, on any shell.
+ */
+const setPoisonedBridge = (): void => {
+  runningInElectron = true;
+  (
+    window as unknown as { cadet: { localMode: Record<string, unknown> } }
+  ).cadet = {
+    localMode: new Proxy(
+      {},
+      {
+        get: () => {
+          throw new Error("the localMode bridge must never be consulted");
+        },
+      },
+    ),
+  };
+};
+
 describe("hatchLocalAssistant", () => {
   test("web/dev host POSTs to the local-mode middleware and returns its JSON", async () => {
     const fetchMock = mock(async () => ({
@@ -88,52 +109,25 @@ describe("hatchLocalAssistant", () => {
     });
   });
 
-  test("Electron host routes to the main-process bridge and never touches fetch", async () => {
-    runningInElectron = true;
-    const hatch = mock(async () => ({ ok: true, assistantId: "electron-1" }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    (
-      window as unknown as { cadet: { localMode: { hatch: typeof hatch } } }
-    ).cadet = { localMode: { hatch } };
-
-    const result = await hatchLocalAssistant();
-
-    expect(result).toEqual({ ok: true, assistantId: "electron-1" });
-    expect(hatch).toHaveBeenCalledWith(undefined);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("Electron host forwards remote to the bridge", async () => {
-    runningInElectron = true;
-    const hatch = mock(async () => ({
-      ok: true,
-      assistantId: "electron-docker-1",
+  test("the desktop shell POSTs the same hatch route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true, assistantId: "electron-1" }),
     }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    (
-      window as unknown as { cadet: { localMode: { hatch: typeof hatch } } }
-    ).cadet = { localMode: { hatch } };
 
     const result = await hatchLocalAssistant("docker");
 
-    expect(result).toEqual({ ok: true, assistantId: "electron-docker-1" });
-    expect(hatch).toHaveBeenCalledWith("docker");
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: true, assistantId: "electron-1" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe("/v1/assistants/hatch");
+    expect(JSON.parse(init.body as string)).toEqual({ remote: "docker" });
   });
 });
-
-const setElectronBridge = (localMode: Record<string, unknown>): void => {
-  runningInElectron = true;
-  (
-    window as unknown as { cadet: { localMode: Record<string, unknown> } }
-  ).cadet = { localMode };
-};
 
 describe("loadLockfileHost", () => {
   test("web/dev host GETs the lockfile middleware and returns its JSON", async () => {
@@ -158,18 +152,18 @@ describe("loadLockfileHost", () => {
     await expect(loadLockfileHost()).rejects.toThrow("500");
   });
 
-  test("Electron host reads through the bridge and never touches fetch", async () => {
+  test("the desktop shell reads the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
     const lockfile = { assistants: [], activeAssistant: null };
-    const readLockfile = mock(async () => lockfile);
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+    const fetchMock = mock(async () => ({
+      ok: true,
+      json: async () => lockfile,
+    }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ readLockfile });
 
     expect(await loadLockfileHost()).toEqual(lockfile);
-    expect(readLockfile).toHaveBeenCalledTimes(1);
-    expect(fetchMock).not.toHaveBeenCalled();
+    const [url] = fetchMock.mock.calls[0] as unknown as [string];
+    expect(url).toBe("/v1/assistants/");
   });
 });
 
@@ -205,29 +199,18 @@ describe("unpairAssistantHost", () => {
     });
   });
 
-  test("Electron host unpairs through the bridge and never touches fetch", async () => {
-    const unpair = mock(async () => ({ ok: true, lockfile: emptyLockfile }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+  test("the desktop shell POSTs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true, lockfile: emptyLockfile }),
+    }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ unpair });
 
     expect(await unpairAssistantHost("a-1")).toEqual({
       ok: true,
       lockfile: emptyLockfile,
     });
-    expect(unpair).toHaveBeenCalledWith("a-1");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the unpair channel reports an unsupported failure", async () => {
-    setElectronBridge({});
-
-    expect(await unpairAssistantHost("a-1")).toEqual({
-      ok: false,
-      error: "Unpair is not supported by this app version",
-    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -312,62 +295,32 @@ describe("pairing hosts", () => {
     });
   });
 
-  test("Electron host carries the address rejection across the bridge", async () => {
-    setElectronBridge({
-      pairingStart: mock(async () => ({
-        ok: false as const,
-        reason: "invalid-address" as const,
-        error: "That address points back at this machine.",
-        rejection: "loopback" as const,
-      })),
-    });
-
-    expect(await pairingStartHost("https://localhost:7830")).toMatchObject({
-      rejection: "loopback",
-    });
-  });
-
-  test("Electron host pairs through the bridge and never touches fetch", async () => {
-    const pairingStart = mock(async () => started);
-    const pairingPoll = mock(async () => ({
-      ok: true as const,
-      status: "pending" as const,
-      expiresAt: started.expiresAt,
-      intervalSeconds: 5,
+  test("pairing-cancel POSTs the handle and resolves void", async () => {
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true }),
     }));
-    const pairingCancel = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ pairingStart, pairingPoll, pairingCancel });
 
-    expect(await pairingStartHost("https://gw.example.com")).toEqual(started);
-    expect(await pairingPollHost("handle-1")).toMatchObject({
-      status: "pending",
-    });
     await pairingCancelHost("handle-1");
 
-    expect(pairingStart).toHaveBeenCalledWith("https://gw.example.com");
-    expect(pairingPoll).toHaveBeenCalledWith("handle-1", undefined);
-    expect(pairingCancel).toHaveBeenCalledWith("handle-1");
-    expect(fetchMock).not.toHaveBeenCalled();
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe("/v1/remote-web/pairing-cancel");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ handle: "handle-1" });
   });
 
-  test("older Electron shell without the pairing channels reports an unsupported failure", async () => {
-    setElectronBridge({});
+  test("the desktop shell rides the same pairing routes — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({ json: async () => started }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    const unsupported = {
-      ok: false as const,
-      error:
-        "Connecting a paired assistant is not supported by this app version",
-    };
-    expect(await pairingStartHost("https://gw.example.com")).toEqual(
-      unsupported,
-    );
-    expect(await pairingPollHost("handle-1")).toEqual(unsupported);
-    // Cancelling has nothing to drop on a host that never held the session.
-    expect(await pairingCancelHost("handle-1")).toBeUndefined();
+    expect(await pairingStartHost("https://gw.example.com")).toEqual(started);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as unknown as [string];
+    expect(url).toBe("/v1/remote-web/pairing-start");
   });
 });
 
@@ -409,26 +362,15 @@ describe("listPairedDevicesHost", () => {
     });
   });
 
-  test("Electron host lists through the bridge and never touches fetch", async () => {
-    const listDevices = mock(async () => ({ ok: true, devices }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+  test("the desktop shell POSTs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true, devices }),
+    }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ listDevices });
 
     expect(await listPairedDevicesHost("a-1")).toEqual({ ok: true, devices });
-    expect(listDevices).toHaveBeenCalledWith("a-1");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the listDevices channel reports an unsupported failure", async () => {
-    setElectronBridge({});
-
-    expect(await listPairedDevicesHost("a-1")).toEqual({
-      ok: false,
-      error: "Device management is not supported by this app version",
-    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -461,26 +403,13 @@ describe("revokePairedDeviceHost", () => {
     });
   });
 
-  test("Electron host revokes through the bridge and never touches fetch", async () => {
-    const revokeDevice = mock(async () => ({ ok: true }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+  test("the desktop shell POSTs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ revokeDevice });
 
     expect(await revokePairedDeviceHost("a-1", "hash-1")).toEqual({ ok: true });
-    expect(revokeDevice).toHaveBeenCalledWith("a-1", "hash-1");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the revokeDevice channel reports an unsupported failure", async () => {
-    setElectronBridge({});
-
-    expect(await revokePairedDeviceHost("a-1", "hash-1")).toEqual({
-      ok: false,
-      error: "Device management is not supported by this app version",
-    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -507,27 +436,24 @@ describe("upgradeLocalAssistantHost", () => {
     });
   });
 
-  test("Electron host upgrades through the bridge and never touches fetch", async () => {
-    const upgrade = mock(async () => ({ ok: true, version: "v1.2.3" }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+  test("the desktop shell POSTs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true, version: "v1.2.3" }),
+    }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ upgrade });
 
     expect(
       await upgradeLocalAssistantHost("a-1", { version: "v1.2.3" }),
     ).toEqual({ ok: true, version: "v1.2.3" });
-    expect(upgrade).toHaveBeenCalledWith("a-1", { version: "v1.2.3" });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the upgrade channel reports an unsupported failure", async () => {
-    setElectronBridge({});
-
-    expect(await upgradeLocalAssistantHost("a-1")).toEqual({
-      ok: false,
-      error: "Update and restart the desktop app to enable local upgrades.",
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe("/v1/assistants/a-1/upgrade");
+    expect(JSON.parse(init.body as string)).toEqual({
+      assistantId: "a-1",
+      version: "v1.2.3",
     });
   });
 });
@@ -547,20 +473,19 @@ describe("getLocalAssistantStatusHost", () => {
     expect(url).toBe("/v1/assistants/a%201/");
   });
 
-  test("Electron host reads status through the bridge and never touches fetch", async () => {
-    const status = mock(async () => ({ ok: true, state: "crashed" }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
+  test("the desktop shell GETs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true, state: "crashed" }),
+    }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ status });
 
     expect(await getLocalAssistantStatusHost("a-1")).toEqual({
       ok: true,
       state: "crashed",
     });
-    expect(status).toHaveBeenCalledWith("a-1");
-    expect(fetchMock).not.toHaveBeenCalled();
+    const [url] = fetchMock.mock.calls[0] as unknown as [string];
+    expect(url).toBe("/v1/assistants/a-1/");
   });
 });
 
@@ -585,49 +510,21 @@ describe("readAssistantAvatarHost", () => {
     expect(init.method).toBe("GET");
   });
 
-  test("Electron host reads the avatar through the bridge and never touches fetch", async () => {
-    const readAssistantAvatar = mock(async () => ({
-      ok: true,
-      avatar: { kind: "image", imageBase64: "AAAA" },
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ readAssistantAvatar });
-
-    expect(await readAssistantAvatarHost("a-1")).toEqual({
-      ok: true,
-      avatar: { kind: "image", imageBase64: "AAAA" },
-    });
-    expect(readAssistantAvatar).toHaveBeenCalledWith("a-1");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the channel resolves ok:false without throwing", async () => {
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({});
-
-    const result = await readAssistantAvatarHost("a-1");
-
-    expect(result.ok).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("a rejected Electron bridge call resolves ok:false instead of throwing", async () => {
-    setElectronBridge({
-      readAssistantAvatar: mock(async () => {
-        throw new Error("ipc channel closed");
+  test("the desktop shell GETs the same route — the bridge is never consulted", async () => {
+    setPoisonedBridge();
+    const fetchMock = mock(async () => ({
+      json: async () => ({
+        ok: true,
+        avatar: { kind: "image", imageBase64: "AAAA" },
       }),
-    });
+    }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     expect(await readAssistantAvatarHost("a-1")).toEqual({
-      ok: false,
-      error: "Error: ipc channel closed",
+      ok: true,
+      avatar: { kind: "image", imageBase64: "AAAA" },
     });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   test("the packaged CLI web host issues no request: it has no avatar endpoint", async () => {

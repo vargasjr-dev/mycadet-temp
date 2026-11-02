@@ -24,19 +24,12 @@ import {
   getLocalInstanceDir,
   isProcessAlive,
   probePort,
-  saveLockfileAssistant,
-  waitForDaemonMigrationsReady,
-  waitForDaemonReady,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
-import {
-  ASSISTANT_INTERNAL_PORT,
-  GATEWAY_INTERNAL_PORT,
-} from "./environments/paths.js";
 import { sleepAssistant } from "@mycadet/local-mode";
 import { wakeAssistant } from "../commands/wake.js";
 
@@ -268,7 +261,6 @@ export interface RootStorage {
 
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
-  initialRunning?: Set<string>;
   private readonly localEntry: LocalAssistant | DockerAssistant;
   constructor(readonly entry: LockfileAssistant) {
     // Local-style roots: plain on-machine instances and docker instances
@@ -312,44 +304,7 @@ export class LocalRootStorage implements RootStorage {
         );
       }
     }
-    this.initialRunning ??= running;
     return running.size > 0;
-  }
-  async resume(): Promise<void> {
-    // wakeAssistant is the one revive seam: whatever the backup paused, the
-    // leg's self-heal brings it back (dead siblings relaunch, live processes
-    // stay) — a backup cycle leaves the assistant fully running either way.
-    await wakeAssistant(this.entry, {
-      watch: false,
-      foreground: false,
-    });
-    await this.checkReady();
-  }
-  private async checkReady(): Promise<void> {
-    const entry = this.localEntry;
-    if (
-      this.initialRunning?.has("assistant") &&
-      entry.daemonPort !== undefined &&
-      (await waitForDaemonMigrationsReady(
-        entry.daemonPort,
-        Date.now() + 60_000,
-      )) !== "ready"
-    ) {
-      throw new Error(
-        "Assistant did not become ready after restoring its running state.",
-      );
-    }
-    for (const [service, port] of [
-      ["gateway", entry.port],
-      ["ces", entry.cesPort],
-    ] as const) {
-      if (
-        this.initialRunning?.has(service) &&
-        port !== undefined &&
-        !(await waitForDaemonReady(port))
-      )
-        throw new Error(`${service} did not become healthy after restart.`);
-    }
   }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
@@ -489,7 +444,6 @@ const dockerOps: DockerBackupOps = {
 
 export class DockerRootStorage implements RootStorage {
   readonly containers: Record<StateRoot, string>;
-  initialRunning?: Set<string>;
   constructor(
     readonly entry: LockfileAssistant,
     readonly ops: DockerBackupOps = dockerOps,
@@ -529,83 +483,7 @@ export class DockerRootStorage implements RootStorage {
         );
       }
     }
-    this.initialRunning ??= new Set(
-      containers.filter((_, index) => states[index]!.State.Running),
-    );
     return states.some((state) => state.State.Running);
-  }
-  async resume(): Promise<void> {
-    if (this.initialRunning?.size === 3) {
-      await wakeAssistant(this.entry, {
-        watch: false,
-        foreground: false,
-      });
-    } else {
-      for (const container of new Set(Object.values(this.containers))) {
-        if (
-          this.initialRunning?.has(container) &&
-          !(await this.inspect(container)).State.Running
-        ) {
-          await this.ops.output("docker", ["start", container]);
-        }
-      }
-    }
-    // Probe inside the destination containers, so remote Docker contexts work
-    // without assuming their published ports are reachable on this CLI host.
-    const endpoints = [
-      [this.containers.workspace, ASSISTANT_INTERNAL_PORT, "readyz"],
-      [this.containers["gateway-security"], GATEWAY_INTERNAL_PORT, "healthz"],
-      [this.containers["ces-security"], 8090, "healthz"],
-    ] as const;
-    await Promise.all(
-      endpoints.map(async ([container, defaultPort, endpoint]) => {
-        if (!this.initialRunning?.has(container)) return;
-        const state = await this.inspect(container);
-        const portVariable =
-          container === this.containers.workspace
-            ? "RUNTIME_HTTP_PORT="
-            : "GATEWAY_PORT=";
-        const configuredPort =
-          container === this.containers["ces-security"]
-            ? undefined
-            : state.Config.Env.find((value) =>
-                value.startsWith(portVariable),
-              )?.split("=")[1];
-        const port = configuredPort ? Number(configuredPort) : defaultPort;
-        if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
-          throw new Error(`Invalid health port for ${container}.`);
-        const deadline = Date.now() + 60_000;
-        const script =
-          'const url=process.argv.at(-1); const r=await fetch(url,{signal:AbortSignal.timeout(1500)}); if(!r.ok)process.exit(1); if(url.endsWith("/readyz")){const b=await r.json(); if(b.dbMigrations?.state==="failed"){console.error("migration_failed");process.exit(2)} if(b.ready===false)process.exit(1)} console.log("ready")';
-        while (true) {
-          try {
-            await this.ops.output(
-              "docker",
-              [
-                "exec",
-                container,
-                "bun",
-                "--eval",
-                script,
-                `http://127.0.0.1:${port}/${endpoint}`,
-              ],
-              { timeoutMs: 3000 },
-            );
-            return;
-          } catch (error) {
-            if (
-              String(error).includes("migration_failed") ||
-              Date.now() >= deadline
-            )
-              throw new Error(
-                `${container} did not become ready after restart.`,
-                { cause: error },
-              );
-            await new Promise((done) => setTimeout(done, 250));
-          }
-        }
-      }),
-    );
   }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
@@ -689,22 +567,17 @@ async function pruneTransient(root: string, relative = ""): Promise<void> {
   }
 }
 
-export interface RootBackupOps {
-  storage: RootStorage;
-  wake: () => Promise<void>;
-  save: (entry: LockfileAssistant) => void;
+function storageFor(entry: LockfileAssistant): RootStorage {
+  return entry.cloud === "docker"
+    ? new DockerRootStorage(entry)
+    : new LocalRootStorage(entry);
 }
 
-function defaultOps(entry: LockfileAssistant): RootBackupOps {
-  const storage =
-    entry.cloud === "docker"
-      ? new DockerRootStorage(entry)
-      : new LocalRootStorage(entry);
-  return {
-    storage,
-    wake: () => storage.resume(),
-    save: saveLockfileAssistant,
-  };
+// A failed wake throws so the cycle's finally retries the recovery wake —
+// the old resume's throw path, kept.
+async function wakeOrFail(entry: LockfileAssistant): Promise<void> {
+  const woken = await wakeAssistant(entry);
+  if (!woken.ok) throw new Error(woken.error);
 }
 
 async function assertStopped(storage: RootStorage): Promise<void> {
@@ -754,37 +627,35 @@ export async function createRootBackup(
   entry: LockfileAssistant,
   output: string,
 ): Promise<void> {
-  return withRootOperationLock(entry, () =>
-    captureBackup(entry, output, defaultOps(entry)),
-  );
+  return withRootOperationLock(entry, () => captureBackup(entry, output));
 }
 
 async function captureBackup(
   entry: LockfileAssistant,
   output: string,
-  ops: RootBackupOps,
 ): Promise<void> {
-  ops.storage.assertBackupTarget(output);
+  const storage = storageFor(entry);
+  storage.assertBackupTarget(output);
   const stage = await mkdtemp(join(tmpdir(), "cadet-backup-"));
   await chmod(stage, 0o700);
   let running = false;
   let stopped = false;
   try {
-    running = await ops.storage.running();
+    running = await storage.running();
     stopped = running;
     if (running) await sleepAssistant(entry);
     stopped = true;
-    await assertStopped(ops.storage);
-    await ops.storage.capture(stage);
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
+    await storage.capture(stage);
+    await assertStopped(storage);
     if (running) {
-      await ops.wake();
+      await wakeOrFail(entry);
       stopped = false;
     }
     await packRoot(stage, output);
   } finally {
     try {
-      if (running && stopped) await ops.wake();
+      if (running && stopped) await wakeOrFail(entry);
     } finally {
       await rm(stage, { recursive: true, force: true });
     }
@@ -797,7 +668,7 @@ export async function restoreRootBackup(
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
 ): Promise<string | undefined> {
   return withRootOperationLock(entry, () =>
-    restoreBackup(entry, file, options, defaultOps(entry)),
+    restoreBackup(entry, file, options),
   );
 }
 
@@ -827,8 +698,8 @@ async function restoreBackup(
   entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean },
-  ops: RootBackupOps,
 ): Promise<string | undefined> {
+  const storage = storageFor(entry);
   const stage = await stageRootArchive(file);
   const source = join(stage, "state");
   const snapshot = join(stage, "previous");
@@ -838,15 +709,15 @@ async function restoreBackup(
   let running = false;
   let recoveryPath: string | undefined;
   try {
-    await ops.storage.prepareRestore?.(source);
+    await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
-    running = await ops.storage.running();
+    running = await storage.running();
     stopped = running;
     if (running) await sleepAssistant(entry);
     stopped = true;
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
     await mkdir(snapshot, { mode: 0o700 });
-    await ops.storage.capture(snapshot);
+    await storage.capture(snapshot);
     recoveryPath =
       options.recoveryPath ??
       join(
@@ -854,14 +725,14 @@ async function restoreBackup(
         `${entry.assistantId}-pre-restore-${Date.now()}.tar.gz`,
       );
     await packRoot(snapshot, recoveryPath);
-    await assertStopped(ops.storage);
+    await assertStopped(storage);
     replacing = true;
     try {
-      await ops.storage.replace(source);
+      await storage.replace(source);
       restored = true;
     } catch (error) {
       try {
-        await ops.storage.replace(snapshot);
+        await storage.replace(snapshot);
         replacing = false;
       } catch (rollbackError) {
         throw new AggregateError(
@@ -873,7 +744,7 @@ async function restoreBackup(
     }
     if (running && options.resume !== false) {
       try {
-        await ops.wake();
+        await wakeOrFail(entry);
         stopped = false;
       } catch (error) {
         try {
@@ -901,7 +772,7 @@ async function restoreBackup(
         !restored &&
         options.resume !== false
       )
-        await ops.wake();
+        await wakeOrFail(entry);
     } finally {
       await rm(stage, { recursive: true, force: true });
     }

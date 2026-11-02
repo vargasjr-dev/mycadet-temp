@@ -51,7 +51,6 @@ function seedToken(
     refreshToken,
     refreshTokenExpiresAt: refreshToken ? future() : 0,
     refreshAfter: due ? past() : future(),
-    isNew: false,
     deviceId: "dev",
     leasedAt: new Date().toISOString(),
   });

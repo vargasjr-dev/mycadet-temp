@@ -25,17 +25,14 @@ import {
 
 import { resolveDataDir, resolveLogDir } from "../../config";
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import { saveLockfileAssistant } from "../../lockfile";
 import {
   GATEWAY_PORT,
   isLocalEntry,
   type AppleContainerAssistant,
   type DockerAssistant,
   type LocalAssistant,
-  type LockfileAssistant,
 } from "../../lockfile-contract";
 import {
-  buildDaemonUrl,
   httpHealthCheck,
   probeDaemonReadiness,
   probeDaemonReadinessWithRetry,
@@ -55,7 +52,6 @@ import {
 import { isValidReleaseVersion } from "../../upgrade";
 import { stripVersionPrefix } from "../../version";
 import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "../../xdg-log";
-import { healConflictedLocalPorts } from "./port-heal";
 import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
 
 const _require = createRequire(import.meta.url);

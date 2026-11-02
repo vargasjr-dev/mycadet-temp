@@ -2,7 +2,7 @@ import type { GuardianTokenData } from "@mycadet/local-mode";
 
 /**
  * A complete `GuardianTokenData` fixture with per-test overrides — the type's
- * nine fields are all required, so partial fakes need this to stand in.
+ * eight fields are all required, so partial fakes need this to stand in.
  */
 export function makeGuardianTokenData(
   over: Partial<GuardianTokenData> = {},
@@ -14,7 +14,6 @@ export function makeGuardianTokenData(
     refreshToken: "refresh-token",
     refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
     refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
     deviceId: "device-1",
     leasedAt: new Date().toISOString(),
     ...over,

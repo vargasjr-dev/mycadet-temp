@@ -60,7 +60,8 @@ mock.module("../channels/gateway-verification-sessions.js", () => ({
   },
 }));
 
-const { executeCallStart } = await import("../tools/calls/call-start.js");
+const { run: executeCallStart } =
+  await import("../config/bundled-skills/phone-calls/tools/call-start.js");
 
 function makeContext(): ToolContext {
   return {
