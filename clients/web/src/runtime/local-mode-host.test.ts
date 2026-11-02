@@ -295,6 +295,23 @@ describe("pairing hosts", () => {
     });
   });
 
+  test("pairing-cancel POSTs the handle and resolves void", async () => {
+    const fetchMock = mock(async () => ({
+      json: async () => ({ ok: true }),
+    }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    await pairingCancelHost("handle-1");
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe("/v1/remote-web/pairing-cancel");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ handle: "handle-1" });
+  });
+
   test("the desktop shell rides the same pairing routes — the bridge is never consulted", async () => {
     setPoisonedBridge();
     const fetchMock = mock(async () => ({ json: async () => started }));
