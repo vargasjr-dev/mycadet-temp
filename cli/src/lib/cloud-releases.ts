@@ -2,8 +2,6 @@ import { z } from "zod";
 
 import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 import { getCloudUrl, loopbackSafeFetch } from "@mycadet/local-mode";
-import { dockerhubImages } from "./remotes/docker.js";
-import type { ServiceName } from "./remotes/docker.js";
 
 const ReleaseListItemSchema = z.object({
   version: z.string().min(1),
@@ -97,24 +95,3 @@ export async function fetchLatestVersion(): Promise<string | null> {
  * git-tag-style "v" prefix on the input is tolerated and stripped. The repo
  * follows the CLI's own version shape (dev CLI → `-dev` repos).
  */
-export function resolveImageRefs(
-  targetVersion: string,
-  cliVersion: string,
-): Record<ServiceName, string> {
-  const versionTag = targetVersion.startsWith("v")
-    ? targetVersion.slice(1)
-    : targetVersion;
-  const images = dockerhubImages(cliVersion);
-  return {
-    assistant: `${images.assistant}:${versionTag}`,
-    "credential-executor": `${images["credential-executor"]}:${versionTag}`,
-    gateway: `${images.gateway}:${versionTag}`,
-  };
-}
-
-/** Convenience wrapper for "the images this CLI itself was built from". */
-export function resolveOwnImageRefs(
-  cliVersion: string,
-): Record<ServiceName, string> {
-  return resolveImageRefs(cliVersion || "latest", cliVersion);
-}

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { green } from "../../color.js";
-import { PROVIDER_ENV_VAR_NAMES } from "../../../shared/provider-env-vars.js";
+import { PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
 import {
   GATEWAY_PORT,
   getGatewayUrl,
@@ -34,7 +34,7 @@ import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context.js";
 /**
  * Every supported provider API key from the caller's environment is injected
  * into the sandbox as a secret env var when present — the same combined map
- * the docker/aws/gcp flows iterate (see shared/provider-env-vars.ts).
+ * the docker/aws/gcp flows iterate (see @mycadet/local-mode's provider-env-vars).
  */
 function collectProviderEnvs() {
   return Object.values(PROVIDER_ENV_VAR_NAMES).flatMap((name) => {
@@ -51,9 +51,7 @@ function collectProviderEnvs() {
  * recorded in the lockfile entry.
  */
 function sandboxGatewayEnvs() {
-  return [
-    { name: "GATEWAY_PORT", value: String(GATEWAY_PORT), secret: false },
-  ];
+  return [{ name: "GATEWAY_PORT", value: String(GATEWAY_PORT), secret: false }];
 }
 
 /**

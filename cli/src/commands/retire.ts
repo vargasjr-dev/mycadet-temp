@@ -15,7 +15,7 @@ import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
-import { printInstanceDetails } from "../lib/instance-details.js";
+import { printInstanceDetails } from "@mycadet/local-mode";
 
 interface RetireArgs {
   name?: string;

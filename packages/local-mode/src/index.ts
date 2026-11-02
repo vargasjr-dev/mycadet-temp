@@ -119,6 +119,28 @@ export {
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
 export { hatchLocal } from "./remotes/local/hatch";
+export { hatchDocker } from "./remotes/docker/hatch";
+export { hatchCloud } from "./remotes/cloud/hatch";
+export {
+  startContainers,
+  stopContainers,
+  DOCKER_STATEFUL_SET_SPEC,
+  type DockerStatefulSetSpec,
+  type ServiceName,
+  getBuilderManagedEnvKeys,
+} from "./remotes/docker/statefulset";
+export {
+  pullImage,
+  resolveImageRefs,
+  dockerhubImages,
+  DOCKER_READY_TIMEOUT_MS,
+} from "./remotes/docker/hatch";
+export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
+export { printInstanceDetails } from "./instance-details";
+export {
+  PROVIDER_ENV_VAR_NAMES,
+  SEARCH_PROVIDER_ENV_VAR_NAMES,
+} from "./provider-env-vars";
 
 export {
   computeDeviceId,

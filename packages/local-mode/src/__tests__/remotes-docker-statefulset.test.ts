@@ -6,8 +6,8 @@ import {
   type BuildServiceRunArgsOpts,
   type DockerStatefulSetSpec,
   type ServiceName,
-} from "../lib/statefulset.js";
-import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+} from "../remotes/docker/statefulset";
+import { PROVIDER_ENV_VAR_NAMES } from "../provider-env-vars";
 
 const SECRET_KEYS = ["CES_SERVICE_TOKEN"];
 

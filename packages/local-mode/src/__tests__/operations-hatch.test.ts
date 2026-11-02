@@ -3,9 +3,30 @@ import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { mock } from "bun:test";
+import {
+  type HatchDockerParams,
+  type HatchDockerResult,
+} from "../remotes/docker/hatch";
 import { hatchAssistant } from "../operations/hatch";
 import { readLockfile, saveLockfileAssistant } from "../lockfile";
 import { findAssistantByName } from "../operations/lookup";
+
+const hatchDockerMock = mock<
+  (params: HatchDockerParams) => Promise<HatchDockerResult>
+>(async () => ({
+  ok: true,
+  entry: {
+    assistantId: "leg-entry",
+    cloud: "docker",
+    port: 7830,
+    daemonPort: 7821,
+  },
+  ready: true,
+}));
+mock.module("../remotes/docker/hatch", () => ({
+  hatchDocker: hatchDockerMock,
+}));
 
 let home: string;
 const ENV_KEYS = ["XDG_CONFIG_HOME", "XDG_DATA_HOME"] as const;
@@ -29,14 +50,54 @@ afterEach(() => {
 
 describe("hatchAssistant", () => {
   test("the router refuses the remotes it does not cover yet", async () => {
-    for (const remote of ["docker", "baseten", "cloud", "custom"]) {
+    for (const remote of ["baseten", "custom"]) {
       const result = await hatchAssistant({ remote });
       expect(result.ok).toBe(false);
       if (result.ok) continue;
       expect(result.status).toBe(400);
       expect(result.error).toContain(remote);
     }
-    expect(findAssistantByName("docker")).toBeNull();
+    expect(findAssistantByName("baseten")).toBeNull();
+  });
+
+  test("the docker arm routes to the leg and maps the entry back", async () => {
+    const result = await hatchAssistant({
+      remote: "docker",
+      name: "leg-entry",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.assistant.assistantId).toBe("leg-entry");
+    expect(result.ready).toBe(true);
+    expect(hatchDockerMock.mock.calls[0]?.[0]).toMatchObject({
+      name: "leg-entry",
+      watch: undefined,
+      version: undefined,
+    });
+  });
+
+  test("the docker arm passes the leg's structured failure through untouched", async () => {
+    hatchDockerMock.mockImplementationOnce(async () => ({
+      ok: false as const,
+      status: 503,
+      error: "docker daemon down",
+      assistantId: "leg-entry",
+    }));
+
+    const result = await hatchAssistant({ remote: "docker" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(503);
+    expect(result.error).toBe("docker daemon down");
+    expect(result.assistantId).toBe("leg-entry");
+  });
+
+  test("the cloud arm without a token answers 401 before any network call", async () => {
+    const result = await hatchAssistant({ remote: "cloud" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(401);
+    expect(result.error).toContain("cadet login");
   });
 
   test("a duplicate local name answers 409 before anything starts", async () => {
@@ -48,7 +109,10 @@ describe("hatchAssistant", () => {
       daemonPort: 7821,
       cesPort: 7832,
     });
-    const result = await hatchAssistant({ remote: "local", name: "hatch-op-dup" });
+    const result = await hatchAssistant({
+      remote: "local",
+      name: "hatch-op-dup",
+    });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.status).toBe(409);

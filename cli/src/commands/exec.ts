@@ -13,7 +13,7 @@ import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
 
-import type { ServiceName } from "../lib/remotes/docker.js";
+import type { ServiceName } from "@mycadet/local-mode";
 import {
   execAppleContainer,
   sshAppleContainer,

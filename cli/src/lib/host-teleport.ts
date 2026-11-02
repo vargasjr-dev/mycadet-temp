@@ -10,7 +10,7 @@ import { dockerResourceNames } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import { hatchDocker, startContainers } from "./remotes/docker.js";
+import { hatchDocker, startContainers } from "@mycadet/local-mode";
 import {
   allocateLocalPlacement,
   buildHatchConfigValues,
@@ -31,7 +31,7 @@ import {
   STATE_ROOTS,
   withRootOperationLock,
 } from "./root-backup.js";
-import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset.js";
+import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
 import { execOutput } from "./step-runner.js";
 import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
@@ -115,11 +115,18 @@ async function initializeTeleportTarget(
   }
   try {
     if (env === "docker") {
-      await hatchDocker({
+      const hatched = await hatchDocker({
         name: instanceName,
-        setupProviderCredentials: false,
-        initialArchive: archive,
+        createOnly: true,
+        version: cliPkg.version,
       });
+      if (!hatched.ok) {
+        throw new Error(hatched.error);
+      }
+      await initializeRootArchive(hatched.entry, archive);
+      // The wake is the one revive seam; readiness is the health check's
+      // job now, not the storage layer's.
+      await wakeAssistant(hatched.entry);
     } else if (env === "local") {
       await withLocalHatchLock(async () => {
         const entry: LockfileAssistant = {

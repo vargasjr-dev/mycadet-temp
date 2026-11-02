@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { SEARCH_PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import { SEARCH_PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
 
 /**
  * Drift guard for the CLI-side search provider env-var mirror.

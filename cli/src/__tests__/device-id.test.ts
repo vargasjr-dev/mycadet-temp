@@ -19,7 +19,7 @@ await mockOsHomedir((realHomedir) => () => fakeHome ?? realHomedir());
 import {
   getOrCreateHostDeviceId,
   resetHostDeviceIdCache,
-} from "../lib/device-id.js";
+} from "@mycadet/local-mode";
 import { snapshotEnv } from "./helpers/env.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
 

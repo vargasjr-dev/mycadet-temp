@@ -2,11 +2,10 @@
 import { isCloudHome } from "../lib/cloud-values.js";
 import cliPkg from "../../package.json";
 
-import { setActiveAssistant } from "../lib/assistant-config";
 import {
   cliCommand,
+  hatchCloud,
   readCloudToken,
-  saveLockfileAssistant,
   validateAssistantName,
 } from "@mycadet/local-mode";
 import { checkProviderApiKey } from "../lib/api-key-check.js";
@@ -27,7 +26,6 @@ import { hatchDocker } from "../lib/remotes/docker.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
 import { buildHatchConfigValues } from "@mycadet/local-mode";
-import { hatchAssistant } from "../lib/cloud-client";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
 
@@ -360,22 +358,19 @@ async function hatchCadetPlatform(): Promise<void> {
   console.log("   Hatching assistant on Cadet Cloud...");
   console.log("");
 
-  const { assistant: result } = await hatchAssistant(token);
-
-  saveLockfileAssistant({
-    assistantId: result.id,
-    cloud: "cloud",
-    hatchedAt: new Date().toISOString(),
-  });
-  setActiveAssistant(result.id);
+  const result = await hatchCloud({ token });
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  const { assistant: hatched } = result;
 
   console.log(
     "   " +
       green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
   );
   console.log("");
-  console.log(`   ID:     ${result.id}`);
-  console.log(`   Name:   ${result.name}`);
-  console.log(`   Status: ${result.status}`);
+  console.log(`   ID:     ${hatched.id}`);
+  console.log(`   Name:   ${hatched.name}`);
+  console.log(`   Status: ${hatched.status}`);
   console.log("");
 }

@@ -10,7 +10,7 @@ import {
   TeleportRecoveryError,
 } from "../lib/host-teleport.js";
 
-import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
+import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
