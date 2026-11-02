@@ -145,7 +145,7 @@ test("an injected id without a completion stamp does not bypass first-run signup
 test("a stalled native host read cannot block routing after cancellation or start a late cloud lookup", async () => {
   // The native read IS the /v1 fetch now; an abort before it settles must
   // resolve false and never fire the late cloud lookups.
-  let resolve!: (value: unknown) => void;
+  let resolve!: (value: Response) => void;
   fetchSpy.mockImplementationOnce(
     Object.assign(
       () =>
