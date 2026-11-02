@@ -1046,7 +1046,7 @@ function runAppServerChild(): void {
 type RelayData = {
   upstream: WebSocket;
   /** Browser→gateway messages sent before the upstream opened. */
-  queue: (string | Uint8Array)[];
+  queue: (string | Uint8Array<ArrayBuffer>)[];
 };
 
 type HeaderCapableWebSocket = {
@@ -1118,7 +1118,7 @@ function gatewayRelayHandlers(): Bun.WebSocketHandler<RelayData> {
         for (const pending of queue.splice(0)) upstream.send(pending);
       });
       upstream.addEventListener("message", (event) => {
-        ws.send(event.data as string | Uint8Array);
+        ws.send(event.data as string | Uint8Array<ArrayBuffer>);
       });
       const lose = () => {
         try {

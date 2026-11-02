@@ -137,7 +137,6 @@
     "toastUpdateInitiated": "已启动更新到 {version}。",
     "update": "更新",
     "updateTo": "更新到",
-    "updateToVersion": "更新到版本 {version}",
     "updating": "更新中..."
   },
   "autoTopUpPaymentMethodModal": {
@@ -299,15 +298,6 @@
     "searchPlaceholder": "搜索凭据",
     "subtitleOwn": "加密存储在助手的凭据库中。可按需显示、替换或删除其值。",
     "title": "凭据"
-  },
-  "debugBundleExport": {
-    "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
-    "export": "导出调试包",
-    "exporting": "正在导出…",
-    "sentAt": "已于 {time} 发送给 Cadet。",
-    "toastFailed": "调试包未发送。",
-    "toastFailedWithReason": "调试包未发送：{reason}",
-    "toastSent": "调试包已发送给 Cadet。"
   },
   "debugControlsPanel": {
     "backups": "备份",
@@ -687,20 +677,6 @@
     "serviceFallbackName": "隧道提供商",
     "serviceWebsite": "这是 {service} 的网站，而不是您的助手地址。请在主机上启动隧道以获取一个；`cadet tunnel --help` 列出了提供商。",
     "unparseable": "请输入有效的 URL，例如 https://your-assistant.ts.net。"
-  },
-  "pairedDevicesSection": {
-    "browserOnOs": "{os}上的{browser}",
-    "confirmMessageNamed": "{name} ({hash}) 将失去对此助手的访问权限。其访问令牌将立即失效；该设备必须从本机重新配对才能重新连接。",
-    "confirmTitle": "撤销此设备？",
-    "dateUnknown": "未知",
-    "hostRevokeDisabledTitle": "这是本机自身的凭据；撤销它将导致主机无法访问助手。",
-    "pairedActiveLine": "已配对 {paired} · 正在使用",
-    "pairedAndUsedLine": "已配对 {paired} · 上次使用时间 {lastUsed}",
-    "pairedLine": "已配对 {paired}",
-    "platformUnknown": "未知",
-    "revokeButton": "撤销",
-    "thisMachine": "本机",
-    "title": "已配对设备 ({count})"
   },
   "paymentMethodRow": {
     "savedCard": "已保存卡片"
