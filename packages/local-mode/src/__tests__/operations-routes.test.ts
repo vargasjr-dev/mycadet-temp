@@ -474,7 +474,10 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
         headers: { "content-type": "application/json" },
         body: "{not json",
       });
-      const response = await match.route.run({ assistantId: match.assistantId, source: request });
+      const response = await match.route.run({
+        assistantId: match.assistantId,
+        source: request,
+      });
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,
@@ -596,11 +599,14 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
   });
 });
 
-describe("the status row — GET /v1/assistants/{id}/", () => {
+describe("the status row — GET /v1/assistants/{id}/status/", () => {
   test("an on-machine entry reports the op's lifecycle state", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
 
-    const response = await dispatchAnswered("/v1/assistants/asst-1/", "GET");
+    const response = await dispatchAnswered(
+      "/v1/assistants/asst-1/status/",
+      "GET",
+    );
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, state: "sleeping" });

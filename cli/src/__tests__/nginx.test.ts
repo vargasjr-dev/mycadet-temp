@@ -2150,17 +2150,6 @@ describe("assistant metadata API", () => {
       operationsSocketPath: "/tmp/cadet-ingress/operations.sock",
     });
   }
-  function body(conf: string, path: string, status = 200): unknown {
-    const location = conf
-      .split(`location = "${path}" {`)[1]
-      ?.split("\n    }")[0];
-    const value = location?.match(/return (200|409) ("(?:\\.|[^"\\])*");/);
-    expect(Number(value?.[1])).toBe(status);
-    if (!value) {
-      throw new Error(`Missing metadata for ${path}`);
-    }
-    return JSON.parse(JSON.parse(value[2]));
-  }
   test("the operator locations generate from the route table for the served id", () => {
     const conf = config();
     // The resolution (the table's GET row) mounts both spellings: the

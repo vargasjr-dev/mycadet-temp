@@ -144,7 +144,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
     "http://localhost:3001/v1/assistant",
-    "http://localhost:3001/v1/assistant",
+    "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
 });
@@ -269,18 +269,25 @@ test("arrow keys move focus across cards without selecting", async () => {
 });
 
 test("Enter selects the focused card", async () => {
+  let resolutionCalls = 0;
   const router = setup(undefined, false, async (url) => {
     const target = String(url);
-    if (target.includes("/v1/assistants/?")) {
-      return Response.json({ results: [{ id: "assistant-1", name: "One" }] });
-    }
-    // The resolution's ready arm carries the assistant the card navigated
-    // with — the frame mounts on what the host answered.
     if (target.includes("/v1/assistant")) {
-      return Response.json({
-        ...resolution,
-        assistant: { ...resolution.assistant, id: "assistant-1" },
-      });
+      // The chooser's first call reads the selection arm; the card's pick
+      // re-resolves and the ready arm carries the assistant the card
+      // navigated with — the frame mounts on what the host answered.
+      resolutionCalls += 1;
+      return Response.json(
+        resolutionCalls === 1
+          ? {
+              status: "selection",
+              assistants: [{ id: "assistant-1", name: "One" }],
+            }
+          : {
+              ...resolution,
+              assistant: { ...resolution.assistant, id: "assistant-1" },
+            },
+      );
     }
     return iframeDocument.clone();
   });
@@ -310,9 +317,12 @@ test("a sole assistant waits for selection rather than fetching detail on the ac
 
 test("an empty host list can be refreshed", async () => {
   request
-    .mockResolvedValueOnce(Response.json({ results: [] }))
+    .mockResolvedValueOnce(Response.json({ status: "empty" }))
     .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }],
+      }),
     );
   setup();
   await screen.findByText("No assistant is available.");
@@ -321,21 +331,21 @@ test("an empty host list can be refreshed", async () => {
 });
 
 test("an empty list offers creation and lands in the created assistant", async () => {
+  let hatched = false;
   const router = setup("/account/select-assistant", false, async (url) => {
     const target = String(url);
-    if (target.includes("/v1/assistants/?")) {
-      return Response.json({ results: [] });
-    }
     // The dialog's create flow resolves the organization, hatches, and the
-    // shell then resolves the created assistant's detail same-origin.
+    // shell then re-resolves the created assistant same-origin: the chooser
+    // reads the empty arm until the hatch lands, the shell reads ready.
+    if (target.includes("/hatch/")) {
+      hatched = true;
+      return Response.json(detail);
+    }
     if (target.includes("/v1/organizations/")) {
       return Response.json({ results: [{ id: "org-1" }] });
     }
-    if (target.includes("/hatch/")) {
-      return Response.json(detail);
-    }
     if (target.includes("/v1/assistant")) {
-      return Response.json(resolution);
+      return Response.json(hatched ? resolution : { status: "empty" });
     }
     return iframeDocument.clone();
   });
@@ -353,10 +363,11 @@ test("an empty list offers creation and lands in the created assistant", async (
       // the cloud session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistant",
     "/v1/organizations/?limit=100&offset=0",
     "/v1/assistants/hatch/?mode=create",
-    "http://localhost:3001/v1/assistant",
+    // The created assistant's id rides the scoped resolution spelling.
+    "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
 });
 
@@ -372,7 +383,8 @@ test("the row's menu retires the assistant and refreshes the list", async () => 
   request
     .mockResolvedValueOnce(
       Response.json({
-        results: [
+        status: "selection",
+        assistants: [
           { id: "assistant-1", name: "One" },
           { id: "assistant-2", name: "Two" },
         ],
@@ -381,7 +393,10 @@ test("the row's menu retires the assistant and refreshes the list", async () => 
     // The DELETE lands, then the refresh re-lists without the retired row.
     .mockResolvedValueOnce(new Response(null, { status: 204 }))
     .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-2", name: "Two" }] }),
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-2", name: "Two" }],
+      }),
     );
   setup();
   const one = await screen.findByRole("radio", { name: /^One/ });
@@ -412,7 +427,10 @@ test("the row's menu retires the assistant and refreshes the list", async () => 
 test("a failed retire keeps the dialog open with the cloud's detail", async () => {
   request
     .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }],
+      }),
     )
     .mockResolvedValueOnce(
       Response.json(
@@ -483,7 +501,12 @@ test("leaving the chooser aborts its request and ignores a late reply", async ()
   cleanup();
   expect(signal?.aborted).toBe(true);
   await act(async () => {
-    finish(Response.json({ results: [{ id: "assistant-1" }] }));
+    finish(
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1" }],
+      }),
+    );
   });
   expect(screen.queryByRole("radio", { name: "assistant-1" })).toBeNull();
 });
@@ -497,7 +520,15 @@ test("browser history restores selection and frame navigation retains it", async
     false,
     async (url) => {
       if (String(url).includes("/v1/assistant")) {
-        return Response.json(resolution);
+        return Response.json({
+          ...resolution,
+          assistant: {
+            ...resolution.assistant,
+            // An absolute runtime origin: the frame's own document load
+            // fails soft (the external host), like the shell suite's.
+            url: "https://runtime.example.com/web/1.2.3/assistant/",
+          },
+        });
       }
       return iframeDocument.clone();
     },
@@ -511,7 +542,7 @@ test("browser history restores selection and frame navigation retains it", async
     window.dispatchEvent(
       new MessageEvent("message", {
         source: frame.contentWindow,
-        origin: "http://localhost:3001",
+        origin: "https://runtime.example.com",
         data: {
           source: "mycadet-web-nav",
           nav: "push",
@@ -524,12 +555,13 @@ test("browser history restores selection and frame navigation retains it", async
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
-  // The auth machinery's platform-session probe rides along; pin the API.
+  // The auth machinery's platform-session probe rides along; pin the API —
+  // the boot entry's hand-off id rides the scoped resolution spelling.
   expect(
     request.mock.calls
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
-  ).toEqual(["http://localhost:3001/v1/assistant"]);
+  ).toEqual(["http://localhost:3001/v1/assistants/assistant-2/"]);
 });
 
 function seedOrigin(url: string, name?: string): void {
@@ -558,7 +590,7 @@ describe("remembered origins", () => {
     );
     try {
       setup("/account/select-assistant", false, async () =>
-        Response.json({ results: [] }),
+        Response.json({ status: "empty" }),
       );
       await act(async () => {
         fireEvent.click(await screen.findByText("Workshop"));
@@ -577,7 +609,7 @@ describe("remembered origins", () => {
     );
     try {
       setup("/account/select-assistant", false, async () =>
-        Response.json({ results: [] }),
+        Response.json({ status: "empty" }),
       );
       fireEvent.click(await screen.findByText("Add a remote assistant"));
       fireEvent.change(screen.getByLabelText("Assistant address"), {
@@ -662,8 +694,10 @@ describe("remembered origins", () => {
 
     test("the pairing affordance replaces the add-origin affordance, and opens the connect dialog", async () => {
       stubCadet(pairedLockfile, { ok: true, state: "healthy" });
-      setup("/account/select-assistant", false, async () =>
-        Response.json({ results: [] }),
+      setup("/account/select-assistant", false, async (url) =>
+        String(url).endsWith("/v1/assistants/")
+          ? Response.json(pairedLockfile)
+          : Response.json({ status: "empty" }),
       );
       expect(
         await screen.findByText("Connect a remote assistant"),
@@ -682,16 +716,20 @@ describe("remembered origins", () => {
     test("a paired entry connects same-origin, routed by the host through the id in the path", async () => {
       stubCadet(pairedLockfile, { ok: true, state: "healthy" });
       setup("/account/select-assistant", false, async (url) => {
-        if (String(url).includes("/v1/assistants/paired-1")) {
+        const target = String(url);
+        if (target.includes("/v1/assistants/paired-1")) {
+          // The id-scoped resolution's ready arm.
           return Response.json({
-            id: "paired-1",
-            status: "active",
-            version: "1.2.3",
-            url: "web/1.2.3/assistant/",
+            status: "ready",
+            assistant: {
+              id: "paired-1",
+              version: "1.2.3",
+              url: "web/1.2.3/assistant/",
+            },
           });
         }
-        if (String(url).includes("/v1/assistants")) {
-          return Response.json({ results: [] });
+        if (target.endsWith("/v1/assistants/")) {
+          return Response.json(pairedLockfile);
         }
         return iframeDocument.clone();
       });
@@ -727,7 +765,20 @@ describe("remembered origins", () => {
         { ok: true, state: "crashed" },
       );
       setup("/account/select-assistant", false, async (url) => {
-        if (String(url).includes("/v1/assistant")) {
+        const target = String(url);
+        if (target.endsWith("/v1/assistants/")) {
+          return Response.json({
+            assistants: [
+              {
+                assistantId: "local-1",
+                name: "Workbench",
+                cloud: "local",
+              },
+            ],
+            activeAssistant: null,
+          });
+        }
+        if (target.includes("/v1/assistant")) {
           return Response.json({ status: "notReady" });
         }
         return iframeDocument.clone();

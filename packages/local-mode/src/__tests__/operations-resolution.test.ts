@@ -18,15 +18,15 @@ const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
 const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
 
 const loopbackSafeFetchMock = mock(
-  async (
-    _input: string | URL,
-    _init?: RequestInit,
-  ): Promise<Response> => new Response(null, { status: 204 }),
+  async (_input: string | URL, _init?: RequestInit): Promise<Response> =>
+    new Response(null, { status: 204 }),
 );
-const getGatewayHealthMock = mock(async (): Promise<{
-  version?: string;
-  authenticated: boolean;
-}> => ({ version: undefined, authenticated: true }));
+const getGatewayHealthMock = mock(
+  async (): Promise<{
+    version?: string;
+    authenticated: boolean;
+  }> => ({ version: undefined, authenticated: true }),
+);
 
 mock.module("../loopback-fetch", () => ({
   ...realLoopbackFetch,
@@ -45,10 +45,7 @@ afterAll(() => {
 });
 
 import { readLockfile } from "../lockfile";
-import {
-  OPERATOR_ROUTES,
-  matchOperatorRequest,
-} from "../operations/routes";
+import { OPERATOR_ROUTES, matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -62,9 +59,7 @@ beforeEach(() => {
   for (const m of [loopbackSafeFetchMock, getGatewayHealthMock]) {
     m.mockReset();
   }
-  loopbackSafeFetchMock.mockResolvedValue(
-    new Response(null, { status: 204 }),
-  );
+  loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status: 204 }));
   getGatewayHealthMock.mockResolvedValue({
     version: undefined,
     authenticated: true,
@@ -132,12 +127,14 @@ describe("matchOperatorRequest — the four prefixes", () => {
     expect(matchOperatorRequest("/v1/assistant", "POST")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant", "DELETE")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant/meta", "GET")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/", "GET")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
   });
 
-  test("each route's segment and pattern describe the same surface", () => {
+  test("each scoped row's segment and pattern describe the same surface", () => {
     for (const route of OPERATOR_ROUTES) {
+      if (!route.scoped) {
+        continue;
+      }
       expect(route.pattern.test(route.segment)).toBe(true);
       expect(route.pattern.test(`${route.segment}/`)).toBe(true);
     }
@@ -332,9 +329,7 @@ describe("runResolveRoute — the cloud leg", () => {
       [409, { status: "notReady" }],
       [410, { status: "unavailable" }],
     ] as const) {
-      loopbackSafeFetchMock.mockResolvedValue(
-        new Response(null, { status }),
-      );
+      loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status }));
       const response = await runResolution();
       expect(await resolutionBody(response)).toEqual(expected);
     }

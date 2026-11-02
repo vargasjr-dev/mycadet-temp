@@ -153,9 +153,7 @@ export function readIngressState(): IngressState | null {
   return {
     listenPort,
     ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
-    ...(typeof remoteWebConfigHash === "string"
-      ? { remoteWebConfigHash }
-      : {}),
+    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
     ...(typeof operationsPid === "number" ? { operationsPid } : {}),
   };
 }

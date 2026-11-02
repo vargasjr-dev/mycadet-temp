@@ -94,7 +94,11 @@ export async function runResolveRoute(
         }
         return resolutionResponse({
           status: "ready",
-          assistant: { id: detail.id, version: detail.version, url: detail.url },
+          assistant: {
+            id: detail.id,
+            version: detail.version,
+            url: detail.url,
+          },
         });
       } catch {
         return resolutionResponse({ status: "notReady" });

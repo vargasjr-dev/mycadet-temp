@@ -87,7 +87,9 @@ export interface OperatorRoute {
  * cloud error shape, so the confirmation dialog renders the same detail
  * either way.
  */
-async function runRetireRoute(request: OperatorRequest): Promise<Response | null> {
+async function runRetireRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
@@ -118,7 +120,9 @@ async function runRetireRoute(request: OperatorRequest): Promise<Response | null
  * and status. Entries the host cannot stop pass through, and the
  * pre-existing chain answers.
  */
-async function runSleepRoute(request: OperatorRequest): Promise<Response | null> {
+async function runSleepRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
@@ -141,7 +145,9 @@ async function runSleepRoute(request: OperatorRequest): Promise<Response | null>
  * at the CLI (the recreate needs the container-create builder, still
  * CLI-side); a bodyless 204 parses as the web bundle's success.
  */
-async function runWakeRoute(request: OperatorRequest): Promise<Response | null> {
+async function runWakeRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {
     return null;
@@ -619,7 +625,8 @@ export function matchOperatorRequest(
         // the lockfile's active or sole entry, empty when there is none.
         return {
           route,
-          assistantId: servedConfigFromLockfile(readLockfile()).assistantId ?? "",
+          assistantId:
+            servedConfigFromLockfile(readLockfile()).assistantId ?? "",
         };
       }
       try {
@@ -629,9 +636,10 @@ export function matchOperatorRequest(
         return null;
       }
     }
-    // A prefixed path matched a prefix but no scoped row: its other
-    // spellings cannot own it either.
-    return null;
+    // A prefixed path is owned by the assistant surface — its other
+    // spellings cannot own it either. The machine-level rows still get
+    // their pass below (the hatch verb rides the assistants namespace).
+    break;
   }
   for (const route of OPERATOR_ROUTES) {
     if (route.scoped || method !== route.method) {

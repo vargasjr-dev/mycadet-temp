@@ -2,7 +2,6 @@ import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
-  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -27,7 +26,6 @@ import {
 import {
   getGatewayUrl,
   type InjectedConfig,
-  type Remote,
 } from "@mycadet/local-mode/contract";
 import {
   getAssistantDisplayName,

@@ -201,8 +201,11 @@ test("retries an API failure without account session probes", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByTitle("Assistant");
   expect(request).toHaveBeenCalledTimes(2);
+  // The shell's assistantId prop rides the request — the scoped spelling.
   expect(
-    request.mock.calls.every(([url]) => String(url).endsWith("/v1/assistant")),
+    request.mock.calls.every(([url]) =>
+      String(url).endsWith("/v1/assistants/assistant-1/"),
+    ),
   ).toBe(true);
 });
 
@@ -249,7 +252,7 @@ test("changing assistant or API base immediately hides the previous frame", asyn
   expect(screen.queryByTitle("Assistant")).toBeNull();
   await act(async () => {});
   expect(String(request.mock.calls.at(-1)?.[0])).toBe(
-    `${origin}/admin/api/v1/assistant`,
+    `${origin}/admin/api/v1/assistants/assistant-2/`,
   );
   await act(async () => {
     finish(json(resolution("assistant-2")));
