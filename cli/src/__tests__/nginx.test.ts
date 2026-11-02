@@ -2106,6 +2106,15 @@ describe("assistant metadata API", () => {
   }
   test("lists only this host's assistant and returns its actual UI version and URL", () => {
     const conf = config();
+    // The shell's one resolution endpoint answers the whole union.
+    expect(body(conf, "/v1/assistant")).toEqual({
+      status: "ready",
+      assistant: {
+        id: "assistant-1",
+        version: "1.2.3",
+        url: "web/assistant/",
+      },
+    });
     // Each row carries its own hosting kind — here the test env has no
     // lockfile entry for the id, so the remote kind is omitted (unknown
     // entries invent nothing).
@@ -2125,6 +2134,8 @@ describe("assistant metadata API", () => {
   test("metadata supports both slash forms and only read methods", () => {
     const conf = config();
     for (const path of [
+      "/v1/assistant",
+      "/v1/assistant/",
       "/v1/assistants",
       "/v1/assistants/",
       "/v1/assistants/assistant-1",
