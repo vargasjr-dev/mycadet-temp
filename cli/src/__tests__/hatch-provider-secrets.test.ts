@@ -3,12 +3,14 @@ import { describe, expect, test } from "bun:test";
 import {
   configureHatchProviderApiKey,
   formatProviderName,
+  isSupportedLlmProvider,
+  type ProviderSecretFetch,
+} from "@mycadet/local-mode";
+import {
   hasExplicitHatchProvider,
   HATCH_PROVIDER_CHOICES,
-  isSupportedLlmProvider,
   resolveHatchProvider,
   shouldPromptForHatchProvider,
-  type ProviderSecretFetch,
 } from "../lib/provider-secrets.js";
 
 interface RecordedFetchCall {

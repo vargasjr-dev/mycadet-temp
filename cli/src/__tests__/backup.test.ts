@@ -19,7 +19,7 @@ const capture = spyOn(roots, "createRootBackup");
 const readToken = spyOn(localMode, "readCloudToken");
 const cloudBackup = spyOn(platform, "createPlatformBackup");
 const guardianRead = spyOn(guardian, "loadGuardianToken");
-const guardianLease = spyOn(guardian, "leaseGuardianToken");
+const guardianLease = spyOn(localMode, "leaseGuardianToken");
 
 beforeEach(() => {
   lookup.mockReset();

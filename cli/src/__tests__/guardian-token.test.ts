@@ -19,15 +19,17 @@ import {
 } from "@mycadet/local-mode";
 
 import {
-  getOrCreatePersistedDeviceId,
   guardianTokenDueForRenewal,
-  GuardianLeasePermanentError,
-  leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
   refreshGuardianTokenResult,
   saveGuardianToken,
 } from "../lib/guardian-token.js";
+import {
+  getOrCreatePersistedDeviceId,
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
+} from "@mycadet/local-mode";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";

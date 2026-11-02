@@ -31,7 +31,7 @@ const signedUrl = spyOn(cloud, "cloudRequestSignedUrl");
 const upload = spyOn(cloud, "platformUploadToSignedUrl");
 const importCloud = spyOn(cloud, "platformImportBundleFromGcs");
 const guardianRead = spyOn(guardian, "loadGuardianToken");
-const guardianLease = spyOn(guardian, "leaseGuardianToken");
+const guardianLease = spyOn(localMode, "leaseGuardianToken");
 
 beforeEach(() => {
   for (const spy of [

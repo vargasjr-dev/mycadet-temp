@@ -527,7 +527,7 @@ import { printInstanceDetails } from "../instance-details";
 import { buildServiceRunArgs } from "../statefulset.js";
 import { getOrCreateHostDeviceId } from "../device-id.js";
 import { green, yellow } from "../color.js";
-import { leaseGuardianToken } from "../guardian-token";
+import { leaseGuardianToken } from "@mycadet/local-mode";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
 import { generateInstanceName } from "@mycadet/local-mode";
 import {
@@ -537,9 +537,9 @@ import {
 } from "../host-image-loader.js";
 import { resolveOwnImageRefs } from "../cloud-releases.js";
 import { isDevVersion } from "@mycadet/shared/version";
+import { configureHatchProviderApiKey } from "@mycadet/local-mode";
 import {
   collectProviderApiKey,
-  configureHatchProviderApiKey,
   promptProviderChoice,
   resolveHatchProvider,
   shouldPromptForHatchProvider,

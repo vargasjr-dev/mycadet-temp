@@ -14,16 +14,18 @@ import { setStartupLogging } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
-} from "../guardian-token.js";
+} from "@mycadet/local-mode";
 import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../lifecycle-reporter.js";
-import { configureHatchProviderApiKey } from "../provider-secrets.js";
+import { configureHatchProviderApiKey } from "@mycadet/local-mode";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
 import { printInstanceDetails } from "../instance-details.js";
-import { registerLocalAssistantWithCloud } from "../cloud-login.js";
-import { fetchCurrentUser } from "../cloud-client.js";
+import {
+  fetchCurrentUser,
+  registerLocalAssistantWithCloud,
+} from "@mycadet/local-mode";
 import { green, yellow } from "../color.js";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.

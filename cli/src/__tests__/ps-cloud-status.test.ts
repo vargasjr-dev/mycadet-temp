@@ -53,7 +53,7 @@ const readCloudTokenMock = spyOn(localMode, "readCloudToken").mockReturnValue(
 // they're never invoked on the no-token path, and re-shaped per-test for the
 // token-but-unreachable path.
 const fetchCurrentUserMock = spyOn(
-  cloudClient,
+  localMode,
   "fetchCurrentUser",
 ).mockResolvedValue({
   id: "u1",

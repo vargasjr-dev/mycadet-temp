@@ -121,6 +121,53 @@ export { wakeLocal } from "./remotes/local/wake";
 export { hatchLocal } from "./remotes/local/hatch";
 
 export {
+  computeDeviceId,
+  getOrCreatePersistedDeviceId,
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
+  parseGuardianTokenFields,
+} from "./guardian-token";
+export {
+  configureHatchProviderApiKey,
+  ensureProviderApiKey,
+  formatProviderName,
+  injectGatewayApiKey,
+  isSupportedLlmProvider,
+  promptSecret,
+  readGatewayApiKey,
+} from "./provider-credentials";
+export { LLM_PROVIDER_ENV_VAR_NAMES } from "./provider-env-vars";
+export {
+  ensureSelfHostedLocalRegistration,
+  reprovisionAssistantApiKey,
+  resolveAssistantApiKeyForInjection,
+  registerLocalAssistantWithCloud,
+  fetchCurrentUser,
+  fetchAssistantIngressUrl,
+  injectCredentialsIntoAssistant,
+  readGatewayCredential,
+  verifyGatewayCloudCredential,
+} from "./cloud-registration";
+export type {
+  EnsureRegistrationResponse,
+  ReprovisionApiKeyResponse,
+  GatewayCredentialResult,
+  CredentialInjectionParams,
+  AssistantApiKeySource,
+  ResolveAssistantApiKeyArgs,
+  ResolvedAssistantApiKey,
+  PlatformUser,
+} from "./cloud-registration";
+export type {
+  EnsureProviderApiKeyOptions,
+  EnsureProviderApiKeyResult,
+  GatewayApiKeyReadResult,
+  HatchProviderApiKeyOptions,
+  LlmProviderId,
+  ProviderApiKeySource,
+  ProviderSecretFetch,
+} from "./provider-credentials";
+export {
   ensureLocalRuntime,
   getLocalRuntimeInstallDir,
   type LocalRuntimeInstall,

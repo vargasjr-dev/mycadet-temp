@@ -7,15 +7,20 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
 import { hatchDocker, startContainers } from "./remotes/docker.js";
-import { hatchLocal } from "./remotes/local.js";
 import {
+  allocateLocalPlacement,
+  buildHatchConfigValues,
   removeLockfileAssistant,
   retireDocker,
   retireLocal,
+  saveLockfileAssistant,
   validateAssistantName,
+  withLocalHatchLock,
+  writeInitialConfig,
 } from "@mycadet/local-mode";
 import {
   DockerRootStorage,
+  initializeRootArchive,
   LocalRootStorage,
   restoreRootBackup,
   stageRootArchive,
@@ -38,11 +43,6 @@ export class TeleportRecoveryError extends AggregateError {}
 export interface HostTeleportOps {
   storage(entry: LockfileAssistant): HostStorage;
   backup(entry: LockfileAssistant): Promise<string>;
-  hatch(
-    env: HostEnvironment,
-    name: string | undefined,
-    archive: string,
-  ): Promise<LockfileAssistant>;
   restore(
     entry: LockfileAssistant,
     archive: string,
@@ -71,38 +71,6 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  hatch: async (env, name, initialArchive) => {
-    const instanceName = generateInstanceName(name ?? null);
-    if (findAssistantByName(instanceName)) {
-      throw new Error(`Assistant '${instanceName}' already exists.`);
-    }
-    try {
-      if (env === "docker") {
-        await hatchDocker({
-          name: instanceName,
-          setupProviderCredentials: false,
-          initialArchive,
-        });
-      } else {
-        await hatchLocal({
-          name: instanceName,
-          setupProviderCredentials: false,
-        });
-      }
-      const entry = findAssistantByName(instanceName);
-      if (!entry) {
-        throw new Error("Could not find the newly hatched teleport target.");
-      }
-      return entry;
-    } catch (error) {
-      const entry = findAssistantByName(instanceName);
-      if (entry) {
-        await sleepAssistant(entry);
-        await defaultOps.retire(entry);
-      }
-      throw error;
-    }
-  },
   restore: restoreHostTeleportTarget,
   retire: async (entry) => {
     if (entry.cloud === "docker") {
@@ -123,6 +91,61 @@ function checkVersion(
     throw new Error(
       `Target runtime ${target} is older than source ${source}. Upgrade the target before teleporting.`,
     );
+  }
+}
+
+/**
+ * Put a fresh teleport target's data in place without starting anything:
+ * allocate the placement, write the first-boot config, install the
+ * transferred archive (gateway-security included, so the gateway boots with
+ * the archived signing identity), and persist the entry. The wake is the
+ * caller's — a hatch is just initialize-data + wake, and the teleport owns
+ * both halves itself.
+ */
+async function initializeTeleportTarget(
+  env: HostEnvironment,
+  name: string | undefined,
+  archive: string,
+): Promise<LockfileAssistant> {
+  const instanceName = generateInstanceName(name ?? null);
+  if (findAssistantByName(instanceName)) {
+    throw new Error(`Assistant '${instanceName}' already exists.`);
+  }
+  try {
+    if (env === "docker") {
+      await hatchDocker({
+        name: instanceName,
+        setupProviderCredentials: false,
+        initialArchive: archive,
+      });
+    } else {
+      await withLocalHatchLock(async () => {
+        const entry: LockfileAssistant = {
+          assistantId: instanceName,
+          cloud: "local",
+          ...(await allocateLocalPlacement(instanceName)),
+        };
+        const defaultWorkspaceConfigPath = writeInitialConfig(
+          buildHatchConfigValues({}, undefined),
+        );
+        await initializeRootArchive(entry, archive);
+        entry.hatchedAt = new Date().toISOString();
+        saveLockfileAssistant(entry, instanceName);
+        return defaultWorkspaceConfigPath;
+      });
+    }
+    const entry = findAssistantByName(instanceName);
+    if (!entry) {
+      throw new Error("Could not find the newly initialized teleport target.");
+    }
+    return entry;
+  } catch (error) {
+    const entry = findAssistantByName(instanceName);
+    if (entry) {
+      await sleepAssistant(entry);
+      await defaultOps.retire(entry);
+    }
+    throw error;
   }
 }
 
@@ -215,13 +238,15 @@ async function performHostTeleport(
         throw error;
       }
     } else {
-      target = await ops.hatch(targetEnv, targetName, archive);
+      // A hatch is just initialize-data + wake — the teleport owns both
+      // halves so the archive lands between allocation and first startup.
+      target = await initializeTeleportTarget(targetEnv, targetName, archive);
+      const hatched = await wakeAssistant(target);
+      if (!hatched.ok) throw new Error(hatched.error);
       checkVersion(
         sourceVersion,
         await fetchCurrentVersion(getGatewayUrl(target)),
       );
-      const hatched = await wakeAssistant(target);
-      if (!hatched.ok) throw new Error(hatched.error);
     }
     ready = true;
     setActiveAssistant(target.assistantId);

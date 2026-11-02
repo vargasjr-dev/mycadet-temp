@@ -90,13 +90,12 @@ function makeGuardianToken(
   };
 }
 
-const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
+const leaseGuardianTokenMock = mock<typeof localMode.leaseGuardianToken>(
   async () => makeGuardianToken(),
 );
 
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
-  leaseGuardianToken: leaseGuardianTokenMock,
 }));
 
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
@@ -147,6 +146,7 @@ mock.module("@mycadet/local-mode", () => ({
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
+  leaseGuardianToken: leaseGuardianTokenMock,
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {

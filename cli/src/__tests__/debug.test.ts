@@ -42,7 +42,7 @@ const loadGuardianTokenSpy = spyOn(
   }),
 );
 const leaseGuardianTokenSpy = spyOn(
-  guardianToken,
+  localMode,
   "leaseGuardianToken",
 ).mockResolvedValue(
   makeGuardianTokenData({

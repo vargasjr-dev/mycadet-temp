@@ -20,7 +20,8 @@ import {
   removeLockfileAssistant,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import { fetchCloudAssistants, fetchCurrentUser } from "./cloud-client.js";
+import { fetchCloudAssistants } from "./cloud-client.js";
+import { fetchCurrentUser } from "@mycadet/local-mode";
 
 export type SyncLogger = (message: string) => void;
 

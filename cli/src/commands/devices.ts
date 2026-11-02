@@ -24,7 +24,8 @@ import {
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config";
 import type { GuardianTokenData } from "@mycadet/local-mode";
-import { computeDeviceId, loadGuardianToken } from "../lib/guardian-token.js";
+import { loadGuardianToken } from "../lib/guardian-token.js";
+import { computeDeviceId } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   CLI_INTERFACE_ID,

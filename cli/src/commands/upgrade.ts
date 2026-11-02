@@ -64,7 +64,7 @@ import {
   wakeAssistant,
 } from "@mycadet/local-mode";
 import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
-import { leaseGuardianToken } from "../lib/guardian-token.js";
+import { leaseGuardianToken } from "@mycadet/local-mode";
 
 interface UpgradeArgs {
   name: string | null;

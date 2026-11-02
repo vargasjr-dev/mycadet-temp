@@ -117,7 +117,6 @@ beforeEach(async () => {
       order.push(`backup:${entry.assistantId}`);
       return file;
     }),
-    hatch: mock(async () => target),
     restore: mock(async (entry, archive) => {
       await restoreRootBackup({ ...entry, cloud: "local" }, archive, {
         resume: false,
@@ -191,7 +190,6 @@ test("dry run creates no archives and does not stop or hatch services", async ()
   );
   expect(order).toEqual([]);
   expect(ops.backup).not.toHaveBeenCalled();
-  expect(ops.hatch).not.toHaveBeenCalled();
 });
 test("keep-source retains the stopped original", async () => {
   await teleportHostInstallation(
@@ -285,21 +283,30 @@ test("originally sleeping source stays asleep on capture failure", async () => {
   ).rejects.toThrow("capture failed");
   expect(order).not.toContain("wake:source");
 });
-test("new target receives safety tar at hatch and becomes ready before source retirement", async () => {
+test("new target receives safety tar at init and becomes ready before source retirement", async () => {
   await teleportHostInstallation(source, "local", "fresh-target", options, ops);
-  expect(ops.hatch).toHaveBeenCalledWith(
-    "local",
-    "fresh-target",
-    join(directory, "source.tar.gz"),
+  // The archive landed in the fresh target's roots before the wake — the
+  // init installed it, the wake spy saw the target first, retirement after.
+  const allocated = (
+    localMode
+      .loadAllAssistants()
+      .find((e) => e.assistantId === "fresh-target") as LocalAssistant
+  ).instanceDir;
+  const state = await readFile(
+    join(allocated ?? "", "workspace", "state"),
+    "utf-8",
   );
+  expect(state).toBe("source:workspace");
   expect(order.indexOf("wake:target")).toBeLessThan(
     order.indexOf("retire:source"),
   );
   expect(ops.restore).not.toHaveBeenCalled();
 });
 test("failed new target readiness cleans it up before waking source", async () => {
+  // The flow owns the wake now: the target's wake failing IS the failed
+  // readiness — no ops.hatch seam to short-circuit through.
   wakeMock.mockImplementation(async (entry) => {
-    if (entry.assistantId === "target") {
+    if (entry.assistantId === "fresh-target") {
       throw new Error("migration failed");
     }
     order.push(`wake:${entry.assistantId}`);
@@ -310,22 +317,29 @@ test("failed new target readiness cleans it up before waking source", async () =
     teleportHostInstallation(source, "local", "fresh-target", options, ops),
   ).rejects.toThrow("migration failed");
   expect(order.slice(-3)).toEqual([
-    "sleep:target",
-    "retire:target",
+    "sleep:fresh-target",
+    "retire:fresh-target",
     "wake:source",
   ]);
   expect(order).not.toContain("retire:source");
 });
-test("hatch failure retains tar and wakes source", async () => {
-  ops.hatch = mock(async () => {
-    throw new Error("image pull failed");
-  });
-  await expect(
-    teleportHostInstallation(source, "local", "fresh-target", options, ops),
-  ).rejects.toThrow("image pull failed");
-  expect(order.at(-1)).toBe("wake:source");
-  expect(await readFile(join(directory, "source.tar.gz"))).not.toHaveLength(0);
-  expect(ops.retire).not.toHaveBeenCalled();
+test("init failure retains tar and wakes source", async () => {
+  // The archive install throws before the entry is persisted, so the
+  // transferred archive survives on disk for the retry and the source wakes.
+  const bad = join(directory, "garbage.tar.gz");
+  await writeFile(bad, "not a tar");
+  const backup = ops.backup;
+  ops.backup = mock(async () => bad);
+  try {
+    await expect(
+      teleportHostInstallation(source, "local", "fresh-target", options, ops),
+    ).rejects.toThrow();
+    expect(order.at(-1)).toBe("wake:source");
+    expect((await readFile(bad)).length).toBeGreaterThan(0);
+    expect(ops.retire).not.toHaveBeenCalled();
+  } finally {
+    ops.backup = backup;
+  }
 });
 test("multi-patch downgrade fails before shutdown", async () => {
   // The version check calls the package's fetchCurrentVersion directly (the
