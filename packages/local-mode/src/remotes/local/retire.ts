@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, win32 } from "node:path";
 
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import { stopIngressNginx } from "../../ingress";
+import { stopAppServer } from "../../app-server";
 import { stopProcessByPidFile } from "../../process";
 import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
 import { loadAllAssistants } from "../../operations/lookup";
@@ -19,7 +19,7 @@ import { unregisterSelfHostedLocalPlatformRecord } from "../cloud/retire";
 /**
  * The local topology's retire leg: unregister the platform's self-hosted
  * record (warn-and-continue — a failed unregister must not block the local
- * teardown), stop the daemon/gateway/CES siblings and the ingress edge, then
+ * teardown), stop the daemon/gateway/CES siblings and the app server, then
  * move the instance directory aside and archive it in the background. The
  * move-aside is the safety-critical half — if it fails, the error propagates
  * (a failed archive must NOT leave the entry removed, or the next hatch
@@ -151,9 +151,9 @@ export async function retireLocal(
   // PID file is absent (e.g. the sibling was never started or already exited).
   await stopProcessByPidFile(join(cadetDir, "ces.pid"), "credential-executor");
 
-  // Stop the nginx ingress if one is fronting this gateway — it would
+  // Stop the app server if one is fronting this gateway — it would
   // otherwise be orphaned when the instance directory is archived.
-  await stopIngressNginx();
+  await stopAppServer();
 
   // Archive and remove the entire instance directory.
   const dirToArchive = getLocalInstanceDir(entry);

@@ -44,7 +44,10 @@ const ROOT_SET = new Set<string>(STATE_ROOTS);
 const TRANSIENT_PATHS = new Set([
   "workspace/cadet.pid",
   "workspace/signals",
+  // The pre-rename edge's pidfile (old installs' backup trees) and the app
+  // server's current one — both are process artifacts, never state.
   "workspace/data/ingress/nginx.pid",
+  "workspace/data/app-server/app-server.pid",
 ]);
 
 function persistent(

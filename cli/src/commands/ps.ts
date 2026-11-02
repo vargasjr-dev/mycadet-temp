@@ -1,5 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { getIngressPaths, readIngressState } from "@mycadet/local-mode";
+import { getAppServerPaths, readAppServerState } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
@@ -305,7 +305,7 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     const info = [listenUrl, `PID ${app.pid}`].join(" | ");
     rows.push({
       row: {
-        name: "nginx",
+        name: "app",
         type: APP_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
         info: alive ? info : `${info} (exited)`,
@@ -322,8 +322,8 @@ function detailLine(label: string, value: string | null | undefined): void {
 }
 
 /**
- * Full info for one CLI-managed process: `cadet ps nginx` / `cadet app status`
- * (the app edge) and `cadet ps ngrok` / `cadet tunnel status` (the tunnel
+ * Full info for one CLI-managed process: `cadet ps app` / `cadet app status`
+ * (the app server) and `cadet ps ngrok` / `cadet tunnel status` (the tunnel
  * agent — any provider name, or "tunnel"). These names resolve before
  * assistant lookup: a built-in process name wins. Returns false when the
  * identifier names neither, so the caller falls through to the assistant
@@ -335,8 +335,8 @@ export async function printRootProcessDetail(
   const name = identifier.toLowerCase();
   const { tunnel, app } = readRootProcesses();
 
-  if (name === "nginx" || name === "app") {
-    console.log("App edge (nginx):");
+  if (name === "app") {
+    console.log("App server:");
     if (!app?.pid) {
       console.log(
         `  not recorded — start one with \`${cliCommand()} app start\``,
@@ -344,9 +344,9 @@ export async function printRootProcessDetail(
       return true;
     }
     const alive = isLocalProcessAlive(app.pid);
-    // The edge's state is machine-level (XDG), so it reads the same record
+    // The app server's state is machine-level (XDG), so it reads the same record
     // no matter which assistant the root lockfile names.
-    const state = readIngressState();
+    const state = readAppServerState();
     detailLine("Status:", alive ? "running" : "not running");
     detailLine("PID:", String(app.pid));
     detailLine("Listen:", `http://127.0.0.1:${app.port}`);
@@ -355,7 +355,7 @@ export async function printRootProcessDetail(
       state?.gatewayUrl !== undefined ? state.gatewayUrl : null,
     );
     detailLine("Started:", app.startedAt);
-    detailLine("Log:", getIngressPaths().logPath);
+    detailLine("Log:", getAppServerPaths().logPath);
     return true;
   }
 
@@ -397,7 +397,7 @@ export async function printRootProcessDetail(
 
 /**
  * Fold the CLI-managed process rows into ONE table with the assistant rows.
- * Tunnel agents and the nginx edge are root resources of the machine, not
+ * Tunnel agents and the app server are root resources of the machine, not
  * children of whichever assistant they front — especially as the web bundle
  * splits into /app and /ui — so every CLI-managed row renders machine-level.
  */
@@ -550,7 +550,7 @@ export const ps = Object.assign(
       console.log(
         "  <name-or-id> Show processes for the assistant display name or ID.",
         "               Built-in names show the CLI-managed processes instead:",
-        "               `nginx` (the app edge), `ngrok`/`tunnel` (the agent)",
+        "               `app` (the app server), `ngrok`/`tunnel` (the agent)",
       );
       console.log("");
       console.log("Options:");
@@ -568,7 +568,7 @@ export const ps = Object.assign(
       return;
     }
 
-    // Built-in process names (`nginx`, `ngrok`, any provider, `tunnel`)
+    // Built-in process names (`app`, `ngrok`, any provider, `tunnel`)
     // detail the CLI-managed processes before assistant lookup — they can
     // never collide with an assistant name worth shadowing.
     if (await printRootProcessDetail(assistantIdentifier)) return;

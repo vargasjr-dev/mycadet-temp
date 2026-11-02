@@ -256,7 +256,7 @@ describe("cadet ps — platform status line", () => {
     // children of an assistant row…
     expect(output).toContain("ngrok");
     expect(output).not.toContain("└ ngrok");
-    expect(output).toContain("nginx");
+    expect(output).toContain("app");
     // The edge's INFO leads with its listen URL (not a bare port).
     expect(output).toContain("http://127.0.0.1:7841");
     // …the type column distinguishes the three process kinds…

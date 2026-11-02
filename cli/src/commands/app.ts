@@ -1,12 +1,11 @@
 import {
-  getIngressPaths,
-  isIngressRunning,
-  readIngressState,
-  stopIngressNginx,
+  getAppServerPaths,
+  isAppServerRunning,
+  readAppServerState,
+  stopAppServer,
+  cliCommand,
 } from "@mycadet/local-mode";
-import { ensureAppServer, type AppServer } from "\.\./lib/servers/nginx\.js";
-import { ensureNginxForEdge } from "../lib/tunnel.js";
-import { cliCommand } from "@mycadet/local-mode";
+import { ensureAppServer, type AppServer } from "../lib/servers/app-server.js";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {
@@ -28,38 +27,36 @@ function printAppHelp(): void {
   process.exit(0);
 }
 
-/** `cadet app start`: bring the nginx edge up for the active local assistant. */
-async function startAppEdge(): Promise<void> {
-  await ensureNginxForEdge();
-
-  let edge: AppServer;
+/** `cadet app start`: bring the app server up for the active local assistant. */
+async function startAppServer(): Promise<void> {
+  let server: AppServer;
   try {
-    edge = await ensureAppServer();
+    server = await ensureAppServer();
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
 
   console.log(
-    `${edge.started ? "Started" : "Reusing"} the app edge on 127.0.0.1:${edge.port}.`,
+    `${server.started ? "Started" : "Reusing"} the app server on 127.0.0.1:${server.port}.`,
   );
   console.log(`Stop with: ${cliCommand()} app stop`);
 }
 
-/** `cadet app stop`: take the nginx edge down. */
-async function stopAppEdge(): Promise<void> {
-  // One machine-level edge: its conf/pid/state live under the XDG data dir,
-  // not any assistant workspace, so there is exactly one candidate.
-  if (!isIngressRunning()) {
-    console.log("No app edge is running.");
+/** `cadet app stop`: take the app server down. */
+async function stopAppServerCommand(): Promise<void> {
+  // One machine-level app server: its pid/state live under the XDG data
+  // dir, not any assistant workspace, so there is exactly one candidate.
+  if (!isAppServerRunning()) {
+    console.log("No app server is running.");
     return;
   }
-  const port = readIngressState()?.listenPort;
-  if (await stopIngressNginx()) {
-    console.log(`Stopped the app edge on 127.0.0.1:${port ?? "?"}.`);
+  const port = readAppServerState()?.listenPort;
+  if (await stopAppServer()) {
+    console.log(`Stopped the app server on 127.0.0.1:${port ?? "?"}.`);
   } else {
     console.error(
-      `Error: could not stop the app edge on 127.0.0.1:${port ?? "?"}. Check the nginx log: ${getIngressPaths().logPath}`,
+      `Error: could not stop the app server on 127.0.0.1:${port ?? "?"}. Check the log: ${getAppServerPaths().logPath}`,
     );
     process.exit(1);
   }
@@ -72,8 +69,8 @@ export const app = Object.assign(
       printAppHelp();
       return;
     }
-    if (subcommand === "start") return startAppEdge();
-    if (subcommand === "stop") return stopAppEdge();
+    if (subcommand === "start") return startAppServer();
+    if (subcommand === "stop") return stopAppServerCommand();
     if (subcommand === "status") {
       await printRootProcessDetail("app");
       return;
@@ -81,5 +78,5 @@ export const app = Object.assign(
     console.error(`Error: Unknown argument '${subcommand}'.`);
     printAppHelp();
   },
-  { description: "Start or stop the local app edge (nginx)" },
+  { description: "Start or stop the local app server" },
 );

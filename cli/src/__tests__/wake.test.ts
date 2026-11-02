@@ -16,7 +16,7 @@ import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/remotes/docker.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
-import * as nginxIngress from "../lib/servers/nginx.js";
+import * as serversLib from "../lib/servers/app-server.js";
 import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
@@ -55,13 +55,12 @@ const recreateDockerContainersMock = mock<
 const waitForDaemonReadyMock = mock<typeof localModeModule.waitForDaemonReady>(
   async () => true,
 );
-const isIngressRunningMock = mock<typeof localModeModule.isIngressRunning>(
+const isAppServerRunningMock = mock<typeof localModeModule.isAppServerRunning>(
   () => false,
 );
-const readIngressStateMock = mock<typeof localModeModule.readIngressState>(
+const readAppServerStateMock = mock<typeof localModeModule.readAppServerState>(
   () => null,
 );
-
 
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
@@ -71,8 +70,8 @@ mock.module("@mycadet/local-mode", () => ({
   wakeDocker: wakeDockerMock,
   dockerResourceNames: dockerResourceNamesMock,
   waitForDaemonReady: waitForDaemonReadyMock,
-  isIngressRunning: isIngressRunningMock,
-  readIngressState: readIngressStateMock,
+  isAppServerRunning: isAppServerRunningMock,
+  readAppServerState: readAppServerStateMock,
 }));
 mock.module("../lib/remotes/docker.js", () => ({
   ...realDocker,
@@ -101,13 +100,13 @@ mock.module("../lib/tunnels/ngrok", () => ({
   },
 }));
 
-const realNginxIngress = { ...nginxIngress };
+const realServersLib = { ...serversLib };
 
-const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
+const ensureAppServerMock = mock<typeof serversLib.ensureAppServer>(
   async () => ({ port: 7840, started: true, shellMode: "web" }),
 );
-mock.module("../lib/servers/nginx.js", () => ({
-  ...realNginxIngress,
+mock.module("../lib/servers/app-server.js", () => ({
+  ...realServersLib,
   ensureAppServer: ensureAppServerMock,
 }));
 
@@ -175,10 +174,10 @@ beforeEach(() => {
     port: 7840,
     started: true,
   });
-  isIngressRunningMock.mockReset();
-  isIngressRunningMock.mockReturnValue(false);
-  readIngressStateMock.mockReset();
-  readIngressStateMock.mockReturnValue(null);
+  isAppServerRunningMock.mockReset();
+  isAppServerRunningMock.mockReturnValue(false);
+  readAppServerStateMock.mockReset();
+  readAppServerStateMock.mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -196,7 +195,7 @@ afterAll(() => {
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/remotes/docker.js", () => realDocker);
   mock.module("../lib/tunnels/ngrok", () => realNgrok);
-  mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+  mock.module("../lib/servers/app-server.js", () => realServersLib);
   mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
 });
 
@@ -331,8 +330,8 @@ describe("cadet wake — app server restore", () => {
       port: 7930,
       daemonPort: 7821,
     });
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:8030",
     });
@@ -364,8 +363,8 @@ describe("cadet wake — app server restore", () => {
       daemonPort: 7821,
     });
     stampRecordedAppServer();
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7930",
     });
@@ -551,7 +550,7 @@ describe("cadet wake — app server restore", () => {
       } as LockfileAssistant,
     ]);
     stampRecordedAppServer();
-    isIngressRunningMock.mockReturnValue(false);
+    isAppServerRunningMock.mockReturnValue(false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -622,8 +621,8 @@ describe("cadet wake — app server restore", () => {
     // rather than carried across the wake at its recorded listen port.
     stampRecordedAppServer();
     stampRecordedTunnel("ngrok");
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7845,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
@@ -644,8 +643,8 @@ describe("cadet wake — app server restore", () => {
     // against a live pid.
     stampRecordedAppServer(7845, process.pid);
     stampRecordedTunnel("ngrok");
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7845,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
@@ -670,8 +669,8 @@ describe("cadet wake — app server restore", () => {
   test("the lockfile's app record drives the surviving port — not the assistant", async () => {
     stampRecordedAppServer(7840, process.pid);
     stampRecordedTunnel("ngrok");
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7845,
       gatewayUrl: "http://127.0.0.1:7831",
     });

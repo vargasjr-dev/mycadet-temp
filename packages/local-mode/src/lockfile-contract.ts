@@ -533,15 +533,15 @@ export type TunnelProcessRecord = z.infer<typeof TunnelProcessRecordSchema>;
 
 /**
  * A CLI-managed OS process recorded at the lockfile root under `app`: the
- * nginx ingress edge (web artifacts, `/v1` proxying, the outer shell).
- * Shares nothing with the tunnel record beyond the pid bookkeeping — a
- * tunnel serves a URL, the edge serves a port.
+ * app server (web artifacts, `/v1` proxying, the outer shell). Shares
+ * nothing with the tunnel record beyond the pid bookkeeping — a tunnel
+ * serves a URL, the app server serves a port.
  */
 export const AppProcessRecordSchema = z.object({
-  /** The edge process's bookkeeping, present while the edge runs. */
+  /** The app server's bookkeeping, present while it runs. */
   pid: z.number().optional(),
   startedAt: z.string().optional(),
-  /** Listening port for the nginx edge. */
+  /** Listening port for the app server. */
   port: z.number(),
   /**
    * The commit the edge's source-built client bundles were last built from

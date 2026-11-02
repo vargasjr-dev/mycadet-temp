@@ -268,15 +268,15 @@ export {
 export { retireAppleContainer } from "./remotes/apple-container/retire";
 export {
   stopContainerAppServer,
-  stopIngressNginx,
-  getIngressPaths,
-  ingressStatePath,
-  readIngressState,
-  getIngressPid,
-  isIngressRunning,
+  stopAppServer,
+  getAppServerPaths,
+  appServerStatePath,
+  readAppServerState,
+  getAppServerPid,
+  isAppServerRunning,
   isPidAlive,
-} from "./ingress";
-export type { IngressPaths, IngressState } from "./ingress";
+} from "./app-server";
+export type { AppServerPaths, AppServerState } from "./app-server";
 export { exec, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,

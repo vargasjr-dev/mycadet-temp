@@ -9,18 +9,13 @@ import {
 import { isDockerEntry, isLocalEntry } from "@mycadet/local-mode/contract";
 
 import { isPidAlive } from "@mycadet/local-mode";
-import {
-  ensureAppServer,
-  getNginxVersion,
-  type AppServer,
-} from "./servers/nginx.js";
+import { ensureAppServer, type AppServer } from "./servers/app-server.js";
 import { waitForDaemonReady } from "@mycadet/local-mode";
 import {
   NGROK_TUNNEL_META,
   NGROK_PROVIDER,
   saveNgrokDomain,
 } from "./tunnels/ngrok.js";
-import { ensureBinaryInstalled } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import { type TunnelProviderName } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
@@ -133,37 +128,8 @@ const providers: Record<TunnelProviderName, TunnelProvider> = {
 const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 
 /**
- * A tunnelable assistant plus the gateway port and workspace the edge fronts.
+ * A tunnelable assistant plus the gateway port and workspace the app server fronts.
  */
-/**
- * Make sure nginx is installed for the app server, offering to install it
- * when missing. Exits the process when nginx cannot be found or installed —
- * every edge-starting command (`cadet tunnel start`, `cadet app start`)
- * shares the same requirement.
- */
-export async function ensureNginxForEdge(): Promise<string> {
-  const nginxVersion = await ensureBinaryInstalled({
-    binary: "nginx",
-    purpose: "the app server",
-    packages: {
-      brew: ["brew", "install", "nginx"],
-      "apt-get": ["sudo", "apt-get", "install", "-y", "nginx"],
-      dnf: ["sudo", "dnf", "install", "-y", "nginx"],
-      pacman: ["sudo", "pacman", "-S", "--noconfirm", "nginx"],
-      zypper: ["sudo", "zypper", "install", "-y", "nginx"],
-      choco: ["choco", "install", "-y", "nginx"],
-    },
-    manualHint:
-      "See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
-    probe: getNginxVersion,
-  });
-  if (!nginxVersion) {
-    console.error("Error: nginx is required to run the app server.");
-    process.exit(1);
-  }
-  return nginxVersion;
-}
-
 /**
  * Tell EVERY locally-reachable assistant's gateway the tunnel's public URL:
  * the tunnel fronts one edge, but its ingress domain is app-global info —
@@ -230,8 +196,8 @@ export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
 
 /**
  * Whether the root lockfile records an app server. The restore flow stamps
- * the `app` entry when it establishes the edge, and the entry outlives the
- * edge's own stop (only the built-sha stamp rides between runs), so it is
+ * the `app` entry when it establishes the server, and the entry outlives the
+ * server's own stop (only the built-sha stamp rides between runs), so it is
  * the CLI's own record that this assistant wants its app server back —
  * read from the lockfile alone, with no workspace access.
  */
@@ -260,9 +226,9 @@ function tunnelRestartCommand(): string {
 }
 
 /**
- * Listen port of an SPA edge still serving in front of `gatewayUrl`, or null
+ * Listen port of an SPA server still serving in front of `gatewayUrl`, or null
  * when nothing verifiably fronts that gateway (an unrecorded upstream is
- * unverified, see `IngressState`).
+ * unverified, see `AppServerState`).
  */
 function survivingAppServerPort(): number | null {
   try {
@@ -274,11 +240,11 @@ function survivingAppServerPort(): number | null {
 }
 
 /**
- * Bring the nginx edge back up after a wake or local upgrade. Returns the
- * port a tunnel should front — the App Server manages its own port, completely
- * agnostic of the cadet gateway port. Raises when the edge cannot be restored
- * and nothing survives to front instead; there is no assistant-derived
- * fallback port.
+ * Bring the app server back up after a wake or local upgrade. Returns the
+ * port a tunnel should front — the app server manages its own port, completely
+ * agnostic of the cadet gateway port. Raises when the server cannot be
+ * restored and nothing survives to front instead; there is no
+ * assistant-derived fallback port.
  */
 async function restoreAppServer(): Promise<number> {
   let appServer: AppServer;

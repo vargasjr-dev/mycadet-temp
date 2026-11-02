@@ -11,7 +11,7 @@ import {
 
 /**
  * Process inspection and stopping for PID-tracked local services (daemon,
- * gateway, credential-executor, file watcher) and the ingress edge.
+ * gateway, credential-executor, file watcher) and the app server.
  *
  * Lives in `@mycadet/local-mode` because the lifecycle OPERATIONS stop these
  * processes in-process now (the hosts no longer spawn the CLI for them), and
