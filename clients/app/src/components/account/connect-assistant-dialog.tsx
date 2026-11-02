@@ -5,7 +5,7 @@ import {
   cancelAssistantPairing,
   pollAssistantPairing,
   startAssistantPairing,
-} from "@app/assistant/local-mode-host";
+} from "@app/assistant/operations";
 import { ConnectGuidanceKind } from "@app/stores/connect-dialog-store";
 import { formatCountdown } from "@app/utils/format-countdown";
 import { publicBaseUrlRejectionMessage } from "@app/utils/pairing-address";

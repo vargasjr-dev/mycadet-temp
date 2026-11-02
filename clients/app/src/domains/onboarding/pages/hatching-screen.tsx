@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { hatchAssistant } from "@app/assistant/api";
+import { hatchAssistant as hatchCloudAssistant } from "@app/assistant/api";
 import { seedHatchAvatar } from "@app/assistant/avatar-traits";
-import {
-  hatchLocalAssistantHost,
-  readLockfileHost,
-  statusLocalAssistantHost,
-} from "@app/assistant/local-mode-host";
+import { hatchAssistant } from "@app/assistant/operations";
+import { resolveAssistant } from "@app/assistant/resolve-assistant";
 import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-storage";
 import { AccountShell } from "@app/components/account/account-shell";
 import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
@@ -31,7 +28,7 @@ const COMPLETION_NAVIGATE_DELAY_MS = 800;
 const POLL_INTERVAL_MS = 3000;
 const MAX_HATCH_WAIT_MS = 300_000;
 
-type LocalHatchResult = Awaited<ReturnType<typeof hatchLocalAssistantHost>>;
+type LocalHatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
 
 // Module-level state so HMR remounts, StrictMode double-mounts, and the
 // shell's session-driven remounts survive without spawning duplicate hatches.
@@ -46,7 +43,7 @@ let localHatchPromise: Promise<LocalHatchResult> | null = null;
 // hosting screen, where the user may switch modes, and the abandoned mode's
 // assistant must not be adopted for the new choice.
 let localHatchRemote: string | undefined;
-type PlatformHatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
+type PlatformHatchResult = Awaited<ReturnType<typeof hatchCloudAssistant>>;
 let platformHatchPromise: Promise<PlatformHatchResult> | null = null;
 let hatchTraitsCache: CharacterTraits | null = null;
 
@@ -229,7 +226,7 @@ export function HatchingScreen() {
           }
           if (!localHatchPromise) {
             localHatchRemote = remote;
-            localHatchPromise = hatchLocalAssistantHost(remote);
+            localHatchPromise = hatchAssistant(remote);
           }
           const result = await localHatchPromise;
           if (cancelled) {
@@ -240,9 +237,6 @@ export function HatchingScreen() {
             setError(result.error ?? "Failed to hatch local assistant.");
             return;
           }
-          // Reload the lockfile so the just-written entry is visible to this
-          // surface and the shell's own resolution before anything probes it.
-          await readLockfileHost();
           if (result.assistantId) {
             writeSelectedAssistantId(result.assistantId);
           }
@@ -253,8 +247,15 @@ export function HatchingScreen() {
           if (result.assistantId) {
             let gatewayReady = false;
             while (!cancelled && !gatewayReady) {
-              const status = await statusLocalAssistantHost(result.assistantId);
-              if (status.ok && status.state === "healthy") {
+              // The resolution endpoint is the lifecycle read: the serving
+              // host composes the entry's health and auth into the union, so
+              // "ready" means the gateway is answering. A probe that cannot
+              // settle (transport error, timeout) keeps polling within the
+              // deadline below.
+              const resolution = await resolveAssistant({
+                signal: AbortSignal.timeout(10_000),
+              }).catch(() => null);
+              if (resolution?.status === "ready") {
                 gatewayReady = true;
                 break;
               }
@@ -294,7 +295,7 @@ export function HatchingScreen() {
       // its CTA downloads the desktop app this bundle already runs in.
       try {
         if (!platformHatchPromise) {
-          platformHatchPromise = hatchAssistant();
+          platformHatchPromise = hatchCloudAssistant();
         }
         const result = await platformHatchPromise;
         platformHatchPromise = null;

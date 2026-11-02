@@ -50,11 +50,23 @@ function setup(
   injectedConfig: Record<string, unknown> = host,
 ) {
   // The shell resolves assistants same-origin now, so the mounted iframe's
-  // own document is fetched from the test origin; answer it quietly.
+  // own document is fetched from the test origin; answer it quietly. The
+  // chooser's roster hydrates on mount with no availability gate — answer
+  // the bare roster read with an empty one unless a test wants otherwise
+  // (its pathname check keeps the query-carrying list calls on `respond`).
+  const screenRespond = respond ?? (async () => iframeDocument.clone());
   request.mockImplementation(
-    Object.assign(respond ?? (async () => iframeDocument.clone()), {
-      preconnect: fetch.preconnect,
-    }),
+    Object.assign(
+      async (url: RequestInfo | URL) => {
+        if (
+          new URL(String(url), "http://t.test").pathname === "/v1/assistants/"
+        ) {
+          return Response.json({ assistants: [], activeAssistant: null });
+        }
+        return screenRespond(url);
+      },
+      { preconnect: fetch.preconnect },
+    ),
   );
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
@@ -133,18 +145,23 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
 });
 
 test("rows render the cloud's synced avatar when the list carries one", async () => {
-  request.mockResolvedValueOnce(
-    Response.json({
-      results: [
-        {
-          id: "assistant-1",
-          name: "One",
-          avatar_url: "https://cloud.example/one.png",
-        },
-        { id: "assistant-2", name: "Two" },
-      ],
-    }),
-  );
+  request
+    .mockResolvedValueOnce(
+      Response.json({ assistants: [], activeAssistant: null }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        status: "selection",
+        assistants: [
+          {
+            id: "assistant-1",
+            name: "One",
+            avatar_url: "https://cloud.example/one.png",
+          },
+          { id: "assistant-2", name: "Two" },
+        ],
+      }),
+    );
   setup();
   const withAvatar = await screen.findByRole("radio", { name: /^One/ });
   const img = withAvatar.querySelector("img");
@@ -193,11 +210,16 @@ test("rows on a cloud build render the cloud-hosted subtitle with a relative cre
 test("rows on a non-cloud remote render the self-hosted subtitle", async () => {
   // `host` stamps no `remote`, so the schema defaults it to the local cadet:
   // its list rows are the machine's own assistants, not the cloud's.
-  request.mockResolvedValueOnce(
-    Response.json({
-      results: [{ id: "assistant-1", name: "One" }],
-    }),
-  );
+  request
+    .mockResolvedValueOnce(
+      Response.json({ assistants: [], activeAssistant: null }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }],
+      }),
+    );
   setup();
   const row = await screen.findByRole("radio", { name: /^One/ });
   expect(row.textContent).toContain("Self-hosted");
@@ -227,14 +249,19 @@ test("each row labels itself with its own remote", async () => {
 });
 
 test("arrow keys move focus across cards without selecting", async () => {
-  request.mockResolvedValueOnce(
-    Response.json({
-      results: [
-        { id: "assistant-1", name: "One" },
-        { id: "assistant-2", name: "Two" },
-      ],
-    }),
-  );
+  request
+    .mockResolvedValueOnce(
+      Response.json({ assistants: [], activeAssistant: null }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        status: "selection",
+        assistants: [
+          { id: "assistant-1", name: "One" },
+          { id: "assistant-2", name: "Two" },
+        ],
+      }),
+    );
   const router = setup();
   const one = await screen.findByRole("radio", { name: /^One/ });
   const two = screen.getByRole("radio", { name: /^Two/ });
@@ -271,12 +298,21 @@ test("Enter selects the focused card", async () => {
 });
 
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
-  request.mockResolvedValueOnce(
-    Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
-  );
+  request
+    .mockResolvedValueOnce(
+      Response.json({ assistants: [], activeAssistant: null }),
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }],
+      }),
+    );
   setup();
   await screen.findByRole("radio", { name: /^One/ });
-  expect(request).toHaveBeenCalledTimes(1);
+  // Two mount reads — the roster and the resolution — and nothing else:
+  // no scoped detail fetch until a card is picked.
+  expect(request).toHaveBeenCalledTimes(2);
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
 
@@ -333,11 +369,21 @@ test("an empty list offers creation and lands in the created assistant", async (
 });
 
 test("401 displays sign-in without running Web account or onboarding probes", async () => {
-  request.mockResolvedValueOnce(new Response(null, { status: 401 }));
+  // Both mount reads share the account's 401 — the roster's list and the
+  // shell's resolution — and the sign-in handoff is the resolution's arm.
+  request
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockResolvedValueOnce(new Response(null, { status: 401 }));
   setup();
   await screen.findByText("Please sign in to continue.");
   expect(screen.getByRole("link").getAttribute("href")).toBe("/account/login");
-  expect(request).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(2);
+  // And no other probe ran: no web account, no onboarding machinery.
+  const probed = request.mock.calls.map(
+    ([url]) => new URL(String(url), "http://t.test").pathname,
+  );
+  expect(probed).toContain("/v1/assistants/");
+  expect(probed).toContain("/v1/assistant");
 });
 
 test("the row's menu retires the assistant and refreshes the list", async () => {
@@ -440,18 +486,22 @@ test("a dead list still offers hatching from the chooser", async () => {
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
   let finish!: (value: Response) => void;
-  request.mockImplementationOnce(
-    Object.assign(
-      () =>
-        new Promise<Response>((resolve) => {
-          finish = resolve;
-        }),
-      { preconnect: fetch.preconnect },
-    ),
-  );
+  request
+    .mockResolvedValueOnce(
+      Response.json({ assistants: [], activeAssistant: null }),
+    )
+    .mockImplementationOnce(
+      Object.assign(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+        { preconnect: fetch.preconnect },
+      ),
+    );
   setup();
-  await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
-  const signal = request.mock.calls[0][1]?.signal;
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  const signal = request.mock.calls[1][1]?.signal;
   cleanup();
   expect(signal?.aborted).toBe(true);
   await act(async () => {
@@ -538,33 +588,6 @@ describe("remembered origins", () => {
       expect(assign).toHaveBeenCalledWith(
         "https://workshop.example/assistant-9/assistant",
       );
-    } finally {
-      assign.mockRestore();
-    }
-  });
-
-  test("the add dialog remembers an origin and rides its device code out of the navigation", async () => {
-    const assign = spyOn(window.location, "assign").mockImplementation(
-      () => {},
-    );
-    try {
-      setup("/account/select-assistant", false, async () =>
-        Response.json({ results: [] }),
-      );
-      fireEvent.click(await screen.findByText("Add a remote assistant"));
-      fireEvent.change(screen.getByLabelText("Assistant address"), {
-        target: {
-          value: "https://workshop.example/assistant/pair#device_code=CODE-1",
-        },
-      });
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Add" }));
-      });
-      expect(assign).toHaveBeenCalledWith(
-        "https://workshop.example/assistant/pair#device_code=CODE-1",
-      );
-      // The dialog closed and the remembered card took its place in the list.
-      expect(await screen.findByText("Remote · workshop.example")).toBeTruthy();
     } finally {
       assign.mockRestore();
     }

@@ -4,7 +4,6 @@ import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
-import { AddRemoteOriginDialog } from "@app/components/account/add-remote-origin-dialog";
 import { ConnectAssistantDialog } from "@app/components/account/connect-assistant-dialog";
 import { OriginCardMenu } from "@app/components/account/origin-card-menu";
 import { RetireCardMenu } from "@app/components/account/retire-card-menu";
@@ -15,14 +14,11 @@ import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
-import {
-  isLocalModeHostAvailable,
-  unpairLocalAssistant,
-  type LockfileAssistant,
-} from "@app/assistant/local-mode-host";
+import { unpairAssistant } from "@app/assistant/operations";
 import {
   getGatewayUrl,
   isLoopbackGatewayCloud,
+  type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
@@ -110,9 +106,8 @@ export function SelectAssistantScreen() {
   } | null>(null);
   const [retirePending, setRetirePending] = useState(false);
   const [retireError, setRetireError] = useState<string | null>(null);
-  // The remembered-origin list and the dialogs that manage it.
+  // The remembered-origin list and the dialog that manages it.
   const originEntries = useRememberedOriginsStore.use.origins();
-  const [addOriginOpen, setAddOriginOpen] = useState(false);
   const [removeOriginTarget, setRemoveOriginTarget] =
     useState<RememberedOrigin | null>(null);
   const [removeOriginPending, setRemoveOriginPending] = useState(false);
@@ -125,9 +120,6 @@ export function SelectAssistantScreen() {
       ? "empty"
       : state.status;
 
-  // The connect flow's gate: only a runtime with a local-mode host (the
-  // Electron shell) can pair, list the lockfile arm, or wake/retire locals.
-  const localModeHostAvailable = isLocalModeHostAvailable();
   // Target of the paired-entry "remove from this device" (unpair) dialog.
   const [unpairTarget, setUnpairTarget] = useState<LockfileAssistant | null>(
     null,
@@ -148,14 +140,11 @@ export function SelectAssistantScreen() {
         isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "custom",
     ) ?? [];
 
-  // The lockfile hydrates on mount (Electron only — a no-op elsewhere), so a
-  // returning chooser renders its paired entries on the first paint after
-  // that read.
+  // The roster hydrates on mount, so a returning chooser renders its paired
+  // entries on the first paint after that read.
   useEffect(() => {
-    if (localModeHostAvailable) {
-      void useLocalLockfileStore.load();
-    }
-  }, [localModeHostAvailable]);
+    void useLocalLockfileStore.load();
+  }, []);
 
   const closeRetireDialog = () => {
     if (retirePending) {
@@ -198,18 +187,6 @@ export function SelectAssistantScreen() {
     closeRemoveOriginDialog();
   };
 
-  // `deviceCode` is one-time credential material and is never persisted: the
-  // store holds the base alone, and the code lives just long enough to ride
-  // the navigation into the origin's own pair page.
-  const handleOriginAdded = (
-    origin: RememberedOrigin,
-    deviceCode: string | null,
-  ) => {
-    setAddOriginOpen(false);
-    // Landing on the origin runs its own pair flow when no session exists.
-    void switchToOrigin(origin, deviceCode ?? undefined);
-  };
-
   /**
    * Connect a lockfile entry: navigate, full stop. Recovery is the app
    * shell's job — an entry whose gateway can't resolve lands on the
@@ -235,7 +212,7 @@ export function SelectAssistantScreen() {
     }
     setUnpairPending(true);
     setUnpairError(null);
-    const result = await unpairLocalAssistant(unpairTarget.assistantId);
+    const result = await unpairAssistant(unpairTarget.assistantId);
     setUnpairPending(false);
     if (!result.ok) {
       setUnpairError(result.error);
@@ -416,24 +393,13 @@ export function SelectAssistantScreen() {
             />
           );
         })}
-        {/* A runtime with a local-mode host pairs in place through the
-            connect dialog (the exchange runs in the shell's main process);
-            hostless surfaces (hub browser, remote-gateway mode, native
-            mobile) add an origin by address or pairing link and navigate to
-            it. */}
-        {localModeHostAvailable ? (
-          <DashedActionButton
-            icon={<Link2 className="h-4 w-4" />}
-            label={t("selectAssistantScreen.connectRemote")}
-            onClick={() => useConnectDialogStore.getState().openConnectDialog()}
-          />
-        ) : (
-          <DashedActionButton
-            icon={<Globe className="h-4 w-4" />}
-            label={t("selectAssistantScreen.addRemote")}
-            onClick={() => setAddOriginOpen(true)}
-          />
-        )}
+        {/* Pair in place through the connect dialog: the exchange runs in
+            the serving host's trusted process. */}
+        <DashedActionButton
+          icon={<Link2 className="h-4 w-4" />}
+          label={t("selectAssistantScreen.connectRemote")}
+          onClick={() => useConnectDialogStore.getState().openConnectDialog()}
+        />
         {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
         )}
@@ -471,11 +437,6 @@ export function SelectAssistantScreen() {
           isPending={retirePending}
           onConfirm={() => void handleRetireConfirm()}
           onCancel={closeRetireDialog}
-        />
-        <AddRemoteOriginDialog
-          open={addOriginOpen}
-          onClose={() => setAddOriginOpen(false)}
-          onAdded={handleOriginAdded}
         />
         <RemoveFromDeviceDialog
           open={removeOriginTarget != null}

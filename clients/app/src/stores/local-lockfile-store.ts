@@ -1,7 +1,7 @@
 /**
- * The local lockfile arm: the serving host's lockfile read over the
+ * The roster arm: the serving host's assistant list read over the
  * `/v1/assistants/` operator route, published as a store so the chooser's
- * lockfile cards (entries imported through the connect flow and the
+ * roster cards (entries imported through the connect flow and the
  * machine's own local assistants) render from one loaded snapshot.
  *
  * Connect's import writes the entry host-side in the same call that settles
@@ -12,19 +12,16 @@
  * the same degradation web's lockfile store chooses.
  *
  * Port of web's lockfile arm of the resolved-assistants store, scoped to the
- * app bundle's one transport (the shell's operator routes). Non-Electron
- * shells report the host unavailable — `loaded` flips true with a null
- * lockfile and the arm renders nothing.
+ * app bundle's one transport (the shell's operator routes). A failed read
+ * leaves the previous snapshot published — `loaded` flips true and the arm
+ * renders from whatever it last had.
  *
  * Leaf module: must not import from chooser/screen modules.
  */
 
 import { useSyncExternalStore } from "react";
 
-import {
-  readLockfileHost,
-  type Lockfile,
-} from "@app/assistant/local-mode-host";
+import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 export interface LocalLockfileState {
   /** The last successfully read lockfile, or `null` before the first read. */
@@ -58,8 +55,13 @@ function publish(next: Partial<LocalLockfileState>): void {
 
 async function load(): Promise<void> {
   try {
-    const lockfile = await readLockfileHost();
-    publish({ lockfile, loaded: true });
+    // The bare `/v1/assistants/` GET is the host's renderer-safe roster
+    // read; the shared total validation parses it before publication.
+    const res = await fetch("/v1/assistants/");
+    if (!res.ok) {
+      throw new Error(`assistant list fetch failed: ${res.status}`);
+    }
+    publish({ lockfile: parseLockfile(await res.json()), loaded: true });
   } catch (error) {
     console.error("localLockfileStore.load failed", error);
     // Loaded regardless: a failed read renders the arm from the previous

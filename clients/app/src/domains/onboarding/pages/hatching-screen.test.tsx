@@ -1,7 +1,7 @@
 /**
  * Behavioral tests for the hatching screen's app-native port: the local arm
- * rides the shell bridge (hatch → lockfile → status probe → handoff), and the
- * cloud arm rides the app's own hatch API.
+ * rides the shell's operator route (hatch → resolution poll → handoff), and
+ * the cloud arm rides the app's own hatch API.
  *
  * The screen keeps module-level hatch guards, so every test drives the flow to
  * a genuine completion (which releases them) to stay isolated. Self-contained
@@ -41,16 +41,23 @@ const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
   assistantId: "local-1",
 }));
 
-const readLockfileMock = mock(async () => ({ assistants: [] }));
-
-let statusHealthyFromCall = 1;
-let statusCallCount = 0;
-const statusMock = mock(async (_id: string) => {
-  statusCallCount += 1;
-  if (statusCallCount >= statusHealthyFromCall) {
-    return { ok: true as const, state: "healthy" as const };
+const resolveActual = await import("@app/assistant/resolve-assistant");
+type Resolution = Awaited<ReturnType<typeof resolveActual.resolveAssistant>>;
+let resolutionReadyFromCall = 1;
+let resolutionCallCount = 0;
+const resolveAssistantMock = mock(async (): Promise<Resolution> => {
+  resolutionCallCount += 1;
+  if (resolutionCallCount >= resolutionReadyFromCall) {
+    return {
+      status: "ready",
+      assistant: {
+        id: "local-1",
+        version: "0.13.0",
+        url: "http://localhost:5173/assistant/",
+      },
+    };
   }
-  return { ok: false as const, status: 503, error: "not ready yet" };
+  return { status: "notReady" };
 });
 
 const writeSelectionMock = mock((_id: string) => {});
@@ -62,12 +69,14 @@ mock.module("react-router", () => ({
   useSearchParams: () => [searchParams, mock(() => {})],
 }));
 
-const localModeActual = await import("@app/assistant/local-mode-host");
-mock.module("@app/assistant/local-mode-host", () => ({
-  ...localModeActual,
-  hatchLocalAssistantHost: hatchLocalAssistantMock,
-  readLockfileHost: readLockfileMock,
-  statusLocalAssistantHost: statusMock,
+const operationsActual = await import("@app/assistant/operations");
+mock.module("@app/assistant/operations", () => ({
+  ...operationsActual,
+  hatchAssistant: hatchLocalAssistantMock,
+}));
+mock.module("@app/assistant/resolve-assistant", () => ({
+  ...resolveActual,
+  resolveAssistant: resolveAssistantMock,
 }));
 
 const selectionActual =
@@ -97,12 +106,11 @@ describe("hatching screen", () => {
     navigateMock.mockClear();
     hatchAssistantMock.mockClear();
     hatchLocalAssistantMock.mockClear();
-    readLockfileMock.mockClear();
-    statusMock.mockClear();
+    resolveAssistantMock.mockClear();
     writeSelectionMock.mockClear();
     seedHatchAvatarMock.mockClear();
-    statusCallCount = 0;
-    statusHealthyFromCall = 1;
+    resolutionCallCount = 0;
+    resolutionReadyFromCall = 1;
     searchParams = new URLSearchParams();
   });
 
@@ -119,19 +127,18 @@ describe("hatching screen", () => {
     expect(hatchLocalAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("the local hatch probes the bridge then hands off to research with the hosting + assistant", async () => {
+  test("the local hatch polls the resolution endpoint then hands off to research with the hosting + assistant", async () => {
     searchParams = new URLSearchParams("hosting=local");
-    statusHealthyFromCall = 2;
+    resolutionReadyFromCall = 2;
     render(<HatchingScreen />);
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
       timeout: 5000,
     });
     expect(hatchLocalAssistantMock).toHaveBeenCalledWith(undefined);
-    expect(readLockfileMock).toHaveBeenCalled();
     expect(writeSelectionMock).toHaveBeenCalledWith("local-1");
-    // The status probe answered unhealthy once, so the wait loop polled again.
-    expect(statusCallCount).toBe(2);
+    // The resolution answered notReady once, so the wait loop polled again.
+    expect(resolutionCallCount).toBe(2);
     expect(navigateMock).toHaveBeenCalledWith(
       `${routes.onboarding.research}?hosting=local&assistant=local-1`,
       { replace: true },
