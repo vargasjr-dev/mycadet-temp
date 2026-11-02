@@ -1,4 +1,3 @@
-import type { LockfileAssistant } from "../lockfile-contract";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { sleepAssistant } from "./sleep";

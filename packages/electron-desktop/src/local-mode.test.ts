@@ -52,6 +52,10 @@ const spawnSyncMock = mock(
 mock.module("node:child_process", () => ({
   spawn: spawnMock,
   spawnSync: spawnSyncMock,
+  // The local-mode package's graph (ingress, process, remotes/local) imports
+  // these at module scope; stub them so the graph evaluates.
+  execFileSync: () => "",
+  execSync: () => "",
 }));
 
 // Mock cli-installer with controllable stubs. Defaults: CLI is not installed,
@@ -113,24 +117,22 @@ const lockfilePath = path.join(lockfileDir, "lockfile.json");
 // production + XDG_CONFIG_HOME environment pinned above.
 const configDir = path.join(configHomeDir, "cadet");
 
-let mockSessionToken: string | null = null;
-
 const refreshLockfileNowMock = mock(() => {});
 
-const { configureLocalMode, installLocalMode } = await import("./local-mode");
+const { installLocalMode } = await import("./local-mode");
 type CliPaths = import("@mycadet/local-mode").CliPaths;
-const { guardianTokenPath } = await import("@mycadet/local-mode");
+const { configureCliPaths, guardianTokenPath } = await import(
+  "@mycadet/local-mode"
+);
 
 const allowedEvent = {};
 
 beforeAll(() => {
-  configureLocalMode({
-    cliPaths,
+  configureCliPaths(cliPaths);
+  installLocalMode({
     handle,
     refreshLockfile: refreshLockfileNowMock,
-    session: { getToken: () => mockSessionToken },
   });
-  installLocalMode();
 });
 
 afterAll(() => {
@@ -168,7 +170,6 @@ afterEach(() => {
   ensureCliInstalledMock.mockClear();
   cliInstallerState.isInstalled = false;
   cliInstallerState.installError = null;
-  mockSessionToken = null;
   refreshLockfileNowMock.mockClear();
   delete process.env.CADET_CLI_PATH;
   for (const key of Object.keys(existsSyncOverrides)) {

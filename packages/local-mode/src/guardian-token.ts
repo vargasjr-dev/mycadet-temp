@@ -6,7 +6,6 @@ import { z } from "zod";
 
 import {
   isDnsIndependentLoopbackUrl,
-  isLoopbackPublicUrl,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { basetenTokenPath, guardianTokenPath } from "./config";

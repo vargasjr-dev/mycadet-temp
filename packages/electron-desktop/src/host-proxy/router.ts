@@ -14,7 +14,6 @@
 import {
   isCloudEntry,
   getGatewayUrl,
-  isLoopbackGatewayCloud,
   isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";

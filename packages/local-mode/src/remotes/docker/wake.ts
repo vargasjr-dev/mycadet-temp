@@ -1,7 +1,6 @@
 import { platform } from "node:os";
 
 import type { LockfileAssistant } from "../../lockfile-contract";
-import { cliCommand } from "../../environment";
 import { exec } from "../../exec";
 import { dockerResourceNames } from "./retire";
 import { ensureDockerDaemonRunning, isNoSuchContainerError } from "./common";
