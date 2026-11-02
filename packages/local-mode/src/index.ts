@@ -87,9 +87,15 @@ export type {
   AppleContainerAssistant,
   CloudAssistant,
   LockfileWriteResult,
+  MachinePolicy,
+  MachineMemoryPolicy,
 } from "./lockfile-contract";
 export { configureCliPaths, resolveCliInvocation } from "./cli-invocation";
-export { forwardOperatorRequest } from "./operations/routes";
+export { machinePolicyPaths } from "./lockfile-contract";
+export {
+  matchOperatorRequest,
+  forwardOperatorRequest,
+} from "./operations/routes";
 export type { CookieJar } from "./operations/cookie-jar";
 
 export { retireAssistant } from "./operations/retire";

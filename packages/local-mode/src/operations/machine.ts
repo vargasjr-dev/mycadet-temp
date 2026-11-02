@@ -1,6 +1,6 @@
 import { saveLockfileAssistant } from "../lockfile";
 import {
-  MACHINE_APPLICABILITY,
+  machinePolicyPaths,
   MachinePolicySchema,
   type LockfileAssistant,
   type MachinePolicy,
@@ -61,9 +61,11 @@ export function parseMachineBytes(raw: string): number | undefined {
   return bytes;
 }
 
-/** Key paths `machine set` accepts; `machine reset` also takes `memory`. */
-export const MACHINE_SET_PATHS = ["memory.max", "memory.high"] as const;
-export const MACHINE_RESET_PATHS = ["memory", ...MACHINE_SET_PATHS] as const;
+/** The schema-walked paths: `set` takes leaves, `reset` also takes sections. */
+const { sections: MACHINE_SECTIONS, leaves: MACHINE_LEAVES } =
+  machinePolicyPaths();
+const MACHINE_SET_PATHS = MACHINE_LEAVES;
+const MACHINE_RESET_PATHS = [...MACHINE_SECTIONS, ...MACHINE_LEAVES];
 
 export type MachineMutationResult =
   | {
@@ -77,11 +79,10 @@ export type MachineMutationResult =
 
 /** The pending narration per remote: what it takes for stored policy to bite. */
 function pendingNote(entry: LockfileAssistant): string {
-  const applicability = MACHINE_APPLICABILITY[entry.cloud];
-  if (applicability === "cgroup") {
+  if (entry.cloud === "docker") {
     return "Pending — stored. Takes effect when the container is recreated (sleep, then wake).";
   }
-  if (applicability === "process-hint") {
+  if (entry.cloud === "local") {
     return "Pending — stored. Takes effect at the next worker spawn.";
   }
   return "Stored — no apply path for this remote yet.";
