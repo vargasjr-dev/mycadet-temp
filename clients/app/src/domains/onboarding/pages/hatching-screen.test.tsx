@@ -53,7 +53,6 @@ const resolveAssistantMock = mock(async (): Promise<Resolution> => {
       assistant: {
         id: "local-1",
         version: "0.13.0",
-        url: "http://localhost:5173/assistant/",
       },
     };
   }

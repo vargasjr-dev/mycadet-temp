@@ -2,7 +2,6 @@ import { isActiveAssistant, readLockfile } from "../lockfile";
 import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
-import { getLocalAssistantStatus } from "../status";
 import { runHatch } from "../hatch";
 import { runUpgrade, type UpgradeOptions } from "../upgrade";
 import { unpairAssistant } from "../unpair";
@@ -13,6 +12,7 @@ import { retireAssistant } from "./retire";
 import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
+import { z } from "zod";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -36,12 +36,13 @@ export interface OperatorRequest {
   /** The scoped rows' decoded target id; the unscoped rows resolve it. */
   assistantId: string;
   /**
-   * The caller's headers, forwarded so a credential-judging operation can
+   * The caller's own headers, forwarded so a credential-judging operation can
    * send the caller's own proof upstream — a verdict read host-side without
-   * them would be the host's, not the caller's. Absent (direct `run` calls
-   * in tests) resolves to an empty `Headers`.
+   * them would be the host's, not the caller's. Passed raw, whatever the
+   * mount holds (a fetch Request's Headers, or the connect record). Absent
+   * (direct `run` calls in tests) resolves to an empty record.
    */
-  headers?: Headers;
+  headers?: Headers | Record<string, string | string[] | undefined>;
   /**
    * The caller's body stream, carried for the body-carrying rows (hatch,
    * devices, pairing, upgrade) to read their JSON off. Absent (GET/HEAD,
@@ -201,6 +202,11 @@ async function readJsonBody(
   }
 }
 
+/** The hatch row's body: the requested remote override; junk degrades to a plain hatch. */
+const HatchBodySchema = z
+  .object({ remote: z.string().optional().catch(undefined) })
+  .catch({});
+
 /**
  * Provision a local assistant. Never rejects — failures resolve with
  * `{ ok: false, error }` so the renderer renders the same error UI the
@@ -209,8 +215,9 @@ async function readJsonBody(
  * ever invokes the CLI as a subprocess.
  */
 async function runHatchRoute(request: OperatorRequest): Promise<Response> {
-  const body = (await readJsonBody(request.body)) ?? {};
-  const remote = typeof body.remote === "string" ? body.remote : undefined;
+  const { remote } = HatchBodySchema.parse(
+    (await readJsonBody(request.body)) ?? {},
+  );
   try {
     const result = await runHatch({ remote });
     return json(
@@ -327,6 +334,18 @@ async function runPairingCancelRoute(
   return json({ ok: pairingCancel(body.handle) });
 }
 
+async function runDevicesListRoute(
+  request: OperatorRequest,
+): Promise<Response> {
+  return runDevicesRoute(false, request);
+}
+
+async function runDevicesRevokeRoute(
+  request: OperatorRequest,
+): Promise<Response> {
+  return runDevicesRoute(true, request);
+}
+
 /**
  * Paired-device management via the CLI (`cadet devices … --json`). POST-only
  * (the renderer always POSTs); run-helper results respond 200 with `ok`
@@ -362,18 +381,16 @@ async function runDevicesRoute(
   }
 }
 
-// The in-flight upgrade set: an upgrade POST flips the status route to
-// `{ ok: true, state: "upgrading" }` until the CLI run settles, and a second
-// upgrade for the same assistant refuses instead of stacking.
+// The in-flight upgrade set: a second upgrade POST for the same assistant
+// refuses while the CLI run is still settling, instead of stacking.
 const upgradingLocalAssistantIds = new Set<string>();
 
 /**
  * Upgrade the active local assistant's runtime through the CLI. The
- * in-flight set deduplicates concurrent upgrades for one assistant (the
- * status route reports the same state), and non-local entries are refused
- * by the operation itself. An id that is not an entry on this machine
- * passes — cloud ids ride the data-plane chain to the conductor's upgrade
- * route.
+ * in-flight set deduplicates concurrent upgrades for one assistant, and
+ * non-local entries are refused by the operation itself. An id that is not
+ * an entry on this machine passes — cloud ids ride the data-plane chain to
+ * the conductor's upgrade route.
  */
 async function runUpgradeRoute(
   request: OperatorRequest,
@@ -421,27 +438,6 @@ async function runUpgradeRoute(
 }
 
 /**
- * The lifecycle probe for a local assistant's daemon and gateway (the
- * hatching screen polls it until the stack answers). The in-flight upgrade
- * state outranks the process probe — an upgrading assistant is not
- * "crashed", it is mid-restart. An id that is not an entry on this machine
- * passes — the data-plane chain forwards it.
- */
-async function runStatusRoute(
-  request: OperatorRequest,
-): Promise<Response | null> {
-  const assistantId = request.assistantId;
-  const entry = findAssistantByName(assistantId);
-  if (!entry) {
-    return null;
-  }
-  if (upgradingLocalAssistantIds.has(assistantId)) {
-    return json({ ok: true, state: "upgrading" });
-  }
-  return json(await getLocalAssistantStatus(assistantId));
-}
-
-/**
  * Read a local assistant's avatar straight off its workspace, so a sleeping
  * sibling still has an avatar in the chooser. An id that is not an entry on
  * this machine passes.
@@ -469,7 +465,7 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   {
     method: "GET",
     pattern: v1Friendly(/^\/assistants\/$/),
-    run: () => runListRoute(),
+    run: runListRoute,
   },
   {
     method: "POST",
@@ -479,12 +475,12 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   {
     method: "POST",
     pattern: v1Friendly(/^\/devices\/?$/),
-    run: (request) => runDevicesRoute(false, request),
+    run: runDevicesListRoute,
   },
   {
     method: "POST",
     pattern: v1Friendly(/^\/devices\/revoke\/?$/),
-    run: (request) => runDevicesRoute(true, request),
+    run: runDevicesRevokeRoute,
   },
   {
     method: "POST",
@@ -526,13 +522,6 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^upgrade$/),
     run: runUpgradeRoute,
   },
-  // The status read rides its own tail now: the scoped bare detail belongs
-  // to the resolution (the shell's one call).
-  {
-    method: "GET",
-    pattern: scopedAssistant(/^status$/),
-    run: runStatusRoute,
-  },
   {
     method: "GET",
     pattern: scopedAssistant(/^avatar\/get$/),
@@ -543,11 +532,6 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
 /** A matched operator request: the route and its decoded target id. */
 export interface OperatorMatch {
   route: OperatorRoute;
-  /**
-   * The scoped rows' decoded target id; for an unscoped match, the active
-   * assistant the operator backend has stored (the lockfile's active or
-   * sole entry), empty when there is none to name.
-   */
   assistantId: string;
 }
 

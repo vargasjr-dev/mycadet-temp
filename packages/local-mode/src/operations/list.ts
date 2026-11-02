@@ -26,7 +26,7 @@ export async function runListRoute(): Promise<Response> {
     status: "selection",
     assistants: lockfile.assistants.map((entry) => ({
       id: entry.assistantId,
-      ...(entry.name ? { name: entry.name } : {}),
+      name: entry.name,
       remote: entry.cloud,
     })),
   });

@@ -349,12 +349,7 @@ export type {
 export { runUpgrade, isValidReleaseVersion } from "./upgrade";
 export { stripVersionPrefix } from "./version";
 export type { UpgradeOptions, UpgradeResult } from "./upgrade";
-export { getLocalAssistantStatus } from "./status";
 export { readLockfileAssistantAvatar } from "./avatar";
-export type {
-  LocalAssistantRuntimeState,
-  LocalAssistantStatusResult,
-} from "./status";
 export {
   getGuardianAccessToken,
   isConfidentialRefreshUrl,

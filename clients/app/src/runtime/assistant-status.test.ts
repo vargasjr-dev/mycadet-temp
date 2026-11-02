@@ -10,7 +10,7 @@ import type { AssistantResolution } from "../assistant/resolution-contract";
 // assistant iframe reports nothing.
 const resolved: AssistantRequestState = {
   status: "ready",
-  assistant: { id: "a1", version: "1", url: "https://assistant.example" },
+  assistant: { id: "a1", version: "1" },
 } satisfies AssistantResolution;
 
 describe("deriveAssistantStatus", () => {
@@ -41,7 +41,7 @@ describe("deriveAssistantStatus", () => {
     // The chooser owns the window (nothing chosen, no assistants at all), or
     // the assistant exists but isn't usable — no live data plane either way.
     const nothing: AssistantResolution[] = [
-      { status: "selection", assistants: [] },
+      { status: "selection" },
       { status: "empty" },
       { status: "notReady" },
       { status: "unavailable" },

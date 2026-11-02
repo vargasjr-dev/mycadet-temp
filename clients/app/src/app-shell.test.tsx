@@ -18,7 +18,6 @@ const resolution = (id = "assistant-1") => ({
   assistant: {
     id,
     version: "1.2.3",
-    url: "https://runtime.example.com/web/1.2.3/assistant/",
   },
 });
 const request = spyOn(globalThis, "fetch");
@@ -63,7 +62,7 @@ function message(
   window.dispatchEvent(
     new MessageEvent("message", {
       source: extra.source ?? frame.contentWindow,
-      origin: extra.origin ?? "https://runtime.example.com",
+      origin: extra.origin ?? origin,
       data: { source: "mycadet-web-nav", nav: extra.nav ?? "push", path },
     }),
   );
@@ -87,14 +86,14 @@ test("admin deep links and active-frame navigation preserve the host prefix", as
   await mounted();
   const frame = iframe();
   expect(frame.src).toBe(
-    "https://runtime.example.com/web/1.2.3/assistant/conversations/123?tab=files#last",
+    `${origin}/admin/assistant/conversations/123?tab=files#last`,
   );
   message(frame, "/assistant/settings?tab=profile#name");
   expect(navigate).toHaveBeenCalledWith(
     "/admin/assistant/settings?tab=profile#name",
     { replace: false },
   );
-  message(frame, "/web/1.2.3/assistant/files", { nav: "pop" });
+  message(frame, "/admin/assistant/files", { nav: "pop" });
   expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/files", {
     replace: true,
   });
@@ -135,9 +134,9 @@ test("host navigation updates the active frame without another API lookup", asyn
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
-      path: "/web/1.2.3/assistant/identity?edit=1#name",
+      path: "/admin/assistant/identity?edit=1#name",
     },
-    "https://runtime.example.com",
+    origin,
   );
   post.mockRestore();
 });
@@ -358,9 +357,9 @@ test("a frame that loads late receives the latest host route", async () => {
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
-      path: "/web/1.2.3/assistant/files?view=grid#last",
+      path: "/admin/assistant/files?view=grid#last",
     },
-    "https://runtime.example.com",
+    origin,
   );
   post.mockRestore();
 });

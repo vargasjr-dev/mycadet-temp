@@ -170,7 +170,7 @@ describe("runResolveRoute — the lockfile arms", () => {
     expect(response.status).toBe(200);
     expect(await resolutionBody(response)).toEqual({
       status: "ready",
-      assistant: { id: "a1", version: "0.13.0", url: "assistant/" },
+      assistant: { id: "a1", version: "0.13.0" },
     });
     // The health read rides the ENTRY (the gateway url is resolved inside),
     // and the caller's credential headers are forwarded so the verdict is
@@ -198,7 +198,7 @@ describe("runResolveRoute — the lockfile arms", () => {
 
     expect(await resolutionBody(response)).toEqual({
       status: "ready",
-      assistant: { id: "a1", version: "1.4.0", url: "assistant/" },
+      assistant: { id: "a1", version: "1.4.0" },
     });
   });
 
@@ -283,22 +283,15 @@ describe("runResolveRoute — the lockfile arms", () => {
 });
 
 describe("runResolveRoute — the cloud leg", () => {
-  test("a cloud entry resolves through the platform's own detail", async () => {
+  test("a cloud entry resolves through the same remote-agnostic health read", async () => {
     writeLockfile({
       assistants: [{ assistantId: "c1", cloud: "cloud" }],
       activeAssistant: null,
     });
-    loopbackSafeFetchMock.mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          status: "active",
-          id: "c1",
-          version: "9.9.9",
-          url: "https://platform.example.test/c1/assistant/",
-        }),
-        { status: 200 },
-      ),
-    );
+    getGatewayHealthMock.mockResolvedValue({
+      version: "9.9.9",
+      authenticated: true,
+    });
 
     const response = await runResolution({
       cookie: "session=abc",
@@ -308,62 +301,15 @@ describe("runResolveRoute — the cloud leg", () => {
     expect(response.status).toBe(200);
     expect(await resolutionBody(response)).toEqual({
       status: "ready",
-      assistant: {
-        id: "c1",
-        version: "9.9.9",
-        url: "https://platform.example.test/c1/assistant/",
-      },
+      assistant: { id: "c1", version: "9.9.9" },
     });
-    const [fetchedUrl, init] = loopbackSafeFetchMock.mock.calls[0]!;
-    expect(String(fetchedUrl)).toContain("/v1/assistants/c1/");
-    // Every caller header rides upstream — the platform judges the caller.
-    const requestHeaders = new Headers(init?.headers as HeadersInit);
-    expect(requestHeaders.get("cookie")).toBe("session=abc");
-    expect(requestHeaders.get("authorization")).toBe("Bearer tok");
-    expect(requestHeaders.get("accept")).toBe("application/json");
-    expect(getGatewayHealthMock).not.toHaveBeenCalled();
-  });
-
-  test("the platform's status codes carry the arms", async () => {
-    writeLockfile({
-      assistants: [{ assistantId: "c1", cloud: "cloud" }],
-      activeAssistant: null,
-    });
-    for (const [status, expected] of [
-      [401, { status: "unauthenticated" }],
-      [409, { status: "notReady" }],
-      [410, { status: "unavailable" }],
-    ] as const) {
-      loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status }));
-      const response = await runResolution();
-      expect(await resolutionBody(response)).toEqual(expected);
-    }
-  });
-
-  test("a platform failure degrades to notReady rather than throwing", async () => {
-    writeLockfile({
-      assistants: [{ assistantId: "c1", cloud: "cloud" }],
-      activeAssistant: null,
-    });
-    loopbackSafeFetchMock.mockRejectedValue(new Error("down"));
-
-    const response = await runResolution();
-
-    expect(await resolutionBody(response)).toEqual({ status: "notReady" });
-  });
-
-  test("a malformed detail body degrades to notReady", async () => {
-    writeLockfile({
-      assistants: [{ assistantId: "c1", cloud: "cloud" }],
-      activeAssistant: null,
-    });
-    loopbackSafeFetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ status: "active" }), { status: 200 }),
+    // The health read rides the ENTRY — the platform's own gateway address
+    // is resolved inside, the caller's credential headers forwarded so the
+    // verdict is the caller's.
+    expect(getGatewayHealthMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "c1" }),
+      { headers: { cookie: "session=abc", authorization: "Bearer tok" } },
     );
-
-    const response = await runResolution();
-
-    expect(await resolutionBody(response)).toEqual({ status: "notReady" });
   });
 });
 

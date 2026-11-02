@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  AssistantNavigationSchema,
-  type ResolvedAssistant,
-} from "../assistant/resolution-contract";
+import { AssistantNavigationSchema } from "../assistant/resolution-contract";
 import { framePath, frameUrl, hostPath } from "./assistant-navigation";
 
 export interface AssistantFrameProps {
-  assistant: ResolvedAssistant;
   location: string;
   mountPath: string;
   origin: string;
@@ -17,7 +13,6 @@ export interface AssistantFrameProps {
 }
 
 export function AssistantFrame({
-  assistant,
   location,
   mountPath,
   origin,
@@ -25,12 +20,8 @@ export function AssistantFrame({
   title,
 }: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [src] = useState(() =>
-    frameUrl(location, mountPath, assistant.url, origin),
-  );
-  const currentPath = useRef(
-    framePath(location, mountPath, assistant.url, origin),
-  );
+  const [src] = useState(() => frameUrl(location, mountPath, origin));
+  const currentPath = useRef(framePath(location, mountPath, origin));
   const frameOrigin = new URL(src).origin;
   useEffect(() => {
     const listener = (event: MessageEvent) => {
@@ -45,18 +36,8 @@ export function AssistantFrame({
         return;
       }
       try {
-        const target = hostPath(
-          message.data.path,
-          mountPath,
-          assistant.url,
-          origin,
-        );
-        const targetFramePath = framePath(
-          target,
-          mountPath,
-          assistant.url,
-          origin,
-        );
+        const target = hostPath(message.data.path, mountPath);
+        const targetFramePath = framePath(target, mountPath, origin);
         if (targetFramePath === currentPath.current) {
           return;
         }
@@ -68,10 +49,10 @@ export function AssistantFrame({
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [frameOrigin, mountPath, assistant.url, origin, onNavigate]);
+  }, [frameOrigin, mountPath, origin, onNavigate]);
 
   useEffect(() => {
-    const next = framePath(location, mountPath, assistant.url, origin);
+    const next = framePath(location, mountPath, origin);
     if (next !== currentPath.current) {
       currentPath.current = next;
       ref.current?.contentWindow?.postMessage(
@@ -79,7 +60,7 @@ export function AssistantFrame({
         frameOrigin,
       );
     }
-  }, [location, mountPath, assistant.url, origin, frameOrigin]);
+  }, [location, mountPath, origin, frameOrigin]);
 
   return (
     <iframe

@@ -40,18 +40,6 @@ export const PublicUrlSchema = z
 export const ResolvedAssistantSchema = z.object({
   id: z.string().min(1),
   version: z.string().min(1),
-  url: PublicUrlSchema.refine((value) => {
-    if (!publicUrl(value)) {
-      return false;
-    }
-    return new URL(value, "https://app.example").pathname
-      .replace(/\/$/, "")
-      .endsWith("/assistant");
-  }, "UI entry must end at /assistant/."),
-});
-
-export const AssistantDetailSchema = ResolvedAssistantSchema.extend({
-  status: z.literal("active"),
 });
 
 export const AssistantChoiceSchema = z.object({
@@ -78,10 +66,9 @@ export const AssistantResolutionSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("ready"), assistant: ResolvedAssistantSchema }),
   z.object({ status: z.literal("notReady") }),
   z.object({ status: z.literal("unavailable") }),
-  z.object({
-    status: z.literal("selection"),
-    assistants: z.array(AssistantChoiceSchema),
-  }),
+  // Selection carries no rows by design — the rows are the list contract's;
+  // this arm just sends the shell to the selection page.
+  z.object({ status: z.literal("selection") }),
   z.object({ status: z.literal("empty") }),
   z.object({ status: z.literal("unauthenticated") }),
 ]);
@@ -89,7 +76,8 @@ export const AssistantResolutionSchema = z.discriminatedUnion("status", [
  * What the list endpoint alone can answer: the choices on the machine
  * (nothing hatched is the empty arm), or no session to read them with. The chooser renders off this contract only —
  * the single-assistant resolution arms (ready/notReady/unavailable/empty)
- * belong to the shell's resolution flow.
+ * belong to the shell's resolution flow, whose own selection arm carries no
+ * rows — it routes here.
  */
 export const AssistantListSchema = z.discriminatedUnion("status", [
   z.object({

@@ -116,17 +116,5 @@ export async function resolveAssistant(
   if (payload === unavailable) {
     return { status: "unavailable" };
   }
-  const parsed = decode(AssistantResolutionSchema, payload);
-  if (parsed.status !== "ready") {
-    return parsed;
-  }
-  return {
-    status: "ready",
-    assistant: {
-      // The endpoint answers the host-relative entry; absolute against the
-      // API base, so a paired apiBase's own origin wins over the shell's.
-      ...parsed.assistant,
-      url: new URL(parsed.assistant.url, client.base).href,
-    },
-  };
+  return decode(AssistantResolutionSchema, payload);
 }

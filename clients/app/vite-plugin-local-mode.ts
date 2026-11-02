@@ -251,29 +251,14 @@ function operatorMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
-    // The route rows read the JSON body off the body stream (pairing,
-    // devices, hatch, upgrade); the body rides as a lazy stream so a row
-    // that PASSES (unknown id) leaves the request stream untouched for the
-    // gateway proxy's forward. GET/HEAD cannot carry a body — only other
-    // methods attach one. The caller's own headers ride along (the
-    // resolution forwards them upstream so the gateway judges the browser).
-    const hasBody = !["GET", "HEAD"].includes(req.method ?? "GET");
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (value === undefined) {
-        continue;
-      }
-      for (const v of Array.isArray(value) ? value : [value]) {
-        headers.append(key, v);
-      }
-    }
+    // The caller's own headers and body ride as-is; the stream is lazy, so
+    // a row that PASSES (unknown id) leaves the request untouched for the
+    // gateway proxy's forward.
     void match.route
       .run({
         assistantId: match.assistantId,
-        headers,
-        ...(hasBody
-          ? { body: Readable.toWeb(req) as unknown as ReadableStream }
-          : {}),
+        headers: req.headers,
+        body: Readable.toWeb(req) as unknown as ReadableStream,
       })
       .then((response) => {
         if (!response) {
