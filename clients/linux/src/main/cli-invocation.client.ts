@@ -2,10 +2,7 @@ import { app } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
-import { LOCAL_MODE_SESSION } from "@mycadet/electron-desktop/local-mode";
-import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
-import { configureCliPaths, resolveCliInvocation } from "@mycadet/local-mode";
+import { configureCliPaths } from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,
@@ -27,9 +24,3 @@ configureCliPaths({
   },
   prepare: ensureCliInstalled,
 });
-
-export const installLinuxLocalModeProviders = (
-  registry: DesktopCapabilityRegistry,
-): void => {
-  registry.provide(LOCAL_MODE_SESSION, { getToken: getSessionToken });
-};

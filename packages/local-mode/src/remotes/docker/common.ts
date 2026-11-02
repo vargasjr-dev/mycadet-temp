@@ -1,5 +1,4 @@
 import { join } from "node:path";
-import { platform } from "node:os";
 
 import { exec } from "../../exec";
 
@@ -44,7 +43,7 @@ async function waitForDockerDaemon(timeoutMs: number): Promise<boolean> {
  * Never `colima delete` — the VM disk holds every container image and volume.
  */
 export async function startColimaAndAwaitDaemon(
-  log: (message: string) => void,
+  _log: (message: string) => void,
   opts: { startArgs?: string[]; settleTimeoutMs?: number } = {},
 ): Promise<void> {
   const startArgs = opts.startArgs ?? [];

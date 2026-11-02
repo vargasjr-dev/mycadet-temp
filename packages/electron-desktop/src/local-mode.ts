@@ -14,9 +14,6 @@ import {
   pairingPoll,
   pairingStart,
   unpairAssistant,
-  LockfileAssistantSchema,
-  configureCliPaths,
-  type CliPaths,
   type LockfileWriteResult,
   type UpgradeOptions,
 } from "@mycadet/local-mode";
@@ -27,7 +24,6 @@ import type {
   LocalReadAssistantAvatarResult,
   LocalRevokeDeviceResult,
 } from "@mycadet/ipc-contract";
-import { capabilityToken } from "./capability-registry";
 import type { IpcHandle } from "./ipc";
 
 /**
@@ -44,6 +40,15 @@ import type { IpcHandle } from "./ipc";
  * The CLI owns all daemon + gateway process lifecycle: a hatched local
  * assistant runs its own daemon, and this host only ever invokes the CLI as a
  * subprocess. The Electron app does not supervise any daemon of its own.
+ *
+ * The host's facts (its IPC transport, lockfile refresh, session tokens)
+ * arrive as plain arguments to {@link installLocalMode}. There is no
+ * module-global runtime to configure first: the previous
+ * `configureLocalMode`/`requireRuntime` dance was a second initialization
+ * ordering every host had to get right before `whenReady`, and a host that
+ * missed it crashed at startup with "Local-mode runtime is unavailable". The
+ * renderer-facing surface is unchanged — the web and app renderers keep
+ * calling `window.cadet.localMode.*` through the preload bridge.
  */
 
 interface HatchResult {
@@ -58,47 +63,12 @@ interface UpgradeResult {
   error?: string;
 }
 
-export interface LocalModeSessionProvider {
-  getToken: () => string | null;
-}
-
-export const LOCAL_MODE_SESSION = capabilityToken<LocalModeSessionProvider>(
-  "desktop.local-mode-session",
-);
-export interface LocalModeRuntime {
-  /** The host's CLI facts — the inlined invocation resolution probes these. */
-  cliPaths?: CliPaths;
+export interface LocalModeDeps {
+  /** The host's IPC transport — handlers register on it directly. */
   handle: IpcHandle;
+  /** Called after lockfile mutations so watchers refresh in the same tick. */
   refreshLockfile: () => void;
-  session: LocalModeSessionProvider;
-  unavailableError?: string;
 }
-
-let runtime: LocalModeRuntime | null = null;
-
-export const configureLocalMode = (next: LocalModeRuntime): void => {
-  runtime = next;
-  configureCliPaths(next.cliPaths);
-};
-
-export const configureUnavailableLocalMode = (
-  handle: IpcHandle,
-  unavailableError: string,
-): void => {
-  configureLocalMode({
-    handle,
-    refreshLockfile: () => undefined,
-    session: { getToken: () => null },
-    unavailableError,
-  });
-};
-
-export const requireRuntime = (): LocalModeRuntime => {
-  if (!runtime) {
-    throw new Error("Local-mode runtime is unavailable");
-  }
-  return runtime;
-};
 
 /**
  * Provision a local assistant. Never rejects — failures resolve with
@@ -120,16 +90,20 @@ async function hatch(remote?: string): Promise<HatchResult> {
 async function listDevices(
   assistantId: string,
 ): Promise<LocalListDevicesResult> {
-  return runDevicesList(assistantId);
+  try {
+    return await runDevicesList(assistantId);
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
 }
 
-/** Revoke one paired device's tokens. Mirrors `hatch`'s never-reject contract. */
+/** Revoke one of a local assistant's paired devices. Never rejects either. */
 async function revokeDevice(
   assistantId: string,
   hashedDeviceId: string,
 ): Promise<LocalRevokeDeviceResult> {
   try {
-    return runDevicesRevoke(assistantId, hashedDeviceId);
+    return await runDevicesRevoke(assistantId, hashedDeviceId);
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
@@ -167,12 +141,6 @@ async function upgrade(
   }
 }
 
-// A persisted assistant entry as it crosses the IPC boundary. The
-// package's lockfile parser owns the real field-level contract; here we
-// only assert the renderer sent an object, so unknown/forward-compat
-// fields pass through untouched.
-const assistantRecord = z.record(z.string(), z.unknown());
-
 // `retire` and `unpair` each take a single assistant id and keep a
 // never-reject contract: a missing id resolves with a structured error the
 // renderer renders, rather than rejecting the invoke. The id is therefore
@@ -206,46 +174,28 @@ const upgradeArgs = z.tuple([
 let installed = false;
 
 /**
- * Register the local-mode IPC handlers. Call once from `whenReady`.
- * Idempotent so it's safe under main-bundle hot reload in dev.
+ * Register the local-mode IPC handlers. Call once from `whenReady` with the
+ * host's facts. Idempotent so it's safe under main-bundle hot reload in dev.
  */
-export const installLocalMode = (): void => {
+export const installLocalMode = (deps: LocalModeDeps): void => {
   if (installed) {
     return;
   }
   installed = true;
 
-  const configured = requireRuntime();
-  const { handle } = configured;
-  const unavailableError = configured.unavailableError;
-  const ipc: IpcHandle = (channel, schema, fn) => {
-    handle(channel, schema, (args, event) => {
-      if (!unavailableError) {
-        return fn(args, event);
-      }
-      if (channel === "cadet:localMode:readLockfile") {
-        throw new Error(unavailableError);
-      }
-      const hasStatus = channel.endsWith("Token") || channel.endsWith("status");
-      return hasStatus
-        ? { ok: false, status: 501, error: unavailableError }
-        : { ok: false, error: unavailableError };
-    });
-  };
+  const { handle, refreshLockfile } = deps;
 
-  const { refreshLockfile } = configured;
-
-  ipc("cadet:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
+  handle("cadet:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
     hatch(remote || undefined),
   );
 
-  ipc("cadet:localMode:readLockfile", z.tuple([]), () => {
+  handle("cadet:localMode:readLockfile", z.tuple([]), () => {
     const lockfile = readLockfile();
     stripSensitiveFields(lockfile);
     return lockfile;
   });
 
-  ipc(
+  handle(
     "cadet:localMode:unpair",
     assistantIdArgs,
     ([assistantId]): LockfileWriteResult => {
@@ -267,7 +217,7 @@ export const installLocalMode = (): void => {
   // Pairing runs host-side across three channels: the pasted address goes out
   // on `pairingStart`, the renderer polls the returned handle, and the device
   // code plus the credentials it buys never cross the boundary.
-  ipc(
+  handle(
     "cadet:localMode:pairingStart",
     oneOptionalStringArgs,
     async ([address]): Promise<LocalPairingStartResult> => {
@@ -292,7 +242,7 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc(
+  handle(
     "cadet:localMode:pairingPoll",
     twoOptionalStringArgs,
     async ([handle, name]): Promise<LocalPairingPollResult> => {
@@ -323,18 +273,18 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc("cadet:localMode:pairingCancel", oneOptionalStringArgs, ([handle]) => ({
+  handle("cadet:localMode:pairingCancel", oneOptionalStringArgs, ([handle]) => ({
     ok: pairingCancel(handle),
   }));
 
-  ipc("cadet:localMode:listDevices", assistantIdArgs, ([assistantId]) => {
+  handle("cadet:localMode:listDevices", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
     return listDevices(assistantId);
   });
 
-  ipc(
+  handle(
     "cadet:localMode:revokeDevice",
     twoOptionalStringArgs,
     ([assistantId, hashedDeviceId]) => {
@@ -348,14 +298,14 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc("cadet:localMode:upgrade", upgradeArgs, ([assistantId, options]) => {
+  handle("cadet:localMode:upgrade", upgradeArgs, ([assistantId, options]) => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
     return upgrade(assistantId, options);
   });
 
-  ipc("cadet:localMode:status", assistantIdArgs, ([assistantId]) => {
+  handle("cadet:localMode:status", assistantIdArgs, ([assistantId]) => {
     if (!assistantId) {
       return { ok: false, status: 400, error: "Missing assistantId" };
     }
@@ -365,7 +315,7 @@ export const installLocalMode = (): void => {
     return getLocalAssistantStatus(assistantId);
   });
 
-  ipc(
+  handle(
     "cadet:localMode:readAssistantAvatar",
     assistantIdArgs,
     ([assistantId]): LocalReadAssistantAvatarResult => {

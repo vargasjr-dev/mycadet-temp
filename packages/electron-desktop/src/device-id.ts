@@ -14,7 +14,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { resolveConfigDir, resolveEnvironmentName } from "@mycadet/local-mode";
+import { resolveConfigDir } from "@mycadet/local-mode";
 
 let cached: string | undefined;
 

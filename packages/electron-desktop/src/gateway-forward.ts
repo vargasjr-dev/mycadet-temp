@@ -6,7 +6,6 @@ import {
   readGatewayTargets,
   resolveGatewayProxyTarget,
   sanitizePairedForwardHeaders,
-  type TokenResult,
   type GuardianTokenLease,
   type LockfileAssistant,
   type PairedGuardianTokenProvider,

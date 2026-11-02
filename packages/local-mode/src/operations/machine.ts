@@ -154,7 +154,7 @@ export function machineSetKey(
       error: `Invalid size '${rawValue}'. Use bytes, or a suffix like 512MiB, 8GiB, 1TiB (1024-based) or 100MB, 2GB (1000-based).`,
     };
   }
-  const [section, key] = keyPath.split(".") as ["memory", "max" | "high"];
+  const [, key] = keyPath.split(".") as ["memory", "max" | "high"];
   const memory = { ...entry.machine?.memory, [key]: bytes };
   const result = writeMachinePolicy(entry, { ...entry.machine, memory });
   if (result.ok) return { ...result, value: bytes };

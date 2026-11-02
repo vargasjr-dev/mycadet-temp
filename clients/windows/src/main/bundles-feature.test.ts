@@ -1,4 +1,10 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 const installBundleFlowMock = mock(() => undefined);
 const handleBundleFileMock = mock(async (_filePath: string) => undefined);
@@ -7,10 +13,6 @@ const onFileOpenMock = mock(
   (_handler: (filePath: string) => void) => stopFileOpenMock,
 );
 const appOnceMock = mock((_event: string, _handler: () => void) => undefined);
-const resolveInvocationMock = mock(async () => ({
-  command: "cadet.exe",
-  baseArgs: [] as string[],
-}));
 const getGuardianAccessTokenMock = mock(async () => ({
   ok: true as const,
   accessToken: "guardian-token",
@@ -50,14 +52,14 @@ mock.module("./ipc.client", () => ({
   on: () => undefined,
 }));
 
-const {
-  bundleFileHandlerToken,
-  getBundlePlatform,
-  resetBundlePlatformForTest,
-} = await import("@mycadet/electron-desktop/bundle-platform");
+const { bundleFileHandlerToken, getBundlePlatform } = await import(
+  "@mycadet/electron-desktop/bundle-platform"
+);
+const { resetBundlePlatformForTest } = await import(
+  "@mycadet/electron-desktop/bundle-platform"
+);
 const { DesktopCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");
-const { LOCAL_MODE_CLI } = await import("@mycadet/electron-desktop/local-mode");
 const { default: bundles } = await import("./features/bundles");
 
 beforeEach(() => {
@@ -67,7 +69,6 @@ beforeEach(() => {
   onFileOpenMock.mockClear();
   stopFileOpenMock.mockClear();
   appOnceMock.mockClear();
-  resolveInvocationMock.mockClear();
   getGuardianAccessTokenMock.mockClear();
 });
 
@@ -85,28 +86,15 @@ describe("Windows bundle workflow", () => {
     expect(getBundlePlatform().bundlesRoot()).toBe("C:\\Cadet/bundles");
   });
 
-  test("mints gateway tokens through the CLI provider installed later", async () => {
+  test("mints gateway tokens through the shared host provider", async () => {
     const registry = new DesktopCapabilityRegistry();
     bundles.install(registry);
 
-    // Without the provider, the token request degrades to null.
+    // The lockfile-backed provider resolves the active gateway itself; the
+    // token mint delegates to the shared package (mocked here).
     await expect(
       getBundlePlatform().acquireGatewayToken("assistant-1"),
-    ).resolves.toBeNull();
-
-    // A cold launch from a `.cadet` file asks for the token in the same
-    // tick that installs the remaining modules, including the CLI provider.
-    const pending = getBundlePlatform().acquireGatewayToken("assistant-1");
-    registry.provide(LOCAL_MODE_CLI, {
-      resolveInvocation: resolveInvocationMock,
-    });
-    await expect(pending).resolves.toBe("guardian-token");
-    expect(getGuardianAccessTokenMock).toHaveBeenCalledWith(
-      "assistant-1",
-      "C:\\Cadet\\config",
-      { command: "cadet.exe", baseArgs: [] },
-      true,
-    );
+    ).resolves.toBe("guardian-token");
+    expect(getGuardianAccessTokenMock).toHaveBeenCalledWith("assistant-1");
   });
 });
-

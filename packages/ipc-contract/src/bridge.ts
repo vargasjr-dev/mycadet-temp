@@ -29,7 +29,6 @@ import type {
   CompanionAnnotationPhase,
   CompanionAnnotationStroke,
   CompanionAnnotationTool,
-  CompanionCoachmark,
   CompanionCharacter,
   CompanionContext,
   CompanionIntroAction,

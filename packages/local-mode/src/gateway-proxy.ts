@@ -5,7 +5,6 @@ import { resolveLockfilePath } from "./config";
 import type { TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
-  GATEWAY_PORT,
   getGatewayUrl,
   isCloudEntry,
   isLoopbackGatewayCloud,

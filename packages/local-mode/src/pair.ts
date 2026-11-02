@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import {
   isLoopbackPublicUrl,
   parsePairingAddress,
@@ -15,7 +12,6 @@ import {
 } from "@mycadet/service-contracts/remote-web-pairing";
 import { nanoid } from "nanoid";
 
-import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
 import { readLockfile } from "./lockfile";
 

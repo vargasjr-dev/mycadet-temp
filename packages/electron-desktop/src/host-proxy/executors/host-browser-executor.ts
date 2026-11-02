@@ -108,7 +108,7 @@ export class HostBrowserExecutor implements HostProxyExecutor {
     });
   }
 
-  handleCancel(message: HostProxySseMessage, poster: HostProxyPoster): void {
+  handleCancel(message: HostProxySseMessage, _poster: HostProxyPoster): void {
     const requestId = message.requestId as string | undefined;
     if (!requestId) return;
 

@@ -11,7 +11,6 @@ import type {
 } from "@mycadet/electron-desktop/capability-registry";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
-import { LOCAL_MODE_CLI } from "@mycadet/electron-desktop/local-mode";
 import {
   getWatchedLockfile,
   onLockfileChange,
@@ -20,11 +19,7 @@ import {
   getSessionToken,
   onSessionTokenChange,
 } from "@mycadet/electron-desktop/session-token-store";
-import {
-  getGuardianAccessToken,
-  resolveConfigDir,
-  resolveEnvironmentName,
-} from "@mycadet/local-mode";
+import { getGuardianAccessToken } from "@mycadet/local-mode";
 
 import { createWindowsHostProxyRuntime } from "../host-proxy-adapter";
 import log from "../logger";
@@ -49,26 +44,9 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
   const teardown = installHostProxyBridge(
     createWindowsHostProxyRuntime({
       acquireGuardianToken: async (assistantId) => {
-        // Resolved lazily so this module works regardless of when (or
-        // whether) the CLI provider registers. Without it, local
-        // assistants stay explicitly unreachable; cloud assistants use
-        // the session token instead.
-        const cli = capabilities.get(LOCAL_MODE_CLI);
-        if (!cli) {
-          log.warn(
-            "[host-proxy] no CLI provider registered, skipping local assistant",
-            { assistantId },
-          );
-          return {
-            ok: false,
-            status: 500,
-            error: "no CLI provider registered",
-          };
-        }
-        const result = await getGuardianAccessToken(
-          assistantId,
-          await cli.resolveInvocation(),
-        );
+        // The shared token mint resolves the CLI invocation itself; hosts
+        // that cannot reach a CLI get the package's structured error.
+        const result = await getGuardianAccessToken(assistantId);
         if (!result.ok) {
           log.warn("[host-proxy] failed to obtain guardian token", {
             assistantId,
