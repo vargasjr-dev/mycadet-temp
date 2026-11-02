@@ -253,7 +253,6 @@ export function HatchingScreen() {
               // settle (transport error, timeout) keeps polling within the
               // deadline below.
               const resolution = await resolveAssistant({
-                origin: window.location.origin,
                 signal: AbortSignal.timeout(10_000),
               }).catch(() => null);
               if (resolution?.status === "ready") {

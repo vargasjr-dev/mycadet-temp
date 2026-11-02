@@ -18,7 +18,6 @@ import {
   resetRememberedOriginsForTesting,
 } from "@app/stores/remembered-origins-store";
 import { __resetConnectDialogForTesting } from "@app/stores/connect-dialog-store";
-import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
 
 const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
@@ -40,15 +39,6 @@ const detail = {
   status: "active",
   version: "1.2.3",
   url: "web/1.2.3/assistant/",
-};
-// The shell's resolution is one GET /v1/assistant — the host's union answer.
-const resolution = {
-  status: "ready",
-  assistant: {
-    id: "assistant-2",
-    version: "1.2.3",
-    url: "web/1.2.3/assistant/",
-  },
 };
 function setup(
   entry:
@@ -106,23 +96,23 @@ afterEach(() => {
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
   // The route's own auth machinery probes the cloud session between API
   // calls (see the create-flow pin below) — seed by URL, not FIFO order.
-  let resolutionCalls = 0;
   const router = setup(undefined, true, async (url) => {
     const target = String(url);
-    if (target.includes("/v1/assistant")) {
-      // One endpoint: the chooser's first call reads the selection arm, the
-      // picked assistant's re-resolution reads the shell's ready arm.
-      resolutionCalls += 1;
-      if (resolutionCalls === 1) {
-        return Response.json({
-          status: "selection",
-          assistants: [
-            { id: "assistant-1", name: "One" },
-            { id: "assistant-2" },
-          ],
-        });
-      }
-      return Response.json(resolution);
+    if (target.endsWith("/v1/assistants/")) {
+      return Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }, { id: "assistant-2" }],
+      });
+    }
+    if (target.includes("/v1/assistants/assistant-2/")) {
+      return Response.json({
+        status: "ready",
+        assistant: {
+          id: "assistant-2",
+          version: detail.version,
+          url: detail.url,
+        },
+      });
     }
     return iframeDocument.clone();
   });
@@ -143,7 +133,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "http://localhost:3001/v1/assistant",
+    "http://localhost:3001/v1/assistants/",
     "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
@@ -269,25 +259,25 @@ test("arrow keys move focus across cards without selecting", async () => {
 });
 
 test("Enter selects the focused card", async () => {
-  let resolutionCalls = 0;
   const router = setup(undefined, false, async (url) => {
     const target = String(url);
-    if (target.includes("/v1/assistant")) {
-      // The chooser's first call reads the selection arm; the card's pick
-      // re-resolves and the ready arm carries the assistant the card
-      // navigated with — the frame mounts on what the host answered.
-      resolutionCalls += 1;
-      return Response.json(
-        resolutionCalls === 1
-          ? {
-              status: "selection",
-              assistants: [{ id: "assistant-1", name: "One" }],
-            }
-          : {
-              ...resolution,
-              assistant: { ...resolution.assistant, id: "assistant-1" },
-            },
-      );
+    if (target.endsWith("/v1/assistants/")) {
+      return Response.json({
+        status: "selection",
+        assistants: [{ id: "assistant-1", name: "One" }],
+      });
+    }
+    // The shell rejects a detail whose id mismatches the selection, so the
+    // detail must answer the assistant the card navigated with.
+    if (target.includes("/v1/assistants/assistant-1/")) {
+      return Response.json({
+        status: "ready",
+        assistant: {
+          id: "assistant-1",
+          version: detail.version,
+          url: detail.url,
+        },
+      });
     }
     return iframeDocument.clone();
   });
@@ -331,21 +321,28 @@ test("an empty host list can be refreshed", async () => {
 });
 
 test("an empty list offers creation and lands in the created assistant", async () => {
-  let hatched = false;
   const router = setup("/account/select-assistant", false, async (url) => {
     const target = String(url);
-    // The dialog's create flow resolves the organization, hatches, and the
-    // shell then re-resolves the created assistant same-origin: the chooser
-    // reads the empty arm until the hatch lands, the shell reads ready.
-    if (target.includes("/hatch/")) {
-      hatched = true;
-      return Response.json(detail);
+    if (target.endsWith("/v1/assistants/")) {
+      return Response.json({ status: "empty" });
     }
+    // The dialog's create flow resolves the organization, hatches, and the
+    // shell then resolves the created assistant's detail same-origin.
     if (target.includes("/v1/organizations/")) {
       return Response.json({ results: [{ id: "org-1" }] });
     }
-    if (target.includes("/v1/assistant")) {
-      return Response.json(hatched ? resolution : { status: "empty" });
+    if (target.includes("/hatch/")) {
+      return Response.json(detail);
+    }
+    if (target.includes("/v1/assistants/assistant-2/")) {
+      return Response.json({
+        status: "ready",
+        assistant: {
+          id: "assistant-2",
+          version: detail.version,
+          url: detail.url,
+        },
+      });
     }
     return iframeDocument.clone();
   });
@@ -363,10 +360,9 @@ test("an empty list offers creation and lands in the created assistant", async (
       // the cloud session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "http://localhost:3001/v1/assistant",
+    "http://localhost:3001/v1/assistants/",
     "/v1/organizations/?limit=100&offset=0",
     "/v1/assistants/hatch/?mode=create",
-    // The created assistant's id rides the scoped resolution spelling.
     "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
 });
@@ -456,7 +452,10 @@ test("a failed retire keeps the dialog open with the cloud's detail", async () =
 
 test("a failed list renders a degraded disabled row plus the way forward", async () => {
   request.mockResolvedValueOnce(
-    Response.json({ results: [{ name: "Missing ID" }] }),
+    Response.json({
+      status: "selection",
+      assistants: [{ name: "Missing ID" }],
+    }),
   );
   setup();
   const row = await screen.findByRole("radio", {
@@ -519,14 +518,13 @@ test("browser history restores selection and frame navigation retains it", async
     },
     false,
     async (url) => {
-      if (String(url).includes("/v1/assistant")) {
+      if (String(url).includes("/v1/assistants/assistant-2/")) {
         return Response.json({
-          ...resolution,
+          status: "ready",
           assistant: {
-            ...resolution.assistant,
-            // An absolute runtime origin: the frame's own document load
-            // fails soft (the external host), like the shell suite's.
-            url: "https://runtime.example.com/web/1.2.3/assistant/",
+            id: "assistant-2",
+            version: detail.version,
+            url: detail.url,
           },
         });
       }
@@ -542,7 +540,7 @@ test("browser history restores selection and frame navigation retains it", async
     window.dispatchEvent(
       new MessageEvent("message", {
         source: frame.contentWindow,
-        origin: "https://runtime.example.com",
+        origin: "http://localhost:3001",
         data: {
           source: "mycadet-web-nav",
           nav: "push",
@@ -555,8 +553,7 @@ test("browser history restores selection and frame navigation retains it", async
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
-  // The auth machinery's platform-session probe rides along; pin the API —
-  // the boot entry's hand-off id rides the scoped resolution spelling.
+  // The auth machinery's platform-session probe rides along; pin the API.
   expect(
     request.mock.calls
       .map(([url]) => String(url))
@@ -577,7 +574,7 @@ describe("remembered origins", () => {
   test("the chooser lists remembered origins under the assistants", async () => {
     seedOrigin("https://workshop.example/assistant-9");
     setup("/account/select-assistant", false, async () =>
-      Response.json({ results: [] }),
+      Response.json({ status: "empty" }),
     );
     expect(await screen.findByText("Remote · workshop.example")).toBeTruthy();
     expect(screen.getByText("workshop.example")).toBeTruthy();
@@ -633,7 +630,7 @@ describe("remembered origins", () => {
   test("a remembered origin can be removed from this device", async () => {
     seedOrigin("https://workshop.example/assistant-9", "Workshop");
     setup("/account/select-assistant", false, async () =>
-      Response.json({ results: [] }),
+      Response.json({ status: "empty" }),
     );
     // Radix menus open on pointerdown, not click.
     fireEvent.pointerDown(
@@ -652,149 +649,24 @@ describe("remembered origins", () => {
   });
 
   describe("with a local-mode host", () => {
-    const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
-
-    function stubCadet(lockfile: unknown, status: unknown): void {
-      Object.defineProperty(window, "cadet", {
-        configurable: true,
-        value: {
-          platform: "electron",
-          localMode: {
-            // Availability is detected on the pairing channel itself.
-            pairingStart: async () => ({ ok: false, error: "unused" }),
-            readLockfile: async () => lockfile,
-            status: async () => status,
-          },
-        },
-      });
-    }
-
     afterEach(() => {
-      if (originalCadet) {
-        Object.defineProperty(window, "cadet", originalCadet);
-      } else {
-        Reflect.deleteProperty(window, "cadet");
-      }
       __resetConnectDialogForTesting();
-      __resetLocalLockfileForTesting();
     });
 
-    const pairedLockfile = {
-      assistants: [
-        {
-          assistantId: "paired-1",
-          name: "Office",
-          cloud: "custom",
-          ipAddress: "office.example.com",
-          port: 443,
-        },
-      ],
-      activeAssistant: null,
-    };
-
-    test("the pairing affordance replaces the add-origin affordance, and opens the connect dialog", async () => {
-      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
-      setup("/account/select-assistant", false, async (url) =>
-        String(url).endsWith("/v1/assistants/")
-          ? Response.json(pairedLockfile)
-          : Response.json({ status: "empty" }),
+    test("both pairing affordances render and the connect one opens the connect dialog", async () => {
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ status: "empty" }),
       );
       expect(
         await screen.findByText("Connect a remote assistant"),
       ).toBeDefined();
-      // Hostless surfaces add an origin instead; with a host the dialog owns
-      // pairing.
-      expect(screen.queryByText("Add a remote assistant")).toBeNull();
-      // A custom remote's row names the gateway host — the actual remote.
-      expect(await screen.findByText("office.example.com")).toBeDefined();
+      // The add-origin arm rides alongside the connect dialog: a paired
+      // shell can still point the chooser at another deployment.
+      expect(screen.getByText("Add a remote assistant")).toBeDefined();
       fireEvent.click(screen.getByText("Connect a remote assistant"));
       expect(
         await screen.findByText("Connect a Remote Assistant"),
       ).toBeDefined();
-    });
-
-    test("a paired entry connects same-origin, routed by the host through the id in the path", async () => {
-      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
-      setup("/account/select-assistant", false, async (url) => {
-        const target = String(url);
-        if (target.includes("/v1/assistants/paired-1")) {
-          // The id-scoped resolution's ready arm.
-          return Response.json({
-            status: "ready",
-            assistant: {
-              id: "paired-1",
-              version: "1.2.3",
-              url: "web/1.2.3/assistant/",
-            },
-          });
-        }
-        if (target.endsWith("/v1/assistants/")) {
-          return Response.json(pairedLockfile);
-        }
-        return iframeDocument.clone();
-      });
-      fireEvent.click(await screen.findByRole("radio", { name: /^Office/ }));
-      // The selection carries no apiBase: the shell's resolution fetch is
-      // the plain same-origin /v1/assistant, and the serving host resolves
-      // the paired entry itself (bearer injected server-side).
-      await waitFor(() => {
-        expect(
-          request.mock.calls.some(([url]) =>
-            String(url).endsWith("/v1/assistant"),
-          ),
-        ).toBe(true);
-      });
-    });
-
-    test("an unhealthy local assistant still connects — the shell's not-ready wake owns recovery", async () => {
-      // The chooser connects by navigating, full stop: no connect-time
-      // probe, no verdict, no recovery dialog of its own. An entry whose
-      // daemon is down lands on the app shell's not-ready panel, whose
-      // wake is remote-agnostic.
-      stubCadet(
-        {
-          assistants: [
-            {
-              assistantId: "local-1",
-              name: "Workbench",
-              cloud: "local",
-            },
-          ],
-          activeAssistant: null,
-        },
-        { ok: true, state: "crashed" },
-      );
-      setup("/account/select-assistant", false, async (url) => {
-        const target = String(url);
-        if (target.endsWith("/v1/assistants/")) {
-          return Response.json({
-            assistants: [
-              {
-                assistantId: "local-1",
-                name: "Workbench",
-                cloud: "local",
-              },
-            ],
-            activeAssistant: null,
-          });
-        }
-        if (target.includes("/v1/assistant")) {
-          return Response.json({ status: "notReady" });
-        }
-        return iframeDocument.clone();
-      });
-      fireEvent.click(await screen.findByRole("radio", { name: /^Workbench/ }));
-      await waitFor(() => {
-        expect(
-          request.mock.calls.some(([url]) =>
-            String(url).endsWith("/v1/assistant"),
-          ),
-        ).toBe(true);
-      });
-      // Recovery copy lives in the shell now, not the chooser.
-      expect(
-        screen.queryByText("Can\u2019t Authenticate Assistant"),
-      ).toBeNull();
     });
   });
 });
