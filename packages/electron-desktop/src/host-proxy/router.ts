@@ -17,17 +17,11 @@ import {
   isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
-import {
-  getGuardianAccessToken,
-  readLockfile,
-} from "@mycadet/local-mode";
+import { getGuardianAccessToken, readLockfile } from "@mycadet/local-mode";
 import { hostname } from "node:os";
 
 import { onLockfileChange } from "../lockfile-watcher";
-import {
-  getSessionToken,
-  onSessionTokenChange,
-} from "../session-token-store";
+import { getSessionToken, onSessionTokenChange } from "../session-token-store";
 import {
   createDesktopPresenceMonitor,
   type DesktopPresenceLogger,
@@ -1018,9 +1012,8 @@ export function installHostProxyBridge(runtime: HostProxyRuntime): () => void {
     const presenceLogger: DesktopPresenceLogger = {
       warn: (...args: unknown[]) => log.warn(String(args[0]), ...args.slice(1)),
     };
-    stopPresenceMonitor = createDesktopPresenceMonitor(presenceLogger)(
-      reportPresence,
-    );
+    stopPresenceMonitor =
+      createDesktopPresenceMonitor(presenceLogger)(reportPresence);
   } catch (err) {
     log.warn("[host-proxy-router] presence monitor install failed", { err });
   }

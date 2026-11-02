@@ -108,24 +108,24 @@ handleSync("cadet:config:get", () => ({
 // ---------------------------------------------------------------------------
 
 startApp(log, () => {
-    if (usesAppProtocolRenderer(app.isPackaged)) {
-      registerAppProtocol();
-      installGatewayRequestGuard({
-        appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-        resolveAllowedOrigin,
-      });
-    }
-    registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
-    installPermissionHandler(resolveAllowedOrigin);
-    installCsp();
-    if (app.isPackaged) {
-      writeCliLocator();
-      void provisionCliForWrapper().catch((err: unknown) => {
-        log.error("[app] startup CLI provisioning failed:", err);
-      });
-    }
-    installMainFeatures();
-  });
+  if (usesAppProtocolRenderer(app.isPackaged)) {
+    registerAppProtocol();
+    installGatewayRequestGuard({
+      appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
+      resolveAllowedOrigin,
+    });
+  }
+  registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
+  installPermissionHandler(resolveAllowedOrigin);
+  installCsp();
+  if (app.isPackaged) {
+    writeCliLocator();
+    void provisionCliForWrapper().catch((err: unknown) => {
+      log.error("[app] startup CLI provisioning failed:", err);
+    });
+  }
+  installMainFeatures();
+});
 
 app.on("second-instance", () => {
   ensureVisible();

@@ -36,11 +36,8 @@ afterAll(() => {
   mock.module("@mycadet/local-mode", () => realLocalMode);
 });
 
-const {
-  installLockfileWatcher,
-  onLockfileChange,
-  __resetForTesting,
-} = await import("./lockfile-watcher");
+const { installLockfileWatcher, onLockfileChange, __resetForTesting } =
+  await import("./lockfile-watcher");
 
 const SAMPLE_LOCKFILE: Lockfile = {
   assistants: [
@@ -114,7 +111,6 @@ describe("lockfile watcher", () => {
 
     teardown();
   });
-
 
   test("a removed lockfile notifies the empty lockfile", async () => {
     // The CLI wiping the lockfile is a real state change: listeners hear

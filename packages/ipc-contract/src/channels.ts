@@ -102,7 +102,6 @@ export const DOCK_SET_BADGE = "cadet:dock:setBadge";
 export const DOWNLOADS_DONE_EVENT = "cadet:downloads:done";
 export const DOWNLOADS_REVEAL = "cadet:downloads:reveal";
 
-
 // Menu
 export const MENU_TITLES = "cadet:menu:titles";
 export const MENU_POPUP = "cadet:menu:popup";

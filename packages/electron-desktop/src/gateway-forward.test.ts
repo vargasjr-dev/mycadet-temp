@@ -13,9 +13,7 @@ type TokenResult =
 // @mycadet/local-mode — module-level dependencies of `forwardGatewayRequest`,
 // pinned here so tests never touch disk.
 type FixtureEntry = Record<string, unknown>;
-const readGatewayTargets = mock(
-  (): Map<string, FixtureEntry> => new Map(),
-);
+const readGatewayTargets = mock((): Map<string, FixtureEntry> => new Map());
 
 let tokenResult: TokenResult = { ok: true, accessToken: "host-token" };
 const getStoredPairedGuardianAccessToken = mock(
@@ -45,9 +43,7 @@ type FixtureLockfile = { assistants: Array<FixtureEntry> };
 const targetsFrom = (lockfile: FixtureLockfile): Map<string, FixtureEntry> =>
   new Map(
     lockfile.assistants.flatMap((entry) =>
-      entry.assistantId
-        ? [[String(entry.assistantId), entry] as const]
-        : [],
+      entry.assistantId ? [[String(entry.assistantId), entry] as const] : [],
     ),
   );
 

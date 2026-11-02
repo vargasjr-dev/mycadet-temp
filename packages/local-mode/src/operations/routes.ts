@@ -1,17 +1,7 @@
-import {
-  isActiveAssistant,
-  readLockfile,
-} from "../lockfile";
+import { isActiveAssistant, readLockfile } from "../lockfile";
 import { stripSensitiveFields } from "../util";
-import {
-  pairingCancel,
-  pairingPoll,
-  pairingStart,
-} from "../pair";
-import {
-  runDevicesList,
-  runDevicesRevoke,
-} from "../devices";
+import { pairingCancel, pairingPoll, pairingStart } from "../pair";
+import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
 import { getLocalAssistantStatus } from "../status";
 import { runHatch } from "../hatch";
@@ -366,7 +356,9 @@ async function runUpgradeRoute(
       ? {}
       : {
           ...(typeof body.latest === "boolean" ? { latest: body.latest } : {}),
-          ...(typeof body.version === "string" ? { version: body.version } : {}),
+          ...(typeof body.version === "string"
+            ? { version: body.version }
+            : {}),
           ...(typeof body.force === "boolean" ? { force: body.force } : {}),
         };
   if (!isActiveAssistant(assistantId)) {
@@ -387,7 +379,9 @@ async function runUpgradeRoute(
     if (!result.ok) {
       return json({ ok: false, error: result.error });
     }
-    return json(result.version ? { ok: true, version: result.version } : { ok: true });
+    return json(
+      result.version ? { ok: true, version: result.version } : { ok: true },
+    );
   } finally {
     upgradingLocalAssistantIds.delete(assistantId);
   }
@@ -427,7 +421,11 @@ async function runAvatarRoute(assistantId: string): Promise<Response | null> {
 const ROUTES: OperatorRoute[] = [
   { method: "GET", pattern: LOCKFILE_PATTERN, run: () => runLockfileRoute() },
   { method: "POST", pattern: HATCH_PATTERN, run: runHatchRoute },
-  { method: "POST", pattern: DEVICES_PATTERN, run: (_id, request) => runDevicesRoute(false, request) },
+  {
+    method: "POST",
+    pattern: DEVICES_PATTERN,
+    run: (_id, request) => runDevicesRoute(false, request),
+  },
   {
     method: "POST",
     pattern: DEVICES_REVOKE_PATTERN,

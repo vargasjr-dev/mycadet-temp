@@ -77,7 +77,9 @@ test("native host stamps identify local returning users independently of cloud a
     },
   });
   fetchSpy.mockResolvedValueOnce(
-    response({ assistants: [{ assistantId: "local-1", onboardedAt: "2026-10-01" }] }),
+    response({
+      assistants: [{ assistantId: "local-1", onboardedAt: "2026-10-01" }],
+    }),
   );
   expect(await readReturningUser()).toBe(true);
   expect(fetchSpy.mock.calls[0]?.[0]).toContain("/v1/assistants/");

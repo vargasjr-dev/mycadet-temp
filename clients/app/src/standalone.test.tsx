@@ -95,26 +95,28 @@ describe("the shell's assistant commands", () => {
     // The lockfile and status reads ride the operator routes' GETs through
     // the fetch spy: layer an implementation that answers those paths (a
     // queued mockResolvedValueOnce still wins for the test's own calls).
-    request.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = String(input).split("?")[0] ?? "";
-      if (path === "/v1/assistants/") {
-        return new Response(JSON.stringify(opts.lockfile), {
-          headers: { "content-type": "application/json" },
-        });
-      }
-      const statusMatch = path.match(/^\/v1\/assistants\/([^/]+)\/$/);
-      if (statusMatch) {
-        return new Response(
-          JSON.stringify(
-            opts.status
-              ? opts.status(decodeURIComponent(statusMatch[1] ?? ""))
-              : { ok: false },
-          ),
-          { headers: { "content-type": "application/json" } },
-        );
-      }
-      return realStandaloneFetch(input, init);
-    });
+    request.mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input).split("?")[0] ?? "";
+        if (path === "/v1/assistants/") {
+          return new Response(JSON.stringify(opts.lockfile), {
+            headers: { "content-type": "application/json" },
+          });
+        }
+        const statusMatch = path.match(/^\/v1\/assistants\/([^/]+)\/$/);
+        if (statusMatch) {
+          return new Response(
+            JSON.stringify(
+              opts.status
+                ? opts.status(decodeURIComponent(statusMatch[1] ?? ""))
+                : { ok: false },
+            ),
+            { headers: { "content-type": "application/json" } },
+          );
+        }
+        return realStandaloneFetch(input, init);
+      },
+    );
     return sink;
   }
 

@@ -24,4 +24,3 @@ configureCliPaths({
   },
   prepare: ensureCliInstalled,
 });
-

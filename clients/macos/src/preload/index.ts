@@ -730,7 +730,6 @@ const bridge: CadetBridge = {
 
 contextBridge.exposeInMainWorld("cadet", bridge);
 
-
 declare global {
   interface Window {
     cadet: CadetBridge;

@@ -730,7 +730,9 @@ describe("remembered origins", () => {
         ).toBe(true);
       });
       // Recovery copy lives in the shell now, not the chooser.
-      expect(screen.queryByText("Can\u2019t Authenticate Assistant")).toBeNull();
+      expect(
+        screen.queryByText("Can\u2019t Authenticate Assistant"),
+      ).toBeNull();
     });
   });
 });

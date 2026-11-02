@@ -225,11 +225,6 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
   };
 }
 
-
-
-
-
-
 /**
  * The operator routes: the host-served local-mode operations the dev server
  * answers in-process — the headless lifecycle cores (retire/sleep/wake), the

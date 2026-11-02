@@ -23,9 +23,9 @@ const realUnpair = { ...(await import("../unpair")) };
 const realPair = { ...(await import("../pair")) };
 
 const runHatchMock = mock(
-  async (
-    _options: { remote?: string },
-  ): Promise<
+  async (_options: {
+    remote?: string;
+  }): Promise<
     { ok: true; assistantId: string } | { ok: false; error: string }
   > => ({ ok: true, assistantId: "hatched-1" }),
 );
@@ -171,10 +171,10 @@ beforeEach(() => {
   ]) {
     m.mockReset();
   }
-  runHatchMock.mockImplementation(
-    async (_options: { remote?: string }) =>
-      ({ ok: true as const, assistantId: "hatched-1" }),
-  );
+  runHatchMock.mockImplementation(async (_options: { remote?: string }) => ({
+    ok: true as const,
+    assistantId: "hatched-1",
+  }));
   runDevicesListMock.mockImplementation(async () => ({
     ok: true as const,
     devices: [],
@@ -238,11 +238,10 @@ const dispatch = (
   }
   const request = new Request(`http://host.test${pathname}`, {
     method,
-    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    headers:
+      body === undefined ? undefined : { "content-type": "application/json" },
     body:
-      body === undefined || method === "GET"
-        ? undefined
-        : JSON.stringify(body),
+      body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
   return match.route.run(match.assistantId, request);
 };
@@ -290,9 +289,7 @@ describe("the lockfile read row — GET /v1/assistants/", () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
     await dispatch("/v1/assistants/", "GET");
     expect(stripSensitiveFields).toBeDefined();
-    expect(
-      JSON.parse(fs.readFileSync(lockfilePath, "utf-8")),
-    ).toBeDefined();
+    expect(JSON.parse(fs.readFileSync(lockfilePath, "utf-8"))).toBeDefined();
   });
 });
 
@@ -336,7 +333,11 @@ describe("the unpair row — POST /v1/assistants/{id}/unpair", () => {
   test("an on-machine entry unpairs and returns the written lockfile", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
 
-    const response = await dispatchAnswered("/v1/assistants/asst-1/unpair", "POST", {});
+    const response = await dispatchAnswered(
+      "/v1/assistants/asst-1/unpair",
+      "POST",
+      {},
+    );
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -347,11 +348,7 @@ describe("the unpair row — POST /v1/assistants/{id}/unpair", () => {
   });
 
   test("an id that is not an entry on this machine passes through", async () => {
-    const response = await dispatch(
-      "/v1/assistants/ghost/unpair",
-      "POST",
-      {},
-    );
+    const response = await dispatch("/v1/assistants/ghost/unpair", "POST", {});
 
     expect(response).toBeNull();
     expect(unpairAssistantMock).not.toHaveBeenCalled();
@@ -365,7 +362,11 @@ describe("the unpair row — POST /v1/assistants/{id}/unpair", () => {
       error: "the assistant is running",
     }));
 
-    const response = await dispatchAnswered("/v1/assistants/asst-1/unpair", "POST", {});
+    const response = await dispatchAnswered(
+      "/v1/assistants/asst-1/unpair",
+      "POST",
+      {},
+    );
 
     expect(response?.status).toBe(409);
     expect(await response?.json()).toEqual({
@@ -403,11 +404,9 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
       rejection: "loopback",
     }));
 
-    const response = await dispatch(
-      "/v1/remote-web/pairing-start",
-      "POST",
-      { address: "https://localhost:7830" },
-    );
+    const response = await dispatch("/v1/remote-web/pairing-start", "POST", {
+      address: "https://localhost:7830",
+    });
 
     expect(response?.status).toBe(400);
     expect(await response?.json()).toMatchObject({
@@ -571,7 +570,11 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
       activeAssistant: "asst-2",
     });
 
-    const response = await dispatch("/v1/assistants/asst-1/upgrade", "POST", {});
+    const response = await dispatch(
+      "/v1/assistants/asst-1/upgrade",
+      "POST",
+      {},
+    );
 
     expect(response?.status).toBe(200);
     expect(await response?.json()).toEqual({
@@ -628,10 +631,7 @@ describe("the avatar row — GET /v1/assistants/{id}/avatar/get", () => {
   });
 
   test("an id that is not an entry on this machine passes through", async () => {
-    const response = await dispatch(
-      "/v1/assistants/ghost/avatar/get",
-      "GET",
-    );
+    const response = await dispatch("/v1/assistants/ghost/avatar/get", "GET");
     expect(response).toBeNull();
     expect(readLockfileAssistantAvatarMock).not.toHaveBeenCalled();
   });

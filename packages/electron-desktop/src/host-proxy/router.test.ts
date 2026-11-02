@@ -39,7 +39,11 @@ const mockInstallPresenceMonitor = mock(
   },
 );
 mock.module("electron", () => ({
-  app: { isPackaged: false, getPath: () => import.meta.dir, once: () => undefined },
+  app: {
+    isPackaged: false,
+    getPath: () => import.meta.dir,
+    once: () => undefined,
+  },
   safeStorage: { isEncryptionAvailable: () => false },
   powerMonitor: {
     getSystemIdleState: () => "active",

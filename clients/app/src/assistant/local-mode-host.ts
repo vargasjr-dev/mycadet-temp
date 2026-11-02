@@ -147,10 +147,9 @@ export async function pollAssistantPairing(
  */
 export async function cancelAssistantPairing(handle: string): Promise<void> {
   try {
-    await postLocalCommand<{ ok: boolean }>(
-      "/v1/remote-web/pairing-cancel",
-      { handle },
-    );
+    await postLocalCommand<{ ok: boolean }>("/v1/remote-web/pairing-cancel", {
+      handle,
+    });
   } catch {
     // Unreachable session: cancelled, spent, or the host itself is gone.
   }

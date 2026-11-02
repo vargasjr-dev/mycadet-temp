@@ -38,7 +38,11 @@ describe("startApp", () => {
     await Promise.resolve();
 
     expect(ran).toBe(true);
-    expect(logCalls.some(([level, message]) => level === "info" && message === "[app] ready")).toBe(true);
+    expect(
+      logCalls.some(
+        ([level, message]) => level === "info" && message === "[app] ready",
+      ),
+    ).toBe(true);
   });
 
   test("reports a failed setup as `[app] whenReady setup failed`", async () => {
