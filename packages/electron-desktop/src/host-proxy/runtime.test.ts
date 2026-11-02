@@ -26,7 +26,6 @@ const unavailableExecutor = {
 test("creates a runtime with only the committed portable executors", () => {
   const runtime = createHostProxyRuntime({
     interfaceId: "linux",
-    resolveRendererBase: () => "http://renderer",
     bashExecutor: unavailableExecutor,
     logger: console,
   });
@@ -52,7 +51,6 @@ test("adds host_cu when the computer-use capability is installed", () => {
   let didTeardown = false;
   const runtime = createHostProxyRuntime({
     interfaceId: "windows",
-    resolveRendererBase: () => "http://renderer",
     bashExecutor: unavailableExecutor,
     logger: console,
     computerUseExecutors: {

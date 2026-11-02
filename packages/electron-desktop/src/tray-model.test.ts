@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { CompanionSize, CompanionSizeAxis } from "@mycadet/ipc-contract";
-import type { Lockfile } from "@mycadet/local-mode/contract";
 
 // Tray stub: records constructions, event listeners, and image swaps.
 type TrayCall = { event: string; handler: (...args: unknown[]) => void };
@@ -88,12 +87,6 @@ mock.module("electron", () => ({
   },
 }));
 
-// Controllable lockfile snapshot standing in for the watcher's cache, so
-// switcher tests can stage managed/paired/local entries per test.
-let watchedLockfile: {
-  assistants: Array<Record<string, unknown>>;
-  activeAssistant: string | null;
-} = { assistants: [], activeAssistant: null };
 /** Defaults to a macOS-shaped build, which is the one that has the surface. */
 let companionSupported = true;
 let companionHidden = false;
@@ -185,7 +178,6 @@ beforeEach(() => {
     companionSupported: () => companionSupported,
     companionHidden: () => companionHidden,
     dispatch: dispatchToMainMock,
-    getLockfile: () => watchedLockfile as Lockfile,
     icon: () => ({ __kind: "template-icon" }) as never,
     onboardingActive: () => false,
     openComponentGallery: () => undefined,
@@ -198,7 +190,6 @@ beforeEach(() => {
   appListeners.clear();
   themeListeners.clear();
   avatarListeners.clear();
-  watchedLockfile = { assistants: [], activeAssistant: null };
   companionSupported = true;
   companionHidden = false;
   companionSizes = { avatar: "large", options: "large" };

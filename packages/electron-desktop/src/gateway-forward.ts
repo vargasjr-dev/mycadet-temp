@@ -152,20 +152,12 @@ async function authorizeGatewayForwardPlan(
   return plan;
 }
 
-/**
- * The gateway target map for a forward: the lockfile's assistant entries ARE
- * the targets, read fresh — no shared cache to fall out of sync with a
- * mutation made by this process.
- */
-const readForwardTargets = (): Map<string, LockfileAssistant> =>
-  readGatewayTargets();
-
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: Fetch,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
-    planGatewayForward(request, readForwardTargets),
+    planGatewayForward(request, readGatewayTargets),
     // The trusted main-process proxy reads the paired bearer through the
     // shared seam, resolving the invocation here (the old electron-local
     // wrapper lived only to do this).

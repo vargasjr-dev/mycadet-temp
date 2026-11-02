@@ -12,7 +12,6 @@ import type {
 import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
 import { createHostProxyRuntime } from "@mycadet/electron-desktop/host-proxy/runtime";
 
-import { getRendererBase } from "../app-config";
 import { hostBashExecutor } from "../executors/host-bash-adapter";
 import log from "../logger";
 import { COMPUTER_USE_ACTION_EXECUTORS } from "./computer-use-actions";
@@ -35,7 +34,6 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
   const teardown = installHostProxyBridge(
     createHostProxyRuntime({
       interfaceId: "linux",
-      resolveRendererBase: () => getRendererBase(app.isPackaged),
       bashExecutor: hostBashExecutor,
       logger: log,
       computerUseExecutors: capabilities.get(COMPUTER_USE_ACTION_EXECUTORS),

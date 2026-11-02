@@ -1,3 +1,4 @@
+import { resolveHostProxyRendererBase } from "./renderer-base";
 import { HostBrowserExecutor } from "./executors/host-browser-executor";
 import { hostFileExecutor } from "./executors/host-file-executor";
 import { hostTransferExecutor } from "./executors/host-transfer-executor";
@@ -12,8 +13,6 @@ import {
 export interface HostProxyRuntimeSources {
   /** The client's interface id — rides the SSE headers. */
   interfaceId: string;
-  /** The renderer base for the ui-snapshot executor (per-client app-config). */
-  resolveRendererBase: () => string;
   /** The client's shell executor: bash on Linux, PowerShell on Windows. */
   bashExecutor: HostProxyExecutor;
   logger: HostProxyLogger;
@@ -36,13 +35,7 @@ export interface HostProxyRuntimeSources {
 export const createHostProxyRuntime = (
   sources: HostProxyRuntimeSources,
 ): HostProxyRuntime => {
-  const {
-    interfaceId,
-    resolveRendererBase,
-    bashExecutor,
-    logger,
-    computerUseExecutors,
-  } = sources;
+  const { interfaceId, bashExecutor, logger, computerUseExecutors } = sources;
   const browserExecutor = new HostBrowserExecutor();
   const clientHeaders = createHostProxyClientHeaders({ interfaceId });
   return {
@@ -56,7 +49,9 @@ export const createHostProxyRuntime = (
       host_file: hostFileExecutor,
       host_transfer: hostTransferExecutor,
       host_browser: browserExecutor,
-      host_ui_snapshot: createHostUiSnapshotExecutor({ resolveRendererBase }),
+      host_ui_snapshot: createHostUiSnapshotExecutor({
+        resolveRendererBase: resolveHostProxyRendererBase,
+      }),
       ...(computerUseExecutors
         ? { host_cu: computerUseExecutors.host_cu }
         : {}),

@@ -7,7 +7,6 @@ import {
   type NativeImage,
 } from "electron";
 
-import { type Lockfile } from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
   type CompanionSizeAxis,
@@ -56,7 +55,6 @@ export interface TrayModelRuntime {
   /** Which named size one axis of the companion surface is drawn at. */
   companionSize: (axis: CompanionSizeAxis) => CompanionSize;
   dispatch: (command: CadetCommand) => void;
-  getLockfile: () => Lockfile;
   icon: (icon: TrayMenuIcon) => NativeImage | undefined;
   onboardingActive: () => boolean;
   openComponentGallery: () => void;
