@@ -256,7 +256,7 @@ describe("cadet ps — platform status line", () => {
     // children of an assistant row…
     expect(output).toContain("ngrok");
     expect(output).not.toContain("└ ngrok");
-    expect(output).toContain("app");
+    expect(output).toContain("bun");
     // The edge's INFO leads with its listen URL (not a bare port).
     expect(output).toContain("http://127.0.0.1:7841");
     // …the type column distinguishes the three process kinds…
@@ -334,7 +334,7 @@ describe("cadet ps <built-in process name> details", () => {
         startedAt: "2026-10-20T15:00:00.000Z",
       },
     });
-    process.argv = ["bun", "cadet", "ps", "app"];
+    process.argv = ["bun", "cadet", "ps", "bun"];
 
     await ps();
 

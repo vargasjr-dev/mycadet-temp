@@ -1,11 +1,11 @@
+import { cliCommand } from "@mycadet/local-mode";
 import {
   getAppServerPaths,
   isAppServerRunning,
   readAppServerState,
   stopAppServer,
-  cliCommand,
-} from "@mycadet/local-mode";
-import { ensureAppServer, type AppServer } from "../lib/servers/app-server.js";
+} from "../lib/servers/bun.js";
+import { ensureAppServer, type AppServer } from "../lib/servers/bun.js";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {

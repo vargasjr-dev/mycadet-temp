@@ -18,7 +18,6 @@ import {
   type LockfileAssistant,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
-import { restoreContainerAppServer } from "../tunnel.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -269,8 +268,6 @@ export async function upgradeDocker(
       },
     };
     saveLockfileAssistant(updatedEntry);
-    // Refresh the host-served web bundle before clients reload on completion.
-    await restoreContainerAppServer(updatedEntry);
 
     // Notify clients on the new service group that the upgrade succeeded.
     await broadcastUpgradeEvent(

@@ -4,7 +4,7 @@ import {
 } from "@mycadet/service-contracts/ingress";
 
 import { readRootProcesses } from "../lib/assistant-config";
-import { ensureAppServer, type AppServer } from "../lib/servers/app-server.js";
+import { ensureAppServer, type AppServer } from "../lib/servers/bun.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   DEFAULT_TUNNEL_PROVIDER,

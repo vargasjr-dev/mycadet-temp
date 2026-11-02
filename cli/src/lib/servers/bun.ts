@@ -1,14 +1,14 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
+  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
-import { createServer } from "node:net";
-import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -26,29 +26,29 @@ import {
   stampRootProcess,
 } from "../assistant-config.js";
 import {
+  clearAppProcessRecord,
+  getAssistantDisplayName,
+  lookupAssistantByIdentifier,
+  matchOperatorRequest,
+  probePort,
+  resolveConfigDir,
+  resolveDataDir,
+  resolveLogDir,
+  waitForDaemonReady,
+} from "@mycadet/local-mode";
+import {
   getGatewayUrl,
   type InjectedConfig,
 } from "@mycadet/local-mode/contract";
-import {
-  getAppServerPaths,
-  getAppServerPid,
-  appServerStatePath,
-  getAssistantDisplayName,
-  isAppServerRunning,
-  lookupAssistantByIdentifier,
-  readAppServerState,
-  stopAppServer,
-  type AppServerState,
-} from "@mycadet/local-mode";
-import { matchOperatorRequest } from "@mycadet/local-mode";
-import { resolveLogDir } from "@mycadet/local-mode";
-import { waitForDaemonReady } from "@mycadet/local-mode";
 import { resolveClientDists } from "../web-dist.js";
 
 /**
- * The CLI-managed app server: a Bun.serve process that supersedes the nginx
- * edge as the canonical tunnel target — browser → tunnel (TLS) → app
- * server@127.0.0.1 → gateway@127.0.0.1.
+ * The Bun app server — the CLI-owned kind of app server, the whole surface in
+ * one module: the machine-level state (pidfile, serve spec, stop), the start
+ * and reuse machinery, and the `Bun.serve` process itself. The app server is
+ * a pure CLI primitive, like the tunnel it fronts: it is started by `cadet
+ * tunnel start` / `cadet app start` and stopped by `cadet app stop` — no
+ * wake or retire path starts or stops it on the user's behalf.
  *
  * One handler owns the whole surface, in priority order: the sensitive-route
  * denylist (never edge-reachable), the operator dispatch (the same route
@@ -59,11 +59,231 @@ import { resolveClientDists } from "../web-dist.js";
  * gate: the server fronts remote browsers through the TLS front, and the
  * operator rows judge credentials from the forwarded headers themselves.
  *
- * `cadet tunnel` (and the wake restore path) bring it up via
- * `ensureAppServer` and always front its loopback listen port.
+ * The server binds 127.0.0.1 only, and every tunnel agent is pointed at
+ * `http://127.0.0.1:<port>` explicitly.
  */
-
 export const DEFAULT_APP_SERVER_PORT = 7840;
+
+/**
+ * The machine-level state: the pidfile, the serve spec, and the injected
+ * documents live under the environment's XDG dirs — the serve data under the
+ * data dir, the PID under the config dir — never inside an assistant's
+ * workspace, so workspace backups never carry process artifacts.
+ */
+export interface AppServerPaths {
+  /** State dir; the serve spec and the injected indexes live here. */
+  dir: string;
+  pidPath: string;
+  logPath: string;
+}
+
+/** The dir pre-rename installs recorded state under (read as a fallback). */
+const LEGACY_INGRESS_DIR = "ingress";
+
+export function getAppServerPaths(): AppServerPaths {
+  const dir = join(resolveDataDir(), "app-server");
+  return {
+    dir,
+    pidPath: join(resolveConfigDir(), "app-server.pid"),
+    logPath: join(resolveLogDir(), "app-server.log"),
+  };
+}
+
+function readPidFile(pidPath: string): number | null {
+  try {
+    const pid = parseInt(readFileSync(pidPath, "utf-8").trim(), 10);
+    return Number.isInteger(pid) && pid > 0 ? pid : null;
+  } catch {
+    return null;
+  }
+}
+
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check whether a PID belongs to this app server process.
+ *
+ * Matching only the executable name is not enough: a stale pidfile can point
+ * at another assistant's app server after PID reuse. The serve entry runs as
+ * its own script, so its command line names our state dir.
+ */
+function isAppServerProcess(pid: number, paths: AppServerPaths): boolean {
+  try {
+    const output = execFileSync(
+      "ps",
+      ["-ww", "-p", String(pid), "-o", "command="],
+      {
+        encoding: "utf-8",
+        timeout: 3000,
+        stdio: ["ignore", "pipe", "ignore"],
+        windowsHide: true,
+      },
+    ).trim();
+    return output.includes(paths.dir);
+  } catch {
+    return false;
+  }
+}
+
+/** The app server's PID when it is recorded and alive, null otherwise. */
+export function getAppServerPid(): number | null {
+  const paths = getAppServerPaths();
+  const pid = readPidFile(paths.pidPath);
+  return pid !== null && isPidAlive(pid) && isAppServerProcess(pid, paths)
+    ? pid
+    : null;
+}
+
+export function isAppServerRunning(): boolean {
+  return getAppServerPid() !== null;
+}
+
+export interface AppServerState {
+  listenPort: number;
+  /**
+   * Gateway URL the app server proxies to — `getGatewayUrl` of the entry it
+   * fronts. Undefined in state records that predate the field; callers treat
+   * an unknown upstream as unverified and restart the app server so the
+   * running config provably targets the requested gateway and the state is
+   * stamped for future comparisons.
+   */
+  gatewayUrl?: string;
+  /**
+   * Fingerprint of the injected SPA config and its source bundle. Undefined
+   * for records that predate the field; an app server without a recorded
+   * fingerprint is treated as drifted and restarted so the served index
+   * provably carries the requested config.
+   */
+  remoteWebConfigHash?: string;
+  /**
+   * The serve spec the spawned server child reads at boot: the upstream, the
+   * dist roots, and the injected documents. Written by the starting parent;
+   * the child is stateless beyond it.
+   */
+  serve?: {
+    gatewayUrl: string;
+    webDistDir: string;
+    appDistDir: string;
+    indexHtmlPath: string;
+    appIndexHtmlPath: string;
+    config: Record<string, unknown>;
+  };
+}
+
+export function appServerStatePath(): string {
+  return join(getAppServerPaths().dir, "state.json");
+}
+
+/** The pre-rename state path, read when the renamed one has no record yet. */
+function legacyStatePath(): string {
+  return join(resolveDataDir(), LEGACY_INGRESS_DIR, "state.json");
+}
+
+export function readAppServerState(): AppServerState | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(appServerStatePath(), "utf-8"));
+  } catch {
+    // The renamed dir has no record yet; a pre-rename install's record
+    // still tells the truth about a running pre-rename server.
+    if (!existsSync(appServerStatePath()) && existsSync(legacyStatePath())) {
+      try {
+        raw = JSON.parse(readFileSync(legacyStatePath(), "utf-8"));
+      } catch {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+  const state = (raw ?? {}) as Record<string, unknown>;
+  const listenPort = state.listenPort;
+  if (typeof listenPort !== "number") return null;
+  const gatewayUrl = state.gatewayUrl;
+  const remoteWebConfigHash = state.remoteWebConfigHash;
+  const serve = state.serve as AppServerState["serve"] | undefined;
+  return {
+    listenPort,
+    ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
+    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
+    ...(serve && typeof serve === "object" ? { serve } : {}),
+  };
+}
+
+function clearStoppedAppServer(pidPath: string): void {
+  rmSync(appServerStatePath(), { force: true });
+  rmSync(pidPath, { force: true });
+  // The app server is gone; release the root lockfile's process entry with
+  // it. Its built-sha stamp survives (a build-cache fact, not a process
+  // fact) so restarting never pays a needless bundle rebuild.
+  clearAppProcessRecord();
+}
+
+const STOP_TIMEOUT_MS = 2_000;
+
+async function waitForPidExit(
+  pid: number,
+  timeoutMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!isPidAlive(pid)) return true;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return !isPidAlive(pid);
+}
+
+/**
+ * Stop the running app server via its pidfile and clear the recorded state.
+ * Returns true if a process was stopped.
+ *
+ * Verifies the PID still belongs to this app server before killing to avoid
+ * hitting an unrelated process if the OS has reused the PID. SIGTERM first;
+ * escalate to SIGKILL if it doesn't exit within the timeout.
+ */
+export async function stopAppServer(): Promise<boolean> {
+  const paths = getAppServerPaths();
+
+  const pid = readPidFile(paths.pidPath);
+  if (pid === null || !isPidAlive(pid) || !isAppServerProcess(pid, paths)) {
+    clearStoppedAppServer(paths.pidPath);
+    return false;
+  }
+
+  try {
+    process.kill(pid, "SIGTERM");
+    if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {
+        if (!isPidAlive(pid)) {
+          clearStoppedAppServer(paths.pidPath);
+          return true;
+        }
+        return false;
+      }
+      if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+        return false;
+      }
+    }
+  } catch {
+    if (!isPidAlive(pid)) {
+      clearStoppedAppServer(paths.pidPath);
+      return true;
+    }
+    return false;
+  }
+
+  clearStoppedAppServer(paths.pidPath);
+  return true;
+}
 
 /**
  * Sensitive local-only gateway paths the app server must never expose to the
@@ -194,46 +414,23 @@ export function buildRemoteWebIndexHtml(
   return `${script}${html}`;
 }
 
-/** Whether the host has an IPv6 loopback to bind. False on Linux installs with
- * IPv6 disabled; the server binds both stacks when it has one (a tunnel agent
- * pointed at "localhost" reaches ::1 first on macOS). */
-export function hasIpv6Loopback(): boolean {
-  return Object.values(networkInterfaces())
-    .flatMap((addrs) => addrs ?? [])
-    .some((addr) => addr.address === "::1");
-}
-
-/** Whether a TCP listener already holds `port` on the given loopback host. */
-async function isPortInUse(
-  port: number,
-  host: "127.0.0.1" | "::1",
-): Promise<boolean> {
-  return await new Promise((resolve) => {
-    const probe = createServer();
-    probe.once("error", () => resolve(true));
-    probe.once("listening", () => {
-      probe.close(() => resolve(false));
-    });
-    probe.listen(port, host);
-  });
+/** Whether a TCP listener already holds `port` on the loopback. */
+async function isPortInUse(port: number): Promise<boolean> {
+  // The package's connect probe is the repo's one port-usage tracker —
+  // true means something is listening, so the port is taken.
+  return await probePort(port);
 }
 
 /**
  * The first free loopback port at or above `startPort`, scanning a short band,
- * or null when the whole band is busy. Both stacks the server may bind are
- * probed (the IPv4 loopback always, the IPv6 loopback when the host has one),
- * so the returned port is one the server can actually take.
+ * or null when the whole band is busy.
  */
 export async function findAvailableServerPort(
   startPort: number,
   attempts = 20,
 ): Promise<number | null> {
-  const checkIpv6 = hasIpv6Loopback();
   for (let port = startPort; port < startPort + attempts; port++) {
-    if (await isPortInUse(port, "127.0.0.1")) {
-      continue;
-    }
-    if (checkIpv6 && (await isPortInUse(port, "::1"))) {
+    if (await isPortInUse(port)) {
       continue;
     }
     return port;
@@ -1002,10 +1199,10 @@ export async function startAppServer(opts: {
 }
 
 /**
- * The serve child's body: read the recorded serve spec, open the listener(s)
- * — both loopback stacks when the host has IPv6 (a tunnel agent pointed at
- * "localhost" reaches ::1 first on macOS) — and write the pidfile only once
- * the bind succeeded, so a recorded pid always names the port's owner.
+ * The serve child's body: read the recorded serve spec, open the listener —
+ * 127.0.0.1 only (every tunnel agent is pointed at that host explicitly) —
+ * and write the pidfile only once the bind succeeded, so a recorded pid
+ * always names the port's owner.
  */
 function runAppServerChild(): void {
   const state = readAppServerState();
@@ -1018,27 +1215,17 @@ function runAppServerChild(): void {
     requestIP: (request, server) => server?.requestIP(request)?.address ?? null,
   });
   const websocket = gatewayRelayHandlers();
-  const servers = [
-    Bun.serve({
-      port: state.listenPort,
-      hostname: "127.0.0.1",
-      fetch: handler,
-      websocket,
-    }),
-  ];
-  if (hasIpv6Loopback()) {
-    servers.push(
-      Bun.serve({
-        port: state.listenPort,
-        hostname: "::1",
-        fetch: handler,
-        websocket,
-      }),
-    );
-  }
-  writeFileSync(getAppServerPaths().pidPath, `${process.pid}\n`);
+  const server = Bun.serve({
+    port: state.listenPort,
+    hostname: "127.0.0.1",
+    fetch: handler,
+    websocket,
+  });
+  const pidPath = getAppServerPaths().pidPath;
+  mkdirSync(join(pidPath, ".."), { recursive: true });
+  writeFileSync(pidPath, `${process.pid}\n`);
   process.on("SIGTERM", () => {
-    for (const server of servers) server.stop(true);
+    server.stop(true);
     process.exit(0);
   });
 }

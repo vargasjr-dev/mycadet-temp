@@ -266,17 +266,6 @@ export {
   retireDocker,
 } from "./remotes/docker/retire";
 export { retireAppleContainer } from "./remotes/apple-container/retire";
-export {
-  stopContainerAppServer,
-  stopAppServer,
-  getAppServerPaths,
-  appServerStatePath,
-  readAppServerState,
-  getAppServerPid,
-  isAppServerRunning,
-  isPidAlive,
-} from "./app-server";
-export type { AppServerPaths, AppServerState } from "./app-server";
 export { exec, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,

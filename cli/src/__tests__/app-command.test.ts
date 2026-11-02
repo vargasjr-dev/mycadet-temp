@@ -17,28 +17,23 @@ import { join } from "node:path";
 // sibling suites in the same `bun test` run.
 // ---------------------------------------------------------------------------
 
-import * as serversLib from "../lib/servers/app-server.js";
-import * as localMode from "@mycadet/local-mode";
+import * as serversLib from "../lib/servers/bun.js";
 
 const ensureAppServerMock = mock(serversLib.ensureAppServer);
-const isAppServerRunningMock = mock(localMode.isAppServerRunning);
-const readAppServerStateMock = mock(localMode.readAppServerState);
-const stopAppServerMock = mock(localMode.stopAppServer);
+const isAppServerRunningMock = mock(serversLib.isAppServerRunning);
+const readAppServerStateMock = mock(serversLib.readAppServerState);
+const stopAppServerMock = mock(serversLib.stopAppServer);
 
-mock.module("../lib/servers/app-server.js", () => ({
+mock.module("../lib/servers/bun.js", () => ({
   ...serversLib,
   ensureAppServer: ensureAppServerMock,
-}));
-mock.module("@mycadet/local-mode", () => ({
-  ...localMode,
   isAppServerRunning: isAppServerRunningMock,
   readAppServerState: readAppServerStateMock,
   stopAppServer: stopAppServerMock,
 }));
 
 afterAll(() => {
-  mock.module("../lib/servers/app-server.js", () => serversLib);
-  mock.module("@mycadet/local-mode", () => localMode);
+  mock.module("../lib/servers/bun.js", () => serversLib);
 });
 
 import { app } from "../commands/app.js";

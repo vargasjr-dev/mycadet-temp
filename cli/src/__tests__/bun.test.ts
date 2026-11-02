@@ -113,7 +113,7 @@ import {
   appServerStatePath,
   getAppServerPaths,
   readAppServerState,
-} from "@mycadet/local-mode";
+} from "../lib/servers/bun.js";
 import {
   DEFAULT_APP_SERVER_PORT,
   MAX_PRESERVED_MODULE_PRELOADS,
@@ -121,9 +121,8 @@ import {
   createAppServerHandler,
   ensureAppServer,
   findAvailableServerPort,
-  hasIpv6Loopback,
   startAppServer,
-} from "../lib/servers/app-server.js";
+} from "../lib/servers/bun.js";
 
 const originalKill = process.kill;
 const originalFetch = globalThis.fetch;
@@ -987,10 +986,12 @@ const SPAWNED_SERVER_PID = 4243;
  * ownership probe with a command line that names the state dir.
  */
 function mockServerSpawn(): void {
-  spawnMock.mockImplementation(((_command: string, args: readonly string[]) => {
-    const dir = String(args[1]);
+  spawnMock.mockImplementation(((_command: string) => {
+    realFs.mkdirSync(join(getAppServerPaths().pidPath, ".."), {
+      recursive: true,
+    });
     realFs.writeFileSync(
-      join(dir, "app-server.pid"),
+      getAppServerPaths().pidPath,
       `${SPAWNED_SERVER_PID}\n`,
     );
     fakePids.set(SPAWNED_SERVER_PID, { alive: true });
@@ -1000,7 +1001,7 @@ function mockServerSpawn(): void {
       psArgs?: readonly string[],
     ) => {
       if (psArgs?.includes(String(SPAWNED_SERVER_PID))) {
-        return `bun ${fileURLToPath(import.meta.url)} ${dir}`;
+        return `bun ${fileURLToPath(import.meta.url)} ${getAppServerPaths().dir}`;
       }
       return "";
     }) as typeof childProcess.execFileSync);
@@ -1138,7 +1139,7 @@ describe("startAppServer", () => {
       SpawnOptions,
     ];
     expect(command).toBe(process.execPath);
-    expect(args[0]!.endsWith("/lib/servers/app-server.ts")).toBe(true);
+    expect(args[0]!.endsWith("/lib/servers/bun.ts")).toBe(true);
     expect(args[1]).toBe(getAppServerPaths().dir);
     expect(options?.detached).toBe(true);
 
@@ -1594,9 +1595,7 @@ describe("the live server child", () => {
       const child = Bun.spawn(
         [
           process.execPath,
-          fileURLToPath(
-            new URL("../lib/servers/app-server.ts", import.meta.url),
-          ),
+          fileURLToPath(new URL("../lib/servers/bun.ts", import.meta.url)),
           getAppServerPaths().dir,
         ],
         {
@@ -1612,25 +1611,12 @@ describe("the live server child", () => {
         },
       );
       try {
-        // Readiness through BOTH stacks: a tunnel agent pointed at
-        // "localhost" may reach either.
         const deadline = Date.now() + 10_000;
-        let seen = 0;
         for (;;) {
-          const probes = await Promise.all([
-            fetch(`http://127.0.0.1:${freePort}/healthz`)
-              .then((r) => r.status)
-              .catch(() => 0),
-            ...(hasIpv6Loopback()
-              ? [
-                  fetch(`http://[::1]:${freePort}/healthz`)
-                    .then((r) => r.status)
-                    .catch(() => 0),
-                ]
-              : []),
-          ]);
-          seen = probes.filter((status) => status === 200).length;
-          if (seen === probes.length) break;
+          const status = await fetch(`http://127.0.0.1:${freePort}/healthz`)
+            .then((r) => r.status)
+            .catch(() => 0);
+          if (status === 200) break;
           if (Date.now() > deadline || child.exitCode !== null) {
             throw new Error(
               `the server child never became ready (exit ${child.exitCode})`,

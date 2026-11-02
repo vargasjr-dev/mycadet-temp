@@ -24,7 +24,6 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 // `test-assistant.*` paths into sibling files, which then fail to find their
 // own archives.
 const realProcess = { ...(await import("../process")) };
-const realIngress = { ...(await import("../app-server")) };
 const realArchive = { ...(await import("../remotes/local/archive")) };
 const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
 const realCloudAuth = { ...(await import("../cloud-auth")) };
@@ -39,16 +38,9 @@ const stopProcessByPidFileMock = mock(
 );
 
 const { DAEMON_STOP_TIMEOUT_MS } = await import("../lifecycle-budgets");
-const stopAppServerMock = mock(async (): Promise<boolean> => false);
-
 mock.module("../process", () => ({
   ...realProcess,
   stopProcessByPidFile: stopProcessByPidFileMock,
-}));
-
-mock.module("../app-server", () => ({
-  ...realIngress,
-  stopAppServer: stopAppServerMock,
 }));
 
 // Keep archive paths on the same filesystem as the test dir so rename doesn't
@@ -95,7 +87,6 @@ mock.module("../cloud-auth", () => ({
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
   mock.module("../process", () => realProcess);
-  mock.module("../app-server", () => realIngress);
   mock.module("../remotes/local/archive", () => realArchive);
   mock.module("../loopback-fetch", () => realLoopbackFetch);
   mock.module("../cloud-auth", () => realCloudAuth);
@@ -113,8 +104,6 @@ describe("retireLocal — CES sibling stop", () => {
   beforeEach(() => {
     stopProcessByPidFileMock.mockReset();
     stopProcessByPidFileMock.mockResolvedValue(true);
-    stopAppServerMock.mockReset();
-    stopAppServerMock.mockResolvedValue(false);
 
     rmSync(instanceDir, { recursive: true, force: true });
     rmSync(join(testDir, "retired"), { recursive: true, force: true });

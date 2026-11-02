@@ -1,5 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { getAppServerPaths, readAppServerState } from "@mycadet/local-mode";
+import { getAppServerPaths, readAppServerState } from "../lib/servers/bun.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
@@ -305,7 +305,7 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     const info = [listenUrl, `PID ${app.pid}`].join(" | ");
     rows.push({
       row: {
-        name: "app",
+        name: "bun",
         type: APP_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
         info: alive ? info : `${info} (exited)`,
@@ -335,7 +335,9 @@ export async function printRootProcessDetail(
   const name = identifier.toLowerCase();
   const { tunnel, app } = readRootProcesses();
 
-  if (name === "app") {
+  // "bun" is the ps row's name (the server is a Bun process); "app" is the
+  // `cadet app status` spelling of the same detail view.
+  if (name === "app" || name === "bun") {
     console.log("App server:");
     if (!app?.pid) {
       console.log(

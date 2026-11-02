@@ -63,7 +63,6 @@ import {
   sleepAssistant,
   wakeAssistant,
 } from "@mycadet/local-mode";
-import { restoreAppServerAndAutoTunnel } from "../lib/tunnel.js";
 import { leaseGuardianToken } from "@mycadet/local-mode";
 
 interface UpgradeArgs {
@@ -403,8 +402,6 @@ async function upgradeLocal(
     }
     await ensureGuardianTokenAfterLocalUpgrade(entry);
     console.log("✅ Local assistant processes started\n");
-
-    await restoreAppServerAndAutoTunnel();
 
     console.log("Waiting for assistant to become ready...");
     const ready = await waitForReady(adminUrl);

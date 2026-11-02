@@ -3,7 +3,6 @@ import { existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, win32 } from "node:path";
 
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import { stopAppServer } from "../../app-server";
 import { stopProcessByPidFile } from "../../process";
 import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
 import { loadAllAssistants } from "../../operations/lookup";
@@ -150,10 +149,6 @@ export async function retireLocal(
   // Stop the CES sibling — it is stopped by its PID file, a no-op when the
   // PID file is absent (e.g. the sibling was never started or already exited).
   await stopProcessByPidFile(join(cadetDir, "ces.pid"), "credential-executor");
-
-  // Stop the app server if one is fronting this gateway — it would
-  // otherwise be orphaned when the instance directory is archived.
-  await stopAppServer();
 
   // Archive and remove the entire instance directory.
   const dirToArchive = getLocalInstanceDir(entry);

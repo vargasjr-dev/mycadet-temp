@@ -154,7 +154,7 @@ const seedEntry = (entry: Record<string, unknown>) => {
 };
 
 describe("retireAssistant — the headless dispatch", () => {
-  test("docker retire stops the containers then the app-server edge", async () => {
+  test("docker retire stops the containers", async () => {
     const entry = seedEntry({
       assistantId: "asst-docker",
       cloud: "docker",
@@ -168,7 +168,7 @@ describe("retireAssistant — the headless dispatch", () => {
     expect(readLockfile().assistants).toEqual([]);
   });
 
-  test("apple-container retire sends the socket command then stops the edge", async () => {
+  test("apple-container retire sends the socket command", async () => {
     const entry = seedEntry({
       assistantId: "asst-apple",
       cloud: "apple-container",

@@ -4,11 +4,6 @@ import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { wakeDocker, wakeLocal } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { recreateDockerContainers } from "../lib/remotes/docker.js";
-import {
-  DOCKER_GATEWAY_READY_TIMEOUT_MS,
-  restoreAppServerAndAutoTunnel,
-  restoreContainerAppServer,
-} from "../lib/tunnel.js";
 
 export const wake = Object.assign(
   async function wake(): Promise<void> {
@@ -161,7 +156,6 @@ export async function wakeAssistant(
     }
     if (!result.ok) return { ok: false, error: result.error };
     console.log("Docker containers started.");
-    await restoreContainerAppServer(entry, DOCKER_GATEWAY_READY_TIMEOUT_MS);
     console.log("Wake complete.");
     return { ok: true };
   }
@@ -176,11 +170,6 @@ export async function wakeAssistant(
   if (entry.cloud === "local") {
     const result = await wakeLocal(entry, { watch, foreground });
     if (!result.ok) return { ok: false, error: result.error };
-    // Restore the nginx edge and point the auto-tunnel at it. The spawned
-    // agent records itself in the root lockfile under `tunnel`. Non-fatal: a
-    // down edge is a degraded remote-web/webhook path, not a broken
-    // assistant.
-    await restoreAppServerAndAutoTunnel();
     console.log("Wake complete.");
     return { ok: true };
   }
