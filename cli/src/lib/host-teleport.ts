@@ -1,5 +1,9 @@
 import { rm } from "node:fs/promises";
-import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  isDockerEntry,
+  type Remote,
+} from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import { dockerResourceNames } from "@mycadet/local-mode";
@@ -36,8 +40,6 @@ import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
 import { generateInstanceName } from "@mycadet/local-mode";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
-type HostEnvironment = "local" | "docker";
-
 export class TeleportRecoveryError extends AggregateError {}
 
 export interface HostTeleportOps {
@@ -103,7 +105,7 @@ function checkVersion(
  * both halves itself.
  */
 async function initializeTeleportTarget(
-  env: HostEnvironment,
+  env: Remote,
   name: string | undefined,
   archive: string,
 ): Promise<LockfileAssistant> {
@@ -118,7 +120,7 @@ async function initializeTeleportTarget(
         setupProviderCredentials: false,
         initialArchive: archive,
       });
-    } else {
+    } else if (env === "local") {
       await withLocalHatchLock(async () => {
         const entry: LockfileAssistant = {
           assistantId: instanceName,
@@ -133,6 +135,8 @@ async function initializeTeleportTarget(
         saveLockfileAssistant(entry, instanceName);
         return defaultWorkspaceConfigPath;
       });
+    } else {
+      throw new Error(`Teleport cannot initialize a '${env}' target yet.`);
     }
     const entry = findAssistantByName(instanceName);
     if (!entry) {
@@ -151,7 +155,7 @@ async function initializeTeleportTarget(
 
 export async function teleportHostInstallation(
   source: LockfileAssistant,
-  targetEnv: HostEnvironment,
+  targetEnv: Remote,
   targetName: string | undefined,
   options: { dryRun: boolean; keepSource: boolean },
   ops = defaultOps,
@@ -169,7 +173,7 @@ export async function teleportHostInstallation(
 
 async function performHostTeleport(
   source: LockfileAssistant,
-  targetEnv: HostEnvironment,
+  targetEnv: Remote,
   targetName: string | undefined,
   existing: LockfileAssistant | null,
   options: { dryRun: boolean; keepSource: boolean },

@@ -281,12 +281,6 @@ export async function captureReplayState(
 }
 
 /**
- * Best-effort fetch of the assistant's configured public ingress URL from the
- * gateway `integrations/ingress/config` endpoint.  Returns `undefined` when
- * the gateway is unreachable, the bearer token is missing, or no public URL
- * is configured.
- */
-/**
  * Poll the gateway `/readyz` endpoint until the assistant reports migrations
  * ready or the timeout elapses. Returns whether the assistant became ready.
  *

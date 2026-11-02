@@ -1,4 +1,3 @@
-import {} from "@mycadet/service-contracts/cloud-credential";
 import {
   chmodSync,
   writeFileSync,

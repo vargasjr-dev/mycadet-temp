@@ -10,6 +10,7 @@ import {
 
 import { dirname, join } from "path";
 import {
+  computeDeviceId,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loopbackSafeFetch,
@@ -325,9 +326,7 @@ export async function refreshGuardianTokenResult(
           // The refresh token is device-bound; send the device id used at init
           // (falling back to a fresh computation for tokens persisted before the
           // field was stored) so the gateway can verify the binding.
-          deviceId:
-            tokenData.deviceId ||
-            (await import("@mycadet/local-mode")).computeDeviceId(),
+          deviceId: tokenData.deviceId || computeDeviceId(),
         }),
         signal: AbortSignal.timeout(REFRESH_FETCH_TIMEOUT_MS),
       },
@@ -377,12 +376,3 @@ export async function refreshGuardianToken(
   const result = await refreshGuardianTokenResult(gatewayUrl, assistantId);
   return result.ok ? result.token : null;
 }
-
-/**
- * The gateway may run in a separate container or VM from the machine
- * issuing this request (Docker, AWS, GCP), so its own hostname does not
- * identify the paired device. Read the CLI process's hostname here, where
- * it reflects the actual machine, and forward it in the init request.
- * Bootstrap is on the critical path, so a throwing or empty hostname
- * degrades to `undefined` rather than failing the lease.
- */
