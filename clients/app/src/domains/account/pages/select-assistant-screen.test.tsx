@@ -41,6 +41,15 @@ const detail = {
   version: "1.2.3",
   url: "web/1.2.3/assistant/",
 };
+// The shell's resolution is one GET /v1/assistant — the host's union answer.
+const resolution = {
+  status: "ready",
+  assistant: {
+    id: "assistant-2",
+    version: "1.2.3",
+    url: "web/1.2.3/assistant/",
+  },
+};
 function setup(
   entry:
     | string
@@ -104,8 +113,8 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
         results: [{ id: "assistant-1", name: "One" }, { id: "assistant-2" }],
       });
     }
-    if (target.includes("/v1/assistants/assistant-2/")) {
-      return Response.json(detail);
+    if (target.includes("/v1/assistant")) {
+      return Response.json(resolution);
     }
     return iframeDocument.clone();
   });
@@ -127,7 +136,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
     "http://localhost:3001/v1/assistants/?limit=100&offset=0",
-    "http://localhost:3001/v1/assistants/assistant-2/",
+    "http://localhost:3001/v1/assistant",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
 });
@@ -252,10 +261,13 @@ test("Enter selects the focused card", async () => {
     if (target.includes("/v1/assistants/?")) {
       return Response.json({ results: [{ id: "assistant-1", name: "One" }] });
     }
-    // The shell rejects a detail whose id mismatches the selection, so the
-    // detail must answer the assistant the card navigated with.
-    if (target.includes("/v1/assistants/assistant-1/")) {
-      return Response.json({ ...detail, id: "assistant-1" });
+    // The resolution's ready arm carries the assistant the card navigated
+    // with — the frame mounts on what the host answered.
+    if (target.includes("/v1/assistant")) {
+      return Response.json({
+        ...resolution,
+        assistant: { ...resolution.assistant, id: "assistant-1" },
+      });
     }
     return iframeDocument.clone();
   });
@@ -306,8 +318,8 @@ test("an empty list offers creation and lands in the created assistant", async (
     if (target.includes("/hatch/")) {
       return Response.json(detail);
     }
-    if (target.includes("/v1/assistants/assistant-2/")) {
-      return Response.json(detail);
+    if (target.includes("/v1/assistant")) {
+      return Response.json(resolution);
     }
     return iframeDocument.clone();
   });
@@ -328,7 +340,7 @@ test("an empty list offers creation and lands in the created assistant", async (
     "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "/v1/organizations/?limit=100&offset=0",
     "/v1/assistants/hatch/?mode=create",
-    "http://localhost:3001/v1/assistants/assistant-2/",
+    "http://localhost:3001/v1/assistant",
   ]);
 });
 
@@ -468,8 +480,8 @@ test("browser history restores selection and frame navigation retains it", async
     },
     false,
     async (url) => {
-      if (String(url).includes("/v1/assistants/assistant-2/")) {
-        return Response.json(detail);
+      if (String(url).includes("/v1/assistant")) {
+        return Response.json(resolution);
       }
       return iframeDocument.clone();
     },
@@ -501,7 +513,7 @@ test("browser history restores selection and frame navigation retains it", async
     request.mock.calls
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
-  ).toEqual(["http://localhost:3001/v1/assistants/assistant-2/"]);
+  ).toEqual(["http://localhost:3001/v1/assistant"]);
 });
 
 function seedOrigin(url: string, name?: string): void {
@@ -669,12 +681,12 @@ describe("remembered origins", () => {
       });
       fireEvent.click(await screen.findByRole("radio", { name: /^Office/ }));
       // The selection carries no apiBase: the shell's resolution fetch is
-      // plain same-origin /v1, and the serving host resolves the paired
-      // entry from the id in the path (bearer injected server-side).
+      // the plain same-origin /v1/assistant, and the serving host resolves
+      // the paired entry itself (bearer injected server-side).
       await waitFor(() => {
         expect(
           request.mock.calls.some(([url]) =>
-            String(url).includes("/v1/assistants/paired-1"),
+            String(url).endsWith("/v1/assistant"),
           ),
         ).toBe(true);
       });
@@ -699,12 +711,8 @@ describe("remembered origins", () => {
         { ok: true, state: "crashed" },
       );
       setup("/account/select-assistant", false, async (url) => {
-        if (String(url).includes("/v1/assistants/local-1")) {
-          return Response.json({
-            id: "local-1",
-            status: "inactive",
-            version: "1.2.3",
-          });
+        if (String(url).includes("/v1/assistant")) {
+          return Response.json({ status: "notReady" });
         }
         return iframeDocument.clone();
       });
@@ -712,12 +720,14 @@ describe("remembered origins", () => {
       await waitFor(() => {
         expect(
           request.mock.calls.some(([url]) =>
-            String(url).includes("/v1/assistants/local-1"),
+            String(url).endsWith("/v1/assistant"),
           ),
         ).toBe(true);
       });
       // Recovery copy lives in the shell now, not the chooser.
-      expect(screen.queryByText("Can\u2019t Authenticate Assistant")).toBeNull();
+      expect(
+        screen.queryByText("Can\u2019t Authenticate Assistant"),
+      ).toBeNull();
     });
   });
 });
