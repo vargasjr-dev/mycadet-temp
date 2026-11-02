@@ -121,7 +121,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   fireEvent.click(screen.getByRole("radio", { name: /^New Assistant/ }));
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
-    "http://localhost:3001/web/1.2.3/assistant/",
+    "http://localhost:3001/assistant/",
   );
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
@@ -285,7 +285,7 @@ test("Enter selects the focused card", async () => {
   fireEvent.keyDown(one, { key: "Enter" });
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
-    "http://localhost:3001/web/1.2.3/assistant/",
+    "http://localhost:3001/assistant/",
   );
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-1"),
