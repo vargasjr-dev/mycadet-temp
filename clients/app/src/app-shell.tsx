@@ -186,7 +186,6 @@ function AssistantShell({
     <AssistantFrame
       key={`${assistant.id}:${assistant.version}:${mountPath}`}
       location={location}
-      origin={window.location.origin}
       mountPath={mountPath}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}

@@ -22,7 +22,10 @@ const loopbackSafeFetchMock = mock(
     new Response(null, { status: 204 }),
 );
 const getGatewayHealthMock = mock(
-  async (): Promise<{
+  async (
+    _entry: unknown,
+    _opts?: { signal?: AbortSignal; headers?: unknown },
+  ): Promise<{
     version?: string;
     authenticated: boolean;
   }> => ({ version: undefined, authenticated: true }),
@@ -75,15 +78,26 @@ const writeLockfile = (data: Record<string, unknown>): void => {
   fs.writeFileSync(lockfilePath, JSON.stringify(data));
 };
 
+const sentHeaders = (): Headers => {
+  const forwarded = getGatewayHealthMock.mock.calls[0]?.[1]?.headers;
+  if (!(forwarded instanceof Headers)) {
+    throw new Error("the resolution did not forward a Headers instance");
+  }
+  return forwarded;
+};
+
+let callerHeaders: Headers;
+
 const runResolution = async (
   headers: Record<string, string> = {},
   requestPath = "/v1/assistant",
 ): Promise<Response> => {
   const match = matchOperatorRequest(requestPath, "GET");
   if (!match) throw new Error("the resolution row did not match");
+  callerHeaders = new Headers(headers);
   return (await match.route.run({
     assistantId: match.assistantId,
-    headers: new Headers(headers),
+    headers: callerHeaders,
   }))!;
 };
 
@@ -175,10 +189,10 @@ describe("runResolveRoute — the lockfile arms", () => {
     // The health read rides the ENTRY (the gateway url is resolved inside),
     // and the caller's credential headers are forwarded so the verdict is
     // the caller's.
-    expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "a1" }),
-      { headers: { cookie: "cadet_web_access=tok" } },
-    );
+    // The caller's headers ride VERBATIM — the instance the caller sent,
+    // no flattening in between.
+    expect(sentHeaders()).toBe(callerHeaders);
+    expect(callerHeaders.get("cookie")).toBe("cadet_web_access=tok");
   });
 
   test("an explicit id resolves that entry even when another is active", async () => {
@@ -264,10 +278,8 @@ describe("runResolveRoute — the lockfile arms", () => {
 
     await runResolution();
 
-    expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "a1" }),
-      { headers: {} },
-    );
+    expect(sentHeaders()).toBe(callerHeaders);
+    expect([...callerHeaders]).toEqual([]);
   });
 
   test("an id the lockfile does not know passes (null)", async () => {
@@ -306,10 +318,11 @@ describe("runResolveRoute — the cloud leg", () => {
     // The health read rides the ENTRY — the platform's own gateway address
     // is resolved inside, the caller's credential headers forwarded so the
     // verdict is the caller's.
-    expect(getGatewayHealthMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "c1" }),
-      { headers: { cookie: "session=abc", authorization: "Bearer tok" } },
-    );
+    // The caller's headers ride VERBATIM — the instance the caller sent,
+    // no flattening in between.
+    expect(sentHeaders()).toBe(callerHeaders);
+    expect(callerHeaders.get("cookie")).toBe("session=abc");
+    expect(callerHeaders.get("authorization")).toBe("Bearer tok");
   });
 });
 

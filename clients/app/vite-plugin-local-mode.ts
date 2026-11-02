@@ -258,7 +258,7 @@ function operatorMiddleware(): Connect.NextHandleFunction {
       .run({
         assistantId: match.assistantId,
         headers: req.headers,
-        body: Readable.toWeb(req) as unknown as ReadableStream,
+        body: Readable.toWeb(req),
       })
       .then((response) => {
         if (!response) {

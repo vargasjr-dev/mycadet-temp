@@ -11,7 +11,11 @@ import {
 function decode<T>(schema: z.ZodType<T>, payload: unknown): T {
   const result = schema.safeParse(payload);
   if (!result.success) {
-    throw new Error("Invalid assistant API data.");
+    // The zod error object carries the path and the per-field failures —
+    // surface them so a contract drift names the field that moved.
+    throw new Error(
+      `Invalid assistant API data.\n${z.prettifyError(result.error)}`,
+    );
   }
   return result.data;
 }

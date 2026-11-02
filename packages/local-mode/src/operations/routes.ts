@@ -1,3 +1,5 @@
+import type { IncomingHttpHeaders } from "node:http";
+
 import { isActiveAssistant, readLockfile } from "../lockfile";
 import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
@@ -39,10 +41,10 @@ export interface OperatorRequest {
    * The caller's own headers, forwarded so a credential-judging operation can
    * send the caller's own proof upstream — a verdict read host-side without
    * them would be the host's, not the caller's. Passed raw, whatever the
-   * mount holds (a fetch Request's Headers, or the connect record). Absent
-   * (direct `run` calls in tests) resolves to an empty record.
+   * mount holds (a fetch Request's Headers, or the connect record).
+   * Absent (direct `run` calls in tests) forwards nothing.
    */
-  headers?: Headers | Record<string, string | string[] | undefined>;
+  headers?: Headers | IncomingHttpHeaders;
   /**
    * The caller's body stream, carried for the body-carrying rows (hatch,
    * devices, pairing, upgrade) to read their JSON off. Absent (GET/HEAD,

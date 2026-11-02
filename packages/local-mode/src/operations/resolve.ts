@@ -10,26 +10,6 @@ function resolutionResponse(body: unknown): Response {
   });
 }
 
-/** The caller's own headers as the plain record the health read forwards. */
-function operatorHeaders(
-  headers: OperatorRequest["headers"],
-): Record<string, string> {
-  if (!headers) {
-    return {};
-  }
-  if (headers instanceof Headers) {
-    return Object.fromEntries(headers);
-  }
-  const flat: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    if (value === undefined) {
-      continue;
-    }
-    flat[key] = Array.isArray(value) ? value.join(", ") : value;
-  }
-  return flat;
-}
-
 /**
  * The shell's resolution operation. One `GET` on the assistant reference —
  * scoped to an id, or unscoped for the active assistant — answers the whole
@@ -43,7 +23,7 @@ function operatorHeaders(
 export async function runResolveRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const headers = operatorHeaders(request.headers);
+  const headers = request.headers;
   if (!request.assistantId) {
     // No id to name: the resolution's unscoped arm IS the list contract —
     // nothing hatched is empty, anything else hands the choice rows to the

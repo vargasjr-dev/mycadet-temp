@@ -7,7 +7,6 @@ import { framePath, frameUrl, hostPath } from "./assistant-navigation";
 export interface AssistantFrameProps {
   location: string;
   mountPath: string;
-  origin: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title: string;
 }
@@ -15,13 +14,12 @@ export interface AssistantFrameProps {
 export function AssistantFrame({
   location,
   mountPath,
-  origin,
   onNavigate,
   title,
 }: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [src] = useState(() => frameUrl(location, mountPath, origin));
-  const currentPath = useRef(framePath(location, mountPath, origin));
+  const [src] = useState(() => frameUrl(location, mountPath));
+  const currentPath = useRef(framePath(location, mountPath));
   const frameOrigin = new URL(src).origin;
   useEffect(() => {
     const listener = (event: MessageEvent) => {
@@ -37,7 +35,7 @@ export function AssistantFrame({
       }
       try {
         const target = hostPath(message.data.path, mountPath);
-        const targetFramePath = framePath(target, mountPath, origin);
+        const targetFramePath = framePath(target, mountPath);
         if (targetFramePath === currentPath.current) {
           return;
         }
@@ -49,10 +47,10 @@ export function AssistantFrame({
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [frameOrigin, mountPath, origin, onNavigate]);
+  }, [frameOrigin, mountPath, onNavigate]);
 
   useEffect(() => {
-    const next = framePath(location, mountPath, origin);
+    const next = framePath(location, mountPath);
     if (next !== currentPath.current) {
       currentPath.current = next;
       ref.current?.contentWindow?.postMessage(
@@ -60,7 +58,7 @@ export function AssistantFrame({
         frameOrigin,
       );
     }
-  }, [location, mountPath, origin, frameOrigin]);
+  }, [location, mountPath, frameOrigin]);
 
   return (
     <iframe

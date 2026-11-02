@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { IncomingHttpHeaders } from "node:http";
 
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { getGatewayUrl } from "./lockfile-contract";
@@ -162,6 +163,10 @@ const GatewayHealthSchema = z.object({
 
 export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
 
+/** The caller's own headers, in either mount spelling: a fetch Request's
+ * Headers, or the connect record's IncomingHttpHeaders. */
+type GatewayHealthHeaders = Headers | IncomingHttpHeaders;
+
 /**
  * Read a gateway's `/healthz` by URL and return its identity AND the
  * caller's own auth verdict in one round-trip: the version it serves, and
@@ -173,15 +178,34 @@ export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
  */
 async function readGatewayHealth(
   runtimeUrl: string,
-  opts: { signal?: AbortSignal; headers?: Record<string, string> } = {},
+  opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
 ): Promise<GatewayHealth> {
   try {
     const healthUrl = new URL(
       "healthz",
       runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
     );
+    // The caller's headers spread under our own Accept — later entries win,
+    // so the caller's Accept (if any) overrides ours; the record spelling's
+    // array values join and its undefined values drop, exactly what a
+    // Headers instance would have done for them.
+    const callerEntries: [string, string][] = [];
+    if (opts.headers instanceof Headers) {
+      for (const entry of opts.headers) {
+        callerEntries.push(entry);
+      }
+    } else {
+      for (const [key, value] of Object.entries(opts.headers ?? {})) {
+        if (value !== undefined) {
+          callerEntries.push([
+            key,
+            Array.isArray(value) ? value.join(", ") : value,
+          ]);
+        }
+      }
+    }
     const resp = await loopbackSafeFetch(healthUrl.href, {
-      headers: { Accept: "application/json", ...(opts.headers ?? {}) },
+      headers: [["accept", "application/json"], ...callerEntries],
       signal: opts.signal ?? AbortSignal.timeout(5000),
     });
     if (resp.ok) {
@@ -203,7 +227,7 @@ async function readGatewayHealth(
  */
 export async function getGatewayHealth(
   entry: LockfileAssistant,
-  opts: { signal?: AbortSignal; headers?: Record<string, string> } = {},
+  opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
 ): Promise<GatewayHealth> {
   return readGatewayHealth(getGatewayUrl(entry), opts);
 }
