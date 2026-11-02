@@ -268,9 +268,12 @@ test("without an ID the shell hands off to the account chooser", async () => {
   );
   render(<AppShell {...props()} assistantId={undefined} />);
   await screen.findByText("Choose an assistant.");
-  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
-    replace: true,
-  });
+  // The chooser handoff is a post-paint effect: await it rather than race it.
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+      replace: true,
+    }),
+  );
   expect(screen.queryByRole("button", { name: "Two" })).toBeNull();
 });
 
@@ -278,9 +281,11 @@ test("empty and unauthenticated states hand off to the chooser too", async () =>
   respond(async () => json({ results: [] }));
   render(<AppShell {...props()} assistantId={undefined} />);
   await screen.findByText("No assistant is available.");
-  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
-    replace: true,
-  });
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+      replace: true,
+    }),
+  );
 });
 
 test("embedded shells follow the app locale", async () => {
