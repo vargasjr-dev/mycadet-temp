@@ -2,6 +2,7 @@ import { CloudOff, Globe, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
+import { AddRemoteOriginDialog } from "@app/components/account/add-remote-origin-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
 import { ConnectAssistantDialog } from "@app/components/account/connect-assistant-dialog";
@@ -14,14 +15,7 @@ import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
-import { unpairAssistant } from "@app/assistant/operations";
-import {
-  getGatewayUrl,
-  isLoopbackGatewayCloud,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
-import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import {
   useRememberedOriginsStore,
   type RememberedOrigin,
@@ -106,8 +100,9 @@ export function SelectAssistantScreen() {
   } | null>(null);
   const [retirePending, setRetirePending] = useState(false);
   const [retireError, setRetireError] = useState<string | null>(null);
-  // The remembered-origin list and the dialog that manages it.
+  // The remembered-origin list and the dialogs that manage it.
   const originEntries = useRememberedOriginsStore.use.origins();
+  const [addOriginOpen, setAddOriginOpen] = useState(false);
   const [removeOriginTarget, setRemoveOriginTarget] =
     useState<RememberedOrigin | null>(null);
   const [removeOriginPending, setRemoveOriginPending] = useState(false);
@@ -120,31 +115,9 @@ export function SelectAssistantScreen() {
       ? "empty"
       : state.status;
 
-  // Target of the paired-entry "remove from this device" (unpair) dialog.
-  const [unpairTarget, setUnpairTarget] = useState<LockfileAssistant | null>(
-    null,
-  );
-  const [unpairPending, setUnpairPending] = useState(false);
-  const [unpairError, setUnpairError] = useState<string | null>(null);
   const connectDialogOpen = useConnectDialogStore.use.open();
   const connectInitialAddress = useConnectDialogStore.use.initialAddress();
   const connectGuidanceKind = useConnectDialogStore.use.guidanceKind();
-  const lockfile = useLocalLockfileStore.use.lockfile();
-
-  // The lockfile arm: every entry whose gateway this machine can address —
-  // the machine's own local assistants and connect imports (custom remotes)
-  // alike.
-  const lockfileEntries =
-    lockfile?.assistants.filter(
-      (entry) =>
-        isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "custom",
-    ) ?? [];
-
-  // The roster hydrates on mount, so a returning chooser renders its paired
-  // entries on the first paint after that read.
-  useEffect(() => {
-    void useLocalLockfileStore.load();
-  }, []);
 
   const closeRetireDialog = () => {
     if (retirePending) {
@@ -187,59 +160,26 @@ export function SelectAssistantScreen() {
     closeRemoveOriginDialog();
   };
 
-  /**
-   * Connect a lockfile entry: navigate, full stop. Recovery is the app
-   * shell's job — an entry whose gateway can't resolve lands on the
-   * not-ready panel's wake, whatever its remote type.
-   */
-  const connectEntry = (entry: LockfileAssistant): void => {
-    void navigate(routes.assistant, {
-      state: assistantSelectionState(entry.assistantId),
-    });
-  };
-
-  const closeUnpairDialog = () => {
-    if (unpairPending) {
-      return;
-    }
-    setUnpairTarget(null);
-    setUnpairError(null);
-  };
-
-  const handleUnpairConfirm = async () => {
-    if (!unpairTarget || unpairPending) {
-      return;
-    }
-    setUnpairPending(true);
-    setUnpairError(null);
-    const result = await unpairAssistant(unpairTarget.assistantId);
-    setUnpairPending(false);
-    if (!result.ok) {
-      setUnpairError(result.error);
-      return;
-    }
-    closeUnpairDialog();
-    void useLocalLockfileStore.load();
+  // `deviceCode` is one-time credential material and is never persisted: the
+  // store holds the base alone, and the code lives just long enough to ride
+  // the navigation into the origin's own pair page.
+  const handleOriginAdded = (
+    origin: RememberedOrigin,
+    deviceCode: string | null,
+  ) => {
+    setAddOriginOpen(false);
+    // Landing on the origin runs its own pair flow when no session exists.
+    void switchToOrigin(origin, deviceCode ?? undefined);
   };
 
   const handleImported = (assistantId: string) => {
     useConnectDialogStore.getState().closeConnectDialog();
-    // The import persists the lockfile entry host-side before resolving, so
-    // the store already lists the new entry after this load; the fallback
-    // keeps the connect alive if the read lags.
-    void (async () => {
-      await useLocalLockfileStore.load();
-      const imported = useLocalLockfileStore
-        .getState()
-        .lockfile?.assistants.find((a) => a.assistantId === assistantId);
-      if (imported) {
-        connectEntry(imported);
-        return;
-      }
-      void navigate(routes.assistant, {
-        state: assistantSelectionState(assistantId),
-      });
-    })();
+    // The import registered the assistant before resolving; the choice list
+    // refetches behind the navigation so the chooser reflects it on return.
+    void navigate(routes.assistant, {
+      state: assistantSelectionState(assistantId),
+    });
+    void retry();
   };
 
   const handleRetireConfirm = async () => {
@@ -316,44 +256,6 @@ export function SelectAssistantScreen() {
             disabled
           />
         )}
-        {lockfileEntries.map((entry, index) => {
-          // The classification asks the entry's own Remote-typed cloud
-          // directly — no intermediate kind to maintain. Every non-local kind
-          // names its own gateway host — the actual remote.
-          const remoteGateway = entry.cloud === "custom";
-          const label = entry.name ?? entry.assistantId;
-          const subtitle = remoteGateway
-            ? new URL(getGatewayUrl(entry)).hostname
-            : entry.cloud === "cloud"
-              ? t("selectAssistantScreen.cloudHostedWithHost", {
-                  host: new URL(getGatewayUrl(entry)).hostname,
-                })
-              : t("selectAssistantScreen.localAssistant");
-          return (
-            <ChooserCard
-              key={entry.assistantId}
-              icon={
-                <ChooserAvatarChip avatarUrl={null} name={label} size={48} />
-              }
-              title={label}
-              subtitle={subtitle}
-              removeMenu={
-                remoteGateway ? (
-                  <OriginCardMenu
-                    label={label}
-                    onRemove={() => setUnpairTarget(entry)}
-                  />
-                ) : undefined
-              }
-              tabStop={
-                state.status === "selection" &&
-                state.assistants.length === 0 &&
-                index === 0
-              }
-              onSelect={() => connectEntry(entry)}
-            />
-          );
-        })}
         {originEntries.map((origin, index) => {
           // Selecting a remembered origin leaves the app for that
           // deployment; the one already serving this bundle just re-enters
@@ -394,11 +296,19 @@ export function SelectAssistantScreen() {
           );
         })}
         {/* Pair in place through the connect dialog: the exchange runs in
-            the serving host's trusted process. */}
+            the serving host's trusted process. Hostless surfaces (hub
+            browser, remote-gateway mode, native mobile) — and any shell
+            pointing at another deployment — add an origin by address or
+            pairing link and navigate to it. */}
         <DashedActionButton
           icon={<Link2 className="h-4 w-4" />}
           label={t("selectAssistantScreen.connectRemote")}
           onClick={() => useConnectDialogStore.getState().openConnectDialog()}
+        />
+        <DashedActionButton
+          icon={<Globe className="h-4 w-4" />}
+          label={t("selectAssistantScreen.addRemote")}
+          onClick={() => setAddOriginOpen(true)}
         />
         {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
@@ -438,6 +348,11 @@ export function SelectAssistantScreen() {
           onConfirm={() => void handleRetireConfirm()}
           onCancel={closeRetireDialog}
         />
+        <AddRemoteOriginDialog
+          open={addOriginOpen}
+          onClose={() => setAddOriginOpen(false)}
+          onAdded={handleOriginAdded}
+        />
         <RemoveFromDeviceDialog
           open={removeOriginTarget != null}
           assistantName={
@@ -449,18 +364,6 @@ export function SelectAssistantScreen() {
           isPending={removeOriginPending}
           onConfirm={() => void handleRemoveOriginConfirm()}
           onCancel={closeRemoveOriginDialog}
-        />
-        <RemoveFromDeviceDialog
-          open={unpairTarget != null}
-          assistantName={
-            unpairTarget
-              ? (unpairTarget.name ?? unpairTarget.assistantId)
-              : t("selectAssistantScreen.unnamedAssistant")
-          }
-          errorMessage={unpairError ?? undefined}
-          isPending={unpairPending}
-          onConfirm={() => void handleUnpairConfirm()}
-          onCancel={closeUnpairDialog}
         />
         <ConnectAssistantDialog
           open={connectDialogOpen}

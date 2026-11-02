@@ -1,4 +1,3 @@
-import { resolveHostProxyRendererBase } from "./renderer-base";
 import { HostBrowserExecutor } from "./executors/host-browser-executor";
 import { hostFileExecutor } from "./executors/host-file-executor";
 import { hostTransferExecutor } from "./executors/host-transfer-executor";
@@ -49,9 +48,7 @@ export const createHostProxyRuntime = (
       host_file: hostFileExecutor,
       host_transfer: hostTransferExecutor,
       host_browser: browserExecutor,
-      host_ui_snapshot: createHostUiSnapshotExecutor({
-        resolveRendererBase: resolveHostProxyRendererBase,
-      }),
+      host_ui_snapshot: createHostUiSnapshotExecutor(),
       ...(computerUseExecutors
         ? { host_cu: computerUseExecutors.host_cu }
         : {}),

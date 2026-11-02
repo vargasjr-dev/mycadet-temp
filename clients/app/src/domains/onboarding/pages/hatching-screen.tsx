@@ -44,13 +44,13 @@ let localHatchPromise: Promise<LocalHatchResult> | null = null;
 // assistant must not be adopted for the new choice.
 let localHatchRemote: string | undefined;
 type PlatformHatchResult = Awaited<ReturnType<typeof hatchCloudAssistant>>;
-let platformHatchPromise: Promise<PlatformHatchResult> | null = null;
+let cloudHatchPromise: Promise<PlatformHatchResult> | null = null;
 let hatchTraitsCache: CharacterTraits | null = null;
 
 function releaseHatchGuards(): void {
   localHatchPromise = null;
   localHatchRemote = undefined;
-  platformHatchPromise = null;
+  cloudHatchPromise = null;
   hatchTraitsCache = null;
 }
 
@@ -253,6 +253,7 @@ export function HatchingScreen() {
               // settle (transport error, timeout) keeps polling within the
               // deadline below.
               const resolution = await resolveAssistant({
+                origin: window.location.origin,
                 signal: AbortSignal.timeout(10_000),
               }).catch(() => null);
               if (resolution?.status === "ready") {
@@ -294,11 +295,11 @@ export function HatchingScreen() {
       // Cloud hatch. The cloud-hosted-disabled fallback is web-only chrome —
       // its CTA downloads the desktop app this bundle already runs in.
       try {
-        if (!platformHatchPromise) {
-          platformHatchPromise = hatchCloudAssistant();
+        if (!cloudHatchPromise) {
+          cloudHatchPromise = hatchCloudAssistant();
         }
-        const result = await platformHatchPromise;
-        platformHatchPromise = null;
+        const result = await cloudHatchPromise;
+        cloudHatchPromise = null;
         if (cancelled) {
           return;
         }
@@ -315,7 +316,7 @@ export function HatchingScreen() {
             "Failed to start your assistant. Please try again.",
         );
       } catch (err) {
-        platformHatchPromise = null;
+        cloudHatchPromise = null;
         captureError(err, { context: "onboarding_hatch_assistant" });
         if (cancelled) {
           return;

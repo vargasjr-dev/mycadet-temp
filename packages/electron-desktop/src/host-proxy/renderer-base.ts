@@ -14,4 +14,7 @@ const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 export const resolveHostProxyRendererBase = (): string =>
   app.isPackaged || process.env.CADET_LOCAL_RENDERER === "true"
     ? `${APP_PROTOCOL}://${APP_HOST}${RENDERER_MOUNT}`
-    : (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
+    : (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(
+        /\/+$/,
+        "",
+      );
