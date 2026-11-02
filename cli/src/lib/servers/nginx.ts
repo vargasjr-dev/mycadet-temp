@@ -829,40 +829,73 @@ const OWNERSHIP_SETTLE_INTERVAL_MS = 100;
  * errors with actionable text, which `cadet tunnel` and `cadet app up` print
  * before exiting non-zero while the wake restore path warns and continues.
  */
+export interface AppServerStartedResult {
+  status: "started";
+  listenPort: number;
+  /** SPA dist directory served by the edge. */
+  webDistDir: string;
+  version: string;
+  /**
+   * The checkout HEAD the dists were built at (the empty string when the
+   * checkout has no git anchor), so the edge's lockfile record carries the
+   * build stamp from birth — `stampAppProcessEntry` replaces the record
+   * wholesale, and a stamp that only lands via `stampAppBuiltSha` before
+   * the record exists is dropped.
+   */
+  builtSha: string;
+}
+
+export interface AppServerAlreadyRunningResult {
+  status: "already-running";
+  /** Recorded listen port of the running edge (requested port when no state is recorded). */
+  listenPort: number;
+  /** Recorded gateway upstream; undefined when the record predates the field. */
+  gatewayUrl?: string;
+  /**
+   * Set when the surviving edge matches the requested gateway upstream but
+   * serves a different injected SPA config than requested (a restart was
+   * attempted and failed), so the served index is stale.
+   */
+  staleRemoteWebConfig?: true;
+  /**
+   * The surviving edge's own build stamp, when its lockfile record has one —
+   * carried so `stampAppProcessEntry` re-stamps the record without losing it.
+   */
+  builtSha?: string;
+}
+
+export interface AppServerNginxMissingResult {
+  status: "nginx-missing";
+}
+
+export interface AppServerWebDistMissingResult {
+  status: "web-dist-missing";
+}
+
+export interface AppServerAppDistMissingResult {
+  status: "app-dist-missing";
+}
+
+export interface AppServerUnreachableResult {
+  status: "unreachable";
+  listenPort: number;
+  logPath: string;
+}
+
+export interface AppServerPortConflictResult {
+  status: "port-conflict";
+  listenPort: number;
+  logPath: string;
+}
+
 export type StartAppServerResult =
-  | {
-      status: "started";
-      listenPort: number;
-      /** SPA dist directory served by the edge. */
-      webDistDir: string;
-      version: string;
-      /**
-       * The checkout HEAD the dists were built at (the empty string when the
-       * checkout has no git anchor), so the edge's lockfile record carries the
-       * build stamp from birth — `stampAppProcessEntry` replaces the record
-       * wholesale, and a stamp that only lands via `stampAppBuiltSha` before
-       * the record exists is dropped.
-       */
-      builtSha: string;
-    }
-  | {
-      status: "already-running";
-      /** Recorded listen port of the running edge (requested port when no state is recorded). */
-      listenPort: number;
-      /** Recorded gateway upstream; undefined when the record predates the field. */
-      gatewayUrl?: string;
-      /**
-       * Set when the surviving edge matches the requested gateway upstream but
-       * serves a different injected SPA config than requested (a restart was
-       * attempted and failed), so the served index is stale.
-       */
-      staleRemoteWebConfig?: true;
-    }
-  | { status: "nginx-missing" }
-  | { status: "web-dist-missing" }
-  | { status: "app-dist-missing" }
-  | { status: "unreachable"; listenPort: number; logPath: string }
-  | { status: "port-conflict"; listenPort: number; logPath: string };
+  | AppServerStartedResult
+  | AppServerAlreadyRunningResult
+  | AppServerNginxMissingResult
+  | AppServerWebDistMissingResult
+  | AppServerAppDistMissingResult
+  | AppServerUnreachableResult
+  | AppServerPortConflictResult;
 
 /**
  * Generate the nginx config and start the app server, probe /healthz through
@@ -944,7 +977,11 @@ export async function startAppServer(opts: {
   // A record without a fingerprint predates the field and counts as drifted
   // (see IngressState).
   const configMatches = recorded?.remoteWebConfigHash === requestedConfigHash;
-  const alreadyRunning = (): StartAppServerResult => ({
+  // The surviving edge's lockfile record holds its own build stamp; carrying
+  // it on the result means `stampAppProcessEntry` re-stamps without losing it
+  // (it replaces the record wholesale).
+  const survivingBuiltSha = readRootProcesses().app?.builtSha;
+  const alreadyRunning = (): AppServerAlreadyRunningResult => ({
     status: "already-running",
     listenPort: recorded?.listenPort ?? listenPort,
     ...(recorded?.gatewayUrl !== undefined
@@ -953,6 +990,7 @@ export async function startAppServer(opts: {
     ...(recorded?.gatewayUrl === opts.gatewayUrl && !configMatches
       ? { staleRemoteWebConfig: true as const }
       : {}),
+    ...(survivingBuiltSha ? { builtSha: survivingBuiltSha } : {}),
   });
   // An unknown recorded gateway upstream is unverified (see IngressState).
   if (running && recorded?.gatewayUrl === opts.gatewayUrl && configMatches) {
@@ -1041,7 +1079,7 @@ export async function startAppServer(opts: {
   const ready = await waitForDaemonReady(listenPort, INGRESS_READY_TIMEOUT_MS);
   const rollback = async (
     status: "port-conflict" | "unreachable",
-  ): Promise<StartAppServerResult> => {
+  ): Promise<AppServerUnreachableResult | AppServerPortConflictResult> => {
     const { logPath } = getIngressPaths();
     await stopIngressNginx();
     return { status, listenPort, logPath };
@@ -1104,24 +1142,19 @@ export async function startAppServer(opts: {
  */
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
 function stampAppProcessEntry(
-  result: Extract<StartAppServerResult, { listenPort: number }>,
+  result: AppServerStartedResult | AppServerAlreadyRunningResult,
 ): void {
   const pid = getIngressPid();
   if (pid === null) return;
   // `stampRootProcess` replaces the record wholesale, so the build stamp
-  // must be carried forward explicitly — a fresh record without it makes
-  // the next dist resolve read "no build stamp" and rebuild. A fresh start
-  // carries the resolve's sha; an already-running edge carries its own
-  // record's forward.
-  const carried =
-    result.status === "started"
-      ? result.builtSha
-      : readRootProcesses().app?.builtSha;
+  // rides the result — a fresh start carries the resolve's sha, an
+  // already-running edge its own record's. Without it a fresh record reads
+  // "no build stamp" and the next dist resolve rebuilds.
   stampRootProcess("app", {
     pid,
     startedAt: new Date().toISOString(),
     port: result.listenPort,
-    ...(carried ? { builtSha: carried } : {}),
+    builtSha: result.builtSha,
   });
 }
 

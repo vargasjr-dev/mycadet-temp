@@ -956,49 +956,9 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          mkdir -p ~/.private_keys
-          echo "$ASC_KEY_P8" > ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8
-
-          DMG="${{ steps.dmg.outputs.dmg_path }}"
-          NOTARY_ARGS=(--key "$HOME/.private_keys/AuthKey_${ASC_KEY_ID}.p8" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID")
-
-          echo "Submitting Electron DMG for notarization..."
-          # Submit WITHOUT --wait: the submit returns once Apple accepts the
-          # upload, and the processing wait is polled below. The previous
-          # version captured notarytool's entire output in a variable, so a
-          # slow wait produced zero log lines — run #118's submit sat silent
-          # for 24 minutes before the job's 30-minute timeout killed it, with
-          # nothing saying whether the upload or Apple's queue was slow.
-          SUBMIT_OUTPUT=$(xcrun notarytool submit "$DMG" "${NOTARY_ARGS[@]}" 2>&1) || NOTARIZE_FAILED=true
-          echo "$SUBMIT_OUTPUT"
-
-          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | grep -m1 .)
-
-          # Apple's queue is normally a few minutes; poll with timestamps so
-          # the wait is visible and bounded (25 polls ~= 19 minutes) instead
-          # of a silent black box. Any non-Accepted terminal state fails below.
-          NOTARIZE_STATUS=""
-          if [ "$NOTARIZE_FAILED" != "true" ] && [ -n "$SUBMISSION_ID" ]; then
-            for i in $(seq 1 25); do
-              sleep 45
-              INFO_OUTPUT=$(xcrun notarytool info "$SUBMISSION_ID" "${NOTARY_ARGS[@]}" 2>&1) || true
-              NOTARIZE_STATUS=$(echo "$INFO_OUTPUT" | awk -F': ' '/^Status:/{print $2}' | head -1)
-              echo "$(date -u +%H:%M:%S) notarization status: ${NOTARIZE_STATUS:-unknown}"
-              case "$NOTARIZE_STATUS" in
-                Accepted|Invalid|Rejected) break ;;
-              esac
-            done
-          fi
-
-          if [ "$NOTARIZE_FAILED" = "true" ] || [ -z "$SUBMISSION_ID" ] || [ "$NOTARIZE_STATUS" != "Accepted" ]; then
-            echo "::error::Electron notarization failed (status: ${NOTARIZE_STATUS:-none})"
-            if [ -n "$SUBMISSION_ID" ]; then
-              xcrun notarytool log "$SUBMISSION_ID" "${NOTARY_ARGS[@]}" \
-                || echo "::warning::Could not fetch notarization log"
-            fi
-            exit 1
-          fi
+        # The submit + timestamped wait live in the script (see its docblock
+        # for why the wait is a poll and not `--wait`).
+        run: bun scripts/notarize.ts "${{ steps.dmg.outputs.dmg_path }}"
 
       - name: Staple notarization ticket
         run: |

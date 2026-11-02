@@ -67,7 +67,7 @@ function message(
   );
 }
 async function mounted() {
-  request.mockResolvedValue(json(detail()));
+  respond(async () => json(detail()));
   const view = render(<AppShell {...props()} />);
   await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
   await act(async () => {});
@@ -147,7 +147,7 @@ for (const [status, message] of [
   [200, "We couldn't reach your assistant"],
 ] as const) {
   test(`does not mount an iframe for HTTP ${status}`, async () => {
-    request.mockResolvedValue(new Response("{}", { status }));
+    respond(async () => new Response("{}", { status }));
     render(<AppShell {...props()} />);
     await screen.findByText(message);
     expect(screen.queryByTitle("Assistant")).toBeNull();
@@ -207,7 +207,7 @@ test("retries an API failure without account session probes", async () => {
 });
 
 test("an API failure offers switching to another assistant", async () => {
-  request.mockResolvedValue(new Response(null, { status: 503 }));
+  respond(async () => new Response(null, { status: 503 }));
   render(<AppShell {...props()} />);
   await screen.findByText("We couldn't reach your assistant");
   fireEvent.click(screen.getByRole("button", { name: "Switch assistant" }));
@@ -238,12 +238,11 @@ test("unmount aborts requests and ignores late replies", async () => {
 test("changing assistant or API base immediately hides the previous frame", async () => {
   const view = await mounted();
   let finish!: (value: Response) => void;
-  respond(
-    () =>
-      new Promise((done) => {
-        finish = done;
-      }),
-  );
+  respond(() => {
+    return new Promise((done) => {
+      finish = done;
+    });
+  });
   view.rerender(
     <AppShell {...props("assistant-2")} apiBaseUrl="/admin/api/" />,
   );
@@ -259,7 +258,7 @@ test("changing assistant or API base immediately hides the previous frame", asyn
 });
 
 test("without an ID the shell hands off to the account chooser", async () => {
-  request.mockResolvedValue(
+  respond(async () =>
     json({
       results: [
         { id: "assistant-1", name: "One" },
@@ -269,19 +268,24 @@ test("without an ID the shell hands off to the account chooser", async () => {
   );
   render(<AppShell {...props()} assistantId={undefined} />);
   await screen.findByText("Choose an assistant.");
-  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
-    replace: true,
-  });
+  // The chooser handoff is a post-paint effect: await it rather than race it.
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+      replace: true,
+    }),
+  );
   expect(screen.queryByRole("button", { name: "Two" })).toBeNull();
 });
 
 test("empty and unauthenticated states hand off to the chooser too", async () => {
-  request.mockResolvedValue(json({ results: [] }));
+  respond(async () => json({ results: [] }));
   render(<AppShell {...props()} assistantId={undefined} />);
   await screen.findByText("No assistant is available.");
-  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
-    replace: true,
-  });
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+      replace: true,
+    }),
+  );
 });
 
 test("embedded shells follow the app locale", async () => {
@@ -305,12 +309,11 @@ test("embedded shells follow the app locale", async () => {
 
 test("a late reply for a previous assistant cannot replace the current selection", async () => {
   const replies = new Map<string, (response: Response) => void>();
-  respond(
-    (url) =>
-      new Promise((done) => {
-        replies.set(String(url), done);
-      }),
-  );
+  respond((url) => {
+    return new Promise((done) => {
+      replies.set(String(url), done);
+    });
+  });
   const view = render(<AppShell {...props()} />);
   await act(async () => {});
   view.rerender(<AppShell {...props("assistant-2")} />);
