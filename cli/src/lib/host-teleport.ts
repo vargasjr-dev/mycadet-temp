@@ -28,7 +28,7 @@ import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
-import { generateInstanceName } from "./random-name.js";
+import { generateInstanceName } from "@mycadet/local-mode";
 
 type HostStorage = LocalRootStorage | DockerRootStorage;
 type HostEnvironment = "local" | "docker";
@@ -38,7 +38,6 @@ export class TeleportRecoveryError extends AggregateError {}
 export interface HostTeleportOps {
   storage(entry: LockfileAssistant): HostStorage;
   backup(entry: LockfileAssistant): Promise<string>;
-  version(entry: LockfileAssistant): Promise<string | undefined>;
   hatch(
     env: HostEnvironment,
     name: string | undefined,
@@ -72,7 +71,6 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  version: async (entry) => await fetchCurrentVersion(getGatewayUrl(entry)),
   hatch: async (env, name, initialArchive) => {
     const instanceName = generateInstanceName(name ?? null);
     if (findAssistantByName(instanceName)) {
@@ -89,7 +87,6 @@ const defaultOps: HostTeleportOps = {
         await hatchLocal({
           name: instanceName,
           setupProviderCredentials: false,
-          initialArchive,
         });
       }
       const entry = findAssistantByName(instanceName);
@@ -179,10 +176,12 @@ async function performHostTeleport(
     return;
   }
 
-  const sourceVersion = await ops.version(source);
+  const sourceVersion = await fetchCurrentVersion(getGatewayUrl(source));
   checkVersion(
     sourceVersion,
-    existing ? await ops.version(existing) : cliPkg.version,
+    existing
+      ? await fetchCurrentVersion(getGatewayUrl(existing))
+      : cliPkg.version,
   );
   const sourceStorage = ops.storage(source);
   const sourceWasRunning = await sourceStorage.running();
@@ -217,7 +216,10 @@ async function performHostTeleport(
       }
     } else {
       target = await ops.hatch(targetEnv, targetName, archive);
-      checkVersion(sourceVersion, await ops.version(target));
+      checkVersion(
+        sourceVersion,
+        await fetchCurrentVersion(getGatewayUrl(target)),
+      );
       const hatched = await wakeAssistant(target);
       if (!hatched.ok) throw new Error(hatched.error);
     }

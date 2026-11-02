@@ -6,7 +6,7 @@ import { join } from "path";
 import {
   resolveLocalHatchLockPath,
   withLocalHatchLock,
-} from "../lib/local-hatch-lock.js";
+} from "../remotes/local/hatch-lock";
 
 const tempDirs: string[] = [];
 

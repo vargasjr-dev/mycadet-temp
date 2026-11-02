@@ -96,6 +96,18 @@ export type { OperatorRoute, OperatorMatch } from "./operations/routes";
 export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
+export {
+  hatchAssistant,
+  type HatchAssistantParams,
+  type HatchAssistantResult,
+} from "./operations/hatch";
+export { generateInstanceName } from "./naming";
+export { withLocalHatchLock } from "./remotes/local/hatch-lock";
+export { allocateLocalPlacement } from "./remotes/local/hatch";
+export {
+  buildHatchConfigValues,
+  writeInitialConfig,
+} from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
 export { wakeDocker } from "./remotes/docker/wake";
 export {
@@ -106,6 +118,7 @@ export {
   isNoSuchContainerError,
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
+export { hatchLocal } from "./remotes/local/hatch";
 
 export {
   ensureLocalRuntime,

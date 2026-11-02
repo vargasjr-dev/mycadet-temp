@@ -1,26 +1,15 @@
 import { join } from "node:path";
 
-import {
-  allocateLocalPlacement,
-  findAssistantByName,
-  setActiveAssistant,
-} from "../assistant-config.js";
-import type {
-  LocalAssistant,
-  LockfileAssistant,
-} from "@mycadet/local-mode/contract";
+import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
-  readCloudToken,
-  resolveLogDir,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
-import {
-  getLocalInstanceDir,
   gatewayCliInvocation,
-  sleepAssistant,
-  wakeLocal,
+  hatchLocal as hatchLocalOp,
+  readCloudToken,
+  resolveAssistantsDir,
+  resolveLogDir,
 } from "@mycadet/local-mode";
+import { execOutput } from "../step-runner.js";
 import { setStartupLogging } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
@@ -30,27 +19,12 @@ import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../lifecycle-reporter.js";
-import {
-  collectProviderApiKey,
-  configureHatchProviderApiKey,
-  promptProviderChoice,
-  resolveHatchProvider,
-  shouldPromptForHatchProvider,
-} from "../provider-secrets.js";
+import { configureHatchProviderApiKey } from "../provider-secrets.js";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
 import { printInstanceDetails } from "../instance-details.js";
-import { checkProviderApiKey } from "../api-key-check.js";
-import {
-  describeLoginError,
-  ensureCloudLoginInteractive,
-  registerLocalAssistantWithCloud,
-} from "../cloud-login.js";
+import { registerLocalAssistantWithCloud } from "../cloud-login.js";
 import { fetchCurrentUser } from "../cloud-client.js";
-import { withLocalHatchLock } from "../local-hatch-lock.js";
-import { generateInstanceName } from "../random-name.js";
-import { buildHatchConfigValues, writeInitialConfig } from "../config-utils.js";
 import { green, yellow } from "../color.js";
-import { execOutput } from "../step-runner.js";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
@@ -63,8 +37,10 @@ export interface HatchLocalParams {
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
   setupProviderCredentials?: boolean;
-  /** Whole-installation state installed before the first service startup. */
-  initialArchive?: string;
+  /** The command's pre-collected provider choice, if it prompted. */
+  provider?: string | null;
+  /** The command's pre-collected provider API key, if it prompted. */
+  precollectedApiKey?: string;
   /**
    * Show the per-service startup logs (assistant, credential executor,
    * gateway) and the extended next steps. Off by default — the happy path
@@ -97,124 +73,34 @@ export async function hatchLocal(
   const verbose = params.verbose ?? false;
   const setupProviderCredentials = params.setupProviderCredentials !== false;
   setStartupLogging(verbose);
-  let provider = setupProviderCredentials
-    ? resolveHatchProvider(configValues)
-    : undefined;
-  const instanceName = generateInstanceName(
-    name ?? process.env.CADET_ASSISTANT_NAME,
-  );
-  // Collected inside the lock (right after the provider choice, so the two
-  // prompts sit back-to-back), consumed after the guardian token leases.
-  let precollectedApiKey: string | undefined;
 
-  const { entry } = await withLocalHatchLock(async () => {
-    reporter.progress(1, 6, "Allocating resources...");
+  if (!process.env.APP_VERSION) {
+    process.env.APP_VERSION = cliPkg.version;
+  }
 
-    const existing = findAssistantByName(instanceName);
-    if (existing && (!existing.cloud || existing.cloud === "local")) {
-      throw new Error(
-        `An assistant named "${instanceName}" is already hatched.\n` +
-          `Run \`cadet wake\` to restart it, or \`cadet retire ${instanceName}\` to remove it first.`,
-      );
-    }
-
-    const entry: LockfileAssistant = {
-      assistantId: instanceName,
-      cloud: "local",
-      ...(await allocateLocalPlacement(instanceName)),
-    };
-
-    reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
-    reporter.log("");
-
-    const apiKeyCheck = checkProviderApiKey();
-    let pickedProvider = false;
-    if (
-      shouldPromptForHatchProvider({
-        configValues,
-        setupProviderCredentials,
-        hasProviderApiKey: apiKeyCheck.hasKey,
-        stdinIsTTY: process.stdin.isTTY,
-      })
-    ) {
-      const picked = await promptProviderChoice();
-      if (picked) {
-        provider = picked;
-        pickedProvider = true;
-        // Collect the key immediately, while the choice is fresh — the
-        // startup logs are quiet now, so nothing separates the two prompts.
-        precollectedApiKey = await collectProviderApiKey(picked);
-
-        // Picking Cadet Cloud should feel like signing in, not like a
-        // mystery later — open the browser login right here. Non-TTY
-        // runs (including the desktop's in-process hatch) skip it.
-        if (picked === "cadet" && process.stdin.isTTY && !readCloudToken()) {
-          reporter.log("");
-          reporter.log(
-            "Cadet Cloud selected — opening your browser to log in...",
-          );
-          try {
-            await ensureCloudLoginInteractive();
-            reporter.log("✅ Logged in to Cadet Cloud");
-          } catch (error) {
-            reporter.warn(
-              `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
-            );
-            reporter.warn("   You can retry later with `cadet login`.");
-          }
-        }
-      }
-    }
-
-    if (!apiKeyCheck.hasKey && !pickedProvider) {
-      reporter.warn(
-        "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
-      );
-      reporter.warn("  To fix, export your key before running cadet hatch:");
-      reporter.warn("  export ANTHROPIC_API_KEY=<your-key>");
-      reporter.warn("");
-    }
-
-    if (!process.env.APP_VERSION) {
-      process.env.APP_VERSION = cliPkg.version;
-    }
-
-    reporter.progress(2, 6, "Setting up local assistant...");
-    const hatchConfigValues = buildHatchConfigValues(configValues, provider);
-    const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
-
-    reporter.progress(3, 6, "Starting assistant...");
-    if (params.initialArchive) {
-      // Restores the archived state roots — gateway-security included, so
-      // the gateway boots with the archived signing identity.
-      await (
-        await import("../root-backup.js")
-      ).initializeRootArchive(entry, params.initialArchive);
-    }
-    try {
-      reporter.progress(4, 6, "Starting assistant...");
-      // The wake leg owns starting — the hatch only threads the fresh
-      // daemon's first-boot config through.
-      await wakeLocal(entry, { watch, defaultWorkspaceConfigPath });
-    } catch (error) {
+  reporter.progress(1, 6, "Allocating resources...");
+  const hatched = await hatchLocalOp({ name, watch, configValues });
+  if (!hatched.ok) {
+    if (hatched.status !== 409) {
       reporter.error(
         `\n❌ Local assistant startup failed — stopping partial processes.`,
       );
       reporter.error(
-        `   Logs: ${join(getLocalInstanceDir(entry), "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+        `   Logs: ${join(resolveAssistantsDir(), hatched.assistantId ?? "", "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
       );
-      await sleepAssistant(entry, { force: true });
-      throw error;
     }
+    throw new Error(hatched.error);
+  }
+  const assistant = hatched.entry;
+  const instanceName = assistant.assistantId;
 
-    entry.hatchedAt = new Date().toISOString();
+  reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
+  reporter.log("");
 
-    reporter.progress(5, 6, "Saving configuration...");
-    saveLockfileAssistant(entry);
-    setActiveAssistant(instanceName);
-
-    return { entry };
-  });
+  // Collected right after the provider choice (so the two prompts sit
+  // back-to-back), consumed after the guardian token leases.
+  const precollectedApiKey = params.precollectedApiKey;
+  const provider = params.provider;
 
   // Lease a guardian token so the desktop app can import it on first launch
   // instead of hitting /v1/guardian/init itself.
@@ -223,7 +109,7 @@ export async function hatchLocal(
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
-      const tokenData = await leaseGuardianToken(entry);
+      const tokenData = await leaseGuardianToken(assistant);
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {
@@ -257,9 +143,9 @@ export async function hatchLocal(
           `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
       ),
     );
-  } else if (provider !== undefined) {
+  } else if (provider !== undefined && setupProviderCredentials) {
     await configureHatchProviderApiKey({
-      gatewayUrl: getGatewayUrl(entry),
+      gatewayUrl: getGatewayUrl(assistant),
       provider,
       bearerToken: guardianAccessToken,
       env: process.env,
@@ -286,8 +172,8 @@ export async function hatchLocal(
   printInstanceDetails(
     {
       name: instanceName,
-      runtime: getGatewayUrl(entry),
-      root: entry.instanceDir,
+      runtime: getGatewayUrl(assistant),
+      root: assistant.instanceDir,
     },
     (message) => reporter.log(message),
   );
@@ -300,8 +186,6 @@ export async function hatchLocal(
 
   return result;
 }
-
-/**
 
 /**
  * Mint (and approve) a remote-web pairing challenge on the local gateway —

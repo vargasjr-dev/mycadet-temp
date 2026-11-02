@@ -117,7 +117,6 @@ beforeEach(async () => {
       order.push(`backup:${entry.assistantId}`);
       return file;
     }),
-    version: mock(async () => "0.12.9"),
     hatch: mock(async () => target),
     restore: mock(async (entry, archive) => {
       await restoreRootBackup({ ...entry, cloud: "local" }, archive, {
@@ -191,7 +190,6 @@ test("dry run creates no archives and does not stop or hatch services", async ()
     ops,
   );
   expect(order).toEqual([]);
-  expect(ops.version).not.toHaveBeenCalled();
   expect(ops.backup).not.toHaveBeenCalled();
   expect(ops.hatch).not.toHaveBeenCalled();
 });
@@ -330,10 +328,18 @@ test("hatch failure retains tar and wakes source", async () => {
   expect(ops.retire).not.toHaveBeenCalled();
 });
 test("multi-patch downgrade fails before shutdown", async () => {
-  ops.version = mock(async (entry) => (entry === source ? "0.12.9" : "0.12.5"));
-  await expect(
-    teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("older than source");
+  // The version check calls the package's fetchCurrentVersion directly (the
+  // ops.version seam is gone). First call = the source's runtime, second =
+  // the existing target's, so the downgrade guard sees an older target.
+  const versionMock = spyOn(localMode, "fetchCurrentVersion");
+  versionMock.mockResolvedValueOnce("0.12.9").mockResolvedValueOnce("0.12.5");
+  try {
+    await expect(
+      teleportHostInstallation(source, "local", "target", options, ops),
+    ).rejects.toThrow("older than source");
+  } finally {
+    versionMock.mockRestore();
+  }
   expect(order).toEqual([]);
 });
 test("target environment mismatch fails before shutdown", async () => {

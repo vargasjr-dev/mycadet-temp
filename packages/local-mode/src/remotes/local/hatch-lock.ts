@@ -1,6 +1,5 @@
-import { execFileSync } from "child_process";
-import { createHash, randomUUID } from "crypto";
-import { z } from "zod";
+import { execFileSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import {
   closeSync,
   mkdirSync,
@@ -10,9 +9,10 @@ import {
   unlinkSync,
   utimesSync,
   writeFileSync,
-} from "fs";
-import { hostname, platform, userInfo } from "os";
-import { dirname, join } from "path";
+} from "node:fs";
+import { hostname, platform, userInfo } from "node:os";
+import { z } from "zod";
+import { dirname, join } from "node:path";
 
 const DEFAULT_TIMEOUT_MS = 240_000;
 const DEFAULT_RETRY_MS = 100;

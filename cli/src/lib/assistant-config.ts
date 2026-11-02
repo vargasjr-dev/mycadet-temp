@@ -8,22 +8,15 @@ import {
 } from "fs";
 import { dirname, join } from "path";
 
-import {
-  findAvailablePort,
-  getDefaultPorts,
-  readLockfile,
-  withLockfileLock,
-} from "@mycadet/local-mode";
+import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
 import {
   type AppProcessRecord,
-  type LocalAssistant,
   type Lockfile,
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
 
 import {
-  resolveAssistantsDir,
   resolveConfigDir,
   resolveLockfilePath,
 } from "@mycadet/local-mode";
@@ -264,41 +257,6 @@ function conversationKeyPath(assistantId: string): string {
     assistantId,
     "conversation-key",
   );
-}
-
-/**
- * Allocate an isolated placement for a named local instance: its data root
- * and host ports. Every new local assistant is allocated under
- * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/`. The legacy `~/.cadet/`
- * path is only reached via existing lockfile entries from before this change
- * — the read path honors whatever `instanceDir` is stored, so production
- * users' existing first-local assistants keep their `~/.cadet/` roots
- * unchanged.
- */
-export async function allocateLocalPlacement(
-  instanceName: string,
-): Promise<
-  Pick<LocalAssistant, "instanceDir" | "port" | "daemonPort" | "cesPort">
-> {
-  const instanceDir = join(resolveAssistantsDir(), instanceName);
-  mkdirSync(instanceDir, { recursive: true });
-
-  // The probe is the source of truth — anything actually listening claims
-  // its port, whether that listener is another assistant or not.
-  // Env-aware bases: non-prod envs sit in their own 1000-port window so
-  // running prod and staging assistants side-by-side doesn't collide. See
-  // the `@mycadet/environments` `portBlock` layout.
-  const basePorts = getDefaultPorts();
-  const daemonPort = await findAvailablePort(basePorts.daemon);
-  const gatewayPort = await findAvailablePort(basePorts.gateway);
-  const cesPort = await findAvailablePort(basePorts.ces);
-
-  return {
-    instanceDir,
-    port: gatewayPort,
-    daemonPort,
-    cesPort,
-  };
 }
 
 /**

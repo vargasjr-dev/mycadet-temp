@@ -5,7 +5,7 @@ import {
   buildHatchConfigValues,
   buildNestedConfig,
   writeInitialConfig,
-} from "../lib/config-utils.js";
+} from "../remotes/local/hatch-config";
 
 function readInitialConfig(
   configValues: Record<string, string>,
