@@ -73,8 +73,9 @@ function AssistantShell({
   // The wake flow — the user-facing recovery for the not-ready state: the
   // same drive the admin console's Wake button gets (wake the vm; a
   // missing vm hatches in place), through the same-origin /v1 proxy with
-  // the session cookie. On success the detail is re-fetched and the frame
-  // mounts; on failure the node's own punchline shows under the button.
+  // the session cookie. On success the shell re-resolves (one GET
+  // /v1/assistant) and the frame mounts; on failure the node's own
+  // punchline shows under the button.
   const [wakePending, setWakePending] = useState(false);
   const [wakeReason, setWakeReason] = useState<string | null>(null);
   const { state, retry: reload } = useAssistantRequest({

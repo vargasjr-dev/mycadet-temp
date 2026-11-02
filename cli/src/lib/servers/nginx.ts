@@ -365,7 +365,30 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
         remote: lockfileAssistantRemote(id),
       }
     : undefined;
+  // The shell's resolution operation, baked at the edge: one GET
+  // /v1/assistant answers the whole union the app's hook decodes. The edge
+  // cannot judge a caller's credentials per request (the baked list and
+  // detail never could either), so the verdict arms render from what the
+  // stack knew at bake time: the served version is ready, its absence is
+  // notReady, no served assistant is empty.
+  const resolution = id
+    ? metadata.version
+      ? {
+          status: "ready",
+          assistant: {
+            id,
+            version: metadata.version,
+            url: entryUrl ?? "assistant/",
+          },
+        }
+      : { status: "notReady" }
+    : { status: "empty" };
   const responses = [
+    {
+      path: "/v1/assistant",
+      status: 200,
+      body: resolution,
+    },
     {
       path: "/v1/assistants",
       status: 200,

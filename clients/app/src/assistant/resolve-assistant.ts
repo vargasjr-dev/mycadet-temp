@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import {
   AssistantChoiceSchema,
-  AssistantDetailSchema,
+  AssistantResolutionSchema,
   PublicUrlSchema,
   type AssistantResolution,
 } from "./resolution-contract";
@@ -22,7 +22,6 @@ function decode<T>(schema: z.ZodType<T>, payload: unknown): T {
 export interface AssistantRequest {
   apiBaseUrl?: string;
   origin: string;
-  assistantId?: string;
   signal: AbortSignal;
 }
 
@@ -106,50 +105,65 @@ export async function listAssistantChoices(
   return listChoices(createClient(options));
 }
 
+/**
+ * The shell's resolution: ONE call to the same-origin `GET /v1/assistant`
+ * operation. The serving host composes the whole union — the lockfile's
+ * choice, the entry gateway's identity and the caller's own auth verdict —
+ * so the client just decodes it. The status-code arms (401/409/410) stay
+ * for hosts whose operation forwards a platform detail's own codes, and for
+ * older stacks whose baked metadata predates the union.
+ */
 export async function resolveAssistant(
   options: AssistantRequest,
 ): Promise<AssistantResolution> {
-  const { base, get } = createClient(options);
-  let assistantId = options.assistantId;
-  if (!assistantId) {
-    const result = await listChoices({ base, get });
-    if (result.status === "unauthenticated") {
-      return result;
-    }
-    if (result.assistants.length === 0) {
-      return { status: "empty" };
-    }
-    if (result.assistants.length > 1) {
-      return result;
-    }
-    assistantId = result.assistants[0].id;
-  }
-  if (!assistantId || [".", ".."].includes(assistantId)) {
-    throw new Error("Invalid assistant identity.");
-  }
-  const payload = await get(
-    `v1/assistants/${encodeURIComponent(assistantId)}/`,
-    true,
+  const base = new URL(
+    decode(PublicUrlSchema, options.apiBaseUrl ?? "/"),
+    options.origin,
   );
-  if (payload === unauthenticated) {
+  base.pathname = base.pathname.replace(/\/*$/, "/");
+  options.signal.throwIfAborted();
+  const requestUrl = new URL("v1/assistant", base);
+  const response = await fetch(requestUrl, {
+    headers: new Headers({ Accept: "application/json" }),
+    signal: options.signal,
+    credentials: "include",
+  });
+  options.signal.throwIfAborted();
+  if (response.status === 401) {
     return { status: "unauthenticated" };
   }
-  if (payload === notReady) {
+  if (response.status === 409) {
     return { status: "notReady" };
   }
-  if (payload === unavailable) {
+  if (response.status === 410) {
     return { status: "unavailable" };
   }
-  const detail = decode(AssistantDetailSchema, payload);
-  if (detail.id !== assistantId) {
-    throw new Error("Assistant identity does not match the request.");
+  if (!response.ok) {
+    console.error(
+      `Assistant request failed: ${response.status} ${response.headers.get("content-type") ?? ""} from ${requestUrl.href}`,
+    );
+    throw new Error(
+      `Assistant request failed: ${response.status} from ${requestUrl.href}`,
+    );
+  }
+  const payload: unknown = await response.json().catch((error) => {
+    console.error(
+      `Assistant response was not JSON from ${requestUrl.href}: ${error}`,
+    );
+    throw error;
+  });
+  options.signal.throwIfAborted();
+  const parsed = decode(AssistantResolutionSchema, payload);
+  if (parsed.status !== "ready") {
+    return parsed;
   }
   return {
     status: "ready",
     assistant: {
-      id: detail.id,
-      version: detail.version,
-      url: new URL(detail.url, base).href,
+      // The endpoint answers the host-relative entry; absolute against the
+      // API base, so a paired apiBase's own origin wins over the shell's.
+      ...parsed.assistant,
+      url: new URL(parsed.assistant.url, base).href,
     },
   };
 }

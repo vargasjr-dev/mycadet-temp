@@ -265,7 +265,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-local/retire/",
       "DELETE",
-    )!.route.run("asst-local");
+    )!.route.run("asst-local", new Headers());
 
     expect(response?.status).toBe(204);
     expect(retireLocalMock).toHaveBeenCalledWith(
@@ -281,7 +281,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-docker/retire/",
       "DELETE",
-    )!.route.run("asst-docker");
+    )!.route.run("asst-docker", new Headers());
 
     expect(response?.status).toBe(500);
     expect(await response?.json()).toEqual({ detail: "no such assistant" });
@@ -298,7 +298,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
       await matchOperatorRequest(
         "/v1/assistants/asst-cloud/retire/",
         "DELETE",
-      )!.route.run("asst-cloud"),
+      )!.route.run("asst-cloud", new Headers()),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
     expect(retireDockerMock).not.toHaveBeenCalled();
@@ -310,7 +310,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-paired/retire/",
       "DELETE",
-    )!.route.run("asst-paired");
+    )!.route.run("asst-paired", new Headers());
 
     expect(response?.status).toBe(204);
     expect(execMock.mock.calls[0]![0]).toBe("ssh");
@@ -324,7 +324,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
       await matchOperatorRequest(
         "/v1/assistants/ghost/retire/",
         "DELETE",
-      )!.route.run("ghost"),
+      )!.route.run("ghost", new Headers()),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
   });

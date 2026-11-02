@@ -509,7 +509,7 @@ function operatorMiddleware(): Connect.NextHandleFunction {
     }
 
     void match.route
-      .run(match.assistantId)
+      .run(match.assistantId, new Headers(req.headers))
       .then((response) => {
         if (!response) {
           return next();

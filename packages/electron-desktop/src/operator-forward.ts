@@ -19,5 +19,5 @@ export async function forwardOperatorRequest(
     request.method,
   );
   if (!match) return null;
-  return match.route.run(match.assistantId);
+  return match.route.run(match.assistantId, request.headers);
 }

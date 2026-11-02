@@ -1423,36 +1423,9 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          mkdir -p ~/.private_keys
-          echo "$ASC_KEY_P8" > ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8
-
-          echo "Submitting Electron DMG for notarization..."
-          NOTARIZE_OUTPUT=$(xcrun notarytool submit "${{ steps.dmg.outputs.dmg_path }}" \
-            --key ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            --key-id "$ASC_KEY_ID" \
-            --issuer "$ASC_ISSUER_ID" \
-            --wait \
-            --timeout 30m \
-            2>&1) || NOTARIZE_FAILED=true
-
-          echo "$NOTARIZE_OUTPUT"
-
-          SUBMISSION_ID=$(echo "$NOTARIZE_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | grep -m1 .)
-
-          if [ "$NOTARIZE_FAILED" = "true" ] || echo "$NOTARIZE_OUTPUT" | grep -q "status: Invalid"; then
-            echo "::error::Electron notarization failed"
-            if [ -n "$SUBMISSION_ID" ]; then
-              xcrun notarytool log "$SUBMISSION_ID" \
-                --key ~/.private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-                --key-id "$ASC_KEY_ID" \
-                --issuer "$ASC_ISSUER_ID" \
-                || echo "::warning::Could not fetch notarization log"
-            fi
-            exit 1
-          fi
-
-          echo "Electron notarization succeeded"
+        # The submit + timestamped wait live in the script (see its docblock
+        # for why the wait is a poll and not `--wait`).
+        run: bun scripts/notarize.ts "${{ steps.dmg.outputs.dmg_path }}"
 
       - name: Staple notarization ticket
         run: |

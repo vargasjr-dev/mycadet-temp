@@ -1,3 +1,7 @@
+import { getGatewayHealth } from "../daemon-readiness";
+import { readLockfile } from "../lockfile";
+import { loopbackSafeFetch } from "../loopback-fetch";
+import { getGatewayUrl, isCloudEntry } from "../lockfile-contract";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
@@ -8,26 +12,33 @@ import { wakeAssistant } from "./wake";
  * The operator ROUTE TABLE: the host-served operations — the headless
  * lifecycle cores the serving host (Electron `app://` handler, Vite dev
  * middleware) mounts before the gateway data-plane planner. One entry per
- * operation; today that is retire, sleep, and wake. Future operations join as new
- * rows (and the gateway proxy itself becomes the LAST row — the catch-all
- * forward — once every scoped route is an operation).
+ * operation; today that is the assistant resolution, retire, sleep, and
+ * wake. Future operations join as new rows (and the gateway proxy itself
+ * becomes the LAST row — the catch-all forward — once every scoped route is
+ * an operation).
  *
  * `matchOperatorRequest` is PURE in the URL — the hot path of every other
  * request never touches the lockfile. A match runs through
- * `match.route.run(match.assistantId)` directly: the routes import the
- * modules they need, no injection surface.
+ * `match.route.run(match.assistantId, headers)` directly: the routes import
+ * the modules they need, no injection surface.
  */
 
 export interface OperatorRoute {
   method: string;
   pattern: RegExp;
   /**
-   * Answer the request. Returning null means PASS: the request is not this
-   * host's to answer (unknown id, or an entry the host cannot retire) and
-   * the pre-existing chain answers instead — the cloud's 404 for a stale id,
-   * the data-plane forward for a platform-hosted entry.
+   * Answer the request. Scoped rows receive the decoded target id; the
+   * unscoped rows (no capture group) receive an empty string. The caller's
+   * headers ride along so a credential-judging operation can forward the
+   * caller's own proof upstream — a verdict read host-side without them
+   * would be the host's, not the caller's.
+   *
+   * Returning null means PASS: the request is not this host's to answer
+   * (unknown id, or an entry the host cannot retire) and the pre-existing
+   * chain answers instead — the cloud's 404 for a stale id, the data-plane
+   * forward for a platform-hosted entry.
    */
-  run: (assistantId: string) => Promise<Response | null>;
+  run: (assistantId: string, headers: Headers) => Promise<Response | null>;
 }
 
 const RETIRE_PATTERN = /^\/v1\/assistants\/([^/?#]+)\/retire\/?$/;
@@ -112,7 +123,143 @@ async function runWakeRoute(assistantId: string): Promise<Response | null> {
   });
 }
 
+const RESOLUTION_PATTERN = /^\/v1\/assistant\/?$/;
+
+/**
+ * The caller's own credential headers, and nothing else. The resolution's
+ * verdicts are the CALLER's — the gateway's `/healthz` auth check reads the
+ * browser access cookie (or a bearer), so the operation forwards exactly
+ * those headers upstream and never the host's own identity.
+ */
+function forwardedCredentials(headers: Headers): Record<string, string> {
+  const forwarded: Record<string, string> = {};
+  const cookie = headers.get("cookie");
+  if (cookie) forwarded.cookie = cookie;
+  const authorization = headers.get("authorization");
+  if (authorization) forwarded.authorization = authorization;
+  return forwarded;
+}
+
+function resolutionResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/**
+ * The platform's own detail for a cloud entry, normalized into the
+ * resolution union. The cloud's status codes carry the arms the shell
+ * renders — 401 no session, 409 still provisioning, 410 gone — and its 200
+ * detail carries the identity; the operation translates so every surface
+ * answers the SAME union shape.
+ */
+async function resolveCloudAssistant(
+  entry: LockfileAssistant,
+  headers: Headers,
+): Promise<Response> {
+  const detailUrl = `${getGatewayUrl(entry).replace(/\/+$/, "")}/v1/assistants/${encodeURIComponent(entry.assistantId ?? "")}/`;
+  try {
+    const response = await loopbackSafeFetch(detailUrl, {
+      headers: { Accept: "application/json", ...forwardedCredentials(headers) },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (response.status === 401) {
+      return resolutionResponse({ status: "unauthenticated" });
+    }
+    if (response.status === 409) {
+      return resolutionResponse({ status: "notReady" });
+    }
+    if (response.status === 410) {
+      return resolutionResponse({ status: "unavailable" });
+    }
+    if (!response.ok) {
+      return resolutionResponse({ status: "notReady" });
+    }
+    const detail = (await response.json().catch(() => null)) as {
+      id?: unknown;
+      version?: unknown;
+      url?: unknown;
+    } | null;
+    if (
+      typeof detail?.id !== "string" ||
+      typeof detail.version !== "string" ||
+      typeof detail.url !== "string"
+    ) {
+      return resolutionResponse({ status: "notReady" });
+    }
+    return resolutionResponse({
+      status: "ready",
+      assistant: { id: detail.id, version: detail.version, url: detail.url },
+    });
+  } catch {
+    return resolutionResponse({ status: "notReady" });
+  }
+}
+
+/**
+ * The shell's resolution operation. One `GET /v1/assistant` answers the
+ * whole resolution union so the app's hook is one fetch: the lockfile says
+ * what is served (empty, a choice list, or the active-or-single entry), and
+ * the entry's gateway says who it is and whether the CALLER's credentials
+ * authenticate — `getGatewayHealth` rides the entry's gateway `/healthz`
+ * (version + verdict in one round-trip; the caller's cookie forwarded, so
+ * an authed gateway judges the browser, not the host). A cloud entry has no
+ * host-side gateway: the platform's own detail carries the arms, and the
+ * operation normalizes it into the same union.
+ */
+async function runAssistantResolution(headers: Headers): Promise<Response> {
+  const lockfile = readLockfile();
+  if (lockfile.assistants.length === 0) {
+    return resolutionResponse({ status: "empty" });
+  }
+  const served =
+    lockfile.assistants.find(
+      (assistant) => assistant.assistantId === lockfile.activeAssistant,
+    ) ??
+    (lockfile.assistants.length === 1 ? lockfile.assistants[0] : undefined);
+  if (!served?.assistantId) {
+    // More than one entry and none active: the shell hands off to the
+    // account chooser, which renders these rows.
+    return resolutionResponse({
+      status: "selection",
+      assistants: lockfile.assistants.map((entry) => ({
+        id: entry.assistantId,
+        ...(entry.name ? { name: entry.name } : {}),
+        remote: entry.cloud,
+      })),
+    });
+  }
+  if (isCloudEntry(served)) {
+    return resolveCloudAssistant(served, headers);
+  }
+  const health = await getGatewayHealth(getGatewayUrl(served), {
+    headers: forwardedCredentials(headers),
+  });
+  if (!health.authenticated) {
+    return resolutionResponse({ status: "unauthenticated" });
+  }
+  if (!health.version) {
+    // The gateway answered nothing (unreachable, still booting, or older
+    // than the identity payload) — the assistant is not ready to mount.
+    return resolutionResponse({ status: "notReady" });
+  }
+  return resolutionResponse({
+    status: "ready",
+    assistant: {
+      id: served.assistantId,
+      version: health.version,
+      url: "assistant/",
+    },
+  });
+}
+
 const ROUTES: OperatorRoute[] = [
+  {
+    method: "GET",
+    pattern: RESOLUTION_PATTERN,
+    run: (_assistantId, headers) => runAssistantResolution(headers),
+  },
   { method: "DELETE", pattern: RETIRE_PATTERN, run: runRetireRoute },
   { method: "POST", pattern: SLEEP_PATTERN, run: runSleepRoute },
   { method: "POST", pattern: WAKE_PATTERN, run: runWakeRoute },
@@ -121,13 +268,16 @@ const ROUTES: OperatorRoute[] = [
 /** A matched operator request: the route and its decoded target id. */
 export interface OperatorMatch {
   route: OperatorRoute;
+  /** The scoped rows' decoded target id; the unscoped rows' empty string. */
   assistantId: string;
 }
 
 /**
  * Match a request against the route table. Pure in `pathname` + `method`:
  * no lockfile read, no I/O — the hot path of every non-operator request
- * (static assets, gateway forwards, pairing) pays one regex walk.
+ * (static assets, gateway forwards, pairing) pays one regex walk. A scoped
+ * row's pattern carries one capture group (the target id); an unscoped row's
+ * carries none and decodes no id.
  */
 export function matchOperatorRequest(
   pathname: string,
@@ -138,7 +288,10 @@ export function matchOperatorRequest(
     const match = route.pattern.exec(pathname);
     if (!match) continue;
     try {
-      return { route, assistantId: decodeURIComponent(match[1]!) };
+      return {
+        route,
+        assistantId: match[1] !== undefined ? decodeURIComponent(match[1]) : "",
+      };
     } catch {
       // Malformed percent-encoding: not this host's request.
       return null;

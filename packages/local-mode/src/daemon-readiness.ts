@@ -170,7 +170,7 @@ export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
  */
 export async function getGatewayHealth(
   runtimeUrl: string,
-  opts: { signal?: AbortSignal } = {},
+  opts: { signal?: AbortSignal; headers?: Record<string, string> } = {},
 ): Promise<GatewayHealth> {
   try {
     const healthUrl = new URL(
@@ -178,7 +178,7 @@ export async function getGatewayHealth(
       runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
     );
     const resp = await loopbackSafeFetch(healthUrl.href, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...(opts.headers ?? {}) },
       signal: opts.signal ?? AbortSignal.timeout(5000),
     });
     if (resp.ok) {
