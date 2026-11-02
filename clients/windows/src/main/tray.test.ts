@@ -1,5 +1,4 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { Lockfile } from "@mycadet/local-mode/contract";
 
 const trayIcon = { isEmpty: () => false };
 mock.module("electron", () => ({
@@ -12,18 +11,8 @@ mock.module("electron", () => ({
   shell: { openExternal: () => Promise.resolve() },
 }));
 
-let currentLockfile: Lockfile = {
-  assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
-  activeAssistant: "assistant-1",
-};
-const readLockfile = mock(() => currentLockfile);
-mock.module("@mycadet/local-mode", () => ({
-  readLockfile,
-}));
-
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };
-  getLockfile: () => Lockfile;
   icon: (icon: string) => unknown;
 };
 let trayRuntime: TrayRuntime | null = null;
@@ -60,20 +49,6 @@ const { installWindowsTray } = await import("./tray");
 
 beforeEach(() => {
   trayRuntime = null;
-  currentLockfile = {
-    assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
-    activeAssistant: "assistant-1",
-  };
-  readLockfile.mockClear();
-});
-
-test("serves tray menus from a fresh lockfile read", () => {
-  installWindowsTray();
-
-  expect(trayRuntime?.getLockfile()).toEqual(currentLockfile);
-  currentLockfile = { assistants: [], activeAssistant: null };
-  expect(trayRuntime?.getLockfile()).toEqual(currentLockfile);
-  expect(readLockfile).toHaveBeenCalledTimes(2);
 });
 
 test("exposes menu accelerators and themed icons", () => {

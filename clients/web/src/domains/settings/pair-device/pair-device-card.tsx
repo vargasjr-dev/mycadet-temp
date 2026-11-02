@@ -20,7 +20,6 @@ import { docsUrl, routes } from "@/utils/routes";
 import { CODE_CHIP_CLASS } from "./code-chip";
 import { resolvePairDeviceTarget } from "./pair-device-client";
 import { PairDeviceReady } from "./pair-device-ready";
-import { PairedDevicesSection } from "./paired-devices-section";
 import { PendingPairingRequests } from "./pending-pairing-requests";
 import { useRelativeAgeTick } from "./relative-age";
 import { TunnelRecheckButton } from "./tunnel-recheck-button";
@@ -116,9 +115,6 @@ export function PairDeviceCard() {
     target?.base ?? null,
     probeAnswered ? statusAddress : null,
   );
-  // Bumped when the pending-request flow pairs a device, so the device list
-  // below refetches without waiting for a live-code poll.
-  const [devicesRevalidateKey, setDevicesRevalidateKey] = useState(0);
   // The user taking the URL field over, by opening its disclosure or typing in
   // it. Sticky, so a verdict arriving afterwards cannot collapse the field out
   // from under them.
@@ -306,16 +302,7 @@ export function PairDeviceCard() {
           />
         )}
 
-        <PendingPairingRequests
-          base={target.base}
-          onApproved={() => setDevicesRevalidateKey((key) => key + 1)}
-        />
-
-        {/* Poll while a code is live so an externally claimed pairing shows up. */}
-        <PairedDevicesSection
-          pollWhilePairing={isReady && !pair.expired}
-          revalidateKey={devicesRevalidateKey}
-        />
+        <PendingPairingRequests base={target.base} />
 
         <ExternalAnchor
           href={PAIRING_DOCS_URL}

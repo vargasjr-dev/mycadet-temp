@@ -9,13 +9,7 @@ import {
 } from "@/generated/api/@tanstack/react-query.gen";
 import { assistantsUpgradeDetailCreate } from "@/generated/api/sdk.gen";
 import type { ReleaseListItem } from "@/generated/api/types.gen";
-import { useLocalRuntimeUpgrade } from "@/hooks/use-local-runtime-upgrade";
 import { t, useTranslation } from "@/i18n";
-import {
-  LOCAL_RUNTIME_RELEASES_FETCH_LIMIT,
-  getLatestRuntimeRelease,
-  isRuntimeUpgradeAvailable,
-} from "@/lib/local-runtime-upgrade";
 import { compareParsed, parseSemver } from "@/utils/semver";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
@@ -244,133 +238,6 @@ export function AssistantUpgrades({
         title={t("assistantUpgrades.confirmUpdateTitle")}
         message={t("assistantUpgrades.confirmUpdateMessage", {
           version: latestVersion ?? t("assistantUpgrades.latest"),
-        })}
-        confirmLabel={t("assistantUpgrades.update")}
-        onConfirm={handleUpgrade}
-        onCancel={() => setShowConfirmation(false)}
-      />
-    </div>
-  );
-}
-
-interface LocalAssistantUpgradesProps {
-  assistantId: string;
-  currentVersion?: string | null;
-  onUpgradeComplete?: () => void;
-}
-
-export function LocalAssistantUpgrades({
-  assistantId,
-  currentVersion,
-  onUpgradeComplete,
-}: LocalAssistantUpgradesProps) {
-  const { t } = useTranslation("settings");
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const { data: releases, isLoading: releasesLoading } = useQuery(
-    releasesListOptions({
-      query: { limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
-    }),
-  );
-
-  const latestRelease = useMemo(
-    () => getLatestRuntimeRelease(releases),
-    [releases],
-  );
-  const targetVersion = latestRelease?.version;
-  const upgradeAvailable = !currentVersion
-    ? !!targetVersion
-    : isRuntimeUpgradeAvailable(currentVersion, targetVersion);
-  const upgradeCreate = useLocalRuntimeUpgrade({ assistantId, targetVersion });
-
-  const handleUpgrade = async () => {
-    setShowConfirmation(false);
-    setSuccessMessage(null);
-    try {
-      const result = await upgradeCreate.upgrade();
-      setSuccessMessage(
-        t("assistantUpgrades.successUpdated", {
-          version:
-            result.version ?? targetVersion ?? t("assistantUpgrades.latest"),
-        }),
-      );
-      toast.success(t("assistantUpgrades.toastUpdateComplete"), {
-        id: "runtime-upgrade-complete",
-        tone: "strong",
-      });
-      onUpgradeComplete?.();
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t("assistantUpgrades.toastUpdateFailed"),
-      );
-    }
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-4 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-x-8 md:gap-y-4">
-        <div className="flex flex-col gap-1 md:contents">
-          <span className="text-body-medium-default text-[var(--content-tertiary)]">
-            {t("assistantUpgrades.current")}
-          </span>
-          <CurrentVersionValue version={currentVersion} />
-        </div>
-
-        <div className="flex flex-col gap-1 md:contents">
-          <span className="text-body-medium-default text-[var(--content-tertiary)]">
-            {t("assistantUpgrades.updateTo")}
-          </span>
-          <span className="block min-w-0 break-all text-body-medium-lighter text-[var(--content-default)]">
-            {releasesLoading
-              ? t("assistantUpgrades.loading")
-              : targetVersion && latestRelease
-                ? releaseLabel(latestRelease, currentVersion, targetVersion)
-                : t("assistantUpgrades.noReleases")}
-          </span>
-        </div>
-      </div>
-
-      <Button
-        variant="primary"
-        className="min-w-[160px]"
-        loading={upgradeCreate.isPending}
-        leftIcon={<RefreshCw />}
-        onClick={() => setShowConfirmation(true)}
-        disabled={
-          upgradeCreate.isPending ||
-          releasesLoading ||
-          !targetVersion ||
-          !upgradeAvailable
-        }
-      >
-        {upgradeCreate.isPending
-          ? t("assistantUpgrades.updating")
-          : targetVersion
-            ? t("assistantUpgrades.updateToVersion", { version: targetVersion })
-            : t("assistantUpgrades.update")}
-      </Button>
-
-      {successMessage && (
-        <p className="text-body-medium-lighter text-[var(--system-positive-strong)]">
-          {successMessage}
-        </p>
-      )}
-      {!successMessage &&
-        !upgradeAvailable &&
-        targetVersion &&
-        !releasesLoading && (
-          <p className="text-body-medium-lighter text-[var(--system-positive-strong)]">
-            {t("assistantUpgrades.alreadyOnVersion")}
-          </p>
-        )}
-
-      <ConfirmDialog
-        open={showConfirmation}
-        title={t("assistantUpgrades.confirmUpdateTitle")}
-        message={t("assistantUpgrades.confirmUpdateMessage", {
-          version: targetVersion ?? t("assistantUpgrades.latest"),
         })}
         confirmLabel={t("assistantUpgrades.update")}
         onConfirm={handleUpgrade}

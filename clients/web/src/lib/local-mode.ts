@@ -3,35 +3,16 @@ import {
   isLoopbackGatewayCloud,
   isUsableBaseUrl,
 } from "@mycadet/local-mode/contract";
-import {
-  isLoopbackPublicUrl,
-  isRetryablePairingReason,
-} from "@mycadet/service-contracts/remote-web-pairing";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { readInjectedConfig } from "@/lib/injected-config";
 
-import { isPublicBaseUrlRejection } from "@/utils/pairing-address";
-import {
-  clearSelectedAssistantId,
-  readSelectedAssistantId,
-} from "@/assistant/selected-assistant-storage";
 import {
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
-import { probeAssistantReadyzHost } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import {
-  loadLockfileHost,
-  pairingCancelHost,
-  pairingPollHost,
-  pairingStartHost,
-  unpairAssistantHost,
-} from "@/runtime/local-mode-host";
 import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
-import { LocalPairingFailure } from "@mycadet/ipc-contract";
-import { LocalPairingPollResult } from "@mycadet/ipc-contract";
-import { LocalPairingStartResult } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -139,128 +120,6 @@ export function isLocalClient(): boolean {
   // self-hosted surface resolve to a local arm (or inject nothing at all,
   // which reads as local too).
   return readInjectedConfig()?.remote !== "cloud";
-}
-
-/**
- * Drop the session state bound to the selected assistant: the raw selection
- * key (the app shell's chooser memory) and the self-hosted connection (whose
- * token slot is the only bearer custody).
- */
-function clearSelectedAssistantSession(): void {
-  clearSelectedAssistantId();
-  setSelfHostedConnection(null);
-}
-
-/**
- * Forget a paired assistant on this device: the host removes its lockfile
- * entry and deletes its stored guardian token, never touching the remote
- * assistant (pair again anytime with `cadet connect import`). The entry
- * being removed is never the served one - it lives only in the host's
- * roster - so validation reads the host transport directly, and the raw
- * selection key (owned by the app shell's chooser) is cleared when it named
- * the removed assistant, the same way a local retire clears it.
- */
-export async function removePairedAssistantFromLockfile(
-  assistantId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  let rosterKnown = true;
-  try {
-    rosterKnown = (await loadLockfileHost()).assistants.some(
-      (a) => a.assistantId === assistantId,
-    );
-  } catch {
-    // An unreachable host must not block the removal attempt: the host
-    // validates the id itself and reports the same "not in the local list"
-    // outcome through its own error.
-  }
-  if (!rosterKnown) {
-    return { ok: false, error: "This assistant isn't in the local list." };
-  }
-  const wasSelected = readSelectedAssistantId() === assistantId;
-  const result = await unpairAssistantHost(assistantId);
-  if (!result.ok) {
-    return { ok: false, error: result.error || "Failed to remove assistant." };
-  }
-  if (wasSelected) {
-    clearSelectedAssistantSession();
-  }
-  return { ok: true };
-}
-
-/** Stands in when a host reports a failure with no message of its own. */
-const PAIRING_FALLBACK_ERROR = "Failed to connect to that assistant.";
-
-/**
- * Whether a refused pairing step is worth polling through, classified by the
- * shared reason table so the dialog and `cadet connect import` cannot drift.
- */
-export function isRetryablePairingFailure(
-  failure: LocalPairingFailure,
-): boolean {
-  return isRetryablePairingReason(failure.reason);
-}
-
-/**
- * Begin pairing with the assistant at `address`, a pairing link or a bare
- * `https://host` URL. The host runs the exchange and keeps the device code,
- * so what comes back is an opaque handle plus, when the address carried no
- * approved code, the code to approve on the assistant's machine.
- */
-export async function startAssistantPairing(
-  address: string,
-): Promise<LocalPairingStartResult> {
-  const result = await pairingStartHost(address);
-  if (!result.ok) {
-    return {
-      ...result,
-      error: result.error || PAIRING_FALLBACK_ERROR,
-      // Runtime guard, as on the poll below: the dev-server host branch parses
-      // untyped JSON, so a reason no caller has copy for degrades to the
-      // host's own message rather than to no message at all.
-      rejection: isPublicBaseUrlRejection(result.rejection)
-        ? result.rejection
-        : undefined,
-    };
-  }
-  return result;
-}
-
-/**
- * One exchange attempt for a live pairing session.
- * `accessOnly` is true when the exchange yielded no refresh credential, so the
- * pairing's access expires and cannot renew itself.
- */
-export async function pollAssistantPairing(
-  handle: string,
-  name?: string,
-): Promise<LocalPairingPollResult> {
-  const result = await pairingPollHost(handle, name);
-  if (!result.ok) {
-    return { ...result, error: result.error || PAIRING_FALLBACK_ERROR };
-  }
-  if (result.status === "pending") {
-    return result;
-  }
-  // Runtime guard: the dev-server host branch parses untyped JSON, so a
-  // malformed success degrades to a structured failure.
-  if (!result.assistantId) {
-    return { ok: false, error: PAIRING_FALLBACK_ERROR };
-  }
-  return { ...result, accessOnly: result.accessOnly === true };
-}
-
-/**
- * Forget a pending pairing session, so its code cannot be exchanged later.
- * Callers cancel on the way out (a dismissed dialog, a dead transport) and
- * have nothing to do about a failure, and a handle the host no longer knows
- * is already the outcome they wanted, so a rejecting host resolves quietly.
- */
-export async function cancelAssistantPairing(handle: string): Promise<void> {
-  try {
-    await pairingCancelHost(handle);
-  } catch {
-    // Unreachable session: cancelled, spent, or the host itself is gone.
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -386,23 +245,6 @@ function isReadyzResponseReady(body: unknown): boolean {
   );
 }
 
-export async function probeLocalGatewayReady(): Promise<boolean> {
-  const assistant = getActiveAssistant();
-  if (!assistant || !hasGatewayAddress(assistant)) {
-    return false;
-  }
-  try {
-    // Host-side probing: the serving host resolves the assistant's gateway
-    // from the id in the path and dials its root `/readyz` itself — the
-    // renderer never sees a port or an unscoped gateway path.
-    return isReadyzResponseReady(
-      await probeAssistantReadyzHost(assistant.assistantId),
-    );
-  } catch {
-    return false;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Gateway connection setup
 // ---------------------------------------------------------------------------
@@ -458,10 +300,20 @@ export async function primeLocalGatewayConnection(
   // the id in the path. The prime also clears credentials persisted by
   // older clients that placed gateway tokens in the gateway-session cache.
   try {
-    // Host-side probing through the scoped readyz route: the serving host
-    // resolves the gateway from the id in the path, dials its root
-    // `/readyz`, and injects its own bearer.
-    const readiness = await probeAssistantReadyzHost(assistant.assistantId);
+    // Probing through the scoped readyz route: the serving host resolves
+    // the gateway from the id in the path, dials its root `/readyz`, and
+    // injects its own bearer.
+    const res = await fetch(
+      `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/readyz`,
+    );
+    const readiness = res.ok
+      ? await res.json().catch(() => null)
+      : new Error(
+          (await res.text()) || `Gateway request failed: ${res.status}`,
+        );
+    if (readiness instanceof Error) {
+      throw readiness;
+    }
     if (!isReadyzResponseReady(readiness)) {
       throw new Error("Assistant is not ready");
     }

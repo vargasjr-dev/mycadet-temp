@@ -60,7 +60,6 @@ export interface PendingPairingRequestsController {
  */
 export function usePendingPairingRequests(
   base: string,
-  onApproved?: () => void,
 ): PendingPairingRequestsController {
   const [requests, setRequests] = useState<RemoteWebPairingRequestSummary[]>(
     [],
@@ -175,10 +174,6 @@ export function usePendingPairingRequests(
           return;
         }
         removeRequest();
-        if (action === "approve") {
-          // A device just paired; let siblings (the device list) revalidate.
-          onApproved?.();
-        }
       } catch (err) {
         if (controller.signal.aborted) {
           return;
@@ -193,8 +188,6 @@ export function usePendingPairingRequests(
             // is no longer pending, but the deny did NOT take effect, and the
             // user must learn a device they tried to reject is now paired.
             removeRequest();
-            // The device is paired despite the deny; siblings should see it.
-            onApproved?.();
             setActionError({
               requestId,
               message: t(
@@ -228,7 +221,7 @@ export function usePendingPairingRequests(
         }
       }
     },
-    [base, onApproved],
+    [base],
   );
 
   const approve = useCallback(

@@ -11,8 +11,6 @@ import { usePendingPairingRequests } from "./use-pending-pairing-requests";
 interface PendingPairingRequestsProps {
   /** Absolute local-gateway base URL the requests are listed and acted on against. */
   base: string;
-  /** Fired when an action pairs a device, so siblings can revalidate. */
-  onApproved?: () => void;
 }
 
 /**
@@ -23,13 +21,10 @@ interface PendingPairingRequestsProps {
  * match it against the requesting device's screen: the device-flow
  * anti-phishing binding.
  */
-export function PendingPairingRequests({
-  base,
-  onApproved,
-}: PendingPairingRequestsProps) {
+export function PendingPairingRequests({ base }: PendingPairingRequestsProps) {
   const { t } = useTranslation("settings");
   const { requests, actingOn, error, approve, deny } =
-    usePendingPairingRequests(base, onApproved);
+    usePendingPairingRequests(base);
 
   // The hook keeps a stable list reference while the pending set is unchanged,
   // so nothing here re-renders on its own and the ages below would freeze.

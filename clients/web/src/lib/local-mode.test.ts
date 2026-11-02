@@ -1,61 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
-  parseLockfile,
-  type Lockfile,
-  type LockfileWriteResult,
-} from "@mycadet/local-mode/contract";
-
-import * as localModeHost from "@/runtime/local-mode-host";
-import type {
-  LocalPairingStartResult,
-  LocalPairingPollResult,
-  LocalPairingFailure,
-} from "@mycadet/ipc-contract";
-
-const loadLockfileHost = mock(async (): Promise<Lockfile> => {
-  throw new Error("host down");
-});
-
-const fetchGuardianTokenHost = mock(async (_id: string) => "guardian-tok");
-
-const unpairAssistantHost = mock(
-  async (_assistantId: string): Promise<LockfileWriteResult> => ({
-    ok: true as const,
-    lockfile: { assistants: [], activeAssistant: null },
-  }),
-);
-
-const pairingStartHost = mock(
-  async (_address: string): Promise<LocalPairingStartResult> => ({
-    ok: true as const,
-    handle: "handle-1",
-    userCode: null,
-    expiresAt: "2099-01-01T00:00:00.000Z",
-    intervalSeconds: 5,
-  }),
-);
-
-const pairingPollHost = mock(
-  async (_handle: string, _name?: string): Promise<LocalPairingPollResult> => ({
-    ok: true as const,
-    status: "imported" as const,
-    assistantId: "paired-new",
-    accessOnly: false,
-  }),
-);
-
-const pairingCancelHost = mock(async (_handle: string): Promise<void> => {});
-
-mock.module("@/runtime/local-mode-host", () => ({
-  ...localModeHost,
-  loadLockfileHost,
-  fetchGuardianTokenHost,
-  unpairAssistantHost,
-  pairingStartHost,
-  pairingPollHost,
-  pairingCancelHost,
-}));
+import { parseLockfile } from "@mycadet/local-mode/contract";
 
 import {
   getActiveAssistant,
@@ -64,16 +9,11 @@ import {
   getServedLockfile,
   getCloudAssistants,
   getRemoteAssistantDisplayName,
-  cancelAssistantPairing,
-  pollAssistantPairing,
-  startAssistantPairing,
   isLocalAssistant,
   isCadetCloudRemote,
   isCloudAssistant,
-  isRetryablePairingFailure,
   hasAssistants,
   primeLocalGatewayConnection,
-  removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
 } from "@/lib/local-mode";
 import {
@@ -117,12 +57,6 @@ afterEach(() => {
   globalThis.fetch = realFetch;
   window.__CADET_CONFIG__ = { remote: "cloud" };
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
-  loadLockfileHost.mockClear();
-  fetchGuardianTokenHost.mockClear();
-  unpairAssistantHost.mockClear();
-  pairingStartHost.mockClear();
-  pairingPollHost.mockClear();
-  pairingCancelHost.mockClear();
   setSelfHostedConnection(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
@@ -147,12 +81,11 @@ const pairedEntry: LockfileAssistant = {
 } as LockfileAssistant;
 
 describe("served config synthesis", () => {
-  test("the stamp produces the one assistant, without calling the local host", () => {
+  test("the stamp produces the one assistant, straight from the injected config", () => {
     stampServed({ assistantId: "served-1", assistantName: "Served" });
 
     const lockfile = getServedLockfile();
 
-    expect(loadLockfileHost).not.toHaveBeenCalled();
     expect(lockfile.activeAssistant).toBe("served-1");
     expect(lockfile.assistants).toEqual([
       expect.objectContaining({
@@ -260,7 +193,6 @@ describe("remote gateway mode", () => {
     const lockfile = getServedLockfile();
 
     expect(isCadetCloudRemote()).toBe(false);
-    expect(loadLockfileHost).not.toHaveBeenCalled();
     expect(lockfile.activeAssistant).toBe("edge-1");
     expect(lockfile.assistants).toEqual([
       expect.objectContaining({
@@ -300,254 +232,6 @@ describe("getRemoteAssistantDisplayName", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
 
     expect(getRemoteAssistantDisplayName()).toBeUndefined();
-  });
-});
-
-describe("removePairedAssistantFromLockfile", () => {
-  // Referenced by variable so the AST-based raw-fetch rule (which only
-  // matches literal key arguments) does not fire in test-only setItem calls.
-  const GW_LS_TOKEN_KEY = "cadet:gw:token";
-
-  function seedSessionResidue(): void {
-    localStorage.setItem(GW_LS_TOKEN_KEY, "tok");
-    setSelfHostedConnection({ url: "http://localhost/x", token: null });
-  }
-
-  test("validates the id against the host's roster, then calls the host unpair", async () => {
-    loadLockfileHost.mockResolvedValueOnce({
-      assistants: [localA, pairedEntry],
-      activeAssistant: "local-a",
-    });
-
-    const result = await removePairedAssistantFromLockfile("paired-a");
-
-    expect(loadLockfileHost).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ ok: true });
-    expect(unpairAssistantHost).toHaveBeenCalledWith("paired-a");
-  });
-
-  test("refuses an id the host roster doesn't know without calling the unpair", async () => {
-    loadLockfileHost.mockResolvedValueOnce({
-      assistants: [pairedEntry],
-      activeAssistant: null,
-    });
-
-    const result = await removePairedAssistantFromLockfile("nope");
-
-    expect(result.ok).toBe(false);
-    expect(unpairAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("an unreachable host does not block the removal attempt", async () => {
-    // The host validates the id itself; a failed pre-read must not strand
-    // the removal behind a dead transport.
-    const result = await removePairedAssistantFromLockfile("paired-a");
-
-    expect(unpairAssistantHost).toHaveBeenCalledWith("paired-a");
-    expect(result).toEqual({ ok: true });
-  });
-
-  test("propagates a host failure without clearing session state", async () => {
-    loadLockfileHost.mockResolvedValueOnce({
-      assistants: [pairedEntry],
-      activeAssistant: null,
-    });
-    setSelected("paired-a");
-    unpairAssistantHost.mockResolvedValueOnce({
-      ok: false,
-      error: "Unpair is not supported by this app version",
-    });
-
-    const result = await removePairedAssistantFromLockfile("paired-a");
-
-    expect(result).toEqual({
-      ok: false,
-      error: "Unpair is not supported by this app version",
-    });
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
-      "paired-a",
-    );
-  });
-
-  test("clears selection and self-hosted connection when removing the selected entry", async () => {
-    loadLockfileHost.mockResolvedValueOnce({
-      assistants: [localA, pairedEntry],
-      activeAssistant: "local-a",
-    });
-    setSelected("paired-a");
-    seedSessionResidue();
-    unpairAssistantHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: { assistants: [localA], activeAssistant: "local-a" },
-    });
-
-    const result = await removePairedAssistantFromLockfile("paired-a");
-
-    expect(result.ok).toBe(true);
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
-    // The slot is memory-only now — stored keys are never scrubbed.
-    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe("tok");
-    expect(getSelfHostedIngressUrl()).toBeNull();
-  });
-
-  test("leaves session state alone when removing a non-selected entry", async () => {
-    loadLockfileHost.mockResolvedValueOnce({
-      assistants: [localA, pairedEntry],
-      activeAssistant: "local-a",
-    });
-    setSelected("local-a");
-    seedSessionResidue();
-    unpairAssistantHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: { assistants: [localA], activeAssistant: "local-a" },
-    });
-
-    const result = await removePairedAssistantFromLockfile("paired-a");
-
-    expect(result.ok).toBe(true);
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
-      "local-a",
-    );
-    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe("tok");
-    expect(getSelfHostedIngressUrl()).toBe("http://localhost/x");
-  });
-});
-
-describe("assistant pairing", () => {
-  test("starts the attempt through the host without touching any lockfile", async () => {
-    const result = await startAssistantPairing("https://gw.example.com");
-
-    expect(pairingStartHost).toHaveBeenCalledWith("https://gw.example.com");
-    expect(result).toMatchObject({ ok: true, handle: "handle-1" });
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-  });
-
-  test("an imported poll resolves with the new assistant id - no roster reload", async () => {
-    const result = await pollAssistantPairing("handle-1", "desk");
-
-    expect(pairingPollHost).toHaveBeenCalledWith("handle-1", "desk");
-    expect(result).toEqual({
-      ok: true,
-      status: "imported",
-      assistantId: "paired-new",
-      accessOnly: false,
-    });
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-  });
-
-  test("a pending poll passes the cadence through", async () => {
-    pairingPollHost.mockResolvedValueOnce({
-      ok: true as const,
-      status: "pending" as const,
-      expiresAt: "2099-01-01T00:00:00.000Z",
-      intervalSeconds: 3,
-    });
-
-    const result = await pollAssistantPairing("handle-1");
-
-    expect(result).toMatchObject({ status: "pending", intervalSeconds: 3 });
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-  });
-
-  test("passes accessOnly through on an access-only pairing", async () => {
-    pairingPollHost.mockResolvedValueOnce({
-      ok: true as const,
-      status: "imported" as const,
-      assistantId: "paired-new",
-      accessOnly: true,
-    });
-
-    const result = await pollAssistantPairing("handle-1");
-
-    expect(result).toMatchObject({ accessOnly: true });
-  });
-
-  test("returns the host error without a reload on failure", async () => {
-    pairingPollHost.mockResolvedValueOnce({
-      ok: false,
-      reason: "expired",
-      error: "The pairing code expired or was denied.",
-    });
-
-    const result = await pollAssistantPairing("handle-1");
-
-    expect(result).toEqual({
-      ok: false,
-      reason: "expired",
-      error: "The pairing code expired or was denied.",
-    });
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-  });
-
-  // The dialog renders its own catalog copy for a refused address, so the
-  // structured reason has to survive the wrapper.
-  test("a refused address keeps its rejection reason", async () => {
-    pairingStartHost.mockResolvedValueOnce({
-      ok: false,
-      reason: "invalid-address",
-      error: "That address points back at this machine.",
-      rejection: "loopback",
-    });
-
-    const result = await startAssistantPairing("https://localhost:7830");
-
-    expect(result).toEqual({
-      ok: false,
-      reason: "invalid-address",
-      error: "That address points back at this machine.",
-      rejection: "loopback",
-    });
-  });
-
-  test("a rejection reason with no copy degrades to the host's message", async () => {
-    pairingStartHost.mockResolvedValueOnce({
-      ok: false,
-      reason: "unheard-of-reason",
-      error: "host says no",
-    } as never);
-
-    const result = await startAssistantPairing("https://localhost:7830");
-
-    expect(result).toMatchObject({ error: "host says no" });
-  });
-
-  test("an error-less host failure still reports something displayable", async () => {
-    pairingStartHost.mockResolvedValueOnce({ ok: false } as never);
-
-    const result = await startAssistantPairing("https://localhost:7830");
-
-    expect(result).toMatchObject({ error: expect.stringMatching(/\S/) });
-  });
-
-  test("cancelling forwards the handle to the host", async () => {
-    await cancelAssistantPairing("handle-1");
-    expect(pairingCancelHost).toHaveBeenCalledWith("handle-1");
-  });
-
-  test("cancelling a session the host rejects resolves quietly", async () => {
-    pairingCancelHost.mockImplementationOnce(async () => {
-      throw new Error("unknown handle");
-    });
-    await expect(cancelAssistantPairing("handle-1")).resolves.toBeUndefined();
-  });
-
-  test.each([
-    { reason: "invalid-address", retryable: false },
-    { reason: "code-expired", retryable: false },
-    { reason: "unreachable", retryable: true },
-  ])(
-    "a $reason failure classifies as retryable=$retryable",
-    ({ reason, retryable }) => {
-      expect(
-        isRetryablePairingFailure({
-          reason,
-        } as LocalPairingFailure),
-      ).toBe(retryable);
-    },
-  );
-
-  test("a host too old to name a reason ends the attempt", () => {
-    expect(isRetryablePairingFailure({} as LocalPairingFailure)).toBe(false);
   });
 });
 
@@ -690,7 +374,6 @@ describe("primeLocalGatewayConnection", () => {
     await expect(
       primeLocalGatewayConnection(pairedEntry),
     ).resolves.toBeUndefined();
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
   });
 
   test("paired prime reaches the host proxy without exposing a bearer", async () => {
@@ -708,7 +391,6 @@ describe("primeLocalGatewayConnection", () => {
     await primeLocalGatewayConnection(pairedEntry);
 
     expect(fetchSpy).toHaveBeenCalledWith("/v1/assistants/paired-a/readyz");
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
     // The connection rides the same-origin scoped data plane (`/v1`, routed
     // by the host through the id in the path) — never the remote runtimeUrl
     // directly (packaged-app CSP and browser CORS both block it).
@@ -758,9 +440,10 @@ describe("primeLocalGatewayConnection", () => {
       (cause: unknown) => cause,
     );
 
-    expect(error).toBeInstanceOf(localModeHost.GuardianTokenError);
-    expect((error as localModeHost.GuardianTokenError).status).toBe(404);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
+    // The failed probe's own body is the error: the host's credential
+    // failure surfaces verbatim (the renderer never reads the credential).
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("Guardian token not found");
   });
 
   test("unready paired prime clears the shared same-origin slot", async () => {
