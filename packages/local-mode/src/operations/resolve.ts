@@ -1,8 +1,8 @@
 import { resolveCloudUrl } from "../cloud-auth";
 import { getGatewayHealth } from "../daemon-readiness";
-import { readLockfile } from "../lockfile";
 import { loopbackSafeFetch } from "../loopback-fetch";
 import type { LockfileAssistant } from "../lockfile-contract";
+import { runListRoute } from "./list";
 import { findAssistantByName } from "./lookup";
 import type { OperatorRequest } from "./routes";
 
@@ -33,21 +33,10 @@ export async function runResolveRoute(
 ): Promise<Response | null> {
   const headers = Object.fromEntries(request.headers ?? new Headers());
   if (!request.assistantId) {
-    // No id to name (the lockfile has no active or sole entry): the
-    // lockfile's own shape decides the arm — nothing hatched is empty,
-    // anything else hands the choice rows to the account chooser.
-    const lockfile = readLockfile();
-    if (lockfile.assistants.length === 0) {
-      return resolutionResponse({ status: "empty" });
-    }
-    return resolutionResponse({
-      status: "selection",
-      assistants: lockfile.assistants.map((entry) => ({
-        id: entry.assistantId,
-        ...(entry.name ? { name: entry.name } : {}),
-        remote: entry.cloud,
-      })),
-    });
+    // No id to name: the resolution's unscoped arm IS the list contract —
+    // nothing hatched is empty, anything else hands the choice rows to the
+    // account chooser.
+    return runListRoute();
   }
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {

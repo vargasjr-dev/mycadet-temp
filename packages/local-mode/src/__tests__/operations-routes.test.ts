@@ -243,7 +243,10 @@ const dispatch = (
     body:
       body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
-  return match.route.run({ assistantId: match.assistantId, source: request });
+  return match.route.run({
+    assistantId: match.assistantId,
+    body: request.body,
+  });
 };
 
 /** dispatch for a row that must answer — narrows the pass-through null. */
@@ -259,10 +262,11 @@ const dispatchAnswered = async (
   return response;
 };
 
-describe("the lockfile read row — GET /v1/assistants/", () => {
-  test("serves the renderer-safe lockfile: sensitive fields stripped", async () => {
+describe("the list row — GET /v1/assistants/ is the list contract", () => {
+  test("a populated lockfile answers a selection of credential-free rows", async () => {
     seedEntry({
       assistantId: "asst-1",
+      name: "Workbench",
       cloud: "local",
       port: 7830,
       bearerToken: "secret-token",
@@ -271,21 +275,18 @@ describe("the lockfile read row — GET /v1/assistants/", () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(body.assistants).toHaveLength(1);
-    expect(body.assistants[0]?.bearerToken).toBeUndefined();
-    expect(body.assistants[0]?.assistantId).toBe("asst-1");
+    expect(await response.json()).toEqual({
+      status: "selection",
+      assistants: [{ id: "asst-1", name: "Workbench", remote: "local" }],
+    });
   });
 
-  test("an empty lockfile serves as an empty list", async () => {
+  test("an empty lockfile answers the empty arm", async () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
-    const body = (await response.json()) as { assistants: unknown[] };
-    expect(body.assistants).toEqual([]);
+    expect(await response.json()).toEqual({ status: "empty" });
   });
 
-  test("the bare strip never reaches disk: the stored file keeps its secrets", async () => {
+  test("the union never reaches disk: the stored file keeps its secrets", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
     await dispatch("/v1/assistants/", "GET");
     expect(stripSensitiveFields).toBeDefined();
@@ -476,7 +477,7 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
       });
       const response = await match.route.run({
         assistantId: match.assistantId,
-        source: request,
+        body: request.body,
       });
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({

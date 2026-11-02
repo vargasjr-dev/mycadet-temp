@@ -1,5 +1,4 @@
 import { isActiveAssistant, readLockfile } from "../lockfile";
-import { stripSensitiveFields } from "../util";
 import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
@@ -8,6 +7,7 @@ import { runHatch } from "../hatch";
 import { runUpgrade, type UpgradeOptions } from "../upgrade";
 import { unpairAssistant } from "../unpair";
 import { servedConfigFromLockfile } from "../served-config";
+import { runListRoute } from "./list";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { runResolveRoute } from "./resolve";
@@ -23,14 +23,14 @@ import { wakeAssistant } from "./wake";
  * (and the gateway proxy itself becomes the LAST row — the catch-all
  * forward — once every scoped route is an operation).
  *
- * Patterns are RELATIVE — the tail after the assistant reference. A request
- * reaches them under any of the four prefixes `matchOperatorRequest` walks
- * (`/v1/assistant/…`, `/assistant/…`, `/v1/assistants/<id>/…`,
- * `/assistants/<id>/…`), so the resolution and the lifecycle operations
- * answer both the unscoped (the operator backend's active assistant) and
- * the scoped (an explicit id) spelling of the same surface. A matched
- * request runs through `match.route.run(match)` directly: the routes import
- * the modules they need, no injection surface.
+ * Patterns are declared ONCE per surface and DERIVED by two helpers: the
+ * absolute rows declare a rooted pattern and `v1Friendly` derives its `/v1`
+ * spelling; the assistant rows declare a tail pattern and `scopedAssistant`
+ * adds scoping support (the id capture under the assistants namespace, plus
+ * the unscoped spellings — the operator backend's active assistant) and then
+ * applies `v1Friendly`. A matched request runs through
+ * `match.route.run(match)` directly: the routes import the modules they
+ * need, no injection surface.
  */
 export interface OperatorRequest {
   /** The scoped rows' decoded target id; the unscoped rows resolve it. */
@@ -43,32 +43,21 @@ export interface OperatorRequest {
    */
   headers?: Headers;
   /**
-   * The serving host's own request, carried for the body-carrying rows
-   * (hatch, devices, pairing, upgrade) to read their JSON bodies.
+   * The caller's body stream, carried for the body-carrying rows (hatch,
+   * devices, pairing, upgrade) to read their JSON off. Absent (GET/HEAD,
+   * direct `run` calls in tests) reads as no body.
    */
-  source?: Request;
+  body?: ReadableStream | null;
 }
 
 export interface OperatorRoute {
   method: string;
   /**
-   * The assistant-scoped rows' RELATIVE tail pattern — matched after a
-   * prefix strips the reference — or the machine-level rows' absolute
-   * pattern.
+   * The DERIVED pattern — absolute rows' rooted pattern made v1-friendly,
+   * assistant rows' tail pattern given scoping support. Matching is one
+   * exec per row: no prefix walk, no surface bookkeeping.
    */
   pattern: RegExp;
-  /**
-   * True when the pattern is a relative tail under the four assistant
-   * prefixes, false when it is an absolute machine-level path.
-   */
-  scoped: boolean;
-  /**
-   * The literal relative segment the pattern matches ("" for the resolution
-   * root). Kept beside the regex so path-based consumers (the nginx edge's
-   * generated locations) derive from this table without parsing patterns;
-   * a test pins pattern and segment to the same surface.
-   */
-  segment: string;
   /**
    * Answer the request. Returning null means PASS: the request is not this
    * host's to answer (unknown id, or an entry the host cannot retire) and
@@ -173,10 +162,35 @@ const json = (body: unknown, status = 200): Response =>
  * per-field validation reports what's missing); malformed JSON resolves to
  * `null`.
  */
+/**
+ * Helper 1 — the v1-friendly derivation: a rooted pattern also matches its
+ * `/v1` spelling. The absolute rows apply it alone.
+ */
+function v1Friendly(rooted: RegExp): RegExp {
+  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1)?"));
+}
+
+/**
+ * Helper 2 — the scoping derivation: a tail pattern matches under BOTH
+ * assistant reference spellings (the id capture of the assistants namespace,
+ * and the bare assistant reference — the operator backend's active
+ * assistant), then helper 1 adds the `/v1` spellings. The assistant rows
+ * apply it alone.
+ */
+function scopedAssistant(tail: RegExp): RegExp {
+  const tailSource = tail.source.replace(/^\^/, "").replace(/\$$/, "");
+  const separator = tailSource === "" ? "\\/?" : "\\/";
+  return v1Friendly(
+    new RegExp(
+      `^(?:\\/assistants\\/(?<id>[^\\/?#]+)|\\/assistant)${separator}(?:${tailSource})?\\/?$`,
+    ),
+  );
+}
+
 async function readJsonBody(
-  request: Request | undefined,
+  body: ReadableStream | null | undefined,
 ): Promise<Record<string, unknown> | null> {
-  const text = (await request?.text().catch(() => "")) ?? "";
+  const text = body ? await new Response(body).text().catch(() => "") : "";
   if (text.trim().length === 0) {
     return {};
   }
@@ -188,19 +202,6 @@ async function readJsonBody(
 }
 
 /**
- * The renderer-safe lockfile: the bare `/v1/assistants/` GET serves the
- * lockfile read with sensitive fields stripped — the lockfile half of the
- * renderer's local-mode seam. A query-carrying list request (the SDK's) does
- * not match this exact path and rides the data-plane chain to the
- * conductor's list route.
- */
-async function runLockfileRoute(): Promise<Response> {
-  const lockfile = readLockfile();
-  stripSensitiveFields(lockfile);
-  return json(lockfile);
-}
-
-/**
  * Provision a local assistant. Never rejects — failures resolve with
  * `{ ok: false, error }` so the renderer renders the same error UI the
  * status probe drives. The CLI owns the daemon + gateway process lifecycle:
@@ -208,7 +209,7 @@ async function runLockfileRoute(): Promise<Response> {
  * ever invokes the CLI as a subprocess.
  */
 async function runHatchRoute(request: OperatorRequest): Promise<Response> {
-  const body = (await readJsonBody(request.source)) ?? {};
+  const body = (await readJsonBody(request.body)) ?? {};
   const remote = typeof body.remote === "string" ? body.remote : undefined;
   try {
     const result = await runHatch({ remote });
@@ -253,7 +254,7 @@ async function runUnpairRoute(
 async function runPairingStartRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request.source);
+  const body = await readJsonBody(request.body);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -283,7 +284,7 @@ async function runPairingStartRoute(
 async function runPairingPollRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request.source);
+  const body = await readJsonBody(request.body);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -319,7 +320,7 @@ async function runPairingPollRoute(
 async function runPairingCancelRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const body = await readJsonBody(request.source);
+  const body = await readJsonBody(request.body);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -335,7 +336,7 @@ async function runDevicesRoute(
   isRevoke: boolean,
   request: OperatorRequest,
 ): Promise<Response> {
-  const body = await readJsonBody(request.source);
+  const body = await readJsonBody(request.body);
   if (!body) {
     return json({ ok: false, error: "Invalid JSON body" }, 400);
   }
@@ -382,7 +383,7 @@ async function runUpgradeRoute(
   if (!entry) {
     return null;
   }
-  const body = await readJsonBody(request.source);
+  const body = await readJsonBody(request.body);
   const options: UpgradeOptions =
     body === null
       ? {}
@@ -461,126 +462,82 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // whole union (scoped to an explicit id, or the active one unscoped).
   {
     method: "GET",
-    pattern: /^\/?$/,
-    segment: "",
-    scoped: true,
+    pattern: scopedAssistant(/^$/),
     run: runResolveRoute,
   },
+  // The list assistants contract: the chooser's and the store's roster read.
   {
     method: "GET",
-    pattern: /^\/v1\/assistants\/$/,
-    segment: "",
-    scoped: false,
-    run: () => runLockfileRoute(),
+    pattern: v1Friendly(/^\/assistants\/$/),
+    run: () => runListRoute(),
   },
   {
     method: "POST",
-    pattern: /^\/v1\/assistants\/hatch\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/assistants\/hatch\/?$/),
     run: runHatchRoute,
   },
   {
     method: "POST",
-    pattern: /^\/v1\/devices\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/devices\/?$/),
     run: (request) => runDevicesRoute(false, request),
   },
   {
     method: "POST",
-    pattern: /^\/v1\/devices\/revoke\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/devices\/revoke\/?$/),
     run: (request) => runDevicesRoute(true, request),
   },
   {
     method: "POST",
-    pattern: /^\/v1\/remote-web\/pairing-start\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/remote-web\/pairing-start\/?$/),
     run: runPairingStartRoute,
   },
   {
     method: "POST",
-    pattern: /^\/v1\/remote-web\/pairing-poll\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/remote-web\/pairing-poll\/?$/),
     run: runPairingPollRoute,
   },
   {
     method: "POST",
-    pattern: /^\/v1\/remote-web\/pairing-cancel\/?$/,
-    segment: "",
-    scoped: false,
+    pattern: v1Friendly(/^\/remote-web\/pairing-cancel\/?$/),
     run: runPairingCancelRoute,
   },
   {
     method: "DELETE",
-    pattern: /^retire\/?$/,
-    segment: "retire",
-    scoped: true,
+    pattern: scopedAssistant(/^retire$/),
     run: runRetireRoute,
   },
   {
     method: "POST",
-    pattern: /^sleep\/?$/,
-    segment: "sleep",
-    scoped: true,
+    pattern: scopedAssistant(/^sleep$/),
     run: runSleepRoute,
   },
   {
     method: "POST",
-    pattern: /^wake\/?$/,
-    segment: "wake",
-    scoped: true,
+    pattern: scopedAssistant(/^wake$/),
     run: runWakeRoute,
   },
   {
     method: "POST",
-    pattern: /^unpair\/?$/,
-    segment: "unpair",
-    scoped: true,
+    pattern: scopedAssistant(/^unpair$/),
     run: runUnpairRoute,
   },
   {
     method: "POST",
-    pattern: /^upgrade\/?$/,
-    segment: "upgrade",
-    scoped: true,
+    pattern: scopedAssistant(/^upgrade$/),
     run: runUpgradeRoute,
   },
   // The status read rides its own tail now: the scoped bare detail belongs
   // to the resolution (the shell's one call).
   {
     method: "GET",
-    pattern: /^status\/?$/,
-    segment: "status",
-    scoped: true,
+    pattern: scopedAssistant(/^status$/),
     run: runStatusRoute,
   },
   {
     method: "GET",
-    pattern: /^avatar\/get\/?$/,
-    segment: "avatar/get",
-    scoped: true,
+    pattern: scopedAssistant(/^avatar\/get$/),
     run: runAvatarRoute,
   },
-];
-
-/**
- * The four prefix spellings an operator route answers, in match order: the
- * versioned and unversioned scoped forms (the id is the capture), and the
- * versioned and unversioned unscoped forms (the bare assistant reference —
- * the operator backend's ACTIVE assistant). A scoped prefix that matches no
- * route ends the walk (a scoped path is scoped; the unscoped prefixes can
- * never own its tail).
- */
-const OPERATOR_PREFIXES: { pattern: RegExp; scoped: boolean }[] = [
-  { pattern: /^\/v1\/assistants\/([^/?#]+)(?=$|[/?#])/, scoped: true },
-  { pattern: /^\/assistants\/([^/?#]+)(?=$|[/?#])/, scoped: true },
-  { pattern: /^\/v1\/assistant(?=$|[/?#])/, scoped: false },
-  { pattern: /^\/assistant(?=$|[/?#])/, scoped: false },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
@@ -595,67 +552,36 @@ export interface OperatorMatch {
 }
 
 /**
- * Match a request against the route table: walk the four prefixes, match
- * the RELATIVE pattern of the first route whose method and tail agree. The
- * walk itself stays pure in the URL — the hot path of every non-operator
- * request (static assets, gateway forwards, pairing) pays one regex walk
- * and no I/O. Only a matched request reads the lockfile (to resolve an
- * unscoped match's active assistant id).
+ * Match a request against the route table: the first row whose DERIVED
+ * pattern and method agree — one exec per row, no prefix walk, no surface
+ * bookkeeping. Matching stays pure in the URL — the hot path of every
+ * non-operator request (static assets, gateway forwards, pairing) pays a
+ * regex pass and no I/O. Only a matched request reads the lockfile (to
+ * resolve an unscoped match's active assistant id).
  */
 export function matchOperatorRequest(
   pathname: string,
   method: string,
 ): OperatorMatch | null {
-  for (const prefix of OPERATOR_PREFIXES) {
-    const prefixMatch = prefix.pattern.exec(pathname);
-    if (!prefixMatch) {
-      continue;
-    }
-    const tail = pathname.slice(prefixMatch[0].length).replace(/^\//, "");
-    for (const route of OPERATOR_ROUTES) {
-      if (
-        !route.scoped ||
-        method !== route.method ||
-        !route.pattern.test(tail)
-      ) {
-        continue;
-      }
-      if (!prefix.scoped) {
-        // An unscoped match names the operator backend's active assistant —
-        // the lockfile's active or sole entry, empty when there is none.
-        return {
-          route,
-          assistantId:
-            servedConfigFromLockfile(readLockfile()).assistantId ?? "",
-        };
-      }
-      try {
-        return { route, assistantId: decodeURIComponent(prefixMatch[1]!) };
-      } catch {
-        // Malformed percent-encoding: not this host's request.
-        return null;
-      }
-    }
-    // A prefixed path is owned by the assistant surface — its other
-    // spellings cannot own it either. The machine-level rows still get
-    // their pass below (the hatch verb rides the assistants namespace).
-    break;
-  }
   for (const route of OPERATOR_ROUTES) {
-    if (route.scoped || method !== route.method) {
+    if (method !== route.method) {
       continue;
     }
     const match = route.pattern.exec(pathname);
     if (!match) {
       continue;
     }
-    try {
+    const id = match.groups?.id;
+    if (!id) {
+      // An unscoped match names the operator backend's active assistant —
+      // the lockfile's active or sole entry, empty when there is none.
       return {
         route,
-        // No-capture patterns (body-only routes) resolve to "" — the rows
-        // that read an id never match on those patterns.
-        assistantId: match[1] ? decodeURIComponent(match[1]) : "",
+        assistantId: servedConfigFromLockfile(readLockfile()).assistantId ?? "",
       };
+    }
+    try {
+      return { route, assistantId: decodeURIComponent(id) };
     } catch {
       // Malformed percent-encoding: not this host's request.
       return null;
@@ -686,6 +612,6 @@ export async function forwardOperatorRequest(
   return match.route.run({
     assistantId: match.assistantId,
     headers: request.headers,
-    source: request,
+    body: request.body,
   });
 }

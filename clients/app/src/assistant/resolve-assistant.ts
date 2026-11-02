@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 import {
+  AssistantListSchema,
   AssistantResolutionSchema,
   PublicUrlSchema,
+  type AssistantList,
   type AssistantResolution,
 } from "./resolution-contract";
 
@@ -69,6 +71,23 @@ function createClient({ apiBaseUrl = "/", signal }: AssistantRequest) {
     return payload;
   }
   return { base, get };
+}
+
+/**
+ * The chooser's list: ONE call to the same-origin list endpoint — the
+ * unscoped `v1/assistants/` is the list CONTRACT (the machine's rows
+ * without a credential field), and the client just decodes it. No session
+ * (401) reads as the contract's own unauthenticated arm.
+ */
+export async function listAssistantChoices(
+  options: AssistantRequest,
+): Promise<AssistantList> {
+  const client = createClient(options);
+  const payload = await client.get("v1/assistants/");
+  if (payload === unauthenticated) {
+    return { status: "unauthenticated" };
+  }
+  return decode(AssistantListSchema, payload);
 }
 
 /**

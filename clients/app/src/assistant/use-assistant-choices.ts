@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { describeError } from "./describe-error";
-import { AssistantListSchema, type AssistantList } from "./resolution-contract";
-import { resolveAssistant } from "./resolve-assistant";
+import { type AssistantList } from "./resolution-contract";
+import { listAssistantChoices } from "./resolve-assistant";
 
 /**
  * The chooser's request state: only what the resolution endpoint can answer
@@ -15,8 +15,9 @@ export type AssistantChoicesState =
   | AssistantList;
 
 /**
- * The chooser's request hook: it calls the same one resolution endpoint the
- * shell does, and it is SAME-ORIGIN by contract — `window.location.origin`,
+ * The chooser's request hook: it calls the list endpoint — the unscoped
+ * assistants CONTRACT, not the shell's resolution endpoint — and it is
+ * SAME-ORIGIN by contract — `window.location.origin`,
  * like every other Cadet surface's chooser (the web dev server proxies /v1,
  * the desktop protocol handler forwards it, the edge and cloud takeovers
  * route it, and the mobile shells' native scheme handler resolves it).
@@ -45,7 +46,7 @@ export function useAssistantChoices() {
         if (controller.signal.aborted) {
           return;
         }
-        return resolveAssistant({
+        return listAssistantChoices({
           apiBaseUrl: "/",
           signal: controller.signal,
         });
@@ -56,24 +57,10 @@ export function useAssistantChoices() {
             return;
           }
           clearTimeout(timer);
-          // The empty arm reads as an empty selection (the screen derives
-          // its own empty state from the row count); the shell-owned arms
-          // (ready/notReady/unavailable) fail the chooser's contract parse
-          // and land in the error state.
-          const choices: unknown =
-            value.status === "empty"
-              ? { status: "selection", assistants: [] }
-              : value;
-          const parsed = AssistantListSchema.safeParse(choices);
-          if (!parsed.success) {
-            console.error(
-              "Assistant list did not match the contract:",
-              parsed.error.message,
-            );
-            settle({ status: "error" });
-            return;
-          }
-          settle(parsed.data);
+          // The contract IS the answer: selection rows, the empty arm (the
+          // screen derives its own empty state from the row count), or the
+          // unauthenticated arm — the chooser renders all three.
+          settle(value);
         },
         (error) => {
           if (!controller.signal.aborted) {

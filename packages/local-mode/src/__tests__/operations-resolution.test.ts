@@ -130,13 +130,18 @@ describe("matchOperatorRequest — the four prefixes", () => {
     expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
   });
 
-  test("each scoped row's segment and pattern describe the same surface", () => {
+  test("the derivation helpers give every row both spellings", () => {
     for (const route of OPERATOR_ROUTES) {
-      if (!route.scoped) {
-        continue;
+      const derived = route.pattern.source;
+      if (derived.includes("(?<id>")) {
+        // An assistant row: helper 2's id capture plus helper 1's /v1 arm.
+        expect(derived).toContain("(?:\\/v1)?");
+        expect(derived).toContain("|\\/assistant");
+      } else {
+        // An absolute row: helper 1's /v1 arm, no scoping.
+        expect(derived).toContain("(?:\\/v1)?");
+        expect(derived).not.toContain("(?<id>");
       }
-      expect(route.pattern.test(route.segment)).toBe(true);
-      expect(route.pattern.test(`${route.segment}/`)).toBe(true);
     }
   });
 });
