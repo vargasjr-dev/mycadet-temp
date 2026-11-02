@@ -243,7 +243,7 @@ const dispatch = (
     body:
       body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
-  return match.route.run(match.assistantId, request);
+  return match.route.run({ assistantId: match.assistantId, source: request });
 };
 
 /** dispatch for a row that must answer — narrows the pass-through null. */
@@ -474,7 +474,7 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
         headers: { "content-type": "application/json" },
         body: "{not json",
       });
-      const response = await match.route.run(match.assistantId, request);
+      const response = await match.route.run({ assistantId: match.assistantId, source: request });
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,
