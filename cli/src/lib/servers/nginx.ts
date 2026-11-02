@@ -1154,7 +1154,7 @@ function stampAppProcessEntry(
     pid,
     startedAt: new Date().toISOString(),
     port: result.listenPort,
-    ...(result.builtSha ? { builtSha: result.builtSha } : {}),
+    builtSha: result.builtSha,
   });
 }
 

@@ -143,7 +143,7 @@ export {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
   fetchCurrentVersion,
-  pingGatewayHealth,
+  getGatewayHealth,
   type DaemonReadiness,
   type GatewayHealth,
   type HttpProbeEndpoint,

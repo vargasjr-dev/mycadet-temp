@@ -38,8 +38,6 @@ afterEach(() => {
 function json(value: unknown) {
   return new Response(JSON.stringify(value));
 }
-/** The gateway's health answer: authenticated, no version stamp. */
-const healthOk = () => json({ status: "ok", authenticated: true });
 function props(id: string | undefined = "assistant-1") {
   return {
     assistantId: id,
@@ -131,7 +129,7 @@ test("host navigation updates the active frame without another API lookup", asyn
   );
   expect(iframe()).toBe(frame);
   expect(frame.src).toBe(src);
-  expect(request).toHaveBeenCalledTimes(2);
+  expect(request).toHaveBeenCalledTimes(1);
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
@@ -158,16 +156,14 @@ for (const [status, message] of [
 
 test("wakes a not-ready assistant and mounts it once ready", async () => {
   request
-    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(new Response(null, { status: 409 }))
     .mockResolvedValueOnce(json({ ok: true, action: "woke", output: "" }))
-    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(json(detail()));
   render(<AppShell {...props()} />);
   await screen.findByText("Your assistant isn't ready.");
   fireEvent.click(screen.getByRole("button", { name: "Wake it up" }));
   await screen.findByTitle("Assistant");
-  expect(request).toHaveBeenCalledTimes(5);
+  expect(request).toHaveBeenCalledTimes(3);
   const wakeCall = request.mock.calls.find(([url]) =>
     String(url).endsWith("/v1/assistants/assistant-1/wake/"),
   );
@@ -176,7 +172,6 @@ test("wakes a not-ready assistant and mounts it once ready", async () => {
 
 test("a failed wake shows the node's own punchline and offers the wake again", async () => {
   request
-    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(new Response(null, { status: 409 }))
     .mockResolvedValueOnce(
       new Response(
@@ -191,26 +186,22 @@ test("a failed wake shows the node's own punchline and offers the wake again", a
   await screen.findByText("Your assistant isn't ready.");
   fireEvent.click(screen.getByRole("button", { name: "Wake it up" }));
   await screen.findByText("Firecracker exited with error");
-  expect(request).toHaveBeenCalledTimes(3);
+  expect(request).toHaveBeenCalledTimes(2);
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
 
 test("retries an API failure without account session probes", async () => {
   request
-    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(new Response(null, { status: 503 }))
-    .mockResolvedValueOnce(healthOk())
     .mockResolvedValueOnce(json(detail()));
   render(<AppShell {...props()} />);
   await screen.findByText("We couldn't reach your assistant");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByTitle("Assistant");
-  expect(request).toHaveBeenCalledTimes(4);
+  expect(request).toHaveBeenCalledTimes(2);
   expect(
-    request.mock.calls.every(
-      ([url]) =>
-        String(url).endsWith("/v1/assistants/assistant-1/") ||
-        String(url).endsWith("/healthz"),
+    request.mock.calls.every(([url]) =>
+      String(url).endsWith("/v1/assistants/assistant-1/"),
     ),
   ).toBe(true);
 });
@@ -247,10 +238,7 @@ test("unmount aborts requests and ignores late replies", async () => {
 test("changing assistant or API base immediately hides the previous frame", async () => {
   const view = await mounted();
   let finish!: (value: Response) => void;
-  respond((url) => {
-    if (String(url).endsWith("/healthz")) {
-      return Promise.resolve(healthOk());
-    }
+  respond(() => {
     return new Promise((done) => {
       finish = done;
     });
@@ -317,9 +305,6 @@ test("embedded shells follow the app locale", async () => {
 test("a late reply for a previous assistant cannot replace the current selection", async () => {
   const replies = new Map<string, (response: Response) => void>();
   respond((url) => {
-    if (String(url).endsWith("/healthz")) {
-      return Promise.resolve(healthOk());
-    }
     return new Promise((done) => {
       replies.set(String(url), done);
     });
