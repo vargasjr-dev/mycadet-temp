@@ -5,7 +5,6 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
-  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
@@ -33,18 +32,12 @@ import {
   getIngressPid,
   ingressStatePath,
   isIngressRunning,
-  isOperationsServeProcess,
-  isPidAlive,
   lookupAssistantByIdentifier,
-  OPERATIONS_SERVE_FLAG,
-  OPERATOR_ROUTES,
-  operationsSocketPath,
   readIngressState,
   stopIngressNginx,
   type IngressState,
 } from "@mycadet/local-mode";
 import { resolveLogDir } from "@mycadet/local-mode";
-import { loopbackSafeFetch } from "@mycadet/local-mode";
 import { waitForDaemonReady } from "@mycadet/local-mode";
 import { resolveClientDists } from "../web-dist.js";
 
@@ -336,62 +329,6 @@ function appOrigins(config: Record<string, unknown>): string[] {
   });
 }
 
-/**
- * The edge's operator locations, generated from the local-mode operator
- * route table itself — never a hand-maintained path list here. The table's
- * GET rows (today: the resolution) mount as exact-match proxies to the
- * edge's operation server (a detached CLI child serving the SAME shared
- * dispatcher the other hosts ride), so every answer is the operation run at
- * REQUEST time — the lockfile state and the gateway's verdict are the
- * caller's truth, not a snapshot from server start. The destructive rows
- * (retire, sleep, wake) stay OFF the public edge: remote browsers are
- * untrusted (the denylist doctrine), so a lifecycle operation never mounts
- * where a tunnel visitor could reach it.
- */
-function operatorProxyLocations(
-  servedAssistantId: string | undefined,
-  operationsSocketPath: string,
-): string {
-  // No socket = no operation server = no operator locations (the pure
-  // config callers that exercise other surfaces).
-  if (!operationsSocketPath) {
-    return "";
-  }
-  const paths: string[] = [];
-  for (const route of OPERATOR_ROUTES) {
-    if (route.method !== "GET") {
-      continue;
-    }
-    for (const tail of ["", "/"]) {
-      paths.push(`/v1/assistant${route.segment}${tail}`);
-      if (servedAssistantId) {
-        paths.push(
-          `/v1/assistants/${encodeURIComponent(servedAssistantId)}${route.segment}${tail}`,
-        );
-      }
-    }
-  }
-  return paths
-    .map(
-      (route) => `
-    location = ${nginxQuoted(route, "assistant operation path")} {
-      default_type application/json;
-      add_header Cache-Control "no-store" always;
-      add_header Access-Control-Allow-Origin $cadet_app_origin always;
-      add_header Access-Control-Allow-Credentials "true" always;
-      add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
-      add_header Access-Control-Allow-Headers "Accept, Cadet-Organization-Id" always;
-      add_header Vary "Origin" always;
-      if ($request_method = OPTIONS) { return 204; }
-      if ($request_method !~ ^(GET|HEAD)$) { return 405; }
-      proxy_pass ${nginxQuoted(`http://unix:${operationsSocketPath}:`, "operation server socket")};
-      proxy_http_version 1.1;
-      proxy_set_header Host $host;
-    }`,
-    )
-    .join("\n");
-}
-
 /** Build the nginx config for the app server and its public assistant metadata.
  *  Not in the module's public surface: production callers go through
  *  `startAppServer`. Exported for tests
@@ -417,12 +354,6 @@ export function buildNginxConfig(opts: {
   /** Emit the `[::1]` listener. Off where the host has no IPv6 loopback,
    *  since nginx exits at startup when it cannot bind a listen address. */
   ipv6Loopback?: boolean;
-  /**
-   * The edge's operation server socket (the detached child serving the
-   * local-mode operator route table). Absent = no operator locations —
-   * the pure-config callers (tests) that exercise other surfaces.
-   */
-  operationsSocketPath?: string;
 }): string {
   const proxyBlock = gatewayProxyBlock(opts.gatewayUrl);
   // A tunnel agent pointed at "localhost" reaches ::1 first on macOS, so an
@@ -440,7 +371,6 @@ export function buildNginxConfig(opts: {
         indexHtmlPath: opts.indexHtmlPath,
         appIndexHtmlPath: opts.appIndexHtmlPath,
         config,
-        operationsSocketPath: opts.operationsSocketPath ?? "",
       })
     : `${DENYLIST_LOCATIONS}
 
@@ -651,8 +581,6 @@ function buildRemoteWebIngressLocations(opts: {
   appIndexHtmlPath?: string;
   indexHtmlPath?: string;
   config: Record<string, unknown>;
-  /** The edge's operation server socket; the operator locations proxy it. */
-  operationsSocketPath: string;
 }): string {
   const webDistDir = nginxDirPath(opts.webDistDir);
   const indexHtmlPath =
@@ -670,12 +598,6 @@ function buildRemoteWebIngressLocations(opts: {
 
 ${denylistLocations("/web")}
 
-${operatorProxyLocations(
-  typeof opts.config.assistantId === "string"
-    ? opts.config.assistantId
-    : undefined,
-  opts.operationsSocketPath,
-)}
 
 ${gatewayProxyLocations(opts.gatewayUrl)}
 
@@ -986,20 +908,8 @@ export async function startAppServer(opts: {
       : {}),
     ...(survivingBuiltSha ? { builtSha: survivingBuiltSha } : {}),
   });
-  // The operation server child is part of the edge: a record without one
-  // (predating the field) or with a dead one is drifted, like a stale SPA
-  // config — the restart below re-spawns it with the operator locations.
-  const operationsAlive =
-    typeof recorded?.operationsPid === "number" &&
-    isPidAlive(recorded.operationsPid) &&
-    isOperationsServeProcess(recorded.operationsPid);
   // An unknown recorded gateway upstream is unverified (see IngressState).
-  if (
-    running &&
-    operationsAlive &&
-    recorded?.gatewayUrl === opts.gatewayUrl &&
-    configMatches
-  ) {
+  if (running && recorded?.gatewayUrl === opts.gatewayUrl && configMatches) {
     return alreadyRunning();
   }
 
@@ -1031,31 +941,6 @@ export async function startAppServer(opts: {
   mkdirSync(resolveLogDir(), { recursive: true });
   const indexHtmlPath = join(paths.dir, "assistant-index.html");
   const appIndexHtmlPath = join(paths.dir, "app-index.html");
-  // The edge's operation server: a detached child of THIS cli that serves
-  // the local-mode operator route table on the edge's unix socket — the
-  // generated operator locations proxy to it, so the operator paths answer
-  // at request time instead of baking the config's snapshot. A stale socket
-  // from a killed child would fail the bind, so it is unlinked first.
-  const edgeOperationsSocket = operationsSocketPath();
-  try {
-    unlinkSync(edgeOperationsSocket);
-  } catch {
-    // Nothing stale.
-  }
-  const operationsFd = openSync(paths.logPath, "a");
-  // The compiled binary runs its own entry; a source checkout needs the
-  // script path on argv (execPath is the bun runtime there).
-  const cliScript = import.meta.path;
-  const operationsArgs = /\.(?:[cm]?[jt]sx?)$/.test(cliScript)
-    ? [cliScript, OPERATIONS_SERVE_FLAG, edgeOperationsSocket]
-    : [OPERATIONS_SERVE_FLAG, edgeOperationsSocket];
-  const operationsChild = spawn(process.execPath, operationsArgs, {
-    detached: true,
-    stdio: ["ignore", operationsFd, operationsFd],
-    windowsHide: true,
-  });
-  closeSync(operationsFd);
-  operationsChild.unref();
   const rawIndexHtml = readFileSync(join(webDistDir, "index.html"), "utf-8");
   writeFileSync(indexHtmlPath, buildRemoteWebIndexHtml(rawIndexHtml, config));
   // The app shell gets its own injected document: the same injected config,
@@ -1077,7 +962,6 @@ export async function startAppServer(opts: {
       indexHtmlPath,
       appIndexHtmlPath,
       ipv6Loopback: hasIpv6Loopback(),
-      operationsSocketPath: edgeOperationsSocket,
     }),
   );
   const fd = openSync(paths.logPath, "a");
@@ -1099,7 +983,6 @@ export async function startAppServer(opts: {
       version,
       appDistDir,
     ),
-    operationsPid: operationsChild.pid,
   });
   let exited = false;
   child.once("exit", () => {
@@ -1110,20 +993,6 @@ export async function startAppServer(opts: {
   // /healthz proxies through nginx to the gateway, so a 200 proves the whole
   // ingress → gateway path works.
   const ready = await waitForDaemonReady(listenPort, INGRESS_READY_TIMEOUT_MS);
-  // The operator path proves the OTHER leg of the ingress: the edge → the
-  // operation server child (the resolution union answers 200 for every
-  // lockfile state — empty, notReady, ready — so any non-200 is a broken
-  // proxy or a dead child).
-  let operationsReady = false;
-  try {
-    const operated = await loopbackSafeFetch(
-      `http://127.0.0.1:${listenPort}/v1/assistant`,
-      { signal: AbortSignal.timeout(5_000) },
-    );
-    operationsReady = operated.ok;
-  } catch {
-    operationsReady = false;
-  }
   const rollback = async (
     status: "port-conflict" | "unreachable",
   ): Promise<AppServerUnreachableResult | AppServerPortConflictResult> => {
@@ -1131,9 +1000,6 @@ export async function startAppServer(opts: {
     await stopIngressNginx();
     return { status, listenPort, logPath };
   };
-  if (ready && !operationsReady) {
-    return rollback("unreachable");
-  }
   const childExited = (): boolean => exited || child.exitCode !== null;
   // nginx runs `daemon off`, so the spawned process is the master and stays
   // alive while the edge serves. An early exit means startup failed: a dead

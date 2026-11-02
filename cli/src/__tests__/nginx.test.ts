@@ -119,8 +119,6 @@ afterAll(() => {
 
 import {
   getIngressPaths,
-  OPERATIONS_SERVE_FLAG,
-  operationsSocketPath,
   readIngressState,
   stopContainerAppServer,
   stopIngressNginx,
@@ -861,7 +859,6 @@ function mockNginxMissing(): void {
 }
 
 const SPAWNED_NGINX_PID = 4243;
-const SPAWNED_OPERATIONS_PID = 4244;
 
 /**
  * Spawned nginx that wins its bind: alive as the master, and it records its
@@ -870,22 +867,6 @@ const SPAWNED_OPERATIONS_PID = 4244;
  */
 function mockNginxSpawn(): void {
   spawnMock.mockImplementation(((_command: string, args: readonly string[]) => {
-    if (args.includes(OPERATIONS_SERVE_FLAG)) {
-      // The edge's operation server child: a live fake pid whose command
-      // line names the serve flag.
-      fakePids.set(SPAWNED_OPERATIONS_PID, { alive: true });
-      installKillMock();
-      execFileSyncMock.mockImplementation(((
-        _file: string,
-        psArgs?: readonly string[],
-      ) =>
-        psArgs?.includes(String(SPAWNED_OPERATIONS_PID))
-          ? `bun ${OPERATIONS_SERVE_FLAG}`
-          : "") as typeof childProcess.execFileSync);
-      const operationsChild = new childProcess.ChildProcess();
-      Object.assign(operationsChild, { pid: SPAWNED_OPERATIONS_PID });
-      return operationsChild;
-    }
     const dir = String(args[args.indexOf("-p") + 1]);
     realFs.writeFileSync(join(dir, "nginx.pid"), `${SPAWNED_NGINX_PID}\n`);
     fakePids.set(SPAWNED_NGINX_PID, { alive: true });
@@ -896,9 +877,6 @@ function mockNginxSpawn(): void {
     ) => {
       if (psArgs?.includes(String(SPAWNED_NGINX_PID))) {
         return `nginx: master process nginx -p ${dir} -c ${join(dir, "nginx.conf")} -g daemon off;`;
-      }
-      if (psArgs?.includes(String(SPAWNED_OPERATIONS_PID))) {
-        return `bun ${OPERATIONS_SERVE_FLAG}`;
       }
       return "";
     }) as typeof childProcess.execFileSync);
@@ -985,18 +963,13 @@ function mockRunningEdge(opts: {
       ...(opts.remoteWebConfigHash === undefined
         ? {}
         : { remoteWebConfigHash: opts.remoteWebConfigHash }),
-      // A running edge carries its operation server child since the
-      // operator locations landed; a seeded record without one reads as
-      // drifted.
-      operationsPid: SPAWNED_OPERATIONS_PID,
     }) + "\n",
   );
   writeFileSync(getIngressPaths().pidPath, `${pid}\n`);
   const dir = getIngressPaths().dir;
-  fakePids.set(SPAWNED_OPERATIONS_PID, { alive: true });
   installKillMock();
   execFileSyncMock.mockReturnValue(
-    `nginx: master process nginx -p ${dir} -c ${getIngressPaths().confPath} -g daemon off;\nbun ${OPERATIONS_SERVE_FLAG}`,
+    `nginx: master process nginx -p ${dir} -c ${getIngressPaths().confPath} -g daemon off;`,
   );
   return pid;
 }
@@ -1057,31 +1030,6 @@ function pinProductionEnvironment(): void {
 describe("startAppServer", () => {
   pinProductionEnvironment();
 
-  test("the operator locations proxy the edge's operation server", async () => {
-    makeWorkspace();
-    seedAssistant();
-    mockNginxInstalled();
-    mockNginxSpawn();
-    mockWebDistPresent();
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
-    expect(result.status).toBe("started");
-    const conf = realFs.readFileSync(ingressConfPath(), "utf8");
-    // The operator paths are exact-match proxies to the operation server's
-    // unix socket — the operation runs at request time, never baked.
-    const resolution = conf
-      .split('location = "/v1/assistant" {')[1]
-      ?.split("\n    }")[0];
-    expect(resolution).toContain(
-      `proxy_pass "http://unix:${operationsSocketPath()}:"`,
-    );
-    expect(conf).toContain('location = "/v1/assistants/assistant-1/"');
-    // No baked assistant metadata: the answers live in the operation server.
-    expect(conf).not.toContain("results");
-  });
-
   test("serves the SPA config unchanged", async () => {
     makeWorkspace();
     seedAssistant();
@@ -1120,7 +1068,6 @@ describe("startAppServer", () => {
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
-        operationsSocketPath: operationsSocketPath(),
       }),
     );
     expect(conf).toContain("location ^~ /assistant/ {");
@@ -1139,7 +1086,6 @@ describe("startAppServer", () => {
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1363,7 +1309,7 @@ describe("startAppServer", () => {
     }
     const { webDistDir } = result;
     expect(edge.killed()).toBe(true);
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
       buildNginxConfig({
@@ -1382,7 +1328,6 @@ describe("startAppServer", () => {
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
-        operationsSocketPath: operationsSocketPath(),
       }),
     );
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830;");
@@ -1390,7 +1335,6 @@ describe("startAppServer", () => {
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1413,7 +1357,7 @@ describe("startAppServer", () => {
     }
     const { webDistDir } = result;
     expect(edge.killed()).toBe(true);
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(realFs.readFileSync(ingressConfPath(), "utf-8")).toBe(
       buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7900",
@@ -1431,14 +1375,12 @@ describe("startAppServer", () => {
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
-        operationsSocketPath: operationsSocketPath(),
       }),
     );
     expect(readIngressState()).toEqual({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash(),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1526,7 +1468,7 @@ describe("startAppServer", () => {
 
     expect(result.status).toBe("started");
     expect(edge.killed()).toBe(true);
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     const indexHtml = realFs.readFileSync(
       join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
@@ -1536,7 +1478,6 @@ describe("startAppServer", () => {
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "New Name" }),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1563,7 +1504,6 @@ describe("startAppServer", () => {
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1624,7 +1564,7 @@ describe("startAppServer", () => {
       throw new Error(`expected started, got ${result.status}`);
     }
     const { webDistDir } = result;
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
       buildNginxConfig({
@@ -1643,14 +1583,12 @@ describe("startAppServer", () => {
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
-        operationsSocketPath: operationsSocketPath(),
       }),
     );
     expect(readIngressState()).toEqual({
       listenPort: 7840,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -1675,7 +1613,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       logPath: getIngressPaths().logPath,
     });
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(readIngressState()).toBeNull();
   });
 
@@ -1700,7 +1638,7 @@ describe("startAppServer", () => {
       listenPort: 7840,
       logPath: getIngressPaths().logPath,
     });
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(readIngressState()).toBeNull();
   });
 
@@ -1896,8 +1834,8 @@ describe("ensureAppServer", () => {
     const second = await ensureAppServer();
 
     expect(second.started).toBe(true);
-    // Two starts: each spawns its nginx and its operation server child.
-    expect(spawnMock).toHaveBeenCalledTimes(4);
+    // Two starts: each spawns its own nginx master.
+    expect(spawnMock).toHaveBeenCalledTimes(2);
     const indexHtml = realFs.readFileSync(
       join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
@@ -1997,7 +1935,6 @@ describe("ensureAppServer", () => {
       listenPort: REQUESTED_PORT,
       gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
-      operationsPid: SPAWNED_OPERATIONS_PID,
     });
   });
 
@@ -2132,74 +2069,7 @@ describe("stopContainerAppServer", () => {
   });
 });
 
-describe("assistant metadata API", () => {
-  function config(id = "assistant-1") {
-    return buildNginxConfig({
-      gatewayUrl: "http://127.0.0.1:7830",
-      listenPort: 7840,
-
-      webDistDir: "/tmp/web",
-      appDistDir: "/tmp/app-dist",
-      config: {
-        remote: "custom",
-        assistantName: "My assistant",
-        assistantId: id,
-        hubUrl: "https://parent.example",
-        version: "1.2.3",
-      },
-      operationsSocketPath: "/tmp/cadet-ingress/operations.sock",
-    });
-  }
-  test("the operator locations generate from the route table for the served id", () => {
-    const conf = config();
-    // The resolution (the table's GET row) mounts both spellings: the
-    // unscoped bare reference and the served assistant's scoped form.
-    for (const path of [
-      "/v1/assistant",
-      "/v1/assistant/",
-      "/v1/assistants/assistant-1",
-      "/v1/assistants/assistant-1/",
-    ]) {
-      expect(conf).toContain(`location = "${path}" {`);
-    }
-    // Another assistant's scoped form is nobody's mount here.
-    expect(conf).not.toContain('location = "/v1/assistants/other/"');
-    // No baked metadata bodies survive: every answer is the operation. (The
-    // __config injection's own `return 200` is the served config, not
-    // assistant metadata.)
-    expect(conf).not.toContain("results");
-    expect(conf).not.toContain("assistant is not ready");
-  });
-  test("the operator locations allow only read methods and keep the CORS block", () => {
-    const conf = config();
-    expect(conf).toContain(
-      "if ($request_method !~ ^(GET|HEAD)$) { return 405; }",
-    );
-    expect(conf).toContain(
-      '"https://parent.example" "https://parent.example";',
-    );
-    expect(conf).toContain(
-      "add_header Access-Control-Allow-Origin $cadet_app_origin always;",
-    );
-    // The destructive rows stay off the public edge: the lifecycle
-    // operations never mount where a tunnel visitor could reach them.
-    expect(conf).not.toContain("/retire");
-    expect(conf).not.toContain("/sleep");
-    expect(conf).not.toContain("/wake");
-  });
-  test("no served assistant mounts only the unscoped operator spelling", () => {
-    const conf = buildNginxConfig({
-      gatewayUrl: "http://127.0.0.1:7830",
-      listenPort: 7840,
-
-      webDistDir: "/tmp/web",
-      appDistDir: "/tmp/app-dist",
-      config: { remote: "custom" },
-      operationsSocketPath: "/tmp/cadet-ingress/operations.sock",
-    });
-    expect(conf).toContain('location = "/v1/assistant" {');
-    expect(conf).not.toContain('location = "/v1/assistants/');
-  });
+describe("the generated config's origin guard", () => {
   test("invalid browser origins fail before nginx starts", () => {
     expect(() =>
       buildNginxConfig({
@@ -2260,7 +2130,6 @@ describe("the app shell edge", () => {
         assistantId: "assistant-1",
         version: "1.2.3",
       },
-      operationsSocketPath: "/tmp/cadet-ingress/operations.sock",
     });
   }
 
@@ -2297,11 +2166,6 @@ describe("the app shell edge", () => {
 
   test("iframes the web UI from the distinct /web/assistant namespace", () => {
     const conf = appConf();
-    // The operator paths proxy the operation server (no baked detail).
-    expect(conf).toContain(
-      'proxy_pass "http://unix:/tmp/cadet-ingress/operations.sock:"',
-    );
-    expect(conf).toContain('location = "/v1/assistants/assistant-1/"');
     expect(conf).toContain(
       "location = /web/assistant/ {\n      rewrite ^ /web/assistant/__remote-index.html last;\n    }",
     );
@@ -2367,9 +2231,6 @@ describe("the app shell edge", () => {
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
-    expect(conf).toContain(
-      `proxy_pass "http://unix:${operationsSocketPath()}:"`,
-    );
     // The served shell document must be the edge's INJECTED copy (which
     // carries the served config), never the raw dist index — that one only
     // carries the build-time vite stamp.

@@ -43,8 +43,6 @@ import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
-import { serveOperatorRequests } from "./lib/servers/operations-server";
-import { OPERATIONS_SERVE_FLAG } from "@mycadet/local-mode";
 
 const commands = {
   backup,
@@ -189,16 +187,6 @@ async function tryLaunchClient(): Promise<boolean> {
 }
 
 async function main() {
-  // The edge's operation server child: startAppServer re-invokes this CLI
-  // with the serve flag and a unix socket path; the process then serves the
-  // local-mode operator route table for nginx's operator locations until
-  // the edge's stop path kills it. Runs before any command dispatch — it is
-  // not a command and never shows up in help.
-  const serveIndex = process.argv.indexOf(OPERATIONS_SERVE_FLAG);
-  if (serveIndex !== -1) {
-    await serveOperatorRequests(process.argv[serveIndex + 1]!);
-  }
-
   // Load $XDG_CONFIG_HOME/cadet/.env before any command runs so
   // provider API keys and other config are available to hatch, exec, etc.
   loadConfigDotenv();

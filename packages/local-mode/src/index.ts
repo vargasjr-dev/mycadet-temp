@@ -271,13 +271,10 @@ export {
   stopIngressNginx,
   getIngressPaths,
   ingressStatePath,
-  operationsSocketPath,
-  OPERATIONS_SERVE_FLAG,
   readIngressState,
   getIngressPid,
   isIngressRunning,
   isPidAlive,
-  isOperationsServeProcess,
 } from "./ingress";
 export type { IngressPaths, IngressState } from "./ingress";
 export { exec, buildExecErrorMessage } from "./exec";
