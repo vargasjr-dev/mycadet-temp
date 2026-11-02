@@ -9,12 +9,24 @@ import {
   saveLockfileAssistant,
   validateAssistantName,
 } from "@mycadet/local-mode";
+import { checkProviderApiKey } from "../lib/api-key-check.js";
+import {
+  describeLoginError,
+  ensureCloudLoginInteractive,
+} from "../lib/cloud-login.js";
+import {
+  collectProviderApiKey,
+  promptProviderChoice,
+  resolveHatchProvider,
+  shouldPromptForHatchProvider,
+} from "../lib/provider-secrets.js";
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/remotes/docker.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
+import { buildHatchConfigValues } from "@mycadet/local-mode";
 import { hatchAssistant } from "../lib/cloud-client";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
@@ -234,21 +246,77 @@ export const hatch = Object.assign(
       process.exit(1);
     }
 
+    // The provider choice is remote-agnostic setup: every hatch wants the
+    // LLM credentials settled before the assistant starts. Collected right
+    // after the key check so the two prompts sit back-to-back.
+    let provider = resolveHatchProvider(configValues);
+    let precollectedApiKey: string | undefined;
+    const apiKeyCheck = checkProviderApiKey();
+    let pickedProvider = false;
+    if (
+      shouldPromptForHatchProvider({
+        configValues,
+        setupProviderCredentials: true,
+        hasProviderApiKey: apiKeyCheck.hasKey,
+        stdinIsTTY: process.stdin.isTTY,
+      })
+    ) {
+      const picked = await promptProviderChoice();
+      if (picked) {
+        provider = picked;
+        pickedProvider = true;
+        // Collect the key immediately, while the choice is fresh.
+        precollectedApiKey = await collectProviderApiKey(picked);
+
+        // Picking Cadet Cloud should feel like signing in, not like a
+        // mystery later — open the browser login right here.
+        if (picked === "cadet" && process.stdin.isTTY && !readCloudToken()) {
+          console.log("");
+          console.log(
+            "Cadet Cloud selected — opening your browser to log in...",
+          );
+          try {
+            await ensureCloudLoginInteractive();
+            console.log("✅ Logged in to Cadet Cloud");
+          } catch (error) {
+            console.warn(
+              `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
+            );
+            console.warn("   You can retry later with `cadet login`.");
+          }
+        }
+      }
+    }
+
+    if (!apiKeyCheck.hasKey && !pickedProvider) {
+      console.warn(
+        "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
+      );
+      console.warn("  To fix, export your key before running cadet hatch:");
+      console.warn("  export ANTHROPIC_API_KEY=<your-key>");
+      console.warn("");
+    }
+
     if (remote === "local") {
       await hatchLocal({
         name,
         watch,
         configValues,
         verbose,
+        provider,
+        precollectedApiKey,
       });
       return;
     }
+
+    // The non-local arms take the provider through the config values.
+    const providerConfigValues = buildHatchConfigValues(configValues, provider);
 
     if (remote === "docker") {
       await hatchDocker({
         name,
         watch,
-        configValues,
+        configValues: providerConfigValues,
         sourcePath,
         netnsContainer: netnsContainer ?? undefined,
         gatewayPort: gatewayPort ?? undefined,
@@ -260,7 +328,7 @@ export const hatch = Object.assign(
     if (remote === "baseten") {
       await hatchBaseten({
         name: name ?? undefined,
-        configValues,
+        configValues: providerConfigValues,
         verbose,
       });
       return;

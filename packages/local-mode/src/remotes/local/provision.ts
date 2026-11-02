@@ -1,14 +1,14 @@
 import { findAssistantByName } from "../../operations/lookup";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
-import { sleepAssistant } from "../../operations/sleep";
+import { sleepLocal } from "./sleep";
 import { wakeLocal } from "./wake";
 import { withLocalHatchLock } from "./hatch-lock";
 import {
   buildHatchConfigValues,
   writeInitialConfig,
 } from "./hatch-config";
-import { generateInstanceName } from "./naming";
+import { generateInstanceName } from "../../naming";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { resolveAssistantsDir } from "../../config";
@@ -61,14 +61,15 @@ export async function allocateLocalPlacement(
  * credential setup, and the cloud registration are the CLI's ceremony and
  * stay there — they need a TTY and cli-side credential machinery.
  */
-export async function provisionLocalHatch(params: {
+export type HatchResult =
+  | { ok: true; entry: LocalAssistant }
+  | { ok: false; status: number; error: string; assistantId?: string };
+
+export async function hatchLocal(params: {
   name?: string | null;
   watch?: boolean;
   configValues?: Record<string, string>;
-}): Promise<
-  | { ok: true; entry: LocalAssistant }
-  | { ok: false; status: number; error: string; assistantId?: string }
-> {
+}): Promise<HatchResult> {
   const { name, watch = false, configValues = {} } = params;
   const instanceName = generateInstanceName(
     name ?? process.env.CADET_ASSISTANT_NAME,
@@ -96,7 +97,7 @@ export async function provisionLocalHatch(params: {
         // daemon's first-boot config through.
         await wakeLocal(entry, { watch, defaultWorkspaceConfigPath });
       } catch (error) {
-        await sleepAssistant(entry, { force: true });
+        await sleepLocal(entry, { force: true });
         throw error;
       }
 

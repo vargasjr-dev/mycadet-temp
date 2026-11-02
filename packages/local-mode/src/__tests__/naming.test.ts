@@ -1,8 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import {
-  generateRandomSuffix,
-  generateInstanceName,
-} from "../remotes/local/naming";
+import { generateRandomSuffix, generateInstanceName } from "../naming";
 
 describe("generateRandomSuffix", () => {
   test("returns a string in adjective-noun-nanoid format", () => {

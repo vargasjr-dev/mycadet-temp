@@ -101,7 +101,7 @@ export {
   type HatchAssistantParams,
   type HatchAssistantResult,
 } from "./operations/hatch";
-export { generateInstanceName } from "./remotes/local/naming";
+export { generateInstanceName } from "./naming";
 export { withLocalHatchLock } from "./remotes/local/hatch-lock";
 export { allocateLocalPlacement } from "./remotes/local/provision";
 export {
@@ -118,6 +118,7 @@ export {
   isNoSuchContainerError,
 } from "./remotes/docker/common";
 export { wakeLocal } from "./remotes/local/wake";
+export { hatchLocal } from "./remotes/local/provision";
 
 export {
   ensureLocalRuntime,

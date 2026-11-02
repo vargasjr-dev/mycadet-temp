@@ -1,5 +1,5 @@
 import type { LockfileAssistant } from "../lockfile-contract";
-import { provisionLocalHatch } from "../remotes/local/provision";
+import { hatchLocal } from "../remotes/local/provision";
 
 /**
  * The hatch operation: the scoped surface's provision door. Unlike the
@@ -27,7 +27,7 @@ export interface HatchAssistantParams {
 }
 
 export type HatchAssistantResult =
-  | { ok: true; assistantId: string; entry: LockfileAssistant }
+  | { ok: true; assistant: LockfileAssistant }
   | { ok: false; status: number; error: string; assistantId?: string };
 
 export async function hatchAssistant(
@@ -35,13 +35,10 @@ export async function hatchAssistant(
 ): Promise<HatchAssistantResult> {
   switch (params.remote) {
     case "local": {
-      const provisioned = await provisionLocalHatch(params);
-      if (!provisioned.ok) return provisioned;
-      return {
-        ok: true,
-        assistantId: provisioned.entry.assistantId,
-        entry: provisioned.entry,
-      };
+      const { name, watch, configValues } = params;
+      const result = await hatchLocal({ name, watch, configValues });
+      if (!result.ok) return result;
+      return { ok: true, assistant: result.entry };
     }
     default:
       return {

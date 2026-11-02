@@ -11,6 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { hostname, platform, userInfo } from "node:os";
+import { z } from "zod";
 import { dirname, join } from "node:path";
 
 const DEFAULT_TIMEOUT_MS = 240_000;
@@ -93,25 +94,15 @@ function errnoCode(error: unknown): string | undefined {
   return error.code;
 }
 
+const LockOwnerFileSchema = z.object({
+  pid: z.number().int().positive(),
+  processStartedAt: z.string().min(1).optional().catch(undefined),
+  token: z.string().min(1),
+});
+
 function parseOwner(raw: string): LockOwner | undefined {
   try {
-    const value = JSON.parse(raw) as Record<string, unknown>;
-    const pid = value.pid;
-    const token = value.token;
-    if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0) {
-      return undefined;
-    }
-    if (typeof token !== "string" || token.length === 0) {
-      return undefined;
-    }
-    const processStartedAt = value.processStartedAt;
-    return {
-      pid,
-      token,
-      ...(typeof processStartedAt === "string" && processStartedAt.length > 0
-        ? { processStartedAt }
-        : {}),
-    };
+    return LockOwnerFileSchema.parse(JSON.parse(raw));
   } catch {}
   return undefined;
 }

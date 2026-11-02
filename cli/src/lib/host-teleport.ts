@@ -89,7 +89,6 @@ const defaultOps: HostTeleportOps = {
         await hatchLocal({
           name: instanceName,
           setupProviderCredentials: false,
-          initialArchive,
         });
       }
       const entry = findAssistantByName(instanceName);
