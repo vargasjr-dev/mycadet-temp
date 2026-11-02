@@ -52,7 +52,6 @@ const GuardianTokenFieldsSchema = z
       .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
       .optional()
       .catch(undefined),
-    isNew: z.boolean().optional().catch(undefined),
     deviceId: z.string().optional().catch(undefined),
   })
   .catch({});
@@ -495,7 +494,6 @@ export async function refreshGuardianTokenResult(
       refreshTokenExpiresAt:
         parsed.refreshTokenExpiresAt ?? tokenData.refreshTokenExpiresAt,
       refreshAfter: parsed.refreshAfter ?? tokenData.refreshAfter,
-      isNew: false,
       deviceId: tokenData.deviceId,
       leasedAt: new Date().toISOString(),
       pairedGatewayUrl: tokenData.pairedGatewayUrl,
@@ -617,8 +615,7 @@ export async function leaseGuardianToken(
     parsed.accessTokenExpiresAt == null ||
     parsed.refreshToken == null ||
     parsed.refreshTokenExpiresAt == null ||
-    parsed.refreshAfter == null ||
-    parsed.isNew == null
+    parsed.refreshAfter == null
   ) {
     const raw = z.record(z.string(), z.unknown()).catch({}).parse(mapped);
     const requiredFields: (keyof typeof parsed)[] = [
@@ -628,7 +625,6 @@ export async function leaseGuardianToken(
       "refreshToken",
       "refreshTokenExpiresAt",
       "refreshAfter",
-      "isNew",
     ];
     const unusable = requiredFields
       .filter((field) => parsed[field] == null)
@@ -644,7 +640,6 @@ export async function leaseGuardianToken(
     refreshToken: parsed.refreshToken,
     refreshTokenExpiresAt: parsed.refreshTokenExpiresAt,
     refreshAfter: parsed.refreshAfter,
-    isNew: parsed.isNew,
     deviceId,
     leasedAt: new Date().toISOString(),
   };
@@ -666,6 +661,5 @@ function mapPairResponse(raw: unknown): unknown {
     refreshToken: rec.refreshToken,
     refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
     refreshAfter: rec.refreshAfter,
-    isNew: rec.isNew,
   };
 }

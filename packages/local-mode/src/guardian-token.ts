@@ -9,10 +9,7 @@ import {
   isLoopbackPublicUrl,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import {
-  basetenTokenPath,
-  guardianTokenPath,
-} from "./config";
+import { basetenTokenPath, guardianTokenPath } from "./config";
 import { readLockfile } from "./lockfile";
 import type { CliInvocation } from "./util";
 import { resolveCliInvocation } from "./cli-invocation";
@@ -30,7 +27,6 @@ export const GuardianTokenFileSchema = z.object({
   /** ISO date string or epoch-ms number as returned by the gateway. */
   refreshTokenExpiresAt: z.union([z.string(), z.number()]),
   refreshAfter: z.string(),
-  isNew: z.boolean(),
   deviceId: z.string(),
   leasedAt: z.string(),
   /** Remote gateway bound to a credential imported through the pairing flow. */

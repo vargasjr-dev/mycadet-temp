@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { LockfileAssistant } from "../lockfile-contract";
+import type { DockerAssistant } from "../lockfile-contract";
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -15,11 +15,11 @@ mock.module("../exec", () => ({
 
 const { pairDocker } = await import("../remotes/docker/pair");
 
-const entry = {
+const entry: DockerAssistant = {
   assistantId: "assistant-123",
   cloud: "docker",
   port: 7831,
-} as unknown as LockfileAssistant;
+};
 
 afterAll(() => {
   mock.module("../exec", () => realExec);
