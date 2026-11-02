@@ -9,7 +9,6 @@ export interface AppElectronBridge {
       "getSessionToken" | "cancelOAuth" | "startOAuth" | "signOut"
     >
   >;
-  localMode?: Pick<CadetBridge["localMode"], "readLockfile">;
   /**
    * Menu-bar (Tray) status dot publishing. Optional for the same
    * shell/renderer skew reason as `deepLinks`: a newer bundle can run against

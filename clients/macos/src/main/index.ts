@@ -59,10 +59,10 @@ import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
-import { resolveCliInvocation } from "./cli-invocation.client";
+import { resolveCliInvocation } from "@mycadet/local-mode";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
 import { installLockfileWatcher } from "@mycadet/electron-desktop/lockfile-watcher";
-import { runWhenReady } from "@mycadet/electron-desktop/app-lifecycle";
+import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "./logger";
 import {
@@ -222,7 +222,7 @@ installFileOpen();
 // App lifecycle
 // ---------------------------------------------------------------------------
 
-runWhenReady(log, async () => {
+startApp(log, async () => {
     // The instance that lost the single-instance lock is already quitting.
     // `app.quit()` requests a shutdown rather than halting the module, and a
     // `ready` that is already queued still fires, so the losing instance gates

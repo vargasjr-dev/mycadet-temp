@@ -5,8 +5,11 @@ import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 /**
  * Lockfile watcher for the main process. Polls the lockfile's mtime every
- * 500ms and caches the parsed result. Consumers (tray menu, window title)
- * read from the cache instead of hitting disk on every access.
+ * 500ms and fires change listeners (tray rebuild, host-proxy reconcile).
+ * Readers that want the lockfile read it fresh (`readLockfile` from
+ * @mycadet/local-mode) — there is no shared cache to invalidate, so a
+ * mutation made by this process is visible to the next read immediately and
+ * the listeners fire within one poll.
  *
  * Polling mtime (rather than `fs.watch` or `chokidar`) because:
  *   - The lockfile is written via atomic rename (write tmp → rename to path),
@@ -112,50 +115,6 @@ const checkForChanges = (): void => {
     cachedLockfile = next;
     notifyListeners();
   }, DEBOUNCE_MS);
-};
-
-/**
- * Return the current cached lockfile. Synchronous — no disk I/O.
- */
-export const getWatchedLockfile = (): Lockfile => cachedLockfile;
-
-/**
- * Return the cached lockfile, or null before {@link installLockfileWatcher}
- * has produced a snapshot. Callers with a disk-reading fallback (the
- * app-protocol paired-gateway forward) use the null to cover the startup
- * window where the watcher is not installed yet.
- */
-export const getWatchedLockfileSnapshot = (): Lockfile | null =>
-  lockfilePath ? cachedLockfile : null;
-
-/**
- * Re-read the watched lockfile immediately, bypassing the poll interval and
- * any pending debounce. For lockfile writes performed by this process (e.g.
- * unpair) whose consumers must observe the change in the same tick rather
- * than after the next poll. No-op before the watcher is installed.
- */
-export const refreshLockfileNow = (): void => {
-  if (!lockfilePath) {
-    return;
-  }
-  const canonicalPath = lockfilePath;
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
-  const previousMtimeMs = lastMtimeMs;
-  try {
-    lastMtimeMs = fs.statSync(canonicalPath).mtimeMs;
-  } catch {
-    lastMtimeMs = 0;
-  }
-  const next = readAndParse();
-  if (!next) {
-    lastMtimeMs = previousMtimeMs;
-    return;
-  }
-  cachedLockfile = next;
-  notifyListeners();
 };
 
 /**

@@ -15,7 +15,6 @@ import {
   fetchForwardPlanWithRetry,
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
-import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -155,21 +154,11 @@ async function authorizeGatewayForwardPlan(
 
 /**
  * The gateway target map for a forward: the lockfile's assistant entries ARE
- * the targets. Prefer the watcher's in-memory snapshot so gateway requests
- * never read disk; the direct read covers only the window before the watcher
- * installs.
+ * the targets, read fresh — no shared cache to fall out of sync with a
+ * mutation made by this process.
  */
-const readForwardTargets = (): Map<string, LockfileAssistant> => {
-  const watched = getWatchedLockfileSnapshot();
-  if (watched) {
-    return new Map(
-      watched.assistants.flatMap((entry) =>
-        entry.assistantId ? [[entry.assistantId, entry] as const] : [],
-      ),
-    );
-  }
-  return readGatewayTargets();
-};
+const readForwardTargets = (): Map<string, LockfileAssistant> =>
+  readGatewayTargets();
 
 export const forwardGatewayRequest = async (
   request: Request,

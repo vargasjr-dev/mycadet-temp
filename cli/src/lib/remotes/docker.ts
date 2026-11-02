@@ -900,7 +900,7 @@ async function ensureDockerInstalled(): Promise<void> {
     }
 
     console.log("🚀 Docker daemon not running. Starting Colima...");
-    await startColimaAndAwaitDaemon(console.log, {
+    await startColimaAndAwaitDaemon({
       startArgs: ["--memory", String(COLIMA_DEFAULT_MEMORY_GIB)],
     });
   }

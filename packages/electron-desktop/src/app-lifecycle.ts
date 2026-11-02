@@ -1,4 +1,5 @@
 import { app } from "electron";
+import type { MainLogger } from "electron-log";
 
 /**
  * The app-lifecycle seam every desktop client shares: acquire the
@@ -12,8 +13,8 @@ import { app } from "electron";
  * single-instance race, or a packaged first launch that is about to relocate
  * itself and relaunch.
  */
-export const runWhenReady = (
-  log: { info: (message: string, ...rest: unknown[]) => void; error: (message: string, ...rest: unknown[]) => void },
+export const startApp = (
+  log: MainLogger,
   setup: () => void | Promise<void>,
 ): void => {
   void app

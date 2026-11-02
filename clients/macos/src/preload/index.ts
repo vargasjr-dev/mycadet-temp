@@ -6,7 +6,6 @@ import {
   type IpcRendererEvent,
 } from "electron";
 
-import { createLocalModeBridge } from "@mycadet/electron-desktop/local-mode-bridge";
 import { createFileOpenPreloadBridge } from "@mycadet/electron-desktop/file-open-preload";
 
 import type {
@@ -354,7 +353,6 @@ const bridge: CadetBridge = {
       ipcRenderer.invoke("cadet:share:file", bytes, filename),
   },
   downloads: createDownloadsBridge(ipcRenderer),
-  localMode: createLocalModeBridge(ipcRenderer),
   mainWindow: {
     ensureVisible: (): Promise<void> =>
       ipcRenderer.invoke("cadet:mainWindow:ensureVisible") as Promise<void>,

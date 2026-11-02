@@ -28,7 +28,7 @@ import {
   setCompanionSurfaceSize,
   setCompanionSurfaceVisible,
 } from "./companion-window";
-import { getWatchedLockfile } from "@mycadet/electron-desktop/lockfile-watcher";
+import { readLockfile } from "@mycadet/local-mode";
 import { dispatchToMain } from "./main-window";
 import { menuIcon } from "./menu-icon";
 import { readSetting } from "@mycadet/electron-desktop/settings";
@@ -56,7 +56,7 @@ export const installTray = (handlers: TrayHandlers): void => {
     companionHidden: readCompanionHidden,
     companionSize: readCompanionSize,
     dispatch: dispatchToMain,
-    getLockfile: getWatchedLockfile,
+    getLockfile: readLockfile,
     icon: (icon) => ICONS[icon],
     onboardingActive: readOnboardingActive,
     openComponentGallery: () => {

@@ -594,19 +594,31 @@ describe("remembered origins", () => {
   describe("with a local-mode host", () => {
     const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
 
+    const hostRealFetch = globalThis.fetch;
+
     function stubCadet(lockfile: unknown, status: unknown): void {
+      // Availability rides the platform stamp; the lockfile and status reads
+      // are the operator routes' GETs.
       Object.defineProperty(window, "cadet", {
         configurable: true,
-        value: {
-          platform: "electron",
-          localMode: {
-            // Availability is detected on the pairing channel itself.
-            pairingStart: async () => ({ ok: false, error: "unused" }),
-            readLockfile: async () => lockfile,
-            status: async () => status,
-          },
-        },
+        value: { platform: "electron" },
       });
+      globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
+        const path = String(input).split("?")[0] ?? "";
+        if (path === "/v1/assistants/") {
+          return new Response(JSON.stringify(lockfile), {
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (path.match(/^\/v1\/assistants\/[^/]+\/$/)) {
+          return new Response(JSON.stringify(status), {
+            headers: { "content-type": "application/json" },
+          });
+        }
+        // Everything else (the shell's resolution fetch, the iframe doc)
+        // rides the test's own fetch spy.
+        return hostRealFetch(input as RequestInfo, init);
+      }) as unknown as typeof fetch;
     }
 
     afterEach(() => {
@@ -615,6 +627,7 @@ describe("remembered origins", () => {
       } else {
         Reflect.deleteProperty(window, "cadet");
       }
+      globalThis.fetch = hostRealFetch;
       __resetConnectDialogForTesting();
       __resetLocalLockfileForTesting();
     });

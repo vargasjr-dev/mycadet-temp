@@ -2,7 +2,7 @@ import { app } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { configureCliPaths, resolveCliInvocation } from "@mycadet/local-mode";
+import { configureCliPaths } from "@mycadet/local-mode";
 
 import {
   ensureCliInstalled,
@@ -25,4 +25,3 @@ configureCliPaths({
   prepare: ensureCliInstalled,
 });
 
-export { resolveCliInvocation };

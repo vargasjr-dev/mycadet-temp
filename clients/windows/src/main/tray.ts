@@ -4,7 +4,7 @@ import { app, nativeImage, shell, type NativeImage } from "electron";
 
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { acceleratorOption } from "@mycadet/electron-desktop/commands";
-import { getWatchedLockfile } from "@mycadet/electron-desktop/lockfile-watcher";
+import { readLockfile } from "@mycadet/local-mode";
 import { configureStatusIconFallback } from "@mycadet/electron-desktop/status-icon";
 import {
   configureTrayModel,
@@ -79,7 +79,7 @@ export const installWindowsTray = (): void => {
     companionHidden: () => true,
     companionSize: () => DEFAULT_COMPANION_SIZE,
     dispatch,
-    getLockfile: getWatchedLockfile,
+    getLockfile: readLockfile,
     icon: (icon) => ICONS[icon](),
     onboardingActive: readOnboardingActive,
     openComponentGallery: () => {

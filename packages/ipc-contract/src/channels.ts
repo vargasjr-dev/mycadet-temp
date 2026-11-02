@@ -102,14 +102,6 @@ export const DOCK_SET_BADGE = "cadet:dock:setBadge";
 export const DOWNLOADS_DONE_EVENT = "cadet:downloads:done";
 export const DOWNLOADS_REVEAL = "cadet:downloads:reveal";
 
-// Local mode
-export const LOCAL_MODE_HATCH = "cadet:localMode:hatch";
-export const LOCAL_MODE_READ_LOCKFILE = "cadet:localMode:readLockfile";
-export const LOCAL_MODE_UNPAIR = "cadet:localMode:unpair";
-export const LOCAL_MODE_UPGRADE = "cadet:localMode:upgrade";
-export const LOCAL_MODE_STATUS = "cadet:localMode:status";
-export const LOCAL_MODE_READ_ASSISTANT_AVATAR =
-  "cadet:localMode:readAssistantAvatar";
 
 // Menu
 export const MENU_TITLES = "cadet:menu:titles";

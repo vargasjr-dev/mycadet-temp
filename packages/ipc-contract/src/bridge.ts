@@ -61,7 +61,6 @@ import type {
   HelperState,
   HotkeyEvent,
   HotkeySelectionResult,
-  LocalAssistantStatusResult,
   NotificationActionEvent,
   PrepareNotificationIdentityPayload,
   PowerEvent,
@@ -85,10 +84,6 @@ import type {
   VoiceActivityStart,
   WindowAttentionPayload,
 } from "./types";
-import type {
-  Lockfile,
-  LockfileWriteResult,
-} from "@mycadet/local-mode/contract";
 
 export interface LocalUpgradeOptions {
   version?: string;
@@ -121,7 +116,7 @@ export interface LocalPairingFailure {
 }
 
 /**
- * Result of `localMode.pairingStart`. `handle` is an opaque key for the
+ * Result of the pairing-start route. `handle` is an opaque key for the
  * follow-up `pairingPoll` / `pairingCancel`; the device code it stands for
  * stays in the host process. `userCode` is the code to approve on the
  * assistant's machine, or null when the address already carried an approved
@@ -138,7 +133,7 @@ export type LocalPairingStartResult =
   | LocalPairingFailure;
 
 /**
- * Result of one `localMode.pairingPoll` attempt. `pending` carries the cadence
+ * Result of one pairing-poll attempt. `pending` carries the cadence
  * to wait before the next one; `imported` means the pairing is registered
  * under `assistantId`, with `accessOnly` true when the exchange yielded no
  * refresh credential (the access expires without renewal).
@@ -149,7 +144,7 @@ export type LocalPairingPollResult =
   | LocalPairingFailure;
 
 /**
- * One paired-device row as returned by `localMode.listDevices`. Structural
+ * One paired-device row as returned by the devices-list route. Structural
  * duplicate of `@mycadet/local-mode`'s `DeviceRecord`, declared here so this
  * package has no `file:` dependency on local-mode (which carries a transitive
  * `file:` chain that breaks lockfile resolution in consumer packages; see the
@@ -402,57 +397,6 @@ export interface CadetBridge {
      * renderer can never point this at an arbitrary file.
      */
     reveal(id: string): Promise<void>;
-  };
-  localMode: {
-    hatch(
-      remote?: string,
-    ): Promise<{ ok: boolean; assistantId?: string; error?: string }>;
-    /** List the devices holding pairing tokens for a local assistant. */
-    listDevices(assistantId: string): Promise<LocalListDevicesResult>;
-    readLockfile(): Promise<Lockfile>;
-    /**
-     * Revoke one paired device's tokens on a local assistant's gateway.
-     * Server-side: the device's next request is rejected.
-     */
-    revokeDevice(
-      assistantId: string,
-      hashedDeviceId: string,
-    ): Promise<LocalRevokeDeviceResult>;
-    /**
-     * Forget a paired assistant (the `paired` flag): remove its lockfile
-     * entry and stored guardian token on this machine. Client-side only:
-     * the remote assistant is never touched.
-     */
-    unpair(assistantId: string): Promise<LockfileWriteResult>;
-    /**
-     * Begin pairing with the assistant at `address`, either a pairing link
-     * copied from its "Pair a device" card or a bare `https://host` URL. The
-     * host runs the device-code exchange, so neither the device code nor the
-     * credentials it buys cross this boundary.
-     */
-    pairingStart(address: string): Promise<LocalPairingStartResult>;
-    /**
-     * One exchange attempt for a live pairing session. An approved code
-     * persists the guardian token and creates a paired lockfile entry
-     * (`paired: true`) in the same call, the write counterpart of `unpair`.
-     * `name` picks the local id (its slug); omitted, the id derives from
-     * the assistant's address.
-     */
-    pairingPoll(handle: string, name?: string): Promise<LocalPairingPollResult>;
-    /** Forget a pending pairing session. */
-    pairingCancel(handle: string): Promise<{ ok: boolean }>;
-    upgrade(
-      assistantId: string,
-      options?: LocalUpgradeOptions,
-    ): Promise<{ ok: boolean; version?: string; error?: string }>;
-    status(assistantId: string): Promise<LocalAssistantStatusResult>;
-    /**
-     * Read a local assistant's avatar straight off its workspace, so the
-     * chooser can render it even while that assistant is asleep.
-     */
-    readAssistantAvatar(
-      assistantId: string,
-    ): Promise<LocalReadAssistantAvatarResult>;
   };
   menu?: {
     /**
@@ -967,7 +911,6 @@ export const CADET_BRIDGE_KEYS = [
   "dock",
   "share",
   "downloads",
-  "localMode",
   "menu",
   "mainWindow",
   "power",

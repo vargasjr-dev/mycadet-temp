@@ -43,7 +43,6 @@ async function waitForDockerDaemon(timeoutMs: number): Promise<boolean> {
  * Never `colima delete` — the VM disk holds every container image and volume.
  */
 export async function startColimaAndAwaitDaemon(
-  _log: (message: string) => void,
   opts: { startArgs?: string[]; settleTimeoutMs?: number } = {},
 ): Promise<void> {
   const startArgs = opts.startArgs ?? [];
@@ -99,7 +98,7 @@ export async function ensureDockerDaemonRunning(
   // Deliberately no `colima status` probe: it trusts Colima's own state file,
   // which can be stale (zombie VM) — daemon reachability is the oracle.
   console.log("🚀 Docker daemon not running. Starting Colima...");
-  await startColimaAndAwaitDaemon(console.log, opts);
+  await startColimaAndAwaitDaemon(opts);
 }
 
 /** The `docker start` failure for a container that was never created. */

@@ -16,9 +16,9 @@ let currentLockfile: Lockfile = {
   assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
   activeAssistant: "assistant-1",
 };
-const getWatchedLockfile = mock(() => currentLockfile);
-mock.module("@mycadet/electron-desktop/lockfile-watcher", () => ({
-  getWatchedLockfile,
+const readLockfile = mock(() => currentLockfile);
+mock.module("@mycadet/local-mode", () => ({
+  readLockfile,
 }));
 
 type TrayRuntime = {
@@ -64,16 +64,16 @@ beforeEach(() => {
     assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
     activeAssistant: "assistant-1",
   };
-  getWatchedLockfile.mockClear();
+  readLockfile.mockClear();
 });
 
-test("serves tray menus from the shared lockfile watcher", () => {
+test("serves tray menus from a fresh lockfile read", () => {
   installLinuxTray();
 
   expect(trayRuntime?.getLockfile()).toEqual(currentLockfile);
   currentLockfile = { assistants: [], activeAssistant: null };
   expect(trayRuntime?.getLockfile()).toEqual(currentLockfile);
-  expect(getWatchedLockfile).toHaveBeenCalledTimes(2);
+  expect(readLockfile).toHaveBeenCalledTimes(2);
 });
 
 test("exposes menu accelerators and themed icons", () => {

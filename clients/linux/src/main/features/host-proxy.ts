@@ -9,35 +9,22 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
-import {
-  getWatchedLockfile,
-  onLockfileChange,
-} from "@mycadet/electron-desktop/lockfile-watcher";
-import {
-  getSessionToken,
-  onSessionTokenChange,
-} from "@mycadet/electron-desktop/session-token-store";
-import {
-  getGuardianAccessToken,
-  resolveConfigDir,
-  resolveEnvironmentName,
-} from "@mycadet/local-mode";
+import { createHostProxyRuntime } from "@mycadet/electron-desktop/host-proxy/runtime";
 
-import { createLinuxHostProxyRuntime } from "../host-proxy-adapter";
+import { getRendererBase } from "../app-config";
+import { hostBashExecutor } from "../executors/host-bash-adapter";
 import log from "../logger";
-import { installPresenceMonitor } from "../presence";
 import { COMPUTER_USE_ACTION_EXECUTORS } from "./computer-use-actions";
 
 const hostProxy: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "host-proxy",
   install: (capabilities) => {
     // Deferred one microtask: capability modules install synchronously in
-    // path order, and the bridge seeds its connections from the lockfile
-    // watcher's cache, which the presence module (sorted later) fills with
-    // its initial synchronous read. Deferring lets the bridge observe
-    // assistants already present at startup.
+    // path order, and the bridge seeds its connections from the lockfile,
+    // which the presence module (sorted later) fills with its initial
+    // synchronous read. Deferring lets the bridge observe assistants already
+    // present at startup.
     queueMicrotask(() => {
       installBridge(capabilities);
     });
@@ -46,26 +33,12 @@ const hostProxy: CapabilityModule<DesktopCapabilityRegistry> = {
 
 const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
   const teardown = installHostProxyBridge(
-    createLinuxHostProxyRuntime({
-      acquireGuardianToken: async (assistantId) => {
-        const result = await getGuardianAccessToken(assistantId);
-        if (!result.ok) {
-          log.warn("[host-proxy] failed to obtain guardian token", {
-            assistantId,
-            status: result.status,
-            error: result.error,
-          });
-        }
-        return result;
-      },
-      getSessionToken,
-      onSessionTokenChange,
-      getLockfile: getWatchedLockfile,
-      onLockfileChange,
-      installPresenceMonitor,
-      getClientId: getDeviceId,
-      computerUseExecutors: capabilities.get(COMPUTER_USE_ACTION_EXECUTORS),
+    createHostProxyRuntime({
+      interfaceId: "linux",
+      resolveRendererBase: () => getRendererBase(app.isPackaged),
+      bashExecutor: hostBashExecutor,
       logger: log,
+      computerUseExecutors: capabilities.get(COMPUTER_USE_ACTION_EXECUTORS),
     }),
   );
   app.once("before-quit", teardown);

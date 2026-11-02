@@ -60,32 +60,35 @@ test("completion records are read live; malformed and missing signals do not ski
   ).toBe(false);
 });
 test("native host stamps identify local returning users independently of cloud availability", async () => {
+  // The desktop answers the lockfile read through its operator route; the
+  // dead bridge (if a stale shell still exposes one) is never consulted.
   Object.defineProperty(window, "cadet", {
     configurable: true,
     value: {
       platform: "electron",
-      localMode: {
-        readLockfile: async () => ({
-          assistants: [{ assistantId: "local-1", onboardedAt: "2026-10-01" }],
-        }),
-      },
+      localMode: new Proxy(
+        {},
+        {
+          get: () => {
+            throw new Error("the localMode bridge must never be consulted");
+          },
+        },
+      ),
     },
   });
+  fetchSpy.mockResolvedValueOnce(
+    response({ assistants: [{ assistantId: "local-1", onboardedAt: "2026-10-01" }] }),
+  );
   expect(await readReturningUser()).toBe(true);
-  expect(fetchSpy).not.toHaveBeenCalled();
+  expect(fetchSpy.mock.calls[0]?.[0]).toContain("/v1/assistants/");
 });
 test("an invalid host response falls back to cloud without trusting malformed stamps", async () => {
   Object.defineProperty(window, "cadet", {
     configurable: true,
-    value: {
-      platform: "electron",
-      localMode: {
-        readLockfile: async () => ({
-          assistants: [{ assistantId: "local-1", onboardedAt: 42 }],
-        }),
-      },
-    },
+    value: { platform: "electron" },
   });
+  // The lockfile read answers; the payload fails the lockfile schema.
+  fetchSpy.mockResolvedValueOnce(response({ assistants: "not-a-list" }));
   fetchSpy.mockResolvedValueOnce(response({ results: [{ id: "org-1" }] }));
   fetchSpy.mockResolvedValueOnce(response({ results: [] }));
   expect(await readReturningUser()).toBe(false);
@@ -138,21 +141,29 @@ test("an injected id without a completion stamp does not bypass first-run signup
   expect(await readReturningUser()).toBe(false);
 });
 test("a stalled native host read cannot block routing after cancellation or start a late cloud lookup", async () => {
+  // The native read IS the /v1 fetch now; an abort before it settles must
+  // resolve false and never fire the late cloud lookups.
   let resolve!: (value: unknown) => void;
-  const host = new Promise((done) => {
-    resolve = done;
-  });
+  fetchSpy.mockImplementationOnce(
+    Object.assign(
+      () =>
+        new Promise<Response>((done) => {
+          resolve = done;
+        }),
+      { preconnect: fetch.preconnect },
+    ),
+  );
   Object.defineProperty(window, "cadet", {
     configurable: true,
-    value: { platform: "electron", localMode: { readLockfile: () => host } },
+    value: { platform: "electron" },
   });
   const controller = new AbortController();
   const pending = readReturningUser({ signal: controller.signal });
   controller.abort();
   expect(await pending).toBe(false);
-  resolve({ assistants: [] });
+  resolve(response({ assistants: [] }));
   await Promise.resolve();
-  expect(fetchSpy).not.toHaveBeenCalled();
+  expect(fetchSpy.mock.calls.length).toBe(1);
 });
 test("a cloud request that ignores cancellation still cannot hold up the destination", async () => {
   fetchSpy.mockImplementationOnce(

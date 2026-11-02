@@ -2,6 +2,7 @@ import http from "node:http";
 import https from "node:https";
 import fs from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
 import type { Plugin, Connect, ViteDevServer } from "vite";
 
 import {
@@ -12,14 +13,7 @@ import {
   hasSameOriginCredentialProof,
   readLockfile,
   servedConfigFromLockfile,
-  stripSensitiveFields,
-  runDevicesList,
-  runDevicesRevoke,
   matchOperatorRequest,
-  pairingCancel,
-  pairingPoll,
-  pairingStart,
-  unpairAssistant,
   getGuardianAccessToken,
   loopbackGatewayBearer,
   resolveGatewayProxyTarget,
@@ -34,15 +28,10 @@ import cliPkg from "../../cli/package.json";
 // gateway's devices routes, and the dev session store at /v1/session. The
 // dev server hosts no assistants — every scoped assistant route forwards
 // through the id-keyed gateway proxy below, whatever the entry's remote.
-const LOCAL_UNPAIR_PATTERN = /^\/v1\/assistants\/([^/]+)\/unpair\/?$/;
 const CLOUD_SESSION_PATTERN = /^\/v1\/session$/;
 
 function requestPathname(req: http.IncomingMessage): string {
   return (req.url ?? "").split("?")[0]!;
-}
-
-function lockfileEntryFor(assistantId: string) {
-  return readLockfile().assistants.find((a) => a.assistantId === assistantId);
 }
 
 // In-memory loopback cloud session token for the dev server. The proxy
@@ -92,10 +81,6 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(loopbackCallbackMiddleware());
       server.middlewares.use(cloudSessionMiddleware());
       server.middlewares.use(configMiddleware(configJson));
-      server.middlewares.use(lockfileMiddleware());
-      server.middlewares.use(unpairMiddleware());
-      server.middlewares.use(pairingMiddleware());
-      server.middlewares.use(devicesMiddleware());
       server.middlewares.use(operatorMiddleware());
       server.middlewares.use(gatewayProxyMiddleware(env));
       server.middlewares.use(accountSpaFallback(server));
@@ -118,30 +103,6 @@ function respondJson(
  * per-field validation reports what's missing); malformed JSON resolves to
  * `null`.
  */
-function readJsonBody(
-  req: http.IncomingMessage,
-): Promise<Record<string, unknown> | null> {
-  return new Promise((resolve) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => {
-      if (chunks.length === 0) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(
-          JSON.parse(Buffer.concat(chunks).toString()) as Record<
-            string,
-            unknown
-          >,
-        );
-      } catch {
-        resolve(null);
-      }
-    });
-  });
-}
 
 function rejectUnlessLocalEndpointRequest(
   req: http.IncomingMessage,
@@ -264,238 +225,21 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
   };
 }
 
-function lockfileMiddleware(): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    // Bare `/v1/assistants/` only: the SDK's list request (query-carrying)
-    // passes through to the dev `/v1` proxy and the conductor's list route.
-    if (requestPathname(req) !== "/v1/assistants/") {
-      return next();
-    }
 
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
 
-    // Read-only: the local-mode commands own lockfile writes now (the
-    // desktop bridge's write verbs are gone with them).
-    if (req.method === "GET") {
-      res.setHeader("Content-Type", "application/json");
-      const lockfile = readLockfile();
-      stripSensitiveFields(lockfile);
-      res.end(JSON.stringify(lockfile));
-    } else {
-      res.statusCode = 405;
-      res.end();
-    }
-  };
-}
 
-function unpairMiddleware(): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_UNPAIR_PATTERN);
-    if (!match) {
-      return next();
-    }
 
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-    if (lockfileEntryFor(assistantId) == null) {
-      // Not an entry on this machine — the id-keyed proxy resolves the rest
-      // (the conductor's routes for a cloud id).
-      return next();
-    }
-
-    const result = unpairAssistant(assistantId);
-    respondJson(
-      res,
-      result.ok ? 200 : result.status,
-      result.ok
-        ? { ok: true, lockfile: result.lockfile }
-        : { ok: false, error: result.error },
-    );
-  };
-}
-
-/** The three pairing routes, under the gateway's remote-web namespace. */
-const PAIRING_ROUTES = ["pairing-start", "pairing-poll", "pairing-cancel"];
-
-function pairingRoute(url: string | undefined): string | null {
-  const path = (url ?? "").split("?")[0];
-  for (const route of PAIRING_ROUTES) {
-    if (path === `/v1/remote-web/${route}`) {
-      return route;
-    }
-  }
-  return null;
-}
 
 /**
- * The device-code exchange that registers an assistant paired on another
- * machine: start an attempt from a pasted address, poll it until the host
- * approves, cancel it on the way out. It runs here rather than in the browser,
- * so the device code and the credentials it buys never reach the renderer.
- */
-function pairingMiddleware(): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const route = pairingRoute(req.url);
-    if (route === null) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    void readJsonBody(req).then(async (body) => {
-      if (!body) {
-        respondJson(res, 400, { ok: false, error: "Invalid JSON body" });
-        return;
-      }
-
-      if (route === "pairing-cancel") {
-        respondJson(res, 200, { ok: pairingCancel(body.handle) });
-        return;
-      }
-
-      if (route === "pairing-start") {
-        const result = await pairingStart(body.address);
-        respondJson(
-          res,
-          result.ok ? 200 : result.status,
-          result.ok
-            ? {
-                ok: true,
-                handle: result.handle,
-                userCode: result.userCode,
-                expiresAt: result.expiresAt,
-                intervalSeconds: result.intervalSeconds,
-              }
-            : // `rejection` rides along so the renderer can show its own
-              // localized copy for a refused address instead of this host's
-              // English.
-              {
-                ok: false,
-                reason: result.reason,
-                error: result.error,
-                rejection: result.rejection,
-              },
-        );
-        return;
-      }
-
-      const result = await pairingPoll({
-        handle: body.handle,
-        name: body.name,
-      });
-      if (!result.ok) {
-        respondJson(res, result.status, {
-          ok: false,
-          reason: result.reason,
-          error: result.error,
-        });
-        return;
-      }
-      if (result.status === "pending") {
-        respondJson(res, 200, {
-          ok: true,
-          status: "pending",
-          expiresAt: result.expiresAt,
-          intervalSeconds: result.intervalSeconds,
-        });
-        return;
-      }
-      // Pairing never defines or saves a lockfile entry — imports create
-      // entries; pairs pair with a defined one. The exchange's identity facts
-      // go back to the page; creating the entry is the import's burden.
-      respondJson(res, 200, {
-        ok: true,
-        status: "imported",
-        assistantId: result.assistantId,
-        accessOnly: result.accessOnly,
-      });
-    });
-  };
-}
-
-// Paired-device management via the CLI (`cadet devices … --json`). POST-only
-// (the renderer's postLocalCommand always POSTs); run-helper results respond
-// 200 with `ok` discriminating success so all hosts share one wire shape.
-function devicesMiddleware(): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const isRevoke = requestPathname(req) === "/v1/devices/revoke";
-    if (!isRevoke && requestPathname(req) !== "/v1/devices") {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    void readJsonBody(req).then((body) => {
-      if (!body) {
-        respondJson(res, 400, { ok: false, error: "Invalid JSON body" });
-        return;
-      }
-
-      const assistantId = body.assistantId;
-      if (typeof assistantId !== "string" || !assistantId) {
-        respondJson(res, 400, { ok: false, error: "Missing assistantId" });
-        return;
-      }
-
-      let revokeHash: string | null = null;
-      if (isRevoke) {
-        const hashedDeviceId = body.hashedDeviceId;
-        if (typeof hashedDeviceId !== "string" || !hashedDeviceId) {
-          respondJson(res, 400, { ok: false, error: "Missing hashedDeviceId" });
-          return;
-        }
-        revokeHash = hashedDeviceId;
-      }
-
-      if (revokeHash !== null) {
-        void runDevicesRevoke(assistantId, revokeHash).then((result) => {
-          respondJson(res, 200, result);
-        });
-        return;
-      }
-      void runDevicesList(assistantId).then((result) => {
-        respondJson(res, 200, result);
-      });
-    });
-  };
-}
-
-/**
- * The operator routes: the headless lifecycle operations the dev server
- * answers in-process (today: the scoped surface's retire arm). The match is
- * pure in the URL — the hot path of every other request never touches the
- * lockfile — and the same-origin guard fronts the EXECUTION: a cross-origin
- * retire DELETE is refused here, never executed, never forwarded. A pass
- * (unknown id, platform-hosted entry) falls through to the gateway proxy,
- * whose cloud forward keeps the bundle's one endpoint holding for every
- * entry type.
+ * The operator routes: the host-served local-mode operations the dev server
+ * answers in-process — the headless lifecycle cores (retire/sleep/wake), the
+ * lockfile read, hatch, unpair, the pairing exchange, and device management.
+ * The match is pure in the URL — the hot path of every other request never
+ * touches the lockfile — and the same-origin guard fronts the EXECUTION: a
+ * cross-origin retire DELETE is refused here, never executed, never
+ * forwarded. A pass (unknown id, platform-hosted entry) falls through to the
+ * gateway proxy, whose cloud forward keeps the bundle's one endpoint holding
+ * for every entry type.
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -508,8 +252,24 @@ function operatorMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
+    // The route rows read the JSON body off the Request (pairing, devices,
+    // hatch, upgrade); the body rides as a lazy stream so a row that PASSES
+    // (unknown id) leaves the request stream untouched for the gateway
+    // proxy's forward. GET/HEAD cannot carry a body — only other methods
+    // attach one.
+    const hasBody = !["GET", "HEAD"].includes(req.method ?? "GET");
+    const request = new Request(`http://local${req.url ?? "/"}`, {
+      method: req.method,
+      headers: { "content-type": "application/json" },
+      ...(hasBody
+        ? {
+            body: Readable.toWeb(req) as unknown as ReadableStream,
+            duplex: "half",
+          }
+        : {}),
+    } as RequestInit & { duplex?: "half" });
     void match.route
-      .run(match.assistantId)
+      .run(match.assistantId, request)
       .then((response) => {
         if (!response) {
           return next();

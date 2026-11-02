@@ -754,7 +754,6 @@
       "version": "0.0.1",
       "dependencies": {
         "@mycadet/avatar-manifest": "workspace:*",
-        "@mycadet/local-mode": "workspace:*",
         "@mycadet/service-contracts": "workspace:*",
       },
       "devDependencies": {

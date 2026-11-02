@@ -14,7 +14,7 @@ import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forw
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
-import { runWhenReady } from "@mycadet/electron-desktop/app-lifecycle";
+import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import {
@@ -107,7 +107,7 @@ handleSync("cadet:config:get", () => ({
 // App lifecycle
 // ---------------------------------------------------------------------------
 
-runWhenReady(log, () => {
+startApp(log, () => {
     if (usesAppProtocolRenderer(app.isPackaged)) {
       registerAppProtocol();
       installGatewayRequestGuard({
