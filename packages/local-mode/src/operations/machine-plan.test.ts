@@ -50,9 +50,7 @@ function inspectAnswer(limits: {
 
 describe("planMachine — docker", () => {
   test("no policy and an unlimited container = no diff", async () => {
-    execOutputMock.mockImplementation(
-      async () => inspectAnswer({}),
-    );
+    execOutputMock.mockImplementation(async () => inspectAnswer({}));
     const result = await planMachine(dockerEntry());
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -71,12 +69,10 @@ describe("planMachine — docker", () => {
   test("a stored policy that matches the live flags = no diff", async () => {
     const max = 8 * 1024 ** 3;
     const high = 6 * 1024 ** 3;
-    execOutputMock.mockImplementation(
-      async () => inspectAnswer({ memory: max, reservation: high, swap: max }),
+    execOutputMock.mockImplementation(async () =>
+      inspectAnswer({ memory: max, reservation: high, swap: max }),
     );
-    const result = await planMachine(
-      dockerEntry({ memory: { max, high } }),
-    );
+    const result = await planMachine(dockerEntry({ memory: { max, high } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([]);
@@ -102,8 +98,8 @@ describe("planMachine — docker", () => {
 
   test("an unpinned swap on a matching max is its own change", async () => {
     const max = 8 * 1024 ** 3;
-    execOutputMock.mockImplementation(
-      async () => inspectAnswer({ memory: max, swap: 0 }),
+    execOutputMock.mockImplementation(async () =>
+      inspectAnswer({ memory: max, swap: 0 }),
     );
     const result = await planMachine(dockerEntry({ memory: { max } }));
     expect(result.ok).toBe(true);
@@ -130,8 +126,8 @@ describe("planMachine — docker", () => {
 
   test("no stored policy on a hand-limited container wants the flags gone", async () => {
     const applied = 4 * 1024 ** 3;
-    execOutputMock.mockImplementation(
-      async () => inspectAnswer({ memory: applied, reservation: applied, swap: applied }),
+    execOutputMock.mockImplementation(async () =>
+      inspectAnswer({ memory: applied, reservation: applied, swap: applied }),
     );
     const result = await planMachine(dockerEntry());
     expect(result.ok).toBe(true);
@@ -149,9 +145,7 @@ describe("planMachine — docker", () => {
       throw new Error("No such object: asst_plan_docker-assistant");
     });
     const max = 8 * 1024 ** 3;
-    const result = await planMachine(
-      dockerEntry({ memory: { max } }),
-    );
+    const result = await planMachine(dockerEntry({ memory: { max } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.applied).toBeUndefined();
@@ -192,15 +186,17 @@ describe("planMachine — remotes without a docker diff", () => {
     }
   });
 
-  test("unsupported remotes say so instead of pretending to diff", async () => {
+  test("unsupported remotes refuse the plan like their sleep and wake do", async () => {
     const result = await planMachine({
       assistantId: "asst_plan_cloud",
       cloud: "cloud",
     } as unknown as LockfileAssistant);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.note).toBe("no apply path for this remote yet");
-      expect(result.requiresRecreate).toBe(false);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(400);
+      expect(result.error).toBe(
+        "'cadet machine plan' is unsupported for a cloud assistant.",
+      );
     }
   });
 });

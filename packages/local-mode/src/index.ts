@@ -58,8 +58,10 @@ export type {
   AppleContainerAssistant,
   CloudAssistant,
   LockfileWriteResult,
+  MachinePolicy,
+  MachineMemoryPolicy,
 } from "./lockfile-contract";
-export { configureCliPaths, resolveCliInvocation } from "./cli-invocation";
+export { machinePolicyPaths } from "./lockfile-contract";
 export {
   matchOperatorRequest,
   forwardOperatorRequest,
