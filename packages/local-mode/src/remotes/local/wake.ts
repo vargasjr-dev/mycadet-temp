@@ -32,20 +32,14 @@ export async function wakeLocal(
   entry: LockfileAssistant,
   opts: {
     watch?: boolean;
-    foreground?: boolean;
     /** The hatch's fresh-daemon first-boot workspace config (a temp file — CLI-internal, never a route surface). */
     defaultWorkspaceConfigPath?: string;
   } = {},
 ): Promise<WakeResult> {
-  const {
-    watch = false,
-    foreground = false,
-    defaultWorkspaceConfigPath,
-  } = opts;
+  const { watch = false, defaultWorkspaceConfigPath } = opts;
   try {
     return await wakeLocalUnchecked(entry, {
       watch,
-      foreground,
       defaultWorkspaceConfigPath,
     });
   } catch (err) {
@@ -66,11 +60,10 @@ async function wakeLocalUnchecked(
   entry: LockfileAssistant,
   opts: {
     watch: boolean;
-    foreground: boolean;
     defaultWorkspaceConfigPath?: string;
   },
 ): Promise<WakeResult> {
-  const { watch, foreground, defaultWorkspaceConfigPath } = opts;
+  const { watch, defaultWorkspaceConfigPath } = opts;
   if (!isLocalEntry(entry)) {
     throw new WakeRefused(
       `'${entry.assistantId}' is not an on-machine assistant.`,
@@ -80,7 +73,6 @@ async function wakeLocalUnchecked(
   try {
     return await wakeLocalSteps(entry, {
       watch,
-      foreground,
       defaultWorkspaceConfigPath,
     });
   } catch (err) {
@@ -95,11 +87,10 @@ async function wakeLocalSteps(
   entry: LocalAssistant,
   opts: {
     watch: boolean;
-    foreground: boolean;
     defaultWorkspaceConfigPath?: string;
   },
 ): Promise<WakeResult> {
-  const { watch, foreground, defaultWorkspaceConfigPath } = opts;
+  const { watch, defaultWorkspaceConfigPath } = opts;
 
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
@@ -196,7 +187,6 @@ async function wakeLocalSteps(
     await Promise.all([
       startCes(watch, entry),
       startLocalDaemon(watch, entry, {
-        foreground,
         defaultWorkspaceConfigPath,
       }),
     ]);

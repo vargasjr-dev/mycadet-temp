@@ -1453,7 +1453,7 @@ jobs:
           cd meta
           jq --arg v "$VERSION" '
             .version = $v |
-            .bin = { "cadet-dev": .bin.cadet, "cadet": .bin.cadet, "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
+            .bin = { "cadet-dev": .bin.cadet, "cadet": "./bin/cadet-production.js", "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
             .dependencies["@mycadet/app"] = $v |
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
@@ -1461,6 +1461,20 @@ jobs:
             .dependencies["@mycadet/gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
+          # The `cadet` name on the dev channel runs the CLI under production
+          # conditions: CADET_ENVIRONMENT beats the version-derived
+          # environment (a dev-release CLI version would resolve "dev"
+          # otherwise), and the resolved environment propagates to the
+          # daemon/gateway children through process.env. Generated here so
+          # the production meta package never carries the launcher.
+          cat > bin/cadet-production.js <<'EOF'
+          #!/usr/bin/env bun
+          // Dev-channel launcher for the `cadet` name: force the production
+          // environment before the CLI evaluates, so a cadet@dev install can
+          // run on a production assistant and feed stability feedback.
+          process.env.CADET_ENVIRONMENT = "production";
+          import("@mycadet/cli");
+          EOF
       - name: Generate npm-shrinkwrap.json
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
       - name: Publish

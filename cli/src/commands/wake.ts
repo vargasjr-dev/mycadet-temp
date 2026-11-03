@@ -26,23 +26,15 @@ export const wake = Object.assign(
       console.log(
         "  --watch        Run assistant and gateway in watch mode (hot reload on source changes)",
       );
-      console.log(
-        "  --foreground   Run assistant in foreground with logs printed to terminal",
-      );
       process.exit(0);
     }
 
     const watch = args.includes("--watch");
-    const foreground = args.includes("--foreground");
     const nameArg = args.find((a) => !a.startsWith("-"));
     const all = args.includes("--all");
 
     if (all && nameArg) {
       console.error("Error: --all cannot be combined with an assistant name.");
-      process.exit(1);
-    }
-    if (all && foreground) {
-      console.error("Error: --all cannot be combined with --foreground.");
       process.exit(1);
     }
 
@@ -52,34 +44,12 @@ export const wake = Object.assign(
     }
 
     const entry = resolveTargetAssistant(nameArg);
-    if (entry.cloud === "docker" && (watch || foreground)) {
-      const ignored = [watch && "--watch", foreground && "--foreground"]
-        .filter(Boolean)
-        .join(" and ");
-      console.warn(`Warning: ${ignored} ignored for Docker instances.`);
-    }
-    const result = await wakeAssistant(entry, { watch, foreground });
+    const result = await wakeAssistant(entry, { watch });
     if (!result.ok) {
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
     console.log("Wake complete.");
-
-    // Foreground blocking is a single-assistant concern (--all refuses the
-    // flag), and the docker path already warned that foreground is ignored.
-    if (foreground && entry.cloud !== "docker") {
-      console.log("Running in the foreground, Ctrl+C to stop...\n");
-      // Block forever — the daemon is running with inherited stdio so its
-      // output streams to this terminal. When the user hits Ctrl+C, SIGINT
-      // propagates to the daemon child and both exit.
-      await new Promise<void>((resolve) => {
-        process.on("SIGINT", () => {
-          console.log("\nShutting down...");
-          resolve();
-        });
-        process.on("SIGTERM", () => resolve());
-      });
-    }
   },
   { description: "Start the assistant and gateway" },
 );
@@ -110,10 +80,7 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
       );
       continue;
     }
-    const result = await wakeAssistant(entry, {
-      watch: opts.watch,
-      foreground: false,
-    });
+    const result = await wakeAssistant(entry, { watch: opts.watch });
     if (!result.ok) {
       failures++;
       console.error(

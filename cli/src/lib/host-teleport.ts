@@ -1,17 +1,10 @@
 import { rm } from "node:fs/promises";
-import {
-  getGatewayUrl,
-  isDockerEntry,
-  type Remote,
-} from "@mycadet/local-mode/contract";
-import { z } from "zod";
+import { getGatewayUrl, type Remote } from "@mycadet/local-mode/contract";
 import cliPkg from "../../package.json";
-import { dockerResourceNames } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import { hatchDocker } from "./remotes/docker.js";
-import { startContainers } from "@mycadet/local-mode";
+import { initializeDockerTeleportTarget } from "./remotes/docker.js";
 import {
   allocateLocalPlacement,
   buildHatchConfigValues,
@@ -32,9 +25,6 @@ import {
   STATE_ROOTS,
   withRootOperationLock,
 } from "./root-backup.js";
-import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
-import { execOutput } from "./step-runner.js";
-import { buildReplayState } from "./upgrade-lifecycle.js";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
@@ -116,11 +106,7 @@ async function initializeTeleportTarget(
   }
   try {
     if (env === "docker") {
-      await hatchDocker({
-        name: instanceName,
-        setupProviderCredentials: false,
-        initialArchive: archive,
-      });
+      await initializeDockerTeleportTarget(instanceName, archive);
     } else if (env === "local") {
       await withLocalHatchLock(async () => {
         const entry: LockfileAssistant = {
@@ -289,139 +275,15 @@ async function performHostTeleport(
   }
 }
 
-const DockerConfiguration = z.object({
-  Id: z.string().optional(),
-  Image: z.string().min(1),
-  Config: z.object({ Env: z.array(z.string()), User: z.string() }),
-  HostConfig: z.object({ NetworkMode: z.string() }),
-  Mounts: z.array(
-    z.object({
-      Type: z.string(),
-      Name: z.string().optional(),
-      Destination: z.string(),
-      RW: z.boolean(),
-    }),
-  ),
-});
-
-/** Recreate standard CLI containers so immutable env cannot override imported identity. */
-async function dockerReplacementOptions(
-  entry: LockfileAssistant,
-): Promise<Parameters<typeof startContainers>[0]> {
-  if (!isDockerEntry(entry)) {
-    throw new Error(
-      `'${entry.assistantId}' is not a docker assistant — teleport expects a docker target.`,
-    );
-  }
-  const res = dockerResourceNames(entry.assistantId);
-  const states = new Map<string, z.infer<typeof DockerConfiguration>>();
-  for (const container of [
-    res.assistantContainer,
-    res.gatewayContainer,
-    res.cesContainer,
-  ]) {
-    const parsed = z
-      .array(DockerConfiguration)
-      .length(1)
-      .safeParse(
-        JSON.parse(await execOutput("docker", ["inspect", container])),
-      );
-    if (!parsed.success) {
-      throw new Error(`Cannot read Docker configuration for ${container}.`);
-    }
-    states.set(container, parsed.data[0]!);
-  }
-  const containerByService = {
-    assistant: res.assistantContainer,
-    gateway: res.gatewayContainer,
-    "credential-executor": res.cesContainer,
-  };
-  for (const spec of DOCKER_STATEFUL_SET_SPEC.containers) {
-    const state = states.get(containerByService[spec.internalName])!;
-    const expectedNetwork =
-      spec.network === "bridge"
-        ? res.network
-        : `container:${res.assistantContainer}`;
-    const assistantId = states.get(res.assistantContainer)!.Id;
-    if (
-      state.HostConfig.NetworkMode !== expectedNetwork &&
-      !(
-        spec.network === "container" &&
-        assistantId &&
-        state.HostConfig.NetworkMode === `container:${assistantId}`
-      )
-    ) {
-      throw new Error(
-        "Teleport into a customized Docker network requires a newly hatched target.",
-      );
-    }
-    if (state.Mounts.length !== spec.volumeMounts.length) {
-      throw new Error(
-        "Teleport into customized Docker mounts requires a newly hatched target.",
-      );
-    }
-    for (const mount of spec.volumeMounts) {
-      const volume = DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates.find(
-        (volume) => volume.name === mount.volumeName,
-      )!;
-      const found = state.Mounts.find(
-        (item) => item.Destination === mount.mountPath,
-      );
-      if (
-        !found ||
-        found.Type !== "volume" ||
-        found.Name !== volume.dockerVolume(entry.assistantId) ||
-        found.RW !== !mount.readOnly
-      ) {
-        throw new Error(
-          "Teleport into customized Docker mounts requires a newly hatched target.",
-        );
-      }
-    }
-  }
-  const env = (container: string) =>
-    Object.fromEntries(
-      states.get(container)!.Config.Env.map((value) => {
-        const index = value.indexOf("=");
-        return [value.slice(0, index), value.slice(index + 1)];
-      }),
-    );
-  const replay = buildReplayState(
-    env(res.assistantContainer),
-    env(res.gatewayContainer),
-  );
-  const gatewayUrl = getGatewayUrl(entry);
-  const gatewayPort = Number(new URL(gatewayUrl).port);
-  if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1) {
-    throw new Error(
-      "Docker target is missing its published ports. Use a newly hatched target.",
-    );
-  }
-  return {
-    ...replay,
-    gatewayPort,
-    imageTags: {
-      assistant: states.get(res.assistantContainer)!.Image,
-      gateway: states.get(res.gatewayContainer)!.Image,
-      "credential-executor": states.get(res.cesContainer)!.Image,
-    },
-    instanceName: entry.assistantId,
-    res,
-    createOnly: true,
-  };
-}
-
 export async function restoreHostTeleportTarget(
   entry: LockfileAssistant,
   archive: string,
   recovery: string,
 ): Promise<void> {
+  // Pre-validation only: a legacy vbundle must be rejected before anything
+  // touches the destination. The real restore re-stages from the archive.
   const stage = await stageRootArchive(archive);
   await rm(stage, { recursive: true, force: true });
-  const previous =
-    entry.cloud === "docker"
-      ? await dockerReplacementOptions(entry)
-      : undefined;
   if (await storageFor(entry).running()) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
@@ -434,56 +296,13 @@ export async function restoreHostTeleportTarget(
           runtimeInstallDir: entry.runtimeInstallDir,
         }
       : undefined;
-  const replaceContainers = async (
-    opts: Parameters<typeof startContainers>[0],
-  ) => {
-    const storage = new DockerRootStorage(entry);
-    if (await storage.running()) {
-      throw new Error(
-        "Docker services must be stopped before container replacement.",
-      );
-    }
-    for (const container of [
-      opts.res.assistantContainer,
-      opts.res.gatewayContainer,
-      opts.res.cesContainer,
-    ]) {
-      await execOutput("docker", ["rm", container]);
-    }
-    await startContainers(opts, (message) => console.log(message));
-  };
   try {
-    if (previous) {
-      // The captured destination env replays wholesale — including this
-      // machine's ACTOR_TOKEN_SIGNING_KEY, which (env beats file) shadows
-      // the imported root's key. The signing-key-level disposition is open.
-      await replaceContainers(previous);
-    }
     await restoreRootBackup(entry, archive, { resume: false });
     const woken = await wakeAssistant(entry);
     if (!woken.ok) throw new Error(woken.error);
   } catch (error) {
     try {
       await sleepAssistant(entry);
-      if (previous) {
-        // Failed creation can leave an incomplete service group.
-        for (const container of [
-          previous.res.assistantContainer,
-          previous.res.gatewayContainer,
-          previous.res.cesContainer,
-        ]) {
-          try {
-            await execOutput("docker", ["rm", container]);
-          } catch (removeError) {
-            if (
-              !String(removeError).toLowerCase().includes("no such container")
-            ) {
-              throw removeError;
-            }
-          }
-        }
-        await startContainers(previous, (message) => console.log(message));
-      }
       if (
         entry.cloud !== "cloud" &&
         entry.cloud !== "custom" &&
@@ -492,7 +311,12 @@ export async function restoreHostTeleportTarget(
         entry.runtimeVersion = originalRuntime?.runtimeVersion;
         entry.runtimeInstallDir = originalRuntime?.runtimeInstallDir;
       }
-      await restoreRootBackup(entry, recovery, { resume: false });
+      // Sleep removes the docker containers, so the recovery import cannot
+      // capture from them again anyway — install the recovery archive into
+      // the volumes directly (initializeRootArchive writes them
+      // container-free) and leave the services stopped; the next wake
+      // recreates the containers from the entry's recorded images.
+      await initializeRootArchive(entry, recovery);
     } catch (recoveryError) {
       throw new TeleportRecoveryError(
         [error, recoveryError],

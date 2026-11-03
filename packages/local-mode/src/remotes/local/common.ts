@@ -519,7 +519,6 @@ function resolveDaemonMainPath(assistantIndex: string): string {
  * signing key end-to-end; the CLI never touches it.
  */
 type DaemonStartOptions = {
-  foreground?: boolean;
   defaultWorkspaceConfigPath?: string;
   requireReady?: boolean;
 };
@@ -735,7 +734,6 @@ async function startDaemonFromSource(
   daemonPort: number,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
-  const foreground = options?.foreground ?? false;
   const daemonMainPath = resolveDaemonMainPath(assistantIndex);
 
   // Ensure the directory containing PID/socket files exists. For named
@@ -789,29 +787,19 @@ async function startDaemonFromSource(
     env,
     assistantCommand ? [dirname(assistantCommand)] : [],
   );
-  const child = foreground
-    ? spawn(bunPath, ["run", resolve(daemonMainPath)], {
-        cwd: spawnStateRoot(),
-        stdio: "inherit",
-        env: spawnEnv,
-        windowsHide: true,
-      })
-    : (() => {
-        const daemonLogFd = openRuntimeLogFile(
-          getLocalInstanceDir(entry),
-          "assistant",
-        );
-        const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
-          cwd: spawnStateRoot(),
-          detached: true,
-          stdio: ["ignore", "pipe", "pipe"],
-          windowsHide: true,
-          env: spawnEnv,
-        });
-        pipeToLogFile(c, daemonLogFd, "daemon");
-        c.unref();
-        return c;
-      })();
+  const daemonLogFd = openRuntimeLogFile(
+    getLocalInstanceDir(entry),
+    "assistant",
+  );
+  const child = spawn(bunPath, ["run", resolve(daemonMainPath)], {
+    cwd: spawnStateRoot(),
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+    env: spawnEnv,
+  });
+  pipeToLogFile(child, daemonLogFd, "daemon");
+  child.unref();
 
   if (!child.pid) {
     try {
@@ -1459,7 +1447,6 @@ export async function startLocalDaemon(
     return;
   }
 
-  const foreground = options?.foreground ?? false;
   // Check for a compiled daemon binary adjacent to the CLI executable
   // (the compiled CLI run directly from the terminal).
   const daemonBinary = compiledSibling("cadet-daemon");
@@ -1581,29 +1568,19 @@ export async function startLocalDaemon(
       // instead of racing to spawn a duplicate daemon.
       writeFileSync(pidFile, "starting", "utf-8");
 
-      const child = foreground
-        ? spawn(daemonBinary, [], {
-            cwd: spawnStateRoot(),
-            stdio: "inherit",
-            env: daemonSpawnEnv,
-            windowsHide: true,
-          })
-        : (() => {
-            const daemonLogFd = openRuntimeLogFile(
-              getLocalInstanceDir(entry),
-              "assistant",
-            );
-            const c = spawn(daemonBinary, [], {
-              cwd: spawnStateRoot(),
-              detached: true,
-              stdio: ["ignore", "pipe", "pipe"],
-              windowsHide: true,
-              env: daemonSpawnEnv,
-            });
-            pipeToLogFile(c, daemonLogFd, "daemon");
-            c.unref();
-            return c;
-          })();
+      const daemonLogFd = openRuntimeLogFile(
+        getLocalInstanceDir(entry),
+        "assistant",
+      );
+      const child = spawn(daemonBinary, [], {
+        cwd: spawnStateRoot(),
+        detached: true,
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        env: daemonSpawnEnv,
+      });
+      pipeToLogFile(child, daemonLogFd, "daemon");
+      child.unref();
       const daemonPid = child.pid;
 
       // Overwrite sentinel with real PID, or clean up on spawn failure.

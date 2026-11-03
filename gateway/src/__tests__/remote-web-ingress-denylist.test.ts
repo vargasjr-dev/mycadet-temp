@@ -7,7 +7,7 @@ const gatewayIndexSource = readFileSync(
   "utf8",
 );
 
-const nginxIngressSource = readFileSync(
+const denylistSource = readFileSync(
   join(
     import.meta.dir,
     "..",
@@ -17,7 +17,22 @@ const nginxIngressSource = readFileSync(
     "src",
     "lib",
     "servers",
-    "nginx.ts",
+    "common.ts",
+  ),
+  "utf8",
+);
+
+const edgeHandlerSource = readFileSync(
+  join(
+    import.meta.dir,
+    "..",
+    "..",
+    "..",
+    "cli",
+    "src",
+    "lib",
+    "servers",
+    "bun.ts",
   ),
   "utf8",
 );
@@ -70,29 +85,24 @@ function extractUnprotectedStaticV1Routes(): string[] {
 }
 
 function sensitiveRoutesSource(): string {
-  const start = nginxIngressSource.indexOf(
-    "const SENSITIVE_GATEWAY_ROUTES = [",
-  );
+  const start = denylistSource.indexOf("const SENSITIVE_GATEWAY_ROUTES = [");
   expect(start).toBeGreaterThanOrEqual(0);
-  const end = nginxIngressSource.indexOf("] as const", start);
-  return nginxIngressSource.slice(start, end);
+  const end = denylistSource.indexOf("] as const", start);
+  return denylistSource.slice(start, end);
 }
 
 function assertDeniedBeforeV1Proxy(path: string): void {
   // The denylist is data-driven since the app-shell edge (#354): the
-  // sensitive paths live in SENSITIVE_GATEWAY_ROUTES, and the emitted
-  // config places the 404 blocks ahead of the /v1/ proxy in both shell
-  // modes (web mode emits DENYLIST_LOCATIONS, app mode re-emits the
-  // denylist for the /web iframe prefix too).
+  // sensitive paths live in SENSITIVE_GATEWAY_ROUTES, and the Bun.serve
+  // handler consults the DENY_PATHS set before every other tier —
+  // operator rows, the static surface, and the /v1 proxy all answer
+  // behind the 404. The set builder also covers the /web iframe prefix
+  // and the unversioned spellings of every route.
   expect(sensitiveRoutesSource()).toContain(`"${path}"`);
-  const denyEmit = nginxIngressSource.indexOf("${DENYLIST_LOCATIONS}");
-  const appDenyEmit = nginxIngressSource.indexOf("${denylistLocations()}");
-  const proxyEmit = nginxIngressSource.indexOf(
-    "${gatewayProxyLocations(opts.gatewayUrl)}",
-  );
-  expect(denyEmit).toBeGreaterThanOrEqual(0);
-  expect(proxyEmit).toBeGreaterThan(denyEmit);
-  expect(appDenyEmit).toBeGreaterThanOrEqual(0);
+  const denyGuard = edgeHandlerSource.indexOf("if (DENY_PATHS.has(pathname))");
+  const proxyCall = edgeHandlerSource.indexOf("proxyToGateway(request");
+  expect(denyGuard).toBeGreaterThanOrEqual(0);
+  expect(proxyCall).toBeGreaterThan(denyGuard);
 }
 
 function assertNotExplicitlyDenied(path: string): void {

@@ -19,7 +19,6 @@ export type WakeResult =
 /** The local daemon's launch modes; the docker containers run detached. */
 export interface WakeAssistantOptions {
   watch?: boolean;
-  foreground?: boolean;
 }
 
 export async function wakeAssistant(
