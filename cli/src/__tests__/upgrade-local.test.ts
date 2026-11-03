@@ -385,7 +385,6 @@ describe("cadet upgrade local", () => {
     expect(sleepAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
-        runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
       { force: true },
     );
@@ -397,7 +396,6 @@ describe("cadet upgrade local", () => {
     expect(wakeAssistantMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
-        runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(

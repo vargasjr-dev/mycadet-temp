@@ -20,7 +20,7 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
-import { startContainers } from "@mycadet/local-mode";
+import { isRunningDocker, startContainers } from "@mycadet/local-mode";
 import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
@@ -191,7 +191,7 @@ test("Docker subprocess round-trip preserves every root, private files and clear
 });
 
 test("failure during Docker replacement recovers prior roots before restarting", async () => {
-  const { storage, file } = await archive();
+  const { file } = await archive();
   for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS)
     await writeFile(join(directory, root, "value"), "destination");
@@ -200,7 +200,7 @@ test("failure during Docker replacement recovers prior roots before restarting",
   await expect(
     restoreRootBackup(entry, file, { recoveryPath: recovery }),
   ).rejects.toThrow("injected volume replacement failure");
-  expect(await storage.running()).toBe(true);
+  expect(await isRunningDocker(entry)).toBe(true);
   const previous = await stageRootArchive(recovery, directory);
   for (const root of STATE_ROOTS) {
     expect(await readFile(join(directory, root, "value"), "utf8")).toBe(

@@ -20,12 +20,9 @@ import * as tar from "tar";
 import { z } from "zod";
 import {
   dockerResourceNames,
-  getDaemonPidPath,
   getLocalInstanceDir,
   isDockerEntry,
   isNoSuchContainerError,
-  isProcessAlive,
-  probePort,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
@@ -246,7 +243,6 @@ export async function stageRootArchive(
 }
 
 export interface RootStorage {
-  running(): Promise<boolean>;
   capture(target: string): Promise<void>;
   replace(source: string): Promise<void>;
   prepareRestore?(source: string): Promise<void>;
@@ -277,34 +273,6 @@ export class LocalRootStorage implements RootStorage {
     }
   }
 
-  async running(): Promise<boolean> {
-    const running = new Set(
-      [
-        ["assistant", getDaemonPidPath(this.localEntry)],
-        ["gateway", join(this.root, "gateway.pid")],
-        ["ces", join(this.root, "ces.pid")],
-      ]
-        .filter(([, file]) => isProcessAlive(file!).alive)
-        .map(([service]) => service!),
-    );
-    const entry = this.localEntry;
-    for (const [service, port] of [
-      ["assistant", entry.daemonPort],
-      ["gateway", entry.port],
-      ["ces", entry.cesPort],
-    ] as const) {
-      if (
-        !running.has(service) &&
-        port !== undefined &&
-        (await probePort(port))
-      ) {
-        throw new Error(
-          `${service} port ${port} is occupied without a live PID file; stop that service before backup/restore.`,
-        );
-      }
-    }
-    return running.size > 0;
-  }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
       const source = join(this.root, root);
@@ -470,28 +438,6 @@ export class DockerRootStorage implements RootStorage {
     }
     return result.data[0]!;
   }
-  async running(): Promise<boolean> {
-    const containers = [...new Set(Object.values(this.containers))];
-    const states: ContainerInspection[] = [];
-    for (const container of containers) {
-      try {
-        states.push(await this.inspect(container));
-      } catch (error) {
-        // A never-created group (the teleport initializes the volumes
-        // before the first wake) is honestly not running.
-        if (isNoSuchContainerError(error)) return false;
-        throw error;
-      }
-    }
-    for (const state of states) {
-      if (!["created", "running", "exited"].includes(state.State.Status)) {
-        throw new Error(
-          `Container is ${state.State.Status}; stop or repair it before backup/restore.`,
-        );
-      }
-    }
-    return states.some((state) => state.State.Running);
-  }
   async capture(target: string): Promise<void> {
     for (const root of STATE_ROOTS) {
       await mkdir(join(target, root), { mode: 0o700 });
@@ -654,11 +600,20 @@ async function wakeOrFail(entry: LockfileAssistant): Promise<void> {
   if (!woken.ok) throw new Error(woken.error);
 }
 
-async function assertStopped(storage: RootStorage): Promise<void> {
-  if (await storage.running())
-    throw new Error(
-      "Services are still running; no consistent root capture is possible.",
-    );
+/**
+ * The restart signal for the root-backup flows, derived from the sleep
+ * result itself: only services the sleep actually stopped come back up in
+ * the flows' finally. A failed sleep has already thrown by the time this
+ * runs.
+ */
+function wasRunningBeforeSleep(
+  slept: Awaited<ReturnType<typeof sleepAssistant>>,
+): boolean {
+  if (!slept.ok) return false; // a failed sleep has already thrown upstream
+  if (slept.kind === "services")
+    return Object.values(slept.services).some((stop) => stop === "stopped");
+  if (slept.kind === "containers") return slept.stopped ?? false;
+  return false;
 }
 
 const ownedOperationLocks = new AsyncLocalStorage<ReadonlySet<string>>();
@@ -715,13 +670,14 @@ async function captureBackup(
   let running = false;
   let stopped = false;
   try {
-    running = await storage.running();
-    stopped = running;
-    if (running) await sleepAssistant(entry);
+    // Sleep is idempotent — invoked unconditionally; a failed sleep throws
+    // its own error, and the per-service stops in its result are the
+    // restart signal. No separate liveness check before or after.
+    const slept = await sleepAssistant(entry);
+    if (!slept.ok) throw new Error(slept.error);
+    running = wasRunningBeforeSleep(slept);
     stopped = true;
-    await assertStopped(storage);
     await storage.capture(stage);
-    await assertStopped(storage);
     if (running) {
       await wakeOrFail(entry);
       stopped = false;
@@ -759,7 +715,6 @@ export async function initializeRootArchive(
     try {
       const source = join(stage, "state");
       await storage.prepareRestore?.(source);
-      await assertStopped(storage);
       await storage.replace(source);
       return undefined;
     } finally {
@@ -785,11 +740,10 @@ async function restoreBackup(
   try {
     await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
-    running = await storage.running();
-    stopped = running;
-    if (running) await sleepAssistant(entry);
+    const slept = await sleepAssistant(entry);
+    if (!slept.ok) throw new Error(slept.error);
+    running = wasRunningBeforeSleep(slept);
     stopped = true;
-    await assertStopped(storage);
     await mkdir(snapshot, { mode: 0o700 });
     await storage.capture(snapshot);
     recoveryPath =
@@ -799,7 +753,6 @@ async function restoreBackup(
         `${entry.assistantId}-pre-restore-${Date.now()}.tar.gz`,
       );
     await packRoot(snapshot, recoveryPath);
-    await assertStopped(storage);
     replacing = true;
     try {
       await storage.replace(source);

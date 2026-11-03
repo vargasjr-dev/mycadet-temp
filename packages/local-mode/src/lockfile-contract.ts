@@ -363,10 +363,6 @@ const LocalRuntimeAssistantFields = {
   instanceDir: z.string().optional(),
   /** The content-editor server's port, recorded at hatch. */
   cesPort: z.number().optional(),
-  /** The runtime build version this instance runs. */
-  runtimeVersion: z.string().optional(),
-  /** Where the runtime build is installed on this machine. */
-  runtimeInstallDir: z.string().optional(),
 };
 
 /** A plain on-machine assistant: host-managed ports and instance dir. */
