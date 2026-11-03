@@ -20,10 +20,15 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
-import { isRunningDocker, startContainers } from "@mycadet/local-mode";
+import { startContainers } from "@mycadet/local-mode";
 import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
+import * as healthCheck from "../lib/health-check.js";
+
+// The flows' restart signal is the entry health probe — modeled here from
+// the container map (any running container = the gateway answers).
+const healthyMock = spyOn(healthCheck, "isAssistantHealthy");
 
 const entry: LockfileAssistant = {
   assistantId: "docker-backup",
@@ -53,6 +58,9 @@ beforeEach(async () => {
   commands = mockCommands();
   writes = 0;
   failWrite = 0;
+  healthyMock.mockImplementation(async () =>
+    [...running.values()].some(Boolean),
+  );
   for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS) {
     await mkdir(join(directory, root), { mode: 0o700 });
@@ -192,6 +200,9 @@ test("Docker subprocess round-trip preserves every root, private files and clear
 
 test("failure during Docker replacement recovers prior roots before restarting", async () => {
   const { file } = await archive();
+  healthyMock.mockImplementation(async () =>
+    [...running.values()].some(Boolean),
+  );
   for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS)
     await writeFile(join(directory, root, "value"), "destination");
@@ -200,7 +211,7 @@ test("failure during Docker replacement recovers prior roots before restarting",
   await expect(
     restoreRootBackup(entry, file, { recoveryPath: recovery }),
   ).rejects.toThrow("injected volume replacement failure");
-  expect(await isRunningDocker(entry)).toBe(true);
+  expect(commands.calls.some((call) => call.args[0] === "run")).toBe(true);
   const previous = await stageRootArchive(recovery, directory);
   for (const root of STATE_ROOTS) {
     expect(await readFile(join(directory, root, "value"), "utf8")).toBe(

@@ -278,3 +278,15 @@ export async function checkCloudHealth(
     return { status, detail: null };
   }
 }
+
+/**
+ * Remote-agnostic liveness for one assistant entry: the assistant is up
+ * exactly when its gateway answers the health probe. The wake-recovery and
+ * backup-restart decisions ride this — no per-cloud pid-file or container
+ * inspection.
+ */
+export async function isAssistantHealthy(
+  entry: LockfileAssistant,
+): Promise<boolean> {
+  return (await checkHealth(getGatewayUrl(entry))).status === "healthy";
+}

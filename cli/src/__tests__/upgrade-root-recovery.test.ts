@@ -54,7 +54,6 @@ beforeEach(() => {
   });
   sleep.mockImplementation(async () => {
     events.push("sleep");
-    return false;
   });
   start.mockImplementation(async () => {
     events.push("start-old-version");

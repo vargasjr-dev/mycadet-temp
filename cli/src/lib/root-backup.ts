@@ -27,6 +27,7 @@ import {
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
+import { isAssistantHealthy } from "./health-check.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
@@ -600,22 +601,6 @@ async function wakeOrFail(entry: LockfileAssistant): Promise<void> {
   if (!woken.ok) throw new Error(woken.error);
 }
 
-/**
- * The restart signal for the root-backup flows, derived from the sleep
- * result itself: only services the sleep actually stopped come back up in
- * the flows' finally. A failed sleep has already thrown by the time this
- * runs.
- */
-function wasRunningBeforeSleep(
-  slept: Awaited<ReturnType<typeof sleepAssistant>>,
-): boolean {
-  if (!slept.ok) return false; // a failed sleep has already thrown upstream
-  if (slept.kind === "services")
-    return Object.values(slept.services).some((stop) => stop === "stopped");
-  if (slept.kind === "containers") return slept.stopped ?? false;
-  return false;
-}
-
 const ownedOperationLocks = new AsyncLocalStorage<ReadonlySet<string>>();
 
 /** Hold storage ownership across lifecycle steps; nested backup calls share the lock. */
@@ -670,12 +655,13 @@ async function captureBackup(
   let running = false;
   let stopped = false;
   try {
-    // Sleep is idempotent — invoked unconditionally; a failed sleep throws
-    // its own error, and the per-service stops in its result are the
-    // restart signal. No separate liveness check before or after.
+    // The restart signal is the gateway's own health probe — remote
+    // agnostic — taken before the sleep. The sleep itself runs
+    // unconditionally (it is idempotent) and its structured failure
+    // throws its own error.
+    running = await isAssistantHealthy(entry);
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
-    running = wasRunningBeforeSleep(slept);
     stopped = true;
     await storage.capture(stage);
     if (running) {
@@ -740,9 +726,9 @@ async function restoreBackup(
   try {
     await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
+    running = await isAssistantHealthy(entry);
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
-    running = wasRunningBeforeSleep(slept);
     stopped = true;
     await mkdir(snapshot, { mode: 0o700 });
     await storage.capture(snapshot);

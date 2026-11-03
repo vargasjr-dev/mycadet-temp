@@ -8,7 +8,6 @@ import { initializeDockerTeleportTarget } from "./remotes/docker.js";
 import {
   allocateLocalPlacement,
   buildHatchConfigValues,
-  isAssistantRunning,
   retireAssistant,
   saveLockfileAssistant,
   validateAssistantName,
@@ -25,6 +24,7 @@ import {
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
+import { isAssistantHealthy } from "./health-check.js";
 import { generateInstanceName } from "@mycadet/local-mode";
 
 export class TeleportRecoveryError extends AggregateError {}
@@ -179,7 +179,7 @@ async function performHostTeleport(
       ? await fetchCurrentVersion(getGatewayUrl(existing))
       : cliPkg.version,
   );
-  const sourceWasRunning = await isAssistantRunning(source);
+  const sourceWasRunning = await isAssistantHealthy(source);
   let target: LockfileAssistant | undefined;
   let ready = false;
   try {
@@ -189,7 +189,7 @@ async function performHostTeleport(
     const archive = await ops.backup(source);
     if (existing) {
       target = existing;
-      const targetWasRunning = await isAssistantRunning(target);
+      const targetWasRunning = await isAssistantHealthy(target);
       try {
         const targetSlept = await sleepAssistant(target);
         if (!targetSlept.ok) throw new Error(targetSlept.error);
@@ -220,7 +220,7 @@ async function performHostTeleport(
         `Source '${source.assistantId}' retained, stopped, via --keep-source.`,
       );
     } else {
-      if (await isAssistantRunning(source)) {
+      if (await isAssistantHealthy(source)) {
         throw new Error(
           "Source was restarted during teleport. Destination is ready; source was retained to preserve newer writes.",
         );
@@ -262,7 +262,7 @@ export async function restoreHostTeleportTarget(
   // touches the destination. The real restore re-stages from the archive.
   const stage = await stageRootArchive(archive);
   await rm(stage, { recursive: true, force: true });
-  if (await isAssistantRunning(entry)) {
+  if (await isAssistantHealthy(entry)) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
   try {
