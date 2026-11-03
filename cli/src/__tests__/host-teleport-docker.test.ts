@@ -15,7 +15,10 @@ import cliPkg from "../../package.json";
 
 import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
 import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import type {
+  DockerAssistant,
+  LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
 import { dockerResourceNames } from "@mycadet/local-mode";
@@ -367,10 +370,14 @@ test("a fresh docker target initializes the volumes without creating containers"
   );
 
   try {
-    const entry = await initializeDockerTeleportTarget("fresh-target", archive);
+    const hatched = await initializeDockerTeleportTarget(
+      "fresh-target",
+      archive,
+    );
+    expect(hatched.cloud).toBe("docker");
+    const entry = hatched as DockerAssistant;
 
     const refs = resolveOwnImageRefs(cliPkg.version);
-    expect(entry.cloud).toBe("docker");
     expect(entry.port).toBe(7830);
     expect(entry.daemonPort).toBe(7821);
     expect(entry.hatchedAt).toBeTruthy();
