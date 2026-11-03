@@ -147,7 +147,6 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "API-ключ {providerName} настроен. Повторная настройка: запуск навыка <code>{setupSkill}</code>.",
-    "connecting": "Подключение к платформе Cadet…",
     "openProvider": "Открыть {providerName}",
     "providerLabel": "Провайдер",
     "saveSuccessToast": "Настройки почты сохранены.",

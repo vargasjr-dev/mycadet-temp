@@ -147,7 +147,6 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "{providerName} API key configured. To reconfigure, run the <code>{setupSkill}</code> skill.",
-    "connecting": "Connecting to Cadet Cloud…",
     "openProvider": "Open {providerName}",
     "providerLabel": "Provider",
     "saveSuccessToast": "Email settings saved.",

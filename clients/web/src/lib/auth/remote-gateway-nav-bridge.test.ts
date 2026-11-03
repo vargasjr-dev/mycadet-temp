@@ -48,11 +48,11 @@ afterEach(() => {
 });
 
 describe("remote-gateway nav bridge", () => {
-  test("inactive outside remote-gateway mode", () => {
+  test("installs unconditionally — the serving gateway is a given", () => {
     setRemote(undefined);
     const original = window.history.pushState;
     setupRemoteGatewayNavBridge();
-    expect(window.history.pushState).toBe(original);
+    expect(window.history.pushState).not.toBe(original);
   });
 
   test("emits push and replace navigations to the parent", () => {
