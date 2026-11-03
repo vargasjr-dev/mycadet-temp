@@ -161,12 +161,12 @@ describe("the wake operation — a remote -> method router", () => {
         cloud: "local",
         port: 7830,
       } as LockfileAssistant,
-      { watch: true, foreground: true },
+      { watch: true },
     );
 
     expect(wakeLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-local" }),
-      { watch: true, foreground: true },
+      { watch: true },
     );
   });
 

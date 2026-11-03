@@ -132,7 +132,6 @@ describe("cadet wake — the CLI shell around the wake operation", () => {
 
     expect(wakeAssistantMock).toHaveBeenCalledWith(localEntry, {
       watch: true,
-      foreground: false,
     });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
@@ -156,27 +155,6 @@ describe("cadet wake — the CLI shell around the wake operation", () => {
       expect(errorSpy).toHaveBeenCalledWith("Error: ces spawn failed");
     } finally {
       exitSpy.mockRestore();
-    }
-  });
-
-  test("warns that the launch opts are ignored for Docker instances", async () => {
-    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      cloud: "docker",
-      port: 7830,
-    } as LockfileAssistant);
-    process.argv = ["bun", "cadet", "wake", "docker-1", "--foreground"];
-
-    try {
-      await wake();
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        "Warning: --foreground ignored for Docker instances.",
-      );
-      expect(logSpy).toHaveBeenCalledWith("Wake complete.");
-    } finally {
-      warnSpy.mockRestore();
     }
   });
 });
@@ -216,10 +194,9 @@ describe("cadet wake --all", () => {
     expect(
       (wakeAssistantMock.mock.calls[1]![0] as LockfileAssistant).assistantId,
     ).toBe("wake-all-2");
-    // The batch never blocks in the foreground.
+    // The batch rides the same launch opts as the single path.
     expect(wakeAssistantMock.mock.calls[0]![1]).toEqual({
       watch: false,
-      foreground: false,
     });
   });
 
@@ -289,24 +266,5 @@ describe("cadet wake --all", () => {
     } finally {
       exitSpy.mockRestore();
     }
-  });
-
-  test("refuses --all with --foreground", async () => {
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`process.exit:${code}`);
-      },
-    );
-
-    try {
-      process.argv = ["bun", "cadet", "wake", "--all", "--foreground"];
-      await expect(wake()).rejects.toThrow("process.exit:1");
-    } finally {
-      exitSpy.mockRestore();
-    }
-
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("--all cannot be combined with --foreground"),
-    );
   });
 });

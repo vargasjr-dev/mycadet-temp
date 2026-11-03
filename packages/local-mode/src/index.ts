@@ -117,7 +117,6 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { wakeDocker } from "./remotes/docker/wake";
 export {
   pullImage,
   SERVICE_START_ORDER,
@@ -145,7 +144,6 @@ export {
   LOCAL_BIN_DIR,
   isNoSuchContainerError,
 } from "./remotes/docker/common";
-export { wakeLocal } from "./remotes/local/wake";
 export { hatchLocal } from "./remotes/local/hatch";
 
 export {
