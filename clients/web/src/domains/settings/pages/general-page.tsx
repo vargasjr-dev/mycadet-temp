@@ -32,6 +32,7 @@ import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
 import { useTranslation } from "@/i18n";
 import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { asGeneratedAssistant } from "@/assistant/queries";
 import { openExternalUrl } from "@/runtime/browser";
 import { routes } from "@/utils/routes";
 
@@ -43,7 +44,7 @@ export function GeneralPage() {
   const navigate = useNavigate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor({
-    assistantId: assistant?.id ?? null,
+    assistantId: assistant.assistantId,
     enabled: isCloudHosted,
   });
   const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
@@ -82,8 +83,7 @@ export function GeneralPage() {
     });
   }, [assistant]);
 
-  const versionValue =
-    healthz?.version ?? assistant?.current_release_version ?? null;
+  const versionValue = healthz?.version ?? null;
 
   const openAssistantChooser = () => {
     const hubUrl = getRemoteGatewayHubUrl();
@@ -128,7 +128,10 @@ export function GeneralPage() {
         />
       )}
 
-      <ProfileCard assistant={assistant} showHandles={isCloudHosted}>
+      <ProfileCard
+        assistant={asGeneratedAssistant(assistant)}
+        showHandles={isCloudHosted}
+      >
         <TimezoneSection />
         <ThisDeviceSection />
       </ProfileCard>
@@ -151,7 +154,7 @@ export function GeneralPage() {
           {isCloudHosted && assistant && (
             <>
               <AssistantUpgrades
-                assistantId={assistant.id}
+                assistantId={assistant.assistantId}
                 currentVersion={versionValue}
                 onUpgradeComplete={() => {
                   void refetch();
@@ -164,7 +167,7 @@ export function GeneralPage() {
               <span className="text-body-medium-default text-[var(--content-tertiary)]">
                 {t("generalPage.current")}
               </span>
-              {healthzLoading && !assistant.current_release_version ? (
+              {healthzLoading ? (
                 <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
                   —
                 </span>
@@ -179,7 +182,7 @@ export function GeneralPage() {
       </DetailCard>
       {isCloudHosted && assistant && (
         <UpdateWindowModal
-          assistantId={assistant.id}
+          assistantId={assistant.assistantId}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />

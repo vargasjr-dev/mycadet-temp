@@ -147,7 +147,6 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "{providerName} API 密钥已配置。要重新配置，请运行 <code>{setupSkill}</code> 技能。",
-    "connecting": "正在连接到 Cadet 平台…",
     "openProvider": "打开 {providerName}",
     "providerLabel": "提供商",
     "saveSuccessToast": "电子邮件设置已保存。",

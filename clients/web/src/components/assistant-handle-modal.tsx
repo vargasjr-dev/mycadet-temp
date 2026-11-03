@@ -1,15 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState, type ReactNode } from "react";
 
 import { Modal } from "@mycadet/design-library";
 
+import { asGeneratedAssistant } from "@/assistant/queries";
 import { AssistantHandleSection } from "@/components/profile-card";
-import {
-  assistantsListOptions,
-  assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
 import type { Assistant } from "@/generated/api/types.gen";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
@@ -33,7 +29,6 @@ export function AssistantHandleModal({
   onOpenChange,
 }: AssistantHandleModalProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   return (
     <Modal.Root open={open} onOpenChange={onOpenChange}>
@@ -51,12 +46,7 @@ export function AssistantHandleModal({
           <AssistantHandleSection
             layout="modal"
             assistant={assistant}
-            onSaved={() => {
-              void queryClient.invalidateQueries({
-                queryKey: assistantsListQueryKey(),
-              });
-              onOpenChange(false);
-            }}
+            onSaved={() => onOpenChange(false)}
           />
         </Modal.Body>
       </Modal.Content>
@@ -80,32 +70,22 @@ export interface AssistantHandleModalControl {
  * platform's listing has the assistant, there is nothing to open and
  * `openModal` is `null`; callers drop their trigger on that.
  */
-export function useAssistantHandleModal(
-  assistantId: string | null,
-): AssistantHandleModalControl {
+export function useAssistantHandleModal(): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const onPlatform = isCloudHosted && !!assistantId;
-  const assistantsQuery = useQuery({
-    ...assistantsListOptions(),
-    enabled: onPlatform,
-  });
-  const assistant =
-    assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === assistantId,
-    ) ?? null;
+  // The store IS the record — there is nothing to scan a listing for.
+  const assistant = asGeneratedAssistant(getResolvedAssistant());
 
   const openModal = useCallback(() => setOpen(true), []);
 
   return {
-    handle: assistant?.handle || null,
-    openModal: assistant ? openModal : null,
-    modal: assistant ? (
+    handle: assistant.handle || null,
+    openModal,
+    modal: (
       <AssistantHandleModal
         assistant={assistant}
         open={open}
         onOpenChange={setOpen}
       />
-    ) : null,
+    ),
   };
 }

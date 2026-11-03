@@ -1,6 +1,5 @@
 import { HardDrive, Wrench } from "lucide-react";
 
-import { asGeneratedAssistant } from "@/assistant/queries";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { useTranslation } from "@/i18n";
@@ -8,12 +7,8 @@ import { useTranslation } from "@/i18n";
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
 
-  // The store IS the resolution — the entry projects straight to the
-  // panel's shape, no fetch and no loading window. The selector returns the
-  // entry itself (a stable reference); the projection runs outside it.
+  // The store IS the resolution — the entry is non-optional, the id real.
   const entry = useResolvedAssistantStore((s) => s.assistant);
-  const assistant =
-    entry.assistantId === "" ? null : asGeneratedAssistant(entry);
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -30,23 +25,15 @@ export function DebugControlsPanel() {
         </div>
       </div>
 
-      {assistant ? (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
-            <div className="mb-3 flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />
-              <h3 className="text-body-medium-default text-[var(--content-default)]">
-                {t("debugControlsPanel.backups")}
-              </h3>
-            </div>
-            <AssistantBackups assistantId={assistant.id} />
-          </div>
+      <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
+        <div className="mb-3 flex items-center gap-2">
+          <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />
+          <h3 className="text-body-medium-default text-[var(--content-default)]">
+            {t("debugControlsPanel.backups")}
+          </h3>
         </div>
-      ) : (
-        <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-          {t("debugControlsPanel.noAssistant")}
-        </p>
-      )}
+        <AssistantBackups assistantId={entry.assistantId} />
+      </div>
     </div>
   );
 }

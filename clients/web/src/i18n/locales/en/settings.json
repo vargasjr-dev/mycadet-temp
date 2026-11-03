@@ -95,18 +95,15 @@
   },
   "assistantStatusPanel": {
     "assistantId": "Assistant ID",
+    "active": "Active",
     "cpuUsage": "CPU Usage",
     "created": "Created",
-    "description": "Description",
     "diskUnavailable": "Disk status unavailable",
     "diskUsage": "Disk Usage",
-    "empty": "No assistant found. Hatch an assistant to get started.",
     "loadHealthzFailed": "Failed to load assistant info",
-    "loading": "Loading assistant info...",
     "loadingCpu": "Loading CPU status...",
     "loadingDisk": "Loading disk status...",
     "loadingMemory": "Loading memory status...",
-    "machineId": "Machine ID",
     "memoryUsage": "Memory Usage",
     "name": "Name",
     "status": "Status",
@@ -115,7 +112,6 @@
     "version": "Version"
   },
   "assistantTerminalPanel": {
-    "noAssistant": "No assistant found. Hatch an assistant to use the terminal.",
     "subtitle": "Interactive shell session on your assistant machine",
     "targetContainer": "Target container",
     "title": "Terminal"
@@ -307,9 +303,6 @@
   },
   "debugControlsPanel": {
     "backups": "Backups",
-    "loadFailedToast": "Failed to load assistant info",
-    "loading": "Loading assistant info...",
-    "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
     "subtitle": "Manage your assistant backups.",
     "title": "General"
   },

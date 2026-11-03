@@ -97,16 +97,12 @@
     "assistantId": "助理 ID",
     "cpuUsage": "CPU 使用率",
     "created": "建立時間",
-    "description": "描述",
     "diskUnavailable": "磁碟狀態無法使用",
     "diskUsage": "磁碟使用率",
-    "empty": "找不到助理。孵化一個助理以開始使用。",
     "loadHealthzFailed": "載入助理資訊失敗",
-    "loading": "正在載入助理資訊...",
     "loadingCpu": "正在載入 CPU 狀態...",
     "loadingDisk": "正在載入磁碟狀態...",
     "loadingMemory": "正在載入記憶體狀態...",
-    "machineId": "機器 ID",
     "memoryUsage": "記憶體使用率",
     "name": "名稱",
     "status": "狀態",
@@ -115,7 +111,6 @@
     "version": "版本"
   },
   "assistantTerminalPanel": {
-    "noAssistant": "找不到助理。孵化一個助理以使用終端機。",
     "subtitle": "助理機器上的互動式 shell 工作階段",
     "targetContainer": "目標容器",
     "title": "終端機"
@@ -301,9 +296,6 @@
   },
   "debugControlsPanel": {
     "backups": "備份",
-    "loadFailedToast": "載入助理資訊失敗",
-    "loading": "正在載入助理資訊...",
-    "noAssistant": "未找到助理。孵化一個助理以存取偵錯控制項。",
     "subtitle": "管理您的助理備份。",
     "title": "一般"
   },

@@ -26,6 +26,7 @@ import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
 import * as cloudGate from "@/assistant/hosting";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "assistant-1";
 const PLATFORM_ASSISTANT_ID = "platform-1";
@@ -175,6 +176,14 @@ beforeEach(() => {
   domainEmailError = null;
   toastSuccessCalls.length = 0;
   useAssistantIdentityStore.setState({ name: "Ziggy" });
+  // The store IS the listing: the handle the setup card offers is the
+  // entry's id until a domain lands.
+  useResolvedAssistantStore.getState().setAssistant({
+    cloud: "cloud",
+    assistantId: "bright-vole-02a64h",
+    name: "Ziggy",
+    hatchedAt: "2026-09-22T00:00:00Z",
+  });
 });
 
 afterEach(() => {

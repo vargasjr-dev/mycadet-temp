@@ -97,16 +97,12 @@
     "assistantId": "助手 ID",
     "cpuUsage": "CPU 使用率",
     "created": "创建时间",
-    "description": "描述",
     "diskUnavailable": "磁盘状态不可用",
     "diskUsage": "磁盘使用率",
-    "empty": "未找到助手。孵化一个助手以开始使用。",
     "loadHealthzFailed": "加载助手信息失败",
-    "loading": "正在加载助手信息...",
     "loadingCpu": "正在加载 CPU 状态...",
     "loadingDisk": "正在加载磁盘状态...",
     "loadingMemory": "正在加载内存状态...",
-    "machineId": "机器 ID",
     "memoryUsage": "内存使用率",
     "name": "名称",
     "status": "状态",
@@ -115,7 +111,6 @@
     "version": "版本"
   },
   "assistantTerminalPanel": {
-    "noAssistant": "未找到助手。孵化一个助手以使用终端。",
     "subtitle": "助手机器上的交互式 shell 会话",
     "targetContainer": "目标容器",
     "title": "终端"
@@ -301,9 +296,6 @@
   },
   "debugControlsPanel": {
     "backups": "备份",
-    "loadFailedToast": "加载助手信息失败",
-    "loading": "正在加载助手信息...",
-    "noAssistant": "未找到助手。孵化一个助手以访问调试控制。",
     "subtitle": "管理您的助手备份。",
     "title": "通用"
   },

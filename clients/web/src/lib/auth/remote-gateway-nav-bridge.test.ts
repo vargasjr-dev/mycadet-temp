@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import {
-  setupRemoteGatewayNavBridge,
-} from "@/lib/auth/remote-gateway-nav-bridge";
+import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 
 const REAL_PARENT = window.parent;
 
@@ -17,7 +15,9 @@ function setRemote(
 }
 
 /** Replaces window.parent with a capturing stub and returns its calls. */
-function captureParentFrame(): { calls: Array<{ nav?: string; path?: string; source?: string }> } {
+function captureParentFrame(): {
+  calls: Array<{ nav?: string; path?: string; source?: string }>;
+} {
   const calls: Array<{ nav?: string; path?: string; source?: string }> = [];
   Object.defineProperty(window, "parent", {
     value: {
@@ -48,11 +48,11 @@ afterEach(() => {
 });
 
 describe("remote-gateway nav bridge", () => {
-  test("inactive outside remote-gateway mode", () => {
+  test("installs unconditionally — the serving gateway is a given", () => {
     setRemote(undefined);
     const original = window.history.pushState;
     setupRemoteGatewayNavBridge();
-    expect(window.history.pushState).toBe(original);
+    expect(window.history.pushState).not.toBe(original);
   });
 
   test("emits push and replace navigations to the parent", () => {
@@ -96,7 +96,10 @@ describe("remote-gateway nav bridge", () => {
     );
     window.dispatchEvent(
       new MessageEvent("message", {
-        data: { source: "mycadet-web-parent-nav", path: "https://evil.example" },
+        data: {
+          source: "mycadet-web-parent-nav",
+          path: "https://evil.example",
+        },
         source: window.parent as MessageEventSource,
       }),
     );

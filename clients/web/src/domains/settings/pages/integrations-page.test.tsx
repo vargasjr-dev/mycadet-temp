@@ -462,16 +462,6 @@ describe("IntegrationsPage", () => {
     await screen.findByText(/OAuth integrations could not be loaded/);
   });
 
-  test("missing OAuth assistant metadata does not gate MCP", async () => {
-    // The unresolved shell (an empty id) is the missing-metadata case: the
-    // OAuth section reports it, MCP proceeds ungated.
-    useResolvedAssistantStore.getState().resetAssistant();
-    seededServers = [server()];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-    await screen.findByText("example-integration");
-    await screen.findByText(/OAuth integrations could not be loaded/);
-  });
-
   test("MCP source failures do not hide OAuth providers", async () => {
     mcpFails = true;
     seededProviders = [provider()];

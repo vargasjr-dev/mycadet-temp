@@ -55,10 +55,7 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/assistant/channels/email"]}>
-        <EmailCloudContent
-          assistantId={ASSISTANT_ID}
-          emailRootDomain="example.com"
-        />
+        <EmailCloudContent emailRootDomain="example.com" />
         <LocationProbe />
       </MemoryRouter>
     </QueryClientProvider>,
