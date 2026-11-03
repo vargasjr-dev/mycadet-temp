@@ -1,5 +1,5 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import type { SidebarIndexSection } from "@/utils/conversation-list-fetchers";
@@ -26,13 +26,19 @@ mock.module(
 
 /* The hook reads the boot resolution's active state for its section query.
    Stubbed (spread-real) so the render never needs a QueryClientProvider. */
-const assistantQueries = await import("@/assistant/queries");
-mock.module("@/assistant/queries", () => ({
-  ...assistantQueries,
-  useAssistantResolution: () => ({ state: { kind: "active" } }),
-}));
 
 const { useSidebarState } = await import("@/domains/chat/use-sidebar-state");
+
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+
+beforeEach(() => {
+  useResolvedAssistantStore.getState().setAssistant({
+    cloud: "cloud",
+    assistantId: "asst-1",
+    name: "Ast",
+    hatchedAt: "1970-01-01T00:00:00.000Z",
+  });
+});
 
 function makeConversation(
   index: number,
@@ -89,9 +95,7 @@ describe("useSidebarState grouping", () => {
       makeConversation(index),
     );
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations }));
 
     expect(sectionFor(result.current.sections, "recents").all).toHaveLength(40);
   });
@@ -105,9 +109,7 @@ describe("useSidebarState grouping", () => {
       makeConversation(3, {}),
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations }));
 
     expect(
       result.current.sections
@@ -139,7 +141,6 @@ describe("useSidebarState open-section persistence", () => {
 
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         attentionConversationIds: new Set(["slack-1"]),
       }),
@@ -174,9 +175,7 @@ describe("useSidebarState open-section persistence", () => {
       }),
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations }));
 
     act(() =>
       result.current.onOpenSectionsChange([
@@ -209,7 +208,6 @@ describe("useSidebarState custom-group open-section persistence", () => {
 
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         conversationGroups,
         attentionConversationIds: new Set(["g2"]),
@@ -258,7 +256,6 @@ describe("useSidebarState all view", () => {
   function renderSidebar() {
     return renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         conversationGroups,
       }),
@@ -357,7 +354,6 @@ describe("useSidebarState section order", () => {
     seedGroupedView();
     return renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         conversationGroups,
       }),
@@ -470,7 +466,6 @@ describe("useSidebarState section order", () => {
     rerender();
     const quiet = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations: withoutSlack,
         conversationGroups,
       }),
@@ -489,7 +484,6 @@ describe("useSidebarState section order", () => {
     // It comes back where the user left it: ahead of Chats.
     const back = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         conversationGroups,
       }),
@@ -505,7 +499,6 @@ describe("useSidebarState curated sections", () => {
   test("omits Pinned when no loaded conversation is pinned", () => {
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations: [makeConversation(1), makeConversation(2)],
       }),
     );
@@ -518,7 +511,6 @@ describe("useSidebarState curated sections", () => {
   test("lists a custom group even when no loaded conversation is in it", () => {
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations: [makeConversation(1)],
         conversationGroups: [
           {
@@ -561,7 +553,6 @@ describe("useSidebarState with the section index", () => {
 
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations,
         conversationGroups,
       }),
@@ -598,7 +589,6 @@ describe("useSidebarState with the section index", () => {
 
     const { result } = renderHook(() =>
       useSidebarState({
-        assistantId: "asst-1",
         conversations: [],
         conversationGroups,
       }),
@@ -616,7 +606,7 @@ describe("useSidebarState with the section index", () => {
     sidebarSectionsImpl = [{ kind: "chats", total: 0, unread: 0 }];
 
     const { result, rerender } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations }),
+      useSidebarState({ conversations }),
     );
     expect(result.current.sections.map((s) => s.key)).not.toContain("pinned");
 
@@ -637,9 +627,7 @@ describe("useSidebarState with the section index", () => {
       { kind: "chats", total: 0, unread: 0 },
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
 
     // Its own query fills the contents; existence must not wait for derived
     // rows the foreground page never carried.
@@ -650,9 +638,7 @@ describe("useSidebarState with the section index", () => {
 
   test("Chats renders in both discovery modes", () => {
     sidebarSectionsImpl = [{ kind: "chats", total: 0, unread: 0 }];
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
     expect(sectionFor(result.current.sections, "recents")).toBeDefined();
   });
 });
@@ -664,9 +650,7 @@ describe("useSidebarState index unread threading", () => {
       { kind: "chats", total: 5, unread: 1 },
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
 
     expect(sectionFor(result.current.sections, "pinned")).toMatchObject({
       unread: 2,
@@ -681,9 +665,7 @@ describe("useSidebarState index unread threading", () => {
       { kind: "channel", channelId: "slack", total: 4, unread: 2 },
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
 
     expect(sectionFor(result.current.sections, "recents")).toMatchObject({
       unread: 3,
@@ -697,9 +679,7 @@ describe("useSidebarState index unread threading", () => {
       { kind: "channel", channelId: "slack", total: 4, unread: 2 },
     ];
 
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
 
     expect(sectionFor(result.current.sections, "recents")).toMatchObject({
       unread: 1,
@@ -711,9 +691,7 @@ describe("useSidebarState index unread threading", () => {
 
   test("the derived path leaves unread undefined", () => {
     // No index means no whole-section truth; the indicator scans rows.
-    const { result } = renderHook(() =>
-      useSidebarState({ assistantId: "asst-1", conversations: [] }),
-    );
+    const { result } = renderHook(() => useSidebarState({ conversations: [] }));
 
     expect(sectionFor(result.current.sections, "recents")).not.toHaveProperty(
       "unread",

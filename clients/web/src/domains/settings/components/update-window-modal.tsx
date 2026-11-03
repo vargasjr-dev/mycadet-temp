@@ -1,20 +1,17 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { UpdateWindowPolicy } from "@/domains/settings/components/update-window-policy";
 import { useTranslation } from "@/i18n";
 import { Modal } from "@mycadet/design-library/components/modal";
 
 export interface UpdateWindowModalProps {
-  assistantId: string;
   open: boolean;
   onClose: () => void;
 }
 
 /** Update-window policy editor, opened from the Version card. */
-export function UpdateWindowModal({
-  assistantId,
-  open,
-  onClose,
-}: UpdateWindowModalProps) {
+export function UpdateWindowModal({ open, onClose }: UpdateWindowModalProps) {
   const { t } = useTranslation("settings");
+  const assistantId = useActiveAssistantId();
 
   return (
     <Modal.Root

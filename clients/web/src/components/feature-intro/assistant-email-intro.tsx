@@ -26,7 +26,7 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
   const focused = useOnboardingFocusStore.use.focused();
   const checkinPending = useOnboardingFocusStore.use.checkinPending();
   const identityName = useAssistantIdentityStore.use.name();
-  const state = useAssistantInboxState(assistantId, identityName ?? "");
+  const state = useAssistantInboxState(identityName ?? "");
 
   const intro = resolveAssistantEmailIntro({
     seen: false,

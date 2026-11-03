@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 
 import { TerminalPanel } from "@/components/terminal-panel";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useTranslation } from "@/i18n";
 import { Select } from "@mycadet/design-library/components/select";
 
@@ -16,7 +15,6 @@ export function AssistantTerminalPanel() {
   // null, structurally blocking TerminalPanel from mounting a cloud-routed
   // exec connection against a self-hosted target. The id is the store's —
   // the shell stamped it before the first render.
-  const assistantId = useActiveAssistantId();
   const [service, setService] = useState<TerminalService>("assistant");
 
   const terminalServiceOptions = useMemo(
@@ -66,7 +64,6 @@ export function AssistantTerminalPanel() {
 
       <TerminalPanel
         key={service}
-        assistantId={assistantId}
         service={service}
         className="min-h-0 flex-1"
       />

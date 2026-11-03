@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
+import { setupIframeNavBridge } from "@/lib/auth/iframe-nav-bridge";
 
 const REAL_PARENT = window.parent;
 
@@ -51,14 +51,14 @@ describe("remote-gateway nav bridge", () => {
   test("installs unconditionally — the serving gateway is a given", () => {
     setRemote(undefined);
     const original = window.history.pushState;
-    setupRemoteGatewayNavBridge();
+    setupIframeNavBridge();
     expect(window.history.pushState).not.toBe(original);
   });
 
   test("emits push and replace navigations to the parent", () => {
     setRemote("docker");
     const parent = captureParentFrame();
-    setupRemoteGatewayNavBridge();
+    setupIframeNavBridge();
 
     window.history.pushState(null, "", "/assistant/conversations/12/");
     window.history.replaceState(null, "", "/assistant/conversations/13/");
@@ -74,7 +74,7 @@ describe("remote-gateway nav bridge", () => {
   test("applies parent-driven navigation without echoing it back", () => {
     setRemote("docker");
     const parent = captureParentFrame();
-    setupRemoteGatewayNavBridge();
+    setupIframeNavBridge();
 
     parentToIframe("/assistant/conversations/9/");
 
@@ -86,7 +86,7 @@ describe("remote-gateway nav bridge", () => {
   test("ignores parent messages that are not nav drives", () => {
     setRemote("docker");
     const parent = captureParentFrame();
-    setupRemoteGatewayNavBridge();
+    setupIframeNavBridge();
 
     window.dispatchEvent(
       new MessageEvent("message", {

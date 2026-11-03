@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
@@ -47,17 +48,16 @@ function CurrentVersionValue({
 }
 
 interface AssistantUpgradesProps {
-  assistantId: string;
   currentVersion?: string | null;
   onUpgradeComplete?: () => void;
 }
 
 export function AssistantUpgrades({
-  assistantId,
   currentVersion,
   onUpgradeComplete,
 }: AssistantUpgradesProps) {
   const { t } = useTranslation("settings");
+  const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
   const [isPollingUpgrade, setIsPollingUpgrade] = useState(false);
   const targetVersionRef = useRef<string | null>(null);

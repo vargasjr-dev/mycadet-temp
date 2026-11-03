@@ -747,7 +747,6 @@ export function DoctorPanel() {
                                 <div className="mt-2 rounded-lg border border-[var(--border-base)] bg-[var(--surface-lift)] p-4">
                                   <AssistantBackups
                                     key={backupsPanel.refreshKey}
-                                    assistantId={assistantId}
                                   />
                                 </div>
                               )}

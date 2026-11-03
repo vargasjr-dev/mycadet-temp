@@ -120,7 +120,6 @@ const shellDecorator: Decorator<InboxStoryArgs> = function ChatShell(
     <div className="flex h-screen gap-4 bg-[var(--surface-base)] p-4">
       <aside className="w-fit shrink-0 overflow-hidden">
         <AssistantSideMenu
-          assistantId={ASSISTANT_ID}
           assistantName={MOCK_ASSISTANT_NAME}
           collapsed={collapsed}
           variant="rail"
@@ -188,7 +187,6 @@ export const SetUpEmail: Story = {
   name: "2 · Set up email",
   render: () => (
     <AssistantInboxSetupCard
-      assistantId={ASSISTANT_ID}
       handle={MOCK_ASSISTANT_HANDLE}
       rootDomain={MOCK_ROOT_DOMAIN}
       onConfirm={fn().mockName("onConfirm")}
@@ -206,7 +204,6 @@ export const SetUpEmailChooseHandle: Story = {
   name: "2b · Set up email, choosing a handle",
   render: () => (
     <AssistantInboxSetupCard
-      assistantId={ASSISTANT_ID}
       handle="bright-vole-02a64h"
       rootDomain={MOCK_ROOT_DOMAIN}
       handleEditable
@@ -230,7 +227,6 @@ export const SetUpEmailRefused: Story = {
   name: "2c · Set up email, refused",
   render: () => (
     <AssistantInboxSetupCard
-      assistantId={ASSISTANT_ID}
       handle={MOCK_ASSISTANT_HANDLE}
       rootDomain={MOCK_ROOT_DOMAIN}
       error="That address is already taken on this domain."
@@ -250,7 +246,6 @@ export const SetUpEmailDone: Story = {
   name: "2d · Address created",
   render: () => (
     <AssistantInboxSetupSuccess
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       onContinue={fn().mockName("onContinue")}
@@ -264,7 +259,6 @@ export const Inbox: Story = {
   name: "3 · Inbox",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={MOCK_INBOX}
@@ -286,7 +280,6 @@ export const InboxReading: Story = {
   name: "3b · Reading a message",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={MOCK_INBOX}
@@ -309,7 +302,6 @@ export const InboxSelecting: Story = {
   name: "3f · Selecting messages",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={MOCK_INBOX}
@@ -332,7 +324,6 @@ export const SentFolder: Story = {
   name: "3c · Sent folder",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={MOCK_INBOX}
@@ -353,7 +344,6 @@ export const InboxFetchedBodies: Story = {
   name: "3e · Bodies fetched on open",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={MOCK_INBOX.map(
@@ -383,7 +373,6 @@ export const InboxEmpty: Story = {
   name: "3d · Inbox, empty",
   render: () => (
     <AssistantInboxPage
-      assistantId={ASSISTANT_ID}
       assistantName={MOCK_ASSISTANT_NAME}
       address={MOCK_ADDRESS}
       inbox={[]}

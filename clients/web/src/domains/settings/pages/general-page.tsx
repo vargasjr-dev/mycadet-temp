@@ -22,17 +22,9 @@ import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
-import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
-import {
-  getRemoteAssistantDisplayName,
-  getRemoteGatewayHubUrl,
-  isCadetCloudRemote,
-} from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsNativeMobile } from "@/runtime/platform-detection";
 import { useTranslation } from "@/i18n";
 import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { asGeneratedAssistant } from "@/assistant/queries";
 import { openExternalUrl } from "@/runtime/browser";
 import { routes } from "@/utils/routes";
 
@@ -40,13 +32,9 @@ export function GeneralPage() {
   const { t } = useTranslation("settings");
   const { assistant, healthz, healthzLoading, refetch } =
     useAssistantWithHealthz();
-  const isNativeMobile = useIsNativeMobile();
   const navigate = useNavigate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const diskPressure = useDiskPressureMonitor({
-    assistantId: assistant.assistantId,
-    enabled: isCloudHosted,
-  });
+  const diskPressure = useDiskPressureMonitor();
   const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -86,25 +74,6 @@ export function GeneralPage() {
   const versionValue = healthz?.version ?? null;
 
   const openAssistantChooser = () => {
-    const hubUrl = getRemoteGatewayHubUrl();
-    if (!isCadetCloudRemote() && !isNativeMobile && hubUrl) {
-      // Self-registration handoff: landing on the hub chooser records this
-      // origin in the hub's remembered list. `hubUrl` is the hub SPA's
-      // assistant root (`<origin>/assistant`), so the absolute chooser route
-      // hangs off its origin.
-      const params = new URLSearchParams({
-        register: remoteGatewayPublicBaseUrl(),
-      });
-      const assistantName = getRemoteAssistantDisplayName();
-      if (assistantName) {
-        params.set("name", assistantName);
-      }
-      const hubOrigin = new URL(hubUrl).origin;
-      window.location.assign(
-        `${hubOrigin}/account/select-assistant?${params.toString()}`,
-      );
-      return;
-    }
     void navigate(routes.assistant);
   };
 
@@ -128,10 +97,7 @@ export function GeneralPage() {
         />
       )}
 
-      <ProfileCard
-        assistant={asGeneratedAssistant(assistant)}
-        showHandles={isCloudHosted}
-      >
+      <ProfileCard showHandles={isCloudHosted}>
         <TimezoneSection />
         <ThisDeviceSection />
       </ProfileCard>
@@ -154,7 +120,6 @@ export function GeneralPage() {
           {isCloudHosted && assistant && (
             <>
               <AssistantUpgrades
-                assistantId={assistant.assistantId}
                 currentVersion={versionValue}
                 onUpgradeComplete={() => {
                   void refetch();
@@ -182,7 +147,6 @@ export function GeneralPage() {
       </DetailCard>
       {isCloudHosted && assistant && (
         <UpdateWindowModal
-          assistantId={assistant.assistantId}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />

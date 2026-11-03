@@ -135,18 +135,6 @@ mock.module(
   }),
 );
 
-// The sidebar state reads the boot resolution; stub it active so the tests
-// run with the assistant already resolved (the shell's guarantee) and no
-// query client is needed.
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({
-    state: { kind: "active", isLocal: false },
-    result: { ok: true, status: 200, data: { id: "asst-1" } },
-    selectedCloudAssistantId: "asst-1",
-    refetch: () => Promise.resolve(),
-  }),
-}));
-
 // The assistant nav item reads the avatar through React Query; stub it so
 // static SSR rendering resolves without a QueryClient.
 mock.module("@/hooks/use-assistant-avatar", () => ({
@@ -168,6 +156,7 @@ import type { ConversationListFilter } from "@/utils/conversation-list-keys";
 import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu";
 import { CONVERSATION_LIST_VIRTUALIZE_THRESHOLD } from "@/domains/chat/components/conversation-nav-section";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { saveExpandedSections } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 import type * as UsePinnedApps from "@/hooks/use-pinned-apps";
 import { makeAppSummary } from "@/types/app-summary.test-helper";
@@ -183,6 +172,13 @@ beforeEach(() => {
   // into every test after it.
   localStorage.clear();
   localStorage.setItem("cadet:sidebar-view-mode:asst-1", "grouped");
+  // The menu reads the active assistant from the store, not a prop.
+  useResolvedAssistantStore.getState().setAssistant({
+    cloud: "cloud",
+    assistantId: "asst-1",
+    name: "Ast",
+    hatchedAt: "1970-01-01T00:00:00.000Z",
+  });
   useSidebarLayoutStore.setState({
     assistantId: null,
     sectionOrder: [],
@@ -237,7 +233,6 @@ function renderMenu(props: {
   const includeFooterAction = props.includeFooterAction ?? true;
   const { container } = render(
     createElement(SideMenuUnderTest, {
-      assistantId: "asst-1",
       collapsed: props.collapsed ?? false,
       variant: props.variant ?? "rail",
       conversations: props.conversations,
@@ -732,7 +727,6 @@ describe("AssistantSideMenu · overlay bottom scroll reserve", () => {
     try {
       const { container } = render(
         createElement(SideMenuUnderTest, {
-          assistantId: "asst-1",
           collapsed: false,
           variant: "overlay",
           conversations,
@@ -777,7 +771,6 @@ describe("AssistantSideMenu · overlay bottom scroll reserve", () => {
 
 describe("AssistantSideMenu · new conversation affordance", () => {
   const baseProps = {
-    assistantId: "asst-1",
     collapsed: false,
     variant: "rail" as const,
     conversations: [makeConversation({ conversationId: "a", title: "Alpha" })],
@@ -1000,7 +993,6 @@ describe("AssistantSideMenu · section header menus", () => {
   }) {
     return render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "rail" as const,
         conversations,
@@ -1191,7 +1183,6 @@ describe("AssistantSideMenu · channel grouping toggle", () => {
     setSectionRows(conversations);
     return render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "rail" as const,
         conversations,
@@ -1588,7 +1579,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
     // the sidebar body's ref has mounted.
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "rail",
         conversations: LAYOUT_CONVERSATIONS,
@@ -1635,7 +1625,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
   function renderRail(openSections: string[] = []) {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "rail",
         conversations: LAYOUT_CONVERSATIONS,
@@ -1699,7 +1688,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
   test("the overlay drawer lets the body scroll Chats clear of the floating pills", () => {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "overlay",
         conversations: LAYOUT_CONVERSATIONS,
@@ -1732,7 +1720,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
     localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "overlay",
         conversations: Array.from(
@@ -1938,7 +1925,6 @@ describe("AssistantSideMenu · section reordering", () => {
   test("the card is the drag handle, the drag image and the drop edge", async () => {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        assistantId: "asst-1",
         collapsed: false,
         variant: "rail" as const,
         conversations: LAYOUT_CONVERSATIONS,
@@ -2045,7 +2031,6 @@ describe("AssistantSideMenu · section reordering", () => {
     async (label, expected) => {
       const { container } = render(
         createElement(SideMenuUnderTest, {
-          assistantId: "asst-1",
           collapsed: false,
           variant: "rail" as const,
           conversations: LAYOUT_CONVERSATIONS,

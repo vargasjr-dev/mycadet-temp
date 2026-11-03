@@ -106,16 +106,6 @@ describe("useCloudAvatarUrls", () => {
     expect(listAssistants).toHaveBeenCalledTimes(1);
   });
 
-  test("stays idle in pure cloud mode", async () => {
-    cloudRemote = true;
-    const { result } = renderHook(() => useCloudAvatarUrls(), {
-      wrapper: createWrapper(),
-    });
-    await settle();
-    expect(result.current.size).toBe(0);
-    expect(listAssistants).not.toHaveBeenCalled();
-  });
-
   test("fetches with no platform-session seeding at all", async () => {
     const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
