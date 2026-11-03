@@ -22,7 +22,6 @@ import {
   lookupAssistantByIdentifier,
   loopbackSafeFetch,
   readCloudToken,
-  saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases";
 import {
@@ -39,6 +38,7 @@ import {
   pruneOldBackups,
   restoreBackup,
 } from "../lib/backup-ops.js";
+import { rm } from "node:fs/promises";
 import {
   broadcastUpgradeEvent,
   buildCompleteEvent,
@@ -279,13 +279,6 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  // The runtime fields the upgrade replaces, snapshotted for the failure
-  // path's rollback to the previous install.
-  const originalRuntime = {
-    runtimeVersion: entry.runtimeVersion,
-    runtimeInstallDir: entry.runtimeInstallDir,
-  };
-
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = `http://127.0.0.1:${entry.port}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
@@ -371,9 +364,6 @@ async function upgradeLocal(
   const runtimeInstall = ensureLocalRuntime(entry, targetVersion, {
     force,
   });
-  entry.runtimeVersion = runtimeInstall.version;
-  entry.runtimeInstallDir = runtimeInstall.installDir;
-  saveLockfileAssistant(entry);
   const upgradedEntry = entry;
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
@@ -420,9 +410,11 @@ async function upgradeLocal(
       "Local upgrade failed; restoring the previous runtime and service roots...",
     );
     await sleepAssistant(upgradedEntry, { force: true });
-    entry.runtimeVersion = originalRuntime.runtimeVersion;
-    entry.runtimeInstallDir = originalRuntime.runtimeInstallDir;
-    saveLockfileAssistant(entry);
+    // The lockfile no longer records the runtime install — the newest
+    // directory under the instance's runtime/ root is what the next wake
+    // derives, so a failed upgrade's install must leave, or that wake
+    // would pick the runtime that just failed to start.
+    await rm(runtimeInstall.installDir, { recursive: true, force: true });
     if (backupPath) {
       const restored = await restoreBackup(entry.assistantId, backupPath, {
         resume: false,

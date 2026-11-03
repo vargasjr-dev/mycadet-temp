@@ -8,14 +8,12 @@ import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
-  storageFor,
   teleportHostInstallation,
   TeleportRecoveryError,
   type HostTeleportOps,
 } from "../lib/host-teleport.js";
 import {
   createRootBackup,
-  LocalRootStorage,
   restoreRootBackup,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
@@ -69,6 +67,7 @@ const sleepMock = spyOn(localMode, "sleepAssistant");
 // Re-created per test (and restored per afterEach) so the co-run suites
 // see the real operation.
 let wakeMock: ReturnType<typeof spyOn<typeof localMode, "wakeAssistant">>;
+let retireMock: ReturnType<typeof spyOn<typeof localMode, "retireAssistant">>;
 
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "host-teleport-"));
@@ -86,23 +85,34 @@ beforeEach(async () => {
   ]);
   log = spyOn(console, "log").mockImplementation(() => {});
   wakeMock = spyOn(localMode, "wakeAssistant");
+  retireMock = spyOn(localMode, "retireAssistant");
+  retireMock.mockImplementation(async (entry) => {
+    order.push(`retire:${entry.assistantId}`);
+    return { ok: true as const };
+  });
   sleepMock.mockImplementation(async (entry) => {
     order.push(`sleep:${entry.assistantId}`);
+    // The report models the pre-sleep state: only services the sleep
+    // actually stopped come back "stopped" (the backup lifecycle the
+    // teleport drives derives its restart signal from this).
+    const wasRunning = running.get(entry.assistantId) ?? false;
     running.set(entry.assistantId, false);
     return {
       ok: true,
       kind: "services",
-      services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
+      services: {
+        assistant: wasRunning ? "stopped" : "not-running",
+        gateway: wasRunning ? "stopped" : "not-running",
+        ces: wasRunning ? "stopped" : "not-running",
+      },
       notes: [],
     } as never;
   });
-  // Simulated service state rides the storage prototype: the backup/restore
-  // fns construct their own LocalRootStorage now, so the liveness override
-  // has to reach them all.
-  spyOn(LocalRootStorage.prototype, "running").mockImplementation(
-    async function (this: LocalRootStorage) {
-      return running.get(this.entry.assistantId) ?? false;
-    },
+  // Liveness rides the package's isAssistantRunning namespace spy now: both
+  // the teleport flow and the backup/restore lifecycle it drives ask the
+  // same package seam, so the override reaches them all.
+  spyOn(localMode, "isAssistantRunning").mockImplementation(
+    async (entry: LockfileAssistant) => running.get(entry.assistantId) ?? false,
   );
   wakeMock.mockImplementation(async (entry) => {
     order.push(`wake:${entry.assistantId}`);
@@ -110,7 +120,6 @@ beforeEach(async () => {
     return { ok: true as const };
   });
   ops = {
-    storage: (entry) => storageFor(entry),
     backup: mock(async (entry) => {
       const file = join(directory, `${entry.assistantId}.tar.gz`);
       await createRootBackup({ ...entry, cloud: "local" }, file);
@@ -125,9 +134,6 @@ beforeEach(async () => {
       await wakeMock(entry);
       order.push(`restore:${entry.assistantId}`);
     }),
-    retire: mock(async (entry) => {
-      order.push(`retire:${entry.assistantId}`);
-    }),
   };
 });
 afterEach(async () => {
@@ -140,6 +146,7 @@ afterEach(async () => {
   // The namespace spy must not leak into the other teleport suites that
   // share this process.
   wakeMock.mockRestore();
+  retireMock.mockRestore();
   if (previousLockDir === undefined) {
     delete process.env.XDG_CONFIG_HOME;
   } else {
@@ -165,11 +172,16 @@ test("moves all four roots and encrypted key pairs using the exact stopped-sourc
       join(getLocalInstanceDir(target), "ces-security", "store.key"),
     ),
   ).toEqual(Buffer.alloc(32, 8));
+  // The backup and restore lifecycles sleep unconditionally now (the sleep
+  // is idempotent), so the flow's own sleeps are joined by the lifecycle's.
   expect(order).toEqual([
+    "sleep:source",
     "sleep:source",
     "backup:source",
     "sleep:target",
+    "sleep:target",
     "backup:target",
+    "sleep:target",
     "wake:target",
     "restore:target",
     "retire:source",
@@ -200,7 +212,7 @@ test("keep-source retains the stopped original", async () => {
     ops,
   );
   expect(running.get("source")).toBe(false);
-  expect(ops.retire).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
 });
 test("source backup failure wakes source without touching target", async () => {
   ops.backup = mock(async () => {
@@ -211,32 +223,24 @@ test("source backup failure wakes source without touching target", async () => {
   ).rejects.toThrow("unreadable credential store");
   expect(order).toEqual(["sleep:source", "wake:source"]);
   expect(ops.restore).not.toHaveBeenCalled();
-  expect(ops.retire).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
 });
-test("graceful shutdown failure never captures a live installation", async () => {
+test("a failed graceful shutdown aborts with sleep's own error", async () => {
+  // The flow trusts the sleep operation: a failure surfaces the operation's
+  // structured error — there is no separate post-sleep liveness check to
+  // second-guess it.
   sleepMock.mockImplementation(
     async () =>
       ({ ok: false, status: 500, error: "graceful timeout" }) as never,
   );
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("Source services are still running; teleport aborted.");
+  ).rejects.toThrow("graceful timeout");
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("Source services are still running; teleport aborted.");
+  ).rejects.toThrow("graceful timeout");
   expect(ops.backup).not.toHaveBeenCalled();
-  expect(ops.retire).not.toHaveBeenCalled();
-});
-test("source that fails to stop is rejected even if sleep returned", async () => {
-  // The sleep operation reports success without actually stopping anything —
-  // the flow's own stopped-check must still reject the capture.
-  sleepMock.mockImplementation(
-    async () => ({ ok: true, kind: "containers" }) as never,
-  );
-  await expect(
-    teleportHostInstallation(source, "local", "target", options, ops),
-  ).rejects.toThrow("still running");
-  expect(ops.backup).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
 });
 test("target capture failure resumes both original installations", async () => {
   const backup = ops.backup;
@@ -259,7 +263,7 @@ test("failed import retains source and resumes recovered target", async () => {
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
   ).rejects.toThrow("import failed");
-  expect(ops.retire).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
   expect(order.slice(-2)).toEqual(["wake:target", "wake:source"]);
 });
 test("failed recovery leaves damaged target stopped", async () => {
@@ -271,7 +275,7 @@ test("failed recovery leaves damaged target stopped", async () => {
   ).rejects.toThrow("recovery failed");
   expect(running.get("target")).toBe(false);
   expect(order).not.toContain("wake:target");
-  expect(ops.retire).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
 });
 test("originally sleeping source stays asleep on capture failure", async () => {
   running.set("source", false);
@@ -336,7 +340,7 @@ test("init failure retains tar and wakes source", async () => {
     ).rejects.toThrow();
     expect(order.at(-1)).toBe("wake:source");
     expect((await readFile(bad)).length).toBeGreaterThan(0);
-    expect(ops.retire).not.toHaveBeenCalled();
+    expect(retireMock).not.toHaveBeenCalled();
   } finally {
     ops.backup = backup;
   }
@@ -371,7 +375,7 @@ test("source restarted during transfer is retained to preserve newer writes", as
   await expect(
     teleportHostInstallation(source, "local", "target", options, ops),
   ).rejects.toThrow("restarted during teleport");
-  expect(ops.retire).not.toHaveBeenCalled();
+  expect(retireMock).not.toHaveBeenCalled();
   expect(order).not.toContain("wake:source");
 });
 

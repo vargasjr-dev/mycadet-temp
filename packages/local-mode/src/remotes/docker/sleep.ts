@@ -15,7 +15,8 @@ import { dockerResourceNames, removeContainer } from "./retire";
 async function sleepContainers(
   res: ReturnType<typeof dockerResourceNames>,
   options: { timeoutMs?: number } = {},
-): Promise<void> {
+): Promise<boolean> {
+  let stoppedAny = false;
   for (const container of [
     res.assistantContainer,
     res.gatewayContainer,
@@ -31,6 +32,7 @@ async function sleepContainers(
       if (status === "exited" || status === "created") continue;
       if (status !== "running")
         throw new Error(`${container} is ${status}; cannot stop gracefully.`);
+      stoppedAny = true;
       await exec("docker", ["kill", "--signal=SIGTERM", container]);
       const deadline = Date.now() + (options.timeoutMs ?? 60_000);
       while (
@@ -56,16 +58,19 @@ async function sleepContainers(
       throw err;
     }
   }
+  return stoppedAny;
 }
 
 /**
  * The docker topology's sleep leg: stop the instance's three service
  * containers (gracefully, then remove them — the wake recreates what it
- * needs) by their derived resource names.
+ * needs) by their derived resource names. Returns whether any container
+ * was actually running — the caller's restart signal (an instance that
+ * was already down stays down).
  */
 export async function sleepDocker(
   entry: LockfileAssistant,
   options: { timeoutMs?: number } = {},
-): Promise<void> {
-  await sleepContainers(dockerResourceNames(entry.assistantId), options);
+): Promise<boolean> {
+  return sleepContainers(dockerResourceNames(entry.assistantId), options);
 }

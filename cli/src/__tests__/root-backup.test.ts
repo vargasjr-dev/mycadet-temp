@@ -32,13 +32,19 @@ import * as localMode from "@mycadet/local-mode";
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
 // prototype's methods and the local-mode package's assistant entrypoint.
-const realRunning = LocalRootStorage.prototype.running;
 const realCapture = LocalRootStorage.prototype.capture;
 const realReplace = LocalRootStorage.prototype.replace;
-const runningMock = spyOn(LocalRootStorage.prototype, "running");
 const captureMock = spyOn(LocalRootStorage.prototype, "capture");
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
 const sleepMock = spyOn(localMode, "sleepAssistant");
+// Liveness rides the package's isAssistantRunning module mock — the
+// backup/restore lifecycle asks the same package seam the teleport flow
+// does. `running === undefined` falls through to the real check (PID files
+// and ports), matching the old prototype-spy passthrough.
+const realIsAssistantRunning = localMode.isAssistantRunning;
+const isRunningMock = mock(async (entry: LockfileAssistant) =>
+  running === undefined ? realIsAssistantRunning(entry) : running,
+);
 // The flow's wake hook is the package's wake operation — module-mocked here
 // so the real operation never runs.
 const wakeMock = mock(async (_entry: { assistantId: string }) => ({
@@ -47,6 +53,7 @@ const wakeMock = mock(async (_entry: { assistantId: string }) => ({
 mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   wakeAssistant: wakeMock,
+  isAssistantRunning: isRunningMock,
 }));
 
 let running: boolean | undefined;
@@ -54,11 +61,6 @@ let onCapture: ((path: string) => void) | undefined;
 let onReplace: ((path: string) => void) | undefined;
 let onResume: (() => void) | undefined;
 let onSleep: (() => void) | undefined;
-
-runningMock.mockImplementation(async function (this: LocalRootStorage) {
-  if (running === undefined) return realRunning.call(this);
-  return running;
-});
 captureMock.mockImplementation(async function (
   this: LocalRootStorage,
   path: string,
@@ -78,9 +80,23 @@ wakeMock.mockImplementation(async () => {
   onResume?.();
   return { ok: true as const };
 });
+// The flow derives its restart signal from the sleep result itself — the
+// mock models the local operation's report from the pre-sleep state (the
+// onSleep hooks run after the state is captured, since they simulate the
+// stop).
 sleepMock.mockImplementation(async () => {
+  const wasRunning = running ?? false;
   onSleep?.();
-  return { ok: true, kind: "containers" };
+  return {
+    ok: true,
+    kind: "services",
+    services: {
+      assistant: wasRunning ? "stopped" : "not-running",
+      gateway: wasRunning ? "stopped" : "not-running",
+      ces: wasRunning ? "stopped" : "not-running",
+    },
+    notes: [],
+  };
 });
 
 afterEach(() => {
@@ -170,19 +186,6 @@ describe("root tar backup", () => {
     );
   });
 
-  test("initialization refuses running services before replacing any roots", async () => {
-    const { root, entry, file } = await fixture();
-    await packRoot(root, file);
-    const storage = new LocalRootStorage(entry);
-    storage.running = async () => true;
-    await expect(initializeRootArchive(entry, file, storage)).rejects.toThrow(
-      "still running",
-    );
-    expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
-      "source notes",
-    );
-  });
-
   test("round-trips every service root, encrypted bytes, permissions and internal links", async () => {
     const { root, entry, file, dir } = await fixture();
     await createRootBackup(entry, file);
@@ -267,10 +270,13 @@ describe("root tar backup", () => {
       events.push("sleep");
       throw new Error("refused shutdown");
     };
+    // A failed sleep surfaces its own error and nothing is captured; the
+    // flow no longer second-guesses the operation with a liveness check, so
+    // there is no recovery wake on its behalf either.
     await expect(createRootBackup(entry, file)).rejects.toThrow(
       "refused shutdown",
     );
-    expect(events).toEqual(["sleep", "wake"]);
+    expect(events).toEqual(["sleep"]);
   });
 
   test("restore replaces stale state and retains a restorable recovery archive", async () => {
@@ -359,9 +365,12 @@ describe("root tar backup", () => {
     ).rejects.toThrow("vellum-to-cadet");
   });
 
-  test.skipIf(process.platform === "win32")(
+  test.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
     "unreadable credential files fail capture without publishing an incomplete archive",
     async () => {
+      // Root ignores file permissions entirely, so the chmod-0 mechanism
+      // this test rides cannot fail a read there — skip instead of
+      // pretending the capture can be made unreadable.
       const { entry, file, root } = await fixture();
       const keys = join(root, "ces-security", "keys.enc");
       await chmod(keys, 0);

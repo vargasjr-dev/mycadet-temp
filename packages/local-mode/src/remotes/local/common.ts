@@ -4,7 +4,9 @@ import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -185,7 +187,7 @@ function envWithBunPath(
 function localRuntimeAssistantIndex(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): string | undefined {
-  const installDir = entry.runtimeInstallDir;
+  const installDir = latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(
     installDir,
@@ -198,7 +200,7 @@ function localRuntimeAssistantIndex(
 function localRuntimeGatewayDir(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
-  const installDir = entry?.runtimeInstallDir;
+  const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
@@ -207,10 +209,44 @@ function localRuntimeGatewayDir(
 function localRuntimeCesDir(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
-  const installDir = entry?.runtimeInstallDir;
+  const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/credential-executor", "");
   return isCesSourceDir(candidate) ? candidate : undefined;
+}
+
+/**
+ * The instance's most recently installed self-managed runtime — the newest
+ * directory under `<instanceDir>/runtime/`, i.e. the install the last
+ * `ensureLocalRuntime` (hatch upgrade) left behind. The lockfile stopped
+ * recording the runtime install (version and dir), so recency is derived
+ * from the filesystem instead: every install rewrites its own directory,
+ * making its mtime the install order.
+ */
+function latestLocalRuntimeInstallDir(
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+): string | undefined {
+  const runtimeRoot = join(getLocalInstanceDir(entry), "runtime");
+  let installed: string[];
+  try {
+    installed = readdirSync(runtimeRoot);
+  } catch {
+    return undefined;
+  }
+  let newest: { dir: string; mtimeMs: number } | undefined;
+  for (const dir of installed) {
+    let stat: ReturnType<typeof statSync>;
+    try {
+      stat = statSync(join(runtimeRoot, dir));
+    } catch {
+      continue;
+    }
+    if (!stat.isDirectory()) continue;
+    if (!newest || stat.mtimeMs > newest.mtimeMs) {
+      newest = { dir, mtimeMs: stat.mtimeMs };
+    }
+  }
+  return newest ? join(runtimeRoot, newest.dir) : undefined;
 }
 
 export function ensureLocalRuntime(
