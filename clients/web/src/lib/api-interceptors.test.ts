@@ -36,8 +36,6 @@ const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
 mock.module(
   "@/lib/local-mode",
   (): Partial<typeof LocalMode> => ({
-    getServedLockfile: () => ({ assistants: [], activeAssistant: null }),
-    getActiveAssistant: () => undefined,
     isLocalAssistant: () => false,
     isLocalClient: isLocalClientMock,
     isCadetCloudRemote: isCadetCloudRemoteMock,

@@ -1,10 +1,8 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { parseLockfile } from "@mycadet/local-mode/contract";
 
 import {
-  getActiveAssistant,
-  getServedLockfile,
   getRemoteAssistantDisplayName,
   isLocalAssistant,
   isCadetCloudRemote,
@@ -15,24 +13,6 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 const realFetch = globalThis.fetch;
-
-function setSelected(id: string): void {
-  localStorage.setItem(SELECTED_ASSISTANT_STORAGE_KEY, id);
-}
-
-// Tests default to cloud-served mode (test-setup.ts stamps the config), but
-// this file's local paths need the local arm: every test starts stamped
-// local, the cloud/served-gateway descriptions override per test, and the
-// afterEach restores the suite default.
-function disableLocalMode(): void {
-  window.__CADET_CONFIG__ = { remote: "cloud" };
-}
-
-function stampServed(
-  config: Record<string, unknown> & { assistantId?: string },
-): void {
-  window.__CADET_CONFIG__ = { remote: "local", ...config };
-}
 
 beforeEach(() => {
   window.__CADET_CONFIG__ = { remote: "local" };
@@ -58,78 +38,6 @@ const platform: LockfileAssistant = {
   cloud: "cloud",
 } as LockfileAssistant;
 
-describe("served config synthesis", () => {
-  test("the stamp produces the one assistant, straight from the injected config", () => {
-    stampServed({ assistantId: "served-1", assistantName: "Served" });
-
-    const lockfile = getServedLockfile();
-
-    expect(lockfile.activeAssistant).toBe("served-1");
-    expect(lockfile.assistants).toEqual([
-      expect.objectContaining({
-        assistantId: "served-1",
-        cloud: "local",
-        name: "Served",
-      }),
-    ]);
-  });
-
-  test("a host that stamps no assistant yields the empty lockfile (pre-hatch)", () => {
-    window.__CADET_CONFIG__ = { remote: "local" };
-
-    expect(getServedLockfile()).toEqual({
-      assistants: [],
-      activeAssistant: null,
-    });
-  });
-
-  test("a cloud-hosted cadet yields the empty lockfile even if an id were stamped", () => {
-    disableLocalMode();
-    window.__CADET_CONFIG__ = {
-      remote: "cloud",
-      assistantId: "not-a-thing",
-    };
-
-    expect(getServedLockfile()).toEqual({
-      assistants: [],
-      activeAssistant: null,
-    });
-  });
-
-  test("names the assistant 'Local Assistant' when the stamp carries no name", () => {
-    stampServed({ assistantId: "served-1" });
-
-    expect(getServedLockfile().assistants[0]?.name).toBe("Local Assistant");
-  });
-
-  test("the stamped cloud kind passes through, so a paired serve classifies as paired", () => {
-    stampServed({ assistantId: "served-1", remote: "local" });
-    expect(getServedLockfile().assistants[0]?.cloud).toBe("local");
-
-    stampServed({ assistantId: "served-1", remote: "docker" });
-    expect(getServedLockfile().assistants[0]?.cloud).toBe("docker");
-  });
-
-  test("the served entry carries no runtimeUrl and no real port", () => {
-    stampServed({ assistantId: "served-1" });
-
-    const entry = getServedLockfile().assistants[0];
-    expect(entry?.cloud === "local" ? entry.port : undefined).toBe(0);
-  });
-
-  test("getActiveAssistant is the served entry; nothing when unstamped", () => {
-    stampServed({ assistantId: "served-1", assistantName: "Served" });
-    // The served identity is independent of the app shell's chooser memory.
-    setSelected("some-other-assistant");
-
-    expect(getActiveAssistant()?.assistantId).toBe("served-1");
-
-    window.__CADET_CONFIG__ = { remote: "local" };
-    expect(getActiveAssistant()).toBeUndefined();
-    expect(getActiveAssistant()).toBeUndefined();
-  });
-});
-
 describe("remote gateway mode", () => {
   test("isCadetCloudRemote splits cloud from the gateway-auth remotes", () => {
     // Shells serving the local cadet (desktop, dev server) inject no remote;
@@ -150,26 +58,6 @@ describe("remote gateway mode", () => {
     // The cloud remote is the only one behind the cloud cookie scheme.
     window.__CADET_CONFIG__ = { remote: "cloud" };
     expect(isCadetCloudRemote()).toBe(true);
-  });
-
-  test("a served runtime synthesizes its stamped assistant without a host call", () => {
-    window.__CADET_CONFIG__ = {
-      remote: "docker",
-      assistantId: "edge-1",
-      assistantName: "cadet-deep-hare-ww1iw1",
-    };
-
-    const lockfile = getServedLockfile();
-
-    expect(isCadetCloudRemote()).toBe(false);
-    expect(lockfile.activeAssistant).toBe("edge-1");
-    expect(lockfile.assistants).toEqual([
-      expect.objectContaining({
-        assistantId: "edge-1",
-        cloud: "docker",
-        name: "cadet-deep-hare-ww1iw1",
-      }),
-    ]);
   });
 });
 

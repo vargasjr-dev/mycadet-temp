@@ -2,11 +2,8 @@ import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import type { CloudStatusGetResponses } from "@/generated/daemon/types.gen";
 import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
-import {
-  getActiveAssistant,
-  isLocalAssistant,
-  isLocalClient,
-} from "@/lib/local-mode";
+import { isLocalAssistant, isLocalClient } from "@/lib/local-mode";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
@@ -105,22 +102,20 @@ export async function resolveLocalAssistantCloudIdentity(
 }
 
 /**
- * The lockfile entry for `assistantId` when it is the active or selected
- * assistant and `eligible` accepts it, else null. The routine resolution
- * passes `isLocalAssistant`, the assistants the web lifecycle owns; a
- * credential-rotating one passes every loopback-gateway assistant.
+ * The resolved assistant's entry when it IS `assistantId` and `eligible`
+ * accepts it, else null. The routine resolution passes `isLocalAssistant`,
+ * the assistants the web lifecycle owns; a credential-rotating one passes
+ * every loopback-gateway assistant. The store holds the one assistant this
+ * surface serves — a mismatching id means the request targets something the
+ * surface never resolved.
  */
 function resolveLocalAssistant(
   assistantId: string,
   eligible: (assistant: LockfileAssistant) => boolean,
 ): LockfileAssistant | null {
-  const active = getActiveAssistant();
-  if (active?.assistantId === assistantId && eligible(active)) {
-    return active;
-  }
-  const selected = getActiveAssistant();
-  if (selected?.assistantId === assistantId && eligible(selected)) {
-    return selected;
+  const entry = getResolvedAssistant();
+  if (entry.assistantId === assistantId && eligible(entry)) {
+    return entry;
   }
   return null;
 }

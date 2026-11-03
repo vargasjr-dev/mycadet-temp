@@ -109,7 +109,7 @@ export function ApiKeyScreen() {
     // assistant's onboarded stamp here, but this call pins newAssistant: true,
     // which mutes that probe — the port drops it.
     const isLocalHatch =
-      isLocalClient() && hosting !== null && hosting !== "cadet-cloud";
+      isLocalClient() && hosting !== null && hosting !== "cloud";
     const destination = onboardingDestinationAfterConsent({
       isLocalHatch,
       newAssistant: true,

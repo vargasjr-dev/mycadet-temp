@@ -149,7 +149,7 @@ describe("hatching screen", () => {
   });
 
   test("the cloud hatch passes the cloud remote and hands off bare to research", async () => {
-    searchParams = new URLSearchParams("hosting=cadet-cloud");
+    searchParams = new URLSearchParams("hosting=cloud");
     render(<HatchingScreen />);
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
@@ -173,7 +173,7 @@ describe("hatching screen", () => {
       ok: false as const,
       error: "hatching is unavailable",
     }));
-    searchParams = new URLSearchParams("hosting=cadet-cloud");
+    searchParams = new URLSearchParams("hosting=cloud");
     render(<HatchingScreen />);
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());

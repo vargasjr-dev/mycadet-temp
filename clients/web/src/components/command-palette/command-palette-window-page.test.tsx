@@ -6,9 +6,11 @@ const authRef = {
   hasCloudSession: true,
 };
 const resolvedRef = {
-  assistant: { cloud: "local", assistantId: "assistant-1", name: "Primary" } as
-    | { cloud: "local"; assistantId: string; name?: string }
-    | null,
+  assistant: {
+    cloud: "local",
+    assistantId: "assistant-1",
+    name: "Primary",
+  } as { cloud: "local"; assistantId: string; name?: string } | null,
 };
 
 const useAssistantBootResolutionMock = mock(() => ({
@@ -56,14 +58,8 @@ mock.module("@/lib/local-mode", () => ({
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   isGatewaySessionLive: () => false,
-  getActiveAssistant: () =>
-    localSelectedRef.value ??
-    (resolvedRef.assistant
-      ? { assistantId: resolvedRef.assistant.assistantId }
-      : undefined),
   setActiveLockfileAssistant: async () => undefined,
 }));
-
 
 mock.module("@/stores/resolved-assistant-store", () => {
   const useResolvedAssistantStore = () => null;

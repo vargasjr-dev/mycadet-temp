@@ -12,8 +12,9 @@ import { useAuthStore } from "@app/stores/auth-store";
 import { useTranslation } from "@app/i18n";
 import { docsUrl, routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
+import type { Remote } from "@mycadet/local-mode/contract";
 
-type HostingMode = "cadet-cloud" | "local" | "docker";
+type HostingMode = Remote;
 
 interface HostingOption {
   mode: HostingMode;
@@ -29,7 +30,7 @@ function useHostingOptions(hasCloudSession: boolean): HostingOption[] {
 
   return [
     {
-      mode: "cadet-cloud",
+      mode: "cloud",
       label: "Cadet Cloud",
       subtitle:
         "Always on, 24/7, even when your computer is off. Runs on Cadet's secure infrastructure.",
@@ -64,13 +65,13 @@ export function HostingScreen() {
   // The resolver's funnel fork reads the same verdict: a live cloud session.
   const hasCloudSession = useAuthStore((s) => s.cloudSession === "present");
   const options = useHostingOptions(hasCloudSession);
-  const cloudDisabled = options.find((o) => o.mode === "cadet-cloud")?.disabled;
+  const cloudDisabled = options.find((o) => o.mode === "cloud")?.disabled;
   const [selected, setSelected] = useState<HostingMode>(
-    hasCloudSession && !cloudDisabled ? "cadet-cloud" : "local",
+    hasCloudSession && !cloudDisabled ? "cloud" : "local",
   );
 
   useEffect(() => {
-    if (cloudDisabled && selected === "cadet-cloud") {
+    if (cloudDisabled && selected === "cloud") {
       setSelected("local");
     }
   }, [cloudDisabled, selected]);
@@ -78,7 +79,7 @@ export function HostingScreen() {
   const showLogin = !hasCloudSession;
 
   const onContinue = () => {
-    if (selected === "cadet-cloud") {
+    if (selected === "cloud") {
       // Cloud is managed: drop any provider key staged from a prior
       // Local/Docker visit so it can't leak into a later local hatch.
       setPendingProviderKey(null);
@@ -137,7 +138,7 @@ export function HostingScreen() {
               }}
               loginLabel={t("actions.loginToUse")}
               onLogin={
-                opt.disabled && opt.mode === "cadet-cloud" && showLogin
+                opt.disabled && opt.mode === "cloud" && showLogin
                   ? () => {
                       void navigate(
                         `${routes.account.login}?returnTo=${encodeURIComponent(routes.account.onboarding.hosting)}`,

@@ -25,7 +25,8 @@ import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { getServedLockfile } from "@/lib/local-mode";
+import { readInjectedConfig } from "@/lib/injected-config";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 
 /** The boot entry for a surface whose serving host fronted no assistant. */
 export const UNRESOLVED_ASSISTANT: LockfileAssistant = {
@@ -34,11 +35,50 @@ export const UNRESOLVED_ASSISTANT: LockfileAssistant = {
 };
 
 /**
+ * The assistant identity stamped by the serving host, read once at boot: one
+ * entry mirroring the stamped remote. The host owns routing — the renderer
+ * holds no transport URL and classifies nothing as paired — so the entry
+ * carries only what identity readers need. A baseten stamp has no serving
+ * fields in the injected config, so it falls back to the local default the
+ * contract's own preprocessor uses. `undefined` = the host fronted no
+ * assistant (the cloud SPA's pre-projection window).
+ */
+function servedBootAssistant(): LockfileAssistant | undefined {
+  const config = readInjectedConfig();
+  const assistantId =
+    typeof config?.assistantId === "string" && config.assistantId.trim() !== ""
+      ? config.assistantId
+      : undefined;
+  if (isCadetCloudRemote() || !assistantId) {
+    return undefined;
+  }
+  const remote = config?.remote ?? "local";
+  const base = {
+    assistantId,
+    name:
+      typeof config?.assistantName === "string" &&
+      config.assistantName.trim() !== ""
+        ? config.assistantName
+        : "Local Assistant",
+    hatchedAt: "1970-01-01T00:00:00.000Z",
+  };
+  const localish = (cloud: "local" | "docker" | "apple-container") =>
+    ({ ...base, cloud, port: 0, daemonPort: 0 }) as LockfileAssistant;
+  return remote === "custom"
+    ? { ...base, cloud: "custom" as const, ipAddress: "127.0.0.1", port: 0 }
+    : remote === "docker"
+      ? localish("docker")
+      : remote === "apple-container"
+        ? localish("apple-container")
+        : localish("local");
+}
+
+/**
  * The assistant this surface serves at boot: the served synthesis when the
  * host stamped one, else the unresolved cloud shell the projection replaces.
  */
 function initialAssistant(): LockfileAssistant {
-  return getServedLockfile().assistants[0] ?? UNRESOLVED_ASSISTANT;
+  return servedBootAssistant() ?? UNRESOLVED_ASSISTANT;
 }
 
 interface ResolvedAssistantState {

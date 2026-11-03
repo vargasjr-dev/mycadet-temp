@@ -33,12 +33,13 @@ let selectedAssistant: {
   name?: string;
 } = { assistantId: "self", cloud: "local" };
 
-// Spread the real module so transitive consumers (e.g. the pending-request
-// chain) keep every export; only the reads the tests drive are overridden.
-const actualLocalMode = await import("@/lib/local-mode");
-mock.module("@/lib/local-mode", () => ({
-  ...actualLocalMode,
-  getActiveAssistant: () => selectedAssistant,
+// Spread the real module so transitive consumers keep every export; only the
+// resolved-assistant read the tests drive is overridden. The pairing client
+// reads the store (the one assistant this surface serves), not the lib.
+const actualStore = await import("@/stores/resolved-assistant-store");
+mock.module("@/stores/resolved-assistant-store", () => ({
+  ...actualStore,
+  getResolvedAssistant: () => selectedAssistant,
 }));
 
 mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({

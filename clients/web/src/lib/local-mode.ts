@@ -1,17 +1,11 @@
 import { readInjectedConfig } from "@/lib/injected-config";
 
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import type { Lockfile, LockfileAssistant } from "@mycadet/local-mode/contract";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Served assistant
-// ---------------------------------------------------------------------------
-
-const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
 export function isCadetCloudRemote(): boolean {
   return readInjectedConfig()?.remote === "cloud";
@@ -58,51 +52,6 @@ export function isServedGatewayRuntime(): boolean {
   return remote === "docker" || remote === "custom";
 }
 
-/**
- * The assistant identity stamped by the serving host: one entry mirroring the
- * stamped remote. The host owns routing — the renderer holds no transport URL
- * and classifies nothing as paired — so the entry carries only what identity
- * readers need. A baseten stamp has no serving fields in the injected config,
- * so it falls back to the local default the contract's own preprocessor uses.
- */
-export function getServedLockfile(): Lockfile {
-  const config = readInjectedConfig();
-  const assistantId = nonEmptyString(config?.assistantId);
-  if (isCadetCloudRemote() || !assistantId) {
-    return { ...EMPTY_LOCKFILE };
-  }
-  const remote = config?.remote ?? "local";
-  const base = {
-    assistantId,
-    name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
-    hatchedAt: "1970-01-01T00:00:00.000Z",
-  };
-  const localish = (
-    cloud: "local" | "docker" | "apple-container",
-  ): { cloud: "local" | "docker" | "apple-container" } extends never
-    ? never
-    : LockfileAssistant =>
-    ({ ...base, cloud, port: 0, daemonPort: 0 }) as LockfileAssistant;
-  const entry =
-    remote === "custom"
-      ? { ...base, cloud: "custom" as const, ipAddress: "127.0.0.1", port: 0 }
-      : remote === "cloud"
-        ? { ...base, cloud: "cloud" as const }
-        : remote === "docker"
-          ? localish("docker")
-          : remote === "apple-container"
-            ? localish("apple-container")
-            : localish("local");
-  return {
-    assistants: [entry],
-    activeAssistant: assistantId,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Core helpers
-// ---------------------------------------------------------------------------
-
 export function isLocalClient(): boolean {
   // The serving host stamps the runtime truth: Cadet Cloud's served SPA
   // carries remote "cloud"; the desktop shim, dev servers, and every
@@ -132,36 +81,4 @@ export function isLocalClient(): boolean {
  */
 export function isLocalAssistant(a: LockfileAssistant): boolean {
   return a.cloud === "local";
-}
-
-/**
- * The lockfile's active assistant, or — when the recorded `activeAssistant`
- * no longer resolves but exactly one assistant exists — that sole assistant.
- * Returns `undefined` when the active id is stale and the choice is ambiguous,
- * so callers fall back deliberately rather than silently binding to a
- * positional entry that may shadow the real active assistant.
- */
-export function getActiveAssistant(): LockfileAssistant | undefined {
-  const lf = getServedLockfile();
-  const active = lf.assistants.find(
-    (a) => a.assistantId === lf.activeAssistant,
-  );
-  if (active) {
-    return active;
-  }
-  if (lf.assistants.length === 1) {
-    return lf.assistants[0];
-  }
-  return undefined;
-}
-
-/**
- * The lockfile entry for a specific assistant id, if one exists.
- */
-export function getLockfileAssistant(
-  assistantId: string,
-): LockfileAssistant | undefined {
-  return getServedLockfile().assistants.find(
-    (a) => a.assistantId === assistantId,
-  );
 }

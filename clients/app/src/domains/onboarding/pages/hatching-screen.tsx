@@ -12,6 +12,7 @@ import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
+import { RemoteSchema } from "@mycadet/local-mode/contract";
 import type { CharacterTraits } from "@app/types/avatar";
 import { BUNDLED_COMPONENTS } from "@app/utils/avatar-bundled-components";
 import { randomCharacterTraits } from "@app/utils/avatar-random";
@@ -99,7 +100,10 @@ export function HatchingScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const hostingParam = searchParams.get("hosting");
+  // The funnel's hosting choice IS a Remote (the hosting screen emits the
+  // contract's spelling) — validate the param and ride it as the hatch's
+  // remote; anything absent or foreign reads as the local walk.
+  const hosting = RemoteSchema.safeParse(searchParams.get("hosting")).data;
   const failParam = searchParams.get("fail");
   const [hatchTraits] = useState<CharacterTraits>(
     () => (hatchTraitsCache ??= randomCharacterTraits(BUNDLED_COMPONENTS)),
@@ -180,8 +184,8 @@ export function HatchingScreen() {
         // selection resolves to (its background hatch resolves the existing
         // local assistant instead of provisioning a cloud one). A cloud walk
         // hands off bare — research owns the managed background hatch.
-        if (hostingParam && hostingParam !== "cadet-cloud") {
-          const researchParams = new URLSearchParams({ hosting: hostingParam });
+        if (hosting && hosting !== "cloud") {
+          const researchParams = new URLSearchParams({ hosting });
           if (readyAssistantId) {
             researchParams.set("assistant", readyAssistantId);
           }
@@ -199,15 +203,10 @@ export function HatchingScreen() {
       transitionPhase("provisioning");
 
       try {
-        // The funnel's hosting choice IS the hatch api's remote param — the
+        // The validated hosting choice IS the hatch api's remote param — the
         // hatch operation discriminates (local, docker, cloud), so this
         // screen never branches on the mode.
-        const remote =
-          hostingParam === "cadet-cloud"
-            ? "cloud"
-            : hostingParam === "docker"
-              ? "docker"
-              : "local";
+        const remote = hosting ?? "local";
         // A promise held across a retry answers only for the hosting mode it
         // was created with; a switched mode hatches fresh.
         if (hatchPromise && hatchRemote !== remote) {
@@ -287,14 +286,7 @@ export function HatchingScreen() {
         clearTimeout(readyPollTimer);
       }
     };
-  }, [
-    attempt,
-    failParam,
-    hatchTraits,
-    hostingParam,
-    navigate,
-    transitionPhase,
-  ]);
+  }, [attempt, failParam, hatchTraits, hosting, navigate, transitionPhase]);
 
   useEffect(() => {
     if (segmentStartTimeRef.current === 0) {
@@ -367,7 +359,7 @@ export function HatchingScreen() {
                 // backs up to its hosting step; a cloud walk came through
                 // research and returns there.
                 const to =
-                  hostingParam && hostingParam !== "cadet-cloud"
+                  hosting && hosting !== "cloud"
                     ? routes.account.onboarding.hosting
                     : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
                 void navigate(to, SETUP_NAVIGATE);
