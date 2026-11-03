@@ -13,13 +13,6 @@ mock.module("@/runtime/apns-environment", () => ({
   resolveSignedApnsEnvironment: resolveSignedApnsEnvironmentMock,
 }));
 
-const resolveCloudAssistantIdMock = mock(
-  async (assistantId: string) => assistantId as string | null,
-);
-mock.module("@/lib/cloud-assistant-id", () => ({
-  resolveCloudAssistantId: resolveCloudAssistantIdMock,
-}));
-
 // ── @capacitor/app (lazy-imported plugin Proxy) ──────────────────────────────
 
 const bundleId = "ai.vocify-inc.mycadet-ios";
@@ -74,10 +67,6 @@ const { changeLocale } = await import("@/i18n");
 beforeEach(() => {
   lastUpsertArg = null;
   resolveSignedApnsEnvironmentMock.mockClear();
-  resolveCloudAssistantIdMock.mockClear();
-  resolveCloudAssistantIdMock.mockImplementation(
-    async (assistantId: string) => assistantId,
-  );
   getInfoMock.mockClear();
   upsertMock.mockClear();
   deleteMock.mockClear();
@@ -104,25 +93,6 @@ describe("registerLiveActivityPushToken APNs environment", () => {
     expect(lastUpsertArg?.body.bundle_id).toBe(bundleId);
     expect(lastUpsertArg?.body.conversation_id).toBe("conv-1");
     expect(lastUpsertArg?.body.apns_environment).toBe("production");
-  });
-
-  test("upserts under the resolved platform UUID", async () => {
-    resolveCloudAssistantIdMock.mockImplementationOnce(
-      async () => "11111111-1111-4111-8111-111111111111",
-    );
-    await registerLiveActivityPushToken(REGISTRATION);
-
-    expect(lastUpsertArg?.path).toEqual({
-      assistant_id: "11111111-1111-4111-8111-111111111111",
-    });
-  });
-
-  test("skips upsert when no platform UUID can be resolved", async () => {
-    resolveCloudAssistantIdMock.mockImplementationOnce(async () => null);
-    await registerLiveActivityPushToken(REGISTRATION);
-
-    expect(upsertMock).not.toHaveBeenCalled();
-    expect(resolveSignedApnsEnvironmentMock).not.toHaveBeenCalled();
   });
 });
 

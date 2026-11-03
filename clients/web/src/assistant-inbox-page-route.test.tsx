@@ -41,14 +41,6 @@ mock.module("@/assistant/hosting", () => ({
   useAssistantHosting: () => "cloud",
 }));
 
-mock.module("@/hooks/use-cloud-assistant-id", () => ({
-  useCloudAssistantId: () => ({
-    cloudAssistantId: PLATFORM_ASSISTANT_ID,
-    isLoading: false,
-    error: null,
-  }),
-}));
-
 mock.module("@/hooks/use-assistant-avatar", () => ({
   ...assistantAvatarMod,
   useAssistantAvatar: () => ({

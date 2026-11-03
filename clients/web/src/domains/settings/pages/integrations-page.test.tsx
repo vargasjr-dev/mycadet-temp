@@ -1,4 +1,14 @@
-import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
+
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   act,
@@ -56,17 +66,6 @@ const installedPluginNames: string[] = [];
 const removedPluginNames: string[] = [];
 const disconnectedConnectionIds: string[] = [];
 const authStarts: string[] = [];
-const getAssistant = mock(async (assistantId?: string) =>
-  assistantAvailable
-    ? { ok: true, data: { id: assistantId ?? "stale-assistant" } }
-    : { ok: false },
-);
-
-const assistantApiActual = await import("@/assistant/api");
-mock.module("@/assistant/api", () => ({
-  ...assistantApiActual,
-  getAssistant,
-}));
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "mcp-assistant-123",
 }));
@@ -162,13 +161,6 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
       disconnectedConnectionIds.push(variables.path.connection_id);
     },
     isPending: false,
-  }),
-}));
-mock.module("@/hooks/use-cloud-assistant-id", () => ({
-  useCloudAssistantId: () => ({
-    cloudAssistantId: cloudHosted ? "platform-123" : null,
-    isLoading: false,
-    error: null,
   }),
 }));
 mock.module("@/assistant/hosting", () => ({
@@ -376,8 +368,17 @@ function installedPlugin(
   };
 }
 
+beforeEach(() => {
+  useResolvedAssistantStore.getState().setAssistant({
+    cloud: "cloud",
+    assistantId: "mcp-assistant-123",
+    name: "MCP Assistant",
+  });
+});
+
 afterEach(() => {
   cleanup();
+  useResolvedAssistantStore.getState().resetAssistant();
   seededProviders = [];
   seededConnections = [];
   seededServers = [];
@@ -405,7 +406,6 @@ afterEach(() => {
   hardNavigate.mockClear();
   managedConnect.mockClear();
   managedDismiss.mockClear();
-  getAssistant.mockClear();
 });
 
 afterAll(() => mock.restore());
@@ -425,7 +425,6 @@ describe("IntegrationsPage", () => {
     await screen.findByText("Notion");
     await screen.findByText("example-integration");
     expect(screen.queryByRole("tab")).toBeNull();
-    expect(getAssistant).toHaveBeenCalledWith("mcp-assistant-123");
   });
 
   test("keeps configured recovery rows separate from available providers", async () => {
@@ -466,7 +465,9 @@ describe("IntegrationsPage", () => {
   });
 
   test("missing OAuth assistant metadata does not gate MCP", async () => {
-    assistantAvailable = false;
+    // The unresolved shell (an empty id) is the missing-metadata case: the
+    // OAuth section reports it, MCP proceeds ungated.
+    useResolvedAssistantStore.getState().resetAssistant();
     seededServers = [server()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
     await screen.findByText("example-integration");

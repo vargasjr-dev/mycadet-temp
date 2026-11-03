@@ -9,8 +9,10 @@ import {
 
 import { useQuery } from "@tanstack/react-query";
 
-import { type Assistant, getAssistant } from "@/assistant/api";
+import { type Assistant } from "@/assistant/api";
+import { asGeneratedAssistant } from "@/assistant/queries";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { CapacityBar } from "@/domains/settings/components/capacity-bar";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
@@ -20,8 +22,6 @@ import { useEnvironmentStore } from "@/stores/environment-store";
 import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 import { toast } from "@mycadet/design-library";
 import { Tag } from "@mycadet/design-library/components/tag";
-
-const CURRENT_ASSISTANT_QUERY_KEY = "currentAssistant";
 
 // A resize rolls the assistant pod, so the new allocation only appears once it
 // comes back up. Poll /v1/health for a bounded window, tolerating the restart
@@ -100,18 +100,12 @@ export interface AssistantWithHealthz {
 
 export function useAssistantWithHealthz(): AssistantWithHealthz {
   const activeAssistantId = useActiveAssistantId();
-  const {
-    data: assistant = null,
-    isLoading: assistantLoading,
-    refetch: refetchAssistant,
-  } = useQuery({
-    queryKey: [CURRENT_ASSISTANT_QUERY_KEY, activeAssistantId],
-    queryFn: async () => {
-      const result = await getAssistant(activeAssistantId);
-      return result.ok ? result.data : null;
-    },
-    retry: false,
-  });
+  // The store IS the resolution: the entry projects straight to the
+  // panel's shape — no fetch, no loading window.
+  const assistant = useResolvedAssistantStore((s) =>
+    s.assistant.assistantId === "" ? null : asGeneratedAssistant(s.assistant),
+  );
+  const assistantLoading = assistant === null;
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
      id the hook already holds, so waiting for it would buy nothing and cost a
@@ -194,18 +188,18 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
   }, [activeAssistantId]);
 
   const refetch = useCallback(async () => {
-    await Promise.all([refetchAssistant(), refetchHealthz()]);
-  }, [refetchAssistant, refetchHealthz]);
+    // The assistant record lives in the store (live on write); only the
+    // healthz read has a fetch to refresh.
+    await refetchHealthz();
+  }, [refetchHealthz]);
 
   /* Opens the watch; the query polls from there. The machine-size tag comes
-     from the assistant record, which the cloud updates synchronously during
-     a resize, so that one is refreshed up front. */
+     from the assistant record — the store's entry, live without a fetch. */
   const refetchUntilResized = useCallback(
     (baseline: HealthzGetResponse | null) => {
-      void refetchAssistant();
       setResizeWatch({ baseline, until: Date.now() + HEALTHZ_POLL_TIMEOUT_MS });
     },
-    [refetchAssistant],
+    [],
   );
 
   return {

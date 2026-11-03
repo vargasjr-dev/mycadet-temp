@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
-import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantIsSelfHosted,
@@ -57,16 +56,8 @@ export function EmailChannelSection() {
   );
 
   // Managed email lives on the cloud API, whose assistant routes key on
-  // the cloud UUID — the local-mode lockfile id is a slug that no
-  // cloud route matches. Resolve the cloud id before rendering the
-  // managed form; on resolution failure fall back to the raw id so the
-  // cloud can still answer with a real per-request error.
-  const {
-    cloudAssistantId: resolvedCloudAssistantId,
-    error: cloudAssistantIdError,
-  } = useCloudAssistantId(assistantId, isCloudHosted && mode === "managed");
-  const cloudAssistantId =
-    resolvedCloudAssistantId ?? (cloudAssistantIdError ? assistantId : null);
+  // The assistant id IS the platform id — there is no second id to resolve.
+  const cloudAssistantId = assistantId;
 
   // -- BYO credential check (your-own mode) ----------------------------------
   const byoCredentialQuery = useQuery({

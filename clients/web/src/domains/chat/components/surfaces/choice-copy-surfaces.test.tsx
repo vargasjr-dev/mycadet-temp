@@ -17,13 +17,6 @@ mock.module("@/domains/chat/components/chat-markdown-message", () => ({
   ),
 }));
 
-// Keep the cloud-id resolution deterministic: the surface resolves the
-// assistant's platform id before invalidating the connections query, and the
-// real resolver reaches into local-mode/gateway state.
-mock.module("@/lib/local-cloud-identity", () => ({
-  resolveLocalAssistantCloudIdentity: mock(async (id: string) => id),
-}));
-
 import { ChoiceSurface } from "@/domains/chat/components/surfaces/choice-surface";
 import { CopyBlockSurface } from "@/domains/chat/components/surfaces/copy-block-surface";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";

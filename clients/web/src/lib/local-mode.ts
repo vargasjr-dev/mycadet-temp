@@ -1,7 +1,6 @@
 import { readInjectedConfig } from "@/lib/injected-config";
 
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,18 +66,3 @@ export function isLocalClient(): boolean {
 // ---------------------------------------------------------------------------
 // Assistant queries
 // ---------------------------------------------------------------------------
-
-/**
- * A local-kind assistant, by origin: a plain on-machine assistant the web
- * client drives through its full set of local lifecycle flows (wake, local
- * retire). Identity only — whether it currently has a reachable gateway is a
- * separate, connect-time question.
- *
- * Deliberately excludes the externally-managed container runtimes
- * (`docker`, `apple-container`), the remote self-hosted cloud (`custom`,
- * reached at its own `runtimeUrl`), and platform (`cloud`). See the
- * `KNOWN_REMOTES` taxonomy in `@mycadet/local-mode/contract`.
- */
-export function isLocalAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "local";
-}

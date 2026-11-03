@@ -14,10 +14,8 @@ import { docsUrl, routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import type { Remote } from "@mycadet/local-mode/contract";
 
-type HostingMode = Remote;
-
 interface HostingOption {
-  mode: HostingMode;
+  mode: Remote;
   label: string;
   subtitle: string;
   icon: ReactNode;
@@ -66,7 +64,7 @@ export function HostingScreen() {
   const hasCloudSession = useAuthStore((s) => s.cloudSession === "present");
   const options = useHostingOptions(hasCloudSession);
   const cloudDisabled = options.find((o) => o.mode === "cloud")?.disabled;
-  const [selected, setSelected] = useState<HostingMode>(
+  const [selected, setSelected] = useState<Remote>(
     hasCloudSession && !cloudDisabled ? "cloud" : "local",
   );
 

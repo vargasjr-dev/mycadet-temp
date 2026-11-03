@@ -1,44 +1,20 @@
 import { HardDrive, Loader2, Wrench } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
-import { type Assistant, getAssistant } from "@/assistant/api";
+import { type Assistant } from "@/assistant/api";
+import { asGeneratedAssistant } from "@/assistant/queries";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
 
-  const [assistant, setAssistant] = useState<Assistant | null>(null);
-  const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
-
-  const fetchAssistant = useCallback(async () => {
-    if (fetchedRef.current) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const result = await getAssistant();
-      if (result.ok) {
-        fetchedRef.current = true;
-        setAssistant(result.data);
-      } else {
-        setAssistant(null);
-      }
-    } catch (error) {
-      captureError(error, { context: "fetch_assistant_for_debug_controls" });
-      toast.error(t("debugControlsPanel.loadFailedToast"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    fetchAssistant();
-  }, [fetchAssistant]);
-
+  // The store IS the resolution — the entry projects straight to the
+  // panel's shape, no fetch and no loading window.
+  const assistant = useResolvedAssistantStore((s) =>
+    s.assistant.assistantId === "" ? null : asGeneratedAssistant(s.assistant),
+  );
+  const loading = assistant === null;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">

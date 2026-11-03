@@ -48,7 +48,6 @@ import {
 } from "@/generated/api/sdk.gen";
 import type { AssistantsPushTokensUpsertData } from "@/generated/api/types.gen";
 import { publish } from "@/lib/event-bus";
-import { resolveCloudAssistantId } from "@/lib/cloud-assistant-id";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureAndroidAlertsChannel } from "@/runtime/android-notification-channels";
 import {
@@ -218,10 +217,6 @@ type AndroidUpsertBody = Extract<
  */
 async function upsertToken(token: string, assistantId: string): Promise<void> {
   try {
-    const cloudAssistantId = await resolveCloudAssistantId(assistantId);
-    if (cloudAssistantId === null) {
-      return;
-    }
     // `@capacitor/app` is a plugin Proxy — destructure inline (see CAPACITOR.md).
     const { App } = await import("@capacitor/app");
     const { id: bundleId } = await App.getInfo();
@@ -245,7 +240,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
           };
 
     const result = await assistantsPushTokensUpsert({
-      path: { assistant_id: cloudAssistantId },
+      path: { assistant_id: assistantId },
       body,
       throwOnError: false,
     });
@@ -263,7 +258,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
     lastRegistered = {
       token,
       bundleId,
-      assistantId: cloudAssistantId,
+      assistantId,
       runtimeAssistantId: assistantId,
     };
     persistedRegistration.save(lastRegistered);
