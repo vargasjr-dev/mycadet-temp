@@ -204,10 +204,7 @@ function renderManaged(
   render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <EmailCloudContent
-          assistantId={ASSISTANT_ID}
-          emailRootDomain={ROOT_DOMAIN}
-        />
+        <EmailCloudContent emailRootDomain={ROOT_DOMAIN} />
       </MemoryRouter>
     </QueryClientProvider>,
   );

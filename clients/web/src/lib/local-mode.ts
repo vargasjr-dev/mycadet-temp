@@ -37,16 +37,3 @@ export function getRemoteAssistantDisplayName(): string | undefined {
 export function getRemoteGatewayHubUrl(): string | undefined {
   return nonEmptyString(readInjectedConfig()?.hubUrl);
 }
-
-/**
- * Whether this bundle is served by a cadet's gateway itself (a self-hosted
- * edge or a docker cadet) rather than running beside a local host or on the
- * cloud platform. The serving gateway synthesizes the single "self" assistant
- * for the chooser and owns the lockfile view. This is a topology fact —
- * distinct from the auth-scheme question (`isCadetCloudRemote`) — and it is
- * the only place the `remote` value selects a code path.
- */
-export function isServedGatewayRuntime(): boolean {
-  const remote = readInjectedConfig()?.remote;
-  return remote === "docker" || remote === "custom";
-}

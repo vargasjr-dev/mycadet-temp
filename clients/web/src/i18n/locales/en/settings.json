@@ -95,6 +95,7 @@
   },
   "assistantStatusPanel": {
     "assistantId": "Assistant ID",
+    "active": "Active",
     "cpuUsage": "CPU Usage",
     "created": "Created",
     "description": "Description",

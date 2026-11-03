@@ -13,9 +13,6 @@ const BASE: InboxStatusInputs = {
 
 describe("resolveInboxStatus", () => {
   test("loads until the cloud id and the address list are in", () => {
-    expect(resolveInboxStatus({ ...BASE, assistantId: null })).toBe(
-      "loading",
-    );
     expect(resolveInboxStatus({ ...BASE, addressCount: undefined })).toBe(
       "loading",
     );

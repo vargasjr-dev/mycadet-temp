@@ -1,4 +1,4 @@
-import { CircleCheck, ExternalLink, Info, Loader2 } from "lucide-react";
+import { CircleCheck, ExternalLink, Info } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -219,17 +219,7 @@ export function EmailChannelSection() {
     >
       {mode === "managed" ? (
         <div className="space-y-4">
-          {assistantId === null ? (
-            <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t("emailChannelSection.connecting")}
-            </div>
-          ) : (
-            <EmailCloudContent
-              assistantId={assistantId}
-              emailRootDomain={emailRootDomain}
-            />
-          )}
+          <EmailCloudContent emailRootDomain={emailRootDomain} />
         </div>
       ) : (
         yourOwnContent

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 
 import { TerminalPanel } from "@/components/terminal-panel";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
-import { useAssistantResolution } from "@/assistant/queries";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useTranslation } from "@/i18n";
 import { Select } from "@mycadet/design-library/components/select";
 
@@ -12,13 +12,11 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
   // The terminal session is a cloud-routed exec channel — it has no meaning
-  // against a self-hosted assistant. Self-hosted resolutions early-return
+  // against a self-hosted assistant. Self-hosted assistants early-return
   // null, structurally blocking TerminalPanel from mounting a cloud-routed
-  // exec connection against a self-hosted target. The assistant is the
-  // shell's — the boot resolution owns the id, the panel runs its own fetch
-  // for nothing.
-  const { result } = useAssistantResolution();
-  const assistantId = result?.ok ? result.data.id : null;
+  // exec connection against a self-hosted target. The id is the store's —
+  // the shell stamped it before the first render.
+  const assistantId = useActiveAssistantId();
   const [service, setService] = useState<TerminalService>("assistant");
 
   const terminalServiceOptions = useMemo(
@@ -58,31 +56,20 @@ export function AssistantTerminalPanel() {
             </p>
           </div>
         </div>
-        {assistantId && (
-          <Select
-            options={[...terminalServiceOptions]}
-            value={service}
-            onChange={setService}
-            aria-label={t("assistantTerminalPanel.targetContainer")}
-          />
-        )}
+        <Select
+          options={[...terminalServiceOptions]}
+          value={service}
+          onChange={setService}
+          aria-label={t("assistantTerminalPanel.targetContainer")}
+        />
       </div>
 
-      {!assistantId ? (
-        <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 text-body-medium-lighter text-[var(--content-tertiary)]">
-          <div className="flex items-center gap-2 px-1 py-0.5">
-            <Terminal className="h-4 w-4 shrink-0" />
-            <span>{t("assistantTerminalPanel.noAssistant")}</span>
-          </div>
-        </div>
-      ) : (
-        <TerminalPanel
-          key={service}
-          assistantId={assistantId}
-          service={service}
-          className="min-h-0 flex-1"
-        />
-      )}
+      <TerminalPanel
+        key={service}
+        assistantId={assistantId}
+        service={service}
+        className="min-h-0 flex-1"
+      />
     </div>
   );
 }

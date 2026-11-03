@@ -7,17 +7,17 @@ import {
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
-import { useAssistantResolution } from "@/assistant/queries";
+import { asGeneratedAssistant } from "@/assistant/queries";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
 import { resolveInboxStatus, type InboxStatus } from "../resolve-inbox-status";
 
 export interface AssistantInboxState {
   status: InboxStatus;
-  /** The id the cloud's assistant routes key on; `null` until resolved. */
-  cloudAssistantId: string | null;
-  /** The assistant as the cloud lists it; falls back to the name given. */
+  /** The assistant id the routes key on. */
+  assistantId: string;
+  /** The assistant as the store lists it; falls back to the name given. */
   assistantName: string;
   /** The public handle, which is the subdomain of the address. */
   handle: string;
@@ -40,39 +40,29 @@ export interface AssistantInboxState {
 
 /**
  * Everything the inbox needs to know to pick a state, read from the caches
- * that own it: the active assistant's hosting, the boot resolution (for
- * the handle and name — the inbox IS the active assistant's inbox, so
- * there is nothing to scan a platform listing for), and the assistant's
- * address and domain lists. Managed email lives on the cloud API, whose
- * assistant routes key on the cloud UUID, so the local id is resolved to
- * that first; the reads that need it wait on it.
+ * that own it: the store's entry (for the handle and name — the inbox IS
+ * the active assistant's inbox, so there is nothing to scan a listing
+ * for) and the assistant's address and domain lists. Managed email lives
+ * on the platform API, whose assistant routes key on the assistant id.
  */
 export function useAssistantInboxState(
-  assistantId: string | null,
+  assistantId: string,
   fallbackName: string,
 ): AssistantInboxState {
   const queryClient = useQueryClient();
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const onPlatform = isCloudHosted && !!assistantId;
   const rootDomain = useEnvironmentStore.use.emailRootDomain();
 
+  // The store IS the cloud's record of this assistant — its name, handle,
+  // and creation instant come from there, not from a listing scan.
+  const listed = asGeneratedAssistant(getResolvedAssistant());
 
-  // The boot resolution IS the cloud's record of this assistant — its
-  // name, handle, and creation instant come from there, not from a
-  // platform listing scan.
-  const { result: resolution } = useAssistantResolution();
-  const listed = resolution?.ok ? resolution.data : null;
-
-  const addressPath = { path: { assistant_id: assistantId ?? "" } };
-  const readsEnabled = onPlatform && !!assistantId;
+  const addressPath = { path: { assistant_id: assistantId } };
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions(addressPath),
-    enabled: readsEnabled,
   });
   const domainsQuery = useQuery({
     ...assistantsDomainsListOptions(addressPath),
-    enabled: readsEnabled,
   });
 
   const addresses = addressesQuery.data?.results;
@@ -93,17 +83,15 @@ export function useAssistantInboxState(
   }, [queryClient, assistantId]);
 
   return {
-    status: !onPlatform
-      ? "unavailable"
-      : resolveInboxStatus({
-          assistantId,
-          addressCount: addresses?.length,
-          domainsSettled: domainsQuery.isFetched,
-        }),
-    cloudAssistantId: assistantId,
-    assistantName: listed?.name || fallbackName,
-    handle: domain?.subdomain ?? listed?.handle ?? "",
-    createdAt: listed?.created ?? null,
+    status: resolveInboxStatus({
+      assistantId,
+      addressCount: addresses?.length,
+      domainsSettled: domainsQuery.isFetched,
+    }),
+    assistantId,
+    assistantName: listed.name || fallbackName,
+    handle: domain?.subdomain ?? listed.handle ?? "",
+    createdAt: listed.created ?? null,
     hasDomain: !!domain,
     address: addresses?.[0]?.address ?? null,
     addressId: addresses?.[0]?.id ?? null,

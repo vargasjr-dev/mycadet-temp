@@ -11,7 +11,6 @@ export interface EmailSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The cloud assistant id the email routes take. */
-  assistantId: string;
   /** The local assistant id the gateway's channel policy routes take. */
   localAssistantId: string;
   assistantName: string;
@@ -30,7 +29,6 @@ export interface EmailSettingsModalProps {
 export function EmailSettingsModal({
   open,
   onOpenChange,
-  assistantId,
   localAssistantId,
   assistantName,
   emailRootDomain,
@@ -48,10 +46,7 @@ export function EmailSettingsModal({
         </Modal.Header>
         <Modal.Body>
           <div className="flex flex-col gap-5">
-            <EmailCloudContent
-              assistantId={assistantId}
-              emailRootDomain={emailRootDomain}
-            />
+            <EmailCloudContent emailRootDomain={emailRootDomain} />
             {floors.onChange ? (
               <div className="border-t border-[var(--border-subtle)] pt-5">
                 <ChannelTrustFloorSection

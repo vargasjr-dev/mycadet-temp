@@ -196,7 +196,6 @@ function Mailbox({
       <EmailSettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        assistantId={cloudAssistantId}
         localAssistantId={assistantId}
         assistantName={assistantName}
         emailRootDomain={rootDomain}
@@ -266,14 +265,11 @@ export function AssistantInboxPageRoute() {
 
   /* An advisory probe of a handle typed into the setup card, through the
      same endpoint the profile card's handle editor uses. */
-  const cloudAssistantId = state.cloudAssistantId;
+  const stateAssistantId = state.assistantId;
   const checkHandle = useCallback(
     async (handle: string, signal: AbortSignal): Promise<HandleCheckResult> => {
-      if (!cloudAssistantId) {
-        return { available: true };
-      }
       const result = await checkAssistantHandleAvailable(
-        cloudAssistantId,
+        stateAssistantId,
         handle,
         signal,
       );
@@ -288,15 +284,12 @@ export function AssistantInboxPageRoute() {
           t("assistantInboxRoute.setupFailed"),
       };
     },
-    [cloudAssistantId, t],
+    [stateAssistantId, t],
   );
 
   const confirmSetup = useCallback(
     async ({ prefix, handle }: { prefix: string; handle: string }) => {
-      if (!state.cloudAssistantId) {
-        return;
-      }
-      const path = { assistant_id: state.cloudAssistantId };
+      const path = { assistant_id: state.assistantId };
       setSettling(true);
       setSetupError(null);
       try {
@@ -408,7 +401,7 @@ export function AssistantInboxPageRoute() {
       return (
         <Mailbox
           assistantId={assistantId}
-          cloudAssistantId={state.cloudAssistantId ?? ""}
+          cloudAssistantId={state.assistantId}
           assistantName={state.assistantName}
           address={state.address ?? ""}
           addressId={state.addressId ?? ""}

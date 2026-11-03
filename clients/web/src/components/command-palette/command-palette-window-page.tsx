@@ -4,7 +4,6 @@ import {
   CommandPalette,
   type CommandPaletteItemData,
 } from "@/components/command-palette/command-palette";
-import { useAssistantBootResolution } from "@/assistant/queries";
 import { useCommandPaletteSections } from "@/domains/chat/hooks/use-command-palette-sections";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
@@ -54,15 +53,12 @@ const commandForItem = (item: CommandPaletteItemData): CadetCommand | null => {
 };
 
 export function CommandPaletteWindowPage() {
-  // This standalone route bypasses RootLayout; bootstrap theme + feature flags
-  // so CSS custom properties resolve to the user's stored preference, and
-  // mount the boot resolution (the same shared query cache + projection
-  // effects the root mounts) so the palette resolves the assistant itself.
+  // This standalone route bypasses RootLayout; bootstrap theme + feature
+  // flags so CSS custom properties resolve to the user's stored preference.
   useAppTheme();
-  useAssistantBootResolution();
 
   const assistant = useResolvedAssistantStore.use.assistant();
-  const assistantId = assistant?.assistantId ?? null;
+  const assistantId = assistant.assistantId;
   const { conversations } = useConversationListQuery(assistantId, true);
 
   const handleItemSelect = useCallback((item: CommandPaletteItemData) => {
