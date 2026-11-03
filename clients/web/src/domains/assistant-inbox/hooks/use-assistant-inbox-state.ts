@@ -7,7 +7,6 @@ import {
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
-import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useAssistantResolution } from "@/assistant/queries";
 import { useEnvironmentStore } from "@/stores/environment-store";
@@ -57,7 +56,8 @@ export function useAssistantInboxState(
   const onPlatform = isCloudHosted && !!assistantId;
   const rootDomain = useEnvironmentStore.use.emailRootDomain();
 
-  const { cloudAssistantId } = useCloudAssistantId(assistantId, onPlatform);
+  // The assistant id IS the platform id — there is no second id to resolve.
+  const cloudAssistantId = assistantId;
 
   // The boot resolution IS the cloud's record of this assistant — its
   // name, handle, and creation instant come from there, not from a

@@ -8,7 +8,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getAssistant } from "@/assistant/api";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { fetchAssistantIdentity } from "@/assistant/identity";
 import type { IdentityGetResponse } from "@/generated/daemon/types.gen";
 
@@ -25,18 +25,15 @@ export function useAssistantIdentityDetails(assistantId: string) {
   return useQuery<AssistantIdentityDetails>({
     queryKey: assistantIdentityDetailsQueryKey(assistantId),
     queryFn: async () => {
-      const [identity, assistantResult] = await Promise.all([
+      const [identity] = await Promise.all([
         fetchAssistantIdentity(assistantId),
-        getAssistant(assistantId).catch(() => ({
-          ok: false as const,
-          status: 0,
-          error: {},
-        })),
       ]);
-      return {
-        identity,
-        createdAt: assistantResult.ok ? assistantResult.data.created : null,
-      };
+      // The created stamp lives on the resolved assistant's entry — the
+      // store's read replaces the platform round trip.
+      const entry = getResolvedAssistant();
+      const createdAt =
+        entry.assistantId === assistantId ? (entry.hatchedAt ?? null) : null;
+      return { identity, createdAt };
     },
   });
 }

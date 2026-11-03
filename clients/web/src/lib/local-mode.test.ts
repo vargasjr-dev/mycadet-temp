@@ -1,15 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { parseLockfile } from "@mycadet/local-mode/contract";
-
 import {
   getRemoteAssistantDisplayName,
-  isLocalAssistant,
   isCadetCloudRemote,
 } from "@/lib/local-mode";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 const realFetch = globalThis.fetch;
@@ -25,18 +21,6 @@ afterEach(() => {
   setSelfHostedConnection(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
-
-const localA: LockfileAssistant = {
-  assistantId: "local-a",
-  cloud: "local",
-  port: 7830,
-  daemonPort: 7831,
-} as LockfileAssistant;
-
-const platform: LockfileAssistant = {
-  assistantId: "platform-a",
-  cloud: "cloud",
-} as LockfileAssistant;
 
 describe("remote gateway mode", () => {
   test("isCadetCloudRemote splits cloud from the gateway-auth remotes", () => {
@@ -86,52 +70,5 @@ describe("getRemoteAssistantDisplayName", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
 
     expect(getRemoteAssistantDisplayName()).toBeUndefined();
-  });
-});
-
-describe("assistant classification", () => {
-  test("a cadet-cloud entry is not local", () => {
-    expect(isLocalAssistant(platform)).toBe(false);
-  });
-
-  test("a local-cloud entry with a gateway port is local, not platform", () => {
-    expect(isLocalAssistant(localA)).toBe(true);
-  });
-
-  test("a local-cloud entry without a gateway port is still local (identity, not connectivity)", () => {
-    const portless = { assistantId: "x", cloud: "local" } as LockfileAssistant;
-    expect(isLocalAssistant(portless)).toBe(true);
-  });
-
-  test("externally-managed container runtimes are not web-client local", () => {
-    // Docker and apple-container are managed by the CLI / macOS app, not the
-    // web client's lifecycle flows — so restart/retire/logout routing must keep
-    // treating them as non-local.
-    const docker = { assistantId: "d", cloud: "docker" } as LockfileAssistant;
-    const appleContainer = {
-      assistantId: "a",
-      cloud: "apple-container",
-    } as LockfileAssistant;
-    expect(isLocalAssistant(docker)).toBe(false);
-    expect(isLocalAssistant(appleContainer)).toBe(false);
-  });
-
-  test("a legacy entry with no cloud normalizes to local at the parse seam", () => {
-    // Entries that predate the `cloud` field are normalized to "local" by
-    // parseLockfile (see @mycadet/local-mode/contract), so by the time one
-    // reaches isLocalAssistant its cloud is already set.
-    const { assistants } = parseLockfile({
-      assistants: [{ assistantId: "old" }],
-      activeAssistant: null,
-    });
-    expect(isLocalAssistant(assistants[0]!)).toBe(true);
-  });
-
-  test("a remote self-hosted cloud is not local", () => {
-    const remote = {
-      assistantId: "r-custom",
-      cloud: "custom",
-    } as LockfileAssistant;
-    expect(isLocalAssistant(remote)).toBe(false);
   });
 });

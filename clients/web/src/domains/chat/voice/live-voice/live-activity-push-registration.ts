@@ -44,7 +44,6 @@ import {
   type LiveVoiceSessionState,
 } from "@/domains/chat/voice/live-voice/live-voice-store";
 import { fixedT } from "@/i18n";
-import { resolveCloudAssistantId } from "@/lib/cloud-assistant-id";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { resolveSignedApnsEnvironment } from "@/runtime/apns-environment";
 import { createStorageAccessor } from "@/utils/typed-storage";
@@ -213,10 +212,6 @@ async function upsertToken({
   muted,
 }: LiveActivityRegistration): Promise<void> {
   try {
-    const cloudAssistantId = await resolveCloudAssistantId(assistantId);
-    if (cloudAssistantId === null) {
-      return;
-    }
     // `@capacitor/app` is a plugin Proxy — destructure inline (see CAPACITOR.md).
     const { App } = await import("@capacitor/app");
     const { id: bundleId } = await App.getInfo();
@@ -224,7 +219,7 @@ async function upsertToken({
     const apnsEnvironment = await resolveSignedApnsEnvironment(bundleId);
 
     const result = await assistantsLiveActivityTokensUpsert({
-      path: { assistant_id: cloudAssistantId },
+      path: { assistant_id: assistantId },
       body: {
         token,
         bundle_id: bundleId,
@@ -246,7 +241,7 @@ async function upsertToken({
       return;
     }
 
-    registered = { token, assistantId: cloudAssistantId };
+    registered = { token, assistantId };
     persistedRegistration.save(registered);
   } catch (err) {
     captureError(err, {

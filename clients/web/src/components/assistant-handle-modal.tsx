@@ -9,7 +9,6 @@ import {
   assistantsListQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
 import type { Assistant } from "@/generated/api/types.gen";
-import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 
@@ -87,7 +86,8 @@ export function useAssistantHandleModal(
   const [open, setOpen] = useState(false);
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const onPlatform = isCloudHosted && !!assistantId;
-  const { cloudAssistantId } = useCloudAssistantId(assistantId, onPlatform);
+  // The assistant id IS the platform id — there is no second id to resolve.
+  const cloudAssistantId = assistantId;
   const assistantsQuery = useQuery({
     ...assistantsListOptions(),
     enabled: onPlatform,
