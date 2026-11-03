@@ -11,6 +11,8 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
+
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   ArrowRight,
   Brain,
@@ -228,11 +230,8 @@ const PHOTO_OVERLAY_STYLE = {
   "--border-base": "rgba(255, 255, 255, 0.08)",
 } as CSSProperties;
 
-interface IdentityOverviewProps {
-  assistantId: string;
-}
-
-export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
+export function IdentityOverview() {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("intelligence");
   const queryClient = useQueryClient();
   const {
@@ -361,7 +360,6 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
         </div>
       ) : (
         <OverviewBento
-          assistantId={assistantId}
           components={components}
           traits={traits}
           customImageUrl={customImageUrl}
@@ -382,7 +380,6 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
       <AvatarManagementModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        assistantId={assistantId}
         components={components}
         traits={traits}
         customImageUrl={customImageUrl}
@@ -836,7 +833,6 @@ export function SectionCard({
 
 /** Greeting + avatar for the stacked (small-viewport) layout. */
 function CenterCell({
-  assistantId,
   components,
   traits,
   customImageUrl,
@@ -845,7 +841,6 @@ function CenterCell({
   isRenaming,
   onEdit,
 }: {
-  assistantId: string;
   components: CharacterComponents | null;
   traits: CharacterTraits | null;
   customImageUrl: string | null;
@@ -857,11 +852,7 @@ function CenterCell({
   const { t } = useTranslation("intelligence");
   return (
     <div className="relative z-[1] flex flex-col items-center justify-center gap-5">
-      <AssistantNameEditor
-        assistantId={assistantId}
-        name={name}
-        isRenaming={isRenaming}
-      />
+      <AssistantNameEditor name={name} isRenaming={isRenaming} />
       <button
         type="button"
         aria-label={t("identityOverview.updateAvatarAndName")}
@@ -905,7 +896,6 @@ function CenterCell({
  * on the card's center-facing edge.
  */
 function OverviewBento({
-  assistantId,
   components,
   traits,
   customImageUrl,
@@ -918,7 +908,6 @@ function OverviewBento({
   isRenaming,
   onOpenAvatarModal,
 }: {
-  assistantId: string;
   components: CharacterComponents | null;
   traits: CharacterTraits | null;
   customImageUrl: string | null;
@@ -1102,7 +1091,6 @@ function OverviewBento({
 
   const centerCell = (
     <CenterCell
-      assistantId={assistantId}
       components={components}
       traits={traits}
       customImageUrl={customImageUrl}
@@ -1442,7 +1430,6 @@ function OverviewBento({
         style={{ gridArea: "greeting" }}
       >
         <AssistantNameEditor
-          assistantId={assistantId}
           name={name}
           isRenaming={isRenaming}
           overrideText={greetingOverride}

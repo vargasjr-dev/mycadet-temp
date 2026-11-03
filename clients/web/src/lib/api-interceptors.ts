@@ -29,11 +29,11 @@ import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
+import { readInjectedConfig } from "@/lib/injected-config";
 import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
-  isLocalClient,
   isCadetCloudRemote,
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
@@ -274,7 +274,7 @@ export async function rewriteForSelfHostedIngress(
   // reference (blob handle) and read directly, with no renderer-side data
   // pipe to block on. Platform self-hosted uses TLS, so keep the streaming
   // body there to avoid buffering large uploads.
-  const body = isLocalClient()
+  const body = readInjectedConfig()?.remote !== "cloud"
     ? request.body
       ? await request.blob()
       : null
@@ -293,7 +293,7 @@ export async function rewriteForSelfHostedIngress(
     // cancels pagehide-time sends (the boot telemetry flush) mid-navigation.
     keepalive: request.keepalive,
   };
-  if (!isLocalClient() && request.body) {
+  if (readInjectedConfig()?.remote === "cloud" && request.body) {
     (init as RequestInit & { duplex: "half" }).duplex = "half";
   }
   return new Request(rewrittenUrl.toString(), init);

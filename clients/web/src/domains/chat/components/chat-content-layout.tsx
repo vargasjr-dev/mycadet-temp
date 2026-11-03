@@ -466,7 +466,6 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
             appId={openedAppState.appId}
             appName={openedAppState.name}
             html={openedAppState.html}
-            assistantId={assistantId ?? ""}
             onClose={handleCloseApp}
             onNavigateAppRoute={handleNavigateAppRoute}
             onEdit={exitAppSplit}
@@ -507,7 +506,6 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
             appId={openedAppState.appId}
             appName={openedAppState.name}
             html={openedAppState.html}
-            assistantId={assistantId ?? ""}
             onClose={handleCloseApp}
             onNavigateAppRoute={handleNavigateAppRoute}
             onEdit={handleEditApp}

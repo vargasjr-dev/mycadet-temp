@@ -71,7 +71,7 @@ export function AddressPill({
             read. An uploaded image has no eyes to lift out, so it fills the
             disc as it does everywhere else. */}
         {components && traits ? (
-          <AssistantEyesMark assistantId={assistantId} />
+          <AssistantEyesMark />
         ) : (
           <ChatAvatar
             components={components}

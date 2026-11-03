@@ -56,8 +56,6 @@ export function useAssistantInboxState(
   const onPlatform = isCloudHosted && !!assistantId;
   const rootDomain = useEnvironmentStore.use.emailRootDomain();
 
-  // The assistant id IS the platform id — there is no second id to resolve.
-  const cloudAssistantId = assistantId;
 
   // The boot resolution IS the cloud's record of this assistant — its
   // name, handle, and creation instant come from there, not from a
@@ -65,8 +63,8 @@ export function useAssistantInboxState(
   const { result: resolution } = useAssistantResolution();
   const listed = resolution?.ok ? resolution.data : null;
 
-  const addressPath = { path: { assistant_id: cloudAssistantId ?? "" } };
-  const readsEnabled = onPlatform && !!cloudAssistantId;
+  const addressPath = { path: { assistant_id: assistantId ?? "" } };
+  const readsEnabled = onPlatform && !!assistantId;
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions(addressPath),
@@ -92,17 +90,17 @@ export function useAssistantInboxState(
     // The query key above is built from the id, so a change of assistant
     // rebuilds it; the callback only needs the id itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient, cloudAssistantId]);
+  }, [queryClient, assistantId]);
 
   return {
     status: !onPlatform
       ? "unavailable"
       : resolveInboxStatus({
-          cloudAssistantId,
+          assistantId,
           addressCount: addresses?.length,
           domainsSettled: domainsQuery.isFetched,
         }),
-    cloudAssistantId,
+    cloudAssistantId: assistantId,
     assistantName: listed?.name || fallbackName,
     handle: domain?.subdomain ?? listed?.handle ?? "",
     createdAt: listed?.created ?? null,

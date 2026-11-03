@@ -16,6 +16,7 @@ import {
   saveCharacterTraits,
   uploadAvatarImage,
 } from "@/assistant/avatar-api";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { AvatarRenderer } from "@/components/avatar-renderer";
 import { TraitCycleRow } from "@/components/avatar/trait-cycle-row";
 import { useTranslation } from "@/i18n";
@@ -28,7 +29,6 @@ import type {
 interface AvatarManagementModalProps {
   open: boolean;
   onClose: () => void;
-  assistantId: string;
   components: CharacterComponents | null;
   traits: CharacterTraits | null;
   customImageUrl: string | null;
@@ -69,7 +69,6 @@ function cycleIndex(
 export function AvatarManagementModal({
   open,
   onClose,
-  assistantId,
   components,
   traits,
   customImageUrl,
@@ -81,6 +80,7 @@ export function AvatarManagementModal({
   onRenameSubmit,
   isRenaming = false,
 }: AvatarManagementModalProps) {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

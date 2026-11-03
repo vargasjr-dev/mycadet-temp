@@ -18,12 +18,12 @@
 
 import { useMemo } from "react";
 
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { eyeStyleBaseWidth } from "@/utils/assistant-eyes";
 import { pathBBox, unionBBox } from "@/utils/eye-bbox";
 
 export function AssistantEyesMark({
-  assistantId,
   /**
    * Overrides the per-style natural width. Height always follows the sprite's
    * own aspect ratio, so the eyes never distort.
@@ -31,10 +31,10 @@ export function AssistantEyesMark({
   width,
   className,
 }: {
-  assistantId: string | null;
   width?: number;
   className?: string;
 }) {
+  const assistantId = useActiveAssistantId();
   const { components, traits } = useAssistantAvatar(assistantId);
 
   const eye = useMemo(() => {

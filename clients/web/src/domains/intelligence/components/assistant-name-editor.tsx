@@ -51,7 +51,6 @@ function useTypewriter(
 
 interface AssistantNameEditorProps {
   /** Whose page this is; the `@handle` line under the greeting is theirs. */
-  assistantId: string;
   name: string;
   /** A rename rewrite turn is in flight — show a spinner beside the name. */
   isRenaming: boolean;
@@ -63,7 +62,6 @@ interface AssistantNameEditorProps {
 }
 
 export function AssistantNameEditor({
-  assistantId,
   name,
   isRenaming,
   overrideText = null,
@@ -106,10 +104,7 @@ export function AssistantNameEditor({
       </div>
       {/* Held in place but hidden while the greeting is a borrowed line, so
           the commentary does not read as the handle's and nothing shifts. */}
-      <AssistantHandleLine
-        assistantId={assistantId}
-        hidden={overrideText !== null}
-      />
+      <AssistantHandleLine hidden={overrideText !== null} />
     </div>
   );
 }

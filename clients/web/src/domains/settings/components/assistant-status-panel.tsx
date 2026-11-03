@@ -81,14 +81,13 @@ export function resizePollInterval(
 
 export interface AssistantWithHealthz {
   assistant: Assistant | null;
-  assistantLoading: boolean;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
   /** True while a request is in flight, including a refresh over existing values. */
   healthzFetching: boolean;
   /** True while a post-resize poll is waiting for the new allocation to appear. */
   healthzPolling: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<unknown>;
   /**
    * Watch for the reported CPU/memory allocation to differ from `baseline`,
    * meaning the resize has landed. The health query polls while the watch is
@@ -107,7 +106,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
   const entry = useResolvedAssistantStore((s) => s.assistant);
   const assistant =
     entry.assistantId === "" ? null : asGeneratedAssistant(entry);
-  const assistantLoading = assistant === null;
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
      id the hook already holds, so waiting for it would buy nothing and cost a
@@ -189,12 +187,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     setResizeWatch(null);
   }, [activeAssistantId]);
 
-  const refetch = useCallback(async () => {
-    // The assistant record lives in the store (live on write); only the
-    // healthz read has a fetch to refresh.
-    await refetchHealthz();
-  }, [refetchHealthz]);
-
   /* Opens the watch; the query polls from there. The machine-size tag comes
      from the assistant record — the store's entry, live without a fetch. */
   const refetchUntilResized = useCallback(
@@ -206,40 +198,28 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
 
   return {
     assistant,
-    assistantLoading,
     healthz,
     healthzLoading: healthzQueryLoading,
     healthzFetching,
     healthzPolling,
-    refetch,
+    refetch: refetchHealthz,
     refetchUntilResized,
   };
 }
 
 export interface AssistantStatusPanelProps {
   assistant: Assistant | null;
-  assistantLoading: boolean;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
 }
 
 export function AssistantStatusPanel({
   assistant,
-  assistantLoading,
   healthz,
   healthzLoading,
 }: AssistantStatusPanelProps) {
   const isNonProduction = useEnvironmentStore.use.isNonProduction();
   const { t } = useTranslation("settings");
-
-  if (assistantLoading) {
-    return (
-      <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t("assistantStatusPanel.loading")}
-      </div>
-    );
-  }
 
   if (!assistant) {
     return (

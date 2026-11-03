@@ -1,5 +1,6 @@
 import { Pencil } from "lucide-react";
 
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { cn } from "@mycadet/design-library";
 
 import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
@@ -64,13 +65,8 @@ export function AssistantHandleLineView({
  * cloud-hosted, or the cloud's listing has not arrived), so the
  * greeting stands alone exactly as it did.
  */
-export function AssistantHandleLine({
-  assistantId,
-  hidden,
-}: {
-  assistantId: string;
-  hidden?: boolean;
-}) {
+export function AssistantHandleLine({ hidden }: { hidden?: boolean }) {
+  const assistantId = useActiveAssistantId();
   const { handle, openModal, modal } = useAssistantHandleModal(assistantId);
   if (!handle || !openModal) {
     return null;

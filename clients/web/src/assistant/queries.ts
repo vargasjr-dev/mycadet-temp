@@ -20,10 +20,13 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { assistantsList } from "@/generated/api/sdk.gen";
+import { assistantsRetrieve } from "@/generated/api/sdk.gen";
 import { type Assistant, type GetAssistantResult } from "@/assistant/api";
 import { assertHasResponse, toErrorObject } from "@/utils/api-errors";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getResolvedAssistant,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
@@ -44,47 +47,28 @@ export function asGeneratedAssistant(entry: LockfileAssistant): Assistant {
 
 /**
  * The projection fetch: the platform's answer for the surface's one
- * assistant — the cloud list first, the local list as the fallback for a
- * surface served by a local host.
+ * assistant, addressed directly by the id the serving host stamped at boot.
+ * The web bundle never lists assistants — it has no reason to: there is
+ * exactly one assistant, and its id is known before the first render.
  */
 async function fetchAssistantResolution(): Promise<GetAssistantResult> {
-  const platformResult = await assistantsList({
-    query: { hosting: "platform" },
-    throwOnError: false,
-  });
-  assertHasResponse(
-    platformResult.response,
-    platformResult.error,
-    "Failed to get assistant.",
-  );
-  if (platformResult.response.ok) {
-    const first = platformResult.data?.results?.[0];
-    if (first) {
-      return { ok: true, status: platformResult.response.status, data: first };
-    }
+  const assistantId = getResolvedAssistant().assistantId;
+  if (!assistantId) {
+    return { ok: false, status: 404, error: { detail: "No assistants found" } };
   }
-
-  const localResult = await assistantsList({
-    query: { hosting: "local" },
+  const { data, error, response } = await assistantsRetrieve({
+    path: { id: assistantId },
     throwOnError: false,
   });
-  assertHasResponse(
-    localResult.response,
-    localResult.error,
-    "Failed to get assistant.",
-  );
-  if (!localResult.response.ok) {
+  assertHasResponse(response, error, "Failed to get assistant.");
+  if (!response.ok) {
     return {
       ok: false,
-      status: localResult.response.status,
-      error: toErrorObject(localResult.error, localResult.response),
+      status: response.status,
+      error: toErrorObject(error, response),
     };
   }
-  const first = localResult.data?.results?.[0];
-  if (first) {
-    return { ok: true, status: localResult.response.status, data: first };
-  }
-  return { ok: false, status: 404, error: { detail: "No assistants found" } };
+  return { ok: true, status: response.status, data: data as Assistant };
 }
 
 /**
