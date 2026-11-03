@@ -8,7 +8,9 @@
 //
 // Usage: bun cli/scripts/stage-remote-image-context.ts --remote <name>
 
-import { stageBasetenBuildContext } from "../src/lib/remotes/baseten/context.js";
+import { join } from "node:path";
+import { resolveVersion } from "@mycadet/shared/version";
+import { stageBasetenBuildContext } from "../../packages/local-mode/src/remotes/baseten/context.js";
 
 const argv = process.argv.slice(2);
 const remoteFlag = argv.indexOf("--remote");
@@ -22,7 +24,11 @@ if (!remote) {
 
 switch (remote) {
   case "baseten": {
-    const staged = stageBasetenBuildContext();
+    // The same resolved version `cadet hatch --remote baseten` stamps —
+    // the cli package's version, local-stamped in source checkouts.
+    const staged = stageBasetenBuildContext({
+      version: resolveVersion(join(import.meta.dir, "..")),
+    });
     console.log(staged.dir);
     break;
   }

@@ -142,17 +142,14 @@ export {
   LOCAL_BIN_DIR,
   isNoSuchContainerError,
 } from "./remotes/docker/common";
-export { hatchLocal } from "./remotes/local/hatch";
 export {
   dockerhubImages,
   resolveImageRefs,
   resolveOwnImageRefs,
   ensureDockerInstalled,
-  hatchDocker,
   pullImage,
   DOCKER_READY_TIMEOUT_MS,
 } from "./remotes/docker/hatch";
-export { hatchCloud } from "./remotes/cloud/hatch";
 
 export {
   computeDeviceId,

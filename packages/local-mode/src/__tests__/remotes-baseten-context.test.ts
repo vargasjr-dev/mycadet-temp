@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { basetenImageRef } from "./api.js";
+import { basetenImageRef } from "../remotes/baseten/api.js";
 import {
   BASETEN_IMAGE_NAME,
-  mycadetVersion,
   stampBasetenDockerfile,
-} from "./context.js";
+} from "../remotes/baseten/context.js";
 
 const UNSHALLOW_DOCKERFILE = [
   "ARG MYCADET_VERSION",
@@ -15,15 +14,11 @@ const UNSHALLOW_DOCKERFILE = [
 ].join("\n");
 
 describe("stampBasetenDockerfile", () => {
-  test("stamps the CLI's package version so releases need no bump here", () => {
-    // resolveVersion local-stamps source checkouts; released CLIs stay plain.
-    expect(mycadetVersion()).toMatch(
-      /^\d+\.\d+\.\d+(-local\.\d{12}\.[0-9a-f]+)?$/,
-    );
+  test("stamps the caller's release version so releases need no bump here", () => {
     const stamped = stampBasetenDockerfile(UNSHALLOW_DOCKERFILE, {
-      version: mycadetVersion(),
+      version: "1.2.3",
     });
-    expect(stamped).toContain(`ARG MYCADET_VERSION="${mycadetVersion()}"`);
+    expect(stamped).toContain('ARG MYCADET_VERSION="1.2.3"');
   });
 
   test("a leading v in the version is normalized away", () => {

@@ -1127,7 +1127,6 @@ async function waitForGatewayAndLease(opts: {
       );
     }
 
-    log("\n✅ Docker assistant hatched!\n");
     return { ready: true, guardianAccessToken };
   }
 
@@ -1235,9 +1234,7 @@ async function waitForGatewayAndLease(opts: {
   }
 
   log("");
-  log("\u2705 Docker containers are up and running!");
-  log(`   Name: ${instanceName}`);
-  log(`   Runtime: ${gatewayUrl}`);
+  log("✅ Docker containers are up and running!");
   log("");
   return { ready: true, guardianAccessToken };
 }

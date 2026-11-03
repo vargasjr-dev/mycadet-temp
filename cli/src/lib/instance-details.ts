@@ -12,6 +12,8 @@ export interface InstanceDetails {
   root?: string;
   /** Assistant container name (docker hatches). */
   container?: string;
+  /** The hatched assistant's platform status (cloud hatches). */
+  status?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function printInstanceDetails(
   if (details.runtime) rows.push(["Runtime", details.runtime]);
   if (details.root) rows.push(["Root", details.root]);
   if (details.container) rows.push(["Container", details.container]);
+  if (details.status) rows.push(["Status", details.status]);
   for (const [label, value] of rows) {
     log(`  ${label}: ${value}`);
   }

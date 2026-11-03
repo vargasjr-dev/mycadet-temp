@@ -1,30 +1,19 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { resolveVersion } from "@mycadet/shared/version";
-import JSZip from "jszip";
+import { buildZip } from "./zip";
 
 /**
  * Builds the Baseten image push context from the Dockerfile and entrypoint.sh
  * that live beside this module.
  *
  * The build directory the user sees never contains a version to bump: the
- * launcher stamps `ARG MYCADET_VERSION` from cli/package.json and the optional
- * assistant name into the staged copy before upload.
+ * launcher stamps `ARG MYCADET_VERSION` from the caller's release version
+ * and the optional assistant name into the staged copy before upload.
  */
 
 /** The Baseten image repository Cadet sandboxes are pushed under. */
 export const BASETEN_IMAGE_NAME = "cadet";
-
-/**
- * Version of the Cadet stack the image installs — the CLI's own resolved
- * version (cli/package.json via the shared resolver, so source checkouts
- * carry their local stamp and releases stay plain), keeping a release's CLI
- * on a matching runtime.
- */
-export function mycadetVersion(): string {
-  return resolveVersion(join(import.meta.dir, "../../../.."));
-}
 
 function escapeShellQuoted(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -69,7 +58,7 @@ export function stampBasetenDockerfile(
 export type StagedBuildContext = {
   dir: string;
   /** Zip the staged context for the Baseten upload URL. */
-  zip: () => Promise<Buffer>;
+  zip: () => Buffer;
   cleanup: () => void;
 };
 
@@ -77,9 +66,10 @@ export type StagedBuildContext = {
  * Copy the image files into a fresh temp directory with the ARGs stamped.
  * The caller owns cleanup().
  */
-export function stageBasetenBuildContext(
-  options: { assistantName?: string } = {},
-): StagedBuildContext {
+export function stageBasetenBuildContext(options: {
+  version: string;
+  assistantName?: string;
+}): StagedBuildContext {
   const dir = mkdtempSync(join(tmpdir(), "cadet-baseten-image-"));
   const dockerfile = readFileSync(join(import.meta.dir, "Dockerfile"), "utf-8");
   const entrypoint = readFileSync(
@@ -89,7 +79,7 @@ export function stageBasetenBuildContext(
   writeFileSync(
     join(dir, "Dockerfile"),
     stampBasetenDockerfile(dockerfile, {
-      version: mycadetVersion(),
+      version: options.version,
       assistantName: options.assistantName,
     }),
   );
@@ -101,10 +91,11 @@ export function stageBasetenBuildContext(
   };
 }
 
-async function zipBuildContext(dir: string): Promise<Buffer> {
-  const zip = new JSZip();
-  for (const name of ["Dockerfile", "entrypoint.sh"]) {
-    zip.file(name, readFileSync(join(dir, name)));
-  }
-  return zip.generateAsync({ type: "nodebuffer" });
+function zipBuildContext(dir: string): Buffer {
+  return buildZip(
+    ["Dockerfile", "entrypoint.sh"].map((name) => ({
+      name,
+      data: readFileSync(join(dir, name)),
+    })),
+  );
 }

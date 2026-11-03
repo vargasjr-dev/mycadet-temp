@@ -1,30 +1,25 @@
 import { randomUUID } from "node:crypto";
-import { green } from "../../color.js";
-import { PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
-import {
-  GATEWAY_PORT,
-  getGatewayUrl,
-  readLockfile,
-  saveBasetenSandboxToken,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
+import type { LockfileAssistant } from "../../lockfile-contract";
+import { GATEWAY_PORT, getGatewayUrl } from "../../lockfile-contract";
+import { readLockfile, saveLockfileAssistant } from "../../lockfile";
+import { PROVIDER_ENV_VAR_NAMES } from "../../provider-env-vars";
+import { saveBasetenSandboxToken } from "../../guardian-token";
 import {
   basetenImageRef,
   createBasetenSandbox,
   pushBasetenImage,
   resolveBasetenToken,
-} from "./api.js";
-import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context.js";
+} from "./api";
+import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context";
 
 /**
- * The Baseten remote — `cadet hatch --remote baseten`.
- *
- * Builds the Cadet sandbox image from the Dockerfile + entrypoint.sh beside
- * this module (version stamped from cli/package.json, optional assistant
- * name piped through), pushes it, and creates a sandbox from it with the
- * provider credentials injected as secret env vars. The installed `baseten`
- * CLI is preferred when present; without one, the same operations ride
- * Baseten's management API directly.
+ * The hatch operation's Baseten provision core: build the Cadet sandbox
+ * image (Dockerfile + entrypoint.sh beside this module, version stamped
+ * from the caller's release version, optional assistant name piped
+ * through), push it, and create a sandbox from it with the provider
+ * credentials injected as secret env vars. The installed `baseten` CLI is
+ * preferred when present; without one, the same operations ride Baseten's
+ * management API directly.
  *
  * The model loop runs IN the sandbox: the image hatches a golden assistant
  * at build time and the sandbox entrypoint wakes it, so once this returns
@@ -34,7 +29,7 @@ import { BASETEN_IMAGE_NAME, stageBasetenBuildContext } from "./context.js";
 /**
  * Every supported provider API key from the caller's environment is injected
  * into the sandbox as a secret env var when present — the same combined map
- * the docker/aws/gcp flows iterate (see @mycadet/local-mode's provider-env-vars).
+ * the docker/aws/gcp flows iterate (see provider-env-vars).
  */
 function collectProviderEnvs() {
   return Object.values(PROVIDER_ENV_VAR_NAMES).flatMap((name) => {
@@ -69,15 +64,16 @@ async function recordSandbox(params: {
   name: string;
   sandboxUrl: string;
   gatewayPort: number;
-}): Promise<string> {
+  log: (msg: string) => void;
+}): Promise<{ entry: LockfileAssistant; gatewayUrl: string }> {
   const assistantId =
     readLockfile().assistants.find(
       (a) => a.cloud === "baseten" && a.name === params.name,
     )?.assistantId ?? randomUUID();
-  const entry = {
+  const entry: LockfileAssistant = {
     assistantId,
     name: params.name,
-    cloud: "baseten" as const,
+    cloud: "baseten",
     sandboxUrl: params.sandboxUrl,
     port: params.gatewayPort,
     hatchedAt: new Date().toISOString(),
@@ -86,45 +82,59 @@ async function recordSandbox(params: {
   try {
     saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
   } catch (err) {
-    console.warn(
+    params.log(
       `   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`,
     );
-    console.warn(
+    params.log(
       "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
     );
   }
-  return getGatewayUrl(entry);
+  return { entry, gatewayUrl: getGatewayUrl(entry) };
 }
 
 export type HatchBasetenParams = {
   name?: string;
   configValues?: Record<string, string>;
   verbose?: boolean;
+  /** The caller's release version — stamped into the image build. */
+  version?: string;
+  /** The narration sink (defaults to console.log). */
+  log?: (msg: string) => void;
 };
 
-export const hatchBaseten = Object.assign(
-  async function hatchBaseten(params: HatchBasetenParams = {}): Promise<void> {
-    const { name, verbose = false } = params;
+export type HatchBasetenResult =
+  | { ok: true; entry: LockfileAssistant; ready: boolean }
+  | { ok: false; status: number; error: string };
+
+export async function hatchBaseten(
+  params: HatchBasetenParams,
+): Promise<HatchBasetenResult> {
+  const { name, verbose = false } = params;
+  const log = params.log ?? ((msg: string) => console.log(msg));
+  try {
     if (Object.keys(params.configValues ?? {}).length > 0) {
-      console.error(
+      log(
         "Warning: --config values are not wired for the baseten remote yet — ignoring them.",
       );
     }
 
-    const staged = stageBasetenBuildContext({ assistantName: name });
+    const staged = stageBasetenBuildContext({
+      version: params.version ?? "",
+      assistantName: name,
+    });
     try {
-      console.log("🚀 Pushing the Cadet sandbox image to Baseten...");
+      log("🚀 Pushing the Cadet sandbox image to Baseten...");
       await pushBasetenImage({
         name: BASETEN_IMAGE_NAME,
         dir: staged.dir,
         zip: staged.zip,
         poll: verbose
-          ? (status) => console.log(`   image status: ${status}`)
+          ? (status) => log(`   image status: ${status}`)
           : undefined,
       });
-      console.log(green("   Image built.", process.stdout));
+      log("   Image built.");
 
-      console.log("🥚 Creating the sandbox...");
+      log("🥚 Creating the sandbox...");
       const sandbox = await createBasetenSandbox({
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
@@ -133,35 +143,39 @@ export const hatchBaseten = Object.assign(
 
       const sandboxName = sandbox.name ?? name ?? "the sandbox";
       const sandboxUrl = sandbox.url;
-      let gatewayUrl: string | undefined;
       if (sandboxUrl) {
         // The gateway's port was pinned at creation, so the sandbox is
         // reachable the moment its gateway is up.
-        gatewayUrl = await recordSandbox({
+        log(`🥚 Hatching Baseten assistant: ${sandboxName}`);
+        const { entry, gatewayUrl } = await recordSandbox({
           name: sandboxName,
           sandboxUrl,
           gatewayPort: GATEWAY_PORT,
+          log,
         });
-      } else {
-        console.warn(
-          "   ⚠️  The sandbox returned no URL — nothing recorded in the lockfile.",
+        log(`   URL: ${sandboxUrl}`);
+        log(`   Assistant gateway: ${gatewayUrl}/`);
+        log(
+          `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,
         );
+        return { ok: true, entry, ready: false };
       }
-      console.log("");
-      console.log(
-        green(`✅ Your Cadet sandbox is up: ${sandboxName}`, process.stdout),
+      log(
+        "   ⚠️  The sandbox returned no URL — nothing recorded in the lockfile.",
       );
-      if (sandboxUrl) {
-        console.log(`   URL: ${sandboxUrl}`);
-        console.log(`   Assistant gateway: ${gatewayUrl}/`);
-      }
-      console.log(
-        `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,
-      );
-      console.log("");
+      return {
+        ok: false,
+        status: 502,
+        error: "The Baseten sandbox returned no URL — nothing was recorded.",
+      };
     } finally {
       staged.cleanup();
     }
-  },
-  { description: "Hatch a Cadet sandbox on Baseten" },
-);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 500,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
