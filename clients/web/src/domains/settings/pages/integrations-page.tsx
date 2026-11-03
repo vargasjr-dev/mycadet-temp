@@ -29,7 +29,6 @@ import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-que
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { routes } from "@/utils/routes";

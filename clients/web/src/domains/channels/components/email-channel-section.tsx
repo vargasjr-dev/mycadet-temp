@@ -6,10 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
-import {
-  useActiveAssistantIsCloudHosted,
-  useActiveAssistantIsSelfHosted,
-} from "@/assistant/hosting";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
@@ -37,7 +34,7 @@ export function EmailChannelSection() {
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
   const isSelfHosted = useActiveAssistantIsSelfHosted();
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
+
 
   const [mode, setMode] = useState<ServiceMode>(() => {
     if (isSelfHosted) {

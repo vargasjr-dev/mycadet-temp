@@ -1,6 +1,5 @@
 import { HardDrive, Loader2, Wrench } from "lucide-react";
 
-import { type Assistant } from "@/assistant/api";
 import { asGeneratedAssistant } from "@/assistant/queries";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";

@@ -47,7 +47,6 @@ let mcpAuthFails = false;
 let mcpAuthCompletes = false;
 let heldPluginRemoval: (() => void) | null = null;
 let holdPluginRemoval = false;
-let assistantAvailable = true;
 let cloudHosted = true;
 let hydrated = true;
 let managedStatus: "idle" | "attempting" | "connected" = "attempting";
@@ -393,7 +392,6 @@ afterEach(() => {
   mcpAuthCompletes = false;
   holdPluginRemoval = false;
   heldPluginRemoval = null;
-  assistantAvailable = true;
   cloudHosted = true;
   managedStatus = "attempting";
   managedError = null;

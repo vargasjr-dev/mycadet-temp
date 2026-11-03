@@ -14,7 +14,6 @@ import {
   assistantsBackupsRetrieve,
   assistantsHatchCreate,
   assistantsList,
-  assistantsRetrieve,
 } from "@/generated/api/sdk.gen";
 import type {
   Assistant as GeneratedAssistant,
