@@ -9,10 +9,11 @@ export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
 
   // The store IS the resolution — the entry projects straight to the
-  // panel's shape, no fetch and no loading window.
-  const assistant = useResolvedAssistantStore((s) =>
-    s.assistant.assistantId === "" ? null : asGeneratedAssistant(s.assistant),
-  );
+  // panel's shape, no fetch and no loading window. The selector returns the
+  // entry itself (a stable reference); the projection runs outside it.
+  const entry = useResolvedAssistantStore((s) => s.assistant);
+  const assistant =
+    entry.assistantId === "" ? null : asGeneratedAssistant(entry);
   const loading = assistant === null;
   return (
     <div className="space-y-4">

@@ -101,10 +101,12 @@ export interface AssistantWithHealthz {
 export function useAssistantWithHealthz(): AssistantWithHealthz {
   const activeAssistantId = useActiveAssistantId();
   // The store IS the resolution: the entry projects straight to the
-  // panel's shape — no fetch, no loading window.
-  const assistant = useResolvedAssistantStore((s) =>
-    s.assistant.assistantId === "" ? null : asGeneratedAssistant(s.assistant),
-  );
+  // panel's shape — no fetch, no loading window. The selector returns the
+  // entry itself (a stable reference); the projection runs outside it, so a
+  // fresh mapped object can never re-trigger the subscription.
+  const entry = useResolvedAssistantStore((s) => s.assistant);
+  const assistant =
+    entry.assistantId === "" ? null : asGeneratedAssistant(entry);
   const assistantLoading = assistant === null;
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
