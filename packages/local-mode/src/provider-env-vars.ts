@@ -21,7 +21,11 @@ export const LLM_PROVIDER_ENV_VAR_NAMES: Record<string, string> = {
   typesafe: "TYPESAFE_API_KEY",
 };
 
-/** Search-provider env var names. Mirrors `SEARCH_PROVIDER_CATALOG` BYOK entries. */
+/**
+ * Search-provider env var names. Mirrors `SEARCH_PROVIDER_CATALOG` BYOK
+ * entries — locally-maintained mirror of the canonical catalog in
+ * `assistant/src/providers/`; drift is caught by the CLI's parity tests.
+ */
 export const SEARCH_PROVIDER_ENV_VAR_NAMES: Record<string, string> = {
   perplexity: "PERPLEXITY_API_KEY",
   brave: "BRAVE_API_KEY",
@@ -37,8 +41,10 @@ export const SEARCH_PROVIDER_ENV_VAR_NAMES: Record<string, string> = {
 
 /**
  * Combined provider env var names — the union of LLM and search providers.
- * Used by the cloud-infra flows (docker/aws/gcp) to forward every supported
- * provider API key from the caller's environment.
+ * Used by the container/VM provisioning flows to forward every supported
+ * provider API key from the caller's environment; the call sites don't need
+ * to know which kind is which — they just forward every value whose env var
+ * is set.
  */
 export const PROVIDER_ENV_VAR_NAMES: Record<string, string> = {
   ...LLM_PROVIDER_ENV_VAR_NAMES,

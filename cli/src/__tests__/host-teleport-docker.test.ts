@@ -10,7 +10,7 @@ import {
   TeleportRecoveryError,
 } from "../lib/host-teleport.js";
 import { initializeDockerTeleportTarget } from "../lib/remotes/docker.js";
-import { resolveOwnImageRefs } from "../lib/cloud-releases.js";
+import { resolveOwnImageRefs } from "@mycadet/local-mode";
 import cliPkg from "../../package.json";
 
 import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";

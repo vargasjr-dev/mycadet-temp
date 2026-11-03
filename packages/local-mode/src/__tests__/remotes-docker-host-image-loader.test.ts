@@ -6,7 +6,7 @@ import {
   HostImageLoaderError,
   isLocalBuildRef,
   loadImageViaHost,
-} from "../lib/host-image-loader.js";
+} from "../remotes/docker/host-image-loader";
 
 describe("HOST_IMAGE_LOADER_URL", () => {
   test("resolves to the well-known image-loader port/path", () => {

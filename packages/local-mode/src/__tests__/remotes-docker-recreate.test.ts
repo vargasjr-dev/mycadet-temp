@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { pullImage } from "../remotes/docker/recreate";
+import { pullImage } from "../remotes/docker/hatch";
 
 describe("pullImage", () => {
   function fakePull(

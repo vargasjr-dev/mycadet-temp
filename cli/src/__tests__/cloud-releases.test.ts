@@ -1,12 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
-  fetchLatestVersion,
-  fetchReleases,
-  resolveImageRefs,
-  resolveOwnImageRefs,
-} from "../lib/cloud-releases.js";
-import { dockerhubImages } from "../lib/remotes/docker.js";
+import { dockerhubImages, resolveImageRefs } from "@mycadet/local-mode";
+import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases.js";
 import {
   isDevVersion,
   isLocalVersion,
@@ -116,14 +111,17 @@ describe("resolveImageRefs", () => {
 
 describe("resolveOwnImageRefs", () => {
   test("uses the CLI's own version for both tag and repo suffix", () => {
-    const tags = resolveOwnImageRefs("0.12.6-dev.202610081023.3a27b77");
+    const tags = resolveImageRefs(
+      "0.12.6-dev.202610081023.3a27b77",
+      "0.12.6-dev.202610081023.3a27b77",
+    );
     expect(tags.assistant).toBe(
       "mycadet/mycadet-assistant-dev:0.12.6-dev.202610081023.3a27b77",
     );
   });
 
   test("falls back to the literal latest tag when the CLI version is unknown", () => {
-    const tags = resolveOwnImageRefs("");
+    const tags = resolveImageRefs("latest", "");
     expect(tags.assistant).toBe("mycadet/mycadet-assistant:latest");
   });
 });

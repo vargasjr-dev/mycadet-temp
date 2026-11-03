@@ -17,10 +17,6 @@ import {
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { z } from "zod";
 
-const CloudErrorDetailSchema = z.object({
-  detail: z.string().optional(),
-});
-
 const InProgressResponseSchema = z.object({
   in_progress: z.boolean().optional(),
 });
@@ -106,58 +102,6 @@ const RawUnifiedJobStatusSchema = z.object({
   result: z.unknown().optional(),
   error: z.string().optional(),
 });
-
-export interface HatchAssistantResult {
-  assistant: HatchedAssistant;
-  /** true when the cloud returned an existing assistant (HTTP 200) */
-  reusedExisting: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Self-hosted local assistant registration
-// ---------------------------------------------------------------------------
-
-export async function hatchAssistant(
-  token: string,
-  cloudUrl?: string,
-): Promise<HatchAssistantResult> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
-  const url = `${resolvedUrl}/v1/assistants/hatch/`;
-
-  const response = await loopbackSafeFetch(url, {
-    method: "POST",
-    headers: await cloudAuthHeaders(token, cloudUrl),
-    body: JSON.stringify({}),
-    signal: AbortSignal.timeout(300_000),
-  });
-
-  if (response.ok) {
-    const assistant = HatchedAssistantSchema.parse(await response.json());
-    return { assistant, reusedExisting: response.status === 200 };
-  }
-
-  if (response.status === 401 || response.status === 403) {
-    const detail = CloudErrorDetailSchema.catch({}).parse(
-      await response.json().catch(() => ({})),
-    );
-    throw new Error(
-      detail.detail ??
-        "Invalid or expired token. Run `cadet login` to re-authenticate.",
-    );
-  }
-
-  if (response.status === 402) {
-    throw new Error("Insufficient balance to hatch a new assistant.");
-  }
-
-  const errorBody = CloudErrorDetailSchema.catch({}).parse(
-    await response.json().catch(() => ({})),
-  );
-  throw new Error(
-    errorBody.detail ??
-      `Platform API error: ${response.status} ${response.statusText}`,
-  );
-}
 
 const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
 
