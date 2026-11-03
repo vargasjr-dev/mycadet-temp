@@ -252,7 +252,7 @@ describe("useAssistantWithHealthz", () => {
     holdHealthz = new Promise<void>((resolve) => {
       releaseRefresh = () => resolve();
     });
-    let refreshing: Promise<void> = Promise.resolve();
+    let refreshing: Promise<unknown> = Promise.resolve();
     act(() => {
       refreshing = result.current.refetch();
     });

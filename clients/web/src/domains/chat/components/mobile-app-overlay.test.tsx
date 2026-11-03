@@ -31,7 +31,6 @@ function renderOverlay(isAppMinimized: boolean): string {
         html: "<p></p>",
       }}
       isAppMinimized={isAppMinimized}
-      assistantId="assistant-1"
       onToggleMinimized={() => undefined}
       onClose={() => undefined}
       onNavigateAppRoute={() => undefined}

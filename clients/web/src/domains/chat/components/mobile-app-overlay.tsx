@@ -11,12 +11,6 @@ interface MobileAppOverlayProps {
   openedAppState: OpenedAppState | null;
   /** Controls the slide-down-to-strip animation. */
   isAppMinimized: boolean;
-  /**
-   * Assistant id consumed by `AppViewerContainer`. Defaults to empty string
-   * upstream when no assistant is selected; callers should pass the resolved
-   * id (or `null` to coerce to empty).
-   */
-  assistantId: string | null;
   /** Toggles the slide-down minimize/restore animation. */
   onToggleMinimized: () => void;
   /** Closes the overlay (resets `openedAppState` upstream). */
@@ -47,7 +41,6 @@ interface MobileAppOverlayProps {
 export function MobileAppOverlay({
   openedAppState,
   isAppMinimized,
-  assistantId,
   onToggleMinimized,
   onClose,
   onNavigateAppRoute,
@@ -153,7 +146,6 @@ export function MobileAppOverlay({
           appId={openedAppState.appId}
           appName={openedAppState.name}
           html={openedAppState.html}
-          assistantId={assistantId ?? ""}
           onClose={onClose}
           onNavigateAppRoute={onNavigateAppRoute}
           onEdit={onToggleMinimized}

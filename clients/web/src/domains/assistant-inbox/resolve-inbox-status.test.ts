@@ -6,14 +6,14 @@ import {
 } from "./resolve-inbox-status";
 
 const BASE: InboxStatusInputs = {
-  cloudAssistantId: "asst-platform",
+  assistantId: "asst-platform",
   addressCount: 1,
   domainsSettled: true,
 };
 
 describe("resolveInboxStatus", () => {
   test("loads until the cloud id and the address list are in", () => {
-    expect(resolveInboxStatus({ ...BASE, cloudAssistantId: null })).toBe(
+    expect(resolveInboxStatus({ ...BASE, assistantId: null })).toBe(
       "loading",
     );
     expect(resolveInboxStatus({ ...BASE, addressCount: undefined })).toBe(

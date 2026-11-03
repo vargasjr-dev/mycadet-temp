@@ -58,6 +58,11 @@ function initialAssistant(): LockfileAssistant {
       return { ...base, cloud: "custom", ipAddress: "127.0.0.1", port: 0 };
     case "cloud":
       return { ...base, cloud: "cloud" };
+    case "baseten":
+      // A baseten stamp carries no sandbox fields in the injected config —
+      // the web bundle's transport is same-origin regardless, so the entry
+      // carries the fabricated placeholders the schema requires.
+      return { ...base, cloud: "baseten", sandboxUrl: "", port: 0 };
     case "docker":
       return localish("docker");
     case "apple-container":

@@ -192,7 +192,6 @@ export function LibraryDetailPage() {
           appId={app.appId}
           appName={app.name}
           html={app.html}
-          assistantId={assistantId}
           onClose={handleClose}
           onNavigateAppRoute={handleNavigateAppRoute}
           {...(isReadOnlyApp(app.origin)

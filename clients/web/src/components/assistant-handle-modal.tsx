@@ -86,15 +86,13 @@ export function useAssistantHandleModal(
   const [open, setOpen] = useState(false);
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const onPlatform = isCloudHosted && !!assistantId;
-  // The assistant id IS the platform id — there is no second id to resolve.
-  const cloudAssistantId = assistantId;
   const assistantsQuery = useQuery({
     ...assistantsListOptions(),
     enabled: onPlatform,
   });
   const assistant =
     assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === cloudAssistantId,
+      (candidate) => candidate.id === assistantId,
     ) ?? null;
 
   const openModal = useCallback(() => setOpen(true), []);

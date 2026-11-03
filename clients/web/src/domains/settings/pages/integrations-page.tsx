@@ -117,23 +117,18 @@ function oauthErrorMessage(
   return messages[code];
 }
 
-function IntegrationsPanelInner({
-  mcpAssistantId,
-}: {
-  mcpAssistantId: string;
-}) {
+function IntegrationsPanelInner() {
+  const mcpAssistantId = useActiveAssistantId();
   const { t } = useTranslation("settings");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   // The store IS the resolution — the entry projects straight to the
-  // page's shape (keyed on the resolved id, so a re-resolution re-reads).
+  // page's shape, keyed on the resolved id so a re-resolution re-reads.
   const assistant = useMemo<Assistant | null>(() => {
     const entry = getResolvedAssistant();
-    return entry.assistantId === "" || entry.assistantId !== mcpAssistantId
-      ? null
-      : asGeneratedAssistant(entry);
+    return entry.assistantId === "" ? null : asGeneratedAssistant(entry);
   }, [mcpAssistantId]);
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState<IntegrationCategory | null>(null);
@@ -651,10 +646,7 @@ export function IntegrationsPage() {
   const mcpAssistantId = useActiveAssistantId();
   return (
     <Suspense>
-      <IntegrationsPanelInner
-        key={mcpAssistantId}
-        mcpAssistantId={mcpAssistantId}
-      />
+      <IntegrationsPanelInner key={mcpAssistantId} />
     </Suspense>
   );
 }

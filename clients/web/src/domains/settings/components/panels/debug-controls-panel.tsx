@@ -1,4 +1,4 @@
-import { HardDrive, Loader2, Wrench } from "lucide-react";
+import { HardDrive, Wrench } from "lucide-react";
 
 import { asGeneratedAssistant } from "@/assistant/queries";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
@@ -14,7 +14,6 @@ export function DebugControlsPanel() {
   const entry = useResolvedAssistantStore((s) => s.assistant);
   const assistant =
     entry.assistantId === "" ? null : asGeneratedAssistant(entry);
-  const loading = assistant === null;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -31,12 +30,7 @@ export function DebugControlsPanel() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t("debugControlsPanel.loading")}
-        </div>
-      ) : assistant ? (
+      {assistant ? (
         <div className="space-y-4">
           <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
             <div className="mb-3 flex items-center gap-2">

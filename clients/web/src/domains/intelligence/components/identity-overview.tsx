@@ -11,6 +11,8 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
+
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   ArrowRight,
   Brain,
@@ -228,11 +230,8 @@ const PHOTO_OVERLAY_STYLE = {
   "--border-base": "rgba(255, 255, 255, 0.08)",
 } as CSSProperties;
 
-interface IdentityOverviewProps {
-  assistantId: string;
-}
-
-export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
+export function IdentityOverview() {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("intelligence");
   const queryClient = useQueryClient();
   const {
@@ -361,8 +360,7 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
         </div>
       ) : (
         <OverviewBento
-          assistantId={assistantId}
-          components={components}
+            components={components}
           traits={traits}
           customImageUrl={customImageUrl}
           name={
@@ -382,7 +380,6 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
       <AvatarManagementModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        assistantId={assistantId}
         components={components}
         traits={traits}
         customImageUrl={customImageUrl}
@@ -858,7 +855,6 @@ function CenterCell({
   return (
     <div className="relative z-[1] flex flex-col items-center justify-center gap-5">
       <AssistantNameEditor
-        assistantId={assistantId}
         name={name}
         isRenaming={isRenaming}
       />
@@ -905,7 +901,6 @@ function CenterCell({
  * on the card's center-facing edge.
  */
 function OverviewBento({
-  assistantId,
   components,
   traits,
   customImageUrl,
@@ -918,7 +913,6 @@ function OverviewBento({
   isRenaming,
   onOpenAvatarModal,
 }: {
-  assistantId: string;
   components: CharacterComponents | null;
   traits: CharacterTraits | null;
   customImageUrl: string | null;
@@ -933,6 +927,7 @@ function OverviewBento({
   isRenaming: boolean;
   onOpenAvatarModal: () => void;
 }) {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("intelligence");
   const { ref, size } = useElementSize();
   const reduce = useReducedMotion();
@@ -1442,8 +1437,7 @@ function OverviewBento({
         style={{ gridArea: "greeting" }}
       >
         <AssistantNameEditor
-          assistantId={assistantId}
-          name={name}
+            name={name}
           isRenaming={isRenaming}
           overrideText={greetingOverride}
         />

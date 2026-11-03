@@ -152,7 +152,7 @@ export function SideControlPresence({ children }: { children: ReactNode }) {
                 : { duration: flooded ? 0.25 : 0.3, ease: "easeOut" }
             }
           >
-            <AssistantEyesMark assistantId={assistantId} />
+            <AssistantEyesMark />
           </motion.span>
         </>
       ) : null}

@@ -4,7 +4,6 @@
  * first-run card, which renders it bare inside its own modal.
  */
 
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ByoServiceCard } from "@/components/byo-service-card";
 import { SttProviderForm } from "@/components/speech/stt-provider-form";
 import { SttRoleOverrides } from "@/components/speech/stt-role-overrides";
@@ -12,7 +11,6 @@ import { useTranslation } from "@/i18n";
 
 export function SpeechToTextCard() {
   const { t } = useTranslation("settings");
-  const assistantId = useActiveAssistantId();
 
   return (
     <ByoServiceCard
@@ -24,7 +22,7 @@ export function SpeechToTextCard() {
           renders the form bare to get someone speaking, and a consumer that
           diverges from the global is a thing to review later, not a decision
           to make mid-setup. */}
-      <SttRoleOverrides assistantId={assistantId} />
+      <SttRoleOverrides />
     </ByoServiceCard>
   );
 }

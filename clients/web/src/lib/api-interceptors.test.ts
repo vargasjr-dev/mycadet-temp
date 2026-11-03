@@ -26,7 +26,6 @@ import {
 import type * as LocalMode from "@/lib/local-mode";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
 
-const isLocalClientMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
 const servedGatewayRuntimeFromConfig = (): boolean => {
   const remote = readInjectedConfig()?.remote;
@@ -36,7 +35,6 @@ const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
 mock.module(
   "@/lib/local-mode",
   (): Partial<typeof LocalMode> => ({
-    isLocalClient: isLocalClientMock,
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
   }),
@@ -883,14 +881,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
 // These tests flip the isLocalClient mock so it returns true.
 
 describe("api-interceptors / platform features gate", () => {
-  beforeAll(() => {
-    isLocalClientMock.mockImplementation(() => true);
-  });
-
-  afterAll(() => {
-    isLocalClientMock.mockImplementation(() => false);
-  });
-
   afterEach(() => {
     window.__CADET_CONFIG__ = undefined;
     setSelfHostedConnection(null);
@@ -1028,15 +1018,12 @@ describe("api-interceptors / daemonErrorInterceptor", () => {
 // isLocalClient mock so it returns true and the buffering path runs.
 
 describe("api-interceptors / local-mode body buffering", () => {
-  beforeAll(() => {
-    isLocalClientMock.mockImplementation(() => true);
-  });
-
-  afterAll(() => {
-    isLocalClientMock.mockImplementation(() => false);
+  beforeEach(() => {
+    window.__CADET_CONFIG__ = { remote: "local" };
   });
 
   afterEach(() => {
+    window.__CADET_CONFIG__ = { remote: "cloud" };
     setSelfHostedConnection(null);
   });
 

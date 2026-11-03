@@ -19,6 +19,7 @@
 
 import { useState } from "react";
 
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -107,7 +108,8 @@ export function sttRoleOverrideEntries(
   return entries;
 }
 
-export function SttRoleOverrides({ assistantId }: { assistantId: string }) {
+export function SttRoleOverrides() {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
   const [clearing, setClearing] = useState<string | null>(null);

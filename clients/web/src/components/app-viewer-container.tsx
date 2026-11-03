@@ -8,6 +8,7 @@ import {
   useAppDeployment,
 } from "@/hooks/use-app-deployment";
 import { useSandboxFetchProxy } from "@/hooks/use-sandbox-fetch-proxy";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useTranslation } from "@/i18n";
 import { useAppIframeSandboxDisabled } from "@/lib/app-sandbox-debug-flag";
 import { cn } from "@/utils/misc";
@@ -26,7 +27,6 @@ export interface AppViewerContainerProps {
   appId: string;
   appName: string;
   html: string;
-  assistantId: string;
   onClose: () => void;
   /** Routes a validated root-relative Cadet URL in the host client. */
   onNavigateAppRoute: (href: string) => void;
@@ -54,7 +54,6 @@ export function AppViewerContainer({
   appId,
   appName,
   html,
-  assistantId,
   onClose,
   onNavigateAppRoute,
   onEdit,
@@ -117,6 +116,7 @@ export function AppViewerContainer({
     return `app-${appId}-${hash}${sandboxDisabled ? "-nosandbox" : ""}`;
   }, [html, appId, sandboxDisabled]);
 
+  const assistantId = useActiveAssistantId();
   useSandboxFetchProxy(iframeRef, {
     frameId: appId,
     assistantId,

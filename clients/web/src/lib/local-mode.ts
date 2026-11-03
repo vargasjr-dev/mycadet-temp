@@ -50,19 +50,3 @@ export function isServedGatewayRuntime(): boolean {
   const remote = readInjectedConfig()?.remote;
   return remote === "docker" || remote === "custom";
 }
-
-export function isLocalClient(): boolean {
-  // The serving host stamps the runtime truth: Cadet Cloud's served SPA
-  // carries remote "cloud"; the desktop shim, dev servers, and every
-  // self-hosted surface resolve to a local arm (or inject nothing at all,
-  // which reads as local too).
-  return readInjectedConfig()?.remote !== "cloud";
-}
-
-// ---------------------------------------------------------------------------
-// Retire
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Assistant queries
-// ---------------------------------------------------------------------------
