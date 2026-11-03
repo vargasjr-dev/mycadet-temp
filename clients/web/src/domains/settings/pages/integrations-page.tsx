@@ -125,11 +125,11 @@ function IntegrationsPanelInner() {
   const location = useLocation();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   // The store IS the resolution — the entry projects straight to the
-  // page's shape, keyed on the resolved id so a re-resolution re-reads.
+  // page's shape, live on every render (a re-resolution re-reads).
   const assistant = useMemo<Assistant | null>(() => {
     const entry = getResolvedAssistant();
     return entry.assistantId === "" ? null : asGeneratedAssistant(entry);
-  }, [mcpAssistantId]);
+  }, []);
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState<IntegrationCategory | null>(null);
   const providerParam = searchParams.get("provider");
