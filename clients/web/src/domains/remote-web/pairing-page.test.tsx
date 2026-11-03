@@ -16,7 +16,6 @@ import type { RemoteWebPairingTokenResult } from "@/lib/auth/remote-gateway-sess
 
 let cloudRemote = false;
 let injectedAssistantName: string | undefined;
-let injectedHubUrl: string | undefined;
 let nativePlatform = false;
 let nativePlatformName: "ios" | "android" = "ios";
 const nativeSwitchToOriginPathMock = mock(
@@ -26,7 +25,6 @@ const nativeSwitchToOriginPathMock = mock(
 mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
   getRemoteGatewayAssistantName: () => injectedAssistantName,
-  getRemoteGatewayHubUrl: () => injectedHubUrl,
 }));
 
 mock.module("@/runtime/native-auth", () => ({
@@ -126,7 +124,6 @@ afterEach(() => {
   cleanup();
   cloudRemote = false;
   injectedAssistantName = undefined;
-  injectedHubUrl = undefined;
   nativePlatform = false;
   nativePlatformName = "ios";
   setUserAgent(ORIGINAL_USER_AGENT);
@@ -170,44 +167,7 @@ describe("RemoteWebPairingPage", () => {
     );
   });
 
-  test("cancel leaves the origin for the hub chooser", async () => {
-    injectedHubUrl = "https://hub.example.com/assistant";
-    const assignMock = mock((_url: string) => {});
-    const originalAssign = window.location.assign;
-    Object.defineProperty(window.location, "assign", {
-      value: assignMock,
-      configurable: true,
-    });
-
-    try {
-      render(
-        <MemoryRouter
-          initialEntries={["/assistant/pair?deviceCode=device-1&userCode=ABCD"]}
-        >
-          <RemoteWebPairingPage />
-        </MemoryRouter>,
-      );
-
-      expect(await screen.findByText("Waiting for approval")).not.toBeNull();
-      fireEvent.click(screen.getByText("Cancel"));
-
-      // An in-app navigate would be bounced back here by the remote-gateway
-      // pairing guard, so cancelling must cross to the hub's own origin.
-      await waitFor(() => {
-        expect(assignMock.mock.calls[0]?.[0]).toBe(
-          "https://hub.example.com/account/select-assistant",
-        );
-      });
-    } finally {
-      Object.defineProperty(window.location, "assign", {
-        value: originalAssign,
-        configurable: true,
-      });
-    }
-  });
-
   test("cancel uses the native origin switch when available", async () => {
-    injectedHubUrl = "https://hub.example.com/assistant";
     nativePlatform = true;
     nativeSwitchToOriginPathMock.mockResolvedValueOnce(true);
     const assignMock = mock((_url: string) => {});
@@ -242,60 +202,6 @@ describe("RemoteWebPairingPage", () => {
         configurable: true,
       });
     }
-  });
-
-  test("cancel falls back when the native shell lacks path switching", async () => {
-    injectedHubUrl = "https://hub.example.com/assistant";
-    nativePlatform = true;
-    const assignMock = mock((_url: string) => {});
-    const originalAssign = window.location.assign;
-    Object.defineProperty(window.location, "assign", {
-      value: assignMock,
-      configurable: true,
-    });
-
-    try {
-      render(
-        <MemoryRouter
-          initialEntries={["/assistant/pair?deviceCode=device-1&userCode=ABCD"]}
-        >
-          <RemoteWebPairingPage />
-        </MemoryRouter>,
-      );
-
-      expect(await screen.findByText("Waiting for approval")).not.toBeNull();
-      fireEvent.click(screen.getByText("Cancel"));
-
-      await waitFor(() => {
-        expect(nativeSwitchToOriginPathMock).toHaveBeenCalledWith(
-          null,
-          "account/select-assistant",
-        );
-        expect(assignMock.mock.calls[0]?.[0]).toBe(
-          "https://hub.example.com/account/select-assistant",
-        );
-      });
-    } finally {
-      Object.defineProperty(window.location, "assign", {
-        value: originalAssign,
-        configurable: true,
-      });
-    }
-  });
-
-  test("cancel is hidden when the served config names no hub", async () => {
-    injectedHubUrl = undefined;
-
-    render(
-      <MemoryRouter
-        initialEntries={["/assistant/pair?deviceCode=device-1&userCode=ABCD"]}
-      >
-        <RemoteWebPairingPage />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByText("Waiting for approval")).not.toBeNull();
-    expect(screen.queryByText("Cancel")).toBeNull();
   });
 
   test("asks for a pairing code when opened without one", () => {

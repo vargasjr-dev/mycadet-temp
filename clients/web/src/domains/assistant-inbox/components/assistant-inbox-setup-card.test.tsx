@@ -31,7 +31,6 @@ function renderCard(props: Partial<AssistantInboxSetupCardProps>) {
   return render(
     <QueryClientProvider client={client}>
       <AssistantInboxSetupCard
-        assistantId={ASSISTANT_ID}
         handle="bright-vole"
         rootDomain="example.com"
         onConfirm={() => {}}

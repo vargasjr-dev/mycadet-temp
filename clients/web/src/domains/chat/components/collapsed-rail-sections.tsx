@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   CollapsedGroupIcon,
   getGroupIndicatorState,
@@ -9,8 +10,6 @@ import { sectionIcon } from "@/domains/chat/utils/sidebar-section-icon";
 
 export interface CollapsedRailSectionsProps {
   sections: SidebarSection[];
-  /** Owns the section queries; `null` keeps them on the derived rows. */
-  assistantId: string | null;
   processingConversationIds?: Set<string>;
   attentionConversationIds?: Set<string>;
 }
@@ -28,15 +27,14 @@ export interface CollapsedRailSectionsProps {
  */
 function CollapsedRailSectionIcon({
   section,
-  assistantId,
   processingConversationIds,
   attentionConversationIds,
 }: {
   section: SidebarSection;
-  assistantId: string | null;
   processingConversationIds?: Set<string>;
   attentionConversationIds?: Set<string>;
 }) {
+  const assistantId = useActiveAssistantId();
   const { conversations, hasMore, loadMore } = useSectionConversations(
     assistantId,
     section,
@@ -79,7 +77,6 @@ function CollapsedRailSectionIcon({
  */
 export function CollapsedRailSections({
   sections,
-  assistantId,
   processingConversationIds,
   attentionConversationIds,
 }: CollapsedRailSectionsProps) {
@@ -89,7 +86,6 @@ export function CollapsedRailSections({
         <CollapsedRailSectionIcon
           key={section.key}
           section={section}
-          assistantId={assistantId}
           processingConversationIds={processingConversationIds}
           attentionConversationIds={attentionConversationIds}
         />

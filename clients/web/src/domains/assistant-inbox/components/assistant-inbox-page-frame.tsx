@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -19,7 +20,6 @@ export interface AssistantInboxPageFrameProps {
    * the design's setup screen has it. Nothing is drawn for an assistant
    * with a custom image instead of a character.
    */
-  peekAssistantId?: string;
   children: ReactNode;
   className?: string;
 }
@@ -36,13 +36,12 @@ const PEEK_SIZE = 260;
 export function AssistantInboxPageFrame({
   onBack,
   centered = false,
-  peekAssistantId,
   children,
   className,
 }: AssistantInboxPageFrameProps) {
   const { t } = useTranslation("assistant-inbox");
-  const { components, traits } = useAssistantAvatar(peekAssistantId ?? null);
-  const peeks = peekAssistantId !== undefined && components && traits;
+  const { components, traits } = useAssistantAvatar(useActiveAssistantId());
+  const peeks = components && traits;
   return (
     <AssistantInboxShell>
       <div

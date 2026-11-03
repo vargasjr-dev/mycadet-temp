@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCallback, useEffect, useState } from "react";
 
 import type { DiskPressureStatus } from "@mycadet/assistant-api";
@@ -15,8 +16,6 @@ import {
 import { useAssistantStatusMonitor } from "@/assistant/use-assistant-status-monitor";
 
 export interface UseDiskPressureMonitorOptions {
-  assistantId: string | null;
-  enabled: boolean;
   refreshKey?: unknown;
   cadenceMs?: number;
 }
@@ -42,11 +41,12 @@ function errorFromUnknown(value: unknown, fallback: string): Error {
 }
 
 export function useDiskPressureMonitor({
-  assistantId,
-  enabled,
   refreshKey,
   cadenceMs = DISK_PRESSURE_POLL_INTERVAL_MS,
-}: UseDiskPressureMonitorOptions): UseDiskPressureMonitorResult {
+}: UseDiskPressureMonitorOptions = {}): UseDiskPressureMonitorResult {
+  // The monitor rides the active assistant — the id is the store's.
+  const assistantId = useActiveAssistantId();
+  const enabled = true;
   const [isAcknowledging, setIsAcknowledging] = useState(false);
   const [acknowledgeError, setAcknowledgeError] = useState<Error | null>(null);
 

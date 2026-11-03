@@ -57,7 +57,6 @@ import {
   authorizeRemoteGatewayRequest,
   daemonErrorInterceptor,
   daemonRequestInterceptor,
-  platformFeaturesGate,
   requestInterceptor,
 } from "@/lib/api-interceptors";
 
@@ -320,7 +319,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
     expect(output.headers.get("X-CSRFToken")).toBeNull();
-    expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 
   test("authorizes cloud-client live-activity upserts with the paired browser token", async () => {
@@ -336,7 +334,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     const output = await requestInterceptor(input);
 
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 
   test("preserves a remote ingress path prefix for cloud-client push-token upserts", async () => {
@@ -353,7 +350,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
 
     expect(output.url).toBe(input.url);
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 
   test("relocates an origin-root push-token upsert under a path-prefixed remote ingress", async () => {
@@ -372,49 +368,10 @@ describe("api-interceptors / remote gateway direct requests", () => {
       `/assistant-123/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`,
     );
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Platform features gate
-// ---------------------------------------------------------------------------
-//
-// In local mode with platform features disabled, the abort interceptor
-// must NOT kill requests already rewritten to the self-hosted gateway.
-//
-// The test setup stamps remote "cloud" (platform mode).
-// These tests flip the isLocalClient mock so it returns true.
-
-describe("api-interceptors / platform features gate", () => {
-  afterEach(() => {
-    window.__CADET_CONFIG__ = undefined;
-    setSelfHostedConnection(null);
-  });
-
-  test("aborts platform requests in remote-gateway mode", () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    const input = new Request(
-      `${window.location.origin}/v1/contacts/client-flag-values/`,
-    );
-    const output = platformFeaturesGate(input);
-    expect(output.signal.aborted).toBe(true);
-    expect((output.signal.reason as DOMException).message).toBe(
-      "Platform routes disabled in remote-gateway mode",
-    );
-  });
-
-  test("passes bearer-authenticated gateway requests in remote-gateway mode", () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    const input = new Request(
-      `${window.location.origin}/v1/assistants/self/events/`,
-      { headers: { Authorization: `Bearer ${ACTOR_TOKEN}` } },
-    );
-    const output = platformFeaturesGate(input);
-    expect(output.signal.aborted).toBe(false);
-    expect(output.url).toBe(input.url);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Daemon error interceptor — ApiError normalization

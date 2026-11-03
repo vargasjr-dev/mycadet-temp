@@ -275,11 +275,6 @@ mock.module("@/domains/chat/components/composer-settings-menu", () => ({
 // auth store reaches `avatarQueryKey` through the takeover avatar stash.
 /* The cloud gate's resolution read (useAssistantResolution) is react-query;
    stubbed spread-real so the composer renders without a QueryClientProvider. */
-const assistantQueries = await import("@/assistant/queries");
-mock.module("@/assistant/queries", () => ({
-  ...assistantQueries,
-  useAssistantResolution: () => ({ state: { kind: "active", isLocal: true } }),
-}));
 
 mock.module("@/hooks/use-assistant-avatar", () => ({
   ...assistantAvatarMod,

@@ -2,15 +2,11 @@ import { useCallback, useState, type ReactNode } from "react";
 
 import { Modal } from "@mycadet/design-library";
 
-import { asGeneratedAssistant } from "@/assistant/queries";
 import { AssistantHandleSection } from "@/components/profile-card";
-import type { Assistant } from "@/generated/api/types.gen";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
-  /** The assistant as the cloud lists it; its id is the cloud's. */
-  assistant: Assistant;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -24,7 +20,6 @@ export interface AssistantHandleModalProps {
  * the modal; the editor's toast says it went through.
  */
 export function AssistantHandleModal({
-  assistant,
   open,
   onOpenChange,
 }: AssistantHandleModalProps) {
@@ -45,7 +40,6 @@ export function AssistantHandleModal({
         <Modal.Body>
           <AssistantHandleSection
             layout="modal"
-            assistant={assistant}
             onSaved={() => onOpenChange(false)}
           />
         </Modal.Body>
@@ -72,20 +66,14 @@ export interface AssistantHandleModalControl {
  */
 export function useAssistantHandleModal(): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
-  // The store IS the record — there is nothing to scan a listing for.
-  const assistant = asGeneratedAssistant(getResolvedAssistant());
+  // The store IS the record — the handle is the entry's id.
+  const handle = getResolvedAssistant().assistantId;
 
   const openModal = useCallback(() => setOpen(true), []);
 
   return {
-    handle: assistant.handle || null,
+    handle: handle || null,
     openModal,
-    modal: (
-      <AssistantHandleModal
-        assistant={assistant}
-        open={open}
-        onOpenChange={setOpen}
-      />
-    ),
+    modal: <AssistantHandleModal open={open} onOpenChange={setOpen} />,
   };
 }

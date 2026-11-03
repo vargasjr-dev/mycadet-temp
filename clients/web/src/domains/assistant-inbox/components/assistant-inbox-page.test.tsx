@@ -74,7 +74,6 @@ function renderPage(props: {
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <AssistantInboxPage
-          assistantId={ASSISTANT_ID}
           assistantName="Velly"
           address="velly@example.org"
           inbox={props.inbox}

@@ -13,8 +13,6 @@
 export type InboxStatus = "unavailable" | "loading" | "setup" | "ready";
 
 export interface InboxStatusInputs {
-  /** The assistant id the routes key on. */
-  assistantId: string;
   /** `undefined` until the address list has been read once. */
   addressCount: number | undefined;
   /**

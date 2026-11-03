@@ -2,20 +2,18 @@ import { useCallback, useRef } from "react";
 
 import { useTerminalSession } from "@/domains/terminal/use-terminal-session";
 import { useTerminalStore } from "@/domains/terminal/terminal-store";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { TerminalConsole } from "@/domains/terminal/components/terminal-console";
 import { TerminalToolbar } from "@/domains/terminal/components/terminal-toolbar";
 
 export interface TerminalPanelProps {
-  assistantId: string | null;
   className?: string;
   service?: string;
 }
 
-export function TerminalPanel({
-  assistantId,
-  className,
-  service,
-}: TerminalPanelProps) {
+export function TerminalPanel({ className, service }: TerminalPanelProps) {
+  // The session is the active assistant's — the id is the store's.
+  const assistantId = useActiveAssistantId();
   const writeToTerminalRef = useRef<((data: string) => void) | null>(null);
 
   const handleData = useCallback((data: string) => {

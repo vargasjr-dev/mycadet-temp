@@ -1,5 +1,5 @@
 /**
- * Parent-frame navigation bridge for remote-gateway mode.
+ * Parent-frame navigation bridge.
  *
  * The bundle boots inside an iframe on the cloud's origin while the
  * router owns the iframe's history. Neither side can observe the other's
@@ -44,7 +44,7 @@ function emitToParent(nav: "push" | "replace" | "pop"): void {
   }
 }
 
-export function setupRemoteGatewayNavBridge(): void {
+export function setupIframeNavBridge(): void {
   if (bridgeInstalled) {
     return;
   }

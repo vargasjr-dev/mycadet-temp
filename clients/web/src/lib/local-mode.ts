@@ -28,12 +28,3 @@ export function getRemoteAssistantDisplayName(): string | undefined {
   const live = useAssistantIdentityStore.getState().name?.trim();
   return live || getRemoteGatewayAssistantName();
 }
-
-/**
- * The cloud hub SPA's assistant-root URL (`<origin>/assistant`), when the
- * served remote-gateway config carries one. Older served configs omit it, so
- * callers must tolerate `undefined`.
- */
-export function getRemoteGatewayHubUrl(): string | undefined {
-  return nonEmptyString(readInjectedConfig()?.hubUrl);
-}
