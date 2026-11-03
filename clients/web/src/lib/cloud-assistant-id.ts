@@ -21,9 +21,7 @@ export async function resolveCloudAssistantId(
     return assistantId;
   }
   try {
-    const resolved = await resolveLocalAssistantCloudIdentity(assistantId, {
-      allowGatewayRepair: false,
-    });
+    const resolved = await resolveLocalAssistantCloudIdentity(assistantId);
     if (isUuid(resolved)) {
       return resolved;
     }

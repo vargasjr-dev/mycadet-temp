@@ -17,10 +17,8 @@
 import { z } from "zod";
 
 import type { HostProxyExecutor } from "../router";
-import type {
-  HostProxyPoster,
-  HostUiSnapshotResultPayload,
-} from "../poster";
+import { resolveHostProxyRendererBase } from "../renderer-base";
+import type { HostProxyPoster, HostUiSnapshotResultPayload } from "../poster";
 import type { HostProxySseMessage } from "../sse";
 import log from "./logger";
 
@@ -34,7 +32,10 @@ const READY_TIMEOUT_MS = 10_000;
 const EMPTY_CAPTURE_RETRY_DELAY_MS = 150;
 
 /** Logical window sizes per staged view (capture is at device scale). */
-const VIEW_SIZES: Record<"sampler" | "chat", { width: number; height: number }> = {
+const VIEW_SIZES: Record<
+  "sampler" | "chat",
+  { width: number; height: number }
+> = {
   sampler: { width: 720, height: 1080 },
   chat: { width: 720, height: 760 },
 };
@@ -73,7 +74,9 @@ async function captureStagedView(
   // Imported lazily so loading this module never drags Electron into
   // processes that only exercise the dispatch lifecycle.
   const { createWindow } = await import("../../windows");
-  const query = tokens ? `?tokens=${encodeURIComponent(JSON.stringify(tokens))}` : "";
+  const query = tokens
+    ? `?tokens=${encodeURIComponent(JSON.stringify(tokens))}`
+    : "";
   const url = `${base}/theme-stage/${view}${query}`;
   const { width, height } = VIEW_SIZES[view];
 
@@ -104,7 +107,11 @@ async function captureStagedView(
       };
       const watchdog = setTimeout(() => {
         cleanup();
-        reject(new Error(`Staged view did not become ready within ${READY_TIMEOUT_MS}ms`));
+        reject(
+          new Error(
+            `Staged view did not become ready within ${READY_TIMEOUT_MS}ms`,
+          ),
+        );
       }, READY_TIMEOUT_MS);
       const onTitle = (_event: unknown, title: string) => {
         if (title === READY_TITLE) {
@@ -121,7 +128,9 @@ async function captureStagedView(
 
       win.webContents.once("did-fail-load", (_event, code, description) => {
         cleanup();
-        reject(new Error(`Staged view failed to load: ${description} (${code})`));
+        reject(
+          new Error(`Staged view failed to load: ${description} (${code})`),
+        );
       });
 
       void win.loadURL(url).catch((err: unknown) => {
@@ -159,27 +168,15 @@ async function captureStagedView(
 export interface HostUiSnapshotExecutorDeps {
   /** Overrides the real staged-window capture pipeline (tests). */
   capture?: StagedCaptureFn;
-  /**
-   * Client-supplied renderer base URL the staged views load from.
-   * Required unless `capture` is overridden.
-   */
-  resolveRendererBase?: () => string;
 }
 
 export function createHostUiSnapshotExecutor(
   deps: HostUiSnapshotExecutorDeps = {},
 ): HostProxyExecutor {
-  const { resolveRendererBase } = deps;
   const capture: StagedCaptureFn =
     deps.capture ??
-    ((view, tokens, signal) => {
-      if (!resolveRendererBase) {
-        throw new Error(
-          "host_ui_snapshot requires resolveRendererBase when no capture override is provided",
-        );
-      }
-      return captureStagedView(resolveRendererBase(), view, tokens, signal);
-    });
+    ((view, tokens, signal) =>
+      captureStagedView(resolveHostProxyRendererBase(), view, tokens, signal));
   const inFlight = new Map<string, AbortController>();
 
   return {
@@ -188,7 +185,9 @@ export function createHostUiSnapshotExecutor(
       if (!parsed.success) {
         const requestId =
           typeof message.requestId === "string" ? message.requestId : undefined;
-        log.warn("[host-ui-snapshot] invalid request", { issues: parsed.error.issues });
+        log.warn("[host-ui-snapshot] invalid request", {
+          issues: parsed.error.issues,
+        });
         if (requestId) {
           void poster.postUiSnapshotResult({
             requestId,
@@ -201,7 +200,9 @@ export function createHostUiSnapshotExecutor(
 
       const { requestId, view, tokens } = parsed.data;
       if (inFlight.has(requestId)) {
-        log.warn("[host-ui-snapshot] duplicate request, ignoring", { requestId });
+        log.warn("[host-ui-snapshot] duplicate request, ignoring", {
+          requestId,
+        });
         return;
       }
 

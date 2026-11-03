@@ -91,8 +91,16 @@ export {
 } from "./cli-invocation";
 export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
-export { matchOperatorRequest } from "./operations/routes";
-export type { OperatorRoute, OperatorMatch } from "./operations/routes";
+export {
+  matchOperatorRequest,
+  forwardOperatorRequest,
+  OPERATOR_ROUTES,
+} from "./operations/routes";
+export type {
+  OperatorRoute,
+  OperatorMatch,
+  OperatorRequest,
+} from "./operations/routes";
 export { retireAssistant } from "./operations/retire";
 export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
@@ -109,7 +117,24 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { wakeDocker } from "./remotes/docker/wake";
+export { recreateDockerContainers } from "./remotes/docker/recreate";
+export {
+  AVATAR_DEVICE_ENV_VAR,
+  DOCKER_STATEFUL_SET_SPEC,
+  SERVICE_START_ORDER,
+  buildServiceRunArgs,
+  getBuilderManagedEnvKeys,
+  resolveAvatarDevicePath,
+  startContainers,
+  stopContainers,
+  type DockerStatefulSetSpec,
+  type ServiceName,
+} from "./remotes/docker/statefulset";
+export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
+export {
+  PROVIDER_ENV_VAR_NAMES,
+  SEARCH_PROVIDER_ENV_VAR_NAMES,
+} from "./provider-env-vars";
 export {
   ensureDockerDaemonRunning,
   startColimaAndAwaitDaemon,
@@ -117,30 +142,17 @@ export {
   LOCAL_BIN_DIR,
   isNoSuchContainerError,
 } from "./remotes/docker/common";
-export { wakeLocal } from "./remotes/local/wake";
 export { hatchLocal } from "./remotes/local/hatch";
-export { hatchDocker } from "./remotes/docker/hatch";
-export { hatchCloud } from "./remotes/cloud/hatch";
 export {
-  startContainers,
-  stopContainers,
-  DOCKER_STATEFUL_SET_SPEC,
-  type DockerStatefulSetSpec,
-  type ServiceName,
-  getBuilderManagedEnvKeys,
-} from "./remotes/docker/statefulset";
-export {
-  pullImage,
-  resolveImageRefs,
   dockerhubImages,
+  resolveImageRefs,
+  resolveOwnImageRefs,
+  ensureDockerInstalled,
+  hatchDocker,
+  pullImage,
   DOCKER_READY_TIMEOUT_MS,
 } from "./remotes/docker/hatch";
-export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
-export { printInstanceDetails } from "./instance-details";
-export {
-  PROVIDER_ENV_VAR_NAMES,
-  SEARCH_PROVIDER_ENV_VAR_NAMES,
-} from "./provider-env-vars";
+export { hatchCloud } from "./remotes/cloud/hatch";
 
 export {
   computeDeviceId,
@@ -280,17 +292,6 @@ export {
   retireDocker,
 } from "./remotes/docker/retire";
 export { retireAppleContainer } from "./remotes/apple-container/retire";
-export {
-  stopContainerAppServer,
-  stopIngressNginx,
-  getIngressPaths,
-  ingressStatePath,
-  readIngressState,
-  getIngressPid,
-  isIngressRunning,
-  isPidAlive,
-} from "./ingress";
-export type { IngressPaths, IngressState } from "./ingress";
 export { exec, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,
@@ -363,12 +364,7 @@ export type {
 export { runUpgrade, isValidReleaseVersion } from "./upgrade";
 export { stripVersionPrefix } from "./version";
 export type { UpgradeOptions, UpgradeResult } from "./upgrade";
-export { getLocalAssistantStatus } from "./status";
 export { readLockfileAssistantAvatar } from "./avatar";
-export type {
-  LocalAssistantRuntimeState,
-  LocalAssistantStatusResult,
-} from "./status";
 export {
   getGuardianAccessToken,
   isConfidentialRefreshUrl,

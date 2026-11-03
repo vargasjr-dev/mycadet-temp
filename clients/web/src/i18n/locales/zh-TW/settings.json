@@ -137,7 +137,6 @@
     "toastUpdateInitiated": "已啟動更新至 {version}。",
     "update": "更新",
     "updateTo": "更新至",
-    "updateToVersion": "更新至版本 {version}",
     "updating": "更新中..."
   },
   "autoTopUpPaymentMethodModal": {
@@ -299,15 +298,6 @@
     "searchPlaceholder": "搜尋憑證",
     "subtitleOwn": "加密儲存於助理的憑證庫中。可依需求顯示、取代或隨時刪除其值。",
     "title": "憑證"
-  },
-  "debugBundleExport": {
-    "description": "向 Cadet 支援傳送診斷記錄和已清理的設定。不包含憑證。上傳內容保留七天。",
-    "export": "匯出偵錯套件",
-    "exporting": "正在匯出…",
-    "sentAt": "已於 {time} 傳送給 Cadet。",
-    "toastFailed": "偵錯套件未傳送。",
-    "toastFailedWithReason": "偵錯套件未傳送：{reason}",
-    "toastSent": "偵錯套件已傳送給 Cadet。"
   },
   "debugControlsPanel": {
     "backups": "備份",
@@ -687,20 +677,6 @@
     "serviceFallbackName": "通道提供者",
     "serviceWebsite": "這是 {service} 的網站，而不是您的助理位址。請在主機上啟動通道以取得一個；`cadet tunnel --help` 列出提供者。",
     "unparseable": "請輸入有效的 URL，例如 https://your-assistant.ts.net。"
-  },
-  "pairedDevicesSection": {
-    "browserOnOs": "{os} 上的 {browser}",
-    "confirmMessageNamed": "{name} ({hash}) 將失去此助理的存取權限。其存取憑證將立即失效；該裝置必須從本機重新配對才能重新連線。",
-    "confirmTitle": "撤銷此裝置？",
-    "dateUnknown": "未知",
-    "hostRevokeDisabledTitle": "這是本機自身的憑證；撤銷它將導致主機無法存取此助理。",
-    "pairedActiveLine": "已配對 {paired} · 正在使用",
-    "pairedAndUsedLine": "已配對 {paired} · 上次使用時間 {lastUsed}",
-    "pairedLine": "已配對 {paired}",
-    "platformUnknown": "未知",
-    "revokeButton": "撤銷",
-    "thisMachine": "本機",
-    "title": "已配對裝置 ({count})"
   },
   "paymentMethodRow": {
     "savedCard": "已儲存卡片"

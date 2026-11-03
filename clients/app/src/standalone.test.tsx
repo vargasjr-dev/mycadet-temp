@@ -10,7 +10,6 @@ import {
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { toast } from "@mycadet/design-library/components/toast";
-import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
 import { DesktopChrome } from "./standalone";
 
 const realStandaloneFetch = globalThis.fetch;
@@ -54,23 +53,17 @@ test("the app's root mounts the toast outlet so every toast.* call renders", asy
 // the captured callback is how a test emits a command as the host would.
 describe("the shell's assistant commands", () => {
   const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
-  const localLockfile = {
-    assistants: [
-      { assistantId: "assistant-1", name: "One", cloud: "local" },
-      {
-        assistantId: "paired-1",
-        name: "Office",
-        cloud: "paired",
-        runtimeUrl: "https://office.example.com",
-      },
-    ],
-    activeAssistant: null,
-  };
+  // The palette switch resolves through the list assistants api: the cloud
+  // org list is the roster (registered local assistants included).
+  const assistantRows = [
+    { id: "assistant-1", name: "One" },
+    { id: "paired-1", name: "Office" },
+  ];
 
   type Sink = { handler?: (command: unknown) => void };
 
   function stubCadet(opts: {
-    lockfile: unknown;
+    assistants?: unknown[];
     status?: (assistantId: string) => unknown;
   }): Sink {
     const sink: Sink = {};
@@ -92,9 +85,10 @@ describe("the shell's assistant commands", () => {
         },
       },
     });
-    // The lockfile and status reads ride the operator routes' GETs through
-    // the fetch spy: layer an implementation that answers those paths (a
-    // queued mockResolvedValueOnce still wins for the test's own calls).
+    // The list assistants api (org resolution + the hosted rows) and the
+    // status read ride the same-origin GETs through the fetch spy: layer an
+    // implementation that answers those paths (a queued
+    // mockResolvedValueOnce still wins for the test's own calls).
     request.mockImplementation(
       Object.assign(
         async (
@@ -102,10 +96,20 @@ describe("the shell's assistant commands", () => {
           init?: RequestInit,
         ): Promise<Response> => {
           const path = String(input).split("?")[0] ?? "";
+          if (path === "/v1/organizations/") {
+            return new Response(
+              JSON.stringify({ results: [{ id: "org-1" }], next: null }),
+              { headers: { "content-type": "application/json" } },
+            );
+          }
           if (path === "/v1/assistants/") {
-            return new Response(JSON.stringify(opts.lockfile), {
-              headers: { "content-type": "application/json" },
-            });
+            return new Response(
+              JSON.stringify({
+                results: opts.assistants ?? assistantRows,
+                next: null,
+              }),
+              { headers: { "content-type": "application/json" } },
+            );
           }
           const statusMatch = path.match(/^\/v1\/assistants\/([^/]+)\/$/);
           if (statusMatch) {
@@ -132,7 +136,6 @@ describe("the shell's assistant commands", () => {
     } else {
       Reflect.deleteProperty(window, "cadet");
     }
-    __resetLocalLockfileForTesting();
   });
 
   function renderChrome(initialEntries: string[] = ["/"]) {
@@ -155,7 +158,6 @@ describe("the shell's assistant commands", () => {
 
   test("selectAssistant connects a healthy local entry by navigating with the selection state", async () => {
     const sink = stubCadet({
-      lockfile: localLockfile,
       status: () => ({ ok: true, state: "healthy" }),
     });
     const router = renderChrome();
@@ -171,7 +173,7 @@ describe("the shell's assistant commands", () => {
   });
 
   test("selectAssistant connects paired entries same-origin (the host routes by path-id)", async () => {
-    const sink = stubCadet({ lockfile: localLockfile });
+    const sink = stubCadet({});
     const router = renderChrome();
     await act(async () => {
       sink.handler!({ kind: "selectAssistant", assistantId: "paired-1" });
@@ -186,7 +188,6 @@ describe("the shell's assistant commands", () => {
 
   test("selectAssistant routes a down local daemon to the assistant screen (the not-ready panel owns recovery)", async () => {
     const sink = stubCadet({
-      lockfile: localLockfile,
       // The shell doesn't probe health: any lockfile entry connects by
       // navigating with the selection state, and an unreachable gateway
       // lands on the not-ready panel's wake, whatever its remote type.
@@ -205,7 +206,7 @@ describe("the shell's assistant commands", () => {
   });
 
   test("selectAssistant routes an id the lockfile does not know to the chooser", async () => {
-    const sink = stubCadet({ lockfile: localLockfile });
+    const sink = stubCadet({});
     const router = renderChrome();
     await act(async () => {
       sink.handler!({ kind: "selectAssistant", assistantId: "ghost" });
@@ -217,7 +218,7 @@ describe("the shell's assistant commands", () => {
   });
 
   test("rePair reconnects the current selection in place", async () => {
-    const sink = stubCadet({ lockfile: localLockfile });
+    const sink = stubCadet({});
     const router = renderChrome();
     // createMemoryRouter's entries carry no state, so the test selects the
     // way the shell itself does: a navigation carrying the selection state.
@@ -248,7 +249,6 @@ describe("the shell's assistant commands", () => {
     // fail the test, not silently pass.
     request.mockResolvedValueOnce(new Response(null, { status: 204 }));
     const sink = stubCadet({
-      lockfile: localLockfile,
       status: () => ({ ok: true, state: "healthy" }),
     });
     renderChrome();
@@ -268,7 +268,6 @@ describe("the shell's assistant commands", () => {
   test("rePair without a selection does nothing", async () => {
     const statusCalls: string[] = [];
     const sink = stubCadet({
-      lockfile: localLockfile,
       status: (assistantId) => {
         statusCalls.push(assistantId);
         return { ok: true, state: "healthy" };

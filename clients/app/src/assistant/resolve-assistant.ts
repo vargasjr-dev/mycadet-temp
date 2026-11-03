@@ -1,27 +1,27 @@
 import { z } from "zod";
 
 import {
-  AssistantChoiceSchema,
-  AssistantDetailSchema,
+  AssistantListSchema,
+  AssistantResolutionSchema,
   PublicUrlSchema,
+  type AssistantList,
   type AssistantResolution,
 } from "./resolution-contract";
 
-const PageSchema = z.object({
-  results: z.array(AssistantChoiceSchema),
-  next: z.string().nullable().optional(),
-});
 function decode<T>(schema: z.ZodType<T>, payload: unknown): T {
   const result = schema.safeParse(payload);
   if (!result.success) {
-    throw new Error("Invalid assistant API data.");
+    // The zod error object carries the path and the per-field failures —
+    // surface them so a contract drift names the field that moved.
+    throw new Error(
+      `Invalid assistant API data.\n${z.prettifyError(result.error)}`,
+    );
   }
   return result.data;
 }
 
 export interface AssistantRequest {
   apiBaseUrl?: string;
-  origin: string;
   assistantId?: string;
   signal: AbortSignal;
 }
@@ -30,11 +30,16 @@ const unauthenticated = Symbol("unauthenticated");
 const notReady = Symbol("not ready");
 const unavailable = Symbol("unavailable");
 
-function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
+function createClient({ apiBaseUrl = "/", signal }: AssistantRequest) {
+  // The shell is same-origin by construction — every host (the desktop
+  // protocol, the web dev server, the cloud takeover) proxies the API at
+  // the page's own origin. Read inside: SSR renders the shell without a
+  // window, and the origin is a browser fact.
+  const origin = window.location.origin;
   const base = new URL(decode(PublicUrlSchema, apiBaseUrl), origin);
   base.pathname = base.pathname.replace(/\/*$/, "/");
   const headers = new Headers({ Accept: "application/json" });
-  async function get(path: string, detail = false) {
+  async function get(path: string) {
     signal.throwIfAborted();
     const requestUrl = new URL(path, base);
     const response = await fetch(requestUrl, {
@@ -46,10 +51,10 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
     if (response.status === 401) {
       return unauthenticated;
     }
-    if (detail && response.status === 409) {
+    if (response.status === 409) {
       return notReady;
     }
-    if (detail && response.status === 410) {
+    if (response.status === 410) {
       return unavailable;
     }
     if (!response.ok) {
@@ -72,64 +77,39 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
   return { base, get };
 }
 
-type AssistantList = Extract<
-  AssistantResolution,
-  { status: "selection" | "unauthenticated" }
->;
-
-async function listChoices(
-  client: ReturnType<typeof createClient>,
-): Promise<AssistantList> {
-  const assistants: z.infer<typeof AssistantChoiceSchema>[] = [];
-  for (let page = 0; page < 20; page++) {
-    const payload = await client.get(
-      `v1/assistants/?limit=100&offset=${assistants.length}`,
-    );
-    if (payload === unauthenticated) {
-      return { status: "unauthenticated" };
-    }
-    const data = decode(PageSchema, payload);
-    assistants.push(...data.results);
-    if (!data.next) {
-      return { status: "selection", assistants };
-    }
-    if (data.results.length === 0 || page === 19) {
-      throw new Error("Assistant list exceeded its page limit.");
-    }
-  }
-  throw new Error("Assistant list exceeded its page limit.");
-}
-
+/**
+ * The chooser's list: ONE call to the same-origin list endpoint — the
+ * unscoped `v1/assistants/` is the list CONTRACT (the machine's rows
+ * without a credential field), and the client just decodes it. No session
+ * (401) reads as the contract's own unauthenticated arm.
+ */
 export async function listAssistantChoices(
-  options: Omit<AssistantRequest, "assistantId">,
+  options: AssistantRequest,
 ): Promise<AssistantList> {
-  return listChoices(createClient(options));
+  const client = createClient(options);
+  const payload = await client.get("v1/assistants/");
+  if (payload === unauthenticated) {
+    return { status: "unauthenticated" };
+  }
+  return decode(AssistantListSchema, payload);
 }
 
+/**
+ * The shell's resolution: ONE call to the same-origin assistant resolution
+ * endpoint — the serving host's operation composes the whole union (the
+ * lockfile's choice, the entry gateway's identity and the caller's own auth
+ * verdict) and the client just decodes it. The status-code arms stay for
+ * hosts whose operation forwards a platform detail's own codes, and for
+ * older stacks whose baked metadata predates the union.
+ */
 export async function resolveAssistant(
   options: AssistantRequest,
 ): Promise<AssistantResolution> {
-  const { base, get } = createClient(options);
-  let assistantId = options.assistantId;
-  if (!assistantId) {
-    const result = await listChoices({ base, get });
-    if (result.status === "unauthenticated") {
-      return result;
-    }
-    if (result.assistants.length === 0) {
-      return { status: "empty" };
-    }
-    if (result.assistants.length > 1) {
-      return result;
-    }
-    assistantId = result.assistants[0].id;
-  }
-  if (!assistantId || [".", ".."].includes(assistantId)) {
-    throw new Error("Invalid assistant identity.");
-  }
-  const payload = await get(
-    `v1/assistants/${encodeURIComponent(assistantId)}/`,
-    true,
+  const client = createClient(options);
+  const payload = await client.get(
+    options.assistantId
+      ? `v1/assistants/${encodeURIComponent(options.assistantId)}/`
+      : "v1/assistant",
   );
   if (payload === unauthenticated) {
     return { status: "unauthenticated" };
@@ -140,16 +120,5 @@ export async function resolveAssistant(
   if (payload === unavailable) {
     return { status: "unavailable" };
   }
-  const detail = decode(AssistantDetailSchema, payload);
-  if (detail.id !== assistantId) {
-    throw new Error("Assistant identity does not match the request.");
-  }
-  return {
-    status: "ready",
-    assistant: {
-      id: detail.id,
-      version: detail.version,
-      url: new URL(detail.url, base).href,
-    },
-  };
+  return decode(AssistantResolutionSchema, payload);
 }

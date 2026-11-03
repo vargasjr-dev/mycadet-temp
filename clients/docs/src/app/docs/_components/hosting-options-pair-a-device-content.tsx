@@ -11,7 +11,6 @@ import { TableOfContents } from "@/app/docs/_components/table-of-contents";
 const TOC_ITEMS = [
   { id: "overview", label: "Overview", level: 2 },
   { id: "before-you-start", label: "Before you start", level: 2 },
-  { id: "install-nginx", label: "Install nginx", level: 2 },
   { id: "set-up-a-tunnel", label: "Set up a tunnel provider", level: 2 },
   { id: "ngrok", label: "ngrok", level: 3 },
   { id: "tailscale", label: "Tailscale", level: 3 },
@@ -22,10 +21,12 @@ const TOC_ITEMS = [
   { id: "troubleshooting", label: "Troubleshooting", level: 2 },
 ];
 
-const linkClass = "font-semibold text-emerald-700 underline hover:text-emerald-800";
+const linkClass =
+  "font-semibold text-emerald-700 underline hover:text-emerald-800";
 const paraClass = "mb-4 text-stone-600 dark:text-stone-400";
 const lastParaClass = "mb-0 text-stone-600 dark:text-stone-400";
-const bulletClass = "mb-6 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400";
+const bulletClass =
+  "mb-6 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400";
 const codeClass =
   "rounded bg-stone-100 px-1.5 py-0.5 font-[family-name:var(--font-dm-mono)] text-sm dark:bg-moss-700";
 const blockClass = "mb-6 overflow-x-auto";
@@ -33,7 +34,8 @@ const preClass = "font-[family-name:var(--font-dm-mono)] text-sm";
 const uiClass = "font-medium text-stone-900 dark:text-stone-100";
 const pillClass =
   "ml-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200";
-const cardClass = "rounded-xl border border-stone-200 p-4 dark:border-moss-600/50";
+const cardClass =
+  "rounded-xl border border-stone-200 p-4 dark:border-moss-600/50";
 const cardTitleClass =
   "mb-1 font-sans font-semibold text-stone-900 dark:text-stone-100";
 const cardBodyClass = "m-0 text-sm text-stone-600 dark:text-stone-400";
@@ -59,19 +61,18 @@ export function HostingOptionsPairADeviceContent() {
           </p>
           <ul className={bulletClass}>
             <li>
-              <strong>A tunnel</strong>{" "}
-              gives your assistant an https address other devices can reach. You
-              start it once and leave it running.
+              <strong>A tunnel</strong> gives your assistant an https address
+              other devices can reach. You start it once and leave it running.
             </li>
             <li>
-              <strong>A pairing</strong>{" "}
-              gives one device permission to use that address. Every device is
-              paired and revoked separately.
+              <strong>A pairing</strong> gives one device permission to use that
+              address. Every device is paired and revoked separately.
             </li>
           </ul>
           <p className="mb-0 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
-            <strong>You connect through your own address, not through
-            mycadet.ai.</strong>{" "}
+            <strong>
+              You connect through your own address, not through mycadet.ai.
+            </strong>{" "}
             The tunnel URL serves the Cadet web app pointed at your assistant,
             so a paired device talks straight to your machine. Conversations
             never pass through Cadet&apos;s servers.
@@ -87,53 +88,14 @@ export function HostingOptionsPairADeviceContent() {
             <code className={codeClass}>cadet ps</code> to check,{" "}
             <code className={codeClass}>cadet wake</code> to start it. No
             assistant yet? See{" "}
-            <Link href="/docs/hosting-options/local-hosting" className={linkClass}>
+            <Link
+              href="/docs/hosting-options/local-hosting"
+              className={linkClass}
+            >
               Local hosting
             </Link>
             .
           </p>
-        </section>
-
-        <section id="install-nginx" className="mt-12">
-          <SectionHeading id="install-nginx" level={2}>
-            Install nginx
-          </SectionHeading>
-          <p className={paraClass}>
-            Tunnels run through nginx. Cadet starts it for you, but
-            won&apos;t install it. Run this on the computer hosting your
-            assistant.
-          </p>
-          <CodeTabs
-            label="Operating system"
-            tabs={[
-              {
-                id: "macos",
-                label: "macOS",
-                content: (
-                  <div className="overflow-x-auto">
-                    <pre className={preClass}>
-<code>{`brew install nginx`}</code>
-                    </pre>
-                  </div>
-                ),
-              },
-              {
-                id: "linux",
-                label: "Linux",
-                content: (
-                  <div className="overflow-x-auto">
-                    <pre className={preClass}>
-<code>{`sudo apt-get update
-sudo apt-get install -y nginx
-
-# nginx lands in /usr/sbin, which isn't on PATH for non-root users
-echo 'export PATH="$PATH:/usr/sbin"' >> ~/.bashrc && source ~/.bashrc`}</code>
-                    </pre>
-                  </div>
-                ),
-              },
-            ]}
-          />
         </section>
 
         <section id="set-up-a-tunnel" className="mt-12">
@@ -141,19 +103,18 @@ echo 'export PATH="$PATH:/usr/sbin"' >> ~/.bashrc && source ~/.bashrc`}</code>
             Set up a tunnel provider
           </SectionHeading>
           <p className={paraClass}>
-            <strong>ngrok</strong>{" "}
-            gives your assistant a public https address, so any phone or laptop
-            can open it with nothing installed on that device.
+            <strong>ngrok</strong> gives your assistant a public https address,
+            so any phone or laptop can open it with nothing installed on that
+            device.
           </p>
           <p className={paraClass}>
-            <strong>Tailscale</strong>{" "}
-            keeps the address off the public internet, which is more private but
-            costs you two things. Every device you pair needs Tailscale
-            installed and signed in, phone included. And a Tailscale address
-            can&apos;t receive inbound webhooks, so channels like Telegram and
-            Twilio still need a public tunnel alongside it. Cadet leaves an
-            existing one in place and uses the Tailscale address for pairing
-            only.
+            <strong>Tailscale</strong> keeps the address off the public
+            internet, which is more private but costs you two things. Every
+            device you pair needs Tailscale installed and signed in, phone
+            included. And a Tailscale address can&apos;t receive inbound
+            webhooks, so channels like Telegram and Twilio still need a public
+            tunnel alongside it. Cadet leaves an existing one in place and uses
+            the Tailscale address for pairing only.
           </p>
           <p className={lastParaClass}>
             Either way, a device still has to be paired and approved before it
@@ -184,7 +145,7 @@ echo 'export PATH="$PATH:/usr/sbin"' >> ~/.bashrc && source ~/.bashrc`}</code>
                       content: (
                         <div className="overflow-x-auto">
                           <pre className={preClass}>
-<code>{`# Install ngrok
+                            <code>{`# Install ngrok
 brew install ngrok/ngrok/ngrok
 
 # Confirm it's there
@@ -199,7 +160,7 @@ ngrok --version`}</code>
                       content: (
                         <div className="overflow-x-auto">
                           <pre className={preClass}>
-<code>{`# ngrok ships as a snap. Ubuntu Desktop has snapd already, but
+                            <code>{`# ngrok ships as a snap. Ubuntu Desktop has snapd already, but
 # Debian and most server images don't.
 sudo apt update
 sudo apt install -y snapd
@@ -220,8 +181,7 @@ ngrok --version`}</code>
                 />
               </li>
               <li>
-                <strong>Add your authtoken</strong>{" "}
-                from the{" "}
+                <strong>Add your authtoken</strong> from the{" "}
                 <Link
                   href="https://dashboard.ngrok.com/get-started/your-authtoken"
                   target="_blank"
@@ -233,15 +193,15 @@ ngrok --version`}</code>
                 page in the dashboard:
                 <div className="mt-3 overflow-x-auto">
                   <pre className={preClass}>
-<code>{`ngrok config add-authtoken <your-token>`}</code>
+                    <code>{`ngrok config add-authtoken <your-token>`}</code>
                   </pre>
                 </div>
               </li>
               <li>
-                <strong>(Optional) Claim a static domain.</strong>{" "}
-                Without one, ngrok issues a new URL every time the tunnel
-                restarts, and your paired devices keep pointing at the old one.
-                Restarts are easy to trigger: a reboot, a Ctrl+C, or a{" "}
+                <strong>(Optional) Claim a static domain.</strong> Without one,
+                ngrok issues a new URL every time the tunnel restarts, and your
+                paired devices keep pointing at the old one. Restarts are easy
+                to trigger: a reboot, a Ctrl+C, or a{" "}
                 <code className={codeClass}>cadet wake</code>. Reserving a
                 domain on the{" "}
                 <Link
@@ -275,9 +235,8 @@ ngrok --version`}</code>
                 <code className={codeClass}>your-mac.tailnet-name.ts.net</code>.
               </li>
               <li>
-                <strong>Turn on HTTPS certificates.</strong>{" "}
-                In the admin console, open <span className={uiClass}>DNS</span>{" "}
-                and enable{" "}
+                <strong>Turn on HTTPS certificates.</strong> In the admin
+                console, open <span className={uiClass}>DNS</span> and enable{" "}
                 <span className={uiClass}>HTTPS Certificates</span> (see{" "}
                 <Link
                   href="https://tailscale.com/kb/1153/enabling-https"
@@ -289,7 +248,9 @@ ngrok --version`}</code>
                 though it prints Tailscale&apos;s own link to switch them on.
               </li>
               <li>
-                <strong>Install Tailscale on every device you want to pair.</strong>{" "}
+                <strong>
+                  Install Tailscale on every device you want to pair.
+                </strong>{" "}
                 Miss this and the pairing link simply won&apos;t open: the
                 address doesn&apos;t resolve outside your network.
               </li>
@@ -315,28 +276,27 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`cadet tunnel --provider ngrok --domain your-assistant.ngrok.app -d`}</code>
+              <code>{`cadet tunnel --provider ngrok --domain your-assistant.ngrok.app -d`}</code>
             </pre>
           </div>
           <p className={paraClass}>For Tailscale:</p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`cadet tunnel --provider tailscale -d`}</code>
+              <code>{`cadet tunnel --provider tailscale -d`}</code>
             </pre>
           </div>
           <p className={paraClass}>
-            <code className={codeClass}>-d</code>{" "}
-            runs the tunnel in the background, so it survives closing the
-            terminal. It has to stay up for as long as you want remote access.
+            <code className={codeClass}>-d</code> runs the tunnel in the
+            background, so it survives closing the terminal. It has to stay up
+            for as long as you want remote access.
           </p>
           <p className={lastParaClass}>
             Either way the command waits for the tunnel to come up, then prints{" "}
             <code className={codeClass}>Tunnel established:</code> with the
             address your devices will use, where it is logging, and the{" "}
-            <code className={codeClass}>kill</code>{" "}
-            command that stops it again. Cadet saves that address so the
-            pairing steps below fill it in for you, and remembers your ngrok
-            domain so later runs don&apos;t need{" "}
+            <code className={codeClass}>kill</code> command that stops it again.
+            Cadet saves that address so the pairing steps below fill it in for
+            you, and remembers your ngrok domain so later runs don&apos;t need{" "}
             <code className={codeClass}>--domain</code>.
           </p>
         </section>
@@ -379,45 +339,44 @@ ngrok --version`}</code>
               Other ways to pair
             </SectionHeading>
             <p className={paraClass}>
-              <strong>Start from the device itself.</strong>{" "}
-              Open your{" "}
+              <strong>Start from the device itself.</strong> Open your{" "}
               <a href="#start-the-tunnel" className={linkClass}>
                 tunnel address
               </a>{" "}
               on the device. It lands on the pairing page, shows a short code,
               and waits. On the host, the request appears under{" "}
-              <span className={uiClass}>Pairing requests</span>{" "}
-              in the same card. Check that code against the device&apos;s screen
-              before approving: the match is what proves the request came from
-              your device. Or approve from a shell with{" "}
-              <code className={codeClass}>cadet pair --web-approve &lt;code&gt;</code>
+              <span className={uiClass}>Pairing requests</span> in the same
+              card. Check that code against the device&apos;s screen before
+              approving: the match is what proves the request came from your
+              device. Or approve from a shell with{" "}
+              <code className={codeClass}>
+                cadet pair --web-approve &lt;code&gt;
+              </code>
               .
             </p>
             <p className={paraClass}>
-              <strong>No desktop app on the host.</strong>{" "}
-              If you hatched the assistant over SSH on a VPS, pair from the CLI
-              instead. It prints a pairing link and the same link as a QR
-              code, using the address from{" "}
-              <code className={codeClass}>cadet tunnel</code>:
+              <strong>No desktop app on the host.</strong> If you hatched the
+              assistant over SSH on a VPS, pair from the CLI instead. It prints
+              a pairing link and the same link as a QR code, using the address
+              from <code className={codeClass}>cadet tunnel</code>:
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`cadet pair`}</code>
+                <code>{`cadet pair`}</code>
               </pre>
             </div>
             <p className={paraClass}>
               Add <code className={codeClass}>--app</code> to point the QR at
               the mobile app instead of a browser,{" "}
               <code className={codeClass}>--url</code> to pair against a
-              different address,{" "}
-              <code className={codeClass}>--label</code> to name the pairing, or{" "}
-              <code className={codeClass}>--json</code> for scripting.
+              different address, <code className={codeClass}>--label</code> to
+              name the pairing, or <code className={codeClass}>--json</code> for
+              scripting.
             </p>
             <p className={paraClass}>
-              <strong>Pair another computer.</strong>{" "}
-              A second machine with the{" "}
-              <code className={codeClass}>cadet</code> CLI joins with that
-              link rather than a browser, and{" "}
+              <strong>Pair another computer.</strong> A second machine with the{" "}
+              <code className={codeClass}>cadet</code> CLI joins with that link
+              rather than a browser, and{" "}
               <code className={codeClass}>cadet pair</code> prints the exact
               command to run under it. The link already carries an approved
               code, so the import finishes right away and registers the
@@ -426,7 +385,7 @@ ngrok --version`}</code>
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`cadet connect import "https://your-assistant.ngrok.app/assistant/pair#device_code=..."`}</code>
+                <code>{`cadet connect import "https://your-assistant.ngrok.app/assistant/pair#device_code=..."`}</code>
               </pre>
             </div>
             <p className={paraClass}>
@@ -435,11 +394,14 @@ ngrok --version`}</code>
               approve it on the host, from{" "}
               <span className={uiClass}>Pairing requests</span> in the card or
               with{" "}
-              <code className={codeClass}>cadet pair --web-approve &lt;code&gt;</code>:
+              <code className={codeClass}>
+                cadet pair --web-approve &lt;code&gt;
+              </code>
+              :
             </p>
             <div className={blockClass}>
               <pre className={preClass}>
-<code>{`cadet connect import https://your-assistant.ngrok.app`}</code>
+                <code>{`cadet connect import https://your-assistant.ngrok.app`}</code>
               </pre>
             </div>
             <p className={lastParaClass}>
@@ -451,7 +413,6 @@ ngrok --version`}</code>
               no deny command.
             </p>
           </div>
-
         </section>
 
         <section id="revoke-a-device" className="mt-12">
@@ -463,7 +424,7 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`cadet devices`}</code>
+              <code>{`cadet devices`}</code>
             </pre>
           </div>
           <p className={paraClass}>
@@ -472,15 +433,14 @@ ngrok --version`}</code>
           </p>
           <div className={blockClass}>
             <pre className={preClass}>
-<code>{`cadet devices revoke 3f9a1c...`}</code>
+              <code>{`cadet devices revoke 3f9a1c...`}</code>
             </pre>
           </div>
           <p className={paraClass}>
             Confirm the prompt (<code className={codeClass}>--yes</code> skips
             it) and that device loses access immediately; it has to be paired
             again to return. The row marked{" "}
-            <span className={uiClass}>This machine</span>{" "}
-            is the host&apos;s own
+            <span className={uiClass}>This machine</span> is the host&apos;s own
             credential and can&apos;t be revoked.
           </p>
           <p className={paraClass}>
@@ -488,9 +448,9 @@ ngrok --version`}</code>
           </p>
           <ul className={bulletClass}>
             <li>
-              <code className={codeClass}>cadet unpair &lt;name&gt;</code>{" "}
-              runs on the paired machine and only forgets the connection there.
-              The host still trusts it.
+              <code className={codeClass}>cadet unpair &lt;name&gt;</code> runs
+              on the paired machine and only forgets the connection there. The
+              host still trusts it.
             </li>
             <li>
               Stopping the tunnel cuts everything off at once, but revokes
@@ -500,8 +460,8 @@ ngrok --version`}</code>
           <p className={lastParaClass}>
             A <span className={uiClass}>Paired devices</span> list with the same
             revoke button is rolling out in the{" "}
-            <span className={uiClass}>Pair a device</span> card. Until it reaches
-            your build, use the CLI.
+            <span className={uiClass}>Pair a device</span> card. Until it
+            reaches your build, use the CLI.
           </p>
         </section>
 

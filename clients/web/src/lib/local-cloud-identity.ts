@@ -2,12 +2,8 @@ import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import type { CloudStatusGetResponses } from "@/generated/daemon/types.gen";
 import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
-import {
-  getActiveAssistant,
-  isLocalAssistant,
-  isLocalClient,
-  primeLocalGatewayConnection,
-} from "@/lib/local-mode";
+import { isLocalAssistant, isLocalClient } from "@/lib/local-mode";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
@@ -47,7 +43,6 @@ type ReprovisionApiKeyResponse = {
 };
 
 type ResolveLocalAssistantCloudIdentityOptions = {
-  allowGatewayRepair?: boolean;
   /**
    * Whether a stored credential the cloud has rejected may be rotated.
    *
@@ -95,7 +90,6 @@ export async function resolveLocalAssistantCloudIdentity(
   }
 
   const promise = ensureLocalAssistantCloudIdentity(assistant, {
-    allowGatewayRepair: options.allowGatewayRepair ?? true,
     rotateRejectedCredential: options.rotateRejectedCredential ?? false,
   });
   cloudAssistantIdCache.set(assistant.assistantId, promise);
@@ -108,31 +102,29 @@ export async function resolveLocalAssistantCloudIdentity(
 }
 
 /**
- * The lockfile entry for `assistantId` when it is the active or selected
- * assistant and `eligible` accepts it, else null. The routine resolution
- * passes `isLocalAssistant`, the assistants the web lifecycle owns; a
- * credential-rotating one passes every loopback-gateway assistant.
+ * The resolved assistant's entry when it IS `assistantId` and `eligible`
+ * accepts it, else null. The routine resolution passes `isLocalAssistant`,
+ * the assistants the web lifecycle owns; a credential-rotating one passes
+ * every loopback-gateway assistant. The store holds the one assistant this
+ * surface serves — a mismatching id means the request targets something the
+ * surface never resolved.
  */
 function resolveLocalAssistant(
   assistantId: string,
   eligible: (assistant: LockfileAssistant) => boolean,
 ): LockfileAssistant | null {
-  const active = getActiveAssistant();
-  if (active?.assistantId === assistantId && eligible(active)) {
-    return active;
-  }
-  const selected = getActiveAssistant();
-  if (selected?.assistantId === assistantId && eligible(selected)) {
-    return selected;
+  const entry = getResolvedAssistant();
+  if (entry.assistantId === assistantId && eligible(entry)) {
+    return entry;
   }
   return null;
 }
 
 async function ensureLocalAssistantCloudIdentity(
   assistant: LockfileAssistant,
-  options: { allowGatewayRepair: boolean; rotateRejectedCredential: boolean },
+  options: { rotateRejectedCredential: boolean },
 ): Promise<string> {
-  const gateway = await ensureGatewayAccess(assistant, options);
+  const gateway = await ensureGatewayAccess();
   const status = await fetchCloudStatus(gateway, assistant.assistantId);
   // No answer is not "no key". A daemon that is still starting cannot store a
   // credential either, and a reprovision it never receives starts the grace
@@ -272,31 +264,23 @@ async function ensureLocalAssistantCloudIdentity(
   return cloudAssistantId;
 }
 
-async function ensureGatewayAccess(
-  assistant: LockfileAssistant,
-  options: { allowGatewayRepair: boolean },
-): Promise<{ gatewayUrl: string; actorToken: string }> {
-  let gatewayUrl = getSelfHostedIngressUrl();
-  let actorToken = getSelfHostedActorToken();
-
-  if (options.allowGatewayRepair && (!gatewayUrl || !actorToken)) {
-    await primeLocalGatewayConnection(assistant);
-    gatewayUrl = getSelfHostedIngressUrl();
-    actorToken = getSelfHostedActorToken();
-  }
-
-  if (!gatewayUrl || !actorToken) {
-    // The scoped data plane is plain same-origin /v1 — the host routes it by
-    // the id in the path, so the bare origin reaches any local assistant.
-    gatewayUrl = window.location.origin;
-  }
-
-  if (!gatewayUrl || !actorToken) {
+/**
+ * The scoped data plane is plain same-origin /v1 — the host routes it by
+ * the id in the path, so the bare page origin reaches any local assistant;
+ * the paired session machinery seeds the actor-token slot when a session
+ * resolves. Without it, platform identity setup cannot run.
+ */
+async function ensureGatewayAccess(): Promise<{
+  gatewayUrl: string;
+  actorToken: string;
+}> {
+  const gatewayUrl = getSelfHostedIngressUrl() ?? window.location.origin;
+  const actorToken = getSelfHostedActorToken();
+  if (!actorToken) {
     throw new Error(
       "Unable to reach the local assistant for platform identity setup.",
     );
   }
-
   return { gatewayUrl, actorToken };
 }
 

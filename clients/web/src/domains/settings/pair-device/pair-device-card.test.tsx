@@ -10,7 +10,6 @@ import {
 } from "@testing-library/react";
 
 import { publish, __resetForTesting as resetEventBus } from "@/lib/event-bus";
-import { LocalListDevicesResult } from "@mycadet/ipc-contract";
 
 import {
   createQueryClientWrapper,
@@ -34,12 +33,13 @@ let selectedAssistant: {
   name?: string;
 } = { assistantId: "self", cloud: "local" };
 
-// Spread the real module so transitive consumers (e.g. the pending-request
-// chain) keep every export; only the reads the tests drive are overridden.
-const actualLocalMode = await import("@/lib/local-mode");
-mock.module("@/lib/local-mode", () => ({
-  ...actualLocalMode,
-  getActiveAssistant: () => selectedAssistant,
+// Spread the real module so transitive consumers keep every export; only the
+// resolved-assistant read the tests drive is overridden. The pairing client
+// reads the store (the one assistant this surface serves), not the lib.
+const actualStore = await import("@/stores/resolved-assistant-store");
+mock.module("@/stores/resolved-assistant-store", () => ({
+  ...actualStore,
+  getResolvedAssistant: () => selectedAssistant,
 }));
 
 mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({
@@ -57,23 +57,6 @@ const {
   stall: probeStalls,
   reset: resetProbe,
 } = await installIngressProbe({ state: "unconfigured" });
-
-let listDevicesResult: LocalListDevicesResult = {
-  ok: false,
-  error: "unavailable",
-};
-let listDevicesCalls = 0;
-
-mock.module(
-  "@/runtime/local-mode-host",
-  (): Partial<typeof import("@/runtime/local-mode-host")> => ({
-    listPairedDevicesHost: async () => {
-      listDevicesCalls += 1;
-      return listDevicesResult;
-    },
-    revokePairedDeviceHost: async () => ({ ok: true }),
-  }),
-);
 
 const { PairDeviceCard } = await import("./pair-device-card");
 const { MIN_VERSION: INGRESS_STATUS_MIN_VERSION } =
@@ -233,8 +216,6 @@ function recheckButton(): HTMLElement | null {
 beforeEach(() => {
   supportsPairingRoutes = true;
   selectedAssistant = { assistantId: "self", cloud: "local" };
-  listDevicesResult = { ok: false, error: "unavailable" };
-  listDevicesCalls = 0;
   resetFetchLog();
   localStorage.clear();
   resetProbe();
@@ -386,26 +367,6 @@ describe("PairDeviceCard", () => {
     ).toBeTruthy();
   });
 
-  test("shows the paired-devices section when the host reports a device", async () => {
-    listDevicesResult = {
-      ok: true,
-      devices: [
-        {
-          hashedDeviceId: "aaaabbbbccccdddd0000111122223333",
-          platform: "ios",
-          issuedAt: null,
-          expiresAt: null,
-          lastUsedAt: null,
-        },
-      ],
-    };
-    renderCard();
-
-    expect(
-      await screen.findByRole("button", { name: "Paired devices (1)" }),
-    ).toBeTruthy();
-  });
-
   test("falls back to generic copy when the assistant has no name", () => {
     renderCard();
 
@@ -519,19 +480,6 @@ describe("PairDeviceCard: pending pairing requests", () => {
     });
     await waitFor(() => expect(screen.queryByText("QRST-7890")).toBeNull());
     expect(actionCalls("deny")).toHaveLength(0);
-  });
-
-  test("approving a pending request refetches the paired-device list", async () => {
-    installPendingFetch();
-    renderCard();
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-    const callsBeforeApprove = listDevicesCalls;
-
-    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
-
-    await waitFor(() =>
-      expect(listDevicesCalls).toBeGreaterThan(callsBeforeApprove),
-    );
   });
 
   test("Deny posts the request id and removes the row", async () => {

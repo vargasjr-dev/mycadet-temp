@@ -17,7 +17,7 @@ const cases: [string, boolean][] = [
   ["/import?source=campaign", true],
   ["https://www.mycadet.ai/account", true],
   ["/account/profile/subpage", true],
-  ["/assistant/onboarding/research?hosting=cadet-cloud", false],
+  ["/assistant/onboarding/research?hosting=cloud", false],
 ];
 for (const [destination, expected] of cases) {
   test(`session requirement for ${destination}`, () => {

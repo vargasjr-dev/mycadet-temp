@@ -653,9 +653,7 @@ export function buildNgrokSpawnArgs(
  * Plain `ngrok http` is spawned deliberately: ngrok only loads the user's
  * default config — where `ngrok config add-authtoken` writes — when no
  * `--config` is passed, so this is what keeps the authtoken in play. The
- * explicit `127.0.0.1:` host avoids a bare port, which ngrok expands to
- * `localhost`, whose ::1 answer resolves first on macOS and races the edge's
- * IPv4 bind.
+ * explicit `127.0.0.1:` host names the edge's only bind address.
  *
  * When `logFilePath` is provided, stdout/stderr are redirected to that file
  * instead of being piped. This avoids keeping pipe handles open in the
@@ -859,7 +857,7 @@ export async function runNgrokTunnel(
     );
   }
 
-  console.log(`Starting ngrok tunnel to localhost:${port}...`);
+  console.log(`Starting ngrok tunnel to 127.0.0.1:${port}...`);
 
   let publicUrl: string | undefined;
   // Points at the live agent across auth retries; cleanup acts on whichever
@@ -1047,7 +1045,7 @@ export async function runNgrokTunnel(
 
     console.log("");
     console.log(`Tunnel established: ${publicUrl}`);
-    console.log(`Forwarding to:     localhost:${port}`);
+    console.log(`Forwarding to:     127.0.0.1:${port}`);
 
     // The domain is standing intent, not tunnel state: cleanup clears the
     // tunnel record but leaves the domain saved for wake/daemon restores.

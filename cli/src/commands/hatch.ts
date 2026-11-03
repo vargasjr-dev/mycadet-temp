@@ -4,10 +4,13 @@ import cliPkg from "../../package.json";
 
 import {
   cliCommand,
+  dockerResourceNames,
   hatchCloud,
+  hatchDocker,
   readCloudToken,
   validateAssistantName,
 } from "@mycadet/local-mode";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { checkProviderApiKey } from "../lib/api-key-check.js";
 import {
   describeLoginError,
@@ -22,7 +25,8 @@ import {
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
-import { hatchDocker } from "../lib/remotes/docker.js";
+import { logHatchNextSteps } from "../lib/hatch-next-steps.js";
+import { printInstanceDetails } from "../lib/instance-details.js";
 import { hatchBaseten } from "../lib/remotes/baseten/index";
 import { hatchLocal } from "../lib/remotes/local.js";
 import { buildHatchConfigValues } from "@mycadet/local-mode";
@@ -311,15 +315,38 @@ export const hatch = Object.assign(
     const providerConfigValues = buildHatchConfigValues(configValues, provider);
 
     if (remote === "docker") {
-      await hatchDocker({
+      // The package's provision core owns the docker mechanics — the
+      // provider ceremony above is the generic layer it expects, and the
+      // instance summary + next steps below are the CLI's narration.
+      const result = await hatchDocker({
         name,
         watch,
-        configValues: providerConfigValues,
+        configValues,
         sourcePath,
         netnsContainer: netnsContainer ?? undefined,
         gatewayPort: gatewayPort ?? undefined,
         assistantCaCertPath: assistantCaCert ?? undefined,
+        version: cliVersion,
+        provider,
+        precollectedApiKey,
       });
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      const entry = result.entry;
+      console.log("Instance details:");
+      printInstanceDetails(
+        {
+          name: entry.assistantId,
+          runtime: getGatewayUrl(entry),
+          container: dockerResourceNames(entry.assistantId).assistantContainer,
+        },
+        console.log,
+      );
+      console.log("");
+      if (result.ready) {
+        logHatchNextSteps(console.log);
+      }
       return;
     }
 
@@ -333,7 +360,36 @@ export const hatch = Object.assign(
     }
 
     if (isCloudHome(remote)) {
-      await hatchCadetPlatform();
+      console.log("");
+      for (const line of HATCH_ART) {
+        console.log(`   ${line}`);
+      }
+      console.log("");
+      console.log("   Hatching assistant...");
+      console.log("");
+
+      const result = await hatchCloud();
+      if (!result.ok) {
+        if (result.status === 401) {
+          console.error(result.error);
+          process.exit(1);
+        }
+        throw new Error(result.error);
+      }
+      const { assistant: hatched } = result;
+
+      console.log(
+        "   " +
+          green(
+            `${HATCHED_EMOJI}  Your assistant has hatched!`,
+            process.stdout,
+          ),
+      );
+      console.log("");
+      console.log(`   ID:     ${hatched.id}`);
+      console.log(`   Name:   ${hatched.name}`);
+      console.log(`   Status: ${hatched.status}`);
+      console.log("");
       return;
     }
 
@@ -342,35 +398,3 @@ export const hatch = Object.assign(
   },
   { description: "Create a new assistant instance" },
 );
-
-async function hatchCadetPlatform(): Promise<void> {
-  const token = readCloudToken();
-  if (!token) {
-    console.error("Not logged in. Run `cadet login --token <token>` first.");
-    process.exit(1);
-  }
-
-  console.log("");
-  for (const line of HATCH_ART) {
-    console.log(`   ${line}`);
-  }
-  console.log("");
-  console.log("   Hatching assistant on Cadet Cloud...");
-  console.log("");
-
-  const result = await hatchCloud({ token });
-  if (!result.ok) {
-    throw new Error(result.error);
-  }
-  const { assistant: hatched } = result;
-
-  console.log(
-    "   " +
-      green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
-  );
-  console.log("");
-  console.log(`   ID:     ${hatched.id}`);
-  console.log(`   Name:   ${hatched.name}`);
-  console.log(`   Status: ${hatched.status}`);
-  console.log("");
-}

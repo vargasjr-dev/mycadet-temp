@@ -17,35 +17,23 @@ import { join } from "node:path";
 // sibling suites in the same `bun test` run.
 // ---------------------------------------------------------------------------
 
-import * as tunnelLib from "../lib/tunnel.js";
-import * as nginxIngress from "../lib/servers/nginx.js";
-import * as localMode from "@mycadet/local-mode";
+import * as serversLib from "../lib/servers/common.js";
 
-const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
-const ensureAppServerMock = mock(nginxIngress.ensureAppServer);
-const isIngressRunningMock = mock(localMode.isIngressRunning);
-const readIngressStateMock = mock(localMode.readIngressState);
-const stopIngressNginxMock = mock(localMode.stopIngressNginx);
+const ensureAppServerMock = mock(serversLib.ensureAppServer);
+const isAppServerRunningMock = mock(serversLib.isAppServerRunning);
+const readAppServerStateMock = mock(serversLib.readAppServerState);
+const stopAppServerMock = mock(serversLib.stopAppServer);
 
-mock.module("../lib/tunnel.js", () => ({
-  ...tunnelLib,
-  ensureNginxForEdge: ensureNginxForEdgeMock,
-}));
-mock.module("../lib/servers/nginx.js", () => ({
-  ...nginxIngress,
+mock.module("../lib/servers/common.js", () => ({
+  ...serversLib,
   ensureAppServer: ensureAppServerMock,
-}));
-mock.module("@mycadet/local-mode", () => ({
-  ...localMode,
-  isIngressRunning: isIngressRunningMock,
-  readIngressState: readIngressStateMock,
-  stopIngressNginx: stopIngressNginxMock,
+  isAppServerRunning: isAppServerRunningMock,
+  readAppServerState: readAppServerStateMock,
+  stopAppServer: stopAppServerMock,
 }));
 
 afterAll(() => {
-  mock.module("../lib/tunnel.js", () => tunnelLib);
-  mock.module("../lib/servers/nginx.js", () => nginxIngress);
-  mock.module("@mycadet/local-mode", () => localMode);
+  mock.module("../lib/servers/common.js", () => serversLib);
 });
 
 import { app } from "../commands/app.js";
@@ -66,14 +54,12 @@ beforeEach(() => {
   console.log = (...args: unknown[]) => {
     stdout.push(args.map((a) => String(a)).join(" "));
   };
-  ensureNginxForEdgeMock.mockReset();
-  ensureNginxForEdgeMock.mockResolvedValue("nginx/1.26.3");
   ensureAppServerMock.mockReset();
-  isIngressRunningMock.mockReset();
-  isIngressRunningMock.mockReturnValue(false);
-  readIngressStateMock.mockReset();
-  stopIngressNginxMock.mockReset();
-  stopIngressNginxMock.mockResolvedValue(true);
+  isAppServerRunningMock.mockReset();
+  isAppServerRunningMock.mockReturnValue(false);
+  readAppServerStateMock.mockReset();
+  stopAppServerMock.mockReset();
+  stopAppServerMock.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -91,33 +77,32 @@ afterAll(() => {
 });
 
 describe("cadet app", () => {
-  test("start brings the edge up for the resolved local assistant", async () => {
+  test("start brings the app server up for the resolved local assistant", async () => {
     ensureAppServerMock.mockResolvedValue({ port: 7841, started: true });
     process.argv = ["bun", "cadet", "app", "start"];
 
     await app();
 
-    expect(ensureNginxForEdgeMock).toHaveBeenCalled();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(stdout.join("\n")).toContain(
-      "Started the app edge on 127.0.0.1:7841",
+      "Started the app server on 127.0.0.1:7841",
     );
   });
 
-  test("start reports a reused edge and the stop command", async () => {
+  test("start reports a reused server and the stop command", async () => {
     ensureAppServerMock.mockResolvedValue({ port: 7841, started: false });
     process.argv = ["bun", "cadet", "app", "start"];
 
     await app();
 
     const output = stdout.join("\n");
-    expect(output).toContain("Reusing the app edge on 127.0.0.1:7841");
+    expect(output).toContain("Reusing the app server on 127.0.0.1:7841");
     expect(output).toContain("cadet app stop");
   });
 
-  test("stop takes the running edge down", async () => {
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
+  test("stop takes the running server down", async () => {
+    isAppServerRunningMock.mockReturnValue(true);
+    readAppServerStateMock.mockReturnValue({
       listenPort: 7841,
       gatewayUrl: "http://127.0.0.1:7830",
     });
@@ -125,19 +110,19 @@ describe("cadet app", () => {
 
     await app();
 
-    expect(stopIngressNginxMock).toHaveBeenCalled();
+    expect(stopAppServerMock).toHaveBeenCalled();
     expect(stdout.join("\n")).toContain(
-      "Stopped the app edge on 127.0.0.1:7841",
+      "Stopped the app server on 127.0.0.1:7841",
     );
   });
 
   test("stop with nothing running says so", async () => {
-    isIngressRunningMock.mockReturnValue(false);
+    isAppServerRunningMock.mockReturnValue(false);
     process.argv = ["bun", "cadet", "app", "stop"];
 
     await app();
 
-    expect(stopIngressNginxMock).not.toHaveBeenCalled();
-    expect(stdout.join("\n")).toContain("No app edge is running.");
+    expect(stopAppServerMock).not.toHaveBeenCalled();
+    expect(stdout.join("\n")).toContain("No app server is running.");
   });
 });

@@ -44,10 +44,6 @@ export interface HatchAssistantParams {
   /** The caller's provider choice; undefined = skip provider credential setup. */
   provider?: string | null;
   precollectedApiKey?: string;
-  /** cloud arm: the platform token. */
-  cloudToken?: string;
-  /** cloud arm: override the platform base URL. */
-  cloudUrl?: string;
   /** The narration sink (defaults to console.log). */
   log?: (msg: string) => void;
 }
@@ -102,17 +98,7 @@ export async function hatchAssistant(
       return { ok: true, assistant: result.entry, ready: result.ready };
     }
     case "cloud": {
-      if (!params.cloudToken) {
-        return {
-          ok: false,
-          status: 401,
-          error: "Not logged in. Run `cadet login --token <token>` first.",
-        };
-      }
-      const result = await hatchCloud({
-        token: params.cloudToken,
-        cloudUrl: params.cloudUrl,
-      });
+      const result = await hatchCloud();
       if (!result.ok) return result;
       return { ok: true, assistant: result.entry, ready: true };
     }

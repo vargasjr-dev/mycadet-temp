@@ -22,16 +22,19 @@ import {
   dockerResourceNames,
   getDaemonPidPath,
   getLocalInstanceDir,
+  isDockerEntry,
+  isNoSuchContainerError,
   isProcessAlive,
   probePort,
   type DockerAssistant,
   type LocalAssistant,
 } from "@mycadet/local-mode";
+import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
 import { sleepAssistant } from "@mycadet/local-mode";
-import { wakeAssistant } from "../commands/wake.js";
+import { wakeAssistant } from "@mycadet/local-mode";
 
 export const STATE_ROOTS = [
   "workspace",
@@ -41,11 +44,7 @@ export const STATE_ROOTS = [
 ] as const;
 type StateRoot = (typeof STATE_ROOTS)[number];
 const ROOT_SET = new Set<string>(STATE_ROOTS);
-const TRANSIENT_PATHS = new Set([
-  "workspace/cadet.pid",
-  "workspace/signals",
-  "workspace/data/ingress/nginx.pid",
-]);
+const TRANSIENT_PATHS = new Set(["workspace/cadet.pid", "workspace/signals"]);
 
 function persistent(
   path: string,
@@ -473,9 +472,17 @@ export class DockerRootStorage implements RootStorage {
   }
   async running(): Promise<boolean> {
     const containers = [...new Set(Object.values(this.containers))];
-    const states = await Promise.all(
-      containers.map((container) => this.inspect(container)),
-    );
+    const states: ContainerInspection[] = [];
+    for (const container of containers) {
+      try {
+        states.push(await this.inspect(container));
+      } catch (error) {
+        // A never-created group (the teleport initializes the volumes
+        // before the first wake) is honestly not running.
+        if (isNoSuchContainerError(error)) return false;
+        throw error;
+      }
+    }
     for (const state of states) {
       if (!["created", "running", "exited"].includes(state.State.Status)) {
         throw new Error(
@@ -523,18 +530,85 @@ export class DockerRootStorage implements RootStorage {
         throw new Error(`Invalid destination user for ${root}.`);
       return {
         root,
-        state,
+        image: state.Image,
         owner,
         mount: `type=${mount.Type},src=${source},dst=/restore`,
       };
     });
   }
+  /**
+   * Spec-canonical mounts for a group whose containers were never created —
+   * the teleport initializes the volumes before the first wake, and the
+   * wake's recreate builds the containers from the same stateful-set spec
+   * the entry's recorded images ride.
+   */
+  private freshMounts(_source: string) {
+    if (!isDockerEntry(this.entry)) {
+      throw new Error(
+        `'${this.entry.assistantId}' is not a docker assistant — the docker volumes cannot be initialized`,
+      );
+    }
+    const info = this.entry.containerInfo;
+    if (!info?.assistantImage || !info.gatewayImage || !info.cesImage) {
+      throw new Error(
+        `no container images recorded for '${this.entry.assistantId}' — the docker volumes cannot be initialized`,
+      );
+    }
+    const images: Record<StateRoot, string> = {
+      workspace: info.assistantImage,
+      "gateway-security": info.gatewayImage,
+      "ces-security": info.cesImage,
+      "ces-data": info.cesImage,
+    };
+    return STATE_ROOTS.map((root) => {
+      const spec = DOCKER_STATEFUL_SET_SPEC.containers.find((container) =>
+        container.volumeMounts.some(
+          (item) => item.mountPath === `/${root}` && !item.readOnly,
+        ),
+      );
+      if (!spec) throw new Error(`No writable persistent mount for ${root}.`);
+      const claimName = spec.volumeMounts.find(
+        (item) => item.mountPath === `/${root}` && !item.readOnly,
+      )!.volumeName;
+      const volume = DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates.find(
+        (claim) => claim.name === claimName,
+      )!;
+      const user = spec.user ?? "1001:1001";
+      const owner =
+        root === "workspace"
+          ? "1001:1001"
+          : user.includes(":")
+            ? user
+            : `${user}:${user}`;
+      if (!/^[\w.-]+(?::[\w.-]+)?$/.test(owner))
+        throw new Error(`Invalid destination user for ${root}.`);
+      return {
+        root,
+        image: images[root],
+        owner,
+        mount: `type=volume,src=${volume.dockerVolume(this.entry.assistantId)},dst=/restore`,
+      };
+    });
+  }
+  /** Inspection-derived mounts when the containers exist, spec-derived when they don't. */
+  private async resolveMounts(source: string) {
+    for (const container of new Set(Object.values(this.containers))) {
+      try {
+        await this.inspect(container);
+      } catch (error) {
+        if (isNoSuchContainerError(error)) return this.freshMounts(source);
+        throw error;
+      }
+    }
+    return this.restoreMounts(source);
+  }
   async prepareRestore(source: string): Promise<void> {
-    await this.restoreMounts(source);
+    await this.resolveMounts(source);
   }
   async replace(source: string): Promise<void> {
-    const mounts = await this.restoreMounts(source);
-    for (const { root, state, mount, owner } of mounts) {
+    for (const { root, image, mount, owner } of await this.resolveMounts(
+      source,
+    )) {
       await this.ops.install(
         [
           "run",
@@ -545,7 +619,7 @@ export class DockerRootStorage implements RootStorage {
           "--mount",
           mount,
           "--entrypoint=/bin/sh",
-          state.Image,
+          image,
           "-ec",
           'find /restore -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; tar -xpf - -C /restore; chown -R "$1" /restore; chmod 700 /restore',
           "cadet-restore",

@@ -11,10 +11,7 @@ import {
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
-import {
-  AssistantUpgrades,
-  LocalAssistantUpgrades,
-} from "@/domains/settings/components/assistant-upgrades";
+import { AssistantUpgrades } from "@/domains/settings/components/assistant-upgrades";
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
@@ -29,9 +26,6 @@ import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import {
   getRemoteAssistantDisplayName,
   getRemoteGatewayHubUrl,
-  getActiveAssistant,
-  isLocalAssistant,
-  isLocalClient,
   isCadetCloudRemote,
 } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
@@ -69,17 +63,12 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  const selected = getActiveAssistant();
-  const hasSelectedLocalAssistant =
-    isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
-  const canUpgradeLocally = hasSelectedLocalAssistant && !!isCadetCloudRemote();
-  // Whether an upgrade panel (platform or local) is on screen. Both panels
-  // render the "Current" version line that carries the 7-tap developer-mode
-  // unlock, so when neither shows we must render a standalone version line to
-  // avoid dropping both the version display and the only unlock affordance
-  // (e.g. logged out of the cloud, or a self-hosted/remote-gateway runtime
-  // that can't upgrade locally).
-  const showsUpgradePanel = (isCloudHosted || canUpgradeLocally) && !!assistant;
+  // Whether the platform upgrade panel is on screen. It renders the
+  // "Current" version line that carries the 7-tap developer-mode unlock, so
+  // when it does not show we must render a standalone version line to avoid
+  // dropping both the version display and the only unlock affordance (e.g.
+  // logged out of the cloud, or a self-hosted/remote-gateway runtime).
+  const showsUpgradePanel = isCloudHosted && !!assistant;
 
   useEffect(() => {
     if (!assistant || window.location.hash !== "#storage-resources") {
@@ -169,15 +158,6 @@ export function GeneralPage() {
                 }}
               />
             </>
-          )}
-          {canUpgradeLocally && assistant && (
-            <LocalAssistantUpgrades
-              assistantId={assistant.id}
-              currentVersion={versionValue}
-              onUpgradeComplete={() => {
-                void refetch();
-              }}
-            />
           )}
           {!showsUpgradePanel && assistant && (
             <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">

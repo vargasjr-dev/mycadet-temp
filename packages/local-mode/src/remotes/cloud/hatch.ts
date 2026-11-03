@@ -1,12 +1,16 @@
 /**
  * The hatch operation's cloud provision core: create the platform-hosted
- * assistant through the cloud API and persist its entry. The narration
- * (the hatch banner, the assistant's ID/name/status) and the cloud token's
- * interactive login are the CLI's ceremony around this door.
+ * assistant through the cloud API and persist its entry. The platform token
+ * is derived here from the stored login; the narration (the hatch banner,
+ * the assistant's ID/name/status) is the CLI's ceremony around this door.
  */
 
 import { z } from "zod";
-import { cloudAuthHeaders, resolveCloudUrl } from "../../cloud-auth";
+import {
+  cloudAuthHeaders,
+  readCloudToken,
+  resolveCloudUrl,
+} from "../../cloud-auth";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LockfileAssistant } from "../../lockfile-contract";
@@ -31,17 +35,25 @@ export type HatchCloudResult =
   | { ok: true; entry: LockfileAssistant; assistant: HatchedCloudAssistant }
   | { ok: false; status: number; error: string };
 
-export async function hatchCloud(params: {
-  token: string;
-  cloudUrl?: string;
-}): Promise<HatchCloudResult> {
-  const resolvedUrl = params.cloudUrl || resolveCloudUrl();
-  const url = `${resolvedUrl}/v1/assistants/hatch/`;
+export async function hatchCloud(): Promise<HatchCloudResult> {
+  // The token is the caller's stored platform login — readCloudToken is the
+  // same credential every cloud command rides, so the hatch derives it here
+  // instead of making callers thread it through.
+  const token = readCloudToken();
+  if (!token) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Not logged in. Run `cadet login --token <token>` first.",
+    };
+  }
+  const cloudUrl = resolveCloudUrl();
+  const url = `${cloudUrl}/v1/assistants/hatch/`;
 
   try {
     const response = await loopbackSafeFetch(url, {
       method: "POST",
-      headers: await cloudAuthHeaders(params.token, params.cloudUrl),
+      headers: await cloudAuthHeaders(token, cloudUrl),
       body: JSON.stringify({}),
       signal: AbortSignal.timeout(300_000),
     });

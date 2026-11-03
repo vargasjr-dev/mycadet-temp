@@ -21,8 +21,10 @@ import { useEffect } from "react";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 
 import { getAssistant, type GetAssistantResult } from "@/assistant/api";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
-import { getLockfileAssistant } from "@/lib/local-mode";
+import {
+  useResolvedAssistantStore,
+  getResolvedAssistant,
+} from "@/stores/resolved-assistant-store";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
@@ -38,10 +40,11 @@ function projectAssistantResult(result: GetAssistantResult): void {
   }
   const a = result.data;
   // The API answer refreshes the identity the entry already carries
-  // (onboardedAt, registration, topology); an entry the lockfile has never
-  // heard of exists only in the cloud-served world, so it normalizes to a
+  // (onboardedAt, registration, topology); an entry the surface has never
+  // resolved exists only in the cloud-served world, so it normalizes to a
   // cloud entry.
-  const entry = getLockfileAssistant(a.id);
+  const resolved = getResolvedAssistant();
+  const entry = resolved.assistantId === a.id ? resolved : undefined;
   const merged: LockfileAssistant = entry
     ? { ...entry, name: a.name, hatchedAt: a.created }
     : {

@@ -21,7 +21,7 @@ import {
 } from "../lifecycle-reporter.js";
 import { configureHatchProviderApiKey } from "@mycadet/local-mode";
 import { logHatchNextSteps } from "../hatch-next-steps.js";
-import { printInstanceDetails } from "@mycadet/local-mode";
+import { printInstanceDetails } from "../instance-details.js";
 import {
   fetchCurrentUser,
   registerLocalAssistantWithCloud,

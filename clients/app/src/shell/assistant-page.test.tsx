@@ -48,10 +48,10 @@ test("the boot bundle resolves assistants against the stamped control plane", as
   // resolver's call rather than assuming it is the first one.
   const resolverCall = fetchSpy.mock.calls
     .map((call) => String(call[0]))
-    .find((url) => url.includes("/v1/assistants"));
+    .find((url) => url.includes("/v1/assistant"));
   const requested = new URL(resolverCall!);
   expect(requested.origin).toBe("http://localhost:8000");
-  expect(requested.pathname).toBe("/v1/assistants/");
+  expect(requested.pathname).toBe("/v1/assistant");
 });
 
 test("a served surface with no stamped base keeps resolving same-origin", async () => {
@@ -62,7 +62,7 @@ test("a served surface with no stamped base keeps resolving same-origin", async 
   // call rather than assuming it is the first one.
   const resolverCall = fetchSpy.mock.calls
     .map((call) => String(call[0]))
-    .find((url) => url.includes("/v1/assistants"));
+    .find((url) => url.includes("/v1/assistant"));
   const requested = new URL(resolverCall!);
   expect(requested.origin).toBe(window.location.origin);
 });

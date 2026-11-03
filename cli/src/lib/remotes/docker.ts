@@ -1,18 +1,21 @@
 /**
  * The docker topology's specifics: the upgrade (pull the recorded images'
  * new tags, swap the containers, migrate, roll back on failure), the wake
- * and recreate paths, the image capture, and the hatch's CLI ceremony shell
- * around the package's provision core.
+ * and recreate paths, the image capture, and the teleport's
+ * initialize-data half around the package's provision core.
  */
 import cliPkg from "../../../package.json";
 import { platform } from "os";
 
 import {
   dockerResourceNames,
-  hatchAssistant as hatchAssistantOp,
+  ensureDockerInstalled,
+  getDefaultPorts,
+  findOpenPort,
   loopbackSafeFetch,
   pullImage,
   resolveImageRefs,
+  resolveOwnImageRefs,
   saveLockfileAssistant,
   sleepDocker,
   startContainers,
@@ -24,7 +27,6 @@ import {
   type LockfileAssistant,
   getGatewayUrl,
 } from "@mycadet/local-mode/contract";
-import { restoreContainerAppServer } from "../tunnel.js";
 import {
   ASSISTANT_INTERNAL_PORT,
   GATEWAY_INTERNAL_PORT,
@@ -49,23 +51,10 @@ import { compareVersions, versionsEqual } from "../version-compat.js";
 import { ensureDockerDaemonRunning } from "@mycadet/local-mode";
 import { getOrCreateHostDeviceId } from "@mycadet/local-mode";
 import { exec, execOutput } from "../step-runner";
-import {
-  closeLogFile,
-  openLogFile,
-  resetLogFile,
-  writeToLogFile,
-} from "@mycadet/local-mode";
-import { logHatchNextSteps } from "../hatch-next-steps.js";
-import {
-  collectProviderApiKey,
-  promptProviderChoice,
-  resolveHatchProvider,
-  shouldPromptForHatchProvider,
-} from "../provider-secrets.js";
-import { checkProviderApiKey } from "../api-key-check.js";
 
 // ─── Folded from the former lib/docker.ts: the docker topology's full surface ───
-// (hatch ceremony shell, containers lifecycle, images, watcher, retire)
+// (containers lifecycle, images, watcher, retire — the hatch ceremony moved
+// into the package's provision core)
 
 export async function upgradeDocker(
   entry: DockerAssistant,
@@ -288,8 +277,6 @@ export async function upgradeDocker(
       },
     };
     saveLockfileAssistant(updatedEntry);
-    // Refresh the host-served web bundle before clients reload on completion.
-    await restoreContainerAppServer(updatedEntry);
 
     // Notify clients on the new service group that the upgrade succeeded.
     await broadcastUpgradeEvent(
@@ -686,130 +673,117 @@ export async function captureImageRefs(
 }
 
 /**
- * Build the set of paths the hot-reload watcher should observe, scoped to
- * each service's `src/` tree, `package.json` manifest, and `Dockerfile`.
- *
- * We deliberately avoid recursively watching whole service directories.
- * Those contain `.claude/` command symlinks — which dangle in a fresh
- * checkout because they point at the separately-cloned `claude-skills`
- * repo — as well as `node_modules`. `fs.watch(dir, { recursive: true })`
- * traverses those entries and emits an unhandled `error` event on a broken
- * symlink, which crashes the CLI process. Source code only ever lives under
- * `src/`, so watching that tree plus the two manifests that drive the image
- * build (`package.json` and `Dockerfile`) preserves hot-reload without
- * walking into symlinked or generated trees. The `Dockerfile` is watched as
- * an individual file for the same reason — editing build steps should
- * trigger a rebuild, but the file sits next to the symlinked trees we avoid.
- *
- * Returning a plain record keeps this trivially unit-testable — see
- * `__tests__/docker.test.ts`.
+ * Initialize a fresh teleport target's docker placement WITHOUT creating
+ * containers: acquire the version's images, create the network + volumes
+ * (idempotently, so a retried teleport heals), record the entry, and install
+ * the transferred archive into the volumes. The wake is the caller's — the
+ * wake's recreate builds the containers from the entry's recorded images,
+ * which is exactly the initialize-data + wake paradigm the local arm rides.
+ * A hatch is just initialize-data + wake; the teleport owns both halves
+ * itself and needs neither the hatch ceremony nor a container start.
  */
-export interface HatchDockerParams {
-  /** Instance display name. Defaults to an auto-generated name. */
-  name?: string | null;
-  /** Build from a local source tree and hot-reload on change. */
-  watch?: boolean;
-  /** Hatch-time config values (key → value). */
-  configValues?: Record<string, string>;
-  setupProviderCredentials?: boolean;
-  /**
-   * Path to a local source tree to build images from before hatching. When
-   * provided, this path is used directly as the repo root and no file
-   * watcher is started — useful for callers (e.g. evals) that want each
-   * run to pick up local CLI changes without keeping a long-lived watcher
-   * process around. `--watch` independently auto-detects the repo root and
-   * also enables hot-reload.
-   */
-  sourcePath?: string | null;
-  /**
-   * Name of an existing container whose network namespace the assistant,
-   * gateway, and credential-executor join (`--network=container:<name>`),
-   * instead of the assistant owning a freshly-created per-instance network.
-   * When set, hatch creates no Docker network and publishes no host ports —
-   * the namespace owner is responsible for publishing the gateway port — so
-   * `gatewayPort` must also be supplied (the owner had to publish it before
-   * hatch ran).
-   */
-  netnsContainer?: string;
-  /**
-   * Explicit host port to record as the entry's gatewayPort instead of
-   * auto-allocating a free port. Required alongside `netnsContainer`, where
-   * the namespace owner — not hatch — owns port allocation and publishing.
-   */
-  gatewayPort?: number;
-  /**
-   * Host path to a PEM CA bundle bind-mounted into the assistant container
-   * and trusted at process start via `NODE_EXTRA_CA_CERTS`. Lets the daemon
-   * trust a TLS-terminating egress proxy from its very first outbound
-   * connection.
-   */
-  assistantCaCertPath?: string;
-}
+export async function initializeDockerTeleportTarget(
+  instanceName: string,
+  archive: string,
+): Promise<LockfileAssistant> {
+  await ensureDockerInstalled();
 
-export async function hatchDocker(params: HatchDockerParams): Promise<void> {
-  const { name = null, configValues = {} } = params;
+  // Fresh target, no namespace join: the teleport always publishes both
+  // host ports. Same dynamic allocation strategy as the hatch — the
+  // env-default is the preferred starting point and we walk upward on
+  // collision so concurrent instances don't fight over a bind.
+  const preferredGatewayPort = getDefaultPorts().gateway;
+  const gatewayPort = await findOpenPort(preferredGatewayPort);
+  if (gatewayPort !== preferredGatewayPort) {
+    console.log(
+      `Preferred gateway port ${preferredGatewayPort} is in use; allocated ${gatewayPort} for this instance.`,
+    );
+  }
+  const preferredAssistantPort = getDefaultPorts().daemon;
+  const assistantPort = await findOpenPort(preferredAssistantPort, {
+    exclude: [gatewayPort],
+  });
+  if (assistantPort !== preferredAssistantPort) {
+    console.log(
+      `Preferred assistant port ${preferredAssistantPort} is in use; allocated ${assistantPort} for this instance.`,
+    );
+  }
 
-  resetLogFile("hatch.log");
-  const setupProviderCredentials = params.setupProviderCredentials !== false;
-  let provider = setupProviderCredentials
-    ? resolveHatchProvider(configValues)
-    : undefined;
-  let precollectedApiKey: string | undefined;
+  // The version-pinned images, same resolution a pull-hatch uses. The
+  // archive install runs one-shot containers from these images, so they
+  // must be on the machine before the data lands; the wake's recreate
+  // re-pulls them as cheap no-ops.
+  const imageTags = resolveOwnImageRefs(cliPkg.version);
+  for (const service of [
+    "assistant",
+    "gateway",
+    "credential-executor",
+  ] as const) {
+    console.log(`📦 Pulling ${imageTags[service]}...`);
+    await pullImage(imageTags[service], (message) => console.log(message));
+  }
 
-  if (
-    shouldPromptForHatchProvider({
-      configValues,
-      setupProviderCredentials,
-      hasProviderApiKey: checkProviderApiKey().hasKey,
-      stdinIsTTY: process.stdin.isTTY,
-    })
-  ) {
-    const picked = await promptProviderChoice();
-    if (picked) {
-      provider = picked;
-      // Collect the key immediately, while the choice is fresh — the
-      // startup logs are quiet now, so nothing separates the two prompts.
-      precollectedApiKey = await collectProviderApiKey(picked);
+  const res = dockerResourceNames(instanceName);
+  console.log("📁 Creating network and volumes...");
+  try {
+    await exec("docker", ["network", "inspect", res.network]);
+  } catch {
+    await exec("docker", ["network", "create", res.network]);
+  }
+  for (const volume of [
+    res.socketVolume,
+    res.assistantIpcVolume,
+    res.gatewayIpcVolume,
+    res.workspaceVolume,
+    res.gatewaySecurityVolume,
+    res.cesSecurityVolume,
+  ]) {
+    try {
+      await exec("docker", ["volume", "inspect", volume]);
+    } catch {
+      await exec("docker", ["volume", "create", volume]);
     }
   }
 
-  let logFd = openLogFile("hatch.log");
-  const log = (msg: string): void => {
-    console.log(msg);
-    writeToLogFile(logFd, `${new Date().toISOString()} ${msg}\n`);
+  // Set volume ownership so non-root containers (UID 1001) can write. The
+  // state roots' ownership is set by the archive install itself (each
+  // extract chowns to the destination owner); these are the runtime
+  // volumes the archive never carries.
+  await exec("docker", [
+    "run",
+    "--rm",
+    "-v",
+    `${res.workspaceVolume}:/workspace`,
+    "-v",
+    `${res.assistantIpcVolume}:/run/assistant-ipc`,
+    "-v",
+    `${res.gatewayIpcVolume}:/run/gateway-ipc`,
+    "busybox",
+    "sh",
+    "-c",
+    "chown 1001:1001 /workspace /run/assistant-ipc /run/gateway-ipc",
+  ]);
+
+  const entry: LockfileAssistant = {
+    assistantId: instanceName,
+    port: gatewayPort,
+    daemonPort: assistantPort,
+    cloud: "docker",
+    containerInfo: {
+      assistantImage: imageTags.assistant,
+      gatewayImage: imageTags.gateway,
+      cesImage: imageTags["credential-executor"],
+    },
   };
 
-  try {
-    // The provision core (toolchain, images, resources, containers,
-    // readiness, the guardian lease, provider credential setup, and the
-    // watch-mode rebuild loop) lives in the package now — the CLI's
-    // ceremony around it is the provider prompts above, the hatch log
-    // file, and the next-steps banner below.
-    const result = await hatchAssistantOp({
-      remote: "docker",
-      name,
-      watch: params.watch,
-      configValues,
-      sourcePath: params.sourcePath,
-      netnsContainer: params.netnsContainer,
-      gatewayPort: params.gatewayPort,
-      assistantCaCertPath: params.assistantCaCertPath,
-      version: cliPkg.version,
-      provider,
-      precollectedApiKey,
-      log,
-    });
-    if (!result.ok) {
-      throw new Error(result.error);
-    }
-
-    if (result.ready) {
-      logHatchNextSteps(log);
-    }
-  } finally {
-    closeLogFile(logFd);
-    logFd = "ignore";
-  }
+  // The archive lands in the volumes while nothing is up — no service
+  // container is ever created here. The entry persists only after the
+  // data install, mirroring the local arm's order.
+  const { initializeRootArchive } = await import("../root-backup.js");
+  await initializeRootArchive(entry, archive);
+  entry.hatchedAt = new Date().toISOString();
+  saveLockfileAssistant(entry, instanceName);
+  return entry;
 }
 
 export async function dockerPair(entry: DockerAssistant): Promise<string> {

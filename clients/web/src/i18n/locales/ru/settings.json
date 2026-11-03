@@ -123,7 +123,6 @@
     "toastUpdateInitiated": "Обновление до {version} запущено.",
     "update": "Обновить",
     "updateTo": "Обновить до",
-    "updateToVersion": "Обновить до {version}",
     "updating": "Обновление..."
   },
   "autoTopUpPaymentMethodModal": {
@@ -285,15 +284,6 @@
     "searchPlaceholder": "Поиск учётных данных",
     "subtitleOwn": "Хранятся в зашифрованном виде в хранилище учётных данных ассистента. Значение можно показать по запросу, заменить или удалить в любой момент.",
     "title": "Секреты"
-  },
-  "debugBundleExport": {
-    "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
-    "export": "Экспортировать отладочный пакет",
-    "exporting": "Экспорт…",
-    "sentAt": "Отправлено в Cadet в {time}.",
-    "toastFailed": "Отладочный пакет не был отправлен.",
-    "toastFailedWithReason": "Отладочный пакет не был отправлен: {reason}",
-    "toastSent": "Отладочный пакет отправлен в Cadet."
   },
   "debugControlsPanel": {
     "backups": "Резервные копии",
@@ -672,20 +662,6 @@
     "serviceFallbackName": "провайдер туннеля",
     "serviceWebsite": "Это сайт {service}, а не адрес ассистента. Запустите туннель на хосте, чтобы получить адрес; список провайдеров: `cadet tunnel --help`.",
     "unparseable": "Нужен корректный URL, например https://your-assistant.ts.net."
-  },
-  "pairedDevicesSection": {
-    "browserOnOs": "{browser} на {os}",
-    "confirmMessageNamed": "{name} ({hash}) потеряет доступ к этому ассистенту. Его токены доступа сразу станут недействительными; чтобы подключиться снова, устройство нужно привязать с этой машины.",
-    "confirmTitle": "Отозвать это устройство?",
-    "dateUnknown": "неизвестно",
-    "hostRevokeDisabledTitle": "Это учётные данные этой же машины; если их отозвать, хост потеряет доступ к ассистенту.",
-    "pairedActiveLine": "Привязано {paired} · Активно сейчас",
-    "pairedAndUsedLine": "Привязано {paired} · Последнее использование {lastUsed}",
-    "pairedLine": "Привязано {paired}",
-    "platformUnknown": "Неизвестно",
-    "revokeButton": "Отозвать",
-    "thisMachine": "Эта машина",
-    "title": "Привязанные устройства ({count})"
   },
   "paymentMethodRow": {
     "savedCard": "Сохранённая карта"

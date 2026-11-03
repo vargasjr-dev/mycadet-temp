@@ -31,7 +31,6 @@ import { classifyReadyzResponse } from "../../daemon-readiness";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
 import { saveLockfileAssistant } from "../../lockfile";
-import { printInstanceDetails } from "../../instance-details";
 import { exec, execOutput, execWithStdin } from "../../exec";
 import { buildImage, serviceImageConfigs, startFileWatcher } from "./watch";
 import type {
@@ -92,7 +91,9 @@ export function resolveImageRefs(
 }
 
 /** Convenience wrapper for "the images this CLI itself was built from". */
-function resolveOwnImageRefs(cliVersion: string): Record<ServiceName, string> {
+export function resolveOwnImageRefs(
+  cliVersion: string,
+): Record<ServiceName, string> {
   return resolveImageRefs(cliVersion || "latest", cliVersion);
 }
 
@@ -303,7 +304,7 @@ export function resolveDockerProviderCredentialSetupAction(options: {
  * Installs Colima and Docker via direct binary download if missing (no sudo
  * required), and starts Colima if the Docker daemon is not reachable.
  */
-async function ensureDockerInstalled(): Promise<void> {
+export async function ensureDockerInstalled(): Promise<void> {
   // Always add ~/.local/bin to PATH so previously installed binaries are found.
   ensureLocalBinOnPath();
 
@@ -1127,16 +1128,6 @@ async function waitForGatewayAndLease(opts: {
     }
 
     log("\n✅ Docker assistant hatched!\n");
-    log("Instance details:");
-    printInstanceDetails(
-      {
-        name: instanceName,
-        runtime: gatewayUrl,
-        container: containerName,
-      },
-      log,
-    );
-    log("");
     return { ready: true, guardianAccessToken };
   }
 

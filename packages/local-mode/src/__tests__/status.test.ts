@@ -4,7 +4,7 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { getLocalAssistantStatus, resolveLockfileInstanceDir } from "../status";
+import { resolveLockfileInstanceDir } from "../status";
 
 let tempDir: string;
 let lockfilePath: string;
@@ -85,134 +85,6 @@ beforeEach(() => {
 afterEach(() => {
   Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
   rmSync(tempDir, { recursive: true, force: true });
-});
-
-describe("getLocalAssistantStatus", () => {
-  test("returns a structured error for unsafe assistant IDs", async () => {
-    const result = await getLocalAssistantStatus("../other");
-    expect(result.ok).toBe(false);
-    expect(result.ok ? 200 : result.status).toBe(400);
-  });
-  test("returns sleeping when the assistant PID file is absent", async () => {
-    writeLocalLockfile();
-
-    expect(await getLocalAssistantStatus("local-1")).toEqual({
-      ok: true,
-      state: "sleeping",
-    });
-  });
-
-  test("returns sleeping for local entries without recorded ports", async () => {
-    writeLockfile({
-      assistantId: "legacy-local",
-      runtimeUrl: "http://127.0.0.1:30102",
-    });
-
-    expect(await getLocalAssistantStatus("legacy-local")).toEqual({
-      ok: true,
-      state: "sleeping",
-    });
-  });
-
-  test("returns sleeping when the assistant PID file points at a dead process", async () => {
-    writeLocalLockfile();
-    writeAssistantPid("999999999");
-
-    const result = await getLocalAssistantStatus("local-1");
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.state).toBe("sleeping");
-    }
-  });
-
-  test("returns crashed when the assistant PID file is invalid", async () => {
-    writeLocalLockfile();
-    writeAssistantPid("not-a-pid");
-
-    const result = await getLocalAssistantStatus("local-1");
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.state).toBe("crashed");
-      expect(result.detail).toContain("PID file");
-    }
-  });
-
-  test("returns starting when a fresh assistant PID is alive but health is not ready yet", async () => {
-    writeLocalLockfile({
-      instanceDir,
-      daemonPort: await unusedPort(),
-      port: 30102,
-    });
-    writeAssistantPid(String(process.pid));
-
-    const result = await getLocalAssistantStatus("local-1");
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.state).toBe("starting");
-      expect(result.pid).toBe(process.pid);
-    }
-  });
-
-  test("returns crashed when an old live assistant PID is still not responding", async () => {
-    writeLocalLockfile({
-      instanceDir,
-      daemonPort: await unusedPort(),
-      port: 30102,
-    });
-    const pidPath = writeAssistantPid(String(process.pid));
-    markStale(pidPath);
-
-    const result = await getLocalAssistantStatus("local-1");
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.state).toBe("crashed");
-      expect(result.detail).toContain("not responding");
-    }
-  });
-
-  test("returns starting while the gateway is coming up for a freshly started assistant", async () => {
-    const server = createServer((_req, res) => {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "healthy" }));
-    });
-    const daemonPort = await listen(server);
-    try {
-      writeLocalLockfile({
-        instanceDir,
-        daemonPort,
-        port: await unusedPort(),
-      });
-      writeAssistantPid(String(process.pid));
-
-      const result = await getLocalAssistantStatus("local-1");
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.state).toBe("starting");
-        expect(result.pid).toBe(process.pid);
-      }
-    } finally {
-      await close(server);
-    }
-  });
-
-  test("rejects non-local assistants", async () => {
-    writeLockfile({
-      assistantId: "platform-1",
-      cloud: "cloud",
-      runtimeUrl: "https://example.com",
-    });
-
-    expect(await getLocalAssistantStatus("platform-1")).toEqual({
-      ok: false,
-      status: 404,
-      error: "Local assistant not found",
-    });
-  });
 });
 
 describe("resolveLockfileInstanceDir", () => {

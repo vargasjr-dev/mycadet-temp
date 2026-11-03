@@ -69,7 +69,6 @@
     "./notification-avatar-file": "./src/notification-avatar-file.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",
-    "./operator-forward": "./src/operator-forward.ts",
     "./permissions": "./src/permissions.ts",
     "./popout-window": "./src/popout-window.ts",
     "./power-events": "./src/power-events.ts",

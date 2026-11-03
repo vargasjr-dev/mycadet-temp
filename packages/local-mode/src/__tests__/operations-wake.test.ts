@@ -150,6 +150,38 @@ describe("the wake operation — a remote -> method router", () => {
     expect(result).toEqual({ ok: true });
     expect(wakeLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-local" }),
+      {},
+    );
+  });
+
+  test("the local leg receives the caller's launch opts", async () => {
+    await wakeAssistant(
+      {
+        assistantId: "asst-local",
+        cloud: "local",
+        port: 7830,
+      } as LockfileAssistant,
+      { watch: true },
+    );
+
+    expect(wakeLocalMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-local" }),
+      { watch: true },
+    );
+  });
+
+  test("the docker leg never sees the launch opts — its containers run detached", async () => {
+    await wakeAssistant(
+      {
+        assistantId: "asst-docker",
+        cloud: "docker",
+        port: 7831,
+      } as LockfileAssistant,
+      { watch: true },
+    );
+
+    expect(wakeDockerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
     );
   });
 
@@ -181,25 +213,6 @@ describe("the wake operation — a remote -> method router", () => {
     expect(result).toEqual({ ok: true });
     expect(wakeDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
-    );
-  });
-
-  test("a docker entry's structured 404 carries the recreate pointer through", async () => {
-    wakeDockerMock.mockResolvedValue({
-      ok: false,
-      status: 404,
-      error:
-        "the containers for 'asst-docker' don't exist yet — run `cadet wake` once to recreate them from the recorded images",
-    });
-    const result = await wakeAssistant({
-      assistantId: "asst-docker",
-      cloud: "docker",
-      port: 7831,
-    } as LockfileAssistant);
-    expect(result.ok).toBe(false);
-    expect((result as { status: number }).status).toBe(404);
-    expect((result as { error: string }).error).toContain(
-      "run `cadet wake` once to recreate",
     );
   });
 
@@ -264,10 +277,9 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       "POST",
     );
     expect(match).not.toBeNull();
-    const response = await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    );
+    const response = await match!.route.run({
+      assistantId: match!.assistantId,
+    });
     expect(response).not.toBeNull();
     expect(response!.status).toBe(204);
   });
@@ -276,10 +288,9 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     seedEntry({ assistantId: "asst-local", cloud: "local", port: 7830 });
     const match = matchOperatorRequest("/v1/assistants/nobody/wake/", "POST");
     expect(match).not.toBeNull();
-    const response = await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    );
+    const response = await match!.route.run({
+      assistantId: match!.assistantId,
+    });
     expect(response).toBeNull();
   });
 
@@ -294,10 +305,9 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       "/v1/assistants/asst-local/wake/",
       "POST",
     );
-    const response = (await match!.route.run(
-      match!.assistantId,
-      new Request("http://local/"),
-    ))!;
+    const response = (await match!.route.run({
+      assistantId: match!.assistantId,
+    }))!;
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ detail: "wake blew up" });
   });

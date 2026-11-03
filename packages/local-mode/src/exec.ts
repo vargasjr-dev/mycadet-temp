@@ -67,12 +67,6 @@ export function exec(
 }
 
 /**
- * Run a child to completion and resolve with its stdout. Non-zero exits
- * reject with the same secret-safe message as {@link exec} — the caller
- * inspects the message for the diagnostic substrings it cares about.
- * `timeoutMs` kills the child (SIGTERM) and rejects when the deadline passes.
- */
-/**
  * Run `command` with `args` and pipe `input` to its stdin. Mirrors `exec` —
  * same no-args-in-error-message contract from `buildExecErrorMessage` — but
  * lets callers stream content (e.g. a small JSON blob) into a child process
@@ -115,6 +109,12 @@ export function execWithStdin(
   });
 }
 
+/**
+ * Run a child to completion and resolve with its stdout. Non-zero exits
+ * reject with the same secret-safe message as {@link exec} — the caller
+ * inspects the message for the diagnostic substrings it cares about.
+ * `timeoutMs` kills the child (SIGTERM) and rejects when the deadline passes.
+ */
 export function execOutput(
   command: string,
   args: string[],

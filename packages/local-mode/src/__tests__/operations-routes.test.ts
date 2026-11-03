@@ -17,7 +17,6 @@ import path from "node:path";
 const realHatch = { ...(await import("../hatch")) };
 const realDevices = { ...(await import("../devices")) };
 const realUpgrade = { ...(await import("../upgrade")) };
-const realStatus = { ...(await import("../status")) };
 const realAvatar = { ...(await import("../avatar")) };
 const realUnpair = { ...(await import("../unpair")) };
 const realPair = { ...(await import("../pair")) };
@@ -42,10 +41,6 @@ const runUpgradeMock = mock(
     version: "v9.9.9",
   }),
 );
-const getLocalAssistantStatusMock = mock(async (_assistantId: string) => ({
-  ok: true as const,
-  state: "sleeping" as const,
-}));
 const readLockfileAssistantAvatarMock = mock((_assistantId: string) => ({
   ok: true as const,
   avatar: { kind: "character" as const, traits: {} },
@@ -115,10 +110,6 @@ mock.module("../upgrade", () => ({
   ...realUpgrade,
   runUpgrade: runUpgradeMock,
 }));
-mock.module("../status", () => ({
-  ...realStatus,
-  getLocalAssistantStatus: getLocalAssistantStatusMock,
-}));
 mock.module("../avatar", () => ({
   ...realAvatar,
   readLockfileAssistantAvatar: readLockfileAssistantAvatarMock,
@@ -140,7 +131,6 @@ afterAll(() => {
   mock.module("../hatch", () => realHatch);
   mock.module("../devices", () => realDevices);
   mock.module("../upgrade", () => realUpgrade);
-  mock.module("../status", () => realStatus);
   mock.module("../avatar", () => realAvatar);
   mock.module("../unpair", () => realUnpair);
   mock.module("../pair", () => realPair);
@@ -162,7 +152,6 @@ beforeEach(() => {
     runDevicesListMock,
     runDevicesRevokeMock,
     runUpgradeMock,
-    getLocalAssistantStatusMock,
     readLockfileAssistantAvatarMock,
     unpairAssistantMock,
     pairingStartMock,
@@ -183,10 +172,6 @@ beforeEach(() => {
   runUpgradeMock.mockImplementation(async () => ({
     ok: true as const,
     version: "v9.9.9",
-  }));
-  getLocalAssistantStatusMock.mockImplementation(async () => ({
-    ok: true as const,
-    state: "sleeping" as const,
   }));
   readLockfileAssistantAvatarMock.mockImplementation(() => ({
     ok: true as const,
@@ -243,7 +228,10 @@ const dispatch = (
     body:
       body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
-  return match.route.run(match.assistantId, request);
+  return match.route.run({
+    assistantId: match.assistantId,
+    body: request.body,
+  });
 };
 
 /** dispatch for a row that must answer — narrows the pass-through null. */
@@ -259,10 +247,11 @@ const dispatchAnswered = async (
   return response;
 };
 
-describe("the lockfile read row — GET /v1/assistants/", () => {
-  test("serves the renderer-safe lockfile: sensitive fields stripped", async () => {
+describe("the list row — GET /v1/assistants/ is the list contract", () => {
+  test("a populated lockfile answers a selection of credential-free rows", async () => {
     seedEntry({
       assistantId: "asst-1",
+      name: "Workbench",
       cloud: "local",
       port: 7830,
       bearerToken: "secret-token",
@@ -271,21 +260,18 @@ describe("the lockfile read row — GET /v1/assistants/", () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(body.assistants).toHaveLength(1);
-    expect(body.assistants[0]?.bearerToken).toBeUndefined();
-    expect(body.assistants[0]?.assistantId).toBe("asst-1");
+    expect(await response.json()).toEqual({
+      status: "selection",
+      assistants: [{ id: "asst-1", name: "Workbench", remote: "local" }],
+    });
   });
 
-  test("an empty lockfile serves as an empty list", async () => {
+  test("an empty lockfile answers the empty arm", async () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
-    const body = (await response.json()) as { assistants: unknown[] };
-    expect(body.assistants).toEqual([]);
+    expect(await response.json()).toEqual({ status: "empty" });
   });
 
-  test("the bare strip never reaches disk: the stored file keeps its secrets", async () => {
+  test("the union never reaches disk: the stored file keeps its secrets", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
     await dispatch("/v1/assistants/", "GET");
     expect(stripSensitiveFields).toBeDefined();
@@ -474,7 +460,10 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
         headers: { "content-type": "application/json" },
         body: "{not json",
       });
-      const response = await match.route.run(match.assistantId, request);
+      const response = await match.route.run({
+        assistantId: match.assistantId,
+        body: request.body,
+      });
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,
@@ -596,23 +585,6 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
   });
 });
 
-describe("the status row — GET /v1/assistants/{id}/", () => {
-  test("an on-machine entry reports the op's lifecycle state", async () => {
-    seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
-
-    const response = await dispatchAnswered("/v1/assistants/asst-1/", "GET");
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, state: "sleeping" });
-    expect(getLocalAssistantStatusMock).toHaveBeenCalledWith("asst-1");
-  });
-
-  test("an id that is not an entry on this machine passes through", async () => {
-    const response = await dispatch("/v1/assistants/ghost/", "GET");
-    expect(response).toBeNull();
-  });
-});
-
 describe("the avatar row — GET /v1/assistants/{id}/avatar/get", () => {
   test("an on-machine entry reads the avatar off its workspace", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
@@ -645,8 +617,8 @@ describe("the route table's method scoping", () => {
     ).toBeNull();
   });
 
-  test("a GET on a path-shaped id rides the status row's pattern", () => {
-    // `/v1/assistants/hatch` is a legal status probe for an id literally
+  test("a GET on a path-shaped id rides the resolution row's pattern", () => {
+    // `/v1/assistants/hatch` is a legal resolution probe for an id literally
     // named "hatch" — the id-scoped pattern owns it, the entry lookup
     // pass-through decides.
     const match = matchOperatorRequest("/v1/assistants/hatch", "GET");
