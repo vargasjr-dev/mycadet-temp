@@ -35,7 +35,6 @@ export function EmailChannelSection() {
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
   const isSelfHosted = useActiveAssistantIsSelfHosted();
 
-
   const [mode, setMode] = useState<ServiceMode>(() => {
     if (isSelfHosted) {
       return "your-own";
