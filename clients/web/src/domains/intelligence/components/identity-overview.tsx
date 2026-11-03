@@ -360,7 +360,7 @@ export function IdentityOverview() {
         </div>
       ) : (
         <OverviewBento
-            components={components}
+          components={components}
           traits={traits}
           customImageUrl={customImageUrl}
           name={
@@ -833,7 +833,6 @@ export function SectionCard({
 
 /** Greeting + avatar for the stacked (small-viewport) layout. */
 function CenterCell({
-  assistantId,
   components,
   traits,
   customImageUrl,
@@ -842,7 +841,6 @@ function CenterCell({
   isRenaming,
   onEdit,
 }: {
-  assistantId: string;
   components: CharacterComponents | null;
   traits: CharacterTraits | null;
   customImageUrl: string | null;
@@ -854,10 +852,7 @@ function CenterCell({
   const { t } = useTranslation("intelligence");
   return (
     <div className="relative z-[1] flex flex-col items-center justify-center gap-5">
-      <AssistantNameEditor
-        name={name}
-        isRenaming={isRenaming}
-      />
+      <AssistantNameEditor name={name} isRenaming={isRenaming} />
       <button
         type="button"
         aria-label={t("identityOverview.updateAvatarAndName")}
@@ -927,7 +922,6 @@ function OverviewBento({
   isRenaming: boolean;
   onOpenAvatarModal: () => void;
 }) {
-  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("intelligence");
   const { ref, size } = useElementSize();
   const reduce = useReducedMotion();
@@ -1097,7 +1091,6 @@ function OverviewBento({
 
   const centerCell = (
     <CenterCell
-      assistantId={assistantId}
       components={components}
       traits={traits}
       customImageUrl={customImageUrl}
@@ -1437,7 +1430,7 @@ function OverviewBento({
         style={{ gridArea: "greeting" }}
       >
         <AssistantNameEditor
-            name={name}
+          name={name}
           isRenaming={isRenaming}
           overrideText={greetingOverride}
         />

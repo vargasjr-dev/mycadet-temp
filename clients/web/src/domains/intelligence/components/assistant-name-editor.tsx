@@ -10,7 +10,6 @@
  * mid-animation. Reduced motion renders the greeting instantly.
  */
 
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
@@ -67,7 +66,6 @@ export function AssistantNameEditor({
   isRenaming,
   overrideText = null,
 }: AssistantNameEditorProps) {
-  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("intelligence");
   const greeting = overrideText ?? t("assistantNameEditor.greeting", { name });
   const { typed, typing } = useTypewriter(
