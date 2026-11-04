@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import cliPkg from "../../package.json";
 import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
@@ -25,6 +26,11 @@ let directory: string,
 let order: string[], running: Map<string, boolean>;
 let log: ReturnType<typeof spyOn>, previousLockDir: string | undefined;
 const options = { dryRun: false, keepSource: false };
+const healthy = (version: string) => ({
+  version,
+  status: "healthy",
+  authenticated: true,
+});
 async function instance(
   name: string,
   cloud: "local" | "docker",
@@ -98,13 +104,14 @@ beforeEach(async () => {
   });
   sleepMock.mockImplementation(async (entry) => {
     order.push(`sleep:${entry.assistantId}`);
-    // The report models the pre-sleep state: only services the sleep
-    // actually stopped come back "stopped" (the backup lifecycle the
-    // teleport drives derives its restart signal from this).
+    // The report models the pre-sleep state: the wasRunning flag and the
+    // per-service "stopped" answers (the teleport's wake-recovery derives
+    // its restart signals from these).
     const wasRunning = running.get(entry.assistantId) ?? false;
     running.set(entry.assistantId, false);
     return {
       ok: true,
+      wasRunning,
       kind: "services",
       services: {
         assistant: wasRunning ? "stopped" : "not-running",
@@ -119,8 +126,12 @@ beforeEach(async () => {
   // running map through the served version.
   healthMock.mockImplementation(async (entry: LockfileAssistant) =>
     running.get(entry.assistantId)
-      ? { version: "1.0.0", status: "healthy", authenticated: true }
-      : { authenticated: true },
+      ? {
+          version: cliPkg.version,
+          status: "healthy",
+          authenticated: true,
+        }
+      : { version: undefined, status: "unreachable", authenticated: true },
   );
   wakeMock.mockImplementation(async (entry) => {
     order.push(`wake:${entry.assistantId}`);
@@ -356,11 +367,13 @@ test("init failure retains tar and wakes source", async () => {
   }
 });
 test("multi-patch downgrade fails before shutdown", async () => {
-  // The version check calls the package's fetchCurrentVersion directly (the
+  // The version check calls the package's checkHealth directly (the
   // ops.version seam is gone). First call = the source's runtime, second =
   // the existing target's, so the downgrade guard sees an older target.
-  const versionMock = spyOn(localMode, "fetchCurrentVersion");
-  versionMock.mockResolvedValueOnce("0.12.9").mockResolvedValueOnce("0.12.5");
+  const versionMock = spyOn(localMode, "checkHealth");
+  versionMock
+    .mockResolvedValueOnce(healthy("0.12.9"))
+    .mockResolvedValueOnce(healthy("0.12.5"));
   try {
     await expect(
       teleportHostInstallation(source, "local", "target", options, ops),

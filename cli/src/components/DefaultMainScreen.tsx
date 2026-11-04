@@ -1016,11 +1016,7 @@ export function render(
   const statusCol = LEFT_PANEL_WIDTH + 1;
   checkHealth(entry)
     .then((health) => {
-      const statusText = withStatusEmoji(
-        health.version === undefined
-          ? "unreachable"
-          : (health.status ?? "healthy"),
-      );
+      const statusText = withStatusEmoji(health.status);
       process.stdout.write(
         `\x1b7\x1b[${statusCanvasLine};${statusCol}H\x1b[K${statusText}\x1b8`,
       );

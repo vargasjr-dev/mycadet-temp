@@ -413,11 +413,7 @@ function formatAssistantListRow(
   return {
     name: prefix + getAssistantDisplayName(entry),
     type: ASSISTANT_TYPE,
-    status: withStatusEmoji(
-      health.version === undefined
-        ? "unreachable"
-        : (health.status ?? "healthy"),
-    ),
+    status: withStatusEmoji(health.status),
     info: infoParts.join(" | "),
   };
 }
@@ -457,6 +453,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     return;
   }
 
+  // The arrow keeps map's index out of checkHealth's opts param.
   const healths = await Promise.all(
     assistants.map((entry) => checkHealth(entry)),
   );

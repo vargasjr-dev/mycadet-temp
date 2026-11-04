@@ -61,7 +61,7 @@ export {
   STATE_ROOTS,
 } from "./root-backup";
 export type { DockerBackupOps } from "./root-backup";
-export { type ManagedProcessEntry } from "./health-check";
+export { type ManagedProcessEntry } from "./daemon-readiness";
 export {
   compareVersions,
   isVersionCompatible,
@@ -79,7 +79,7 @@ export {
   type UpgradePollState,
   type UpgradeTargetResolution,
 } from "./upgrade-preflight";
-export { fetchGatewayPs } from "./health-check";
+export { fetchGatewayPs } from "./daemon-readiness";
 export {
   cliCommand,
   defaultEnvironmentFilePath,
@@ -276,7 +276,6 @@ export {
   probeDaemonReadiness,
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
-  fetchCurrentVersion,
   checkHealth,
   type DaemonReadiness,
   type GatewayHealth,
