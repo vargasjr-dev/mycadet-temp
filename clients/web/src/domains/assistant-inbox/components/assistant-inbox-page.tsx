@@ -85,7 +85,6 @@ function matchesQuery(email: InboxEmail, query: string): boolean {
 }
 
 export interface AssistantInboxPageProps {
-  assistantId: string;
   assistantName: string;
   address: string;
   inbox: InboxEmail[];
@@ -142,7 +141,6 @@ export interface AssistantInboxPageProps {
  * preview, run on the client over the folder already loaded.
  */
 export function AssistantInboxPage({
-  assistantId,
   assistantName,
   address,
   inbox,
@@ -270,7 +268,6 @@ export function AssistantInboxPage({
           with it: the pane's own way back is then the one way back, to the
           list, where the masthead and its way out of the page return. */}
       <AssistantInboxHeader
-        assistantId={assistantId}
         address={address}
         onOpenSettings={onOpenSettings}
         onBack={onBack}

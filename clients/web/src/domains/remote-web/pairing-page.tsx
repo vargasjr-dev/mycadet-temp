@@ -19,7 +19,6 @@ import {
 import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 import {
   getRemoteGatewayAssistantName,
-  getRemoteGatewayHubUrl,
   isCadetCloudRemote,
 } from "@/lib/local-mode";
 import { isNativePlatform } from "@/runtime/native-auth";
@@ -179,27 +178,6 @@ function buildAppHandoffUrl(
     `package=${CADET_ANDROID_PACKAGE};` +
     `S.browser_fallback_url=${fallbackUrl};end`
   );
-}
-
-/**
- * The hub's chooser on its own origin, or `null` when the served config names
- * no hub. Abandoning a pairing has to leave this origin: the chooser sits
- * behind `requireRemoteGatewayPairing`, which bounces a sessionless visit
- * straight back here and mints a fresh code.
- */
-function hubChooserUrl(): string | null {
-  const hubUrl = getRemoteGatewayHubUrl();
-  if (!hubUrl) {
-    return null;
-  }
-  try {
-    // The path is served by the hub's app shell (its SPA fallback resolves
-    // every account route to the app bundle's own chooser), so the hand-off
-    // keeps landing on a chooser after web's own one came down.
-    return `${new URL(hubUrl).origin}/account/select-assistant`;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -387,16 +365,9 @@ export function RemoteWebPairingPage() {
     setState({ kind: "verifying" });
   }, []);
 
-  const cancelUrl = useMemo(() => hubChooserUrl(), []);
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(null, `account/select-assistant`).then(
-      (switched) => {
-        if (!switched && cancelUrl) {
-          window.location.assign(cancelUrl);
-        }
-      },
-    );
-  }, [cancelUrl]);
+    void nativeSwitchToOriginPath(null, `account/select-assistant`);
+  }, []);
 
   if (!enabled) {
     return <NotFound />;
@@ -467,7 +438,7 @@ export function RemoteWebPairingPage() {
           </p>
         ) : null}
 
-        {state.kind === "polling" && cancelUrl ? (
+        {state.kind === "polling" ? (
           <Button
             variant="outlined"
             fullWidth

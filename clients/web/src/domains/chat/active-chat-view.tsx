@@ -198,10 +198,7 @@ export function ActiveChatView() {
   // Disk pressure (only relevant for cloud-hosted assistants)
   // -------------------------------------------------------------------------
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const diskPressure = useDiskPressureMonitor({
-    assistantId,
-    enabled: isCloudHosted,
-  });
+  const diskPressure = useDiskPressureMonitor();
   const diskPressureChatBlockReason = getDiskPressureChatBlockReason({
     monitorEnabled: diskPressure.mode !== null,
     hasResolvedStatus: diskPressure.hasResolvedStatus,

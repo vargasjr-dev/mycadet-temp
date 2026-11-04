@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { SIDEBAR_STACK_GAP } from "@/components/sidebar-nav-geometry";
 import { useNavigate } from "react-router";
 
@@ -11,7 +12,6 @@ import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
 
 export interface SideMenuBuiltInNavProps {
-  assistantId: string | null;
   /** Shown on the assistant row; falls back to "Your Assistant". */
   assistantName?: string | null;
   collapsed: boolean;
@@ -36,7 +36,6 @@ export interface SideMenuBuiltInNavProps {
  * and a rule on top of it divide a group that reads as grouped without them.
  */
 export function SideMenuBuiltInNav({
-  assistantId,
   assistantName,
   collapsed,
   variant,
@@ -47,6 +46,7 @@ export function SideMenuBuiltInNav({
   onOpenApp,
   onClose,
 }: SideMenuBuiltInNavProps) {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
   const { pinnedApps, unpin, setColor } = usePinnedApps(assistantId);

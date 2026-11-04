@@ -66,8 +66,6 @@ function InboxLoading({ label }: { label: string }) {
 }
 
 interface MailboxProps {
-  assistantId: string;
-  cloudAssistantId: string;
   assistantName: string;
   address: string;
   addressId: string;
@@ -78,8 +76,6 @@ interface MailboxProps {
 
 /** The mailbox with its reads attached; split out so its hooks run only in the ready state. */
 function Mailbox({
-  assistantId,
-  cloudAssistantId,
   assistantName,
   address,
   addressId,
@@ -88,7 +84,8 @@ function Mailbox({
 }: MailboxProps) {
   const { t } = useTranslation("assistant-inbox");
   const navigate = useNavigate();
-  const mail = useInboxMail(assistantId, cloudAssistantId, addressId);
+  const assistantId = useActiveAssistantId();
+  const mail = useInboxMail(addressId);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { deletedIds, deleteEmails } = useDeletedEmails(assistantId);
   const { readIds, markRead } = useReadEmails(assistantId);
@@ -177,7 +174,6 @@ function Mailbox({
         /* Keyed on the link so a second card opens its message rather than
            leaving the first one up. */
         key={linkedMessageId ?? ""}
-        assistantId={assistantId}
         assistantName={assistantName}
         address={address}
         inbox={received}
@@ -196,7 +192,6 @@ function Mailbox({
       <EmailSettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        localAssistantId={assistantId}
         assistantName={assistantName}
         emailRootDomain={rootDomain}
       />
@@ -218,7 +213,7 @@ export function AssistantInboxPageRoute() {
   const queryClient = useQueryClient();
   const assistantId = useActiveAssistantId();
   const identityName = useAssistantIdentityStore.use.name();
-  const state = useAssistantInboxState(assistantId, identityName ?? "");
+  const state = useAssistantInboxState(identityName ?? "");
   const [settling, setSettling] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   /* The address just created, shown on the success screen until the user
@@ -265,11 +260,10 @@ export function AssistantInboxPageRoute() {
 
   /* An advisory probe of a handle typed into the setup card, through the
      same endpoint the profile card's handle editor uses. */
-  const stateAssistantId = state.assistantId;
   const checkHandle = useCallback(
     async (handle: string, signal: AbortSignal): Promise<HandleCheckResult> => {
       const result = await checkAssistantHandleAvailable(
-        stateAssistantId,
+        assistantId,
         handle,
         signal,
       );
@@ -284,7 +278,7 @@ export function AssistantInboxPageRoute() {
           t("assistantInboxRoute.setupFailed"),
       };
     },
-    [stateAssistantId, t],
+    [assistantId, t],
   );
 
   const confirmSetup = useCallback(
@@ -374,7 +368,6 @@ export function AssistantInboxPageRoute() {
     case "setup":
       return (
         <AssistantInboxSetupCard
-          assistantId={assistantId}
           rootDomain={state.rootDomain}
           handle={state.handle}
           handleEditable={!state.hasDomain}
@@ -390,7 +383,6 @@ export function AssistantInboxPageRoute() {
       if (justCreated !== null) {
         return (
           <AssistantInboxSetupSuccess
-            assistantId={assistantId}
             assistantName={state.assistantName}
             address={justCreated}
             onContinue={() => setJustCreated(null)}
@@ -400,8 +392,6 @@ export function AssistantInboxPageRoute() {
       }
       return (
         <Mailbox
-          assistantId={assistantId}
-          cloudAssistantId={state.assistantId}
           assistantName={state.assistantName}
           address={state.address ?? ""}
           addressId={state.addressId ?? ""}

@@ -41,6 +41,7 @@
  * @see {@link https://react.dev/reference/react/useMemo}
  */
 
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCallback, useEffect, useMemo, startTransition } from "react";
 
 import type {
@@ -178,18 +179,17 @@ export interface SidebarState {
 // ---------------------------------------------------------------------------
 
 export interface UseSidebarStateParams {
-  assistantId: string;
   conversations: Conversation[];
   conversationGroups?: ConversationGroup[];
   attentionConversationIds?: Set<string>;
 }
 
 export function useSidebarState({
-  assistantId,
   conversations,
   conversationGroups,
   attentionConversationIds,
 }: UseSidebarStateParams): SidebarState {
+  const assistantId = useActiveAssistantId();
   // --- Layout store hydration ---
 
   useEffect(() => {

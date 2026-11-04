@@ -1,14 +1,11 @@
 import { HardDrive, Wrench } from "lucide-react";
 
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { useTranslation } from "@/i18n";
 
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
 
-  // The store IS the resolution — the entry is non-optional, the id real.
-  const entry = useResolvedAssistantStore((s) => s.assistant);
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -32,7 +29,7 @@ export function DebugControlsPanel() {
             {t("debugControlsPanel.backups")}
           </h3>
         </div>
-        <AssistantBackups assistantId={entry.assistantId} />
+        <AssistantBackups />
       </div>
     </div>
   );

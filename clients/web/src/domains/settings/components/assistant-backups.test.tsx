@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+
 let cloudHosted = true;
 
 let exportFails = false;
@@ -93,7 +95,13 @@ describe("AssistantBackups export", () => {
   afterEach(() => cleanup());
 
   test("exports, then saves the bundle from a named signed download URL", async () => {
-    render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
 
     await confirmExport();
 
@@ -109,7 +117,13 @@ describe("AssistantBackups export", () => {
 
   test("a failed export toasts and leaves the button ready", async () => {
     exportFails = true;
-    render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
 
     await confirmExport();
 
@@ -124,7 +138,13 @@ describe("AssistantBackups export", () => {
   });
 
   test("cancelling the confirmation starts no export", async () => {
-    render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
     const dialog = await screen.findByRole("dialog");
@@ -136,34 +156,69 @@ describe("AssistantBackups export", () => {
 
   test("a self-hosted assistant gets no Export button", async () => {
     cloudHosted = false;
-    render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
 
     await screen.findByText(/cadet backup/);
     expect(screen.queryByRole("button")).toBeNull();
   });
 
   test("switching assistants closes an open confirmation without exporting", async () => {
-    const { rerender } = render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
     await screen.findByRole("dialog");
 
-    rerender(<AssistantBackups assistantId="ast-2" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-2",
+      name: "Ast Two",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(calls).toEqual([]);
   });
 
   test("losing cloud hosting closes an open confirmation", async () => {
-    const { rerender } = render(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
     await screen.findByRole("dialog");
 
     cloudHosted = false;
-    rerender(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
     cloudHosted = true;
-    rerender(<AssistantBackups assistantId="ast-1" />);
+    useResolvedAssistantStore.getState().setAssistant({
+      cloud: "cloud",
+      assistantId: "ast-1",
+      name: "Ast",
+      hatchedAt: "1970-01-01T00:00:00.000Z",
+    });
+    render(<AssistantBackups />);
     await screen.findByRole("button", { name: "Export" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(calls).toEqual([]);
