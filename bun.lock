@@ -781,6 +781,7 @@
         "@mycadet/service-contracts": "workspace:*",
         "@mycadet/shared": "workspace:*",
         "nanoid": "5.1.7",
+        "tar": "7.5.22",
         "zod": "4.3.6",
       },
       "devDependencies": {

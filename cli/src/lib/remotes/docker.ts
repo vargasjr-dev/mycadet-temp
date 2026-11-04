@@ -22,7 +22,7 @@ import { ASSISTANT_INTERNAL_PORT } from "../environments/paths.js";
 import { initializeRootArchive } from "@mycadet/local-mode";
 import { getOrCreateHostDeviceId } from "@mycadet/local-mode";
 import { exec, execOutput } from "../step-runner";
-import { ownVersion } from "@mycadet/local-mode";
+import cliPkg from "../../../package.json";
 
 // ─── Folded from the former lib/docker.ts: the docker topology's full surface ───
 // (containers lifecycle, images, watcher, retire — the hatch ceremony moved
@@ -168,7 +168,7 @@ export async function initializeDockerTeleportTarget(
   // archive install runs one-shot containers from these images, so they
   // must be on the machine before the data lands; the wake's recreate
   // re-pulls them as cheap no-ops.
-  const imageTags = resolveOwnImageRefs(ownVersion());
+  const imageTags = resolveOwnImageRefs(cliPkg.version);
   for (const service of [
     "assistant",
     "gateway",
