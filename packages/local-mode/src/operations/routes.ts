@@ -208,16 +208,30 @@ async function readJsonBody(
 
 /** The hatch row's body: the requested remote override; junk degrades to a plain hatch. */
 const HatchBodySchema = z
-  .object({ remote: z.string().optional().catch(undefined) })
-  .catch({});
+  .object({
+    remote: z
+      .string()
+      .nullish()
+      .catch(undefined)
+      .transform((remote) => remote ?? "local"),
+  })
+  .catch({ remote: "local" });
 
 /** The upgrade row's body: the target version and force flag; junk reads as the defaults. */
 const UpgradeBodySchema = z
   .object({
-    version: z.string().nullish().catch(undefined),
-    force: z.boolean().optional().catch(undefined),
+    version: z
+      .string()
+      .nullish()
+      .catch(undefined)
+      .transform((version) => version ?? null),
+    force: z
+      .boolean()
+      .optional()
+      .catch(undefined)
+      .transform((force) => force ?? false),
   })
-  .catch({});
+  .catch({ version: null, force: false });
 
 /**
  * Provision a local assistant. Never rejects — failures resolve with
@@ -227,11 +241,9 @@ const UpgradeBodySchema = z
  * ever invokes the CLI as a subprocess.
  */
 async function runHatchRoute(request: OperatorRequest): Promise<Response> {
-  const { remote } = HatchBodySchema.parse(
-    (await readJsonBody(request.body)) ?? {},
-  );
+  const { remote } = HatchBodySchema.parse(await readJsonBody(request.body));
   try {
-    const result = await hatchAssistant({ remote: remote ?? "local" });
+    const result = await hatchAssistant({ remote });
     if (result.ok) {
       return json({ ok: true, assistantId: result.assistant.assistantId });
     }
@@ -411,8 +423,8 @@ async function runUpgradeRoute(
   if (!entry) {
     return null;
   }
-  const { version = null, force = false } = UpgradeBodySchema.parse(
-    (await readJsonBody(request.body)) ?? {},
+  const { version, force } = UpgradeBodySchema.parse(
+    await readJsonBody(request.body),
   );
   if (!isActiveAssistant(assistantId)) {
     return json({
