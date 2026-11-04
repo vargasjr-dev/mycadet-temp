@@ -129,7 +129,7 @@ export async function pushBasetenImage(options: {
   /** The staged build context — the CLI pushes it with --dir. */
   dir: string;
   /** The ZIP'd context — the HTTP path uploads it to the returned URL. */
-  zip: () => Promise<Buffer>;
+  zip: () => Buffer;
   poll?: (status: string) => void;
   timeoutMs?: number;
   intervalMs?: number;
@@ -164,7 +164,7 @@ export async function pushBasetenImage(options: {
       `Baseten image push returned no upload URL (status ${accepted.status ?? "unknown"}).`,
     );
   }
-  const archive = await options.zip();
+  const archive = options.zip();
   const uploaded = await fetch(uploadUrl, {
     method: "PUT",
     body: new Uint8Array(archive),

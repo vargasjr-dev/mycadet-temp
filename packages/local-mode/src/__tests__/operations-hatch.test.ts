@@ -8,6 +8,10 @@ import {
   type HatchDockerParams,
   type HatchDockerResult,
 } from "../remotes/docker/hatch";
+import {
+  type HatchBasetenParams,
+  type HatchBasetenResult,
+} from "../remotes/baseten/hatch";
 import { hatchAssistant } from "../operations/hatch";
 import { readLockfile, saveLockfileAssistant } from "../lockfile";
 import { findAssistantByName } from "../operations/lookup";
@@ -26,6 +30,23 @@ const hatchDockerMock = mock<
 }));
 mock.module("../remotes/docker/hatch", () => ({
   hatchDocker: hatchDockerMock,
+}));
+
+const basetenMock = mock<
+  (params: HatchBasetenParams) => Promise<HatchBasetenResult>
+>(async () => ({
+  ok: true,
+  entry: {
+    assistantId: "baseten-entry",
+    name: "sandbox-entry",
+    cloud: "baseten",
+    sandboxUrl: "https://sandbox.example.com",
+    port: 7830,
+  },
+  ready: false,
+}));
+mock.module("../remotes/baseten/hatch", () => ({
+  hatchBaseten: basetenMock,
 }));
 
 let home: string;
@@ -50,14 +71,32 @@ afterEach(() => {
 
 describe("hatchAssistant", () => {
   test("the router refuses the remotes it does not cover yet", async () => {
-    for (const remote of ["baseten", "custom"]) {
+    for (const remote of ["custom"]) {
       const result = await hatchAssistant({ remote });
       expect(result.ok).toBe(false);
       if (result.ok) continue;
       expect(result.status).toBe(400);
       expect(result.error).toContain(remote);
     }
-    expect(findAssistantByName("baseten")).toBeNull();
+    expect(findAssistantByName("custom")).toBeNull();
+  });
+
+  test("the baseten arm routes to the leg and maps the entry back", async () => {
+    const result = await hatchAssistant({
+      remote: "baseten",
+      name: "sandbox-entry",
+      version: "1.2.3",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.assistant.assistantId).toBe("baseten-entry");
+    // The sandbox wakes itself after the leg returns — the leg does not
+    // confirm readiness, so the CLI's next-steps narration stays off.
+    expect(result.ready).toBe(false);
+    expect(basetenMock.mock.calls[0]?.[0]).toMatchObject({
+      name: "sandbox-entry",
+      version: "1.2.3",
+    });
   });
 
   test("the docker arm routes to the leg and maps the entry back", async () => {

@@ -1,12 +1,10 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
-import { isCloudHome } from "../lib/cloud-values.js";
 import cliPkg from "../../package.json";
 
 import {
   cliCommand,
   dockerResourceNames,
-  hatchCloud,
-  hatchDocker,
+  hatchAssistant,
   readCloudToken,
   validateAssistantName,
 } from "@mycadet/local-mode";
@@ -27,9 +25,6 @@ import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { logHatchNextSteps } from "../lib/hatch-next-steps.js";
 import { printInstanceDetails } from "../lib/instance-details.js";
-import { hatchBaseten } from "../lib/remotes/baseten/index";
-import { hatchLocal } from "../lib/remotes/local.js";
-import { buildHatchConfigValues } from "@mycadet/local-mode";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
 
@@ -299,102 +294,69 @@ export const hatch = Object.assign(
       console.warn("");
     }
 
-    if (remote === "local") {
-      await hatchLocal({
-        name,
-        watch,
-        configValues,
-        verbose,
-        provider,
-        precollectedApiKey,
-      });
-      return;
+    // The hatch operation is the package's provision door — every remote
+    // goes through this one call. The art banner here and the hatched
+    // summary below are the CLI's remote-agnostic narration, printed once
+    // around the op whatever the remote is.
+    console.log("");
+    for (const line of HATCH_ART) {
+      console.log(`   ${line}`);
+    }
+    console.log("");
+    console.log("   Hatching assistant...");
+    console.log("");
+
+    const result = await hatchAssistant({
+      remote,
+      name,
+      watch,
+      configValues,
+      verbose,
+      version: cliVersion,
+      sourcePath,
+      netnsContainer: netnsContainer ?? undefined,
+      gatewayPort: gatewayPort ?? undefined,
+      assistantCaCertPath: assistantCaCert ?? undefined,
+      provider,
+      precollectedApiKey,
+      log: (msg) => console.log(msg),
+    });
+    if (!result.ok) {
+      if (result.status === 401) {
+        console.error(result.error);
+        process.exit(1);
+      }
+      throw new Error(result.error);
     }
 
-    // The non-local arms take the provider through the config values.
-    const providerConfigValues = buildHatchConfigValues(configValues, provider);
-
-    if (remote === "docker") {
-      // The package's provision core owns the docker mechanics — the
-      // provider ceremony above is the generic layer it expects, and the
-      // instance summary + next steps below are the CLI's narration.
-      const result = await hatchDocker({
-        name,
-        watch,
-        configValues,
-        sourcePath,
-        netnsContainer: netnsContainer ?? undefined,
-        gatewayPort: gatewayPort ?? undefined,
-        assistantCaCertPath: assistantCaCert ?? undefined,
-        version: cliVersion,
-        provider,
-        precollectedApiKey,
-      });
-      if (!result.ok) {
-        throw new Error(result.error);
-      }
-      const entry = result.entry;
-      console.log("Instance details:");
-      printInstanceDetails(
-        {
-          name: entry.assistantId,
-          runtime: getGatewayUrl(entry),
-          container: dockerResourceNames(entry.assistantId).assistantContainer,
-        },
-        console.log,
-      );
-      console.log("");
-      if (result.ready) {
-        logHatchNextSteps(console.log);
-      }
-      return;
+    const entry = result.assistant;
+    console.log(
+      "   " +
+        green(
+          `${HATCHED_EMOJI}  Your assistant has hatched!`,
+          process.stdout,
+        ),
+    );
+    console.log("");
+    printInstanceDetails(
+      {
+        name: entry.name,
+        id: entry.assistantId,
+        cloud: entry.cloud,
+        runtime: entry.cloud === "cloud" ? undefined : getGatewayUrl(entry),
+        root: "instanceDir" in entry ? entry.instanceDir : undefined,
+        container:
+          entry.cloud === "docker"
+            ? dockerResourceNames(entry.assistantId).assistantContainer
+            : undefined,
+        status: result.status,
+      },
+      console.log,
+    );
+    console.log("");
+    if (result.ready) {
+      logHatchNextSteps(console.log);
     }
-
-    if (remote === "baseten") {
-      await hatchBaseten({
-        name: name ?? undefined,
-        configValues: providerConfigValues,
-        verbose,
-      });
-      return;
-    }
-
-    if (isCloudHome(remote)) {
-      console.log("");
-      for (const line of HATCH_ART) {
-        console.log(`   ${line}`);
-      }
-      console.log("");
-      console.log("   Hatching assistant...");
-      console.log("");
-
-      const result = await hatchCloud();
-      if (!result.ok) {
-        if (result.status === 401) {
-          console.error(result.error);
-          process.exit(1);
-        }
-        throw new Error(result.error);
-      }
-      const { assistant: hatched } = result;
-
-      console.log(
-        "   " +
-          green(
-            `${HATCHED_EMOJI}  Your assistant has hatched!`,
-            process.stdout,
-          ),
-      );
-      console.log("");
-      console.log(`   ID:     ${hatched.id}`);
-      console.log(`   Name:   ${hatched.name}`);
-      console.log(`   Status: ${hatched.status}`);
-      console.log("");
-      return;
-    }
-
-    console.error(`Error: Remote host '${remote}' is not yet supported.`);
-    process.exit(1);
   },
   { description: "Create a new assistant instance" },
 );

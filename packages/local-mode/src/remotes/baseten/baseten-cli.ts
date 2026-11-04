@@ -5,7 +5,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { execOutput } from "../../step-runner.js";
+import { execOutput } from "../../exec.js";
 
 /** The installed baseten CLI, or null when it isn't on PATH. Exported for tests. */
 export async function resolveBasetenCli(): Promise<string | null> {

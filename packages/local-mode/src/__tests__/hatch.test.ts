@@ -60,6 +60,23 @@ describe("runHatch", () => {
     ]);
   });
 
+  test("parses the assistant id from a Baseten hatch banner", async () => {
+    const pending = runHatch({ remote: "baseten" });
+    // The resolution is async now: let the spawn land before driving the child.
+    await new Promise((r) => setImmediate(r));
+    lastChild.stdout.emit(
+      "data",
+      Buffer.from("🥚 Hatching Baseten assistant: sbx-cadet-42\n"),
+    );
+    lastChild.emit("close", 0);
+
+    expect(await pending).toEqual({ ok: true, assistantId: "sbx-cadet-42" });
+    expect(spawnArgs[0]).toEqual([
+      "bun",
+      ["run", "cli", "hatch", "--remote", "baseten"],
+    ]);
+  });
+
   test("a non-zero exit resolves to a failure carrying the CLI's output", async () => {
     const pending = runHatch();
     // The resolution is async now: let the spawn land before driving the child.

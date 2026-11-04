@@ -63,6 +63,9 @@ export async function hatchCloud(): Promise<HatchCloudResult> {
       const entry: LockfileAssistant = {
         assistantId: assistant.id,
         cloud: "cloud",
+        // The platform's display name — the same row every other remote's
+        // entry carries, so the post-hatch summary reads it from the entry.
+        name: assistant.name,
         hatchedAt: new Date().toISOString(),
       };
       // The active-assistant switch rides the same locked write.

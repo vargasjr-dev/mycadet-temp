@@ -1,15 +1,22 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, afterEach, describe, expect, spyOn, test } from "bun:test";
 
-import * as basetenCli from "./baseten-cli.js";
+import * as basetenCli from "../remotes/baseten/baseten-cli.js";
 import {
   BasetenApiError,
   basetenImageRef,
   createBasetenSandbox,
   pushBasetenImage,
   resolveBasetenToken,
-} from "./api.js";
+} from "../remotes/baseten/api.js";
 
-const request = spyOn(globalThis, "fetch");
+// The fetch spy lives per test, not per file: the readiness suites in this
+// package also spy globalThis.fetch, and a file-lifetime spy here breaks
+// theirs when bun batches the files into one process.
+let request: ReturnType<typeof spyOn>;
+
+beforeEach(() => {
+  request = spyOn(globalThis, "fetch");
+});
 
 function calls(): Array<[string, RequestInit]> {
   return request.mock.calls as unknown as Array<[string, RequestInit]>;
@@ -37,7 +44,7 @@ function cliArm(describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"') {
 }
 
 afterEach(() => {
-  request.mockReset();
+  request.mockRestore();
   delete process.env.BASETEN_API_KEY;
 });
 
@@ -73,7 +80,7 @@ describe("pushBasetenImage", () => {
     await pushBasetenImage({
       name: "cadet",
       dir: "/tmp/staged",
-      zip: () => Promise.resolve(Buffer.from("zip")),
+      zip: () => Buffer.from("zip"),
     });
 
     expect(run).toHaveBeenCalledWith([
@@ -115,7 +122,7 @@ describe("pushBasetenImage", () => {
       dir: "/tmp/staged",
       zip: () => {
         zipped++;
-        return Promise.resolve(Buffer.from("zip"));
+        return Buffer.from("zip");
       },
       poll: (status) => polled.push(status),
       intervalMs: 1,
@@ -154,7 +161,7 @@ describe("pushBasetenImage", () => {
       pushBasetenImage({
         name: "cadet",
         dir: "/tmp/staged",
-        zip: () => Promise.resolve(Buffer.from("zip")),
+        zip: () => Buffer.from("zip"),
         intervalMs: 1,
       }),
     ).rejects.toThrow(/build failed/);
