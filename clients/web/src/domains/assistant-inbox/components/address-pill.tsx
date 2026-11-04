@@ -9,7 +9,6 @@ import {
 
 import { AssistantEyesMark } from "@/components/avatar/assistant-eyes-mark";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useTranslation } from "@/i18n";
 
@@ -36,7 +35,8 @@ export interface AddressPillProps {
  */
 export function AddressPill({ address, copy, className }: AddressPillProps) {
   const { t } = useTranslation("assistant-inbox");
-  const { components, traits, customImageUrl, accentHex } = useAssistantAvatar();
+  const { components, traits, customImageUrl, accentHex } =
+    useAssistantAvatar();
 
   const wash = accentHex ? panelItemWashStyle(accentHex) : null;
   const pillStyle: CustomPropertyStyle | undefined = wash

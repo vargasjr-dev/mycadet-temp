@@ -193,7 +193,7 @@ export function RootLayout() {
   // Keep the browser favicon in sync with the assistant's avatar across
   // every authenticated route (chat, settings, logs, etc.). Mounted here
   // so the favicon persists when navigating between sibling layouts.
-  const avatar = useAssistantAvatar(assistantId, {
+  const avatar = useAssistantAvatar({
     ownerScopeId: notificationScopeId,
   });
   useDynamicFavicon(avatar.customImageUrl, avatar.components, avatar.traits);

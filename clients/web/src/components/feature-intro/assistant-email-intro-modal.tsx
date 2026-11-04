@@ -33,15 +33,13 @@ export interface AssistantEmailIntroModalProps {
 export function AssistantEmailIntroModal({
   open,
   onOpenChange,
-  assistantId,
   assistantName,
   rootDomain,
   onSetUp,
 }: AssistantEmailIntroModalProps) {
   const { t } = useTranslation();
   const { title, subtitle } = useInboxPitchCopy(assistantName);
-  const { components, traits, customImageUrl } =
-    useAssistantAvatar(assistantId);
+  const { components, traits, customImageUrl } = useAssistantAvatar();
 
   return (
     <FeatureIntroModal

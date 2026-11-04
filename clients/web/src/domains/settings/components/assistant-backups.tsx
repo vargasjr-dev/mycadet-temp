@@ -96,14 +96,7 @@ export function AssistantBackups() {
   const [creatingBackup, setCreatingBackup] = useState(false);
   const [copiedSnapshot, setCopiedSnapshot] = useState<string | null>(null);
   const [exportStep, setExportStep] = useState<ExportStep | null>(null);
-  // The assistant the export confirmation was opened for. The dialog only
-  // shows while that assistant is still current and exportable, so a switch
-  // or sign-out mid-dialog can never export a different assistant.
-  const [exportTarget, setExportTarget] = useState<string | null>(null);
-  const confirmingExport = exportTarget === assistantId;
-  if (exportTarget !== null && !confirmingExport) {
-    setExportTarget(null);
-  }
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleCopySnapshotName = useCallback(
     (name: string) => {
@@ -202,18 +195,15 @@ export function AssistantBackups() {
   }, [assistantId, t]);
 
   const handleExportConfirm = useCallback(async () => {
-    const target = exportTarget;
-    setExportTarget(null);
-    if (target !== assistantId) {
-      return;
-    }
+    setExportOpen(false);
     setExportStep("preparing");
     try {
-      const { bundleKey, runtimeVersion } = await exportManagedBundle(target, {
-        onStep: setExportStep,
-      });
+      const { bundleKey, runtimeVersion } = await exportManagedBundle(
+        assistantId,
+        { onStep: setExportStep },
+      );
       setExportStep("downloading");
-      const filename = exportBundleFilename(target, new Date());
+      const filename = exportBundleFilename(assistantId, new Date());
       const url = await requestSignedDownloadUrl(
         bundleKey,
         runtimeVersion,
@@ -228,7 +218,7 @@ export function AssistantBackups() {
     } finally {
       setExportStep(null);
     }
-  }, [assistantId, exportTarget, t]);
+  }, [assistantId, t]);
 
   if (loading) {
     return (
@@ -273,7 +263,7 @@ export function AssistantBackups() {
         variant="outlined"
         loading={exportBusy}
         leftIcon={<Download />}
-        onClick={() => setExportTarget(assistantId)}
+        onClick={() => setExportOpen(true)}
         disabled={exportBusy || restoringSnapshot !== null}
         className="shrink-0"
       >
@@ -296,12 +286,12 @@ export function AssistantBackups() {
 
   const exportConfirmDialog = (
     <ConfirmDialog
-      open={confirmingExport}
+      open={exportOpen}
       title={t("assistantBackups.exportTitle")}
       message={t("assistantBackups.exportMessage")}
       confirmLabel={t("assistantBackups.export")}
       onConfirm={handleExportConfirm}
-      onCancel={() => setExportTarget(null)}
+      onCancel={() => setExportOpen(false)}
     />
   );
 

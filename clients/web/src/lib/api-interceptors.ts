@@ -299,17 +299,6 @@ daemonClient.interceptors.error.use(daemonErrorInterceptor);
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
-// Client census: the bundle's route traffic is dominated by the daemon
-// client (chat/ACP streaming, credentials, MCP, presence) — the platform
-// client carries the timezone/profile/teleport routes, and the auth client
-// the allauth session endpoints. The end state is ONE client: the gateway
-// client, since every route above is (or can be) proxied through the same
-// self-hosted ingress / platform gateway path that `gatewayRequestInterceptor`
-// already routes. Cutover path: regenerate the specs against the gateway's
-// surface, move the consumers module-by-module onto `gatewayClient`, then
-// delete the daemon/cloud/auth clients and `requestInterceptor`'s
-// origin-rewriting branches with them.
-//
 // Force JSON body parsing for all three generated clients. The default
 // `parseAs: 'auto'` infers the parsing strategy from the Content-Type
 // response header. When the header is absent (observed on iOS WKWebView

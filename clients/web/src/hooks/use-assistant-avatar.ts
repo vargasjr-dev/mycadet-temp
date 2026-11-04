@@ -213,8 +213,6 @@ function withoutAvatarOwner(data: AvatarData): AvatarData {
 export interface AssistantAvatarOptions {
   /** Exact request/connection owner used by notification publication. */
   ownerScopeId?: string | null;
-  /** Resolved row already held by a caller before the global list catches up. */
-  ownerAssistant?: LockfileAssistant | null;
   /**
    * Per-assistant manifest gate. The default reads the ACTIVE assistant's
    * version, which is wrong for a sibling on another runtime; list surfaces
@@ -391,26 +389,13 @@ export async function fetchAvatarViaLegacyFiles(
  * key so the avatar re-fetches through the correct path the moment the
  * assistant version resolves.
  */
-export function useAssistantAvatar(
-  assistantId?: string | null,
-  options?: AssistantAvatarOptions,
-) {
-  // No id passed means "the active assistant's" — the hook reads the store.
-  // An explicit `null` stays a real null (the disconnected state).
-  const activeId = useActiveAssistantId();
-  const ownerId = assistantId === undefined ? activeId : assistantId;
+export function useAssistantAvatar(options?: AssistantAvatarOptions) {
+  // The web bundle has one assistant loaded — the active one.
+  const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
-  const entry = useResolvedAssistantStore.use.assistant();
-  const assistant =
-    options?.ownerAssistant === undefined
-      ? entry && entry.assistantId === ownerId
-        ? entry
-        : null
-      : options.ownerAssistant?.assistantId === ownerId
-        ? options.ownerAssistant
-        : null;
+  const assistant = useResolvedAssistantStore.use.assistant();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
@@ -427,9 +412,9 @@ export function useAssistantAvatar(
         ? canonicalScopeId
         : null;
   const requestedOwner =
-    ownerId && scopeId ? { scopeId, assistantId: ownerId } : null;
-  const initialInstalledScope = ownerId
-    ? activeOwners.get(ownerId)?.scopeId
+    assistantId && scopeId ? { scopeId, assistantId } : null;
+  const initialInstalledScope = assistantId
+    ? activeOwners.get(assistantId)?.scopeId
     : undefined;
   const [readyOwner, setReadyOwner] = useState<AvatarOwner | null>(() =>
     initialInstalledScope && initialInstalledScope !== scopeId
@@ -437,8 +422,8 @@ export function useAssistantAvatar(
       : requestedOwner,
   );
   const previousOwnerRef = useRef<AvatarOwner | null>(
-    ownerId && initialInstalledScope
-      ? { assistantId: ownerId, scopeId: initialInstalledScope }
+    assistantId && initialInstalledScope
+      ? { assistantId, scopeId: initialInstalledScope }
       : requestedOwner,
   );
   const ownerReady = sameAvatarOwner(readyOwner, requestedOwner);
@@ -446,10 +431,10 @@ export function useAssistantAvatar(
   useEffect(() => {
     const previousOwner = previousOwnerRef.current;
     const nextOwner = assistantId && scopeId ? { assistantId, scopeId } : null;
-    transitionAvatarOwner(queryClient, previousOwner, nextOwner, ownerId);
+    transitionAvatarOwner(queryClient, previousOwner, nextOwner, assistantId);
     previousOwnerRef.current = nextOwner;
     setReadyOwner(nextOwner);
-  }, [ownerId, queryClient, scopeId]);
+  }, [assistantId, queryClient, scopeId]);
 
   const owner = requestedOwner
     ? {
@@ -469,11 +454,11 @@ export function useAssistantAvatar(
 
   const { data, isLoading, isSuccess } = useQuery<AvatarData>({
     queryKey,
-    meta: { assistantId: ownerId, scopeKey: scopeId ?? "" },
+    meta: { assistantId, scopeKey: scopeId ?? "" },
     placeholderData: (previousData, previousQuery) => {
       if (
         shouldRetainAvatarPlaceholder(previousQuery?.meta, {
-          assistantId: ownerId,
+          assistantId,
           scopeKey: scopeId ?? "",
         })
       ) {
@@ -599,7 +584,7 @@ export function useAssistantAvatar(
 export function useActiveAssistantAvatar() {
   const activeId = useActiveAssistantId();
   const { components, traits, customImageUrl, isLoading } =
-    useAssistantAvatar(activeId);
+    useAssistantAvatar();
   return {
     ready: Boolean(activeId) && !isLoading,
     components,

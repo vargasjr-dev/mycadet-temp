@@ -56,7 +56,6 @@ export function useDiskPressureMonitor({
 
   const monitor = useAssistantStatusMonitor({
     assistantId,
-    enabled: true,
     refreshKey,
     cadenceMs,
     fetchStatus: getAssistantDiskPressureStatus,
@@ -76,7 +75,7 @@ export function useDiskPressureMonitor({
 
   useEffect(() => {
     resetAcknowledgement();
-  }, [assistantId, resetAcknowledgement]);
+  }, [resetAcknowledgement]);
 
   const acknowledge = useCallback(async () => {
     const requestedAssistantId = assistantId;

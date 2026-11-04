@@ -15,8 +15,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import type { Assistant } from "@/generated/api/types.gen";
-
 // ---------------------------------------------------------------------------
 // Module mocks — registered before the subject is imported.
 // ---------------------------------------------------------------------------
@@ -91,30 +89,6 @@ const { ProfileCard } = await import("@/components/profile-card");
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------
-
-function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
-  // OSS Assistant type carries a few more fields than the cloud type
-  // (access_consented). Populate the union of both so the
-  // fixture stays type-safe if either generator regenerates.
-  return {
-    id: "asst-1",
-    name: "My Assistant",
-    description: null,
-    configuration: null,
-    status: "active",
-    created: "2026-01-01T00:00:00Z",
-    modified: "2026-01-01T00:00:00Z",
-    current_release_version: null,
-    machine_id: null,
-    vembda_cluster_id: null,
-    machine_size: null,
-    is_local: false,
-    ingress_url: null,
-    access_consented: false,
-    handle: null,
-    ...overrides,
-  } as Assistant;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers

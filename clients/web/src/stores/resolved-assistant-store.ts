@@ -116,12 +116,12 @@ function nonEmptyString(value: string | undefined): string | undefined {
 }
 
 /** Name the shell injected at boot, when the config carries one. */
-export function getInjectedAssistantName(): string | undefined {
+export function getAssistantName(): string | undefined {
   return nonEmptyString(readInjectedConfig()?.assistantName);
 }
 
 /** Live persona name when hydrated, else the name the shell injected. */
 export function getAssistantDisplayName(): string | undefined {
   const live = useAssistantIdentityStore.getState().name?.trim();
-  return live || getInjectedAssistantName();
+  return live || getAssistantName();
 }

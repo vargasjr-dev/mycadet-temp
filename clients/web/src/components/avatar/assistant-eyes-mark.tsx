@@ -18,7 +18,6 @@
 
 import { useMemo } from "react";
 
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { eyeStyleBaseWidth } from "@/utils/assistant-eyes";
 import { pathBBox, unionBBox } from "@/utils/eye-bbox";
@@ -34,8 +33,7 @@ export function AssistantEyesMark({
   width?: number;
   className?: string;
 }) {
-  const assistantId = useActiveAssistantId();
-  const { components, traits } = useAssistantAvatar(assistantId);
+  const { components, traits } = useAssistantAvatar();
 
   const eye = useMemo(() => {
     if (!components || !traits) {

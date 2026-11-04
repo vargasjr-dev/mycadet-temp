@@ -23,9 +23,10 @@ export function useResourcePressureMonitor({
   assistantId,
   enabled,
 }: UseResourcePressureMonitorOptions): UseResourcePressureMonitorResult {
+  // The monitor itself is always on; the gate (the daemon version floor for
+  // the status route) is enforced by withholding the assistant id.
   const { status, mode } = useAssistantStatusMonitor({
-    assistantId,
-    enabled,
+    assistantId: enabled ? assistantId : null,
     cadenceMs: RESOURCE_PRESSURE_POLL_INTERVAL_MS,
     fetchStatus: getAssistantResourcePressureStatus,
     areStatusesEqual: areResourcePressureStatusesEqual,

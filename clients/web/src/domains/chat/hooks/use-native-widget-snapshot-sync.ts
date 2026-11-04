@@ -349,7 +349,7 @@ export function useNativeWidgetSnapshotSync(
   // those publishers: see {@link snapshotAvatar}. The query is already mounted
   // at root scope, so this is another observer on a cached entry rather than a
   // second fetch.
-  const avatar = useAssistantAvatar(assistantId);
+  const avatar = useAssistantAvatar();
   const avatarSource = useMemo(
     () =>
       resolveAvatarRender(

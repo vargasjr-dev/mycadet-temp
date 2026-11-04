@@ -31,7 +31,6 @@ export type AssistantStatusFetchResult<TStatus> =
 
 export interface UseAssistantStatusMonitorOptions<TStatus, TMode> {
   assistantId: string | null;
-  enabled: boolean;
   /** A new identity restarts the poll interval and refreshes immediately. */
   refreshKey?: unknown;
   cadenceMs: number;
@@ -100,7 +99,6 @@ const EMPTY_MONITOR_SNAPSHOT: AssistantStatusMonitorSnapshot<never> = {
 
 export function useAssistantStatusMonitor<TStatus, TMode>({
   assistantId,
-  enabled,
   refreshKey,
   cadenceMs,
   fetchStatus,
@@ -116,7 +114,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
     AssistantStatusMonitorSnapshot<TStatus>
   >(EMPTY_MONITOR_SNAPSHOT);
   const activeAssistantIdRef = useRef<string | null>(assistantId);
-  const enabledRef = useRef(enabled);
+  const enabledRef = useRef(true);
   const generationRef = useRef(0);
   const pollRequestIdRef = useRef(0);
 
@@ -129,7 +127,6 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
 
   useLayoutEffect(() => {
     activeAssistantIdRef.current = assistantId;
-    enabledRef.current = enabled;
     fetchStatusRef.current = fetchStatus;
     areStatusesEqualRef.current = areStatusesEqual;
     onStatusEventRef.current = onStatusEvent;
@@ -138,7 +135,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   useEffect(() => {
     generationRef.current += 1;
     setSnapshot(EMPTY_MONITOR_SNAPSHOT);
-  }, [assistantId, enabled]);
+  }, [assistantId]);
 
   const bumpGeneration = useCallback(() => {
     generationRef.current += 1;
@@ -191,7 +188,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   const refresh = useCallback(async () => {
     const requestedAssistantId = assistantId;
 
-    if (!enabled || !requestedAssistantId) {
+    if (!requestedAssistantId) {
       clearStatus();
       return;
     }
@@ -224,10 +221,10 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
 
       applyStatusForAssistant(requestedAssistantId, null, false, generation);
     }
-  }, [assistantId, applyStatusForAssistant, clearStatus, enabled]);
+  }, [assistantId, applyStatusForAssistant, clearStatus]);
 
   useEffect(() => {
-    if (!enabled || !assistantId) {
+    if (!assistantId) {
       return;
     }
 
@@ -240,19 +237,19 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [assistantId, cadenceMs, enabled, refresh, refreshKey]);
+  }, [assistantId, cadenceMs, refresh, refreshKey]);
 
   // The bus's `"app.resume"` channel fans in browser visibility,
   // Capacitor foreground, and `window.online`, so a single
   // subscription drives the focus-style refetch. `refresh` guards
-  // on `enabled` and `assistantId` internally.
+  // on `assistantId` internally.
   useBusSubscription("app.resume", () => {
     void refresh();
   });
 
   const applyStatusEvent = useCallback(
     (payload: TStatus | null) => {
-      if (!enabled || !assistantId) {
+      if (!assistantId) {
         clearStatus();
         return;
       }
@@ -261,13 +258,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
       onStatusEventRef.current?.();
       applyStatusForAssistant(assistantId, payload, true, generation);
     },
-    [
-      assistantId,
-      applyStatusForAssistant,
-      bumpGeneration,
-      clearStatus,
-      enabled,
-    ],
+    [assistantId, applyStatusForAssistant, bumpGeneration, clearStatus],
   );
 
   // React to daemon-pushed status events via the event bus. Complements
@@ -281,10 +272,8 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
     applyStatusEvent(payload);
   });
 
-  const status =
-    enabled && snapshot.assistantId === assistantId ? snapshot.status : null;
+  const status = snapshot.assistantId === assistantId ? snapshot.status : null;
   const hasResolvedStatus = Boolean(
-    enabled &&
     assistantId &&
     snapshot.assistantId === assistantId &&
     snapshot.hasResolvedStatus,

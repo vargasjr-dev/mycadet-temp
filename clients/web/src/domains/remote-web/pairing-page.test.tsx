@@ -27,7 +27,7 @@ mock.module("@/lib/local-mode", () => ({
 }));
 
 mock.module("@/stores/resolved-assistant-store", () => ({
-  getInjectedAssistantName: () => injectedAssistantName,
+  getAssistantName: () => injectedAssistantName,
 }));
 
 mock.module("@/runtime/native-auth", () => ({

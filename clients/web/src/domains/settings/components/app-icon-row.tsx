@@ -29,7 +29,6 @@ import {
 } from "@/utils/avatar-app-icon";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import { Button } from "@mycadet/design-library/components/button";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** Size of the row's thumbnail, sitting beside a single-line control. */
 const ROW_PREVIEW_SIZE = 32;
@@ -150,8 +149,7 @@ function primaryIconGround(
 }
 
 export function AppIconRow() {
-  const assistantId = useActiveAssistantId();
-  const sync = useAppIconSync(assistantId);
+  const sync = useAppIconSync();
 
   // The catalog and the picker below belong to a row that actually draws, so
   // they hang off the gate instead of loading for every install this feature
@@ -160,17 +158,16 @@ export function AppIconRow() {
     return null;
   }
 
-  return <AppIconRowContent assistantId={assistantId} sync={sync} />;
+  return <AppIconRowContent sync={sync} />;
 }
 
 interface AppIconRowContentProps {
-  assistantId: string | null;
   sync: AppIconSync;
 }
 
-function AppIconRowContent({ assistantId, sync }: AppIconRowContentProps) {
+function AppIconRowContent({ sync }: AppIconRowContentProps) {
   const { t } = useTranslation("settings");
-  const { components } = useAssistantAvatar(assistantId);
+  const { components } = useAssistantAvatar();
   const bundledComponents = useBundledAvatarComponents();
   const shellEnvironment = useShellEnvironment();
   const isAndroidShell = useIsNativeAndroid();

@@ -1,4 +1,3 @@
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 

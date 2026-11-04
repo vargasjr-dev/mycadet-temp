@@ -11,7 +11,7 @@ afterEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
 });
 
-describe("getAssistantDisplayName", () => {
+describe("the injected/display names", () => {
   test("prefers the live identity-store name over the injected config", () => {
     window.__CADET_CONFIG__ = {
       remote: "docker",
