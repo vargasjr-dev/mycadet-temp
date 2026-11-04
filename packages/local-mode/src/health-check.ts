@@ -4,20 +4,6 @@ import { z } from "zod";
 import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
 import { loopbackSafeFetch } from "./loopback-fetch";
 
-const HealthResponseSchema = z.object({
-  status: z.string().optional(),
-  message: z.string().optional(),
-  version: z.string().optional(),
-});
-
-export const HEALTH_CHECK_TIMEOUT_MS = 1500;
-
-export interface HealthCheckResult {
-  status: string;
-  detail: string | null;
-  version?: string;
-}
-
 export interface ManagedProcessEntry {
   name: string;
   status: "running" | "not_running" | "unreachable";
@@ -114,52 +100,6 @@ async function fetchLegacyConnectionStatus(
   }
 }
 
-export async function checkHealth(
-  runtimeUrl: string,
-  bearerToken?: string,
-): Promise<HealthCheckResult> {
-  try {
-    const url = `${runtimeUrl}/v1/health`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      HEALTH_CHECK_TIMEOUT_MS,
-    );
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (bearerToken) {
-      headers["Authorization"] = `Bearer ${bearerToken}`;
-    }
-
-    const response = await loopbackSafeFetch(url, {
-      signal: controller.signal,
-      headers,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { status: `error (${response.status})`, detail: null };
-    }
-
-    const data = HealthResponseSchema.catch({}).parse(await response.json());
-    const status = data.status || "unknown";
-    return {
-      status,
-      detail: status !== "healthy" ? (data.message ?? null) : null,
-      version: data.version,
-    };
-  } catch (error) {
-    const status =
-      error instanceof Error && error.name === "AbortError"
-        ? "timeout"
-        : "unreachable";
-    return { status, detail: null };
-  }
-}
-
 /**
  * Cadet Cloud process listing for an entry. The gateway address derives
  * from the entry's topology — cloud-managed entries resolve through the
@@ -211,79 +151,4 @@ export async function fetchCloudPs(
   } catch {
     return null;
   }
-}
-
-/**
- * Cadet Cloud health for an entry. The gateway address derives from the
- * entry's topology — cloud-managed entries resolve through the
- * environment's cloud URL stack.
- */
-export async function checkCloudHealth(
-  entry: LockfileAssistant,
-): Promise<HealthCheckResult> {
-  const runtimeUrl = getGatewayUrl(entry);
-
-  const token = readCloudToken();
-  if (!token) {
-    return {
-      status: "error (auth)",
-      detail: "not logged in — run `cadet login`",
-    };
-  }
-
-  let headers: Record<string, string>;
-  try {
-    headers = await cloudAuthHeaders(token, runtimeUrl);
-  } catch (err) {
-    return {
-      status: "error (auth)",
-      detail: err instanceof Error ? err.message : "org lookup failed",
-    };
-  }
-
-  try {
-    const url = `${runtimeUrl}/v1/assistants/${encodeURIComponent(entry.assistantId)}/healthz/`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      HEALTH_CHECK_TIMEOUT_MS,
-    );
-
-    const response = await loopbackSafeFetch(url, {
-      signal: controller.signal,
-      headers,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { status: `error (${response.status})`, detail: null };
-    }
-
-    const data = HealthResponseSchema.catch({}).parse(await response.json());
-    const status = data.status || "unknown";
-    return {
-      status,
-      detail: status !== "healthy" ? (data.message ?? null) : null,
-      version: data.version,
-    };
-  } catch (error) {
-    const status =
-      error instanceof Error && error.name === "AbortError"
-        ? "timeout"
-        : "unreachable";
-    return { status, detail: null };
-  }
-}
-
-/**
- * Remote-agnostic liveness for one assistant entry: the assistant is up
- * exactly when its gateway answers the health probe. The wake-recovery and
- * backup-restart decisions ride this — no per-cloud pid-file or container
- * inspection.
- */
-export async function isAssistantHealthy(
-  entry: LockfileAssistant,
-): Promise<boolean> {
-  return (await checkHealth(getGatewayUrl(entry))).status === "healthy";
 }

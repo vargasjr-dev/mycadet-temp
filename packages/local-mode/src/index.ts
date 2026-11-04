@@ -61,14 +61,7 @@ export {
   STATE_ROOTS,
 } from "./root-backup";
 export type { DockerBackupOps } from "./root-backup";
-export {
-  checkCloudHealth,
-  checkHealth,
-  isAssistantHealthy,
-  HEALTH_CHECK_TIMEOUT_MS,
-  type HealthCheckResult,
-  type ManagedProcessEntry,
-} from "./health-check";
+export { type ManagedProcessEntry } from "./health-check";
 export {
   compareVersions,
   isVersionCompatible,
@@ -284,7 +277,7 @@ export {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
   fetchCurrentVersion,
-  getGatewayHealth,
+  checkHealth,
   type DaemonReadiness,
   type GatewayHealth,
   type HttpProbeEndpoint,

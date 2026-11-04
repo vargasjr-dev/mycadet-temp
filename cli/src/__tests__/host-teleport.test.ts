@@ -6,7 +6,6 @@ import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
-import * as healthCheck from "@mycadet/local-mode";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
@@ -60,10 +59,13 @@ async function instance(
   };
 }
 const previousDataHome = process.env.XDG_DATA_HOME;
-// The teleport flow calls sleepAssistant directly now (the ops seam is
-// gone), so the sleep events ride a namespace spy.
-const sleepMock = spyOn(localMode, "sleepAssistant");
-const healthMock = spyOn(healthCheck, "isAssistantHealthy");
+// Re-created per test (and restored per afterEach) so the co-run suites
+// see the real operations — the namespace spies patch the shared module
+// registry, so anything they leave attached leaks across files.
+let sleepMock: ReturnType<typeof spyOn<typeof localMode, "sleepAssistant">>;
+// Liveness rides the one health method: the flow's wake-recovery decisions
+// ask whether the gateway answers, so the override models the running map.
+let healthMock: ReturnType<typeof spyOn<typeof localMode, "checkHealth">>;
 // Same for wake: the flow calls the package's wakeAssistant (the one
 // revive seam), so the wake events ride a namespace spy like sleep.
 // Re-created per test (and restored per afterEach) so the co-run suites
@@ -76,6 +78,8 @@ beforeEach(async () => {
   process.env.XDG_DATA_HOME = directory;
   previousLockDir = process.env.XDG_CONFIG_HOME;
   process.env.XDG_CONFIG_HOME = join(directory, "registry");
+  sleepMock = spyOn(localMode, "sleepAssistant");
+  healthMock = spyOn(localMode, "checkHealth");
   source = await instance("source", "local", 7);
   target = (await instance("target", "local", 3)) as LocalAssistant;
   saveLockfileAssistant(source);
@@ -112,9 +116,11 @@ beforeEach(async () => {
   });
   // Liveness rides the health check's entry probe: the flow's wake-recovery
   // decisions ask whether the gateway answers, so the override models the
-  // running map.
-  healthMock.mockImplementation(
-    async (entry: LockfileAssistant) => running.get(entry.assistantId) ?? false,
+  // running map through the served version.
+  healthMock.mockImplementation(async (entry: LockfileAssistant) =>
+    running.get(entry.assistantId)
+      ? { version: "1.0.0", status: "healthy", authenticated: true }
+      : { authenticated: true },
   );
   wakeMock.mockImplementation(async (entry) => {
     order.push(`wake:${entry.assistantId}`);
@@ -145,8 +151,10 @@ afterEach(async () => {
     process.env.XDG_DATA_HOME = previousDataHome;
   }
   log.mockRestore();
-  // The namespace spy must not leak into the other teleport suites that
-  // share this process.
+  // The namespace spies must not leak into the other suites that share
+  // this process.
+  sleepMock.mockRestore();
+  healthMock.mockRestore();
   wakeMock.mockRestore();
   retireMock.mockRestore();
   if (previousLockDir === undefined) {

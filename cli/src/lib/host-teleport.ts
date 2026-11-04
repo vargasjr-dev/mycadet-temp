@@ -24,10 +24,19 @@ import {
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "@mycadet/local-mode";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
-import { isAssistantHealthy } from "@mycadet/local-mode";
+import { checkHealth } from "@mycadet/local-mode";
 import { generateInstanceName } from "@mycadet/local-mode";
 
 export class TeleportRecoveryError extends AggregateError {}
+
+/**
+ * Liveness for the flow's wake-recovery decisions: the assistant's gateway
+ * answers the health probe with a served version. The package keeps this
+ * predicate private (the sleep operation's own was-running signal), so the
+ * flow derives it from the one health method.
+ */
+const isAssistantHealthy = (entry: LockfileAssistant): Promise<boolean> =>
+  checkHealth(entry).then((health) => health.version !== undefined);
 
 export interface HostTeleportOps {
   backup(entry: LockfileAssistant): Promise<string>;

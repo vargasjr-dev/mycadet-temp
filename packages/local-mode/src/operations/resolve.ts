@@ -1,4 +1,4 @@
-import { getGatewayHealth } from "../daemon-readiness";
+import { checkHealth } from "../daemon-readiness";
 import { runListRoute } from "./list";
 import { findAssistantByName } from "./lookup";
 import type { OperatorRequest } from "./routes";
@@ -36,7 +36,7 @@ export async function runResolveRoute(
     // 404s a stale id, the data-plane forward owns a platform-hosted one.
     return null;
   }
-  const health = await getGatewayHealth(entry, { headers });
+  const health = await checkHealth(entry, { headers });
   if (!health.authenticated) {
     return resolutionResponse({ status: "unauthenticated" });
   }

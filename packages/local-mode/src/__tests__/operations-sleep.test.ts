@@ -18,6 +18,7 @@ const realProcess = { ...(await import("../process")) };
 const realDrain = { ...(await import("../remotes/local/drain")) };
 const realGuardianToken = { ...(await import("../guardian-token")) };
 const realDockerSleep = { ...(await import("../remotes/docker/sleep")) };
+const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
 
 const isProcessAliveMock = mock(
   (_pidFile?: string): { alive: boolean; pid: number | null } => ({
@@ -39,7 +40,12 @@ const getGuardianAccessTokenMock = mock(
   > => ({ ok: true, accessToken: "test-guardian-token" }),
 );
 const sleepDockerMock = mock(async (): Promise<void> => {});
+const isAssistantHealthyMock = mock(async (): Promise<boolean> => false);
 
+mock.module("../daemon-readiness", () => ({
+  ...realDaemonReadiness,
+  isAssistantHealthy: isAssistantHealthyMock,
+}));
 mock.module("../process", () => ({
   ...realProcess,
   isProcessAlive: isProcessAliveMock,
@@ -66,6 +72,7 @@ afterAll(() => {
   mock.module("../remotes/local/drain", () => realDrain);
   mock.module("../guardian-token", () => realGuardianToken);
   mock.module("../remotes/docker/sleep", () => realDockerSleep);
+  mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
 import type { LockfileAssistant } from "../lockfile-contract";
@@ -87,9 +94,11 @@ beforeEach(() => {
     loadGuardianTokenMock,
     getGuardianAccessTokenMock,
     sleepDockerMock,
+    isAssistantHealthyMock,
   ]) {
     m.mockReset();
   }
+  isAssistantHealthyMock.mockResolvedValue(false);
   isProcessAliveMock.mockReturnValue({ alive: false, pid: null });
   stopProcessByPidFileMock.mockResolvedValue(true);
   drainAssistantMock.mockResolvedValue("drained");
@@ -177,6 +186,7 @@ describe("sleepAssistant — the local stop core", () => {
         ces: "not-running",
       },
       notes: [],
+      wasRunning: false,
     });
     // assistant + gateway + CES sibling
     expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3);
@@ -297,7 +307,7 @@ describe("sleepAssistant — the --wait drain phase", () => {
 
     const result = await sleepAssistant(entry, { wait: true });
 
-    expect(result).toEqual({ ok: true, cancelled: true });
+    expect(result).toEqual({ ok: true, cancelled: true, wasRunning: false });
     expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
   });
 
@@ -342,19 +352,25 @@ describe("sleepAssistant — the --wait drain phase", () => {
 });
 
 describe("sleepAssistant — the dispatch", () => {
-  test("docker entries stop their containers", async () => {
+  test("docker entries stop their containers and report the pre-sleep liveness", async () => {
     const entry = {
       assistantId: "asst-docker",
       cloud: "docker",
       port: 7831,
     } as LockfileAssistant;
+    isAssistantHealthyMock.mockResolvedValue(true);
 
     const result = await sleepAssistant(entry, {});
 
     expect(result).toEqual({
       ok: true,
       kind: "containers",
+      wasRunning: true,
     });
+    // The probe fires BEFORE the stop — the verdict is the pre-sleep state.
+    expect(isAssistantHealthyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
+    );
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
     );
