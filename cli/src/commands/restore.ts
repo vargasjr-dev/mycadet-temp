@@ -1,35 +1,10 @@
-import { isCloudEntry } from "@mycadet/local-mode/contract";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  renameSync,
-  unlinkSync,
-} from "fs";
-import { basename, dirname, join } from "path";
+import { existsSync, statSync } from "fs";
 
 import { findAssistantByName } from "../lib/assistant-config.js";
-import {
-  cliCommand,
-  getArchivePath,
-  getLocalInstanceDir,
-  getMetadataPath,
-  readCloudToken,
-  saveLockfileAssistant,
-  wakeAssistant,
-} from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { exec } from "../lib/step-runner.js";
-import {
-  cloudPollJobStatus,
-  cloudRequestSignedUrl,
-  platformImportBundleFromGcs,
-  platformImportPreflightFromGcs,
-  platformUploadToSignedUrl,
-} from "../lib/cloud-client.js";
-import { restoreRootBackup, validateRootArchive } from "@mycadet/local-mode";
+import { cliCommand } from "@mycadet/local-mode";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
+import { recoverRetiredAssistant, restoreAssistant } from "@mycadet/local-mode";
+
 function printUsage(): void {
   console.log(
     `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,
@@ -100,417 +75,62 @@ function parseArgs(argv: string[]): {
   return { name: positionals[0], fromPath, dryRun, help: false };
 }
 
-interface PreflightFileEntry {
-  path: string;
-  action: string;
+function fail(message: string): never {
+  console.error(message);
+  process.exit(1);
 }
 
-interface StructuredError {
-  code: string;
-  message: string;
-  path?: string;
-}
+/** The dry-run report: what a real import would change. */
+function printPreflight(preflight: {
+  filesToCreate: number;
+  filesToOverwrite: number;
+  filesUnchanged: number;
+  totalFiles: number;
+  conflicts: string[];
+  files: { path: string; action: string }[];
+}): void {
+  console.log("Preflight analysis:");
+  console.log(`  Files to create:    ${preflight.filesToCreate}`);
+  console.log(`  Files to overwrite: ${preflight.filesToOverwrite}`);
+  console.log(`  Files unchanged:    ${preflight.filesUnchanged}`);
+  console.log(`  Total:              ${preflight.totalFiles}`);
+  console.log("");
 
-interface PreflightResponse {
-  can_import: boolean;
-  validation?: {
-    is_valid: false;
-    errors: StructuredError[];
-  };
-  files?: PreflightFileEntry[];
-  summary?: {
-    files_to_create: number;
-    files_to_overwrite: number;
-    files_unchanged: number;
-    total_files: number;
-  };
-  conflicts?: StructuredError[];
-}
-
-interface ImportResponse {
-  success: boolean;
-  reason?: string;
-  errors?: StructuredError[];
-  message?: string;
-  warnings?: string[];
-  summary?: {
-    total_files: number;
-    files_created: number;
-    files_overwritten: number;
-    files_skipped: number;
-    backups_created: number;
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Cloud restore through the cloud API; the CLI never opens cloud storage.
-// ---------------------------------------------------------------------------
-
-async function restorePlatform(
-  entry: LockfileAssistant,
-  name: string,
-  bundleData: Buffer,
-  opts: { dryRun: boolean },
-): Promise<void> {
-  // Step 1 — Authenticate
-  const token = readCloudToken();
-  if (!token) {
-    console.error(`Not logged in. Run '${cliCommand()} login' first.`);
-    process.exit(1);
-  }
-
-  // Upload the root archive through the cloud API; it owns cloud restore.
-  const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
-    {
-      operation: "upload",
-      contentType: "application/gzip",
-      contentLength: bundleData.length,
-    },
-    token,
-    getGatewayUrl(entry),
+  console.log(
+    `Conflicts: ${preflight.conflicts.length > 0 ? preflight.conflicts.join(", ") : "none"}`,
   );
-  console.log("Uploading bundle...");
-  await platformUploadToSignedUrl(uploadUrl, new Uint8Array(bundleData));
 
-  // Step 2 — Dry-run path
-  if (opts.dryRun) {
-    console.log("Running preflight analysis...\n");
-
-    let preflightResult: { statusCode: number; body: Record<string, unknown> };
-    try {
-      preflightResult = await platformImportPreflightFromGcs(
-        bundleKey,
-        token,
-        getGatewayUrl(entry),
-      );
-    } catch (err) {
-      if (err instanceof Error && err.name === "TimeoutError") {
-        console.error("Error: Preflight request timed out after 30 minutes.");
-        process.exit(1);
-      }
-      throw err;
-    }
-
-    if (
-      preflightResult.statusCode === 401 ||
-      preflightResult.statusCode === 403
-    ) {
-      console.error(
-        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
-      );
-      process.exit(1);
-    }
-
-    if (preflightResult.statusCode === 404) {
-      console.error(
-        "No cloud assistant found. Ensure your assistant is running.",
-      );
-      process.exit(1);
-    }
-
-    if (preflightResult.statusCode === 409) {
-      console.error(
-        "Multiple assistants found. This is a Cadet Cloud configuration issue.",
-      );
-      process.exit(1);
-    }
-
-    if (
-      preflightResult.statusCode === 502 ||
-      preflightResult.statusCode === 503 ||
-      preflightResult.statusCode === 504
-    ) {
-      console.error(
-        `Assistant is unreachable. Try 'cadet wake ${name}' first.`,
-      );
-      process.exit(1);
-    }
-
-    if (preflightResult.statusCode !== 200) {
-      console.error(
-        `Error: Preflight check failed (${preflightResult.statusCode}): ${JSON.stringify(preflightResult.body)}`,
-      );
-      process.exit(1);
-    }
-
-    const result = preflightResult.body as unknown as PreflightResponse;
-
-    if (!result.can_import) {
-      if (result.validation?.errors?.length) {
-        console.error("Import blocked by validation errors:");
-        for (const err of result.validation.errors) {
-          console.error(
-            `  - ${err.message}${err.path ? ` (${err.path})` : ""}`,
-          );
-        }
-      }
-      if (result.conflicts?.length) {
-        console.error("Import blocked by conflicts:");
-        for (const conflict of result.conflicts) {
-          console.error(
-            `  - ${conflict.message}${conflict.path ? ` (${conflict.path})` : ""}`,
-          );
-        }
-      }
-      process.exit(1);
-    }
-
-    // Print summary table
-    const summary = result.summary ?? {
-      files_to_create: 0,
-      files_to_overwrite: 0,
-      files_unchanged: 0,
-      total_files: 0,
-    };
-    console.log("Preflight analysis:");
-    console.log(`  Files to create:    ${summary.files_to_create}`);
-    console.log(`  Files to overwrite: ${summary.files_to_overwrite}`);
-    console.log(`  Files unchanged:    ${summary.files_unchanged}`);
-    console.log(`  Total:              ${summary.total_files}`);
+  // List individual files with their action
+  if (preflight.files.length > 0) {
     console.log("");
-
-    const conflicts = result.conflicts ?? [];
-    console.log(
-      `Conflicts: ${conflicts.length > 0 ? conflicts.map((c) => c.message).join(", ") : "none"}`,
-    );
-
-    // List individual files with their action
-    if (result.files && result.files.length > 0) {
-      console.log("");
-      console.log("Files:");
-      for (const file of result.files) {
-        console.log(`  [${file.action}] ${file.path}`);
-      }
-    }
-
-    return;
-  }
-
-  // Step 4 — Data import
-  console.log("Importing backup data...");
-
-  let importResult: { statusCode: number; body: Record<string, unknown> };
-  try {
-    importResult = await platformImportBundleFromGcs(
-      bundleKey,
-      token,
-      getGatewayUrl(entry),
-    );
-  } catch (err) {
-    if (err instanceof Error && err.name === "TimeoutError") {
-      console.error("Error: Import request timed out after 30 minutes.");
-      process.exit(1);
-    }
-    throw err;
-  }
-
-  if (importResult.statusCode === 401 || importResult.statusCode === 403) {
-    console.error(
-      `Authentication failed. Run '${cliCommand()} login' to refresh.`,
-    );
-    process.exit(1);
-  }
-
-  if (importResult.statusCode === 404) {
-    console.error(
-      "No cloud assistant found. Ensure your assistant is running.",
-    );
-    process.exit(1);
-  }
-
-  if (importResult.statusCode === 409) {
-    console.error(
-      "Multiple assistants found. This is a Cadet Cloud configuration issue.",
-    );
-    process.exit(1);
-  }
-
-  if (
-    importResult.statusCode === 502 ||
-    importResult.statusCode === 503 ||
-    importResult.statusCode === 504
-  ) {
-    console.error(`Assistant is unreachable. Try 'cadet wake ${name}' first.`);
-    process.exit(1);
-  }
-
-  if (
-    importResult.statusCode !== 202 &&
-    (importResult.statusCode < 200 || importResult.statusCode >= 300)
-  ) {
-    console.error(`Error: Import failed (${importResult.statusCode})`);
-    process.exit(1);
-  }
-
-  // Async import — poll until complete
-  if (importResult.statusCode === 202) {
-    const jobId = (importResult.body as { job_id?: string }).job_id;
-    if (!jobId) {
-      console.error("Error: Import accepted but no job ID returned.");
-      process.exit(1);
-    }
-
-    const POLL_INTERVAL_MS = 5_000;
-    const TIMEOUT_MS = 10 * 60 * 1_000; // 10 minutes
-    const startTime = Date.now();
-    const deadline = startTime + TIMEOUT_MS;
-
-    while (Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-
-      let status: Awaited<ReturnType<typeof cloudPollJobStatus>>;
-      try {
-        status = await cloudPollJobStatus(jobId, token, getGatewayUrl(entry));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("not found")) {
-          throw err;
-        }
-        // Fail fast on auth errors from authHeaders() which don't
-        // match the "status check failed: NNN" format
-        if (msg.includes("401") || msg.includes("403")) {
-          throw err;
-        }
-        // Re-throw permanent 4xx errors, retry transient 5xx
-        const statusMatch = msg.match(/status check failed: (\d+)/);
-        if (statusMatch) {
-          const statusCode = parseInt(statusMatch[1], 10);
-          if (statusCode >= 400 && statusCode < 500) {
-            throw err;
-          }
-        }
-        // Transient error (5xx, network) — retry
-        console.warn(`Polling failed: ${msg}. Retrying...`);
-        continue;
-      }
-
-      if (status.status === "complete") {
-        importResult = {
-          statusCode: 200,
-          body: (status.result as Record<string, unknown>) ?? {},
-        };
-        break;
-      }
-
-      if (status.status === "failed") {
-        console.error(`Import failed: ${status.error ?? "unknown error"}`);
-        process.exit(1);
-      }
-
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      process.stdout.write(`\rImporting... ${elapsed}s elapsed`);
-    }
-
-    // Clear the progress line
-    process.stdout.write("\r" + " ".repeat(40) + "\r");
-
-    if (importResult.statusCode === 202) {
-      console.error("Import timed out after 10 minutes.");
-      process.exit(1);
+    console.log("Files:");
+    for (const file of preflight.files) {
+      console.log(`  [${file.action}] ${file.path}`);
     }
   }
+}
 
-  const result = importResult.body as unknown as ImportResponse;
-
-  if (!result.success) {
-    console.error(
-      `Error: Import failed — ${result.message ?? result.reason ?? "unknown reason"}`,
-    );
-    for (const err of result.errors ?? []) {
-      console.error(`  - ${err.message}${err.path ? ` (${err.path})` : ""}`);
-    }
-    process.exit(1);
-  }
-
-  // Print import report
-  const summary = result.summary ?? {
-    total_files: 0,
-    files_created: 0,
-    files_overwritten: 0,
-    files_skipped: 0,
-    backups_created: 0,
-  };
+/** The import report: what the restore changed. */
+function printImportReport(imported: {
+  filesCreated: number;
+  filesOverwritten: number;
+  filesSkipped: number;
+  backupsCreated: number;
+  warnings: string[];
+}): void {
   console.log("✅ Restore complete.");
-  console.log(`  Files created:     ${summary.files_created}`);
-  console.log(`  Files overwritten: ${summary.files_overwritten}`);
-  console.log(`  Files skipped:     ${summary.files_skipped}`);
-  console.log(`  Backups created:   ${summary.backups_created}`);
+  console.log(`  Files created:     ${imported.filesCreated}`);
+  console.log(`  Files overwritten: ${imported.filesOverwritten}`);
+  console.log(`  Files skipped:     ${imported.filesSkipped}`);
+  console.log(`  Backups created:   ${imported.backupsCreated}`);
 
-  // Print warnings if any
-  const warnings = result.warnings ?? [];
-  if (warnings.length > 0) {
+  if (imported.warnings.length > 0) {
     console.log("");
     console.log("Warnings:");
-    for (const warning of warnings) {
+    for (const warning of imported.warnings) {
       console.log(`  ⚠️  ${warning}`);
     }
   }
-}
-
-/**
- * Recover a previously retired local assistant from its archive: extract the
- * archived workspace data back to its original location, restore the lockfile
- * entry, and start the assistant and gateway. Archives live in
- * $XDG_DATA_HOME/cadet/retired/ (default: ~/.local/share/cadet/retired/).
- */
-async function recoverFromArchive(name: string): Promise<void> {
-  const archivePath = getArchivePath(name);
-  const metadataPath = getMetadataPath(name);
-
-  // Verify the archive exists
-  if (!existsSync(archivePath) || !existsSync(metadataPath)) {
-    console.error(`No retired archive found for '${name}'.`);
-    process.exit(1);
-  }
-
-  // Read and validate metadata before any side effects
-  const entry: LockfileAssistant = JSON.parse(
-    readFileSync(metadataPath, "utf-8"),
-  );
-  // Retire archives local instances, so only a local entry can be restored.
-  if (entry.cloud !== "local") {
-    throw new Error(
-      `Retired assistant '${name}' is not a local assistant; only local archives can be restored.`,
-    );
-  }
-
-  // Check that the recovering entry's own target directory is free.
-  const target = getLocalInstanceDir(entry);
-  if (existsSync(target)) {
-    console.error(
-      `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
-        `Retire the current assistant first.`,
-    );
-    process.exit(1);
-  }
-
-  // Extract and rename.
-  //
-  // retireLocal archives the full instanceDir. The directory is staged under
-  // `<archive>.staging` inside the retired dir before being packed with
-  // `tar -C <retiredDir> <stagingBasename>`, so the top-level entry inside
-  // the tarball is always `<name>.tar.gz.staging`.
-  //
-  // Correct restoration: extract to retiredDir, then rename the staging entry
-  // back to the original target path. Using homedir() as the -C target was
-  // wrong for any instance stored outside the home directory.
-  const targetDir = getLocalInstanceDir(entry);
-  const retiredDir = dirname(archivePath);
-  const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
-
-  await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
-  mkdirSync(dirname(targetDir), { recursive: true });
-  renameSync(extractedPath, targetDir);
-  saveLockfileAssistant(entry);
-  // wakeAssistant is the one revive seam: the local leg brings CES sibling,
-  // daemon, and gateway up in parallel (the way the Docker topology starts
-  // its sibling containers together) and self-heals anything already alive.
-  await wakeAssistant(entry);
-
-  unlinkSync(archivePath);
-  unlinkSync(metadataPath);
-
-  console.log(`✅ Recovered assistant '${name}'.`);
 }
 
 export const restore = Object.assign(
@@ -537,7 +157,9 @@ export const restore = Object.assign(
         );
         process.exit(1);
       }
-      await recoverFromArchive(name);
+      const recovered = await recoverRetiredAssistant(name);
+      if (!recovered.ok) fail(recovered.error);
+      console.log(`✅ Recovered assistant '${name}'.`);
       return;
     }
 
@@ -558,33 +180,29 @@ export const restore = Object.assign(
     const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
     console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
 
-    const cloud = entry.cloud;
+    if (isCloudEntry(entry)) console.log("Uploading bundle...");
 
-    if (cloud === "apple-container") {
-      console.error(
-        `Error: '${name}' uses the Apple Containers runtime. Restore is not yet supported for this topology.`,
-      );
-      process.exit(1);
-    }
+    const result = await restoreAssistant(entry, {
+      fromPath,
+      dryRun,
+      log: (line) => console.log(line),
+    });
 
-    if (isCloudEntry(entry)) {
-      await validateRootArchive(fromPath);
-      const bundleData = readFileSync(fromPath);
-      await restorePlatform(entry, name, bundleData, { dryRun });
+    if (!result.ok) fail(result.error);
+
+    if (result.kind === "cloud") {
+      if (result.dryRun) printPreflight(result.preflight);
+      else printImportReport(result.import);
       return;
     }
 
-    if (cloud !== "local" && cloud !== "docker") {
-      throw new Error(`Restore for '${cloud}' must run on its host.`);
-    }
-    const recoveryPath = await restoreRootBackup(entry, fromPath, { dryRun });
-    if (dryRun)
+    if (result.dryRun)
       console.log(
         "Root archive is valid; restore would replace workspace, gateway security, CES security and CES data. No services were stopped.",
       );
     else {
       console.log("Restore complete.");
-      console.log(`Previous state retained at ${recoveryPath}`);
+      console.log(`Previous state retained at ${result.recoveryPath}`);
     }
   },
   {
