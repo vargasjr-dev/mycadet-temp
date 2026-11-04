@@ -310,7 +310,7 @@ describe("cadet ps — platform status line", () => {
     checkHealthMock.mockImplementation(async (entry) =>
       entry.assistantId === "assistant-123"
         ? { version: "1.0.0", status: "healthy", authenticated: true }
-        : { authenticated: true },
+        : { version: undefined, status: "unreachable", authenticated: true },
     );
 
     await listAllAssistants(false);

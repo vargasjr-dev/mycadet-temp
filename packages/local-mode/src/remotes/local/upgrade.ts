@@ -10,7 +10,7 @@
 import { rm } from "node:fs/promises";
 
 import {
-  fetchCurrentVersion,
+  checkHealth,
   ensureLocalRuntime,
   leaseGuardianToken,
 } from "../..";
@@ -104,7 +104,7 @@ export async function upgradeLocal(
     reporter,
   );
   const adminUrl = `http://127.0.0.1:${entry.port}`;
-  const currentVersion = await fetchCurrentVersion(adminUrl);
+  const currentVersion = (await checkHealth(entry)).version;
 
   if (!currentVersion && targetVersion) {
     warn(

@@ -21,7 +21,7 @@ import { computeDeviceId, loadGuardianToken } from "./guardian-token";
 import { saveLockfileAssistant } from "./lockfile";
 import { getGatewayUrl, type LockfileAssistant } from "./lockfile-contract";
 import { loopbackSafeFetch } from "./loopback-fetch";
-import { fetchCurrentVersion } from "./daemon-readiness";
+import { checkHealth } from "./daemon-readiness";
 import {
   findAssistantByName,
   getActiveAssistant,
@@ -554,7 +554,7 @@ export async function registerLocalAssistantWithCloud(
   const orgId = await fetchOrganizationId(token);
   const clientInstallationId = computeDeviceId();
   const [assistantVersion, ingressUrl] = await Promise.all([
-    fetchCurrentVersion(gatewayUrl),
+    (await checkHealth(entry)).version,
     fetchAssistantIngressUrl(gatewayUrl, guardianBearer(entry.assistantId)),
   ]);
   const cloudUrl = resolveCloudUrl();

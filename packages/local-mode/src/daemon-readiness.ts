@@ -155,8 +155,7 @@ export const GatewayHealthSchema = z.object({
    * The runtime's own health verdict from the detailed body ("healthy",
    * "unhealthy", ...) — the gateway and the runtime share one process in the
    * topologies this probe serves, so the alias answers with the runtime's
-   * full detailed-health shape. Absent on a failed probe or a server that
-   * predates the field.
+   * full detailed-health shape. Absent on servers that predate the field.
    */
   status: z.string().optional(),
   /**
@@ -170,74 +169,22 @@ export const GatewayHealthSchema = z.object({
   authenticated: z.boolean().default(true),
 });
 
-export type GatewayHealth = z.infer<typeof GatewayHealthSchema>;
+/**
+ * The one health answer. `status` is always present: the runtime's own
+ * verdict from the detailed body when it served one, "healthy" when the
+ * gateway answered with a body that predates the field, and the way the
+ * probe failed otherwise — "unreachable", or "timeout" when the probe's own
+ * deadline fired.
+ */
+export type GatewayHealth = {
+  version?: string;
+  status: string;
+  authenticated: boolean;
+};
 
 /** The caller's own headers, in either mount spelling: a fetch Request's
  * Headers, or the connect record's IncomingHttpHeaders. */
 type GatewayHealthHeaders = Headers | IncomingHttpHeaders;
-
-/**
- * Read a gateway's `/healthz` by URL and return its identity AND the
- * caller's own auth verdict in one round-trip: the version it serves, and
- * whether the request's credentials (the browser access cookie on a
- * same-origin request) authenticate. Best-effort — an unreachable endpoint,
- * a non-2xx, or a malformed body all read as "no version, no verdict"
- * (`authenticated: true`), so callers on servers without the field keep
- * today's behavior.
- */
-async function readGatewayHealth(
-  runtimeUrl: string,
-  opts: {
-    signal?: AbortSignal;
-    headers?: GatewayHealthHeaders;
-    authHeaders?: Record<string, string>;
-  } = {},
-): Promise<GatewayHealth> {
-  try {
-    const healthUrl = new URL(
-      "healthz",
-      runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
-    );
-    // The derived auth headers spread under our own Accept, and the
-    // caller's headers spread after them — later entries win, so the
-    // caller's credentials (if any) override the derived ones and its
-    // Accept overrides ours; the record spelling's array values join and
-    // its undefined values drop, exactly what a Headers instance would
-    // have done for them.
-    const callerEntries: [string, string][] = [];
-    if (opts.headers instanceof Headers) {
-      for (const entry of opts.headers) {
-        callerEntries.push(entry);
-      }
-    } else {
-      for (const [key, value] of Object.entries(opts.headers ?? {})) {
-        if (value !== undefined) {
-          callerEntries.push([
-            key,
-            Array.isArray(value) ? value.join(", ") : value,
-          ]);
-        }
-      }
-    }
-    const resp = await loopbackSafeFetch(healthUrl.href, {
-      headers: [
-        ["accept", "application/json"],
-        ...Object.entries(opts.authHeaders ?? {}),
-        ...callerEntries,
-      ],
-      signal: opts.signal ?? AbortSignal.timeout(5000),
-    });
-    if (resp.ok) {
-      const parsed = GatewayHealthSchema.safeParse(await resp.json());
-      if (parsed.success) {
-        return parsed.data;
-      }
-    }
-  } catch {
-    // Best-effort: no version, no verdict.
-  }
-  return { version: undefined, authenticated: true };
-}
 
 /**
  * THE health check for one assistant entry — the package's and the CLI's
@@ -256,10 +203,62 @@ export async function checkHealth(
   entry: LockfileAssistant,
   opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
 ): Promise<GatewayHealth> {
-  return readGatewayHealth(getGatewayUrl(entry), {
-    ...opts,
-    authHeaders: await gatewayAuthHeaders(entry),
+  const runtimeUrl = getGatewayUrl(entry);
+  const down = (status: "unreachable" | "timeout"): GatewayHealth => ({
+    version: undefined,
+    status,
+    authenticated: true,
   });
+  try {
+    const healthUrl = new URL(
+      "healthz",
+      runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
+    );
+    // The derived auth headers spread under our own Accept, and the
+    // caller's headers spread after them — later entries win, so the
+    // caller's credentials (if any) override the derived ones and its
+    // Accept overrides ours; the record spelling's array values join and
+    // its undefined values drop, exactly what a Headers instance would
+    // have done for them.
+    const callerEntries: [string, string][] = [];
+    if (opts.headers instanceof Headers) {
+      for (const headerEntry of opts.headers) {
+        callerEntries.push(headerEntry);
+      }
+    } else {
+      for (const [key, value] of Object.entries(opts.headers ?? {})) {
+        if (value !== undefined) {
+          callerEntries.push([
+            key,
+            Array.isArray(value) ? value.join(", ") : value,
+          ]);
+        }
+      }
+    }
+    const resp = await loopbackSafeFetch(healthUrl.href, {
+      headers: [
+        ["accept", "application/json"],
+        ...Object.entries(await gatewayAuthHeaders(entry)),
+        ...callerEntries,
+      ],
+      signal: opts.signal ?? AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const parsed = GatewayHealthSchema.safeParse(await resp.json());
+      if (parsed.success) {
+        // A body without the field is an older gateway — answering at all
+        // is what "healthy" means there.
+        return { ...parsed.data, status: parsed.data.status ?? "healthy" };
+      }
+    }
+    return down("unreachable");
+  } catch (error) {
+    return down(
+      error instanceof Error && error.name === "AbortError"
+        ? "timeout"
+        : "unreachable",
+    );
+  }
 }
 
 /**
@@ -296,16 +295,153 @@ export async function isAssistantHealthy(
   return (await checkHealth(entry)).version !== undefined;
 }
 
+export interface ManagedProcessEntry {
+  name: string;
+  status: "running" | "not_running" | "unreachable";
+  children?: ManagedProcessEntry[];
+  info?: string;
+}
+
+export interface ManagedPsResponse {
+  processes: ManagedProcessEntry[];
+}
+
 /**
- * Best-effort fetch of the running service group version from the gateway
- * `/healthz` endpoint. Returns `undefined` when the endpoint is unreachable
- * or does not include a version field.
+ * Fetch the gateway's `/v1/ps` process tree — the daemon's real process
+ * table (assistant + every child it owns) with the gateway's own entry
+ * appended. Returns null when the gateway is unreachable or the route is
+ * missing (older gateway versions), so callers can fall back to local
+ * process detection.
  */
-export async function fetchCurrentVersion(
+export async function fetchGatewayPs(
+  gatewayUrl: string,
+  bearerToken?: string,
+): Promise<ManagedProcessEntry[] | null> {
+  try {
+    const url = `${gatewayUrl.replace(/\/+$/, "")}/v1/ps`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (bearerToken) {
+      headers["Authorization"] = `Bearer ${bearerToken}`;
+    }
+
+    const response = await loopbackSafeFetch(url, {
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as ManagedPsResponse;
+    return Array.isArray(data.processes) ? data.processes : null;
+  } catch {
+    return null;
+  }
+}
+
+const LegacyConnectionStatusSchema = z.object({
+  state: z.string(),
+  is_awake: z.boolean(),
+  pod_status: z.string().nullable(),
+  detail: z.string().nullable(),
+});
+
+async function fetchLegacyConnectionStatus(
   runtimeUrl: string,
-): Promise<string | undefined> {
-  const health = await readGatewayHealth(runtimeUrl);
-  return health.version;
+  assistantId: string,
+  headers: Record<string, string>,
+): Promise<ManagedPsResponse | null> {
+  try {
+    const url = `${runtimeUrl}/v1/assistants/${encodeURIComponent(assistantId)}/connection-status/`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await loopbackSafeFetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) return null;
+
+    const parsed = LegacyConnectionStatusSchema.safeParse(
+      await response.json(),
+    );
+    if (!parsed.success) return null;
+    const data = parsed.data;
+
+    // Translate legacy shape into the ps process tree
+    const status: ManagedProcessEntry["status"] = data.is_awake
+      ? "running"
+      : "not_running";
+    return {
+      processes: [
+        { name: "assistant", status, info: data.detail ?? undefined },
+      ],
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cadet Cloud process listing for an entry. The gateway address derives
+ * from the entry's topology — cloud-managed entries resolve through the
+ * environment's cloud URL stack.
+ */
+export async function fetchCloudPs(
+  entry: LockfileAssistant,
+): Promise<ManagedPsResponse | null> {
+  const runtimeUrl = getGatewayUrl(entry);
+
+  const token = readCloudToken();
+  if (!token) return null;
+
+  let headers: Record<string, string>;
+  try {
+    headers = await cloudAuthHeaders(token, runtimeUrl);
+  } catch {
+    return null;
+  }
+
+  // Try the /ps endpoint first; fall back to legacy /connection-status
+  // for platform versions that haven't rolled it out yet.
+  try {
+    const psUrl = `${runtimeUrl}/v1/assistants/${encodeURIComponent(entry.assistantId)}/ps/`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await loopbackSafeFetch(psUrl, {
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return (await response.json()) as ManagedPsResponse;
+    }
+
+    // /ps not available — fall back to legacy connection-status
+    if (response.status === 404 || response.status === 405) {
+      return fetchLegacyConnectionStatus(
+        runtimeUrl,
+        entry.assistantId,
+        headers,
+      );
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /** The docker containers' readiness budget: image pulls and first-boot migrations ride the same deadline. */

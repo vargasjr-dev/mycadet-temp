@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { getGatewayUrl, type Remote } from "@mycadet/local-mode/contract";
+import { type Remote } from "@mycadet/local-mode/contract";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
@@ -21,7 +21,6 @@ import {
   STATE_ROOTS,
   withRootOperationLock,
 } from "@mycadet/local-mode";
-import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "@mycadet/local-mode";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
 import { checkHealth } from "@mycadet/local-mode";
@@ -121,7 +120,6 @@ async function initializeTeleportTarget(
   } catch (error) {
     const entry = findAssistantByName(instanceName);
     if (entry) {
-      await sleepAssistant(entry);
       // Cleanup path — the original failure is the one worth surfacing.
       const retired = await retireAssistant(entry);
       if (!retired.ok)
@@ -181,46 +179,35 @@ async function performHostTeleport(
     return;
   }
 
-  const sourceVersion = await fetchCurrentVersion(getGatewayUrl(source));
+  const sourceVersion = (await checkHealth(source)).version;
   checkVersion(
     sourceVersion,
-    existing
-      ? await fetchCurrentVersion(getGatewayUrl(existing))
-      : cliPkg.version,
+    existing ? (await checkHealth(existing)).version : cliPkg.version,
   );
-  const sourceWasRunning = await isAssistantHealthy(source);
+  let sourceWasRunning = false;
+  let targetWasRunning = false;
   let target: LockfileAssistant | undefined;
   let ready = false;
   try {
     const sourceSlept = await sleepAssistant(source);
     if (!sourceSlept.ok) throw new Error(sourceSlept.error);
+    sourceWasRunning = sourceSlept.wasRunning;
     // This exact snapshot is both the safety backup and the transferred state.
     const archive = await ops.backup(source);
     if (existing) {
       target = existing;
-      const targetWasRunning = await isAssistantHealthy(target);
-      try {
-        const targetSlept = await sleepAssistant(target);
-        if (!targetSlept.ok) throw new Error(targetSlept.error);
-        const recovery = await ops.backup(target);
-        await ops.restore(target, archive, recovery);
-      } catch (error) {
-        if (targetWasRunning && !(error instanceof TeleportRecoveryError)) {
-          const woken = await wakeAssistant(target);
-          if (!woken.ok) throw new Error(woken.error);
-        }
-        throw error;
-      }
+      const targetSlept = await sleepAssistant(target);
+      if (!targetSlept.ok) throw new Error(targetSlept.error);
+      targetWasRunning = targetSlept.wasRunning;
+      const recovery = await ops.backup(target);
+      await ops.restore(target, archive, recovery);
     } else {
       // A hatch is just initialize-data + wake — the teleport owns both
       // halves so the archive lands between allocation and first startup.
       target = await initializeTeleportTarget(targetEnv, targetName, archive);
       const hatched = await wakeAssistant(target);
       if (!hatched.ok) throw new Error(hatched.error);
-      checkVersion(
-        sourceVersion,
-        await fetchCurrentVersion(getGatewayUrl(target)),
-      );
+      checkVersion(sourceVersion, (await checkHealth(target)).version);
     }
     ready = true;
     setActiveAssistant(target.assistantId);
@@ -252,6 +239,14 @@ async function performHostTeleport(
         const retired = await retireAssistant(target);
         if (!retired.ok)
           console.error(`Teleport cleanup retire failed: ${retired.error}`);
+      } else if (
+        target &&
+        targetWasRunning &&
+        !(error instanceof TeleportRecoveryError)
+      ) {
+        // The restore flow's own recovery owns a recovery error's wake.
+        const woken = await wakeAssistant(target);
+        if (!woken.ok) throw new Error(woken.error);
       }
       if (sourceWasRunning) {
         const woken = await wakeAssistant(source);

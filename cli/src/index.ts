@@ -169,8 +169,7 @@ async function tryLaunchClient(): Promise<boolean> {
   if (!entry) return false;
 
   const health = await checkHealth(entry);
-  if (health.version === undefined) return false;
-  if (health.status !== undefined && health.status !== "healthy") return false;
+  if (health.status !== "healthy") return false;
 
   // Ensure the resolved assistant is active so client() can find it
   // (client() independently reads the active assistant from config).

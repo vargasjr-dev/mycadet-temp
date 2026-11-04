@@ -16,7 +16,7 @@ describe("checkHealth", () => {
   test("reads as down for a non-existent host", async () => {
     const result = await checkHealth(localEntry(1));
     expect(result.version).toBeUndefined();
-    expect(result.status).toBeUndefined();
+    expect(result.status).toBe("unreachable");
   });
 
   test("reads a serving gateway's version and verdict", async () => {
@@ -58,6 +58,25 @@ describe("checkHealth", () => {
     }
   });
 
+  test("reads as down for a malformed health body", async () => {
+    const server = Bun.serve({
+      port: 0,
+      fetch() {
+        // A schema-rejecting body: an empty version fails the wire schema
+        // exactly like a non-JSON answer does.
+        return Response.json({ status: "healthy", version: "" });
+      },
+    });
+
+    try {
+      const result = await checkHealth(localEntry(server.port));
+      expect(result.status).toBe("unreachable");
+      expect(result.version).toBeUndefined();
+    } finally {
+      server.stop(true);
+    }
+  });
+
   test("reads as down for a non-ok health response", async () => {
     const server = Bun.serve({
       port: 0,
@@ -68,7 +87,7 @@ describe("checkHealth", () => {
 
     try {
       const result = await checkHealth(localEntry(server.port));
-      expect(result.status).toBeUndefined();
+      expect(result.status).toBe("unreachable");
       expect(result.version).toBeUndefined();
     } finally {
       server.stop(true);
