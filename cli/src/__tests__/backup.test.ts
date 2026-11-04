@@ -1,9 +1,14 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import { backup } from "../commands/backup.js";
 
+const directory = mkdtempSync(join(tmpdir(), "backup-command-test-"));
+const archive = join(directory, "test.tar.gz");
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
 const backupOp = spyOn(localMode, "backupAssistant");
@@ -18,6 +23,7 @@ afterEach(() => {
 afterAll(() => {
   lookup.mockRestore();
   backupOp.mockRestore();
+  rmSync(directory, { recursive: true, force: true });
 });
 
 for (const topology of ["local", "docker"] as const) {
@@ -28,11 +34,8 @@ for (const topology of ["local", "docker"] as const) {
       port: 7830,
     };
     lookup.mockReturnValue(entry);
-    backupOp.mockResolvedValue({
-      ok: true,
-      kind: "roots",
-      path: "/backups/test.tar.gz",
-    });
+    writeFileSync(archive, "tar archive");
+    backupOp.mockResolvedValue({ ok: true, kind: "roots", path: archive });
     process.argv = ["bun", "cadet", "backup", "test"];
     await backup();
     expect(backupOp).toHaveBeenCalledWith(entry);
