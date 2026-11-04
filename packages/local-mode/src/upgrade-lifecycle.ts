@@ -6,7 +6,6 @@ import { join } from "node:path";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 
-
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { saveLockfileAssistant } from "./lockfile";
 import type { LockfileAssistant } from "./lockfile-contract";

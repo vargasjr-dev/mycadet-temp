@@ -33,7 +33,6 @@ import { mockCommands } from "../../../../cli/src/__tests__/commands-mock.js";
 // the container map (any running container = the gateway answers).
 const healthyMock = spyOn(healthCheck, "isAssistantHealthy");
 
-
 const entry: LockfileAssistant = {
   assistantId: "docker-backup",
   cloud: "docker",

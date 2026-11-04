@@ -404,8 +404,10 @@ async function runUpgradeRoute(
     return null;
   }
   const body = await readJsonBody(request.body);
-  const version = body !== null && typeof body.version === "string" ? body.version : null;
-  const force = body !== null && typeof body.force === "boolean" ? body.force : false;
+  const version =
+    body !== null && typeof body.version === "string" ? body.version : null;
+  const force =
+    body !== null && typeof body.force === "boolean" ? body.force : false;
   if (!isActiveAssistant(assistantId)) {
     return json({
       ok: false,

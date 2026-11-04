@@ -68,7 +68,8 @@ export async function upgradeDocker(
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
-  const versionTag = version ?? (params.cliVersion ? `v${params.cliVersion}` : "latest");
+  const versionTag =
+    version ?? (params.cliVersion ? `v${params.cliVersion}` : "latest");
 
   // Capture current migration state and running version for rollback targeting
   // and version guards. Must happen while the daemon is still running (before
@@ -129,9 +130,7 @@ export async function upgradeDocker(
   log("🔍 Resolving image references...");
   const imageTags = resolveImageRefs(versionTag, params.cliVersion);
 
-  log(
-    `🔄 Upgrading Docker assistant '${instanceName}' to ${versionTag}...\n`,
-  );
+  log(`🔄 Upgrading Docker assistant '${instanceName}' to ${versionTag}...\n`);
 
   // Capture rollback state from existing containers BEFORE pulling new
   // images or stopping anything.  captureImageRefs uses the immutable
@@ -202,7 +201,11 @@ export async function upgradeDocker(
       entry.assistantId,
       buildCompleteEvent(currentVersion ?? "unknown", false),
     );
-    throw new UpgradeError("IMAGE_PULL_FAILED", "Failed to pull Docker images", detail);
+    throw new UpgradeError(
+      "IMAGE_PULL_FAILED",
+      "Failed to pull Docker images",
+      detail,
+    );
   }
   log("✅ Docker images pulled\n");
 
@@ -301,9 +304,7 @@ export async function upgradeDocker(
       }),
     );
 
-    log(
-      `\n✅ Docker assistant '${instanceName}' upgraded to ${versionTag}.`,
-    );
+    log(`\n✅ Docker assistant '${instanceName}' upgraded to ${versionTag}.`);
   } else {
     err(`\n❌ Containers failed to become ready within the timeout.`);
 
@@ -388,9 +389,7 @@ export async function upgradeDocker(
           // backup on disk, which could be from a previous upgrade cycle
           // and contain stale data.
           if (restoredViaFailedState) {
-            log(
-              "   ✅ Data restored during failed-state recovery above\n",
-            );
+            log("   ✅ Data restored during failed-state recovery above\n");
           } else if (backupPath) {
             await broadcastUpgradeEvent(
               gatewayUrl,

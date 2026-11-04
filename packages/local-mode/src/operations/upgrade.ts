@@ -19,7 +19,11 @@ import {
 } from "../upgrade-lifecycle";
 import type { LifecycleReporter } from "../lifecycle-reporter";
 import { createBackup, pruneOldBackups } from "../backup-ops";
-import { isDockerEntry, isLocalEntry, getGatewayUrl } from "../lockfile-contract";
+import {
+  isDockerEntry,
+  isLocalEntry,
+  getGatewayUrl,
+} from "../lockfile-contract";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { upgradeDocker } from "../remotes/docker/upgrade";
 import { upgradeLocal } from "../remotes/local/upgrade";
@@ -140,10 +144,8 @@ export async function upgradePrepare(
   version: string | null,
   reporter?: LifecycleReporter,
 ): Promise<void> {
-  const log = (msg: string): void =>
-    reporter?.log(msg) ?? console.log(msg);
-  const warn = (msg: string): void =>
-    reporter?.warn(msg) ?? console.warn(msg);
+  const log = (msg: string): void => reporter?.log(msg) ?? console.log(msg);
+  const warn = (msg: string): void => reporter?.warn(msg) ?? console.warn(msg);
   const gatewayUrl = getGatewayUrl(entry);
   const targetVersion = version ?? "unknown";
   const currentVersion = "unknown";
@@ -204,10 +206,8 @@ export async function upgradeFinalize(
   cliVersion?: string,
   reporter?: LifecycleReporter,
 ): Promise<void> {
-  const log = (msg: string): void =>
-    reporter?.log(msg) ?? console.log(msg);
-  const err = (msg: string): void =>
-    reporter?.error(msg) ?? console.error(msg);
+  const log = (msg: string): void => reporter?.log(msg) ?? console.log(msg);
+  const err = (msg: string): void => reporter?.error(msg) ?? console.error(msg);
   if (!version) {
     throw new UpgradeError(
       "UNKNOWN",

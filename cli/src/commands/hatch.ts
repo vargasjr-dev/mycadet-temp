@@ -333,10 +333,7 @@ export const hatch = Object.assign(
     const entry = result.assistant;
     console.log(
       "   " +
-        green(
-          `${HATCHED_EMOJI}  Your assistant has hatched!`,
-          process.stdout,
-        ),
+        green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
     );
     console.log("");
     printInstanceDetails(

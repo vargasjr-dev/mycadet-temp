@@ -1,4 +1,7 @@
-import { consoleLifecycleReporter, type LifecycleReporter } from "../../lifecycle-reporter";
+import {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "../../lifecycle-reporter";
 import { findAssistantByName } from "../../operations/lookup";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";

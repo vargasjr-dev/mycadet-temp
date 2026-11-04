@@ -42,9 +42,7 @@ const createBackupMock = mock<typeof backups.createBackup>(
   async () => "/tmp/local-pre-upgrade.tar.gz",
 );
 const pruneOldBackupsMock = mock<typeof backups.pruneOldBackups>(() => {});
-const restoreBackupMock = mock<typeof backups.restoreBackup>(
-  async () => true,
-);
+const restoreBackupMock = mock<typeof backups.restoreBackup>(async () => true);
 
 mock.module("../backup-ops", () => ({
   ...realBackups,
@@ -88,16 +86,18 @@ mock.module("../remotes/local/common", () => ({
   ensureLocalRuntime: ensureLocalRuntimeMock,
 }));
 
-const sleepAssistantMock = mock<typeof sleepModule.sleepAssistant>(async () => ({
-  ok: true,
-  kind: "services",
-  services: {
-    assistant: "stopped",
-    gateway: "stopped",
-    ces: "stopped",
-  },
-  notes: [],
-}));
+const sleepAssistantMock = mock<typeof sleepModule.sleepAssistant>(
+  async () => ({
+    ok: true,
+    kind: "services",
+    services: {
+      assistant: "stopped",
+      gateway: "stopped",
+      ces: "stopped",
+    },
+    notes: [],
+  }),
+);
 const wakeAssistantMock = mock<typeof wakeModule.wakeAssistant>(async () => ({
   ok: true,
 }));
@@ -130,15 +130,13 @@ mock.module("../loopback-fetch", () => ({
   loopbackSafeFetch: loopbackSafeFetchMock,
 }));
 
-const broadcastUpgradeEventMock = mock<
-  typeof lifecycle.broadcastUpgradeEvent
->(async () => {});
+const broadcastUpgradeEventMock = mock<typeof lifecycle.broadcastUpgradeEvent>(
+  async () => {},
+);
 const commitWorkspaceViaGatewayMock = mock<
   typeof lifecycle.commitWorkspaceViaGateway
 >(async () => {});
-const waitForReadyMock = mock<typeof lifecycle.waitForReady>(
-  async () => true,
-);
+const waitForReadyMock = mock<typeof lifecycle.waitForReady>(async () => true);
 
 mock.module("../upgrade-lifecycle", () => ({
   ...realLifecycle,
@@ -283,7 +281,12 @@ describe("targetVersionFromCli", () => {
     const resolveLatest = mock(async () => "v0.9.9");
 
     await expect(
-      targetVersionFromCli(null, "0.10.0", consoleLifecycleReporter, resolveLatest),
+      targetVersionFromCli(
+        null,
+        "0.10.0",
+        consoleLifecycleReporter,
+        resolveLatest,
+      ),
     ).resolves.toBe("v0.10.0");
     expect(resolveLatest).not.toHaveBeenCalled();
   });

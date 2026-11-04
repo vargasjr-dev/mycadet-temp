@@ -14,15 +14,17 @@ import {
   withLocalHatchLock,
   writeInitialConfig,
 } from "@mycadet/local-mode";
-import {initializeRootArchive,
+import {
+  initializeRootArchive,
   restoreRootBackup,
   stageRootArchive,
   STATE_ROOTS,
-  withRootOperationLock,} from "@mycadet/local-mode";
+  withRootOperationLock,
+} from "@mycadet/local-mode";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
 import { compareVersions } from "@mycadet/local-mode";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
-import { isAssistantHealthy } from "./health-check.js";
+import { isAssistantHealthy } from "@mycadet/local-mode";
 import { generateInstanceName } from "@mycadet/local-mode";
 
 export class TeleportRecoveryError extends AggregateError {}

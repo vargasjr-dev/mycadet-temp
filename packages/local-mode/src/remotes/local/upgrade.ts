@@ -300,5 +300,3 @@ export async function resolveLatestStableTag(): Promise<string> {
 
   return latestVersion.startsWith("v") ? latestVersion : `v${latestVersion}`;
 }
-
-

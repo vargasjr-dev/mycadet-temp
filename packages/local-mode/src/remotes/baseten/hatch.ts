@@ -87,9 +87,7 @@ async function recordSandbox(params: {
   try {
     saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
   } catch (err) {
-    warn(
-      `   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`,
-    );
+    warn(`   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`);
     warn(
       "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
     );

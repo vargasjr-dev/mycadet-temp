@@ -20,7 +20,11 @@ import {
   stripVersionPrefix,
   upgradeAssistant,
 } from "@mycadet/local-mode";
-import { emitCliError, categorizeUpgradeError, type CliErrorCategory } from "../lib/cli-error.js";
+import {
+  emitCliError,
+  categorizeUpgradeError,
+  type CliErrorCategory,
+} from "../lib/cli-error.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
 interface UpgradeArgs {
@@ -193,7 +197,6 @@ function resolveTargetAssistant(nameArg: string | null): LockfileAssistant {
   }
   process.exit(1);
 }
-
 
 /** The command edge's error UX: print, map onto the CLI taxonomy, exit. */
 function reportUpgradeFailure(result: {

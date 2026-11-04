@@ -214,9 +214,7 @@ async function waitForPlatformUpgrade(
   );
 }
 
-export async function upgradeCloud(
-  params: UpgradeCloudParams,
-): Promise<void> {
+export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
   const { reporter } = params;
   const log = (msg: string) => reporter.log(msg);
   const warn = (msg: string) => reporter.warn(msg);
@@ -225,9 +223,7 @@ export async function upgradeCloud(
   const version = params.version;
   const wait = params.wait;
   const gatewayUrl = getGatewayUrl(entry);
-  log(
-    `🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`,
-  );
+  log(`🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`);
 
   const token = readCloudToken();
   if (!token) {

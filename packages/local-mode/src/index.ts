@@ -64,6 +64,7 @@ export type { DockerBackupOps } from "./root-backup";
 export {
   checkCloudHealth,
   checkHealth,
+  isAssistantHealthy,
   HEALTH_CHECK_TIMEOUT_MS,
   type HealthCheckResult,
   type ManagedProcessEntry,
@@ -409,7 +410,11 @@ export type {
 } from "./devices";
 export { stripVersionPrefix } from "./version";
 export { isValidReleaseVersion } from "./upgrade";
-export { upgradeAssistant, type UpgradeAssistantParams, type UpgradeAssistantResult } from "./operations/upgrade";
+export {
+  upgradeAssistant,
+  type UpgradeAssistantParams,
+  type UpgradeAssistantResult,
+} from "./operations/upgrade";
 export { UpgradeError } from "./upgrade-lifecycle";
 export {
   attemptFailedStateRestore,
@@ -431,7 +436,11 @@ export {
   type PerformDockerRollbackOptions,
 } from "./upgrade-lifecycle";
 export { upgradeDocker } from "./remotes/docker/upgrade";
-export { upgradeLocal, targetVersionFromCli, resolveLatestStableTag } from "./remotes/local/upgrade";
+export {
+  upgradeLocal,
+  targetVersionFromCli,
+  resolveLatestStableTag,
+} from "./remotes/local/upgrade";
 export { upgradeCloud } from "./remotes/cloud/upgrade";
 export { isCloudHome } from "./cloud-values";
 export { readLockfileAssistantAvatar } from "./avatar";
