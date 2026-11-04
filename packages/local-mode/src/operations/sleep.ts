@@ -16,13 +16,6 @@ import { sleepDocker } from "../remotes/docker/sleep";
  * token against the entry's trusted URL) — callers never thread a token
  * through, mirroring the retire operation's contract.
  */
-
-/**
- * Whether the gateway answered the health probe before the stop — the
- * caller's restart signal. Every variant carries it: the structured failure
- * variants raise it alongside the error so a failed sleep still answers
- * "was the assistant up when we tried?".
- */
 export type SleepResult =
   | {
       ok: true;
@@ -66,15 +59,17 @@ export async function sleepAssistant(
   // The was-running signal is the gateway's own health probe — remote
   // agnostic — taken before the stop; every result variant (and the raised
   // structured error) carries it so callers never probe separately.
-  let wasRunning = false;
+  // The was-running signal is the gateway's own health probe — remote
+  // agnostic — taken once, above the switch, before the stop; every result
+  // variant (and the raised structured error) carries it so callers never
+  // probe separately.
+  const wasRunning = await isAssistantHealthy(entry);
   try {
     if (entry.cloud === "docker") {
-      wasRunning = await isAssistantHealthy(entry);
       await sleepDocker(entry);
       return { ok: true, kind: "containers", wasRunning };
     }
     if (entry.cloud === "local") {
-      wasRunning = await isAssistantHealthy(entry);
       return { ...(await sleepLocal(entry, options)), wasRunning };
     }
     return {

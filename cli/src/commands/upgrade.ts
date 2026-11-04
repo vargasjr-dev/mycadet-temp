@@ -13,6 +13,7 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName } from "../lib/assistant-config";
 import { type LocalAssistant } from "@mycadet/local-mode/contract";
 import {
+  checkHealth,
   cliCommand,
   cloudAuthHeaders,
   formatAssistantLookupError,
@@ -28,7 +29,6 @@ import {
   fetchAssistantDetail,
   fetchUpgradeInProgress,
 } from "../lib/cloud-client";
-import { checkHealth } from "../lib/health-check.js";
 import {
   evaluateUpgradePoll,
   resolveUpgradeTarget,

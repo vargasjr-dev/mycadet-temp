@@ -1,8 +1,9 @@
 import { z } from "zod";
 import type { IncomingHttpHeaders } from "node:http";
 
+import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
 import { loopbackSafeFetch } from "./loopback-fetch";
-import { getGatewayUrl } from "./lockfile-contract";
+import { getGatewayUrl, isCloudEntry } from "./lockfile-contract";
 import type { LockfileAssistant } from "./lockfile-contract";
 
 export type HttpProbeEndpoint = "healthz" | "readyz";
@@ -186,17 +187,23 @@ type GatewayHealthHeaders = Headers | IncomingHttpHeaders;
  */
 async function readGatewayHealth(
   runtimeUrl: string,
-  opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
+  opts: {
+    signal?: AbortSignal;
+    headers?: GatewayHealthHeaders;
+    authHeaders?: Record<string, string>;
+  } = {},
 ): Promise<GatewayHealth> {
   try {
     const healthUrl = new URL(
       "healthz",
       runtimeUrl.endsWith("/") ? runtimeUrl : `${runtimeUrl}/`,
     );
-    // The caller's headers spread under our own Accept — later entries win,
-    // so the caller's Accept (if any) overrides ours; the record spelling's
-    // array values join and its undefined values drop, exactly what a
-    // Headers instance would have done for them.
+    // The derived auth headers spread under our own Accept, and the
+    // caller's headers spread after them — later entries win, so the
+    // caller's credentials (if any) override the derived ones and its
+    // Accept overrides ours; the record spelling's array values join and
+    // its undefined values drop, exactly what a Headers instance would
+    // have done for them.
     const callerEntries: [string, string][] = [];
     if (opts.headers instanceof Headers) {
       for (const entry of opts.headers) {
@@ -213,7 +220,11 @@ async function readGatewayHealth(
       }
     }
     const resp = await loopbackSafeFetch(healthUrl.href, {
-      headers: [["accept", "application/json"], ...callerEntries],
+      headers: [
+        ["accept", "application/json"],
+        ...Object.entries(opts.authHeaders ?? {}),
+        ...callerEntries,
+      ],
       signal: opts.signal ?? AbortSignal.timeout(5000),
     });
     if (resp.ok) {
@@ -229,29 +240,60 @@ async function readGatewayHealth(
 }
 
 /**
- * Read the ENTRY's gateway `/healthz` — `getGatewayUrl` resolves the
- * address inside, so consumers pass the lockfile entry and never re-derive
- * (or re-trim) the URL themselves.
+ * THE health check for one assistant entry — the package's and the CLI's
+ * single probe. The URL and the headers both derive from the entry:
+ * `getGatewayUrl` resolves the address inside, and a cloud-managed entry
+ * authenticates the probe with the cloud URL stack's own credentials while
+ * every other remote probes bare — so one method routes every remote and
+ * there is no cloud-specific health check. The caller's own headers (the
+ * auth-verdict callers) ride on top of the derived ones.
+ *
+ * Best-effort: an unreachable endpoint, a non-2xx, or a malformed body all
+ * read as "no version, no verdict" (`authenticated: true`), so callers on
+ * servers without the field keep today's behavior.
  */
-export async function getGatewayHealth(
+export async function checkHealth(
   entry: LockfileAssistant,
   opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
 ): Promise<GatewayHealth> {
-  return readGatewayHealth(getGatewayUrl(entry), opts);
+  return readGatewayHealth(getGatewayUrl(entry), {
+    ...opts,
+    authHeaders: await gatewayAuthHeaders(entry),
+  });
+}
+
+/**
+ * The credentials the health probe itself should present, derived from the
+ * entry: a cloud-managed entry presents the cloud URL stack's own token,
+ * every other remote probes bare. Best-effort — a missing token or a failed
+ * derivation probes without credentials (the /v1 routes' own 401s stay the
+ * signal there).
+ */
+async function gatewayAuthHeaders(
+  entry: LockfileAssistant,
+): Promise<Record<string, string>> {
+  if (!isCloudEntry(entry)) return {};
+  const token = readCloudToken();
+  if (!token) return {};
+  try {
+    return await cloudAuthHeaders(token, getGatewayUrl(entry));
+  } catch {
+    return {};
+  }
 }
 
 /**
  * Remote-agnostic liveness for one assistant entry: the assistant is up
  * exactly when its gateway answers the health probe with a served version
  * (the detailed body always carries one while the runtime is up). The sleep
- * operation's was-running signal and the CLI's wake-recovery and
- * backup-restart decisions ride this — no per-cloud pid-file or container
- * inspection.
+ * operation's was-running signal rides this — no per-cloud pid-file or
+ * container inspection. Module-level export only: it stays off the
+ * package's public surface.
  */
 export async function isAssistantHealthy(
   entry: LockfileAssistant,
 ): Promise<boolean> {
-  return (await getGatewayHealth(entry)).version !== undefined;
+  return (await checkHealth(entry)).version !== undefined;
 }
 
 /**

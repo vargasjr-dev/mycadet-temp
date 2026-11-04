@@ -9,12 +9,12 @@ import {
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
 import {
+  checkHealth,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { checkHealth } from "../lib/health-check";
 import {
   guardianTokenDueForRenewal,
   loadGuardianToken,
@@ -1016,9 +1016,11 @@ export function render(
   const statusCol = LEFT_PANEL_WIDTH + 1;
   checkHealth(entry)
     .then((health) => {
-      const statusText = health.detail
-        ? `${withStatusEmoji(health.status)} (${health.detail})`
-        : withStatusEmoji(health.status);
+      const statusText = withStatusEmoji(
+        health.version === undefined
+          ? "unreachable"
+          : (health.status ?? "healthy"),
+      );
       process.stdout.write(
         `\x1b7\x1b[${statusCanvasLine};${statusCol}H\x1b[K${statusText}\x1b8`,
       );

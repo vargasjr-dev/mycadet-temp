@@ -24,7 +24,6 @@ process.env.XDG_CONFIG_HOME = testDir;
 // ---------------------------------------------------------------------------
 
 import * as assistantConfig from "../lib/assistant-config.js";
-import * as healthCheck from "../lib/health-check.js";
 import * as cloudClient from "../lib/cloud-client.js";
 import * as localMode from "@mycadet/local-mode";
 
@@ -64,9 +63,10 @@ const fetchCloudAssistantsMock = spyOn(
   cloudClient,
   "fetchCloudAssistants",
 ).mockResolvedValue([]);
-const checkHealthMock = spyOn(healthCheck, "checkHealth").mockResolvedValue({
+const checkHealthMock = spyOn(localMode, "checkHealth").mockResolvedValue({
+  version: "1.0.0",
   status: "healthy",
-  detail: null,
+  authenticated: true,
 });
 
 // ---------------------------------------------------------------------------
@@ -115,7 +115,11 @@ afterEach(() => {
   fetchCloudAssistantsMock.mockReset();
   fetchCloudAssistantsMock.mockResolvedValue([]);
   checkHealthMock.mockReset();
-  checkHealthMock.mockResolvedValue({ status: "healthy", detail: null });
+  checkHealthMock.mockResolvedValue({
+    version: "1.0.0",
+    status: "healthy",
+    authenticated: true,
+  });
   readRootProcessesMock.mockReturnValue({});
 });
 
@@ -232,8 +236,9 @@ describe("cadet ps — platform status line", () => {
     ]);
     getActiveAssistantMock.mockReturnValue(null);
     checkHealthMock.mockImplementation(async () => ({
+      version: "1.0.0",
       status: "healthy",
-      detail: null,
+      authenticated: true,
     }));
     // The tunnel fronts the app server, no assistant; the edge records one.
     readRootProcessesMock.mockReturnValue({
@@ -302,10 +307,11 @@ describe("cadet ps — platform status line", () => {
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");
-    checkHealthMock.mockImplementation(async (entry) => ({
-      status: entry.assistantId === "assistant-123" ? "healthy" : "sleeping",
-      detail: null,
-    }));
+    checkHealthMock.mockImplementation(async (entry) =>
+      entry.assistantId === "assistant-123"
+        ? { version: "1.0.0", status: "healthy", authenticated: true }
+        : { authenticated: true },
+    );
 
     await listAllAssistants(false);
 
@@ -315,7 +321,7 @@ describe("cadet ps — platform status line", () => {
     expect(output.match(/Alice/g)).toHaveLength(1);
     expect(output.match(/Bob/g)).toHaveLength(1);
     expect(output).toContain("healthy");
-    expect(output).toContain("sleeping");
+    expect(output).toContain("unreachable");
   });
 });
 
@@ -379,8 +385,9 @@ describe("cadet ps <built-in process name> details", () => {
       },
     ]);
     checkHealthMock.mockImplementation(async () => ({
+      version: "1.0.0",
       status: "healthy",
-      detail: null,
+      authenticated: true,
     }));
     process.argv = ["bun", "cadet", "ps", "assistant-123"];
 
