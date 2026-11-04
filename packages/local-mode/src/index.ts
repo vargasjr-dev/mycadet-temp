@@ -446,6 +446,23 @@ export {
   resolveLatestStableTag,
 } from "./remotes/local/upgrade";
 export { upgradeCloud } from "./remotes/cloud/upgrade";
+export {
+  restoreAssistant,
+  recoverRetiredAssistant,
+  type RecoverRetiredResult,
+  type RestoreAssistantResult,
+} from "./operations/restore";
+export {
+  cloudPollJobStatus,
+  cloudRequestSignedUrl,
+  parseUnifiedJobStatus,
+  platformImportBundleFromGcs,
+  platformImportPreflightFromGcs,
+  platformUploadToSignedUrl,
+  VersionMismatchError,
+  type BundleCompatibility,
+  type UnifiedJobStatus,
+} from "./remotes/cloud/migrations";
 export { readLockfileAssistantAvatar } from "./avatar";
 export {
   getGuardianAccessToken,
