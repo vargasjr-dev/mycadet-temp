@@ -86,18 +86,16 @@ mock.module("../remotes/local/common", () => ({
   ensureLocalRuntime: ensureLocalRuntimeMock,
 }));
 
-const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(
-  async () => ({
-    ok: true,
-    kind: "services",
-    services: {
-      assistant: "stopped",
-      gateway: "stopped",
-      ces: "stopped",
-    },
-    notes: [],
-  }),
-);
+const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(async () => ({
+  ok: true,
+  kind: "services",
+  services: {
+    assistant: "stopped",
+    gateway: "stopped",
+    ces: "stopped",
+  },
+  notes: [],
+}));
 const wakeLocalMock = mock<typeof wakeModule.wakeLocal>(async () => ({
   ok: true,
 }));
