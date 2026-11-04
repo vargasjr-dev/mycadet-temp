@@ -44,7 +44,7 @@ const healthServer = Bun.serve({
 });
 // The probe addresses the entry's own port — point it at the listener's
 // ephemeral bind.
-entry.port = healthServer.port;
+entry.port = healthServer.port ?? 0;
 afterAll(() => healthServer.stop(true));
 const names = dockerResourceNames(entry.assistantId);
 const containers = [
