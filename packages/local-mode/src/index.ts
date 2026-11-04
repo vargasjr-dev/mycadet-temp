@@ -160,19 +160,17 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { recreateDockerContainers } from "./remotes/docker/recreate";
 export {
   AVATAR_DEVICE_ENV_VAR,
   DOCKER_STATEFUL_SET_SPEC,
-  SERVICE_START_ORDER,
   buildServiceRunArgs,
   getBuilderManagedEnvKeys,
   resolveAvatarDevicePath,
-  startContainers,
   stopContainers,
   type DockerStatefulSetSpec,
   type ServiceName,
 } from "./remotes/docker/statefulset";
+export { SERVICE_START_ORDER, startContainers, wakeDocker, type WakeDockerOptions } from "./remotes/docker/wake";
 export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
 export {
   PROVIDER_ENV_VAR_NAMES,
@@ -191,8 +189,8 @@ export {
   resolveOwnImageRefs,
   ensureDockerInstalled,
   pullImage,
-  DOCKER_READY_TIMEOUT_MS,
 } from "./remotes/docker/hatch";
+export { DOCKER_READY_TIMEOUT_MS } from "./daemon-readiness";
 
 export {
   computeDeviceId,

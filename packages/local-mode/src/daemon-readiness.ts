@@ -307,3 +307,49 @@ export async function fetchCurrentVersion(
   const health = await readGatewayHealth(runtimeUrl);
   return health.version;
 }
+
+/** The docker containers' readiness budget: image pulls and first-boot migrations ride the same deadline. */
+export const DOCKER_READY_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Poll the gateway's `/readyz` until the assistant answers ready, migrations
+ * fail outright, or the budget runs out. A "failed" readiness is reported as
+ * not-ready so recovery can run.
+ */
+export async function waitForReady(runtimeUrl: string): Promise<boolean> {
+  const readyUrl = `${runtimeUrl}/readyz`;
+  const start = Date.now();
+
+  while (Date.now() - start < DOCKER_READY_TIMEOUT_MS) {
+    try {
+      const resp = await loopbackSafeFetch(readyUrl, {
+        signal: AbortSignal.timeout(5000),
+      });
+      const body = (await resp.json().catch(() => null)) as {
+        status?: string;
+        upstream?: number;
+      } | null;
+      const readiness = classifyReadyzResponse(resp.ok, body);
+      if (readiness === "ready") {
+        const elapsedSec = ((Date.now() - start) / 1000).toFixed(1);
+        console.log(`Assistant ready after ${elapsedSec}s`);
+        return true;
+      }
+      if (readiness === "failed") {
+        console.log(
+          "Assistant database migrations FAILED — treating the assistant as not ready so recovery can run.",
+        );
+        return false;
+      }
+      const parts = [body?.status].filter(Boolean);
+      if (body?.upstream != null) parts.push(`upstream=${body.upstream}`);
+      const detail = parts.length > 0 ? ` — ${parts.join(", ")}` : "";
+      console.log(`Readiness check: ${resp.status}${detail}, retrying...`);
+    } catch {
+      // Connection refused / timeout — not up yet
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  return false;
+}

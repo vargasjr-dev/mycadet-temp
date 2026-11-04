@@ -11,10 +11,10 @@ import { exec } from "../../exec";
 import { dockerResourceNames, removeContainer } from "./retire";
 import {
   type ServiceName,
-  SERVICE_START_ORDER,
   buildServiceRunArgs,
   resolveAvatarDevicePath,
 } from "./statefulset";
+import { SERVICE_START_ORDER } from "./wake";
 
 export function collectWatchTargets(repoRoot: string): {
   dirs: string[];

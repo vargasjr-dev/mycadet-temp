@@ -27,7 +27,10 @@ import {
   getDefaultPorts,
 } from "../../ports";
 import { leaseGuardianToken } from "../../guardian-token";
-import { classifyReadyzResponse } from "../../daemon-readiness";
+import {
+  classifyReadyzResponse,
+  DOCKER_READY_TIMEOUT_MS,
+} from "../../daemon-readiness";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
 import { saveLockfileAssistant } from "../../lockfile";
@@ -52,9 +55,9 @@ import { dockerResourceNames } from "./retire";
 import {
   type DockerResourceNames,
   type ServiceName,
-  startContainers,
   stopContainers,
 } from "./statefulset";
+import { startContainers } from "./wake";
 import {
   HOST_IMAGE_LOADER_URL,
   isLocalBuildRef,
@@ -102,7 +105,6 @@ export function resolveOwnImageRefs(
 }
 
 /** Max time to wait for the assistant container to emit the readiness sentinel. */
-export const DOCKER_READY_TIMEOUT_MS = 5 * 60 * 1000;
 
 /** Default memory (GiB) allocated to the Colima VM. */
 const COLIMA_DEFAULT_MEMORY_GIB = 8;

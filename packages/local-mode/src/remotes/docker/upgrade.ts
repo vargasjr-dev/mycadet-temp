@@ -14,7 +14,6 @@ import {
   resolveImageRefs,
   saveLockfileAssistant,
   sleepDocker,
-  startContainers,
   type ServiceName,
   GATEWAY_INTERNAL_PORT,
 } from "../..";
@@ -36,8 +35,8 @@ import {
   rollbackMigrations,
   UPGRADE_PROGRESS,
   UpgradeError,
-  waitForReady,
 } from "../../upgrade-lifecycle";
+import { wakeDocker } from "./wake";
 import type { LifecycleReporter } from "../../lifecycle-reporter";
 import { createBackup, pruneOldBackups, restoreBackup } from "../../backup-ops";
 import { compareVersions, versionsEqual } from "../../version-compat";
@@ -254,22 +253,16 @@ export async function upgradeDocker(
   log("✅ Containers stopped\n");
 
   log("🚀 Starting upgraded containers...");
-  await startContainers(
-    {
-      cesServiceToken,
-      extraAssistantEnv,
-      extraGatewayEnv,
-      gatewayPort,
-      imageTags,
-      instanceName,
-      res,
-    },
-    (msg) => log(msg),
-  );
-  log("✅ Containers started\n");
-
-  log("Waiting for assistant to become ready...");
-  const ready = await waitForReady(gatewayUrl);
+  const wake = await wakeDocker(entry, {
+    cesServiceToken,
+    extraAssistantEnv,
+    extraGatewayEnv,
+    gatewayPort,
+    imageTags,
+    waitUntilReady: true,
+    log: (msg) => log(msg),
+  });
+  const ready = wake.ok;
   if (ready) {
     // Update lockfile with new service group topology
     const updatedEntry: LockfileAssistant = {
@@ -346,20 +339,16 @@ export async function upgradeDocker(
 
         await sleepDocker(entry);
 
-        await startContainers(
-          {
-            cesServiceToken,
-            extraAssistantEnv,
-            extraGatewayEnv,
-            gatewayPort,
-            imageTags: previousImageRefs,
-            instanceName,
-            res,
-          },
-          (msg) => log(msg),
-        );
-
-        let rollbackReady = await waitForReady(gatewayUrl);
+        const rollbackWake = await wakeDocker(entry, {
+          cesServiceToken,
+          extraAssistantEnv,
+          extraGatewayEnv,
+          gatewayPort,
+          imageTags: previousImageRefs,
+          waitUntilReady: true,
+          log: (msg) => log(msg),
+        });
+        let rollbackReady = rollbackWake.ok;
         let restoredViaFailedState = false;
         if (!rollbackReady && backupPath) {
           const recovery = await attemptFailedStateRestore({
@@ -471,22 +460,6 @@ export async function upgradeDocker(
         "Containers failed to become ready and no previous images available for rollback.",
       );
     }
-  }
-}
-
-/** Start existing stopped containers, ensuring a Docker daemon is up first (macOS only). */
-export async function wakeContainers(
-  res: ReturnType<typeof dockerResourceNames>,
-): Promise<void> {
-  if (platform() !== "linux") {
-    await ensureDockerDaemonRunning();
-  }
-  for (const container of [
-    res.assistantContainer,
-    res.gatewayContainer,
-    res.cesContainer,
-  ]) {
-    await exec("docker", ["start", container]);
   }
 }
 
