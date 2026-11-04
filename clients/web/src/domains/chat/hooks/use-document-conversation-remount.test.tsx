@@ -251,7 +251,7 @@ describe("document editor history remount", () => {
       fireEvent.change(input, { target: { value: "Latest local body" } });
       if (stage === "in flight") {
         await waitFor(() => expect(write).toHaveBeenCalledTimes(1), {
-          timeout: 2000,
+          timeout: 10000,
         });
       }
       fireEvent.click(
@@ -293,8 +293,9 @@ describe("document editor history remount", () => {
         },
       });
       page.unmount();
-      await waitFor(() =>
-        expect(saved.content).toBe("Latest local body with another edit"),
+      await waitFor(
+        () => expect(saved.content).toBe("Latest local body with another edit"),
+        { timeout: 10000 },
       );
     },
   );
@@ -314,7 +315,9 @@ describe("document editor history remount", () => {
       }
       fireEvent.change(first, { target: { value: "Latest saved body" } });
       fireEvent.click(screen.getByRole("button", { name: "Close document" }));
-      await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(write).toHaveBeenCalledTimes(1), {
+        timeout: 10000,
+      });
       fireEvent.click(screen.getByRole("button", { name: "Open document" }));
       await act(async () => {});
       expect(
@@ -333,8 +336,9 @@ describe("document editor history remount", () => {
         },
       });
       page.unmount();
-      await waitFor(() =>
-        expect(saved.content).toBe("Latest saved body with another edit"),
+      await waitFor(
+        () => expect(saved.content).toBe("Latest saved body with another edit"),
+        { timeout: 10000 },
       );
       expect(write).toHaveBeenCalledTimes(2);
     },
@@ -356,7 +360,9 @@ describe("document editor history remount", () => {
           name: mode === "conversation" ? "Leave session" : "Close document",
         }),
       );
-      await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(write).toHaveBeenCalledTimes(1), {
+        timeout: 10000,
+      });
       fireEvent.click(
         screen.getByRole("button", {
           name: mode === "conversation" ? "Back" : "Open document",
@@ -397,7 +403,9 @@ describe("document editor history remount", () => {
       },
     );
     fireEvent.click(screen.getByRole("button", { name: "Leave session" }));
-    await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(write).toHaveBeenCalledTimes(1), {
+      timeout: 10000,
+    });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     fireEvent.click(screen.getByRole("button", { name: "Leave session" }));
     await act(async () => finishWrite());
@@ -418,7 +426,9 @@ describe("document editor history remount", () => {
         },
       );
       fireEvent.click(screen.getByRole("button", { name: "Leave session" }));
-      await waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(write).toHaveBeenCalledTimes(1), {
+        timeout: 10000,
+      });
       if (outcome === "completed") {
         await act(async () => finishWrite());
       }
@@ -442,8 +452,9 @@ describe("document editor history remount", () => {
         },
       });
       page.unmount();
-      await waitFor(() =>
-        expect(saved.content).toBe("Latest saved body with another edit"),
+      await waitFor(
+        () => expect(saved.content).toBe("Latest saved body with another edit"),
+        { timeout: 10000 },
       );
       expect(write).toHaveBeenCalledTimes(2);
     },

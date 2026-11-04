@@ -113,6 +113,7 @@ const sleepAssistantMock = mock<typeof localMode.sleepAssistant>(async () => ({
     ces: "stopped",
   },
   notes: [],
+  wasRunning: true,
 }));
 const wakeAssistantMock = mock<typeof local.wakeAssistant>(async () => ({
   ok: true,
@@ -269,6 +270,7 @@ beforeEach(() => {
     kind: "services",
     services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
     notes: [],
+    wasRunning: true,
   });
   wakeAssistantMock.mockReset();
   wakeAssistantMock.mockResolvedValue({ ok: true });

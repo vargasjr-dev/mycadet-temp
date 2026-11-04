@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # practice-build-remote-images.sh — build every remote sandbox image locally.
 #
-# Discovers each remote's Dockerfile (cli/src/lib/remotes/*/Dockerfile),
-# stages its build context through the CLI's own staging code — the exact
-# bytes `cadet hatch --remote <name>` uploads — and docker builds it.
+# Discovers each remote's Dockerfile
+# (packages/local-mode/src/remotes/*/Dockerfile), stages its build context
+# through the CLI's own staging code — the exact bytes
+# `cadet hatch --remote <name>` uploads — and docker builds it.
 #
 # The release workflows' ci-remote-images job runs this to gate the
 # @mycadet/cli publish: a broken image recipe (missing apt packages, bad bun
@@ -21,7 +22,7 @@ published=$(npm view mycadet version)
 echo "Practice-building remote images against published mycadet@${published}"
 
 shopt -s nullglob
-dockerfiles=(cli/src/lib/remotes/*/Dockerfile)
+dockerfiles=(packages/local-mode/src/remotes/*/Dockerfile)
 [ ${#dockerfiles[@]} -gt 0 ] || { echo "::error::no remote Dockerfiles found"; exit 1; }
 
 for dockerfile in "${dockerfiles[@]}"; do

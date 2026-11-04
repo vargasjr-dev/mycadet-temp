@@ -6,7 +6,6 @@ import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
-import * as healthCheck from "../lib/health-check.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
@@ -63,7 +62,7 @@ const previousDataHome = process.env.XDG_DATA_HOME;
 // The teleport flow calls sleepAssistant directly now (the ops seam is
 // gone), so the sleep events ride a namespace spy.
 const sleepMock = spyOn(localMode, "sleepAssistant");
-const healthMock = spyOn(healthCheck, "isAssistantHealthy");
+const healthMock = spyOn(localMode, "isAssistantHealthy");
 // Same for wake: the flow calls the package's wakeAssistant (the one
 // revive seam), so the wake events ride a namespace spy like sleep.
 // Re-created per test (and restored per afterEach) so the co-run suites

@@ -3,7 +3,6 @@ import {
   getAppServerPaths,
   readAppServerState,
 } from "../lib/servers/common.js";
-import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
 import {
@@ -34,7 +33,6 @@ import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
 import {
-  checkCloudHealth,
   checkHealth,
   fetchGatewayPs,
   type ManagedProcessEntry,
@@ -441,8 +439,6 @@ async function getAssistantListHealth(
     if (!alive) {
       return { status: "sleeping", detail: null };
     }
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
   }
 
   if (entry.cloud === "docker") {
@@ -451,23 +447,13 @@ async function getAssistantListHealth(
     if (!state || state !== "running") {
       return { status: "sleeping", detail: null };
     }
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
   }
 
-  if (entry.cloud === "apple-container") {
-    // Apple containers are managed by the macOS app. Probe the gateway
-    // (the macOS app records its loopback port on the entry).
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
-  }
-
-  if (isCloudHome(entry.cloud)) {
-    return checkCloudHealth(entry);
-  }
-
-  const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  return checkHealth(getGatewayUrl(entry), token);
+  // Everything else probes: apple-container entries are managed by the
+  // macOS app (the entry carries the loopback port), cloud entries route
+  // through the platform, and the alive local/docker stacks answer the
+  // gateway probe directly. checkHealth is remote-agnostic.
+  return checkHealth(entry);
 }
 
 function formatAssistantListRow(

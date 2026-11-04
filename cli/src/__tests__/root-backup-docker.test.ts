@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import {
   cp,
   mkdir,
@@ -24,17 +24,28 @@ import { startContainers } from "@mycadet/local-mode";
 import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { mockCommands } from "./commands-mock.js";
-import * as healthCheck from "../lib/health-check.js";
 
-// The flows' restart signal is the entry health probe — modeled here from
-// the container map (any running container = the gateway answers).
-const healthyMock = spyOn(healthCheck, "isAssistantHealthy");
-
+// The sleep operation probes the gateway's health itself now — the flow's
+// restart signal rides the sleep result. A loopback listener stands in for
+// the entry's gateway: the container map decides whether /healthz answers
+// with the detailed body (200) or 503s (any non-2xx reads as "not up").
 const entry: LockfileAssistant = {
   assistantId: "docker-backup",
   cloud: "docker",
-  port: 7830,
+  port: 0,
 };
+const healthServer = Bun.serve({
+  hostname: "127.0.0.1",
+  port: 0,
+  fetch: () =>
+    [...running.values()].some(Boolean)
+      ? Response.json({ status: "healthy", version: "docker-backup-test" })
+      : new Response("down", { status: 503 }),
+});
+// The probe addresses the entry's own port — point it at the listener's
+// ephemeral bind.
+entry.port = healthServer.port;
+afterAll(() => healthServer.stop(true));
 const names = dockerResourceNames(entry.assistantId);
 const containers = [
   names.assistantContainer,
@@ -58,9 +69,6 @@ beforeEach(async () => {
   commands = mockCommands();
   writes = 0;
   failWrite = 0;
-  healthyMock.mockImplementation(async () =>
-    [...running.values()].some(Boolean),
-  );
   for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS) {
     await mkdir(join(directory, root), { mode: 0o700 });
@@ -200,9 +208,6 @@ test("Docker subprocess round-trip preserves every root, private files and clear
 
 test("failure during Docker replacement recovers prior roots before restarting", async () => {
   const { file } = await archive();
-  healthyMock.mockImplementation(async () =>
-    [...running.values()].some(Boolean),
-  );
   for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS)
     await writeFile(join(directory, root, "value"), "destination");

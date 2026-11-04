@@ -235,6 +235,7 @@ export {
   waitForDaemonMigrationsReady,
   fetchCurrentVersion,
   getGatewayHealth,
+  isAssistantHealthy,
   type DaemonReadiness,
   type GatewayHealth,
   type HttpProbeEndpoint,

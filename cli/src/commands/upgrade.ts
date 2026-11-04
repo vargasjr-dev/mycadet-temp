@@ -28,7 +28,7 @@ import {
   fetchAssistantDetail,
   fetchUpgradeInProgress,
 } from "../lib/cloud-client";
-import { checkCloudHealth } from "../lib/health-check.js";
+import { checkHealth } from "../lib/health-check.js";
 import {
   evaluateUpgradePoll,
   resolveUpgradeTarget,
@@ -536,7 +536,7 @@ async function waitForPlatformUpgrade(
       const finalVersion = observedVersion ?? pollTarget ?? "unknown";
       const healthDeadline = Date.now() + PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS;
       while (Date.now() < healthDeadline) {
-        const health = await checkCloudHealth(entry);
+        const health = await checkHealth(entry);
         if (health.status === "healthy") {
           console.log(`✅ Upgraded to ${finalVersion} — assistant is healthy.`);
           return;
@@ -586,7 +586,7 @@ async function upgradeCloud(
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
     fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
-    checkCloudHealth(entry),
+    checkHealth(entry),
   ]);
   // Health probe first, DB-backed field as the sleeping-assistant fallback.
   const currentVersion =

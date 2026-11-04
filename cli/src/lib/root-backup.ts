@@ -27,7 +27,6 @@ import {
   type LocalAssistant,
 } from "@mycadet/local-mode";
 import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
-import { isAssistantHealthy } from "./health-check.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getBackupsDir } from "./backup-ops.js";
 import { execOutput } from "./step-runner.js";
@@ -655,13 +654,14 @@ async function captureBackup(
   let running = false;
   let stopped = false;
   try {
-    // The restart signal is the gateway's own health probe — remote
-    // agnostic — taken before the sleep. The sleep itself runs
-    // unconditionally (it is idempotent) and its structured failure
-    // throws its own error.
-    running = await isAssistantHealthy(entry);
+    // The restart signal rides the sleep result: the sleep operation probes
+    // the gateway's health before stopping and returns the verdict on every
+    // variant — result or structured error. The sleep itself runs
+    // unconditionally (it is idempotent) and its structured failure throws
+    // its own error.
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
+    running = slept.wasRunning;
     stopped = true;
     await storage.capture(stage);
     if (running) {
@@ -726,9 +726,9 @@ async function restoreBackup(
   try {
     await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
-    running = await isAssistantHealthy(entry);
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
+    running = slept.wasRunning;
     stopped = true;
     await mkdir(snapshot, { mode: 0o700 });
     await storage.capture(snapshot);

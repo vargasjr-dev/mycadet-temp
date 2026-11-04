@@ -1014,7 +1014,7 @@ export function render(
 
   const statusCanvasLine = RIGHT_PANEL_LINE_COUNT + HEADER_TOP_BORDER_LINES;
   const statusCol = LEFT_PANEL_WIDTH + 1;
-  checkHealth(runtimeUrl)
+  checkHealth(entry)
     .then((health) => {
       const statusText = health.detail
         ? `${withStatusEmoji(health.status)} (${health.detail})`

@@ -147,9 +147,17 @@ export async function waitForDaemonMigrationsReady(
   }
 }
 
-const GatewayHealthSchema = z.object({
+export const GatewayHealthSchema = z.object({
   /** The gateway's own version stamp, when it serves one. */
   version: z.string().min(1).optional(),
+  /**
+   * The runtime's own health verdict from the detailed body ("healthy",
+   * "unhealthy", ...) — the gateway and the runtime share one process in the
+   * topologies this probe serves, so the alias answers with the runtime's
+   * full detailed-health shape. Absent on a failed probe or a server that
+   * predates the field.
+   */
+  status: z.string().optional(),
   /**
    * Whether the caller's own credentials (the browser access cookie, or a
    * bearer) authenticate against the gateway. A server that does not answer
@@ -230,6 +238,20 @@ export async function getGatewayHealth(
   opts: { signal?: AbortSignal; headers?: GatewayHealthHeaders } = {},
 ): Promise<GatewayHealth> {
   return readGatewayHealth(getGatewayUrl(entry), opts);
+}
+
+/**
+ * Remote-agnostic liveness for one assistant entry: the assistant is up
+ * exactly when its gateway answers the health probe with a served version
+ * (the detailed body always carries one while the runtime is up). The sleep
+ * operation's was-running signal and the CLI's wake-recovery and
+ * backup-restart decisions ride this — no per-cloud pid-file or container
+ * inspection.
+ */
+export async function isAssistantHealthy(
+  entry: LockfileAssistant,
+): Promise<boolean> {
+  return (await getGatewayHealth(entry)).version !== undefined;
 }
 
 /**

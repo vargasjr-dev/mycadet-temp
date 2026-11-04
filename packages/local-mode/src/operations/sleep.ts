@@ -1,5 +1,6 @@
 import type { LockfileAssistant } from "../lockfile-contract";
 import { cliCommand } from "../environment";
+import { isAssistantHealthy } from "../daemon-readiness";
 import { sleepLocal, type SleepServiceStop } from "../remotes/local/sleep";
 import { sleepDocker } from "../remotes/docker/sleep";
 
@@ -16,6 +17,12 @@ import { sleepDocker } from "../remotes/docker/sleep";
  * through, mirroring the retire operation's contract.
  */
 
+/**
+ * Whether the gateway answered the health probe before the stop — the
+ * caller's restart signal. Every variant carries it: the structured failure
+ * variants raise it alongside the error so a failed sleep still answers
+ * "was the assistant up when we tried?".
+ */
 export type SleepResult =
   | {
       ok: true;
@@ -24,10 +31,11 @@ export type SleepResult =
       services: Record<"assistant" | "gateway" | "ces", SleepServiceStop>;
       /** Degradation notes (a skipped drain, an unreachable API) for the UX. */
       notes: string[];
+      wasRunning: boolean;
     }
-  | { ok: true; cancelled?: false; kind: "containers" }
-  | { ok: true; cancelled: true; kind?: undefined }
-  | { ok: false; status: number; error: string };
+  | { ok: true; cancelled?: false; kind: "containers"; wasRunning: boolean }
+  | { ok: true; cancelled: true; kind?: undefined; wasRunning: boolean }
+  | { ok: false; status: number; error: string; wasRunning: boolean };
 
 export type { SleepServiceStop };
 
@@ -55,24 +63,32 @@ export async function sleepAssistant(
   entry: LockfileAssistant,
   options: SleepOptions = {},
 ): Promise<SleepResult> {
+  // The was-running signal is the gateway's own health probe — remote
+  // agnostic — taken before the stop; every result variant (and the raised
+  // structured error) carries it so callers never probe separately.
+  let wasRunning = false;
   try {
     if (entry.cloud === "docker") {
+      wasRunning = await isAssistantHealthy(entry);
       await sleepDocker(entry);
-      return { ok: true, kind: "containers" };
+      return { ok: true, kind: "containers", wasRunning };
     }
     if (entry.cloud === "local") {
-      return await sleepLocal(entry, options);
+      wasRunning = await isAssistantHealthy(entry);
+      return { ...(await sleepLocal(entry, options)), wasRunning };
     }
     return {
       ok: false,
       status: 400,
       error: `'${cliCommand()} sleep' is unsupported for a ${entry.cloud} assistant.`,
+      wasRunning,
     };
   } catch (err) {
     return {
       ok: false,
       status: 500,
       error: err instanceof Error ? err.message : String(err),
+      wasRunning,
     };
   }
 }

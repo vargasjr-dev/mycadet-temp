@@ -37,6 +37,7 @@ const sleepAssistantMock = mock(
     kind: "services",
     services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
     notes: [],
+    wasRunning: true,
   }),
 );
 mock.module("@mycadet/local-mode", () => ({
@@ -135,6 +136,7 @@ describe("sleep command", () => {
       kind: "services",
       services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
       notes: [],
+      wasRunning: true,
     }));
     // Reset per-test state: drop the lockfile left behind.
     rmSync(join(testDir, "cadet", "lockfile.json"), { force: true });
@@ -204,6 +206,7 @@ describe("sleep command", () => {
         ces: "not-running",
       },
       notes: [],
+      wasRunning: true,
     }));
 
     try {
@@ -234,6 +237,7 @@ describe("sleep command", () => {
       ok: true,
       kind: "services",
       services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
+      wasRunning: true,
       notes: [
         "This assistant version does not support --wait — stopping without waiting.",
       ],
@@ -260,6 +264,7 @@ describe("sleep command", () => {
     sleepAssistantMock.mockImplementation(async () => ({
       ok: true,
       kind: "containers",
+      wasRunning: false,
     }));
 
     try {
@@ -285,6 +290,7 @@ describe("sleep command", () => {
     sleepAssistantMock.mockImplementation(async () => ({
       ok: false,
       status: 409,
+      wasRunning: true,
       error:
         "assistant is staying awake for active phone calls (call-1). Use 'cadet sleep --force' to stop it anyway.",
     }));
@@ -311,6 +317,7 @@ describe("sleep command", () => {
     sleepAssistantMock.mockImplementation(async () => ({
       ok: true,
       cancelled: true,
+      wasRunning: false,
     }));
 
     try {
@@ -402,7 +409,7 @@ describe("sleep command", () => {
       const consoleError = spyOn(console, "error").mockImplementation(() => {});
       sleepAssistantMock.mockImplementation(async (entry) =>
         entry.assistantId === "sleep-all-1"
-          ? { ok: false, status: 409, error: "refused" }
+          ? { ok: false, status: 409, error: "refused", wasRunning: true }
           : {
               ok: true,
               kind: "services",
@@ -412,6 +419,7 @@ describe("sleep command", () => {
                 ces: "stopped",
               },
               notes: [],
+              wasRunning: true,
             },
       );
 
