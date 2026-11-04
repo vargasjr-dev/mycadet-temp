@@ -20,15 +20,12 @@ import {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 
-import { type Assistant, getAssistant } from "@/assistant/api";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { routes } from "@/utils/routes";
@@ -117,46 +114,23 @@ function oauthErrorMessage(
   return messages[code];
 }
 
-function IntegrationsPanelInner({
-  mcpAssistantId,
-}: {
-  mcpAssistantId: string;
-}) {
+function IntegrationsPanelInner() {
   const { t } = useTranslation("settings");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const [assistant, setAssistant] = useState<Assistant | null>(null);
-  const [assistantLoading, setAssistantLoading] = useState(true);
+  // The store IS the resolution — the entry is the one assistant fact,
+  // resolved before the first render; there is nothing to await.
+  const assistant = getResolvedAssistant();
+  const assistantId = assistant.assistantId;
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState<IntegrationCategory | null>(null);
   const providerParam = searchParams.get("provider");
   const handledProviderParam = useRef<string | null>(null);
-  const mcp = useMcpConnections(mcpAssistantId);
-  const plugins = usePluginsList(mcpAssistantId);
-  const connect = useIntegrationConnect({ assistantId: mcpAssistantId, mcp });
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const result = await getAssistant(mcpAssistantId);
-        if (active && result.ok) {
-          setAssistant(result.data);
-        }
-      } catch (error) {
-        captureError(error, { context: "integrations.getAssistant" });
-      } finally {
-        if (active) {
-          setAssistantLoading(false);
-        }
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [mcpAssistantId]);
+  const mcp = useMcpConnections(assistantId);
+  const plugins = usePluginsList(assistantId);
+  const connect = useIntegrationConnect({ assistantId: assistantId, mcp });
 
   // Returns to this page with its query intact so a deep-linked provider
   // survives the round trip. The login flow itself lives in the app bundle's
@@ -200,24 +174,17 @@ function IntegrationsPanelInner({
     setToolsServerId,
   ]);
 
-  const {
-    cloudAssistantId,
-    isLoading: cloudAssistantIdLoading,
-    error: cloudAssistantIdError,
-  } = useCloudAssistantId(assistant?.id, isCloudHosted);
   const providers = useQuery({
     ...oauthProvidersGetOptions({
-      path: { assistant_id: assistant?.id ?? "" },
+      path: { assistant_id: assistantId },
     }),
     select: (data) => data.providers,
-    enabled: Boolean(assistant),
   });
-  const connections = useQuery({
-    ...assistantsOauthConnectionsListOptions({
-      path: { assistant_id: cloudAssistantId ?? "" },
+  const connections = useQuery(
+    assistantsOauthConnectionsListOptions({
+      path: { assistant_id: assistantId },
     }),
-    enabled: Boolean(cloudAssistantId) && isCloudHosted,
-  });
+  );
 
   useEffect(() => {
     const oauthStatus = searchParams.get("oauth_status");
@@ -246,10 +213,7 @@ function IntegrationsPanelInner({
   }, [searchParams, navigate, t]);
 
   const oauthUnavailable =
-    providers.isError ||
-    connections.isError ||
-    Boolean(cloudAssistantIdError) ||
-    (!assistantLoading && !assistant);
+    providers.isError || connections.isError || !assistant;
   const oauthReady =
     !oauthUnavailable &&
     Boolean(providers.data) &&
@@ -342,17 +306,14 @@ function IntegrationsPanelInner({
     .filter(isAvailable)
     .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   const loading =
-    assistantLoading ||
+    !assistant ||
     providers.isLoading ||
     connections.isLoading ||
-    cloudAssistantIdLoading ||
     mcp.list.isLoading ||
     ((plugins.isLoading || plugins.catalogLoading) && allItems.length === 0);
   // One attempt at a time, on every surface: the rows and cards that
   // predate the tiles only knew about the MCP machine.
   const authBusy = mcp.auth.isBusy;
-  const oauthDisabled =
-    assistantLoading || !assistant || (isCloudHosted && !cloudAssistantId);
   // The attempt is drawn inside the tile, or in the connect modal over it,
   // only while that surface is on screen. A search that filters the owning
   // integration out leaves the page-level notice as the one place with a
@@ -418,7 +379,7 @@ function IntegrationsPanelInner({
     : undefined;
 
   const disconnectIntegration = useIntegrationDisconnect({
-    assistantId: mcpAssistantId,
+    assistantId: assistantId,
     onStopAuth: (connection) => {
       const waitingOn = mcp.auth.attempt?.serverId;
       if (!waitingOn) {
@@ -475,7 +436,7 @@ function IntegrationsPanelInner({
           logoUrl={item.provider.logo_url}
           connections={item.connections}
           mcpMethods={item.methods}
-          disabled={oauthDisabled || !plan || connect.isBusyElsewhere(item.id)}
+          disabled={!plan || connect.isBusyElsewhere(item.id)}
           onConfigure={() => connect.openModal(item.id)}
         />
       );
@@ -484,7 +445,7 @@ function IntegrationsPanelInner({
       return (
         <PluginIntegrationRow
           key={item.id}
-          assistantId={mcpAssistantId}
+          assistantId={assistantId}
           method={item.method}
           disabled={!plan || connect.isBusyElsewhere(item.id)}
           onOpen={() => connect.openModal(item.id)}
@@ -638,9 +599,9 @@ function IntegrationsPanelInner({
           attempt={connect.attemptFor(connectModalItem.id)}
           toolsByConnectionId={toolsByConnectionId}
           ownOAuthContent={
-            assistant && connectModalItem.kind === "oauth" ? (
+            connectModalItem.kind === "oauth" ? (
               <YourOwnTab
-                assistantId={assistant.id}
+                assistantId={assistantId}
                 providerKey={connectModalItem.provider.provider_key}
                 displayName={connectModalItem.name}
                 logoUrl={connectModalItem.provider.logo_url}
@@ -671,13 +632,9 @@ function IntegrationsPanelInner({
 }
 
 export function IntegrationsPage() {
-  const mcpAssistantId = useActiveAssistantId();
   return (
     <Suspense>
-      <IntegrationsPanelInner
-        key={mcpAssistantId}
-        mcpAssistantId={mcpAssistantId}
-      />
+      <IntegrationsPanelInner />
     </Suspense>
   );
 }

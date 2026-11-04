@@ -1,21 +1,12 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState, type ReactNode } from "react";
 
 import { Modal } from "@mycadet/design-library";
 
 import { AssistantHandleSection } from "@/components/profile-card";
-import {
-  assistantsListOptions,
-  assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { Assistant } from "@/generated/api/types.gen";
-import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
+import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
-  /** The assistant as the cloud lists it; its id is the cloud's. */
-  assistant: Assistant;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -29,12 +20,10 @@ export interface AssistantHandleModalProps {
  * the modal; the editor's toast says it went through.
  */
 export function AssistantHandleModal({
-  assistant,
   open,
   onOpenChange,
 }: AssistantHandleModalProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   return (
     <Modal.Root open={open} onOpenChange={onOpenChange}>
@@ -51,13 +40,7 @@ export function AssistantHandleModal({
         <Modal.Body>
           <AssistantHandleSection
             layout="modal"
-            assistant={assistant}
-            onSaved={() => {
-              void queryClient.invalidateQueries({
-                queryKey: assistantsListQueryKey(),
-              });
-              onOpenChange(false);
-            }}
+            onSaved={() => onOpenChange(false)}
           />
         </Modal.Body>
       </Modal.Content>
@@ -81,33 +64,16 @@ export interface AssistantHandleModalControl {
  * platform's listing has the assistant, there is nothing to open and
  * `openModal` is `null`; callers drop their trigger on that.
  */
-export function useAssistantHandleModal(
-  assistantId: string | null,
-): AssistantHandleModalControl {
+export function useAssistantHandleModal(): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const onPlatform = isCloudHosted && !!assistantId;
-  const { cloudAssistantId } = useCloudAssistantId(assistantId, onPlatform);
-  const assistantsQuery = useQuery({
-    ...assistantsListOptions(),
-    enabled: onPlatform,
-  });
-  const assistant =
-    assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === cloudAssistantId,
-    ) ?? null;
+  // The store IS the record — the handle is the entry's id.
+  const handle = getResolvedAssistant().assistantId;
 
   const openModal = useCallback(() => setOpen(true), []);
 
   return {
-    handle: assistant?.handle || null,
-    openModal: assistant ? openModal : null,
-    modal: assistant ? (
-      <AssistantHandleModal
-        assistant={assistant}
-        open={open}
-        onOpenChange={setOpen}
-      />
-    ) : null,
+    handle: handle || null,
+    openModal,
+    modal: <AssistantHandleModal open={open} onOpenChange={setOpen} />,
   };
 }

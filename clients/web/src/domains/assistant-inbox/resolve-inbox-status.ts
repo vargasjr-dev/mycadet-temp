@@ -13,8 +13,6 @@
 export type InboxStatus = "unavailable" | "loading" | "setup" | "ready";
 
 export interface InboxStatusInputs {
-  /** The platform id the assistant routes key on; `null` while unresolved. */
-  cloudAssistantId: string | null;
   /** `undefined` until the address list has been read once. */
   addressCount: number | undefined;
   /**
@@ -26,7 +24,7 @@ export interface InboxStatusInputs {
 
 /** Pure so the decision can be tested without the hooks that feed it. */
 export function resolveInboxStatus(inputs: InboxStatusInputs): InboxStatus {
-  if (!inputs.cloudAssistantId || inputs.addressCount === undefined) {
+  if (inputs.addressCount === undefined) {
     return "loading";
   }
   if (inputs.addressCount > 0) {

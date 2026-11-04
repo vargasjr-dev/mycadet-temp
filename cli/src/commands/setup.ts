@@ -5,15 +5,15 @@ import {
 } from "@mycadet/local-mode/contract";
 import { cliCommand } from "@mycadet/local-mode";
 import {
-  leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
 } from "../lib/guardian-token.js";
-import type { GuardianTokenData } from "@mycadet/local-mode";
 import {
   ensureProviderApiKey,
   formatProviderName,
-} from "../lib/provider-secrets.js";
+  leaseGuardianToken,
+  type GuardianTokenData,
+} from "@mycadet/local-mode";
 import { yellow } from "../lib/color.js";
 
 function parseSetupArgs(args: string[]): { provider?: string } {

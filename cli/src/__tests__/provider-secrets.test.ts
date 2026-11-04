@@ -4,12 +4,11 @@ import { EventEmitter } from "node:events";
 import {
   ensureProviderApiKey,
   injectGatewayApiKey,
-  promptLine,
-  promptProviderChoice,
   promptSecret,
   readGatewayApiKey,
   type ProviderSecretFetch,
-} from "../lib/provider-secrets.js";
+} from "@mycadet/local-mode";
+import { promptLine, promptProviderChoice } from "../lib/provider-secrets.js";
 
 interface RecordedFetchCall {
   url: string;

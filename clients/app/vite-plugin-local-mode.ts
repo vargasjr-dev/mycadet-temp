@@ -232,9 +232,13 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
  * The match is pure in the URL — the hot path of every other request never
  * touches the lockfile — and the same-origin guard fronts the EXECUTION: a
  * cross-origin retire DELETE is refused here, never executed, never
- * forwarded. A pass (unknown id, platform-hosted entry) falls through to the
- * gateway proxy, whose cloud forward keeps the bundle's one endpoint holding
- * for every entry type.
+ * forwarded. The dispatch is the package's shared table directly — match,
+ * then `match.route.run` with the caller's own headers and the assistant id
+ * (the Electron `app://` handler rides the `forwardOperatorRequest`
+ * wrapper of the same seam, so the mounts cannot drift). A pass
+ * (unknown id, platform-hosted entry) falls through to the gateway proxy,
+ * whose cloud forward keeps the bundle's one endpoint holding for every
+ * entry type.
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -247,24 +251,15 @@ function operatorMiddleware(): Connect.NextHandleFunction {
       return;
     }
 
-    // The route rows read the JSON body off the Request (pairing, devices,
-    // hatch, upgrade); the body rides as a lazy stream so a row that PASSES
-    // (unknown id) leaves the request stream untouched for the gateway
-    // proxy's forward. GET/HEAD cannot carry a body — only other methods
-    // attach one.
-    const hasBody = !["GET", "HEAD"].includes(req.method ?? "GET");
-    const request = new Request(`http://local${req.url ?? "/"}`, {
-      method: req.method,
-      headers: { "content-type": "application/json" },
-      ...(hasBody
-        ? {
-            body: Readable.toWeb(req) as unknown as ReadableStream,
-            duplex: "half",
-          }
-        : {}),
-    } as RequestInit & { duplex?: "half" });
+    // The caller's own headers and body ride as-is; the stream is lazy, so
+    // a row that PASSES (unknown id) leaves the request untouched for the
+    // gateway proxy's forward.
     void match.route
-      .run(match.assistantId, request)
+      .run({
+        assistantId: match.assistantId,
+        headers: req.headers,
+        body: Readable.toWeb(req),
+      })
       .then((response) => {
         if (!response) {
           return next();

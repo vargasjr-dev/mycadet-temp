@@ -11,15 +11,19 @@ export type AssistantRequestState =
   | { status: "loading" | "error" };
 
 /**
- * The shell's resolution flow: it resolves one assistant's detail, falling
- * back to the list endpoint's summary when there is nothing (or more than
- * one) to resolve. The chooser picks instead of resolving, so it reads the
- * list endpoint through its own useAssistantChoices hook.
+ * The shell's resolution flow: one same-origin resolution request — the
+ * serving host's operation composes the whole union (the lockfile's choice,
+ * the entry gateway's identity, the caller's own auth verdict) and the hook
+ * decodes it. The chooser picks instead of resolving, so it reads the same
+ * endpoint through its own useAssistantChoices hook. The `assistantId` prop
+ * keys re-resolution (a chooser hand-off re-runs the flow) and rides the
+ * request when present — the endpoint answers the named assistant; without
+ * one it answers the host's truth about what is served.
  */
 export function useAssistantRequest({
   apiBaseUrl = "/",
   assistantId,
-}: Omit<AssistantRequest, "signal" | "origin">) {
+}: Omit<AssistantRequest, "signal">) {
   const [attempt, setAttempt] = useState(0);
   const key = JSON.stringify([apiBaseUrl, assistantId, attempt]);
   const [result, setResult] = useState<{
@@ -30,9 +34,9 @@ export function useAssistantRequest({
     const controller = new AbortController();
     const settle = (state: AssistantRequestState) => setResult({ key, state });
     settle({ status: "loading" });
-    // The shell is same-origin by construction — every host (the desktop
-    // protocol, the web dev server, the cloud takeover) proxies the API at
-    // the page's own origin. Read inside the effect: SSR renders the shell
+    // The request itself needs no origin — the client reads the page's own
+    // (same-origin by construction: every host proxies the API at the page's
+    // origin). Read here only for the timeout log: SSR renders the shell
     // without a window, and the origin is a browser fact.
     const origin = window.location.origin;
     const timer = setTimeout(() => {
@@ -47,13 +51,11 @@ export function useAssistantRequest({
         if (controller.signal.aborted) {
           return;
         }
-        const request = {
+        return resolveAssistant({
           apiBaseUrl,
-          origin,
           assistantId,
           signal: controller.signal,
-        };
-        return resolveAssistant(request);
+        });
       })
       .then(
         (value) => {
@@ -66,17 +68,6 @@ export function useAssistantRequest({
             console.error(
               "Assistant resolution did not match the contract:",
               parsed.error.message,
-            );
-            settle({ status: "error" });
-            return;
-          }
-          if (
-            parsed.data.status === "ready" &&
-            assistantId &&
-            parsed.data.assistant.id !== assistantId
-          ) {
-            console.error(
-              `Assistant resolution returned ${parsed.data.assistant.id}, not the requested ${assistantId}`,
             );
             settle({ status: "error" });
             return;

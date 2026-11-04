@@ -9,7 +9,6 @@ import { useOpenUrlDirectives } from "@/hooks/use-open-url-directives";
 import { useGlobalDeepLinkConsumer } from "@/hooks/use-global-deep-link-consumer";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-open";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
-import { useAssistantBootResolution } from "@/assistant/queries";
 import { useChannelSetupCloseNotify } from "@/domains/chat/hooks/use-channel-setup-close-notify";
 import {
   endLiveVoiceSession,
@@ -100,7 +99,7 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
  * App-level layout route. Owns four cross-route concerns:
  *
  * 1. Safe-area insets and iOS visual-viewport keyboard tracking.
- * 2. The boot resolution (`useAssistantBootResolution`). Mounted here
+ * 2. The resolved-assistant store's boot stamp (the shell's job).
  *    once: it fetches `/assistant/`, projects the result into the
  *    resolved-assistants store and the self-hosted connection slots,
  *    and re-projects on selection change. Every layout / route reads
@@ -126,7 +125,6 @@ export function RootLayout() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  useAssistantBootResolution();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
   // from any route — including setMainView("chat") calls made while the chat

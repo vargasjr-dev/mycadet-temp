@@ -27,14 +27,9 @@ import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
-import * as nginxIngress from "../lib/servers/nginx.js";
+import * as serversLib from "../lib/servers/common.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import {
-  readRootProcesses,
-  stampRootProcess,
-} from "../lib/assistant-config.js";
-import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type {
   LocalAssistant,
   LockfileAssistant,
@@ -44,7 +39,7 @@ import { withPreconnect } from "./helpers/http.js";
 const realCloudflareTunnel = { ...cloudflareTunnel };
 const realGatewayNotify = { ...gatewayNotify };
 const realNgrok = { ...ngrok };
-const realNginxIngress = { ...nginxIngress };
+const realServersLib = { ...serversLib };
 const realTailscaleTunnel = { ...tailscaleTunnel };
 const realChildProcess = { ...childProcess };
 
@@ -96,32 +91,28 @@ mock.module("../lib/tunnels/gateway-notify.js", () => ({
 
 const EDGE_PORT = 18080;
 
-const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
+const ensureAppServerMock = mock<typeof serversLib.ensureAppServer>(
   async () => ({
     port: EDGE_PORT,
     started: true,
   }),
 );
-const isIngressRunningMock = mock<typeof localModeModule.isIngressRunning>(
+const isAppServerRunningMock = mock<typeof serversLib.isAppServerRunning>(
   () => false,
 );
-const readIngressStateMock = mock<typeof localModeModule.readIngressState>(
+const readAppServerStateMock = mock<typeof serversLib.readAppServerState>(
   () => null,
 );
-const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
-  () => "nginx version (test)",
-);
-mock.module("../lib/servers/nginx.js", () => ({
-  ...realNginxIngress,
+mock.module("../lib/servers/common.js", () => ({
+  ...realServersLib,
   ensureAppServer: ensureAppServerMock,
-  getNginxVersion: getNginxVersionMock,
 }));
 mock.module("@mycadet/local-mode", () => ({
   ...localModeModule,
   // servers/nginx.ts no longer re-exports the ingress reads — the tunnel
   // flow imports them from the package, so mock them here.
-  isIngressRunning: isIngressRunningMock,
-  readIngressState: readIngressStateMock,
+  isAppServerRunning: isAppServerRunningMock,
+  readAppServerState: readAppServerStateMock,
 }));
 
 const { tunnel } = await import("../commands/tunnel.js");
@@ -171,21 +162,6 @@ function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
     daemonPort: 7821,
     mgmtSocket: "/tmp/fake-mgmt.sock",
   };
-}
-
-/**
- * Pin the default workspace and seed its config. The start flow's
- * webhook-integration guard reads the machine-level workspace under the
- * app-server-first contract, so start-flow tests seed there.
- */
-function writeDefaultWorkspaceConfig(config: Record<string, unknown>): string {
-  const workspaceDir = useTempDefaultWorkspaceDir();
-  mkdirSync(workspaceDir, { recursive: true });
-  writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify(config, null, 2),
-  );
-  return workspaceDir;
 }
 
 /** Point the default workspace dir at a temp dir; returns that dir. */
@@ -331,7 +307,7 @@ describe("app server targeting", () => {
     mock.module("../lib/tunnels/cloudflare.js", () => realCloudflareTunnel);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
-    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+    mock.module("../lib/servers/common.js", () => realServersLib);
     mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
@@ -1216,15 +1192,14 @@ describe("tunnel start runs the providers directly", () => {
       runNgrokTunnel: runNgrokTunnelMock,
       NGROK_PROVIDER: { ...realNgrok.NGROK_PROVIDER, run: runNgrokTunnelMock },
     }));
-    mock.module("../lib/servers/nginx.js", () => ({
-      ...realNginxIngress,
+    mock.module("../lib/servers/common.js", () => ({
+      ...realServersLib,
       ensureAppServer: ensureAppServerMock,
-      getNginxVersion: getNginxVersionMock,
     }));
     mock.module("@mycadet/local-mode", () => ({
       ...localModeModule,
-      isIngressRunning: isIngressRunningMock,
-      readIngressState: readIngressStateMock,
+      isAppServerRunning: isAppServerRunningMock,
+      readAppServerState: readAppServerStateMock,
     }));
     mock.module("node:child_process", () => ({
       ...realChildProcess,
@@ -1235,7 +1210,7 @@ describe("tunnel start runs the providers directly", () => {
   afterAll(() => {
     mock.module("node:child_process", () => realChildProcess);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
-    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
+    mock.module("../lib/servers/common.js", () => realServersLib);
     mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
@@ -1297,261 +1272,5 @@ describe("tunnel start runs the providers directly", () => {
       "ngrok is not installed.",
     );
     expect(spawnMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
-  const TAILNET_URL = "https://test-machine.tailnet.ts.net";
-  let restoreFlow: typeof import("../lib/tunnel.js");
-  let logSpy: ReturnType<typeof spyOn>;
-  let warnSpy: ReturnType<typeof spyOn>;
-
-  beforeAll(async () => {
-    // The edge-targeting describe's afterAll restores the REAL provider
-    // modules; re-establish the fakes the restore flow's tests need.
-    mock.module("../lib/tunnels/tailscale.js", () => ({
-      ...realTailscaleTunnel,
-      TAILSCALE_PROVIDER: {
-        ...realTailscaleTunnel.TAILSCALE_PROVIDER,
-        run: runTailscaleTunnelMock,
-      },
-    }));
-    mock.module("../lib/servers/nginx.js", () => ({
-      ...realNginxIngress,
-      ensureAppServer: ensureAppServerMock,
-      getNginxVersion: getNginxVersionMock,
-      isIngressRunning: isIngressRunningMock,
-      readIngressState: readIngressStateMock,
-    }));
-    restoreFlow = await import("../lib/tunnel.js");
-  });
-
-  beforeEach(() => {
-    ensureAppServerMock.mockReset();
-    ensureAppServerMock.mockImplementation(async () => ({
-      port: EDGE_PORT,
-      started: true,
-    }));
-    runTailscaleTunnelMock.mockReset();
-    runTailscaleTunnelMock.mockImplementation(async () => {
-      // The real run stamps the lockfile record with the URL it published —
-      // the wake restore's gate and the edge refresh both read it.
-      stampRootProcess("tunnel", {
-        pid: process.pid,
-        provider: "tailscale",
-        startedAt: new Date().toISOString(),
-        publicUrl: TAILNET_URL,
-      });
-      return { publicUrl: TAILNET_URL };
-    });
-    isIngressRunningMock.mockReset();
-    isIngressRunningMock.mockImplementation(() => false);
-    readIngressStateMock.mockReset();
-    readIngressStateMock.mockImplementation(() => null);
-    notifyGatewayOfPublicUrlMock.mockReset();
-    notifyGatewayOfPublicUrlMock.mockImplementation(async () => {});
-    logSpy = spyOn(console, "log").mockImplementation(() => {});
-    warnSpy = spyOn(console, "warn").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    logSpy.mockRestore();
-    warnSpy.mockRestore();
-    process.argv = originalArgv;
-    globalThis.fetch = originalFetch;
-    rmSync(realNgrok.ngrokConfigPath(), { force: true });
-    if (originalConfigHome === undefined) {
-      delete process.env.XDG_CONFIG_HOME;
-    } else {
-      process.env.XDG_CONFIG_HOME = originalConfigHome;
-    }
-    if (originalWorkspaceDir === undefined) {
-      delete process.env.CADET_WORKSPACE_DIR;
-    } else {
-      process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-    }
-    for (const dir of tempDirs.splice(0)) {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  // The suite re-mocked the provider + edge modules in beforeAll; restore
-  // the real ones or the mocks leak into whichever file Bun runs next.
-  afterAll(() => {
-    mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
-    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
-    mock.module("@mycadet/local-mode", () => localModeModule);
-  });
-
-  function seedRecordedTailnetWake(): {
-    entry: LocalAssistant;
-    workspaceDir: string;
-  } {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    stampRootProcess("tunnel", {
-      pid: 4321,
-      provider: "tailscale",
-      startedAt: new Date().toISOString(),
-      publicUrl: TAILNET_URL,
-    });
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      startedAt: new Date().toISOString(),
-    });
-    const workspaceDir = writeDefaultWorkspaceConfig({});
-    return { entry, workspaceDir };
-  }
-
-  test("a recorded tailnet tunnel re-establishes the serve at the app server's port and re-records the url", async () => {
-    seedRecordedTailnetWake();
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    // Step 1: the edge started even though the gateway had cleared the url —
-    // the lockfile's records are why the wake still wants both back.
-    expect(ensureAppServerMock).toHaveBeenCalledWith();
-    // Step 2: the tunnel re-established at the app server's port, never the
-    // gateway's fallback port.
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
-    // Step 3: the url rode to every locally-reachable assistant's gateway,
-    // and the lockfile record carries it again.
-    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
-      TAILNET_URL,
-      "assistant-1",
-    );
-    expect(readRootProcesses().tunnel?.publicUrl).toBe(TAILNET_URL);
-  });
-
-  test("a stopped tunnel cleared its root record, so the wake resurrects no tunnel", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    // The app entry survives, so the edge comes back — but the cleared
-    // tunnel record leaves the dispatch nothing to ensure.
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      startedAt: new Date().toISOString(),
-    });
-    const workspaceDir = join(getLocalInstanceDir(entry), "workspace");
-    mkdirSync(workspaceDir, { recursive: true });
-    writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify(
-        {
-          ingress: {
-            enabled: true,
-            lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-          },
-        },
-        null,
-        2,
-      ),
-    );
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
-  });
-
-  test("a workspace with no recorded app server wants no edge", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    writeDefaultWorkspaceConfig({
-      ingress: { enabled: true },
-    });
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
-  });
-
-  test("a cloudflare run failure is non-fatal for the restore", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    stampRootProcess("tunnel", {
-      pid: 4321,
-      provider: "cloudflare",
-      startedAt: new Date().toISOString(),
-      publicUrl: "https://x.trycloudflare.com",
-    });
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      startedAt: new Date().toISOString(),
-    });
-    writeDefaultWorkspaceConfig({
-      ingress: { enabled: true },
-    });
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
-  });
-
-  test("a pairing-only tailnet run published no ingress base URL, so the restore re-establishes nothing", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    stampRootProcess("tunnel", {
-      pid: 4321,
-      provider: "tailscale",
-      startedAt: new Date().toISOString(),
-    });
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      startedAt: new Date().toISOString(),
-    });
-    // The saved webhook callback base stands (a pairing run leaves it); the
-    // record's missing `publicUrl` is what keeps the restore from repointing
-    // it at the tailnet address.
-    writeDefaultWorkspaceConfig({
-      ingress: {
-        enabled: true,
-        publicBaseUrl: "https://x.ngrok.app",
-      },
-    });
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    // The pairing run did not repoint the webhook callback base; the restore
-    // must not repoint it either.
-    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
-  });
-
-  test("the record alone drives the restore — no workspace record is consulted", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    stampRootProcess("tunnel", {
-      pid: 4321,
-      provider: "tailscale",
-      startedAt: new Date().toISOString(),
-      publicUrl: TAILNET_URL,
-    });
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      startedAt: new Date().toISOString(),
-    });
-    // An empty workspace config: nothing in it names a tunnel or a URL.
-    writeDefaultWorkspaceConfig({});
-
-    await restoreFlow.restoreAppServerAndAutoTunnel();
-
-    // The lockfile's tunnel record published a URL, so the recorded tailnet
-    // tunnel is re-established and the URL is saved again.
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
-    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
-      TAILNET_URL,
-      entry.assistantId,
-    );
   });
 });

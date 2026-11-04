@@ -25,7 +25,7 @@ import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { getServedLockfile } from "@/lib/local-mode";
+import { readInjectedConfig } from "@/lib/injected-config";
 
 /** The boot entry for a surface whose serving host fronted no assistant. */
 export const UNRESOLVED_ASSISTANT: LockfileAssistant = {
@@ -34,11 +34,42 @@ export const UNRESOLVED_ASSISTANT: LockfileAssistant = {
 };
 
 /**
- * The assistant this surface serves at boot: the served synthesis when the
- * host stamped one, else the unresolved cloud shell the projection replaces.
+ * The assistant this surface serves at boot: the entry the serving host
+ * stamped into the injected config — read regardless of which remote serves
+ * it, since the stamp is the truth everywhere. A host fronting no assistant
+ * (the cloud SPA's account surfaces) leaves the shell for the projection to
+ * replace.
  */
 function initialAssistant(): LockfileAssistant {
-  return getServedLockfile().assistants[0] ?? UNRESOLVED_ASSISTANT;
+  const config = readInjectedConfig();
+  const assistantId = config?.assistantId;
+  if (!assistantId) {
+    return UNRESOLVED_ASSISTANT;
+  }
+  const base = {
+    assistantId,
+    name: config?.assistantName ?? "Local Assistant",
+    hatchedAt: "1970-01-01T00:00:00.000Z",
+  };
+  const localish = (cloud: "local" | "docker" | "apple-container") =>
+    ({ ...base, cloud, port: 0 }) as LockfileAssistant;
+  switch (config?.remote) {
+    case "custom":
+      return { ...base, cloud: "custom", ipAddress: "127.0.0.1", port: 0 };
+    case "cloud":
+      return { ...base, cloud: "cloud" };
+    case "baseten":
+      // A baseten stamp carries no sandbox fields in the injected config —
+      // the web bundle's transport is same-origin regardless, so the entry
+      // carries the fabricated placeholders the schema requires.
+      return { ...base, cloud: "baseten", sandboxUrl: "", port: 0 };
+    case "docker":
+      return localish("docker");
+    case "apple-container":
+      return localish("apple-container");
+    default:
+      return localish("local");
+  }
 }
 
 interface ResolvedAssistantState {

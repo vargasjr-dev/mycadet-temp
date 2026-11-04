@@ -315,7 +315,7 @@ export async function runTailscaleTunnel(
 
   console.log("");
   console.log(`Tunnel established: ${publicUrl}`);
-  console.log(`Serving:            localhost:${port}`);
+  console.log(`Serving:            127.0.0.1:${port}`);
   console.log("");
   console.log("Tunnel recorded in the lockfile.");
   console.log(

@@ -13,11 +13,12 @@ import { changeLocale } from "@app/i18n";
 
 // The shell derives its origin from the page — same-origin by construction.
 const origin = window.location.origin;
-const detail = (id = "assistant-1") => ({
-  id,
-  status: "active",
-  version: "1.2.3",
-  url: "https://runtime.example.com/web/1.2.3/assistant/",
+const resolution = (id = "assistant-1") => ({
+  status: "ready",
+  assistant: {
+    id,
+    version: "1.2.3",
+  },
 });
 const request = spyOn(globalThis, "fetch");
 function respond(
@@ -61,13 +62,13 @@ function message(
   window.dispatchEvent(
     new MessageEvent("message", {
       source: extra.source ?? frame.contentWindow,
-      origin: extra.origin ?? "https://runtime.example.com",
+      origin: extra.origin ?? origin,
       data: { source: "mycadet-web-nav", nav: extra.nav ?? "push", path },
     }),
   );
 }
 async function mounted() {
-  respond(async () => json(detail()));
+  respond(async () => json(resolution()));
   const view = render(<AppShell {...props()} />);
   await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
   await act(async () => {});
@@ -85,14 +86,14 @@ test("admin deep links and active-frame navigation preserve the host prefix", as
   await mounted();
   const frame = iframe();
   expect(frame.src).toBe(
-    "https://runtime.example.com/web/1.2.3/assistant/conversations/123?tab=files#last",
+    `${origin}/admin/assistant/conversations/123?tab=files#last`,
   );
   message(frame, "/assistant/settings?tab=profile#name");
   expect(navigate).toHaveBeenCalledWith(
     "/admin/assistant/settings?tab=profile#name",
     { replace: false },
   );
-  message(frame, "/web/1.2.3/assistant/files", { nav: "pop" });
+  message(frame, "/admin/assistant/files", { nav: "pop" });
   expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/files", {
     replace: true,
   });
@@ -133,9 +134,9 @@ test("host navigation updates the active frame without another API lookup", asyn
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
-      path: "/web/1.2.3/assistant/identity?edit=1#name",
+      path: "/admin/assistant/identity?edit=1#name",
     },
-    "https://runtime.example.com",
+    origin,
   );
   post.mockRestore();
 });
@@ -158,7 +159,7 @@ test("wakes a not-ready assistant and mounts it once ready", async () => {
   request
     .mockResolvedValueOnce(new Response(null, { status: 409 }))
     .mockResolvedValueOnce(json({ ok: true, action: "woke", output: "" }))
-    .mockResolvedValueOnce(json(detail()));
+    .mockResolvedValueOnce(json(resolution()));
   render(<AppShell {...props()} />);
   await screen.findByText("Your assistant isn't ready.");
   fireEvent.click(screen.getByRole("button", { name: "Wake it up" }));
@@ -193,12 +194,13 @@ test("a failed wake shows the node's own punchline and offers the wake again", a
 test("retries an API failure without account session probes", async () => {
   request
     .mockResolvedValueOnce(new Response(null, { status: 503 }))
-    .mockResolvedValueOnce(json(detail()));
+    .mockResolvedValueOnce(json(resolution()));
   render(<AppShell {...props()} />);
   await screen.findByText("We couldn't reach your assistant");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByTitle("Assistant");
   expect(request).toHaveBeenCalledTimes(2);
+  // The shell's assistantId prop rides the request — the scoped spelling.
   expect(
     request.mock.calls.every(([url]) =>
       String(url).endsWith("/v1/assistants/assistant-1/"),
@@ -230,7 +232,7 @@ test("unmount aborts requests and ignores late replies", async () => {
   view.unmount();
   expect(signal?.aborted).toBe(true);
   await act(async () => {
-    finish(json(detail()));
+    finish(json(resolution()));
   });
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
@@ -252,7 +254,7 @@ test("changing assistant or API base immediately hides the previous frame", asyn
     `${origin}/admin/api/v1/assistants/assistant-2/`,
   );
   await act(async () => {
-    finish(json(detail("assistant-2")));
+    finish(json(resolution("assistant-2")));
   });
   await screen.findByTitle("Assistant");
 });
@@ -260,7 +262,8 @@ test("changing assistant or API base immediately hides the previous frame", asyn
 test("without an ID the shell hands off to the account chooser", async () => {
   respond(async () =>
     json({
-      results: [
+      status: "selection",
+      assistants: [
         { id: "assistant-1", name: "One" },
         { id: "assistant-2", name: "Two" },
       ],
@@ -278,7 +281,7 @@ test("without an ID the shell hands off to the account chooser", async () => {
 });
 
 test("empty and unauthenticated states hand off to the chooser too", async () => {
-  respond(async () => json({ results: [] }));
+  respond(async () => json({ status: "empty" }));
   render(<AppShell {...props()} assistantId={undefined} />);
   await screen.findByText("No assistant is available.");
   await waitFor(() =>
@@ -289,7 +292,7 @@ test("empty and unauthenticated states hand off to the chooser too", async () =>
 });
 
 test("embedded shells follow the app locale", async () => {
-  respond(async () => json({ results: [] }));
+  respond(async () => json({ status: "empty" }));
   await changeLocale("es");
   try {
     const first = render(<AppShell {...props()} assistantId={undefined} />);
@@ -308,24 +311,25 @@ test("embedded shells follow the app locale", async () => {
 });
 
 test("a late reply for a previous assistant cannot replace the current selection", async () => {
-  const replies = new Map<string, (response: Response) => void>();
-  respond((url) => {
+  // One resolution endpoint now — every request lands on the same URL, so
+  // the pending requests are told apart by ORDER, not by path.
+  const replies: Array<(response: Response) => void> = [];
+  respond(() => {
     return new Promise((done) => {
-      replies.set(String(url), done);
+      replies.push(done);
     });
   });
   const view = render(<AppShell {...props()} />);
   await act(async () => {});
   view.rerender(<AppShell {...props("assistant-2")} />);
   await act(async () => {});
+  expect(replies.length).toBe(2);
   await act(async () => {
-    replies.get(`${origin}/v1/assistants/assistant-1/`)?.(json(detail()));
+    replies[0]?.(json(resolution()));
   });
   expect(screen.queryByTitle("Assistant")).toBeNull();
   await act(async () => {
-    replies.get(`${origin}/v1/assistants/assistant-2/`)?.(
-      json(detail("assistant-2")),
-    );
+    replies[1]?.(json(resolution("assistant-2")));
   });
   await screen.findByTitle("Assistant");
 });
@@ -353,9 +357,9 @@ test("a frame that loads late receives the latest host route", async () => {
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
-      path: "/web/1.2.3/assistant/files?view=grid#last",
+      path: "/admin/assistant/files?view=grid#last",
     },
-    "https://runtime.example.com",
+    origin,
   );
   post.mockRestore();
 });

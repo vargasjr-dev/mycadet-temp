@@ -210,14 +210,6 @@ mock.module("@/generated/api/sdk.gen", () => ({
   assistantsPushTokensDelete: deleteMock,
 }));
 
-const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
-const resolveCloudAssistantIdMock = mock(
-  async (assistantId: string) => assistantId as string | null,
-);
-mock.module("@/lib/cloud-assistant-id", () => ({
-  resolveCloudAssistantId: resolveCloudAssistantIdMock,
-}));
-
 // ── error reporting ─────────────────────────────────────────────────────
 
 const captureErrorMock = mock(() => {});
@@ -305,10 +297,6 @@ beforeEach(() => {
   upsertMock.mockClear();
   deleteMock.mockClear();
   captureErrorMock.mockClear();
-  resolveCloudAssistantIdMock.mockClear();
-  resolveCloudAssistantIdMock.mockImplementation(
-    async (assistantId: string) => assistantId,
-  );
   __resetPushRegistrationStateForTests();
 });
 
@@ -458,31 +446,6 @@ describe("registerForRemotePush", () => {
 
     expect(captureErrorMock).toHaveBeenCalledTimes(1);
     expect(upsertMock).not.toHaveBeenCalled();
-  });
-
-  test("upserts under the resolved platform UUID for a lockfile slug", async () => {
-    resolveCloudAssistantIdMock.mockImplementationOnce(
-      async () => PLATFORM_ASSISTANT_ID,
-    );
-    await registerForRemotePush("local-slug");
-    registrationHandler?.({ value: "apns-token-abc" });
-    await flushMicrotasks();
-
-    expect(lastUpsertArg?.path.assistant_id).toBe(PLATFORM_ASSISTANT_ID);
-    expect(hasSessionConfirmedRemotePushRegistration("local-slug")).toBe(true);
-    expect(
-      hasSessionConfirmedRemotePushRegistration(PLATFORM_ASSISTANT_ID),
-    ).toBe(true);
-  });
-
-  test("skips upsert when no platform UUID can be resolved", async () => {
-    resolveCloudAssistantIdMock.mockImplementationOnce(async () => null);
-    await registerForRemotePush("self");
-    registrationHandler?.({ value: "apns-token-abc" });
-    await flushMicrotasks();
-
-    expect(upsertMock).not.toHaveBeenCalled();
-    expect(hasSessionConfirmedRemotePushRegistration("self")).toBe(false);
   });
 });
 

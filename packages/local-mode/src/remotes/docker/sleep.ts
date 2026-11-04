@@ -61,7 +61,8 @@ async function sleepContainers(
 /**
  * The docker topology's sleep leg: stop the instance's three service
  * containers (gracefully, then remove them — the wake recreates what it
- * needs) by their derived resource names.
+ * needs) by their derived resource names. A container that refuses to
+ * stop is an error; anything already down is expected and skipped.
  */
 export async function sleepDocker(
   entry: LockfileAssistant,

@@ -4,7 +4,6 @@ import { app, nativeImage, shell, type NativeImage } from "electron";
 
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { acceleratorOption } from "@mycadet/electron-desktop/commands";
-import { readLockfile } from "@mycadet/local-mode";
 import { configureStatusIconFallback } from "@mycadet/electron-desktop/status-icon";
 import {
   configureTrayModel,
@@ -79,7 +78,6 @@ export const installLinuxTray = (): void => {
     companionHidden: () => true,
     companionSize: () => DEFAULT_COMPANION_SIZE,
     dispatch,
-    getLockfile: readLockfile,
     icon: (icon) => ICONS[icon](),
     onboardingActive: readOnboardingActive,
     openComponentGallery: () => {

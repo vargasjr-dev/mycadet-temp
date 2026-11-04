@@ -1448,19 +1448,7 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
       - name: Stamp dev version into meta package.json
-        run: |
-          VERSION="${{ needs.compute-version.outputs.version }}"
-          cd meta
-          jq --arg v "$VERSION" '
-            .version = $v |
-            .bin = { "cadet-dev": .bin.cadet, "cadet": .bin.cadet, "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
-            .dependencies["@mycadet/app"] = $v |
-            .dependencies["@mycadet/assistant"] = $v |
-            .dependencies["@mycadet/cli"] = $v |
-            .dependencies["@mycadet/credential-executor"] = $v |
-            .dependencies["@mycadet/gateway"] = $v |
-            .dependencies["@mycadet/web"] = $v
-          ' package.json > tmp && mv tmp package.json
+        run: ./scripts/stamp-dev-meta-package.sh "${{ needs.compute-version.outputs.version }}"
       - name: Generate npm-shrinkwrap.json
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
       - name: Publish

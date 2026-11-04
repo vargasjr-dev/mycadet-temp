@@ -1,4 +1,4 @@
-import { LLM_PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import { LLM_PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
 
 export interface ApiKeyCheckResult {
   hasKey: boolean;

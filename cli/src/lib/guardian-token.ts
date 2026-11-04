@@ -1,164 +1,23 @@
-import { createHash, randomUUID } from "node:crypto";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { execSync } from "node:child_process";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   closeSync,
-  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
   statSync,
   unlinkSync,
-  writeFileSync,
   writeSync,
 } from "fs";
-import { hostname, platform } from "os";
-import { dirname, join } from "path";
 
+import { dirname, join } from "path";
 import {
+  computeDeviceId,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loopbackSafeFetch,
-  pairDevice,
-  resolveConfigDir,
+  parseGuardianTokenFields,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
-
-import { z } from "zod";
-
-/**
- * The guardian token fields as they arrive untrusted (gateway refresh/init
- * responses, persisted token files). Every field is independently optional
- * and independently caught: one malformed field must not invalidate the
- * others — callers fall back per field.
- */
-const GuardianTokenFieldsSchema = z
-  .object({
-    guardianPrincipalId: z.string().optional().catch(undefined),
-    accessToken: z.string().optional().catch(undefined),
-    accessTokenExpiresAt: z
-      .union([z.string(), z.number()])
-      .optional()
-      .catch(undefined),
-    refreshToken: z.string().optional().catch(undefined),
-    refreshTokenExpiresAt: z
-      .union([z.string(), z.number()])
-      .optional()
-      .catch(undefined),
-    refreshAfter: z
-      .union([z.string(), z.number()])
-      .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
-      .optional()
-      .catch(undefined),
-    deviceId: z.string().optional().catch(undefined),
-  })
-  .catch({});
-
-/** Narrow untrusted JSON to the token fields whose values have the right
- * shape; fields absent or malformed come back undefined for callers to
- * fall back on or reject. */
-function parseGuardianTokenFields(value: unknown): Partial<GuardianTokenData> {
-  return GuardianTokenFieldsSchema.parse(value);
-}
-
-const DEVICE_ID_SALT = "mycadet-host-id";
-
-function getGuardianTokenPath(assistantId: string): string {
-  // Resolve via the shared @mycadet/local-mode resolver — the same one every
-  // host-seam reader (`getGuardianAccessToken`) uses — so the token is always
-  // written where it's read.
-  return guardianTokenPath(assistantId);
-}
-
-function getPersistedDeviceIdPath(): string {
-  return join(resolveConfigDir(), "device-id");
-}
-
-function hashWithSalt(input: string): string {
-  return createHash("sha256")
-    .update(input + DEVICE_ID_SALT)
-    .digest("hex");
-}
-
-function getMacOSPlatformUUID(): string | null {
-  try {
-    const output = execSync(
-      "ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/{print $3}'",
-      { encoding: "utf-8", timeout: 5000, windowsHide: true },
-    ).trim();
-    const uuid = output.replace(/"/g, "");
-    return uuid.length > 0 ? uuid : null;
-  } catch {
-    return null;
-  }
-}
-
-function getLinuxMachineId(): string | null {
-  try {
-    return readFileSync("/etc/machine-id", "utf-8").trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-function getWindowsMachineGuid(): string | null {
-  try {
-    const output = execSync(
-      'reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid',
-      { encoding: "utf-8", timeout: 5000, windowsHide: true },
-    ).trim();
-    const match = output.match(/MachineGuid\s+REG_SZ\s+(.+)/);
-    return match?.[1]?.trim() ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export function getOrCreatePersistedDeviceId(): string {
-  const path = getPersistedDeviceIdPath();
-  try {
-    const existing = readFileSync(path, "utf-8").trim();
-    if (existing.length > 0) {
-      return existing;
-    }
-  } catch {
-    // File doesn't exist yet
-  }
-  const newId = randomUUID();
-  const dir = dirname(path);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true, mode: 0o700 });
-  }
-  writeFileSync(path, newId + "\n", { mode: 0o600 });
-  return newId;
-}
-
-/**
- * Compute a stable device identifier matching the native client conventions.
- *
- * - macOS: SHA-256 of IOPlatformUUID + salt
- * - Linux: SHA-256 of /etc/machine-id + salt
- * - Windows: SHA-256 of HKLM MachineGuid + salt
- * - Fallback: persisted random UUID in XDG config
- */
-export function computeDeviceId(): string {
-  const os = platform();
-
-  if (os === "darwin") {
-    const uuid = getMacOSPlatformUUID();
-    if (uuid) return hashWithSalt(uuid);
-  } else if (os === "linux") {
-    const machineId = getLinuxMachineId();
-    if (machineId) return hashWithSalt(machineId);
-  } else if (os === "win32") {
-    const guid = getWindowsMachineGuid();
-    if (guid) return hashWithSalt(guid);
-  }
-
-  return getOrCreatePersistedDeviceId();
-}
 
 /**
  * Read a previously persisted guardian token for the given assistant.
@@ -195,7 +54,7 @@ const REFRESH_LOCK_STALE_MS = 30_000;
 const REFRESH_LOCK_POLL_MS = 100;
 
 function getRefreshLockPath(assistantId: string): string {
-  return join(dirname(getGuardianTokenPath(assistantId)), "refresh.lock");
+  return join(dirname(guardianTokenPath(assistantId)), "refresh.lock");
 }
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -516,150 +375,4 @@ export async function refreshGuardianToken(
 ): Promise<GuardianTokenData | null> {
   const result = await refreshGuardianTokenResult(gatewayUrl, assistantId);
   return result.ok ? result.token : null;
-}
-
-/**
- * The gateway may run in a separate container or VM from the machine
- * issuing this request (Docker, AWS, GCP), so its own hostname does not
- * identify the paired device. Read the CLI process's hostname here, where
- * it reflects the actual machine, and forward it in the init request.
- * Bootstrap is on the critical path, so a throwing or empty hostname
- * degrades to `undefined` rather than failing the lease.
- */
-function readClientHostname(): string | undefined {
-  try {
-    return hostname() || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Pair with the gateway (POST /v1/pair over loopback presence — direct for
- * the local topology, docker-exec'd into the container for docker) to mint a
- * JWT credential pair. The returned tokens are persisted locally under
- * `$XDG_CONFIG_HOME/cadet{-env}/assistants/<assistantId>/guardian-token.json`.
- */
-const READY_POLL_INTERVAL_MS = 500;
-const READY_POLL_BUDGET_MS = 60_000;
-
-async function waitForGatewayReady(gatewayUrl: string): Promise<void> {
-  const deadline = Date.now() + READY_POLL_BUDGET_MS;
-  while (Date.now() < deadline) {
-    try {
-      const res = await loopbackSafeFetch(`${gatewayUrl}/readyz`, {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (res.ok) return;
-      // Only the documented "starting" gate is worth waiting out. Anything
-      // else (404, connection refused) means there is no gate here — e.g.
-      // test doubles that serve only the leased routes — so proceed and let
-      // the caller's own retry budget handle it.
-      if (res.status !== 503) return;
-    } catch {
-      return;
-    }
-    await new Promise((r) => setTimeout(r, READY_POLL_INTERVAL_MS));
-  }
-}
-
-export class GuardianLeasePermanentError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "GuardianLeasePermanentError";
-  }
-}
-
-function describeJsonType(value: unknown): string {
-  if (value === undefined) return "absent";
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
-  return typeof value;
-}
-
-export async function leaseGuardianToken(
-  entry: LockfileAssistant,
-): Promise<GuardianTokenData> {
-  // The gateway address derives from the entry's topology; assistantId and
-  // the bootstrap secret ride the entry too. Only the local runtimes lease —
-  // they are the topologies a detached hatch records a bootstrap secret for.
-  if (entry.cloud !== "local" && entry.cloud !== "docker") {
-    throw new Error(
-      `Guardian token leasing is not available for '${entry.cloud}' assistants.`,
-    );
-  }
-  const gatewayUrl = getGatewayUrl(entry);
-  const assistantId = entry.assistantId;
-  // The gateway 503s every non-probe route ({status: "starting"}) while its
-  // post-assistant-ready backfills run — exactly the window that burned the
-  // caller's lease-retry budget. Poll /readyz (body-aware: it is the probe
-  // the gateway docs point CLI waits at) until the gate opens before the
-  // first pair attempt.
-  await waitForGatewayReady(gatewayUrl);
-
-  const deviceId = computeDeviceId();
-  const clientReportedName = readClientHostname();
-
-  const paired = await pairDevice(entry, {
-    platform: "cli",
-    deviceId,
-    clientReportedName,
-  });
-  if (!paired.ok) throw new Error(paired.error);
-
-  const mapped = mapPairResponse(paired.response);
-  const parsed = parseGuardianTokenFields(mapped);
-  if (
-    parsed.guardianPrincipalId == null ||
-    parsed.accessToken == null ||
-    parsed.accessTokenExpiresAt == null ||
-    parsed.refreshToken == null ||
-    parsed.refreshTokenExpiresAt == null ||
-    parsed.refreshAfter == null
-  ) {
-    const raw = z.record(z.string(), z.unknown()).catch({}).parse(mapped);
-    const requiredFields: (keyof typeof parsed)[] = [
-      "guardianPrincipalId",
-      "accessToken",
-      "accessTokenExpiresAt",
-      "refreshToken",
-      "refreshTokenExpiresAt",
-      "refreshAfter",
-    ];
-    const unusable = requiredFields
-      .filter((field) => parsed[field] == null)
-      .map((field) => `${field} arrived as ${describeJsonType(raw[field])}`);
-    throw new GuardianLeasePermanentError(
-      `guardian pair returned a malformed token response — ${unusable.join(", ")}`,
-    );
-  }
-  const tokenData: GuardianTokenData = {
-    guardianPrincipalId: parsed.guardianPrincipalId,
-    accessToken: parsed.accessToken,
-    accessTokenExpiresAt: parsed.accessTokenExpiresAt,
-    refreshToken: parsed.refreshToken,
-    refreshTokenExpiresAt: parsed.refreshTokenExpiresAt,
-    refreshAfter: parsed.refreshAfter,
-    deviceId,
-    leasedAt: new Date().toISOString(),
-  };
-
-  saveGuardianToken(assistantId, tokenData);
-  return tokenData;
-}
-
-/**
- * Map /v1/pair's device-bound response onto the token-field names the lease
- * parses (`token` → `accessToken`, `guardianId` → `guardianPrincipalId`).
- */
-function mapPairResponse(raw: unknown): unknown {
-  const rec = z.record(z.string(), z.unknown()).catch({}).parse(raw);
-  return {
-    guardianPrincipalId: rec.guardianId,
-    accessToken: rec.token,
-    accessTokenExpiresAt: rec.expiresAt,
-    refreshToken: rec.refreshToken,
-    refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
-    refreshAfter: rec.refreshAfter,
-  };
 }

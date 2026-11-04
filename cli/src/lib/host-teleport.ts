@@ -1,59 +1,44 @@
 import { rm } from "node:fs/promises";
-import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
+import { getGatewayUrl, type Remote } from "@mycadet/local-mode/contract";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
-import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import { hatchDocker, recreateDockerContainers } from "./remotes/docker.js";
-import { hatchLocal } from "./remotes/local.js";
+import { createBackup, pruneOldBackups } from "@mycadet/local-mode";
+import { initializeDockerTeleportTarget } from "./remotes/docker.js";
 import {
-  removeLockfileAssistant,
-  retireDocker,
-  retireLocal,
+  allocateLocalPlacement,
+  buildHatchConfigValues,
+  retireAssistant,
+  saveLockfileAssistant,
   validateAssistantName,
+  withLocalHatchLock,
+  writeInitialConfig,
 } from "@mycadet/local-mode";
 import {
-  DockerRootStorage,
-  LocalRootStorage,
+  initializeRootArchive,
   restoreRootBackup,
   stageRootArchive,
   STATE_ROOTS,
   withRootOperationLock,
-} from "./root-backup.js";
+} from "@mycadet/local-mode";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
-import { compareVersions } from "./version-compat.js";
+import { compareVersions } from "@mycadet/local-mode";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
+import { isAssistantHealthy } from "@mycadet/local-mode";
 import { generateInstanceName } from "@mycadet/local-mode";
-
-type HostStorage = LocalRootStorage | DockerRootStorage;
-type HostEnvironment = "local" | "docker";
 
 export class TeleportRecoveryError extends AggregateError {}
 
 export interface HostTeleportOps {
-  storage(entry: LockfileAssistant): HostStorage;
   backup(entry: LockfileAssistant): Promise<string>;
-  hatch(
-    env: HostEnvironment,
-    name: string | undefined,
-    archive: string,
-  ): Promise<LockfileAssistant>;
   restore(
     entry: LockfileAssistant,
     archive: string,
     recovery: string,
   ): Promise<void>;
-  retire(entry: LockfileAssistant): Promise<void>;
-}
-
-export function storageFor(entry: LockfileAssistant): HostStorage {
-  return entry.cloud === "docker"
-    ? new DockerRootStorage(entry)
-    : new LocalRootStorage(entry);
 }
 
 const defaultOps: HostTeleportOps = {
-  storage: storageFor,
   backup: async (entry) => {
     const archive = await createBackup(entry.assistantId, {
       prefix: `${entry.assistantId}-pre-teleport`,
@@ -66,47 +51,7 @@ const defaultOps: HostTeleportOps = {
     console.log(`Backup saved: ${archive}`);
     return archive;
   },
-  hatch: async (env, name, initialArchive) => {
-    const instanceName = generateInstanceName(name ?? null);
-    if (findAssistantByName(instanceName)) {
-      throw new Error(`Assistant '${instanceName}' already exists.`);
-    }
-    try {
-      if (env === "docker") {
-        await hatchDocker({
-          name: instanceName,
-          setupProviderCredentials: false,
-          initialArchive,
-        });
-      } else {
-        await hatchLocal({
-          name: instanceName,
-          setupProviderCredentials: false,
-        });
-      }
-      const entry = findAssistantByName(instanceName);
-      if (!entry) {
-        throw new Error("Could not find the newly hatched teleport target.");
-      }
-      return entry;
-    } catch (error) {
-      const entry = findAssistantByName(instanceName);
-      if (entry) {
-        await sleepAssistant(entry);
-        await defaultOps.retire(entry);
-      }
-      throw error;
-    }
-  },
   restore: restoreHostTeleportTarget,
-  retire: async (entry) => {
-    if (entry.cloud === "docker") {
-      await retireDocker(entry.assistantId);
-    } else {
-      await retireLocal(entry.assistantId, entry);
-    }
-    removeLockfileAssistant(entry.assistantId);
-  },
 };
 
 function checkVersion(
@@ -121,9 +66,65 @@ function checkVersion(
   }
 }
 
+/**
+ * Put a fresh teleport target's data in place without starting anything:
+ * allocate the placement, write the first-boot config, install the
+ * transferred archive (gateway-security included, so the gateway boots with
+ * the archived signing identity), and persist the entry. The wake is the
+ * caller's — a hatch is just initialize-data + wake, and the teleport owns
+ * both halves itself.
+ */
+async function initializeTeleportTarget(
+  env: Remote,
+  name: string | undefined,
+  archive: string,
+): Promise<LockfileAssistant> {
+  const instanceName = generateInstanceName(name ?? null);
+  if (findAssistantByName(instanceName)) {
+    throw new Error(`Assistant '${instanceName}' already exists.`);
+  }
+  try {
+    if (env === "docker") {
+      await initializeDockerTeleportTarget(instanceName, archive);
+    } else if (env === "local") {
+      await withLocalHatchLock(async () => {
+        const entry: LockfileAssistant = {
+          assistantId: instanceName,
+          cloud: "local",
+          ...(await allocateLocalPlacement(instanceName)),
+        };
+        const defaultWorkspaceConfigPath = writeInitialConfig(
+          buildHatchConfigValues({}, undefined),
+        );
+        await initializeRootArchive(entry, archive);
+        entry.hatchedAt = new Date().toISOString();
+        saveLockfileAssistant(entry, instanceName);
+        return defaultWorkspaceConfigPath;
+      });
+    } else {
+      throw new Error(`Teleport cannot initialize a '${env}' target yet.`);
+    }
+    const entry = findAssistantByName(instanceName);
+    if (!entry) {
+      throw new Error("Could not find the newly initialized teleport target.");
+    }
+    return entry;
+  } catch (error) {
+    const entry = findAssistantByName(instanceName);
+    if (entry) {
+      await sleepAssistant(entry);
+      // Cleanup path — the original failure is the one worth surfacing.
+      const retired = await retireAssistant(entry);
+      if (!retired.ok)
+        console.error(`Teleport cleanup retire failed: ${retired.error}`);
+    }
+    throw error;
+  }
+}
+
 export async function teleportHostInstallation(
   source: LockfileAssistant,
-  targetEnv: HostEnvironment,
+  targetEnv: Remote,
   targetName: string | undefined,
   options: { dryRun: boolean; keepSource: boolean },
   ops = defaultOps,
@@ -141,7 +142,7 @@ export async function teleportHostInstallation(
 
 async function performHostTeleport(
   source: LockfileAssistant,
-  targetEnv: HostEnvironment,
+  targetEnv: Remote,
   targetName: string | undefined,
   existing: LockfileAssistant | null,
   options: { dryRun: boolean; keepSource: boolean },
@@ -178,28 +179,20 @@ async function performHostTeleport(
       ? await fetchCurrentVersion(getGatewayUrl(existing))
       : cliPkg.version,
   );
-  const sourceStorage = ops.storage(source);
-  const sourceWasRunning = await sourceStorage.running();
+  const sourceWasRunning = await isAssistantHealthy(source);
   let target: LockfileAssistant | undefined;
   let ready = false;
   try {
-    await sleepAssistant(source);
-    if (await sourceStorage.running()) {
-      throw new Error("Source services are still running; teleport aborted.");
-    }
+    const sourceSlept = await sleepAssistant(source);
+    if (!sourceSlept.ok) throw new Error(sourceSlept.error);
     // This exact snapshot is both the safety backup and the transferred state.
     const archive = await ops.backup(source);
     if (existing) {
       target = existing;
-      const targetStorage = ops.storage(target);
-      const targetWasRunning = await targetStorage.running();
+      const targetWasRunning = await isAssistantHealthy(target);
       try {
-        await sleepAssistant(target);
-        if (await targetStorage.running()) {
-          throw new Error(
-            "Target services are still running; teleport aborted.",
-          );
-        }
+        const targetSlept = await sleepAssistant(target);
+        if (!targetSlept.ok) throw new Error(targetSlept.error);
         const recovery = await ops.backup(target);
         await ops.restore(target, archive, recovery);
       } catch (error) {
@@ -210,13 +203,15 @@ async function performHostTeleport(
         throw error;
       }
     } else {
-      target = await ops.hatch(targetEnv, targetName, archive);
+      // A hatch is just initialize-data + wake — the teleport owns both
+      // halves so the archive lands between allocation and first startup.
+      target = await initializeTeleportTarget(targetEnv, targetName, archive);
+      const hatched = await wakeAssistant(target);
+      if (!hatched.ok) throw new Error(hatched.error);
       checkVersion(
         sourceVersion,
         await fetchCurrentVersion(getGatewayUrl(target)),
       );
-      const hatched = await wakeAssistant(target);
-      if (!hatched.ok) throw new Error(hatched.error);
     }
     ready = true;
     setActiveAssistant(target.assistantId);
@@ -225,12 +220,13 @@ async function performHostTeleport(
         `Source '${source.assistantId}' retained, stopped, via --keep-source.`,
       );
     } else {
-      if (await sourceStorage.running()) {
+      if (await isAssistantHealthy(source)) {
         throw new Error(
           "Source was restarted during teleport. Destination is ready; source was retained to preserve newer writes.",
         );
       }
-      await ops.retire(source);
+      const retired = await retireAssistant(source);
+      if (!retired.ok) throw new Error(retired.error);
     }
     pruneOldBackups(source.assistantId, 3, "pre-teleport");
     if (existing) {
@@ -243,7 +239,10 @@ async function performHostTeleport(
     if (!ready) {
       if (target && !existing) {
         await sleepAssistant(target);
-        await ops.retire(target);
+        // Cleanup path — the original failure is the one worth surfacing.
+        const retired = await retireAssistant(target);
+        if (!retired.ok)
+          console.error(`Teleport cleanup retire failed: ${retired.error}`);
       }
       if (sourceWasRunning) {
         const woken = await wakeAssistant(source);
@@ -254,61 +253,31 @@ async function performHostTeleport(
   }
 }
 
-/**
- * Restore a teleported root on the TARGET machine: import the archive into
- * the (stopped) target, then sleep + wake — the wake recreates the service
- * group from the imported entry's recorded images, so the destination's
- * pre-teleport container state plays no role (the replay that shadowed the
- * imported root's identity died with it). On any failure the recovery
- * archive — the target's own pre-teleport root — is imported and the same
- * sleep + wake revives it; a failed recovery rethrows as
- * {@link TeleportRecoveryError}.
- */
 export async function restoreHostTeleportTarget(
   entry: LockfileAssistant,
   archive: string,
   recovery: string,
 ): Promise<void> {
+  // Pre-validation only: a legacy vbundle must be rejected before anything
+  // touches the destination. The real restore re-stages from the archive.
   const stage = await stageRootArchive(archive);
   await rm(stage, { recursive: true, force: true });
-  if (await storageFor(entry).running()) {
+  if (await isAssistantHealthy(entry)) {
     throw new Error("Target services must be stopped before teleport restore.");
   }
-  const originalRuntime =
-    entry.cloud !== "cloud" &&
-    entry.cloud !== "custom" &&
-    entry.cloud !== "baseten"
-      ? {
-          runtimeVersion: entry.runtimeVersion,
-          runtimeInstallDir: entry.runtimeInstallDir,
-        }
-      : undefined;
-  const revive = async () => {
-    const stopped = await sleepAssistant(entry);
-    if (!stopped.ok) throw new Error(stopped.error);
-    let woken = await wakeAssistant(entry);
-    if (!woken.ok && woken.status === 404 && isDockerEntry(entry)) {
-      await recreateDockerContainers(entry);
-      woken = await wakeAssistant(entry);
-    }
-    if (!woken.ok) throw new Error(woken.error);
-  };
   try {
     await restoreRootBackup(entry, archive, { resume: false });
-    await revive();
+    const woken = await wakeAssistant(entry);
+    if (!woken.ok) throw new Error(woken.error);
   } catch (error) {
     try {
       await sleepAssistant(entry);
-      if (
-        entry.cloud !== "cloud" &&
-        entry.cloud !== "custom" &&
-        entry.cloud !== "baseten"
-      ) {
-        entry.runtimeVersion = originalRuntime?.runtimeVersion;
-        entry.runtimeInstallDir = originalRuntime?.runtimeInstallDir;
-      }
-      await restoreRootBackup(entry, recovery, { resume: false });
-      await revive();
+      // Sleep removes the docker containers, so the recovery import cannot
+      // capture from them again anyway — install the recovery archive into
+      // the volumes directly (initializeRootArchive writes them
+      // container-free) and leave the services stopped; the next wake
+      // recreates the containers from the entry's recorded images.
+      await initializeRootArchive(entry, recovery);
     } catch (recoveryError) {
       throw new TeleportRecoveryError(
         [error, recoveryError],

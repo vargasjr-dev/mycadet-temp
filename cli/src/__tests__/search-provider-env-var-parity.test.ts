@@ -2,12 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { SEARCH_PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
+import { SEARCH_PROVIDER_ENV_VAR_NAMES } from "@mycadet/local-mode";
 
 /**
  * Drift guard for the CLI-side search provider env-var mirror.
  *
- * `cli/src/shared/provider-env-vars.ts` hardcodes the search env-var names so
+ * `@mycadet/local-mode`'s provider-env-vars hardcodes the search env-var names so
  * the CLI doesn't need to import the assistant's
  * `SEARCH_PROVIDER_CATALOG` (no CLI → assistant cross-package imports exist).
  * This test pulls the catalog JSON at `meta/web-search-provider-catalog.json`

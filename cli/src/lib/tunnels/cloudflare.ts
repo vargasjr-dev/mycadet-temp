@@ -64,7 +64,7 @@ function waitForCloudflareTunnelUrlInLog(
       reject(
         new Error(
           `cloudflared tunnel URL did not appear within ${timeoutMs / 1000}s. ` +
-            `Ensure cloudflared is working: try running 'cloudflared tunnel --url http://localhost:7840' manually.`,
+            `Ensure cloudflared is working: try running 'cloudflared tunnel --url http://127.0.0.1:7840' manually.`,
         ),
       );
     }, timeoutMs);
@@ -97,7 +97,7 @@ export function getCloudflareTunnelVersion(): string | null {
 export function startCloudflareTunnelProcess(targetPort: number): ChildProcess {
   return spawn(
     "cloudflared",
-    ["tunnel", "--url", `http://localhost:${targetPort}`, "--no-autoupdate"],
+    ["tunnel", "--url", `http://127.0.0.1:${targetPort}`, "--no-autoupdate"],
     // Keep stdio as pipes so we can parse the URL from output.
     { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
   );
@@ -123,7 +123,7 @@ export function waitForCloudflareTunnelUrl(
       reject(
         new Error(
           `cloudflared tunnel URL did not appear within ${timeoutMs / 1000}s. ` +
-            `Ensure cloudflared is working: try running 'cloudflared tunnel --url http://localhost:7840' manually.`,
+            `Ensure cloudflared is working: try running 'cloudflared tunnel --url http://127.0.0.1:7840' manually.`,
         ),
       );
     }, timeoutMs);
@@ -239,7 +239,7 @@ export async function runCloudflareTunnel(
     }
   }
 
-  console.log(`Starting cloudflared quick tunnel to localhost:${port}...`);
+  console.log(`Starting cloudflared quick tunnel to 127.0.0.1:${port}...`);
   console.log("No Cloudflare account required — quick tunnels are free.");
   console.log("");
 
@@ -254,7 +254,7 @@ export async function runCloudflareTunnel(
   const logFd = openSync(logPath, "a");
   const child = spawn(
     "cloudflared",
-    ["tunnel", "--url", `http://localhost:${port}`, "--no-autoupdate"],
+    ["tunnel", "--url", `http://127.0.0.1:${port}`, "--no-autoupdate"],
     { stdio: ["ignore", logFd, logFd], windowsHide: true },
   );
   closeSync(logFd);
@@ -290,7 +290,7 @@ export async function runCloudflareTunnel(
 
   console.log("");
   console.log(`Tunnel established: ${publicUrl}`);
-  console.log(`Forwarding to:     localhost:${port}`);
+  console.log(`Forwarding to:     127.0.0.1:${port}`);
   console.log("");
 
   if (child.pid)

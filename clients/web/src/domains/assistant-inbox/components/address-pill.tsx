@@ -9,6 +9,7 @@ import {
 
 import { AssistantEyesMark } from "@/components/avatar/assistant-eyes-mark";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useTranslation } from "@/i18n";
 
@@ -16,8 +17,6 @@ import { useTranslation } from "@/i18n";
 const DISC_SIZE = 32;
 
 export interface AddressPillProps {
-  /** Whose address this is; the pill wears their avatar and accent. */
-  assistantId: string;
   address: string;
   /**
    * Make the pill a copy control: the whole pill copies the address, and
@@ -35,15 +34,11 @@ export interface AddressPillProps {
  * assistant's, so the address reads the same in the masthead, the setup
  * card's preview, and the upgrade card's example.
  */
-export function AddressPill({
-  assistantId,
-  address,
-  copy,
-  className,
-}: AddressPillProps) {
+export function AddressPill({ address, copy, className }: AddressPillProps) {
   const { t } = useTranslation("assistant-inbox");
-  const { components, traits, customImageUrl, accentHex } =
-    useAssistantAvatar(assistantId);
+  const { components, traits, customImageUrl, accentHex } = useAssistantAvatar(
+    useActiveAssistantId(),
+  );
 
   const wash = accentHex ? panelItemWashStyle(accentHex) : null;
   const pillStyle: CustomPropertyStyle | undefined = wash
@@ -71,7 +66,7 @@ export function AddressPill({
             read. An uploaded image has no eyes to lift out, so it fills the
             disc as it does everywhere else. */}
         {components && traits ? (
-          <AssistantEyesMark assistantId={assistantId} />
+          <AssistantEyesMark />
         ) : (
           <ChatAvatar
             components={components}

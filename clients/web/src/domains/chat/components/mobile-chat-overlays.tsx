@@ -179,7 +179,6 @@ export function MobileChatOverlays() {
       <MobileAppOverlay
         openedAppState={mainView === "app" ? openedAppState : null}
         isAppMinimized={isAppMinimized}
-        assistantId={assistantId}
         onToggleMinimized={() => {
           useViewerStore.getState().toggleAppMinimized();
         }}

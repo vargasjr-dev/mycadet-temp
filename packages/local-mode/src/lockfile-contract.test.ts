@@ -203,6 +203,26 @@ describe("parseLockfile", () => {
           cloud: "local",
           port: 7777,
           daemonPort: 7778,
+        },
+      ],
+      activeAssistant: null,
+    };
+    const parsed = parseLockfile(raw).assistants[0];
+    if (parsed?.cloud !== "local") throw new Error("expected a local entry");
+    expect(parsed.port).toBe(7777);
+    expect(parsed.daemonPort).toBe(7778);
+  });
+
+  test("drops the retired runtime install fields from legacy entries", () => {
+    // Lockfiles written before the runtime install left the contract carry
+    // runtimeVersion/runtimeInstallDir; the parse strips them instead of
+    // refusing the entry, and no write ever puts them back.
+    const raw = {
+      assistants: [
+        {
+          assistantId: "asst_1",
+          cloud: "local",
+          port: 7777,
           runtimeVersion: "v0.8.13",
           runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
         },
@@ -212,15 +232,16 @@ describe("parseLockfile", () => {
     const parsed = parseLockfile(raw).assistants[0];
     if (parsed?.cloud !== "local") throw new Error("expected a local entry");
     expect(parsed.port).toBe(7777);
-    expect(parsed.daemonPort).toBe(7778);
-    expect(parsed.runtimeVersion).toBe("v0.8.13");
-    expect(parsed.runtimeInstallDir).toBe("/tmp/cadet/runtime/0.8.13");
+    expect("runtimeVersion" in parsed).toBe(false);
+    expect("runtimeInstallDir" in parsed).toBe(false);
   });
 
   test("the resources parse is strict over the modeled shape; secrets leave at the hosts' strip", () => {
-    // Every field the CLI read-modify-writes is modeled, so the parse drops
-    // nothing; the renderer boundary is `stripSensitiveFields`, which every
-    // host runs on the raw JSON before this parse ever sees it.
+    // Every field the CLI read-modify-writes is modeled, so the parse keeps
+    // them all (the retired runtime-install fields are the one exception —
+    // the parse strips those); the renderer boundary is
+    // `stripSensitiveFields`, which every host runs on the raw JSON before
+    // this parse ever sees it.
     const raw = {
       assistants: [
         {
@@ -241,8 +262,6 @@ describe("parseLockfile", () => {
       instanceDir: "/data",
       port: 7777,
       daemonPort: 7778,
-      runtimeVersion: "v0.8.13",
-      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
       cesPort: 7780,
     });
     const stripped = structuredClone(raw);
@@ -251,8 +270,6 @@ describe("parseLockfile", () => {
       instanceDir: "/data",
       port: 7777,
       daemonPort: 7778,
-      runtimeVersion: "v0.8.13",
-      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
       cesPort: 7780,
     });
   });

@@ -34,8 +34,6 @@ export type EntryOverrides = {
   port?: number;
   daemonPort?: number;
   cesPort?: number;
-  runtimeVersion?: string;
-  runtimeInstallDir?: string;
   sandboxUrl?: string;
   hatchedAt?: string;
   onboardedAt?: string;

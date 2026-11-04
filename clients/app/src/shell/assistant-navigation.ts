@@ -35,43 +35,27 @@ function remap(value: string, from: string, to: string): string {
   return `${to}${url.pathname.slice(from.length) || "/"}${url.search}${url.hash}`;
 }
 
-export function framePath(
-  location: string,
-  mountPath: string,
-  entryUrl: string,
-  origin: string,
-): string {
-  const entry = new URL(entryUrl, origin);
+export function framePath(location: string, mountPath: string): string {
+  // The assistant mounts on the shell's own origin at the mount path — the
+  // frame's url space IS the host's url space.
   return remap(
     location,
     assistantMountPath(mountPath),
-    entry.pathname.replace(/\/+$/, ""),
+    new URL(assistantMountPath(mountPath), window.location.origin).pathname,
   );
 }
 
-export function hostPath(
-  path: string,
-  mountPath: string,
-  entryUrl: string,
-  origin: string,
-): string {
-  const entry = new URL(entryUrl, origin);
+export function hostPath(path: string, mountPath: string): string {
   const pathname = route(path).pathname;
+  // The bundle announces its paths under its own /assistant root; the shell
+  // remaps them onto wherever it mounted the mount path.
   const from =
     pathname === "/assistant" || pathname.startsWith("/assistant/")
       ? "/assistant"
-      : entry.pathname.replace(/\/+$/, "");
+      : assistantMountPath(mountPath);
   return remap(path, from, assistantMountPath(mountPath));
 }
 
-export function frameUrl(
-  location: string,
-  mountPath: string,
-  entryUrl: string,
-  origin: string,
-): string {
-  return new URL(
-    framePath(location, mountPath, entryUrl, origin),
-    new URL(entryUrl, origin),
-  ).href;
+export function frameUrl(location: string, mountPath: string): string {
+  return new URL(framePath(location, mountPath), window.location.origin).href;
 }

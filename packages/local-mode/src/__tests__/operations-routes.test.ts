@@ -14,20 +14,20 @@ import path from "node:path";
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
 // shared loader, and `mock.restore()` does not undo `mock.module()`.
-const realHatch = { ...(await import("../hatch")) };
+const realHatch = { ...(await import("../operations/hatch")) };
 const realDevices = { ...(await import("../devices")) };
-const realUpgrade = { ...(await import("../upgrade")) };
-const realStatus = { ...(await import("../status")) };
+const realUpgrade = { ...(await import("../operations/upgrade")) };
 const realAvatar = { ...(await import("../avatar")) };
 const realUnpair = { ...(await import("../unpair")) };
 const realPair = { ...(await import("../pair")) };
 
-const runHatchMock = mock(
+const hatchAssistantMock = mock(
   async (_options: {
-    remote?: string;
+    remote: string;
   }): Promise<
-    { ok: true; assistantId: string } | { ok: false; error: string }
-  > => ({ ok: true, assistantId: "hatched-1" }),
+    | { ok: true; assistant: { assistantId: string }; ready: boolean }
+    | { ok: false; status: number; error: string }
+  > => ({ ok: true, assistant: { assistantId: "hatched-1" }, ready: true }),
 );
 const runDevicesListMock = mock(async (_assistantId: string) => ({
   ok: true as const,
@@ -36,16 +36,12 @@ const runDevicesListMock = mock(async (_assistantId: string) => ({
 const runDevicesRevokeMock = mock(
   async (_assistantId: string, _hashedDeviceId: string) => ({ ok: true }),
 );
-const runUpgradeMock = mock(
-  async (_assistantId: string, _options?: unknown) => ({
-    ok: true as const,
-    version: "v9.9.9",
-  }),
+const upgradeAssistantMock = mock(
+  async (_options: unknown) =>
+    ({ ok: true as const, version: "v9.9.9" }) as
+      | { ok: true; version?: string }
+      | { ok: false; status: number; error: string; code?: string },
 );
-const getLocalAssistantStatusMock = mock(async (_assistantId: string) => ({
-  ok: true as const,
-  state: "sleeping" as const,
-}));
 const readLockfileAssistantAvatarMock = mock((_assistantId: string) => ({
   ok: true as const,
   avatar: { kind: "character" as const, traits: {} },
@@ -102,22 +98,18 @@ const pairingPollMock = mock(
 );
 const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 
-mock.module("../hatch", () => ({
+mock.module("../operations/hatch", () => ({
   ...realHatch,
-  runHatch: runHatchMock,
+  hatchAssistant: hatchAssistantMock,
 }));
 mock.module("../devices", () => ({
   ...realDevices,
   runDevicesList: runDevicesListMock,
   runDevicesRevoke: runDevicesRevokeMock,
 }));
-mock.module("../upgrade", () => ({
+mock.module("../operations/upgrade", () => ({
   ...realUpgrade,
-  runUpgrade: runUpgradeMock,
-}));
-mock.module("../status", () => ({
-  ...realStatus,
-  getLocalAssistantStatus: getLocalAssistantStatusMock,
+  upgradeAssistant: upgradeAssistantMock,
 }));
 mock.module("../avatar", () => ({
   ...realAvatar,
@@ -139,8 +131,7 @@ mock.module("../pair", () => ({
 afterAll(() => {
   mock.module("../hatch", () => realHatch);
   mock.module("../devices", () => realDevices);
-  mock.module("../upgrade", () => realUpgrade);
-  mock.module("../status", () => realStatus);
+  mock.module("../operations/upgrade", () => realUpgrade);
   mock.module("../avatar", () => realAvatar);
   mock.module("../unpair", () => realUnpair);
   mock.module("../pair", () => realPair);
@@ -158,11 +149,10 @@ beforeEach(() => {
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
   for (const m of [
-    runHatchMock,
+    hatchAssistantMock,
     runDevicesListMock,
     runDevicesRevokeMock,
-    runUpgradeMock,
-    getLocalAssistantStatusMock,
+    upgradeAssistantMock,
     readLockfileAssistantAvatarMock,
     unpairAssistantMock,
     pairingStartMock,
@@ -171,22 +161,21 @@ beforeEach(() => {
   ]) {
     m.mockReset();
   }
-  runHatchMock.mockImplementation(async (_options: { remote?: string }) => ({
-    ok: true as const,
-    assistantId: "hatched-1",
-  }));
+  hatchAssistantMock.mockImplementation(
+    async (_options: { remote: string }) => ({
+      ok: true as const,
+      assistant: { assistantId: "hatched-1" },
+      ready: true,
+    }),
+  );
   runDevicesListMock.mockImplementation(async () => ({
     ok: true as const,
     devices: [],
   }));
   runDevicesRevokeMock.mockImplementation(async () => ({ ok: true }));
-  runUpgradeMock.mockImplementation(async () => ({
+  upgradeAssistantMock.mockImplementation(async () => ({
     ok: true as const,
     version: "v9.9.9",
-  }));
-  getLocalAssistantStatusMock.mockImplementation(async () => ({
-    ok: true as const,
-    state: "sleeping" as const,
   }));
   readLockfileAssistantAvatarMock.mockImplementation(() => ({
     ok: true as const,
@@ -243,7 +232,10 @@ const dispatch = (
     body:
       body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
-  return match.route.run(match.assistantId, request);
+  return match.route.run({
+    assistantId: match.assistantId,
+    body: request.body,
+  });
 };
 
 /** dispatch for a row that must answer — narrows the pass-through null. */
@@ -259,10 +251,11 @@ const dispatchAnswered = async (
   return response;
 };
 
-describe("the lockfile read row — GET /v1/assistants/", () => {
-  test("serves the renderer-safe lockfile: sensitive fields stripped", async () => {
+describe("the list row — GET /v1/assistants/ is the list contract", () => {
+  test("a populated lockfile answers a selection of credential-free rows", async () => {
     seedEntry({
       assistantId: "asst-1",
+      name: "Workbench",
       cloud: "local",
       port: 7830,
       bearerToken: "secret-token",
@@ -271,21 +264,18 @@ describe("the lockfile read row — GET /v1/assistants/", () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(body.assistants).toHaveLength(1);
-    expect(body.assistants[0]?.bearerToken).toBeUndefined();
-    expect(body.assistants[0]?.assistantId).toBe("asst-1");
+    expect(await response.json()).toEqual({
+      status: "selection",
+      assistants: [{ id: "asst-1", name: "Workbench", remote: "local" }],
+    });
   });
 
-  test("an empty lockfile serves as an empty list", async () => {
+  test("an empty lockfile answers the empty arm", async () => {
     const response = await dispatchAnswered("/v1/assistants/", "GET");
-    const body = (await response.json()) as { assistants: unknown[] };
-    expect(body.assistants).toEqual([]);
+    expect(await response.json()).toEqual({ status: "empty" });
   });
 
-  test("the bare strip never reaches disk: the stored file keeps its secrets", async () => {
+  test("the union never reaches disk: the stored file keeps its secrets", async () => {
     seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
     await dispatch("/v1/assistants/", "GET");
     expect(stripSensitiveFields).toBeDefined();
@@ -304,24 +294,25 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
       ok: true,
       assistantId: "hatched-1",
     });
-    expect(runHatchMock).toHaveBeenCalledWith({ remote: "docker" });
+    expect(hatchAssistantMock).toHaveBeenCalledWith({ remote: "docker" });
   });
 
   test("a non-object body degrades to a plain hatch", async () => {
     const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
-    expect(runHatchMock).toHaveBeenCalledWith({ remote: undefined });
+    expect(hatchAssistantMock).toHaveBeenCalledWith({ remote: "local" });
     expect((await response.json()).ok).toBe(true);
   });
 
   test("a failed hatch resolves {ok:false, error} — never a throw", async () => {
-    runHatchMock.mockImplementation(async () => ({
+    hatchAssistantMock.mockImplementation(async () => ({
       ok: false as const,
+      status: 503,
       error: "docker daemon unreachable",
     }));
 
     const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
       ok: false,
       error: "docker daemon unreachable",
@@ -474,7 +465,10 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
         headers: { "content-type": "application/json" },
         body: "{not json",
       });
-      const response = await match.route.run(match.assistantId, request);
+      const response = await match.route.run({
+        assistantId: match.assistantId,
+        body: request.body,
+      });
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,
@@ -556,7 +550,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, version: "v9.9.9" });
-    expect(runUpgradeMock).toHaveBeenCalledWith("asst-1", { latest: true });
+    expect(upgradeAssistantMock).toHaveBeenCalled();
   });
 
   test("a non-active local entry is refused", async () => {
@@ -581,7 +575,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
       ok: false,
       error: "Can only upgrade the active local assistant",
     });
-    expect(runUpgradeMock).not.toHaveBeenCalled();
+    expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 
   test("an id that is not an entry on this machine passes through", async () => {
@@ -592,24 +586,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
     );
 
     expect(response).toBeNull();
-    expect(runUpgradeMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("the status row — GET /v1/assistants/{id}/", () => {
-  test("an on-machine entry reports the op's lifecycle state", async () => {
-    seedEntry({ assistantId: "asst-1", cloud: "local", port: 7830 });
-
-    const response = await dispatchAnswered("/v1/assistants/asst-1/", "GET");
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, state: "sleeping" });
-    expect(getLocalAssistantStatusMock).toHaveBeenCalledWith("asst-1");
-  });
-
-  test("an id that is not an entry on this machine passes through", async () => {
-    const response = await dispatch("/v1/assistants/ghost/", "GET");
-    expect(response).toBeNull();
+    expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 });
 
@@ -645,8 +622,8 @@ describe("the route table's method scoping", () => {
     ).toBeNull();
   });
 
-  test("a GET on a path-shaped id rides the status row's pattern", () => {
-    // `/v1/assistants/hatch` is a legal status probe for an id literally
+  test("a GET on a path-shaped id rides the resolution row's pattern", () => {
+    // `/v1/assistants/hatch` is a legal resolution probe for an id literally
     // named "hatch" — the id-scoped pattern owns it, the entry lookup
     // pass-through decides.
     const match = matchOperatorRequest("/v1/assistants/hatch", "GET");

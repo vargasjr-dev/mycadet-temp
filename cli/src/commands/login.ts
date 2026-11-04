@@ -12,14 +12,11 @@ import { setActiveAssistant } from "../lib/assistant-config";
 import {
   clearCloudToken,
   fetchCloudAssistants,
-  fetchCurrentUser,
   saveCloudToken,
 } from "../lib/cloud-client";
-import {
-  describeLoginError,
-  registerLocalAssistantWithCloud,
-  workosPkceLogin,
-} from "../lib/cloud-login.js";
+import { fetchCurrentUser } from "@mycadet/local-mode";
+import { describeLoginError, workosPkceLogin } from "../lib/cloud-login.js";
+import { registerLocalAssistantWithCloud } from "@mycadet/local-mode";
 import { syncCloudAssistants } from "../lib/sync-cloud-assistants";
 
 export const login = Object.assign(

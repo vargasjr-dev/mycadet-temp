@@ -13,7 +13,8 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { loadGuardianToken, leaseGuardianToken } from "../lib/guardian-token";
+import { loadGuardianToken } from "../lib/guardian-token";
+import { leaseGuardianToken } from "@mycadet/local-mode";
 
 // Renew a cached guardian token that is about to lapse instead of starting
 // a long export on it.

@@ -1,8 +1,1487 @@
+/**
+ * The assistant overview — the landing page of the About Assistant
+ * section. A bento mosaic on a surface lightly tinted with the avatar's
+ * color: the avatar and a typewritten "Hi, I'm {name}" greeting (with
+ * inline rename) sit in the center cell, surrounded by organically-rounded
+ * drill-down cards (Personality, Schedules, My Superpowers, Workspace,
+ * Contacts, Channels — the replacement for the old tab bar), each carrying
+ * one glanceable stat. On narrow or short viewports the mosaic collapses
+ * to a stacked avatar + card grid of uniform tiles (icon, title, subtitle,
+ * small stat line).
+ */
+
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { IdentityOverview } from "@/domains/intelligence/components/identity-overview";
+import {
+  ArrowRight,
+  Brain,
+  Calendar,
+  ChevronRight,
+  FolderOpen,
+  LayoutGrid,
+  Mail,
+  Pencil,
+  Pin,
+  PinOff,
+  Radio,
+  Sparkles,
+  Users,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { Link } from "react-router";
+
+import { Card, toast } from "@mycadet/design-library";
+
+import { AvatarManagementModal } from "@/components/avatar/avatar-management-modal";
+import { ChatAvatar } from "@/components/avatar/chat-avatar";
+import { MidlineDot } from "@/components/midline-dot";
+import { PageShell } from "@/components/page-shell";
+import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
+import { useElementSize } from "@/hooks/use-element-size";
+import { useTranslation } from "@/i18n";
+import { useEmailPinned } from "@/hooks/use-email-pinned";
+import { useAssistantHosting } from "@/assistant/hosting";
+import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surface";
+import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
+import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
+import { contrastForeground } from "@/utils/avatar-tone";
+import { formatCompactLocalDate } from "@/utils/format-date";
+
+import { applyRename } from "./identity-actions/apply-rename";
+import {} from "./memory-graph/get-memory-stats";
+import {
+  assistantIdentityDetailsQueryKey,
+  useAssistantIdentityDetails,
+} from "./use-assistant-identity-details";
+import {
+  useIdentitySectionStats,
+  type IdentitySectionStat,
+} from "./use-identity-section-stats";
+import {
+  AmoebaPeekTab,
+  amoebaTargetForCard,
+  type AmoebaFacing,
+  type AmoebaTarget,
+} from "./components/amoeba-avatar";
+import { AssistantNameEditor } from "./components/assistant-name-editor";
+import {
+  buildIdentitySections,
+  type IdentitySection,
+} from "./components/identity-sections";
+import { PersonalitySignature } from "./components/personality-signature";
+
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  personality: Sparkles,
+  schedules: Calendar,
+  superpowers: Zap,
+  memory: Brain,
+  library: LayoutGrid,
+  workspace: FolderOpen,
+  contacts: Users,
+  email: Mail,
+  channels: Radio,
+};
+
+/**
+ * Hand-varied corner radii per card so the mosaic reads as placed by hand
+ * rather than stamped from one template. The two feature cards
+ * (Personality, Schedules) share one uniform radius so the top-row trio
+ * reads symmetric.
+ */
+const SECTION_RADII: Record<string, string> = {
+  personality: "rounded-3xl",
+  schedules: "rounded-3xl",
+  superpowers: "rounded-[1.25rem_2.75rem_1.25rem_2.5rem]",
+  channels: "rounded-[2.25rem_1rem_2.5rem_1.25rem]",
+  contacts: "rounded-[1rem_2.5rem_1.25rem_2.75rem]",
+  workspace: "rounded-[1.25rem_2.5rem_1rem_2.5rem]",
+};
+
+/** Below these bento dimensions the mosaic collapses to the stacked layout. */
+const BENTO_MIN_W = 720;
+const BENTO_MIN_H = 480;
+
+/** Sections rendered as compact mini cards in the bottom strip. */
+const MINI_SECTION_KEYS = [
+  "superpowers",
+  "memory",
+  "library",
+  "workspace",
+  "contacts",
+  "channels",
+];
+
+/**
+ * In-character center-text lines while the avatar is off hugging a card —
+ * the greeting becomes his commentary on whatever you're pointing at.
+ */
+const CARD_HOVER_LINE_KEY: Record<
+  string,
+  `identityOverview.cardHoverLine.${
+    | "personality"
+    | "superpowers"
+    | "memory"
+    | "library"
+    | "schedules"
+    | "workspace"
+    | "contacts"
+    | "email"
+    | "channels"}`
+> = {
+  personality: "identityOverview.cardHoverLine.personality",
+  superpowers: "identityOverview.cardHoverLine.superpowers",
+  memory: "identityOverview.cardHoverLine.memory",
+  library: "identityOverview.cardHoverLine.library",
+  schedules: "identityOverview.cardHoverLine.schedules",
+  workspace: "identityOverview.cardHoverLine.workspace",
+  contacts: "identityOverview.cardHoverLine.contacts",
+  email: "identityOverview.cardHoverLine.email",
+  channels: "identityOverview.cardHoverLine.channels",
+};
+
+/**
+ * The example schedules the Schedules card outlines while the assistant has
+ * none. "Morning briefing" is the name the create-schedule form already
+ * suggests as its placeholder, so the card teases the same starting point
+ * its destination offers.
+ */
+const SCHEDULE_GHOSTS = [
+  {
+    nameKey: "identityOverview.scheduleGhosts.morningBriefingName",
+    cadenceKey: "identityOverview.scheduleGhosts.morningBriefingCadence",
+  },
+  {
+    nameKey: "identityOverview.scheduleGhosts.inboxTriageName",
+    cadenceKey: "identityOverview.scheduleGhosts.inboxTriageCadence",
+  },
+] as const;
+
+/** "14 Jul, 9:00 am" — compact next-fire time for the schedules preview. */
+function formatNextRun(nextRunAt: number): string {
+  const date = new Date(nextRunAt);
+  // A non-positive timestamp means no next run, and one outside Date's range
+  // would make `toISOString()` throw mid-render.
+  if (nextRunAt <= 0 || Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return formatCompactLocalDate(date.toISOString());
+}
+
+const AVATAR_MAX_SIZE = 280;
+const AVATAR_MIN_SIZE = 140;
+
+/**
+ * Bento hero avatar: very large, bottom-anchored behind the cards. Sized
+ * as a fraction of the bento WIDTH so it scales with the window instead
+ * of swallowing short-but-wide layouts (height only caps it, via the
+ * greeting headroom).
+ */
+const HERO_AVATAR_WIDTH_FRACTION = 0.44;
+const HERO_AVATAR_MAX_SIZE = 1118;
+const HERO_AVATAR_MIN_SIZE = 300;
+/** Fraction of the hero avatar clipped below the page's bottom edge. */
+const HERO_AVATAR_CUT_FRACTION = 0.09;
+
+/**
+ * How much of the avatar's color is mixed into the page surface, the card
+ * surfaces, and the cards' hover fill. Mixing into theme tokens (rather
+ * than hardcoding a lightened hex) keeps the tint working across
+ * light/dark/velvet. Cards get a lighter wash than the page so they still
+ * read as raised tiles without the clinical white-on-tint contrast.
+ */
+const BG_TINT_PERCENT = 14;
+const CARD_TINT_PERCENT = 5;
+const HOVER_TINT_PERCENT = 22;
+
+/**
+ * Overlay palette for the custom-photo backdrop (Figma: New-App
+ * 7219-160935). With a custom avatar the page floats on the user's
+ * blurred photo, so surfaces and text are fixed light-on-dark values —
+ * the photo, not the theme, is the background in every theme. The values
+ * are the dark theme's content/surface set; the feature cards go
+ * translucent (they additionally get a backdrop blur via `photoBackdrop`).
+ */
+const PHOTO_OVERLAY_STYLE = {
+  "--card-bg": "#24292e",
+  // Glassy per Figma; legibility on bright photos comes from the
+  // backdrop's brightness dimming, so the wash itself can stay thin
+  // (white text keeps ~4.5:1 even over a pure-white photo).
+  "--card-feature-bg": "rgba(23, 25, 28, 0.35)",
+  // Card.Root asChild puts the hover bg on the same element as the card
+  // bg, so a translucent hover would punch through to the photo. Opaque
+  // value = the theme's hover wash pre-composited over the dark card.
+  "--card-hover": "#2d3339",
+  "--card-accent": "#bd4900",
+  "--card-flood-fg": "#fdfdfc",
+  "--content-default": "#fdfdfc",
+  "--content-strong": "#fdfdfc",
+  "--content-secondary": "#a9b2bb",
+  "--content-tertiary": "#8d99a5",
+  "--border-base": "rgba(255, 255, 255, 0.08)",
+} as CSSProperties;
 
 export function IdentityPage() {
   const assistantId = useActiveAssistantId();
+  const { t } = useTranslation("intelligence");
+  const queryClient = useQueryClient();
+  const {
+    components,
+    traits,
+    customImageUrl,
+    accentHex,
+    accent,
+    isLoading: isAvatarLoading,
+    invalidate: invalidateAvatar,
+  } = useAssistantAvatar(assistantId);
+  const identityQuery = useAssistantIdentityDetails(assistantId);
+  const supportsPlugins = useSupportsPluginsSurface();
+  const stats = useIdentitySectionStats(assistantId, { supportsPlugins });
+  const sectionStats: Record<string, IdentitySectionStat | undefined> = stats;
 
-  return <IdentityOverview assistantId={assistantId} />;
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  const handleRename = useCallback(
+    (newName: string) => {
+      setIsRenaming(true);
+      void applyRename(assistantId, newName).then((ok) => {
+        setIsRenaming(false);
+        if (ok) {
+          void queryClient.invalidateQueries({
+            queryKey: assistantIdentityDetailsQueryKey(assistantId),
+          });
+          const {
+            version,
+            assistantId: hydratedAssistantId,
+            setIdentity,
+          } = useAssistantIdentityStore.getState();
+          // Preserve the owner tag: a rename changes the name, not which
+          // assistant the hydrated identity belongs to.
+          setIdentity(newName, version, hydratedAssistantId);
+          toast.success(t("identityOverview.renameSuccessToast", { newName }));
+        } else {
+          toast.error(t("identityOverview.renameErrorToast"));
+        }
+      });
+    },
+    [assistantId, queryClient, t],
+  );
+
+  const handleAvatarChange = useCallback(() => {
+    invalidateAvatar();
+  }, [invalidateAvatar]);
+
+  /* The Email card is the way into the Assistant Inbox, which exists only
+     on the cloud. */
+  const showsEmail = useAssistantHosting() === "cloud";
+  const emailPin = useEmailPinned(assistantId);
+  const sections = buildIdentitySections({ email: showsEmail });
+  const emailTrailing = (
+    <button
+      type="button"
+      aria-label={
+        emailPin.pinned
+          ? t("identityOverview.unpinEmail")
+          : t("identityOverview.pinEmail")
+      }
+      title={
+        emailPin.pinned
+          ? t("identityOverview.unpinEmail")
+          : t("identityOverview.pinEmail")
+      }
+      aria-pressed={emailPin.pinned}
+      onClick={emailPin.toggle}
+      className="flex size-7 items-center justify-center rounded-full text-[var(--content-secondary)] transition-colors hover:bg-[color-mix(in_srgb,var(--content-default)_10%,transparent)] hover:text-[var(--content-strong)] outline-none keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]"
+    >
+      {emailPin.pinned ? (
+        <PinOff className="h-4 w-4" aria-hidden />
+      ) : (
+        <Pin className="h-4 w-4" aria-hidden />
+      )}
+    </button>
+  );
+  const isLoading = isAvatarLoading || identityQuery.isLoading;
+  // Custom image: the page background becomes the photo itself, blown up and
+  // heavily blurred behind the content, which says more about the assistant
+  // than a wash of its accent would. A character tints the page in its colour.
+  const photoBackdrop = Boolean(customImageUrl);
+  const avatarHex = photoBackdrop ? null : accentHex;
+
+  return (
+    <PageShell
+      // The photo backdrop is an image, not a flat color, so there is nothing
+      // the shell could paint into the safe areas that would continue it.
+      bleed={!photoBackdrop}
+      className={photoBackdrop ? "relative overflow-hidden" : undefined}
+      style={
+        avatarHex
+          ? {
+              backgroundColor: `color-mix(in srgb, ${avatarHex} ${BG_TINT_PERCENT}%, var(--surface-overlay))`,
+            }
+          : undefined
+      }
+    >
+      {photoBackdrop && customImageUrl && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+        >
+          {/* Scaled up so the blur never bleeds transparent edges in.
+              Dimmed via brightness (not a flat scrim) so bright photos
+              darken naturally — highlights keep their hue, like the dark
+              reference backdrop in Figma (7219-160942) — and the white
+              overlay text and translucent cards stay readable. */}
+          <img
+            src={customImageUrl}
+            alt=""
+            className="h-full w-full scale-110 object-cover blur-[60px] brightness-[0.65]"
+          />
+        </div>
+      )}
+      {isLoading ? (
+        <div className="relative flex flex-1 items-center justify-center">
+          <div
+            className="h-6 w-6 animate-spin rounded-full border-2"
+            style={{
+              borderColor: "var(--border-base)",
+              borderTopColor: "var(--content-tertiary)",
+            }}
+          />
+        </div>
+      ) : (
+        <OverviewBento
+          components={components}
+          traits={traits}
+          customImageUrl={customImageUrl}
+          name={
+            identityQuery.data?.identity?.name ||
+            t("identityOverview.defaultAssistantName")
+          }
+          sections={sections}
+          stats={sectionStats}
+          emailTrailing={emailTrailing}
+          avatarHex={avatarHex}
+          photoBackdrop={photoBackdrop}
+          isRenaming={isRenaming}
+          onOpenAvatarModal={() => setModalOpen(true)}
+        />
+      )}
+
+      <AvatarManagementModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        components={components}
+        traits={traits}
+        customImageUrl={customImageUrl}
+        accent={accent}
+        onSaveCharacter={handleAvatarChange}
+        onUploadImage={handleAvatarChange}
+        onSaveAccent={handleAvatarChange}
+        assistantName={
+          identityQuery.data?.identity?.name ||
+          t("identityOverview.defaultAssistantName")
+        }
+        onRenameSubmit={handleRename}
+        isRenaming={isRenaming}
+      />
+    </PageShell>
+  );
+}
+
+/**
+ * One row of the Schedules card's preview column. The ghost variant draws
+ * the same shape as a dashed, unfilled outline at reduced opacity, so an
+ * empty card can preview what a filled one looks like without any of its
+ * rows reading as a schedule the user owns.
+ */
+function ScheduleTile({
+  name,
+  cadence,
+  fg,
+  fgMuted,
+  flooded,
+  ghost = false,
+}: {
+  name: string;
+  cadence: string;
+  /** The card's content tone, already resolved for the flood state. */
+  fg: string;
+  /** The card's muted tone, already resolved for the flood state. */
+  fgMuted: string;
+  flooded: boolean;
+  ghost?: boolean;
+}) {
+  return (
+    <span
+      className={`flex flex-col gap-0.5 rounded-xl px-3 py-2 transition-colors duration-300 ${
+        ghost ? "border border-dashed opacity-60" : ""
+      }`}
+      style={
+        ghost
+          ? {
+              borderColor: flooded
+                ? "color-mix(in srgb, var(--card-flood-fg) 45%, transparent)"
+                : "var(--border-base)",
+            }
+          : {
+              // A content-tinted wash (not a surface token) so the tile
+              // visibly lifts off the card in dark themes too.
+              backgroundColor: flooded
+                ? "color-mix(in srgb, var(--card-flood-fg) 12%, transparent)"
+                : "color-mix(in srgb, var(--content-default) 5%, transparent)",
+            }
+      }
+    >
+      <span
+        className={`truncate text-[13px] font-medium transition-colors duration-300 ${
+          ghost ? fgMuted : fg
+        }`}
+      >
+        {name}
+      </span>
+      <span
+        className={`truncate text-[12px] transition-colors duration-300 ${fgMuted}`}
+      >
+        {cadence}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * One bento tile. Exported for the Storybook fixture that reviews the
+ * Schedules card in both its populated and its empty state.
+ */
+export function SectionCard({
+  section,
+  stat,
+  gridArea,
+  cardStyle,
+  hoverFill,
+  mini,
+  compact = false,
+  aside,
+  flooded = false,
+  floodOrigin,
+  photoBackdrop = false,
+  linkRef,
+  onHoverChange,
+}: {
+  section: IdentitySection;
+  stat: IdentitySectionStat | undefined;
+  /** Named bento cell; unset in the stacked layout's plain grid. */
+  gridArea?: string;
+  /** Extra card-root styles (e.g. self-sizing within a taller area). */
+  cardStyle?: CSSProperties;
+  /** Tint the card itself on hover — off when the amoeba avatar reacts instead. */
+  hoverFill: boolean;
+  /** Compact one-row variant for the bottom-strip and stacked-grid
+   *  sections. */
+  mini?: boolean;
+  /**
+   * The stacked layout's tighter tile metrics (Figma 7907-9239). The bento's
+   * bottom strip keeps its own (6944-89405), which is why this is a variant
+   * rather than a change to {@link mini}: the two surfaces are specced
+   * separately and a shared edit would quietly restyle the desktop strip.
+   */
+  compact?: boolean;
+  /**
+   * Content on the tile's trailing edge, inside the card but outside its
+   * link: the Email pill on the Channels tile.
+   */
+  aside?: ReactNode;
+  /** The avatar has poured itself over this card — fill it with the
+   *  avatar color and flip the content to the contrast tone. */
+  flooded?: boolean;
+  /** Where the flood enters, in percent of the card box. */
+  floodOrigin?: { x: number; y: number };
+  /** On the blurred-photo backdrop the feature cards go translucent
+   *  (a dark wash + backdrop blur) instead of the avatar-color wash. */
+  photoBackdrop?: boolean;
+  linkRef?: (el: HTMLAnchorElement | null) => void;
+  onHoverChange?: (hovering: boolean) => void;
+}) {
+  const { t } = useTranslation("intelligence");
+  const Icon = SECTION_ICONS[section.key] ?? Sparkles;
+
+  // Keep the last origin while draining so the water recedes back to
+  // where it came from. Render-time state adjustment (not an effect).
+  const [lastOrigin, setLastOrigin] = useState({ x: 50, y: 100 });
+  if (floodOrigin && floodOrigin !== lastOrigin) {
+    setLastOrigin(floodOrigin);
+  }
+
+  const fg = flooded
+    ? "text-[var(--card-flood-fg)]"
+    : "text-[var(--content-default)]";
+  const fgStrong = flooded
+    ? "text-[var(--card-flood-fg)]"
+    : "text-[var(--content-strong)]";
+  const fgMuted = flooded
+    ? "text-[var(--card-flood-fg)] opacity-75"
+    : "text-[var(--content-secondary)]";
+
+  // The avatar-color "water" covering the card, expanding from the point
+  // the avatar enters (the tab's anchor on the facing edge).
+  const floodOverlay = (
+    <motion.span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0"
+      style={{ backgroundColor: "var(--card-accent)" }}
+      initial={false}
+      animate={{
+        clipPath: flooded
+          ? `circle(141% at ${lastOrigin.x}% ${lastOrigin.y}%)`
+          : `circle(0% at ${lastOrigin.x}% ${lastOrigin.y}%)`,
+      }}
+      transition={
+        flooded
+          ? { duration: 0.5, ease: "easeOut" }
+          : { duration: 0.35, ease: "easeIn" }
+      }
+    />
+  );
+
+  if (mini) {
+    // Bottom-strip tile per Figma (New-App 6944-89405): left-aligned,
+    // 12px radius, 40px icon slot in the secondary tone, 16px title over
+    // an 11px tertiary stat. An aside sits on the card's surface beside
+    // the link, since a control cannot nest inside an anchor.
+    return (
+      <Card.Root
+        asChild
+        bordered={false}
+        elevated
+        clipContents
+        className="rounded-[12px] border-0 bg-[var(--card-bg)]"
+      >
+        <div className="relative flex min-w-0 flex-1 items-center">
+          {/* The flood covers the whole card, the aside included, so a hug
+              takes the tile rather than the part of it the link owns. */}
+          {floodOverlay}
+          <Link
+            to={section.to}
+            ref={linkRef}
+            onMouseEnter={() => onHoverChange?.(true)}
+            onMouseLeave={() => onHoverChange?.(false)}
+            className={`relative flex h-full min-w-0 flex-1 cursor-pointer items-center transition-all duration-150 active:scale-[0.98] ${
+              compact ? "gap-1 py-3 pr-3 pl-2" : "gap-2 px-4 py-2.5"
+            } ${hoverFill ? "hover:bg-[var(--card-hover)]" : ""}`}
+          >
+            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+              {/* The stacked tiles keep the 40px slot but sit a smaller glyph
+                in it, so the title leads the row rather than the icon. */}
+              <Icon
+                className={`${compact ? "h-3.5 w-3.5" : "h-5 w-5"} transition-colors duration-300 ${fgMuted}`}
+                aria-hidden
+              />
+            </span>
+            <span className="relative flex min-w-0 flex-col gap-0">
+              <span
+                className={`flex items-center gap-1.5 truncate text-title-small leading-normal transition-colors duration-300 ${fgStrong}`}
+              >
+                {section.label}
+              </span>
+              {stat?.text && (
+                <span
+                  className={`truncate text-[11px] leading-normal font-medium transition-colors duration-300 ${
+                    flooded
+                      ? "text-[var(--card-flood-fg)] opacity-75"
+                      : "text-[var(--content-tertiary)]"
+                  }`}
+                >
+                  {stat.text}
+                </span>
+              )}
+            </span>
+          </Link>
+          {aside ? (
+            <span className="relative flex shrink-0 items-center gap-1 pr-2">
+              {aside}
+            </span>
+          ) : null}
+        </div>
+      </Card.Root>
+    );
+  }
+
+  // The feature cards (Personality, Schedules) wear a stronger wash of the
+  // avatar color — lighter than the avatar itself, darker than the page
+  // tint (Figma: New-App 6944-89250). `--card-feature-bg` collapses to the
+  // plain card surface when there's no character color (custom image), so
+  // they flow with the regular theme. A class (not inline style) so the
+  // hover fill can still win.
+  const isFeatureCard =
+    section.key === "personality" || section.key === "schedules";
+
+  // An assistant with no schedules has a stat but no preview list, which
+  // leaves the tall card's whole middle empty. It spends that space on
+  // ghosts of the example schedules instead. `stat === undefined` is the
+  // still-loading card, which stays blank rather than teasing.
+  const showsScheduleGhosts =
+    Boolean(gridArea) &&
+    section.key === "schedules" &&
+    stat !== undefined &&
+    !stat.schedules;
+
+  return (
+    // The feature cards sit flat on the page (no shadow) with a hairline
+    // theme border; the other tiles keep the standard raised card chrome.
+    <Card.Root
+      asChild
+      bordered={!isFeatureCard}
+      elevated={!isFeatureCard}
+      className={`${SECTION_RADII[section.key] ?? ""} ${
+        isFeatureCard
+          ? `border bg-[var(--card-feature-bg,var(--card-bg))] ${
+              photoBackdrop
+                ? "border-transparent backdrop-blur-[32px]"
+                : "border-[var(--border-base)]"
+            }`
+          : "bg-[var(--card-bg)]"
+      }`}
+      style={{
+        ...(gridArea ? { gridArea } : {}),
+        ...cardStyle,
+      }}
+    >
+      {/* Corner-anchored tile: identity cluster pinned top-left, the stat
+          pinned bottom-left as a display-size numeral. Anchoring (rather
+          than centering) turns the card's empty area into intentional
+          negative space. */}
+      <Link
+        to={section.to}
+        ref={linkRef}
+        onMouseEnter={() => onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
+        className={`relative flex h-full w-full cursor-pointer flex-col justify-between gap-3 overflow-hidden p-5 text-left transition-all duration-150 active:scale-[0.98] ${
+          hoverFill ? "hover:bg-[var(--card-hover)]" : ""
+        }`}
+      >
+        {floodOverlay}
+        {/* The Personality card fills with the signature of the persisted
+            slider values; bento only (`gridArea`). The mark reads the
+            `--card-accent` var, so it flips to the contrast tone while
+            flooded along with the rule and labels (currentColor). */}
+        {gridArea && stat?.signature && (
+          <span
+            className={`absolute inset-x-5 top-14 bottom-9 flex flex-col justify-start transition-colors duration-300 ${
+              flooded
+                ? "text-[var(--card-flood-fg)]"
+                : photoBackdrop
+                  ? // On the photo backdrop the rule and labels read in
+                    // white (Figma 7219-160964), not the muted secondary.
+                    "text-[var(--content-default)]"
+                  : "text-[var(--content-secondary)]"
+            }`}
+            style={
+              flooded
+                ? ({ "--card-accent": "var(--card-flood-fg)" } as CSSProperties)
+                : undefined
+            }
+          >
+            {/* The mark rests on the bottom inset, but only while the gap it
+                leaves under the header stays inside this spacer. The mark's
+                height follows its WIDTH, so a narrow card makes a short one —
+                and without the cap that whole surplus collected under the
+                header and pushed the mark to the floor of the card. Past the
+                cap the surplus falls below the mark instead. */}
+            <span aria-hidden className="max-h-10 flex-1" />
+            {/* Nothing ties the mark's width-derived height to a box sized by
+                the card's HEIGHT, so a wide, short window makes it the taller
+                of the two. `max-h-full` clamps the viewport there and the
+                default `xMidYMid meet` scales the whole mark down to fit,
+                rather than letting `overflow-hidden` cut the top labels off. */}
+            <PersonalitySignature
+              values={stat.signature}
+              className="h-auto max-h-full w-full"
+            />
+          </span>
+        )}
+        {isFeatureCard ? (
+          // Compact header (Figma 6944-89250): icon beside the title, no
+          // description — the content is the card's whole story.
+          <span className="relative flex items-center gap-2">
+            <Icon
+              className={`h-5 w-5 transition-colors duration-300 ${fg}`}
+              aria-hidden
+            />
+            <span
+              className={`text-body-medium-default transition-colors duration-300 ${fg}`}
+            >
+              {section.label}
+            </span>
+          </span>
+        ) : (
+          <span className="relative flex flex-col items-start gap-1.5">
+            <Icon
+              className={`h-6 w-6 transition-colors duration-300 ${fg}`}
+              aria-hidden
+            />
+            <span className="flex flex-col">
+              <span
+                className={`flex items-center gap-1.5 text-body-medium-default transition-colors duration-300 ${fg}`}
+              >
+                {section.label}
+              </span>
+              <span
+                className={`text-[13px] transition-colors duration-300 ${fgMuted}`}
+              >
+                {section.description}
+              </span>
+            </span>
+          </span>
+        )}
+        {/* The tall Schedules card previews the upcoming enabled
+            schedules; bento only (`gridArea`), where there's room. */}
+        {gridArea && stat?.schedules && stat.schedules.items.length > 0 && (
+          <span className="relative flex min-h-0 flex-1 flex-col justify-start gap-2 overflow-hidden py-2">
+            {stat.schedules.items.map((schedule) => (
+              <ScheduleTile
+                key={schedule.id}
+                name={schedule.name}
+                cadence={t("identityOverview.scheduleCadence", {
+                  cadence: schedule.cadence,
+                  nextRun: formatNextRun(schedule.nextRunAt),
+                })}
+                fg={fg}
+                fgMuted={fgMuted}
+                flooded={flooded}
+              />
+            ))}
+            {stat.schedules.more > 0 && (
+              <span
+                className={`text-[12px] font-medium transition-colors duration-300 ${fgMuted}`}
+              >
+                {t("identityOverview.viewMoreSchedules", {
+                  count: stat.schedules.more,
+                })}
+              </span>
+            )}
+          </span>
+        )}
+        {/* With nothing scheduled the same column carries outlines of two
+            example schedules. They are decoration, not data, so the group
+            is hidden from assistive technology and the card's own link
+            stays the only action: a button cannot nest inside an anchor. */}
+        {showsScheduleGhosts && (
+          <span
+            aria-hidden
+            className="relative flex min-h-0 flex-1 flex-col justify-start gap-2 overflow-hidden py-2"
+          >
+            {SCHEDULE_GHOSTS.map((ghost) => (
+              <ScheduleTile
+                key={ghost.nameKey}
+                name={t(ghost.nameKey)}
+                cadence={t(ghost.cadenceKey)}
+                fg={fg}
+                fgMuted={fgMuted}
+                flooded={flooded}
+                ghost
+              />
+            ))}
+          </span>
+        )}
+        {stat?.value !== undefined ? (
+          <span className="relative flex flex-col leading-none">
+            <span
+              className={`text-[3.25rem] transition-colors duration-300 max-lg:text-[2.5rem] ${fgStrong}`}
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {stat.value}
+            </span>
+            <span
+              className={`mt-1 text-[13px] transition-colors duration-300 ${fgMuted}`}
+            >
+              {stat.label}
+            </span>
+          </span>
+        ) : stat?.text ? (
+          <span className="relative flex flex-col gap-1">
+            <span
+              className={`text-[14px] font-medium italic transition-colors duration-300 ${fg}`}
+            >
+              {stat.text}
+            </span>
+            {/* An invitation, not a control. The card already links to
+                Schedules, so this names the destination and lets the whole
+                surface remain the click target. */}
+            {showsScheduleGhosts && (
+              <span
+                className={`flex items-center gap-1 text-[13px] font-medium transition-colors duration-300 ${fg}`}
+              >
+                {t("identityOverview.setUpSchedule")}
+                <ArrowRight size={13} aria-hidden />
+              </span>
+            )}
+          </span>
+        ) : null}
+      </Link>
+    </Card.Root>
+  );
+}
+
+/** Greeting + avatar for the stacked (small-viewport) layout. */
+function CenterCell({
+  components,
+  traits,
+  customImageUrl,
+  name,
+  avatarSize,
+  isRenaming,
+  onEdit,
+}: {
+  components: CharacterComponents | null;
+  traits: CharacterTraits | null;
+  customImageUrl: string | null;
+  name: string;
+  avatarSize: number;
+  isRenaming: boolean;
+  onEdit: () => void;
+}) {
+  const { t } = useTranslation("intelligence");
+  return (
+    <div className="relative z-[1] flex flex-col items-center justify-center gap-5">
+      <AssistantNameEditor name={name} isRenaming={isRenaming} />
+      <button
+        type="button"
+        aria-label={t("identityOverview.updateAvatarAndName")}
+        title={t("identityOverview.updateAvatarAndName")}
+        onClick={onEdit}
+        className="avatar-edit-cursor outline-none keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]"
+      >
+        {customImageUrl && !traits ? (
+          // Custom image: a plain static rounded square (Figma
+          // 7259-169118) — no entrance or bounce.
+          <img
+            src={customImageUrl}
+            alt=""
+            width={avatarSize}
+            height={avatarSize}
+            className="rounded-[32px] object-cover"
+            style={{ width: avatarSize, height: avatarSize }}
+          />
+        ) : (
+          <ChatAvatar
+            components={components}
+            traits={traits}
+            customImageUrl={customImageUrl}
+            size={avatarSize}
+            interactive
+          />
+        )}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The bento mosaic: Personality owns the full left column, Skills and
+ * Plugins run across the top, Schedules owns the right column below
+ * Plugins, the avatar + greeting take the wide center, and the
+ * low-priority sections (Channels, Contacts, Workspace) fill a slim
+ * full-width row along the bottom of the center. It also orchestrates
+ * the avatar's card-hover act: the resting avatar disappears, the
+ * hovered card floods with the avatar color, and the peek tab surfaces
+ * on the card's center-facing edge.
+ */
+function OverviewBento({
+  components,
+  traits,
+  customImageUrl,
+  name,
+  sections,
+  emailTrailing,
+  stats,
+  avatarHex,
+  photoBackdrop,
+  isRenaming,
+  onOpenAvatarModal,
+}: {
+  components: CharacterComponents | null;
+  traits: CharacterTraits | null;
+  customImageUrl: string | null;
+  name: string;
+  sections: IdentitySection[];
+  /** The Email row's trailing pin control. */
+  emailTrailing?: ReactNode;
+  stats: Record<string, IdentitySectionStat | undefined>;
+  avatarHex: string | null;
+  /** The page sits on the blurred custom photo — use the overlay palette. */
+  photoBackdrop: boolean;
+  isRenaming: boolean;
+  onOpenAvatarModal: () => void;
+}) {
+  const { t } = useTranslation("intelligence");
+  const { ref, size } = useElementSize();
+  const reduce = useReducedMotion();
+  const useBento = size.w >= BENTO_MIN_W && size.h >= BENTO_MIN_H;
+
+  const avatarSize = Math.round(
+    Math.min(
+      AVATAR_MAX_SIZE,
+      Math.max(AVATAR_MIN_SIZE, Math.min(size.w, size.h) * 0.32),
+    ),
+  );
+
+  // Character avatars get the theatrics — the giant bottom-anchored hero,
+  // the color tints, the amoeba hover act. A custom image (or no avatar)
+  // stays calm: a static circle under the greeting on regular theme colors.
+  const hasCharacter = Boolean(avatarHex && components && traits);
+
+  /* Email lives inside the Channels tile as a pill, the way the side menu
+     draws its entries: the assistant's wash with the glyph in the accent,
+     and its pin beside it. */
+  const emailSection = sections.find((s) => s.key === "email");
+  const emailPill = emailSection ? (
+    /* The pill is a link with its control inside the same shape, as the
+       side menu's pills carry theirs: siblings, since a button cannot
+       nest in an anchor. */
+    <span
+      data-testid="identity-email-pill"
+      className="inline-flex h-10 shrink-0 items-center gap-1 rounded-full py-0 pr-1.5 pl-4 text-body-medium-default text-[var(--content-default)] transition-[filter] hover:brightness-95"
+      style={{
+        backgroundColor: avatarHex
+          ? `color-mix(in srgb, ${avatarHex} 22%, var(--surface-lift))`
+          : "var(--surface-active)",
+      }}
+    >
+      <Link
+        to={emailSection.to}
+        aria-label={emailSection.label}
+        className="inline-flex h-full items-center gap-2 pr-1.5 outline-none keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)] rounded-full"
+      >
+        <Mail
+          className="h-5 w-5 shrink-0"
+          style={{ color: avatarHex ?? "var(--content-default)" }}
+          aria-hidden
+        />
+        <span className="truncate">{emailSection.label}</span>
+      </Link>
+      {emailTrailing}
+    </span>
+  ) : null;
+
+  // The amoeba avatar needs a color + eye art to morph with; custom-image
+  // and reduced-motion users keep the static avatar and card hover fills.
+  const morphing = useBento && !reduce && hasCharacter;
+
+  const containerEl = useRef<HTMLDivElement | null>(null);
+  const cardEls = useRef<Record<string, HTMLElement | null>>({});
+  const [hugged, setHugged] = useState<{
+    key: string;
+    target: AmoebaTarget;
+    /** Flood origin, in percent of the hovered card's box. */
+    origin: { x: number; y: number };
+  } | null>(null);
+
+  const setContainerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      containerEl.current = el;
+      ref(el);
+    },
+    [ref],
+  );
+
+  const handleCardHover = useCallback(
+    (key: string, hovering: boolean) => {
+      if (!morphing) {
+        return;
+      }
+      if (!hovering) {
+        setHugged(null);
+        return;
+      }
+      const container = containerEl.current;
+      const el = cardEls.current[key];
+      if (!container || !el) {
+        return;
+      }
+      const cr = container.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const rect = {
+        left: r.left - cr.left,
+        top: r.top - cr.top,
+        width: r.width,
+        height: r.height,
+      };
+      // The eyes peek from the card edge that faces the page center —
+      // whichever axis the card sits furthest out on wins.
+      const dx = (rect.left + rect.width / 2 - cr.width / 2) / (cr.width / 2);
+      const dy = (rect.top + rect.height / 2 - cr.height / 2) / (cr.height / 2);
+      const facing: AmoebaFacing =
+        Math.abs(dx) > Math.abs(dy)
+          ? dx < 0
+            ? "right"
+            : "left"
+          : dy < 0
+            ? "bottom"
+            : "top";
+      const target = amoebaTargetForCard(rect, facing, {
+        x: cr.width / 2,
+        y: cr.height / 2,
+      });
+      setHugged({
+        key,
+        target,
+        origin: {
+          x: (target.peek.x / rect.width) * 100,
+          y: (target.peek.y / rect.height) * 100,
+        },
+      });
+    },
+    [morphing],
+  );
+
+  // Guard against a stale hug when the morph gets disabled mid-hover
+  // (e.g. a resize into the stacked layout).
+  const activeHug = morphing ? hugged : null;
+
+  // While the avatar is off hugging a card, the center text becomes his
+  // commentary on it.
+  const activeHoverLineKey = activeHug
+    ? CARD_HOVER_LINE_KEY[activeHug.key]
+    : undefined;
+  const greetingOverride = activeHoverLineKey ? t(activeHoverLineKey) : null;
+
+  // Without a character color (custom image / not loaded) every surface
+  // falls back to the regular theme tokens — no forced white/black card
+  // faces, no accent wash — so the page reads like the rest of the app.
+  // Exception: on the blurred-photo backdrop the fixed overlay palette
+  // takes over so cards and text read on the photo in every theme.
+  const tintStyle = photoBackdrop
+    ? PHOTO_OVERLAY_STYLE
+    : ({
+        "--card-bg": avatarHex
+          ? `color-mix(in srgb, ${avatarHex} var(--card-tint-pct, ${CARD_TINT_PERCENT}%), var(--card-surface, var(--surface-lift)))`
+          : "var(--surface-lift)",
+        "--card-feature-bg": avatarHex
+          ? "color-mix(in srgb, var(--card-accent) 28%, var(--card-surface, var(--surface-lift)))"
+          : "var(--surface-lift)",
+        "--card-hover": avatarHex
+          ? `color-mix(in srgb, ${avatarHex} ${HOVER_TINT_PERCENT}%, var(--card-surface, var(--surface-lift)))`
+          : "var(--surface-hover)",
+        "--card-accent": avatarHex ?? "var(--content-default)",
+        "--card-flood-fg": avatarHex
+          ? contrastForeground(avatarHex)
+          : "var(--content-default)",
+      } as CSSProperties);
+
+  // The avatar is a background element positioned against the full page —
+  // cards overlap it freely; cap only so his head stays inside the frame.
+  const heroHeadroomCap = (size.h - 8) / (1 - HERO_AVATAR_CUT_FRACTION);
+  const heroAvatarSize = Math.round(
+    Math.min(
+      HERO_AVATAR_MAX_SIZE,
+      heroHeadroomCap,
+      Math.max(HERO_AVATAR_MIN_SIZE, size.w * HERO_AVATAR_WIDTH_FRACTION),
+    ),
+  );
+  const heroCutPx = Math.round(heroAvatarSize * HERO_AVATAR_CUT_FRACTION);
+
+  const centerCell = (
+    <CenterCell
+      components={components}
+      traits={traits}
+      customImageUrl={customImageUrl}
+      name={name}
+      avatarSize={avatarSize}
+      isRenaming={isRenaming}
+      onEdit={onOpenAvatarModal}
+    />
+  );
+
+  if (!useBento) {
+    // Stacked (mobile) layout per Figma 7259-169032: greeting + avatar,
+    // a compact Schedules row (title · count › ), the Personality card
+    // with the full signature, then the remaining sections as a two-column
+    // grid of mini tiles.
+    const schedulesSection = sections.find((s) => s.key === "schedules");
+    const personalitySection = sections.find((s) => s.key === "personality");
+    // Channels, which carries the Email pill and spans both columns, sits
+    // on the grid's second row rather than at its foot, so the pill is not
+    // the last thing on the page.
+    const stackable = sections.filter(
+      (s) => s.key !== "schedules" && s.key !== "personality",
+    );
+    const channelsSection = stackable.find((s) => s.key === "channels");
+    const rest = stackable.filter((s) => s.key !== "channels");
+    const gridSections = channelsSection
+      ? [...rest.slice(0, 2), channelsSection, ...rest.slice(2)]
+      : rest;
+    const schedulesStat = stats["schedules"]?.schedules;
+    const scheduleCount = schedulesStat
+      ? schedulesStat.items.length + schedulesStat.more
+      : undefined;
+    const signature = stats["personality"]?.signature;
+    // A translucent face needs the blur to read as a card rather than a dimmed
+    // patch of whatever sits behind it, and needs no drawn edge, which would
+    // compete with the one the blur implies.
+    const featureCardClass =
+      "w-full rounded-[12px] border border-transparent bg-[var(--card-feature-bg,var(--card-bg))] backdrop-blur-[32px]";
+
+    return (
+      <div
+        ref={setContainerRef}
+        className="identity-bento relative flex min-h-0 flex-1 flex-col items-center gap-6 overflow-y-auto px-2 py-4"
+        style={
+          photoBackdrop
+            ? // The photo backdrop's palette is fixed light-on-dark in every
+              // theme, so these stay literals: `var(--surface-base)` would
+              // resolve to the light theme's near-white and put white text on
+              // a white tile.
+              ({
+                ...tintStyle,
+                "--card-feature-bg": "rgba(23, 25, 28, 0.3)",
+                "--card-bg": "#17191c",
+                "--card-hover": "#24292e",
+              } as CSSProperties)
+            : // The stacked layout steps its tiles off the avatar tint and
+              // onto the surface ramp, with `--card-hover` following them so
+              // a hover reads as a lift rather than a colour flash. The two
+              // feature cards (and the Email tab, which wears their wash)
+              // keep the desktop's wash of the avatar colour, so the page
+              // reads the same on a phone as on a desk.
+              ({
+                ...tintStyle,
+                "--card-bg": "var(--surface-base)",
+                "--card-hover": "var(--surface-lift)",
+              } as CSSProperties)
+        }
+      >
+        {centerCell}
+        <div className="flex w-full max-w-md shrink-0 flex-col gap-2">
+          {schedulesSection && (
+            <Card.Root
+              asChild
+              bordered={false}
+              elevated={false}
+              clipContents
+              className={featureCardClass}
+            >
+              <Link
+                to={schedulesSection.to}
+                className="flex w-full cursor-pointer items-center gap-2 p-4 transition-all duration-150 hover:bg-[var(--card-hover)] active:scale-[0.98]"
+              >
+                <Calendar
+                  className="h-6 w-6 shrink-0 text-[var(--content-default)]"
+                  aria-hidden
+                />
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate text-title-small leading-normal text-[var(--content-default)]">
+                    {schedulesSection.label}
+                  </span>
+                  {scheduleCount !== undefined && (
+                    <>
+                      <MidlineDot />
+                      <span className="text-title-small leading-normal text-[var(--content-tertiary)]">
+                        {scheduleCount}
+                      </span>
+                    </>
+                  )}
+                </span>
+                <ChevronRight
+                  className="h-6 w-6 shrink-0 text-[var(--content-default)]"
+                  aria-hidden
+                />
+              </Link>
+            </Card.Root>
+          )}
+          {personalitySection && (
+            <Card.Root
+              asChild
+              bordered={false}
+              elevated={false}
+              clipContents
+              className={featureCardClass}
+            >
+              <Link
+                to={personalitySection.to}
+                className="flex w-full cursor-pointer flex-col gap-4 px-4 pt-4 pb-6 transition-all duration-150 hover:bg-[var(--card-hover)] active:scale-[0.98]"
+              >
+                <span className="flex w-full items-center gap-2">
+                  <Sparkles
+                    className="h-6 w-6 shrink-0 text-[var(--content-default)]"
+                    aria-hidden
+                  />
+                  <span className="text-title-small leading-normal text-[var(--content-default)]">
+                    {personalitySection.label}
+                  </span>
+                </span>
+                {signature && (
+                  <span
+                    className={`flex items-center justify-center ${
+                      photoBackdrop
+                        ? "text-[var(--content-default)]"
+                        : "text-[var(--content-secondary)]"
+                    }`}
+                  >
+                    {/* The mark's height follows its width, so the full frame
+                        at card width runs past 250px and the card swallows
+                        the tiles below it. The compact frame holds the band
+                        near 110px without shrinking the labels. */}
+                    <PersonalitySignature
+                      values={signature}
+                      compact
+                      className="h-auto w-full"
+                    />
+                  </span>
+                )}
+              </Link>
+            </Card.Root>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            {gridSections.map((section) =>
+              section.key === "email" ? null : (
+                /* Channels carries the Email pill, so it takes both columns
+                   for the two to fit on one line. */
+                <div
+                  key={section.key}
+                  className={`flex min-w-0 ${section.key === "channels" && emailPill ? "col-span-2" : ""}`}
+                >
+                  <SectionCard
+                    section={section}
+                    stat={stats[section.key]}
+                    hoverFill
+                    mini
+                    compact
+                    aside={section.key === "channels" ? emailPill : undefined}
+                  />
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Priority layout: Personality owns the left column (signature centered in
+  // it) and Schedules the right, both the same height above the strip,
+  // and everything else (Skills, Plugins, Workspace, Contacts, Channels)
+  // runs as compact mini cards in a full-width bottom strip.
+  const mainSections = sections.filter(
+    (s) => !MINI_SECTION_KEYS.includes(s.key) && s.key !== "email",
+  );
+  const miniSections = sections.filter((s) =>
+    MINI_SECTION_KEYS.includes(s.key),
+  );
+
+  // Top row is a centered trio — Personality, the greeting, Schedules —
+  // and the rows below stay open so the page-anchored avatar shows
+  // through behind everything.
+  // Schedules' AREA runs a row deeper than Personality, but the card
+  // self-sizes from the top with Personality's row height as its minimum
+  // — so the two match until the schedule tiles (3 max) need more room.
+  const BENTO_ROWS = [1.15, 1, 0.45, 0.3];
+  const BENTO_GAP_PX = 12;
+  const rowUnit =
+    (size.h - (BENTO_ROWS.length - 1) * BENTO_GAP_PX) /
+    BENTO_ROWS.reduce((a, b) => a + b, 0);
+  const personalityRowHeight = Math.round(rowUnit * BENTO_ROWS[0]!);
+
+  // Character avatars float behind the open middle rows; a custom image
+  // gets its own centered cell right under the greeting instead.
+  const gridTemplateAreas = (
+    hasCharacter
+      ? [
+          `"personality greeting greeting greeting schedules"`,
+          `". . . . schedules"`,
+          `". . . . ."`,
+          `"smalls smalls smalls smalls smalls"`,
+        ]
+      : [
+          `"personality greeting greeting greeting schedules"`,
+          `". avatar avatar avatar schedules"`,
+          `". avatar avatar avatar ."`,
+          `"smalls smalls smalls smalls smalls"`,
+        ]
+  ).join(" ");
+
+  const cardProps = (section: IdentitySection) => ({
+    section,
+    stat: stats[section.key],
+    hoverFill: !morphing,
+    photoBackdrop,
+    flooded: activeHug?.key === section.key,
+    floodOrigin: activeHug?.key === section.key ? activeHug.origin : undefined,
+    linkRef: (el: HTMLAnchorElement | null) => {
+      cardEls.current[section.key] = el;
+    },
+    onHoverChange: (hovering: boolean) =>
+      handleCardHover(section.key, hovering),
+  });
+
+  return (
+    <div
+      ref={setContainerRef}
+      className="identity-bento relative grid min-h-0 flex-1 gap-3 overflow-hidden"
+      style={{
+        ...tintStyle,
+        gridTemplateColumns: "1.55fr 1fr 1fr 1fr 1.55fr",
+        gridTemplateRows: BENTO_ROWS.map((r) => `${r}fr`).join(" "),
+        gridTemplateAreas,
+      }}
+    >
+      {hasCharacter ? (
+        /* Hero avatar: very large, bottom-anchored so its chin dips just
+           past the page edge, sitting behind the cards (rendered before
+           them, same z-plane). */
+        <motion.div
+          className="pointer-events-none absolute left-1/2 z-0"
+          style={{
+            width: heroAvatarSize,
+            height: heroAvatarSize,
+            bottom: -heroCutPx,
+            x: "-50%",
+          }}
+          initial={false}
+          animate={
+            activeHug ? { scale: 0.4, opacity: 0 } : { scale: 1, opacity: 1 }
+          }
+          transition={
+            activeHug
+              ? { duration: 0.15 }
+              : { delay: 0.25, type: "spring", stiffness: 210, damping: 18 }
+          }
+        >
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={t("identityOverview.updateAvatarAndName")}
+            title={t("identityOverview.updateAvatarAndName")}
+            onClick={onOpenAvatarModal}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenAvatarModal();
+              }
+            }}
+            className="avatar-edit-cursor group pointer-events-auto relative h-full w-full scale-100 outline-none transition-transform duration-200 ease-out hover:scale-105 keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]"
+          >
+            <ChatAvatar
+              components={components}
+              traits={traits}
+              customImageUrl={customImageUrl}
+              size={heroAvatarSize}
+              interactive
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40">
+                <Pencil className="h-5 w-5 text-white" />
+              </span>
+            </span>
+          </div>
+        </motion.div>
+      ) : (
+        /* Custom image (or no avatar): a calm, static circle centered
+           under the greeting — no entrance, no hover act. Still the edit
+           trigger. */
+        <div
+          className="relative z-[1] flex items-start justify-center"
+          style={{ gridArea: "avatar" }}
+        >
+          <button
+            type="button"
+            aria-label={t("identityOverview.updateAvatarAndName")}
+            title={t("identityOverview.updateAvatarAndName")}
+            onClick={onOpenAvatarModal}
+            className="avatar-edit-cursor rounded-full outline-none keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]"
+          >
+            {customImageUrl ? (
+              <img
+                src={customImageUrl}
+                alt=""
+                width={avatarSize}
+                height={avatarSize}
+                className="rounded-full object-cover"
+                style={{ width: avatarSize, height: avatarSize }}
+              />
+            ) : (
+              <ChatAvatar
+                components={components}
+                traits={traits}
+                customImageUrl={null}
+                size={avatarSize}
+              />
+            )}
+          </button>
+        </div>
+      )}
+      {/* Greeting: the middle of the top-row trio, center-aligned with the
+          two feature cards. Its own layer (not inside the fading hero) so
+          the name never blinks out while the avatar dives into a card —
+          instead it becomes his commentary on the hovered card. */}
+      <div
+        className="relative z-[1] flex items-center justify-center"
+        style={{ gridArea: "greeting" }}
+      >
+        <AssistantNameEditor
+          name={name}
+          isRenaming={isRenaming}
+          overrideText={greetingOverride}
+        />
+      </div>
+      {morphing && avatarHex && components && traits && (
+        <AmoebaPeekTab
+          hex={avatarHex}
+          components={components}
+          traits={traits}
+          target={activeHug?.target ?? null}
+        />
+      )}
+      {mainSections.map((section) => (
+        <SectionCard
+          key={section.key}
+          {...cardProps(section)}
+          gridArea={section.key}
+          cardStyle={
+            section.key === "schedules"
+              ? {
+                  // The card's `h-full` class resolves against the full
+                  // two-row grid area — inline `auto` restores content
+                  // sizing so `alignSelf: start` + the min-height (one
+                  // personality-row) actually govern the height.
+                  alignSelf: "start",
+                  height: "auto",
+                  minHeight: personalityRowHeight,
+                }
+              : undefined
+          }
+        />
+      ))}
+      <div
+        className="flex min-h-0 items-stretch gap-3"
+        style={{ gridArea: "smalls" }}
+      >
+        {miniSections.map((section) => (
+          /* Channels carries the Email pill, so it takes a wider share of
+             the strip than its neighbours. */
+          <div
+            key={section.key}
+            className={`flex min-w-0 ${section.key === "channels" && emailPill ? "flex-[1.6]" : "flex-1"}`}
+          >
+            <SectionCard
+              {...cardProps(section)}
+              mini
+              aside={section.key === "channels" ? emailPill : undefined}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

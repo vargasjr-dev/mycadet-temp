@@ -82,11 +82,7 @@ function renderSection(section: SidebarSection, overlayCards = false) {
             type="multiple"
             defaultValue={[section.key]}
           >
-            <SidebarSectionItem
-              section={section}
-              assistantId="asst-1"
-              groupMenu={() => ({})}
-            />
+            <SidebarSectionItem section={section} groupMenu={() => ({})} />
           </CollapsibleNavSection.Root>
         </ConversationListProvider>
       </QueryClientProvider>

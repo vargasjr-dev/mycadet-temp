@@ -97,16 +97,12 @@
     "assistantId": "ID del asistente",
     "cpuUsage": "Uso de CPU",
     "created": "Creado",
-    "description": "Descripción",
     "diskUnavailable": "Estado del disco no disponible",
     "diskUsage": "Uso del disco",
-    "empty": "No se encontró ningún asistente. Crea un asistente para empezar.",
     "loadHealthzFailed": "No se pudo cargar la información del asistente",
-    "loading": "Cargando información del asistente...",
     "loadingCpu": "Cargando estado de la CPU...",
     "loadingDisk": "Cargando estado del disco...",
     "loadingMemory": "Cargando estado de la memoria...",
-    "machineId": "ID de la máquina",
     "memoryUsage": "Uso de memoria",
     "name": "Nombre",
     "status": "Estado",
@@ -115,7 +111,6 @@
     "version": "Versión"
   },
   "assistantTerminalPanel": {
-    "noAssistant": "No se encontró ningún asistente. Crea un asistente para usar la terminal.",
     "subtitle": "Sesión de shell interactiva en la máquina de tu asistente",
     "targetContainer": "Contenedor de destino",
     "title": "Terminal"
@@ -137,7 +132,6 @@
     "toastUpdateInitiated": "Actualización a {version} iniciada.",
     "update": "Actualizar",
     "updateTo": "Actualizar a",
-    "updateToVersion": "Actualizar a {version}",
     "updating": "Actualizando..."
   },
   "autoTopUpPaymentMethodModal": {
@@ -300,20 +294,8 @@
     "subtitleOwn": "Guardadas cifradas en la bóveda de credenciales de tu asistente. Revela un valor bajo demanda, o reemplázalo o elimínalo en cualquier momento.",
     "title": "Credenciales"
   },
-  "debugBundleExport": {
-    "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
-    "export": "Exportar paquete de depuración",
-    "exporting": "Exportando…",
-    "sentAt": "Enviado a Cadet a las {time}.",
-    "toastFailed": "El paquete de depuración no se envió.",
-    "toastFailedWithReason": "El paquete de depuración no se envió: {reason}",
-    "toastSent": "Paquete de depuración enviado a Cadet."
-  },
   "debugControlsPanel": {
     "backups": "Copias de seguridad",
-    "loadFailedToast": "No se pudo cargar la información del asistente",
-    "loading": "Cargando información del asistente...",
-    "noAssistant": "No se encontró ningún asistente. Crea un asistente para acceder a los controles de depuración.",
     "subtitle": "Administra las copias de seguridad de tu asistente.",
     "title": "General"
   },
@@ -687,20 +669,6 @@
     "serviceFallbackName": "el proveedor del túnel",
     "serviceWebsite": "Este es el sitio web de {service}, no la dirección de tu asistente. Inicia un túnel en el host para obtener una; `cadet tunnel --help` lista los proveedores.",
     "unparseable": "Introduce una URL válida, p. ej. https://your-assistant.ts.net."
-  },
-  "pairedDevicesSection": {
-    "browserOnOs": "{browser} en {os}",
-    "confirmMessageNamed": "{name} ({hash}) pierde el acceso a este asistente. Sus tokens de acceso se invalidan de inmediato; ese dispositivo tendrá que vincularse de nuevo desde este equipo para reconectarse.",
-    "confirmTitle": "¿Revocar este dispositivo?",
-    "dateUnknown": "desconocido",
-    "hostRevokeDisabledTitle": "Esta es la credencial de este mismo equipo; revocarla dejaría al host sin acceso al asistente.",
-    "pairedActiveLine": "Vinculado {paired} · Activo ahora",
-    "pairedAndUsedLine": "Vinculado {paired} · Último uso {lastUsed}",
-    "pairedLine": "Vinculado {paired}",
-    "platformUnknown": "Desconocido",
-    "revokeButton": "Revocar",
-    "thisMachine": "Este equipo",
-    "title": "Dispositivos vinculados ({count})"
   },
   "paymentMethodRow": {
     "savedCard": "Tarjeta guardada"

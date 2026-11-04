@@ -9,16 +9,6 @@
  *     suppression: the daemon echoes the client id back on the resulting
  *     `sync_changed` so the originator's SSE subscriber can be skipped.
  *
- * When `getSelfHostedIngressUrl()` returns a URL AND the request hits a
- * runtime-proxied per-assistant path, {@link rewriteForSelfHostedIngress}
- * takes over instead — the URL's origin is swapped to the ingress, the
- * platform-only headers are stripped, cookie credentials are omitted,
- * and an `Authorization: Bearer` is attached when
- * `getSelfHostedActorToken()` returns a value (it can briefly return
- * `null` while `bootstrap_platform_actor_token` is mid-flight on the
- * platform — the gateway then 401s and the chat surface lands on its
- * error state).
- *
  * Import this module for its side effects in the app entrypoint
  * (`main.tsx`) so interceptors are installed before any API call fires.
  *
@@ -31,12 +21,6 @@ import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
-import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
-import {
-  isLocalClient,
-  isCadetCloudRemote,
-  isServedGatewayRuntime,
-} from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -55,78 +39,13 @@ function getRendererTupleOrigin(): string {
   return `${window.location.protocol}//${window.location.host}`;
 }
 
-/**
- * Allowlist of `/v1/assistants/{id}/<segment>/...` first segments that
- * the **platform client** rewrites to the self-hosted gateway.
- *
- * Only applies to requests made through the cloud HeyAPI client.
- * The daemon client bypasses this list entirely — all daemon SDK
- * requests are forwarded to the gateway unconditionally (see
- * {@link daemonRequestInterceptor}).
- *
- * Kept narrow for the cloud client: the cloud owns routes like
- * `system-events/`, `terminal/`, `doctor/` under
- * the same namespace, and forwarding those to the gateway would 404.
- * Once all daemon endpoints are migrated to the daemon SDK, this list
- * becomes dead code and can be removed.
- */
-const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
-  "conversations",
-  // Live SSE event stream — `subscribeEvents` opens it through the
-  // platform client, so it must be forwarded to the gateway in local /
-  // self-hosted mode like any other runtime route.
-  "events",
-  // User-defined route handlers (`/v1/x/*`). Sandboxed apps reach their
-  // backend handlers through the cloud client (the sandbox fetch
-  // proxy in `useSandboxFetchProxy`, gated to `/v1/x/` paths), so these
-  // must be forwarded to the gateway in local / self-hosted mode rather
-  // than falling through to the cloud proxy.
-  "x",
-  // Daemon-owned app-serving routes (`/v1/apps/*`: bundled asset media and
-  // compiled dist files). The sandbox asset proxy in `useSandboxFetchProxy`
-  // fetches `/v1/assistants/{id}/apps/{appId}/asset/...` through the cloud
-  // client, so it must be forwarded to the gateway in local / self-hosted
-  // mode rather than falling through to the cloud proxy.
-  "apps",
-  // Daemon-owned config reached through the cloud client via raw
-  // `client.*` calls (the background `TimezoneSync` PATCH and the general
-  // settings page). Must be forwarded to the gateway in local /
-  // self-hosted mode rather than falling through to the dead platform
-  // proxy — otherwise the PATCH retries against a nonexistent platform
-  // and floods the console with 502s. Removable once those call sites
-  // move to the generated daemon SDK (LUM-2716).
-  //
-  // Every removed entry (contacts, trust-rules, permissions,
-  // channel-admission-policy, …) was retired by migrating its call sites
-  // to the generated gateway SDK, whose client forwards all
-  // assistant-scoped requests without this list: that is the paved road
-  // for new endpoints. Deliberately NOT listed: `artifacts` (no
-  // gateway/daemon route exists) and
-  // `push-tokens` / `live-activity` (cloud-owned token registration).
-  // Those stay on the cloud in cloud and local-with-ingress. Remote
-  // gateway authorizes the last two via
-  // {@link authorizeRemoteGatewayRequest} so the features gate does not
-  // abort them. The contact family (`contacts`, `contact-channels`) is
-  // forwarded via {@link FLATTENED_FIRST_SEGMENTS} with the assistant
-  // prefix stripped; it does not belong in this allowlist.
-  "config",
-]);
-
-/**
- * Cloud-owned device and Live Activity token routes. In remote-gateway
- * mode they are same-origin to the ingress, so they must carry the
- * paired bearer or {@link platformFeaturesGate} aborts them before
- * The cloud (or the gateway proxy that reaches it) sees them.
- */
 const PLATFORM_PUSH_FIRST_SEGMENTS = new Set<string>([
   "push-tokens",
   "live-activity",
 ]);
 
-const ASSISTANT_PATH_RE = /^\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
-
 /**
- * Same resource match as {@link ASSISTANT_PATH_RE}, but allows an ingress
+ * Same resource match as the same path match, but allows an ingress
  * path prefix (`/assistant-123/v1/assistants/...`).
  */
 const ASSISTANT_RESOURCE_RE = /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
@@ -163,9 +82,6 @@ function isPlatformPushPath(url: string): boolean {
  * relocate the resource under that prefix before authorizing.
  */
 function relocateRemoteGatewayPushRequest(request: Request): Request {
-  if (!isServedGatewayRuntime()) {
-    return request;
-  }
   const ingressUrl = getSelfHostedIngressUrl();
   if (!ingressUrl) {
     return request;
@@ -194,112 +110,6 @@ function relocateRemoteGatewayPushRequest(request: Request): Request {
 }
 
 /**
- * Rewrites a request bound for `/v1/assistants/{id}/{runtime-segment}/...`
- * to the registered self-hosted ingress, swapping platform session/CSRF
- * auth for `Authorization: Bearer <jwt>`.
- *
- * Returns `null` when no self-hosted ingress is currently set or when
- * the path doesn't match an assistant sub-resource.
- *
- * @param request — the outbound request to inspect.
- * @param options.skipSegmentAllowlist — when `true`, all assistant
- *   sub-resource paths are forwarded regardless of
- *   {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. The daemon client sets this
- *   for both daemon routes and gateway-owned compatibility routes.
- *   The cloud client leaves it `false` to avoid forwarding
- *   platform-owned routes (system-events, etc.);
- *   {@link FLATTENED_FIRST_SEGMENTS} are forwarded regardless.
- *
- * Exported for direct unit testing — production code paths invoke this
- * via {@link requestInterceptor} / {@link daemonRequestInterceptor}.
- */
-export async function rewriteForSelfHostedIngress(
-  request: Request,
-  { skipSegmentAllowlist = false } = {},
-): Promise<Request | null> {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (!ingressUrl) {
-    return null;
-  }
-
-  const url = new URL(request.url);
-
-  const match = ASSISTANT_PATH_RE.exec(url.pathname);
-  if (!match) {
-    return null;
-  }
-  const [, subPath, firstSegment] = match;
-  if (
-    !skipSegmentAllowlist &&
-    !RUNTIME_PROXIED_FIRST_SEGMENTS.has(firstSegment) &&
-    !FLATTENED_FIRST_SEGMENTS.has(firstSegment)
-  ) {
-    return null;
-  }
-
-  // Splice the cloud's base out and the user's gateway in. Contact-family
-  // paths are flattened to `/v1/<rest>` — the shape cloud's runtime proxy strip
-  // delivers to the gateway, which serves them on its flat control-plane
-  // routes. Every other segment keeps the scoped path verbatim: the gateway
-  // exposes the same `/v1/assistants/{id}/...` routes the cloud's
-  // RuntimeProxyView would otherwise forward to.
-  const rewrittenUrl = new URL(ingressUrl);
-  const prefix = rewrittenUrl.pathname.replace(/\/$/, "");
-  rewrittenUrl.pathname = FLATTENED_FIRST_SEGMENTS.has(firstSegment)
-    ? `${prefix}/v1/${subPath}`
-    : prefix + url.pathname;
-  rewrittenUrl.search = url.search;
-
-  // Build a fresh header set. Drop platform-only headers; keep client +
-  // interface ids so the user's gateway can echo them back for self-echo
-  // suppression once the SSE wiring lands on the same path.
-  const headers = new Headers(request.headers);
-  headers.delete("X-CSRFToken");
-  headers.delete("Cadet-Organization-Id");
-  if (isServedGatewayRuntime()) {
-    // Ngrok free tunnels return an HTML interstitial to browser-shaped API
-    // requests unless this bypass header is present.
-    headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, "true");
-  }
-
-  applySelfHostedBearer(headers);
-
-  // In local mode the gateway proxy runs over plain HTTP, and Chrome
-  // refuses to send a streaming (duplex: "half") body without TLS
-  // (ERR_ALPN_NEGOTIATION_FAILED), so the body must be buffered into a
-  // finite-length payload. Buffer to a Blob rather than an ArrayBuffer:
-  // an ArrayBuffer body is streamed to the network process through a
-  // fixed-capacity (~1-2 MB) data pipe, so a larger upload stalls forever
-  // when the local consumer drains the pipe slowly. A Blob is passed by
-  // reference (blob handle) and read directly, with no renderer-side data
-  // pipe to block on. Platform self-hosted uses TLS, so keep the streaming
-  // body there to avoid buffering large uploads.
-  const body = isLocalClient()
-    ? request.body
-      ? await request.blob()
-      : null
-    : request.body;
-
-  const init: RequestInit = {
-    method: request.method,
-    headers,
-    body,
-    // Bearer auth replaces cookie auth — don't leak the cloud's
-    // session cookie to the user's gateway.
-    credentials: "omit",
-    redirect: request.redirect,
-    signal: request.signal,
-    // A rebuilt Request does not inherit this from `request`, and dropping it
-    // cancels pagehide-time sends (the boot telemetry flush) mid-navigation.
-    keepalive: request.keepalive,
-  };
-  if (!isLocalClient() && request.body) {
-    (init as RequestInit & { duplex: "half" }).duplex = "half";
-  }
-  return new Request(rewrittenUrl.toString(), init);
-}
-
-/**
  * Remote-gateway mode serves the app and the gateway from the same nginx edge.
  * Some platform-generated clients still call same-origin flat `/v1/...` routes
  * (for example client feature flags), so they do not pass through the
@@ -309,10 +119,6 @@ export async function rewriteForSelfHostedIngress(
 export function authorizeRemoteGatewayRequest(
   request: Request,
 ): Request | null {
-  if (!isServedGatewayRuntime()) {
-    return null;
-  }
-
   const ingressUrl = getSelfHostedIngressUrl();
   if (!ingressUrl) {
     return null;
@@ -374,16 +180,6 @@ function createInterceptor({
     }
 
     newRequest.headers.set("Accept-Language", currentLocale());
-
-    // Self-hosted assistant + runtime-proxied path → talk to the user's
-    // gateway directly instead of stamping the cloud's session/CSRF
-    // headers.
-    const selfHosted = await rewriteForSelfHostedIngress(newRequest, {
-      skipSegmentAllowlist: isDaemonClient,
-    });
-    if (selfHosted) {
-      return selfHosted;
-    }
 
     if (allowRemoteGatewayDirect) {
       const remoteGateway = authorizeRemoteGatewayRequest(newRequest);
@@ -535,75 +331,3 @@ for (const apiClient of [authClient, cloudClient]) {
 // A chat send in cloud mode goes through the daemon client; other platform
 // calls go through the cloud client. Not installed on `authClient` — the
 // allauth session endpoints manage their own 401 semantics.
-
-/**
- * What {@link platformFeaturesGate} does with a request. A deny carries the
- * reason it was denied, so the gate reports it without re-probing the mode the
- * decision already looked at. {@link PLATFORM_GATE_DENIALS} keys off this
- * union, so a third reason cannot be mislabelled as one of the existing two.
- */
-type CloudGateDecision = "allow" | "deny_remote_gateway";
-
-/**
- * How each denial is reported. Keyed by every deny decision, so a new reason
- * added to {@link CloudGateDecision} fails to compile until it says what it
- * logs and what it aborts with.
- */
-const PLATFORM_GATE_DENIALS: Record<
-  Exclude<CloudGateDecision, "allow">,
-  { log: string; abortMessage: string }
-> = {
-  deny_remote_gateway: {
-    log: "remote-gateway mode, no-op platform request:",
-    abortMessage: "Platform routes disabled in remote-gateway mode",
-  },
-};
-
-/**
- * The decision {@link platformFeaturesGate} reaches for this request.
- *
- * Takes the request as the gate sees it: the gate is registered after
- * {@link requestInterceptor}, so a self-hosted rewrite (gateway origin, bearer
- * auth) has already happened by the time it runs.
- */
-function cloudFeaturesGateDecision(request: Request): CloudGateDecision {
-  if (isCadetCloudRemote()) {
-    // The cloud session cookie authenticates platform-origin calls in
-    // this mode; the bearer check below guards gateway-session bundles.
-    return "allow";
-  }
-  if (isServedGatewayRuntime()) {
-    // A served-gateway browser holds the gateway JWT as its credential:
-    // platform-bound calls ride it as the bearer or are refused.
-    const hasBearer =
-      request.headers
-        .get("Authorization")
-        ?.toLowerCase()
-        .startsWith("bearer ") ?? false;
-    return hasBearer ? "allow" : "deny_remote_gateway";
-  }
-
-  return "allow";
-}
-
-/**
- * Abort platform client requests in remote-gateway mode that ride no
- * gateway bearer. Let-through requests keep the daemon endpoints
- * (skills, memories, etc.) that route through the cloud client alive.
- *
- * Exported for direct unit testing.
- */
-export function platformFeaturesGate(request: Request): Request {
-  const decision = cloudFeaturesGateDecision(request);
-  if (decision === "allow") {
-    return request;
-  }
-
-  const denial = PLATFORM_GATE_DENIALS[decision];
-  console.debug(denial.log, new URL(request.url).pathname);
-  const aborted = new AbortController();
-  aborted.abort(new DOMException(denial.abortMessage, "AbortError"));
-  return new Request(request.url, { signal: aborted.signal });
-}
-
-cloudClient.interceptors.request.use(platformFeaturesGate);

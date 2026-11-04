@@ -9,19 +9,16 @@ import {
 
 import { useQuery } from "@tanstack/react-query";
 
-import { type Assistant, getAssistant } from "@/assistant/api";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { CapacityBar } from "@/domains/settings/components/capacity-bar";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import { t, useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useEnvironmentStore } from "@/stores/environment-store";
 import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 import { toast } from "@mycadet/design-library";
 import { Tag } from "@mycadet/design-library/components/tag";
-
-const CURRENT_ASSISTANT_QUERY_KEY = "currentAssistant";
 
 // A resize rolls the assistant pod, so the new allocation only appears once it
 // comes back up. Poll /v1/health for a bounded window, tolerating the restart
@@ -80,15 +77,14 @@ export function resizePollInterval(
 }
 
 export interface AssistantWithHealthz {
-  assistant: Assistant | null;
-  assistantLoading: boolean;
+  assistant: LockfileAssistant;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
   /** True while a request is in flight, including a refresh over existing values. */
   healthzFetching: boolean;
   /** True while a post-resize poll is waiting for the new allocation to appear. */
   healthzPolling: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<unknown>;
   /**
    * Watch for the reported CPU/memory allocation to differ from `baseline`,
    * meaning the resize has landed. The health query polls while the watch is
@@ -99,26 +95,18 @@ export interface AssistantWithHealthz {
 }
 
 export function useAssistantWithHealthz(): AssistantWithHealthz {
-  const activeAssistantId = useActiveAssistantId();
-  const {
-    data: assistant = null,
-    isLoading: assistantLoading,
-    refetch: refetchAssistant,
-  } = useQuery({
-    queryKey: [CURRENT_ASSISTANT_QUERY_KEY, activeAssistantId],
-    queryFn: async () => {
-      const result = await getAssistant(activeAssistantId);
-      return result.ok ? result.data : null;
-    },
-    retry: false,
-  });
+  // The store IS the resolution: the entry projects straight to the
+  // panel's shape — no fetch, no loading window. The selector returns the
+  // entry itself (a stable reference); the projection runs outside it, so a
+  // fresh mapped object can never re-trigger the subscription.
+  const assistant = useResolvedAssistantStore((s) => s.assistant);
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
      id the hook already holds, so waiting for it would buy nothing and cost a
      round trip on a tunnel. */
   const healthzQueryOptions = useMemo(
-    () => healthzGetOptions({ path: { assistant_id: activeAssistantId } }),
-    [activeAssistantId],
+    () => healthzGetOptions({ path: { assistant_id: assistant.assistantId } }),
+    [assistant.assistantId],
   );
   const [resizeWatch, setResizeWatch] = useState<ResizeWatch | null>(null);
   const {
@@ -191,116 +179,67 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
      left running would hold the next assistant's resize controls disabled. */
   useEffect(() => {
     setResizeWatch(null);
-  }, [activeAssistantId]);
-
-  const refetch = useCallback(async () => {
-    await Promise.all([refetchAssistant(), refetchHealthz()]);
-  }, [refetchAssistant, refetchHealthz]);
+  }, [assistant.assistantId]);
 
   /* Opens the watch; the query polls from there. The machine-size tag comes
-     from the assistant record, which the cloud updates synchronously during
-     a resize, so that one is refreshed up front. */
+     from the assistant record — the store's entry, live without a fetch. */
   const refetchUntilResized = useCallback(
     (baseline: HealthzGetResponse | null) => {
-      void refetchAssistant();
       setResizeWatch({ baseline, until: Date.now() + HEALTHZ_POLL_TIMEOUT_MS });
     },
-    [refetchAssistant],
+    [],
   );
 
   return {
     assistant,
-    assistantLoading,
     healthz,
     healthzLoading: healthzQueryLoading,
     healthzFetching,
     healthzPolling,
-    refetch,
+    refetch: refetchHealthz,
     refetchUntilResized,
   };
 }
 
 export interface AssistantStatusPanelProps {
-  assistant: Assistant | null;
-  assistantLoading: boolean;
+  assistant: LockfileAssistant;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
 }
 
 export function AssistantStatusPanel({
   assistant,
-  assistantLoading,
   healthz,
   healthzLoading,
 }: AssistantStatusPanelProps) {
-  const isNonProduction = useEnvironmentStore.use.isNonProduction();
   const { t } = useTranslation("settings");
 
-  if (assistantLoading) {
-    return (
-      <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t("assistantStatusPanel.loading")}
-      </div>
-    );
-  }
-
-  if (!assistant) {
-    return (
-      <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-        {t("assistantStatusPanel.empty")}
-      </p>
-    );
-  }
-
-  const version = healthz?.version ?? assistant.current_release_version;
+  const version = healthz?.version;
 
   return (
     <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
       <Label>{t("assistantStatusPanel.name")}</Label>
       <Value>{assistant.name}</Value>
 
-      {assistant.description && (
-        <>
-          <Label>{t("assistantStatusPanel.description")}</Label>
-          <Value>{assistant.description}</Value>
-        </>
-      )}
-
       <Label>{t("assistantStatusPanel.status")}</Label>
       <div>
-        <Tag tone={assistant.status === "active" ? "positive" : "neutral"}>
-          {assistant.status}
-        </Tag>
+        <Tag tone="positive">{t("assistantStatusPanel.active")}</Tag>
       </div>
 
       <Label>{t("assistantStatusPanel.assistantId")}</Label>
       <span className="break-all font-mono text-body-small-default text-[var(--content-tertiary)]">
-        {assistant.id}
+        {assistant.assistantId}
       </span>
-
-      {isNonProduction && assistant.machine_id && (
-        <>
-          <Label>{t("assistantStatusPanel.machineId")}</Label>
-          <span className="break-all font-mono text-body-small-default text-[var(--content-tertiary)]">
-            {assistant.machine_id}
-          </span>
-        </>
-      )}
 
       <Label>{t("assistantStatusPanel.created")}</Label>
       <Value>
-        {assistant.created
-          ? new Date(assistant.created).toLocaleDateString()
+        {assistant.hatchedAt
+          ? new Date(assistant.hatchedAt).toLocaleDateString()
           : t("assistantStatusPanel.unknown")}
       </Value>
 
       <Label>{t("assistantStatusPanel.version")}</Label>
-      <Value>
-        {healthzLoading && !assistant.current_release_version
-          ? "—"
-          : (version ?? "—")}
-      </Value>
+      <Value>{healthzLoading ? "—" : (version ?? "—")}</Value>
     </div>
   );
 }

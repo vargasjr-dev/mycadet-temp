@@ -9,10 +9,16 @@ import {
   restoreHostTeleportTarget,
   TeleportRecoveryError,
 } from "../lib/host-teleport.js";
+import { initializeDockerTeleportTarget } from "../lib/remotes/docker.js";
+import { resolveOwnImageRefs } from "@mycadet/local-mode";
+import cliPkg from "../../package.json";
 
-import { DOCKER_STATEFUL_SET_SPEC } from "../lib/statefulset.js";
-import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
+import { packRoot, STATE_ROOTS } from "@mycadet/local-mode";
+import type {
+  DockerAssistant,
+  LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
 import { dockerResourceNames } from "@mycadet/local-mode";
@@ -38,6 +44,14 @@ const services: Array<keyof typeof containers> = [
   "gateway",
   "credential-executor",
 ];
+// Volume suffixes per state root (dockerResourceNames' shape) — the mounts
+// always carry them after the instance-name prefix.
+const ROOT_VOLUMES: Record<(typeof STATE_ROOTS)[number], string> = {
+  workspace: "workspace",
+  "gateway-security": "gateway-sec",
+  "ces-security": "ces-sec",
+  "ces-data": "ces-data",
+};
 const rootContainer = {
   workspace: names.assistantContainer,
   "gateway-security": names.gatewayContainer,
@@ -151,22 +165,6 @@ beforeEach(async () => {
   );
   commands.on(
     "docker",
-    (args) => args[0] === "create",
-    ({ args }) => {
-      const container = args[args.indexOf("--name") + 1]!;
-      const service = services.find(
-        (service) => containers[service] === container,
-      )!;
-      const state = inspection(service);
-      state.Config.Env = args.flatMap((value, index) =>
-        value === "-e" ? [args[index + 1]!] : [],
-      );
-      states.set(container, state);
-      return {};
-    },
-  );
-  commands.on(
-    "docker",
     (args) => args[0] === "start",
     ({ args }) => {
       const state = states.get(args[1]!)!;
@@ -201,25 +199,24 @@ beforeEach(async () => {
     (args) => args[0] === "run" && args.includes("-i"),
     async ({ args, input }) => {
       const mount = args[args.indexOf("--mount") + 1]!;
-      const root = STATE_ROOTS.find(
-        (root) =>
-          states
-            .get(rootContainer[root])!
-            .Mounts.find((item) => item.Destination === `/${root}`)?.Name ===
-          mount.split("src=")[1]!.split(",")[0]!,
-      )!;
+      const volumeName = mount.split("src=")[1]!.split(",")[0]!;
+      const root = STATE_ROOTS.find((root) =>
+        volumeName.endsWith(`-${ROOT_VOLUMES[root]}`),
+      );
+      expect(root).toBeDefined();
       expect([...states.values()].every((state) => !state.State.Running)).toBe(
         true,
       );
       expect(args).toContain("--network=none");
       expect(args).toContain("--user=0");
-      expect(args).toContain("1001:1001");
+      // Destination-owned extraction: the archive never brings a uid.
+      expect(args.at(-1)).toMatch(/^[\w.-]+:[\w.-]+$/);
       expect(args[args.indexOf("-ec") + 1]).toContain('chown -R "$1" /restore');
       writes++;
       if (failEveryWrite) {
         return { code: 1, stderr: "injected volume write failure" };
       }
-      const rootDir = join(directory, "volumes", root);
+      const rootDir = join(directory, "volumes", root!);
       await rm(rootDir, { recursive: true });
       await mkdir(rootDir);
       await pipeline(
@@ -251,7 +248,7 @@ afterEach(async () => {
   await rm(directory, { recursive: true, force: true });
 });
 
-test("recreates immutable identity overrides and imports all roots before first start", async () => {
+test("imports all roots before the first start", async () => {
   await restoreHostTeleportTarget(entry, archive, recovery);
   for (const root of STATE_ROOTS) {
     expect(
@@ -280,12 +277,10 @@ test("recreates immutable identity overrides and imports all roots before first 
   expect(installs).toHaveLength(4);
   expect(installs.every(({ index }) => index < firstStart)).toBe(true);
 });
-test("readiness failure restores original ciphertext and gateway identity, then revives", async () => {
-  // The first wake's readiness failure triggers the recovery path: the
-  // recovery archive (the destination's own pre-teleport root) is
-  // imported, and the revive's recreate rebuilds the containers with ITS
-  // identity before the second wake succeeds.
-  wakeSpy = spyOn(localMode, "wakeAssistant").mockRejectedValueOnce(
+test("readiness failure restores the recovery archive and leaves services stopped", async () => {
+  // The in-container probes died with the resume method; the wake's own
+  // readiness failure is the trigger now.
+  wakeSpy = spyOn(localMode, "wakeAssistant").mockRejectedValue(
     new Error("containers did not become ready"),
   );
   await expect(
@@ -302,15 +297,9 @@ test("readiness failure restores original ciphertext and gateway identity, then 
       "utf8",
     ),
   ).toBe("original ciphertext");
-  expect(
-    await readFile(
-      join(directory, "volumes", "gateway-security", "actor-token-signing-key"),
-    ),
-  ).toEqual(Buffer.alloc(32, 7));
-  expect(states.get(names.gatewayContainer)!.Config.Env).toContain(
-    "ACTOR_TOKEN_SIGNING_KEY=" + "07".repeat(32),
+  expect([...states.values()].every((state) => !state.State.Running)).toBe(
+    true,
   );
-  expect(states.get(names.gatewayContainer)!.State.Running).toBe(true);
 });
 test("unrecoverable writes leave services stopped and report the retained recovery tar", async () => {
   failEveryWrite = true;
@@ -331,4 +320,93 @@ test("legacy vbundle is rejected before touching destination containers", async 
     ),
   ).rejects.toThrow("vellum-to-cadet");
   expect(commands.calls).toHaveLength(0);
+});
+
+test("a fresh docker target initializes the volumes without creating containers", async () => {
+  // No containers exist yet for a fresh target — the inspect handler's
+  // "No such container" answer drives the storage through its spec-derived
+  // mounts, and the init must never create or start a container itself.
+  states.clear();
+  const openPort = spyOn(localMode, "findOpenPort")
+    .mockResolvedValueOnce(7830)
+    .mockResolvedValueOnce(7821);
+  const pull = spyOn(localMode, "pullImage").mockResolvedValue(undefined);
+  const save = spyOn(localMode, "saveLockfileAssistant").mockImplementation(
+    async () => undefined as never,
+  );
+  let writesAtSave = -1;
+  save.mockImplementation(async () => {
+    writesAtSave = writes;
+    return undefined as never;
+  });
+  // The busybox chown run carries no -i, so it needs its own arm (the -i
+  // installs keep riding the beforeEach harness).
+  commands.on(
+    "docker",
+    (args) => args[0] === "run" && !args.includes("-i"),
+    () => ({}),
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "network",
+    () => ({}),
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "volume",
+    () => ({}),
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "info",
+    () => ({}),
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "--version",
+    () => ({
+      stdout: "Docker version 27.0.0, build 1",
+    }),
+  );
+
+  try {
+    const hatched = await initializeDockerTeleportTarget(
+      "fresh-target",
+      archive,
+    );
+    expect(hatched.cloud).toBe("docker");
+    const entry = hatched as DockerAssistant;
+
+    const refs = resolveOwnImageRefs(cliPkg.version);
+    expect(entry.port).toBe(7830);
+    expect(entry.daemonPort).toBe(7821);
+    expect(entry.hatchedAt).toBeTruthy();
+    expect(entry.containerInfo).toEqual({
+      assistantImage: refs.assistant,
+      gatewayImage: refs.gateway,
+      cesImage: refs["credential-executor"],
+    });
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "fresh-target" }),
+      "fresh-target",
+    );
+    // The data landed before the entry was persisted.
+    expect(writesAtSave).toBe(4);
+    for (const root of STATE_ROOTS) {
+      expect(
+        await readFile(join(directory, "volumes", root, "value"), "utf8"),
+      ).toBe("source");
+    }
+    // initialize-data only: no container is ever created or started here —
+    // the wake's recreate owns the containers from the recorded images.
+    expect(
+      commands.calls.some((request) =>
+        ["create", "start"].includes(request.args[0] ?? ""),
+      ),
+    ).toBe(false);
+  } finally {
+    openPort.mockRestore();
+    pull.mockRestore();
+    save.mockRestore();
+  }
 });

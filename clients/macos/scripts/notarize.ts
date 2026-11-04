@@ -58,8 +58,36 @@ function runNotary(args: string[]): { code: number | null; output: string } {
   return { code: proc.exitCode, output };
 }
 
-/** Apple's terminal verdicts; anything else keeps the poll spinning. */
+/**
+ * Apple's terminal verdicts; anything else keeps the poll spinning.
+ */
 const TERMINAL_STATUSES = ["Accepted", "Invalid", "Rejected"];
+
+/**
+ * The submission's status, read off `notarytool info`. The JSON format is
+ * the stable contract (`.status`), but run #122 showed Apple's text output
+ * drifting between "Status:" and "status:" spellings across Xcode versions —
+ * the parser saw "unknown" every poll while the submission was Accepted the
+ * whole time. Parse JSON first; fall back to a case-insensitive line scan.
+ */
+function notarizationStatus(output: string): string {
+  try {
+    const parsed = JSON.parse(output) as { status?: string; Status?: string };
+    const status = parsed.status ?? parsed.Status;
+    if (typeof status === "string") return status.trim();
+  } catch {
+    // not plain JSON — fall through to the text scan
+  }
+  return (
+    output
+      .split("\n")
+      .find((line) => /^status:/i.test(line))
+      ?.split(/:/)
+      .slice(1)
+      .join(":")
+      .trim() ?? ""
+  );
+}
 
 try {
   console.log("Submitting Electron DMG for notarization...");
@@ -81,13 +109,14 @@ try {
   let status = "";
   for (let poll = 0; poll < 25; poll++) {
     await new Promise((resolve) => setTimeout(resolve, 45_000));
-    const info = runNotary(["info", submissionId, ...notaryArgs]);
-    status =
-      info.output
-        .split("\n")
-        .find((line) => line.startsWith("Status:"))
-        ?.slice("Status:".length)
-        .trim() ?? "";
+    const info = runNotary([
+      "info",
+      submissionId,
+      "--output-format",
+      "json",
+      ...notaryArgs,
+    ]);
+    status = notarizationStatus(info.output);
     console.log(
       `${new Date().toISOString()} notarization status: ${status || "unknown"}`,
     );

@@ -11,7 +11,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router";
 
 import { buildIdentitySections } from "./identity-sections";
-import { SectionCard } from "./identity-overview";
+import { SectionCard } from "../identity-page";
 
 const AVATAR_HEX = "#9b6bd6";
 

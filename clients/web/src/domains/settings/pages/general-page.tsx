@@ -11,10 +11,7 @@ import {
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
-import {
-  AssistantUpgrades,
-  LocalAssistantUpgrades,
-} from "@/domains/settings/components/assistant-upgrades";
+import { AssistantUpgrades } from "@/domains/settings/components/assistant-upgrades";
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
@@ -25,17 +22,7 @@ import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
-import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
-import {
-  getRemoteAssistantDisplayName,
-  getRemoteGatewayHubUrl,
-  getActiveAssistant,
-  isLocalAssistant,
-  isLocalClient,
-  isCadetCloudRemote,
-} from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsNativeMobile } from "@/runtime/platform-detection";
 import { useTranslation } from "@/i18n";
 import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { openExternalUrl } from "@/runtime/browser";
@@ -45,13 +32,9 @@ export function GeneralPage() {
   const { t } = useTranslation("settings");
   const { assistant, healthz, healthzLoading, refetch } =
     useAssistantWithHealthz();
-  const isNativeMobile = useIsNativeMobile();
   const navigate = useNavigate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const diskPressure = useDiskPressureMonitor({
-    assistantId: assistant?.id ?? null,
-    enabled: isCloudHosted,
-  });
+  const diskPressure = useDiskPressureMonitor();
   const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,17 +52,12 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  const selected = getActiveAssistant();
-  const hasSelectedLocalAssistant =
-    isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
-  const canUpgradeLocally = hasSelectedLocalAssistant && !!isCadetCloudRemote();
-  // Whether an upgrade panel (platform or local) is on screen. Both panels
-  // render the "Current" version line that carries the 7-tap developer-mode
-  // unlock, so when neither shows we must render a standalone version line to
-  // avoid dropping both the version display and the only unlock affordance
-  // (e.g. logged out of the cloud, or a self-hosted/remote-gateway runtime
-  // that can't upgrade locally).
-  const showsUpgradePanel = (isCloudHosted || canUpgradeLocally) && !!assistant;
+  // Whether the platform upgrade panel is on screen. It renders the
+  // "Current" version line that carries the 7-tap developer-mode unlock, so
+  // when it does not show we must render a standalone version line to avoid
+  // dropping both the version display and the only unlock affordance (e.g.
+  // logged out of the cloud, or a self-hosted/remote-gateway runtime).
+  const showsUpgradePanel = isCloudHosted && !!assistant;
 
   useEffect(() => {
     if (!assistant || window.location.hash !== "#storage-resources") {
@@ -93,29 +71,9 @@ export function GeneralPage() {
     });
   }, [assistant]);
 
-  const versionValue =
-    healthz?.version ?? assistant?.current_release_version ?? null;
+  const versionValue = healthz?.version ?? null;
 
   const openAssistantChooser = () => {
-    const hubUrl = getRemoteGatewayHubUrl();
-    if (!isCadetCloudRemote() && !isNativeMobile && hubUrl) {
-      // Self-registration handoff: landing on the hub chooser records this
-      // origin in the hub's remembered list. `hubUrl` is the hub SPA's
-      // assistant root (`<origin>/assistant`), so the absolute chooser route
-      // hangs off its origin.
-      const params = new URLSearchParams({
-        register: remoteGatewayPublicBaseUrl(),
-      });
-      const assistantName = getRemoteAssistantDisplayName();
-      if (assistantName) {
-        params.set("name", assistantName);
-      }
-      const hubOrigin = new URL(hubUrl).origin;
-      window.location.assign(
-        `${hubOrigin}/account/select-assistant?${params.toString()}`,
-      );
-      return;
-    }
     void navigate(routes.assistant);
   };
 
@@ -139,7 +97,7 @@ export function GeneralPage() {
         />
       )}
 
-      <ProfileCard assistant={assistant} showHandles={isCloudHosted}>
+      <ProfileCard showHandles={isCloudHosted}>
         <TimezoneSection />
         <ThisDeviceSection />
       </ProfileCard>
@@ -162,7 +120,6 @@ export function GeneralPage() {
           {isCloudHosted && assistant && (
             <>
               <AssistantUpgrades
-                assistantId={assistant.id}
                 currentVersion={versionValue}
                 onUpgradeComplete={() => {
                   void refetch();
@@ -170,21 +127,12 @@ export function GeneralPage() {
               />
             </>
           )}
-          {canUpgradeLocally && assistant && (
-            <LocalAssistantUpgrades
-              assistantId={assistant.id}
-              currentVersion={versionValue}
-              onUpgradeComplete={() => {
-                void refetch();
-              }}
-            />
-          )}
           {!showsUpgradePanel && assistant && (
             <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
               <span className="text-body-medium-default text-[var(--content-tertiary)]">
                 {t("generalPage.current")}
               </span>
-              {healthzLoading && !assistant.current_release_version ? (
+              {healthzLoading ? (
                 <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
                   —
                 </span>
@@ -199,7 +147,6 @@ export function GeneralPage() {
       </DetailCard>
       {isCloudHosted && assistant && (
         <UpdateWindowModal
-          assistantId={assistant.id}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />

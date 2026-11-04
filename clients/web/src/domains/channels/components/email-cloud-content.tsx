@@ -63,14 +63,11 @@ export function domainVerificationRefetchInterval(
 }
 
 interface EmailCloudContentProps {
-  assistantId: string;
   emailRootDomain: string;
 }
 
-export function EmailCloudContent({
-  assistantId,
-  emailRootDomain,
-}: EmailCloudContentProps) {
+export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("channels");
   const queryClient = useQueryClient();
   const navigate = useNavigate();

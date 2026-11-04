@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, Cloud, Laptop } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
 import { AccountShell } from "@app/components/account/account-shell";
@@ -12,73 +12,51 @@ import { useAuthStore } from "@app/stores/auth-store";
 import { useTranslation } from "@app/i18n";
 import { docsUrl, routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
-
-type HostingMode = "cadet-cloud" | "local" | "docker";
+import type { Remote } from "@mycadet/local-mode/contract";
 
 interface HostingOption {
-  mode: HostingMode;
+  mode: Remote;
   label: string;
   subtitle: string;
   icon: ReactNode;
-  disabled?: boolean;
-  badge?: string;
 }
 
-function useHostingOptions(hasCloudSession: boolean): HostingOption[] {
-  const cloudDisabled = !hasCloudSession;
-
-  return [
-    {
-      mode: "cadet-cloud",
-      label: "Cadet Cloud",
-      subtitle:
-        "Always on, 24/7, even when your computer is off. Runs on Cadet's secure infrastructure.",
-      icon: <Cloud className="h-5 w-5 shrink-0" />,
-      ...(cloudDisabled
-        ? {
-            disabled: true,
-            badge: hasCloudSession ? "Limit Reached" : "Requires Account",
-          }
-        : {}),
-    },
-    {
-      mode: "local",
-      label: "Local",
-      subtitle:
-        "Runs directly on your machine. Your data never leaves your computer.",
-      icon: <Laptop className="h-5 w-5 shrink-0" />,
-    },
-  ];
-}
+const HOSTING_OPTIONS: HostingOption[] = [
+  {
+    mode: "cloud",
+    label: "Cadet Cloud",
+    subtitle:
+      "Always on, 24/7, even when your computer is off. Runs on Cadet's secure infrastructure.",
+    icon: <Cloud className="h-5 w-5 shrink-0" />,
+  },
+  {
+    mode: "local",
+    label: "Local",
+    subtitle:
+      "Runs directly on your machine. Your data never leaves your computer.",
+    icon: <Laptop className="h-5 w-5 shrink-0" />,
+  },
+];
 
 /**
  * The funnel's hosting choice, ported from web's
  * `/assistant/onboarding/hosting` — now `/account/onboarding/hosting`, rendered
- * with the account screens' compact chrome. A live cloud session unlocks the
- * managed option; its absence locks the card behind a login hand-off to the
- * app's own login page.
+ * with the account screens' compact chrome. Without a live cloud session the
+ * cloud card carries the login hand-off to the app's own login page.
  */
 export function HostingScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
   // The resolver's funnel fork reads the same verdict: a live cloud session.
   const hasCloudSession = useAuthStore((s) => s.cloudSession === "present");
-  const options = useHostingOptions(hasCloudSession);
-  const cloudDisabled = options.find((o) => o.mode === "cadet-cloud")?.disabled;
-  const [selected, setSelected] = useState<HostingMode>(
-    hasCloudSession && !cloudDisabled ? "cadet-cloud" : "local",
+  const [selected, setSelected] = useState<Remote>(
+    hasCloudSession ? "cloud" : "local",
   );
-
-  useEffect(() => {
-    if (cloudDisabled && selected === "cadet-cloud") {
-      setSelected("local");
-    }
-  }, [cloudDisabled, selected]);
 
   const showLogin = !hasCloudSession;
 
   const onContinue = () => {
-    if (selected === "cadet-cloud") {
+    if (selected === "cloud") {
       // Cloud is managed: drop any provider key staged from a prior
       // Local/Docker visit so it can't leak into a later local hatch.
       setPendingProviderKey(null);
@@ -124,20 +102,16 @@ export function HostingScreen() {
           onKeyDown={handleRadioCardArrowNav}
           className="mt-8 grid w-full gap-2"
         >
-          {options.map((opt) => (
+          {HOSTING_OPTIONS.map((opt) => (
             <HostingCard
               key={opt.mode}
               option={opt}
               selected={selected === opt.mode}
               tabStop={selected === opt.mode}
-              onSelect={() => {
-                if (!opt.disabled) {
-                  setSelected(opt.mode);
-                }
-              }}
+              onSelect={() => setSelected(opt.mode)}
               loginLabel={t("actions.loginToUse")}
               onLogin={
-                opt.disabled && opt.mode === "cadet-cloud" && showLogin
+                opt.mode === "cloud" && showLogin
                   ? () => {
                       void navigate(
                         `${routes.account.login}?returnTo=${encodeURIComponent(routes.account.onboarding.hosting)}`,
@@ -184,47 +158,34 @@ function HostingCard({
   tabStop: boolean;
   onSelect: () => void;
   loginLabel: string;
-  /** Present on the locked cloud card when logging in can unlock it. */
+  /** Present on the cloud card when logging in brings the session. */
   onLogin?: () => void;
 }) {
-  const locked = !!option.disabled;
-  // The badge explains a lock nothing on this card can lift (e.g. Limit
-  // Reached); when logging in unlocks the card, the login button replaces it.
-  const badge = onLogin ? undefined : option.badge;
-
   return (
     <div
-      role={locked ? undefined : "radio"}
-      aria-checked={locked ? undefined : selected}
-      tabIndex={locked ? undefined : tabStop ? 0 : -1}
-      onClick={locked ? undefined : onSelect}
-      onKeyDown={
-        locked
-          ? undefined
-          : (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onSelect();
-              }
-            }
-      }
+      role="radio"
+      aria-checked={selected}
+      tabIndex={tabStop ? 0 : -1}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={[
         "group flex w-full items-center gap-3 rounded-lg border p-3 text-left",
         "transition-all duration-200 ease-out",
-        locked
-          ? "border-[var(--border-base)] bg-[var(--surface-overlay)]"
-          : "cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary-base)]",
-        locked
-          ? ""
-          : selected
-            ? "border-[var(--primary-base)] bg-[var(--surface-lift)]"
-            : "border-[var(--border-base)] bg-[var(--surface-lift)]/60 hover:border-[var(--border-element)] hover:bg-[var(--surface-lift)]",
+        "cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary-base)]",
+        selected
+          ? "border-[var(--primary-base)] bg-[var(--surface-lift)]"
+          : "border-[var(--border-base)] bg-[var(--surface-lift)]/60 hover:border-[var(--border-element)] hover:bg-[var(--surface-lift)]",
       ].join(" ")}
     >
       <div
         className={[
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-200",
-          selected && !locked
+          selected
             ? "bg-[var(--primary-base)] text-[var(--surface-base)]"
             : "bg-[var(--surface-active)]/40 text-[var(--content-secondary)]",
         ].join(" ")}
@@ -236,11 +197,6 @@ function HostingCard({
           <span className="text-body-medium-default text-[var(--content-default)]">
             {option.label}
           </span>
-          {badge && (
-            <span className="rounded-full bg-[var(--surface-active)]/40 px-2 py-0.5 text-label-medium-default text-[var(--content-tertiary)]">
-              {badge}
-            </span>
-          )}
         </div>
         <span className="mt-1 line-clamp-2 text-label-medium-default leading-[14px] text-[var(--content-tertiary)]">
           {option.subtitle}
@@ -256,23 +212,21 @@ function HostingCard({
           {loginLabel}
         </Button>
       )}
-      {!locked && (
-        <div
-          className={[
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
-            selected
-              ? "border-[var(--primary-base)] bg-[var(--primary-base)]"
-              : "border-[var(--border-element)] group-hover:border-[var(--content-tertiary)]",
-          ].join(" ")}
-        >
-          {selected && (
-            <Check
-              className="h-3 w-3 text-[var(--surface-base)]"
-              strokeWidth={3}
-            />
-          )}
-        </div>
-      )}
+      <div
+        className={[
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+          selected
+            ? "border-[var(--primary-base)] bg-[var(--primary-base)]"
+            : "border-[var(--border-element)] group-hover:border-[var(--content-tertiary)]",
+        ].join(" ")}
+      >
+        {selected && (
+          <Check
+            className="h-3 w-3 text-[var(--surface-base)]"
+            strokeWidth={3}
+          />
+        )}
+      </div>
     </div>
   );
 }

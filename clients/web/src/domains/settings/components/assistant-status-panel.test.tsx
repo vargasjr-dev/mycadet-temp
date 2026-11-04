@@ -22,7 +22,6 @@ import {
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { getAssistant } from "@/assistant/api";
 import type { healthzGet } from "@/generated/daemon/sdk.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import {
@@ -30,6 +29,7 @@ import {
   stubModule,
 } from "@/utils/module-mock.test-helper";
 import type { toast } from "@mycadet/design-library";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const HEALTHZ: HealthzGetResponse = {
   version: "1.2.3",
@@ -67,10 +67,6 @@ const healthzGetMock = mock(async () => {
   };
 });
 
-let assistantCalls = 0;
-/** Held open by default, so "healthz did not wait for it" is observable. */
-let releaseAssistant: (() => void) | null = null;
-
 const captureErrorMock = mock((_error: unknown, _tags: unknown) => {});
 const toastErrorMock = mock((_message: string) => {});
 
@@ -85,17 +81,8 @@ stubModule(
   { healthzGet: healthzGetMock as unknown as typeof healthzGet },
 );
 
-stubModule("@/assistant/api", await import("@/assistant/api"), {
-  getAssistant: (async () => {
-    assistantCalls += 1;
-    if (releaseAssistant !== null) {
-      await new Promise<void>((resolve) => {
-        releaseAssistant = () => resolve();
-      });
-    }
-    return { ok: true, status: 200, data: { id: "a-1", name: "Assistant" } };
-  }) as unknown as typeof getAssistant,
-});
+const storeModule = await import("@/stores/resolved-assistant-store");
+stubModule("@/stores/resolved-assistant-store", storeModule, {});
 
 stubModule(
   "@/assistant/use-active-assistant-id",
@@ -129,13 +116,17 @@ function wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   healthzCalls = 0;
-  assistantCalls = 0;
   healthzFails = false;
   healthzResponse = HEALTHZ;
   holdHealthz = null;
-  releaseAssistant = null;
   captureErrorMock.mockClear();
   toastErrorMock.mockClear();
+  // The store IS the resolution: the panel reads its entry, no fetch.
+  storeModule.useResolvedAssistantStore.getState().setAssistant({
+    cloud: "cloud",
+    assistantId: "a-1",
+    name: "Assistant",
+  } as LockfileAssistant);
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -194,20 +185,6 @@ describe("useAssistantWithHealthz", () => {
     expect(second.result.current.healthz).toEqual(HEALTHZ);
     expect(second.result.current.healthzLoading).toBe(false);
     await waitFor(() => expect(healthzCalls).toBe(2));
-  });
-
-  test("the health read does not queue behind the assistant record", async () => {
-    // GIVEN an assistant record that never resolves, standing in for a slow
-    // round trip over the tunnel
-    releaseAssistant = () => {};
-
-    // WHEN the hook mounts
-    renderHook(() => useAssistantWithHealthz(), { wrapper });
-
-    // THEN health is fetched anyway: the two reads go out together rather than
-    // nose to tail, which over a tunnel was a whole extra round trip
-    await waitFor(() => expect(healthzCalls).toBe(1));
-    expect(assistantCalls).toBe(1);
   });
 
   test("reports a failure when there is nothing to show", async () => {
@@ -275,7 +252,7 @@ describe("useAssistantWithHealthz", () => {
     holdHealthz = new Promise<void>((resolve) => {
       releaseRefresh = () => resolve();
     });
-    let refreshing: Promise<void> = Promise.resolve();
+    let refreshing: Promise<unknown> = Promise.resolve();
     act(() => {
       refreshing = result.current.refetch();
     });

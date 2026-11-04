@@ -4,8 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as backupOps from "../lib/backup-ops.js";
-import * as roots from "../lib/root-backup.js";
 import * as localMode from "@mycadet/local-mode";
 import * as platform from "../lib/teleport-backup.js";
 import * as guardian from "../lib/guardian-token.js";
@@ -14,12 +12,12 @@ import { backup } from "../commands/backup.js";
 const directory = mkdtempSync(join(tmpdir(), "backup-command-test-"));
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
-const backupDir = spyOn(backupOps, "getBackupsDir").mockReturnValue(directory);
-const capture = spyOn(roots, "createRootBackup");
+const backupDir = spyOn(localMode, "getBackupsDir").mockReturnValue(directory);
+const capture = spyOn(localMode, "createRootBackup");
 const readToken = spyOn(localMode, "readCloudToken");
 const cloudBackup = spyOn(platform, "createPlatformBackup");
 const guardianRead = spyOn(guardian, "loadGuardianToken");
-const guardianLease = spyOn(guardian, "leaseGuardianToken");
+const guardianLease = spyOn(localMode, "leaseGuardianToken");
 
 beforeEach(() => {
   lookup.mockReset();

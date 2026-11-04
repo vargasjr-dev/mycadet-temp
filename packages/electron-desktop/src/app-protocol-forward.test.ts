@@ -26,11 +26,14 @@ mock.module("electron", () => ({
   protocol: { handle: protocolHandle },
 }));
 
+import * as realLocalMode from "@mycadet/local-mode";
+
 const forwardOperator = mock(async (): Promise<Response | null> => null);
 const forwardGateway = mock(async (): Promise<Response | null> => null);
 const forwardCloud = mock(async (): Promise<Response | null> => null);
 
-mock.module("./operator-forward", () => ({
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
   forwardOperatorRequest: forwardOperator,
 }));
 mock.module("./gateway-forward", () => ({

@@ -5,15 +5,12 @@ import { Modal } from "@mycadet/design-library";
 import { ChannelTrustFloorSection } from "@/domains/channels/components/channel-trust-floor-section";
 import { EmailCloudContent } from "@/domains/channels/components/email-cloud-content";
 import { useChannelTrustFloors } from "@/domains/channels/hooks/use-channel-trust-floors";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useTranslation } from "@/i18n";
 
 export interface EmailSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The cloud assistant id the email routes take. */
-  assistantId: string;
-  /** The local assistant id the gateway's channel policy routes take. */
-  localAssistantId: string;
   assistantName: string;
   emailRootDomain: string;
 }
@@ -30,13 +27,12 @@ export interface EmailSettingsModalProps {
 export function EmailSettingsModal({
   open,
   onOpenChange,
-  assistantId,
-  localAssistantId,
   assistantName,
   emailRootDomain,
 }: EmailSettingsModalProps) {
   const { t } = useTranslation("channels");
-  const floors = useChannelTrustFloors(localAssistantId);
+  const assistantId = useActiveAssistantId();
+  const floors = useChannelTrustFloors(assistantId);
   return (
     <Modal.Root open={open} onOpenChange={onOpenChange}>
       <Modal.Content size="md">
@@ -48,10 +44,7 @@ export function EmailSettingsModal({
         </Modal.Header>
         <Modal.Body>
           <div className="flex flex-col gap-5">
-            <EmailCloudContent
-              assistantId={assistantId}
-              emailRootDomain={emailRootDomain}
-            />
+            <EmailCloudContent emailRootDomain={emailRootDomain} />
             {floors.onChange ? (
               <div className="border-t border-[var(--border-subtle)] pt-5">
                 <ChannelTrustFloorSection

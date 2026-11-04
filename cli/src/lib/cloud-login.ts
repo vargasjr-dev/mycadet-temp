@@ -7,30 +7,18 @@
  */
 
 import { pollingCloudLogin } from "./cloud-login-poll.js";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { isCloudHome } from "./cloud-values.js";
+import {
+  fetchCurrentUser,
+  getCloudUrl,
+  readCloudToken,
+} from "@mycadet/local-mode";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 
-import { resolveAssistant } from "./assistant-config.js";
-import {
-  fetchOrganizationId,
-  getCloudUrl,
-  readCloudToken,
-  saveLockfileAssistant,
-} from "@mycadet/local-mode";
-import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
-import { computeDeviceId, loadGuardianToken } from "./guardian-token.js";
 import { openBrowser } from "./open-browser.js";
-import {
-  ensureSelfHostedLocalRegistration,
-  fetchCurrentUser,
-  injectCredentialsIntoAssistant,
-  saveCloudToken,
-} from "./cloud-client.js";
-import { fetchAssistantIngressUrl } from "./upgrade-lifecycle.js";
-import { fetchCurrentVersion } from "@mycadet/local-mode";
+import { saveCloudToken } from "./cloud-client.js";
+
 import {
   CALLBACK_PATH,
   buildAuthorizeUrl,
@@ -338,95 +326,4 @@ export function describeLoginError(error: unknown): string {
     `${getCloudUrl()}'s TLS certificate is missing or still provisioning. ` +
     "Retry in a few minutes, or point CADET_CLOUD_URL at a reachable host."
   );
-}
-
-/** The guardian bearer recorded beside the lockfile, for gateway calls. */
-function guardianBearer(assistantId: string): string | undefined {
-  return loadGuardianToken(assistantId)?.accessToken;
-}
-
-/**
- * Register the active self-hosted assistant with the cloud and inject
- * cloud credentials into its runtime — the post-login half of the desktop
- * app's LocalAssistantBootstrapService flow. Extracted so `cadet hatch` can
- * complete the same flow right after an interactive login on the Cadet Cloud
- * provider path. Non-fatal by design; callers log failures. Reads the cloud
- * session token and the guardian bearer from their disk files.
- */
-export async function registerLocalAssistantWithCloud(
-  user: { id: string; email: string },
-  log: (message: string) => void = console.log,
-): Promise<void> {
-  // Both credentials come from disk: the cloud session token saved by
-  // `cadet login`, and the guardian bearer beside the lockfile — the same
-  // credential the assistant's gateway leases.
-  const token = readCloudToken();
-  if (!token) return;
-  const entry = resolveAssistant();
-
-  // Skip managed ("cadet") assistants — they are handled by the cloud.
-  if (!entry || isCloudHome(entry.cloud)) return;
-
-  const gatewayUrl = getGatewayUrl(entry);
-
-  const orgId = await fetchOrganizationId(token);
-  const clientInstallationId = computeDeviceId();
-  const [assistantVersion, ingressUrl] = await Promise.all([
-    fetchCurrentVersion(gatewayUrl),
-    fetchAssistantIngressUrl(gatewayUrl, guardianBearer(entry.assistantId)),
-  ]);
-  const cloudUrl = getCloudUrl();
-  const registration = await ensureSelfHostedLocalRegistration(
-    token,
-    orgId,
-    clientInstallationId,
-    entry.assistantId,
-    "cli",
-    assistantVersion,
-    cloudUrl,
-    ingressUrl,
-  );
-  saveLockfileAssistant({
-    ...entry,
-    cloudAssistantId: registration.assistant.id,
-    cloudBaseUrl: cloudUrl,
-    cloudOrganizationId: orgId,
-  });
-  log(
-    `Registered assistant: ${registration.assistant.name} (${registration.assistant.id})`,
-  );
-
-  // Which key to hand the assistant, and why. Shared with teleport so
-  // the two injection paths cannot drift.
-  const resolved = await resolveAssistantApiKeyForInjection({
-    registrationApiKey: registration.assistant_api_key,
-    runtimeUrl: gatewayUrl,
-    bearerToken: guardianBearer(entry.assistantId),
-    token,
-    organizationId: orgId,
-    clientInstallationId,
-    runtimeAssistantId: entry.assistantId,
-    clientPlatform: "cli",
-  });
-  const assistantApiKey = resolved.apiKey;
-  if (resolved.source === "reprovisioned") {
-    log("Provisioning a replacement API key...");
-  }
-
-  // Inject credentials into the running assistant via the gateway,
-  // mirroring the desktop app's LocalAssistantBootstrapService flow.
-  const allInjected = await injectCredentialsIntoAssistant({
-    gatewayUrl: gatewayUrl,
-    bearerToken: guardianBearer(entry.assistantId),
-    assistantApiKey,
-    cloudAssistantId: registration.assistant.id,
-    organizationId: orgId,
-    userId: user.id,
-    webhookSecret: registration.webhook_secret,
-  });
-  if (allInjected) {
-    log("Injected cloud credentials into assistant.");
-  } else {
-    console.warn("Some credentials could not be injected into the assistant.");
-  }
 }

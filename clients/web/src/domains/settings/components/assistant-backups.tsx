@@ -21,6 +21,7 @@ import {
   type ManagedExportStep,
 } from "@/domains/settings/teleport/cloud-export";
 import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
@@ -78,17 +79,19 @@ function formatTimestamp(value: unknown): string {
   });
 }
 
-export function AssistantBackups({ assistantId }: { assistantId: string }) {
+export function AssistantBackups() {
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const { t } = useTranslation("settings");
   if (!isCloudHosted) {
     return <p>{t("assistantBackups.cliOnly")}</p>;
   }
-  return <CloudAssistantBackups assistantId={assistantId} />;
+  return <CloudAssistantBackups />;
 }
 
-function CloudAssistantBackups({ assistantId }: { assistantId: string }) {
+function CloudAssistantBackups() {
   const { t } = useTranslation("settings");
+  // The panel is the active assistant's — the id is the store's.
+  const assistantId = useActiveAssistantId();
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backups, setBackups] = useState<AssistantBackup[]>([]);

@@ -90,7 +90,6 @@ function renderViewer(props?: {
         appId={props?.appId ?? "app-1"}
         appName="My App"
         html="<html><body>hi</body></html>"
-        assistantId="assistant-1"
         onClose={() => {}}
         onNavigateAppRoute={props?.onNavigateAppRoute ?? (() => {})}
         enableFullscreen={props?.enableFullscreen}
@@ -188,7 +187,6 @@ describe("AppViewerContainer app actions", () => {
           appId="app-1"
           appName="My App"
           html="<html><body>hi</body></html>"
-          assistantId="assistant-1"
           onClose={() => {}}
           onNavigateAppRoute={() => {}}
           onAction={onAction}

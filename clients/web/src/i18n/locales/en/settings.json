@@ -95,18 +95,15 @@
   },
   "assistantStatusPanel": {
     "assistantId": "Assistant ID",
+    "active": "Active",
     "cpuUsage": "CPU Usage",
     "created": "Created",
-    "description": "Description",
     "diskUnavailable": "Disk status unavailable",
     "diskUsage": "Disk Usage",
-    "empty": "No assistant found. Hatch an assistant to get started.",
     "loadHealthzFailed": "Failed to load assistant info",
-    "loading": "Loading assistant info...",
     "loadingCpu": "Loading CPU status...",
     "loadingDisk": "Loading disk status...",
     "loadingMemory": "Loading memory status...",
-    "machineId": "Machine ID",
     "memoryUsage": "Memory Usage",
     "name": "Name",
     "status": "Status",
@@ -115,7 +112,6 @@
     "version": "Version"
   },
   "assistantTerminalPanel": {
-    "noAssistant": "No assistant found. Hatch an assistant to use the terminal.",
     "subtitle": "Interactive shell session on your assistant machine",
     "targetContainer": "Target container",
     "title": "Terminal"
@@ -137,7 +133,6 @@
     "toastUpdateInitiated": "Update to {version} initiated.",
     "update": "Update",
     "updateTo": "Update to",
-    "updateToVersion": "Update to {version}",
     "updating": "Updating..."
   },
   "autoTopUpPaymentMethodModal": {
@@ -306,20 +301,8 @@
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
   },
-  "debugBundleExport": {
-    "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
-    "export": "Export debug bundle",
-    "exporting": "Exporting…",
-    "sentAt": "Sent to Cadet at {time}.",
-    "toastFailed": "The debug bundle was not sent.",
-    "toastFailedWithReason": "The debug bundle was not sent: {reason}",
-    "toastSent": "Debug bundle sent to Cadet."
-  },
   "debugControlsPanel": {
     "backups": "Backups",
-    "loadFailedToast": "Failed to load assistant info",
-    "loading": "Loading assistant info...",
-    "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
     "subtitle": "Manage your assistant backups.",
     "title": "General"
   },
@@ -756,20 +739,6 @@
     "serviceFallbackName": "the tunnel provider",
     "serviceWebsite": "This is {service}'s website, not your assistant's address. Start a tunnel on the host to get one; `cadet tunnel --help` lists the providers.",
     "unparseable": "Enter a valid URL, e.g. https://your-assistant.ts.net."
-  },
-  "pairedDevicesSection": {
-    "browserOnOs": "{browser} on {os}",
-    "confirmMessageNamed": "{name} ({hash}) loses access to this assistant. Its access tokens are invalidated immediately; that device must be paired again from this machine to reconnect.",
-    "confirmTitle": "Revoke this device?",
-    "dateUnknown": "unknown",
-    "hostRevokeDisabledTitle": "This is this machine's own credential; revoking it would lock the host out of the assistant.",
-    "pairedActiveLine": "Paired {paired} · Active now",
-    "pairedAndUsedLine": "Paired {paired} · Last used {lastUsed}",
-    "pairedLine": "Paired {paired}",
-    "platformUnknown": "Unknown",
-    "revokeButton": "Revoke",
-    "thisMachine": "This machine",
-    "title": "Paired devices ({count})"
   },
   "paymentMethodRow": {
     "savedCard": "Saved card"

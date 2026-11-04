@@ -4,13 +4,12 @@ import {
 } from "@mycadet/service-contracts/ingress";
 
 import { readRootProcesses } from "../lib/assistant-config";
-import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
+import { ensureAppServer, type AppServer } from "../lib/servers/common.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
   clearReservedDomain,
-  ensureNginxForEdge,
   providerSupportsReservedDomain,
   runProviderTunnel,
   stopTunnelProcess,
@@ -269,21 +268,19 @@ export const tunnel = Object.assign(
     }
 
     // The tunnel is assistant-agnostic: its only concern is the app server —
-    // a machine-level edge that resolves whatever it fronts from the lockfile
-    // itself. ensureAppServer starts the edge when it is down and reuses it
-    // when up; the tunnel fronts the port it reports.
+    // a machine-level server that resolves whatever it fronts from the
+    // lockfile itself. ensureAppServer starts it when it is down and reuses
+    // it when up; the tunnel fronts the port it reports.
 
     if (clearDomain) {
       clearReservedDomain();
       console.log("Cleared the saved reserved domain.");
     }
 
-    await ensureNginxForEdge();
-
     let edge: AppServer;
     try {
-      // The edge resolves the assistant it fronts (and the gateway to proxy)
-      // from the lockfile itself — no per-assistant threading here.
+      // The app server resolves the assistant it fronts (and the gateway to
+      // proxy) from the lockfile itself — no per-assistant threading here.
       edge = await ensureAppServer();
     } catch (err) {
       console.error(

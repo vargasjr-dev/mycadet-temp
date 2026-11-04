@@ -100,8 +100,6 @@ const meta: Meta<typeof EmailSettingsModal> = {
   args: {
     open: true,
     onOpenChange: fn().mockName("onOpenChange"),
-    assistantId: ASSISTANT_ID,
-    localAssistantId: LOCAL_ASSISTANT_ID,
     assistantName: "Velly",
     emailRootDomain: ROOT_DOMAIN,
   },

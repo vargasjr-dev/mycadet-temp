@@ -14,7 +14,7 @@ import { AppProviders } from "@/components/providers";
 import { StartupFailure } from "@/components/startup-failure";
 import { WindowDragRegion } from "@/components/window-drag-region";
 import { initI18n } from "@/i18n";
-import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
+import { setupIframeNavBridge } from "@/lib/auth/iframe-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
@@ -68,7 +68,7 @@ async function boot(router: Router) {
   // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
   // boot route is announced.
-  setupRemoteGatewayNavBridge();
+  setupIframeNavBridge();
   // The resolved assistant stamped itself: the store derives its boot entry
   // from the served synthesis at module init (the host stamped the one
   // assistant this surface serves). Local mode awaits `initSession()` above,

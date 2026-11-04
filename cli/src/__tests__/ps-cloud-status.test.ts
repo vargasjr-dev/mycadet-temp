@@ -24,7 +24,7 @@ process.env.XDG_CONFIG_HOME = testDir;
 // ---------------------------------------------------------------------------
 
 import * as assistantConfig from "../lib/assistant-config.js";
-import * as healthCheck from "../lib/health-check.js";
+import * as healthCheck from "@mycadet/local-mode";
 import * as cloudClient from "../lib/cloud-client.js";
 import * as localMode from "@mycadet/local-mode";
 
@@ -53,7 +53,7 @@ const readCloudTokenMock = spyOn(localMode, "readCloudToken").mockReturnValue(
 // they're never invoked on the no-token path, and re-shaped per-test for the
 // token-but-unreachable path.
 const fetchCurrentUserMock = spyOn(
-  cloudClient,
+  localMode,
   "fetchCurrentUser",
 ).mockResolvedValue({
   id: "u1",
@@ -256,7 +256,7 @@ describe("cadet ps — platform status line", () => {
     // children of an assistant row…
     expect(output).toContain("ngrok");
     expect(output).not.toContain("└ ngrok");
-    expect(output).toContain("nginx");
+    expect(output).toContain("bun");
     // The edge's INFO leads with its listen URL (not a bare port).
     expect(output).toContain("http://127.0.0.1:7841");
     // …the type column distinguishes the three process kinds…
@@ -326,7 +326,7 @@ describe("cadet ps <built-in process name> details", () => {
     readRootProcessesMock.mockReturnValue({});
   });
 
-  test("`ps nginx` details the app edge with its listen URL", async () => {
+  test("`ps app` details the app server with its listen URL", async () => {
     readRootProcessesMock.mockReturnValue({
       app: {
         pid: 77,
@@ -334,18 +334,18 @@ describe("cadet ps <built-in process name> details", () => {
         startedAt: "2026-10-20T15:00:00.000Z",
       },
     });
-    process.argv = ["bun", "cadet", "ps", "nginx"];
+    process.argv = ["bun", "cadet", "ps", "bun"];
 
     await ps();
 
     const output = stdout.join(NL);
-    expect(output).toContain("App edge (nginx):");
+    expect(output).toContain("App server:");
     expect(output).toContain("http://127.0.0.1:7841");
   });
 
-  test("`ps nginx` with no record points at `cadet app start`", async () => {
+  test("`ps app` with no record points at `cadet app start`", async () => {
     readRootProcessesMock.mockReturnValue({});
-    process.argv = ["bun", "cadet", "ps", "nginx"];
+    process.argv = ["bun", "cadet", "ps", "app"];
 
     await ps();
 

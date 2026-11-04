@@ -230,7 +230,6 @@ export function AssistantSideMenu({
   isLoadingConversations,
   conversationsFailed,
   onRetryConversations,
-  assistantId,
   assistantName,
   collapsed,
   variant,
@@ -273,7 +272,6 @@ export function AssistantSideMenu({
 }: AssistantSideMenuProps) {
   const { t } = useTranslation("chat");
   const sidebar = useSidebarState({
-    assistantId,
     conversations,
     conversationGroups,
     attentionConversationIds,
@@ -493,7 +491,6 @@ export function AssistantSideMenu({
     <SidebarSectionItem
       key={section.key}
       section={section}
-      assistantId={assistantId ?? null}
       groupMenu={(conversations, getAllRows) =>
         sectionMenu(section, conversations, getAllRows)
       }
@@ -516,7 +513,6 @@ export function AssistantSideMenu({
   // composition rules live on SideMenuBuiltInNav.
   const builtInNav = (
     <SideMenuBuiltInNav
-      assistantId={assistantId ?? null}
       assistantName={assistantName}
       collapsed={collapsed}
       variant={variant}
@@ -653,7 +649,6 @@ export function AssistantSideMenu({
           {isCollapsedRail ? (
             <CollapsedRailSections
               sections={listSections}
-              assistantId={assistantId ?? null}
               processingConversationIds={processingConversationIds}
               attentionConversationIds={attentionConversationIds}
             />

@@ -4,7 +4,9 @@ import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -185,7 +187,7 @@ function envWithBunPath(
 function localRuntimeAssistantIndex(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
 ): string | undefined {
-  const installDir = entry.runtimeInstallDir;
+  const installDir = latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(
     installDir,
@@ -198,7 +200,7 @@ function localRuntimeAssistantIndex(
 function localRuntimeGatewayDir(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
-  const installDir = entry?.runtimeInstallDir;
+  const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/gateway", "");
   return isGatewaySourceDir(candidate) ? candidate : undefined;
@@ -207,10 +209,44 @@ function localRuntimeGatewayDir(
 function localRuntimeCesDir(
   entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
 ): string | undefined {
-  const installDir = entry?.runtimeInstallDir;
+  const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(installDir, "@mycadet/credential-executor", "");
   return isCesSourceDir(candidate) ? candidate : undefined;
+}
+
+/**
+ * The instance's most recently installed self-managed runtime — the newest
+ * directory under `<instanceDir>/runtime/`, i.e. the install the last
+ * `ensureLocalRuntime` (hatch upgrade) left behind. The lockfile stopped
+ * recording the runtime install (version and dir), so recency is derived
+ * from the filesystem instead: every install rewrites its own directory,
+ * making its mtime the install order.
+ */
+function latestLocalRuntimeInstallDir(
+  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+): string | undefined {
+  const runtimeRoot = join(getLocalInstanceDir(entry), "runtime");
+  let installed: string[];
+  try {
+    installed = readdirSync(runtimeRoot);
+  } catch {
+    return undefined;
+  }
+  let newest: { dir: string; mtimeMs: number } | undefined;
+  for (const dir of installed) {
+    let stat: ReturnType<typeof statSync>;
+    try {
+      stat = statSync(join(runtimeRoot, dir));
+    } catch {
+      continue;
+    }
+    if (!stat.isDirectory()) continue;
+    if (!newest || stat.mtimeMs > newest.mtimeMs) {
+      newest = { dir, mtimeMs: stat.mtimeMs };
+    }
+  }
+  return newest ? join(runtimeRoot, newest.dir) : undefined;
 }
 
 export function ensureLocalRuntime(
@@ -519,7 +555,6 @@ function resolveDaemonMainPath(assistantIndex: string): string {
  * signing key end-to-end; the CLI never touches it.
  */
 type DaemonStartOptions = {
-  foreground?: boolean;
   defaultWorkspaceConfigPath?: string;
   requireReady?: boolean;
 };
@@ -735,7 +770,6 @@ async function startDaemonFromSource(
   daemonPort: number,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
-  const foreground = options?.foreground ?? false;
   const daemonMainPath = resolveDaemonMainPath(assistantIndex);
 
   // Ensure the directory containing PID/socket files exists. For named
@@ -789,29 +823,19 @@ async function startDaemonFromSource(
     env,
     assistantCommand ? [dirname(assistantCommand)] : [],
   );
-  const child = foreground
-    ? spawn(bunPath, ["run", resolve(daemonMainPath)], {
-        cwd: spawnStateRoot(),
-        stdio: "inherit",
-        env: spawnEnv,
-        windowsHide: true,
-      })
-    : (() => {
-        const daemonLogFd = openRuntimeLogFile(
-          getLocalInstanceDir(entry),
-          "assistant",
-        );
-        const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
-          cwd: spawnStateRoot(),
-          detached: true,
-          stdio: ["ignore", "pipe", "pipe"],
-          windowsHide: true,
-          env: spawnEnv,
-        });
-        pipeToLogFile(c, daemonLogFd, "daemon");
-        c.unref();
-        return c;
-      })();
+  const daemonLogFd = openRuntimeLogFile(
+    getLocalInstanceDir(entry),
+    "assistant",
+  );
+  const child = spawn(bunPath, ["run", resolve(daemonMainPath)], {
+    cwd: spawnStateRoot(),
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+    env: spawnEnv,
+  });
+  pipeToLogFile(child, daemonLogFd, "daemon");
+  child.unref();
 
   if (!child.pid) {
     try {
@@ -1459,7 +1483,6 @@ export async function startLocalDaemon(
     return;
   }
 
-  const foreground = options?.foreground ?? false;
   // Check for a compiled daemon binary adjacent to the CLI executable
   // (the compiled CLI run directly from the terminal).
   const daemonBinary = compiledSibling("cadet-daemon");
@@ -1581,29 +1604,19 @@ export async function startLocalDaemon(
       // instead of racing to spawn a duplicate daemon.
       writeFileSync(pidFile, "starting", "utf-8");
 
-      const child = foreground
-        ? spawn(daemonBinary, [], {
-            cwd: spawnStateRoot(),
-            stdio: "inherit",
-            env: daemonSpawnEnv,
-            windowsHide: true,
-          })
-        : (() => {
-            const daemonLogFd = openRuntimeLogFile(
-              getLocalInstanceDir(entry),
-              "assistant",
-            );
-            const c = spawn(daemonBinary, [], {
-              cwd: spawnStateRoot(),
-              detached: true,
-              stdio: ["ignore", "pipe", "pipe"],
-              windowsHide: true,
-              env: daemonSpawnEnv,
-            });
-            pipeToLogFile(c, daemonLogFd, "daemon");
-            c.unref();
-            return c;
-          })();
+      const daemonLogFd = openRuntimeLogFile(
+        getLocalInstanceDir(entry),
+        "assistant",
+      );
+      const child = spawn(daemonBinary, [], {
+        cwd: spawnStateRoot(),
+        detached: true,
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        env: daemonSpawnEnv,
+      });
+      pipeToLogFile(child, daemonLogFd, "daemon");
+      child.unref();
       const daemonPid = child.pid;
 
       // Overwrite sentinel with real PID, or clean up on spawn failure.

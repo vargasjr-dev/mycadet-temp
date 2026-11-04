@@ -64,14 +64,8 @@ export function AssistantHandleLineView({
  * cloud-hosted, or the cloud's listing has not arrived), so the
  * greeting stands alone exactly as it did.
  */
-export function AssistantHandleLine({
-  assistantId,
-  hidden,
-}: {
-  assistantId: string;
-  hidden?: boolean;
-}) {
-  const { handle, openModal, modal } = useAssistantHandleModal(assistantId);
+export function AssistantHandleLine({ hidden }: { hidden?: boolean }) {
+  const { handle, openModal, modal } = useAssistantHandleModal();
   if (!handle || !openModal) {
     return null;
   }

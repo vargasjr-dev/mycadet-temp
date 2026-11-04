@@ -22,7 +22,7 @@ import {
   assistantSelectionState,
   selectedAssistantState,
 } from "@app/assistant/assistant-selection";
-import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
+import { listAssistants } from "@app/assistant/api";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
 
@@ -49,21 +49,22 @@ export function DesktopChrome() {
    */
   const connectAssistantById = (assistantId: string): void => {
     void (async () => {
-      await useLocalLockfileStore.load();
-      const entry = useLocalLockfileStore
-        .getState()
-        .lockfile?.assistants.find(
-          (candidate) => candidate.assistantId === assistantId,
-        );
+      // The palette switch resolves through the list assistants api — the
+      // platform's rows are the roster (registered local assistants included);
+      // the bundle never reads a lockfile.
+      const result = await listAssistants();
+      const entry = result.ok
+        ? result.data.find((candidate) => candidate.id === assistantId)
+        : undefined;
       if (entry) {
         // The shell owns recovery: an entry whose gateway can't resolve
         // lands on the not-ready panel's wake, whatever its remote type.
         navigate(routes.assistant, {
-          state: assistantSelectionState(entry.assistantId),
+          state: assistantSelectionState(entry.id),
         });
         return;
       }
-      // Not a lockfile entry (a cloud id, or no lockfile arm): the chooser
+      // Not a listed row (an unregistered local, or no session): the chooser
       // owns the full list.
       toast.error(t("appShell.assistantSwitchFailed"));
       navigate(routes.account.selectAssistant);

@@ -24,6 +24,7 @@
  * reload like the section's open state does.
  */
 
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import type { ReactNode } from "react";
 
 import { useTranslation } from "@/i18n";
@@ -47,7 +48,6 @@ import type { Conversation } from "@/types/conversation-types";
 export interface SidebarSectionItemProps {
   section: SidebarSection;
   /** Owns this section's query; `null` keeps it on the derived rows. */
-  assistantId: string | null;
   /**
    * Header actions, given the section's own rows. A function rather than a
    * built menu because the rows are resolved here: the sidebar decides what
@@ -86,13 +86,13 @@ export interface SidebarSectionItemProps {
 
 export function SidebarSectionItem({
   section,
-  assistantId,
   groupMenu: buildGroupMenu,
   drag,
   collapsible,
   collapsedIndicator,
   isLast,
 }: SidebarSectionItemProps) {
+  const assistantId = useActiveAssistantId();
   const { t } = useTranslation("chat");
   const { conversations, hasMore, resolved, loadMore, getAllRows } =
     useSectionConversations(assistantId, section);
