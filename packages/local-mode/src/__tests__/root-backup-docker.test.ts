@@ -19,11 +19,14 @@ import {
   restoreRootBackup,
   stageRootArchive,
   STATE_ROOTS,
-} from "../lib/root-backup.js";
+} from "../root-backup";
 import { startContainers } from "@mycadet/local-mode";
 import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { mockCommands } from "./commands-mock.js";
+import type { LockfileAssistant } from "../lockfile-contract";
+// The subprocess-fake harness stays cli-side (its other consumers are the
+// CLI's teleport tests); this docker-flow test is a monorepo-level one and
+// reaches across for it.
+import { mockCommands } from "../../../../cli/src/__tests__/commands-mock.js";
 
 // The sleep operation probes the gateway's health itself now — the flow's
 // restart signal rides the sleep result. A loopback listener stands in for

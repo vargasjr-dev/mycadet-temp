@@ -617,7 +617,6 @@ export function ChatLayout({
 
   const renderSideMenu = (args: SideMenuRenderArgs): ReactNode => (
     <AssistantSideMenu
-      assistantId={assistantId ?? ""}
       assistantName={assistantName}
       collapsed={args.collapsed}
       variant={args.variant}

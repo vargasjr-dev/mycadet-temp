@@ -26,7 +26,7 @@ import {
   stageRootArchive,
   STATE_ROOTS,
   validateRootArchive,
-} from "../lib/root-backup.js";
+} from "../root-backup";
 import * as localMode from "@mycadet/local-mode";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so

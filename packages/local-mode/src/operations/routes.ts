@@ -4,8 +4,10 @@ import { isActiveAssistant, readLockfile } from "../lockfile";
 import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
-import { runHatch } from "../hatch";
-import { runUpgrade, type UpgradeOptions } from "../upgrade";
+import { hatchAssistant } from "./hatch";
+import { upgradeAssistant } from "./upgrade";
+import { consoleLifecycleReporter } from "../lifecycle-reporter";
+import { ownVersion } from "../environment";
 import { unpairAssistant } from "../unpair";
 import { servedConfigFromLockfile } from "../served-config";
 import { runListRoute } from "./list";
@@ -221,12 +223,11 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
     (await readJsonBody(request.body)) ?? {},
   );
   try {
-    const result = await runHatch({ remote });
-    return json(
-      result.ok
-        ? { ok: true, assistantId: result.assistantId }
-        : { ok: false, error: result.error },
-    );
+    const result = await hatchAssistant({ remote: remote ?? "local" });
+    if (result.ok) {
+      return json({ ok: true, assistantId: result.assistant.assistantId });
+    }
+    return json({ ok: false, error: result.error }, result.status);
   } catch (err) {
     return json({ ok: false, error: (err as Error).message });
   }
@@ -403,16 +404,10 @@ async function runUpgradeRoute(
     return null;
   }
   const body = await readJsonBody(request.body);
-  const options: UpgradeOptions =
-    body === null
-      ? {}
-      : {
-          ...(typeof body.latest === "boolean" ? { latest: body.latest } : {}),
-          ...(typeof body.version === "string"
-            ? { version: body.version }
-            : {}),
-          ...(typeof body.force === "boolean" ? { force: body.force } : {}),
-        };
+  const version =
+    body !== null && typeof body.version === "string" ? body.version : null;
+  const force =
+    body !== null && typeof body.force === "boolean" ? body.force : false;
   if (!isActiveAssistant(assistantId)) {
     return json({
       ok: false,
@@ -427,9 +422,16 @@ async function runUpgradeRoute(
   }
   upgradingLocalAssistantIds.add(assistantId);
   try {
-    const result = await runUpgrade(assistantId, options);
+    const result = await upgradeAssistant({
+      entry,
+      version,
+      force,
+      // The host runs the CLI it ships with — its release drives the target.
+      cliVersion: ownVersion() ? `v${ownVersion()}` : undefined,
+      reporter: consoleLifecycleReporter,
+    });
     if (!result.ok) {
-      return json({ ok: false, error: result.error });
+      return json({ ok: false, error: result.error }, result.status);
     }
     return json(
       result.version ? { ok: true, version: result.version } : { ok: true },

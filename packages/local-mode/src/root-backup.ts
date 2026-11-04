@@ -9,8 +9,10 @@ import {
   mkdir,
   mkdtemp,
   readdir,
+  readFile,
   rename,
   rm,
+  stat,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -18,20 +20,17 @@ import { dirname, join, posix, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
-import {
-  dockerResourceNames,
-  getLocalInstanceDir,
-  isDockerEntry,
-  isNoSuchContainerError,
-  type DockerAssistant,
-  type LocalAssistant,
-} from "@mycadet/local-mode";
-import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { getBackupsDir } from "./backup-ops.js";
-import { execOutput } from "./step-runner.js";
-import { sleepAssistant } from "@mycadet/local-mode";
-import { wakeAssistant } from "@mycadet/local-mode";
+import { dockerResourceNames } from "./remotes/docker/retire";
+import { isNoSuchContainerError } from "./remotes/docker/common";
+import { isDockerEntry } from "./lockfile-contract";
+import { DOCKER_STATEFUL_SET_SPEC } from "./remotes/docker/statefulset";
+import { getLocalInstanceDir } from "./remotes/local/instance";
+import { sleepAssistant } from "./operations/sleep";
+import { wakeAssistant } from "./operations/wake";
+import type { DockerAssistant, LocalAssistant } from "./lockfile-contract";
+import type { LockfileAssistant } from "./lockfile-contract";
+import { getBackupsDir } from "./backup-ops";
+import { execOutput } from "./exec";
 
 export const STATE_ROOTS = [
   "workspace",

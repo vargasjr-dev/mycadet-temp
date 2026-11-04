@@ -6,7 +6,6 @@ import {
 } from "./resolve-inbox-status";
 
 const BASE: InboxStatusInputs = {
-  assistantId: "asst-platform",
   addressCount: 1,
   domainsSettled: true,
 };

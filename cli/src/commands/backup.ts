@@ -2,9 +2,9 @@ import { cliCommand, readCloudToken } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { findAssistantByName } from "../lib/assistant-config.js";
-import { formatSize, getBackupsDir } from "../lib/backup-ops.js";
+import { formatSize, getBackupsDir } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
-import { createRootBackup } from "../lib/root-backup.js";
+import { createRootBackup } from "@mycadet/local-mode";
 import { createPlatformBackup } from "../lib/teleport-backup.js";
 
 export const backup = Object.assign(

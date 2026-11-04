@@ -15,6 +15,7 @@ import {
   checkHealth,
   cliCommand,
   dockerResourceNames,
+  fetchGatewayPs,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
@@ -23,6 +24,7 @@ import {
   readCloudToken,
   resolveLogDir,
   type GatewayHealth,
+  type ManagedProcessEntry,
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -33,7 +35,6 @@ import {
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
-import { fetchGatewayPs, type ManagedProcessEntry } from "../lib/health-check";
 
 import { withStatusEmoji } from "../lib/status-emoji";
 import {

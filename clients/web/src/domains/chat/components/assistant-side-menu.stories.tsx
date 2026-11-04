@@ -332,10 +332,8 @@ const meta: Meta<typeof AssistantSideMenu> = {
      type and row metrics switch at `md`; the desktop width every story
      starts at holds these above that breakpoint. */
   decorators: [
-    (Story, context) => (
-      <QueryClientProvider
-        client={storyClient(String(context.args.assistantId ?? ""))}
-      >
+    (Story) => (
+      <QueryClientProvider client={storyClient(String("asst-all"))}>
         <Story />
       </QueryClientProvider>
     ),
@@ -356,7 +354,7 @@ type Story = StoryObj<typeof AssistantSideMenu>;
 export const AllView: Story = {
   name: "All view (default)",
   beforeEach: () => seedViewMode("asst-all", "all"),
-  args: { ...SHARED_ARGS, assistantId: "asst-all" },
+  args: { ...SHARED_ARGS },
 };
 
 export const AllViewLongList: Story = {
@@ -364,7 +362,6 @@ export const AllViewLongList: Story = {
   beforeEach: () => seedViewMode("asst-all-long", "all"),
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-all-long",
     conversations: LONG_CONVERSATIONS,
   },
 };
@@ -374,7 +371,6 @@ export const GroupedLongSection: Story = {
   beforeEach: () => seedViewMode("asst-grouped-long", "grouped"),
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-grouped-long",
     conversations: LONG_CONVERSATIONS,
   },
 };
@@ -382,7 +378,7 @@ export const GroupedLongSection: Story = {
 export const GroupedView: Story = {
   name: "Grouped view",
   beforeEach: () => seedViewMode("asst-grouped", "grouped"),
-  args: { ...SHARED_ARGS, assistantId: "asst-grouped" },
+  args: { ...SHARED_ARGS },
 };
 
 /* The collapsed rail: one circle per section, each carrying the same
@@ -399,7 +395,6 @@ export const CollapsedRail: Story = {
   beforeEach: () => seedViewMode("asst-collapsed", "grouped"),
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-collapsed",
     collapsed: true,
     footerAction: <PreferencesMenu assistantId="asst-story" />,
   },
@@ -414,7 +409,6 @@ export const CollapsedRailAllView: Story = {
   beforeEach: () => seedViewMode("asst-collapsed-all", "all"),
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-collapsed-all",
     collapsed: true,
     footerAction: <PreferencesMenu assistantId="asst-story" />,
   },
@@ -429,7 +423,6 @@ export const LoadingConversations: Story = {
   beforeEach: () => seedViewMode("asst-loading", "all"),
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-loading",
     conversations: [],
     isLoadingConversations: true,
   },
@@ -449,7 +442,6 @@ export const UploadedImageAvatar: Story = {
   decorators: [withAvatar(IMAGE_AVATAR_CLIENT)],
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-image",
     assistantName: "Haze II",
   },
 };
@@ -461,7 +453,6 @@ export const UploadedImageAvatarCollapsed: Story = {
   decorators: [withAvatar(IMAGE_AVATAR_CLIENT)],
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-image",
     assistantName: "Haze II",
     collapsed: true,
     footerAction: <PreferencesMenu assistantId="asst-story" />,
@@ -479,7 +470,6 @@ export const CharacterAvatar: Story = {
   decorators: [withAvatar(CHARACTER_AVATAR_CLIENT)],
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-character",
     assistantName: "Haze II",
   },
 };
@@ -526,7 +516,6 @@ export const OverlayDrawer: Story = {
   decorators: [withPhoneFrame],
   args: {
     ...SHARED_ARGS,
-    assistantId: "asst-overlay",
     conversations: LONG_CONVERSATIONS,
     variant: "overlay",
     collapsed: false,
@@ -565,7 +554,6 @@ export const OverlayDrawerCharacterAvatar: Story = {
   decorators: [withAvatar(OVERLAY_CHARACTER_AVATAR_CLIENT), withPhoneFrame],
   args: {
     ...OverlayDrawer.args,
-    assistantId: "asst-overlay-character",
     assistantName: "Haze II",
     footerAction: (
       <PreferencesMenu

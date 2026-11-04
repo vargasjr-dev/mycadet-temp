@@ -12,7 +12,7 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { waitForReady } from "../lib/upgrade-lifecycle.js";
+import { waitForReady } from "../upgrade-lifecycle";
 
 type ReadyzResponder = () => Response;
 

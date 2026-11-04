@@ -1,4 +1,5 @@
 import type { LockfileAssistant } from "../lockfile-contract";
+import type { LifecycleReporter } from "../lifecycle-reporter";
 import { hatchCloud } from "../remotes/cloud/hatch";
 import { hatchDocker } from "../remotes/docker/hatch";
 import { hatchLocal } from "../remotes/local/hatch";
@@ -46,8 +47,8 @@ export interface HatchAssistantParams {
   /** The caller's provider choice; undefined = skip provider credential setup. */
   provider?: string | null;
   precollectedApiKey?: string;
-  /** The narration sink (defaults to console.log). */
-  log?: (msg: string) => void;
+  /** The narration sink (defaults to the console reporter). */
+  reporter?: LifecycleReporter;
 }
 
 export type HatchAssistantResult =
@@ -80,7 +81,7 @@ export async function hatchAssistant(
         version,
         provider,
         precollectedApiKey,
-        log,
+        reporter,
       } = params;
       const result = await hatchLocal({
         name,
@@ -90,7 +91,7 @@ export async function hatchAssistant(
         version,
         provider,
         precollectedApiKey,
-        log,
+        reporter,
       });
       if (!result.ok) return result;
       return { ok: true, assistant: result.entry, ready: true };
@@ -107,7 +108,7 @@ export async function hatchAssistant(
         version,
         provider,
         precollectedApiKey,
-        log,
+        reporter,
       } = params;
       const result = await hatchDocker({
         name,
@@ -120,19 +121,19 @@ export async function hatchAssistant(
         version,
         provider,
         precollectedApiKey,
-        log,
+        reporter,
       });
       if (!result.ok) return result;
       return { ok: true, assistant: result.entry, ready: result.ready };
     }
     case "baseten": {
-      const { name, configValues, verbose, version, log } = params;
+      const { name, configValues, verbose, version, reporter } = params;
       const result = await hatchBaseten({
         name: name ?? undefined,
         configValues,
         verbose,
         version,
-        log,
+        reporter,
       });
       if (!result.ok) return result;
       return { ok: true, assistant: result.entry, ready: false };

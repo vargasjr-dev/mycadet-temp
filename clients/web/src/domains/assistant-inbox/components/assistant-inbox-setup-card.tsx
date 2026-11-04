@@ -12,8 +12,6 @@ import { EmailAddressFields } from "./email-address-fields";
 const HANDLE_CHECK_DELAY_MS = 400;
 
 export interface AssistantInboxSetupCardProps {
-  /** Whose address this creates; the preview pill shows their avatar. */
-  assistantId: string;
   /** The assistant's current handle. */
   handle: string;
   rootDomain: string;
@@ -62,7 +60,6 @@ export interface AssistantInboxSetupCardProps {
  * over it.
  */
 export function AssistantInboxSetupCard({
-  assistantId,
   handle: initialHandle,
   rootDomain,
   handleEditable = false,
@@ -118,11 +115,7 @@ export function AssistantInboxSetupCard({
   const problem = checkMessage ?? error;
 
   return (
-    <AssistantInboxPageFrame
-      onBack={onBack}
-      centered
-      peekAssistantId={assistantId}
-    >
+    <AssistantInboxPageFrame onBack={onBack} centered>
       <div className="flex w-full max-w-[560px] flex-col items-center gap-10 px-4 py-1 text-center">
         <h2
           className="text-[var(--content-emphasised)]"

@@ -8,7 +8,6 @@ import { useTranslation } from "@/i18n";
 import { AddressPill } from "./address-pill";
 
 export interface AssistantInboxHeaderProps {
-  assistantId: string;
   address: string;
   /** Opens the email settings. Without it no settings control is drawn. */
   onOpenSettings?: () => void;
@@ -27,7 +26,6 @@ export interface AssistantInboxHeaderProps {
  * it, while the settings control keeps the title row's trailing corner.
  */
 export function AssistantInboxHeader({
-  assistantId,
   address,
   onOpenSettings,
   onBack,
@@ -66,7 +64,6 @@ export function AssistantInboxHeader({
           it sits on the trailing edge beside the settings control. */}
       <div className="flex min-w-0 max-md:order-last max-md:basis-full">
         <AddressPill
-          assistantId={assistantId}
           address={address}
           copy={{ copied, onCopy: () => copy(address) }}
         />

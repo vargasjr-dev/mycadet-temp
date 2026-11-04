@@ -1,9 +1,9 @@
-import { existsSync, readdirSync, statSync, unlinkSync } from "fs";
-import { join } from "path";
+import { existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 
-import { findAssistantByName } from "./assistant-config.js";
+import { findAssistantByName } from "./operations/lookup";
 import { createRootBackup, restoreRootBackup } from "./root-backup.js";
-import { resolveDataDir } from "@mycadet/local-mode";
+import { resolveDataDir } from "./config";
 
 /** Default backup directory following XDG convention */
 export function getBackupsDir(): string {

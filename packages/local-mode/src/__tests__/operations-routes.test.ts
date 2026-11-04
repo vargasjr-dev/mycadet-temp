@@ -14,19 +14,20 @@ import path from "node:path";
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
 // shared loader, and `mock.restore()` does not undo `mock.module()`.
-const realHatch = { ...(await import("../hatch")) };
+const realHatch = { ...(await import("../operations/hatch")) };
 const realDevices = { ...(await import("../devices")) };
-const realUpgrade = { ...(await import("../upgrade")) };
+const realUpgrade = { ...(await import("../operations/upgrade")) };
 const realAvatar = { ...(await import("../avatar")) };
 const realUnpair = { ...(await import("../unpair")) };
 const realPair = { ...(await import("../pair")) };
 
-const runHatchMock = mock(
+const hatchAssistantMock = mock(
   async (_options: {
-    remote?: string;
+    remote: string;
   }): Promise<
-    { ok: true; assistantId: string } | { ok: false; error: string }
-  > => ({ ok: true, assistantId: "hatched-1" }),
+    | { ok: true; assistant: { assistantId: string }; ready: boolean }
+    | { ok: false; status: number; error: string }
+  > => ({ ok: true, assistant: { assistantId: "hatched-1" }, ready: true }),
 );
 const runDevicesListMock = mock(async (_assistantId: string) => ({
   ok: true as const,
@@ -35,11 +36,11 @@ const runDevicesListMock = mock(async (_assistantId: string) => ({
 const runDevicesRevokeMock = mock(
   async (_assistantId: string, _hashedDeviceId: string) => ({ ok: true }),
 );
-const runUpgradeMock = mock(
-  async (_assistantId: string, _options?: unknown) => ({
-    ok: true as const,
-    version: "v9.9.9",
-  }),
+const upgradeAssistantMock = mock(
+  async (_options: unknown) =>
+    ({ ok: true as const, version: "v9.9.9" }) as
+      | { ok: true; version?: string }
+      | { ok: false; status: number; error: string; code?: string },
 );
 const readLockfileAssistantAvatarMock = mock((_assistantId: string) => ({
   ok: true as const,
@@ -97,18 +98,18 @@ const pairingPollMock = mock(
 );
 const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 
-mock.module("../hatch", () => ({
+mock.module("../operations/hatch", () => ({
   ...realHatch,
-  runHatch: runHatchMock,
+  hatchAssistant: hatchAssistantMock,
 }));
 mock.module("../devices", () => ({
   ...realDevices,
   runDevicesList: runDevicesListMock,
   runDevicesRevoke: runDevicesRevokeMock,
 }));
-mock.module("../upgrade", () => ({
+mock.module("../operations/upgrade", () => ({
   ...realUpgrade,
-  runUpgrade: runUpgradeMock,
+  upgradeAssistant: upgradeAssistantMock,
 }));
 mock.module("../avatar", () => ({
   ...realAvatar,
@@ -130,7 +131,7 @@ mock.module("../pair", () => ({
 afterAll(() => {
   mock.module("../hatch", () => realHatch);
   mock.module("../devices", () => realDevices);
-  mock.module("../upgrade", () => realUpgrade);
+  mock.module("../operations/upgrade", () => realUpgrade);
   mock.module("../avatar", () => realAvatar);
   mock.module("../unpair", () => realUnpair);
   mock.module("../pair", () => realPair);
@@ -148,10 +149,10 @@ beforeEach(() => {
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
   for (const m of [
-    runHatchMock,
+    hatchAssistantMock,
     runDevicesListMock,
     runDevicesRevokeMock,
-    runUpgradeMock,
+    upgradeAssistantMock,
     readLockfileAssistantAvatarMock,
     unpairAssistantMock,
     pairingStartMock,
@@ -160,16 +161,19 @@ beforeEach(() => {
   ]) {
     m.mockReset();
   }
-  runHatchMock.mockImplementation(async (_options: { remote?: string }) => ({
-    ok: true as const,
-    assistantId: "hatched-1",
-  }));
+  hatchAssistantMock.mockImplementation(
+    async (_options: { remote: string }) => ({
+      ok: true as const,
+      assistant: { assistantId: "hatched-1" },
+      ready: true,
+    }),
+  );
   runDevicesListMock.mockImplementation(async () => ({
     ok: true as const,
     devices: [],
   }));
   runDevicesRevokeMock.mockImplementation(async () => ({ ok: true }));
-  runUpgradeMock.mockImplementation(async () => ({
+  upgradeAssistantMock.mockImplementation(async () => ({
     ok: true as const,
     version: "v9.9.9",
   }));
@@ -290,24 +294,25 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
       ok: true,
       assistantId: "hatched-1",
     });
-    expect(runHatchMock).toHaveBeenCalledWith({ remote: "docker" });
+    expect(hatchAssistantMock).toHaveBeenCalledWith({ remote: "docker" });
   });
 
   test("a non-object body degrades to a plain hatch", async () => {
     const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
-    expect(runHatchMock).toHaveBeenCalledWith({ remote: undefined });
+    expect(hatchAssistantMock).toHaveBeenCalledWith({ remote: "local" });
     expect((await response.json()).ok).toBe(true);
   });
 
   test("a failed hatch resolves {ok:false, error} — never a throw", async () => {
-    runHatchMock.mockImplementation(async () => ({
+    hatchAssistantMock.mockImplementation(async () => ({
       ok: false as const,
+      status: 503,
       error: "docker daemon unreachable",
     }));
 
     const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
       ok: false,
       error: "docker daemon unreachable",
@@ -545,7 +550,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, version: "v9.9.9" });
-    expect(runUpgradeMock).toHaveBeenCalledWith("asst-1", { latest: true });
+    expect(upgradeAssistantMock).toHaveBeenCalled();
   });
 
   test("a non-active local entry is refused", async () => {
@@ -570,7 +575,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
       ok: false,
       error: "Can only upgrade the active local assistant",
     });
-    expect(runUpgradeMock).not.toHaveBeenCalled();
+    expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 
   test("an id that is not an entry on this machine passes through", async () => {
@@ -581,7 +586,7 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
     );
 
     expect(response).toBeNull();
-    expect(runUpgradeMock).not.toHaveBeenCalled();
+    expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 });
 

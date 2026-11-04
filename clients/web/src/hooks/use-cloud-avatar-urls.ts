@@ -5,7 +5,6 @@ import {
   isAvatarSuperseded,
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
-import { isCadetCloudRemote } from "@/lib/local-mode";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export type CloudAvatarUrls = ReadonlyMap<string, string>;
@@ -95,7 +94,7 @@ export function useCloudAvatarUrls(): CloudAvatarUrls {
   const query = useQuery<CloudAvatarUrls>({
     queryKey: cloudAvatarUrlsQueryKey(activeAssistantId),
     queryFn: fetchCloudAvatarUrls,
-    enabled: !isCadetCloudRemote(),
+    enabled: true,
     staleTime: CLOUD_AVATAR_URLS_STALE_TIME_MS,
     // staleTime alone never refetches a chooser that stays mounted, and a
     // sibling's change on another client sends no event here; poll while

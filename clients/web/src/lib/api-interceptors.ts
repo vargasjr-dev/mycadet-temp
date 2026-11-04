@@ -21,7 +21,6 @@ import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
-import { isCadetCloudRemote } from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -332,71 +331,3 @@ for (const apiClient of [authClient, cloudClient]) {
 // A chat send in cloud mode goes through the daemon client; other platform
 // calls go through the cloud client. Not installed on `authClient` — the
 // allauth session endpoints manage their own 401 semantics.
-
-/**
- * What {@link platformFeaturesGate} does with a request. A deny carries the
- * reason it was denied, so the gate reports it without re-probing the mode the
- * decision already looked at. {@link PLATFORM_GATE_DENIALS} keys off this
- * union, so a third reason cannot be mislabelled as one of the existing two.
- */
-type CloudGateDecision = "allow" | "deny_remote_gateway";
-
-/**
- * How each denial is reported. Keyed by every deny decision, so a new reason
- * added to {@link CloudGateDecision} fails to compile until it says what it
- * logs and what it aborts with.
- */
-const PLATFORM_GATE_DENIALS: Record<
-  Exclude<CloudGateDecision, "allow">,
-  { log: string; abortMessage: string }
-> = {
-  deny_remote_gateway: {
-    log: "remote-gateway mode, no-op platform request:",
-    abortMessage: "Platform routes disabled in remote-gateway mode",
-  },
-};
-
-/**
- * The decision {@link platformFeaturesGate} reaches for this request.
- *
- * Takes the request as the gate sees it: the gate is registered after
- * {@link requestInterceptor}, so a self-hosted rewrite (gateway origin, bearer
- * auth) has already happened by the time it runs.
- */
-function cloudFeaturesGateDecision(request: Request): CloudGateDecision {
-  if (isCadetCloudRemote()) {
-    // The cloud session cookie authenticates platform-origin calls in
-    // this mode; the bearer check below guards gateway-session bundles.
-    return "allow";
-  }
-  // A served-gateway browser holds the gateway JWT as its credential:
-  // platform-bound calls ride it as the bearer or are refused.
-  const hasBearer =
-    request.headers.get("Authorization")?.toLowerCase().startsWith("bearer ") ??
-    false;
-  return hasBearer ? "allow" : "deny_remote_gateway";
-
-  return "allow";
-}
-
-/**
- * Abort platform client requests in remote-gateway mode that ride no
- * gateway bearer. Let-through requests keep the daemon endpoints
- * (skills, memories, etc.) that route through the cloud client alive.
- *
- * Exported for direct unit testing.
- */
-export function platformFeaturesGate(request: Request): Request {
-  const decision = cloudFeaturesGateDecision(request);
-  if (decision === "allow") {
-    return request;
-  }
-
-  const denial = PLATFORM_GATE_DENIALS[decision];
-  console.debug(denial.log, new URL(request.url).pathname);
-  const aborted = new AbortController();
-  aborted.abort(new DOMException(denial.abortMessage, "AbortError"));
-  return new Request(request.url, { signal: aborted.signal });
-}
-
-cloudClient.interceptors.request.use(platformFeaturesGate);

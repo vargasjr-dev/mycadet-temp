@@ -7,7 +7,6 @@ import {
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
-import { asGeneratedAssistant } from "@/assistant/queries";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
@@ -46,15 +45,15 @@ export interface AssistantInboxState {
  * on the platform API, whose assistant routes key on the assistant id.
  */
 export function useAssistantInboxState(
-  assistantId: string,
   fallbackName: string,
 ): AssistantInboxState {
   const queryClient = useQueryClient();
   const rootDomain = useEnvironmentStore.use.emailRootDomain();
 
   // The store IS the cloud's record of this assistant — its name, handle,
-  // and creation instant come from there, not from a listing scan.
-  const listed = asGeneratedAssistant(getResolvedAssistant());
+  // id, and creation instant come from there, not from a listing scan.
+  const assistant = getResolvedAssistant();
+  const assistantId = assistant.assistantId;
 
   const addressPath = { path: { assistant_id: assistantId } };
 
@@ -84,14 +83,13 @@ export function useAssistantInboxState(
 
   return {
     status: resolveInboxStatus({
-      assistantId,
       addressCount: addresses?.length,
       domainsSettled: domainsQuery.isFetched,
     }),
     assistantId,
-    assistantName: listed.name || fallbackName,
-    handle: domain?.subdomain ?? listed.handle ?? "",
-    createdAt: listed.created ?? null,
+    assistantName: assistant.name || fallbackName,
+    handle: domain?.subdomain ?? assistantId,
+    createdAt: assistant.hatchedAt ?? null,
     hasDomain: !!domain,
     address: addresses?.[0]?.address ?? null,
     addressId: addresses?.[0]?.id ?? null,

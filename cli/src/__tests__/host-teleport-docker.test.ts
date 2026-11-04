@@ -14,7 +14,7 @@ import { resolveOwnImageRefs } from "@mycadet/local-mode";
 import cliPkg from "../../package.json";
 
 import { DOCKER_STATEFUL_SET_SPEC } from "@mycadet/local-mode";
-import { packRoot, STATE_ROOTS } from "../lib/root-backup.js";
+import { packRoot, STATE_ROOTS } from "@mycadet/local-mode";
 import type {
   DockerAssistant,
   LockfileAssistant,

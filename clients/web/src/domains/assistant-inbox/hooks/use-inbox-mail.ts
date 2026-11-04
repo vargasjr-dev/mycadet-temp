@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
@@ -59,18 +60,14 @@ export interface InboxMail {
 }
 
 /**
- * The mail the mailbox draws. The two folders come from the cloud, keyed
- * on the cloud assistant id, and the usage counts from the address's own
- * status endpoint. The body and attachments
- * of a message come through the daemon, keyed on the local assistant id the
- * daemon routes expect, and only when a message is opened.
+ * The mail the mailbox draws. The two folders come from the cloud, the
+ * usage counts from the address's own status endpoint, and the body and
+ * attachments of a message from the daemon — all keyed on the one
+ * assistant id, read from the store.
  */
-export function useInboxMail(
-  assistantId: string,
-  cloudAssistantId: string,
-  addressId: string,
-): InboxMail {
-  const path = { assistant_id: cloudAssistantId };
+export function useInboxMail(addressId: string): InboxMail {
+  const assistantId = useActiveAssistantId();
+  const path = { assistant_id: assistantId };
 
   const receivedQuery = useQuery(
     assistantsEmailsListOptions({

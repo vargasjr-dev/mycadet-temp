@@ -4,8 +4,8 @@ import {
   resetHostDeviceIdCache,
   type DockerStatefulSetSpec,
 } from "@mycadet/local-mode";
-import { buildReplayEnv, buildReplayState } from "../lib/upgrade-lifecycle.js";
-import { snapshotEnv } from "./helpers/env.js";
+import { buildReplayEnv, buildReplayState } from "../upgrade-lifecycle";
+import { snapshotEnv } from "../../../../cli/src/__tests__/helpers/env.js";
 
 const restoreEnv = snapshotEnv([
   "CADET_CLOUD_URL",

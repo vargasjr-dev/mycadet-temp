@@ -123,14 +123,14 @@ function IntegrationsPanelInner() {
   // The store IS the resolution — the entry is the one assistant fact,
   // resolved before the first render; there is nothing to await.
   const assistant = getResolvedAssistant();
-  const mcpAssistantId = assistant.assistantId;
+  const assistantId = assistant.assistantId;
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState<IntegrationCategory | null>(null);
   const providerParam = searchParams.get("provider");
   const handledProviderParam = useRef<string | null>(null);
-  const mcp = useMcpConnections(mcpAssistantId);
-  const plugins = usePluginsList(mcpAssistantId);
-  const connect = useIntegrationConnect({ assistantId: mcpAssistantId, mcp });
+  const mcp = useMcpConnections(assistantId);
+  const plugins = usePluginsList(assistantId);
+  const connect = useIntegrationConnect({ assistantId: assistantId, mcp });
 
   // Returns to this page with its query intact so a deep-linked provider
   // survives the round trip. The login flow itself lives in the app bundle's
@@ -176,16 +176,15 @@ function IntegrationsPanelInner() {
 
   const providers = useQuery({
     ...oauthProvidersGetOptions({
-      path: { assistant_id: mcpAssistantId },
+      path: { assistant_id: assistantId },
     }),
     select: (data) => data.providers,
   });
-  const connections = useQuery({
-    ...assistantsOauthConnectionsListOptions({
-      path: { assistant_id: mcpAssistantId },
+  const connections = useQuery(
+    assistantsOauthConnectionsListOptions({
+      path: { assistant_id: assistantId },
     }),
-    enabled: isCloudHosted,
-  });
+  );
 
   useEffect(() => {
     const oauthStatus = searchParams.get("oauth_status");
@@ -315,7 +314,6 @@ function IntegrationsPanelInner() {
   // One attempt at a time, on every surface: the rows and cards that
   // predate the tiles only knew about the MCP machine.
   const authBusy = mcp.auth.isBusy;
-  const oauthDisabled = !assistant || (isCloudHosted && !mcpAssistantId);
   // The attempt is drawn inside the tile, or in the connect modal over it,
   // only while that surface is on screen. A search that filters the owning
   // integration out leaves the page-level notice as the one place with a
@@ -381,7 +379,7 @@ function IntegrationsPanelInner() {
     : undefined;
 
   const disconnectIntegration = useIntegrationDisconnect({
-    assistantId: mcpAssistantId,
+    assistantId: assistantId,
     onStopAuth: (connection) => {
       const waitingOn = mcp.auth.attempt?.serverId;
       if (!waitingOn) {
@@ -438,7 +436,7 @@ function IntegrationsPanelInner() {
           logoUrl={item.provider.logo_url}
           connections={item.connections}
           mcpMethods={item.methods}
-          disabled={oauthDisabled || !plan || connect.isBusyElsewhere(item.id)}
+          disabled={!plan || connect.isBusyElsewhere(item.id)}
           onConfigure={() => connect.openModal(item.id)}
         />
       );
@@ -447,7 +445,7 @@ function IntegrationsPanelInner() {
       return (
         <PluginIntegrationRow
           key={item.id}
-          assistantId={mcpAssistantId}
+          assistantId={assistantId}
           method={item.method}
           disabled={!plan || connect.isBusyElsewhere(item.id)}
           onOpen={() => connect.openModal(item.id)}
@@ -603,7 +601,7 @@ function IntegrationsPanelInner() {
           ownOAuthContent={
             connectModalItem.kind === "oauth" ? (
               <YourOwnTab
-                assistantId={mcpAssistantId}
+                assistantId={assistantId}
                 providerKey={connectModalItem.provider.provider_key}
                 displayName={connectModalItem.name}
                 logoUrl={connectModalItem.provider.logo_url}

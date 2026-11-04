@@ -35,7 +35,6 @@ function useTypewriter(text: string): { typed: string; done: boolean } {
 }
 
 export interface AssistantInboxSetupSuccessProps {
-  assistantId: string;
   assistantName: string;
   /** The address that was just created. */
   address: string;
@@ -52,7 +51,6 @@ export interface AssistantInboxSetupSuccessProps {
  * off a line they were still reading.
  */
 export function AssistantInboxSetupSuccess({
-  assistantId,
   assistantName,
   address,
   onContinue,
@@ -96,7 +94,7 @@ export function AssistantInboxSetupSuccess({
           style={{ opacity: done ? 1 : 0 }}
           aria-hidden={!done}
         >
-          <AddressPill assistantId={assistantId} address={address} />
+          <AddressPill address={address} />
           <p className="max-w-xs text-body-small-lighter text-[var(--content-secondary)]">
             {t("assistantInboxSetupSuccess.body")}
           </p>

@@ -27,7 +27,6 @@ const meta: Meta<typeof AssistantHandleModal> = {
   title: "Components/AssistantHandleModal",
   component: AssistantHandleModal,
   args: {
-    assistant: ASSISTANT,
     open: true,
     onOpenChange: fn().mockName("onOpenChange"),
   },

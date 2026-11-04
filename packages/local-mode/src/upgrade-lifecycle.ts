@@ -1,34 +1,33 @@
-import { randomBytes } from "crypto";
-import { getGatewayUrl, isDockerEntry } from "@mycadet/local-mode/contract";
-import { spawnSync } from "child_process";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
+import { randomBytes } from "node:crypto";
+import { getGatewayUrl, isDockerEntry } from "./lockfile-contract";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
-import cliPkg from "../../package.json";
 
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { loopbackSafeFetch, saveLockfileAssistant } from "@mycadet/local-mode";
-import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
-import { emitCliError } from "./cli-error.js";
-import { captureImageRefs, wakeContainers } from "./remotes/docker.js";
+import { loopbackSafeFetch } from "./loopback-fetch";
+import { saveLockfileAssistant } from "./lockfile";
+import type { LockfileAssistant } from "./lockfile-contract";
+import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops";
+import { captureImageRefs, wakeContainers } from "./remotes/docker/upgrade";
 import {
   DOCKER_READY_TIMEOUT_MS,
-  getBuilderManagedEnvKeys,
-  getOrCreateHostDeviceId,
   pullImage,
   resolveImageRefs,
+} from "./remotes/docker/hatch";
+import {
+  getBuilderManagedEnvKeys,
   startContainers,
   stopContainers,
-} from "@mycadet/local-mode";
-import { GATEWAY_INTERNAL_PORT } from "./environments/paths.js";
-import {
-  dockerResourceNames,
-  resolveDataDir,
-  sleepDocker,
-} from "@mycadet/local-mode";
-import { loadGuardianToken } from "./guardian-token.js";
-import { classifyReadyzResponse } from "@mycadet/local-mode";
+} from "./remotes/docker/statefulset";
+import { getOrCreateHostDeviceId } from "./device-id";
+import { GATEWAY_INTERNAL_PORT } from "./ports";
+import { dockerResourceNames } from "./remotes/docker/retire";
+import { sleepDocker } from "./remotes/docker/sleep";
+import { resolveDataDir } from "./config";
+import { loadGuardianToken } from "./guardian-token";
+import { classifyReadyzResponse } from "./daemon-readiness";
 
 import { z } from "zod";
 
@@ -39,9 +38,26 @@ const MigrationGateBodySchema = z.object({
 import {
   type DockerStatefulSetSpec,
   type ServiceName,
-} from "@mycadet/local-mode";
-import { execOutput } from "./step-runner.js";
-import { compareVersions } from "./version-compat.js";
+} from "./remotes/docker/statefulset";
+import { execOutput } from "./exec";
+import { compareVersions } from "./version-compat";
+import { stripVersionPrefix } from "./version";
+
+/**
+ * A typed upgrade failure: the legs throw it where the CLI used to call
+ * `emitCliError` + `process.exit`, and the command layer maps it onto the
+ * CLI's error taxonomy (the code IS the category).
+ */
+export class UpgradeError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+    readonly detail?: string,
+  ) {
+    super(message);
+    this.name = "UpgradeError";
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Failure log capture
@@ -517,6 +533,8 @@ export async function attemptFailedStateRestore(opts: {
 // ---------------------------------------------------------------------------
 
 export interface PerformDockerRollbackOptions {
+  /** The caller's own version — the fallback image tag when a pull has no ref. */
+  cliVersion?: string;
   /** Root archive must be installed before the target runtime starts. */
   backupPath: string;
   /** Specific version to roll back to. */
@@ -540,10 +558,10 @@ export async function performDockerRollback(
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
   if (!isDockerEntry(entry)) {
-    const msg = `Docker rollback requires a docker assistant; '${entry.assistantId}' is ${entry.cloud}.`;
-    console.error(msg);
-    emitCliError("UNKNOWN", msg);
-    process.exit(1);
+    throw new UpgradeError(
+      "UNKNOWN",
+      `Docker rollback requires a docker assistant; '${entry.assistantId}' is ${entry.cloud}.`,
+    );
   }
   const gatewayUrl = getGatewayUrl(entry);
   const { targetVersion, backupPath } = options;
@@ -561,7 +579,10 @@ export async function performDockerRollback(
   // Resolve Docker image refs for the target version. The repo follows the
   // CLI's own version shape (dev CLI → -dev repos); the tag is the target.
   console.log("🔍 Resolving image references...");
-  const targetImageTags = resolveImageRefs(targetVersion, cliPkg.version ?? "");
+  const targetImageTags = resolveImageRefs(
+    targetVersion,
+    options.cliVersion ?? "",
+  );
 
   // Capture current image digests for auto-rollback on failure
   console.log("📸 Capturing current image references for rollback...");
@@ -599,17 +620,16 @@ export async function performDockerRollback(
     const cmp = compareVersions(targetVersion, currentVersion);
     if (cmp !== null) {
       if (cmp > 0) {
-        const msg =
-          "Cannot roll back to a newer version. Use `cadet upgrade` instead.";
-        console.error(msg);
-        emitCliError("VERSION_DIRECTION", msg);
-        process.exit(1);
+        throw new UpgradeError(
+          "VERSION_DIRECTION",
+          "Cannot roll back to a newer version. Use `cadet upgrade` instead.",
+        );
       }
       if (cmp === 0) {
-        const msg = `Already on version ${targetVersion}. Nothing to roll back to.`;
-        console.error(msg);
-        emitCliError("VERSION_DIRECTION", msg);
-        process.exit(1);
+        throw new UpgradeError(
+          "VERSION_DIRECTION",
+          `Already on version ${targetVersion}. Nothing to roll back to.`,
+        );
       }
     }
   }
@@ -697,8 +717,11 @@ export async function performDockerRollback(
       entry.assistantId,
       buildCompleteEvent(currentVersion ?? "unknown", false),
     );
-    emitCliError("IMAGE_PULL_FAILED", "Failed to pull Docker images", detail);
-    process.exit(1);
+    throw new UpgradeError(
+      "IMAGE_PULL_FAILED",
+      "Failed to pull Docker images",
+      detail,
+    );
   }
   console.log("✅ Docker images pulled\n");
 
@@ -914,7 +937,7 @@ export async function performDockerRollback(
           console.log(
             `\n⚠️  Rolled back to original version. Rollback to ${targetVersion} failed.`,
           );
-          emitCliError(
+          throw new UpgradeError(
             "READINESS_TIMEOUT",
             `Rollback to ${targetVersion} failed: containers did not become ready. Rolled back to original version.`,
           );
@@ -930,7 +953,7 @@ export async function performDockerRollback(
             entry.assistantId,
             buildCompleteEvent(currentVersion ?? "unknown", false),
           );
-          emitCliError(
+          throw new UpgradeError(
             "ROLLBACK_FAILED",
             "Auto-rollback also failed after readiness timeout. Manual intervention required.",
           );
@@ -948,7 +971,7 @@ export async function performDockerRollback(
           entry.assistantId,
           buildCompleteEvent(currentVersion ?? "unknown", false),
         );
-        emitCliError(
+        throw new UpgradeError(
           "ROLLBACK_FAILED",
           "Auto-rollback failed after readiness timeout. Manual intervention required.",
           revertDetail,
@@ -964,12 +987,10 @@ export async function performDockerRollback(
         entry.assistantId,
         buildCompleteEvent(currentVersion ?? "unknown", false),
       );
-      emitCliError(
+      throw new UpgradeError(
         "ROLLBACK_NO_STATE",
         "Containers failed to become ready and no previous images available for auto-rollback.",
       );
     }
-
-    process.exit(1);
   }
 }

@@ -1,11 +1,8 @@
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "./lockfile-contract";
+import type { LockfileAssistant } from "./lockfile-contract";
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  loopbackSafeFetch,
-  readCloudToken,
-} from "@mycadet/local-mode";
+import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
+import { loopbackSafeFetch } from "./loopback-fetch";
 
 export interface ManagedProcessEntry {
   name: string;

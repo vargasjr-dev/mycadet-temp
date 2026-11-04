@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { checkHealth } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import { checkHealth } from "../daemon-readiness";
+import type { LockfileAssistant } from "../lockfile-contract";
 
 // The probe is entry-based: a local entry's gateway address is the loopback
 // port the test server binds.

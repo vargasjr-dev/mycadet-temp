@@ -68,7 +68,7 @@ function railLabels(sections: SidebarSection[]): string[] {
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <CollapsedRailSections sections={sections} assistantId="asst-1" />
+      <CollapsedRailSections sections={sections} />
     </QueryClientProvider>,
   );
   return [...html.matchAll(/data-testid="rail-tile">([^<]*)</g)].map(
