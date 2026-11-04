@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { assistantBackupFilenamePattern } from "../lib/backup-ops.js";
+import { assistantBackupFilenamePattern } from "../backup-ops";
 
 const STAMP = "2026-09-15T14-27-28-123Z";
 

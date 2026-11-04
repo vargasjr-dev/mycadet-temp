@@ -6,7 +6,7 @@ import { getLocalInstanceDir } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { LocalAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
-import * as healthCheck from "../lib/health-check.js";
+import * as healthCheck from "@mycadet/local-mode";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
@@ -17,7 +17,7 @@ import {
   createRootBackup,
   restoreRootBackup,
   STATE_ROOTS,
-} from "../lib/root-backup.js";
+} from "@mycadet/local-mode";
 
 let directory: string,
   source: LockfileAssistant,

@@ -10,7 +10,7 @@
 
 import { join } from "node:path";
 import { resolveVersion } from "@mycadet/shared/version";
-import { stageBasetenBuildContext } from "../../packages/local-mode/src/remotes/baseten/context.js";
+import { stageBasetenBuildContext } from "@mycadet/local-mode";
 
 const argv = process.argv.slice(2);
 const remoteFlag = argv.indexOf("--remote");

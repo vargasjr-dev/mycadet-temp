@@ -1,6 +1,7 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
+import { consoleLifecycleReporter } from "@mycadet/local-mode";
 import {
   cliCommand,
   dockerResourceNames,
@@ -319,7 +320,7 @@ export const hatch = Object.assign(
       assistantCaCertPath: assistantCaCert ?? undefined,
       provider,
       precollectedApiKey,
-      log: (msg) => console.log(msg),
+      reporter: consoleLifecycleReporter,
     });
     if (!result.ok) {
       if (result.status === 401) {
@@ -332,10 +333,7 @@ export const hatch = Object.assign(
     const entry = result.assistant;
     console.log(
       "   " +
-        green(
-          `${HATCHED_EMOJI}  Your assistant has hatched!`,
-          process.stdout,
-        ),
+        green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
     );
     console.log("");
     printInstanceDetails(

@@ -1,15 +1,20 @@
+/**
+ * The docker upgrade's recovery core: failed-state restore ordering and the
+ * versioned rollback's stop → install → wake sequence. The subprocess fake
+ * harness stays cli-side (shared with the teleport tests).
+ */
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
-import * as backups from "../lib/backup-ops.js";
-import * as docker from "../lib/remotes/docker.js";
-import * as lifecycle from "../lib/upgrade-lifecycle.js";
-import * as localMode from "@mycadet/local-mode";
-import { mockCommands } from "./commands-mock.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import * as backups from "../backup-ops";
+import * as dockerUpgrade from "../remotes/docker/upgrade";
+import * as lifecycle from "../upgrade-lifecycle";
+import * as localMode from "..";
+import { mockChildProcessSpawn } from "./helpers/child-process-mock";
+import type { LockfileAssistant } from "../lockfile-contract";
 
 const capture = spyOn(backups, "createBackup");
-const images = spyOn(docker, "captureImageRefs");
+const images = spyOn(dockerUpgrade, "captureImageRefs");
 const pull = spyOn(localMode, "pullImage");
-const wake = spyOn(docker, "wakeContainers");
+const wake = spyOn(dockerUpgrade, "wakeContainers");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(localMode, "sleepDocker");
@@ -117,14 +122,22 @@ test("failed root restore does not restart a partial installation", async () => 
 });
 
 test("versioned restore installs roots into stopped target containers before first startup", async () => {
-  const commands = mockCommands();
-  commands.on(
-    "docker",
-    (args) => args[0] === "inspect",
-    () => ({
-      stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
-    }),
-  );
+  // The docker `inspect` that reads the stopped container's env goes through
+  // the package's child-process mock (the house spawn seam — a leaked spy on
+  // the builtin namespace strips `spawn` for every later file in the run).
+  await mockChildProcessSpawn((command, args) => {
+    if (command === "docker" && args[0] === "inspect") {
+      return {
+        stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
+        code: 0,
+        pid: 4242,
+        unref: () => {},
+      };
+    }
+    // The archive/restore path spawns detached tar processes that only
+    // unref — give them a real-shaped child so the mock stays whole.
+    return { stdout: "", code: 0, pid: 4243, unref: () => {} };
+  });
 
   capture.mockImplementation(async () => {
     events.push("capture-safety");
@@ -137,7 +150,7 @@ test("versioned restore installs roots into stopped target containers before fir
   });
   pull.mockResolvedValue(undefined);
   start.mockImplementation(async (options) => {
-    expect(options.createOnly).toBe(true);
+    expect((options as { createOnly?: boolean }).createOnly).toBe(true);
     events.push("create-stopped-target");
   });
   wake.mockImplementation(async () => {
@@ -152,27 +165,23 @@ test("versioned restore installs roots into stopped target containers before fir
     }
     return Response.json({});
   });
-  try {
-    await lifecycle.performDockerRollback(entry, {
-      targetVersion: "0.12.10",
-      backupPath: "/tmp/source.tar.gz",
-    });
-    expect(restore).toHaveBeenCalledWith(
-      entry.assistantId,
-      "/tmp/source.tar.gz",
-      {
-        resume: false,
-      },
-    );
-    expect(events).toEqual([
-      "capture-safety",
-      "sleep",
-      "create-stopped-target",
-      "restore-roots",
-      "wake-restored-target",
-      "check-ready",
-    ]);
-  } finally {
-    commands.restore();
-  }
+  await lifecycle.performDockerRollback(entry, {
+    targetVersion: "0.12.10",
+    backupPath: "/tmp/source.tar.gz",
+  });
+  expect(restore).toHaveBeenCalledWith(
+    entry.assistantId,
+    "/tmp/source.tar.gz",
+    {
+      resume: false,
+    },
+  );
+  expect(events).toEqual([
+    "capture-safety",
+    "sleep",
+    "create-stopped-target",
+    "restore-roots",
+    "wake-restored-target",
+    "check-ready",
+  ]);
 });

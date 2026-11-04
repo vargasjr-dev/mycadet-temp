@@ -4,7 +4,7 @@ import { execSync } from "node:child_process";
 import { stampedVersion } from "@mycadet/shared/version";
 import { environmentFromVersion } from "../lib/environments/resolve.js";
 import { isLocalVersion } from "@mycadet/shared/version";
-import { parseVersion } from "../lib/version-compat.js";
+import { parseVersion } from "@mycadet/local-mode";
 
 describe("stampedVersion", () => {
   test("stamps source checkouts with a -local. postfix in the dev-release format", () => {

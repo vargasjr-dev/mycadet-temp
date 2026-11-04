@@ -1,3 +1,7 @@
+import {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "../../lifecycle-reporter";
 import { findAssistantByName } from "../../operations/lookup";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
@@ -84,8 +88,8 @@ export async function hatchLocal(params: {
   /** The caller's provider choice; undefined = skip provider credential setup. */
   provider?: string | null;
   precollectedApiKey?: string;
-  /** The narration sink (defaults to console.log). */
-  log?: (msg: string) => void;
+  /** The narration sink (defaults to the console reporter). */
+  reporter?: LifecycleReporter;
 }): Promise<HatchResult> {
   const {
     name,
@@ -94,7 +98,8 @@ export async function hatchLocal(params: {
     provider,
     precollectedApiKey,
   } = params;
-  const log = params.log ?? ((msg: string) => console.log(msg));
+  const reporter = params.reporter ?? consoleLifecycleReporter;
+  const log = (msg: string) => reporter.log(msg);
   setStartupLogging(params.verbose ?? false);
   if (params.version && !process.env.APP_VERSION) {
     process.env.APP_VERSION = params.version;

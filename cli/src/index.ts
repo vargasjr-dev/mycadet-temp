@@ -42,7 +42,7 @@ import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { loadGuardianToken } from "./lib/guardian-token";
-import { checkHealth } from "./lib/health-check";
+import { checkHealth } from "@mycadet/local-mode";
 
 const commands = {
   backup,

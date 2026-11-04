@@ -26,9 +26,9 @@ import {
   stageRootArchive,
   STATE_ROOTS,
   validateRootArchive,
-} from "../lib/root-backup.js";
+} from "../root-backup";
 import * as localMode from "@mycadet/local-mode";
-import * as healthCheck from "../lib/health-check.js";
+import * as healthCheck from "../health-check";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
@@ -55,7 +55,7 @@ mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   wakeAssistant: wakeMock,
 }));
-mock.module("../lib/health-check.js", () => ({
+mock.module("../health-check", () => ({
   ...healthCheck,
   isAssistantHealthy: isHealthyMock,
 }));

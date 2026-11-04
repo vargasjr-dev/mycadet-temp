@@ -5,27 +5,26 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as roots from "../lib/root-backup.js";
 import * as cloud from "../lib/cloud-client.js";
 import * as localMode from "@mycadet/local-mode";
-import * as lifecycle from "../lib/upgrade-lifecycle.js";
+import * as lifecycle from "@mycadet/local-mode";
 import * as guardian from "../lib/guardian-token.js";
 import { restore } from "../commands/restore.js";
 
 const directory = await mkdtemp(join(tmpdir(), "root-restore-command-"));
 const file = join(directory, "backup.tar.gz");
 const source = join(directory, "source");
-for (const root of roots.STATE_ROOTS)
+for (const root of localMode.STATE_ROOTS)
   await mkdir(join(source, root), { recursive: true });
 await writeFile(
   join(source, "gateway-security", "actor-token-signing-key"),
   Buffer.alloc(32, 1),
 );
-await roots.packRoot(source, file);
+await localMode.packRoot(source, file);
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
 const versionRestore = spyOn(lifecycle, "performDockerRollback");
-const hostRestore = spyOn(roots, "restoreRootBackup");
+const hostRestore = spyOn(localMode, "restoreRootBackup");
 const token = spyOn(localMode, "readCloudToken");
 const signedUrl = spyOn(cloud, "cloudRequestSignedUrl");
 const upload = spyOn(cloud, "platformUploadToSignedUrl");

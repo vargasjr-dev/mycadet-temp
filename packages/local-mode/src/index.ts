@@ -34,7 +34,59 @@ export {
   assistantBearerTokenPath,
   basetenTokenPath,
 } from "./config";
+export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export type { LocalEndpointConfig } from "./config";
+export {
+  assistantBackupFilenamePattern,
+  CLI_BACKUP_KINDS,
+  type CliBackupKind,
+  createBackup,
+  formatSize,
+  getBackupsDir,
+  listAssistantBackupTimes,
+  pruneOldBackups,
+  restoreBackup,
+} from "./backup-ops";
+export {
+  createRootBackup,
+  DockerRootStorage,
+  initializeRootArchive,
+  LocalRootStorage,
+  packRoot,
+  restoreRootBackup,
+  stageRootArchive,
+  validateRootArchive,
+  withRootOperationLock,
+  type RootStorage,
+  STATE_ROOTS,
+} from "./root-backup";
+export type { DockerBackupOps } from "./root-backup";
+export {
+  checkCloudHealth,
+  checkHealth,
+  isAssistantHealthy,
+  HEALTH_CHECK_TIMEOUT_MS,
+  type HealthCheckResult,
+  type ManagedProcessEntry,
+} from "./health-check";
+export {
+  compareVersions,
+  isVersionCompatible,
+  parseVersion,
+  versionsEqual,
+} from "./version-compat";
+export {
+  fetchLatestVersion,
+  fetchReleases,
+  type ReleaseListItem,
+} from "./cloud-releases";
+export {
+  evaluateUpgradePoll,
+  resolveUpgradeTarget,
+  type UpgradePollState,
+  type UpgradeTargetResolution,
+} from "./upgrade-preflight";
+export { fetchGatewayPs } from "./health-check";
 export {
   cliCommand,
   defaultEnvironmentFilePath,
@@ -89,8 +141,6 @@ export {
   resolveCliInvocation,
   type CliPaths,
 } from "./cli-invocation";
-export { runHatch } from "./hatch";
-export type { HatchResult } from "./hatch";
 export {
   matchOperatorRequest,
   forwardOperatorRequest,
@@ -358,9 +408,41 @@ export type {
   DevicesListResult,
   DevicesRevokeResult,
 } from "./devices";
-export { runUpgrade, isValidReleaseVersion } from "./upgrade";
 export { stripVersionPrefix } from "./version";
-export type { UpgradeOptions, UpgradeResult } from "./upgrade";
+export { isValidReleaseVersion } from "./upgrade";
+export {
+  upgradeAssistant,
+  type UpgradeAssistantParams,
+  type UpgradeAssistantResult,
+} from "./operations/upgrade";
+export { UpgradeError } from "./upgrade-lifecycle";
+export {
+  attemptFailedStateRestore,
+  broadcastUpgradeEvent,
+  buildCompleteEvent,
+  buildProgressEvent,
+  buildReplayEnv,
+  buildReplayState,
+  buildStartingEvent,
+  buildUpgradeCommitMessage,
+  captureContainerEnv,
+  captureReplayState,
+  captureUpgradeFailureLogs,
+  commitWorkspaceViaGateway,
+  performDockerRollback,
+  rollbackMigrations,
+  UPGRADE_PROGRESS,
+  waitForReady,
+  type PerformDockerRollbackOptions,
+} from "./upgrade-lifecycle";
+export { upgradeDocker } from "./remotes/docker/upgrade";
+export {
+  upgradeLocal,
+  targetVersionFromCli,
+  resolveLatestStableTag,
+} from "./remotes/local/upgrade";
+export { upgradeCloud } from "./remotes/cloud/upgrade";
+export { isCloudHome } from "./cloud-values";
 export { readLockfileAssistantAvatar } from "./avatar";
 export {
   getGuardianAccessToken,
