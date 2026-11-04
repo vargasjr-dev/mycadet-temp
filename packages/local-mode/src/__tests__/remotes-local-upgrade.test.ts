@@ -96,7 +96,6 @@ const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(
       ces: "stopped",
     },
     notes: [],
-    wasRunning: false,
   }),
 );
 const wakeLocalMock = mock<typeof wakeModule.wakeLocal>(async () => ({
@@ -208,7 +207,6 @@ beforeEach(() => {
     kind: "services",
     services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
     notes: [],
-    wasRunning: false,
   });
   wakeLocalMock.mockReset();
   wakeLocalMock.mockResolvedValue({ ok: true });
