@@ -44,6 +44,10 @@ import {
   LOCAL_BIN_DIR,
   startColimaAndAwaitDaemon,
 } from "./common";
+import {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "../../lifecycle-reporter";
 import { dockerResourceNames } from "./retire";
 import {
   type DockerResourceNames,
@@ -609,8 +613,8 @@ export interface HatchDockerParams {
    * connection.
    */
   assistantCaCertPath?: string;
-  /** The narration sink (defaults to console.log). */
-  log?: (msg: string) => void;
+  /** The narration sink (defaults to the console reporter). */
+  reporter?: LifecycleReporter;
 }
 
 export type HatchDockerResult =
@@ -631,7 +635,8 @@ export async function hatchDocker(
 ): Promise<HatchDockerResult> {
   const { name = null, configValues = {} } = params;
   let watch = params.watch ?? false;
-  const log = params.log ?? ((msg: string) => console.log(msg));
+  const reporter = params.reporter ?? consoleLifecycleReporter;
+  const log = (msg: string) => reporter.log(msg);
   const provider = params.provider;
   const precollectedApiKey = params.precollectedApiKey;
   const version = params.version ?? "";

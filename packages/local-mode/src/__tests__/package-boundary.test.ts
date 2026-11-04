@@ -33,6 +33,7 @@ const ALLOWED_PACKAGES = new Set([
   "@mycadet/shared",
   "zod",
   "nanoid",
+  "tar",
 ]);
 
 function collectSourceFiles(dir: string): string[] {
@@ -123,6 +124,7 @@ describe("package boundary", () => {
       "@mycadet/service-contracts": "workspace:*",
       "@mycadet/shared": "workspace:*",
       nanoid: "5.1.7",
+      tar: "7.5.22",
       zod: "4.3.6",
     });
   });

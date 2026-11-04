@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { checkHealth, HEALTH_CHECK_TIMEOUT_MS } from "../lib/health-check.js";
+import { checkHealth, HEALTH_CHECK_TIMEOUT_MS } from "../health-check";
 
 describe("checkHealth", () => {
   test("HEALTH_CHECK_TIMEOUT_MS is a positive number", () => {

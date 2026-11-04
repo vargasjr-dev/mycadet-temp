@@ -1,3 +1,5 @@
+import { stripVersionPrefix } from "./version";
+
 /**
  * Parse a version string into { major, minor, patch, pre } components.
  * Handles optional `v`/`V` prefix (e.g., "v1.2.3" or "1.2.3").
@@ -89,10 +91,6 @@ export function compareVersions(a: string, b: string): number | null {
 /**
  * Strip an optional leading `v`/`V` prefix: "v0.7.0" → "0.7.0".
  */
-export function stripVersionPrefix(version: string): string {
-  return version.replace(/^[vV]/, "");
-}
-
 /**
  * Check whether two version strings refer to the same version.
  * Compares via semver when both parse; falls back to prefix-stripped

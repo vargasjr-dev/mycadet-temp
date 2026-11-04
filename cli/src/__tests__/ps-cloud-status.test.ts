@@ -24,7 +24,7 @@ process.env.XDG_CONFIG_HOME = testDir;
 // ---------------------------------------------------------------------------
 
 import * as assistantConfig from "../lib/assistant-config.js";
-import * as healthCheck from "../lib/health-check.js";
+import * as healthCheck from "@mycadet/local-mode";
 import * as cloudClient from "../lib/cloud-client.js";
 import * as localMode from "@mycadet/local-mode";
 

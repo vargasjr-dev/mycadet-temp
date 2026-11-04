@@ -17,7 +17,7 @@ import {
   createRootBackup,
   restoreRootBackup,
   STATE_ROOTS,
-} from "../lib/root-backup.js";
+} from "@mycadet/local-mode";
 
 let directory: string,
   source: LockfileAssistant,

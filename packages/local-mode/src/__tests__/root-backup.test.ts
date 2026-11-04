@@ -26,7 +26,7 @@ import {
   stageRootArchive,
   STATE_ROOTS,
   validateRootArchive,
-} from "../lib/root-backup.js";
+} from "../root-backup";
 import * as localMode from "@mycadet/local-mode";
 import * as healthCheck from "../lib/health-check.js";
 

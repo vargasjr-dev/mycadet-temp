@@ -29,7 +29,7 @@ import {
   platformImportPreflightFromGcs,
   platformUploadToSignedUrl,
 } from "../lib/cloud-client.js";
-import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
+import { restoreRootBackup, validateRootArchive } from "@mycadet/local-mode";
 function printUsage(): void {
   console.log(
     `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,

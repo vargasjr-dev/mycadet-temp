@@ -1,5 +1,5 @@
-import type { ReleaseListItem } from "./cloud-releases.js";
-import { compareVersions, versionsEqual } from "./version-compat.js";
+import type { ReleaseListItem } from "./cloud-releases";
+import { compareVersions, versionsEqual } from "./version-compat";
 
 export interface UpgradeTargetResolution {
   kind: "ok" | "version-not-found" | "no-releases";

@@ -10,12 +10,12 @@ import {
 import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import * as config from "../lib/assistant-config.js";
+import * as config from "../operations/lookup";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
-import * as backups from "../lib/backup-ops.js";
-import * as guardian from "../lib/guardian-token.js";
-import { stageRootArchive, STATE_ROOTS } from "../lib/root-backup.js";
+import * as backups from "../backup-ops";
+import * as guardian from "../guardian-token";
+import { stageRootArchive, STATE_ROOTS } from "../root-backup";
 
 const directory = await mkdtemp(join(tmpdir(), "safety-root-backup-"));
 const root = join(directory, "instance");

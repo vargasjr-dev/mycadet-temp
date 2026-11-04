@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   evaluateUpgradePoll,
   resolveUpgradeTarget,
-} from "../lib/upgrade-preflight.js";
+} from "../upgrade-preflight";
 
 const RELEASES = [
   { version: "0.8.0", is_stable: false },

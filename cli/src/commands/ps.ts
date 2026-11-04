@@ -38,7 +38,7 @@ import {
   checkHealth,
   fetchGatewayPs,
   type ManagedProcessEntry,
-} from "../lib/health-check";
+} from "@mycadet/local-mode";
 
 import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";

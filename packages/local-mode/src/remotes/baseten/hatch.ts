@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import { GATEWAY_PORT, getGatewayUrl } from "../../lockfile-contract";
 import { readLockfile, saveLockfileAssistant } from "../../lockfile";
+import {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "../../lifecycle-reporter";
 import { PROVIDER_ENV_VAR_NAMES } from "../../provider-env-vars";
 import { saveBasetenSandboxToken } from "../../guardian-token";
 import {
@@ -64,8 +68,9 @@ async function recordSandbox(params: {
   name: string;
   sandboxUrl: string;
   gatewayPort: number;
-  log: (msg: string) => void;
+  reporter: LifecycleReporter;
 }): Promise<{ entry: LockfileAssistant; gatewayUrl: string }> {
+  const warn = (msg: string) => params.reporter.warn(msg);
   const assistantId =
     readLockfile().assistants.find(
       (a) => a.cloud === "baseten" && a.name === params.name,
@@ -82,10 +87,10 @@ async function recordSandbox(params: {
   try {
     saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
   } catch (err) {
-    params.log(
+    warn(
       `   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`,
     );
-    params.log(
+    warn(
       "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
     );
   }
@@ -98,8 +103,8 @@ export type HatchBasetenParams = {
   verbose?: boolean;
   /** The caller's release version — stamped into the image build. */
   version?: string;
-  /** The narration sink (defaults to console.log). */
-  log?: (msg: string) => void;
+  /** The narration sink (defaults to the console reporter). */
+  reporter?: LifecycleReporter;
 };
 
 export type HatchBasetenResult =
@@ -110,7 +115,9 @@ export async function hatchBaseten(
   params: HatchBasetenParams,
 ): Promise<HatchBasetenResult> {
   const { name, verbose = false } = params;
-  const log = params.log ?? ((msg: string) => console.log(msg));
+  const reporter = params.reporter ?? consoleLifecycleReporter;
+  const log = (msg: string) => reporter.log(msg);
+  const warn = (msg: string) => reporter.warn(msg);
   try {
     if (Object.keys(params.configValues ?? {}).length > 0) {
       log(
@@ -151,7 +158,7 @@ export async function hatchBaseten(
           name: sandboxName,
           sandboxUrl,
           gatewayPort: GATEWAY_PORT,
-          log,
+          reporter,
         });
         log(`   URL: ${sandboxUrl}`);
         log(`   Assistant gateway: ${gatewayUrl}/`);

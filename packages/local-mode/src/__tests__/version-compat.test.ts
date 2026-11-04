@@ -4,9 +4,9 @@ import {
   parseVersion,
   compareVersions,
   isVersionCompatible,
-  stripVersionPrefix,
   versionsEqual,
-} from "../lib/version-compat.js";
+} from "../version-compat";
+import { stripVersionPrefix } from "../version";
 
 describe("parseVersion", () => {
   test("parses basic semver", () => {

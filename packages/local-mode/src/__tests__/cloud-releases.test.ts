@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { dockerhubImages, resolveImageRefs } from "@mycadet/local-mode";
-import { fetchLatestVersion, fetchReleases } from "../lib/cloud-releases.js";
+import { fetchLatestVersion, fetchReleases } from "../cloud-releases";
 import {
   isDevVersion,
   isLocalVersion,

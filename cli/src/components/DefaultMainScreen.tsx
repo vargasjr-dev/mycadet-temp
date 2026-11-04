@@ -14,7 +14,7 @@ import {
 } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { checkHealth } from "../lib/health-check";
+import { checkHealth } from "@mycadet/local-mode";
 import {
   guardianTokenDueForRenewal,
   loadGuardianToken,

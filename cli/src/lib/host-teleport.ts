@@ -3,7 +3,7 @@ import { getGatewayUrl, type Remote } from "@mycadet/local-mode/contract";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistantByName, setActiveAssistant } from "./assistant-config.js";
-import { createBackup, pruneOldBackups } from "./backup-ops.js";
+import { createBackup, pruneOldBackups } from "@mycadet/local-mode";
 import { initializeDockerTeleportTarget } from "./remotes/docker.js";
 import {
   allocateLocalPlacement,
@@ -14,15 +14,13 @@ import {
   withLocalHatchLock,
   writeInitialConfig,
 } from "@mycadet/local-mode";
-import {
-  initializeRootArchive,
+import {initializeRootArchive,
   restoreRootBackup,
   stageRootArchive,
   STATE_ROOTS,
-  withRootOperationLock,
-} from "./root-backup.js";
+  withRootOperationLock,} from "@mycadet/local-mode";
 import { fetchCurrentVersion } from "@mycadet/local-mode";
-import { compareVersions } from "./version-compat.js";
+import { compareVersions } from "@mycadet/local-mode";
 import { sleepAssistant, wakeAssistant } from "@mycadet/local-mode";
 import { isAssistantHealthy } from "./health-check.js";
 import { generateInstanceName } from "@mycadet/local-mode";
