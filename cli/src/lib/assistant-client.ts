@@ -23,7 +23,7 @@ import {
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "./cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
 import {
@@ -99,7 +99,7 @@ export class AssistantClient {
     }
 
     this._assistantId = entry.assistantId;
-    const cloudManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
+    const cloudManaged = !opts?.sessionToken && isCloudEntry(entry);
     this.runtimeUrl = getGatewayUrl(entry);
 
     if (opts?.sessionToken) {

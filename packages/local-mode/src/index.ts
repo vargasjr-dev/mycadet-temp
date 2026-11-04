@@ -433,7 +433,6 @@ export {
   resolveLatestStableTag,
 } from "./remotes/local/upgrade";
 export { upgradeCloud } from "./remotes/cloud/upgrade";
-export { isCloudHome } from "./cloud-values";
 export { readLockfileAssistantAvatar } from "./avatar";
 export {
   getGuardianAccessToken,

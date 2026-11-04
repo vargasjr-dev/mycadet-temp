@@ -1,4 +1,4 @@
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   existsSync,
@@ -567,7 +567,7 @@ export const restore = Object.assign(
       process.exit(1);
     }
 
-    if (isCloudHome(cloud)) {
+    if (isCloudEntry(entry)) {
       await validateRootArchive(fromPath);
       const bundleData = readFileSync(fromPath);
       await restorePlatform(entry, name, bundleData, { dryRun });

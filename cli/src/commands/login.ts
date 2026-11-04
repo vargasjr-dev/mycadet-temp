@@ -6,7 +6,7 @@ import {
   readCloudToken,
   removeLockfileAssistant,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 
 import { setActiveAssistant } from "../lib/assistant-config";
 import {
@@ -152,7 +152,7 @@ export const logout = Object.assign(
 
     // Remove cloud assistants from the lockfile.
     const cloudAssistants = loadAllAssistants().filter((a) =>
-      isCloudHome(a.cloud),
+      isCloudEntry(a),
     );
     for (const a of cloudAssistants) {
       removeLockfileAssistant(a.assistantId);

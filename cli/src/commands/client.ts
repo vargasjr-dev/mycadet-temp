@@ -1,4 +1,4 @@
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
@@ -43,7 +43,7 @@ interface ParsedArgs {
   assistantName?: string;
   /** "cadet" for cloud-hosted assistants, undefined for local. */
   cloud?: string;
-  /** Platform session token (X-Session-Token), set when isCloudHome(cloud). */
+  /** Platform session token (X-Session-Token), set when cloud === "cloud". */
   cloudToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
@@ -148,12 +148,12 @@ export function parseArgs(): ParsedArgs {
   // entirely when --token supplies the credential, so no saved creds are read.
   const cloudToken = bearerTokenOverride
     ? undefined
-    : isCloudHome(cloud)
+    : cloud === "cloud"
       ? (readCloudToken() ?? undefined)
       : undefined;
   const bearerToken = bearerTokenOverride
     ? bearerTokenOverride
-    : isCloudHome(cloud)
+    : cloud === "cloud"
       ? undefined
       : (loadGuardianToken(entry?.assistantId ?? "")?.accessToken ?? undefined);
 
@@ -218,7 +218,7 @@ async function maybeHydrateCloudAssistantName(
   cloud: string | undefined,
   cloudToken: string | undefined,
 ): Promise<string | undefined> {
-  if (!isCloudHome(cloud) || assistantName || !cloudToken) {
+  if (cloud !== "cloud" || assistantName || !cloudToken) {
     return assistantName;
   }
 
@@ -249,7 +249,7 @@ async function maybeHydrateCloudAssistantName(
  * Return a possibly-refreshed bearer token for the TUI's startup auth.
  *
  * Only a STORED guardian token is refreshable: platform session auth
- * (`isCloudHome(cloud)`) and ephemeral `--token` overrides (whose token won't
+ * (`cloud === "cloud"`) and ephemeral `--token` overrides (whose token won't
  * match the store) are left untouched, as is a token that's still fresh. When
  * the stored token has passed its `refreshAfter` (or expiry) and a refresh
  * token is available, refresh once via the concurrency-safe refreshGuardianToken
@@ -262,7 +262,7 @@ export async function resolveFreshBearerToken(
   bearerToken: string | undefined,
   cloud: string | undefined,
 ): Promise<string | undefined> {
-  if (isCloudHome(cloud) || !bearerToken || !assistantId) return bearerToken;
+  if (cloud === "cloud" || !bearerToken || !assistantId) return bearerToken;
 
   const stored = loadGuardianToken(assistantId);
   // Refresh only the stored token (an ephemeral --token won't match), and only
@@ -316,7 +316,7 @@ export const client = Object.assign(
     // Build pre-constructed request headers merged from auth + client registration.
     // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
     let auth: Record<string, string> | undefined;
-    if (isCloudHome(cloud) && cloudToken) {
+    if (cloud === "cloud" && cloudToken) {
       const orgId = await fetchOrganizationId(cloudToken).catch((err) => {
         tuiLog.warn("failed to fetch organization id", { err: String(err) });
         return undefined;

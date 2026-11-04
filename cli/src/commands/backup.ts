@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { findAssistantByName } from "../lib/assistant-config.js";
 import { formatSize, getBackupsDir } from "@mycadet/local-mode";
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { createRootBackup } from "@mycadet/local-mode";
 import { createPlatformBackup } from "../lib/teleport-backup.js";
 
@@ -27,7 +27,7 @@ export const backup = Object.assign(
     if (args.length > 1) throw new Error(`Unknown backup option: ${args[1]}`);
     const entry = findAssistantByName(name);
     if (!entry) throw new Error(`No assistant found with name '${name}'.`);
-    if (isCloudHome(entry.cloud)) {
+    if (isCloudEntry(entry)) {
       const token = readCloudToken();
       if (!token)
         throw new Error(`Not logged in. Run '${cliCommand()} login' first.`);
