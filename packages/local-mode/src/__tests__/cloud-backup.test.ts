@@ -11,7 +11,7 @@ import {
 
 import type { LockfileAssistant } from "../lockfile-contract";
 import * as cloudAuth from "../cloud-auth";
-import { createCloudBackup, listCloudBackups } from "../cloud-backup";
+import { createCloudBackup, listCloudBackups } from "../remotes/cloud/backup";
 
 const authHeadersSpy = spyOn(cloudAuth, "cloudAuthHeaders").mockResolvedValue({
   "Content-Type": "application/json",

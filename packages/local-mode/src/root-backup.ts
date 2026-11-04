@@ -642,6 +642,18 @@ export async function createRootBackup(
   return withRootOperationLock(entry, () => captureBackup(entry, output));
 }
 
+/**
+ * Fresh archive path for a root backup: the backups dir keyed by assistant
+ * and timestamp (colons and dots swapped for dashes — filesystem- and
+ * shell-safe).
+ */
+export function newRootBackupPath(entry: LockfileAssistant): string {
+  return join(
+    getBackupsDir(),
+    `${entry.assistantId}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
+  );
+}
+
 async function captureBackup(
   entry: LockfileAssistant,
   output: string,

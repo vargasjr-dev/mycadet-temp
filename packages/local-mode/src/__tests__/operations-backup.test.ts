@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as cloudAuth from "../cloud-auth";
-import * as cloudBackups from "../cloud-backup";
+import * as cloudBackups from "../remotes/cloud/backup";
 import * as rootBackup from "../root-backup";
 import * as backupOps from "../backup-ops";
 import type { LockfileAssistant } from "../lockfile-contract";

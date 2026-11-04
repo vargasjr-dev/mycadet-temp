@@ -168,7 +168,7 @@ export {
   createCloudBackup,
   listCloudBackups,
   type CreateCloudBackupOptions,
-} from "./cloud-backup";
+} from "./remotes/cloud/backup";
 export {
   AVATAR_DEVICE_ENV_VAR,
   DOCKER_STATEFUL_SET_SPEC,

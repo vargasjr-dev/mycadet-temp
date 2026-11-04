@@ -10,16 +10,18 @@ import {
   managedBackupIsReady,
   readyManagedBackupCreatedAts,
   type ManagedBackupEntry,
-} from "./teleport-backup-policy";
+} from "../../teleport-backup-policy";
 
-import type { LockfileAssistant } from "./lockfile-contract";
+import type { LockfileAssistant } from "../../lockfile-contract";
 import { z } from "zod";
 import {
   cloudAuthHeaders,
   invalidateOrgIdCache,
+  readCloudToken,
   resolveCloudUrl,
-} from "./cloud-auth";
-import { loopbackSafeFetch } from "./loopback-fetch";
+} from "../../cloud-auth";
+import { loopbackSafeFetch } from "../../loopback-fetch";
+import { cliCommand } from "../../environment";
 
 const ManagedBackupEntrySchema = z.object({
   snapshot_name: z.string().optional(),
@@ -143,4 +145,25 @@ export async function createCloudBackup(
   throw new Error(
     `Cadet Cloud backup ${snapshotName} was not ready after ${Math.round(timeoutMs / 1000)}s`,
   );
+}
+
+/**
+ * The cloud backup LEG: resolve the session token (the credential the cloud
+ * snapshot request needs — callers never thread one through) and drive the
+ * create-and-wait. Structured login refusal; create/wait failures throw and
+ * the operation's caller maps them.
+ */
+export async function backupCloud(
+  entry: LockfileAssistant,
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const token = readCloudToken();
+  if (!token) {
+    return {
+      ok: false,
+      status: 401,
+      error: `Not logged in. Run '${cliCommand()} login' first.`,
+    };
+  }
+  await createCloudBackup(entry, token);
+  return { ok: true };
 }
