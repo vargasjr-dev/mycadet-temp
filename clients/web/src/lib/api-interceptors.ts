@@ -15,10 +15,8 @@
  * Reference: https://heyapi.dev/openapi-ts/clients/fetch#interceptors
  */
 import { client as cloudClient } from "@/generated/api/client.gen";
-import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
-import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import {
@@ -310,20 +308,10 @@ gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 // sites (blob downloads) explicitly override `parseAs` per-request.
 //
 // Reference: https://heyapi.dev/openapi-ts/clients/fetch#parser
-for (const apiClient of [
-  daemonClient,
-  gatewayClient,
-  cloudClient,
-  authClient,
-]) {
+for (const apiClient of [daemonClient, gatewayClient, cloudClient]) {
   apiClient.setConfig({ parseAs: "json" });
 }
 
-authClient.setConfig({
-  baseUrl: getCloudRuntimeUrl(),
-  credentials: "include",
-});
-
-for (const apiClient of [authClient, cloudClient]) {
+for (const apiClient of [cloudClient]) {
   apiClient.interceptors.request.use(requestInterceptor);
 }

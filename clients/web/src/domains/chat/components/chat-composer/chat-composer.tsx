@@ -432,9 +432,7 @@ export function ChatComposer({
   // normal surface, because the card is a working input during a session now
   // (see the bar's placement below), and an input painted in the room's color
   // reads as part of the room rather than as somewhere to type.
-  const voiceSurfacePaint = useVoiceSurfacePaint(
-    isLiveVoiceActive ? assistantId : null,
-  );
+  const voiceSurfacePaint = useVoiceSurfacePaint();
   // The two mute states (controller-published) behind the block's toggles: one
   // per direction of the conversation, like the room's.
   const liveVoiceMuted = useLiveVoiceStore.use.muted();
