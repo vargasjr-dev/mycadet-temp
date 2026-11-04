@@ -88,7 +88,9 @@ export async function wakeDocker(
     log("Docker containers started.");
   }
   if (options.waitUntilReady) {
-    const gatewayUrl = new URL(`http://127.0.0.1:${options.gatewayPort ?? entry.port}`);
+    const gatewayUrl = new URL(
+      `http://127.0.0.1:${options.gatewayPort ?? entry.port}`,
+    );
     const ready = await waitForReady(gatewayUrl.origin);
     if (!ready) {
       return {
@@ -124,8 +126,7 @@ async function recreateDockerContainers(
   const info = entry.containerInfo;
   const assistantImage = options.imageTags?.assistant ?? info?.assistantImage;
   const gatewayImage = options.imageTags?.gateway ?? info?.gatewayImage;
-  const cesImage =
-    options.imageTags?.["credential-executor"] ?? info?.cesImage;
+  const cesImage = options.imageTags?.["credential-executor"] ?? info?.cesImage;
   if (!assistantImage || !gatewayImage || !cesImage) {
     throw new Error(
       `no container images recorded for '${entry.assistantId}' — re-hatch or run \`cadet upgrade\` to set them`,
@@ -179,7 +180,10 @@ async function recreateDockerContainers(
   const assistantPort = ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   const runArgs = buildServiceRunArgs({
-    extraAssistantEnv: { CADET_DEVICE_ID: device, ...options.extraAssistantEnv },
+    extraAssistantEnv: {
+      CADET_DEVICE_ID: device,
+      ...options.extraAssistantEnv,
+    },
     extraGatewayEnv: { CADET_DEVICE_ID: device, ...options.extraGatewayEnv },
     cesServiceToken: options.cesServiceToken,
     gatewayPort,

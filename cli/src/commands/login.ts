@@ -151,9 +151,7 @@ export const logout = Object.assign(
     }
 
     // Remove cloud assistants from the lockfile.
-    const cloudAssistants = loadAllAssistants().filter((a) =>
-      isCloudEntry(a),
-    );
+    const cloudAssistants = loadAllAssistants().filter((a) => isCloudEntry(a));
     for (const a of cloudAssistants) {
       removeLockfileAssistant(a.assistantId);
     }

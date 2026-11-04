@@ -182,9 +182,7 @@ export async function hatchAssistant(
   return hatchPromise;
 }
 
-async function requestHatch(
-  remote?: string,
-): Promise<HatchAssistantResult> {
+async function requestHatch(remote?: string): Promise<HatchAssistantResult> {
   try {
     const res = await fetch("/v1/assistants/hatch", {
       method: "POST",

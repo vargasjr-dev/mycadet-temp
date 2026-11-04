@@ -11,10 +11,7 @@ import {
 
 import type { LockfileAssistant } from "../lockfile-contract";
 import * as cloudAuth from "../cloud-auth";
-import {
-  createCloudBackup,
-  listCloudBackups,
-} from "../cloud-backup";
+import { createCloudBackup, listCloudBackups } from "../cloud-backup";
 
 const authHeadersSpy = spyOn(cloudAuth, "cloudAuthHeaders").mockResolvedValue({
   "Content-Type": "application/json",
@@ -115,9 +112,9 @@ describe("listCloudBackups", () => {
   test("throws on a persistent error", async () => {
     responses.push(() => new Response("Bad gateway", { status: 502 }));
 
-    await expect(
-      listCloudBackups(ENTRY, "test-cloud-token"),
-    ).rejects.toThrow("Cadet Cloud backup list failed (502): Bad gateway");
+    await expect(listCloudBackups(ENTRY, "test-cloud-token")).rejects.toThrow(
+      "Cadet Cloud backup list failed (502): Bad gateway",
+    );
   });
 });
 

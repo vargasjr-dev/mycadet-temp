@@ -12,10 +12,7 @@ import type { LockfileAssistant } from "./lockfile-contract";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops";
 import { captureImageRefs } from "./remotes/docker/upgrade";
 import { wakeDocker } from "./remotes/docker/wake";
-import {
-  pullImage,
-  resolveImageRefs,
-} from "./remotes/docker/hatch";
+import { pullImage, resolveImageRefs } from "./remotes/docker/hatch";
 import {
   getBuilderManagedEnvKeys,
   stopContainers,

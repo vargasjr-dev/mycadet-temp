@@ -160,8 +160,15 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { backupAssistant, type BackupAssistantResult } from "./operations/backup";
-export { createCloudBackup, listCloudBackups, type CreateCloudBackupOptions } from "./cloud-backup";
+export {
+  backupAssistant,
+  type BackupAssistantResult,
+} from "./operations/backup";
+export {
+  createCloudBackup,
+  listCloudBackups,
+  type CreateCloudBackupOptions,
+} from "./cloud-backup";
 export {
   AVATAR_DEVICE_ENV_VAR,
   DOCKER_STATEFUL_SET_SPEC,
@@ -172,7 +179,12 @@ export {
   type DockerStatefulSetSpec,
   type ServiceName,
 } from "./remotes/docker/statefulset";
-export { SERVICE_START_ORDER, startContainers, wakeDocker, type WakeDockerOptions } from "./remotes/docker/wake";
+export {
+  SERVICE_START_ORDER,
+  startContainers,
+  wakeDocker,
+  type WakeDockerOptions,
+} from "./remotes/docker/wake";
 export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
 export {
   PROVIDER_ENV_VAR_NAMES,

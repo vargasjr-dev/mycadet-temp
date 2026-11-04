@@ -14,7 +14,11 @@ import {
 
 import type { LockfileAssistant } from "./lockfile-contract";
 import { z } from "zod";
-import { cloudAuthHeaders, invalidateOrgIdCache, resolveCloudUrl } from "./cloud-auth";
+import {
+  cloudAuthHeaders,
+  invalidateOrgIdCache,
+  resolveCloudUrl,
+} from "./cloud-auth";
 import { loopbackSafeFetch } from "./loopback-fetch";
 
 const ManagedBackupEntrySchema = z.object({

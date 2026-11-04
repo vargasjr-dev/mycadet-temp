@@ -1,5 +1,3 @@
-import { isCloudEntry } from "@mycadet/local-mode/contract";
-
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,

@@ -9,7 +9,11 @@
  */
 import { rm } from "node:fs/promises";
 
-import { fetchCurrentVersion, ensureLocalRuntime, leaseGuardianToken } from "../..";
+import {
+  fetchCurrentVersion,
+  ensureLocalRuntime,
+  leaseGuardianToken,
+} from "../..";
 import type { LocalAssistant } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import {

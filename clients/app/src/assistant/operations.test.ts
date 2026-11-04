@@ -12,7 +12,9 @@ function respondWith(sequence: Array<unknown>): void {
   globalThis.fetch = (async () => {
     const next = responses.shift();
     fetchCalls++;
-    return { json: async () => (next !== undefined ? next : { ok: true }) } as Response;
+    return {
+      json: async () => (next !== undefined ? next : { ok: true }),
+    } as Response;
   }) as unknown as typeof globalThis.fetch;
 }
 
@@ -38,7 +40,10 @@ describe("hatchAssistant — the coalesced hatch", () => {
   });
 
   test("a held promise answers only for the same remote — a switched mode hatches fresh", async () => {
-    respondWith([{ ok: true, assistantId: "local-1" }, { ok: true, assistantId: "cloud-1" }]);
+    respondWith([
+      { ok: true, assistantId: "local-1" },
+      { ok: true, assistantId: "cloud-1" },
+    ]);
 
     await operations.hatchAssistant("local");
     const switched = await operations.hatchAssistant("cloud");
@@ -48,7 +53,10 @@ describe("hatchAssistant — the coalesced hatch", () => {
   });
 
   test("a failed hatch releases immediately — a retry re-hatches", async () => {
-    respondWith([{ ok: false, error: "no ports left" }, { ok: true, assistantId: "a-2" }]);
+    respondWith([
+      { ok: false, error: "no ports left" },
+      { ok: true, assistantId: "a-2" },
+    ]);
 
     const failed = await operations.hatchAssistant("local");
     expect(failed.ok).toBe(false);
@@ -59,7 +67,10 @@ describe("hatchAssistant — the coalesced hatch", () => {
   });
 
   test("releaseHatchGuard retires a resolved hatch for the next session", async () => {
-    respondWith([{ ok: true, assistantId: "a-1" }, { ok: true, assistantId: "a-2" }]);
+    respondWith([
+      { ok: true, assistantId: "a-1" },
+      { ok: true, assistantId: "a-2" },
+    ]);
 
     await operations.hatchAssistant("local");
     operations.releaseHatchGuard();
