@@ -1,4 +1,4 @@
-import { isCloudHome } from "./cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./lan-ip.js";
@@ -21,7 +21,7 @@ export function resolveRuntimeUrl(
   entry: LockfileAssistant,
   subpath: string,
 ): string {
-  if (isCloudHome(entry.cloud)) {
+  if (isCloudEntry(entry)) {
     return `${getGatewayUrl(entry)}/v1/assistants/${entry.assistantId}/${subpath}`;
   }
   return `${getGatewayUrl(entry)}/v1/${subpath}`;

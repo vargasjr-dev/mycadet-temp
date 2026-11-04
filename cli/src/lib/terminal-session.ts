@@ -7,7 +7,7 @@
  */
 
 import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
-import { isCloudHome } from "./cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
 import {
   closeTerminalSession,
@@ -51,7 +51,7 @@ export function resolveManagedAssistant(
   }
 
   const cloud = entry.cloud;
-  if (!isCloudHome(cloud)) {
+  if (!isCloudEntry(entry)) {
     if (cloud === "local") {
       console.error(
         "This assistant runs locally on your machine. You can access it directly.",

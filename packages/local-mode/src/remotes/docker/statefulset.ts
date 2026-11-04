@@ -95,7 +95,7 @@ interface PortSpec {
 export interface DockerContainerSpec {
   /** K8s-style container name (matches `stateful_template.yaml`). */
   name: string;
-  /** Internal CLI `ServiceName` key used by `SERVICE_START_ORDER`. */
+  /** Internal CLI `ServiceName` key. */
   internalName: ServiceName;
   /**
    * Network mode:
@@ -496,44 +496,6 @@ export function resolveAvatarDevicePath(
   return override && override.length > 0
     ? override
     : DEFAULT_AVATAR_DEVICE_PATH;
-}
-
-/** The order in which services must be started. */
-export const SERVICE_START_ORDER: ServiceName[] = [
-  "assistant",
-  "gateway",
-  "credential-executor",
-];
-
-/** Start all three containers in dependency order. */
-export async function startContainers(
-  opts: {
-    createOnly?: boolean;
-    cesServiceToken?: string;
-    extraAssistantEnv?: Record<string, string>;
-    extraGatewayEnv?: Record<string, string>;
-    gatewayPort: number;
-    imageTags: Record<ServiceName, string>;
-    instanceName: string;
-    res: ReturnType<typeof dockerResourceNames>;
-    netnsContainer?: string;
-    assistantCaCertPath?: string;
-  },
-  log: (msg: string) => void,
-): Promise<void> {
-  const runArgs = buildServiceRunArgs({
-    ...opts,
-    avatarDevicePath: resolveAvatarDevicePath(),
-  });
-  for (const service of SERVICE_START_ORDER) {
-    const args = runArgs[service]();
-    if (opts.createOnly) {
-      args[0] = "create";
-      args.splice(args.indexOf("-d"), 1);
-    }
-    log(`${opts.createOnly ? "Creating" : "Starting"} ${service} container...`);
-    await exec("docker", args);
-  }
 }
 
 /** Stop and remove all three containers (ignoring errors). */

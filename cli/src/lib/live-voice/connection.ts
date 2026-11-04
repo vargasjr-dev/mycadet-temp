@@ -31,7 +31,7 @@ import {
   lookupAssistantByIdentifier,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "../cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../assistant-config.js";
@@ -93,7 +93,7 @@ export async function resolveLiveVoiceConnection(
   // is behind tunnel, which authenticates nobody and forwards an attestation
   // the gateway trusts, so the credential is not the guardian JWT below but a
   // WS token minted from the cloud session the CLI already holds.
-  if (isCloudHome(entry.cloud)) {
+  if (isCloudEntry(entry)) {
     return await resolveCloudConnection(entry);
   }
 

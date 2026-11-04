@@ -13,7 +13,7 @@
  * "Platform: …" status without ever entering the cloud fetch path.
  */
 
-import { isCloudHome } from "./cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import {
   getCloudUrl,
   loadAllAssistants,
@@ -109,7 +109,7 @@ export async function syncCloudAssistants(
 
   // Add new platform assistants not yet in the lockfile
   const existingCloudEntries = loadAllAssistants().filter((a) =>
-    isCloudHome(a.cloud),
+    isCloudEntry(a),
   );
   const existingCloudById = new Map(
     existingCloudEntries.map((a) => [a.assistantId, a]),

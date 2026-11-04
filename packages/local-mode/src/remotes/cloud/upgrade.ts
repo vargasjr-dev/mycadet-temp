@@ -1,5 +1,5 @@
 /**
- * The cloud upgrade leg: the platform's upgrade call plus the poll-and-
+ * The cloud upgrade leg: the cloud's upgrade call plus the poll-and-
  * confirm wait (the web UI's Software Updates flow — poll the DB-backed
  * `current_release_version`, since the gateway bounces during the restart).
  * Narration rides the caller's reporter; failures throw `UpgradeError` for
@@ -23,7 +23,7 @@ import {
 import { fetchReleases } from "../../cloud-releases";
 import { z } from "zod";
 
-const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
+const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 const AssistantDetailResponseSchema = z.object({
   current_release_version: z.string().nullable().optional(),
@@ -56,7 +56,7 @@ export async function fetchAssistantDetail(
 
   try {
     const response = await loopbackSafeFetch(url, {
-      signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
       headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
@@ -77,7 +77,7 @@ export async function fetchAssistantDetail(
 /**
  * Check whether the cloud reports an upgrade in progress for the
  * assistant via `GET /v1/assistants/{id}/upgrade-status/`. Returns null
- * when the endpoint is unavailable (404 on older platforms, network
+ * when the endpoint is unavailable (404 on older cloud builds, network
  * error) so callers can skip the check. Never throws.
  */
 export async function fetchUpgradeInProgress(
@@ -90,7 +90,7 @@ export async function fetchUpgradeInProgress(
 
   try {
     const response = await loopbackSafeFetch(url, {
-      signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
       headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
@@ -112,23 +112,23 @@ interface UpgradeApiResponse {
 
 export interface UpgradeCloudParams {
   entry: LockfileAssistant;
-  /** The explicit target version; null/undefined = let the platform resolve. */
+  /** The explicit target version; null/undefined = let the cloud resolve. */
   version?: string | null;
-  /** Wait for the platform to confirm completion (the CLI's --no-wait turns this off). */
+  /** Wait for the cloud to confirm completion (the CLI's --no-wait turns this off). */
   wait?: boolean;
   reporter: LifecycleReporter;
 }
 
-const PLATFORM_POLL_INTERVAL_MS = 3_000;
-const PLATFORM_POLL_HEARTBEAT_MS = 30_000;
-const PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS = 120_000;
-const PLATFORM_HEALTH_CONFIRM_INTERVAL_MS = 5_000;
+const CLOUD_POLL_INTERVAL_MS = 3_000;
+const CLOUD_POLL_HEARTBEAT_MS = 30_000;
+const CLOUD_HEALTH_CONFIRM_TIMEOUT_MS = 120_000;
+const CLOUD_HEALTH_CONFIRM_INTERVAL_MS = 5_000;
 
 const UPGRADE_IN_PROGRESS_MSG =
   "An upgrade is already in progress for this assistant. Check `cadet ps`.";
 
-function platformUpgradeTimeoutMs(): number {
-  const override = process.env.CADET_PLATFORM_UPGRADE_TIMEOUT_MS;
+function cloudUpgradeTimeoutMs(): number {
+  const override = process.env.CADET_CLOUD_UPGRADE_TIMEOUT_MS;
   if (override) {
     const parsed = parseInt(override, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -140,7 +140,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function waitForPlatformUpgrade(
+async function waitForCloudUpgrade(
   entry: LockfileAssistant,
   token: string,
   pollTarget: string | null,
@@ -150,7 +150,7 @@ async function waitForPlatformUpgrade(
   const log = (msg: string) => reporter.log(msg);
   const warn = (msg: string) => reporter.warn(msg);
   const gatewayUrl = getGatewayUrl(entry);
-  const timeoutMs = platformUpgradeTimeoutMs();
+  const timeoutMs = cloudUpgradeTimeoutMs();
   const start = Date.now();
   let sawInProgress = false;
   let lastHeartbeat = start;
@@ -163,7 +163,7 @@ async function waitForPlatformUpgrade(
   );
 
   while (Date.now() - start < timeoutMs) {
-    await sleep(PLATFORM_POLL_INTERVAL_MS);
+    await sleep(CLOUD_POLL_INTERVAL_MS);
 
     // The in-progress lock is only needed when we don't know the target
     // version (server resolved "latest" without reporting it).
@@ -186,14 +186,14 @@ async function waitForPlatformUpgrade(
 
     if (verdict === "complete") {
       const finalVersion = observedVersion ?? pollTarget ?? "unknown";
-      const healthDeadline = Date.now() + PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS;
+      const healthDeadline = Date.now() + CLOUD_HEALTH_CONFIRM_TIMEOUT_MS;
       while (Date.now() < healthDeadline) {
         const health = await checkHealth(entry);
         if (health.status === "healthy") {
           log(`✅ Upgraded to ${finalVersion} — assistant is healthy.`);
           return;
         }
-        await sleep(PLATFORM_HEALTH_CONFIRM_INTERVAL_MS);
+        await sleep(CLOUD_HEALTH_CONFIRM_INTERVAL_MS);
       }
       warn(
         `⚠️  Upgraded to ${finalVersion}, but the health check did not confirm. Check \`cadet ps\`.`,
@@ -201,7 +201,7 @@ async function waitForPlatformUpgrade(
       return;
     }
 
-    if (Date.now() - lastHeartbeat >= PLATFORM_POLL_HEARTBEAT_MS) {
+    if (Date.now() - lastHeartbeat >= CLOUD_POLL_HEARTBEAT_MS) {
       const elapsedSec = Math.round((Date.now() - start) / 1000);
       log(`   Still upgrading... (${elapsedSec}s elapsed)`);
       lastHeartbeat = Date.now();
@@ -234,7 +234,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
   }
 
   // Pre-flight (all best-effort except an explicit version that the
-  // platform doesn't know about): resolve the target, detect no-ops and
+  // cloud doesn't know about): resolve the target, detect no-ops and
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
     fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
@@ -244,8 +244,8 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
   const currentVersion =
     health.version ?? assistantDetail?.currentReleaseVersion ?? undefined;
 
-  // Target the same platform as the detail/health/POST calls — the entry's
-  // platform may differ from the active lockfile default.
+  // Target the same cloud as the detail/health/POST calls — the entry's
+  // cloud may differ from the active lockfile default.
   const releases = await fetchReleases();
 
   const resolution = resolveUpgradeTarget({
@@ -285,7 +285,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
     gatewayUrl,
   );
   if (inProgress === true) {
-    throw new UpgradeError("PLATFORM_API_ERROR", UPGRADE_IN_PROGRESS_MSG);
+    throw new UpgradeError("CLOUD_API_ERROR", UPGRADE_IN_PROGRESS_MSG);
   }
 
   if (currentVersion && resolution.target) {
@@ -322,7 +322,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
 
   if (response.status === 409) {
     const text = await response.text();
-    throw new UpgradeError("PLATFORM_API_ERROR", UPGRADE_IN_PROGRESS_MSG, text);
+    throw new UpgradeError("CLOUD_API_ERROR", UPGRADE_IN_PROGRESS_MSG, text);
   }
 
   if (!response.ok) {
@@ -337,8 +337,8 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
       // Best-effort — broadcast may fail if the assistant is unreachable
     }
     throw new UpgradeError(
-      "PLATFORM_API_ERROR",
-      `Platform upgrade failed (${response.status})`,
+      "CLOUD_API_ERROR",
+      `Cloud upgrade failed (${response.status})`,
       text,
     );
   }
@@ -368,7 +368,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
     return;
   }
 
-  await waitForPlatformUpgrade(
+  await waitForCloudUpgrade(
     entry,
     token,
     result.version ?? resolution.target ?? null,

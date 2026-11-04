@@ -6,6 +6,7 @@
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import * as backups from "../backup-ops";
 import * as dockerUpgrade from "../remotes/docker/upgrade";
+import * as dockerWake from "../remotes/docker/wake";
 import * as lifecycle from "../upgrade-lifecycle";
 import * as localMode from "..";
 import { mockChildProcessSpawn } from "./helpers/child-process-mock";
@@ -14,11 +15,11 @@ import type { LockfileAssistant } from "../lockfile-contract";
 const capture = spyOn(backups, "createBackup");
 const images = spyOn(dockerUpgrade, "captureImageRefs");
 const pull = spyOn(localMode, "pullImage");
-const wake = spyOn(dockerUpgrade, "wakeContainers");
+const wake = spyOn(dockerWake, "wakeDocker");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(localMode, "sleepDocker");
-const start = spyOn(localMode, "startContainers");
+const start = spyOn(dockerWake, "startContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = localMode.dockerResourceNames("recovery");
 const entry: LockfileAssistant = {
@@ -155,6 +156,7 @@ test("versioned restore installs roots into stopped target containers before fir
   });
   wake.mockImplementation(async () => {
     events.push("wake-restored-target");
+    return { ok: true };
   });
   fetch.mockImplementation(async (url) => {
     if (String(url).includes("/healthz"))

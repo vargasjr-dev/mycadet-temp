@@ -19,7 +19,7 @@ import {
   getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { spawn } from "child_process";
 
 import { resolveAssistant } from "../lib/assistant-config";
@@ -313,7 +313,7 @@ export const terminal = Object.assign(
       return;
     }
 
-    if (isCloudHome(cloud)) {
+    if (isCloudEntry(entry)) {
       const token = readCloudToken();
       if (!token) {
         console.error(

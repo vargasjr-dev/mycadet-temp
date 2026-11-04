@@ -24,11 +24,10 @@ import {
   isLocalEntry,
   getGatewayUrl,
 } from "../lockfile-contract";
-import type { LockfileAssistant } from "../lockfile-contract";
+import { isCloudEntry, type LockfileAssistant } from "../lockfile-contract";
 import { upgradeDocker } from "../remotes/docker/upgrade";
 import { upgradeLocal } from "../remotes/local/upgrade";
 import { upgradeCloud } from "../remotes/cloud/upgrade";
-import { isCloudHome } from "../cloud-values";
 import { consoleLifecycleReporter } from "../lifecycle-reporter";
 
 export interface UpgradeAssistantParams {
@@ -96,7 +95,7 @@ export async function upgradeAssistant(
       return { ok: true, version: version ?? undefined };
     }
 
-    if (isCloudHome(entry.cloud)) {
+    if (isCloudEntry(entry)) {
       await upgradeCloud({
         entry,
         version: params.version,

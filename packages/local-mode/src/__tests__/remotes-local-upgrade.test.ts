@@ -20,8 +20,8 @@ import { join } from "node:path";
 
 import { getLocalInstanceDir } from "..";
 import type { LocalAssistant } from "../lockfile-contract";
-import * as sleepModule from "../operations/sleep";
-import * as wakeModule from "../operations/wake";
+import * as sleepModule from "../remotes/local/sleep";
+import * as wakeModule from "../remotes/local/wake";
 import * as commonModule from "../remotes/local/common";
 import * as guardianModule from "../guardian-token";
 import * as loopbackModule from "../loopback-fetch";
@@ -86,30 +86,27 @@ mock.module("../remotes/local/common", () => ({
   ensureLocalRuntime: ensureLocalRuntimeMock,
 }));
 
-const sleepAssistantMock = mock<typeof sleepModule.sleepAssistant>(
-  async () => ({
-    ok: true,
-    kind: "services",
-    services: {
-      assistant: "stopped",
-      gateway: "stopped",
-      ces: "stopped",
-    },
-    notes: [],
-    wasRunning: false,
-  }),
-);
-const wakeAssistantMock = mock<typeof wakeModule.wakeAssistant>(async () => ({
+const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(async () => ({
+  ok: true,
+  kind: "services",
+  services: {
+    assistant: "stopped",
+    gateway: "stopped",
+    ces: "stopped",
+  },
+  notes: [],
+}));
+const wakeLocalMock = mock<typeof wakeModule.wakeLocal>(async () => ({
   ok: true,
 }));
 
-mock.module("../operations/sleep", () => ({
+mock.module("../remotes/local/sleep", () => ({
   ...realSleep,
-  sleepAssistant: sleepAssistantMock,
+  sleepLocal: sleepLocalMock,
 }));
-mock.module("../operations/wake", () => ({
+mock.module("../remotes/local/wake", () => ({
   ...realWake,
-  wakeAssistant: wakeAssistantMock,
+  wakeLocal: wakeLocalMock,
 }));
 
 const loopbackSafeFetchMock = mock<typeof loopbackModule.loopbackSafeFetch>(
@@ -202,16 +199,15 @@ beforeEach(() => {
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }));
-  sleepAssistantMock.mockReset();
-  sleepAssistantMock.mockResolvedValue({
+  sleepLocalMock.mockReset();
+  sleepLocalMock.mockResolvedValue({
     ok: true,
     kind: "services",
     services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
     notes: [],
-    wasRunning: false,
   });
-  wakeAssistantMock.mockReset();
-  wakeAssistantMock.mockResolvedValue({ ok: true });
+  wakeLocalMock.mockReset();
+  wakeLocalMock.mockResolvedValue({ ok: true });
   loopbackSafeFetchMock.mockReset();
   loopbackSafeFetchMock.mockResolvedValue({
     ok: true,
@@ -322,7 +318,7 @@ describe("upgradeLocal", () => {
         prefix: "local-assistant-pre-upgrade",
       }),
     );
-    expect(sleepAssistantMock).toHaveBeenCalledWith(
+    expect(sleepLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
       }),
@@ -333,7 +329,7 @@ describe("upgradeLocal", () => {
       TARGET,
       { force: false },
     );
-    expect(wakeAssistantMock).toHaveBeenCalledWith(
+    expect(wakeLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,
       }),
@@ -361,19 +357,19 @@ describe("upgradeLocal", () => {
     expect(pruneOldBackupsMock).not.toHaveBeenCalled();
     expect(restoreBackupMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).toHaveBeenCalled();
-    expect(wakeAssistantMock).toHaveBeenCalled();
+    expect(wakeLocalMock).toHaveBeenCalled();
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
-    wakeAssistantMock.mockRejectedValueOnce(new Error("target startup failed"));
+    wakeLocalMock.mockRejectedValueOnce(new Error("target startup failed"));
     await expect(runLeg()).rejects.toThrow("target startup failed");
     expect(restoreBackupMock).toHaveBeenCalledWith(
       "local-assistant",
       "/tmp/local-pre-upgrade.tar.gz",
       { resume: false },
     );
-    expect(wakeAssistantMock).toHaveBeenCalledTimes(2);
-    expect(sleepAssistantMock).toHaveBeenCalledTimes(2);
+    expect(wakeLocalMock).toHaveBeenCalledTimes(2);
+    expect(sleepLocalMock).toHaveBeenCalledTimes(2);
     expect(waitForReadyMock).toHaveBeenCalled();
   });
 
@@ -385,7 +381,7 @@ describe("upgradeLocal", () => {
 
     await runLeg();
 
-    expect(sleepAssistantMock).not.toHaveBeenCalled();
+    expect(sleepLocalMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain("Already on");
   });
