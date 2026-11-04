@@ -25,13 +25,7 @@ export type SleepResult =
       /** Degradation notes (a skipped drain, an unreachable API) for the UX. */
       notes: string[];
     }
-  | {
-      ok: true;
-      cancelled?: false;
-      kind: "containers";
-      /** Whether any container was actually running — the restart signal. */
-      stopped?: boolean;
-    }
+  | { ok: true; cancelled?: false; kind: "containers" }
   | { ok: true; cancelled: true; kind?: undefined }
   | { ok: false; status: number; error: string };
 
@@ -63,8 +57,8 @@ export async function sleepAssistant(
 ): Promise<SleepResult> {
   try {
     if (entry.cloud === "docker") {
-      const stopped = await sleepDocker(entry);
-      return { ok: true, kind: "containers", stopped };
+      await sleepDocker(entry);
+      return { ok: true, kind: "containers" };
     }
     if (entry.cloud === "local") {
       return await sleepLocal(entry, options);

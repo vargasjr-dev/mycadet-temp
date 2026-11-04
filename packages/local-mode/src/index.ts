@@ -117,9 +117,6 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { isAssistantRunning } from "./operations/is-running";
-export { isRunningLocal } from "./remotes/local/is-running";
-export { isRunningDocker } from "./remotes/docker/is-running";
 export { recreateDockerContainers } from "./remotes/docker/recreate";
 export {
   AVATAR_DEVICE_ENV_VAR,

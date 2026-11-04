@@ -38,7 +38,7 @@ const getGuardianAccessTokenMock = mock(
     | { ok: false; status: number; error: string }
   > => ({ ok: true, accessToken: "test-guardian-token" }),
 );
-const sleepDockerMock = mock(async (): Promise<boolean> => false);
+const sleepDockerMock = mock(async (): Promise<void> => {});
 
 mock.module("../process", () => ({
   ...realProcess,
@@ -98,7 +98,6 @@ beforeEach(() => {
     ok: true,
     accessToken: "test-guardian-token",
   });
-  sleepDockerMock.mockResolvedValue(false);
 });
 
 afterEach(() => {
@@ -355,7 +354,6 @@ describe("sleepAssistant — the dispatch", () => {
     expect(result).toEqual({
       ok: true,
       kind: "containers",
-      stopped: false,
     });
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),

@@ -28,6 +28,7 @@ import {
   validateRootArchive,
 } from "../lib/root-backup.js";
 import * as localMode from "@mycadet/local-mode";
+import * as healthCheck from "../lib/health-check.js";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
@@ -37,13 +38,13 @@ const realReplace = LocalRootStorage.prototype.replace;
 const captureMock = spyOn(LocalRootStorage.prototype, "capture");
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
 const sleepMock = spyOn(localMode, "sleepAssistant");
-// Liveness rides the package's isAssistantRunning module mock — the
-// backup/restore lifecycle asks the same package seam the teleport flow
-// does. `running === undefined` falls through to the real check (PID files
-// and ports), matching the old prototype-spy passthrough.
-const realIsAssistantRunning = localMode.isAssistantRunning;
-const isRunningMock = mock(async (entry: LockfileAssistant) =>
-  running === undefined ? realIsAssistantRunning(entry) : running,
+// Liveness rides the health check's entry probe — the backup/restore
+// lifecycle asks whether the gateway answers. `running === undefined` falls
+// through to the real probe (an unreachable gateway answers "not healthy"
+// for these fixtures), matching the old prototype-spy passthrough.
+const realIsAssistantHealthy = healthCheck.isAssistantHealthy;
+const isHealthyMock = mock(async (entry: LockfileAssistant) =>
+  running === undefined ? realIsAssistantHealthy(entry) : running,
 );
 // The flow's wake hook is the package's wake operation — module-mocked here
 // so the real operation never runs.
@@ -53,7 +54,10 @@ const wakeMock = mock(async (_entry: { assistantId: string }) => ({
 mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   wakeAssistant: wakeMock,
-  isAssistantRunning: isRunningMock,
+}));
+mock.module("../lib/health-check.js", () => ({
+  ...healthCheck,
+  isAssistantHealthy: isHealthyMock,
 }));
 
 let running: boolean | undefined;
