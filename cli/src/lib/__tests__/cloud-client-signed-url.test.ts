@@ -5,7 +5,7 @@ import {
   cloudPollJobStatus,
   cloudRequestSignedUrl,
   type UnifiedJobStatus,
-} from "../cloud-client.js";
+} from "@mycadet/local-mode";
 
 const PLATFORM_URL = "https://platform.example.test";
 const VAK_TOKEN = "vak_test_1234567890"; // API-key path skips org-ID fetch.
