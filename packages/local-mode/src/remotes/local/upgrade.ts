@@ -9,13 +9,7 @@
  */
 import { rm } from "node:fs/promises";
 
-import {
-  fetchCurrentVersion,
-  ensureLocalRuntime,
-  leaseGuardianToken,
-  sleepAssistant,
-  wakeAssistant,
-} from "../..";
+import { fetchCurrentVersion, ensureLocalRuntime, leaseGuardianToken } from "../..";
 import type { LocalAssistant } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import {
@@ -31,6 +25,8 @@ import {
 } from "../../upgrade-lifecycle";
 import type { LifecycleReporter } from "../../lifecycle-reporter";
 import { createBackup, pruneOldBackups, restoreBackup } from "../../backup-ops";
+import { sleepLocal } from "./sleep";
+import { wakeLocal } from "./wake";
 import { compareVersions, versionsEqual } from "../../version-compat";
 import { stripVersionPrefix } from "../../version";
 import { fetchLatestVersion } from "../../cloud-releases";
@@ -195,7 +191,7 @@ export async function upgradeLocal(
     // force: the upgrade's teardown must not be refused the way a user's
     // `cadet sleep` can be — the lease guard protects live calls, but this
     // stop is the upgrade's own midpoint.
-    const stopped = await sleepAssistant(upgradedEntry, { force: true });
+    const stopped = await sleepLocal(upgradedEntry, { force: true });
     if (!stopped.ok) throw new Error(stopped.error);
     log("✅ Local assistant processes stopped\n");
 
@@ -205,7 +201,7 @@ export async function upgradeLocal(
     const previousAppVersion = process.env.APP_VERSION;
     process.env.APP_VERSION = stripVersionPrefix(targetVersion);
     try {
-      await wakeAssistant(upgradedEntry);
+      await wakeLocal(upgradedEntry);
     } finally {
       if (previousAppVersion === undefined) {
         delete process.env.APP_VERSION;
@@ -232,7 +228,7 @@ export async function upgradeLocal(
     err(
       "Local upgrade failed; restoring the previous runtime and service roots...",
     );
-    await sleepAssistant(upgradedEntry, { force: true });
+    await sleepLocal(upgradedEntry, { force: true });
     // The lockfile no longer records the runtime install — the newest
     // directory under the instance's runtime/ root is what the next wake
     // derives, so a failed upgrade's install must leave, or that wake
@@ -247,7 +243,7 @@ export async function upgradeLocal(
           `Local recovery failed; services remain stopped. Backup: ${backupPath}`,
           { cause: error },
         );
-      await wakeAssistant(entry);
+      await wakeLocal(entry);
       if (!(await waitForReady(adminUrl)))
         throw new Error(
           `Previous local runtime did not recover. Backup: ${backupPath}`,

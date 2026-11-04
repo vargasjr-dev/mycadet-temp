@@ -211,6 +211,14 @@ const HatchBodySchema = z
   .object({ remote: z.string().optional().catch(undefined) })
   .catch({});
 
+/** The upgrade row's body: the target version and force flag; junk reads as the defaults. */
+const UpgradeBodySchema = z
+  .object({
+    version: z.string().nullish().catch(undefined),
+    force: z.boolean().optional().catch(undefined),
+  })
+  .catch({});
+
 /**
  * Provision a local assistant. Never rejects — failures resolve with
  * `{ ok: false, error }` so the renderer renders the same error UI the
@@ -403,11 +411,9 @@ async function runUpgradeRoute(
   if (!entry) {
     return null;
   }
-  const body = await readJsonBody(request.body);
-  const version =
-    body !== null && typeof body.version === "string" ? body.version : null;
-  const force =
-    body !== null && typeof body.force === "boolean" ? body.force : false;
+  const { version = null, force = false } = UpgradeBodySchema.parse(
+    (await readJsonBody(request.body)) ?? {},
+  );
   if (!isActiveAssistant(assistantId)) {
     return json({
       ok: false,

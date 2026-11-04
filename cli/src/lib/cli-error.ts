@@ -21,7 +21,7 @@ export type CliErrorCategory =
   | "NETWORK_ERROR"
   | "UNSUPPORTED_TOPOLOGY"
   | "ASSISTANT_NOT_FOUND"
-  | "PLATFORM_API_ERROR"
+  | "CLOUD_API_ERROR"
   | "UNKNOWN";
 
 interface CliErrorPayload {
