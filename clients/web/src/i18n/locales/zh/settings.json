@@ -90,8 +90,7 @@
     "typeDoctor": "诊断",
     "typePointInTime": "时间点",
     "typePreview": "预览",
-    "typeScheduled": "计划",
-    "cliOnly": "对于本地或 Docker 安装，请在终端中使用 cadet backup 和 cadet restore。"
+    "typeScheduled": "计划"
   },
   "assistantStatusPanel": {
     "assistantId": "助手 ID",

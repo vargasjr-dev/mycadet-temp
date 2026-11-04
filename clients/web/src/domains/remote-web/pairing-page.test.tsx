@@ -24,7 +24,10 @@ const nativeSwitchToOriginPathMock = mock(
 
 mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
-  getRemoteGatewayAssistantName: () => injectedAssistantName,
+}));
+
+mock.module("@/stores/resolved-assistant-store", () => ({
+  getInjectedAssistantName: () => injectedAssistantName,
 }));
 
 mock.module("@/runtime/native-auth", () => ({

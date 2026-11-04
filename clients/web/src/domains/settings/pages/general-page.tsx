@@ -97,7 +97,7 @@ export function GeneralPage() {
         />
       )}
 
-      <ProfileCard showHandles={isCloudHosted}>
+      <ProfileCard>
         <TimezoneSection />
         <ThisDeviceSection />
       </ProfileCard>

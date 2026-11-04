@@ -392,19 +392,23 @@ export async function fetchAvatarViaLegacyFiles(
  * assistant version resolves.
  */
 export function useAssistantAvatar(
-  assistantId: string | null,
+  assistantId?: string | null,
   options?: AssistantAvatarOptions,
 ) {
+  // No id passed means "the active assistant's" — the hook reads the store.
+  // An explicit `null` stays a real null (the disconnected state).
+  const activeId = useActiveAssistantId();
+  const ownerId = assistantId === undefined ? activeId : assistantId;
   const queryClient = useQueryClient();
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
   const entry = useResolvedAssistantStore.use.assistant();
   const assistant =
     options?.ownerAssistant === undefined
-      ? entry && entry.assistantId === assistantId
+      ? entry && entry.assistantId === ownerId
         ? entry
         : null
-      : options.ownerAssistant?.assistantId === assistantId
+      : options.ownerAssistant?.assistantId === ownerId
         ? options.ownerAssistant
         : null;
   const connectionFallback =
@@ -423,9 +427,9 @@ export function useAssistantAvatar(
         ? canonicalScopeId
         : null;
   const requestedOwner =
-    assistantId && scopeId ? { scopeId, assistantId } : null;
-  const initialInstalledScope = assistantId
-    ? activeOwners.get(assistantId)?.scopeId
+    ownerId && scopeId ? { scopeId, assistantId: ownerId } : null;
+  const initialInstalledScope = ownerId
+    ? activeOwners.get(ownerId)?.scopeId
     : undefined;
   const [readyOwner, setReadyOwner] = useState<AvatarOwner | null>(() =>
     initialInstalledScope && initialInstalledScope !== scopeId
@@ -433,8 +437,8 @@ export function useAssistantAvatar(
       : requestedOwner,
   );
   const previousOwnerRef = useRef<AvatarOwner | null>(
-    assistantId && initialInstalledScope
-      ? { assistantId, scopeId: initialInstalledScope }
+    ownerId && initialInstalledScope
+      ? { assistantId: ownerId, scopeId: initialInstalledScope }
       : requestedOwner,
   );
   const ownerReady = sameAvatarOwner(readyOwner, requestedOwner);
@@ -442,10 +446,10 @@ export function useAssistantAvatar(
   useEffect(() => {
     const previousOwner = previousOwnerRef.current;
     const nextOwner = assistantId && scopeId ? { assistantId, scopeId } : null;
-    transitionAvatarOwner(queryClient, previousOwner, nextOwner, assistantId);
+    transitionAvatarOwner(queryClient, previousOwner, nextOwner, ownerId);
     previousOwnerRef.current = nextOwner;
     setReadyOwner(nextOwner);
-  }, [assistantId, queryClient, scopeId]);
+  }, [ownerId, queryClient, scopeId]);
 
   const owner = requestedOwner
     ? {
@@ -465,11 +469,11 @@ export function useAssistantAvatar(
 
   const { data, isLoading, isSuccess } = useQuery<AvatarData>({
     queryKey,
-    meta: { assistantId, scopeKey: scopeId ?? "" },
+    meta: { assistantId: ownerId, scopeKey: scopeId ?? "" },
     placeholderData: (previousData, previousQuery) => {
       if (
         shouldRetainAvatarPlaceholder(previousQuery?.meta, {
-          assistantId,
+          assistantId: ownerId,
           scopeKey: scopeId ?? "",
         })
       ) {

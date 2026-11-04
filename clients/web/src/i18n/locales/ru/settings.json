@@ -76,8 +76,7 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "На момент времени",
     "typePreview": "Preview",
-    "typeScheduled": "По расписанию",
-    "cliOnly": "Для локальных установок и Docker используйте cadet backup и cadet restore в терминале."
+    "typeScheduled": "По расписанию"
   },
   "assistantStatusPanel": {
     "assistantId": "ID ассистента",

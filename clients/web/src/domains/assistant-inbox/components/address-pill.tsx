@@ -36,9 +36,7 @@ export interface AddressPillProps {
  */
 export function AddressPill({ address, copy, className }: AddressPillProps) {
   const { t } = useTranslation("assistant-inbox");
-  const { components, traits, customImageUrl, accentHex } = useAssistantAvatar(
-    useActiveAssistantId(),
-  );
+  const { components, traits, customImageUrl, accentHex } = useAssistantAvatar();
 
   const wash = accentHex ? panelItemWashStyle(accentHex) : null;
   const pillStyle: CustomPropertyStyle | undefined = wash

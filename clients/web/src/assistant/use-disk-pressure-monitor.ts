@@ -46,7 +46,6 @@ export function useDiskPressureMonitor({
 }: UseDiskPressureMonitorOptions = {}): UseDiskPressureMonitorResult {
   // The monitor rides the active assistant — the id is the store's.
   const assistantId = useActiveAssistantId();
-  const enabled = true;
   const [isAcknowledging, setIsAcknowledging] = useState(false);
   const [acknowledgeError, setAcknowledgeError] = useState<Error | null>(null);
 
@@ -57,7 +56,7 @@ export function useDiskPressureMonitor({
 
   const monitor = useAssistantStatusMonitor({
     assistantId,
-    enabled,
+    enabled: true,
     refreshKey,
     cadenceMs,
     fetchStatus: getAssistantDiskPressureStatus,
@@ -77,12 +76,12 @@ export function useDiskPressureMonitor({
 
   useEffect(() => {
     resetAcknowledgement();
-  }, [assistantId, enabled, resetAcknowledgement]);
+  }, [assistantId, resetAcknowledgement]);
 
   const acknowledge = useCallback(async () => {
     const requestedAssistantId = assistantId;
 
-    if (!enabled || !requestedAssistantId) {
+    if (!requestedAssistantId) {
       clearStatus();
       return;
     }
@@ -125,7 +124,6 @@ export function useDiskPressureMonitor({
     applyStatusForAssistant,
     bumpGeneration,
     clearStatus,
-    enabled,
     isCurrentRequest,
   ]);
 

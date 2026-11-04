@@ -22,7 +22,6 @@ import {
 } from "@/domains/settings/teleport/cloud-export";
 import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -80,17 +79,9 @@ function formatTimestamp(value: unknown): string {
 }
 
 export function AssistantBackups() {
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const { t } = useTranslation("settings");
-  if (!isCloudHosted) {
-    return <p>{t("assistantBackups.cliOnly")}</p>;
-  }
-  return <CloudAssistantBackups />;
-}
-
-function CloudAssistantBackups() {
-  const { t } = useTranslation("settings");
-  // The panel is the active assistant's — the id is the store's.
+  // Backups are remote-agnostic now; the panel is the active assistant's —
+  // the id is the store's.
   const assistantId = useActiveAssistantId();
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,8 +100,7 @@ function CloudAssistantBackups() {
   // shows while that assistant is still current and exportable, so a switch
   // or sign-out mid-dialog can never export a different assistant.
   const [exportTarget, setExportTarget] = useState<string | null>(null);
-  const canExport = useActiveAssistantIsCloudHosted();
-  const confirmingExport = canExport && exportTarget === assistantId;
+  const confirmingExport = exportTarget === assistantId;
   if (exportTarget !== null && !confirmingExport) {
     setExportTarget(null);
   }
@@ -214,7 +204,7 @@ function CloudAssistantBackups() {
   const handleExportConfirm = useCallback(async () => {
     const target = exportTarget;
     setExportTarget(null);
-    if (!canExport || target !== assistantId) {
+    if (target !== assistantId) {
       return;
     }
     setExportStep("preparing");
@@ -238,7 +228,7 @@ function CloudAssistantBackups() {
     } finally {
       setExportStep(null);
     }
-  }, [assistantId, canExport, exportTarget, t]);
+  }, [assistantId, exportTarget, t]);
 
   if (loading) {
     return (
@@ -279,18 +269,16 @@ function CloudAssistantBackups() {
           {t("assistantBackups.oldestRemovedNotice")}
         </p>
       )}
-      {canExport && (
-        <Button
-          variant="outlined"
-          loading={exportBusy}
-          leftIcon={<Download />}
-          onClick={() => setExportTarget(assistantId)}
-          disabled={exportBusy || restoringSnapshot !== null}
-          className="shrink-0"
-        >
-          {exportLabel}
-        </Button>
-      )}
+      <Button
+        variant="outlined"
+        loading={exportBusy}
+        leftIcon={<Download />}
+        onClick={() => setExportTarget(assistantId)}
+        disabled={exportBusy || restoringSnapshot !== null}
+        className="shrink-0"
+      >
+        {exportLabel}
+      </Button>
       <Button
         variant="outlined"
         loading={creatingBackup}

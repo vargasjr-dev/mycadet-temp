@@ -90,8 +90,7 @@
     "typeDoctor": "診斷",
     "typePointInTime": "時間點",
     "typePreview": "預覽",
-    "typeScheduled": "排程",
-    "cliOnly": "對於本機或 Docker 安裝，請在終端機中使用 cadet backup 和 cadet restore。"
+    "typeScheduled": "排程"
   },
   "assistantStatusPanel": {
     "assistantId": "助理 ID",

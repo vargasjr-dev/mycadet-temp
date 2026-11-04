@@ -40,7 +40,7 @@ export function AssistantInboxPageFrame({
   className,
 }: AssistantInboxPageFrameProps) {
   const { t } = useTranslation("assistant-inbox");
-  const { components, traits } = useAssistantAvatar(useActiveAssistantId());
+  const { components, traits } = useAssistantAvatar();
   const peeks = components && traits;
   return (
     <AssistantInboxShell>
