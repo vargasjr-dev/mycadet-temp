@@ -138,10 +138,53 @@ export async function unpairAssistant(
  * `{ ok, assistantId }` contract the CLI's own hatch reports; callers read
  * the resolution endpoint to discover the new assistant regardless. (The
  * platform's own hatch rides the app's cloud API.)
+ *
+ * The hatch coalesces: concurrent and remount-driven callers await the SAME
+ * in-flight (or already-resolved) hatch instead of starting over, so HMR
+ * remounts, StrictMode double-mounts, and the shell's session-driven
+ * remounts never spawn duplicate hatches. A held promise answers only for
+ * the SAME remote — the guard can outlive a trip through the hosting screen,
+ * where the user may switch modes, and the abandoned mode's assistant must
+ * not be adopted for the new choice. The guard releases on failure (a retry
+ * re-hatches) and via `releaseHatchGuard` — the caller knows when the
+ * handoff is genuinely done, and a later onboarding session must hatch a
+ * brand-new assistant instead of reusing a resolved one.
  */
+let hatchPromise: Promise<HatchAssistantResult> | null = null;
+let hatchRemote: string | undefined;
+
+export function releaseHatchGuard(): void {
+  hatchPromise = null;
+  hatchRemote = undefined;
+}
+
+type HatchAssistantResult = {
+  ok: boolean;
+  assistantId?: string;
+  error?: string;
+};
+
 export async function hatchAssistant(
   remote?: string,
-): Promise<{ ok: boolean; assistantId?: string; error?: string }> {
+): Promise<HatchAssistantResult> {
+  if (hatchPromise && hatchRemote !== remote) {
+    releaseHatchGuard();
+  }
+  if (!hatchPromise) {
+    hatchRemote = remote;
+    hatchPromise = requestHatch(remote).then((result) => {
+      if (!result.ok) {
+        releaseHatchGuard();
+      }
+      return result;
+    });
+  }
+  return hatchPromise;
+}
+
+async function requestHatch(
+  remote?: string,
+): Promise<HatchAssistantResult> {
   try {
     const res = await fetch("/v1/assistants/hatch", {
       method: "POST",

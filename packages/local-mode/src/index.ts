@@ -160,6 +160,8 @@ export {
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
+export { backupAssistant, type BackupAssistantResult } from "./operations/backup";
+export { createCloudBackup, listCloudBackups, type CreateCloudBackupOptions } from "./cloud-backup";
 export {
   AVATAR_DEVICE_ENV_VAR,
   DOCKER_STATEFUL_SET_SPEC,

@@ -1,11 +1,7 @@
-import { cliCommand, readCloudToken } from "@mycadet/local-mode";
+import { cliCommand, formatSize } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
-import { join } from "node:path";
 import { findAssistantByName } from "../lib/assistant-config.js";
-import { formatSize, getBackupsDir } from "@mycadet/local-mode";
-import { isCloudEntry } from "@mycadet/local-mode/contract";
-import { createRootBackup } from "@mycadet/local-mode";
-import { createPlatformBackup } from "../lib/teleport-backup.js";
+import { backupAssistant } from "@mycadet/local-mode";
 
 export const backup = Object.assign(
   async function backup(): Promise<void> {
@@ -27,26 +23,14 @@ export const backup = Object.assign(
     if (args.length > 1) throw new Error(`Unknown backup option: ${args[1]}`);
     const entry = findAssistantByName(name);
     if (!entry) throw new Error(`No assistant found with name '${name}'.`);
-    if (isCloudEntry(entry)) {
-      const token = readCloudToken();
-      if (!token)
-        throw new Error(`Not logged in. Run '${cliCommand()} login' first.`);
-      await createPlatformBackup(entry, token);
+    const result = await backupAssistant(entry);
+    if (!result.ok) throw new Error(result.error);
+    if (result.kind === "cloud") {
       console.log("Cloud backup is ready.");
       return;
     }
-    if (entry.cloud && !["local", "docker"].includes(entry.cloud)) {
-      throw new Error(
-        `Backup for '${entry.cloud}' must run on its host; only local, Docker and cloud backups are supported.`,
-      );
-    }
-    const path = join(
-      getBackupsDir(),
-      `${entry.assistantId}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
-    );
-    await createRootBackup(entry, path);
-    console.log(`Backup saved to ${path}`);
-    console.log(`Size: ${formatSize((await stat(path)).size)}`);
+    console.log(`Backup saved to ${result.path}`);
+    console.log(`Size: ${formatSize((await stat(result.path)).size)}`);
   },
   {
     description:

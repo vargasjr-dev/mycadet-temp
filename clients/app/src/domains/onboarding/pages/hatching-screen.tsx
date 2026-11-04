@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { seedHatchAvatar } from "@app/assistant/avatar-traits";
-import { hatchAssistant } from "@app/assistant/operations";
+import { hatchAssistant, releaseHatchGuard } from "@app/assistant/operations";
 import { resolveAssistant } from "@app/assistant/resolve-assistant";
 import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-storage";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -28,24 +28,14 @@ const MAX_HATCH_WAIT_MS = 300_000;
 
 type HatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
 
-// Module-level state so HMR remounts, StrictMode double-mounts, and the
-// shell's session-driven remounts survive without spawning duplicate hatches.
-// The remounted instance must await the SAME in-flight (or already-resolved)
-// hatch — and reuse the SAME avatar traits — rather than start over. These
-// guards are released only on failure (so retry re-hatches) and on genuine
-// completion, never in the window between the hatch resolving and the screen
-// navigating away.
-let hatchPromise: Promise<HatchResult> | null = null;
-// The remote the held hatchPromise was created with. A held promise only
-// answers for the SAME remote: the guard can outlive a trip through the
-// hosting screen, where the user may switch modes, and the abandoned mode's
-// assistant must not be adopted for the new choice.
-let hatchRemote: string | undefined;
+// The hatch promise's coalescing lives in the operation (module-level there);
+// this screen holds only the avatar traits so every remount riding the same
+// hatch renders the SAME assistant. Released on failure (a retry regenerates)
+// and on genuine completion — never in the window between the hatch resolving
+// and the screen navigating away.
 let hatchTraitsCache: CharacterTraits | null = null;
 
-function releaseHatchGuards(): void {
-  hatchPromise = null;
-  hatchRemote = undefined;
+function releaseHatchTraits(): void {
   hatchTraitsCache = null;
 }
 
@@ -178,7 +168,8 @@ export function HatchingScreen() {
         // The hatch succeeded and we're leaving this screen for good. Release
         // the module-level guards so a later onboarding session hatches a
         // brand-new one instead of reusing this resolved promise and avatar.
-        releaseHatchGuards();
+        releaseHatchGuard();
+        releaseHatchTraits();
         // A local walk carries the hosting choice + the hatched assistant so
         // research adopts exactly this assistant, not whatever a stale
         // selection resolves to (its background hatch resolves the existing
@@ -207,21 +198,12 @@ export function HatchingScreen() {
         // hatch operation discriminates (local, docker, cloud), so this
         // screen never branches on the mode.
         const remote = hosting ?? "local";
-        // A promise held across a retry answers only for the hosting mode it
-        // was created with; a switched mode hatches fresh.
-        if (hatchPromise && hatchRemote !== remote) {
-          releaseHatchGuards();
-        }
-        if (!hatchPromise) {
-          hatchRemote = remote;
-          hatchPromise = hatchAssistant(remote);
-        }
-        const result = await hatchPromise;
+        const result = await hatchAssistant(remote);
         if (cancelled) {
           return;
         }
         if (!result.ok) {
-          releaseHatchGuards();
+          releaseHatchTraits();
           setError(result.error ?? "Failed to hatch your assistant.");
           return;
         }
@@ -250,7 +232,8 @@ export function HatchingScreen() {
               // The hatch succeeded but the assistant never went healthy —
               // release the guards so "Try again" runs a genuinely fresh
               // hatch.
-              releaseHatchGuards();
+              releaseHatchGuard();
+              releaseHatchTraits();
               setError(
                 "Your assistant is taking longer than expected. Please try again.",
               );
@@ -267,7 +250,7 @@ export function HatchingScreen() {
         }
         handleHatchReady(result.assistantId);
       } catch {
-        releaseHatchGuards();
+        releaseHatchTraits();
         if (cancelled) {
           return;
         }

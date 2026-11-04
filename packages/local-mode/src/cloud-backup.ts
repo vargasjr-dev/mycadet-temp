@@ -1,4 +1,8 @@
-/** Cloud API safety backups use session auth and wait for a restorable root tar. */
+/**
+ * Cloud API safety backups use session auth and wait for a restorable root
+ * tar: `POST /v1/assistants/<id>/backups/`, then re-list until the returned
+ * `snapshot_name` reports `ready_to_use`.
+ */
 
 import {
   MANAGED_BACKUP_READY_POLL_INTERVAL_MS,
@@ -6,16 +10,12 @@ import {
   managedBackupIsReady,
   readyManagedBackupCreatedAts,
   type ManagedBackupEntry,
-} from "@mycadet/local-mode/teleport-backup-policy";
+} from "./teleport-backup-policy";
 
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
+import type { LockfileAssistant } from "./lockfile-contract";
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  getCloudUrl,
-  invalidateOrgIdCache,
-  loopbackSafeFetch,
-} from "@mycadet/local-mode";
+import { cloudAuthHeaders, invalidateOrgIdCache, resolveCloudUrl } from "./cloud-auth";
+import { loopbackSafeFetch } from "./loopback-fetch";
 
 const ManagedBackupEntrySchema = z.object({
   snapshot_name: z.string().optional(),
@@ -33,7 +33,7 @@ const CreatedBackupResponseSchema = z.object({
 });
 
 function cloudBackupsUrl(entry: LockfileAssistant): string {
-  return `${getCloudUrl()}/v1/assistants/${entry.assistantId}/backups/`;
+  return `${resolveCloudUrl()}/v1/assistants/${entry.assistantId}/backups/`;
 }
 
 async function errorSuffix(response: Response): Promise<string> {
@@ -46,7 +46,7 @@ async function errorSuffix(response: Response): Promise<string> {
  * cached organization id once on 401 (the same recovery the runtime identity
  * probe applies).
  */
-async function platformBackupRequest(
+async function cloudBackupRequest(
   entry: LockfileAssistant,
   token: string,
   method: "GET" | "POST",
@@ -55,23 +55,23 @@ async function platformBackupRequest(
     loopbackSafeFetch(cloudBackupsUrl(entry), {
       method,
       headers: {
-        ...(await cloudAuthHeaders(token, getCloudUrl())),
+        ...(await cloudAuthHeaders(token, resolveCloudUrl())),
         Accept: "application/json",
       },
     });
   let response = await doRequest();
   if (response.status === 401) {
-    invalidateOrgIdCache(token, getCloudUrl());
+    invalidateOrgIdCache(token, resolveCloudUrl());
     response = await doRequest();
   }
   return response;
 }
 
-async function fetchPlatformBackups(
+async function fetchCloudBackups(
   entry: LockfileAssistant,
   token: string,
 ): Promise<ManagedBackupEntry[]> {
-  const response = await platformBackupRequest(entry, token, "GET");
+  const response = await cloudBackupRequest(entry, token, "GET");
   if (!response.ok) {
     throw new Error(
       `Cadet Cloud backup list failed ${await errorSuffix(response)}`,
@@ -85,14 +85,14 @@ async function fetchPlatformBackups(
  * `created_at` of every restorable root archive of a cloud assistant:
  * `GET /v1/assistants/<id>/backups/`.
  */
-export async function listPlatformBackups(
+export async function listCloudBackups(
   entry: LockfileAssistant,
   token: string,
 ): Promise<Array<string | undefined>> {
-  return readyManagedBackupCreatedAts(await fetchPlatformBackups(entry, token));
+  return readyManagedBackupCreatedAts(await fetchCloudBackups(entry, token));
 }
 
-export interface CreatePlatformBackupOptions {
+export interface CreateCloudBackupOptions {
   timeoutMs?: number;
   pollIntervalMs?: number;
 }
@@ -103,16 +103,16 @@ export interface CreatePlatformBackupOptions {
  * returned `snapshot_name` reports `ready_to_use`. Throws if the POST fails
  * or the snapshot is not ready within `timeoutMs`.
  */
-export async function createPlatformBackup(
+export async function createCloudBackup(
   entry: LockfileAssistant,
   token: string,
-  options: CreatePlatformBackupOptions = {},
+  options: CreateCloudBackupOptions = {},
 ): Promise<void> {
   const timeoutMs = options.timeoutMs ?? MANAGED_BACKUP_READY_TIMEOUT_MS;
   const pollIntervalMs =
     options.pollIntervalMs ?? MANAGED_BACKUP_READY_POLL_INTERVAL_MS;
 
-  const response = await platformBackupRequest(entry, token, "POST");
+  const response = await cloudBackupRequest(entry, token, "POST");
   if (!response.ok) {
     throw new Error(
       `Cadet Cloud backup create failed ${await errorSuffix(response)}`,
@@ -131,7 +131,7 @@ export async function createPlatformBackup(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-    const backups = await fetchPlatformBackups(entry, token);
+    const backups = await fetchCloudBackups(entry, token);
     if (managedBackupIsReady(backups, snapshotName)) {
       return;
     }
