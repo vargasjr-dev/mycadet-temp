@@ -104,8 +104,6 @@ export function resolveOwnImageRefs(
   return resolveImageRefs(cliVersion || "latest", cliVersion);
 }
 
-/** Max time to wait for the assistant container to emit the readiness sentinel. */
-
 /** Default memory (GiB) allocated to the Colima VM. */
 const COLIMA_DEFAULT_MEMORY_GIB = 8;
 

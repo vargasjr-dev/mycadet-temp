@@ -296,18 +296,6 @@ export async function captureReplayState(
 }
 
 /**
- * Poll the gateway `/readyz` endpoint until the assistant reports migrations
- * ready or the timeout elapses. Returns whether the assistant became ready.
- *
- * Readiness is classified from the response BODY, not the status code: the
- * assistant's `/readyz` (forwarded through the gateway proxy) returns 200
- * with `ready: false` while DB migrations run — the k8s keep-the-pod contract
- * — so `resp.ok` alone would declare an upgrade successful before its
- * migrations settle and make the caller's rollback path unreachable. A
- * terminally failed migration returns immediately so rollback/restore can run
- * without burning the timeout.
- */
-/**
  * Best-effort broadcast of an upgrade lifecycle event to connected clients
  * via the gateway's upgrade-broadcast proxy. Uses guardian token auth.
  * Failures are logged but never block the upgrade flow.

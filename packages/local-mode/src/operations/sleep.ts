@@ -57,9 +57,6 @@ export async function sleepAssistant(
   options: SleepOptions = {},
 ): Promise<SleepResult> {
   // The was-running signal is the gateway's own health probe — remote
-  // agnostic — taken before the stop; every result variant (and the raised
-  // structured error) carries it so callers never probe separately.
-  // The was-running signal is the gateway's own health probe — remote
   // agnostic — taken once, above the switch, before the stop; every result
   // variant (and the raised structured error) carries it so callers never
   // probe separately.
