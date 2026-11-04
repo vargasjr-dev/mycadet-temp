@@ -33,13 +33,8 @@ export interface VoiceAvatarProps {
  * anything the avatar does. Reduced-motion users get the static avatar (CSS
  * loops disabled).
  */
-export function VoiceAvatar({
-  assistantId,
-  visual,
-  size = DEFAULT_SIZE,
-}: VoiceAvatarProps) {
-  const { components, traits, customImageUrl } =
-    useAssistantAvatar(assistantId);
+export function VoiceAvatar({ visual, size = DEFAULT_SIZE }: VoiceAvatarProps) {
+  const { components, traits, customImageUrl } = useAssistantAvatar();
 
   return (
     <div

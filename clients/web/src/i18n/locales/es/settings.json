@@ -90,8 +90,7 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "Punto en el tiempo",
     "typePreview": "Vista previa",
-    "typeScheduled": "Programada",
-    "cliOnly": "Usa cadet backup y cadet restore en una terminal para instalaciones locales o Docker."
+    "typeScheduled": "Programada"
   },
   "assistantStatusPanel": {
     "assistantId": "ID del asistente",

@@ -63,12 +63,12 @@ export interface AppIconSync {
 /** Shared empty list, so a disabled surface hands back a stable identity. */
 const NO_ICONS: string[] = [];
 
-export function useAppIconSync(assistantId: string | null): AppIconSync {
+export function useAppIconSync(): AppIconSync {
   const isNativeIOS = useIsNativeIOS();
   const isNativeAndroid = useIsNativeAndroid();
   const gateOpen = isNativeIOS || isNativeAndroid;
 
-  const { state } = useAssistantAvatar(assistantId);
+  const { state } = useAssistantAvatar();
   const iconState = useAppIconStore.use.snapshot();
   const setSnapshot = useAppIconStore.use.setSnapshot();
 

@@ -51,7 +51,7 @@ export function PersonalityPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { components, traits, customImageUrl, accentHex } =
-    useAssistantAvatar(assistantId);
+    useAssistantAvatar();
   const identityQuery = useAssistantIdentityDetails(assistantId);
   const slidersQuery = useQuery({
     queryKey: personalitySlidersQueryKey(assistantId),

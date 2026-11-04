@@ -1,36 +1,40 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import {
-  getActiveAssistantId,
-  getResolvedAssistant,
-  useResolvedAssistantStore,
-} from "./resolved-assistant-store";
+import { getAssistantDisplayName } from "@/stores/resolved-assistant-store";
+import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
-const LOCAL_ENTRY = {
-  cloud: "local" as const,
-  assistantId: "asst-1",
-  port: 0,
-};
+beforeEach(() => {
+  window.__CADET_CONFIG__ = { remote: "local" };
+});
 
-describe("useResolvedAssistantStore", () => {
-  test("the assistant is non-optional — the boot entry exists before any stamp", () => {
-    expect(getResolvedAssistant()).toBeDefined();
-    expect(typeof getActiveAssistantId()).toBe("string");
+afterEach(() => {
+  useAssistantIdentityStore.getState().clearIdentity();
+});
+
+describe("the injected/display names", () => {
+  test("prefers the live identity-store name over the injected config", () => {
+    window.__CADET_CONFIG__ = {
+      remote: "docker",
+      assistantName: "cadet-deep-hare-ww1iw1",
+    };
+    useAssistantIdentityStore.getState().setIdentity("Credence", "1.0.0");
+
+    expect(getAssistantDisplayName()).toBe("Credence");
   });
 
-  test("setAssistant stamps the one assistant; resetAssistant returns to the shell", () => {
-    useResolvedAssistantStore.getState().setAssistant(LOCAL_ENTRY);
-    expect(getResolvedAssistant()).toBe(LOCAL_ENTRY);
-    expect(getActiveAssistantId()).toBe("asst-1");
-    useResolvedAssistantStore.getState().resetAssistant();
-    expect(getResolvedAssistant().assistantId).toBe("");
+  test("falls back to the injected config for a whitespace-only live name", () => {
+    window.__CADET_CONFIG__ = {
+      remote: "docker",
+      assistantName: "cadet-deep-hare-ww1iw1",
+    };
+    useAssistantIdentityStore.getState().setIdentity("   ", "1.0.0");
+
+    expect(getAssistantDisplayName()).toBe("cadet-deep-hare-ww1iw1");
   });
 
-  test("the store's module init rides the served synthesis", () => {
-    // The test helper injects a config before import in suite setups; here we
-    // only pin that the boot entry is a well-formed entry either way.
-    const entry = getResolvedAssistant();
-    expect(entry).toHaveProperty("assistantId");
-    expect(entry).toHaveProperty("cloud");
+  test("is undefined when neither source carries a name", () => {
+    window.__CADET_CONFIG__ = { remote: "docker" };
+
+    expect(getAssistantDisplayName()).toBeUndefined();
   });
 });

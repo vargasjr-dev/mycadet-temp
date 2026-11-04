@@ -1067,7 +1067,7 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
     traits,
     customImageUrl,
     accentHex: avatarAccentHex,
-  } = useAssistantAvatar(assistantId);
+  } = useAssistantAvatar();
   // An uploaded image on an assistant that predates accents carries none, so
   // its colour is sampled here instead; the daemon's accent wins when there
   // is one, and a character never needs the sample.

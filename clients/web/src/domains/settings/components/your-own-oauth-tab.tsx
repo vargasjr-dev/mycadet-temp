@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, ExternalLink, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -53,19 +54,18 @@ function formatOAuthTimestamp(ms: number): string {
 }
 
 interface YourOwnTabProps {
-  assistantId: string;
   providerKey: string;
   displayName: string;
   logoUrl: string | null;
 }
 
 export function YourOwnTab({
-  assistantId,
   providerKey,
   displayName,
   logoUrl,
 }: YourOwnTabProps) {
   const { t } = useTranslation("settings");
+  const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
 
   // --- Server state via TanStack Query ---

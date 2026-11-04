@@ -242,7 +242,7 @@ export function IdentityPage() {
     accent,
     isLoading: isAvatarLoading,
     invalidate: invalidateAvatar,
-  } = useAssistantAvatar(assistantId);
+  } = useAssistantAvatar();
   const identityQuery = useAssistantIdentityDetails(assistantId);
   const supportsPlugins = useSupportsPluginsSurface();
   const stats = useIdentitySectionStats(assistantId, { supportsPlugins });

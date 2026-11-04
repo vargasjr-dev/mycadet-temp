@@ -10,11 +10,6 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
-  // The terminal session is a cloud-routed exec channel — it has no meaning
-  // against a self-hosted assistant. Self-hosted assistants early-return
-  // null, structurally blocking TerminalPanel from mounting a cloud-routed
-  // exec connection against a self-hosted target. The id is the store's —
-  // the shell stamped it before the first render.
   const [service, setService] = useState<TerminalService>("assistant");
 
   const terminalServiceOptions = useMemo(

@@ -17,10 +17,8 @@ import {
   RemoteWebPairingError,
 } from "@/lib/auth/remote-gateway-session";
 import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
-import {
-  getRemoteGatewayAssistantName,
-  isCadetCloudRemote,
-} from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
+import { getAssistantName } from "@/stores/resolved-assistant-store";
 import { isNativePlatform } from "@/runtime/native-auth";
 import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
 import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
@@ -160,7 +158,7 @@ function buildAppHandoffUrl(
     url: remoteGatewayPublicBaseUrl(),
     code: deviceCode,
   });
-  const assistantName = getRemoteGatewayAssistantName();
+  const assistantName = getAssistantName();
   if (assistantName) {
     params.set("name", assistantName);
   }

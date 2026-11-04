@@ -193,7 +193,7 @@ describe("useAssistantAvatar", () => {
 
   test("does not fetch before an explicit notification owner resolves", async () => {
     const { result } = renderHook(
-      () => useAssistantAvatar("asst-1", { ownerScopeId: null }),
+      () => useAssistantAvatar({ ownerScopeId: null }),
       { wrapper: createWrapper() },
     );
 
@@ -215,8 +215,7 @@ describe("useAssistantAvatar", () => {
     );
 
     const { result, rerender } = renderHook(
-      (supportsManifest: boolean) =>
-        useAssistantAvatar("asst-1", { supportsManifest }),
+      (supportsManifest: boolean) => useAssistantAvatar({ supportsManifest }),
       { wrapper: createWrapper(), initialProps: false },
     );
     await waitFor(() => {
@@ -227,35 +226,6 @@ describe("useAssistantAvatar", () => {
     expect(result.current.traits).toEqual(traits);
 
     resolveManifest(noneState);
-    await waitFor(() => {
-      expect(result.current.state).toEqual(noneState);
-    });
-  });
-
-  test("does not retain assistant A while assistant B loads", async () => {
-    fetchAvatarState.mockResolvedValueOnce(characterState);
-    let resolveSecond: (state: AvatarState) => void = () => {};
-    fetchAvatarState.mockImplementationOnce(
-      () =>
-        new Promise<AvatarState>((resolve) => {
-          resolveSecond = resolve;
-        }),
-    );
-
-    const { result, rerender } = renderHook(
-      (assistantId: string) => useAssistantAvatar(assistantId),
-      { wrapper: createWrapper(), initialProps: "asst-1" },
-    );
-    await waitFor(() => {
-      expect(result.current.traits).toEqual(traits);
-    });
-
-    useResolvedAssistantStore.getState().setAssistant(assistantTwo);
-    rerender("asst-2");
-    expect(result.current.traits).toBeNull();
-    expect(result.current.customImageUrl).toBeNull();
-
-    resolveSecond(noneState);
     await waitFor(() => {
       expect(result.current.state).toEqual(noneState);
     });
@@ -290,7 +260,7 @@ describe("useAssistantAvatar", () => {
       null,
     )!;
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(queryClient),
     });
     await waitFor(() => {
@@ -340,8 +310,8 @@ describe("useAssistantAvatar", () => {
 
     const { result } = renderHook(
       () => ({
-        root: useAssistantAvatar("asst-1", { ownerScopeId: scopeId }),
-        display: useAssistantAvatar("asst-1"),
+        root: useAssistantAvatar({ ownerScopeId: scopeId }),
+        display: useAssistantAvatar(),
       }),
       { wrapper: createWrapper(queryClient) },
     );
@@ -355,143 +325,6 @@ describe("useAssistantAvatar", () => {
       queryClient
         .getQueryCache()
         .findAll({ queryKey: avatarQueryKey("asst-1") }),
-    ).toHaveLength(1);
-  });
-
-  test("switching one consumer from A to B preserves another consumer's A avatar", async () => {
-    fetchAvatarState.mockResolvedValue(imageState);
-    const imageFetchCounts = new Map<string, number>();
-    fetchAvatarImageUrlResult.mockImplementation(async (assistantId) => {
-      const count = (imageFetchCounts.get(assistantId) ?? 0) + 1;
-      imageFetchCounts.set(assistantId, count);
-      return found(`blob:${assistantId}:${count}`);
-    });
-    const secondOwner = {
-      ...assistantTwo,
-      runtimeUrl: "https://second.example.com/runtime",
-    };
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { result, rerender } = renderHook(
-      ({ dynamicId }: { dynamicId: "asst-1" | "asst-2" }) => ({
-        stable: useAssistantAvatar("asst-1", {
-          ownerAssistant: assistantOne,
-        }),
-        dynamic: useAssistantAvatar(dynamicId, {
-          ownerAssistant: dynamicId === "asst-1" ? assistantOne : secondOwner,
-        }),
-      }),
-      {
-        wrapper: createWrapper(queryClient),
-        initialProps: { dynamicId: "asst-1" },
-      },
-    );
-    await waitFor(() => {
-      expect(result.current.stable.customImageUrl).toBe("blob:asst-1:1");
-      expect(result.current.dynamic.customImageUrl).toBe("blob:asst-1:1");
-    });
-
-    rerender({ dynamicId: "asst-2" });
-    await waitFor(() => {
-      expect(result.current.dynamic.customImageUrl).toBe("blob:asst-2:1");
-    });
-    expect(result.current.stable.customImageUrl).toBe("blob:asst-1:1");
-    expect(revokeObjectURL).not.toHaveBeenCalledWith("blob:asst-1:1");
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: avatarQueryKey("asst-1") }),
-    ).toHaveLength(1);
-  });
-
-  test("disconnecting one consumer preserves another consumer's shared avatar", async () => {
-    fetchAvatarState.mockResolvedValue(imageState);
-    fetchAvatarImageUrlResult.mockResolvedValue(found("blob:shared-a"));
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { result, rerender } = renderHook(
-      ({ connected }: { connected: boolean }) => ({
-        stable: useAssistantAvatar("asst-1", {
-          ownerAssistant: assistantOne,
-        }),
-        dynamic: useAssistantAvatar(connected ? "asst-1" : null, {
-          ownerAssistant: connected ? assistantOne : null,
-        }),
-      }),
-      {
-        wrapper: createWrapper(queryClient),
-        initialProps: { connected: true },
-      },
-    );
-    await waitFor(() => {
-      expect(result.current.stable.customImageUrl).toBe("blob:shared-a");
-      expect(result.current.dynamic.customImageUrl).toBe("blob:shared-a");
-    });
-
-    rerender({ connected: false });
-    expect(result.current.dynamic.customImageUrl).toBeNull();
-    expect(result.current.stable.customImageUrl).toBe("blob:shared-a");
-    expect(revokeObjectURL).not.toHaveBeenCalledWith("blob:shared-a");
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: avatarQueryKey("asst-1") }),
-    ).toHaveLength(1);
-  });
-
-  test("different assistants keep independent connection-scoped queries", async () => {
-    fetchAvatarState.mockResolvedValue(imageState);
-    const imageFetchCounts = new Map<string, number>();
-    fetchAvatarImageUrlResult.mockImplementation(async (assistantId) => {
-      const count = (imageFetchCounts.get(assistantId) ?? 0) + 1;
-      imageFetchCounts.set(assistantId, count);
-      return found(`blob:${assistantId}:${count}`);
-    });
-    const secondOwner = {
-      ...assistantTwo,
-      port: 9103,
-      daemonPort: 9103,
-    };
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { result, rerender } = renderHook(
-      ({ firstOwner }: { firstOwner: LockfileAssistant }) => ({
-        first: useAssistantAvatar("asst-1", { ownerAssistant: firstOwner }),
-        second: useAssistantAvatar("asst-2", { ownerAssistant: secondOwner }),
-      }),
-      {
-        wrapper: createWrapper(queryClient),
-        initialProps: { firstOwner: assistantOne },
-      },
-    );
-    await waitFor(() => {
-      expect(result.current.first.customImageUrl).toBe("blob:asst-1:1");
-      expect(result.current.second.customImageUrl).toBe("blob:asst-2:1");
-    });
-
-    rerender({
-      firstOwner: {
-        ...assistantOne,
-        port: 9104,
-        daemonPort: 9104,
-      },
-    });
-    await waitFor(() => {
-      expect(result.current.first.customImageUrl).toBe("blob:asst-1:2");
-    });
-    expect(result.current.second.customImageUrl).toBe("blob:asst-2:1");
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:asst-1:1");
-    expect(revokeObjectURL).not.toHaveBeenCalledWith("blob:asst-2:1");
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: avatarQueryKey("asst-2") }),
     ).toHaveLength(1);
   });
 
@@ -515,7 +348,7 @@ describe("useAssistantAvatar", () => {
     const scopeId = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
 
     const { result } = renderHook(
-      () => useAssistantAvatar("asst-1", { ownerScopeId: scopeId }),
+      () => useAssistantAvatar({ ownerScopeId: scopeId }),
       { wrapper: createWrapper(queryClient) },
     );
     expect(result.current.traits).toEqual(traits);
@@ -544,16 +377,16 @@ describe("useAssistantAvatar", () => {
     fetchAvatarState.mockResolvedValueOnce(imageState);
     fetchAvatarImageUrlResult.mockResolvedValueOnce(found("blob:assistant-b"));
 
-    const { result, rerender } = renderHook(
-      (assistantId: string) => useAssistantAvatar(assistantId),
-      { wrapper: createWrapper(), initialProps: "asst-1" },
-    );
+    const { result } = renderHook(() => useAssistantAvatar(), {
+      wrapper: createWrapper(),
+    });
     await waitFor(() => {
       expect(fetchAvatarState).toHaveBeenCalledTimes(1);
     });
 
-    useResolvedAssistantStore.getState().setAssistant(assistantTwo);
-    rerender("asst-2");
+    act(() => {
+      useResolvedAssistantStore.getState().setAssistant(assistantTwo);
+    });
     await waitFor(() => {
       expect(result.current.customImageUrl).toBe("blob:assistant-b");
     });
@@ -567,7 +400,7 @@ describe("useAssistantAvatar", () => {
   describe("last-seen cache", () => {
     test("a resolved character avatar is persisted for the chooser's fallback", async () => {
       fetchAvatarState.mockResolvedValueOnce(characterState);
-      const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+      const { result } = renderHook(() => useAssistantAvatar(), {
         wrapper: createWrapper(),
       });
       await waitFor(() => {
@@ -584,7 +417,7 @@ describe("useAssistantAvatar", () => {
     });
 
     test("a resolved none evicts the entry", async () => {
-      const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+      const { result } = renderHook(() => useAssistantAvatar(), {
         wrapper: createWrapper(),
       });
       await waitFor(() => {
@@ -606,7 +439,7 @@ describe("useAssistantAvatar", () => {
       });
       const cacheKey = chooserRowAvatarCacheQueryKey("asst-1");
       queryClient.setQueryData(cacheKey, { traits: null, imageUrl: null });
-      renderHook(() => useAssistantAvatar("asst-1"), {
+      renderHook(() => useAssistantAvatar(), {
         wrapper: createWrapper(queryClient),
       });
       await waitFor(() => {
@@ -615,22 +448,6 @@ describe("useAssistantAvatar", () => {
       await waitFor(() => {
         expect(queryClient.getQueryState(cacheKey)?.isInvalidated).toBe(true);
       });
-    });
-
-    test("a sibling's read never touches the cache, only the active assistant's does", async () => {
-      fetchAvatarState.mockResolvedValueOnce(characterState);
-      const { result } = renderHook(
-        () => useAssistantAvatar("asst-2", { ownerAssistant: assistantTwo }),
-        {
-          wrapper: createWrapper(),
-        },
-      );
-      await waitFor(() => {
-        expect(result.current.traits).toEqual(traits);
-      });
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      expect(writeLastSeenAvatar).not.toHaveBeenCalled();
-      expect(deleteLastSeenAvatar).not.toHaveBeenCalled();
     });
 
     test("a superseded legacy read that finishes last persists nothing and drops its blob", async () => {
@@ -642,8 +459,7 @@ describe("useAssistantAvatar", () => {
       fetchAvatarState.mockResolvedValue(characterState);
 
       const { result, rerender } = renderHook(
-        (supportsManifest: boolean) =>
-          useAssistantAvatar("asst-1", { supportsManifest }),
+        (supportsManifest: boolean) => useAssistantAvatar({ supportsManifest }),
         { wrapper: createWrapper(), initialProps: false },
       );
       await waitFor(() => {
@@ -675,7 +491,7 @@ describe("useAssistantAvatar", () => {
 
     test("an inconclusive read touches nothing", async () => {
       fetchAvatarState.mockResolvedValue(null);
-      const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+      const { result } = renderHook(() => useAssistantAvatar(), {
         wrapper: createWrapper(),
       });
       await waitFor(() => {
@@ -691,7 +507,7 @@ describe("useAssistantAvatar", () => {
   test("character kind exposes manifest traits and skips the image fetch", async () => {
     fetchAvatarState.mockResolvedValueOnce(characterState);
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -714,7 +530,7 @@ describe("useAssistantAvatar", () => {
     fetchAvatarState.mockResolvedValueOnce(imageState);
     fetchAvatarImageUrlResult.mockResolvedValueOnce(found("blob:avatar-image"));
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -732,7 +548,7 @@ describe("useAssistantAvatar", () => {
   });
 
   test("none kind falls back with neither traits nor image", async () => {
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -760,7 +576,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const first = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const first = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(first.result.current.traits).toEqual(traits);
     });
@@ -772,7 +588,7 @@ describe("useAssistantAvatar", () => {
     fetchAvatarState.mockResolvedValue(null);
     await queryClient.invalidateQueries({ queryKey: avatarQueryKey("asst-1") });
 
-    const second = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const second = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(fetchAvatarState).toHaveBeenCalledTimes(2);
     });
@@ -801,7 +617,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper,
     });
 
@@ -827,7 +643,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const first = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const first = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(first.result.current.traits).toEqual(traits);
     });
@@ -839,7 +655,7 @@ describe("useAssistantAvatar", () => {
     );
     await queryClient.invalidateQueries({ queryKey: avatarQueryKey("asst-1") });
 
-    const second = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const second = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(fetchCharacterComponents).toHaveBeenCalledTimes(2);
     });
@@ -861,7 +677,7 @@ describe("useAssistantAvatar", () => {
     );
 
     // WHEN the hook mounts
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -879,7 +695,7 @@ describe("useAssistantAvatar", () => {
     useAssistantIdentityStore.getState().setIdentity("test-asst", "0.8.6");
     fetchCharacterTraitsResult.mockResolvedValueOnce(found(traits));
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -907,7 +723,7 @@ describe("useAssistantAvatar", () => {
     useAssistantIdentityStore.getState().setIdentity("test-asst", "0.8.6");
     fetchAvatarImageUrlResult.mockResolvedValueOnce(found("blob:legacy-image"));
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -939,7 +755,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const first = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const first = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(first.result.current.customImageUrl).toBe("blob:avatar-image");
     });
@@ -949,7 +765,7 @@ describe("useAssistantAvatar", () => {
     fetchAvatarImageUrlResult.mockResolvedValue(FAILED);
     await queryClient.invalidateQueries({ queryKey: avatarQueryKey("asst-1") });
 
-    const second = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const second = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(fetchAvatarImageUrlResult).toHaveBeenCalledTimes(2);
     });
@@ -959,7 +775,7 @@ describe("useAssistantAvatar", () => {
   test("pre-manifest assistants with both sidecars absent resolve to a bare avatar", async () => {
     useAssistantIdentityStore.getState().setIdentity("test-asst", "0.8.6");
 
-    const { result } = renderHook(() => useAssistantAvatar("asst-1"), {
+    const { result } = renderHook(() => useAssistantAvatar(), {
       wrapper: createWrapper(),
     });
 
@@ -981,7 +797,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const first = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const first = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(first.result.current.customImageUrl).toBe("blob:avatar-image");
     });
@@ -991,7 +807,7 @@ describe("useAssistantAvatar", () => {
     fetchCharacterTraitsResult.mockResolvedValue(found(traits));
     await queryClient.invalidateQueries({ queryKey: avatarQueryKey("asst-1") });
 
-    const second = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const second = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(fetchAvatarImageUrlResult).toHaveBeenCalledTimes(2);
     });
@@ -1011,7 +827,7 @@ describe("useAssistantAvatar", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const first = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const first = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(first.result.current.traits).toEqual(traits);
     });
@@ -1021,7 +837,7 @@ describe("useAssistantAvatar", () => {
     fetchCharacterTraitsResult.mockResolvedValue(FAILED);
     await queryClient.invalidateQueries({ queryKey: avatarQueryKey("asst-1") });
 
-    const second = renderHook(() => useAssistantAvatar("asst-1"), { wrapper });
+    const second = renderHook(() => useAssistantAvatar(), { wrapper });
     await waitFor(() => {
       expect(fetchAvatarImageUrlResult).toHaveBeenCalledTimes(2);
     });

@@ -108,8 +108,7 @@ export function VoiceFirstRunCard({
   onDismiss,
 }: VoiceFirstRunCardProps) {
   const { t } = useTranslation("chat");
-  const { components, traits, customImageUrl } =
-    useAssistantAvatar(assistantId);
+  const { components, traits, customImageUrl } = useAssistantAvatar();
   const assistantName = useAssistantName(assistantId);
   const displayName = assistantName ?? t("voiceFirstRunCard.yourAssistant");
 

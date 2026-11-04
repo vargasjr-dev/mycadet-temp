@@ -445,7 +445,6 @@ function IntegrationsPanelInner() {
       return (
         <PluginIntegrationRow
           key={item.id}
-          assistantId={assistantId}
           method={item.method}
           disabled={!plan || connect.isBusyElsewhere(item.id)}
           onOpen={() => connect.openModal(item.id)}
@@ -601,7 +600,6 @@ function IntegrationsPanelInner() {
           ownOAuthContent={
             connectModalItem.kind === "oauth" ? (
               <YourOwnTab
-                assistantId={assistantId}
                 providerKey={connectModalItem.provider.provider_key}
                 displayName={connectModalItem.name}
                 logoUrl={connectModalItem.provider.logo_url}

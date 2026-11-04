@@ -244,7 +244,7 @@ export function ActiveChatView() {
 
   // Avatar — called here so the cache is warm; ChatMainPanel has
   // its own call (TanStack Query deduplicates the fetch).
-  useAssistantAvatar(assistantId);
+  useAssistantAvatar();
 
   // -------------------------------------------------------------------------
   // Conversation loader

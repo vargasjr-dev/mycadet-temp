@@ -327,7 +327,3 @@ authClient.setConfig({
 for (const apiClient of [authClient, cloudClient]) {
   apiClient.interceptors.request.use(requestInterceptor);
 }
-
-// A chat send in cloud mode goes through the daemon client; other platform
-// calls go through the cloud client. Not installed on `authClient` — the
-// allauth session endpoints manage their own 401 semantics.

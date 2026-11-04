@@ -44,7 +44,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { AssistantEyesMark } from "@/components/avatar/assistant-eyes-mark";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /** How long the pill wears the avatar color before the wash drains. */
 const FLOOD_HOLD_MS = 900;
@@ -61,9 +60,7 @@ const SLIDE_PX = 28;
 export function SideControlPresence({ children }: { children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   const isMobile = useIsMobile();
-  const assistantId = useActiveAssistantId();
-  const { components, traits, customImageUrl } =
-    useAssistantAvatar(assistantId);
+  const { components, traits, customImageUrl } = useAssistantAvatar();
   // The takeover needs both halves of a character avatar. A custom image has
   // neither, so the control just slides in.
   const hasCharacterAvatar =

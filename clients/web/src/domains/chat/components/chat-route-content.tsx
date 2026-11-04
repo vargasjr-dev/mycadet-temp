@@ -405,7 +405,7 @@ export function ChatMainPanel({
   // -------------------------------------------------------------------------
   // UI-scoped hooks
   // -------------------------------------------------------------------------
-  const avatar = useAssistantAvatar(assistantId);
+  const avatar = useAssistantAvatar();
 
   const {
     voiceInputRef,

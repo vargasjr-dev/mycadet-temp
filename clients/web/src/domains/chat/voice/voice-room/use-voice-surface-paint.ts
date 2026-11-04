@@ -35,7 +35,7 @@ export function useVoiceSurfacePaint(
   assistantId: string | null,
 ): VoiceSurfacePaint | null {
   const { components, traits, customImageUrl, accentHex, isLoading } =
-    useAssistantAvatar(assistantId);
+    useAssistantAvatar();
   const sampledAccentHex = useSampledAvatarAccentHex(
     accentHex === null ? customImageUrl : null,
   );

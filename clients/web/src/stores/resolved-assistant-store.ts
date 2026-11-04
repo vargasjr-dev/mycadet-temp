@@ -26,6 +26,7 @@ import { create } from "zustand";
 import { createSelectors } from "@/utils/create-selectors";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { readInjectedConfig } from "@/lib/injected-config";
+import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 /** The boot entry for a surface whose serving host fronted no assistant. */
 export const UNRESOLVED_ASSISTANT: LockfileAssistant = {
@@ -108,4 +109,19 @@ export function getResolvedAssistant(): LockfileAssistant {
 /** Non-reactive read of the served assistant's id. */
 export function getActiveAssistantId(): string {
   return useResolvedAssistantStoreBase.getState().assistant.assistantId;
+}
+
+function nonEmptyString(value: string | undefined): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+/** Name the shell injected at boot, when the config carries one. */
+export function getAssistantName(): string | undefined {
+  return nonEmptyString(readInjectedConfig()?.assistantName);
+}
+
+/** Live persona name when hydrated, else the name the shell injected. */
+export function getAssistantDisplayName(): string | undefined {
+  const live = useAssistantIdentityStore.getState().name?.trim();
+  return live || getAssistantName();
 }
