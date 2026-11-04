@@ -95,7 +95,7 @@ interface PortSpec {
 export interface DockerContainerSpec {
   /** K8s-style container name (matches `stateful_template.yaml`). */
   name: string;
-  /** Internal CLI `ServiceName` key used by `SERVICE_START_ORDER`. */
+  /** Internal CLI `ServiceName` key. */
   internalName: ServiceName;
   /**
    * Network mode:

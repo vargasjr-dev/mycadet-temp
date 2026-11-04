@@ -180,7 +180,6 @@ export {
   type ServiceName,
 } from "./remotes/docker/statefulset";
 export {
-  SERVICE_START_ORDER,
   startContainers,
   wakeDocker,
   type WakeDockerOptions,

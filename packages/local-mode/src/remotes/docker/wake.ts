@@ -192,11 +192,14 @@ async function recreateDockerContainers(
     res,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
-  for (const service of SERVICE_START_ORDER) {
-    const args = runArgs[service]();
+  // The assistant owns the instance's network namespace — the gateway and
+  // credential-executor sidecars join it with `--network=container:` — so it
+  // starts alone and the two sidecars start together (see
+  // startAssistantThenSidecars).
+  await startAssistantThenSidecars(runArgs, async (service) => {
     log(`Starting ${service} container...`);
-    await exec("docker", args);
-  }
+    await exec("docker", runArgs[service]());
+  });
 
   // Persist what the recreation decided (the gateway port, the assistant
   // port when it defaulted) so plain `docker start` wakes work and clients
@@ -214,14 +217,22 @@ async function recreateDockerContainers(
   });
 }
 
-/** The order in which services must be started. */
-export const SERVICE_START_ORDER: ServiceName[] = [
-  "assistant",
-  "gateway",
-  "credential-executor",
-];
+/**
+ * Start the three service containers. The assistant owns the instance's
+ * network namespace — the gateway and credential-executor sidecars join it
+ * with `--network=container:` — so it starts alone and the two sidecars,
+ * independent of each other, start together. `docker run -d` returns once
+ * the container runs, which is all a namespace join needs.
+ */
+async function startAssistantThenSidecars(
+  runArgs: Record<ServiceName, () => string[]>,
+  start: (service: ServiceName) => Promise<void>,
+): Promise<void> {
+  await start("assistant");
+  await Promise.all([start("gateway"), start("credential-executor")]);
+}
 
-/** Start all three containers in dependency order. */
+/** Start all three containers: the namespace owner first, sidecars together. */
 export async function startContainers(
   opts: {
     createOnly?: boolean;
@@ -241,7 +252,7 @@ export async function startContainers(
     ...opts,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
-  for (const service of SERVICE_START_ORDER) {
+  await startAssistantThenSidecars(runArgs, async (service) => {
     const args = runArgs[service]();
     if (opts.createOnly) {
       args[0] = "create";
@@ -249,5 +260,5 @@ export async function startContainers(
     }
     log(`${opts.createOnly ? "Creating" : "Starting"} ${service} container...`);
     await exec("docker", args);
-  }
+  });
 }

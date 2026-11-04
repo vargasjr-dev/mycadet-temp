@@ -14,7 +14,6 @@ import {
   buildServiceRunArgs,
   resolveAvatarDevicePath,
 } from "./statefulset";
-import { SERVICE_START_ORDER } from "./wake";
 
 export function collectWatchTargets(repoRoot: string): {
   dirs: string[];
@@ -152,15 +151,25 @@ export function startFileWatcher(opts: {
         }),
       );
 
-      // Restart in dependency order (assistant first) so the network
-      // namespace owner is up before dependents try to attach.
-      for (const service of SERVICE_START_ORDER) {
-        if (!services.has(service)) continue;
-        const container = containerForService[service];
+      // The assistant owns the shared network namespace: restart it first
+      // when affected (the sidecars join it with `--network=container:`);
+      // the affected sidecars restart together.
+      if (services.has("assistant")) {
+        const container = containerForService.assistant;
         console.log(`🔄 Restarting ${container}...`);
         await removeContainer(container);
-        await exec("docker", runArgs[service]());
+        await exec("docker", runArgs.assistant());
       }
+      await Promise.all(
+        (["gateway", "credential-executor"] as const)
+          .filter((service) => services.has(service))
+          .map(async (service) => {
+            const container = containerForService[service];
+            console.log(`🔄 Restarting ${container}...`);
+            await removeContainer(container);
+            await exec("docker", runArgs[service]());
+          }),
+      );
 
       console.log("✅ Rebuild complete — watching for changes...\n");
     } catch (err) {
