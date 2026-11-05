@@ -68,7 +68,6 @@
     "@mycadet/avatar-catalog": "workspace:*",
     "@mycadet/avatar-manifest": "workspace:*",
     "@mycadet/design-library": "workspace:*",
-    "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
     "@mycadet/shared": "workspace:*",

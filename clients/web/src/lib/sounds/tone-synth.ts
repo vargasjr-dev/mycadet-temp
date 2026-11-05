@@ -287,9 +287,6 @@ export async function renderTone(
 let liveContext: AudioContext | null = null;
 
 function getLiveContext(): AudioContext | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
   if (liveContext) {
     return liveContext;
   }

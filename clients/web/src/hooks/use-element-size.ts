@@ -38,9 +38,6 @@ export interface StageSize {
 const FALLBACK: StageSize = { w: 1280, h: 800 };
 
 export function layoutViewportSize(): StageSize {
-  if (typeof window === "undefined") {
-    return FALLBACK;
-  }
   return { w: window.innerWidth, h: window.innerHeight };
 }
 
@@ -112,11 +109,10 @@ const noopSubscribe = () => () => {};
  * computing `clamp()` in JavaScript, which is what LUM-3204 tracks. Adding a
  * consumer that CSS could have expressed makes that worse.
  *
- * Lives here rather than at the call site so the SSR fallback and the
- * `FALLBACK` dimensions keep one owner: a caller re-deriving this from
- * `window.innerWidth` ends up restating those constants, and then they drift
- * from the ones `layoutViewportSize` hands every other layer on the same
- * screen.
+ * Lives here rather than at the call site so the `FALLBACK` dimensions
+ * keep one owner: a caller re-deriving this from `window.innerWidth` ends
+ * up restating those constants, and then they drift from the ones
+ * `layoutViewportSize` hands every other layer on the same screen.
  *
  * Pass `enabled: false` when something else is supplying the size and this is
  * only a fallback. The value stays correct; it just stops subscribing.

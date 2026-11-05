@@ -23,7 +23,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 function usePrefersReducedMotion(): boolean {
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) {
+    if (!window.matchMedia) {
       return;
     }
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");

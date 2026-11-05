@@ -12,9 +12,6 @@ function normalizeThemePreference(
 }
 
 export function readStoredThemePreference(): ThemePreference {
-  if (typeof window === "undefined") {
-    return "system";
-  }
   const raw = getDeviceSetting("theme", "");
   return normalizeThemePreference(raw || null);
 }

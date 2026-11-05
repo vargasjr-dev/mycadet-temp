@@ -15,9 +15,7 @@ import { publishLifecycleEdge } from "@/runtime/event-sources/lifecycle-edge";
  * `signal: "app_state"`. Both go through
  * `runtime/event-sources/lifecycle-edge.ts`, which publishes the edge once.
  *
- * Browser-only; the caller is responsible for not invoking this in an
- * environment without `document` (SSR / Node). `useEventBusInit` guards
- * with `typeof window === "undefined"`.
+ * Browser-only.
  */
 export function publishVisibilitySource(): () => void {
   const handler = () => {

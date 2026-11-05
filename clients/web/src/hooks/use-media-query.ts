@@ -2,8 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 /**
  * Subscribes to a CSS media query and re-renders when it starts or stops
- * matching. SSR reports `false`, so server-rendered markup matches the
- * query-not-matching path.
+ * matching.
  *
  * Prefer a plain Tailwind variant when CSS can express the difference, and a
  * named hook (`useIsMobile`, `useTouchMobile`) when the query is a shared

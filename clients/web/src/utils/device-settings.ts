@@ -68,9 +68,6 @@ export function getDeviceSetting(
   name: DeviceSettingName,
   fallback: string,
 ): string {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     return localStorage.getItem(DEVICE_SETTINGS[name].key) ?? fallback;
   } catch {
@@ -88,9 +85,6 @@ export function getDeviceBool(
   name: DeviceSettingName,
   fallback: boolean,
 ): boolean {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     const raw = localStorage.getItem(DEVICE_SETTINGS[name].key);
     if (raw === "true") {

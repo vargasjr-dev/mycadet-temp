@@ -58,9 +58,6 @@ let referenceInnerHeight =
 // Orientation detection via matchMedia — universally supported (iOS 9+),
 // unlike screen.orientation which was only added in Safari 16.4.
 function isPortrait(): boolean {
-  if (typeof window === "undefined") {
-    return true;
-  }
   return window.matchMedia("(orientation: portrait)").matches;
 }
 let lastIsPortrait: boolean = isPortrait();

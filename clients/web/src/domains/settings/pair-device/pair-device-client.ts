@@ -102,9 +102,6 @@ export interface PairDeviceTarget {
  * visibility gate.
  */
 export function resolvePairDeviceTarget(): PairDeviceTarget | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
   const assistant = getResolvedAssistant();
   // The shell's empty id = the not-yet-resolved pre-projection window —
   // exactly the null the docblock describes.

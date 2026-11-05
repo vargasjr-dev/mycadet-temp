@@ -46,7 +46,6 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -135,8 +134,8 @@ export async function mintTunnelWsToken(
 
 /**
  * Resolve the tunnel host (no scheme). An explicit `VITE_TUNNEL_HOST` always
- * wins (local `vel up` tunnel); otherwise derive it from the cloud runtime
- * URL so one renderer build follows whichever platform environment it is
+ * wins (local `vel up` tunnel); otherwise derive it from the page's own
+ * origin so one renderer build follows whichever platform environment it is
  * connected to — the Electron web bundle is built without `VITE_TUNNEL_HOST`,
  * and baking the prod default would send a staging assistant's token to prod
  * tunnel, which rejects it on the WS upgrade.
@@ -146,9 +145,7 @@ function getTunnelHost(): string {
     return import.meta.env.VITE_TUNNEL_HOST;
   }
   try {
-    const derived = tunnelHostForCloudHost(
-      new URL(getCloudRuntimeUrl()).hostname,
-    );
+    const derived = tunnelHostForCloudHost(window.location.hostname);
     if (derived) {
       return derived;
     }

@@ -230,22 +230,6 @@ describe("the default locale", () => {
     });
   });
 
-  test("falls back to the app language where there is no navigator", () => {
-    const original = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-    Object.defineProperty(globalThis, "navigator", {
-      value: undefined,
-      configurable: true,
-    });
-    try {
-      expect(formatLocale()).toBe("en");
-    } finally {
-      if (original) {
-        Object.defineProperty(globalThis, "navigator", original);
-      } else {
-        delete (globalThis as { navigator?: Navigator }).navigator;
-      }
-    }
-  });
 });
 
 describe("seconds-resolution timestamps", () => {

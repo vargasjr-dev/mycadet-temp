@@ -177,8 +177,5 @@ export function useDiscordNudgeState(
 // ---------------------------------------------------------------------------
 
 export function openDiscordInvite(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   window.open(DISCORD_INVITE_URL, "_blank", "noopener,noreferrer");
 }

@@ -129,18 +129,13 @@ describe("buildTunnelWsUrl", () => {
     expect(raw).not.toContain("token=a/b+c=d e");
   });
 
-  test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
-    window.__CADET_CONFIG__ = {
-      cloudUrl: "https://staging-cloud.mycadet.ai",
-    };
+  test("derives the tunnel host from the page's own origin, falling back to prod off-convention", () => {
+    // The single-origin plan: no injected URL — the origin the page is
+    // served AT decides. The test env's origin (localhost) matches no
+    // platform convention, so the prod tunnel is the answer. The
+    // convention mapping itself is tunnelHostForCloudHost's own tests.
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("staging-tunnel.mycadet.ai");
-  });
-
-  test("falls back to the prod tunnel host for an off-convention platform URL", () => {
-    window.__CADET_CONFIG__ = { cloudUrl: "http://localhost:8000" };
-    const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.host).toBe("tunnel.mycadet.ai");
   });
 });

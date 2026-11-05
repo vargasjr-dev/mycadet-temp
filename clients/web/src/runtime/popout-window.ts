@@ -13,10 +13,8 @@ export function isPopoutWindow(search: string): boolean {
 }
 
 // Captured at module load, while the initial URL still carries `?popout=1`
-// (in-window navigations drop the query). `typeof window` guard keeps the
-// module importable under SSR/tooling contexts with no window.
-const INITIAL_LOAD_IS_POPOUT =
-  typeof window !== "undefined" && isPopoutWindow(window.location.search);
+// (in-window navigations drop the query).
+const INITIAL_LOAD_IS_POPOUT = isPopoutWindow(window.location.search);
 
 /**
  * Whether THIS window is an Electron pop-out thread window, valid for the

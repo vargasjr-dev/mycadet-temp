@@ -28,9 +28,6 @@ export function migrateValue(
   oldValue: string,
   newValue: string,
 ): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     if (localStorage.getItem(key) === oldValue) {
       localStorage.setItem(key, newValue);
@@ -44,9 +41,6 @@ export function migrateValue(
  * Remove a legacy key that has no successor. Idempotent.
  */
 export function removeKey(key: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     localStorage.removeItem(key);
   } catch {
@@ -61,9 +55,6 @@ export function removeKey(key: string): void {
  * silently losing the value).
  */
 export function migrateKey(oldKey: string, newKey: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     const value = localStorage.getItem(oldKey);
     if (value === null) {
@@ -86,9 +77,6 @@ export function migrateKey(oldKey: string, newKey: string): void {
  * iteration.
  */
 export function migratePrefix(oldPrefix: string, newPrefix: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     const pairs: [string, string][] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -138,9 +126,6 @@ function removeAllWithPrefix(prefix: string): void {
  * via the target-exists short-circuit plus unconditional legacy removal.
  */
 export function collapseSelectedAssistantKeys(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   const target = "cadet:selectedAssistantId";
   const tabLocalKey = "cadet:local:selectedAssistantId";
   const perOrgPrefix = "cadet:currentAssistantId:";
@@ -199,9 +184,6 @@ function activeOrgSelection(perOrgPrefix: string): string | null {
  * inter-key dependencies.
  */
 export function runStorageMigrations(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
 
   // -- Static key renames ------------------------------------------------
 

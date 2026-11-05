@@ -36,7 +36,7 @@ export function useNativeChordRegistration(
   onRegistered: (registered: boolean) => void,
 ): void {
   useEffect(() => {
-    if (typeof window === "undefined" || !supportsVoiceModeChord()) {
+    if (!supportsVoiceModeChord()) {
       return;
     }
 

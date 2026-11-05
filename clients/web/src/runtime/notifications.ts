@@ -177,9 +177,6 @@ export function shouldSuppressFocusedNotificationDelivery(
  * Notification API).
  */
 export function isNotificationsSupported(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
   if (isElectron()) {
     return !!window.cadet?.notifications;
   }
