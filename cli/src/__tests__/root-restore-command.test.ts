@@ -1,128 +1,89 @@
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as cloud from "../lib/cloud-client.js";
 import * as localMode from "@mycadet/local-mode";
-import * as lifecycle from "@mycadet/local-mode";
-import * as guardian from "../lib/guardian-token.js";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { restore } from "../commands/restore.js";
 
 const directory = await mkdtemp(join(tmpdir(), "root-restore-command-"));
 const file = join(directory, "backup.tar.gz");
-const source = join(directory, "source");
-for (const root of localMode.STATE_ROOTS)
-  await mkdir(join(source, root), { recursive: true });
-await writeFile(
-  join(source, "gateway-security", "actor-token-signing-key"),
-  Buffer.alloc(32, 1),
-);
-await localMode.packRoot(source, file);
+await writeFile(file, Buffer.alloc(32, 1));
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
-const versionRestore = spyOn(lifecycle, "performDockerRollback");
-const hostRestore = spyOn(localMode, "restoreRootBackup");
-const token = spyOn(localMode, "readCloudToken");
-const signedUrl = spyOn(cloud, "cloudRequestSignedUrl");
-const upload = spyOn(cloud, "platformUploadToSignedUrl");
-const importCloud = spyOn(cloud, "platformImportBundleFromGcs");
-const guardianRead = spyOn(guardian, "loadGuardianToken");
-const guardianLease = spyOn(localMode, "leaseGuardianToken");
+const restoreOp = spyOn(localMode, "restoreAssistant");
 
 beforeEach(() => {
-  for (const spy of [
-    lookup,
-    hostRestore,
-    versionRestore,
-    token,
-    signedUrl,
-    upload,
-    importCloud,
-    guardianRead,
-    guardianLease,
-  ])
-    spy.mockReset();
-  versionRestore.mockResolvedValue(undefined);
-  hostRestore.mockResolvedValue(join(directory, "recovery.tar.gz"));
-  token.mockReturnValue("session-token");
-  signedUrl.mockResolvedValue({
-    url: "https://storage.googleapis.com/upload",
-    bundleKey: "root-archive",
-    expiresAt: "2026-10-15T00:00:00Z",
-  });
-  upload.mockResolvedValue(undefined);
-  importCloud.mockResolvedValue({ statusCode: 200, body: { success: true } });
-  guardianRead.mockImplementation(() => {
-    throw new Error("must not read guardian tokens");
-  });
-  guardianLease.mockImplementation(async () => {
-    throw new Error("must not lease guardian tokens");
-  });
+  for (const spy of [lookup, restoreOp]) spy.mockReset();
+  lookup.mockReturnValue(null);
 });
 afterEach(() => {
   process.argv = [...argv];
 });
 afterAll(async () => {
-  for (const spy of [
-    lookup,
-    hostRestore,
-    versionRestore,
-    token,
-    signedUrl,
-    upload,
-    importCloud,
-    guardianRead,
-    guardianLease,
-  ])
-    spy.mockRestore();
+  for (const spy of [lookup, restoreOp]) spy.mockRestore();
   await rm(directory, { recursive: true, force: true });
 });
 
 for (const topology of ["local", "docker"] as const) {
-  test(`${topology} restore uses root storage without runtime authentication`, async () => {
+  test(`${topology} restore delegates to the operation and reports the recovery path`, async () => {
     const entry: LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
       port: 7830,
     };
     lookup.mockReturnValue(entry);
+    restoreOp.mockResolvedValue({
+      ok: true,
+      kind: "roots",
+      dryRun: false,
+      recoveryPath: join(directory, "recovery.tar.gz"),
+    });
     process.argv = ["bun", "cadet", "restore", "test", "--from", file];
     await restore();
-    expect(hostRestore).toHaveBeenCalledWith(entry, file, { dryRun: false });
-    expect(guardianRead).not.toHaveBeenCalled();
-    expect(guardianLease).not.toHaveBeenCalled();
-    expect(importCloud).not.toHaveBeenCalled();
+    expect(restoreOp).toHaveBeenCalledWith({
+      entry,
+      fromPath: file,
+      dryRun: false,
+      log: expect.any(Function),
+    });
   });
 }
 
-test("cloud restore uploads tar and calls the cloud API using the assistant's cloud session", async () => {
+test("cloud restore delegates through the same operation", async () => {
   const entry: LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
   };
   lookup.mockReturnValue(entry);
+  restoreOp.mockResolvedValue({
+    ok: true,
+    kind: "cloud",
+    dryRun: false,
+    import: {
+      filesCreated: 2,
+      filesOverwritten: 1,
+      filesSkipped: 0,
+      backupsCreated: 3,
+      warnings: [],
+    },
+  });
   process.argv = ["bun", "cadet", "restore", "cloud-test", "--from", file];
   await restore();
-  expect(signedUrl).toHaveBeenCalledWith(
-    expect.objectContaining({
-      operation: "upload",
-      contentType: "application/gzip",
-      contentLength: expect.any(Number),
-    }),
-    "session-token",
-    getGatewayUrl(entry),
-  );
-  expect(upload).toHaveBeenCalled();
-  expect(importCloud).toHaveBeenCalledWith(
-    "root-archive",
-    "session-token",
-    getGatewayUrl(entry),
-  );
-  expect(hostRestore).not.toHaveBeenCalled();
-  expect(guardianRead).not.toHaveBeenCalled();
+  expect(restoreOp).toHaveBeenCalledWith({
+    entry,
+    fromPath: file,
+    dryRun: false,
+    log: expect.any(Function),
+  });
+});
+
+test("without --from the command recovers the retired assistant", async () => {
+  process.argv = ["bun", "cadet", "restore", "retired-one"];
+  restoreOp.mockResolvedValue({ ok: true, kind: "recovery" });
+  await restore();
+  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one" });
 });
 
 for (const topology of ["local", "docker", "cloud"] as const) {
@@ -141,8 +102,6 @@ for (const topology of ["local", "docker", "cloud"] as const) {
       "Unknown restore option: --version",
     );
     expect(lookup).not.toHaveBeenCalled();
-    expect(signedUrl).not.toHaveBeenCalled();
-    expect(importCloud).not.toHaveBeenCalled();
-    expect(versionRestore).not.toHaveBeenCalled();
+    expect(restoreOp).not.toHaveBeenCalled();
   });
 }

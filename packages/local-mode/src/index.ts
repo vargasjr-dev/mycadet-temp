@@ -450,6 +450,21 @@ export {
   resolveLatestStableTag,
 } from "./remotes/local/upgrade";
 export { upgradeCloud } from "./remotes/cloud/upgrade";
+export {
+  restoreAssistant,
+  type RestoreAssistantResult,
+} from "./operations/restore";
+export {
+  cloudPollJobStatus,
+  cloudRequestSignedUrl,
+  parseUnifiedJobStatus,
+  cloudImportBundleFromGcs,
+  cloudImportPreflightFromGcs,
+  cloudUploadToSignedUrl,
+  VersionMismatchError,
+  type BundleCompatibility,
+  type UnifiedJobStatus,
+} from "./remotes/cloud/migrations";
 export { readLockfileAssistantAvatar } from "./avatar";
 export {
   getGuardianAccessToken,
