@@ -9,7 +9,11 @@
  */
 
 import { z } from "zod";
-import { captureBasetenCli, resolveBasetenCli, runBasetenCli } from "./baseten-cli.js";
+import {
+  captureBasetenCli,
+  resolveBasetenCli,
+  runBasetenCliCaptured,
+} from "./baseten-cli.js";
 
 const BASETEN_API_BASE = "https://api.baseten.co";
 
@@ -149,7 +153,10 @@ export async function pushBasetenImage(options: {
 }): Promise<void> {
   const team = basetenTeamId();
   if (await resolveBasetenCli()) {
-    return runBasetenCli([
+    // Captured, not streamed: the hatch already narrated the push, and the
+    // CLI's banner ("Waiting for it to build...") adds nothing — on failure
+    // the captured output rides the error instead.
+    await runBasetenCliCaptured([
       "sandbox",
       "image",
       "push",
@@ -160,6 +167,7 @@ export async function pushBasetenImage(options: {
       ...(team ? ["--team", team] : []),
       "--wait",
     ]);
+    return;
   }
 
   const token = await resolveBasetenToken();
@@ -218,8 +226,10 @@ export async function pushBasetenImage(options: {
 /**
  * Create a sandbox from an image. Creation waits until the sandbox is ready
  * and returns it; `envs` is the credential-injection path (marked secret so
- * Baseten masks the values). The CLI arm reports through its own streamed
- * output and only echoes back the requested name.
+ * Baseten masks the values). The CLI arm parses the created sandbox's name
+ * and URL straight off the create output — with no requested name the
+ * server picks one, and the URL only appears there (or on `describe`,
+ * which needs the name first).
  */
 export async function createBasetenSandbox(options: {
   name?: string;
@@ -238,10 +248,15 @@ export async function createBasetenSandbox(options: {
       const flag = env.secret ? "--env" : "--plain-env";
       args.push(flag, `${env.name}=${env.value}`);
     }
-    await runBasetenCli(args);
-    if (options.name) {
-      const url = await describeBasetenSandboxUrl(options.name);
-      return { name: options.name, ...(url ? { url } : {}) };
+    const output = await runBasetenCliCaptured(args);
+    const name = /^Name:\s*(\S+)/m.exec(output)?.[1] ?? options.name;
+    const url = /^URL:\s*(\S+)/m.exec(output)?.[1];
+    if (url) {
+      return { name, ...(url ? { url } : {}) };
+    }
+    if (name) {
+      const described = await describeBasetenSandboxUrl(name);
+      return { name, ...(described ? { url: described } : {}) };
     }
     return { name: options.name };
   }
