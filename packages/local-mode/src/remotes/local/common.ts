@@ -626,6 +626,10 @@ export function setStartupLogging(enabled: boolean): void {
   startupLogging = enabled;
 }
 
+export function isStartupLoggingEnabled(): boolean {
+  return startupLogging;
+}
+
 function startupLog(message = ""): void {
   if (startupLogging) console.log(message);
 }
