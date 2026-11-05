@@ -16,7 +16,49 @@ function localEntry(port: number | undefined): LockfileAssistant {
   } as LockfileAssistant;
 }
 
-describe("checkHealth — the baseten port route", () => {
+describe("checkHealth — the baseten gateway doors", () => {
+  test("a minted preview is the door: the probe rides it with the preview token", async () => {
+    const seen = { path: "", preview: null as string | null, auth: null as string | null };
+    const server = Bun.serve({
+      port: 0,
+      fetch(req) {
+        seen.path = new URL(req.url).pathname;
+        seen.preview = req.headers.get("x-blaxel-preview-token");
+        seen.auth = req.headers.get("authorization");
+        return Response.json({ status: "healthy", version: "1.2.3" });
+      },
+    });
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-health-prev-"));
+    const oldXdg = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = tmp;
+    saveBasetenSandboxToken("asst-baseten", "sbx-tok-1", "preview-tok-1");
+    try {
+      const entry = {
+        assistantId: "asst-baseten",
+        cloud: "baseten",
+        name: "sbx-x",
+        sandboxUrl: "https://sbx-x.b10.co",
+        previewUrl: `http://127.0.0.1:${server.port}`,
+        port: 7830,
+      } as LockfileAssistant;
+      const result = await checkHealth(entry);
+      expect(result.status).toBe("healthy");
+      expect(seen.path).toBe("/healthz");
+      expect(seen.preview).toBe("preview-tok-1");
+      // Authorization carries nothing — the gateway's own bearer flows
+      // through the edge untouched.
+      expect(seen.auth).toBe(null);
+    } finally {
+      server.stop(true);
+      if (oldXdg === undefined) {
+        delete process.env.XDG_CONFIG_HOME;
+      } else {
+        process.env.XDG_CONFIG_HOME = oldXdg;
+      }
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test("the probe rides /port/<PORT>/ presenting the sandbox token", async () => {
     const seen = { path: "", auth: null as string | null };
     const server = Bun.serve({

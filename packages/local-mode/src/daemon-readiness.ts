@@ -2,7 +2,10 @@ import { z } from "zod";
 import type { IncomingHttpHeaders } from "node:http";
 
 import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
-import { readBasetenSandboxToken } from "./guardian-token";
+import {
+  readBasetenPreviewToken,
+  readBasetenSandboxToken,
+} from "./guardian-token";
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { getGatewayUrl, isCloudEntry } from "./lockfile-contract";
 import type { LockfileAssistant } from "./lockfile-contract";
@@ -265,19 +268,27 @@ export async function checkHealth(
 /**
  * The credentials the health probe itself should present, derived from the
  * entry: a cloud-managed entry presents the cloud URL stack's own token, a
- * baseten entry presents the sandbox access token (the sandbox edge guards
- * the /port route the gateway rides), every other remote probes bare.
+ * baseten entry presents the preview token (or, without a preview, the
+ * sandbox access token on the /port route), every other remote probes
+ * bare.
  * Best-effort — a missing token or a failed derivation probes without
  * credentials (the /v1 routes' own 401s stay the signal there).
  */
 async function gatewayAuthHeaders(
   entry: LockfileAssistant,
 ): Promise<Record<string, string>> {
-  // The baseten sandbox edge authenticates every route with the sandbox
-  // access token the hatch saved — the /port/<PORT>/ route the gateway
-  // rides included — so without the token the probe 401s before the inner
-  // gateway ever answers.
+  // The baseten gateway's door decides the credential: a minted preview
+  // (the canonical address) is guarded by the PREVIEW token, sent as the
+  // vendor header — `Authorization` stays free for the gateway's own
+  // bearer end to end. Legacy entries without a preview ride the sandbox
+  // API's /port route, which the sandbox access token authenticates.
   if (entry.cloud === "baseten") {
+    if (entry.previewUrl) {
+      const previewToken = readBasetenPreviewToken(entry.assistantId);
+      return previewToken
+        ? { "X-Blaxel-Preview-Token": previewToken }
+        : {};
+    }
     const sandboxToken = readBasetenSandboxToken(entry.assistantId);
     if (sandboxToken.ok) {
       return { Authorization: `Bearer ${sandboxToken.accessToken}` };

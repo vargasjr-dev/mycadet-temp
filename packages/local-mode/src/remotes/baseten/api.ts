@@ -235,6 +235,10 @@ export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
+  /** Ports to expose at creation — the `/port/<PORT>/` route only serves
+   * ports declared here (previews open theirs dynamically). The CLI arm
+   * has no ports flag, so only the API arm can declare them. */
+  ports?: Array<{ name?: string; protocol?: "HTTP" | "TCP" | "UDP" | "TLS"; target: number }>;
 }): Promise<BasetenSandboxCreated> {
   const team = basetenTeamId();
   if (await resolveBasetenCli()) {
@@ -268,8 +272,84 @@ export async function createBasetenSandbox(options: {
       image: options.image,
       ...(options.name ? { name: options.name } : {}),
       ...(options.envs?.length ? { envs: options.envs } : {}),
+      ...(options.ports?.length ? { ports: options.ports } : {}),
     }),
   });
+}
+
+/** The preview mint's body — the URL is what the lockfile records. */
+const SandboxPreview = z.object({
+  name: z.string().optional(),
+  port: z.number().optional(),
+  url: z.string().optional(),
+});
+
+/** The gateway preview's name — one per sandbox, idempotent on re-hatch. */
+export const BASETEN_GATEWAY_PREVIEW = "gateway";
+
+/**
+ * Mint the gateway's private preview: an HTTPS URL the preview edge routes
+ * to the gateway's port, opened dynamically (no create-time ports needed)
+ * and guarded by a preview token — so `Authorization` stays free for the
+ * gateway's own bearer end to end. `create_if_not_exists` makes re-hatch
+ * idempotent; without BASETEN_API_KEY the token exchange throws first.
+ */
+export async function ensureBasetenGatewayPreview(
+  sandboxName: string,
+  port: number,
+): Promise<{ url?: string }> {
+  const token = await resolveBasetenToken();
+  const preview = await basetenFetch(
+    token,
+    `/v1/sandboxes/instances/${encodeURIComponent(sandboxName)}/previews`,
+    SandboxPreview,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        name: BASETEN_GATEWAY_PREVIEW,
+        port,
+        create_if_not_exists: true,
+      }),
+    },
+  );
+  return { url: preview.url };
+}
+
+/** The preview token mint's response — `token` is the query-param/header value. */
+const SandboxPreviewToken = z.object({
+  name: z.string().optional(),
+  token: z.string().optional(),
+  expires_at: z.string().optional(),
+});
+
+/**
+ * Mint a preview token for the gateway preview — the credential servers
+ * send as `X-Blaxel-Preview-Token` and browsers convert to a cookie with
+ * one authenticated open. 30-day lifetime: long enough to outlive a token
+ * rotation cycle, short enough that retiring the sandbox kills access.
+ */
+export async function createBasetenPreviewToken(
+  sandboxName: string,
+  previewName: string,
+  expiresAt: Date,
+): Promise<string> {
+  const token = await resolveBasetenToken();
+  const minted = await basetenFetch(
+    token,
+    `/v1/sandboxes/instances/${encodeURIComponent(sandboxName)}/previews/${encodeURIComponent(previewName)}/tokens`,
+    SandboxPreviewToken,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        expires_at: expiresAt.toISOString(),
+        create_if_not_exists: true,
+      }),
+    },
+  );
+  if (!minted.token) {
+    throw new Error("The preview token mint returned no token.");
+  }
+  return minted.token;
 }
 
 /** The delete call's body — the fields that ride back on termination. */
