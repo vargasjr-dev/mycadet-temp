@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { TimezonePicker } from "@/domains/settings/components/timezone-picker";
-import { client } from "@/generated/api/client.gen";
+import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
@@ -42,7 +42,7 @@ export function TimezoneSection() {
     }
     inFlightRef.current = true;
     pendingValueRef.current = null;
-    client
+    gatewayClient
       .patch<Record<string, unknown>, unknown, true>({
         url: `/v1/assistants/{assistant_id}/config`,
         path: { assistant_id: currentAssistantId },
