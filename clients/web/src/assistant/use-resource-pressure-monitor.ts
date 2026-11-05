@@ -1,4 +1,3 @@
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
 import { getAssistantResourcePressureStatus } from "@/assistant/api";
@@ -17,7 +16,6 @@ export interface UseResourcePressureMonitorResult {
 
 export function useResourcePressureMonitor(): UseResourcePressureMonitorResult {
   const { status, mode } = useAssistantStatusMonitor({
-    assistantId: useActiveAssistantId(),
     cadenceMs: RESOURCE_PRESSURE_POLL_INTERVAL_MS,
     fetchStatus: getAssistantResourcePressureStatus,
     areStatusesEqual: areResourcePressureStatusesEqual,
