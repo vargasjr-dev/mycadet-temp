@@ -147,14 +147,15 @@ export async function wakeBaseten(
  * platform teardown that stops the billing. The inner retire is
  * best-effort: a sandbox that already terminated or expired has no inner
  * state left to retire, so only the delete's failure (beyond a 404) fails
- * the operation. The sandbox token file beside the lockfile goes with the
- * entry.
+ * the operation. Like the other remotes' retire legs, failures THROW —
+ * the operation's catch maps them onto the structured result — and the
+ * sandbox token file beside the lockfile goes with the entry.
  */
-export async function retireBaseten(entry: LockfileAssistant): Promise<{
-  ok: true;
-} | { ok: false; status: number; error: string }> {
+export async function retireBaseten(entry: LockfileAssistant): Promise<void> {
   const fields = resolveEntryFields(entry);
-  if (!fields.ok) return fields;
+  if (!fields.ok) {
+    throw new Error(fields.error);
+  }
   let innerError: string | undefined;
   try {
     const code = await execInSandbox(fields.fields, ["cadet", "retire", "--yes"]);
@@ -169,13 +170,11 @@ export async function retireBaseten(entry: LockfileAssistant): Promise<{
     await deleteBasetenSandbox(fields.fields.name);
   } catch (err) {
     const deleteError = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      status: 502,
-      error: innerError
+    throw new Error(
+      innerError
         ? `${innerError} The sandbox delete also failed: ${deleteError}`
         : `The sandbox delete failed: ${deleteError}`,
-    };
+    );
   }
 
   try {
@@ -184,5 +183,4 @@ export async function retireBaseten(entry: LockfileAssistant): Promise<{
     // Best-effort — the token file may never have existed (the CLI-arm
     // hatch needs no key, so no token was minted).
   }
-  return { ok: true };
 }

@@ -36,6 +36,7 @@ export {
 } from "./config";
 export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export { execBasetenSandbox } from "./remotes/baseten/exec";
+export { localExecDirForService } from "./remotes/local/exec";
 export type { LocalEndpointConfig } from "./config";
 export {
   assistantBackupFilenamePattern,
