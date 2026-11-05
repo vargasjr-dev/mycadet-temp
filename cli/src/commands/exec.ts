@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import {
   cliCommand,
   dockerResourceNames,
+  execBasetenSandbox,
   getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
@@ -23,6 +24,8 @@ import {
   nonInteractiveExec,
   shellEscapeArgs,
 } from "../lib/terminal-session";
+
+const DEFAULT_EXEC_TIMEOUT = 30_000;
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -138,7 +141,7 @@ export const exec = Object.assign(
     let serviceRaw = "assistant";
     let interactive = false;
     let verbose = false;
-    let timeoutMs = 30_000;
+    let timeoutMs = DEFAULT_EXEC_TIMEOUT;
 
     for (let i = 0; i < preArgs.length; i++) {
       if (preArgs[i] === "--service" && preArgs[i + 1]) {
@@ -260,6 +263,37 @@ export const exec = Object.assign(
       return;
     }
 
+    if (cloud === "baseten") {
+      if (service !== "assistant") {
+        console.error(
+          red(
+            `Error: the baseten remote runs a single service (the assistant) — there is no ${service} to exec into.`,
+          ),
+        );
+        process.exit(1);
+      }
+      if (!entry.name || !entry.sandboxUrl) {
+        console.error(
+          red(
+            `Error: assistant '${entry.assistantId}' has no sandbox name/URL recorded — re-hatch with \`cadet hatch --remote baseten\` to fix.`,
+          ),
+        );
+        process.exit(1);
+      }
+      const { code } = await execBasetenSandbox({
+        assistantId: entry.assistantId,
+        sandboxUrl: entry.sandboxUrl,
+        name: entry.name,
+        command,
+        interactive,
+        ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
+          ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
+          : {}),
+      });
+      process.exitCode = code;
+      return;
+    }
+
     if (isCloudEntry(entry)) {
       const token = readCloudToken();
       if (!token) {
@@ -299,7 +333,9 @@ export const exec = Object.assign(
     }
 
     console.error(
-      red(`Error: 'cadet exec' is not supported for ${cloud} instances.`),
+      red(
+        `Error: 'cadet exec' is not supported for ${cloud} assistants — supported: local, docker, apple-container, cloud, baseten.`,
+      ),
     );
     process.exit(1);
   },
