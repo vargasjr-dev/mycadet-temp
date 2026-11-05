@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 type AppStatePayload = { isActive: boolean };
 type AppStateHandler = (payload: AppStatePayload) => void;
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => true,
 }));
 

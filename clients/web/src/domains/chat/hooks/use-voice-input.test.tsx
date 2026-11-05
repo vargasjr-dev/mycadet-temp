@@ -23,7 +23,7 @@ mock.module("@/runtime/text-insertion", () => ({
   openTextInsertionSettings: async () => undefined,
 }));
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   useIsNativePlatform: () => false,
 }));
 

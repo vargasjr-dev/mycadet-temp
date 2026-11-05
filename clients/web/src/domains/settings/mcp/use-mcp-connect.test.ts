@@ -12,7 +12,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type * as BrowserRuntime from "@/runtime/browser";
-import type * as NativeAuth from "@/runtime/native-auth";
+import type * as NativeAuth from "@/runtime/native-platform";
 
 import type * as McpApi from "./mcp-api";
 import { mcpQueryKeys } from "./mcp-query-keys";
@@ -89,7 +89,7 @@ mock.module(
 );
 
 mock.module(
-  "@/runtime/native-auth",
+  "@/runtime/native-platform",
   (): Partial<typeof NativeAuth> => ({
     isNativePlatform: () => nativePlatform,
   }),

@@ -27,7 +27,7 @@ import {
 } from "@/domains/chat/utils/oauth-popup-links";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { t } from "@/i18n";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { canHandleForegroundDirective } from "@/runtime/window-attention";
 import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 

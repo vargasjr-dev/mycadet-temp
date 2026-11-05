@@ -30,7 +30,7 @@ mock.module("@/stores/resolved-assistant-store", () => ({
   getAssistantName: () => injectedAssistantName,
 }));
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 

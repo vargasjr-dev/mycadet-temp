@@ -24,7 +24,7 @@ let nativePlatform = false;
 let nativeOsPlatform = "web";
 
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => electron }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 mock.module("@capacitor/core", () => ({

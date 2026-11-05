@@ -13,7 +13,7 @@ import { describe, expect, mock, test } from "bun:test";
 // plain-browser branch (the cloud-detection.test.ts pattern) so the OS
 // header is driven purely by the `navigator` overrides below.
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => false }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => false,
 }));
 

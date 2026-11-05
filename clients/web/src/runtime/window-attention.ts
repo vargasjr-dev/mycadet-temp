@@ -2,7 +2,7 @@ import { windowAttentionPayloadSchema } from "@mycadet/ipc-contract";
 import type { WindowAttentionPayload } from "@mycadet/ipc-contract";
 
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 /**
  * Per-capability wrapper for the Electron host's window attention bridge.

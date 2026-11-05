@@ -27,7 +27,7 @@ import type { LiveVoicePreflightVerdict } from "@/domains/chat/voice/live-voice/
 import { INITIAL_TURN_STATE, useTurnStore } from "@/domains/chat/turn-store";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
 import * as emojiCatalogMod from "@/domains/chat/components/chat-composer/emoji-catalog";
-import * as nativeAuthMod from "@/runtime/native-auth";
+import * as nativeAuthMod from "@/runtime/native-platform";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 
@@ -85,7 +85,7 @@ mock.module("@/runtime/platform-detection", () => ({
 // the textarea's place in the row. Defaults to the browser; the row-layout
 // cases below flip it.
 let mockIsNativePlatform = false;
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   ...nativeAuthMod,
   useIsNativePlatform: () => mockIsNativePlatform,
 }));

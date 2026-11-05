@@ -15,7 +15,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 let nativePlatform = false;
 let openedUrl: string | null = null;
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 

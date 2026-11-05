@@ -1,6 +1,6 @@
 import { publish } from "@/lib/event-bus";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import { isClientAttended } from "@/runtime/window-attention";
 import { publishLifecycleEdge } from "@/runtime/event-sources/lifecycle-edge";
 

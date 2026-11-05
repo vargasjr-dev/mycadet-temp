@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 mock.module("@/runtime/is-electron", () => ({
   isElectron: () => false,
 }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => false,
 }));
 mock.module("@/runtime/platform-detection", () => ({

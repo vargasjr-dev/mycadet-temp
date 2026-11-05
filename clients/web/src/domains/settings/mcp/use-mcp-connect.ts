@@ -9,7 +9,7 @@ import {
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl, openUrlFinishedListener } from "@/runtime/browser";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 import { fetchMcpServers, pollMcpAuthStatus, startMcpAuth } from "./mcp-api";
 import { mcpQueryKeys } from "./mcp-query-keys";

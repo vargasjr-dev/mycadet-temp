@@ -12,7 +12,7 @@ import { type Dispatch, type SetStateAction, useCallback } from "react";
 
 import { useNavigate } from "react-router";
 
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { useMessageReconciliation } from "@/domains/chat/hooks/use-message-reconciliation";
 import { useStreamEventHandler } from "@/domains/chat/hooks/use-stream-event-handler";
 import { useEventStream } from "@/domains/chat/hooks/use-event-stream";

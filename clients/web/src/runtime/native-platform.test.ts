@@ -10,7 +10,7 @@ mock.module("@capacitor/core", () => ({
   registerPlugin: (name: string) => (name === "NativeAuth" ? {} : {}),
 }));
 
-const { isNativePlatform } = await import("./native-auth");
+const { isNativePlatform } = await import("./native-platform");
 
 describe("isNativePlatform", () => {
   test("false on the web", () => {

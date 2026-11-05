@@ -1,7 +1,7 @@
 import { captureError } from "@/lib/error-reporting/capture-error";
 import type { PluginListenerHandle } from "@capacitor/core";
 
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 /**
  * Shared subscription scaffold for Capacitor plugin event listeners.

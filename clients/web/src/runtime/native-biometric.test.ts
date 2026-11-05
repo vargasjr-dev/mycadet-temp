@@ -13,7 +13,7 @@ const retrieveToken = mock(async (_options: ServerOptions) => ({
 }));
 const deleteToken = mock(async (_options: ServerOptions) => undefined);
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => native,
 }));
 mock.module("@capacitor/core", () => ({

@@ -109,7 +109,7 @@ import type {
   TranscriptProps,
 } from "@/domains/chat/transcript/transcript";
 import { useTranscriptScroll } from "@/domains/chat/transcript/use-transcript-scroll";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import {
   resolveDroppedDirectories,
   WEB_FOLDER_DROP_ERROR,

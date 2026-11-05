@@ -75,7 +75,7 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useSupportsWebPresence } from "@/lib/backwards-compat/use-supports-web-presence";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import { isClientAttended } from "@/runtime/window-attention";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";

@@ -19,7 +19,7 @@ import {
 import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 import { isCadetCloudRemote } from "@/lib/local-mode";
 import { getAssistantName } from "@/stores/resolved-assistant-store";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
 import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
 import { sanitizeReturnTo } from "@/utils/return-to";

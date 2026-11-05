@@ -1,6 +1,6 @@
 import { registerPlugin } from "@capacitor/core";
 
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import { getNativeUrlSchemeForHost } from "@/runtime/native-deep-link";
 import { APEX_DOMAIN } from "@/utils/domains";
 import { getDeviceBool, setDeviceBool } from "@/utils/device-settings";

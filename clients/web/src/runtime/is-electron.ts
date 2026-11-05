@@ -398,7 +398,7 @@ declare global {
  *
  * Use this to branch behavior that differs between the web host and the
  * Electron host. For branches that differ between web and Capacitor iOS,
- * use `isNativePlatform` from `@/runtime/native-auth.js` instead.
+ * use `isNativePlatform` from `@/runtime/native-platform.js` instead.
  */
 export function isElectron(): boolean {
   return typeof window !== "undefined" && window.cadet?.platform === "electron";

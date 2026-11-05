@@ -74,7 +74,7 @@ mock.module("@/runtime/native-dictation-partials", () => ({
   transcribeNativeAudioBlob: () => transcribeBlobImpl(),
 }));
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   useIsNativePlatform: () => false,
 }));
 mock.module("@/utils/voice-input-device", () => ({
