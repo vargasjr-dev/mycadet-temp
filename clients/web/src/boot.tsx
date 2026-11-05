@@ -30,7 +30,6 @@ import { initWindowsTitleBarOverlay } from "@/runtime/electron-window-chrome";
 import { initNativeKeyboard } from "@/runtime/native-keyboard";
 import { initNativePlatformAttributes } from "@/runtime/native-platform-attributes";
 import { initSafeAreaBridge } from "@/runtime/native-safe-area";
-import { restorePendingNativeLogin } from "@/runtime/native-auth";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
 import { initInputModality } from "@mycadet/design-library";
 
@@ -59,11 +58,6 @@ async function boot(router: Router) {
     await initI18n();
   } catch (error) {
     captureError(error, { context: "init_i18n" });
-  }
-  try {
-    await restorePendingNativeLogin();
-  } catch (error) {
-    captureError(error, { context: "restore_pending_native_login" });
   }
   // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
