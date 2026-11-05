@@ -49,17 +49,30 @@ const SandboxCreated = z.object({
 
 export type BasetenSandboxCreated = z.infer<typeof SandboxCreated>;
 
+/**
+ * Organizations with teams (Enterprise) require the team selector on every
+ * resource request when the caller belongs to more than one team —
+ * https://docs.baseten.co/reference/management-api/sandboxes/overview .
+ * Opt in by exporting BASETEN_TEAM_ID (a team name or ID); unset means the
+ * caller's default team, which is fine for single-team orgs.
+ */
+function basetenTeamId(): string | undefined {
+  return process.env.BASETEN_TEAM_ID?.trim() || undefined;
+}
+
 async function basetenFetch<S extends z.ZodType>(
   token: string,
   path: string,
   schema: S,
   init: RequestInit = {},
 ): Promise<z.infer<S>> {
+  const team = basetenTeamId();
   const response = await fetch(`${BASETEN_API_BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(team ? { "X-Team-Id": team } : {}),
       ...(init.headers ?? {}),
     },
   });
@@ -134,6 +147,7 @@ export async function pushBasetenImage(options: {
   timeoutMs?: number;
   intervalMs?: number;
 }): Promise<void> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     return runBasetenCli([
       "sandbox",
@@ -143,6 +157,7 @@ export async function pushBasetenImage(options: {
       options.name,
       "--dir",
       options.dir,
+      ...(team ? ["--team", team] : []),
       "--wait",
     ]);
   }
@@ -211,9 +226,11 @@ export async function createBasetenSandbox(options: {
   image: string;
   envs?: BasetenEnvs;
 }): Promise<BasetenSandboxCreated> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
+    if (team) args.push("--team", team);
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
       // `--plain-env` stays readable — configuration like a gateway port is
@@ -247,12 +264,14 @@ export async function createBasetenSandbox(options: {
  * treats a miss as "no URL recorded" rather than a failed hatch.
  */
 export async function describeBasetenSandboxUrl(name: string): Promise<string> {
+  const team = basetenTeamId();
   try {
     const out = await captureBasetenCli([
       "sandbox",
       "describe",
       "--name",
       name,
+      ...(team ? ["--team", team] : []),
       "--jq",
       ".url",
     ]);
