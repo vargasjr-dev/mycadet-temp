@@ -1252,7 +1252,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
-    # the renderer below (same environment expression as upload-electron-updates).
+    # the renderer below.
     environment: production
     strategy:
       # Let both arches finish so a failure reports which arch(es) broke; any
@@ -1614,70 +1614,6 @@ jobs:
           path: clients/linux/dist/*.AppImage
           if-no-files-found: error
           retention-days: 7
-
-  upload-electron-updates:
-    needs: [extract-version, build-electron, publish-meta-prod]
-    # always() disables the implicit success(): publish-meta-prod may be
-    # skipped when an upstream publish fails. build-electron must actually
-    # it is skipped (offline marker), there are no update artifacts to upload,
-    # so this job skips too (v0.12.7's run failed exactly here: the skipped
-    # tolerance made it run and die on "Artifact not found").
-    if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && needs.publish-meta-prod.result == 'success' }}
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: production
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Download arm64 update artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: macos-electron-update-arm64
-          path: electron-artifacts/arm64
-
-      - name: Download x64 update artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: macos-electron-update-x64
-          path: electron-artifacts/x64
-
-      - name: Validate update artifacts
-        run: |
-          DIR="electron-artifacts/arm64"
-          if [ ! -f "$(find "$DIR" -name '*-mac.yml' -type f 2>/dev/null | grep -m1 .)" ]; then
-            echo "::error::Missing update manifest (*-mac.yml) for arm64"
-            exit 1
-          fi
-          if [ -z "$(find "$DIR" -name '*.zip' -type f ! -name '*.blockmap' 2>/dev/null | grep -m1 .)" ]; then
-            echo "::error::Missing ZIP for arm64"
-            exit 1
-          fi
-
-      - name: Upload Electron update artifacts to the sandbox updates store
-        env:
-          RCLONE_CREDENTIALS: ${{ secrets.SANDBOX_UPDATES_STORAGE_CREDENTIALS }}
-          BUCKET: ${{ secrets.SANDBOX_UPDATES_BUCKET }}
-        run: |
-          ENVIRONMENT=production
-          MANIFEST_NAME="${ENVIRONMENT}-mac.yml"
-
-          for ARCH in arm64 x64; do
-            ARCH_DIR="electron-artifacts/${ARCH}"
-            [ -d "$ARCH_DIR" ] || continue
-            PREFIX="mac-electron/${ENVIRONMENT}/${ARCH}"
-
-            find "$ARCH_DIR" -type f \( -name "*.zip" -o -name "*.zip.blockmap" -o -name "*-mac.yml" \) | while read -r FILE; do
-              [ -z "$FILE" ] && continue
-              docker run --rm \
-                -v "$PWD:/work" -w /work \
-                -e RCLONE_CONFIG_REMOTE_TYPE=googlecloudstorage \
-                -e RCLONE_CONFIG_REMOTE_SERVICE_ACCOUNT_CREDENTIALS="$RCLONE_CREDENTIALS" \
-                -e RCLONE_CONFIG_REMOTE_BUCKET_POLICY_ONLY=true \
-                rclone/rclone:1.69.1 copyto "/work/$FILE" "remote:$BUCKET/$PREFIX/$(basename "$FILE")"
-            done
-          done
 
   release:
     # build-electron + build-chrome-extension are out of the release gate:
