@@ -18,6 +18,9 @@ const realProcess = { ...(await import("../process")) };
 const realDrain = { ...(await import("../remotes/local/drain")) };
 const realGuardianToken = { ...(await import("../guardian-token")) };
 const realDockerSleep = { ...(await import("../remotes/docker/sleep")) };
+const realBasetenLifecycle = {
+  ...(await import("../remotes/baseten/lifecycle")),
+};
 const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
 
 const isProcessAliveMock = mock(
@@ -40,6 +43,12 @@ const getGuardianAccessTokenMock = mock(
   > => ({ ok: true, accessToken: "test-guardian-token" }),
 );
 const sleepDockerMock = mock(async (): Promise<void> => {});
+const sleepBasetenMock = mock(
+  async (): Promise<
+    | { ok: true; kind: "remote" }
+    | { ok: false; status: number; error: string }
+  > => ({ ok: true, kind: "remote" }),
+);
 const isAssistantHealthyMock = mock(async (): Promise<boolean> => false);
 
 mock.module("../daemon-readiness", () => ({
@@ -64,6 +73,10 @@ mock.module("../remotes/docker/sleep", () => ({
   ...realDockerSleep,
   sleepDocker: sleepDockerMock,
 }));
+mock.module("../remotes/baseten/lifecycle", () => ({
+  ...realBasetenLifecycle,
+  sleepBaseten: sleepBasetenMock,
+}));
 
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
@@ -72,6 +85,7 @@ afterAll(() => {
   mock.module("../remotes/local/drain", () => realDrain);
   mock.module("../guardian-token", () => realGuardianToken);
   mock.module("../remotes/docker/sleep", () => realDockerSleep);
+  mock.module("../remotes/baseten/lifecycle", () => realBasetenLifecycle);
   mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
@@ -521,3 +535,47 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(body.detail).toContain("active phone calls");
   });
 });
+
+describe("sleepAssistant — the baseten arm", () => {
+  const basetenEntry = (overrides: Record<string, unknown> = {}) =>
+    ({
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+      ...overrides,
+    }) as LockfileAssistant;
+
+  test("the sandbox's own `cadet sleep` runs, with the caller's flags", async () => {
+    sleepBasetenMock.mockResolvedValue({ ok: true, kind: "remote" });
+    const entry = seedEntry(batenSafe(basetenEntry()));
+    const result = await sleepAssistant(entry, { force: true, wait: true });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.kind).toBe("remote");
+    expect(sleepBasetenMock).toHaveBeenCalledWith(
+      expect.objectContaining({ cloud: "baseten" }),
+      { force: true, wait: true },
+    );
+  });
+
+  test("the leg's structured failure rides back with the was-running probe", async () => {
+    sleepBasetenMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: "'cadet sleep' inside the sandbox exited with 1.",
+    });
+    const entry = seedEntry(batenSafe(basetenEntry()));
+    const result = await sleepAssistant(entry);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("inside the sandbox");
+    expect(result.wasRunning).toBe(false);
+  });
+});
+
+/** The lockfile's baseten schema is strict — seed through the parse. */
+function batenSafe(entry: Record<string, unknown>): Record<string, unknown> {
+  return entry;
+}

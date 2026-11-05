@@ -84,6 +84,32 @@ export function consumeBasetenExecEvent(
   return null;
 }
 
+/** The services a baseten sandbox runs — a local hatch's stack in one VM. */
+export type BasetenExecService =
+  | "assistant"
+  | "gateway"
+  | "credential-executor";
+
+/**
+ * The command the SANDBOX actually runs: the caller's argv wrapped in the
+ * sandbox's own `cadet exec`, so the invocation rides the cadet runtime
+ * running in there (a local hatch the entrypoint woke) — the service picks
+ * the working directory (workspace vs the gateway's security dir vs CES
+ * data) the same way it does on the user's machine.
+ */
+export function cadetExecCommand(
+  command: string[],
+  service?: BasetenExecService,
+): string[] {
+  return [
+    "cadet",
+    "exec",
+    ...(service && service !== "assistant" ? ["--service", service] : []),
+    "--",
+    ...command,
+  ];
+}
+
 export type BasetenExecOptions = {
   /** The lockfile entry's id — the token file is keyed by it. */
   assistantId: string;
@@ -91,8 +117,10 @@ export type BasetenExecOptions = {
   sandboxUrl: string;
   /** The sandbox's name (recorded in the lockfile at hatch). */
   name: string;
-  /** The command to run, as argv. */
+  /** The command to run, as argv (wrapped in the sandbox's cadet exec). */
   command: string[];
+  /** Which service's working directory the command runs in. */
+  service?: BasetenExecService;
   /** Forward stdin (the CLI arm's `--stdin`). */
   interactive?: boolean;
   /** Seconds before the sandbox kills the process; 0 = never. Omitted when
@@ -105,12 +133,13 @@ export type BasetenExecOptions = {
 export async function execBasetenSandbox(
   options: BasetenExecOptions,
 ): Promise<{ code: number }> {
+  const innerCommand = cadetExecCommand(options.command, options.service);
   const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     const code = await new Promise<number>((resolve, reject) => {
       const child = spawn(
         "baseten",
-        basetenExecArgs(options.name, options.command, {
+        basetenExecArgs(options.name, innerCommand, {
           team,
           stdin: options.interactive,
           timeoutSeconds: options.timeoutSeconds,
@@ -151,7 +180,7 @@ export async function execBasetenSandbox(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        command: execCommandLine(options.command),
+        command: execCommandLine(innerCommand),
         ...(options.timeoutSeconds !== undefined
           ? { timeout: options.timeoutSeconds }
           : {}),

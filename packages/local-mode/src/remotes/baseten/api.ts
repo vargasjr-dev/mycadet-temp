@@ -272,6 +272,47 @@ export async function createBasetenSandbox(options: {
   });
 }
 
+/** The delete call's body — the fields that ride back on termination. */
+const SandboxDeleted = z.object({
+  name: z.string().optional(),
+  status: z.string().optional(),
+});
+
+/**
+ * Delete (terminate) a sandbox — the teardown that stops it billing. The
+ * CLI arm carries --yes (headless by construction); the HTTP arm rides the
+ * management API's DELETE. An already-gone sandbox is success: 404 means
+ * the termination the caller wanted already happened.
+ */
+export async function deleteBasetenSandbox(name: string): Promise<void> {
+  const team = basetenTeamId();
+  if (await resolveBasetenCli()) {
+    await runBasetenCliCaptured([
+      "sandbox",
+      "delete",
+      "--name",
+      name,
+      "--yes",
+      ...(team ? ["--team", team] : []),
+    ]);
+    return;
+  }
+  const token = await resolveBasetenToken();
+  try {
+    await basetenFetch(
+      token,
+      `/v1/sandboxes/instances/${encodeURIComponent(name)}`,
+      SandboxDeleted,
+      { method: "DELETE" },
+    );
+  } catch (err) {
+    if (err instanceof BasetenApiError && err.status === 404) {
+      return;
+    }
+    throw err;
+  }
+}
+
 /**
  * The sandbox server URL off the installed CLI — `describe --jq '.url'` —
  * with the jq quoting (`"https://..."`) stripped. Empty string when the CLI

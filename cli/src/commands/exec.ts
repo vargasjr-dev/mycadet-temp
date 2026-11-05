@@ -192,6 +192,25 @@ export const exec = Object.assign(
         process.exit(1);
       }
 
+      // The service picks the working directory: the assistant works in
+      // the workspace; the gateway's files live in its security dir; the
+      // CES writes its data root (the docker statefulset's per-service
+      // mounts, flattened onto the one instance dir).
+      const serviceDir =
+        service === "gateway"
+          ? join(instanceDir, "gateway-security")
+          : service === "credential-executor"
+            ? join(instanceDir, "ces-data")
+            : join(instanceDir, "workspace");
+      if (service !== "assistant" && !existsSync(serviceDir)) {
+        console.error(
+          red(
+            `Error: the ${service} has never run for '${entry.assistantId}' (no ${serviceDir}).`,
+          ),
+        );
+        process.exit(1);
+      }
+
       const workspaceDir = join(instanceDir, "workspace");
       const socketPath = join(workspaceDir, "assistant.sock");
       if (!existsSync(socketPath)) {
@@ -211,6 +230,7 @@ export const exec = Object.assign(
       const child = spawn(command[0], command.slice(1), {
         stdio: "inherit",
         windowsHide: true,
+        cwd: serviceDir,
         env: {
           ...process.env,
           CADET_WORKSPACE_DIR: workspaceDir,
@@ -264,14 +284,9 @@ export const exec = Object.assign(
     }
 
     if (cloud === "baseten") {
-      if (service !== "assistant") {
-        console.error(
-          red(
-            `Error: the baseten remote runs a single service (the assistant) — there is no ${service} to exec into.`,
-          ),
-        );
-        process.exit(1);
-      }
+      // All three services run in the sandbox as a local hatch — the
+      // service selects the working directory, which the sandbox's own
+      // `cadet exec` (the wrap execBasetenSandbox applies) resolves.
       if (!entry.name || !entry.sandboxUrl) {
         console.error(
           red(
@@ -285,6 +300,7 @@ export const exec = Object.assign(
         sandboxUrl: entry.sandboxUrl,
         name: entry.name,
         command,
+        service,
         interactive,
         ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
           ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
