@@ -1,16 +1,13 @@
 import { cliCommand, teleportAssistant } from "@mycadet/local-mode";
 
-import {
-  findAssistantByName,
-  setActiveAssistant,
-} from "../lib/assistant-config.js";
+import { findAssistantByName } from "../lib/assistant-config.js";
 
 function printHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} teleport --from <assistant> <--local | --docker> [name] [--keep-source] [--dry-run]`,
+    `Usage: ${cliCommand()} teleport --from <assistant> <--local | --docker>`,
   );
   console.log(
-    "Move the whole installation between local and Docker storage using root tar archives.",
+    "Move the whole installation to another remote, keeping the assistant name.",
   );
   console.log(
     "Cloud teleport is unavailable until cloud root archive transfer is supported.",
@@ -20,16 +17,10 @@ function printHelp(): void {
 export function parseArgs(argv: string[]): {
   from: string | undefined;
   targetEnv: "local" | "docker" | "cloud" | undefined;
-  targetName: string | undefined;
-  keepSource: boolean;
-  dryRun: boolean;
   help: boolean;
 } {
   let from: string | undefined;
   let targetEnv: "local" | "docker" | "cloud" | undefined;
-  let targetName: string | undefined;
-  let keepSource = false;
-  let dryRun = false;
   let help = false;
 
   const envFlags: string[] = [];
@@ -46,14 +37,6 @@ export function parseArgs(argv: string[]): {
         arg === "--local" ? "local" : arg === "--docker" ? "docker" : "cloud";
       envFlags.push(env);
       targetEnv = env;
-      // Peek at next arg for optional target name
-      if (i + 1 < argv.length && !argv[i + 1].startsWith("--")) {
-        targetName = argv[++i];
-      }
-    } else if (arg === "--keep-source") {
-      keepSource = true;
-    } else if (arg === "--dry-run") {
-      dryRun = true;
     } else if (arg === "--help" || arg === "-h") {
       help = true;
     }
@@ -66,14 +49,13 @@ export function parseArgs(argv: string[]): {
     process.exit(1);
   }
 
-  return { from, targetEnv, targetName, keepSource, dryRun, help };
+  return { from, targetEnv, help };
 }
 
 export const teleport = Object.assign(
   async function teleport(): Promise<void> {
     const args = process.argv.slice(3);
-    const { from, targetEnv, targetName, keepSource, dryRun, help } =
-      parseArgs(args);
+    const { from, targetEnv, help } = parseArgs(args);
 
     if (help) {
       printHelp();
@@ -96,10 +78,7 @@ export const teleport = Object.assign(
 
     const result = await teleportAssistant({
       source: fromEntry,
-      targetEnv,
-      targetName,
-      keepSource,
-      dryRun,
+      target: targetEnv,
       log: (line) => console.log(line),
     });
 
@@ -107,11 +86,6 @@ export const teleport = Object.assign(
       console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-    if (result.kind === "dry-run") {
-      for (const line of result.lines) console.log(line);
-      return;
-    }
-    setActiveAssistant(result.targetId);
   },
-  { description: "Move an installation between local and Docker storage" },
+  { description: "Move an installation to another remote, keeping its name" },
 );

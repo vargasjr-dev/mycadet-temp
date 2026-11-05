@@ -13,9 +13,6 @@ const entry: LockfileAssistant = {
 };
 const find = spyOn(assistants, "findAssistantByName");
 const teleportOp = spyOn(localMode, "teleportAssistant");
-const setActive = spyOn(assistants, "setActiveAssistant").mockImplementation(
-  () => {},
-);
 const exit = spyOn(process, "exit").mockImplementation((code): never => {
   throw new Error(`exit:${code}`);
 });
@@ -24,7 +21,6 @@ const argv = process.argv;
 beforeEach(() => {
   find.mockReturnValue(entry);
   teleportOp.mockReset();
-  setActive.mockClear();
   errors.mockClear();
   process.argv = [
     "bun",
@@ -33,8 +29,6 @@ beforeEach(() => {
     "--from",
     "source",
     "--docker",
-    "target",
-    "--keep-source",
   ];
 });
 afterEach(() => {
@@ -43,64 +37,35 @@ afterEach(() => {
 afterAll(() => {
   find.mockRestore();
   teleportOp.mockRestore();
-  setActive.mockRestore();
   exit.mockRestore();
   errors.mockRestore();
 });
-test("delegates to the operation with the parsed options and activates the target", async () => {
+test("delegates to the operation with the parsed options", async () => {
   teleportOp.mockResolvedValue({
     ok: true,
-    kind: "moved",
     sourceId: "source-1",
-    targetId: "target-1",
-    sourceRetired: false,
+    targetId: "source-1",
   });
   await teleport();
   expect(teleportOp).toHaveBeenCalledWith({
     source: entry,
-    targetEnv: "docker",
-    targetName: "target",
-    keepSource: true,
-    dryRun: false,
+    target: "docker",
     log: expect.any(Function),
   });
-  expect(setActive).toHaveBeenCalledWith("target-1");
-});
-
-test("a dry run prints the report without activating anything", async () => {
-  teleportOp.mockResolvedValue({
-    ok: true,
-    kind: "dry-run",
-    lines: ["Would move the installation roots.", "Dry run complete."],
-  });
-  process.argv = [
-    "bun",
-    "cadet",
-    "teleport",
-    "--from",
-    "source",
-    "--docker",
-    "--dry-run",
-  ];
-  await teleport();
-  expect(teleportOp).toHaveBeenCalledWith(
-    expect.objectContaining({ dryRun: true }),
-  );
-  expect(setActive).not.toHaveBeenCalled();
 });
 
 test("an operation refusal surfaces the error and exits 1", async () => {
   teleportOp.mockResolvedValue({
     ok: false,
     status: 400,
-    error: "Cannot teleport between two local assistants.",
+    error:
+      "Cloud teleport is unavailable until cloud root archive transfer is supported. No installation was changed.",
   });
-  process.argv = ["bun", "cadet", "teleport", "--from", "source", "--local"];
+  process.argv = ["bun", "cadet", "teleport", "--from", "source", "--cloud"];
   await expect(teleport()).rejects.toThrow("exit:1");
   expect(errors.mock.calls.flat().join(" ")).toContain(
-    "Cannot teleport between two local assistants",
+    "Cloud teleport is unavailable",
   );
-  expect(setActive).not.toHaveBeenCalled();
 });
 
 test("an unknown source exits before the operation runs", async () => {
@@ -109,14 +74,10 @@ test("an unknown source exits before the operation runs", async () => {
   expect(teleportOp).not.toHaveBeenCalled();
 });
 
-test("parses dry run and rejects multiple destinations", () => {
-  expect(
-    parseArgs(["--from", "source", "--local", "target", "--dry-run"]),
-  ).toMatchObject({
+test("parses the destination and rejects multiple destinations", () => {
+  expect(parseArgs(["--from", "source", "--docker"])).toMatchObject({
     from: "source",
-    targetEnv: "local",
-    targetName: "target",
-    dryRun: true,
+    targetEnv: "docker",
   });
   expect(() => parseArgs(["--local", "--docker"])).toThrow("exit:1");
 });
