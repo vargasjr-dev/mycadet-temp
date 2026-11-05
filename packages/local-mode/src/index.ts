@@ -8,6 +8,7 @@
  * `@mycadet/service-contracts`, and the source-only
  * `@mycadet/avatar-manifest` are its only workspace dependencies.
  */
+export { isLoopbackAddr, headerHostIsLoopback, originIsAllowed, hasSameOriginCredentialProof, resolveDevCliInvocation } from "./util";
 export type { CliInvocation } from "./util";
 export { resolveLocalConfigFromEnv, resolveLockfilePath, resolveConfigDir, resolveDataDir, resolveLogDir, resolveAssistantsDir, guardianTokenPath } from "./config";
 export { createBackup, formatSize } from "./backup-ops";
@@ -60,7 +61,8 @@ export { cloudTokenPath, readCloudToken, resolveCloudUrl as getCloudUrl, authHea
 export { consoleLifecycleReporter } from "./lifecycle-reporter";
 export { unpairAssistant } from "./unpair";
 export { checkPairedAssistantName, pairingStart, pairingPoll, pairingCancel } from "./pair";
-export type { DeviceRecord } from "./devices";
+export { runDevicesList, runDevicesRevoke } from "./devices";
+export type { DeviceRecord, DevicesListResult, DevicesRevokeResult } from "./devices";
 export { stripVersionPrefix } from "./version";
 export { upgradeAssistant } from "./operations/upgrade";
 export { broadcastUpgradeEvent, buildCompleteEvent } from "./upgrade-lifecycle";
