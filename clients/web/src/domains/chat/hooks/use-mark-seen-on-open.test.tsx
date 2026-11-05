@@ -34,7 +34,6 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-
 const { useMarkSeenOnOpen } =
   await import("@/domains/chat/hooks/use-mark-seen-on-open");
 

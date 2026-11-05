@@ -111,14 +111,6 @@ type _Exhaustive =
   NonNullable<OriginChannel> extends (typeof ORIGIN_CHANNELS)[number]
     ? true
     : never;
-
-/**
- * Group filter accepted by `GET /v1/conversations?groupId=`. Derived from the
- * generated query type rather than restated, so a schema change surfaces
- * here as a type error.
- */
-export type ConversationGroupId = ConversationListQuery["groupId"];
-
 /**
  * Closed set of list labels carried by the `client_list.drain` watchdog event
  * and by every conversation-list ring entry. One label per real caller, so the

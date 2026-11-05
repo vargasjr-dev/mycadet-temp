@@ -17,7 +17,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 let announceKeyboardHeight:
-  ((keyboardHeight: number, visible: boolean) => void) | null = null;
+  | ((keyboardHeight: number, visible: boolean) => void)
+  | null = null;
 // Whether the stubbed shell reports a keyboard source, as one with the plugin
 // linked does and one built before it never does.
 let stubReportsKeyboardSource = true;

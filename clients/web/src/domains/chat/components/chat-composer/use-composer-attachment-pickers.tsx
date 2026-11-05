@@ -1,5 +1,12 @@
 import { toast } from "@mycadet/design-library";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
   isPickerDismissal,

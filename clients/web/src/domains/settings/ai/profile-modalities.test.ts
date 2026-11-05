@@ -39,9 +39,9 @@ describe("profileUsesFreeTextModel", () => {
   });
 
   test("is false for a Cadet routed catalog model", () => {
-    expect(
-      profileUsesFreeTextModel("cadet", "anthropic/claude-opus-4-8"),
-    ).toBe(false);
+    expect(profileUsesFreeTextModel("cadet", "anthropic/claude-opus-4-8")).toBe(
+      false,
+    );
   });
 });
 

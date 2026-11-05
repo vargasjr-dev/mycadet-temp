@@ -289,10 +289,7 @@ describe("LocalFileEmbed cards", () => {
       size: 8,
     });
 
-    const { container } = renderEmbed(
-      "cadet://workspace/notes.md",
-      "my notes",
-    );
+    const { container } = renderEmbed("cadet://workspace/notes.md", "my notes");
 
     await waitFor(() => expect(screen.getByText("my notes")).toBeTruthy());
     expect(screen.getByText("notes.md")).toBeTruthy();

@@ -58,8 +58,7 @@ declare global {
  */
 export function hasNativeQuoteReplyMenu(): boolean {
   return (
-    typeof window !== "undefined" &&
-    window.__cadetNativeQuoteReplyMenu === true
+    typeof window !== "undefined" && window.__cadetNativeQuoteReplyMenu === true
   );
 }
 

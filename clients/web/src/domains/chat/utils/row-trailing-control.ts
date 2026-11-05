@@ -18,10 +18,6 @@ export const ROW_TRAILING_CONTROL_CLASSES = [
   "aria-[expanded=true]:text-[var(--content-emphasised)]",
   "max-md:h-[30px] max-md:w-[30px]",
 ].join(" ");
-
-/** The 14px glyph inside it, at the size a thumb needs on a phone. */
-export const ROW_TRAILING_GLYPH_CLASSES = "max-md:h-[21px] max-md:w-[21px]";
-
 /**
  * The same glyph when the control is a `Button iconOnly`, whose glyph wrapper
  * sizes the svg itself and so outranks a class on the svg; goes in

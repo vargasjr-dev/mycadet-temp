@@ -70,7 +70,9 @@ afterEach(() => {
 
 describe("workspace path spans", () => {
   test("a workspace path renders as a clickable link", () => {
-    renderMessage("The draft is at `/workspace/drafts/v0.10.12-release-notes.md`.");
+    renderMessage(
+      "The draft is at `/workspace/drafts/v0.10.12-release-notes.md`.",
+    );
 
     const button = screen.getByRole("button", {
       name: "/workspace/drafts/v0.10.12-release-notes.md",
@@ -92,7 +94,9 @@ describe("workspace path spans", () => {
   });
 
   test("clicking opens the file in the drawer, like an explicit link", () => {
-    const { onCadetLinkClick } = renderMessage("See `/workspace/drafts/deck.pdf`.");
+    const { onCadetLinkClick } = renderMessage(
+      "See `/workspace/drafts/deck.pdf`.",
+    );
 
     screen.getByRole("button", { name: "/workspace/drafts/deck.pdf" }).click();
 

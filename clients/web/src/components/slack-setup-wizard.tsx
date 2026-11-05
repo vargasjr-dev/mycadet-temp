@@ -24,7 +24,6 @@ import { buildSlackManifest } from "@/utils/slack-manifest";
 const SLACK_NEW_APP_URL = "https://api.slack.com/apps?new_app=1";
 
 const WIZARD_STEP_IDS = ["name", "open", "create", "connect"] as const;
-export type SlackSetupStepId = (typeof WIZARD_STEP_IDS)[number];
 
 export interface SlackSetupWizardProps {
   /** Assistant the setup panel was opened for. */

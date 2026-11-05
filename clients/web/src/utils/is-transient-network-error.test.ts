@@ -11,7 +11,9 @@ describe("isTransientNetworkError", () => {
 
   test("matches 'Failed to fetch' with hostname suffix (error-reporter enrichment)", () => {
     expect(
-      isTransientNetworkError(new TypeError("Failed to fetch (www.mycadet.ai)")),
+      isTransientNetworkError(
+        new TypeError("Failed to fetch (www.mycadet.ai)"),
+      ),
     ).toBe(true);
     expect(
       isTransientNetworkError(new TypeError("Failed to fetch (example.com)")),

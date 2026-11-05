@@ -111,7 +111,9 @@ export const CreateAdvanced: Story = {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Provider" }),
     );
-    await userEvent.click(await screen.findByRole("option", { name: /Anthropic/ }));
+    await userEvent.click(
+      await screen.findByRole("option", { name: /Anthropic/ }),
+    );
 
     const modelField = await screen.findByRole("combobox", { name: "Model" });
     await userEvent.click(modelField);
@@ -137,7 +139,9 @@ export const CreateDuplicateName: Story = {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Provider" }),
     );
-    await userEvent.click(await screen.findByRole("option", { name: /Anthropic/ }));
+    await userEvent.click(
+      await screen.findByRole("option", { name: /Anthropic/ }),
+    );
 
     const modelField = await screen.findByRole("combobox", { name: "Model" });
     await userEvent.click(modelField);
@@ -145,7 +149,9 @@ export const CreateDuplicateName: Story = {
       await screen.findByRole("option", { name: "Claude Opus 4.8" }),
     );
 
-    await userEvent.click(await screen.findByRole("button", { name: "Advanced" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Advanced" }),
+    );
     await waitFor(() =>
       expect(screen.getByDisplayValue("Claude Opus 4.8 (2)")).toBeTruthy(),
     );
@@ -192,7 +198,9 @@ export const CreateModelFirstListReopened: Story = {
       await screen.findByRole("option", { name: /Gemini 3\.6 Flash/ }),
     );
     await waitFor(() =>
-      expect(screen.getByText("Only Google Gemini serves this model.")).toBeTruthy(),
+      expect(
+        screen.getByText("Only Google Gemini serves this model."),
+      ).toBeTruthy(),
     );
     await userEvent.click(modelField);
     await waitFor(() => expect(screen.getByRole("listbox")).toBeTruthy());
@@ -230,9 +238,9 @@ export const CreateModelFirstCustomId: Story = {
       await screen.findByRole("option", { name: "Enter a custom model ID…" }),
     );
     await waitFor(() =>
-      expect(screen.getAllByTestId("provider-candidate").length).toBeGreaterThan(
-        5,
-      ),
+      expect(
+        screen.getAllByTestId("provider-candidate").length,
+      ).toBeGreaterThan(5),
     );
   },
 };
@@ -317,7 +325,9 @@ export const CreateModelFirstSingleProvider: Story = {
       await screen.findByRole("option", { name: /Gemini 3\.6 Flash/ }),
     );
     await waitFor(() =>
-      expect(screen.getByText("Only Google Gemini serves this model.")).toBeTruthy(),
+      expect(
+        screen.getByText("Only Google Gemini serves this model."),
+      ).toBeTruthy(),
     );
   },
 };

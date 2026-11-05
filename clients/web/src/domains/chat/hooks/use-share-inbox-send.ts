@@ -93,7 +93,9 @@ export function useShareInboxSend({
       if (activeConversationId !== inFlight.threadId) {
         removeOwnedAttachments(inFlight.ownedLocalIds);
         if (inFlight.text.length > 0) {
-          useComposerStore.getState().saveDraft(inFlight.threadId, inFlight.text);
+          useComposerStore
+            .getState()
+            .saveDraft(inFlight.threadId, inFlight.text);
         }
         inFlightRef.current = null;
         return;

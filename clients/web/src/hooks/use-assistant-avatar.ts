@@ -572,23 +572,3 @@ export function useAssistantAvatar(options?: AssistantAvatarOptions) {
     invalidate,
   };
 }
-
-/**
- * The active assistant's avatar for a surface that draws the character only
- * once the query has settled. An empty id (the cloud platform's SPA before
- * its projection lands) disables the query, which reports
- * `isLoading: false` with no data, so the id gates `ready` too. Drawing
- * early would flash `ChatAvatar`'s synthesized fallback traits (the bundled
- * green) and then jump to the real colour.
- */
-export function useActiveAssistantAvatar() {
-  const activeId = useActiveAssistantId();
-  const { components, traits, customImageUrl, isLoading } =
-    useAssistantAvatar();
-  return {
-    ready: Boolean(activeId) && !isLoading,
-    components,
-    traits,
-    customImageUrl,
-  };
-}

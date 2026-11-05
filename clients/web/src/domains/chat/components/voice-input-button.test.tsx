@@ -53,9 +53,7 @@ mock.module("@/domains/chat/voice/stt-api", () => ({
 interface FakeDictationStreamArgs {
   onPartial: (text: string) => void;
 }
-let dictationStreamImpl: (
-  args: FakeDictationStreamArgs,
-) => {
+let dictationStreamImpl: (args: FakeDictationStreamArgs) => {
   isLive: () => boolean;
   stop: () => Promise<string | null>;
 } | null = () => null;
@@ -186,7 +184,6 @@ describe("VoiceInputButton — Esc cancellation", () => {
     });
     expect(postSttTranscribeSpy).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
-
   });
 
   test("cancelDictation command (escape monitor relay) discards like Escape", async () => {
@@ -319,7 +316,8 @@ describe("VoiceInputButton — native partials fallback", () => {
 
   test("waits for empty native final when stop races native startup", async () => {
     let resolveNativeStart:
-      ((stop: (() => Promise<string | null>) | null) => void) | null = null;
+      | ((stop: (() => Promise<string | null>) | null) => void)
+      | null = null;
     nativePartialsImpl = () =>
       new Promise<(() => Promise<string | null>) | null>((resolve) => {
         resolveNativeStart = resolve;
@@ -350,7 +348,8 @@ describe("VoiceInputButton — native partials fallback", () => {
 
   test("configuration errors still surface when native startup resolves unavailable after stop", async () => {
     let resolveNativeStart:
-      ((stop: (() => Promise<string | null>) | null) => void) | null = null;
+      | ((stop: (() => Promise<string | null>) | null) => void)
+      | null = null;
     nativePartialsImpl = () =>
       new Promise<(() => Promise<string | null>) | null>((resolve) => {
         resolveNativeStart = resolve;

@@ -304,10 +304,7 @@ function MergeEmptyState() {
  */
 export function formatSurvivorName(contact: ContactPayload): string {
   if (contact.role === "guardian") {
-    if (
-      !contact.displayName ||
-      isGeneratedPrincipalName(contact.displayName)
-    ) {
+    if (!contact.displayName || isGeneratedPrincipalName(contact.displayName)) {
       return translate("survivorName.you", { ns: "contacts" });
     }
     return translate("survivorName.youNamed", {

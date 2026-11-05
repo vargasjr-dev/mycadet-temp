@@ -125,4 +125,3 @@ export async function linkContactChannelAccount(
   }
   await verifyContactChannel(assistantId, linked.id);
 }
-

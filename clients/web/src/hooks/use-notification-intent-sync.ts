@@ -67,8 +67,7 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
   const entry = useResolvedAssistantStore.use.assistant();
-  const assistant =
-    entry && entry.assistantId === assistantId ? entry : null;
+  const assistant = entry && entry.assistantId === assistantId ? entry : null;
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"

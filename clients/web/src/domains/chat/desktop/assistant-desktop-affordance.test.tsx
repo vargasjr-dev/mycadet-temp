@@ -38,9 +38,11 @@ mock.module("@/utils/pointer", () => ({
 }));
 
 const servedRef = {
-  value: { cloud: "local", assistantId: "asst-1", name: "Alice" } as
-    | { cloud: "local"; assistantId: string; name?: string }
-    | null,
+  value: { cloud: "local", assistantId: "asst-1", name: "Alice" } as {
+    cloud: "local";
+    assistantId: string;
+    name?: string;
+  } | null,
 };
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {

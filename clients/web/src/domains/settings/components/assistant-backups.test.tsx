@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
-
 let exportFails = false;
 const calls: string[] = [];
 let toastErrors: string[] = [];
@@ -148,7 +147,6 @@ describe("AssistantBackups export", () => {
     expect(calls).toEqual([]);
   });
 
-
   test("switching assistants closes an open confirmation without exporting", async () => {
     useResolvedAssistantStore.getState().setAssistant({
       cloud: "cloud",
@@ -170,5 +168,4 @@ describe("AssistantBackups export", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(calls).toEqual([]);
   });
-
 });

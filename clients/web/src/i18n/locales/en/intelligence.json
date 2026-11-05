@@ -155,22 +155,8 @@
     "backToAriaLabel": "Back to {name}",
     "backToTitle": "Back to {name}"
   },
-  "listConceptPages": {
-    "failureMessage": "Failed to load concept pages."
-  },
-  "memoryFormat": {
-    "justNow": "just now"
-  },
   "memoryPage": {
     "createMemory": "Create memory"
-  },
-  "memoryTypes": {
-    "sourceType": {
-      "direct": "Told directly",
-      "inferred": "Inferred",
-      "observed": "Observed",
-      "toldByOther": "Told by other"
-    }
   },
   "memoryUpgradePrompt": {
     "tryAgain": "Try again",

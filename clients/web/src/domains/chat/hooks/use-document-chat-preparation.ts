@@ -79,8 +79,7 @@ export function useDocumentChatPreparation({
           mountedRef.current &&
           ownerRef.current === owner &&
           editorRef.current === editor &&
-          getActiveAssistantId() ===
-            assistantId &&
+          getActiveAssistantId() === assistantId &&
           conversation.activeConversationId === conversationId &&
           (viewer.mainView === "document" ||
             viewer.mainView === "chat" ||

@@ -6,8 +6,6 @@ import { readStoredThemePreference } from "@/utils/theme-preferences";
 /** Releases the Android launch screen after the first React tree commits. */
 export function useNativeLaunchScreenReady(): void {
   useEffect(() => {
-    void markNativeLaunchScreenReady(
-      readStoredThemePreference(),
-    );
+    void markNativeLaunchScreenReady(readStoredThemePreference());
   }, []);
 }

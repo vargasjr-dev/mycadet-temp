@@ -1,20 +1,3 @@
-/**
- * Pure utilities for the Capacitor deep links.
- *
- * On Capacitor iOS, integration OAuth runs inside `SFSafariViewController`.
- * Apple's prescribed pattern for round-tripping back into a host app from
- * SFSafariViewController is a custom URL scheme: redirecting
- * `window.location.href = "<scheme>://oauth-complete?…"` causes iOS to
- * dismiss the sheet and route the URL into the registered app via
- * `application(_:open:options:)`. Capacitor surfaces that as the
- * `appUrlOpen` listener event.
- *
- * Reference: https://capacitorjs.com/docs/apis/app#addlistenerappurlopen-
- */
-
-export const OAUTH_COMPLETE_DEEP_LINK_EVENT = "cadet:oauth-complete-deeplink";
-export const OAUTH_COMPLETE_DEEP_LINK_HOST = "oauth-complete";
-
 export interface OAuthCompleteDeepLinkPayload {
   requestId: string;
   oauthStatus: string | null;
@@ -304,9 +287,6 @@ const CAMERA_DEEP_LINK_HOST = "camera";
 /** Host segment shared with `NewChatDeepLink.swift` on the native side. */
 const NEW_CHAT_DEEP_LINK_HOST = "new-chat";
 
-/** Host segment shared with `ConversationsDeepLink.swift` on the native side. */
-const CONVERSATIONS_DEEP_LINK_HOST = "conversations";
-
 /**
  * What a `<scheme>://camera`, `<scheme>://new-chat` or
  * `<scheme>://conversations` deep link asks for.
@@ -386,18 +366,6 @@ export function parseNewChatDeepLink(
   options?: DeepLinkParseOptions,
 ): CommandDeepLinkPayload | null {
   return parseCommandDeepLink(rawUrl, NEW_CHAT_DEEP_LINK_HOST, options);
-}
-
-/**
- * Parse a `cadet://conversations` deep link, produced by the Home
- * Screen widgets' unread affordances (`ConversationsDeepLink.swift`). The
- * consumer brings up the conversation list.
- */
-export function parseOpenConversationsDeepLink(
-  rawUrl: string,
-  options?: DeepLinkParseOptions,
-): CommandDeepLinkPayload | null {
-  return parseCommandDeepLink(rawUrl, CONVERSATIONS_DEEP_LINK_HOST, options);
 }
 
 /** Host segment shared with `ShareDeepLink.swift` on the native side. */

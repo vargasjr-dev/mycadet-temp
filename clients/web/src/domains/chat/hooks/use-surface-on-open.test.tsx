@@ -37,7 +37,6 @@ mock.module(
   }),
 );
 
-
 const { useSurfaceOnOpen } =
   await import("@/domains/chat/hooks/use-surface-on-open");
 

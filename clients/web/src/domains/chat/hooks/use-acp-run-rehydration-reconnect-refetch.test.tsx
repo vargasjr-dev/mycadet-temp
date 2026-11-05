@@ -36,7 +36,9 @@ mock.module("@/generated/daemon/client.gen", () => ({
     },
   },
 }));
-mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({
+  captureError: () => {},
+}));
 
 const { useAcpRunRehydration, __resetAcpSnapshotGenerationsForTests } =
   await import("@/domains/chat/hooks/use-acp-run-rehydration");
@@ -479,9 +481,9 @@ describe("useAcpRunRehydration: a snapshot in flight cannot roll back a model", 
     await waitFor(() => {
       expect(useAcpRunStore.getState().byId["run-A"]!.model).toBe("sonnet");
     });
-    expect(
-      useAcpRunStore.getState().byId["run-A"]!.modelRevisionEpoch,
-    ).toBe("new-process");
+    expect(useAcpRunStore.getState().byId["run-A"]!.modelRevisionEpoch).toBe(
+      "new-process",
+    );
   });
 
   test("accepts a new process epoch even when its UUID sorts lower", async () => {
@@ -518,9 +520,9 @@ describe("useAcpRunRehydration: a snapshot in flight cannot roll back a model", 
     await waitFor(() => {
       expect(useAcpRunStore.getState().byId["run-A"]!.model).toBe("sonnet");
     });
-    expect(
-      useAcpRunStore.getState().byId["run-A"]!.modelRevisionEpoch,
-    ).toBe("018f0000-0000-7000-8000-000000000001");
+    expect(useAcpRunStore.getState().byId["run-A"]!.modelRevisionEpoch).toBe(
+      "018f0000-0000-7000-8000-000000000001",
+    );
   });
 
   test("keeps a live model update that landed while the fetch was open", async () => {

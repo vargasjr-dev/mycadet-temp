@@ -44,8 +44,6 @@ describe("ProfileModalitiesSection", () => {
 
     const trigger = screen.getByRole("button", { name: "Modalities" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(
-      screen.queryByRole("switch", { name: "Enable Image" }),
-    ).toBeNull();
+    expect(screen.queryByRole("switch", { name: "Enable Image" })).toBeNull();
   });
 });

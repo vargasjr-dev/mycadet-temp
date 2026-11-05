@@ -91,9 +91,7 @@ describe("SidebarLayoutStore", () => {
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
     useSidebarLayoutStore.getState().setOpenCustomGroups(["grp-1", "grp-2"]);
 
-    const raw = localStorage.getItem(
-      "cadet:sidebar-open-custom-groups:asst-1",
-    );
+    const raw = localStorage.getItem("cadet:sidebar-open-custom-groups:asst-1");
     expect(JSON.parse(raw!)).toEqual(["grp-1", "grp-2"]);
   });
 

@@ -103,8 +103,7 @@ export function useConversationSecondaryActions({
 
   const handleForkConversation = useCallback(
     async (throughMessageId: string) => {
-      const assistantId =
-        getActiveAssistantId();
+      const assistantId = getActiveAssistantId();
       const activeConversationId =
         useConversationStore.getState().activeConversationId;
       if (!assistantId || !activeConversationId) {

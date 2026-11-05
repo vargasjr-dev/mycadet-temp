@@ -29,10 +29,6 @@ export type EyeStyleDefinition =
 export type EyePathDefinition = EyeStyleDefinition["paths"][number];
 
 export type ColorDefinition = CharacterComponentsResponse["colors"][number];
-
-export type FaceCenterOverride =
-  CharacterComponentsResponse["faceCenterOverrides"][number];
-
 export type CharacterComponents = CharacterComponentsResponse;
 
 export type CharacterTraits = NonNullable<AvatarStateResponse["traits"]>;

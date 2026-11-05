@@ -78,10 +78,7 @@ function SlotHarness({ monitor }: { monitor: UseDiskPressureMonitorResult }) {
   const visibility = useDiskPressureBannerVisibility(monitor, "assistant-1");
   return (
     <MemoryRouter>
-      <DiskPressureBannerSlot
-        diskPressure={monitor}
-        visibility={visibility}
-      />
+      <DiskPressureBannerSlot diskPressure={monitor} visibility={visibility} />
     </MemoryRouter>
   );
 }
@@ -100,10 +97,7 @@ function PrecedenceHarness({
   const visibility = useDiskPressureBannerVisibility(monitor, "assistant-1");
   return (
     <MemoryRouter>
-      <DiskPressureBannerSlot
-        diskPressure={monitor}
-        visibility={visibility}
-      />
+      <DiskPressureBannerSlot diskPressure={monitor} visibility={visibility} />
       {visibility.visibleMode !== null ? null : (
         <div data-testid="resource-banner-stand-in" />
       )}

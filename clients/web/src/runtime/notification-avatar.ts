@@ -954,54 +954,6 @@ function parseNotificationIdentityKey(
   }
 }
 
-/** Reset prepared identities no longer present in one resolved scope. */
-export function reconcilePreparedNotificationIdentities(
-  scopeId: string,
-  retainedAssistantIds: readonly string[],
-): number {
-  const normalizedScopeId = boundedIdentityPart(scopeId);
-  if (!normalizedScopeId) {
-    return 0;
-  }
-  const shouldRetain = (assistantId: string): boolean =>
-    retainedAssistantIds.some(
-      (candidate) => boundedIdentityPart(candidate) === assistantId,
-    );
-  const candidates = new Set<string>();
-  for (const snapshot of snapshots.values()) {
-    if (
-      snapshot.identity.scopeId === normalizedScopeId &&
-      !shouldRetain(snapshot.identity.assistantId)
-    ) {
-      candidates.add(snapshot.identity.assistantId);
-    }
-  }
-  const publicationScope = publicationScopes.get(normalizedScopeId);
-  if (publicationScope) {
-    for (const [key, revision] of publicationScope.revisions) {
-      if (!revision.active) {
-        continue;
-      }
-      const identity = parseNotificationIdentityKey(key);
-      if (
-        identity?.scopeId === normalizedScopeId &&
-        !shouldRetain(identity.assistantId)
-      ) {
-        candidates.add(identity.assistantId);
-      }
-    }
-  }
-  let resetCount = 0;
-  for (const assistantId of candidates) {
-    if (
-      resetPreparedNotificationIdentityByKey(normalizedScopeId, assistantId)
-    ) {
-      resetCount += 1;
-    }
-  }
-  return resetCount;
-}
-
 /** Reset prepared identities absent from the complete resolved owner list. */
 export function reconcilePreparedNotificationIdentityOwners(
   retainedOwners: readonly NotificationIdentityOwner[],

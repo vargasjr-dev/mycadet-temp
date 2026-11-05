@@ -414,24 +414,6 @@ export function consumePendingPreChatContext(): PreChatOnboardingContext | null 
   return parsed;
 }
 
-/**
- * Drop any pending pre-chat onboarding context without consuming it.
- * Used when the onboarding flow is abandoned (e.g. user navigates back
- * out of the pre-chat steps) so a stale payload from the previous attempt
- * can't leak into a future chat.
- */
-export function clearPendingPreChatContext(): void {
-  const storage = getSessionStorage();
-  if (storage === null) {
-    return;
-  }
-  try {
-    storage.removeItem(STORAGE_KEY);
-  } catch {
-    // Storage unavailable — nothing to clear.
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Optimistic assistant-name handoff
 //
@@ -445,27 +427,6 @@ export function clearPendingPreChatContext(): void {
 
 /** Storage key for the optimistic assistant-name hint. */
 export const ASSISTANT_NAME_KEY = "onboarding.prechat.assistantName";
-
-/**
- * Persist the user-chosen assistant name so the chat sidebar can display
- * it immediately on mount before `fetchAssistantIdentity` resolves.
- * No-op when `name` is blank or storage is unavailable.
- */
-export function setPendingAssistantName(name: string): void {
-  const trimmed = name.trim();
-  if (!trimmed) {
-    return;
-  }
-  const storage = getSessionStorage();
-  if (storage === null) {
-    return;
-  }
-  try {
-    storage.setItem(ASSISTANT_NAME_KEY, trimmed);
-  } catch {
-    // Storage unavailable — degrade silently.
-  }
-}
 
 /**
  * Read and remove the pending assistant-name hint. Consume-once: clears

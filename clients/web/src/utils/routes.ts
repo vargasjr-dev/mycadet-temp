@@ -1,22 +1,8 @@
-/**
- * Centralized URL registry for app-internal navigation.
- *
- * All paths are absolute app paths — pass them directly to `<Link to>`,
- * `navigate()`, `window.location.href`, and pathname comparisons. Normal app
- * modes run the router at `/`; remote-gateway mode may add a public ingress
- * prefix as the React Router basename while keeping these app paths unchanged.
- *
- * Captured paths (e.g. inputs to `sanitizeReturnTo`, query-string round-trips)
- * are values, not constants — do NOT rewrite those through this module.
- */
-
-import { isElectron } from "@/runtime/is-electron";
 import { WWW_DOMAIN } from "@/utils/domains";
 
 const r = <const T extends string>(path: T): T => path;
 
 const dyn = (parent: string, id: string): string => `${parent}/${id}`;
-const LOCAL_ADMIN_ORIGIN = "http://localhost:3000";
 const SETTINGS_USAGE_PATH = r("/assistant/settings/usage");
 
 /**
@@ -33,14 +19,6 @@ export const SCROLL_TO_MESSAGE_PARAM = "message";
  * friends), and the parser ({@link appIdForPath}) so the spelling can't drift.
  */
 export const CONVERSATION_APP_SEGMENT = "app";
-
-/**
- * Search param naming a Pro package. Carried by the checkout deep link
- * (`/assistant/checkout?package=<slug>`) that the marketing pricing CTAs
- * target. Shared by every producer and reader so the spelling can't drift.
- */
-export const PACKAGE_PARAM = "package";
-
 /**
  * Search params that fire once on the entry carrying them: an auto-send
  * prompt, its relay token, and the document a conversation URL opens with.
@@ -54,15 +32,6 @@ export function hasOneShotEntryParam(search: string): boolean {
   const params = new URLSearchParams(search);
   return ONE_SHOT_ENTRY_PARAMS.some((key) => params.has(key));
 }
-
-/**
- * Search params the All chats page reads to preselect a chip: a channel, a
- * custom group, or one of the two named views. Declared here beside the URL
- * producer so the page and its links cannot spell them differently.
- */
-export const ALL_CHATS_CHANNEL_PARAM = "channel";
-export const ALL_CHATS_GROUP_PARAM = "group";
-export const ALL_CHATS_FILTER_PARAM = "filter";
 
 export const routes = {
   assistant: r("/assistant"),
@@ -521,28 +490,7 @@ export function isConversationChatPath(pathname: string): boolean {
   );
 }
 
-/** Full external URL for a legal/docs page hosted on the marketing site. */
-export function legalUrl(
-  path: (typeof routes.docs.legal)[keyof typeof routes.docs.legal],
-): string {
-  return docsUrl(path);
-}
-
 /** Full external URL for a docs page hosted on the marketing site. */
 export function docsUrl(path: string): string {
   return `https://${WWW_DOMAIN}${path}`;
-}
-
-/** URL for the cloud-hosted admin UI. */
-export function adminUrl(): string {
-  if (isElectron()) {
-    const config = (
-      window as unknown as { __CADET_CONFIG__?: { webUrl?: string } }
-    ).__CADET_CONFIG__;
-    return `${config?.webUrl ?? window.location.origin}${routes.admin.root}`;
-  }
-  if (import.meta.env.DEV) {
-    return `${LOCAL_ADMIN_ORIGIN}${routes.admin.root}`;
-  }
-  return routes.admin.root;
 }

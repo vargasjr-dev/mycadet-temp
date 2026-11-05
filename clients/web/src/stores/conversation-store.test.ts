@@ -234,7 +234,6 @@ describe("useConversationStore", () => {
       expect(getState().pendingDraftProfiles).toBe(before);
     });
   });
-
 });
 
 describe("draft conversation ids", () => {

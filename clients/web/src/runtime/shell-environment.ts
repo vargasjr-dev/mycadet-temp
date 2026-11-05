@@ -23,10 +23,7 @@ import { useEffect, useState } from "react";
 export type ShellEnvironment = "production" | "staging" | "dev";
 
 /** Unsuffixed application ids: iOS first, then Android. */
-const SHELL_APP_ID_BASES = [
-  "ai.vocify-inc.mycadet-ios",
-  "ai.mycadet.android",
-];
+const SHELL_APP_ID_BASES = ["ai.vocify-inc.mycadet-ios", "ai.mycadet.android"];
 
 /** Suffix each build appends to its base id, production appending none. */
 const SHELL_ENVIRONMENT_BY_SUFFIX: Record<string, ShellEnvironment> = {

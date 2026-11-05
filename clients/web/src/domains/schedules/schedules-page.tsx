@@ -41,7 +41,6 @@ export function SchedulesPage() {
   const schedules = useSchedulesData(assistantId);
   const systemTasks = useSystemTasks(assistantId, tz);
 
-
   const [createScheduleOpen, setCreateScheduleOpen] = useState(false);
   const selectedScheduleId = scheduleId ?? null;
   const [selectedSystemTaskKind, setSelectedSystemTaskKind] =

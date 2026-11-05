@@ -951,7 +951,6 @@ export function ContactsPage({
             : undefined
         }
       />
-
     </div>
   );
 }
@@ -982,7 +981,9 @@ function ContactsPaneSpinner() {
  * A contact reads as verified when any non-revoked channel is verified.
  */
 function isVerifiedContact(channels: ContactChannelPayload[]): boolean {
-  return channels.some((ch) => ch.status !== "revoked" && isVerifiedContactChannel(ch));
+  return channels.some(
+    (ch) => ch.status !== "revoked" && isVerifiedContactChannel(ch),
+  );
 }
 
 function channelTypeLabels(channels: ContactChannelPayload[]): string[] {

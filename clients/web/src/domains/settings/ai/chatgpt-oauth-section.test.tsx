@@ -14,9 +14,8 @@ import type { PollOutcome } from "@/utils/poll-until-settled";
 
 const ASSISTANT_ID = "asst-1";
 
-const actualApi = await import(
-  "@/domains/settings/ai/chatgpt-subscription-api"
-);
+const actualApi =
+  await import("@/domains/settings/ai/chatgpt-subscription-api");
 const { CHATGPT_ACCESS_TOKEN_CREDENTIAL, DeviceAuthUnsupportedError } =
   actualApi;
 
@@ -77,11 +76,12 @@ mock.module("@/utils/poll-until-settled", () => ({
     settle === "never" ? new Promise(() => {}) : Promise.resolve(settle),
 }));
 
-const { ChatgptOAuthSection } = await import(
-  "@/domains/settings/ai/chatgpt-oauth-section"
-);
+const { ChatgptOAuthSection } =
+  await import("@/domains/settings/ai/chatgpt-oauth-section");
 
-function renderSection(onConnected: (c: ProviderConnection) => void = () => {}) {
+function renderSection(
+  onConnected: (c: ProviderConnection) => void = () => {},
+) {
   return render(
     <ChatgptOAuthSection
       assistantId={ASSISTANT_ID}

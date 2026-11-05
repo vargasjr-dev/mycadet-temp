@@ -142,7 +142,6 @@ function GuardianDetailViewInner({
           onRevokeChannel={onRevokeChannel}
         />
       </DetailCard>
-
     </div>
   );
 }

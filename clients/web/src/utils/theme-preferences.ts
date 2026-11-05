@@ -37,19 +37,3 @@ export function applyThemePreference(theme: ThemePreference): void {
   root.setAttribute("data-theme", shouldBeDark ? "dark" : "light");
   root.classList.toggle("dark", shouldBeDark);
 }
-
-export function getEffectiveThemePreference(
-  theme: ThemePreference,
-): "light" | "dark" {
-  if (theme === "dark") {
-    return "dark";
-  }
-  if (
-    theme === "system" &&
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    return "dark";
-  }
-  return "light";
-}

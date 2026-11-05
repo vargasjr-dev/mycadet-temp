@@ -12,11 +12,7 @@ import {
 
 describe("parseStartVoiceDeepLink", () => {
   test("accepts every registered build-target scheme", () => {
-    for (const scheme of [
-      "cadet",
-      "cadet-staging",
-      "cadet-dev",
-    ]) {
+    for (const scheme of ["cadet", "cadet-staging", "cadet-dev"]) {
       expect(parseStartVoiceDeepLink(`${scheme}://voice?mode=new`)).toEqual({
         mode: "new",
         prompt: null,
@@ -26,9 +22,11 @@ describe("parseStartVoiceDeepLink", () => {
   });
 
   test("parses mode=resume", () => {
-    expect(
-      parseStartVoiceDeepLink("cadet://voice?mode=resume"),
-    ).toEqual({ mode: "resume", prompt: null, provenance: null });
+    expect(parseStartVoiceDeepLink("cadet://voice?mode=resume")).toEqual({
+      mode: "resume",
+      prompt: null,
+      provenance: null,
+    });
   });
 
   test("defaults a missing mode to new — a bare link still means 'start talking'", () => {
@@ -40,29 +38,23 @@ describe("parseStartVoiceDeepLink", () => {
   });
 
   test("defaults an unrecognized mode to new", () => {
-    expect(
-      parseStartVoiceDeepLink("cadet://voice?mode=teleport"),
-    ).toEqual({ mode: "new", prompt: null, provenance: null });
+    expect(parseStartVoiceDeepLink("cadet://voice?mode=teleport")).toEqual({
+      mode: "new",
+      prompt: null,
+      provenance: null,
+    });
   });
 
   test("rejects look-alike schemes — a prefix match would let a hostile app in", () => {
-    expect(
-      parseStartVoiceDeepLink("cadet-evil://voice?mode=new"),
-    ).toBeNull();
+    expect(parseStartVoiceDeepLink("cadet-evil://voice?mode=new")).toBeNull();
     expect(parseStartVoiceDeepLink("mycadet://voice?mode=new")).toBeNull();
     expect(parseStartVoiceDeepLink("https://voice?mode=new")).toBeNull();
   });
 
   test("rejects other hosts on a valid scheme", () => {
-    expect(
-      parseStartVoiceDeepLink("cadet://oauth-complete"),
-    ).toBeNull();
-    expect(
-      parseStartVoiceDeepLink("cadet://voices?mode=new"),
-    ).toBeNull();
-    expect(
-      parseStartVoiceDeepLink("cadet://billing/voice"),
-    ).toBeNull();
+    expect(parseStartVoiceDeepLink("cadet://oauth-complete")).toBeNull();
+    expect(parseStartVoiceDeepLink("cadet://voices?mode=new")).toBeNull();
+    expect(parseStartVoiceDeepLink("cadet://billing/voice")).toBeNull();
   });
 
   test("rejects unparseable URLs", () => {
@@ -84,9 +76,9 @@ function askLink(prompt: string, mode = "new"): string {
 
 describe("parseStartVoiceDeepLink - prompt", () => {
   test("a link with no prompt is identical to a plain mode=new link", () => {
-    expect(
-      parseStartVoiceDeepLink("cadet://voice?mode=new"),
-    ).toEqual(parseStartVoiceDeepLink("cadet://voice"));
+    expect(parseStartVoiceDeepLink("cadet://voice?mode=new")).toEqual(
+      parseStartVoiceDeepLink("cadet://voice"),
+    );
     expect(
       parseStartVoiceDeepLink("cadet://voice?mode=new")?.prompt,
     ).toBeNull();
@@ -171,9 +163,7 @@ describe("parseStartVoiceDeepLink - prompt", () => {
 
   test("still rejects the link itself for a bad scheme or host, prompt or not", () => {
     expect(
-      parseStartVoiceDeepLink(
-        "cadet-evil://voice?mode=new&prompt=hi",
-      ),
+      parseStartVoiceDeepLink("cadet-evil://voice?mode=new&prompt=hi"),
     ).toBeNull();
     expect(
       parseStartVoiceDeepLink("cadet://voices?mode=new&prompt=hi"),
@@ -206,10 +196,7 @@ describe("parseStartVoiceDeepLink - prompt", () => {
         "cadet://voice?mode=new&prompt=book%20a%20table%20%F0%9F%8D%9C%20for%20two",
         "book a table \u{1F35C} for two",
       ],
-      [
-        "cadet://voice?mode=new&prompt=100%25%20capacity",
-        "100% capacity",
-      ],
+      ["cadet://voice?mode=new&prompt=100%25%20capacity", "100% capacity"],
     ];
     for (const [link, expected] of cases) {
       expect(parseStartVoiceDeepLink(link)).toEqual({
@@ -236,11 +223,7 @@ describe("parseOpenThreadDeepLink", () => {
   const THREAD_ID = "0198f2f7-6c4e-7a31-b552-9c4d1a2b3c4d";
 
   test("accepts every registered build-target scheme", () => {
-    for (const scheme of [
-      "cadet",
-      "cadet-staging",
-      "cadet-dev",
-    ]) {
+    for (const scheme of ["cadet", "cadet-staging", "cadet-dev"]) {
       expect(
         parseOpenThreadDeepLink(`${scheme}://thread/${THREAD_ID}`),
       ).toEqual({ threadId: THREAD_ID, message: null, provenance: null });
@@ -256,12 +239,8 @@ describe("parseOpenThreadDeepLink", () => {
   });
 
   test("rejects other hosts on a valid scheme", () => {
-    expect(
-      parseOpenThreadDeepLink(`cadet://threads/${THREAD_ID}`),
-    ).toBeNull();
-    expect(
-      parseOpenThreadDeepLink(`cadet://voice/${THREAD_ID}`),
-    ).toBeNull();
+    expect(parseOpenThreadDeepLink(`cadet://threads/${THREAD_ID}`)).toBeNull();
+    expect(parseOpenThreadDeepLink(`cadet://voice/${THREAD_ID}`)).toBeNull();
   });
 
   test("rejects a missing, multi-segment, or malformed id", () => {
@@ -271,9 +250,7 @@ describe("parseOpenThreadDeepLink", () => {
       parseOpenThreadDeepLink(`cadet://thread/${THREAD_ID}/extra`),
     ).toBeNull();
     // Percent-encoding in the id is structure-smuggling, not an id.
-    expect(
-      parseOpenThreadDeepLink("cadet://thread/abc%2Fdef"),
-    ).toBeNull();
+    expect(parseOpenThreadDeepLink("cadet://thread/abc%2Fdef")).toBeNull();
     expect(
       parseOpenThreadDeepLink(`cadet://thread/${"a".repeat(129)}`),
     ).toBeNull();
@@ -281,9 +258,11 @@ describe("parseOpenThreadDeepLink", () => {
 
   test("accepts an id exactly at the length cap", () => {
     const atCap = "a".repeat(128);
-    expect(
-      parseOpenThreadDeepLink(`cadet://thread/${atCap}`),
-    ).toEqual({ threadId: atCap, message: null, provenance: null });
+    expect(parseOpenThreadDeepLink(`cadet://thread/${atCap}`)).toEqual({
+      threadId: atCap,
+      message: null,
+      provenance: null,
+    });
   });
 
   test("round-trips a message with query-breaking characters", () => {
@@ -374,20 +353,15 @@ describe("command URL provenance", () => {
     );
     // Absent, or any other value, is unknown origin.
     expect(
-      parseStartVoiceDeepLink("cadet://voice?prompt=hi", opts)
+      parseStartVoiceDeepLink("cadet://voice?prompt=hi", opts)?.provenance,
+    ).toBeNull();
+    expect(
+      parseStartVoiceDeepLink("cadet://voice?prompt=hi&src=shortcut", opts)
         ?.provenance,
     ).toBeNull();
     expect(
-      parseStartVoiceDeepLink(
-        "cadet://voice?prompt=hi&src=shortcut",
-        opts,
-      )?.provenance,
-    ).toBeNull();
-    expect(
-      parseOpenThreadDeepLink(
-        `cadet://thread/${THREAD_ID}?src=INTENT`,
-        opts,
-      )?.provenance,
+      parseOpenThreadDeepLink(`cadet://thread/${THREAD_ID}?src=INTENT`, opts)
+        ?.provenance,
     ).toBeNull();
   });
 
@@ -453,11 +427,7 @@ describe("parseOpenCameraDeepLink / parseNewChatDeepLink", () => {
 
   test("accepts every registered build-target scheme", () => {
     for (const [host, parse] of hosts) {
-      for (const scheme of [
-        "cadet",
-        "cadet-staging",
-        "cadet-dev",
-      ]) {
+      for (const scheme of ["cadet", "cadet-staging", "cadet-dev"]) {
         expect(parse(`${scheme}://${host}`)).toEqual({ provenance: null });
       }
     }
@@ -523,11 +493,7 @@ describe("parseShareDeepLink", () => {
   const INBOX_ID = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890";
 
   test("accepts every registered build-target scheme", () => {
-    for (const scheme of [
-      "cadet",
-      "cadet-staging",
-      "cadet-dev",
-    ]) {
+    for (const scheme of ["cadet", "cadet-staging", "cadet-dev"]) {
       expect(parseShareDeepLink(`${scheme}://share/${INBOX_ID}`)).toEqual({
         inboxId: INBOX_ID,
       });
@@ -535,25 +501,19 @@ describe("parseShareDeepLink", () => {
   });
 
   test("rejects look-alike schemes", () => {
-    expect(
-      parseShareDeepLink(`cadet-evil://share/${INBOX_ID}`),
-    ).toBeNull();
+    expect(parseShareDeepLink(`cadet-evil://share/${INBOX_ID}`)).toBeNull();
     expect(parseShareDeepLink(`mycadet://share/${INBOX_ID}`)).toBeNull();
   });
 
   test("rejects other hosts, missing ids, and unsafe path segments", () => {
     expect(parseShareDeepLink("cadet://share")).toBeNull();
     expect(parseShareDeepLink("cadet://share/")).toBeNull();
-    expect(
-      parseShareDeepLink(`cadet://share/${INBOX_ID}/extra`),
-    ).toBeNull();
+    expect(parseShareDeepLink(`cadet://share/${INBOX_ID}/extra`)).toBeNull();
     expect(parseShareDeepLink("cadet://share/../x")).toBeNull();
     expect(parseShareDeepLink("cadet://share/foo/../x")).toBeNull();
     expect(parseShareDeepLink("cadet://thread/abc")).toBeNull();
     expect(
-      parseShareDeepLink(
-        `cadet://share/${INBOX_ID}?unused=1#frag`,
-      ),
+      parseShareDeepLink(`cadet://share/${INBOX_ID}?unused=1#frag`),
     ).toEqual({ inboxId: INBOX_ID });
   });
 });

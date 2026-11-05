@@ -1,69 +1,6 @@
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { isStandaloneAssistantMessage } from "@/domains/chat/utils/is-standalone-assistant-message";
 
-export function messagesEqual(
-  a: DisplayMessage[],
-  b: DisplayMessage[],
-): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  for (let i = 0; i < a.length; i++) {
-    const am = a[i]!;
-    const bm = b[i]!;
-    if (
-      am.id !== bm.id ||
-      am.role !== bm.role ||
-      am.timestamp !== bm.timestamp ||
-      JSON.stringify(am.mergedMessageIds) !==
-        JSON.stringify(bm.mergedMessageIds) ||
-      JSON.stringify(am.contentBlocks) !== JSON.stringify(bm.contentBlocks) ||
-      JSON.stringify(am.surfaces) !== JSON.stringify(bm.surfaces) ||
-      JSON.stringify(am.textSegments) !== JSON.stringify(bm.textSegments) ||
-      JSON.stringify(am.contentOrder) !== JSON.stringify(bm.contentOrder) ||
-      JSON.stringify(am.thinkingSegments) !==
-        JSON.stringify(bm.thinkingSegments) ||
-      JSON.stringify(am.slackMessage) !== JSON.stringify(bm.slackMessage) ||
-      JSON.stringify(am.toolCalls) !== JSON.stringify(bm.toolCalls) ||
-      JSON.stringify(am.attachments) !== JSON.stringify(bm.attachments)
-    ) {
-      return false;
-    }
-
-    // Compare any arbitrary passthrough fields beyond the known set
-    const knownKeys = new Set([
-      "id",
-      "mergedMessageIds",
-      "role",
-      "contentBlocks",
-      "surfaces",
-      "textSegments",
-      "contentOrder",
-      "thinkingSegments",
-      "slackMessage",
-      "toolCalls",
-      "attachments",
-      "timestamp",
-      "queueStatus",
-      "queuePosition",
-    ]);
-    const amKeys = Object.keys(am).filter((k) => !knownKeys.has(k));
-    const bmKeys = Object.keys(bm).filter((k) => !knownKeys.has(k));
-    if (amKeys.length !== bmKeys.length) {
-      return false;
-    }
-    for (const key of new Set([...amKeys, ...bmKeys])) {
-      if (
-        JSON.stringify((am as unknown as Record<string, unknown>)[key]) !==
-        JSON.stringify((bm as unknown as Record<string, unknown>)[key])
-      ) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 function mergeStringArrays(
   current: string[] | undefined,
   incoming: string[] | undefined,

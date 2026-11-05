@@ -98,7 +98,7 @@ export function useMessageLifecycle({
   // 3. SSE subscription lifecycle — subscribes, filters, and tears down
   //    the bus-owned SSE for the active conversation.
   useEventStream({
-      assistantId,
+    assistantId,
     activeConversationId,
     conversationExistsOnServer,
     handleStreamEvent,
