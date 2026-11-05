@@ -72,6 +72,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Knip (dead code ratchet)
+        run: bun run knip
+
       - name: Audit cross-domain import allow-list freshness
         run: |
           if ! bun run audit:cross-domain:check; then
