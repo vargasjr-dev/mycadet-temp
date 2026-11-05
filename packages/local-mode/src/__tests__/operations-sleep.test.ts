@@ -267,6 +267,21 @@ describe("sleepAssistant — the local stop core", () => {
       expect(result.error).toContain("did not stop gracefully");
     }
   });
+
+  test("the local leg narrates its own verdict through the log callback", async () => {
+    const entry = localEntry() as LockfileAssistant;
+    stopProcessByPidFileMock.mockImplementation(
+      async (...args: unknown[]) => (args[1] as string) === "assistant",
+    );
+    const lines: string[] = [];
+
+    const result = await sleepAssistant(entry, {
+      log: (line) => lines.push(line),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(lines).toEqual(["Assistant stopped.", "Gateway is not running."]);
+  });
 });
 
 describe("sleepAssistant — the --wait drain phase", () => {
@@ -309,6 +324,20 @@ describe("sleepAssistant — the --wait drain phase", () => {
 
     expect(result).toEqual({ ok: true, cancelled: true, wasRunning: false });
     expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
+  });
+
+  test("a cancelled drain narrates the cancel line through the log callback", async () => {
+    const entry = localEntry() as LockfileAssistant;
+    isProcessAliveMock.mockReturnValue({ alive: true, pid: 4321 });
+    drainAssistantMock.mockResolvedValue("cancelled");
+    const lines: string[] = [];
+
+    await sleepAssistant(entry, { wait: true, log: (l) => lines.push(l) });
+
+    expect(lines).toEqual([
+      "Waiting for the assistant to finish background work (Ctrl-C cancels)…",
+      "Sleep cancelled — the assistant is still running.",
+    ]);
   });
 
   test("skips the drain when the assistant is not running", async () => {
@@ -373,6 +402,7 @@ describe("sleepAssistant — the dispatch", () => {
     );
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
   });
 
@@ -433,6 +463,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(response?.status).toBe(204);
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
   });
 

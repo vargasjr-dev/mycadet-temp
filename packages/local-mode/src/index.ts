@@ -161,6 +161,11 @@ export {
 } from "./remotes/local/hatch-config";
 export { wakeAssistant, type WakeResult } from "./operations/wake";
 export {
+  restartAssistant,
+  type RestartReport,
+  type RestartAssistantResult,
+} from "./operations/restart";
+export {
   backupAssistant,
   type BackupAssistantResult,
 } from "./operations/backup";

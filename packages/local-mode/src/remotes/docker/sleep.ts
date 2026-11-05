@@ -58,15 +58,30 @@ async function sleepContainers(
   }
 }
 
+export interface SleepDockerOptions {
+  timeoutMs?: number;
+  /** Sleep-side wait is not supported for docker yet — narrate when asked. */
+  wait?: boolean;
+  /** Progress narration (headless hosts omit it). */
+  log?: (line: string) => void;
+}
+
 /**
  * The docker topology's sleep leg: stop the instance's three service
  * containers (gracefully, then remove them — the wake recreates what it
  * needs) by their derived resource names. A container that refuses to
- * stop is an error; anything already down is expected and skipped.
+ * stop is an error; anything already down is expected and skipped. The
+ * leg narrates its own progress — the command layer adds nothing.
  */
 export async function sleepDocker(
   entry: LockfileAssistant,
-  options: { timeoutMs?: number } = {},
+  options: SleepDockerOptions = {},
 ): Promise<void> {
+  if (options.wait) {
+    options.log?.(
+      "--wait is not supported for Docker assistants yet — stopping containers now.",
+    );
+  }
   await sleepContainers(dockerResourceNames(entry.assistantId), options);
+  options.log?.("Docker containers stopped.");
 }
