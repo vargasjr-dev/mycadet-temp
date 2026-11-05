@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as assistants from "../lib/assistant-config.js";
-import * as host from "../lib/host-teleport.js";
+import * as localMode from "@mycadet/local-mode";
 import { parseArgs, teleport } from "../commands/teleport.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
@@ -12,8 +12,9 @@ const entry: LockfileAssistant = {
   hatchedAt: "2026-01-01T00:00:00Z",
 };
 const find = spyOn(assistants, "findAssistantByName");
-const move = spyOn(host, "teleportHostInstallation").mockResolvedValue(
-  undefined,
+const teleportOp = spyOn(localMode, "teleportAssistant");
+const setActive = spyOn(assistants, "setActiveAssistant").mockImplementation(
+  () => {},
 );
 const exit = spyOn(process, "exit").mockImplementation((code): never => {
   throw new Error(`exit:${code}`);
@@ -22,7 +23,8 @@ const errors = spyOn(console, "error").mockImplementation(() => {});
 const argv = process.argv;
 beforeEach(() => {
   find.mockReturnValue(entry);
-  move.mockClear();
+  teleportOp.mockReset();
+  setActive.mockClear();
   errors.mockClear();
   process.argv = [
     "bun",
@@ -40,35 +42,73 @@ afterEach(() => {
 });
 afterAll(() => {
   find.mockRestore();
-  move.mockRestore();
+  teleportOp.mockRestore();
+  setActive.mockRestore();
   exit.mockRestore();
   errors.mockRestore();
 });
-test("routes local and Docker installation moves through the host tar implementation", async () => {
+test("delegates to the operation with the parsed options and activates the target", async () => {
+  teleportOp.mockResolvedValue({
+    ok: true,
+    kind: "moved",
+    sourceId: "source-1",
+    targetId: "target-1",
+    sourceRetired: false,
+  });
   await teleport();
-  expect(move).toHaveBeenCalledWith(entry, "docker", "target", {
+  expect(teleportOp).toHaveBeenCalledWith({
+    source: entry,
+    targetEnv: "docker",
+    targetName: "target",
     keepSource: true,
     dryRun: false,
+    log: expect.any(Function),
   });
+  expect(setActive).toHaveBeenCalledWith("target-1");
 });
-test("cloud destination refuses before starting any host operation", async () => {
-  process.argv = ["bun", "cadet", "teleport", "--from", "source", "--cloud"];
-  await expect(teleport()).rejects.toThrow("exit:1");
-  expect(move).not.toHaveBeenCalled();
-  expect(errors.mock.calls.flat().join(" ")).toContain(
-    "Cloud teleport is unavailable",
+
+test("a dry run prints the report without activating anything", async () => {
+  teleportOp.mockResolvedValue({
+    ok: true,
+    kind: "dry-run",
+    lines: ["Would move the installation roots.", "Dry run complete."],
+  });
+  process.argv = [
+    "bun",
+    "cadet",
+    "teleport",
+    "--from",
+    "source",
+    "--docker",
+    "--dry-run",
+  ];
+  await teleport();
+  expect(teleportOp).toHaveBeenCalledWith(
+    expect.objectContaining({ dryRun: true }),
   );
+  expect(setActive).not.toHaveBeenCalled();
 });
-test("cloud source refuses before starting any host operation", async () => {
-  find.mockReturnValue({ ...entry, cloud: "cloud" });
+
+test("an operation refusal surfaces the error and exits 1", async () => {
+  teleportOp.mockResolvedValue({
+    ok: false,
+    status: 400,
+    error: "Cannot teleport between two local assistants.",
+  });
+  process.argv = ["bun", "cadet", "teleport", "--from", "source", "--local"];
   await expect(teleport()).rejects.toThrow("exit:1");
-  expect(move).not.toHaveBeenCalled();
+  expect(errors.mock.calls.flat().join(" ")).toContain(
+    "Cannot teleport between two local assistants",
+  );
+  expect(setActive).not.toHaveBeenCalled();
 });
-test("same environment refuses before starting any host operation", async () => {
-  find.mockReturnValue({ ...entry, cloud: "docker" });
+
+test("an unknown source exits before the operation runs", async () => {
+  find.mockReturnValue(null);
   await expect(teleport()).rejects.toThrow("exit:1");
-  expect(move).not.toHaveBeenCalled();
+  expect(teleportOp).not.toHaveBeenCalled();
 });
+
 test("parses dry run and rejects multiple destinations", () => {
   expect(
     parseArgs(["--from", "source", "--local", "target", "--dry-run"]),

@@ -1,6 +1,9 @@
-import { teleportHostInstallation } from "../lib/host-teleport.js";
-import { cliCommand } from "@mycadet/local-mode";
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { cliCommand, teleportAssistant } from "@mycadet/local-mode";
+
+import {
+  findAssistantByName,
+  setActiveAssistant,
+} from "../lib/assistant-config.js";
 
 function printHelp(): void {
   console.log(
@@ -77,12 +80,7 @@ export const teleport = Object.assign(
       process.exit(0);
     }
 
-    if (!from) {
-      printHelp();
-      process.exit(1);
-    }
-
-    if (!targetEnv) {
+    if (!from || !targetEnv) {
       printHelp();
       process.exit(1);
     }
@@ -96,46 +94,24 @@ export const teleport = Object.assign(
       process.exit(1);
     }
 
-    const fromCloud = fromEntry.cloud;
+    const result = await teleportAssistant({
+      source: fromEntry,
+      targetEnv,
+      targetName,
+      keepSource,
+      dryRun,
+      log: (line) => console.log(line),
+    });
 
-    if (fromCloud === "apple-container") {
-      console.error(
-        `Error: '${from}' uses the Apple Containers runtime. Teleport is not yet supported for this topology.`,
-      );
+    if (!result.ok) {
+      console.error(`Error: ${result.error}`);
       process.exit(1);
     }
-
-    // Early same-environment guard — compare source cloud against the CLI flag
-    // BEFORE exporting or hatching, to avoid creating orphaned assistants.
-    if (fromCloud === targetEnv) {
-      console.error(
-        `Cannot teleport between two ${targetEnv} assistants. Teleport transfers data across different environments.`,
-      );
-      process.exit(1);
-    }
-
-    if (
-      (fromCloud === "local" || fromCloud === "docker") &&
-      (targetEnv === "local" || targetEnv === "docker")
-    ) {
-      try {
-        await teleportHostInstallation(fromEntry, targetEnv, targetName, {
-          keepSource,
-          dryRun,
-        });
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
-      }
+    if (result.kind === "dry-run") {
+      for (const line of result.lines) console.log(line);
       return;
     }
-
-    console.error(
-      "Cloud teleport is unavailable until cloud root archive transfer is supported. No installation was changed.",
-    );
-    process.exit(1);
+    setActiveAssistant(result.targetId);
   },
   { description: "Move an installation between local and Docker storage" },
 );
