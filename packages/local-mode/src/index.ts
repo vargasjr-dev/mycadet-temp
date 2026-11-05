@@ -35,6 +35,7 @@ export {
   basetenTokenPath,
 } from "./config";
 export { stageBasetenBuildContext } from "./remotes/baseten/context";
+export { execBasetenSandbox } from "./remotes/baseten/exec";
 export type { LocalEndpointConfig } from "./config";
 export {
   assistantBackupFilenamePattern,

@@ -60,7 +60,7 @@ export type BasetenSandboxCreated = z.infer<typeof SandboxCreated>;
  * Opt in by exporting BASETEN_TEAM_ID (a team name or ID); unset means the
  * caller's default team, which is fine for single-team orgs.
  */
-function basetenTeamId(): string | undefined {
+export function basetenTeamId(): string | undefined {
   return process.env.BASETEN_TEAM_ID?.trim() || undefined;
 }
 
