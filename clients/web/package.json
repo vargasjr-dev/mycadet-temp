@@ -23,7 +23,7 @@
     "pretypecheck": "bun run openapi-ts",
     "typecheck": "bunx tsgo --noEmit",
     "postinstall": "bash scripts/postinstall.sh",
-    "openapi-ts": "bun run scripts/transform-daemon-spec.ts && bun run scripts/transform-gateway-spec.ts && openapi-ts",
+    "openapi-ts": "bun run scripts/transform-cloud-spec.ts && bun run scripts/transform-daemon-spec.ts && bun run scripts/transform-gateway-spec.ts && openapi-ts",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
     "test": "bun test",
@@ -135,6 +135,7 @@
     "tailwindcss": "4.1.8",
     "typescript": "5.9.3",
     "typescript-eslint": "8.58.1",
-    "vite": "8.0.11"
+    "vite": "8.0.11",
+    "yaml": "2.9.1"
   }
 }

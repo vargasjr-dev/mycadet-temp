@@ -9,7 +9,7 @@ const reactQueryPlugin = {
 
 export default defineConfig([
   {
-    input: "./openapi-schemas/cloud.yaml",
+    input: "./openapi-schemas/cloud.json",
     output: "src/generated/api",
     parser: {
       // HeyAPI only detects pagination params by exact keyword match, so the
