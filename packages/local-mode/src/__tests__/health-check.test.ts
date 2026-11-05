@@ -1,5 +1,9 @@
 import { describe, test, expect } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { checkHealth } from "../daemon-readiness";
+import { saveBasetenSandboxToken } from "../guardian-token";
 import type { LockfileAssistant } from "../lockfile-contract";
 
 // The probe is entry-based: a local entry's gateway address is the loopback
@@ -11,6 +15,70 @@ function localEntry(port: number | undefined): LockfileAssistant {
     port: port ?? 0,
   } as LockfileAssistant;
 }
+
+describe("checkHealth — the baseten port route", () => {
+  test("the probe rides /port/<PORT>/ presenting the sandbox token", async () => {
+    const seen = { path: "", auth: null as string | null };
+    const server = Bun.serve({
+      port: 0,
+      fetch(req) {
+        seen.path = new URL(req.url).pathname;
+        seen.auth = req.headers.get("authorization");
+        return Response.json({ status: "healthy", version: "1.2.3" });
+      },
+    });
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-health-sbx-"));
+    const oldXdg = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = tmp;
+    saveBasetenSandboxToken("asst-baseten", "sbx-tok-1");
+    try {
+      // The gateway URL derives from the sandbox URL + the port route.
+      const entry = {
+        assistantId: "asst-baseten",
+        cloud: "baseten",
+        name: "sbx-x",
+        sandboxUrl: `http://127.0.0.1:${server.port}`,
+        port: 7830,
+      } as LockfileAssistant;
+      const result = await checkHealth(entry);
+      expect(result.status).toBe("healthy");
+      expect(result.version).toBe("1.2.3");
+      expect(seen.path).toBe("/port/7830/healthz");
+      expect(seen.auth).toBe("Bearer sbx-tok-1");
+    } finally {
+      server.stop(true);
+      if (oldXdg === undefined) {
+        delete process.env.XDG_CONFIG_HOME;
+      } else {
+        process.env.XDG_CONFIG_HOME = oldXdg;
+      }
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test("a missing sandbox token still probes (bare) instead of throwing", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-health-sbx-"));
+    const oldXdg = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = tmp;
+    try {
+      const result = await checkHealth({
+        assistantId: "asst-notoken",
+        cloud: "baseten",
+        name: "sbx-x",
+        sandboxUrl: "http://127.0.0.1:1",
+        port: 7830,
+      } as LockfileAssistant);
+      expect(result.status).toBe("unreachable");
+    } finally {
+      if (oldXdg === undefined) {
+        delete process.env.XDG_CONFIG_HOME;
+      } else {
+        process.env.XDG_CONFIG_HOME = oldXdg;
+      }
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("checkHealth", () => {
   test("reads as down for a non-existent host", async () => {

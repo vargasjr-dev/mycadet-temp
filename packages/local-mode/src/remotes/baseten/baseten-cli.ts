@@ -4,7 +4,6 @@
  * its own auth, so no Baseten env credentials are needed.
  */
 
-import { spawn } from "node:child_process";
 import { execOutput } from "../../exec.js";
 
 /** The installed baseten CLI, or null when it isn't on PATH. Exported for tests. */
@@ -17,19 +16,14 @@ export async function resolveBasetenCli(): Promise<string | null> {
   }
 }
 
-/** Run the baseten CLI with inherited stdio so its logs stream to the caller. */
-export function runBasetenCli(args: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("baseten", args, { stdio: "inherit" });
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`baseten ${args.join(" ")} exited with ${code}`));
-      }
-    });
-  });
+/**
+ * Run the baseten CLI with its output captured: the hatch narrates its own
+ * progress (one "pushing" line, then the result), so the CLI's own banner
+ * ("Pushed... Waiting for it to build...") and tables stay quiet on
+ * success — and ride the error as the diagnostic when it fails.
+ */
+export async function runBasetenCliCaptured(args: string[]): Promise<string> {
+  return (await execOutput("baseten", args)).trim();
 }
 
 /**

@@ -34,13 +34,13 @@ export const HATCH_COLOR = ANSI.magenta;
 
 /** Hatch identity: the ASCII art shown while an assistant hatches. */
 export const HATCH_ART = [
-  `${ANSI.magenta}  *     .--.${ANSI.reset}`,
-  `${ANSI.magenta}       |${ANSI.reset}${ANSI.bold}o_o${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
-  `${ANSI.magenta} *     |${ANSI.reset}${ANSI.bold}:_/${ANSI.reset}${ANSI.magenta}|${ANSI.reset}`,
-  `${ANSI.magenta}      //   \\ \\${ANSI.reset}`,
-  `${ANSI.magenta}     (|     | )${ANSI.reset}`,
-  `${ANSI.magenta}    /'\\_   _/\`\\${ANSI.reset}`,
-  `${ANSI.magenta}    \\___)=(___/${ANSI.reset}`,
+  `${ANSI.magenta}  *   .------.${ANSI.reset}`,
+  `${ANSI.magenta}      / .--. \\${ANSI.reset}`,
+  `${ANSI.magenta} *   |  ${ANSI.reset}${ANSI.bold}o_o${ANSI.reset}${ANSI.magenta}  |${ANSI.reset}`,
+  `${ANSI.magenta}     |  ${ANSI.reset}${ANSI.bold}\\__/${ANSI.reset}${ANSI.magenta} |${ANSI.reset}`,
+  `${ANSI.magenta} *     '----'${ANSI.reset}`,
+  `${ANSI.magenta}        |  |${ANSI.reset}`,
+  `${ANSI.magenta}       _|  |_${ANSI.reset}`,
 ];
 
 /** Hatch identity: emoji shown when an assistant has hatched. */

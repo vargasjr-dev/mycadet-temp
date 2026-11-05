@@ -9,7 +9,11 @@
  */
 
 import { z } from "zod";
-import { captureBasetenCli, resolveBasetenCli, runBasetenCli } from "./baseten-cli.js";
+import {
+  captureBasetenCli,
+  resolveBasetenCli,
+  runBasetenCliCaptured,
+} from "./baseten-cli.js";
 
 const BASETEN_API_BASE = "https://api.baseten.co";
 
@@ -49,17 +53,30 @@ const SandboxCreated = z.object({
 
 export type BasetenSandboxCreated = z.infer<typeof SandboxCreated>;
 
+/**
+ * Organizations with teams (Enterprise) require the team selector on every
+ * resource request when the caller belongs to more than one team —
+ * https://docs.baseten.co/reference/management-api/sandboxes/overview .
+ * Opt in by exporting BASETEN_TEAM_ID (a team name or ID); unset means the
+ * caller's default team, which is fine for single-team orgs.
+ */
+export function basetenTeamId(): string | undefined {
+  return process.env.BASETEN_TEAM_ID?.trim() || undefined;
+}
+
 async function basetenFetch<S extends z.ZodType>(
   token: string,
   path: string,
   schema: S,
   init: RequestInit = {},
 ): Promise<z.infer<S>> {
+  const team = basetenTeamId();
   const response = await fetch(`${BASETEN_API_BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(team ? { "X-Team-Id": team } : {}),
       ...(init.headers ?? {}),
     },
   });
@@ -134,8 +151,12 @@ export async function pushBasetenImage(options: {
   timeoutMs?: number;
   intervalMs?: number;
 }): Promise<void> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
-    return runBasetenCli([
+    // Captured, not streamed: the hatch already narrated the push, and the
+    // CLI's banner ("Waiting for it to build...") adds nothing — on failure
+    // the captured output rides the error instead.
+    await runBasetenCliCaptured([
       "sandbox",
       "image",
       "push",
@@ -143,8 +164,10 @@ export async function pushBasetenImage(options: {
       options.name,
       "--dir",
       options.dir,
+      ...(team ? ["--team", team] : []),
       "--wait",
     ]);
+    return;
   }
 
   const token = await resolveBasetenToken();
@@ -203,17 +226,21 @@ export async function pushBasetenImage(options: {
 /**
  * Create a sandbox from an image. Creation waits until the sandbox is ready
  * and returns it; `envs` is the credential-injection path (marked secret so
- * Baseten masks the values). The CLI arm reports through its own streamed
- * output and only echoes back the requested name.
+ * Baseten masks the values). The CLI arm parses the created sandbox's name
+ * and URL straight off the create output — with no requested name the
+ * server picks one, and the URL only appears there (or on `describe`,
+ * which needs the name first).
  */
 export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
 }): Promise<BasetenSandboxCreated> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
+    if (team) args.push("--team", team);
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
       // `--plain-env` stays readable — configuration like a gateway port is
@@ -221,10 +248,15 @@ export async function createBasetenSandbox(options: {
       const flag = env.secret ? "--env" : "--plain-env";
       args.push(flag, `${env.name}=${env.value}`);
     }
-    await runBasetenCli(args);
-    if (options.name) {
-      const url = await describeBasetenSandboxUrl(options.name);
-      return { name: options.name, ...(url ? { url } : {}) };
+    const output = await runBasetenCliCaptured(args);
+    const name = /^Name:\s*(\S+)/m.exec(output)?.[1] ?? options.name;
+    const url = /^URL:\s*(\S+)/m.exec(output)?.[1];
+    if (url) {
+      return { name, ...(url ? { url } : {}) };
+    }
+    if (name) {
+      const described = await describeBasetenSandboxUrl(name);
+      return { name, ...(described ? { url: described } : {}) };
     }
     return { name: options.name };
   }
@@ -240,6 +272,47 @@ export async function createBasetenSandbox(options: {
   });
 }
 
+/** The delete call's body — the fields that ride back on termination. */
+const SandboxDeleted = z.object({
+  name: z.string().optional(),
+  status: z.string().optional(),
+});
+
+/**
+ * Delete (terminate) a sandbox — the teardown that stops it billing. The
+ * CLI arm carries --yes (headless by construction); the HTTP arm rides the
+ * management API's DELETE. An already-gone sandbox is success: 404 means
+ * the termination the caller wanted already happened.
+ */
+export async function deleteBasetenSandbox(name: string): Promise<void> {
+  const team = basetenTeamId();
+  if (await resolveBasetenCli()) {
+    await runBasetenCliCaptured([
+      "sandbox",
+      "delete",
+      "--name",
+      name,
+      "--yes",
+      ...(team ? ["--team", team] : []),
+    ]);
+    return;
+  }
+  const token = await resolveBasetenToken();
+  try {
+    await basetenFetch(
+      token,
+      `/v1/sandboxes/instances/${encodeURIComponent(name)}`,
+      SandboxDeleted,
+      { method: "DELETE" },
+    );
+  } catch (err) {
+    if (err instanceof BasetenApiError && err.status === 404) {
+      return;
+    }
+    throw err;
+  }
+}
+
 /**
  * The sandbox server URL off the installed CLI — `describe --jq '.url'` —
  * with the jq quoting (`"https://..."`) stripped. Empty string when the CLI
@@ -247,12 +320,14 @@ export async function createBasetenSandbox(options: {
  * treats a miss as "no URL recorded" rather than a failed hatch.
  */
 export async function describeBasetenSandboxUrl(name: string): Promise<string> {
+  const team = basetenTeamId();
   try {
     const out = await captureBasetenCli([
       "sandbox",
       "describe",
       "--name",
       name,
+      ...(team ? ["--team", team] : []),
       "--jq",
       ".url",
     ]);

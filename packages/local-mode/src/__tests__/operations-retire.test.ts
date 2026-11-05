@@ -17,6 +17,9 @@ import path from "node:path";
 const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
 const realCloudAuth = { ...(await import("../cloud-auth")) };
 const realLocalRetire = { ...(await import("../remotes/local/retire")) };
+const realBasetenLifecycle = {
+  ...(await import("../remotes/baseten/lifecycle")),
+};
 const realDockerRetire = { ...(await import("../remotes/docker/retire")) };
 const realExec = { ...(await import("../exec")) };
 const realAppleRetire = {
@@ -68,6 +71,11 @@ mock.module("../exec", () => ({
   ...realExec,
   exec: execMock,
 }));
+const retireBasetenMock = mock(async (): Promise<void> => {});
+mock.module("../remotes/baseten/lifecycle", () => ({
+  ...realBasetenLifecycle,
+  retireBaseten: retireBasetenMock,
+}));
 mock.module("../remotes/local/retire", () => ({
   ...realLocalRetire,
   retireLocal: retireLocalMock,
@@ -88,6 +96,7 @@ afterAll(() => {
   mock.module("../cloud-auth", () => realCloudAuth);
   mock.module("../exec", () => realExec);
   mock.module("../remotes/local/retire", () => realLocalRetire);
+  mock.module("../remotes/baseten/lifecycle", () => realBasetenLifecycle);
   mock.module("../remotes/docker/retire", () => realDockerRetire);
   mock.module("../remotes/apple-container/retire", () => realAppleRetire);
 });
@@ -327,5 +336,49 @@ describe("the operator route table — the scoped surface's retire arm", () => {
       )!.route.run({ assistantId: "ghost" }),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("retireAssistant — the baseten arm", () => {
+  test("the leg tears the sandbox down and the entry leaves the lockfile", async () => {
+    retireBasetenMock.mockImplementation(async () => {});
+    const entry = seedEntry({
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+    });
+
+    const result = await retireAssistant(entry);
+
+    expect(result).toEqual({ ok: true });
+    expect(retireBasetenMock).toHaveBeenCalledWith(
+      expect.objectContaining({ cloud: "baseten", name: "sbx-abc123" }),
+    );
+    expect(readLockfile().assistants).toEqual([]);
+  });
+
+  test("a leg failure keeps the entry and reports the teardown error", async () => {
+    retireBasetenMock.mockImplementation(async () => {
+      throw new Error("The sandbox delete failed: boom");
+    });
+    const entry = seedEntry({
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+    });
+    const result = await retireAssistant(entry);
+
+    expect(result).toEqual({
+      ok: false,
+      status: 500,
+      error: "The sandbox delete failed: boom",
+    });
+    expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([
+      "asst-baseten",
+    ]);
   });
 });

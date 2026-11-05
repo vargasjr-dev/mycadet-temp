@@ -13,6 +13,8 @@ import {
   type HatchBasetenResult,
 } from "../remotes/baseten/hatch";
 import { hatchAssistant } from "../operations/hatch";
+import { existsSync } from "node:fs";
+import { resolveLockfilePath } from "../config";
 import { readLockfile, saveLockfileAssistant } from "../lockfile";
 import { findAssistantByName } from "../operations/lookup";
 
@@ -79,6 +81,10 @@ describe("hatchAssistant", () => {
       expect(result.error).toContain(remote);
     }
     expect(findAssistantByName("custom")).toBeNull();
+    // The refusal still leaves the lockfile behind: an empty registry the
+    // next hatch (or any writer) builds on.
+    expect(existsSync(resolveLockfilePath())).toBe(true);
+    expect(readLockfile().assistants).toEqual([]);
   });
 
   test("the baseten arm routes to the leg and maps the entry back", async () => {
