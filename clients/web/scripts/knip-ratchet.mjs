@@ -25,16 +25,20 @@ const run = spawnSync(
   },
 );
 
-if (run.error) throw run.error;
+if (run.error) {throw run.error;}
 const report = JSON.parse(run.stdout);
 
 // One stable key per finding: rule, file, symbol.
 // The JSON shape is one group per file: { file, exports: [{name}…], … }.
 const keys = new Set();
 for (const group of report.issues) {
-  if (!group || typeof group !== "object") continue;
+  if (!group || typeof group !== "object") {
+    continue;
+  }
   for (const [rule, findings] of Object.entries(group)) {
-    if (rule === "file" || !Array.isArray(findings)) continue;
+    if (rule === "file" || !Array.isArray(findings)) {
+      continue;
+    }
     for (const finding of findings) {
       const symbol = typeof finding === "string" ? finding : finding?.name;
       keys.add(`${rule}|${group.file}|${symbol ?? ""}`);
