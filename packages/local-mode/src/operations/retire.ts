@@ -56,8 +56,7 @@ export async function retireAssistant(
     } else if (cloud === "local") {
       await retireLocal(assistantId, entry);
     } else if (cloud === "baseten") {
-      const basetenResult = await retireBaseten(entry);
-      if (!basetenResult.ok) return basetenResult;
+      await retireBaseten(entry);
     } else if (cloud === "custom") {
       await retireCustom(entry);
     } else if (isCloudEntry(entry)) {

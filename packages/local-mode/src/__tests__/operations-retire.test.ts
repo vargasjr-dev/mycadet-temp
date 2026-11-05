@@ -71,11 +71,7 @@ mock.module("../exec", () => ({
   ...realExec,
   exec: execMock,
 }));
-const retireBasetenMock = mock(
-  async (): Promise<
-    { ok: true } | { ok: false; status: number; error: string }
-  > => ({ ok: true }),
-);
+const retireBasetenMock = mock(async (): Promise<void> => {});
 mock.module("../remotes/baseten/lifecycle", () => ({
   ...realBasetenLifecycle,
   retireBaseten: retireBasetenMock,
@@ -345,7 +341,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
 
 describe("retireAssistant — the baseten arm", () => {
   test("the leg tears the sandbox down and the entry leaves the lockfile", async () => {
-    retireBasetenMock.mockResolvedValue({ ok: true });
+    retireBasetenMock.mockImplementation(async () => {});
     const entry = seedEntry({
       assistantId: "asst-baseten",
       cloud: "baseten",
@@ -364,10 +360,9 @@ describe("retireAssistant — the baseten arm", () => {
   });
 
   test("a leg failure keeps the entry and reports the teardown error", async () => {
-    retireBasetenMock.mockImplementation(
-      async () =>
-        ({ ok: false, status: 502, error: "The sandbox delete failed: boom" }),
-    );
+    retireBasetenMock.mockImplementation(async () => {
+      throw new Error("The sandbox delete failed: boom");
+    });
     const entry = seedEntry({
       assistantId: "asst-baseten",
       cloud: "baseten",
@@ -379,7 +374,7 @@ describe("retireAssistant — the baseten arm", () => {
 
     expect(result).toEqual({
       ok: false,
-      status: 502,
+      status: 500,
       error: "The sandbox delete failed: boom",
     });
     expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([
