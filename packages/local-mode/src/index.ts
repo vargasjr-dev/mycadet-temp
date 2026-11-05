@@ -451,6 +451,10 @@ export {
 } from "./remotes/local/upgrade";
 export { upgradeCloud } from "./remotes/cloud/upgrade";
 export {
+  teleportAssistant,
+  type TeleportAssistantResult,
+} from "./operations/teleport";
+export {
   restoreAssistant,
   type RestoreAssistantResult,
 } from "./operations/restore";
