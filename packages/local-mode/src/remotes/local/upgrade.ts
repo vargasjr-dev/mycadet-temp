@@ -9,11 +9,9 @@
  */
 import { rm } from "node:fs/promises";
 
-import {
-  checkHealth,
-  ensureLocalRuntime,
-  leaseGuardianToken,
-} from "../..";
+import { checkHealth } from "../../daemon-readiness";
+import { ensureLocalRuntime } from "../local/common";
+import { leaseGuardianToken } from "../../guardian-token";
 import type { LocalAssistant } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import {
