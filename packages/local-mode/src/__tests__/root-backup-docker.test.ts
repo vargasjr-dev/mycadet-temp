@@ -20,8 +20,9 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../root-backup";
-import { startContainers } from "@mycadet/local-mode";
-import { dockerResourceNames, sleepDocker } from "@mycadet/local-mode";
+import { startContainers } from "../remotes/docker/wake";
+import { sleepDocker } from "../remotes/docker/sleep";
+import { dockerResourceNames } from "../remotes/docker/retire";
 import type { LockfileAssistant } from "../lockfile-contract";
 // The subprocess-fake harness stays cli-side (its other consumers are the
 // CLI's teleport tests); this docker-flow test is a monorepo-level one and

@@ -18,7 +18,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { getLocalInstanceDir } from "..";
+import { getLocalInstanceDir } from "../remotes/local/instance";
 import type { LocalAssistant } from "../lockfile-contract";
 import * as sleepModule from "../remotes/local/sleep";
 import * as wakeModule from "../remotes/local/wake";

@@ -8,15 +8,15 @@
 import { platform } from "node:os";
 
 import {
-  dockerResourceNames,
-  ensureDockerDaemonRunning,
   pullImage,
   resolveImageRefs,
-  saveLockfileAssistant,
-  sleepDocker,
-  type ServiceName,
-  GATEWAY_INTERNAL_PORT,
-} from "../..";
+} from "./hatch";
+import { dockerResourceNames } from "./retire";
+import { ensureDockerDaemonRunning } from "./common";
+import { sleepDocker } from "./sleep";
+import { type ServiceName } from "./statefulset";
+import { saveLockfileAssistant } from "../../lockfile";
+import { GATEWAY_INTERNAL_PORT } from "../../ports";
 import {
   type DockerAssistant,
   type LockfileAssistant,

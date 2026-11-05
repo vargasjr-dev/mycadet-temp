@@ -9,6 +9,7 @@ import * as dockerUpgrade from "../remotes/docker/upgrade";
 import * as dockerWake from "../remotes/docker/wake";
 import * as lifecycle from "../upgrade-lifecycle";
 import * as localMode from "..";
+import * as sleepDockerModule from "../remotes/docker/sleep";
 import { mockChildProcessSpawn } from "./helpers/child-process-mock";
 import type { LockfileAssistant } from "../lockfile-contract";
 
@@ -18,7 +19,7 @@ const pull = spyOn(localMode, "pullImage");
 const wake = spyOn(dockerWake, "wakeDocker");
 const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
-const sleep = spyOn(localMode, "sleepDocker");
+const sleep = spyOn(sleepDockerModule, "sleepDocker");
 const start = spyOn(dockerWake, "startContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = localMode.dockerResourceNames("recovery");
