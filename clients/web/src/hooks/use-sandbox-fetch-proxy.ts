@@ -15,7 +15,7 @@
 
 import { type RefObject, useEffect, useRef } from "react";
 
-import { client as gatewayClient } from "@/generated/gateway/client.gen";
+import { client } from "@/generated/gateway/client.gen";
 import { subscribe as busSubscribe } from "@/lib/event-bus";
 import {
   FETCH_PROXY_PATH_RE,
@@ -179,7 +179,7 @@ export function useSandboxFetchProxy(
         try {
           const encodedPath = path.split("/").map(encodeURIComponent).join("/");
           const url = `/v1/assistants/${assistantId}/apps/${appId}/asset/${encodedPath}`;
-          const { data: blob, response } = await gatewayClient.get({
+          const { data: blob, response } = await client.get({
             url,
             parseAs: "blob",
             throwOnError: false,
@@ -278,14 +278,14 @@ export function useSandboxFetchProxy(
 
         const clientMethod =
           method === "POST"
-            ? gatewayClient.post
+            ? client.post
             : method === "PUT"
-              ? gatewayClient.put
+              ? client.put
               : method === "PATCH"
-                ? gatewayClient.patch
+                ? client.patch
                 : method === "DELETE"
-                  ? gatewayClient.delete
-                  : gatewayClient.get;
+                  ? client.delete
+                  : client.get;
         const response = await clientMethod(fetchOptions);
 
         const httpResponse = response.response;

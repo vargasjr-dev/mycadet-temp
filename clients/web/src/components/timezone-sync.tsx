@@ -31,7 +31,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { client as gatewayClient } from "@/generated/gateway/client.gen";
+import { client } from "@/generated/gateway/client.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { getBrowserTimezone } from "@/utils/browser-timezone";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
@@ -49,7 +49,7 @@ export function TimezoneSync(): null {
       assistantId: string;
       detectedTimezone: string;
     }) => {
-      await gatewayClient.patch({
+      await client.patch({
         url: `/v1/assistants/{assistant_id}/config`,
         path: { assistant_id: vars.assistantId },
         body: { ui: { detectedTimezone: vars.detectedTimezone } },
