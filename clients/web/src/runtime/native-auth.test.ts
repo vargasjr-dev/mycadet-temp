@@ -58,12 +58,8 @@ Object.defineProperty(document, "cookie", {
   },
 });
 
-const {
-  installSessionCookies,
-  getSessionTokenFromCookies,
-  isNativePlatform,
-  restorePendingNativeLogin,
-} = await import("./native-auth");
+const { installSessionCookies, isNativePlatform, restorePendingNativeLogin } =
+  await import("./native-auth");
 
 beforeEach(() => {
   nativePlatform = false;
@@ -96,7 +92,6 @@ describe("platform detection", () => {
 describe("session cookie hand-off", () => {
   test("installSessionCookies writes dev and prod names", () => {
     installSessionCookies("tok-123");
-    expect(getSessionTokenFromCookies()).toBe("tok-123");
     expect(cookieJar.has("sessionid")).toBe(true);
     expect(cookieJar.has("__Secure-sessionid")).toBe(true);
   });
@@ -141,7 +136,7 @@ describe("restorePendingNativeLogin", () => {
         Object.defineProperty(window, "location", descriptor);
       }
     }
-    expect(getSessionTokenFromCookies()).toBe("restored-tok");
+    expect(cookieJar.get("__Secure-sessionid")).toBe("restored-tok");
     expect(navigated).toBe("/assistant");
   });
 

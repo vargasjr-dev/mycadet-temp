@@ -115,19 +115,8 @@ import { SlashCommandPopup } from "@/domains/chat/components/chat-composer/slash
 import { useTextPopup } from "@/domains/chat/components/chat-composer/use-text-popup";
 
 /**
- * Composer used at the bottom of the chat (main variant) and inside the
- * app-editing split layout.
- *
- * The draft text is the only high-frequency state here, so the composer
- * subscribes to it directly from `composer-store` via atomic selectors (per
- * `docs/STATE_MANAGEMENT.md`) rather than receiving it as a prop. That keeps a
- * keystroke from re-rendering the orchestrator and the transcript above it —
- * only this component re-renders as you type.
- *
- * The optional slots/voice props exist because the app-editing variant does
- * NOT render a voice button, threshold picker, context-window indicator, or
- * the notice banners above the form — only the main variant does. Passing
- * those as `undefined` keeps the app-editing layout byte-identical.
+ * Composer for the chat thread (main variant) and the app-editing layout;
+ * optional slots/voice props are the main variant's alone.
  */
 export interface ChatComposerProps {
   placeholder?: string;
@@ -136,19 +125,12 @@ export interface ChatComposerProps {
   typingDisabled: boolean;
   sendDisabled: boolean;
 
-  // Adding files is orchestration-owned: it runs the vision-capability gate
-  // (which depends on the active model) before queueing the upload. The rest of
-  // the attachment lifecycle — the strip, the uploading/can-send derivation, and
-  // removal — is read straight from the composer store below.
   /**
-   * Takes the picked files and answers with the ones it kept, where it filters
-   * at all. Returning nothing counts as keeping them, so a caller that does no
-   * filtering stays a plain callback and cannot free an allowance by accident.
+   * Orchestration-owned: runs the vision-capability gate before queueing.
    */
   onAddAttachmentFiles: (files: FileList | File[]) => File[] | void;
 
-  // voice — optional; when `voiceInputRef` is omitted the voice button is
-  // skipped entirely (matches the app-editing variant which has no voice).
+  /** Omitting `voiceInputRef` skips the voice button (app-editing variant). */
   voiceInputRef?: RefObject<VoiceInputButtonHandle | null>;
   onVoiceTranscript?: (text: string) => void;
   onVoiceInterimTranscript?: (text: string) => void;
@@ -170,51 +152,31 @@ export interface ChatComposerProps {
   // assistant id used by AttachFileButton's disabled guard
   assistantId: string | null;
 
-  // Conversation this composer is bound to — used to attach live-voice
-  // sessions and to decide whether this composer owns the active session
-  // (see `isLiveVoiceSessionOwnedBy`). Pass the routing-truth id
-  // (`activeConversationId`), including client-generated draft ids, so the
-  // session lands in the thread the user is looking at. Optional — when
-  // absent the session starts without a conversation and the server assigns
-  // one. The app-editing variant, which has no voice, leaves this undefined.
+  /** Routing-truth conversation id for live-voice session binding. */
   conversationId?: string | null;
 
-  // Whether that conversation has nothing in it yet. Drives the one decision
-  // in `voiceEntryGreetingSeed`: a voice session opened on a blank thread
-  // takes its first turn on the user's behalf so the assistant speaks first,
-  // and one opened on a thread already underway does not. Pass the same value
-  // the empty state renders from, so the two cannot disagree about what empty
-  // means. Optional, defaulting to false: a caller that says nothing opens a
-  // silent room.
+  /** Feeds `voiceEntryGreetingSeed`'s speak-first-on-blank-thread call. */
   conversationIsEmpty?: boolean;
 
   /** Chat status controls (Progress, Agents) above the mobile composer. */
   statusControlsSlot?: ReactNode;
   contextWindowIndicatorSlot?: ReactNode;
-  // Slot rendered above the form (between the max-width wrapper and the form).
-  // The main variant uses this for attachment-error / voice-error / disk-pressure
-  // notices and the live voice-interim preview. The app-editing variant omits it.
+  /** Notices + live voice-interim preview, above the form. */
   noticesAboveFormSlot?: ReactNode;
 
-  // When true, the form's top border-radius is removed so the billing banner
-  // (which has only top corners rounded) sits flush against the form,
-  // forming a single continuous card.
+  /** Drops the form's top radius so the billing banner sits flush. */
   hasBillingBanner?: boolean;
 
-  // Cap for the textarea's auto-grow height in pixels. The empty state passes a
-  // larger value so the user can compose long first messages without the box
-  // clipping.
+  /** Auto-grow height cap for the textarea. */
   textareaMaxHeightPx?: number;
 
-  // When true, only Cmd+Enter (Mac) or Ctrl+Enter (Win/Linux) submits the
-  // message; plain Enter inserts a newline. Defaults to false (Enter submits).
+  /** Cmd/Ctrl+Enter submits; plain Enter inserts a newline. */
   cmdEnterMode?: boolean;
 
-  // Ghost text autocomplete — shown as a dimmed suffix in the textarea when
-  // the suggestion endpoint returns a completion for the current conversation.
+  /** Ghost-text autocomplete suffix for the current conversation. */
   suggestion?: string | null;
 
-  // Edit-message recall — up-arrow on empty input recalls last user message.
+  /** Up-arrow on empty input recalls the last user message. */
   onRecallLastMessage?: () => void;
   onCancelEdit?: () => void;
 }
@@ -279,19 +241,14 @@ function AddToChatButton({
       variant="ghost"
       iconOnly={<PlusIcon strokeWidth={2} />}
       iconOnlyGlyphClassName={MOBILE_GLYPH_CLASS}
-      // The row sizes its own controls, so the primitive's mobile growth is
-      // off here and every narrow window gets the same plus.
-      expandOnMobile={false}
-      // Where the press would not carry focus to this button, it has to leave
-      // the composer's focus alone until the click arrives. Whatever the click
-      // opens takes focus into its own portal from there.
+      expandOnMobile={false} // the row sizes its own controls
+      // Leave focus alone when the press can't carry it; the portal takes over.
       onMouseDown={onMouseDown}
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
       title={label}
-      // Tertiary resting tone, matching the row's other glyphs. `shrink-0`
-      // holds the circle at 40px however tight the row runs.
+      // Tertiary tone; `shrink-0` holds the circle at 40px.
       className={cn(
         MOBILE_CONTROL_CLASS,
         MOBILE_GHOST_WASH_CLASS,
@@ -335,9 +292,7 @@ export function ChatComposer({
   const sendDisabled =
     sendDisabledProp || (configuration ? !configuration.readyForDraft : false);
 
-  // Draft text is owned by the composer store; subscribing here (rather than
-  // receiving it as a prop) means a keystroke re-renders only this component,
-  // not the orchestrator or the transcript above it.
+  // Store subscription (not a prop) so a keystroke re-renders only this.
   const input = useComposerStore.use.input();
   const setInput = useComposerStore.use.setInput();
   // Attachments are composer-owned too: read the list and derive send-gating
@@ -353,11 +308,7 @@ export function ChatComposer({
   const voicePhase = useVoiceRecordingStore.use.phase();
   const isVoiceActive =
     voicePhase === "recording" || voicePhase === "processing";
-  // The recording store is window-global and shared with the bridge's hidden
-  // recorder, which a held voice key drives into whatever app is in front.
-  // That session is flagged `hold` as it starts, and it is not this
-  // composer's content: its words land at a cursor elsewhere, and its
-  // recorder is not the one the composer's target can stop.
+  // `hold` sessions (a held voice key in any app) are not ours to stop.
   const voiceHold = useVoiceRecordingStore.use.hold();
   const ownsDictation = isVoiceActive && !voiceHold;
   // Holds the MediaStream opened by VoiceInputButton so we can reuse it for
@@ -377,22 +328,7 @@ export function ChatComposer({
   const showVoiceInput =
     voiceInputRef !== undefined && onVoiceTranscript !== undefined;
 
-  // ---- Live voice (full-duplex conversation) ----------------------------
-  // Coexists with dictation: entry is gated on eligibility — `LiveVoiceButton`
-  // only renders alongside the dictation button (`showVoiceInput` + a non-null
-  // assistant id new enough to serve live voice) — so where there is no entry
-  // point no session can ever start and the session state below stays `idle`.
-  //
-  // The session controller (`useLiveVoice`) is NOT owned here: it lives in
-  // the persistent `useLiveVoiceSessionController` mount in `ChatLayout`, so
-  // a session survives thread switches, Home/Library navigation, and the
-  // fullscreen app viewer — the navigations that unmount this composer. The
-  // composer only observes the session through narrow store selectors and
-  // drives it through the store-registered `starter`/`controls` seams.
-  // Version gate for the entry point (NOT for an already-live session — see
-  // the ownership note below). Replaces the retired `voice-mode` flag, whose
-  // fail-closed default kept the button hidden on assistants too old to
-  // declare it.
+  // ---- Live voice: entry is eligibility-gated; ChatLayout owns the controller ----
   const supportsLiveVoice = useSupportsLiveVoice(assistantId);
   const liveVoiceState = useLiveVoiceStore.use.state();
   const liveVoiceAssistantAudioActive =
@@ -401,86 +337,30 @@ export function ChatComposer({
   const liveVoiceOnToolStep = useLiveVoiceStore(isOnToolStep);
   const liveVoiceError = useLiveVoiceStore.use.error();
   const liveVoiceErrorRecovery = useLiveVoiceStore.use.errorRecovery();
-  // Whether any session is live anywhere (this thread or another). `failed`
-  // is a retryable/inactive state, so it must count as inactive — otherwise
-  // dictation would stay unavailable after a failed start.
+  // Any session live anywhere; `failed` counts as inactive.
   const isLiveVoiceSessionLive = isLiveVoiceSessionActive(liveVoiceState);
-  // Whether THIS composer owns the active session — its conversation matches
-  // the session's, or the session was started from this composer's draft.
-  // Ownership scopes the surface swap: a session started in thread A must
-  // not hijack thread B's composer — B keeps its normal row and the
-  // title-bar pill is the session surface there (exactly one of the two
-  // renders at any time; see `isLiveVoiceSessionOwnedBy`).
-  //
-  // Deliberately based on session state + ownership alone — NOT on the
-  // entry-point eligibility (the version gate / a non-null `assistantId`) —
-  // so a mid-session eligibility drop (version re-fetch, `assistantId`
-  // transiently cleared) can't unmount the
-  // voice bar while the session keeps the mic/socket live: the bar's ✕ stays
-  // available until teardown completes. `showVoiceInput` (static per variant)
-  // scopes the swap to the voice-enabled composer — the app-editing variant
-  // shares the global live-voice store but must never swap its row.
+  // Owner of the active session (see `isLiveVoiceSessionOwnedBy`); blind to eligibility on purpose.
   const ownsLiveVoiceSession = useIsLiveVoiceSessionOwnedBy(conversationId);
   const isLiveVoiceActive = showVoiceInput && ownsLiveVoiceSession;
-  // What the minimized bar paints itself with, from the session assistant's
-  // avatar — the same hook the room and the header pill resolve their fill
-  // through, so the three surfaces can never disagree about the session's
-  // color. Fetch-gated to live sessions; the query is shared with every other
-  // avatar consumer.
-  //
-  // The paint stops at the bar. The composer card underneath keeps the app's
-  // normal surface, because the card is a working input during a session now
-  // (see the bar's placement below), and an input painted in the room's color
-  // reads as part of the room rather than as somewhere to type.
+  // The bar paints from the session avatar — the same hook as the room and
+  // pill, so the three can't disagree. The card underneath stays normal.
   const voiceSurfacePaint = useVoiceSurfacePaint();
   // The two mute states (controller-published) behind the block's toggles: one
   // per direction of the conversation, like the room's.
   const liveVoiceMuted = useLiveVoiceStore.use.muted();
   const liveVoiceOutputMuted = useLiveVoiceStore.use.outputMuted();
-  // The composer no longer renders the user's own speech: the textarea is a
-  // live input for the whole session now, so there is no cell to stream it
-  // into without taking typing away again. "Show the words you say" is served
-  // by the room's own transcript (`VoiceAmbientTranscript`), which is where a
-  // user who wants to watch their words is looking; minimizing is the gesture
-  // that puts them back on the thread instead.
-  // Session verbs go through the store seams registered by the layout-owned
-  // controller: `starter` (registered for the controller's whole mount) to
-  // start, per-session `controls` to end/interrupt — the latter via the shared
-  // module-level `endLiveVoiceSession` helper, which
-  // read the store with `getState()` per STATE_MANAGEMENT.md (no subscription
-  // needed for callback-only reads).
-  // First-run interception: the very first voice-mode entry opens a
-  // preferences card (see `VoiceFirstRunCard`) instead of starting the
-  // session, so the user chooses their transcript prefs before listening
-  // begins. Every subsequent entry (`firstRunSeen === true`) starts directly
-  // — the card and the engine stay decoupled. The app-editing variant (no
-  // voice entry point) never renders the card.
+  // Textarea stays live during a session; speech lives in `VoiceAmbientTranscript`.
   const firstRunCardOpen = useLiveVoiceStore((state) => state.firstRunCardOpen);
-  // Where the user tapped to start — captured at click so the room's entrance
-  // grows from the on-screen control, not screen-center. Stashed here because
-  // the first-run card path defers the actual start to its own handler.
+  // Tap origin for the room's entrance animation (the first-run path defers).
   const liveVoiceEntryOriginRef = useRef<{ x: number; y: number } | null>(null);
   const navigate = useNavigate();
-  // Window-lifetime, not mount-time: the composer is a per-route component
-  // that can remount after an in-window navigation has dropped `?popout=1`,
-  // so a mount-time capture could misread a pop-out as a main window and ship
-  // a dead expand-to-room control (pop-outs never render the voice room).
+  // Window-lifetime read: the composer can remount after `?popout=1` drops.
   const isPopout = isPopoutWindowLifetime();
-  // "Configure voice" copy surfaced when the pre-open preflight returns
-  // `not-ready` — the daemon's human-readable `userMessage`. Non-null renders
-  // the notice below (with a deep-link to voice settings) and the room stays
-  // closed. Cleared on dismiss or on the next successful start.
+  // "Configure voice" copy from a `not-ready` preflight; non-null keeps the room closed.
   const voiceConfigNotice = useLiveVoiceStore((state) => state.configNotice);
-  // Re-entrancy guard: the preflight is awaited before the room opens, so a
-  // second click while it's in flight must be ignored (else two sessions could
-  // race to start). A ref, not state — this must gate synchronously and never
-  // trigger a re-render.
+  // Re-entrancy guard for the awaited preflight (ref: synchronous, no re-render).
   const liveVoicePreflightPendingRef = useRef(false);
-  // Latest chat identity, re-read after the preflight await. The awaiting
-  // callback holds the assistant/conversation captured when it was created, so
-  // a user who switches chats (or leaves) mid-flight would otherwise resume and
-  // bind the room to the chat they left. Kept in a ref so the check sees the
-  // current render's values rather than the closure's.
+  // Re-read after the preflight await, so a mid-flight chat switch can't bind the room to the old chat.
   const liveVoiceChatIdentityRef = useRef({
     assistantId,
     conversationId,
@@ -497,16 +377,10 @@ export function ChatComposer({
     if (!assistantId || liveVoicePreflightPendingRef.current) {
       return;
     }
-    // WebKit's media-element playback permission is transient. Reserve and
-    // prewarm the controller-owned player synchronously from this gesture,
-    // before the readiness request yields to the event loop.
+    // Prewarm the player inside the gesture — WebKit's playback permission is transient.
     const starter = useLiveVoiceStore.getState().starter;
     starter?.prewarm();
-    // Gate the open on the daemon's readiness verdict BEFORE starting, so the
-    // room never flashes open then immediately closes for a user with no
-    // usable STT/TTS provider. The daemon runs cloud-speech defaulting as
-    // part of the preflight, so a user who *can* be auto-configured comes back
-    // `ready` here.
+    // Gate on the daemon's readiness verdict (which also runs cloud-speech defaulting).
     liveVoicePreflightPendingRef.current = true;
     let readiness;
     try {
@@ -522,10 +396,7 @@ export function ChatComposer({
     } finally {
       liveVoicePreflightPendingRef.current = false;
     }
-    // The user may have moved to another chat while the POST was in flight.
-    // Drop the result entirely rather than opening a room bound to the chat
-    // they left — and skip the notice too, which would otherwise surface
-    // against whatever conversation they navigated to.
+    // A mid-flight chat switch drops the result (and its notice) entirely.
     const latest = liveVoiceChatIdentityRef.current;
     if (
       latest.assistantId !== assistantId ||
@@ -540,31 +411,20 @@ export function ChatComposer({
       starter?.cancelPrewarm();
       return;
     }
-    // Only an explicit `not-ready` closes the door; see `voiceReadiness` for
-    // why a failed preflight allows the start instead of blocking it. The
-    // notice is published here rather than inside the guard so the staleness
-    // checks above get to decide the answer is still wanted.
+    // Only an explicit `not-ready` closes the door (see `voiceReadiness`).
     if (!readiness.allowed) {
       starter?.cancelPrewarm();
       publishConfigNotice(readiness.notice);
       return;
     }
     publishConfigNotice(null);
-    // Grow the room's entrance from the assistant avatar the user sees — the
-    // empty-state greeting avatar, or the latest-turn avatar below the most
-    // recent response (both tagged `data-voice-origin`). Fall back to the
-    // tapped voice button, then to screen-center (null).
+    // Grow the entrance from the tagged `data-voice-origin` avatar; fallbacks: button, center.
     const origin =
       measureVoiceOriginAvatar() ?? liveVoiceEntryOriginRef.current;
     // Publish the origin BEFORE starting; the controller carries it across its
     // start-time `reset()` (see the live-voice store's `entryOrigin`).
     setLiveVoiceEntryOrigin(origin);
-    // Read off `latest`, not off the render that opened this callback: the
-    // preflight above is a network round trip, and a conversation that filled
-    // up across it must not be seeded as if it were still blank. Unlike the
-    // assistant/conversation mismatch this is not a reason to abandon the
-    // start, only a reason to open silent, so it is decided here rather than
-    // in the staleness guard.
+    // Read off `latest`: the preflight was a round trip; a filled thread opens silent, not abandoned.
     starter?.start(assistantId, conversationId ?? null, {
       entry: "composer",
       seedText: voiceEntryGreetingSeed(latest.conversationIsEmpty),
@@ -595,17 +455,12 @@ export function ChatComposer({
     if (!assistantId) {
       return;
     }
-    // Prewarm from inside the click, before any await: WebKit's playback
-    // permission belongs to the gesture, and `startLiveVoiceSession` below
-    // runs after a network round trip, by which time the gesture is spent.
+    // Prewarm inside the gesture; `startLiveVoiceSession` runs after a round trip.
     useLiveVoiceStore.getState().starter?.prewarm();
     const reclaim = new AbortController();
     liveVoiceReclaimRef.current?.abort();
     liveVoiceReclaimRef.current = reclaim;
-    // The result is not branched on: whether the slot was already free or the
-    // call failed, the next move is to try to start, and the start handshake
-    // reports anything still wrong. A second error in front of someone
-    // escaping the first one helps nobody.
+    // Not branched on: the start handshake reports anything still wrong.
     await endLiveVoiceSessionOnAssistant(assistantId, reclaim.signal);
     if (liveVoiceReclaimRef.current === reclaim) {
       liveVoiceReclaimRef.current = null;
@@ -630,27 +485,11 @@ export function ChatComposer({
         return;
       }
       liveVoiceEntryOriginRef.current = origin ?? null;
-      // A soft keyboard is the only thing worth dropping focus for: it would
-      // otherwise stay raised under a room that takes the whole screen. Read at
-      // press time rather than from render, since a convertible can gain or lose
-      // its keyboard between the two.
-      //
-      // Everywhere else the focus stays put. A pointing device or a keyboard
-      // entry leaves focus on the button, and a `not-ready` verdict never opens
-      // the room at all: it raises a "Configure voice" action that the user then
-      // has to reach, which is a good deal harder from the body. The textarea by
-      // name for the same reason, so nothing else can be blurred by accident.
+      // Drop focus only for the soft keyboard; everywhere else it stays put.
       if (isPointerCoarse()) {
         inputRef.current?.blur();
       }
-      // First-run preferences card — shown on the first-ever voice entry on
-      // EVERY platform, the Capacitor iOS shell included (web↔iOS parity for the
-      // welcome card), and dismissible on all of them. The card precedes the
-      // live-voice `getUserMedia` alert, so `docs/CAPACITOR.md` § OS permission
-      // requests governs it: dismissing cancels outright and never reaches
-      // `getUserMedia`, so the only path that does reach the alert is still
-      // the direct one ("Start talking"). A widget or Siri launch can open
-      // the card by accident; dismiss is how that user gets out.
+      // First-run prefs card, every platform; dismissing cancels before `getUserMedia`.
       if (firstRunCardIntercepts()) {
         return;
       }
@@ -666,10 +505,7 @@ export function ChatComposer({
 
   const pointerCoarse = useMemo(() => isPointerCoarse(), []);
 
-  // The compact row and everything in it follow the window's width; what the
-  // plus opens follows the input. A narrowed desktop or Electron window keeps
-  // the row, and still wants the picker a mouse can drive. See
-  // `docs/CLOUD_ADAPTATION.md`.
+  // Row follows window width; what the plus opens follows the input.
   const isMobile = useIsMobile();
   const isNative = useIsNativePlatform();
   const isElectronHost = isElectron();
@@ -683,9 +519,7 @@ export function ChatComposer({
     onSubmitRef.current = onSubmit;
   });
 
-  // Cursor position at the time of the last text change, used to derive the
-  // emoji popup's trigger text. Updated in onChange and programmatic setInput
-  // calls; defaults to end-of-input for the initial render.
+  // Cursor position for the emoji popup's trigger text.
   const cursorRef = useRef(input.length);
 
   // The Doctor is cloud-hosted only, so `/doctor` is not offered when the
@@ -709,8 +543,7 @@ export function ChatComposer({
     search: searchSlashCommands,
   });
 
-  // Cursor position is a DOM property tracked via onSelect; using state
-  // would re-render on every cursor movement.
+  // DOM-tracked via onSelect — state would re-render on every cursor move.
   // eslint-disable-next-line react-hooks/refs
   const textBeforeCursor = input.slice(0, cursorRef.current);
   const searchEmoji = useEmojiSearch();
@@ -764,67 +597,25 @@ export function ChatComposer({
     phase === "queued" || phase === "thinking" || phase === "streaming";
   const showInlineVoicePreview =
     isVoiceActive && !isLocallyGenerating && !isElectronHost;
-  // Dictation's inline preview takes the textarea's place on native. A
-  // live-voice session does not: its bar sits above the card and the composer
-  // stays a working composer underneath, so the user can type and send
-  // mid-session.
+  // Dictation's preview takes the textarea's place; a live session's bar doesn't.
   const hideTextareaForVoice = isNative && showInlineVoicePreview;
-  // Staged context is anything that makes an empty input sendable: staged
-  // quotes, or the one channel reference pinned above this composer. Both are
-  // read from their stores here, the same way attachments are, so the send
-  // button, the Enter policy, and `useComposerSubmit`'s own guard all answer
-  // "is there something to send" from the same state.
+  // Staged context (quotes, the pinned channel ref) makes an empty input sendable.
   const hasStagedQuotes = useQuoteReplyStore.use.stagedQuotes().length > 0;
   const hasStagedContext = hasStagedQuotes;
   const canSendMessageContent =
     Boolean(input.trim()) || canSendAttachments || hasStagedContext;
-  // A turn in flight keeps the row in its resting shape (attach, dictation,
-  // voice, Send): the message the user types stops that turn and is answered
-  // at once, so Send stays where it is and pressing it interrupts and sends in
-  // one move. The send slot is the exception, since a Send that cannot be
-  // pressed is no such gesture: it holds Stop there (`showStopInSendSlot`),
-  // which is the only way to end a turn without sending something.
-  // Words already spoken are content the composer does not hold yet, so the
-  // composer's own dictation session makes the send slot pressable on its
-  // own: Send there means "finish, then send", and `useComposerSubmit`
-  // awaits the transcript before it reads the draft (LUM-3432). Without this
-  // the send arrow stays disabled, or cedes the slot to voice mode, for the
-  // whole of an empty-composer dictation, which is most of them.
-  // Deliberately not folded into `canSendMessageContent`: the busy row's
-  // stop/send swap below is about a draft that is ready to queue right now,
-  // and a session still being spoken is not that.
+  // Busy row keeps its shape; dictation Send = "finish, then send" (LUM-3432).
   const canSendOrFinishDictation = canSendMessageContent || ownsDictation;
-  // Whether the send arrow, wherever it stands, can be pressed. The one answer
-  // for the slot's own button and for the stop that takes the slot when there
-  // is no press to make.
+  // One pressability answer for the slot's button and its Stop.
   const sendBlocked =
     sendDisabled || attachmentsUploadingCount > 0 || !canSendOrFinishDictation;
-  // A pressable Send is the interrupt, so Stop takes the send slot exactly
-  // while there is no press to make: an empty composer, an attachment still
-  // uploading, a prompt holding the send. Without it those rows leave a
-  // running turn with no end the user can reach.
-  //
-  // A live-voice session this composer owns keeps the slot as it rests: the bar
-  // above the card owns that session and the turn it is speaking.
+  // Stop takes the send slot exactly while there is no press to make; an owned
+  // live-voice session keeps the slot as it rests.
   const showStopInSendSlot =
     isAssistantBusy && !isLiveVoiceActive && sendBlocked;
-  // Voice mode occupies the send slot while there is nothing to send: the
-  // send arrow only earns that spot once the message has content. Eligibility
-  // is a voice-enabled composer + a bound assistant new enough to serve live
-  // voice, so the slot falls back to the disabled send arrow whenever voice
-  // mode is unavailable. The version gate replaces the retired `voice-mode`
-  // flag, which used to hide the entry point on older assistants by failing
-  // closed — see `use-supports-live-voice.ts`.
-  // Dictation is gone from the row while this composer owns a live session:
-  // two mic capture flows can't run at once, and a permanently dead mic button
-  // sitting under a live voice bar reads as a broken control rather than an
-  // unavailable one. The bar's own mic (mute) is the mic that matters there.
+  // Voice mode occupies the send slot while there is nothing to send.
   const showDictationButton = showVoiceInput && !isLiveVoiceActive;
-  //
-  // Suppressed while this composer owns a live session: the bar above is the
-  // session's control, so the slot would offer a second, dead entry point into
-  // the thing already running. The send arrow takes the slot back instead,
-  // which is the control that matters now that the input works mid-session.
+  // Suppressed during an owned live session — the bar above is the control.
   const showVoiceModeInSendSlot =
     showVoiceInput &&
     Boolean(assistantId) &&
@@ -836,10 +627,7 @@ export function ChatComposer({
   const isMainComposer = Boolean(configuration);
   const isMobileMainComposer = isMobile && isMainComposer;
 
-  // No longer suppressed during a live-voice session: it was suppressed
-  // because the streaming speech rendered in the ghost-suffix mirror's own
-  // grid cell, and nothing renders there now. The textarea is an ordinary
-  // input for the session's duration, so it keeps its ordinary suggestion.
+  // Not suppressed during a live session — the textarea is an ordinary input now.
   const ghostSuffix = useMemo(
     () =>
       computeGhostSuffix({
@@ -852,9 +640,7 @@ export function ChatComposer({
   );
 
   const [addSheetOpen, setAddSheetOpen] = useState(false);
-  // Latched on the first open and never reset. The sheet closes itself before
-  // it hands off to the OS picker, so a shell that crossed the breakpoint while
-  // that picker was up would take the sheet's hidden inputs with it.
+  // Latched: the sheet closes before the OS picker opens, so a width flip can't strand it.
   const [addSheetEverPresented, setAddSheetEverPresented] = useState(false);
   const handleAddSheetOpenChange = useCallback((open: boolean) => {
     if (open) {
@@ -865,31 +651,10 @@ export function ChatComposer({
   // Subscribed rather than read once: a convertible whose keyboard comes off
   // mid-session changes whether a press on the row carries focus with it.
   const pointerCoarseNow = usePointerCoarse();
-  // Two shells want a list of their own, for different reasons.
-  //
-  // A shell holding the native pickers wants one because its rows go straight
-  // to the surface they name: the photo row opens the system photo picker and
-  // the files row the document browser, neither of which a file input can
-  // reach. Without them a row can only raise the OS chooser the plain input
-  // already raises, which is a list in front of a list.
-  //
-  // The Android shell wants one either way. Capacitor's
-  // `BridgeWebChromeClient` only reaches a camera intent when the input
-  // carries `capture` AND an `image/*` or `video/*` accept
-  // (`onShowFileChooser`); anything else goes straight to `ACTION_GET_CONTENT`,
-  // which is a document picker with no way to take a photo. WebKit's own sheet
-  // offers the camera for a bare input, and Android in a browser gets
-  // Chromium's chooser, which does the same.
-  //
-  // Read rather than subscribed: neither the shell a session runs in nor the
-  // plugins its build links can change mid-session.
+  // Custom list for native-picker shells (Android needs `capture` + media accept).
   const isNativeAndroidShell = useIsNativeAndroid();
   const nativePickers = nativeAttachmentPickersAvailable();
-  // iOS with the native pickers uses the sheet at every width. A bare file
-  // input is what a wide layout would otherwise open, and WebKit's menu for
-  // one includes Take Photo or Video, which takes the microphone and moves
-  // Bluetooth onto the headset profile. A shell without the plugin keeps that
-  // menu: the web bundle cannot add a photo picker the binary lacks.
+  // iOS with native pickers uses the sheet at every width (WebKit's own menu steals the mic).
   const iosNativeAttach = isNativeIOS() && nativePickers;
   const usesAddSheet =
     iosNativeAttach || (isMobile && (isNativeAndroidShell || nativePickers));
@@ -902,33 +667,20 @@ export function ChatComposer({
     ? preventPressFocusTransfer
     : undefined;
 
-  // The picker behind both attach controls, through one hook so the iOS
-  // refocus dance is identical on either. Where the OS menu already offers the
-  // camera, the photo library and the file browser, this is the whole flow.
-  // Owned by the composer rather than by the control that opens it, so a width
-  // or pointer change while the OS picker is up cannot unmount the input under
-  // it and drop the selection.
+  // One picker hook behind both attach controls, composer-owned so a width flip can't unmount it.
   const { openPicker: openAttachPicker, inputNode: attachPickerInput } =
     useAttachmentFilePicker({
       onFiles: onAddAttachmentFiles,
       multiple: true,
     });
 
-  // The camera a Home Screen widget's button asks for. Owned here for the same
-  // reason as the picker above, and gated to the `ChatMainPanel` composer so a
-  // one-shot park is never spent by the onboarding tour's. That gate leaves
-  // exactly one taker: `ChatMainPanel` renders on either the app-editing
-  // branch or the plain chat branch, never both.
+  // The widget's camera; gated to `ChatMainPanel` so the tour can't spend it.
   const { overlayNode: cameraDeepLinkOverlay } = useCameraDeepLink({
     onFiles: onAddAttachmentFiles,
     enabled: isMainComposer,
   });
 
-  // Whether a banner is standing over the card. Read off the box rather than
-  // derived from props: most of that stack arrives through
-  // `noticesAboveFormSlot`, an opaque node, and the composer-owned notices in
-  // it source their own state, so what the box holds is the one answer that
-  // covers all of them at once.
+  // Banner presence, read off the box (the slot's notices are opaque nodes).
   const bannerStackRef = useRef<HTMLDivElement>(null);
   const [hasBannerAboveCard, setHasBannerAboveCard] = useState(false);
   const readBannerStack = useCallback(() => {
@@ -937,14 +689,9 @@ export function ChatComposer({
       setHasBannerAboveCard(node.childElementCount > 0);
     }
   }, []);
-  // On every commit, so a banner that arrives with a render of this composer
-  // (the slot above, or a notice keyed on state it already subscribes to)
-  // settles in that same commit rather than a frame later.
+  // Every commit, so a banner settles in the same frame as its render.
   useLayoutEffect(readBannerStack);
-  // The backstop for the rest: `ComposerDraftNotices` sources its own state,
-  // and its restored-draft notice comes and goes without this composer
-  // rendering at all. `childList` alone, since every notice in there is an
-  // element of its own.
+  // Backstop for `ComposerDraftNotices`'s self-sourced state; `childList` only.
   useLayoutEffect(() => {
     const node = bannerStackRef.current;
     if (!node) {
@@ -957,10 +704,7 @@ export function ChatComposer({
     };
   }, [readBannerStack]);
 
-  // A pill at mobile widths (half the card's 52px collapsed height), the 10px
-  // panel elsewhere, both shared with the live-voice bar: it stacks on this
-  // card and has to wear whichever corner the card is showing. The banner
-  // variants stay literal, since a bottom-only corner is not the same class.
+  // Pill at mobile widths, 10px panel elsewhere; shares the live-voice bar's corners.
   const cardShapeClass = isMobile
     ? hasBillingBanner
       ? "rounded-b-[26px]"
@@ -969,15 +713,10 @@ export function ChatComposer({
       ? "rounded-b-[10px]"
       : COMPOSER_RADIUS_CLASS;
 
-  // One 24px line inside 8px of padding is the 40px the mobile row's buttons
-  // stand at, which centres the placeholder on them and holds the collapsed
-  // card at 52px.
+  // 24px + 8px padding = the 40px the mobile buttons stand at; card stays 52px.
   const textFieldPaddingClass = isMobile ? "px-2 py-2" : "px-4 pt-3 pb-2";
 
-  // ---- Mobile draft geometry --------------------------------------------
-  // One question the draft's own text cannot answer: whether it still fits the
-  // one line the inline row gives it. Measured after commit, from the boxes
-  // below.
+  // ---- Mobile draft geometry: does the draft still fit its one line? ----
   const mobileRowRef = useRef<HTMLDivElement>(null);
   const inlineActionsStartRef = useRef<HTMLDivElement>(null);
   const inlineActionsEndRef = useRef<HTMLDivElement>(null);
@@ -991,11 +730,7 @@ export function ChatComposer({
       setIsMultilineDraft(false);
       return;
     }
-    // The span between the two control clusters. They keep their widths and
-    // their line through the change, so this is the width the draft has on the
-    // inline row whichever layout is currently up: the fixed reference the
-    // stacked layout has to be judged against to settle (see
-    // `isDraftPastOneLine`).
+    // The fixed span between control clusters — `isDraftPastOneLine`'s reference.
     const inlineWidthPx =
       end.getBoundingClientRect().left -
       start.getBoundingClientRect().right -
@@ -1035,10 +770,7 @@ export function ChatComposer({
     return () => observer.disconnect();
   }, [isMobile]);
 
-  // Mobile hands the attach flow to a plus, which opens the same native picker
-  // the desktop paperclip does, or the sheet where that menu cannot offer a
-  // camera without taking the microphone. Attachment controls share the same
-  // availability gate.
+  // Mobile's plus opens the same picker/sheet as the paperclip; one availability gate.
   const attachDisabled = typingDisabled || !assistantId;
   const configurationPickers = useComposerAttachmentPickers({
     onOpenChange: configuration?.setOpen ?? handleAddSheetOpenChange,
@@ -1083,10 +815,7 @@ export function ChatComposer({
     <VoiceInputButton
       ref={voiceInputRef}
       assistantId={assistantId}
-      // Mutual exclusion: a live-voice session in another thread must block
-      // dictation, or two mic capture flows could run at once. (This
-      // composer's own session takes the button away entirely, see
-      // `showDictationButton`.)
+      // A session in another thread blocks dictation (two mics can't run).
       disabled={typingDisabled || isLiveVoiceSessionLive}
       onTranscript={onVoiceTranscript}
       onInterimTranscript={onVoiceInterimTranscript}
@@ -1098,9 +827,7 @@ export function ChatComposer({
     />
   ) : null;
 
-  // The row's one Stop, in the chrome the send slot wears while the turn's
-  // own Send has nothing to press: the only way to end a turn without
-  // sending something.
+  // The row's one Stop, in the send slot's chrome.
   const stopControl = (
     <Button
       variant="primary"
@@ -1114,25 +841,11 @@ export function ChatComposer({
     />
   );
 
-  // The send arrow stays through a dictation session, where pressing it means
-  // "finish, then send": `useComposerSubmit` ends the session and waits for
-  // the transcript before it reads the draft (LUM-3432). It used to be hidden
-  // for the whole session (macOS parity), which left the mic button as the
-  // only control on the row and no gesture at all for ending dictation and
-  // sending in one move -- while Enter stayed live and sent whatever stale
-  // draft was in the box. The two controls now divide the job: the mic stops
-  // and leaves the words in the composer, the arrow stops and sends them.
-  // Otherwise the slot holds voice mode until there is something to send, at
-  // which point the send arrow takes over. Stop outranks both while it claims
-  // the slot: a running turn the row cannot send into leaves ending that turn
-  // as the move the user is reaching for.
+  // Send stays through dictation: "finish, then send" (LUM-3432). Stop outranks.
   const sendSlot = showStopInSendSlot ? (
     stopControl
   ) : showVoiceModeInSendSlot ? (
-    // Session entry point: once a session starts here the slot gives way to
-    // the send arrow and the bar above the card owns stopping. Disabled while
-    // dictation is active or a live-voice session already runs elsewhere, so a
-    // second mic/voice capture can't open alongside it.
+    // Entry point; gives way to Send once a session starts here.
     <LiveVoiceButton
       onStart={handleLiveVoiceStart}
       disabled={typingDisabled || isVoiceActive || isLiveVoiceSessionLive}
@@ -1163,9 +876,7 @@ export function ChatComposer({
   );
 
   const inlineVoicePreview = showInlineVoicePreview ? (
-    // Non-Electron fallback: Electron uses the shared top-center dictation
-    // overlay for both focused and global recording. Browser/iOS hosts keep
-    // this inline waveform because the overlay bridge no-ops there.
+    // Non-Electron fallback (the overlay bridge no-ops outside Electron).
     <div
       className={hideTextareaForVoice ? "px-2 pt-3" : "px-2"}
       aria-label={
@@ -1195,17 +906,8 @@ export function ChatComposer({
     </div>
   ) : null;
 
-  // CSS Grid hidden-mirror technique for an auto-growing textarea. A hidden
-  // div mirrors the textarea content in the same grid cell, so the grid
-  // auto-sizes to max(mirror_height, textarea_intrinsic_height) and the
-  // textarea stretches to fit with no JS height measurement. That avoids the
-  // iOS WKWebView re-dispatch bug entirely: no DOM geometry mutation means no
-  // re-fired input events.
-  // https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/
-  //
-  // One element serves both layouts (the mobile row wraps it, the desktop card
-  // stacks it above the action row), so a breakpoint swap can't strand the
-  // draft or the caret in a second textarea.
+  // CSS Grid hidden-mirror autogrow (https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/)
+  // — no JS height measurement, so no WKWebView re-dispatch bug. One element serves both layouts.
   const textFieldBlock = (
     <div
       className={
@@ -1216,9 +918,7 @@ export function ChatComposer({
                 "grid min-w-0",
                 isMultilineDraft
                   ? // Past one line the block takes the row's whole width and
-                    // steps ahead of the controls, which wrap into a row of
-                    // their own beneath it. The 2px lands the text on the
-                    // card's 12px inset, where the plus below it already sits.
+                    // The 2px lands the text on the card's 12px inset.
                     "order-first basis-full pl-0.5"
                   : "flex-1",
               )
@@ -1226,15 +926,8 @@ export function ChatComposer({
       }
     >
       {isMobile && (
-        // What the row asks whether the draft still fits its one line: the
-        // same text with nothing to wrap it, in a box with no width of its
-        // own, so `scrollWidth` reports what the draft would take unbroken.
-        // The autogrow mirror below cannot answer that, since it wraps, and
-        // its width is the very thing the answer decides.
-        //
-        // The suggestion is deliberately left out. It is somebody else's text
-        // arriving on its own schedule, and restructuring the composer around
-        // it would move the card under the user mid-sentence.
+        // Unwrapped `scrollWidth` measures the one-line fit (the mirror wraps);
+        // the suggestion is deliberately excluded so the card never jumps.
         <div
           ref={draftProbeRef}
           aria-hidden
@@ -1270,10 +963,7 @@ export function ChatComposer({
           const value = e.target.value;
           cursorRef.current = e.target.selectionStart ?? value.length;
           setInput(value);
-          // The user has edited the text, so it's no longer a pristine
-          // restored draft, so retire the "draft restored" marker (and its
-          // notice). Keeps `restoredDraftConversationId` an accurate
-          // signal for "unedited restored draft" (see use-deep-link-consumer).
+          // An edit retires the "draft restored" marker.
           if (
             useComposerStore.getState().restoredDraftConversationId !== null
           ) {
@@ -1423,9 +1113,7 @@ export function ChatComposer({
           }
         }}
         placeholder={ghostSuffix ? "" : placeholder}
-        // A live-voice session leaves this alone: the bar above owns
-        // the session, and typing alongside it is the point of moving
-        // the bar out of the card.
+        // A live-voice session leaves this alone — the bar above owns it.
         disabled={typingDisabled}
         rows={1}
         className={`col-start-1 row-start-1 w-full resize-none overflow-y-auto border-none bg-transparent text-chat text-[var(--content-default)] placeholder:text-[var(--content-disabled)] focus:outline-none disabled:opacity-50 ${textFieldPaddingClass}`}
@@ -1437,12 +1125,7 @@ export function ChatComposer({
   return (
     <>
       {firstRunCardOpen && (
-        // First voice-mode entry only — the card commits prefs + starts via
-        // `handleFirstRunStart`; a plain dismiss cancels without consuming the
-        // first run, so it returns on the next entry. Dismissible on every
-        // platform, Capacitor iOS included: the card precedes the live-voice
-        // `getUserMedia` alert, and `docs/CAPACITOR.md` § OS permission requests
-        // allows a pre-prompt whose decline path never reaches the gated API.
+        // First entry only; dismiss cancels without consuming the first run.
         <VoiceFirstRunCard
           assistantId={assistantId}
           onStart={handleFirstRunStart}
@@ -1531,11 +1214,7 @@ export function ChatComposer({
         {noticesAboveFormSlot}
       </div>
       {isLiveVoiceActive && (
-        // The minimized session surface, directly above the composer card
-        // rather than in place of it: the session gets a bar, the user keeps a
-        // working chat input. ✕ ends the session, ⤢ grows it back into the
-        // room (omitted in pop-out windows, where the room never renders and
-        // the standalone pill is the only other surface).
+        // The minimized session bar, above the card — ✕ ends, ⤢ grows back into the room.
         <div className="mb-2">
           <VoiceComposerBar
             state={liveVoiceState}
@@ -1619,9 +1298,7 @@ export function ChatComposer({
                         ref={mobileRowRef}
                         className={cn(
                           "flex items-end py-1.5 pl-0.5 pr-1.5",
-                          // 4px against the field's own 8px of bottom padding
-                          // is the 12px the design leaves between the draft
-                          // and the controls.
+                          // 4px + the field's 8px = the 12px to the controls.
                           isMultilineDraft && "flex-wrap gap-y-1",
                         )}
                       >
@@ -1631,9 +1308,7 @@ export function ChatComposer({
                           className="flex shrink-0 items-end"
                         >
                           {contextWindowIndicatorSlot ? (
-                            // A bare slot in an `items-end` row sits flush on
-                            // the card's bottom edge; a control-height box
-                            // centres it against the glyphs beside it instead.
+                            // Control-height so the slot centres against its glyphs.
                             <div className="mr-1 flex h-10 shrink-0 items-center">
                               {contextWindowIndicatorSlot}
                             </div>
@@ -1726,11 +1401,7 @@ export function ChatComposer({
           {cameraDeepLinkOverlay}
           {configuration && configurationPickers.inputs}
           {!configuration && (usesAddSheet || addSheetEverPresented) && (
-            // The sheet's own three inputs, beside the form for the same
-            // reason. The latch keeps a sheet that has ever been presented
-            // mounted for the rest of the session: its rows close it before
-            // launching the OS picker, and a width change while that picker was
-            // up would otherwise unmount the input still waiting for the pick.
+            // The sheet's three inputs, latch-mounted so a width flip can't strand the pick.
             <AddToChatSheet
               open={addSheetOpen}
               onOpenChange={handleAddSheetOpenChange}

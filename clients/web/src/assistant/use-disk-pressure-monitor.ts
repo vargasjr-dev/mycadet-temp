@@ -1,4 +1,4 @@
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useCallback, useEffect, useState } from "react";
 
 import type { DiskPressureStatus } from "@mycadet/assistant-api";
@@ -44,8 +44,6 @@ export function useDiskPressureMonitor({
   refreshKey,
   cadenceMs = DISK_PRESSURE_POLL_INTERVAL_MS,
 }: UseDiskPressureMonitorOptions = {}): UseDiskPressureMonitorResult {
-  // The monitor rides the active assistant — the id is the store's.
-  const assistantId = useActiveAssistantId();
   const [isAcknowledging, setIsAcknowledging] = useState(false);
   const [acknowledgeError, setAcknowledgeError] = useState<Error | null>(null);
 
@@ -55,7 +53,6 @@ export function useDiskPressureMonitor({
   }, []);
 
   const monitor = useAssistantStatusMonitor({
-    assistantId,
     refreshKey,
     cadenceMs,
     fetchStatus: getAssistantDiskPressureStatus,
@@ -66,25 +63,14 @@ export function useDiskPressureMonitor({
     onStatusEvent: resetAcknowledgement,
   });
 
-  const {
-    applyStatusForAssistant,
-    bumpGeneration,
-    clearStatus,
-    isCurrentRequest,
-  } = monitor;
+  const { applyStatusForAssistant, bumpGeneration, isCurrentRequest } = monitor;
 
   useEffect(() => {
     resetAcknowledgement();
   }, [resetAcknowledgement]);
 
   const acknowledge = useCallback(async () => {
-    const requestedAssistantId = assistantId;
-
-    if (!requestedAssistantId) {
-      clearStatus();
-      return;
-    }
-
+    const requestedAssistantId = getActiveAssistantId();
     const generation = bumpGeneration();
     setIsAcknowledging(true);
     setAcknowledgeError(null);
@@ -96,35 +82,24 @@ export function useDiskPressureMonitor({
         throw new Error(ACKNOWLEDGE_FAILURE_MESSAGE);
       }
 
-      if (!isCurrentRequest(requestedAssistantId, generation)) {
+      if (!isCurrentRequest(generation)) {
         return;
       }
 
-      applyStatusForAssistant(
-        requestedAssistantId,
-        result.data.status,
-        true,
-        bumpGeneration(),
-      );
+      applyStatusForAssistant(result.data.status, true, bumpGeneration());
       setIsAcknowledging(false);
     } catch (error) {
-      if (isCurrentRequest(requestedAssistantId, generation)) {
+      if (isCurrentRequest(generation)) {
         setAcknowledgeError(
           errorFromUnknown(error, ACKNOWLEDGE_FAILURE_MESSAGE),
         );
       }
     } finally {
-      if (isCurrentRequest(requestedAssistantId, generation)) {
+      if (isCurrentRequest(generation)) {
         setIsAcknowledging(false);
       }
     }
-  }, [
-    assistantId,
-    applyStatusForAssistant,
-    bumpGeneration,
-    clearStatus,
-    isCurrentRequest,
-  ]);
+  }, [applyStatusForAssistant, bumpGeneration, isCurrentRequest]);
 
   return {
     status: monitor.status,

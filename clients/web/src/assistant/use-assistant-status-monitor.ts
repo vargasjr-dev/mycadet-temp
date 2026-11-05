@@ -1,9 +1,8 @@
 /**
- * Generic per-assistant status monitor: polls a daemon status endpoint on a
- * fixed cadence, refetches on `app.resume`, and applies daemon-pushed SSE
- * updates, with generation/request-id race guards so a stale response can
- * never overwrite a newer snapshot after the assistant or enabled flag
- * changes mid-flight.
+ * Generic status monitor for the active assistant: polls a daemon status
+ * endpoint on a fixed cadence, refetches on `app.resume`, and applies
+ * daemon-pushed SSE updates, with generation race guards so a stale response
+ * can never overwrite a newer snapshot after an assistant switch mid-flight.
  *
  * `useDiskPressureMonitor` and `useResourcePressureMonitor` are the
  * instantiations; parameterize by status type, fetch function, equality,
@@ -22,6 +21,7 @@ import {
 import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 type AssistantEvent = AssistantEventEnvelope["message"];
 
@@ -30,7 +30,6 @@ export type AssistantStatusFetchResult<TStatus> =
   | { ok: false };
 
 export interface UseAssistantStatusMonitorOptions<TStatus, TMode> {
-  assistantId: string;
   /** A new identity restarts the poll interval and refreshes immediately. */
   refreshKey?: unknown;
   cadenceMs: number;
@@ -67,17 +66,12 @@ export interface UseAssistantStatusMonitorResult<TStatus, TMode> {
    */
   bumpGeneration: () => number;
   /**
-   * True while the hook still targets `requestedAssistantId` at
-   * `generation`; a wrapping hook checks this before applying the result
-   * of one of its own requests.
+   * True while `generation` is still the current one; a wrapping hook checks
+   * this before applying the result of one of its own requests.
    */
-  isCurrentRequest: (
-    requestedAssistantId: string,
-    generation: number,
-  ) => boolean;
+  isCurrentRequest: (generation: number) => boolean;
   /** Applies a fetched status if the request is still current. */
   applyStatusForAssistant: (
-    requestedAssistantId: string,
     nextStatus: TStatus | null,
     hasResolvedStatus: boolean,
     generation: number,
@@ -86,19 +80,16 @@ export interface UseAssistantStatusMonitorResult<TStatus, TMode> {
 }
 
 interface AssistantStatusMonitorSnapshot<TStatus> {
-  assistantId: string | null;
   status: TStatus | null;
   hasResolvedStatus: boolean;
 }
 
 const EMPTY_MONITOR_SNAPSHOT: AssistantStatusMonitorSnapshot<never> = {
-  assistantId: null,
   status: null,
   hasResolvedStatus: false,
 };
 
 export function useAssistantStatusMonitor<TStatus, TMode>({
-  assistantId,
   refreshKey,
   cadenceMs,
   fetchStatus,
@@ -110,10 +101,11 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   TStatus,
   TMode
 >): UseAssistantStatusMonitorResult<TStatus, TMode> {
+  // The web bundle has one assistant loaded — the active one.
+  const assistantId = useActiveAssistantId();
   const [snapshot, setSnapshot] = useState<
     AssistantStatusMonitorSnapshot<TStatus>
   >(EMPTY_MONITOR_SNAPSHOT);
-  const activeAssistantIdRef = useRef(assistantId);
   const generationRef = useRef(0);
   const pollRequestIdRef = useRef(0);
 
@@ -125,7 +117,6 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   const onStatusEventRef = useRef(onStatusEvent);
 
   useLayoutEffect(() => {
-    activeAssistantIdRef.current = assistantId;
     fetchStatusRef.current = fetchStatus;
     areStatusesEqualRef.current = areStatusesEqual;
     onStatusEventRef.current = onStatusEvent;
@@ -142,26 +133,22 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   }, []);
 
   const isCurrentRequest = useCallback(
-    (requestedAssistantId: string, generation: number) =>
-      activeAssistantIdRef.current === requestedAssistantId &&
-      generationRef.current === generation,
+    (generation: number) => generationRef.current === generation,
     [],
   );
 
   const applyStatusForAssistant = useCallback(
     (
-      requestedAssistantId: string,
       nextStatus: TStatus | null,
       hasResolvedStatus: boolean,
       generation: number,
     ) => {
-      if (!isCurrentRequest(requestedAssistantId, generation)) {
+      if (!isCurrentRequest(generation)) {
         return;
       }
 
       setSnapshot((current) => {
         if (
-          current.assistantId === requestedAssistantId &&
           current.hasResolvedStatus === hasResolvedStatus &&
           areStatusesEqualRef.current(current.status, nextStatus)
         ) {
@@ -169,7 +156,6 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
         }
 
         return {
-          assistantId: requestedAssistantId,
           status: nextStatus,
           hasResolvedStatus,
         };
@@ -195,22 +181,17 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
       }
 
       if (!result.ok) {
-        applyStatusForAssistant(assistantId, null, false, generation);
+        applyStatusForAssistant(null, false, generation);
         return;
       }
 
-      applyStatusForAssistant(
-        assistantId,
-        result.data.status,
-        true,
-        generation,
-      );
+      applyStatusForAssistant(result.data.status, true, generation);
     } catch {
       if (pollRequestIdRef.current !== pollRequestId) {
         return;
       }
 
-      applyStatusForAssistant(assistantId, null, false, generation);
+      applyStatusForAssistant(null, false, generation);
     }
   }, [assistantId, applyStatusForAssistant]);
 
@@ -237,9 +218,9 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
     (payload: TStatus | null) => {
       const generation = bumpGeneration();
       onStatusEventRef.current?.();
-      applyStatusForAssistant(assistantId, payload, true, generation);
+      applyStatusForAssistant(payload, true, generation);
     },
-    [assistantId, applyStatusForAssistant, bumpGeneration],
+    [applyStatusForAssistant, bumpGeneration],
   );
 
   // React to daemon-pushed status events via the event bus. Complements
@@ -253,10 +234,8 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
     applyStatusEvent(payload);
   });
 
-  const status = snapshot.assistantId === assistantId ? snapshot.status : null;
-  const hasResolvedStatus = Boolean(
-    snapshot.assistantId === assistantId && snapshot.hasResolvedStatus,
-  );
+  const status = snapshot.status;
+  const { hasResolvedStatus } = snapshot;
   const mode = useMemo(() => deriveMode(status), [deriveMode, status]);
 
   return {

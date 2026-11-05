@@ -144,24 +144,3 @@ export function installSessionCookies(sessionToken: string): void {
   document.cookie = `sessionid=${sessionToken}; ${cookieAttrs}`;
   document.cookie = `__Secure-sessionid=${sessionToken}; ${cookieAttrs}`;
 }
-
-/**
- * Read the current cloud session token from cookies.
- * Checks `__Secure-sessionid` (prod) then `sessionid` (dev).
- */
-export function getSessionTokenFromCookies(): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  const cookies = document.cookie.split("; ");
-  for (const name of ["__Secure-sessionid", "sessionid"]) {
-    const entry = cookies.find((c) => c.startsWith(`${name}=`));
-    if (entry) {
-      const value = entry.slice(name.length + 1);
-      if (value) {
-        return value;
-      }
-    }
-  }
-  return null;
-}
