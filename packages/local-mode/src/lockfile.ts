@@ -75,6 +75,25 @@ export type WriteResult =
   | { ok: true; lockfile: Lockfile }
   | { ok: false; status: number; error: string };
 
+/**
+ * Create the lockfile when it is absent: an empty registry on disk (and its
+ * directory) so a failed hatch still leaves recorded state behind — the
+ * assistant's absence is a file, not a missing one, and the next writer has
+ * its home. Best-effort: an unwritable config dir must not mask the caller's
+ * own failure.
+ */
+export function ensureLockfile(): void {
+  try {
+    if (fs.existsSync(resolveLockfilePath())) return;
+    const written = writeRawLockfile(LockfileSchema.parse({}));
+    if (!written.ok) {
+      throw new Error(written.error);
+    }
+  } catch {
+    // The caller's failure already carries the news; this is bookkeeping.
+  }
+}
+
 /** 423 Locked: the cross-process advisory lock could not be acquired. */
 export function lockFailure(error: string): WriteResult {
   return { ok: false, status: 423, error };
