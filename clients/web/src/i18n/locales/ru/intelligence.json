@@ -155,22 +155,8 @@
     "backToAriaLabel": "Назад к {name}",
     "backToTitle": "Назад к {name}"
   },
-  "listConceptPages": {
-    "failureMessage": "Не получилось загрузить страницы понятий."
-  },
-  "memoryFormat": {
-    "justNow": "только что"
-  },
   "memoryPage": {
     "createMemory": "Создать воспоминание"
-  },
-  "memoryTypes": {
-    "sourceType": {
-      "direct": "Сказано напрямую",
-      "inferred": "Выведено",
-      "observed": "Замечено",
-      "toldByOther": "Сказано кем-то ещё"
-    }
   },
   "memoryUpgradePrompt": {
     "tryAgain": "Повторить",

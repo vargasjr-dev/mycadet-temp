@@ -1419,9 +1419,6 @@ export const PROVIDER_SUPPORTS_PLATFORM_AUTH: Record<string, boolean> = {
   typesafe: true,
   cadet: true,
 };
-
-export const MANAGED_MODELS = MODELS_BY_PROVIDER.anthropic;
-
 /**
  * Providers the Cadet Cloud entry can route to. Single source of truth for
  * the web (the settings-domain CLOUD_ROUTABLE_PROVIDERS set derives from
@@ -1586,8 +1583,4 @@ export function getDefaultModelForProvider(
     return undefined;
   }
   return DEFAULT_MODEL_BY_PROVIDER[provider as LlmProviderId];
-}
-
-export function providerSupportsCloudAuth(provider: string): boolean {
-  return PROVIDER_SUPPORTS_PLATFORM_AUTH[provider] === true;
 }

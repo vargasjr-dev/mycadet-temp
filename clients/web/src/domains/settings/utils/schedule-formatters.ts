@@ -115,14 +115,6 @@ export function canOpenScheduleRunConversation(run: ScheduleRun): boolean {
   );
 }
 
-export function getOpenableScheduleSourceConversationId(
-  schedule: Schedule,
-): string | null {
-  return canOpenScheduleSourceConversation(schedule)
-    ? (schedule.createdFromConversationId ?? null)
-    : null;
-}
-
 /**
  * @deprecated Prefer `ScheduleRun.conversations`. A schedule run can touch
  * multiple conversations, and script runs usually do. The schedule-runs
@@ -234,22 +226,9 @@ export function retrospectiveSubtitle(t = defaultT): string {
   return t("scheduleFormatters.retrospectiveSubtitle");
 }
 
-export const RETROSPECTIVE_SUBTITLE = "After conversation activity";
-
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-export const MODE_TONE: Record<string, TagTone> = {
-  execute: "positive",
-  notify: "warning",
-  script: "neutral",
-};
-
-export const DEFAULT_SCRIPT_TIMEOUT_MS = 60_000;
-export const MIN_SCRIPT_TIMEOUT_SECONDS = 1;
-export const MAX_SCRIPT_TIMEOUT_SECONDS = 30 * 60;
-
 // ---------------------------------------------------------------------------
 // Grouping
 // ---------------------------------------------------------------------------

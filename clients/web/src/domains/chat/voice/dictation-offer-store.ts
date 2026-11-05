@@ -117,11 +117,6 @@ export function disarmDictationOfferWatch(): void {
   void setInputActivityWatch(false);
 }
 
-/** Whether the user has typed or clicked since the watch was armed. */
-export function sawInputSinceArming(): boolean {
-  return sawInput;
-}
-
 /**
  * Offer Cadet's words, unless the user has already moved on: a press since
  * the hold ended means the other app's paste is no longer the last edit, so

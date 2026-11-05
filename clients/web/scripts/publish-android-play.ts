@@ -59,7 +59,7 @@ async function main(): Promise<void> {
           body: createReadStream(bundlePath),
         },
       },
-      { timeout: 600_000 }
+      { timeout: 600_000 },
     );
     const versionCode = uploadedBundle.data.versionCode;
 
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
     });
 
     console.log(
-      `Published ${packageId} version code ${versionCode} to the Google Play ${track} track`
+      `Published ${packageId} version code ${versionCode} to the Google Play ${track} track`,
     );
   } catch (error) {
     await deleteEdit(publisher, packageId, editId);
@@ -118,7 +118,7 @@ function requireTrack(value: string | undefined): PlayTrack {
 async function deleteEdit(
   publisher: ReturnType<typeof androidpublisher.androidpublisher>,
   packageId: string,
-  editId: string
+  editId: string,
 ): Promise<void> {
   try {
     await publisher.edits.delete({
@@ -127,7 +127,7 @@ async function deleteEdit(
     });
   } catch (error) {
     console.warn(
-      `Failed to delete the uncommitted Google Play edit: ${errorMessage(error)}`
+      `Failed to delete the uncommitted Google Play edit: ${errorMessage(error)}`,
     );
   }
 }

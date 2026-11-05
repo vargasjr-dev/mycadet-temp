@@ -237,11 +237,7 @@ export function ProfileEditorProviderSection({
         }
       }
       return merged;
-    }, [
-      provider,
-      providerConnection,
-      availableConnectionsForProvider,
-    ]);
+    }, [provider, providerConnection, availableConnectionsForProvider]);
 
   // The Model dropdown always offers the profile's currently-bound model, even
   // when it's absent from the static catalog — a profile can be bound (via Chat)
@@ -340,13 +336,7 @@ export function ProfileEditorProviderSection({
       }
       onModelChange("");
     }
-  }, [
-    model,
-    availableModels,
-    onModelChange,
-    provider,
-    isEnteringCustomModel,
-  ]);
+  }, [model, availableModels, onModelChange, provider, isEnteringCustomModel]);
 
   const defaultEntryMetaLabel = t("aiProviderPicker.defaultEntryMeta");
 

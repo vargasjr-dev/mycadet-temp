@@ -35,7 +35,7 @@ mock.module("@/hooks/use-touch-mobile", () => ({
 }));
 
 let mockIsNativePlatform = false;
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   useIsNativePlatform: () => mockIsNativePlatform,
   isNativePlatform: () => mockIsNativePlatform,
 }));

@@ -53,9 +53,7 @@ interface UseEventBusInitParams {
   assistantId: string | null;
 }
 
-export function useEventBusInit({
-  assistantId,
-}: UseEventBusInitParams): void {
+export function useEventBusInit({ assistantId }: UseEventBusInitParams): void {
   useEffect(() => {
     // Source helpers touch `document` / `window` at call time and
     // document their "caller guards under SSR/Node" contract in their

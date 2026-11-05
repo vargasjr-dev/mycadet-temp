@@ -32,7 +32,9 @@ mock.module("@/domains/chat/voice/live-voice/connection", () => ({
       conversationId?: string;
     }) => {
       const { token } = await mintResult;
-      const url = new URL(`wss://tunnel.mycadet.ai/${assistantId}/v1/live-voice`);
+      const url = new URL(
+        `wss://tunnel.mycadet.ai/${assistantId}/v1/live-voice`,
+      );
       url.searchParams.set("token", token);
       if (conversationId) {
         url.searchParams.set("conversationId", conversationId);

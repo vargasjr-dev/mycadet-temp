@@ -81,7 +81,9 @@ describe("nuked account pages", () => {
 
 describe("remote web pairing route", () => {
   test("stays outside the auth-protected assistant app tree", () => {
-    expect(isUnderComponent("/assistant/pair?deviceCode=abc", "RootLayout")).toBe(false);
+    expect(
+      isUnderComponent("/assistant/pair?deviceCode=abc", "RootLayout"),
+    ).toBe(false);
   });
 
   test("uses the remote-gateway public path prefix as the router basename", () => {

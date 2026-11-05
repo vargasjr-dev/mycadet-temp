@@ -117,7 +117,7 @@ mock.module("@/runtime/is-electron", () => ({
 }));
 
 let nativePlatform = false;
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 let windowAttended = true;

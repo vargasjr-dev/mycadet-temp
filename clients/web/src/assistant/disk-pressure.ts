@@ -41,16 +41,6 @@ function isDiskPressureWarning(
   return Boolean(status?.enabled && status.state === "warning");
 }
 
-export function shouldShowDiskPressureBanner(
-  status: DiskPressureStatus | null | undefined,
-): boolean {
-  return (
-    isDiskPressureWarning(status) ||
-    requiresDiskPressureAcknowledgement(status) ||
-    isDiskPressureCleanupActive(status)
-  );
-}
-
 export function getDiskPressureMonitorMode(
   status: DiskPressureStatus | null | undefined,
 ): DiskPressureMonitorMode {
@@ -67,24 +57,6 @@ export function getDiskPressureMonitorMode(
   }
 
   return "inactive";
-}
-
-export function isChatInputDisabledByDiskPressure({
-  monitorEnabled,
-  hasResolvedStatus,
-  status,
-}: {
-  monitorEnabled: boolean;
-  hasResolvedStatus: boolean;
-  status: DiskPressureStatus | null;
-}): boolean {
-  return (
-    getDiskPressureChatBlockReason({
-      monitorEnabled,
-      hasResolvedStatus,
-      status,
-    }) !== null
-  );
 }
 
 export type DiskPressureChatBlockReason = "acknowledgement-required";

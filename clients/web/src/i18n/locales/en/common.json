@@ -305,10 +305,6 @@
     "copied": "Copied",
     "copyFailed": "Could not copy to the clipboard."
   },
-  "dateRangeSelect": {
-    "ariaLabel": "Date range",
-    "lastDays": "{days, plural, one {Last # day} other {Last # days}}"
-  },
   "deleteAppDialog": {
     "delete": "Delete",
     "deleting": "Deleting…",
@@ -634,9 +630,6 @@
     "stepCreate": "Create",
     "stepName": "Name",
     "stepOpen": "Open"
-  },
-  "stackedBarTooltip": {
-    "total": "Total: {value}"
   },
   "startupFailure": {
     "reloadApp": "Reload app"

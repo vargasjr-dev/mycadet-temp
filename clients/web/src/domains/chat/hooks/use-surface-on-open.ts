@@ -82,10 +82,5 @@ export function useSurfaceOnOpen({
       .finally(() => {
         surfacingConversationIdsRef.current.delete(activeConversationId);
       });
-  }, [
-    activeConversation,
-    activeConversationId,
-    assistantId,
-    queryClient,
-  ]);
+  }, [activeConversation, activeConversationId, assistantId, queryClient]);
 }

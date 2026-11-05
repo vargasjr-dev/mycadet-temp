@@ -22,9 +22,6 @@ import {
   watchSetting,
 } from "@/utils/local-settings";
 
-/** Prefix for all device-scoped localStorage keys. */
-export const DEVICE_PREFIX = "device:";
-
 /** One device-scoped setting: its `device:`-prefixed localStorage key. */
 interface DeviceSettingEntry {
   key: string;
@@ -84,18 +81,6 @@ export function getDeviceSetting(
 /** Write a device-scoped setting. Fires the `cadet:pref-changed` event for same-tab observers. */
 export function setDeviceSetting(name: DeviceSettingName, value: string): void {
   setLocalSetting(DEVICE_SETTINGS[name].key, value);
-}
-
-/** Whether a device-scoped setting is stored at all, an empty value included. */
-export function hasDeviceSetting(name: DeviceSettingName): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return localStorage.getItem(DEVICE_SETTINGS[name].key) !== null;
-  } catch {
-    return false;
-  }
 }
 
 /** Read a boolean device setting. */

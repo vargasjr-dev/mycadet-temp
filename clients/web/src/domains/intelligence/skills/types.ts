@@ -1,7 +1,11 @@
 import type { SkillsGetResponses } from "@/generated/daemon/types.gen";
 
 export type SkillOrigin =
-  "cadet" | "clawhub" | "skillssh" | "custom" | "assistant-memory";
+  | "cadet"
+  | "clawhub"
+  | "skillssh"
+  | "custom"
+  | "assistant-memory";
 
 export type SkillKind = "bundled" | "installed" | "catalog";
 
@@ -46,8 +50,6 @@ type GeneratedSkill = SkillsGetResponses[200]["skills"][number];
  */
 type AssertAssignable<_Target, _Source extends _Target> = true;
 type _SkillInfoCompat = AssertAssignable<SkillInfo, GeneratedSkill>;
-
-export type SkillFilter = "all" | "installed" | "available" | SkillOrigin;
 
 export function isInstalledSkill(skill: SkillInfo): boolean {
   return skill.kind === "installed" || skill.kind === "bundled";

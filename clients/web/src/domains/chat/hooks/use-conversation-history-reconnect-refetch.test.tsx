@@ -126,9 +126,7 @@ describe("useConversationHistory — refetch on SSE reopen", () => {
       draftConversationIdResolution: false,
     });
     useComposerStore.getState().setInput("Unsent draft");
-    useComposerStore
-      .getState()
-      .addPathReferences(["/example/project-notes"]);
+    useComposerStore.getState().addPathReferences(["/example/project-notes"]);
 
     const { rerender } = renderHook(
       () =>
@@ -277,5 +275,4 @@ describe("useConversationHistory — refetch on SSE reopen", () => {
     // THEN the history query is invalidated so the snapshot reseeds.
     expect(invalidateSpy).toHaveBeenCalledTimes(1);
   });
-
 });

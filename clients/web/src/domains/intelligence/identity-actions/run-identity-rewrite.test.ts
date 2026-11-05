@@ -52,7 +52,9 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
     return ok({});
   },
 }));
-mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({
+  captureError: () => {},
+}));
 
 const { runIdentityRewrite } = await import("./run-identity-rewrite");
 

@@ -62,7 +62,7 @@ import {
 } from "@/hooks/conversation-queries";
 import { openCommandPaletteWindow } from "@/runtime/command-palette-window";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { isPopoutWindow, openPopoutWindow } from "@/runtime/popout-window";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { useConversationStore } from "@/stores/conversation-store";

@@ -127,8 +127,3 @@ export function useDesktopAppNudgeState(platform: DesktopAppPlatform): {
 export function openDesktopAppDownload(): void {
   window.open(CADET_DOWNLOADS_URL, "_blank", "noopener,noreferrer");
 }
-
-export const __testing = {
-  readDesktopAppBannerDismissed,
-  writeDesktopAppBannerDismissed,
-};

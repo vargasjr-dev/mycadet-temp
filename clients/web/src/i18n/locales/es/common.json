@@ -303,10 +303,6 @@
     "copied": "Copiado",
     "copyFailed": "No se pudo copiar al portapapeles."
   },
-  "dateRangeSelect": {
-    "ariaLabel": "Rango de fechas",
-    "lastDays": "{days, plural, one {Último # día} other {Últimos # días}}"
-  },
   "deleteAppDialog": {
     "delete": "Eliminar",
     "deleting": "Eliminando…",
@@ -632,9 +628,6 @@
     "stepCreate": "Crear",
     "stepName": "Nombre",
     "stepOpen": "Abrir"
-  },
-  "stackedBarTooltip": {
-    "total": "Total: {value}"
   },
   "startupFailure": {
     "reloadApp": "Recargar app"

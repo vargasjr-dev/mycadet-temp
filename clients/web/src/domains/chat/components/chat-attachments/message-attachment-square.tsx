@@ -11,7 +11,7 @@ import {
   middleTruncate,
 } from "@/utils/attachment-utils";
 import { DisplayAttachment } from "@/types/attachment-types";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { cn } from "@/utils/misc";
 
 /**

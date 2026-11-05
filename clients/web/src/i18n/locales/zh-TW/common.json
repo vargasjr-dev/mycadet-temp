@@ -305,10 +305,6 @@
     "copied": "已複製",
     "copyFailed": "無法複製到剪貼簿。"
   },
-  "dateRangeSelect": {
-    "ariaLabel": "日期範圍",
-    "lastDays": "{days, plural, other {過去 # 天}}"
-  },
   "deleteAppDialog": {
     "delete": "刪除",
     "deleting": "正在刪除…",
@@ -634,9 +630,6 @@
     "stepCreate": "建立",
     "stepName": "名稱",
     "stepOpen": "開啟"
-  },
-  "stackedBarTooltip": {
-    "total": "總計：{value}"
   },
   "startupFailure": {
     "reloadApp": "重新載入應用程式"

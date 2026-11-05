@@ -93,21 +93,7 @@
     "typeScheduled": "计划"
   },
   "assistantStatusPanel": {
-    "assistantId": "助手 ID",
-    "cpuUsage": "CPU 使用率",
-    "created": "创建时间",
-    "diskUnavailable": "磁盘状态不可用",
-    "diskUsage": "磁盘使用率",
-    "loadHealthzFailed": "加载助手信息失败",
-    "loadingCpu": "正在加载 CPU 状态...",
-    "loadingDisk": "正在加载磁盘状态...",
-    "loadingMemory": "正在加载内存状态...",
-    "memoryUsage": "内存使用率",
-    "name": "名称",
-    "status": "状态",
-    "unknown": "未知",
-    "usedOf": "已用 {used} / 总计 {total}",
-    "version": "版本"
+    "loadHealthzFailed": "加载助手信息失败"
   },
   "assistantTerminalPanel": {
     "subtitle": "助手机器上的交互式 shell 会话",
@@ -134,7 +120,6 @@
     "updating": "更新中..."
   },
   "autoTopUpPaymentMethodModal": {
-    "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
   },
   "bulkOverrideSwapModal": {
@@ -549,26 +534,6 @@
     "toolsHeading": "已注册的工具",
     "toolsLoading": "正在加载工具..."
   },
-  "mediaEmbedsCard": {
-    "add": "添加",
-    "addDomainLabel": "添加域名",
-    "addDomainPlaceholder": "添加域名（例如 example.com）",
-    "allowlist": "视频域名白名单",
-    "autoToggle": "自动媒体嵌入",
-    "domainCount": "{count, plural, other {# 个域名}}",
-    "removeDomainAria": "移除 {domain}",
-    "resetDefaults": "重置为默认值",
-    "subtitle": "自动嵌入聊天消息中共享的图片、视频及其他媒体。",
-    "title": "媒体嵌入"
-  },
-  "memoryRetrospectiveToggle": {
-    "ariaLabel": "启用记忆回顾",
-    "description": "让您的助手在后台重新阅读近期对话，并保存它当时遗漏的信息。暂停此功能会保持其他记忆功能正常工作。",
-    "title": "回顾",
-    "toastEnabled": "记忆回顾已启用。",
-    "toastFailed": "更新记忆回顾失败。",
-    "toastPaused": "记忆回顾已暂停。"
-  },
   "memoryWorkerToggle": {
     "ariaLabel": "启用后台记忆工作器",
     "description": "在专用的后台进程中运行记忆整合。它会自动启动；停止它会暂停后台记忆处理，直到下次重启。",
@@ -933,18 +898,6 @@
     "skipped": "已跳过",
     "title": "最近运行"
   },
-  "riskToleranceSettings": {
-    "advanced": "高级",
-    "backgroundDescription": "当您的助手在您不知情的情况下执行操作时 - 定时任务、后台作业和外部触发器。",
-    "backgroundTitle": "后台",
-    "conversationsDescription": "当您直接与助手聊天时。",
-    "conversationsTitle": "对话",
-    "description": "控制您的助手无需事先询问即可执行哪些操作。每个操作都按风险级别分类 - 您的访问级别决定了哪些级别会自动批准。信任规则通过提高或降低特定操作的风险来微调此设置。",
-    "headlessDescription": "当在没有交互式客户端的情况下从外部触发时。",
-    "headlessTitle": "无头",
-    "loadError": "无法加载阈值设置。请检查您的连接并重新加载。",
-    "title": "助手访问权限"
-  },
   "scheduleProfileRebase": {
     "alreadyOnProfileToast": "所有定时任务都已在 {profile} 上运行。",
     "dialogMessage": "{count, plural, other {{count} 个定时任务在不同的模型上运行。这将把所有定时任务，包括您的助手稍后设置的提醒，都移动到您当前的默认 {profile} 上。您特意放在其他模型上的定时任务也会被移动。}}",
@@ -1052,20 +1005,6 @@
     "system": "系统",
     "title": "主题"
   },
-  "tierPicker": {
-    "machineAriaLabel": "机器层级",
-    "machineLabel": "机器",
-    "machineOption": "{label} {priceLabel}",
-    "machinePlaceholder": "选择机器层级",
-    "machineTooltip": "决定分配给助手的 CPU 和内存",
-    "priceAddon": "+{price}",
-    "priceCurrent": "({price}，当前)",
-    "storageAriaLabel": "存储层级",
-    "storageLabel": "存储",
-    "storageOption": "{gib} GB {priceLabel}",
-    "storagePlaceholder": "选择存储层级",
-    "storageTooltip": "用于助手文件和数据的持久磁盘空间"
-  },
   "timezonePicker": {
     "noMatches": "无匹配项",
     "notSet": "未设置",
@@ -1082,52 +1021,6 @@
     "title": "此设备",
     "description": "助手网关为此浏览器记录的 id。请与主机上 `cadet devices` 列出的哈希设备 id 进行比对。",
     "copyHint": "复制设备 id"
-  },
-  "trustRuleFormModal": {
-    "cancel": "取消",
-    "closeAriaLabel": "关闭",
-    "defaultDescription": "{tool} - {pattern}",
-    "descriptionLabel": "描述（可选）",
-    "patternFallback": "模式",
-    "patternLabel": "模式",
-    "patternPlaceholder": "例如：git *",
-    "riskHigh": "高",
-    "riskHighDescription": "始终需要明确批准",
-    "riskLevelLabel": "风险级别",
-    "riskLow": "低",
-    "riskLowDescription": "无需提示自动批准",
-    "riskMedium": "中",
-    "riskMediumDescription": "执行前提示",
-    "save": "保存",
-    "saveFailed": "保存信任规则失败。",
-    "saving": "正在保存…",
-    "title": "编辑信任规则",
-    "toolLabel": "工具"
-  },
-  "trustRules": {
-    "description": "管理按工具划分的规则，这些规则控制哪些操作自动批准，哪些需要您的明确许可。",
-    "manage": "管理",
-    "title": "信任规则"
-  },
-  "trustRulesModal": {
-    "cancel": "取消",
-    "defaultTag": "默认",
-    "delete": "删除",
-    "deleteErrorFallback": "删除信任规则失败。",
-    "deleteMessage": "是否移除 {tool} 的 {risk} 风险规则（匹配“{pattern}”）？",
-    "deleteRuleAria": "删除 {tool} 规则",
-    "deleteTitle": "删除信任规则？",
-    "done": "完成",
-    "editRuleAria": "编辑 {tool} 规则",
-    "empty": "暂无信任规则。当您对权限提示中的操作进行分类时，将创建规则。",
-    "loadErrorFallback": "加载信任规则失败。",
-    "loading": "正在加载…",
-    "modifiedTag": "已修改",
-    "riskHigh": "高",
-    "riskLow": "低",
-    "riskMedium": "中",
-    "showAllDefaults": "显示所有默认值",
-    "title": "信任规则"
   },
   "tunnelStatusRow": {
     "checkedAt": "{when} 已检查",

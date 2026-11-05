@@ -23,15 +23,6 @@
 import { hostMatchesDomain } from "@/utils/domains";
 
 export type ResearchConfidence = "confident" | "maybe" | "guessing";
-
-/** Optional reason a user gives when removing a claim. */
-export type RemovalReason = "not_me" | "not_relevant";
-
-export const REMOVAL_REASON_LABELS: Record<RemovalReason, string> = {
-  not_me: "Not me",
-  not_relevant: "Not relevant",
-};
-
 // A `type` (not `interface`) so it carries an implicit index signature and
 // stays assignable to the telemetry `fields` JSON-value type — see the
 // `onboarding_research` reporter in research-runner.ts.
@@ -524,24 +515,4 @@ export function pluginDisplayName(plugin: string): string {
     .filter((w) => w.length > 0)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-interface ConfidenceBadge {
-  label: string;
-  tone: "positive" | "warning" | "neutral";
-}
-
-/** Map a confidence tier to its card badge label + Tag tone. */
-export function confidenceBadge(
-  confidence: ResearchConfidence,
-): ConfidenceBadge {
-  switch (confidence) {
-    case "confident":
-      return { label: "Confident", tone: "positive" };
-    case "guessing":
-      return { label: "Guessing", tone: "neutral" };
-    case "maybe":
-    default:
-      return { label: "Maybe-ish", tone: "warning" };
-  }
 }

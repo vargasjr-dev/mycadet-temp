@@ -40,25 +40,14 @@ export {
   currentLocale,
   formatLocale,
   initI18n,
-  resolveInitialLocale,
 } from "@/i18n/i18n";
 
 export {
-  DEFAULT_LOCALE,
-  LOCALE_LABELS,
   SUPPORTED_LOCALES,
-  isSupportedLocale,
-  negotiateLocale,
   type SupportedLocale,
 } from "@/i18n/supported-locales";
 
-export { systemLocales } from "@/i18n/system-locale";
-
-export {
-  DEFAULT_NAMESPACE,
-  NAMESPACES,
-  type Namespace,
-} from "@/i18n/namespaces";
+export { type Namespace } from "@/i18n/namespaces";
 
 /**
  * Namespace-bound `t` for non-React call sites.

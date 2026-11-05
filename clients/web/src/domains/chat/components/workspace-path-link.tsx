@@ -41,7 +41,11 @@ export interface WorkspacePathLinkProps {
   onOpen?: (href: string, linkText: string) => void;
 }
 
-export function WorkspacePathLink({ path, raw, onOpen }: WorkspacePathLinkProps) {
+export function WorkspacePathLink({
+  path,
+  raw,
+  onOpen,
+}: WorkspacePathLinkProps) {
   const { t } = useTranslation("chat");
   const label = raw ?? path ?? "";
 

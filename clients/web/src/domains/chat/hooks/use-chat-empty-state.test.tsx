@@ -379,4 +379,3 @@ describe("useChatEmptyState starters dock", () => {
     expect(result.current.startersSlot).toBeUndefined();
   });
 });
-

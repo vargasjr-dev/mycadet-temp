@@ -318,4 +318,3 @@ describe("ConversationRowList expand", () => {
     expect(scrollerOf(container)?.style.maxHeight).toBe("");
   });
 });
-

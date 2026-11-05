@@ -265,9 +265,11 @@ describe("geminiThinkingLevels", () => {
       "medium",
       "high",
     ]);
-    expect(
-      geminiThinkingLevels("gemini-3.1-pro-preview-customtools"),
-    ).toEqual(["low", "medium", "high"]);
+    expect(geminiThinkingLevels("gemini-3.1-pro-preview-customtools")).toEqual([
+      "low",
+      "medium",
+      "high",
+    ]);
   });
 
   test("gemini-3.8-flash excludes 'minimal'", () => {

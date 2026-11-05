@@ -1,7 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { useSyncExternalStore } from "react";
 
-
 /**
  * Platform detection for the Capacitor shells.
  *
@@ -35,4 +34,3 @@ const noop = () => () => {};
 export function useIsNativePlatform(): boolean {
   return useSyncExternalStore(noop, isNativePlatform, () => false);
 }
-

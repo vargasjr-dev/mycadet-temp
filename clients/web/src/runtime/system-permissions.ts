@@ -9,17 +9,6 @@ import {
   type SystemPermissionsState,
 } from "@mycadet/ipc-contract";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
-
-export const SYSTEM_PERMISSION_KINDS: SystemPermissionKind[] = [
-  "accessibility",
-  "screen",
-  "microphone",
-  "speechRecognition",
-  "inputMonitoring",
-  "automation",
-  "notifications",
-];
-
 const SYSTEM_PERMISSION_SETTINGS_URLS: Readonly<
   Record<string, { hostOS: "macos" | "windows"; kind: SystemPermissionKind }>
 > = {
@@ -104,13 +93,6 @@ export function dispatchSystemPermissionSettingsUrl(
   }
   void openSystemPermissionSettings(target.kind);
   return "opened";
-}
-
-export async function quitAndReopenForPermissions(): Promise<void> {
-  if (!supportsSystemPermissions()) {
-    return;
-  }
-  await window.cadet!.permissions!.quitAndReopen();
 }
 
 export function subscribeToSystemPermissions(

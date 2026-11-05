@@ -158,18 +158,6 @@ function isUnsupportedUsageGroupByError(error: unknown): boolean {
   );
 }
 
-export function trendTitle(
-  rangeGranularity: UsageGranularity,
-  groupBy?: UsageGroupBy,
-): string {
-  const prefix = rangeGranularity === "hourly" ? "Hourly Trend" : "Daily Trend";
-  if (!groupBy || groupBy === "conversation") {
-    return prefix;
-  }
-
-  return `${prefix} by ${USAGE_GROUP_LABELS[groupBy]}`;
-}
-
 export function resolveEffectiveUsageGranularity({
   requestedGranularity,
   isLoading,

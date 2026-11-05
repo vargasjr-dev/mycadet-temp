@@ -31,9 +31,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { BulkOverrideSwapModal } = await import(
-  "@/domains/settings/ai/bulk-override-swap-modal"
-);
+const { BulkOverrideSwapModal } =
+  await import("@/domains/settings/ai/bulk-override-swap-modal");
 
 // ---------------------------------------------------------------------------
 // Fixtures

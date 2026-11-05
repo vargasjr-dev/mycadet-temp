@@ -7,7 +7,7 @@ import {
   isKnownUnsupportedDesktopBrowser,
 } from "@/runtime/desktop-app-platform";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 /**
  * Returns true when the current browser is running on iOS (iPhone, iPod, or iPad).

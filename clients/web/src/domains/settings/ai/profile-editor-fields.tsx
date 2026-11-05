@@ -15,7 +15,6 @@ import { useTranslation, Trans } from "@/i18n";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import { useSupportsProfileInputModalities } from "@/lib/backwards-compat/profile-input-modalities";
 
-
 export interface ProfileEditorFieldsProps {
   editor: ProfileEditor;
   assistantId: string;

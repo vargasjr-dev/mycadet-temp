@@ -173,7 +173,8 @@ export function useTerminalSession({
           const detail =
             error && typeof error === "object" && !Array.isArray(error)
               ? ((error as Record<string, unknown>).detail as
-                  string | undefined)
+                  | string
+                  | undefined)
               : undefined;
           throw new Error(
             detail ??

@@ -164,18 +164,6 @@ export type LiveVoiceSessionControl =
   | "look_camera"
   | "look_stop";
 
-export interface LiveVoiceClientPttReleaseFrame {
-  readonly type: "ptt_release";
-}
-
-export interface LiveVoiceClientInterruptFrame {
-  readonly type: "interrupt";
-}
-
-export interface LiveVoiceClientEndFrame {
-  readonly type: "end";
-}
-
 /**
  * Mid-session screen-sharing state and turn-detection tuning. Each field
  * is optional; the daemon applies changes from the next utterance.
@@ -197,74 +185,7 @@ export type LiveVoiceSessionConfig = Omit<
   LiveVoiceClientUpdateConfigFrame,
   "type"
 >;
-
-/**
- * A photo taken while the call is running, identified by the id the normal
- * attachment upload (`POST /v1/assistants/{id}/attachments`) already returned.
- *
- * Only the id travels: the bytes go over the same HTTP upload a typed message
- * uses, which already handles HEIF normalization and size caps, and this
- * socket is tuned for 50 ms audio frames.
- *
- * The daemon persists it into the conversation as its own user message and
- * runs no turn. That is what makes the order of shutter and speech
- * irrelevant: whatever the user says next, before or after the snap, is
- * answered by a model whose history already has the image.
- */
-export interface LiveVoiceClientAttachImageFrame {
-  readonly type: "attach_image";
-  readonly attachmentId: string;
-}
-
 export type LiveVoiceSightSource = "live" | "ambient";
-
-export interface LiveVoiceClientSightStartFrame {
-  readonly type: "sight_start";
-  readonly cameraEpoch: number;
-  readonly source?: LiveVoiceSightSource;
-}
-
-export interface LiveVoiceClientSightEndFrame {
-  readonly type: "sight_end";
-  readonly cameraEpoch: number;
-}
-
-export interface LiveVoiceClientSightFrameFrame {
-  readonly type: "sight_frame";
-  readonly attachmentId: string;
-  readonly cameraEpoch?: number;
-  readonly source?: LiveVoiceSightSource;
-}
-
-/**
- * A user turn the client already has as text, taken without the microphone.
- *
- * The daemon runs it through the same pipeline a spoken turn takes, joining
- * where the transcript would have arrived, so the reply is spoken exactly as
- * it would be for speech. Only capture is skipped.
- *
- * Gated on the `ready` frame's `textInput` echo. An assistant that predates
- * the frame rejects it with `unknown_type`, which is indistinguishable on the
- * wire from the `update_config` rejection and would latch in-session settings
- * off for the whole session (see the error handling in `live-voice-client`).
- */
-export interface LiveVoiceClientTextTurnFrame {
-  readonly type: "text";
-  readonly text: string;
-}
-
-export type LiveVoiceClientFrame =
-  | LiveVoiceClientStartFrame
-  | LiveVoiceClientPttReleaseFrame
-  | LiveVoiceClientInterruptFrame
-  | LiveVoiceClientEndFrame
-  | LiveVoiceClientUpdateConfigFrame
-  | LiveVoiceClientAttachImageFrame
-  | LiveVoiceClientSightStartFrame
-  | LiveVoiceClientSightEndFrame
-  | LiveVoiceClientSightFrameFrame
-  | LiveVoiceClientTextTurnFrame;
-
 // ---------------------------------------------------------------------------
 // Server frames (text/JSON; every frame carries `seq`)
 // ---------------------------------------------------------------------------

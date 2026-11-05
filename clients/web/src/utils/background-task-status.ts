@@ -5,7 +5,10 @@
  */
 
 export type BackgroundTaskStatus =
-  "running" | "completed" | "failed" | "cancelled";
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 /** Whether the task is in an active (non-terminal) state. */
 export function isActiveBackgroundTaskStatus(

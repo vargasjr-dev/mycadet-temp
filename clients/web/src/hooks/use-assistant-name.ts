@@ -15,19 +15,9 @@ function resolveAssistantName(
       return name;
     }
   }
-  return (
-    (entry && entry.assistantId === assistantId
-      ? (entry.name?.trim() || null)
-      : null)
-  );
-}
-
-export function readAssistantName(assistantId: string | null): string | null {
-  return resolveAssistantName(
-    assistantId,
-    useAssistantIdentityStore.getState(),
-    useResolvedAssistantStore.getState().assistant,
-  );
+  return entry && entry.assistantId === assistantId
+    ? entry.name?.trim() || null
+    : null;
 }
 
 export function useAssistantName(assistantId: string | null): string | null {

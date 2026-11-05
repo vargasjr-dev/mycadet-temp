@@ -69,7 +69,9 @@ describe("fetchMyDevice", () => {
 
   test("returns null when the gateway cannot answer", async () => {
     setSelfHostedConnection({ url: "http://localhost:7830", token: "tok-1" });
-    globalThis.fetch = withPreconnect(async () => new Response(null, { status: 404 }));
+    globalThis.fetch = withPreconnect(
+      async () => new Response(null, { status: 404 }),
+    );
 
     const device = await fetchMyDevice();
     expect(device).toBeNull();
@@ -77,8 +79,8 @@ describe("fetchMyDevice", () => {
 
   test("returns null on a malformed body", async () => {
     setSelfHostedConnection({ url: "http://localhost:7830", token: "tok-1" });
-    globalThis.fetch = withPreconnect(async () =>
-      new Response("<html>oops</html>", { status: 200 }),
+    globalThis.fetch = withPreconnect(
+      async () => new Response("<html>oops</html>", { status: 200 }),
     );
 
     const device = await fetchMyDevice();

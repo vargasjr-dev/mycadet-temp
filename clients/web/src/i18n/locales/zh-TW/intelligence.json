@@ -155,22 +155,8 @@
     "backToAriaLabel": "返回 {name}",
     "backToTitle": "返回 {name}"
   },
-  "listConceptPages": {
-    "failureMessage": "概念頁面載入失敗。"
-  },
-  "memoryFormat": {
-    "justNow": "剛才"
-  },
   "memoryPage": {
     "createMemory": "建立記憶"
-  },
-  "memoryTypes": {
-    "sourceType": {
-      "direct": "直接告知",
-      "inferred": "推斷",
-      "observed": "觀察到",
-      "toldByOther": "由他人告知"
-    }
   },
   "memoryUpgradePrompt": {
     "tryAgain": "再試一次",

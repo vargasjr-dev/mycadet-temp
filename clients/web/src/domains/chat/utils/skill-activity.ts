@@ -410,9 +410,3 @@ export function parseSkillExecuteActivity(
 
   return { innerToolName, activity, params: innerBag };
 }
-
-/** Tool names this module renders purpose-built UI for. */
-export const SKILL_ACTIVITY_TOOL_NAMES = new Set([
-  "skill_load",
-  "skill_execute",
-]);

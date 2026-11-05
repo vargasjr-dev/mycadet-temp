@@ -27,7 +27,7 @@ import {
   isAssistantMessageNode,
   resolveAssistantSelection,
 } from "@/domains/chat/resolve-assistant-selection";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 const NATIVE_SELECTION_HANDLER = "cadetTextSelection";
 
@@ -58,8 +58,7 @@ declare global {
  */
 export function hasNativeQuoteReplyMenu(): boolean {
   return (
-    typeof window !== "undefined" &&
-    window.__cadetNativeQuoteReplyMenu === true
+    typeof window !== "undefined" && window.__cadetNativeQuoteReplyMenu === true
   );
 }
 

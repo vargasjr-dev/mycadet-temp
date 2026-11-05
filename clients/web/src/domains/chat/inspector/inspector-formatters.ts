@@ -27,9 +27,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: "medium",
 });
 
-const RESPONSE_PREVIEW_LIMIT = 240;
-const TOOL_NAME_MAX_VISIBLE = 3;
-
 export function formatCount(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
     return MISSING_VALUE;
@@ -108,38 +105,6 @@ export function formattedCreatedAt(epochMs: number | null | undefined): string {
     return MISSING_VALUE;
   }
   return dateTimeFormatter.format(new Date(epochMs));
-}
-
-export function truncatedResponsePreview(
-  preview: string | null | undefined,
-): string {
-  if (preview == null) {
-    return MISSING_VALUE;
-  }
-  const trimmed = preview.trim();
-  if (!trimmed) {
-    return MISSING_VALUE;
-  }
-  if (trimmed.length <= RESPONSE_PREVIEW_LIMIT) {
-    return trimmed;
-  }
-  const head = trimmed.slice(0, RESPONSE_PREVIEW_LIMIT).trim();
-  return head ? `${head}…` : MISSING_VALUE;
-}
-
-export function compactToolNames(names: string[] | null | undefined): string {
-  if (!names) {
-    return MISSING_VALUE;
-  }
-  const cleaned = names.map((n) => n.trim()).filter((n) => n.length > 0);
-  if (!cleaned.length) {
-    return MISSING_VALUE;
-  }
-  if (cleaned.length <= TOOL_NAME_MAX_VISIBLE) {
-    return cleaned.join(", ");
-  }
-  const visible = cleaned.slice(0, TOOL_NAME_MAX_VISIBLE).join(", ");
-  return `${visible} +${cleaned.length - TOOL_NAME_MAX_VISIBLE} more`;
 }
 
 /**

@@ -1311,7 +1311,9 @@ test.each(["unmount", "assistant-change", "another-call"] as const)(
       view.rerender(
         <MemoryRouter>
           <GlobalPushToTalkBridge
-            assistantId={change === "assistant-change" ? "assistant-2" : "assistant-1"}
+            assistantId={
+              change === "assistant-change" ? "assistant-2" : "assistant-1"
+            }
           />
         </MemoryRouter>,
       );

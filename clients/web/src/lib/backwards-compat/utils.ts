@@ -88,61 +88,6 @@ export function useAssistantScopedSupports(
 }
 
 /**
- * Whether the identity store holds a version fetched for `ownerAssistantId`.
- *
- * The gates above collapse "older than the floor" and "not known yet" into one
- * `false`, which is the right answer for a surface that hides and the wrong one
- * for a surface that navigates: a redirect fired on the unresolved answer sends
- * a deep link somewhere else before the version has landed. This is the second
- * bit, so such a caller can wait instead of acting on a gate that has not
- * spoken.
- *
- * Owner-scoped for the same reason {@link useAssistantScopedSupports} is: a
- * version still held for the assistant the user just left says nothing about
- * this one.
- */
-function useAssistantVersionKnownFor(
-  ownerAssistantId: string | null | undefined,
-): boolean {
-  const identityAssistantId = useAssistantIdentityStore.use.assistantId();
-  const version = useAssistantIdentityStore.use.version();
-  return (
-    version !== null &&
-    ownerAssistantId != null &&
-    ownerAssistantId === identityAssistantId
-  );
-}
-
-/**
- * Whether the identity fetch for `ownerAssistantId` has finished asking,
- * whatever it came back with: a version landed, or the fetch reached a dead
- * end (it errored, or `fetchAssistantIdentity` swallowed an unreachable
- * runtime into a `null`).
- *
- * {@link useAssistantVersionKnownFor} is the wait a caller wants while the
- * answer is still coming. It is not the wait a caller wants when the answer
- * never comes: a fetch that exhausted its retries leaves the version `null`
- * forever, and a surface that navigates on the resolved gate would hold a deep
- * link on a blank page for the rest of the session. This says "stop waiting"
- * for both endings, so such a caller can act on the conservative `false` the
- * version gates report rather than sit on it.
- *
- * A null owner has nothing to wait for and reports `true`, matching
- * {@link whenAssistantVersionKnownFor}: the scoped gates answer `false` for
- * one regardless.
- */
-export function useAssistantIdentitySettledFor(
-  ownerAssistantId: string | null | undefined,
-): boolean {
-  const versionKnown = useAssistantVersionKnownFor(ownerAssistantId);
-  const unavailableFor = useAssistantIdentityStore.use.unavailableFor();
-  if (ownerAssistantId == null) {
-    return true;
-  }
-  return versionKnown || unavailableFor === ownerAssistantId;
-}
-
-/**
  * Non-hook variant of `useAssistantSupports`: reads the version
  * snapshot via `useAssistantIdentityStore.getState()` so it's safe to
  * call from non-hook contexts (event handlers, async ops, request

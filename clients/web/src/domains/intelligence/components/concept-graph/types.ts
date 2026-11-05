@@ -4,7 +4,11 @@ import type { PositionedNode } from "@/domains/intelligence/components/constella
  * "pending" marks buffer entries consolidation has not yet filed into concept
  * pages — drawn dash-ringed so "saved but not filed" reads at a glance. */
 export type ConceptNodeKind =
-  "concept" | "skill" | "capability" | "pending" | "other";
+  | "concept"
+  | "skill"
+  | "capability"
+  | "pending"
+  | "other";
 
 /** Edge taxonomy the renderer styles by. */
 export type ConceptEdgeKind = "link" | "learned" | "other";

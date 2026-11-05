@@ -105,9 +105,7 @@ describe("migratePrefix", () => {
 
     migratePrefix("voice:ttsApiKey:", "cadet:voice:ttsApiKey:");
 
-    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe(
-      "sk-123",
-    );
+    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe("sk-123");
     expect(localStorage.getItem("cadet:voice:ttsApiKey:elevenlabs")).toBe(
       "el-456",
     );
@@ -183,12 +181,8 @@ describe("runStorageMigrations", () => {
     expect(localStorage.getItem("cadet:voice:ttsProvider")).toBe("openai");
     expect(localStorage.getItem("cadet:voice:sttProvider")).toBe("whisper");
     expect(localStorage.getItem("cadet:voice:activationKey")).toBe("Space");
-    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe(
-      "sk-123",
-    );
-    expect(localStorage.getItem("cadet:voice:ttsVoiceId:openai")).toBe(
-      "alloy",
-    );
+    expect(localStorage.getItem("cadet:voice:ttsApiKey:openai")).toBe("sk-123");
+    expect(localStorage.getItem("cadet:voice:ttsVoiceId:openai")).toBe("alloy");
     expect(localStorage.getItem("cadet:voice:sttApiKey:deepgram")).toBe(
       "dg-456",
     );
@@ -206,9 +200,7 @@ describe("runStorageMigrations", () => {
     runStorageMigrations();
 
     expect(localStorage.getItem("cadet:onboarding:tosAccepted")).toBe("true");
-    expect(localStorage.getItem("cadet:onboarding:aiDataConsent")).toBe(
-      "true",
-    );
+    expect(localStorage.getItem("cadet:onboarding:aiDataConsent")).toBe("true");
     // completed key is removed (no longer used), not migrated
     expect(localStorage.getItem("onboarding.completed")).toBeNull();
     expect(localStorage.getItem("cadet:onboarding:completed")).toBeNull();
@@ -358,17 +350,13 @@ describe("runStorageMigrations", () => {
     localStorage.setItem("cadet:currentAssistantId:org-1", "per-org");
 
     runStorageMigrations();
-    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe(
-      "tab-local",
-    );
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("tab-local");
     expect(localStorage.getItem("cadet:local:selectedAssistantId")).toBeNull();
     expect(localStorage.getItem("cadet:currentAssistantId:org-1")).toBeNull();
 
     // Re-running leaves the collapsed value untouched and removes nothing new.
     runStorageMigrations();
-    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe(
-      "tab-local",
-    );
+    expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("tab-local");
   });
 
   test("migrates cadetDebug key", () => {

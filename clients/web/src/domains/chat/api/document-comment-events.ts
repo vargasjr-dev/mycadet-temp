@@ -13,13 +13,6 @@ import type {
   DocumentCommentResolvedEvent,
 } from "@mycadet/assistant-api";
 import type { DocumentsByIdCommentsPostResponse } from "@/generated/daemon/types.gen";
-
-export type DocumentCommentEvent =
-  | DocumentCommentCreatedEvent
-  | DocumentCommentResolvedEvent
-  | DocumentCommentReopenedEvent
-  | DocumentCommentDeletedEvent;
-
 // ---------------------------------------------------------------------------
 // Callbacks
 // ---------------------------------------------------------------------------

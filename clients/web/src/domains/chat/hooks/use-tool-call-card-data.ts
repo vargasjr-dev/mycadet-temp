@@ -5,12 +5,9 @@
  *  updates in lockstep with daemon-emitted metadata. */
 
 import { useEffect, useState } from "react";
-
-import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import { useTurnStore } from "@/domains/chat/turn-store";
 
 import {
-  computeToolCallCardData,
   computeToolCallCardDataFromItems,
   hasRunningItem,
   type ToolCallCardData,
@@ -37,21 +34,6 @@ function useNow(active: boolean): number | undefined {
     return () => clearInterval(id);
   }, [active]);
   return active ? now : undefined;
-}
-
-/**
- * React hook flavour of {@link computeToolCallCardData}. Subscribes to the
- * turn store's `liveWebActivity` map so the card data updates in lockstep
- * with daemon-emitted metadata, then delegates to the pure projection.
- */
-export function useToolCallCardData(
-  toolCalls: ChatMessageToolCall[],
-): ToolCallCardData {
-  const liveWebActivity = useTurnStore.use.liveWebActivity();
-  const now = useNow(
-    hasRunningItem(toolCalls.map((tc) => ({ kind: "toolCall", toolCall: tc }))),
-  );
-  return computeToolCallCardData(toolCalls, liveWebActivity, now, {});
 }
 
 /**

@@ -1,25 +1,15 @@
-import { Loader2 } from "lucide-react";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
-import { CapacityBar } from "@/domains/settings/components/capacity-bar";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
-import { t, useTranslation } from "@/i18n";
+import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 import { toast } from "@mycadet/design-library";
-import { Tag } from "@mycadet/design-library/components/tag";
-
 // A resize rolls the assistant pod, so the new allocation only appears once it
 // comes back up. Poll /v1/health for a bounded window, tolerating the restart
 // gap where the endpoint is briefly unreachable.
@@ -199,145 +189,4 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     refetch: refetchHealthz,
     refetchUntilResized,
   };
-}
-
-export interface AssistantStatusPanelProps {
-  assistant: LockfileAssistant;
-  healthz: HealthzGetResponse | null;
-  healthzLoading: boolean;
-}
-
-export function AssistantStatusPanel({
-  assistant,
-  healthz,
-  healthzLoading,
-}: AssistantStatusPanelProps) {
-  const { t } = useTranslation("settings");
-
-  const version = healthz?.version;
-
-  return (
-    <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
-      <Label>{t("assistantStatusPanel.name")}</Label>
-      <Value>{assistant.name}</Value>
-
-      <Label>{t("assistantStatusPanel.status")}</Label>
-      <div>
-        <Tag tone="positive">{t("assistantStatusPanel.active")}</Tag>
-      </div>
-
-      <Label>{t("assistantStatusPanel.assistantId")}</Label>
-      <span className="break-all font-mono text-body-small-default text-[var(--content-tertiary)]">
-        {assistant.assistantId}
-      </span>
-
-      <Label>{t("assistantStatusPanel.created")}</Label>
-      <Value>
-        {assistant.hatchedAt
-          ? new Date(assistant.hatchedAt).toLocaleDateString()
-          : t("assistantStatusPanel.unknown")}
-      </Value>
-
-      <Label>{t("assistantStatusPanel.version")}</Label>
-      <Value>{healthzLoading ? "—" : (version ?? "—")}</Value>
-    </div>
-  );
-}
-
-export interface SystemResourcesPanelProps {
-  healthz: HealthzGetResponse | null;
-  healthzLoading: boolean;
-}
-
-export function SystemResourcesPanel({
-  healthz,
-  healthzLoading,
-}: SystemResourcesPanelProps) {
-  const { t } = useTranslation("settings");
-  return (
-    <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
-      <Label>{t("assistantStatusPanel.diskUsage")}</Label>
-      {healthzLoading ? (
-        <LoadingRow label={t("assistantStatusPanel.loadingDisk")} />
-      ) : healthz?.disk ? (
-        <CapacityBar
-          value={healthz.disk.usedMb}
-          max={healthz.disk.totalMb}
-          caption={t("assistantStatusPanel.usedOf", {
-            used: formatResourceMb(healthz.disk.usedMb),
-            total: formatResourceMb(healthz.disk.totalMb),
-          })}
-        />
-      ) : (
-        <span className="text-[var(--content-tertiary)]">
-          {t("assistantStatusPanel.diskUnavailable")}
-        </span>
-      )}
-
-      <Label>{t("assistantStatusPanel.cpuUsage")}</Label>
-      {healthzLoading ? (
-        <LoadingRow label={t("assistantStatusPanel.loadingCpu")} />
-      ) : healthz?.cpu ? (
-        <CapacityBar
-          value={healthz.cpu.currentPercent}
-          max={100}
-          caption={`${healthz.cpu.currentPercent.toFixed(1)}%`}
-        />
-      ) : (
-        <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
-          —
-        </span>
-      )}
-
-      <Label>{t("assistantStatusPanel.memoryUsage")}</Label>
-      {healthzLoading ? (
-        <LoadingRow label={t("assistantStatusPanel.loadingMemory")} />
-      ) : healthz?.memory ? (
-        <CapacityBar
-          value={healthz.memory.currentMb}
-          max={healthz.memory.maxMb}
-          caption={t("assistantStatusPanel.usedOf", {
-            used: formatResourceMb(healthz.memory.currentMb),
-            total: formatResourceMb(healthz.memory.maxMb),
-          })}
-        />
-      ) : (
-        <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
-          —
-        </span>
-      )}
-    </div>
-  );
-}
-
-export function formatResourceMb(mb: number): string {
-  if (mb >= 1024) {
-    return `${(mb / 1024).toFixed(1)} GB`;
-  }
-  return `${mb.toFixed(0)} MB`;
-}
-
-function Label({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-body-medium-default text-[var(--content-tertiary)]">
-      {children}
-    </span>
-  );
-}
-
-function Value({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-body-medium-lighter text-[var(--content-default)]">
-      {children}
-    </span>
-  );
-}
-
-function LoadingRow({ label }: { label: string }) {
-  return (
-    <span className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      {label}
-    </span>
-  );
 }

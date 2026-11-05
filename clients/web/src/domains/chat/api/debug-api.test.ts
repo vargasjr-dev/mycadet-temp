@@ -50,10 +50,7 @@ describe("eventsDebugApi", () => {
 
       // THEN the envelope is logged once
       expect(logSpy).toHaveBeenCalledTimes(1);
-      expect(logSpy).toHaveBeenLastCalledWith(
-        "[_cadetDebug.events]",
-        envelope,
-      );
+      expect(logSpy).toHaveBeenLastCalledWith("[_cadetDebug.events]", envelope);
 
       // AND no further events are logged after unsubscribing
       unsubscribe();

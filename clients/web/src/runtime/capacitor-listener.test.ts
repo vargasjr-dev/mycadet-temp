@@ -4,7 +4,7 @@ import type { PluginListenerHandle } from "@capacitor/core";
 
 let isNative = true;
 const isNativePlatformMock = mock(() => isNative);
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: isNativePlatformMock,
 }));
 

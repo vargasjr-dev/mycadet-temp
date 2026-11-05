@@ -29,9 +29,7 @@ export function PluginIntegrationRow({
 
   return (
     <IntegrationListRow
-      icon={
-        <PluginIntegrationIcon definition={method.definition} />
-      }
+      icon={<PluginIntegrationIcon definition={method.definition} />}
       title={method.definition.displayName}
       subtitle={method.definition.description}
       status={

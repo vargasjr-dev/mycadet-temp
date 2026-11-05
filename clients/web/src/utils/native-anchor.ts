@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 
 import { openUrl } from "@/runtime/browser";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 /**
  * Click handler for external `target="_blank"` anchors that must also work

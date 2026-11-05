@@ -25,7 +25,9 @@ const run = spawnSync(
   },
 );
 
-if (run.error) {throw run.error;}
+if (run.error) {
+  throw run.error;
+}
 const report = JSON.parse(run.stdout);
 
 // One stable key per finding: rule, file, symbol.

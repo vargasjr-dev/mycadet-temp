@@ -8,7 +8,6 @@ import {
 } from "@mycadet/assistant-api";
 
 import {
-  assistantsActivateCreate,
   assistantsBackupsCreate,
   assistantsBackupsRestoreCreate,
   assistantsBackupsRetrieve,
@@ -38,11 +37,6 @@ export type Assistant = GeneratedAssistant;
 export type HatchResult =
   | { ok: true; status: number; data: Assistant }
   | { ok: false; status: number; error: Record<string, unknown> };
-
-export type GetAssistantResult =
-  | { ok: true; status: number; data: Assistant }
-  | { ok: false; status: number; error: Record<string, unknown> };
-
 export type GetHealthzResult =
   | { ok: true; status: number; data: HealthzGetResponse }
   | { ok: false; status: number; error: Record<string, unknown> };
@@ -371,30 +365,5 @@ export async function listAssistants(): Promise<ListAssistantsResult> {
     ok: false,
     status,
     error: { detail: "Assistant list exceeded the page cap." },
-  };
-}
-
-export type ActivateResult =
-  | { ok: true; data: Assistant }
-  | { ok: false; status: number; error: Record<string, unknown> };
-
-export async function activateAssistant(
-  assistantId: string,
-): Promise<ActivateResult> {
-  const { data, error, response } = await assistantsActivateCreate({
-    path: { id: assistantId },
-    throwOnError: false,
-  });
-
-  assertHasResponse(response, error, "Failed to activate assistant.");
-
-  if (response.ok) {
-    return { ok: true, data: data as Assistant };
-  }
-
-  return {
-    ok: false,
-    status: response.status,
-    error: toErrorObject(error, response),
   };
 }

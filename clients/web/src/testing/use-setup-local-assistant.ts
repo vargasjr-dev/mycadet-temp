@@ -7,9 +7,7 @@ import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
  * holds one plain local assistant whose gateway listens on the default
  * port. Idempotent per id — call it in a test body or a `beforeEach`.
  */
-export function useSetupLocalAssistant(
-  assistantId: string,
-): LockfileAssistant {
+export function useSetupLocalAssistant(assistantId: string): LockfileAssistant {
   const entry: LockfileAssistant = {
     cloud: "local",
     assistantId,

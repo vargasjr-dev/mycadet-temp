@@ -2,7 +2,6 @@ import {
   type DisplayMessage,
   isSurfaceInteractive,
 } from "@/domains/chat/types/types";
-import type { IdentityGetResponse } from "@/generated/daemon/types.gen";
 import type { Conversation } from "@/types/conversation-types";
 import type { AssistantEvent } from "@/types/event-types";
 import { mapMessageToolCalls } from "@/domains/chat/utils/map-message-tool-calls";
@@ -336,26 +335,6 @@ export function shouldReturnToBackground(c: Conversation): boolean {
 // Shallow per-field equality check — used to skip re-renders when an identity
 // refetch returns an unchanged value (common on SSE bursts triggered by
 // tool-driven IDENTITY.md edits).
-export function identitiesEqual(
-  a: IdentityGetResponse | null,
-  b: IdentityGetResponse | null,
-): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (a === null || b === null) {
-    return false;
-  }
-  return (
-    a.name === b.name &&
-    a.role === b.role &&
-    a.personality === b.personality &&
-    a.emoji === b.emoji &&
-    a.home === b.home &&
-    a.version === b.version &&
-    a.createdAt === b.createdAt
-  );
-}
 
 function applyConfirmationToToolCall(
   messages: DisplayMessage[],

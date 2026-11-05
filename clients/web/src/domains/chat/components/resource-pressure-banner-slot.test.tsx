@@ -147,7 +147,6 @@ describe("ResourcePressureBannerSlot", () => {
     expect(screen.getByRole("button", { name: "Upgrade" })).toBeTruthy();
   });
 
-
   test("dismiss hides the banner and persists a 7-day cooldown", () => {
     render(slot(elevatedStatus));
 
@@ -183,12 +182,12 @@ describe("ResourcePressureBannerSlot", () => {
           resourcePressure={monitorResult(elevatedStatus)}
           assistantId="assistant-1"
           assistantName={null}
-          />
+        />
         <ResourcePressureBannerSlot
           resourcePressure={monitorResult(elevatedStatus)}
           assistantId="assistant-1"
           assistantName={null}
-          />
+        />
       </MemoryRouter>,
     );
 
@@ -252,7 +251,6 @@ describe("ResourcePressureBannerSlot", () => {
     expect(screen.queryByText(/[Mm]emory/)).toBeNull();
     expect(screen.queryByText(/\d+%/)).toBeNull();
   });
-
 
   test("the title uses the assistant's name when one is set", () => {
     render(slot(elevatedStatus, "assistant-1", false, "Vel"));

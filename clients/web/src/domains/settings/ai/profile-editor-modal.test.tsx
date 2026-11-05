@@ -31,7 +31,6 @@ import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { ApiError } from "@/utils/api-errors";
 
-
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
  * resolution kind. A local stamp synthesizes a self-hosted entry for the

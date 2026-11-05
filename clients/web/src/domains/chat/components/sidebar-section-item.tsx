@@ -162,7 +162,8 @@ export function SidebarSectionItem({
          an empty node. Passed as a prop rather than as a JSX child for that
          reason: it keeps the absent case unambiguous. */
       children={
-        conversations.length > 0 ? undefined : section.type === "recents" && resolved ? (
+        conversations.length > 0 ? undefined : section.type === "recents" &&
+          resolved ? (
           <SidebarSectionEmptyState
             title={t("chatsSection.emptyTitle")}
             body={t("chatsSection.emptyBody")}

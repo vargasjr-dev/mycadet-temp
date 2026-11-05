@@ -55,9 +55,8 @@ mock.module("@/domains/settings/ai/use-provider-credentials-list", () => ({
   }),
 }));
 
-const { ProviderEditorContent } = await import(
-  "@/domains/settings/ai/provider-editor-content"
-);
+const { ProviderEditorContent } =
+  await import("@/domains/settings/ai/provider-editor-content");
 
 const ASSISTANT_ID = "asst-1";
 

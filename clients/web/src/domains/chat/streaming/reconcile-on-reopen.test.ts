@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 
 const consoleWarnMock = spyOn(console, "warn").mockImplementation(() => {});
 

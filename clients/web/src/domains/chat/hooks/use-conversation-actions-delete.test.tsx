@@ -39,7 +39,6 @@ mock.module("@/utils/haptics", () => ({
   haptic: { medium: () => {}, light: () => {} },
 }));
 
-
 const { useConversationActions } =
   await import("@/domains/chat/hooks/use-conversation-actions");
 
@@ -270,7 +269,9 @@ describe("handleDeleteConversation — optimistic update", () => {
     });
 
     expect(requestedId).toBeUndefined();
-    expect(readList(client).map((c) => c.conversationId)).toEqual(["draft-123"]);
+    expect(readList(client).map((c) => c.conversationId)).toEqual([
+      "draft-123",
+    ]);
   });
 
   test("failed delete restores only the deleted row", async () => {

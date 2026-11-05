@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 
 import type { DisplayAttachment } from "@/types/attachment-types";
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   useIsNativePlatform: () => false,
 }));
 

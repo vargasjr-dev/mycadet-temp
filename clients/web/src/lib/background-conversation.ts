@@ -1,34 +1,3 @@
-/**
- * Starting a conversation the user is not looking at.
- *
- * A background launch creates a conversation, links it somewhere, and sends
- * one prompt into it, all while the surface that triggered it stays on screen
- * and the visible conversation is left alone. That is deliberately NOT
- * `prepareFreshConversation()` from `conversation-navigation.ts`: that helper
- * selects the new draft and reveals the chat, which is right for "new chat"
- * and wrong here, since it would swap the transcript under an open modal while
- * the URL still points at the conversation the user was reading.
- *
- * The conversation is created by the daemon up front rather than minted
- * client-side. A caller that has to record a link BEFORE the prompt is sent
- * needs an id the daemon can already resolve: `POST /v1/messages` looks a
- * `conversationId` up strictly and 404s on a miss (see
- * `lib/backwards-compat/conversation-id-wire-field.ts`), and its
- * create-on-first-send branches either mint their own id or key off an
- * external `conversationKey`. One extra round trip buys an id that the link
- * and the send agree about.
- *
- * The seam lives in `lib/` rather than `utils/` because it does network I/O
- * and reaches into the chat domain's message API, neither of which belongs in
- * a directory reserved for pure functions. The conversation is a real
- * conversation: it is in the sidebar list from the moment it exists, and
- * opening it later streams like any other.
- */
-
-import {
-  postChatMessage,
-  type PostMessageResult,
-} from "@/domains/chat/api/messages";
 import {
   conversationsByIdDelete,
   conversationsPost,
@@ -116,39 +85,4 @@ export async function discardBackgroundConversation(
   } catch {
     // Best effort by contract.
   }
-}
-
-export interface SendBackgroundPromptArgs {
-  assistantId: string;
-  /** A conversation from {@link createBackgroundConversation}. */
-  conversationId: string;
-  prompt: string;
-  /**
-   * Whether the words are generated rather than typed. `true` for a prompt a
-   * surface supplies, where the user chose the button and not the sentence;
-   * `false` for text the user wrote into a field, which is typed engagement
-   * however it is sent.
-   *
-   * Required rather than defaulted: the marker is what activation analytics
-   * excludes on, and an omitted marker reads as unknown rather than false, so
-   * a caller that forgets it either loses a real turn from the numbers or
-   * leaves a generated one counted as engagement.
-   */
-  scripted: boolean;
-}
-
-/**
- * Send one prompt into a background conversation.
- *
- * The id names a row the daemon already holds, so the strict `conversationId`
- * wire field resolves it on assistants that use it and the legacy
- * `conversationKey` lookup finds it on assistants that do not.
- */
-export async function sendBackgroundPrompt({
-  assistantId,
-  conversationId,
-  prompt,
-  scripted,
-}: SendBackgroundPromptArgs): Promise<PostMessageResult> {
-  return postChatMessage(assistantId, conversationId, prompt, { scripted });
 }

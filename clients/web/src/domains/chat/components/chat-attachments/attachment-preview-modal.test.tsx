@@ -16,10 +16,12 @@ type ContentResult = { data: Blob | null; error: { message: string } | null };
 
 // Mock only the daemon content endpoint; keep the rest of the generated SDK
 // real so any other consumer in the module graph is unaffected.
-const attachmentsByIdContentGet = mock(async (): Promise<ContentResult> => ({
-  data: new Blob(["content"]),
-  error: null,
-}));
+const attachmentsByIdContentGet = mock(
+  async (): Promise<ContentResult> => ({
+    data: new Blob(["content"]),
+    error: null,
+  }),
+);
 const attachmentsByIdGet = mock(async () => ({
   data: {
     id: "att-1",

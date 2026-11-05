@@ -27,17 +27,6 @@ export const SOUND_EVENT_IDS = [
 
 export type SoundEventId = (typeof SOUND_EVENT_IDS)[number];
 
-export const SOUND_EVENT_DISPLAY_NAMES: Record<SoundEventId, string> = {
-  task_complete: "Task Complete",
-  needs_input: "Needs Input",
-  task_failed: "Task Failed",
-  notification: "Notification",
-  new_conversation: "New Conversation",
-  message_sent: "Message Sent",
-  character_poke: "Character Poke",
-  random: "Random",
-};
-
 export interface SoundEventConfig {
   enabled: boolean;
   sounds: string[];

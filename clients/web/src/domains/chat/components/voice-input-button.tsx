@@ -29,7 +29,7 @@ import {
   MOBILE_GLYPH_CLASS,
   preventPressFocusTransfer,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { getVoiceInputMediaStream } from "@/utils/voice-input-device";
 import { isHoldDictation } from "@/utils/voice-key";

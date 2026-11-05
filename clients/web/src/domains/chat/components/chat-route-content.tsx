@@ -74,7 +74,7 @@ import { useComposerStore } from "@/domains/chat/composer-store";
 import { ActiveProcessOverlay } from "@/domains/chat/process-registry/active-process-overlay";
 import {
   OVERLAY_PROCESS_KINDS,
-  POPOUT_OVERLAY_PROCESS_KINDS,
+  PROCESS_KINDS,
 } from "@/domains/chat/process-registry/registry";
 import type { ProcessKind } from "@/domains/chat/process-registry/types";
 import { SUBAGENT_DESCRIPTOR } from "@/domains/chat/process-registry/descriptors/subagent";
@@ -109,7 +109,7 @@ import type {
   TranscriptProps,
 } from "@/domains/chat/transcript/transcript";
 import { useTranscriptScroll } from "@/domains/chat/transcript/use-transcript-scroll";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import {
   resolveDroppedDirectories,
   WEB_FOLDER_DROP_ERROR,
@@ -252,7 +252,7 @@ function useActiveProcessSlots(isPopout: boolean) {
     workflow: workflowIds,
     "background-task": backgroundTaskIds,
   };
-  const kinds = isPopout ? POPOUT_OVERLAY_PROCESS_KINDS : OVERLAY_PROCESS_KINDS;
+  const kinds = isPopout ? PROCESS_KINDS : OVERLAY_PROCESS_KINDS;
   const hasAny = kinds.some(
     (descriptor) => idsByKind[descriptor.kind].length > 0,
   );

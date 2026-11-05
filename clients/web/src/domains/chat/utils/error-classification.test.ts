@@ -41,4 +41,3 @@ describe("chat error classification", () => {
     ).toBe(true);
   });
 });
-

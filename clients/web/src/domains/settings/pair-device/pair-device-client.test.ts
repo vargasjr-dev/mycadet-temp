@@ -135,9 +135,7 @@ describe("approvePairingRequest", () => {
     await approvePairingRequest({ base: BASE, requestId: "req-1" });
 
     expect(fetchLog).toHaveLength(1);
-    expect(fetchLog[0]?.url).toBe(
-      `${BASE}/pairing-requests/approve`,
-    );
+    expect(fetchLog[0]?.url).toBe(`${BASE}/pairing-requests/approve`);
     expect(fetchLog[0]?.init?.method).toBe("POST");
     expect(requestBody(fetchLog[0])).toEqual({ requestId: "req-1" });
     const headers = new Headers(fetchLog[0]?.init?.headers);
@@ -197,9 +195,7 @@ describe("denyPairingRequest", () => {
     await denyPairingRequest({ base: BASE, requestId: "req-1" });
 
     expect(fetchLog).toHaveLength(1);
-    expect(fetchLog[0]?.url).toBe(
-      `${BASE}/pairing-requests/deny`,
-    );
+    expect(fetchLog[0]?.url).toBe(`${BASE}/pairing-requests/deny`);
     expect(fetchLog[0]?.init?.method).toBe("POST");
     expect(requestBody(fetchLog[0])).toEqual({ requestId: "req-1" });
     expect(

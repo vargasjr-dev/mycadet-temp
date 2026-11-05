@@ -6,6 +6,7 @@ import type {
   UsageSeriesBucket,
   UsageSeriesGroupBy,
   UsageSeriesGroupValue,
+  UsageDayBucket,
 } from "./usage-types";
 
 const VISIBLE_LEGEND_ITEM_LIMIT = 6;
@@ -63,7 +64,7 @@ export function sortUsageSeriesBuckets(
 }
 
 export function seriesFromDailyBuckets(
-  buckets: readonly import("./usage-types").UsageDayBucket[],
+  buckets: readonly UsageDayBucket[],
 ): UsageSeriesBucket[] {
   return buckets.map((bucket) => ({
     bucketId: bucket.bucketId,

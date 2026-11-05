@@ -9,7 +9,7 @@ import {
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl, openUrlFinishedListener } from "@/runtime/browser";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 
 import { fetchMcpServers, pollMcpAuthStatus, startMcpAuth } from "./mcp-api";
 import { mcpQueryKeys } from "./mcp-query-keys";
@@ -160,8 +160,8 @@ export function useMcpConnect(assistantId: string) {
     const error = awaitingAuthorization
       ? settledMcpPollError(authStatus.error, authStatus.isFetching)
       : attempt.phase === "connecting"
-      ? settledMcpPollError(runtime.error, runtime.isFetching)
-      : null;
+        ? settledMcpPollError(runtime.error, runtime.isFetching)
+        : null;
     if (!error) {
       return;
     }
@@ -185,18 +185,21 @@ export function useMcpConnect(assistantId: string) {
     if (!attempt || attempt.phase === "error") {
       return;
     }
-    const timer = setTimeout(() => {
-      if (activeOperation.current !== attempt.operationId) {
-        return;
-      }
-      popupRef.current?.close();
-      popupRef.current = null;
-      setAttempt((current) =>
-        current?.operationId === attempt.operationId
-          ? { ...current, phase: "error", error: t("mcpConnect.timedOut") }
-          : current,
-      );
-    }, Math.max(0, attempt.startedAt + CONNECTION_POLL_WINDOW_MS - Date.now()));
+    const timer = setTimeout(
+      () => {
+        if (activeOperation.current !== attempt.operationId) {
+          return;
+        }
+        popupRef.current?.close();
+        popupRef.current = null;
+        setAttempt((current) =>
+          current?.operationId === attempt.operationId
+            ? { ...current, phase: "error", error: t("mcpConnect.timedOut") }
+            : current,
+        );
+      },
+      Math.max(0, attempt.startedAt + CONNECTION_POLL_WINDOW_MS - Date.now()),
+    );
     return () => clearTimeout(timer);
   }, [attempt, t]);
 

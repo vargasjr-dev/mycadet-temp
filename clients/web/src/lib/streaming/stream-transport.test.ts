@@ -253,7 +253,6 @@ describe("subscribeEvents idle watchdog", () => {
       expect(first.details.attempt).toBe(0);
       // Centralized platform tag is injected by the diagnostics recorder.
       expect(first.details.platform).toBe("web");
-
     } finally {
       sub.cancel();
     }
@@ -309,7 +308,6 @@ describe("subscribeEvents idle watchdog", () => {
         dataFramesReceivedSinceConnect: 0,
         lastByteAgeMs: null,
       });
-
     } finally {
       sub.cancel();
     }

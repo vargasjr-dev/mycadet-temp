@@ -167,7 +167,6 @@ describe("useSectionConversations", () => {
     expect(sentFilters.at(-1)).toEqual({ groupId: "system:pinned" });
   });
 
-
   /* A channel section constrains BOTH axes. `origin_channel` is a separate
      column from `group_id`, so without `system:all` a Slack conversation the
      user filed into a custom group would match that group's card AND Slack's,
