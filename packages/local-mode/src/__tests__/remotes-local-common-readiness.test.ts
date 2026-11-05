@@ -6,7 +6,9 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import {
   type DaemonSpawn,
+  isStartupLoggingEnabled,
   reportFreshSpawnReadiness,
+  setStartupLogging,
 } from "../remotes/local/common";
 
 // Above every platform default pid ceiling, so no live process owns it.
@@ -27,6 +29,10 @@ describe("reportFreshSpawnReadiness", () => {
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), "cadet-readiness-"));
     pidFile = join(tempDir, "daemon.pid");
+    // The ready line is the one startup line behind the verbosity gate —
+    // these tests assert the operator-visible default, so pin the gate on
+    // (a sibling suite that runs the real hatch leg flips it off).
+    setStartupLogging(true);
     logSpy = spyOn(console, "log").mockImplementation(() => {});
   });
 
@@ -41,19 +47,34 @@ describe("reportFreshSpawnReadiness", () => {
      * probed state reported.
      */
 
-    // GIVEN the spawned daemon is running
-    writeFileSync(pidFile, String(process.pid), "utf-8");
+    // GIVEN the spawned daemon is running — a real child process, so the
+    // liveness probe is unambiguous even while the runner's own pid is
+    // doing whatever the parallel test scheduler has it do
+    const daemon = Bun.spawn(["sleep", "5"]);
+    writeFileSync(pidFile, String(daemon.pid), "utf-8");
 
-    // WHEN its readiness is reported
-    await reportFreshSpawnReadiness(
-      spawnHandle(false),
-      pidFile,
-      UNSERVED_PORT,
-      "ready",
-    );
+    try {
+      // WHEN its readiness is reported
+      await reportFreshSpawnReadiness(
+        spawnHandle(false),
+        pidFile,
+        UNSERVED_PORT,
+        "ready",
+      );
 
-    // THEN the probed state reaches the operator
-    expect(logSpy).toHaveBeenCalledWith("   Assistant ready\n");
+      // THEN the probed state reaches the operator — if this ever fails,
+      // say which mechanism swallowed it: the verbosity gate, or a settle
+      // verdict that took the failure branch instead
+      expect(isStartupLoggingEnabled()).toBeTrue();
+      expect(
+        logSpy.mock.calls.map((call: Parameters<typeof console.log>) =>
+          call.join(" "),
+        ),
+      ).not.toContain(expect.stringContaining("⚠️"));
+      expect(logSpy).toHaveBeenCalledWith("   Assistant ready\n");
+    } finally {
+      daemon.kill();
+    }
   });
 
   test("reports a startup failure instead of a probe answered by a foreign listener", async () => {
