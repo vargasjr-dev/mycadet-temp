@@ -7,6 +7,7 @@ import { saveBasetenSandboxToken } from "../guardian-token.js";
 import * as basetenCli from "../remotes/baseten/baseten-cli.js";
 import {
   basetenExecArgs,
+  cadetExecCommand,
   consumeBasetenExecEvent,
   execBasetenSandbox,
   execCommandLine,
@@ -45,6 +46,39 @@ describe("execCommandLine", () => {
       "sh -c 'ps aux | grep cadet'",
     );
     expect(execCommandLine(["echo", "it's"])).toBe("echo 'it'\\''s'");
+  });
+});
+
+describe("cadetExecCommand", () => {
+  test("the command wraps in the sandbox's own cadet exec", () => {
+    expect(cadetExecCommand(["cadet", "ps"])).toEqual([
+      "cadet",
+      "exec",
+      "--",
+      "cadet",
+      "ps",
+    ]);
+  });
+
+  test("a non-assistant service rides --service — the sandbox's cadet resolves its pwd", () => {
+    expect(cadetExecCommand(["cat", "gateway.log"], "gateway")).toEqual([
+      "cadet",
+      "exec",
+      "--service",
+      "gateway",
+      "--",
+      "cat",
+      "gateway.log",
+    ]);
+    expect(cadetExecCommand(["ls"], "credential-executor")[2]).toBe(
+      "--service",
+    );
+    expect(cadetExecCommand(["ls"], "assistant")).toEqual([
+      "cadet",
+      "exec",
+      "--",
+      "ls",
+    ]);
   });
 });
 
@@ -214,8 +248,10 @@ describe("execBasetenSandbox — the execution-API arm", () => {
 
     expect(seenUrl).toBe("https://sbx.example.b10.co/process");
     expect(seenAuth).toBe("Bearer sbx-token-1");
+    // The command rides the sandbox's own cadet exec — the runtime in
+    // there resolves the service's working directory.
     expect(seenBody).toBe(
-      JSON.stringify({ command: "echo 'a b'" }),
+      JSON.stringify({ command: "cadet exec -- echo 'a b'" }),
     );
   });
 

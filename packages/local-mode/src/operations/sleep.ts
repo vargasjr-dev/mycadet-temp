@@ -3,6 +3,7 @@ import { cliCommand } from "../environment";
 import { isAssistantHealthy } from "../daemon-readiness";
 import { sleepLocal, type SleepServiceStop } from "../remotes/local/sleep";
 import { sleepDocker } from "../remotes/docker/sleep";
+import { sleepBaseten } from "../remotes/baseten/lifecycle";
 
 /**
  * The sleep OPERATION: the headless core of `cadet sleep`, moved out of the
@@ -27,6 +28,7 @@ export type SleepResult =
       wasRunning: boolean;
     }
   | { ok: true; cancelled?: false; kind: "containers"; wasRunning: boolean }
+  | { ok: true; cancelled?: false; kind: "remote"; wasRunning: boolean }
   | { ok: true; cancelled: true; kind?: undefined; wasRunning: boolean }
   | { ok: false; status: number; error: string; wasRunning: boolean };
 
@@ -47,7 +49,8 @@ export interface SleepOptions {
 
 /**
  * Sleep one assistant entry: per-cloud stop (the local leg drains then
- * stops the process tree; the docker leg SIGTERMs the containers). Never
+ * stops the process tree; the docker leg SIGTERMs the containers; the
+ * baseten leg runs `cadet sleep` inside the sandbox). Never
  * throws and never exits the process — failures come back structured so
  * both the CLI's exit-code UX and the route's wire mapping render the same
  * detail.
@@ -68,6 +71,17 @@ export async function sleepAssistant(
     }
     if (entry.cloud === "local") {
       return { ...(await sleepLocal(entry, options)), wasRunning };
+    }
+    if (entry.cloud === "baseten") {
+      // The remote's own teardown — `cadet sleep` inside the sandbox —
+      // narrates itself over the exec stream.
+      return {
+        ...(await sleepBaseten(entry, {
+          force: options.force,
+          wait: options.wait,
+        })),
+        wasRunning,
+      };
     }
     return {
       ok: false,
