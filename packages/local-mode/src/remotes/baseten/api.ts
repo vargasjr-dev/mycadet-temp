@@ -49,16 +49,24 @@ const SandboxCreated = z.object({
 
 export type BasetenSandboxCreated = z.infer<typeof SandboxCreated>;
 
+/**
+ * Organizations with teams (Enterprise) require the team selector on every
+ * resource request when the caller belongs to more than one team —
+ * https://docs.baseten.co/reference/management-api/sandboxes/overview .
+ * Opt in by exporting BASETEN_TEAM_ID (a team name or ID); unset means the
+ * caller's default team, which is fine for single-team orgs.
+ */
+function basetenTeamId(): string | undefined {
+  return process.env.BASETEN_TEAM_ID?.trim() || undefined;
+}
+
 async function basetenFetch<S extends z.ZodType>(
   token: string,
   path: string,
   schema: S,
   init: RequestInit = {},
-  // Organizations with teams (Enterprise) require the team selector on every
-  // resource request when the caller belongs to more than one team —
-  // https://docs.baseten.co/reference/management-api/sandboxes/overview
-  team?: string,
 ): Promise<z.infer<S>> {
+  const team = basetenTeamId();
   const response = await fetch(`${BASETEN_API_BASE}${path}`, {
     ...init,
     headers: {
@@ -135,12 +143,11 @@ export async function pushBasetenImage(options: {
   dir: string;
   /** The ZIP'd context — the HTTP path uploads it to the returned URL. */
   zip: () => Buffer;
-  /** The team (name or ID) the image belongs to. */
-  team?: string;
   poll?: (status: string) => void;
   timeoutMs?: number;
   intervalMs?: number;
 }): Promise<void> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     return runBasetenCli([
       "sandbox",
@@ -150,7 +157,7 @@ export async function pushBasetenImage(options: {
       options.name,
       "--dir",
       options.dir,
-      ...(options.team ? ["--team", options.team] : []),
+      ...(team ? ["--team", team] : []),
       "--wait",
     ]);
   }
@@ -164,7 +171,6 @@ export async function pushBasetenImage(options: {
       method: "POST",
       body: JSON.stringify({ name: options.name }),
     },
-    options.team,
   );
   const uploadUrl = accepted.upload_url;
 
@@ -194,8 +200,6 @@ export async function pushBasetenImage(options: {
       token,
       `/v1/sandboxes/images/${encodeURIComponent(options.name)}`,
       ImageStatus,
-      {},
-      options.team,
     );
     const status = image.status ?? "UNKNOWN";
     options.poll?.(status);
@@ -221,13 +225,12 @@ export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
-  /** The team (name or ID) the sandbox is created in. */
-  team?: string;
 }): Promise<BasetenSandboxCreated> {
+  const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
-    if (options.team) args.push("--team", options.team);
+    if (team) args.push("--team", team);
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
       // `--plain-env` stays readable — configuration like a gateway port is
@@ -237,27 +240,21 @@ export async function createBasetenSandbox(options: {
     }
     await runBasetenCli(args);
     if (options.name) {
-      const url = await describeBasetenSandboxUrl(options.name, options.team);
+      const url = await describeBasetenSandboxUrl(options.name);
       return { name: options.name, ...(url ? { url } : {}) };
     }
     return { name: options.name };
   }
 
   const token = await resolveBasetenToken();
-  return basetenFetch(
-    token,
-    "/v1/sandboxes/instances",
-    SandboxCreated,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        image: options.image,
-        ...(options.name ? { name: options.name } : {}),
-        ...(options.envs?.length ? { envs: options.envs } : {}),
-      }),
-    },
-    options.team,
-  );
+  return basetenFetch(token, "/v1/sandboxes/instances", SandboxCreated, {
+    method: "POST",
+    body: JSON.stringify({
+      image: options.image,
+      ...(options.name ? { name: options.name } : {}),
+      ...(options.envs?.length ? { envs: options.envs } : {}),
+    }),
+  });
 }
 
 /**
@@ -266,10 +263,8 @@ export async function createBasetenSandbox(options: {
  * declines (name not found yet, pre-release output changes): the caller
  * treats a miss as "no URL recorded" rather than a failed hatch.
  */
-export async function describeBasetenSandboxUrl(
-  name: string,
-  team?: string,
-): Promise<string> {
+export async function describeBasetenSandboxUrl(name: string): Promise<string> {
+  const team = basetenTeamId();
   try {
     const out = await captureBasetenCli([
       "sandbox",

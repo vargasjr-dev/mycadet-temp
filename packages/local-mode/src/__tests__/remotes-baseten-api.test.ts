@@ -48,6 +48,7 @@ function cliArm(describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"') {
 afterEach(() => {
   request.mockRestore();
   delete process.env.BASETEN_API_KEY;
+  delete process.env.BASETEN_TEAM_ID;
 });
 
 describe("resolveBasetenToken", () => {
@@ -291,12 +292,12 @@ describe("createBasetenSandbox", () => {
     run.mockRestore();
   });
 
-  test("a team rides --team on the CLI arm and the X-Team-Id header over HTTP", async () => {
+  test("BASETEN_TEAM_ID rides --team on the CLI arm and X-Team-Id over HTTP", async () => {
+    process.env.BASETEN_TEAM_ID = "team-abc123";
     const [cli, run] = cliArm();
     await createBasetenSandbox({
       name: "my-cadet",
       image: basetenImageRef("cadet"),
-      team: "team-abc123",
     });
     expect(run).toHaveBeenCalledWith([
       "sandbox",
@@ -330,25 +331,24 @@ describe("createBasetenSandbox", () => {
     await createBasetenSandbox({
       name: "my-cadet",
       image: basetenImageRef("cadet"),
-      team: "team-abc123",
     });
     const instances = calls().find(([url]) =>
       url.endsWith("/v1/sandboxes/instances"),
     );
-    expect(
-      new Headers(instances?.[1].headers).get("X-Team-Id"),
-    ).toBe("team-abc123");
+    expect(new Headers(instances?.[1].headers).get("X-Team-Id")).toBe(
+      "team-abc123",
+    );
     httpCli.mockRestore();
     httpRun.mockRestore();
   });
 
-  test("a team rides the image push on both arms", async () => {
+  test("BASETEN_TEAM_ID rides the image push on both arms", async () => {
+    process.env.BASETEN_TEAM_ID = "team-abc123";
     const [cli, run] = cliArm();
     await pushBasetenImage({
       name: "cadet",
       dir: "/tmp/staged",
       zip: () => Buffer.from("zip"),
-      team: "team-abc123",
     });
     expect(run).toHaveBeenCalledWith([
       "sandbox",
@@ -383,15 +383,14 @@ describe("createBasetenSandbox", () => {
       name: "cadet",
       dir: "/tmp/staged",
       zip: () => Buffer.from("zip"),
-      team: "team-abc123",
       intervalMs: 1,
     });
     const pushes = calls().filter(([url]) =>
       url.endsWith("/v1/sandboxes/images"),
     );
-    expect(
-      new Headers(pushes[0][1].headers).get("X-Team-Id"),
-    ).toBe("team-abc123");
+    expect(new Headers(pushes[0][1].headers).get("X-Team-Id")).toBe(
+      "team-abc123",
+    );
     const status = calls().find(([url]) =>
       url.endsWith("/v1/sandboxes/images/cadet"),
     );
@@ -400,6 +399,23 @@ describe("createBasetenSandbox", () => {
     );
     httpCli.mockRestore();
     httpRun.mockRestore();
+  });
+
+  test("without BASETEN_TEAM_ID no team header is sent", async () => {
+    const [cli, run] = httpArm();
+    request.mockResolvedValueOnce(
+      Response.json({ name: "my-cadet", status: "DEPLOYED" }, { status: 201 }),
+    );
+    await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+    });
+    const instances = calls().find(([url]) =>
+      url.endsWith("/v1/sandboxes/instances"),
+    );
+    expect(new Headers(instances?.[1].headers).get("X-Team-Id")).toBe(null);
+    cli.mockRestore();
+    run.mockRestore();
   });
 
   test("over HTTP API errors carry Baseten's code and message", async () => {
