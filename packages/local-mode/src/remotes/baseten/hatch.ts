@@ -98,6 +98,13 @@ async function recordSandbox(params: {
 export type HatchBasetenParams = {
   name?: string;
   configValues?: Record<string, string>;
+  /**
+   * The Baseten team (name or ID) to hatch into. Organizations with teams
+   * require the selector when the caller belongs to more than one team.
+   * Resolved from the `baseten.team` config value, falling back to
+   * BASETEN_TEAM_ID.
+   */
+  team?: string;
   verbose?: boolean;
   /** The caller's release version — stamped into the image build. */
   version?: string;
@@ -117,10 +124,22 @@ export async function hatchBaseten(
   const log = (msg: string) => reporter.log(msg);
   const warn = (msg: string) => reporter.warn(msg);
   try {
-    if (Object.keys(params.configValues ?? {}).length > 0) {
+    const unwired = Object.keys(params.configValues ?? {}).filter(
+      (key) => key !== "baseten.team",
+    );
+    if (unwired.length > 0) {
       log(
         "Warning: --config values are not wired for the baseten remote yet — ignoring them.",
       );
+    }
+
+    const team =
+      params.team ??
+      params.configValues?.["baseten.team"]?.trim() ??
+      process.env.BASETEN_TEAM_ID?.trim() ??
+      undefined;
+    if (team) {
+      log(`   Baseten team: ${team}`);
     }
 
     const staged = stageBasetenBuildContext({
@@ -133,6 +152,7 @@ export async function hatchBaseten(
         name: BASETEN_IMAGE_NAME,
         dir: staged.dir,
         zip: staged.zip,
+        team,
         poll: verbose
           ? (status) => log(`   image status: ${status}`)
           : undefined,
@@ -144,6 +164,7 @@ export async function hatchBaseten(
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
         envs: [...sandboxGatewayEnvs(), ...collectProviderEnvs()],
+        team,
       });
 
       const sandboxName = sandbox.name ?? name ?? "the sandbox";

@@ -54,12 +54,17 @@ async function basetenFetch<S extends z.ZodType>(
   path: string,
   schema: S,
   init: RequestInit = {},
+  // Organizations with teams (Enterprise) require the team selector on every
+  // resource request when the caller belongs to more than one team —
+  // https://docs.baseten.co/reference/management-api/sandboxes/overview
+  team?: string,
 ): Promise<z.infer<S>> {
   const response = await fetch(`${BASETEN_API_BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(team ? { "X-Team-Id": team } : {}),
       ...(init.headers ?? {}),
     },
   });
@@ -130,6 +135,8 @@ export async function pushBasetenImage(options: {
   dir: string;
   /** The ZIP'd context — the HTTP path uploads it to the returned URL. */
   zip: () => Buffer;
+  /** The team (name or ID) the image belongs to. */
+  team?: string;
   poll?: (status: string) => void;
   timeoutMs?: number;
   intervalMs?: number;
@@ -143,6 +150,7 @@ export async function pushBasetenImage(options: {
       options.name,
       "--dir",
       options.dir,
+      ...(options.team ? ["--team", options.team] : []),
       "--wait",
     ]);
   }
@@ -156,6 +164,7 @@ export async function pushBasetenImage(options: {
       method: "POST",
       body: JSON.stringify({ name: options.name }),
     },
+    options.team,
   );
   const uploadUrl = accepted.upload_url;
 
@@ -185,6 +194,8 @@ export async function pushBasetenImage(options: {
       token,
       `/v1/sandboxes/images/${encodeURIComponent(options.name)}`,
       ImageStatus,
+      {},
+      options.team,
     );
     const status = image.status ?? "UNKNOWN";
     options.poll?.(status);
@@ -210,10 +221,13 @@ export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
+  /** The team (name or ID) the sandbox is created in. */
+  team?: string;
 }): Promise<BasetenSandboxCreated> {
   if (await resolveBasetenCli()) {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
+    if (options.team) args.push("--team", options.team);
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
       // `--plain-env` stays readable — configuration like a gateway port is
@@ -223,21 +237,27 @@ export async function createBasetenSandbox(options: {
     }
     await runBasetenCli(args);
     if (options.name) {
-      const url = await describeBasetenSandboxUrl(options.name);
+      const url = await describeBasetenSandboxUrl(options.name, options.team);
       return { name: options.name, ...(url ? { url } : {}) };
     }
     return { name: options.name };
   }
 
   const token = await resolveBasetenToken();
-  return basetenFetch(token, "/v1/sandboxes/instances", SandboxCreated, {
-    method: "POST",
-    body: JSON.stringify({
-      image: options.image,
-      ...(options.name ? { name: options.name } : {}),
-      ...(options.envs?.length ? { envs: options.envs } : {}),
-    }),
-  });
+  return basetenFetch(
+    token,
+    "/v1/sandboxes/instances",
+    SandboxCreated,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        image: options.image,
+        ...(options.name ? { name: options.name } : {}),
+        ...(options.envs?.length ? { envs: options.envs } : {}),
+      }),
+    },
+    options.team,
+  );
 }
 
 /**
@@ -246,13 +266,17 @@ export async function createBasetenSandbox(options: {
  * declines (name not found yet, pre-release output changes): the caller
  * treats a miss as "no URL recorded" rather than a failed hatch.
  */
-export async function describeBasetenSandboxUrl(name: string): Promise<string> {
+export async function describeBasetenSandboxUrl(
+  name: string,
+  team?: string,
+): Promise<string> {
   try {
     const out = await captureBasetenCli([
       "sandbox",
       "describe",
       "--name",
       name,
+      ...(team ? ["--team", team] : []),
       "--jq",
       ".url",
     ]);
