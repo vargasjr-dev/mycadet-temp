@@ -72,7 +72,7 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Knip (dead code ratchet)
+      - name: Knip (dead code)
         run: bun run knip
 
       - name: Audit cross-domain import allow-list freshness
