@@ -15,7 +15,7 @@
 
 import { type RefObject, useEffect, useRef } from "react";
 
-import { client } from "@/generated/api/client.gen";
+import { client } from "@/generated/gateway/client.gen";
 import { subscribe as busSubscribe } from "@/lib/event-bus";
 import {
   FETCH_PROXY_PATH_RE,

@@ -31,7 +31,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { client } from "@/generated/api/client.gen";
+import { client } from "@/generated/gateway/client.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { getBrowserTimezone } from "@/utils/browser-timezone";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
@@ -49,17 +49,12 @@ export function TimezoneSync(): null {
       assistantId: string;
       detectedTimezone: string;
     }) => {
-      const { data } = await client.patch<
-        Record<string, unknown>,
-        unknown,
-        true
-      >({
+      await client.patch({
         url: `/v1/assistants/{assistant_id}/config`,
         path: { assistant_id: vars.assistantId },
         body: { ui: { detectedTimezone: vars.detectedTimezone } },
         throwOnError: true,
       });
-      return data;
     },
     retry: 3,
     retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 10_000),
