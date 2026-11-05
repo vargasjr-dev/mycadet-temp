@@ -30,7 +30,7 @@ export type AssistantStatusFetchResult<TStatus> =
   | { ok: false };
 
 export interface UseAssistantStatusMonitorOptions<TStatus, TMode> {
-  assistantId: string | null;
+  assistantId: string;
   /** A new identity restarts the poll interval and refreshes immediately. */
   refreshKey?: unknown;
   cadenceMs: number;
@@ -113,8 +113,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   const [snapshot, setSnapshot] = useState<
     AssistantStatusMonitorSnapshot<TStatus>
   >(EMPTY_MONITOR_SNAPSHOT);
-  const activeAssistantIdRef = useRef<string | null>(assistantId);
-  const enabledRef = useRef(true);
+  const activeAssistantIdRef = useRef(assistantId);
   const generationRef = useRef(0);
   const pollRequestIdRef = useRef(0);
 
@@ -144,7 +143,6 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
 
   const isCurrentRequest = useCallback(
     (requestedAssistantId: string, generation: number) =>
-      enabledRef.current &&
       activeAssistantIdRef.current === requestedAssistantId &&
       generationRef.current === generation,
     [],
@@ -186,30 +184,23 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
   }, []);
 
   const refresh = useCallback(async () => {
-    const requestedAssistantId = assistantId;
-
-    if (!requestedAssistantId) {
-      clearStatus();
-      return;
-    }
-
     const generation = generationRef.current;
     const pollRequestId = pollRequestIdRef.current + 1;
     pollRequestIdRef.current = pollRequestId;
 
     try {
-      const result = await fetchStatusRef.current(requestedAssistantId);
+      const result = await fetchStatusRef.current(assistantId);
       if (pollRequestIdRef.current !== pollRequestId) {
         return;
       }
 
       if (!result.ok) {
-        applyStatusForAssistant(requestedAssistantId, null, false, generation);
+        applyStatusForAssistant(assistantId, null, false, generation);
         return;
       }
 
       applyStatusForAssistant(
-        requestedAssistantId,
+        assistantId,
         result.data.status,
         true,
         generation,
@@ -219,15 +210,11 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
         return;
       }
 
-      applyStatusForAssistant(requestedAssistantId, null, false, generation);
+      applyStatusForAssistant(assistantId, null, false, generation);
     }
-  }, [assistantId, applyStatusForAssistant, clearStatus]);
+  }, [assistantId, applyStatusForAssistant]);
 
   useEffect(() => {
-    if (!assistantId) {
-      return;
-    }
-
     void refresh();
 
     const intervalId = window.setInterval(() => {
@@ -241,24 +228,18 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
 
   // The bus's `"app.resume"` channel fans in browser visibility,
   // Capacitor foreground, and `window.online`, so a single
-  // subscription drives the focus-style refetch. `refresh` guards
-  // on `assistantId` internally.
+  // subscription drives the focus-style refetch.
   useBusSubscription("app.resume", () => {
     void refresh();
   });
 
   const applyStatusEvent = useCallback(
     (payload: TStatus | null) => {
-      if (!assistantId) {
-        clearStatus();
-        return;
-      }
-
       const generation = bumpGeneration();
       onStatusEventRef.current?.();
       applyStatusForAssistant(assistantId, payload, true, generation);
     },
-    [assistantId, applyStatusForAssistant, bumpGeneration, clearStatus],
+    [assistantId, applyStatusForAssistant, bumpGeneration],
   );
 
   // React to daemon-pushed status events via the event bus. Complements
@@ -274,9 +255,7 @@ export function useAssistantStatusMonitor<TStatus, TMode>({
 
   const status = snapshot.assistantId === assistantId ? snapshot.status : null;
   const hasResolvedStatus = Boolean(
-    assistantId &&
-    snapshot.assistantId === assistantId &&
-    snapshot.hasResolvedStatus,
+    snapshot.assistantId === assistantId && snapshot.hasResolvedStatus,
   );
   const mode = useMemo(() => deriveMode(status), [deriveMode, status]);
 

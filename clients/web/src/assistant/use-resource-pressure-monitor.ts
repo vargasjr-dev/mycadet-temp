@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
 import { getAssistantResourcePressureStatus } from "@/assistant/api";
@@ -9,24 +10,14 @@ import {
 } from "@/assistant/resource-pressure";
 import { useAssistantStatusMonitor } from "@/assistant/use-assistant-status-monitor";
 
-export interface UseResourcePressureMonitorOptions {
-  assistantId: string | null;
-  enabled: boolean;
-}
-
 export interface UseResourcePressureMonitorResult {
   status: ResourcePressureStatus | null;
   mode: ResourcePressureMonitorMode;
 }
 
-export function useResourcePressureMonitor({
-  assistantId,
-  enabled,
-}: UseResourcePressureMonitorOptions): UseResourcePressureMonitorResult {
-  // The monitor itself is always on; the gate (the daemon version floor for
-  // the status route) is enforced by withholding the assistant id.
+export function useResourcePressureMonitor(): UseResourcePressureMonitorResult {
   const { status, mode } = useAssistantStatusMonitor({
-    assistantId: enabled ? assistantId : null,
+    assistantId: useActiveAssistantId(),
     cadenceMs: RESOURCE_PRESSURE_POLL_INTERVAL_MS,
     fetchStatus: getAssistantResourcePressureStatus,
     areStatusesEqual: areResourcePressureStatusesEqual,

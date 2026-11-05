@@ -2,7 +2,6 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 import { useSyncExternalStore } from "react";
 
 import { sanitizeReturnTo } from "@/utils/return-to";
-import { getSession } from "@/lib/auth/allauth-client";
 import {
   isBiometricEnabled,
   setBiometricEnabled,
@@ -118,25 +117,6 @@ async function completeNativeLogin(
   // The JS-side cookie is the source of truth for the native WebView session.
   installSessionCookies(sessionToken);
 
-  // Native WebViews can flush `document.cookie` writes asynchronously.
-  // Without a synchronization step, the subsequent
-  // hard navigation can race the flush and the request to `/assistant`
-  // goes out without the session cookie — the cloud sees an anonymous user,
-  // `AuthProvider` redirects back to `/account/login`, and the user is
-  // dumped at the login screen even though auth itself succeeded.
-  //
-  // Probe `/_allauth/browser/v1/auth/session` until the server agrees
-  // we're authenticated. This both (a) forces the WebView to flush the
-  // cookie store so subsequent requests carry the cookie and (b) confirms
-  // The cloud actually recognized it before we navigate.
-  //
-  // The biometric branch below incidentally awaited enough async work
-  // to mask the race for biometrics-enabled users, which is why this
-  // bug only reproduces consistently when biometrics is off.
-  if (isNativePlatform()) {
-    await waitForNativeSessionCookie();
-  }
-
   // Persist the token in native secure storage for biometric session recovery.
   // Respects the user's opt-out preference; storeBiometricToken is also
   // a no-op if biometrics are unavailable on the device.
@@ -148,34 +128,6 @@ async function completeNativeLogin(
   }
 
   window.location.href = destination;
-}
-
-/**
- * Block until the just-written session cookie is reachable to the cloud.
- *
- * Polls `getSession()` with backoff. Each call is a real same-origin
- * fetch with `credentials: "include"`, so the native WebView has to send the
- * cookie from its store — if `document.cookie` hasn't flushed yet, the
- * server returns anonymous and we retry until it does.
- *
- * If every attempt fails we still fall through and let the navigation
- * proceed; the post-nav `AuthProvider` may succeed once the store
- * finally settles, and a stuck loop here would block the user worse
- * than a possible re-login.
- */
-export async function waitForNativeSessionCookie(): Promise<void> {
-  const MAX_ATTEMPTS = 6;
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    try {
-      const result = await getSession();
-      if (result.ok && result.data.user) {
-        return;
-      }
-    } catch {
-      // Transient network errors fall through to the backoff.
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50 * (attempt + 1)));
-  }
 }
 
 /**

@@ -25,12 +25,6 @@ mock.module("@capacitor/core", () => ({
   registerPlugin: (name: string) => nativePlugins[name] ?? {},
 }));
 
-// The restore path polls the session endpoint before navigating. Answer
-// "authenticated" immediately so tests don't sit through the backoff.
-mock.module("@/lib/auth/allauth-client", () => ({
-  getSession: async () => ({ ok: true, data: { user: { id: "user-1" } } }),
-}));
-
 // Biometric recovery is opt-in device storage, not this suite's subject.
 mock.module("@/runtime/native-biometric", () => ({
   isBiometricEnabled: () => biometricsEnabled,
@@ -49,9 +43,7 @@ const originalCookie = Object.getOwnPropertyDescriptor(
 Object.defineProperty(document, "cookie", {
   configurable: true,
   get() {
-    return [...cookieJar.entries()]
-      .map(([k, v]) => `${k}=${v}`)
-      .join("; ");
+    return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
   },
   set(input: string) {
     const [pair] = input.split(";");

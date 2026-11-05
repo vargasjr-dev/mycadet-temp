@@ -41,7 +41,6 @@ import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useDiskPressureMonitor } from "@/assistant/use-disk-pressure-monitor";
 import { getDiskPressureChatBlockReason } from "@/assistant/disk-pressure";
 import { useResourcePressureMonitor } from "@/assistant/use-resource-pressure-monitor";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useComposerStore } from "@/domains/chat/composer-store";
 
 import { useConversationLoader } from "@/domains/chat/hooks/use-conversation-loader";
@@ -50,7 +49,6 @@ import { useOnboardingOrchestrator } from "@/domains/chat/hooks/use-onboarding-o
 
 import { useConversationSecondaryActions } from "@/domains/chat/hooks/use-conversation-secondary-actions";
 import { useAssistantCapability } from "@/hooks/use-assistant-capability";
-import { useSupportsResourcePressureStatus } from "@/lib/backwards-compat/use-supports-resource-pressure-status";
 import { useSendMessage } from "@/domains/chat/hooks/use-send-message";
 import { useMessageLifecycle } from "@/domains/chat/hooks/use-message-lifecycle";
 import { useActiveAppPinSync } from "@/domains/chat/hooks/use-active-app-pin-sync";
@@ -195,22 +193,15 @@ export function ActiveChatView() {
   } = useOnboardingOrchestrator();
 
   // -------------------------------------------------------------------------
-  // Disk pressure (only relevant for cloud-hosted assistants)
+  // Disk pressure
   // -------------------------------------------------------------------------
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor();
   const diskPressureChatBlockReason = getDiskPressureChatBlockReason({
     monitorEnabled: diskPressure.mode !== null,
     hasResolvedStatus: diskPressure.hasResolvedStatus,
     status: diskPressure.status,
   });
-  // Daemons below the gate's floor lack the status route; the gate keeps
-  // the poller from 404ing against them every tick and app resume.
-  const supportsResourcePressureStatus = useSupportsResourcePressureStatus();
-  const resourcePressure = useResourcePressureMonitor({
-    assistantId,
-    enabled: isCloudHosted && supportsResourcePressureStatus,
-  });
+  const resourcePressure = useResourcePressureMonitor();
 
   // -------------------------------------------------------------------------
   // Composer store — load drafts for the active assistant on mount / switch.
