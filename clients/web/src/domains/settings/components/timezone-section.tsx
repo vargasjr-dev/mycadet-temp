@@ -43,7 +43,7 @@ export function TimezoneSection() {
     inFlightRef.current = true;
     pendingValueRef.current = null;
     gatewayClient
-      .patch<Record<string, unknown>, unknown, true>({
+      .patch({
         url: `/v1/assistants/{assistant_id}/config`,
         path: { assistant_id: currentAssistantId },
         body: { ui: { userTimezone: value } },

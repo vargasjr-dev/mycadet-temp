@@ -49,17 +49,12 @@ export function TimezoneSync(): null {
       assistantId: string;
       detectedTimezone: string;
     }) => {
-      const { data } = await gatewayClient.patch<
-        Record<string, unknown>,
-        unknown,
-        true
-      >({
+      await gatewayClient.patch({
         url: `/v1/assistants/{assistant_id}/config`,
         path: { assistant_id: vars.assistantId },
         body: { ui: { detectedTimezone: vars.detectedTimezone } },
         throwOnError: true,
       });
-      return data;
     },
     retry: 3,
     retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 10_000),
