@@ -6,7 +6,6 @@ import { restart } from "../commands/restart.js";
 
 const lookup = spyOn(localMode, "lookupAssistantByIdentifier");
 const restartOp = spyOn(localMode, "restartAssistant");
-const restartAllOp = spyOn(localMode, "restartAllAssistants");
 const exitSpy = spyOn(process, "exit").mockImplementation((() => {
   throw new Error("process.exit");
 }) as never);
@@ -26,77 +25,141 @@ const okSleep: SleepResult = {
 };
 
 beforeEach(() => {
-  for (const spy of [lookup, restartOp, restartAllOp]) spy.mockReset();
+  for (const spy of [lookup, restartOp]) spy.mockReset();
   // mockReset restores the spy's original — re-arm the throwing exit.
   exitSpy.mockImplementation((() => {
     throw new Error("process.exit");
   }) as never);
   lookup.mockReturnValue({ status: "found", entry });
-  restartOp.mockResolvedValue({ ok: true, sleep: okSleep });
+  restartOp.mockResolvedValue({
+    ok: true,
+    reports: [{ assistantId: "test", sleep: okSleep, wake: { ok: true } }],
+  });
 });
 afterEach(() => {
   process.argv = ["bun", "cadet", "restart"];
 });
 afterAll(() => {
-  for (const spy of [lookup, restartOp, restartAllOp, exitSpy])
-    spy.mockRestore();
+  for (const spy of [lookup, restartOp, exitSpy]) spy.mockRestore();
 });
 
-test("restart delegates to the operation with the parsed flags", async () => {
-  process.argv = [
-    "bun",
-    "cadet",
-    "restart",
-    "test",
-    "--force",
-    "--wait",
-    "90s",
-    "--repair-guardian",
-  ];
+test("restart delegates one target to the single operation", async () => {
+  process.argv = ["bun", "cadet", "restart", "test"];
   await restart();
   expect(lookup).toHaveBeenCalledWith("test");
-  expect(restartOp).toHaveBeenCalledWith(
+  expect(restartOp).toHaveBeenCalledWith({
     entry,
-    expect.objectContaining({
-      force: true,
-      wait: true,
-      waitMs: 90_000,
-      repairGuardian: true,
-    }),
-  );
-  expect(restartAllOp).not.toHaveBeenCalled();
+    all: false,
+    log: expect.any(Function),
+  });
 });
 
-test("restart --all rides the env-wide operation", async () => {
-  restartAllOp.mockResolvedValue({ ok: true, reports: [] });
+test("restart --all rides the same operation with all: true", async () => {
   process.argv = ["bun", "cadet", "restart", "--all"];
   await restart();
-  expect(restartAllOp).toHaveBeenCalledWith(expect.objectContaining({}));
-  expect(restartOp).not.toHaveBeenCalled();
+  expect(lookup).not.toHaveBeenCalled();
+  expect(restartOp).toHaveBeenCalledWith({
+    entry: undefined,
+    all: true,
+    log: expect.any(Function),
+  });
 });
 
-test("a failed sleep surfaces the operation's error", async () => {
+test("a completed restart prints one line per assistant", async () => {
+  const log = spyOn(console, "log").mockImplementation(() => {});
+  restartOp.mockResolvedValue({
+    ok: true,
+    reports: [
+      { assistantId: "one", sleep: okSleep, wake: { ok: true } },
+      { assistantId: "two", sleep: okSleep, wake: { ok: true } },
+    ],
+  });
+  process.argv = ["bun", "cadet", "restart", "--all"];
+  try {
+    await restart();
+    expect(log.mock.calls.some(([l]) => l === "Restarted 'one'.")).toBe(true);
+    expect(log.mock.calls.some(([l]) => l === "Restarted 'two'.")).toBe(true);
+  } finally {
+    log.mockRestore();
+  }
+});
+
+test("a failed stop surfaces the sleep error and exits 1", async () => {
   restartOp.mockResolvedValue({
     ok: false,
-    phase: "sleep",
-    status: 500,
-    error: "the process tree refused to stop",
+    reports: [
+      {
+        assistantId: "test",
+        sleep: {
+          ok: false,
+          status: 500,
+          error: "the process tree refused to stop",
+          wasRunning: true,
+        },
+      },
+    ],
+  });
+  const err = spyOn(console, "error").mockImplementation(() => {});
+  process.argv = ["bun", "cadet", "restart", "test"];
+  try {
+    await expect(restart()).rejects.toThrow(/process\.exit/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(
+      err.mock.calls.some(([l]) => String(l).includes("failed to stop 'test'")),
+    ).toBe(true);
+  } finally {
+    err.mockRestore();
+  }
+});
+
+test("a failed wake surfaces the wake error and exits 1", async () => {
+  restartOp.mockResolvedValue({
+    ok: false,
+    reports: [
+      {
+        assistantId: "test",
+        sleep: okSleep,
+        wake: { ok: false, status: 503, error: "the gateway refused to start" },
+      },
+    ],
+  });
+  const err = spyOn(console, "error").mockImplementation(() => {});
+  process.argv = ["bun", "cadet", "restart", "test"];
+  try {
+    await expect(restart()).rejects.toThrow(/process\.exit/);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(
+      err.mock.calls.some(([l]) => String(l).includes("failed to wake 'test'")),
+    ).toBe(true);
+  } finally {
+    err.mockRestore();
+  }
+});
+
+test("a cancelled drain exits 130", async () => {
+  restartOp.mockResolvedValue({
+    ok: false,
+    reports: [
+      {
+        assistantId: "test",
+        sleep: { ok: true, cancelled: true, wasRunning: true },
+      },
+    ],
   });
   process.argv = ["bun", "cadet", "restart", "test"];
   await expect(restart()).rejects.toThrow(/process\.exit/);
-  expect(restartOp).toHaveBeenCalledTimes(1);
+  expect(exitSpy).toHaveBeenCalledWith(130);
 });
 
 for (const argv of [
-  ["bun", "cadet", "restart", "--all", "--repair-guardian"],
   ["bun", "cadet", "restart", "--all", "named"],
   ["bun", "cadet", "restart", "test", "--watch"],
-  ["bun", "cadet", "restart", "test", "--wait=bogus"],
+  ["bun", "cadet", "restart", "test", "--force"],
+  ["bun", "cadet", "restart", "test", "--repair-guardian"],
 ]) {
   test(`rejects ${argv.slice(3).join(" ")}`, async () => {
     process.argv = argv;
     await expect(restart()).rejects.toThrow(/process\.exit/);
     expect(restartOp).not.toHaveBeenCalled();
-    expect(restartAllOp).not.toHaveBeenCalled();
   });
 }

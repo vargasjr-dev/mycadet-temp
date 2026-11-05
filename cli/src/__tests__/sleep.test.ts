@@ -168,117 +168,6 @@ describe("sleep command", () => {
     expect(exitMock).toHaveBeenCalledWith(0);
   });
 
-  test("narrates the per-service result", async () => {
-    process.argv = ["bun", "cadet", "sleep"];
-    const { restore } = recordExit();
-    const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-
-    try {
-      await sleep();
-
-      expect(
-        consoleLog.mock.calls.some(([l]) => l === "Assistant stopped."),
-      ).toBe(true);
-      expect(
-        consoleLog.mock.calls.some(([l]) => l === "Gateway stopped."),
-      ).toBe(true);
-      expect(
-        consoleLog.mock.calls.some(
-          ([l]) => l === "credential-executor stopped.",
-        ),
-      ).toBe(true);
-    } finally {
-      restore();
-      consoleLog.mockRestore();
-    }
-  });
-
-  test("narrates services that were never running differently", async () => {
-    process.argv = ["bun", "cadet", "sleep"];
-    const { restore } = recordExit();
-    const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-    sleepAssistantMock.mockImplementation(async () => ({
-      ok: true,
-      kind: "services",
-      services: {
-        assistant: "not-running",
-        gateway: "stopped",
-        ces: "not-running",
-      },
-      notes: [],
-      wasRunning: true,
-    }));
-
-    try {
-      await sleep();
-
-      expect(
-        consoleLog.mock.calls.some(([l]) => l === "Assistant is not running."),
-      ).toBe(true);
-      expect(
-        consoleLog.mock.calls.some(([l]) => l === "Gateway stopped."),
-      ).toBe(true);
-      expect(
-        consoleLog.mock.calls.some(
-          ([l]) => l === "credential-executor stopped.",
-        ),
-      ).toBe(false);
-    } finally {
-      restore();
-      consoleLog.mockRestore();
-    }
-  });
-
-  test("prints the operation's degradation notes", async () => {
-    process.argv = ["bun", "cadet", "sleep", "--wait"];
-    const { restore } = recordExit();
-    const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-    sleepAssistantMock.mockImplementation(async () => ({
-      ok: true,
-      kind: "services",
-      services: { assistant: "stopped", gateway: "stopped", ces: "stopped" },
-      wasRunning: true,
-      notes: [
-        "This assistant version does not support --wait — stopping without waiting.",
-      ],
-    }));
-
-    try {
-      await sleep();
-
-      expect(
-        consoleLog.mock.calls.some(([l]) =>
-          String(l).includes("does not support --wait"),
-        ),
-      ).toBe(true);
-    } finally {
-      restore();
-      consoleLog.mockRestore();
-    }
-  });
-
-  test("docker containers narrate their own line", async () => {
-    process.argv = ["bun", "cadet", "sleep"];
-    const { restore } = recordExit();
-    const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-    sleepAssistantMock.mockImplementation(async () => ({
-      ok: true,
-      kind: "containers",
-      wasRunning: false,
-    }));
-
-    try {
-      await sleep();
-
-      expect(
-        consoleLog.mock.calls.some(([l]) => l === "Docker containers stopped."),
-      ).toBe(true);
-    } finally {
-      restore();
-      consoleLog.mockRestore();
-    }
-  });
-
   test("a failed stop reports the operation's detail and exits 1", async () => {
     process.argv = ["bun", "cadet", "sleep", "sleep-test"];
     const exitMock = mock((code?: number | string | undefined): never => {
@@ -306,7 +195,7 @@ describe("sleep command", () => {
     }
   });
 
-  test("a cancelled drain exits 130 with the cancel line", async () => {
+  test("a cancelled drain exits 130 — the leg narrates the cancel line", async () => {
     process.argv = ["bun", "cadet", "sleep", "--wait"];
     const exitMock = mock((code?: number | string | undefined): never => {
       throw new Error(`process.exit:${code}`);
@@ -322,7 +211,8 @@ describe("sleep command", () => {
 
     try {
       await expect(sleep()).rejects.toThrow("process.exit:130");
-      expect(consoleLog).toHaveBeenCalledWith(
+      // The cancel line belongs to the local leg's narration, not the shell.
+      expect(consoleLog).not.toHaveBeenCalledWith(
         "Sleep cancelled — the assistant is still running.",
       );
     } finally {

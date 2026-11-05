@@ -162,9 +162,7 @@ export {
 export { wakeAssistant, type WakeResult } from "./operations/wake";
 export {
   restartAssistant,
-  restartAllAssistants,
-  type RestartAllReport,
-  type RestartAllResult,
+  type RestartReport,
   type RestartAssistantResult,
 } from "./operations/restart";
 export {

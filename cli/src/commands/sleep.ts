@@ -6,7 +6,6 @@ import {
 } from "@mycadet/local-mode";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
-import { exitCodeFor, narrate } from "../lib/sleep-narration.js";
 
 export const sleep = Object.assign(
   async function sleep(): Promise<void> {
@@ -122,17 +121,13 @@ export const sleep = Object.assign(
     }
 
     const entry = resolveTargetAssistant(nameArg);
-    if (entry.cloud === "docker" && wait) {
-      console.log(
-        "--wait is not supported for Docker assistants yet — stopping containers now.",
-      );
-    }
     const result = await sleepAssistant(entry, options);
     if (!result.ok) {
       console.error(`Error: ${result.error}`);
     }
-    narrate(result);
-    process.exit(exitCodeFor(result));
+    // Success narration comes from the legs themselves; the command only
+    // maps the structured verdict onto the exit code.
+    process.exit(result.ok ? (result.cancelled ? 130 : 0) : 1);
   },
   { description: "Stop the assistant process" },
 );
@@ -172,15 +167,9 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
       );
       continue;
     }
-    if (entry.cloud === "docker" && opts.wait) {
-      console.log(
-        "--wait is not supported for Docker assistants yet — stopping containers now.",
-      );
-    }
     const result = await sleepAssistant(entry, opts);
     if (result.ok && result.cancelled) {
       // A cancelled drain is the user asking to stop — honor it immediately.
-      console.log("Sleep cancelled — the assistant is still running.");
       process.exit(130);
     }
     if (!result.ok) {
@@ -190,7 +179,6 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
       );
       continue;
     }
-    narrate(result);
   }
   if (failures > 0) {
     process.exit(1);

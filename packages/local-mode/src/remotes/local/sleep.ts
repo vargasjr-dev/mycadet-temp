@@ -133,6 +133,7 @@ export async function sleepLocal(
       notes,
     });
     if (outcome === "cancelled") {
+      options.log?.("Sleep cancelled — the assistant is still running.");
       return { ok: true, cancelled: true };
     }
   }
@@ -172,6 +173,21 @@ export async function sleepLocal(
   ))
     ? "stopped"
     : "not-running";
+
+  // The leg narrates its own verdict — the command layer adds nothing.
+  const { log } = options;
+  for (const note of notes) log?.(note);
+  log?.(
+    services.assistant === "stopped"
+      ? "Assistant stopped."
+      : "Assistant is not running.",
+  );
+  log?.(
+    services.gateway === "stopped"
+      ? "Gateway stopped."
+      : "Gateway is not running.",
+  );
+  if (services.ces === "stopped") log?.("credential-executor stopped.");
 
   return { ok: true, kind: "services", services, notes };
 }
