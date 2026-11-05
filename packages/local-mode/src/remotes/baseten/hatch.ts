@@ -9,6 +9,11 @@ import {
 import { PROVIDER_ENV_VAR_NAMES } from "../../provider-env-vars";
 import { saveBasetenSandboxToken } from "../../guardian-token";
 import {
+  BASETEN_GATEWAY_PREVIEW,
+  createBasetenPreviewToken,
+  ensureBasetenGatewayPreview,
+} from "./api";
+import {
   basetenImageRef,
   createBasetenSandbox,
   pushBasetenImage,
@@ -75,7 +80,7 @@ async function recordSandbox(params: {
     readLockfile().assistants.find(
       (a) => a.cloud === "baseten" && a.name === params.name,
     )?.assistantId ?? randomUUID();
-  const entry: LockfileAssistant = {
+  let entry: LockfileAssistant = {
     assistantId,
     name: params.name,
     cloud: "baseten",
@@ -85,7 +90,40 @@ async function recordSandbox(params: {
   };
   saveLockfileAssistant(entry, assistantId);
   try {
-    saveBasetenSandboxToken(assistantId, await resolveBasetenToken());
+    const sandboxToken = await resolveBasetenToken();
+
+    // The gateway's door: a private preview on the gateway port. The
+    // preview edge opens the port dynamically and guards the URL with a
+    // preview token, so `Authorization` stays free for the gateway's own
+    // bearer end to end — servers send the token as a header, browsers
+    // earn a cookie with one authenticated open.
+    let previewUrl: string | undefined;
+    let previewToken: string | undefined;
+    try {
+      const preview = await ensureBasetenGatewayPreview(
+        params.name,
+        params.gatewayPort,
+      );
+      if (preview.url) {
+        previewUrl = preview.url;
+        previewToken = await createBasetenPreviewToken(
+          params.name,
+          BASETEN_GATEWAY_PREVIEW,
+          new Date(Date.now() + BASETEN_PREVIEW_TOKEN_LIFETIME_MS),
+        );
+      }
+    } catch (err) {
+      warn(`   ⚠️  No gateway preview minted (${(err as Error).message}).`);
+      warn(
+        "      Browsers reach the gateway through it — export BASETEN_API_KEY and re-run the hatch to add it.",
+      );
+    }
+
+    saveBasetenSandboxToken(assistantId, sandboxToken, previewToken);
+    if (previewUrl) {
+      entry = { ...entry, previewUrl };
+      saveLockfileAssistant(entry, assistantId);
+    }
   } catch (err) {
     warn(`   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`);
     warn(
@@ -94,6 +132,10 @@ async function recordSandbox(params: {
   }
   return { entry, gatewayUrl: getGatewayUrl(entry) };
 }
+
+/** A preview token outlives the sandbox token's 2h ceiling by design — it
+ * is the door credential, rotated on every re-hatch. */
+const BASETEN_PREVIEW_TOKEN_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type HatchBasetenParams = {
   name?: string;
@@ -144,6 +186,7 @@ export async function hatchBaseten(
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
         envs: [...sandboxGatewayEnvs(), ...collectProviderEnvs()],
+        ports: [{ name: "gateway", protocol: "HTTP", target: GATEWAY_PORT }],
       });
 
       const sandboxName = sandbox.name ?? name ?? "the sandbox";

@@ -93,19 +93,43 @@ export function loadGuardianToken(
 export function saveBasetenSandboxToken(
   assistantId: string,
   token: string,
+  previewToken?: string,
 ): void {
   const tokenPath = basetenTokenPath(assistantId);
   fs.mkdirSync(path.dirname(tokenPath), { recursive: true, mode: 0o700 });
-  const data = JSON.stringify({ token, mintedAt: new Date().toISOString() });
+  const data = JSON.stringify({
+    token,
+    ...(previewToken ? { previewToken } : {}),
+    mintedAt: new Date().toISOString(),
+  });
   fs.writeFileSync(tokenPath, data + "\n", { mode: 0o600 });
   fs.chmodSync(tokenPath, 0o600);
 }
 
-/** The token file the hatch writes: the sandbox access token plus mint bookkeeping. */
+/** The token file the hatch writes: the sandbox access token, the gateway
+ * preview's token when one was minted, plus mint bookkeeping. */
 const BasetenTokenFileSchema = z.object({
   token: z.string().min(1),
+  previewToken: z.string().min(1).optional(),
   mintedAt: z.string().optional(),
 });
+
+/**
+ * The gateway preview's token, saved at hatch — the credential the preview
+ * edge wants on every request (header for servers, a cookie for browsers
+ * after the first open). Undefined when the hatch had no API key or the
+ * preview mint failed; the probe then falls back to the port route.
+ */
+export function readBasetenPreviewToken(assistantId: string): string | undefined {
+  try {
+    const parsed = BasetenTokenFileSchema.safeParse(
+      JSON.parse(fs.readFileSync(basetenTokenPath(assistantId), "utf-8")),
+    );
+    return parsed.success ? parsed.data.previewToken : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Read a saved Baseten sandbox access token. TokenResult-shaped so it drops

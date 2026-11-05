@@ -226,8 +226,15 @@ function getCloudUrl(): string {
  *   recorded loopback gateway port, else the default gateway port.
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
-  // Baseten: the gateway rides the sandbox API server's `/port/<PORT>/` route.
+  // Baseten: the private preview is the door when one was minted — the
+  // preview edge opens the port dynamically and guards it with a preview
+  // token, so `Authorization` stays free for the gateway's own bearer.
+  // Without one, the sandbox API's `/port/<PORT>/` route (the sandbox
+  // access token authenticates it).
   if (entry.cloud === "baseten") {
+    if (entry.previewUrl) {
+      return entry.previewUrl.replace(/\/+$/, "");
+    }
     return `${entry.sandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
   }
   if (entry.cloud === "custom") {
@@ -403,15 +410,21 @@ const CustomAssistantSchema = BaseAssistantSchema.extend({
 
 /**
  * A Baseten sandbox entry: the sandbox server URL and the sandbox-internal
- * gateway port are pinned at creation, so every reader can address
- * `{sandboxUrl}/port/{port}` without a fallback.
+ * gateway port are pinned at creation. When the hatch also minted the
+ * gateway's private preview, `previewUrl` is the gateway's canonical
+ * address — the preview edge opens the port dynamically and guards it with
+ * a preview token, leaving `Authorization` free for the gateway's own
+ * bearer end to end. Entries without one (tokenless hatches, legacy) ride
+ * the `{sandboxUrl}/port/{port}` route with the sandbox access token.
  */
 const BasetenAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("baseten"),
-  /** The Baseten sandbox server URL; the gateway rides `{sandboxUrl}/port/{port}`. */
+  /** The Baseten sandbox server URL; the port route rides on it. */
   sandboxUrl: z.string(),
   /** The sandbox-internal gateway port, piped in as `GATEWAY_PORT` at creation. */
   port: z.number(),
+  /** The gateway's private preview URL, minted at hatch when a token resolves. */
+  previewUrl: z.string().optional(),
 });
 
 /**

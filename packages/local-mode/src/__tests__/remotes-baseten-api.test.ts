@@ -2,9 +2,12 @@ import { beforeEach, afterEach, describe, expect, spyOn, test } from "bun:test";
 
 import * as basetenCli from "../remotes/baseten/baseten-cli.js";
 import {
+  BASETEN_GATEWAY_PREVIEW,
   BasetenApiError,
   basetenImageRef,
+  createBasetenPreviewToken,
   createBasetenSandbox,
+  ensureBasetenGatewayPreview,
   pushBasetenImage,
   resolveBasetenToken,
 } from "../remotes/baseten/api.js";
@@ -177,6 +180,64 @@ describe("pushBasetenImage", () => {
   });
 });
 
+describe("the gateway preview", () => {
+  test("the mint rides the API with create_if_not_exists — private by default", async () => {
+    const [cli] = httpArm();
+    request.mockResolvedValueOnce(
+      Response.json({
+        name: BASETEN_GATEWAY_PREVIEW,
+        port: 7830,
+        url: "https://tkm1.preview.b10.co",
+      }),
+    );
+
+    const { url } = await ensureBasetenGatewayPreview("sbx-my-cadet", 7830);
+
+    expect(url).toBe("https://tkm1.preview.b10.co");
+    const [tokenCall, previewCall] = calls();
+    expect(tokenCall[0]).toBe("https://api.baseten.co/v1/token");
+    expect(previewCall[0]).toBe(
+      "https://api.baseten.co/v1/sandboxes/instances/sbx-my-cadet/previews",
+    );
+    expect(JSON.parse(String(previewCall[1]?.body))).toEqual({
+      name: "gateway",
+      port: 7830,
+      create_if_not_exists: true,
+    });
+    cli.mockRestore();
+  });
+
+  test("the preview token mint returns the header/cookie credential", async () => {
+    const [cli] = httpArm();
+    request.mockResolvedValueOnce(
+      Response.json({
+        name: "tok123",
+        token: "prev-tok-1",
+        expires_at: "2026-12-05T00:00:00Z",
+      }),
+    );
+
+    const token = await createBasetenPreviewToken(
+      "sbx-my-cadet",
+      "gateway",
+      new Date("2026-12-05T00:00:00Z"),
+    );
+
+    expect(token).toBe("prev-tok-1");
+    const [, previewTokenCall] = calls();
+    expect(previewTokenCall[0]).toBe(
+      "https://api.baseten.co/v1/sandboxes/instances/sbx-my-cadet/previews/gateway/tokens",
+    );
+    // Date's ISO output carries milliseconds — the wire shape matters, the
+    // exact precision does not.
+    expect(JSON.parse(String(previewTokenCall[1]?.body))).toEqual({
+      expires_at: "2026-12-05T00:00:00.000Z",
+      create_if_not_exists: true,
+    });
+    cli.mockRestore();
+  });
+});
+
 describe("createBasetenSandbox", () => {
   test("an installed CLI creates through argv with env pairs and echoes the name", async () => {
     const [cli, run, capture] = cliArm();
@@ -197,6 +258,8 @@ describe("createBasetenSandbox", () => {
       "--env",
       "ANTHROPIC_API_KEY=sk-ant-1",
     ]);
+    // The CLI create has no ports flag — the preview covers reachability
+    // for CLI-arm sandboxes; only the API arm declares create-time ports.
     expect(capture).toHaveBeenCalledWith([
       "sandbox",
       "describe",
