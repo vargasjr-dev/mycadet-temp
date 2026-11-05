@@ -41,19 +41,26 @@ describe("reportFreshSpawnReadiness", () => {
      * probed state reported.
      */
 
-    // GIVEN the spawned daemon is running
-    writeFileSync(pidFile, String(process.pid), "utf-8");
+    // GIVEN the spawned daemon is running — a real child process, so the
+    // liveness probe is unambiguous even while the runner's own pid is
+    // doing whatever the parallel test scheduler has it do
+    const daemon = Bun.spawn(["sleep", "5"]);
+    writeFileSync(pidFile, String(daemon.pid), "utf-8");
 
-    // WHEN its readiness is reported
-    await reportFreshSpawnReadiness(
-      spawnHandle(false),
-      pidFile,
-      UNSERVED_PORT,
-      "ready",
-    );
+    try {
+      // WHEN its readiness is reported
+      await reportFreshSpawnReadiness(
+        spawnHandle(false),
+        pidFile,
+        UNSERVED_PORT,
+        "ready",
+      );
 
-    // THEN the probed state reaches the operator
-    expect(logSpy).toHaveBeenCalledWith("   Assistant ready\n");
+      // THEN the probed state reaches the operator
+      expect(logSpy).toHaveBeenCalledWith("   Assistant ready\n");
+    } finally {
+      daemon.kill();
+    }
   });
 
   test("reports a startup failure instead of a probe answered by a foreign listener", async () => {
