@@ -18,9 +18,9 @@ import { validateRootArchive } from "../../root-backup";
 import {
   cloudPollJobStatus,
   cloudRequestSignedUrl,
-  platformImportBundleFromGcs,
-  platformImportPreflightFromGcs,
-  platformUploadToSignedUrl,
+  cloudImportBundleFromGcs,
+  cloudImportPreflightFromGcs,
+  cloudUploadToSignedUrl,
   VersionMismatchError,
 } from "./migrations";
 
@@ -90,7 +90,7 @@ const LOGIN_REFRESH_ERROR = () =>
  * operation hands its callers (the CLI's exit UX and any host's wire
  * mapping render the same detail).
  */
-function platformFailure(
+function cloudFailure(
   statusCode: number,
   name: string,
 ): { ok: false; status: number; error: string } {
@@ -169,6 +169,7 @@ export async function restoreCloud(
   const bundleData = readFileSync(opts.fromPath);
 
   // Upload the root archive through the cloud API; it owns cloud restore.
+  opts.log?.("Uploading bundle...");
   let bundleKey: string;
   try {
     const { url, bundleKey: key } = await cloudRequestSignedUrl(
@@ -181,7 +182,7 @@ export async function restoreCloud(
       gatewayUrl,
     );
     bundleKey = key;
-    await platformUploadToSignedUrl(url, new Uint8Array(bundleData));
+    await cloudUploadToSignedUrl(url, new Uint8Array(bundleData));
   } catch (err) {
     if (err instanceof VersionMismatchError) throw err;
     return {
@@ -197,7 +198,7 @@ export async function restoreCloud(
       body: Record<string, unknown>;
     };
     try {
-      preflightResult = await platformImportPreflightFromGcs(
+      preflightResult = await cloudImportPreflightFromGcs(
         bundleKey,
         token,
         gatewayUrl,
@@ -217,7 +218,7 @@ export async function restoreCloud(
       };
     }
     if (preflightResult.statusCode !== 200) {
-      return platformFailure(preflightResult.statusCode, entry.assistantId);
+      return cloudFailure(preflightResult.statusCode, entry.assistantId);
     }
 
     const result = preflightResult.body as unknown as PreflightResponse;
@@ -260,11 +261,7 @@ export async function restoreCloud(
   // Data import — may be async (202 + job id), in which case poll.
   let importResult: { statusCode: number; body: Record<string, unknown> };
   try {
-    importResult = await platformImportBundleFromGcs(
-      bundleKey,
-      token,
-      gatewayUrl,
-    );
+    importResult = await cloudImportBundleFromGcs(bundleKey, token, gatewayUrl);
   } catch (err) {
     if (isTimeout(err)) {
       return {
@@ -284,7 +281,7 @@ export async function restoreCloud(
     importResult.statusCode !== 202 &&
     (importResult.statusCode < 200 || importResult.statusCode >= 300)
   ) {
-    return platformFailure(importResult.statusCode, entry.assistantId);
+    return cloudFailure(importResult.statusCode, entry.assistantId);
   }
 
   if (importResult.statusCode === 202) {

@@ -16,14 +16,11 @@ import * as execModule from "../exec";
 import * as localInstance from "../remotes/local/instance";
 import * as wakeOps from "../operations/wake";
 import type { LockfileAssistant } from "../lockfile-contract";
-import {
-  recoverRetiredAssistant,
-  restoreAssistant,
-} from "../operations/restore";
+import { restoreAssistant } from "../operations/restore";
 
 const cloudLeg = spyOn(cloudRestore, "restoreCloud");
-const localLeg = spyOn(localRestore, "restoreRoots");
-const dockerLeg = spyOn(dockerRestore, "restoreRoots");
+const localLeg = spyOn(localRestore, "restoreLocal");
+const dockerLeg = spyOn(dockerRestore, "restoreDocker");
 
 beforeEach(() => {
   cloudLeg.mockReset();
@@ -50,7 +47,7 @@ for (const topology of ["local", "docker"] as const) {
       recoveryPath: "/somewhere/recovery.tar.gz",
     });
 
-    const result = await restoreAssistant(entry, { fromPath });
+    const result = await restoreAssistant({ entry, fromPath });
 
     expect(result).toEqual({
       ok: true,
@@ -81,7 +78,7 @@ test("cloud restore rides the cloud leg; the dry run maps the preflight report",
     },
   });
 
-  const result = await restoreAssistant(entry, { fromPath, dryRun: true });
+  const result = await restoreAssistant({ entry, fromPath, dryRun: true });
 
   expect(result).toEqual({
     ok: true,
@@ -115,7 +112,7 @@ test("a cloud leg refusal passes through untouched", async () => {
     error: "Not logged in.",
   });
 
-  const result = await restoreAssistant(entry, { fromPath });
+  const result = await restoreAssistant({ entry, fromPath });
 
   expect(result).toEqual({ ok: false, status: 401, error: "Not logged in." });
 });
@@ -128,7 +125,7 @@ test("the router refuses the topologies that run on their own host", async () =>
     port: 7830,
   };
 
-  const result = await restoreAssistant(entry, { fromPath });
+  const result = await restoreAssistant({ entry, fromPath });
 
   expect(result.ok).toBe(false);
   if (!result.ok) expect(result.error).toContain("baseten");
@@ -138,7 +135,7 @@ test("the router refuses the topologies that run on their own host", async () =>
 });
 
 // ---------------------------------------------------------------------------
-// recoverRetiredAssistant — the retire-archive recovery
+// the recovery arm — the retire-archive recovery, reached through the one operation
 // ---------------------------------------------------------------------------
 
 const retiredDir = mkdtempSync(join(tmpdir(), "restore-operation-retired-"));
@@ -199,7 +196,7 @@ afterAll(() => {
 });
 
 test("recovering a name with no archive refuses with 404", async () => {
-  const result = await recoverRetiredAssistant("no-such-archive");
+  const result = await restoreAssistant({ name: "no-such-archive" });
   expect(result).toEqual({
     ok: false,
     status: 404,
@@ -213,7 +210,7 @@ test("recovering a non-local archive refuses", async () => {
     assistantId: "cloud-one",
     cloud: "cloud",
   });
-  const result = await recoverRetiredAssistant("retired-cloud");
+  const result = await restoreAssistant({ name: "retired-cloud" });
   expect(result.ok).toBe(false);
   if (!result.ok) {
     expect(result.status).toBe(400);
@@ -230,7 +227,7 @@ test("recovering onto an owned target refuses with 409", async () => {
     port: 7830,
   });
   mkdirSync(staged.target, { recursive: true });
-  const result = await recoverRetiredAssistant("retired-owned");
+  const result = await restoreAssistant({ name: "retired-owned" });
   expect(result.ok).toBe(false);
   if (!result.ok) {
     expect(result.status).toBe(409);
@@ -246,9 +243,9 @@ test("recovery extracts the instance dir, restores the entry, wakes, and clears 
     port: 7830,
   });
 
-  const result = await recoverRetiredAssistant("retired-one");
+  const result = await restoreAssistant({ name: "retired-one" });
 
-  expect(result).toEqual({ ok: true });
+  expect(result).toEqual({ ok: true, kind: "recovery" });
   expect(existsSync(staged.target)).toBe(true);
   expect(existsSync(join(staged.target, "workspace", "keep.txt"))).toBe(true);
   expect(existsSync(staged.archive)).toBe(false);
@@ -265,9 +262,9 @@ test("recovery creates the target's parent directories when they do not exist", 
     port: 7830,
   });
 
-  const result = await recoverRetiredAssistant(name);
+  const result = await restoreAssistant({ name });
 
-  expect(result).toEqual({ ok: true });
+  expect(result).toEqual({ ok: true, kind: "recovery" });
   expect(existsSync(nestedTarget)).toBe(true);
   expect(existsSync(join(nestedTarget, "workspace", "keep.txt"))).toBe(true);
   expect(existsSync(staged.archive)).toBe(false);

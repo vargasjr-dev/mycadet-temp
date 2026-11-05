@@ -448,17 +448,15 @@ export {
 export { upgradeCloud } from "./remotes/cloud/upgrade";
 export {
   restoreAssistant,
-  recoverRetiredAssistant,
-  type RecoverRetiredResult,
   type RestoreAssistantResult,
 } from "./operations/restore";
 export {
   cloudPollJobStatus,
   cloudRequestSignedUrl,
   parseUnifiedJobStatus,
-  platformImportBundleFromGcs,
-  platformImportPreflightFromGcs,
-  platformUploadToSignedUrl,
+  cloudImportBundleFromGcs,
+  cloudImportPreflightFromGcs,
+  cloudUploadToSignedUrl,
   VersionMismatchError,
   type BundleCompatibility,
   type UnifiedJobStatus,

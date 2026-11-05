@@ -1,7 +1,7 @@
 import { restoreRootBackup } from "../../root-backup";
 import type { LockfileAssistant } from "../../lockfile-contract";
 
-export type RestoreRootsResult =
+export type RestoreDockerResult =
   | { ok: true; dryRun: boolean; recoveryPath?: string }
   | { ok: false; status: number; error: string };
 
@@ -13,10 +13,10 @@ export type RestoreRootsResult =
  *
  * Throws on failure; the operation maps it.
  */
-export async function restoreRoots(
+export async function restoreDocker(
   entry: LockfileAssistant,
   opts: { fromPath: string; dryRun: boolean },
-): Promise<RestoreRootsResult> {
+): Promise<RestoreDockerResult> {
   const recoveryPath = await restoreRootBackup(entry, opts.fromPath, {
     dryRun: opts.dryRun,
   });

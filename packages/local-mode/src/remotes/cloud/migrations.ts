@@ -15,7 +15,7 @@ import {
 } from "../../cloud-auth";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 
-const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
+const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 const PassthroughBodySchema = z.record(z.string(), z.unknown()).catch({});
 
@@ -54,7 +54,7 @@ const RawUnifiedJobStatusSchema = z.object({
 // Signed-URL upload flow
 // ---------------------------------------------------------------------------
 
-export async function platformUploadToSignedUrl(
+export async function cloudUploadToSignedUrl(
   uploadUrl: string,
   bundleData: Uint8Array<ArrayBuffer>,
 ): Promise<void> {
@@ -74,7 +74,7 @@ export async function platformUploadToSignedUrl(
   }
 }
 
-export async function platformImportPreflightFromGcs(
+export async function cloudImportPreflightFromGcs(
   bundleKey: string,
   token: string,
   cloudUrl?: string,
@@ -96,7 +96,7 @@ export async function platformImportPreflightFromGcs(
   return { statusCode: response.status, body };
 }
 
-export async function platformImportBundleFromGcs(
+export async function cloudImportBundleFromGcs(
   bundleKey: string,
   token: string,
   cloudUrl?: string,

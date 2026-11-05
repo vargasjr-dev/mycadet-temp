@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
@@ -13,17 +13,16 @@ await writeFile(file, Buffer.alloc(32, 1));
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
 const restoreOp = spyOn(localMode, "restoreAssistant");
-const recoverOp = spyOn(localMode, "recoverRetiredAssistant");
 
 beforeEach(() => {
-  for (const spy of [lookup, restoreOp, recoverOp]) spy.mockReset();
+  for (const spy of [lookup, restoreOp]) spy.mockReset();
   lookup.mockReturnValue(null);
 });
 afterEach(() => {
   process.argv = [...argv];
 });
 afterAll(async () => {
-  for (const spy of [lookup, restoreOp, recoverOp]) spy.mockRestore();
+  for (const spy of [lookup, restoreOp]) spy.mockRestore();
   await rm(directory, { recursive: true, force: true });
 });
 
@@ -43,11 +42,12 @@ for (const topology of ["local", "docker"] as const) {
     });
     process.argv = ["bun", "cadet", "restore", "test", "--from", file];
     await restore();
-    expect(restoreOp).toHaveBeenCalledWith(
+    expect(restoreOp).toHaveBeenCalledWith({
       entry,
-      expect.objectContaining({ fromPath: file, dryRun: false }),
-    );
-    expect(recoverOp).not.toHaveBeenCalled();
+      fromPath: file,
+      dryRun: false,
+      log: expect.any(Function),
+    });
   });
 }
 
@@ -71,19 +71,19 @@ test("cloud restore delegates through the same operation", async () => {
   });
   process.argv = ["bun", "cadet", "restore", "cloud-test", "--from", file];
   await restore();
-  expect(restoreOp).toHaveBeenCalledWith(
+  expect(restoreOp).toHaveBeenCalledWith({
     entry,
-    expect.objectContaining({ fromPath: file, dryRun: false }),
-  );
-  expect(recoverOp).not.toHaveBeenCalled();
+    fromPath: file,
+    dryRun: false,
+    log: expect.any(Function),
+  });
 });
 
 test("without --from the command recovers the retired assistant", async () => {
   process.argv = ["bun", "cadet", "restore", "retired-one"];
-  recoverOp.mockResolvedValue({ ok: true });
+  restoreOp.mockResolvedValue({ ok: true, kind: "recovery" });
   await restore();
-  expect(recoverOp).toHaveBeenCalledWith("retired-one");
-  expect(restoreOp).not.toHaveBeenCalled();
+  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one" });
 });
 
 for (const topology of ["local", "docker", "cloud"] as const) {
@@ -103,6 +103,5 @@ for (const topology of ["local", "docker", "cloud"] as const) {
     );
     expect(lookup).not.toHaveBeenCalled();
     expect(restoreOp).not.toHaveBeenCalled();
-    expect(recoverOp).not.toHaveBeenCalled();
   });
 }

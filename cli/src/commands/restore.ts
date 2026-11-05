@@ -1,9 +1,7 @@
 import { existsSync, statSync } from "fs";
 
 import { findAssistantByName } from "../lib/assistant-config.js";
-import { cliCommand } from "@mycadet/local-mode";
-import { isCloudEntry } from "@mycadet/local-mode/contract";
-import { recoverRetiredAssistant, restoreAssistant } from "@mycadet/local-mode";
+import { cliCommand, restoreAssistant } from "@mycadet/local-mode";
 
 function printUsage(): void {
   console.log(
@@ -150,45 +148,41 @@ export const restore = Object.assign(
     }
 
     // Without --from: recover a retired assistant from its retire archive.
-    if (!fromPath) {
-      if (dryRun) {
-        console.error(
-          "Dry-run is only supported with --from. Recovery replays the retired assistant's archive directly.",
-        );
+    let entry: ReturnType<typeof findAssistantByName>;
+    if (fromPath) {
+      // Look up the instance
+      entry = findAssistantByName(name);
+      if (!entry) {
+        console.error(`Error: No assistant found with name '${name}'.`);
+        console.error(`Run '${cliCommand()} ps' to see available assistants.`);
         process.exit(1);
       }
-      const recovered = await recoverRetiredAssistant(name);
-      if (!recovered.ok) fail(recovered.error);
+
+      // Verify .tar.gz file exists
+      if (!existsSync(fromPath)) {
+        console.error(`Error: File not found: ${fromPath}`);
+        process.exit(1);
+      }
+
+      const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
+      console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
+    }
+
+    const result = fromPath
+      ? await restoreAssistant({
+          entry: entry!,
+          fromPath,
+          dryRun,
+          log: (line) => console.log(line),
+        })
+      : await restoreAssistant({ name });
+
+    if (!result.ok) fail(result.error);
+
+    if (result.kind === "recovery") {
       console.log(`✅ Recovered assistant '${name}'.`);
       return;
     }
-
-    // Look up the instance
-    const entry = findAssistantByName(name);
-    if (!entry) {
-      console.error(`Error: No assistant found with name '${name}'.`);
-      console.error(`Run '${cliCommand()} ps' to see available assistants.`);
-      process.exit(1);
-    }
-
-    // Verify .tar.gz file exists
-    if (!existsSync(fromPath)) {
-      console.error(`Error: File not found: ${fromPath}`);
-      process.exit(1);
-    }
-
-    const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
-    console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
-
-    if (isCloudEntry(entry)) console.log("Uploading bundle...");
-
-    const result = await restoreAssistant(entry, {
-      fromPath,
-      dryRun,
-      log: (line) => console.log(line),
-    });
-
-    if (!result.ok) fail(result.error);
 
     if (result.kind === "cloud") {
       if (result.dryRun) printPreflight(result.preflight);

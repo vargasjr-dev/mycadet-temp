@@ -69,7 +69,7 @@ const VersionCheckResponseSchema = z
   })
   .catch({});
 
-const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
+const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Lightweight pre-check: returns the first active cloud assistant for the
@@ -89,7 +89,7 @@ export async function checkExistingCloudAssistant(
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),
-    PLATFORM_FETCH_TIMEOUT_MS,
+    CLOUD_FETCH_TIMEOUT_MS,
   );
 
   try {
@@ -125,7 +125,7 @@ export async function fetchCloudAssistants(
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),
-    PLATFORM_FETCH_TIMEOUT_MS,
+    CLOUD_FETCH_TIMEOUT_MS,
   );
 
   try {
@@ -164,7 +164,7 @@ export async function fetchAssistantDetail(
 
   try {
     const response = await loopbackSafeFetch(url, {
-      signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
       headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
@@ -198,7 +198,7 @@ export async function fetchUpgradeInProgress(
 
   try {
     const response = await loopbackSafeFetch(url, {
-      signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
       headers: await cloudAuthHeaders(token, cloudUrl),
     });
 
