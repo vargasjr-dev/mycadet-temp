@@ -117,8 +117,12 @@ const BasetenTokenFileSchema = z.object({
 /**
  * The gateway preview's token, saved at hatch — the credential the preview
  * edge wants on every request (header for servers, a cookie for browsers
- * after the first open). Undefined when the hatch had no API key or the
- * preview mint failed; the probe then falls back to the port route.
+ * after the first open). Undefined on token files that predate the
+ * preview. Baseten mints the two tokens differently: the sandbox access
+ * token is an API-key EXCHANGE at POST /v1/token (the server sets a 2h
+ * expiry), while preview tokens are minted per-preview with a CALLER-set
+ * expires_at — which is why this one is the door credential and the
+ * sandbox token only feeds the exec HTTP arm.
  */
 export function readBasetenPreviewToken(assistantId: string): string | undefined {
   try {

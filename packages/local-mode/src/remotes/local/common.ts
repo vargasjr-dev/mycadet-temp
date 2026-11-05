@@ -659,7 +659,7 @@ function logDaemonReadiness(
         );
       }
       console.log(
-        "   ⚠️  Assistant did not become ready within 60s, continuing anyway\n",
+        "   ⚠️  Assistant did not report ready yet — continuing anyway (wake asks again at the gateway level)\n",
       );
   }
 }
@@ -1480,7 +1480,10 @@ export async function startLocalDaemon(
         runtimeSpawn,
         getDaemonPidPath(entry),
         daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
+        // A quick classification only — wake asks the ONE readiness
+        // question at the gateway level (its migration-coordination
+        // wait); blocking here would stall the parallel gateway start.
+        await probeDaemonReadinessWithRetry(daemonPort),
         options?.requireReady,
       );
     }
@@ -1738,7 +1741,10 @@ export async function startLocalDaemon(
         sourceSpawn,
         getDaemonPidPath(entry),
         daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
+        // A quick classification only — wake asks the ONE readiness
+        // question at the gateway level (its migration-coordination
+        // wait); blocking here would stall the parallel gateway start.
+        await probeDaemonReadinessWithRetry(daemonPort),
         options?.requireReady,
       );
     }

@@ -160,9 +160,8 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {(state.status === "error" ||
-          state.status === "unavailable" ||
-          state.status === "unauthenticated") && (
+        {state.status === "unauthenticated" && <PairRedirect onNavigate={onNavigate} />}
+        {(state.status === "error" || state.status === "unavailable") && (
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={reload} style={quietButton}>
               {t("appShell.retry")}
@@ -254,6 +253,24 @@ function NotReadyBody({
  * failure treatment; inline styles so the portable bundle and the
  * standalone build render it identically.
  */
+/** An unauthenticated shell IS a pairing problem — forward to the pair
+ * page once, replaced, so the dead assistant URL doesn't linger in
+ * history. Renders nothing; the unauthenticated message shows for the
+ * beat before the navigation lands. */
+function PairRedirect({
+  onNavigate,
+}: {
+  onNavigate: (path: string, options: { replace: boolean }) => void;
+}): null {
+  const forwarded = useRef(false);
+  useEffect(() => {
+    if (forwarded.current) return;
+    forwarded.current = true;
+    onNavigate(routes.account.selectAssistant, { replace: true });
+  }, [onNavigate]);
+  return null;
+}
+
 function ErrorBody() {
   const { t } = useTranslation("account");
   return (

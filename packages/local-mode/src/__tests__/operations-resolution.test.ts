@@ -265,6 +265,7 @@ describe("runResolveRoute — the lockfile arms", () => {
 
     const response = await runResolution();
 
+    expect(response.status).toBe(401);
     expect(await resolutionBody(response)).toEqual({
       status: "unauthenticated",
     });

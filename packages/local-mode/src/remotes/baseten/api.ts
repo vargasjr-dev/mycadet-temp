@@ -268,12 +268,9 @@ export async function createBasetenSandbox(options: {
   const token = await resolveBasetenToken();
   return basetenFetch(token, "/v1/sandboxes/instances", SandboxCreated, {
     method: "POST",
-    body: JSON.stringify({
-      image: options.image,
-      ...(options.name ? { name: options.name } : {}),
-      ...(options.envs?.length ? { envs: options.envs } : {}),
-      ...(options.ports?.length ? { ports: options.ports } : {}),
-    }),
+    // Every option is a create-body field: the optional ones serialize
+    // away when absent.
+    body: JSON.stringify({ ...options }),
   });
 }
 

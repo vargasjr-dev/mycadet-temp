@@ -128,6 +128,62 @@ export function getAppServerPid(): number | null {
     : null;
 }
 
+/**
+ * A recorded PID that is alive but belongs to some OTHER process — the
+ * reuse case: the app server died and the OS handed its PID to something
+ * else (a stray nginx, another assistant's server). `app stop` reports it
+ * instead of the misleading "no app server is running", and offers to
+ * clear the squatter before continuing.
+ */
+export function getForeignAppServerProcess(): {
+  pid: number;
+  command: string;
+} | null {
+  const paths = getAppServerPaths();
+  const pid = readPidFile(paths.pidPath);
+  if (pid === null || !isPidAlive(pid) || isAppServerProcess(pid, paths)) {
+    return null;
+  }
+  let command = "";
+  try {
+    command = execFileSync("ps", ["-ww", "-p", String(pid), "-o", "command="], {
+      encoding: "utf-8",
+      timeout: 3000,
+      stdio: ["ignore", "pipe", "ignore"],
+      windowsHide: true,
+    }).trim();
+  } catch {
+    command = "(unidentified)";
+  }
+  return { pid, command };
+}
+
+/**
+ * Kill a foreign process sitting on the app server's recorded PID and
+ * clear the stale records. SIGTERM first, SIGKILL on a 2s timeout — the
+ * same escalation `stopAppServer` uses.
+ */
+export async function killForeignAppServerProcess(pid: number): Promise<boolean> {
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch {
+    clearStoppedAppServer(getAppServerPaths().pidPath);
+    return true;
+  }
+  if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // Already gone — the outcome the caller wanted.
+    }
+    if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+      return false;
+    }
+  }
+  clearStoppedAppServer(getAppServerPaths().pidPath);
+  return true;
+}
+
 export function isAppServerRunning(): boolean {
   return getAppServerPid() !== null;
 }
@@ -659,12 +715,14 @@ export async function startAppServer(opts: {
       `The assistant ${opts.assistantId} is not in the lockfile, but the app server was asked to serve its UI.`,
     );
   }
+  // The browser config is the identity facts ONLY — every URL a served
+  // bundle needs is its own origin (the single-origin plan). hubUrl still
+  // rides the serve spec (below) for the Capacitor origins allowlist, which
+  // is a server-side fact the page never sees.
   const config: InjectedConfig = {
     remote: assistant.entry.cloud,
     assistantName: getAssistantDisplayName(assistant.entry),
     assistantId: opts.assistantId,
-    hubUrl: cloudAssistantHubUrl(),
-    cloudUrl: savedPublicBaseUrl(),
     version,
   };
   const fingerprint = remoteWebConfigFingerprint(
@@ -723,6 +781,10 @@ export async function startAppServer(opts: {
   mkdirSync(resolveLogDir(), { recursive: true });
   const indexHtmlPath = join(paths.dir, "assistant-index.html");
   const appIndexHtmlPath = join(paths.dir, "app-index.html");
+  // The serve spec carries hubUrl for the Capacitor origins allowlist (a
+  // server-side CORS fact); the stamped documents strip it — the page's
+  // config is identity only, every URL is the page's own origin.
+  const specConfig = { ...config, hubUrl: cloudAssistantHubUrl() };
   const rawIndexHtml = readFileSync(join(webDistDir, "index.html"), "utf-8");
   writeFileSync(indexHtmlPath, buildRemoteWebIndexHtml(rawIndexHtml, config));
   // The app shell gets its own injected document: the same injected config,
@@ -742,7 +804,7 @@ export async function startAppServer(opts: {
       appDistDir,
       indexHtmlPath,
       appIndexHtmlPath,
-      config,
+      config: specConfig,
     },
   });
   const fd = openSync(paths.logPath, "a");

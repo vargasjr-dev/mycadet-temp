@@ -1,15 +1,16 @@
-import { readInjectedConfig } from "@/lib/injected-config";
-import { SEEDS } from "@mycadet/environments/seeds";
-
-/** An explicit host override wins; otherwise the build environment owns cloud routing. */
+/**
+ * The single-origin plan: a served bundle reaches everything through its
+ * own origin — the cloud platform serves it at the platform origin, the
+ * local app server at its loopback one. No injected or seeded override:
+ * the origin IS the answer.
+ */
 export function getCloudRuntimeUrl(): string {
-  return (
-    readInjectedConfig()?.cloudUrl ??
-    (
-      SEEDS[import.meta.env.VITE_ENVIRONMENT ?? "production"] ??
-      SEEDS.production
-    ).cloudUrl
-  );
+  if (typeof window === "undefined") {
+    // SSR imports this module for the billing link builders; the browser
+    // is the only real caller.
+    return "";
+  }
+  return window.location.origin;
 }
 
 /**

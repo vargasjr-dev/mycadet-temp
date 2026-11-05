@@ -176,20 +176,83 @@ async function wakeLocalSteps(
     }
   }
 
+  // Gateway state resolves once, before anything starts: both the
+  // fresh-spawn (parallel) and attach paths classify from it.
+  const gatewayPidFile = join(getLocalInstanceDir(entry), "gateway.pid");
+  let gatewayState = await resolveProcessState(
+    gatewayPidFile,
+    entry.port ?? GATEWAY_PORT,
+    "Gateway",
+  );
+  let gatewayAlive = gatewayState.status === "healthy";
+  const gatewayStuck = gatewayState.status === "stuck";
+  const restartGateway = async (
+    restartWithWatch: boolean,
+  ): Promise<boolean> => {
+    const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
+    if (!stopped && isProcessAlive(gatewayPidFile).alive) {
+      console.log(
+        `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
+      );
+      return false;
+    }
+    await startGateway(restartWithWatch, entry);
+    return true;
+  };
+  let gatewayStarted = false;
+
   if (!daemonRunning) {
-    // Spin up CES and the daemon in parallel, the way the Docker topology
-    // brings its sibling containers up together — the assistant polls for the
-    // CES socket during startup (discoverCesWithRetry), so it tolerates CES
-    // still binding. CES's lifecycle tracks the daemon (its only consumer):
-    // restarting it under a live daemon would sever the daemon's open
-    // connection, so it is only (re)started alongside the daemon. startCes
-    // always launches the CES sibling unconditionally.
-    await Promise.all([
+    // Spin up CES, the daemon, and the gateway in parallel, the way the
+    // Docker topology brings its sibling containers up together — the
+    // assistant polls for the CES socket during startup
+    // (discoverCesWithRetry), so it tolerates CES still binding, and the
+    // gateway gates its own traffic on the daemon's migration readiness,
+    // so an early start just means it holds the gate a little longer. The
+    // gateway-level wait further down stays the ONE place wake asks the
+    // readiness question. CES's lifecycle tracks the daemon (its only
+    // consumer): restarting it under a live daemon would sever the
+    // daemon's open connection, so it is only (re)started alongside the
+    // daemon. startCes always launches the CES sibling unconditionally.
+    if (gatewayAlive && watch && isGatewayWatchModeAvailable()) {
+      console.log(
+        `Gateway running (pid ${gatewayState.pid}) — restarting in watch mode...`,
+      );
+      const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
+      if (stopped || !isProcessAlive(gatewayPidFile).alive) {
+        gatewayAlive = false;
+        gatewayState = { ...gatewayState, status: "needs_start" };
+      } else {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
+        );
+      }
+    }
+    const starts: Array<Promise<unknown>> = [
       startCes(watch, entry),
       startLocalDaemon(watch, entry, {
         defaultWorkspaceConfigPath,
       }),
-    ]);
+    ];
+    if (gatewayStuck) {
+      console.log(
+        `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
+      );
+    } else if (gatewayAlive) {
+      if (watch) {
+        console.log(
+          `Gateway running (pid ${gatewayState.pid}) — watch mode not available, no source files. Keeping existing process.`,
+        );
+      } else {
+        console.log(`Gateway already running (pid ${gatewayState.pid}).`);
+      }
+    } else {
+      starts.push(
+        startGateway(watch, entry).then(() => {
+          gatewayStarted = true;
+        }),
+      );
+    }
+    await Promise.all(starts);
     // A daemon that aborts during startup (an occupied runtime HTTP port, a
     // fatal subsystem failure) leaves no process behind, and readiness alone
     // cannot see that: whatever foreign listener holds the port answers the
@@ -223,31 +286,9 @@ async function wakeLocalSteps(
     }
   }
 
-  // Start gateway
-  let gatewayStarted = false;
-  {
-    const cadetDir = getLocalInstanceDir(entry);
-    const gatewayPidFile = join(cadetDir, "gateway.pid");
-    const gatewayState = await resolveProcessState(
-      gatewayPidFile,
-      entry.port ?? GATEWAY_PORT,
-      "Gateway",
-    );
-    const gatewayAlive = gatewayState.status === "healthy";
-    const gatewayStuck = gatewayState.status === "stuck";
-    const restartGateway = async (
-      restartWithWatch: boolean,
-    ): Promise<boolean> => {
-      const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
-      if (!stopped && isProcessAlive(gatewayPidFile).alive) {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
-        );
-        return false;
-      }
-      await startGateway(restartWithWatch, entry);
-      return true;
-    };
+  // Attach path only — the fresh-spawn path above already started (or
+  // classified) the gateway from the same hoisted state.
+  if (daemonRunning) {
     if (gatewayStuck) {
       console.log(
         `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,

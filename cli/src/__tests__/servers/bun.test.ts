@@ -1044,19 +1044,15 @@ function appConfigHash(
   fixture: HandlerFixture,
   overrides: Record<string, unknown> = {},
 ): string {
-  // Field order matters: JSON.stringify is order-sensitive and the derived
-  // config inserts cloudUrl between hubUrl and version.
+  // Field order matters: JSON.stringify is order-sensitive. The injected
+  // config is identity-only — the single-origin plan strips every
+  // origin-shaped field, so no cloudUrl/hubUrl rides the fingerprint.
   const base = fixture.config as Record<string, unknown>;
   const config: Record<string, unknown> = {
     remote: base.remote,
     assistantName: base.assistantName,
     assistantId: base.assistantId,
-    hubUrl: base.hubUrl,
-    ...(overrides.cloudUrl === undefined
-      ? {}
-      : { cloudUrl: overrides.cloudUrl }),
     version: base.version,
-    ...(overrides.cloudUrl === undefined ? overrides : {}),
   };
   return createHash("sha256")
     .update(
@@ -1169,7 +1165,7 @@ describe("startAppServer", () => {
     expect(appIndex).toContain('"assistantId":"assistant-1"');
   });
 
-  test("stamps the saved tunnel URL as the served config's cloudUrl", async () => {
+  test("never stamps an origin — even with a tunnel URL on record", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
@@ -1183,34 +1179,15 @@ describe("startAppServer", () => {
     });
 
     expect(result.status).toBe("started");
+    // The single-origin plan: tunnel clients reach the origin they came
+    // in on, so the served config carries no base URL at all — the
+    // shell reads window.location.origin.
     const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    // Tunnel clients can only reach the origin they came in on, so the
-    // account/auth surfaces' backend base is the tunnel URL.
-    expect(appIndex).toContain('"cloudUrl":"https://camping.ngrok-free.dev"');
-    expect(readAppServerState()).toMatchObject({
-      remoteWebConfigHash: appConfigHash(fixture, {
-        cloudUrl: "https://camping.ngrok-free.dev",
-      }),
-    });
-  });
-
-  test("omits cloudUrl when no tunnel URL is on record", async () => {
-    makeWorkspace();
-    seedAssistant();
-    const fixture = makeHandlerFixture();
-    mockDistsPresent(fixture);
-    mockServerSpawn();
-
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
-
-    expect(result.status).toBe("started");
-    const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    // Omitted — the shell's same-origin fallbacks own it until a tunnel
-    // saves a URL.
     expect(appIndex).not.toContain("cloudUrl");
+    expect(appIndex).not.toContain("hubUrl");
+    expect(readAppServerState()).toMatchObject({
+      remoteWebConfigHash: appConfigHash(fixture),
+    });
   });
 
   test("requires the web dist", async () => {
