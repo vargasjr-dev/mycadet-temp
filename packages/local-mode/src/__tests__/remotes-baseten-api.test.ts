@@ -29,18 +29,22 @@ function httpArm() {
   request.mockResolvedValueOnce(Response.json({ token: "short-lived-token" }));
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue(null),
-    spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
+    spyOn(basetenCli, "runBasetenCliCaptured").mockResolvedValue(""),
   ];
 }
 
-/** The CLI-arm spies: an installed CLI, a runner that never spawns, and a
- * describe that reports the sandbox's URL (pre-release `describe --jq` prints
- * it jq-quoted). */
-function cliArm(describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"') {
+/** The CLI-arm spies: an installed CLI, a captured runner whose output is
+ * (by default) empty — the arms narrate themselves — and a describe that
+ * reports the sandbox's URL (pre-release `describe --jq` prints it
+ * jq-quoted). */
+function cliArm(
+  describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"',
+  createOutput = "",
+) {
   capture = spyOn(basetenCli, "captureBasetenCli").mockResolvedValue(describeUrl);
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue("baseten"),
-    spyOn(basetenCli, "runBasetenCli").mockResolvedValue(undefined),
+    spyOn(basetenCli, "runBasetenCliCaptured").mockResolvedValue(createOutput),
     capture,
   ];
 }
@@ -230,6 +234,41 @@ describe("createBasetenSandbox", () => {
     expect(argv).toContain("GATEWAY_PORT=7830");
     expect(argv).toContain("--env");
     expect(argv).toContain("ANTHROPIC_API_KEY=sk-ant-1");
+    cli.mockRestore();
+    run.mockRestore();
+    capture.mockRestore();
+  });
+
+  test("a server-named sandbox parses its name and URL off the create output", async () => {
+    // With no requested name the server picks one — and the URL only ever
+    // appears in the create output (describe needs the name first). This is
+    // the hatch's default path: `cadet-dev hatch --remote baseten` passes no
+    // name, and the URL must still land in the lockfile.
+    const [cli, run, capture] = cliArm(
+      '"https://sbx-never-describe.b10.co"',
+      [
+        "Name:         063543e1-a27e-4496-8ecd-f5db52ad5238",
+        "Status:       DEPLOYED",
+        "URL:          https://sbx-063543e1-a27e-4496-8ecd-f5db52ad5238-i6914d.us-pdx-1.b10.co",
+        "Image:        sandbox/cadet:latest",
+        "Memory:       4096 MB",
+        "Region:       us-pdx-1",
+        "Created:      2026-11-05T16:42:29Z",
+        "Expires in:   167h59m51s",
+      ].join("\n"),
+    );
+
+    const created = await createBasetenSandbox({
+      image: basetenImageRef("cadet"),
+    });
+
+    expect(created).toEqual({
+      name: "063543e1-a27e-4496-8ecd-f5db52ad5238",
+      url: "https://sbx-063543e1-a27e-4496-8ecd-f5db52ad5238-i6914d.us-pdx-1.b10.co",
+    });
+    // No name was requested, so there is nothing to describe — the output
+    // carried everything.
+    expect(capture).not.toHaveBeenCalled();
     cli.mockRestore();
     run.mockRestore();
     capture.mockRestore();
