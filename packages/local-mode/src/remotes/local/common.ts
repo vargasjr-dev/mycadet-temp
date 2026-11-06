@@ -16,10 +16,6 @@ import { homedir, platform, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import {
-  findAssistantCommand,
-  isRepoCheckoutPath,
-} from "@mycadet/environments";
-import {
   isNamedPipePath,
   removeIpcEndpointFile,
   resolveIpcEndpoint,
@@ -27,13 +23,7 @@ import {
 
 import { resolveDataDir, resolveLogDir } from "../../config";
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import {
-  GATEWAY_PORT,
-  isLocalEntry,
-  type AppleContainerAssistant,
-  type DockerAssistant,
-  type LocalAssistant,
-} from "../../lockfile-contract";
+import { GATEWAY_PORT, type LocalAssistant } from "../../lockfile-contract";
 import {
   httpHealthCheck,
   probeDaemonReadiness,
@@ -168,13 +158,11 @@ function resolveBunExecutable(): string {
 
 function envWithBunPath(
   env: Record<string, string | undefined>,
-  commandDirs: string[] = [],
 ): Record<string, string | undefined> {
   const bunPath = resolveBunExecutable();
   const basePath = env.PATH || DEFAULT_EXECUTABLE_PATH;
   const extraDirs = [
     isAbsolute(bunPath) ? dirname(bunPath) : "",
-    ...commandDirs,
     join(homedir(), ".bun", "bin"),
     join(homedir(), ".local", "bin"),
   ].filter((dir) => dir && !basePath.split(PATH_DELIMITER).includes(dir));
@@ -184,9 +172,7 @@ function envWithBunPath(
   };
 }
 
-function localRuntimeAssistantIndex(
-  entry: LocalAssistant,
-): string | undefined {
+function localRuntimeAssistantIndex(entry: LocalAssistant): string | undefined {
   const installDir = latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(
@@ -429,9 +415,7 @@ function findGatewaySourceFromCwd(): string | undefined {
   }
 }
 
-function resolveAssistantIndexPath(
-  entry?: LocalAssistant,
-): string | undefined {
+function resolveAssistantIndexPath(entry?: LocalAssistant): string | undefined {
   if (entry) {
     const runtimeIndex = localRuntimeAssistantIndex(entry);
     if (runtimeIndex) return runtimeIndex;
@@ -808,13 +792,6 @@ async function startDaemonFromSource(
     CADET_CLOUD: "local",
     CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
-  // "From source" covers both a developer's checkout and the npm-installed
-  // runtime the desktop app runs. Only the former is a dev run: marking an
-  // installed runtime as dev suppresses its telemetry and skips the
-  // `assistant` command install. An inherited CADET_DEV is left alone.
-  if (isRepoCheckoutPath(assistantIndex)) {
-    env.CADET_DEV = "1";
-  }
   applyDaemonEnvOverrides(env, entry, options);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
@@ -822,11 +799,7 @@ async function startDaemonFromSource(
   writeFileSync(pidFile, "starting", "utf-8");
 
   const bunPath = resolveBunExecutable();
-  const assistantCommand = findAssistantCommand(assistantIndex);
-  const spawnEnv = envWithBunPath(
-    env,
-    assistantCommand ? [dirname(assistantCommand)] : [],
-  );
+  const spawnEnv = envWithBunPath(env);
   const daemonLogFd = openRuntimeLogFile(
     getLocalInstanceDir(entry),
     "assistant",
@@ -893,7 +866,6 @@ async function startDaemonWatchFromSource(
   const env: Record<string, string | undefined> = {
     ...process.env,
     RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    CADET_DEV: "1",
     CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
   applyDaemonEnvOverrides(env, entry, options);
@@ -934,9 +906,7 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(
-  entry?: LocalAssistant,
-): string {
+function resolveGatewayDir(entry?: LocalAssistant): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
@@ -1014,9 +984,7 @@ export function gatewayCliInvocation(entry?: LocalAssistant): {
   };
 }
 
-function resolveCesDir(
-  entry?: LocalAssistant,
-): string {
+function resolveCesDir(entry?: LocalAssistant): string {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
@@ -1578,7 +1546,6 @@ export async function startLocalDaemon(
         "USER",
         "LANG",
         "CADET_DEBUG",
-        "CADET_DEV",
         "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
         "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
         "CADET_WORKSPACE_DIR",
@@ -1757,7 +1724,6 @@ export async function startGateway(
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
     ...(watch
       ? {
-          CADET_DEV: "1",
           CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
         }
       : {}),

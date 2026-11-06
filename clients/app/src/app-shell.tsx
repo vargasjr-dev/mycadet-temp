@@ -12,8 +12,6 @@ import { routes } from "./utils/routes";
 export interface AppShellProps {
   apiBaseUrl?: string;
   assistantId?: string;
-  location: string;
-  mountPath?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title?: string;
 }
@@ -64,8 +62,6 @@ function wakeFailureMessage(body: unknown): string | null {
 function AssistantShell({
   apiBaseUrl = "/",
   assistantId,
-  location,
-  mountPath = "/assistant",
   onNavigate,
   title,
 }: AppShellProps) {
@@ -166,9 +162,7 @@ function AssistantShell({
   const assistant = state.assistant;
   return (
     <AssistantFrame
-      key={`${assistant.id}:${assistant.version}:${mountPath}`}
-      location={location}
-      mountPath={mountPath}
+      key={`${assistant.id}:${assistant.version}`}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}
     />

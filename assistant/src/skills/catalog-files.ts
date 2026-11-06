@@ -7,12 +7,8 @@
  * `readCatalogSkillFiles` / `readCatalogSkillFileContent` functions.
  *
  * Data sources:
- *   - In `CADET_DEV` mode, when `<repo>/skills/<id>/` exists on disk, we
- *     read the skill files directly from the repo checkout (matching the
- *     behavior of `getCatalog()` in dev).
- *   - Otherwise, we call the cloud preview endpoints:
- *       GET /v1/skills/{skill_id}/files/
- *       GET /v1/skills/{skill_id}/files/content/?path=...
+ *  - GET /v1/skills/{skill_id}/files/
+ *  - GET /v1/skills/{skill_id}/files/content/?path=...
  *
  * Crucially, this code does NOT extract any tar/gzip archives. Previewing a
  * skill's files never installs it or touches the install flow.

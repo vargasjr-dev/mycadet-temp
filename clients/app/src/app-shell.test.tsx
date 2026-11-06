@@ -43,7 +43,6 @@ function props(id: string | undefined = "assistant-1") {
   return {
     assistantId: id,
     location: "/admin/assistant/conversations/123?tab=files#last",
-    mountPath: "/admin/assistant",
     onNavigate: navigate,
   };
 }

@@ -41,16 +41,12 @@ describe("secure-keys", () => {
 
   beforeEach(() => {
     _resetBackend();
-
-    // Ensure CADET_DEV is NOT set
-    delete process.env.CADET_DEV;
   });
 
   afterEach(() => {
     _resetBackend();
     // Clear any memory-backend pin a describe installed.
     setSecureKeyBackendForTesting(undefined);
-    delete process.env.CADET_DEV;
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CES_CREDENTIAL_URL;
     delete process.env.CES_BOOTSTRAP_SOCKET_DIR;
