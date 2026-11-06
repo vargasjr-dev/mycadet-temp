@@ -23,7 +23,7 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as net from "node:net";
@@ -487,7 +487,16 @@ describe("root tar backup", () => {
     healthPorts.add(7821);
     afterSpawnPorts.add(7821);
     healthPorts.add(7831);
+    // TEMP DEBUG
+    const probeMod = await import("../process");
+    console.log("PROBE kill===mocked:", process.kill === mockedKill);
+    console.log("PROBE alivePids:", [...alivePids]);
+    console.log("PROBE cadet.pid exists:", existsSync(join(root, "workspace", "cadet.pid")));
+    console.log("PROBE isProcessAlive:", probeMod.isProcessAlive(join(root, "workspace", "cadet.pid")));
+    console.log("PROBE fetch===mocked:", globalThis.fetch === mockedFetch);
+    try { process.kill(2000000000, 0); console.log("PROBE kill0: alive"); } catch (e) { console.log("PROBE kill0: dead", (e as Error).message); }
     await createRootBackup(entry, file);
+    console.log("PROBE journal:", JSON.stringify(journal));
 
     // The sleep leg really stopped the tracked services: SIGTERMs to the
     // fake pids, and the stop consumed their PID files.
