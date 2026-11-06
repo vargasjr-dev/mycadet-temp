@@ -2,7 +2,7 @@ import fs from "node:fs";
 
 import { resolveLockfilePath } from "./config";
 
-import type { TokenResult } from "./guardian-token";
+import { getGuardianAccessToken, type TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
   getGatewayUrl,
@@ -337,10 +337,6 @@ export function sanitizePairedForwardHeaders(headers: Headers): void {
   headers.set("ngrok-skip-browser-warning", "true");
 }
 
-export type PairedGuardianTokenProvider = (
-  assistantId: string,
-) => Promise<TokenResult>;
-
 export type PairedForwardAuthorizationResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
@@ -349,10 +345,9 @@ export type PairedForwardAuthorizationResult =
 export async function authorizePairedForwardHeaders(
   assistantId: string,
   headers: Headers,
-  getGuardianToken: PairedGuardianTokenProvider,
 ): Promise<PairedForwardAuthorizationResult> {
   sanitizePairedForwardHeaders(headers);
-  const result = await getGuardianToken(assistantId);
+  const result = await getGuardianAccessToken(assistantId);
   if (!result.ok) {
     return result;
   }

@@ -1,12 +1,5 @@
 /**
- * @mycadet/local-mode - shared host library for serving the local-assistant
- * surface (lockfile reads, guardian-token issuance, gateway proxying, and the
- * hatch/retire/wake lifecycle ops) over a loopback HTTP boundary. Consumed by the
- * CLI `client` server and the web app's dev-server middleware so the local
- * endpoint behaviour is defined exactly once instead of one host reaching into
- * another's source tree. `@mycadet/environments`,
- * `@mycadet/service-contracts`, and the source-only
- * `@mycadet/avatar-manifest` are its only workspace dependencies.
+ * @mycadet/local-mode - shared assistant-agnostic operations for assistant operators
  */
 export {
   stripSensitiveFields,
@@ -479,5 +472,4 @@ export type {
   GatewayEntryTarget,
   GatewayProxyDecision,
   PairedForwardAuthorizationResult,
-  PairedGuardianTokenProvider,
 } from "./gateway-proxy";
