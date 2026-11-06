@@ -11,7 +11,6 @@ import { matchOperatorRequest } from "@mycadet/local-mode";
 
 import {
   appOrigins,
-  DENY_PATHS,
   getAppServerPaths,
   readAppServerState,
   type AppServerSpec,
@@ -235,9 +234,6 @@ async function serveStatic(
       "no-store",
     );
   }
-  if (pathname === "/web/assistant/__remote-index.html") {
-    return notFound(); // internal in the nginx map; not directly fetchable
-  }
   if (pathname.startsWith("/web/assistant/")) {
     const file = join(
       spec.webDistDir,
@@ -282,9 +278,6 @@ async function serveStatic(
   // fallback. Its own assets and the shipped root files are plain files.
   if (pathname === "/") {
     return staticResponse(request, { file: spec.appIndexHtmlPath }, "no-cache");
-  }
-  if (pathname === "/__cadet-app-index.html") {
-    return notFound(); // internal in the nginx map; not directly fetchable
   }
   if (pathname.startsWith("/assets/")) {
     return staticResponse(
@@ -340,10 +333,6 @@ export function createAppServerHandler(
       `[${new Date().toISOString()}] [${request.method}] ${pathname}`,
     );
 
-    if (DENY_PATHS.has(pathname)) {
-      return notFound();
-    }
-
     if ((request.headers.get("upgrade") ?? "") !== "" && server) {
       return upgradeToGateway(request, server, spec);
     }
@@ -374,7 +363,11 @@ export function createAppServerHandler(
     if (static_) return static_;
 
     const peer = server?.requestIP(request)?.address ?? null;
-    return proxyToGateway(request, spec, peer);
+    if (pathname.startsWith("/assistant")) {
+      return proxyToGateway(request, spec, peer);
+    }
+
+    return notFound();
   };
 }
 
