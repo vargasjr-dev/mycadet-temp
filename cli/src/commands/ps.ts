@@ -20,6 +20,7 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
   resolveLogDir,
@@ -34,7 +35,6 @@ import {
 } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
-import { loadGuardianToken } from "../lib/guardian-token";
 
 import { withStatusEmoji } from "../lib/status-emoji";
 import {

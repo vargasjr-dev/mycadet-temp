@@ -9,13 +9,13 @@ import {
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
-  loadGuardianToken,
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "../lib/guardian-token";

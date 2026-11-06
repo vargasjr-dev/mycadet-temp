@@ -6,6 +6,7 @@ import {
   cloudAuthHeaders,
   getAssistantDisplayName,
   getCloudUrl,
+  loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
@@ -13,7 +14,6 @@ import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { loadGuardianToken } from "../lib/guardian-token";
 import { leaseGuardianToken } from "@mycadet/local-mode";
 
 // Renew a cached guardian token that is about to lapse instead of starting

@@ -18,13 +18,13 @@ import {
   DeviceRecord,
   dockerResourceNames,
   getAssistantDisplayName,
+  loadGuardianToken,
   loopbackSafeFetch,
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config";
 import type { GuardianTokenData } from "@mycadet/local-mode";
-import { loadGuardianToken } from "../lib/guardian-token.js";
 import { computeDeviceId } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {

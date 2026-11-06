@@ -451,5 +451,6 @@ export {
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,
+  loadGuardianToken,
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";
