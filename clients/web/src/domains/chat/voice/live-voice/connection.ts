@@ -144,13 +144,9 @@ function getTunnelHost(): string {
   if (import.meta.env.VITE_TUNNEL_HOST) {
     return import.meta.env.VITE_TUNNEL_HOST;
   }
-  try {
-    const derived = tunnelHostForCloudHost(window.location.hostname);
-    if (derived) {
-      return derived;
-    }
-  } catch {
-    // Unparseable platform URL — fall through to the prod default.
+  const derived = tunnelHostForCloudHost();
+  if (derived) {
+    return derived;
   }
   return DEFAULT_TUNNEL_HOST;
 }

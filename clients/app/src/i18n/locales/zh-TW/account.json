@@ -104,7 +104,7 @@
     "remoteWithHost": "遠端 · {host}",
     "removeFromDevice": "從此裝置移除…",
     "unnamedAssistant": "該助理",
-    "hatchAssistant": "TODO",
+    "hatchAssistant": "孵化新助理",
     "localAssistant": "在這部電腦上"
   },
   "appShell": {

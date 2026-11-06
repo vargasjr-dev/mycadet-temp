@@ -105,18 +105,23 @@ const resolutionBody = async (response: Response): Promise<unknown> =>
   (await response.json()) as unknown;
 
 describe("matchOperatorRequest — the four prefixes", () => {
-  test("the resolution answers every assistant-reference spelling", () => {
+  test("the resolution answers every versioned assistant-reference spelling", () => {
     for (const requestPath of [
       "/v1/assistant",
       "/v1/assistant/",
-      "/assistant",
-      "/assistant/",
+      "/api/assistant",
+      "/api/assistant/",
       "/v1/assistants/a1",
       "/v1/assistants/a1/",
-      "/assistants/a1",
-      "/assistants/a1/",
+      "/api/assistants/a1",
+      "/api/assistants/a1/",
     ]) {
       expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+    }
+    // The bare spellings are gone on purpose: api routes nest under a
+    // version prefix, or they collide with the frontend routes.
+    for (const requestPath of ["/assistant", "/assistant/", "/assistants/a1"]) {
+      expect(matchOperatorRequest(requestPath, "GET")).toBeNull();
     }
   });
 
@@ -144,16 +149,17 @@ describe("matchOperatorRequest — the four prefixes", () => {
     expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
   });
 
-  test("the derivation helpers give every row both spellings", () => {
+  test("the derivation helpers give every row both versioned spellings", () => {
     for (const route of OPERATOR_ROUTES) {
       const derived = route.pattern.source;
       if (derived.includes("(?<id>")) {
-        // An assistant row: helper 2's id capture plus helper 1's /v1 arm.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An assistant row: helper 2's id capture plus helper 1's required
+        // version arm.
+        expect(derived).toContain("(?:\\/v1|\\/api)");
         expect(derived).toContain("|\\/assistant");
       } else {
-        // An absolute row: helper 1's /v1 arm, no scoping.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An absolute row: helper 1's required version arm, no scoping.
+        expect(derived).toContain("(?:\\/v1|\\/api)");
         expect(derived).not.toContain("(?<id>");
       }
     }
