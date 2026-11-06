@@ -10,6 +10,7 @@ import { execOutput } from "../step-runner.js";
  */
 export async function localPair(entry: LocalAssistant): Promise<string> {
   const invocation = gatewayCliInvocation(entry);
+  console.log(invocation.command, ...invocation.args);
   return execOutput(
     invocation.command,
     [...invocation.args, "pairing", "mint"],

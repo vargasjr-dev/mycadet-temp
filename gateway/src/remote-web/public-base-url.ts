@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getWorkspaceDir } from "../paths.js";
+import { loadConfig } from "../config.js";
+import { getLogger } from "../logger.js";
 
 /**
  * Shared public-base-URL handling for the remote-web pairing flow — the
@@ -14,11 +16,18 @@ import { getWorkspaceDir } from "../paths.js";
  * or null when the value is empty, unparseable, non-http(s), or hostless.
  */
 export function parsePublicBaseUrl(value: string): string | null {
+  console.log("parsePublicBaseUrl", value);
+  const logger = getLogger("parsePublicBaseUrl");
+  logger.info("parsePublicBaseUrl | " + value);
   if (!value.trim()) {
     return null;
   }
   try {
     const url = new URL(value);
+    logger.info("protocol | " + url.protocol + " | " + url.host);
+
+    console.log("protocol", url.protocol, url.host);
+
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     if (!url.host) return null;
     const pathPrefix = url.pathname.replace(/\/+$/, "");
@@ -28,16 +37,13 @@ export function parsePublicBaseUrl(value: string): string | null {
   }
 }
 
-/** The ingress URL recorded in this gateway's own workspace, or null. */
-export function readSavedIngressPublicBaseUrl(): string | null {
-  try {
-    const config = JSON.parse(
-      readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8"),
-    ) as Record<string, unknown>;
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    return typeof url === "string" && url.trim() ? url : null;
-  } catch {
-    return null;
-  }
+/** The ingress URL recorded in the Cadet's workspace, defaulting to localhost */
+export function readSavedIngressPublicBaseUrl(): string {
+  const config = JSON.parse(
+    readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8"),
+  ) as Record<string, unknown>;
+  const ingress = config.ingress as Record<string, unknown> | undefined;
+  const url = ingress?.publicBaseUrl;
+  if (typeof url === "string") return url.trim();
+  return `http://127.0.0.1:${loadConfig().port}`;
 }

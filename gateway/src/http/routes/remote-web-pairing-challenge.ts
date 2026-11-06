@@ -8,7 +8,6 @@ import {
   type RemoteWebPairingChallengeRateLimit,
 } from "../../remote-web/pairing-challenge-rate-limit-store.js";
 import { EDGE_CLIENT_IP_HEADER } from "../edge-forwarded-header.js";
-import { errorResponse } from "../loopback-guard.js";
 import {
   parsePublicBaseUrl,
   readSavedIngressPublicBaseUrl,
@@ -89,15 +88,9 @@ export async function handleCreateRemoteWebPairingChallenge(
   let publicBaseUrl = readSavedIngressPublicBaseUrl();
   if (publicBaseUrl) {
     const strict = parsePublicBaseUrl(publicBaseUrl);
-    publicBaseUrl =
-      strict !== null && isPublicHttpAddress(strict) ? strict : null;
-  }
-  if (!publicBaseUrl) {
-    return errorResponse(
-      "BAD_REQUEST",
-      "no public URL is recorded for this gateway — run `cadet tunnel start` first",
-      400,
-    );
+    if (strict !== null && isPublicHttpAddress(strict)) {
+      publicBaseUrl = strict;
+    }
   }
 
   const rateLimited = recordRemoteWebPairingChallengeCreation();

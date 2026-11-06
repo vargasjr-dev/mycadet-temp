@@ -185,7 +185,6 @@ async function mintPairingChallengeOrExit(
       `Error: could not mint a pairing challenge on the gateway ` +
         `(${err instanceof Error ? err.message : String(err)}).`,
     );
-    console.error("Is the assistant running? Try `cadet wake`.");
     process.exit(1);
   }
 
