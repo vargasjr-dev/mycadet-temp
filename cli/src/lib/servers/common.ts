@@ -12,7 +12,6 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
-  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -23,7 +22,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
-
 
 import { resolveVersion } from "@mycadet/shared/version";
 
@@ -38,6 +36,7 @@ import {
   lookupAssistantByIdentifier,
   probePort,
   resolveConfigDir,
+  resolveDataDir,
   resolveLogDir,
   waitForDaemonReady,
 } from "@mycadet/local-mode";
@@ -160,7 +159,9 @@ export function getForeignAppServerProcess(): {
  * clear the stale records. SIGTERM first, SIGKILL on a 2s timeout — the
  * same escalation `stopAppServer` uses.
  */
-export async function killForeignAppServerProcess(pid: number): Promise<boolean> {
+export async function killForeignAppServerProcess(
+  pid: number,
+): Promise<boolean> {
   try {
     process.kill(pid, "SIGTERM");
   } catch {
@@ -225,14 +226,16 @@ const AppServerStateSchema = z.object({
   listenPort: z.number(),
   gatewayUrl: z.string().optional(),
   remoteWebConfigHash: z.string().optional(),
-  serve: z.object({
-    gatewayUrl: z.string(),
-    webDistDir: z.string(),
-    appDistDir: z.string(),
-    indexHtmlPath: z.string(),
-    appIndexHtmlPath: z.string(),
-    config: z.record(z.string(), z.unknown()),
-  }),
+  serve: z
+    .object({
+      gatewayUrl: z.string(),
+      webDistDir: z.string(),
+      appDistDir: z.string(),
+      indexHtmlPath: z.string(),
+      appIndexHtmlPath: z.string(),
+      config: z.record(z.string(), z.unknown()),
+    })
+    .optional(),
 });
 
 export function readAppServerState(): AppServerState | null {
