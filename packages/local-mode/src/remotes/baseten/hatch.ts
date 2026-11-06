@@ -88,48 +88,35 @@ async function recordSandbox(params: {
     port: params.gatewayPort,
     hatchedAt: new Date().toISOString(),
   };
-  saveLockfileAssistant(entry, assistantId);
-  try {
-    const sandboxToken = await resolveBasetenToken();
+  // Both doors are required: the sandbox URL (exec) and the preview URL
+  // (every gateway invocation) land together or the hatch fails. The
+  // lockfile's READ stays permissive — one legacy entry missing a field
+  // would blank the whole file on parse — but no NEW entry is written
+  // half-doored.
+  const sandboxToken = await resolveBasetenToken();
 
-    // The gateway's door: a private preview on the gateway port. The
-    // preview edge opens the port dynamically and guards the URL with a
-    // preview token, so `Authorization` stays free for the gateway's own
-    // bearer end to end — servers send the token as a header, browsers
-    // earn a cookie with one authenticated open.
-    let previewUrl: string | undefined;
-    let previewToken: string | undefined;
-    try {
-      const preview = await ensureBasetenGatewayPreview(
-        params.name,
-        params.gatewayPort,
-      );
-      if (preview.url) {
-        previewUrl = preview.url;
-        previewToken = await createBasetenPreviewToken(
-          params.name,
-          BASETEN_GATEWAY_PREVIEW,
-          new Date(Date.now() + BASETEN_PREVIEW_TOKEN_LIFETIME_MS),
-        );
-      }
-    } catch (err) {
-      warn(`   ⚠️  No gateway preview minted (${(err as Error).message}).`);
-      warn(
-        "      Browsers reach the gateway through it — export BASETEN_API_KEY and re-run the hatch to add it.",
-      );
-    }
-
-    saveBasetenSandboxToken(assistantId, sandboxToken, previewToken);
-    if (previewUrl) {
-      entry = { ...entry, previewUrl };
-      saveLockfileAssistant(entry, assistantId);
-    }
-  } catch (err) {
-    warn(`   ⚠️  No Baseten sandbox token saved (${(err as Error).message}).`);
-    warn(
-      "      The desktop proxy needs it to reach the assistant — export BASETEN_API_KEY and re-run the hatch.",
+  // The gateway's door: a private preview on the gateway port. The
+  // preview edge opens the port dynamically and guards the URL with a
+  // preview token, so `Authorization` stays free for the gateway's own
+  // bearer end to end — servers send the token as a header, browsers
+  // earn a cookie with one authenticated open.
+  const preview = await ensureBasetenGatewayPreview(
+    params.name,
+    params.gatewayPort,
+  );
+  if (!preview.url) {
+    throw new Error(
+      "The gateway preview mint returned no URL — the assistant would be unreachable from browsers.",
     );
   }
+  const previewToken = await createBasetenPreviewToken(
+    params.name,
+    BASETEN_GATEWAY_PREVIEW,
+    new Date(Date.now() + BASETEN_PREVIEW_TOKEN_LIFETIME_MS),
+  );
+  entry = { ...entry, previewUrl: preview.url };
+  saveLockfileAssistant(entry, assistantId);
+  saveBasetenSandboxToken(assistantId, sandboxToken, previewToken);
   return { entry, gatewayUrl: getGatewayUrl(entry) };
 }
 
