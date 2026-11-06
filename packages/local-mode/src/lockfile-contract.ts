@@ -354,16 +354,13 @@ const BaseAssistantSchema = z.object({
 
 /**
  * The fields the self-hosted, on-machine topologies (local, docker,
- * apple-container) share: host-recorded ports and instance dir.
+ * apple-container) share: host-recorded ports.
  */
 const LocalRuntimeAssistantFields = {
   /** The gateway port a freshly hatched assistant's gateway listens on. */
   port: z.number(),
   /** The runtime daemon's port, recorded at hatch. */
   daemonPort: z.number().optional(),
-  /** The instance's state root on this machine. Local instances keep their
-   * data here; docker instances record their host-side volume root. */
-  instanceDir: z.string().optional(),
   /** The content-editor server's port, recorded at hatch. */
   cesPort: z.number().optional(),
 };
@@ -371,6 +368,9 @@ const LocalRuntimeAssistantFields = {
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
   ...LocalRuntimeAssistantFields,
+  /** The instance's state root on this machine. Local instances keep their
+   * data here. */
+  instanceDir: z.string().optional(),
   cloud: z.literal("local"),
 });
 

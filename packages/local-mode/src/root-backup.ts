@@ -255,12 +255,12 @@ export interface RootStorage {
 
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
-  private readonly localEntry: LocalAssistant | DockerAssistant;
+  private readonly localEntry: LocalAssistant;
   constructor(readonly entry: LockfileAssistant) {
-    // Local-style roots: plain on-machine instances and docker instances
-    // (whose state roots are volumes) both carry the recorded paths.
-    if (entry.cloud !== "local" && entry.cloud !== "docker")
-      throw new Error("Local backup requires an on-machine instance.");
+    // The instance dir is a local-topology concept — only local assistants
+    // carry a state root on this machine to back up.
+    if (entry.cloud !== "local")
+      throw new Error("Local backup requires a local assistant.");
     this.localEntry = entry;
     this.root = resolve(getLocalInstanceDir(entry));
   }
