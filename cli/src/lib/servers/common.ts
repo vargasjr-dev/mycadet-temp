@@ -38,7 +38,6 @@ import {
   lookupAssistantByIdentifier,
   probePort,
   resolveConfigDir,
-  resolveDataDir,
   resolveLogDir,
   waitForDaemonReady,
 } from "@mycadet/local-mode";
@@ -64,7 +63,6 @@ export interface AppServerPaths {
 }
 
 /** The dir pre-rename installs recorded state under (read as a fallback). */
-const LEGACY_INGRESS_DIR = "ingress";
 
 export function getAppServerPaths(): AppServerPaths {
   const dir = join(resolveDataDir(), "app-server");
@@ -223,41 +221,29 @@ export function appServerStatePath(): string {
   return join(getAppServerPaths().dir, "state.json");
 }
 
-// TODO: Delete this method
-function legacyStatePath(): string {
-  return join(resolveDataDir(), LEGACY_INGRESS_DIR, "state.json");
-}
+const AppServerStateSchema = z.object({
+  listenPort: z.number(),
+  gatewayUrl: z.string().optional(),
+  remoteWebConfigHash: z.string().optional(),
+  serve: z.object({
+    gatewayUrl: z.string(),
+    webDistDir: z.string(),
+    appDistDir: z.string(),
+    indexHtmlPath: z.string(),
+    appIndexHtmlPath: z.string(),
+    config: z.record(z.string(), z.unknown()),
+  }),
+});
 
 export function readAppServerState(): AppServerState | null {
   let raw: unknown;
   try {
-    // TODO replace this with zod parsing
     raw = JSON.parse(readFileSync(appServerStatePath(), "utf-8"));
   } catch {
-    // The renamed dir has no record yet; a pre-rename install's record
-    // still tells the truth about a running pre-rename server.
-    if (!existsSync(appServerStatePath()) && existsSync(legacyStatePath())) {
-      try {
-        raw = JSON.parse(readFileSync(legacyStatePath(), "utf-8"));
-      } catch {
-        return null;
-      }
-    } else {
-      return null;
-    }
+    return null;
   }
-  const state = (raw ?? {}) as Record<string, unknown>;
-  const listenPort = state.listenPort;
-  if (typeof listenPort !== "number") return null;
-  const gatewayUrl = state.gatewayUrl;
-  const remoteWebConfigHash = state.remoteWebConfigHash;
-  const serve = state.serve as AppServerState["serve"] | undefined;
-  return {
-    listenPort,
-    ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
-    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
-    ...(serve && typeof serve === "object" ? { serve } : {}),
-  };
+  const result = AppServerStateSchema.safeParse(raw ?? {});
+  return result.success ? result.data : null;
 }
 
 function clearStoppedAppServer(pidPath: string): void {

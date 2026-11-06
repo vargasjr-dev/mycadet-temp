@@ -1,29 +1,21 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  LoaderCircle,
-  Smartphone,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { Button } from "@mycadet/design-library/components/button";
-// TODO: fix imports and stuff
-import { NotFound } from "@/components/not-found";
+
+import { NotFound } from "@app/components/not-found";
 import {
   activateRemoteGatewaySession,
   exchangeRemoteWebPairingToken,
-  remoteGatewayPublicBaseUrl,
   RemoteWebPairingError,
-} from "@/lib/auth/remote-gateway-session";
+} from "@app/lib/auth/remote-gateway-session";
+import { isLocalClient } from "@app/lib/runtime-mode";
+import { nativeSwitchToOriginPath } from "@app/runtime/self-hosted-servers";
+import { sanitizeReturnTo } from "@app/utils/return-to";
+import { routes } from "@app/utils/routes";
+import { useTranslation } from "@app/i18n";
 import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
-import { isCadetCloudRemote } from "@/lib/local-mode";
-import { getAssistantName } from "@/stores/resolved-assistant-store";
-import { isNativePlatform } from "@/runtime/native-platform";
-import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
-import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
-import { sanitizeReturnTo } from "@/utils/return-to";
-import { routes } from "@/utils/routes";
 
 type PairingDetails = {
   deviceCode: string;
@@ -32,7 +24,6 @@ type PairingDetails = {
 
 type PairingState =
   | { kind: "awaiting_code" }
-  | { kind: "handoff_choice" }
   | { kind: "verifying" }
   | { kind: "polling"; expiresAt: string | null }
   | { kind: "approved" }
@@ -45,11 +36,6 @@ function statusCopy(state: PairingState): { title: string; body: string } {
       return {
         title: "Pair a device",
         body: 'On the machine running your assistant, run "cadet pair", then enter the code it prints below the QR code here.',
-      };
-    case "handoff_choice":
-      return {
-        title: "Open in the Cadet app",
-        body: "Scanning from a phone with the Cadet app installed? Hand this pairing to the app.",
       };
     case "verifying":
       return {
@@ -88,9 +74,9 @@ function StatusIcon({ state }: { state: PairingState }) {
       />
     );
   }
-  if (state.kind === "handoff_choice" || state.kind === "awaiting_code") {
+  if (state.kind === "awaiting_code") {
     return (
-      <Smartphone
+      <LoaderCircle
         className="h-5 w-5 text-[var(--system-info-strong)]"
         aria-hidden
       />
@@ -130,90 +116,11 @@ function clearDeviceCodeFromUrl(): void {
   }
 }
 
-/**
- * Custom URL scheme registered by the shipped mobile apps. Dev and staging app
- * builds register suffixed schemes (e.g. `cadet-dev`), so this
- * handoff link intentionally targets the production app — the common case for
- * a phone that scanned a pairing QR with its camera.
- */
-const CADET_APP_SCHEME = "cadet";
-const CADET_ANDROID_PACKAGE = "ai.mycadet.android";
-type AppHandoffPlatform = "ios" | "android";
-
-/**
- * Build the `cadet://connect?url=<base>&code=<device-code>` deep
- * link the mobile app consumes to persist this server and finish pairing inside
- * the app. `url` is the page's own public base (origin + served path prefix)
- * so the app reconnects to the same self-hosted assistant this browser is
- * already on. When the served config carries the assistant's display name, a
- * `name` param rides along so the app can label the server.
- */
-function buildAppHandoffUrl(
-  deviceCode: string,
-  platform: AppHandoffPlatform,
-): string {
-  const params = new URLSearchParams({
-    url: remoteGatewayPublicBaseUrl(),
-    code: deviceCode,
-  });
-  const assistantName = getAssistantName();
-  if (assistantName) {
-    params.set("name", assistantName);
-  }
-  // Percent-encode spaces: URLSearchParams form-encodes them as `+`, which
-  // the iOS app's Foundation URLComponents parser keeps as a literal plus.
-  const query = params.toString().replace(/\+/g, "%20");
-  if (platform === "ios") {
-    return `${CADET_APP_SCHEME}://connect?${query}`;
-  }
-
-  const fallbackUrl = encodeURIComponent(window.location.href);
-  return (
-    `intent://connect?${query}` +
-    `#Intent;scheme=${CADET_APP_SCHEME};` +
-    `package=${CADET_ANDROID_PACKAGE};` +
-    `S.browser_fallback_url=${fallbackUrl};end`
-  );
-}
-
-/**
- * Pre-exchange choice shown to a mobile browser that arrived with a device
- * code. The primary action is a plain anchor so the browser performs the
- * custom-scheme navigation natively; tapping it does not burn the code, so
- * "Continue in this browser" stays available if the app is not installed.
- */
-function PairingHandoffActions({
-  deviceCode,
-  platform,
-  onContinueInBrowser,
-}: {
-  deviceCode: string;
-  platform: AppHandoffPlatform;
-  onContinueInBrowser: () => void;
-}) {
-  const { t } = useTranslation("remote-web");
-  const appLink = useMemo(
-    () => buildAppHandoffUrl(deviceCode, platform),
-    [deviceCode, platform],
-  );
-
-  return (
-    <div className="mt-6 flex flex-col gap-3">
-      <Button variant="primary" fullWidth asChild>
-        <a href={appLink}>{t("pairingPage.openInApp")}</a>
-      </Button>
-      <Button variant="outlined" fullWidth onClick={onContinueInBrowser}>
-        {t("pairingPage.continueInBrowser")}
-      </Button>
-    </div>
-  );
-}
-
 export function PairingPage() {
-  const { t } = useTranslation("remote-web");
+  const { t } = useTranslation("account");
   const location = useLocation();
   const navigate = useNavigate();
-  const enabled = !isCadetCloudRemote();
+  const enabled = isLocalClient();
   const returnTo = useMemo(() => {
     const value = new URLSearchParams(location.search).get("returnTo");
     return sanitizeReturnTo(value, routes.assistant);
@@ -226,19 +133,6 @@ export function PairingPage() {
     [location.pathname, location.search, location.hash],
   );
 
-  // A phone that scanned the pairing QR with its camera lands here in a browser.
-  // If the Cadet app is installed we offer to hand the pairing to it before
-  // burning the single-use code, never inside a native shell that pairs directly.
-  const appHandoffPlatform = useMemo<AppHandoffPlatform | null>(() => {
-    if (!params.deviceCode || isNativePlatform()) {
-      return null;
-    }
-    if (isAndroidBrowser()) {
-      return "android";
-    }
-    return isIOSBrowser() ? "ios" : null;
-  }, [params.deviceCode]);
-
   const [pairing, setPairing] = useState<PairingDetails | null>(() =>
     params.deviceCode
       ? {
@@ -248,21 +142,9 @@ export function PairingPage() {
       : null,
   );
 
-  // The browser-side exchange burns the single-use code, so on the app handoff
-  // screen it waits until the user picks "Continue in this browser"; every
-  // other surface starts it immediately.
-  const [browserExchangeAllowed, setBrowserExchangeAllowed] = useState(
-    () => !appHandoffPlatform,
+  const [state, setState] = useState<PairingState>(() =>
+    params.deviceCode ? { kind: "verifying" } : { kind: "awaiting_code" },
   );
-
-  const [state, setState] = useState<PairingState>(() => {
-    if (appHandoffPlatform) {
-      return { kind: "handoff_choice" };
-    }
-    return params.deviceCode
-      ? { kind: "verifying" }
-      : { kind: "awaiting_code" };
-  });
 
   const [codeDraft, setCodeDraft] = useState("");
 
@@ -280,10 +162,6 @@ export function PairingPage() {
       return;
     }
     if (!pairing?.deviceCode) {
-      return;
-    }
-    // Hold the code-burning exchange while the app handoff choice is pending.
-    if (!browserExchangeAllowed) {
       return;
     }
 
@@ -348,21 +226,13 @@ export function PairingPage() {
         clearTimeout(timeout);
       }
     };
-  }, [
-    enabled,
-    pairing?.deviceCode,
-    browserExchangeAllowed,
-    navigate,
-    returnTo,
-  ]);
-
-  const handleContinueInBrowser = useCallback(() => {
-    setBrowserExchangeAllowed(true);
-    setState({ kind: "verifying" });
-  }, []);
+  }, [enabled, pairing?.deviceCode, navigate, returnTo]);
 
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(null, `account/select-assistant`);
+    void nativeSwitchToOriginPath(
+      window.location.origin,
+      routes.account.selectAssistant,
+    );
   }, []);
 
   if (!enabled) {
@@ -416,14 +286,6 @@ export function PairingPage() {
               {t("pairingPage.pair")}
             </Button>
           </form>
-        ) : null}
-
-        {state.kind === "handoff_choice" && pairing && appHandoffPlatform ? (
-          <PairingHandoffActions
-            deviceCode={pairing.deviceCode}
-            platform={appHandoffPlatform}
-            onContinueInBrowser={handleContinueInBrowser}
-          />
         ) : null}
 
         {state.kind === "polling" && state.expiresAt ? (

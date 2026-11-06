@@ -195,5 +195,12 @@
       "connecting": "正在连接到您的助手…",
       "ready": "就绪"
     }
+  },
+  "pairingPage": {
+    "pairingCode": "配对码",
+    "pair": "配对",
+    "expiresAt": "{time} 过期。",
+    "cancel": "取消",
+    "enterNewCode": "输入新代码"
   }
 }
