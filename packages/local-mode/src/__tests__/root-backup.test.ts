@@ -1,10 +1,10 @@
 import {
   afterAll,
   afterEach,
+  beforeEach,
   describe,
   expect,
   mock,
-  spyOn,
   test,
 } from "bun:test";
 import { Database } from "bun:sqlite";
@@ -67,6 +67,14 @@ const journal: JournalEntry[] = [];
 // --- 1. node:child_process --------------------------------------------------
 
 const realChildProcess = { ...childProcess };
+
+// The lifecycle links ../process (PID-file liveness, graceful stops) and
+// ../daemon-readiness (the health verdict). Sibling suites in this package
+// register process-global mocks of both, so snapshot the reals here and
+// re-register them per-test below — a load-time-only registration leaks
+// into whatever file the shared-loader scheduler interleaves.
+const realProcessModule = { ...(await import("../process")) };
+const realDaemonReadinessModule = { ...(await import("../daemon-readiness")) };
 
 const alivePids = new Set<number>();
 
@@ -132,29 +140,24 @@ function fakeExecFileSync(command: string, args: string[]): string {
 // --- 2. process.kill (the signal boundary) ----------------------------------
 
 const realKill = process.kill.bind(process);
-const killSpy = spyOn(process, "kill").mockImplementation(
-  (pid: number, signal?: string | number) => {
-    if (Math.abs(pid) >= FAKE_PID_BASE) {
-      journal.push({ kind: "signal", pid, signal: signal ?? "SIGTERM" });
-      if ((signal ?? "SIGTERM") === 0) {
-        if (!alivePids.has(pid))
-          throw Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
-        return true;
-      }
-      // A real signal stops the fake service — SIGTERM'd local services
-      // exit, which is what the graceful-stop code waits to observe.
-      alivePids.delete(Math.abs(pid));
+const mockedKill = (pid: number, signal?: string | number) => {
+  if (Math.abs(pid) >= FAKE_PID_BASE) {
+    journal.push({ kind: "signal", pid, signal: signal ?? "SIGTERM" });
+    if ((signal ?? "SIGTERM") === 0) {
+      if (!alivePids.has(pid))
+        throw Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
       return true;
     }
-    return realKill(pid, signal as never);
-  },
-);
-
-mock.module("node:child_process", () => ({
-  ...realChildProcess,
-  spawn: fakeSpawn,
-  execFileSync: fakeExecFileSync,
-}));
+    // A real signal stops the fake service — SIGTERM'd local services
+    // exit, which is what the graceful-stop code waits to observe.
+    alivePids.delete(Math.abs(pid));
+    return true;
+  }
+  return realKill(pid, signal as never);
+};
+// A direct assignment (not a spy): another suite's mock.restore() must not
+// be able to resurrect the real kill mid-run.
+process.kill = mockedKill as typeof process.kill;
 
 // --- 3. node:net (the port-probe boundary) ----------------------------------
 
@@ -191,11 +194,6 @@ class AlwaysBindingServer extends EventEmitter {
     return this;
   }
 }
-mock.module("node:net", () => ({
-  ...realNet,
-  Socket: NeverConnectingSocket,
-  createServer: () => new AlwaysBindingServer(),
-}));
 
 // --- 4. globalThis.fetch (the network boundary) -----------------------------
 
@@ -206,7 +204,7 @@ const afterSpawnPorts = new Set<number>();
 /** What `/readyz` answers on scripted health ports: "ready" or "failed". */
 let readyzAnswer: "ready" | "failed" = "ready";
 
-globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+const mockedFetch = (async (input: Parameters<typeof fetch>[0]) => {
   const url =
     typeof input === "string"
       ? input
@@ -243,12 +241,32 @@ globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
   // listener — exactly the degraded world a stopped install presents.
   throw new Error(`connect ECONNREFUSED (mocked): ${url}`);
 }) as typeof fetch;
+globalThis.fetch = mockedFetch as typeof fetch;
+
+beforeEach(() => {
+  mock.module("node:child_process", () => ({
+    ...realChildProcess,
+    spawn: fakeSpawn,
+    execFileSync: fakeExecFileSync,
+  }));
+  mock.module("node:net", () => ({
+    ...realNet,
+    Socket: NeverConnectingSocket,
+    createServer: () => new AlwaysBindingServer(),
+  }));
+  mock.module("../process", () => realProcessModule);
+  mock.module("../daemon-readiness", () => realDaemonReadinessModule);
+  process.kill = mockedKill as typeof process.kill;
+  globalThis.fetch = mockedFetch as typeof fetch;
+});
 
 afterAll(() => {
-  killSpy.mockRestore();
+  process.kill = realKill;
   globalThis.fetch = realFetch;
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:net", () => realNet);
+  mock.module("../process", () => realProcessModule);
+  mock.module("../daemon-readiness", () => realDaemonReadinessModule);
 });
 
 // The journal and the fake process table are per-test state.
