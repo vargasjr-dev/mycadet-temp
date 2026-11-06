@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { PeekCharacter } from "@/app/docs/_components/peek-character";
 
-interface TocItem {
+export interface TocItem {
   id: string;
   label: string;
   level: number;

@@ -86,3 +86,7 @@ function walk(dir: string, basePath: string): DiscoveredDocsPage[] {
 
   return pages;
 }
+
+export function fetchConstitutionContent(): string {
+  return fs.readFileSync("../../CONSTITUTION.md").toString();
+}
