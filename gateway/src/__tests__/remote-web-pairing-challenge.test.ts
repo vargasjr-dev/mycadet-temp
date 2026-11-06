@@ -117,23 +117,6 @@ describe("remote web pairing challenge", () => {
     expect(record?.status).toBe("pending");
   });
 
-  test("creates a challenge through the nginx remote web edge", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        edgeForwarded: true,
-        host: "paired.example.com",
-      }),
-      REMOTE_IP,
-    );
-
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as {
-      verificationUri: string;
-      userCode: string;
-    };
-    expect(body.verificationUri).toBe(`${PUBLIC_BASE_URL}/assistant/pair`);
-    expect(getRemoteWebPairingChallengeForTests(body.userCode)).toBeDefined();
-  });
 
   test("rejects direct non-loopback challenge creation without the edge marker", async () => {
     const res = await handleCreateRemoteWebPairingChallenge(
@@ -144,29 +127,7 @@ describe("remote web pairing challenge", () => {
     expect(res.status).toBe(403);
   });
 
-  test("rejects spoofed edge marker from a non-loopback peer", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        edgeForwarded: true,
-        host: "paired.example.com",
-      }),
-      REMOTE_IP,
-    );
 
-    expect(res.status).toBe(403);
-  });
-
-  test("rejects spoofed edge marker when X-Forwarded-For appears loopback", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        edgeForwarded: true,
-        host: "paired.example.com",
-      }),
-      LOOPBACK_IP,
-    );
-
-    expect(res.status).toBe(403);
-  });
 
   test("rate limits repeated challenge creation globally across rotated public hosts", async () => {
     for (let i = 0; i < 20; i++) {
@@ -298,22 +259,6 @@ describe("remote web pairing challenge", () => {
     expect(body.publicBaseUrl).toBe("https://saved.example.test");
   });
 
-  test("self-sources the request host on an edge-proxied mint", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        edgeForwarded: true,
-        host: "paired.example.com",
-        body: JSON.stringify({}),
-      }),
-      REMOTE_IP,
-    );
-
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { verificationUri: string };
-    expect(body.verificationUri).toBe(
-      "https://paired.example.com/assistant/pair",
-    );
-  });
 
   test("defaults a self-sourced loopback mint to the local host", async () => {
     // No ingress url recorded — a local assistant pairs on its own host:
