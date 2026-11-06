@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, LoaderCircle, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
@@ -71,9 +71,12 @@ function StatusIcon({ state }: { state: PairingState }) {
       />
     );
   }
+  // Not a loader: this state waits on the user to enter the code the host
+  // printed, so a spinner — live or frozen — reads as a broken loading
+  // state. The page pairs a device; the glyph says which one.
   if (state.kind === "awaiting_code") {
     return (
-      <LoaderCircle
+      <Smartphone
         className="h-5 w-5 text-[var(--system-info-strong)]"
         aria-hidden
       />

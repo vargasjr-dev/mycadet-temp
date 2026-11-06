@@ -39,7 +39,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                 {/* Desktop: logo */}
                 <a href="https://www.mycadet.ai" className="hidden md:flex items-center gap-2 no-underline">
                   <Image
-                    src="/docs/cadet-mark.svg"
+                    src="/docs/cadet-logo.svg"
                     alt="Cadet"
                     width={26}
                     height={26}
