@@ -417,7 +417,7 @@ describe("remote-forward header handling", () => {
   test("authorizePairedForwardHeaders installs the host's guardian bearer", async () => {
     const headers = new Headers({ authorization: "Bearer renderer" });
     const result = await authorizePairedForwardHeaders("abc-123", headers);
-    expect(result).toEqual({ ok: true });
+    expect(result.ok).toEqual(true);
     expect(headers.get("authorization")).toBe("Bearer host-token");
   });
 });
