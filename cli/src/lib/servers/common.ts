@@ -503,6 +503,38 @@ export function appOrigins(config: Record<string, unknown>): string[] {
  * the injected documents. The starting parent writes it into `state.json`;
  * the child is stateless beyond it.
  */
+const SENSITIVE_GATEWAY_ROUTES = [
+  "/auth/token",
+  "/v1/pair",
+  "/v1/pair/web-init",
+  "/v1/devices",
+  "/v1/devices/revoke",
+  "/v1/remote-web/pairing-requests",
+  "/v1/remote-web/pairing-requests/approve",
+  "/v1/remote-web/pairing-requests/deny",
+  "/v1/remote-web/pairing-verification",
+  "/v1/shared/invites/redeem",
+] as const;
+
+export const DENY_PATHS: ReadonlySet<string> = (() => {
+  const paths = new Set<string>();
+  for (const route of SENSITIVE_GATEWAY_ROUTES) {
+    // The version prefix is optional at the gateway (P7 of the one-url plan):
+    // block the unversioned spelling of every /v1 route too, so the sensitive
+    // paths never gain a reachable alias through the new unversioned surface.
+    const unversioned = route.replace(/^\/v1(?=\/)/, "");
+    for (const spelling of unversioned === route
+      ? [route]
+      : [route, unversioned]) {
+      paths.add(spelling);
+      paths.add(`${spelling}/`);
+      paths.add(`/web${spelling}`);
+      paths.add(`/web${spelling}/`);
+    }
+  }
+  return paths;
+})();
+
 export interface AppServerSpec {
   gatewayUrl: string;
   webDistDir: string;

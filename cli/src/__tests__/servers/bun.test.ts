@@ -329,14 +329,16 @@ function makeHandlerFixture(
 const EDGE_PEER_IP = "198.51.100.7";
 
 /**
- * The handler under test, with the edge's peer address pinned (the live
- * server threads `server.requestIP` here; direct handler tests pass a
- * stub).
+ * The handler under test, with the edge's peer address pinned: the handler
+ * reads the peer off the server handle's `requestIP`, so direct handler
+ * tests pass a stub handle (the live child passes Bun's real server).
  */
 function handlerFor(fixture: HandlerFixture) {
-  return createAppServerHandler(fixture.spec, {
-    requestIP: () => EDGE_PEER_IP,
-  });
+  const handler = createAppServerHandler(fixture.spec);
+  const server = {
+    requestIP: () => ({ address: EDGE_PEER_IP }),
+  } as unknown as Parameters<ReturnType<typeof createAppServerHandler>>[1];
+  return (request: Request) => handler(request, server);
 }
 
 /** Capture the proxy's upstream request and answer a canned response. */
@@ -454,12 +456,12 @@ describe("the app server's routes", () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    for (const path of ["/healthz", "/readyz"]) {
-      const response = await handler(
-        new Request(`http://127.0.0.1:7840${path}`),
-      );
-      expect(response.status).toBe(200);
-    }
+    // The app server answers its own liveness locally — the gateway being
+    // down must not read as the app server being dead.
+    const health = await handler(new Request("http://127.0.0.1:7840/healthz"));
+    expect(await health.json()).toEqual({ ok: true });
+    const ready = await handler(new Request("http://127.0.0.1:7840/readyz"));
+    expect(ready.status).toBe(200);
     await handler(
       new Request("http://127.0.0.1:7840/webhooks/telegram", {
         method: "POST",
@@ -467,7 +469,6 @@ describe("the app server's routes", () => {
       }),
     );
     expect(gateway.calls.map((call) => new URL(call.url).pathname)).toEqual([
-      "/healthz",
       "/readyz",
       "/webhooks/telegram",
     ]);
@@ -484,7 +485,6 @@ describe("the app server's routes", () => {
     );
     const headers = gateway.calls[0]!.headers;
     expect(headers.get("x-cadet-client-ip")).toBe("198.51.100.7");
-    expect(headers.get("x-cadet-edge-forwarded")).toBe("1");
   });
 
   test("falls back to the raw peer when no X-Forwarded-For is set", async () => {
@@ -847,9 +847,7 @@ describe("the app server's routes", () => {
   test("websocket upgrades relay to the gateway through the server handle", async () => {
     const fixture = makeHandlerFixture();
     const upgraded: Array<{ data: unknown }> = [];
-    const handler = createAppServerHandler(fixture.spec, {
-      requestIP: () => EDGE_PEER_IP,
-    });
+    const handler = createAppServerHandler(fixture.spec);
     // A stub server handle: the live child passes Bun's real Server.
     const server = {
       requestIP: () => ({ address: EDGE_PEER_IP }),

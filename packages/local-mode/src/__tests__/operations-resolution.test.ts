@@ -109,10 +109,12 @@ describe("matchOperatorRequest — the four prefixes", () => {
     for (const requestPath of [
       "/v1/assistant",
       "/v1/assistant/",
+      "/api/assistant",
       "/assistant",
       "/assistant/",
       "/v1/assistants/a1",
       "/v1/assistants/a1/",
+      "/api/assistants/a1",
       "/assistants/a1",
       "/assistants/a1/",
     ]) {
@@ -148,12 +150,13 @@ describe("matchOperatorRequest — the four prefixes", () => {
     for (const route of OPERATOR_ROUTES) {
       const derived = route.pattern.source;
       if (derived.includes("(?<id>")) {
-        // An assistant row: helper 2's id capture plus helper 1's /v1 arm.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An assistant row: helper 2's id capture plus helper 1's
+        // optional version arm.
+        expect(derived).toContain("(?:\\/v1|\\/api)?");
         expect(derived).toContain("|\\/assistant");
       } else {
-        // An absolute row: helper 1's /v1 arm, no scoping.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An absolute row: helper 1's optional version arm, no scoping.
+        expect(derived).toContain("(?:\\/v1|\\/api)?");
         expect(derived).not.toContain("(?<id>");
       }
     }

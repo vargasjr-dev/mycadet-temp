@@ -3,10 +3,14 @@
  * deployment naming convention (`cloud.mycadet.ai` → `tunnel.mycadet.ai`,
  * `{env}-cloud.mycadet.ai` → `{env}-tunnel.mycadet.ai`). Returns null for
  * hosts outside that convention (localhost, custom domains). Shared by the
- * gateway speech relay and the web live-voice client so the two ends of the
- * cloud-speech transport can't drift.
+ * gateway speech relay (which passes the request's own host) and the web
+ * live-voice client (which defaults to the page's origin) so the two ends
+ * of the cloud-speech transport can't drift.
  */
-export function tunnelHostForCloudHost(host: string): string | null {
+export function tunnelHostForCloudHost(
+  host: string = (globalThis as { location?: { hostname?: string } }).location
+    ?.hostname ?? "",
+): string | null {
   if (host === "cloud.mycadet.ai") {
     return "tunnel.mycadet.ai";
   }

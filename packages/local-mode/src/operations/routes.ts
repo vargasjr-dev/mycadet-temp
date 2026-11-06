@@ -169,10 +169,11 @@ const json = (body: unknown, status = 200): Response =>
  */
 /**
  * Helper 1 — the v1-friendly derivation: a rooted pattern also matches its
- * `/v1` spelling. The absolute rows apply it alone.
+ * `/v1` and `/api` spellings, and matches bare (the version prefix is
+ * optional). The absolute rows apply it alone.
  */
 function v1Friendly(rooted: RegExp): RegExp {
-  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1|\\/api)"));
+  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1|\\/api)?"));
 }
 
 /**
