@@ -7,7 +7,6 @@ import log from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
 import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
-import { forwardGatewayRequest } from "./gateway-forward";
 import {
   forwardOperatorRequest,
   readLockfile,
@@ -93,13 +92,6 @@ export function registerAppProtocol(): void {
     const operated = await forwardOperatorRequest(request);
     if (operated) {
       return operated;
-    }
-
-    // Forward the id-keyed gateway proxy to its lockfile-resolved target
-    // (mirrors the Vite dev-server proxy).
-    const proxied = await forwardGatewayRequest(request, net.fetch);
-    if (proxied) {
-      return proxied;
     }
 
     // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the

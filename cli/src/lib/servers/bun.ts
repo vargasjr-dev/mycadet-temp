@@ -150,55 +150,6 @@ function edgeClientIp(request: Request, peer: string | null): string {
 }
 
 /**
- * Proxy a request to the gateway upstream, streaming both ways: the body
- * rides as the raw stream (a passing operator row leaves it untouched), the
- * response streams back with the hop-by-hop and length headers stripped
- * (fetch decodes the upstream's content-encoding, so the lengths no longer
- * describe the bytes).
- */
-async function proxyToGateway(
-  request: Request,
-  spec: AppServerSpec,
-  peer: string | null,
-): Promise<Response> {
-  const url = new URL(request.url);
-  const rewritePath = (p: string) =>
-    p.startsWith("/web/v1/")
-      ? p.slice("/web".length)
-      : p.startsWith("/web/")
-        ? `/v1/${p.slice("/web/".length)}`
-        : p;
-  const path = rewritePath ? rewritePath(url.pathname) : url.pathname;
-  const target = new URL(`${path}${url.search}`, spec.gatewayUrl);
-  const headers = new Headers();
-  request.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "host") return;
-    if (HOP_BY_HOP_HEADERS.has(key.toLowerCase())) return;
-    headers.set(key, value);
-  });
-  headers.set("X-Cadet-Client-Ip", edgeClientIp(request, peer));
-  const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  const upstream = await fetch(target, {
-    method: request.method,
-    headers,
-    ...(hasBody ? { body: request.body, duplex: "half" as const } : {}),
-    redirect: "manual",
-  });
-  const outHeaders = new Headers();
-  upstream.headers.forEach((value, key) => {
-    if (HOP_BY_HOP_HEADERS.has(key.toLowerCase())) return;
-    if (["content-length", "content-encoding"].includes(key.toLowerCase())) {
-      return;
-    }
-    outHeaders.set(key, value);
-  });
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: outHeaders,
-  });
-}
-
-/**
  * The static SPA surface, ported from the nginx location map: the web
  * bundle's iframe mount at /web/assistant/ (injected index, inline config,
  * SPA fallback), the web bundle's own files under its baked /assistant/
@@ -361,11 +312,6 @@ export function createAppServerHandler(
 
     const static_ = await serveStatic(request, spec);
     if (static_) return static_;
-
-    const peer = server?.requestIP(request)?.address ?? null;
-    if (pathname.startsWith("/assistant")) {
-      return proxyToGateway(request, spec, peer);
-    }
 
     return notFound();
   };

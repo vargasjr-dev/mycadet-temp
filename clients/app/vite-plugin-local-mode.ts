@@ -14,11 +14,6 @@ import {
   readLockfile,
   servedConfigFromLockfile,
   matchOperatorRequest,
-  getGuardianAccessToken,
-  loopbackGatewayBearer,
-  resolveGatewayProxyTarget,
-  readGatewayTargets,
-  authorizePairedForwardHeaders,
 } from "@mycadet/local-mode";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
@@ -82,7 +77,6 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(cloudSessionMiddleware());
       server.middlewares.use(configMiddleware(configJson));
       server.middlewares.use(operatorMiddleware());
-      server.middlewares.use(gatewayProxyMiddleware(env));
       server.middlewares.use(accountSpaFallback(server));
     },
   };
@@ -242,7 +236,10 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
-    const match = matchOperatorRequest(requestPathname(req), req.method);
+    const match = matchOperatorRequest(
+      requestPathname(req),
+      req.method ?? "GET",
+    );
     if (!match) {
       return next();
     }
@@ -281,213 +278,4 @@ function operatorMiddleware(): Connect.NextHandleFunction {
         }
       });
   };
-}
-
-function gatewayProxyMiddleware(
-  env: Record<string, string>,
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
-    // rides one id-keyed proxy for every assistant gateway. The lockfile
-    // resolves the id to a loopback port (locally hatched) or the recorded
-    // gateway address of a custom remote (imported pairing) — that target
-    // map is the allowlist.
-    // The host OWNS the Authorization header: it overwrites whatever the
-    // renderer sent with the bearer it mints from the on-disk guardian
-    // token (401 re-mint retry on bodyless requests); remote hops
-    // sanitize browser-ambient headers and install the paired guardian
-    // bearer. An unknown id on the scoped surface passes through to the
-    // dev `/v1` proxy (the cloud), so cloud assistants keep their
-    // platform-served routes.
-    const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
-      readGatewayTargets(),
-    );
-    if (decision.kind === "pass") {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (decision.kind === "reject") {
-      res.statusCode = decision.status;
-      res.end(decision.message);
-      return;
-    }
-
-    if (decision.target.kind === "loopback") {
-      const { port } = decision.target;
-      // The trusted dev-server host owns the Authorization header: it
-      // overwrites whatever the renderer sent with the bearer it mints
-      // from the on-disk guardian token — the browser never holds one.
-      const lease = () => getGuardianAccessToken(decision.assistantId);
-      const mint =
-        decision.path !== "/auth/token"
-          ? loopbackGatewayBearer(port, lease)
-          : Promise.resolve(null);
-      mint
-        .then((bearer) => {
-          pipeGatewayProxyWithBearerRetry(
-            req,
-            res,
-            http,
-            {
-              hostname: "127.0.0.1",
-              port,
-              path: decision.path + decision.search,
-              method: req.method,
-              headers: { ...req.headers, host: `127.0.0.1:${port}` },
-            },
-            bearer,
-            () => loopbackGatewayBearer(port, lease, { forceMint: true }),
-          );
-        })
-        .catch(() => {
-          if (!res.headersSent) {
-            res.statusCode = 502;
-            res.end("Gateway proxy error");
-          }
-        });
-      return;
-    }
-
-    if (!isSameOriginProxyRequest(req)) {
-      res.statusCode = 403;
-      res.end("Forbidden");
-      return;
-    }
-
-    const target = new URL(decision.target.runtimeUrl);
-    const headers = new Headers();
-    for (const [name, value] of Object.entries(req.headers)) {
-      if (value === undefined) {
-        continue;
-      }
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          headers.append(name, item);
-        }
-      } else {
-        headers.set(name, value);
-      }
-    }
-    void authorizePairedForwardHeaders(
-      decision.assistantId,
-      headers,
-      getGuardianAccessToken,
-    ).then((result) => {
-      if (!result.ok) {
-        res.statusCode = result.status;
-        res.end(result.error);
-        return;
-      }
-      headers.set("host", target.host);
-      pipeGatewayProxy(
-        req,
-        res,
-        target.protocol === "https:" ? https : http,
-        {
-          protocol: target.protocol,
-          hostname: target.hostname,
-          port: target.port || undefined,
-          path: decision.path + decision.search,
-          method: req.method,
-          headers: Object.fromEntries(headers.entries()),
-        },
-        "Paired gateway proxy error",
-      );
-    });
-  };
-}
-
-// One streamed hop for both gateway data-plane proxies. Drops the upstream's
-// `transfer-encoding` before re-emitting: Node's http server sets its own when
-// we pipe the streamed body, so copying the gateway's `chunked` too yields a
-// duplicate ("too many transfer encodings"). A strict downstream proxy (the
-// `vel up` Caddy edge) rejects that with 502, fatal for the SSE `/events`
-// stream, whose failure drives a client reconnect + full-refetch loop.
-function pipeGatewayProxy(
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-  transport: Pick<typeof http, "request">,
-  options: http.RequestOptions,
-  errorMessage: string,
-): void {
-  const proxyReq = transport.request(options, (proxyRes) => {
-    const headers = { ...proxyRes.headers };
-    delete headers["transfer-encoding"];
-    res.writeHead(proxyRes.statusCode ?? 502, headers);
-    proxyRes.pipe(res);
-  });
-
-  proxyReq.on("error", () => {
-    if (!res.headersSent) {
-      res.statusCode = 502;
-      res.end(errorMessage);
-    }
-  });
-
-  req.pipe(proxyReq);
-}
-
-/**
- * The loopback variant of {@link pipeGatewayProxy} with bearer-custody
- * retry: when the gateway rejects the injected bearer with a 401 on a
- * bodyless request, the rejected upstream response is discarded, the host
- * re-mints once, and the request is sent again — a revoked bearer heals on
- * the next request instead of 401ing until the cache expires. Bodied
- * requests cannot replay (the request stream is already consumed), so
- * their 401 pipes through untouched.
- */
-function pipeGatewayProxyWithBearerRetry(
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-  transport: Pick<typeof http, "request">,
-  options: http.RequestOptions,
-  injectedBearer: string | null,
-  reMint: () => Promise<string | null>,
-): void {
-  const send = (bearer: string | null, isRetry: boolean) => {
-    // The host owns the Authorization header on every attempt: overwrite
-    // the renderer's value with the current bearer, clear when none
-    // applies — a stale credential never rides a retry.
-    const headers: http.OutgoingHttpHeaders = { ...options.headers };
-    if (bearer) {
-      headers.authorization = `Bearer ${bearer}`;
-    } else {
-      delete headers.authorization;
-    }
-    const proxyReq = transport.request({ ...options, headers }, (proxyRes) => {
-      if (!isRetry && injectedBearer !== null && proxyRes.statusCode === 401) {
-        proxyRes.resume();
-        void reMint().then((fresh) => {
-          if (fresh) {
-            send(fresh, true);
-            return;
-          }
-          // The re-mint failed: surface the original rejection.
-          const headers = { ...proxyRes.headers };
-          delete headers["transfer-encoding"];
-          res.writeHead(proxyRes.statusCode ?? 502, headers);
-          res.end();
-        });
-        return;
-      }
-      const headers = { ...proxyRes.headers };
-      delete headers["transfer-encoding"];
-      res.writeHead(proxyRes.statusCode ?? 502, headers);
-      proxyRes.pipe(res);
-    });
-
-    proxyReq.on("error", () => {
-      if (!res.headersSent) {
-        res.statusCode = 502;
-        res.end("Gateway proxy error");
-      }
-    });
-
-    req.pipe(proxyReq);
-  };
-  send(injectedBearer, false);
 }

@@ -470,5 +470,4 @@ export type {
   GatewayTarget,
   GatewayParseResult,
   GatewayEntryTarget,
-  GatewayProxyDecision,
 } from "./gateway-proxy";

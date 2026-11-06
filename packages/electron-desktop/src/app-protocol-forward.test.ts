@@ -36,9 +36,6 @@ mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   forwardOperatorRequest: forwardOperator,
 }));
-mock.module("./gateway-forward", () => ({
-  forwardGatewayRequest: forwardGateway,
-}));
 mock.module("./cloud-forward", () => ({
   forwardCloudRequest: forwardCloud,
 }));

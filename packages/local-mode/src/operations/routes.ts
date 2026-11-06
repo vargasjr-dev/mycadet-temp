@@ -17,6 +17,7 @@ import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
 import { z } from "zod";
+import { getGatewayUrl } from "../lockfile-contract";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -476,6 +477,24 @@ async function runAvatarRoute(
   return json(readLockfileAssistantAvatar(request.assistantId));
 }
 
+/**
+ * Sending all remaining routes to the Cadet Gateway
+ */
+async function runProxyRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  const assistantId = request.assistantId;
+  const entry = findAssistantByName(assistantId);
+  if (!entry) {
+    return null;
+  }
+  return fetch(getGatewayUrl(entry), {
+    // @ts-expect-error ts(2769) - TODO: normalize IncomingHttpHeaders here
+    headers: request.headers,
+    body: request.body,
+  });
+}
+
 /** The operator route table, in match order. */
 export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // The shell's resolution: the assistant reference's bare tail answers the
@@ -551,6 +570,11 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^avatar\/get$/),
     run: runAvatarRoute,
   },
+  {
+    method: "ALL",
+    pattern: scopedAssistant(/^.+$/),
+    run: runProxyRoute,
+  },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
@@ -572,7 +596,7 @@ export function matchOperatorRequest(
   method: string,
 ): OperatorMatch | null {
   for (const route of OPERATOR_ROUTES) {
-    if (method !== route.method) {
+    if (method !== route.method && route.method !== "ALL") {
       continue;
     }
     const match = route.pattern.exec(pathname);

@@ -135,7 +135,7 @@ export type GatewayEntryTarget =
  *   - `forward`  — forward to the entry's resolved target, carrying the
  *                  assistant id so the trusted host can resolve its bearer.
  */
-export type GatewayProxyDecision =
+type GatewayProxyDecision =
   | { kind: "pass" }
   | { kind: "reject"; status: number; message: string }
   | {
