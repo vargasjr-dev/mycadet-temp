@@ -7,9 +7,7 @@ import type {
 } from "@mycadet/local-mode/contract";
 import { gatewayCliInvocation } from "../remotes/local/common";
 
-function fakeEntry(
-  instanceDir: string,
-): LocalAssistant | DockerAssistant | AppleContainerAssistant {
+function fakeEntry(instanceDir: string): LocalAssistant {
   // gatewayCliInvocation only reads the recorded paths; the rest of the
   // entry shape is irrelevant here.
   return {

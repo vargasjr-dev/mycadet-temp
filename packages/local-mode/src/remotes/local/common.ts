@@ -98,7 +98,7 @@ function normalizeRuntimeVersion(version: string): string {
 }
 
 export function getLocalRuntimeInstallDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   version: string,
 ): string {
   return join(
@@ -185,7 +185,7 @@ function envWithBunPath(
 }
 
 function localRuntimeAssistantIndex(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
 ): string | undefined {
   const installDir = latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
@@ -198,7 +198,7 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
+  entry: LocalAssistant | undefined,
 ): string | undefined {
   const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
@@ -207,7 +207,7 @@ function localRuntimeGatewayDir(
 }
 
 function localRuntimeCesDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
+  entry: LocalAssistant | undefined,
 ): string | undefined {
   const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
@@ -224,7 +224,7 @@ function localRuntimeCesDir(
  * making its mtime the install order.
  */
 function latestLocalRuntimeInstallDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
 ): string | undefined {
   const runtimeRoot = join(getLocalInstanceDir(entry), "runtime");
   let installed: string[];
@@ -250,7 +250,7 @@ function latestLocalRuntimeInstallDir(
 }
 
 export function ensureLocalRuntime(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   version: string,
   options: { force?: boolean } = {},
 ): LocalRuntimeInstall {
@@ -430,7 +430,7 @@ function findGatewaySourceFromCwd(): string | undefined {
 }
 
 function resolveAssistantIndexPath(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
 ): string | undefined {
   if (entry) {
     const runtimeIndex = localRuntimeAssistantIndex(entry);
@@ -567,7 +567,7 @@ type DaemonStartOptions = {
  * writable per-instance directory used outside containers.
  */
 function resolveCesBootstrapSocketDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
   env?: Record<string, string | undefined>,
 ): string {
   if (entry) {
@@ -585,7 +585,7 @@ function resolveCesBootstrapSocketDir(
  */
 function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): void {
   {
@@ -935,7 +935,7 @@ async function startDaemonWatchFromSource(
 }
 
 function resolveGatewayDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
 ): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
@@ -989,13 +989,7 @@ function resolveGatewayDir(
  * entry's `entry` (undefined for the default instance, where both
  * processes fall back to the same cwd-relative paths).
  */
-export function gatewayCliInvocation(
-  entry?:
-    | LocalAssistant
-    | DockerAssistant
-    | AppleContainerAssistant
-    | undefined,
-): {
+export function gatewayCliInvocation(entry?: LocalAssistant): {
   command: string;
   args: string[];
   cwd: string;
@@ -1007,7 +1001,7 @@ export function gatewayCliInvocation(
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(entry && isLocalEntry(entry)
+      ...(entry
         ? {
             CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
             GATEWAY_SECURITY_DIR: join(
@@ -1021,7 +1015,7 @@ export function gatewayCliInvocation(
 }
 
 function resolveCesDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
 ): string {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
@@ -1059,7 +1053,7 @@ function resolveCesDir(
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
 export function resolveCesSocketPath(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
@@ -1101,9 +1095,9 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  */
 export async function startCes(
   watch: boolean = false,
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
 ): Promise<void> {
-  const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+  const cadetDir = getLocalInstanceDir(entry);
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1732,7 +1726,7 @@ export async function startLocalDaemon(
 
 export async function startGateway(
   watch: boolean = false,
-  entry?: LocalAssistant,
+  entry: LocalAssistant,
   options?: {
     requireReady?: boolean;
   },
@@ -1743,7 +1737,7 @@ export async function startGateway(
   // Without this, crashed/stale gateways accumulate as zombies — the old
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
-  const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+  const gwPidDir = getLocalInstanceDir(entry);
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1832,7 +1826,7 @@ export async function startGateway(
   gateway.unref();
 
   if (gateway.pid) {
-    const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+    const gwPidDir = getLocalInstanceDir(entry);
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 

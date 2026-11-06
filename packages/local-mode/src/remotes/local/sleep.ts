@@ -15,7 +15,7 @@ import {
   loadGuardianToken,
   getGuardianAccessToken,
 } from "../../guardian-token";
-import type { LockfileAssistant } from "../../lockfile-contract";
+import type { LocalAssistant } from "../../lockfile-contract";
 
 const ACTIVE_CALL_LEASES_FILE = "active-call-leases.json";
 
@@ -69,7 +69,7 @@ export interface SleepLocalOptions {
  * operation route's wire mapping render the same detail.
  */
 export async function sleepLocal(
-  entry: LockfileAssistant,
+  entry: LocalAssistant,
   options: SleepLocalOptions = {},
 ): Promise<
   | {
@@ -199,7 +199,7 @@ export async function sleepLocal(
  * never make sleep less reliable than it is without `--wait`.
  */
 async function runDrainPhase(
-  entry: LockfileAssistant,
+  entry: LocalAssistant,
   assistantPidFile: string,
   waitMs: number | null,
   io: {
