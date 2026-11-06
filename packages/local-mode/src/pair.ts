@@ -16,13 +16,7 @@ import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
 import { readLockfile } from "./lockfile";
 
 /**
- * The session credentials a pairing exchange yields, in the shape
- * {@link pairAssistant} persists. `refreshToken` is absent when the assistant's
- * gateway does not issue a device-bound refresh credential, which imports the
- * pairing access-only.
- *
- * `refreshTokenExpiresAt` mirrors GuardianTokenData (ISO string OR epoch-ms
- * number) so a numeric expiry isn't silently dropped on import.
+ * The session credentials a pairing exchange yields.
  */
 export interface PairedAssistantCredentials {
   gatewayUrl: string;

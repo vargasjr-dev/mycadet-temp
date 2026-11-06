@@ -13,17 +13,17 @@ import { dirname, join } from "node:path";
 
 import {
   guardianTokenPath,
+  loadGuardianToken,
   resolveConfigDir,
+  saveGuardianToken,
   type PairDeviceIdentity,
   type PairOperationResult,
 } from "@mycadet/local-mode";
 
 import {
   guardianTokenDueForRenewal,
-  loadGuardianToken,
   refreshGuardianToken,
   refreshGuardianTokenResult,
-  saveGuardianToken,
 } from "../lib/guardian-token.js";
 import {
   getOrCreatePersistedDeviceId,

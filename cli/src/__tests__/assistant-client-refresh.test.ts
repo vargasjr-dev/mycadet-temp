@@ -21,8 +21,11 @@ const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { AssistantClient } from "../lib/assistant-client.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
-import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
+import {
+  loadGuardianToken,
+  saveGuardianToken,
+  saveLockfileAssistant,
+} from "@mycadet/local-mode";
 
 const FUTURE = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60_000).toISOString();

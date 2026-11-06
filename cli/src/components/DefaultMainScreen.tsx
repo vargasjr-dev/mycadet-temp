@@ -11,13 +11,13 @@ import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 import {
   checkHealth,
   getAssistantDisplayName,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   guardianTokenDueForRenewal,
-  loadGuardianToken,
   refreshGuardianToken,
 } from "../lib/guardian-token";
 import { trustedRefreshUrl } from "../lib/runtime-url";

@@ -13,8 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
-import type { GuardianTokenData } from "@mycadet/local-mode";
+import { loadGuardianToken, saveGuardianToken, type GuardianTokenData } from "@mycadet/local-mode";
 import { setup } from "../commands/setup.js";
 import type {
   PairDeviceIdentity,
