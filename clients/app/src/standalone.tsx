@@ -120,11 +120,6 @@ export function DesktopChrome() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
       />
-      {/* Single app-wide toast outlet. Sonner only renders toasts when a
-          <Toaster /> is mounted in the tree; without this every `toast.*`
-          call (the create dialog's confirmations, "Assistant retired", etc.)
-          silently no-ops. Every route renders through this layout, and both
-          entries (standalone and capacitor) boot through it. */}
       <Toaster />
       <RetireConfirmDialog
         open={retireTargetId !== null}

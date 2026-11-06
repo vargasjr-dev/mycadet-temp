@@ -302,6 +302,7 @@ export async function resolveClientDists(
   const anchor = arms.app.sourceDir;
   const headSha = await gitHeadSha(anchor);
   const recordedSha = readAppBuiltSha();
+  console.log("head", headSha, "recorded", recordedSha);
 
   for (const kind of ["web", "app"] as const) {
     console.log(`Building ${kind} client...`);

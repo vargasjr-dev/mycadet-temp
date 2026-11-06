@@ -90,7 +90,6 @@ export function SelectAssistantScreen() {
   // Each row labels itself with its own `remote`; servers predating the
   // stamp fall back to the build's own (`readInjectedConfig()?.remote`).
   const buildRemote = readInjectedConfig()?.remote;
-  const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
     id: string;
     name: string;
@@ -101,7 +100,6 @@ export function SelectAssistantScreen() {
   const originEntries = useRememberedOriginsStore.use.origins();
   const [removeOriginTarget, setRemoveOriginTarget] =
     useState<RememberedOrigin | null>(null);
-  const [removeOriginPending, setRemoveOriginPending] = useState(false);
   const { state, retry } = useAssistantChoices();
   const status =
     state.status === "selection" && state.assistants.length === 0
@@ -123,9 +121,6 @@ export function SelectAssistantScreen() {
   }, []);
 
   const closeRemoveOriginDialog = () => {
-    if (removeOriginPending) {
-      return;
-    }
     setRemoveOriginTarget(null);
   };
 
@@ -255,21 +250,9 @@ export function SelectAssistantScreen() {
         )}
         {(status === "empty" || status === "error") && (
           <>
-            <Button variant="primary" onClick={() => setCreating(true)}>
-              {t("selectAssistantScreen.create")}
-            </Button>
             <Button variant="outlined" onClick={retry}>
               {t("appShell.retry")}
             </Button>
-            <CreateAssistantDialog
-              open={creating}
-              onClose={() => setCreating(false)}
-              onCreated={(id) => {
-                void navigate(routes.assistant, {
-                  state: assistantSelectionState(id),
-                });
-              }}
-            />
           </>
         )}
         <RetireConfirmDialog
