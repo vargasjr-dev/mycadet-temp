@@ -9,7 +9,7 @@ import {
   exec,
   execOutput,
   execWithStdin,
-} from "../step-runner";
+} from "../exec";
 
 describe("buildExecErrorMessage", () => {
   it("omits the argv from the header so secrets in args can't leak", () => {
@@ -133,6 +133,41 @@ describe("execOutput — secret leak regression", () => {
       expect(message).not.toContain("OPENAI_API_KEY");
       expect(message).toContain("sh exited with code 1");
       expect(message).toContain("no such container");
+    }
+  });
+});
+
+describe("exec — optional stdout capture", () => {
+  it("resolves void by default", async () => {
+    const result = await exec("sh", ["-c", "echo fire-and-forget"]);
+    expect(result).toBeUndefined();
+  });
+
+  it("resolves the child's trimmed stdout when captureStdout is set", async () => {
+    const result = await exec("sh", ["-c", "echo captured"], {
+      captureStdout: true,
+    });
+    expect(result).toBe("captured");
+  });
+
+  it("carries the child's stdout in a failed run's error message either way", async () => {
+    // The diagnostic surface the CLI's old runner lacked: stdout prints on
+    // failure, not just stderr.
+    try {
+      await exec("sh", ["-c", "echo stdout-diagnostic 1>&2; echo stdout-line; exit 3"]);
+      throw new Error("exec should have rejected");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      expect(message).toContain("stdout-line");
+    }
+    try {
+      await exec("sh", ["-c", "echo stdout-line; exit 3"], {
+        captureStdout: true,
+      });
+      throw new Error("exec should have rejected");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      expect(message).toContain("stdout-line");
     }
   });
 });

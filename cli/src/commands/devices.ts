@@ -20,6 +20,7 @@ import {
   getAssistantDisplayName,
   loadGuardianToken,
   loopbackSafeFetch,
+  execOutput,
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -36,7 +37,6 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
-import { execOutput } from "../lib/step-runner.js";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),

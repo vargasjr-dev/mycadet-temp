@@ -26,30 +26,36 @@ import { withPreconnect } from "./helpers/http.js";
 // answer it in-process and record the invocations (the fetch stubs below
 // still serve the loopback HTTP mint the other topologies keep using).
 const mintCalls: Array<{ command: string; args: readonly string[] }> = [];
+// The cutover: the mint runs inside the package's pairChallenge pair —
+// the mock stands in for THOSE, recording the invocation the package
+// would have run (command + the mint args) so the argv assertions below
+// keep biting.
 // The gateway CLI self-sources its advertised url from its own workspace
 // config, so the mint carries no url argument; the mock echoes the base the
 // test seeded there.
 let mintReplyBase = "";
-const actualStepRunner = await import("../lib/step-runner.js");
-const mockExecOutput = mock(
-  (command: string, args: readonly string[]): Promise<string> => {
-    mintCalls.push({ command, args });
-    return Promise.resolve(
-      JSON.stringify({
-        deviceCode: "device-code",
-        userCode: "ABCD-EFGH",
-        verificationUri: `${mintReplyBase}/assistant/pair`,
-        publicBaseUrl: mintReplyBase,
-        expiresAt: "2026-06-04T00:10:00.000Z",
-        expiresInSeconds: 600,
-        intervalSeconds: 5,
-      }),
-    );
-  },
-);
-mock.module("../lib/step-runner.js", () => ({
-  ...actualStepRunner,
-  execOutput: mockExecOutput,
+const actualLocalMode = await import("@mycadet/local-mode");
+const mockMint = (entry: { assistantId: string }): Promise<string> => {
+  mintCalls.push({
+    command: "gateway",
+    args: [entry.assistantId, "pairing", "mint"],
+  });
+  return Promise.resolve(
+    JSON.stringify({
+      deviceCode: "device-code",
+      userCode: "ABCD-EFGH",
+      verificationUri: `${mintReplyBase}/assistant/pair`,
+      publicBaseUrl: mintReplyBase,
+      expiresAt: "2026-06-04T00:10:00.000Z",
+      expiresInSeconds: 600,
+      intervalSeconds: 5,
+    }),
+  );
+};
+mock.module("@mycadet/local-mode", () => ({
+  ...actualLocalMode,
+  pairChallengeLocal: mockMint,
+  pairChallengeDocker: mockMint,
 }));
 
 // The cloud-home arms (cloud/custom/baseten) mint through the platform's

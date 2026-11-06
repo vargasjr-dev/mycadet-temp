@@ -4,7 +4,6 @@ import { z } from "zod";
 
 import { getWorkspaceDir } from "../paths.js";
 import { loadConfig } from "../config.js";
-import { getLogger } from "../logger.js";
 
 /**
  * Shared public-base-URL handling for the remote-web pairing flow — the
@@ -17,18 +16,11 @@ import { getLogger } from "../logger.js";
  * or null when the value is empty, unparseable, non-http(s), or hostless.
  */
 export function parsePublicBaseUrl(value: string): string | null {
-  console.log("parsePublicBaseUrl", value);
-  const logger = getLogger("parsePublicBaseUrl");
-  logger.info("parsePublicBaseUrl | " + value);
   if (!value.trim()) {
     return null;
   }
   try {
     const url = new URL(value);
-    logger.info("protocol | " + url.protocol + " | " + url.host);
-
-    console.log("protocol", url.protocol, url.host);
-
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     if (!url.host) return null;
     const pathPrefix = url.pathname.replace(/\/+$/, "");
@@ -38,6 +30,7 @@ export function parsePublicBaseUrl(value: string): string | null {
   }
 }
 
+/**
 /**
  * The gateway's own minimal read of the workspace config. This is
  * deliberately a gateway-side schema rather than the workspace config's
@@ -64,6 +57,9 @@ export function readSavedIngressPublicBaseUrl(): string {
   } catch {
     // No workspace config (or an unreadable one) — the local default below
     // is the answer for a local assistant.
+  }
+  return `http://127.0.0.1:${loadConfig().port}`;
+}
   }
   return `http://127.0.0.1:${loadConfig().port}`;
 }

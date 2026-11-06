@@ -8,6 +8,28 @@ import type { LocalAssistant } from "../../lockfile-contract";
 import { gatewayCliInvocation } from "./common";
 
 /**
+ * Mint a remote-web pairing challenge on the local gateway — the bare
+ * `gateway pairing mint` the `cadet pair` command wraps, run through the
+ * gateway CLI invocation. Process execution is the local-presence proof.
+ * Returns the command's stdout; its last line is the challenge JSON.
+ * The device-bound flow is {@link pairLocal}.
+ */
+export async function pairChallengeLocal(
+  entry: LocalAssistant,
+): Promise<string> {
+  const invocation = gatewayCliInvocation(entry);
+  return execOutput(
+    invocation.command,
+    [...invocation.args, "pairing", "mint"],
+    {
+      cwd: invocation.cwd,
+      env: invocation.env,
+      timeoutMs: 30_000,
+    },
+  );
+}
+
+/**
  * Pair by running the gateway's OWN CLI on this host (local topology): the
  * `gateway pairing mint --device-id` command mints the device-bound
  * credential in-process — process execution is the local-presence proof,

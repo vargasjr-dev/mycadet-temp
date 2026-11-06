@@ -315,20 +315,17 @@ describe("remote web pairing challenge", () => {
     );
   });
 
-  test("refuses a self-sourced loopback mint when no ingress url is recorded", async () => {
+  test("defaults a self-sourced loopback mint to the local host", async () => {
+    // No ingress url recorded — a local assistant pairs on its own host:
+    // the challenge's verification URI points at the gateway's own port.
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({ body: JSON.stringify({}) }),
       LOOPBACK_IP,
     );
 
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
-      error: {
-        code: "BAD_REQUEST",
-        message:
-          "no public URL is recorded for this gateway — run `cadet tunnel start` first",
-      },
-    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { verificationUri: string };
+    expect(body.verificationUri).toBe("http://127.0.0.1:7830/assistant/pair");
   });
 
   test("rejects oversized challenge request bodies", async () => {

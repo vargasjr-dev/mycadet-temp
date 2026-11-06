@@ -8,6 +8,25 @@ import type { LockfileAssistant } from "../../lockfile-contract";
 import { dockerResourceNames } from "./retire";
 
 /**
+ * Mint a remote-web pairing challenge on the docker gateway — the bare
+ * `gateway pairing mint` the `cadet pair` command wraps, docker-exec'd
+ * into the gateway container. Returns the command's stdout; its last line
+ * is the challenge JSON. The device-bound flow is {@link pairDocker}.
+ */
+export async function pairChallengeDocker(
+  entry: LockfileAssistant,
+): Promise<string> {
+  const container = dockerResourceNames(entry.assistantId).gatewayContainer;
+  return execOutput(
+    "docker",
+    ["exec", container, "bun", "run", "gateway", "pairing", "mint"],
+    {
+      timeoutMs: 30_000,
+    },
+  );
+}
+
+/**
  * Pair by running the gateway's OWN CLI inside the container (docker
  * topology): the `gateway pairing mint --device-id` command mints the
  * device-bound credential in-process — the docker exec is the

@@ -13,11 +13,11 @@ import {
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import {
-  type DockerAssistant,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { initializeRootArchive } from "@mycadet/local-mode";
-import { exec, execOutput } from "../step-runner";
+import { exec } from "@mycadet/local-mode";
+
 import cliPkg from "../../../package.json";
 
 /** The `docker start` failure for a container that was never created. */
@@ -139,18 +139,3 @@ export async function initializeDockerTeleportTarget(
   return entry;
 }
 
-export async function dockerPair(entry: DockerAssistant): Promise<string> {
-  return execOutput(
-    "docker",
-    [
-      "exec",
-      dockerResourceNames(entry.assistantId).gatewayContainer,
-      "bun",
-      "run",
-      "src/cli/index.ts",
-      "pairing",
-      "mint",
-    ],
-    { timeoutMs: 30_000 },
-  );
-}
