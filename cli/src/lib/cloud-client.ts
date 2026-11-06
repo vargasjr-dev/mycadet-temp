@@ -13,16 +13,11 @@ import {
   getCloudUrl,
   loopbackSafeFetch,
 } from "@mycadet/local-mode";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { z } from "zod";
 
 const InProgressResponseSchema = z.object({
   in_progress: z.boolean().optional(),
 });
-
-export function getWebUrl(): string {
-  return process.env.CADET_WEB_URL?.trim() || getCurrentEnvironment().webUrl;
-}
 
 export function saveCloudToken(token: string): void {
   const tokenPath = cloudTokenPath();

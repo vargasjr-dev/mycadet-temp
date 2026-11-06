@@ -43,7 +43,6 @@ import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 
 import { appleContainerPair } from "../lib/remotes/apple-container.js";
 
@@ -339,7 +338,6 @@ export const pair = Object.assign(
         const diagnostic = formatWebApproveFailure(
           mintUrl,
           getAssistantDisplayName(entry),
-          getCurrentEnvironment().name,
           parseGatewayErrorCode(errorBody),
         );
         console.error(

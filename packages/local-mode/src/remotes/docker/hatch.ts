@@ -63,6 +63,7 @@ import {
   isLocalBuildRef,
   loadImageViaHost,
 } from "./host-image-loader";
+import { resolveEnvironmentName } from "../../environment";
 
 const DOCKERHUB_ORG = "mycadet";
 
@@ -478,7 +479,8 @@ export function resolveDockerHatchMode(opts: {
   buildFromSource: boolean;
   fullSourceTreeAvailable: boolean;
 }): { build: boolean; watcher: boolean; fellBackToPull: boolean } {
-  const requested = opts.watch || opts.buildFromSource;
+  const requested =
+    opts.watch || opts.buildFromSource || resolveEnvironmentName() === "local";
   if (!requested) {
     return { build: false, watcher: false, fellBackToPull: false };
   }
@@ -705,27 +707,8 @@ export async function hatchDocker(
         ? params.sourcePath
         : null;
     const buildFromSource = sourcePath !== null;
-    let repoRoot: string | undefined;
-    let fullSourceTreeAvailable = false;
-
-    if (watch || buildFromSource) {
-      // When --source <path> is supplied, trust the caller and use it
-      // directly. Otherwise (the --watch case) walk up from known locations
-      // to find the repo root.
-      repoRoot = sourcePath ? resolve(sourcePath) : findRepoRoot();
-
-      // When running from a packaged .app bundle, the Dockerfiles are
-      // present (so findRepoRoot succeeds) but the full source tree is
-      // not — we can't build images locally. Fall back to pulling
-      // pre-built images instead.
-      fullSourceTreeAvailable = hasFullSourceTree(repoRoot);
-      if (!fullSourceTreeAvailable) {
-        log(
-          "⚠️  Dockerfiles found but no source tree — falling back to image pull",
-        );
-        repoRoot = undefined;
-      }
-    }
+    const repoRoot = sourcePath ? resolve(sourcePath) : findRepoRoot();
+    const fullSourceTreeAvailable = hasFullSourceTree(repoRoot);
 
     const mode = resolveDockerHatchMode({
       watch,
@@ -737,7 +720,7 @@ export async function hatchDocker(
 
     if (mode.build && repoRoot) {
       const localTag = `local-${instanceName}`;
-      imageTags.assistant = `mycadet:${localTag}`;
+      imageTags.assistant = `cadet-assistant:${localTag}`;
       imageTags.gateway = `cadet-gateway:${localTag}`;
       imageTags["credential-executor"] =
         `cadet-credential-executor:${localTag}`;

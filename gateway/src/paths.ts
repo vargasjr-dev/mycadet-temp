@@ -43,14 +43,14 @@ export function getWorkspaceDir(): string {
     assertTestPathIsEphemeral(override, WORKSPACE_GUARD);
     return override;
   }
+  const dir = join(process.cwd(), "workspace");
   if (!warnedWorkspaceDir) {
     warnedWorkspaceDir = true;
     console.warn(
-      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to ./workspace. " +
+      `[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to ${dir}` +
         "Set CADET_WORKSPACE_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(process.cwd(), "workspace");
   assertTestPathIsEphemeral(dir, WORKSPACE_GUARD);
   return dir;
 }
@@ -68,14 +68,14 @@ export function getGatewaySecurityDir(): string {
     assertTestPathIsEphemeral(override, SECURITY_GUARD);
     return override;
   }
+  const dir = join(process.cwd(), "gateway-security");
   if (!warnedSecurityDir) {
     warnedSecurityDir = true;
     console.warn(
-      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to ./gateway-security. " +
+      `[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to ${dir} ` +
         "Set GATEWAY_SECURITY_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(process.cwd(), "gateway-security");
   assertTestPathIsEphemeral(dir, SECURITY_GUARD);
   return dir;
 }

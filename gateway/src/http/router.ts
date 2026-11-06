@@ -237,8 +237,10 @@ function matchRoute(
       pathname.length > 1 && pathname.endsWith("/")
         ? pathname.slice(0, -1)
         : pathname;
-    if (normalized !== route.path) return null;
-    return { params: [] };
+    if (normalized === route.path) return { params: [] };
+    if (normalized === `/v1/assistant${route.path}`) return { params: [] };
+    if (normalized === `/assistant${route.path}`) return { params: [] };
+    return null;
   }
 
   // Regex path — use original pathname since regex routes may

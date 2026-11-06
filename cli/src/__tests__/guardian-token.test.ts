@@ -31,7 +31,6 @@ import {
   leaseGuardianToken,
 } from "@mycadet/local-mode";
 import type { GuardianTokenData } from "@mycadet/local-mode";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";
 import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
@@ -689,14 +688,6 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     process.env.CADET_ENVIRONMENT = "local";
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("local"));
-    expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
-  });
-
-  test("stale persisted default env file is ignored — version wins", () => {
-    mkdirSync(join(tempHome, "cadet"), { recursive: true });
-    writeFileSync(join(tempHome, "cadet", "environment"), "dev\n");
-    expect(getCurrentEnvironment().name).toBe("production");
-    saveGuardianToken("alpha", makeTokenData("prod"));
     expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
   });
 });
