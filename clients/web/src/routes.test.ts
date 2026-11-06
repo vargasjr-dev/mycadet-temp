@@ -80,12 +80,9 @@ describe("nuked account pages", () => {
 });
 
 describe("remote web pairing route", () => {
-  test("stays outside the auth-protected assistant app tree", () => {
-    expect(
-      isUnderComponent("/assistant/pair?deviceCode=abc", "RootLayout"),
-    ).toBe(false);
-  });
-
+  // The /assistant/pair page itself moved to the app (#731, finished by
+  // #734's end-to-end simplification) — only the basename arithmetic its
+  // URLs used to need is still the web router's business.
   test("uses the remote-gateway public path prefix as the router basename", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     window.history.pushState(
@@ -95,12 +92,6 @@ describe("remote web pairing route", () => {
     );
 
     expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
-    expect(
-      isUnderComponent(
-        "/assistant-123/assistant/pair?deviceCode=abc",
-        "RootLayout",
-      ),
-    ).toBe(false);
   });
 
   test("uses the cloud artifact's versioned path as the router basename", () => {

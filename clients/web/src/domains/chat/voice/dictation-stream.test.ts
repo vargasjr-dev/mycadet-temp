@@ -162,24 +162,19 @@ describe("resolveDictationStreamWsUrl", () => {
     client.post = originalPost;
   });
 
-  test("self-hosted: dials the scoped STT path with the audio-format params", async () => {
+  test("dials the id-prefixed STT path with the minted token and the audio-format params", async () => {
+    // The transport rule set is unified: mint the session token off the
+    // same-origin gateway client, then dial the id-prefixed path — the
+    // gateway strips the prefix to recover the upstream path its
+    // allowlist matches against.
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
-    expect(url.protocol).toBe("ws:");
-    expect(url.host).toBe("localhost:8500");
-    expect(url.pathname).toBe("/v1/assistants/stt-1/stt/stream");
-    expect(url.searchParams.get("token")).toBe("actor-jwt");
+    expect(captured?.body).toEqual({ assistantId: "stt-1" });
+    expect(url.protocol).toBe("wss:");
+    expect(url.pathname).toBe("/stt-1/v1/stt/stream");
+    expect(url.searchParams.get("token")).toBe("tok-abc");
     expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
     expect(url.searchParams.get("sampleRate")).toBe("16000");
-    expect(captured).toBeNull();
-  });
-
-  test("self-hosted without an actor token dials without one — the host injects", async () => {
-    const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
-
-    expect(url.pathname).toBe("/v1/assistants/stt-1/stt/stream");
-    expect(url.searchParams.has("token")).toBe(false);
-    expect(captured).toBeNull();
   });
 
   test("cloud: mints a tunnel token and dials tunnel with the audio-format params", async () => {
