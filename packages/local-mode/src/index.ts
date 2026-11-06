@@ -471,5 +471,4 @@ export type {
   GatewayParseResult,
   GatewayEntryTarget,
   GatewayProxyDecision,
-  PairedForwardAuthorizationResult,
 } from "./gateway-proxy";

@@ -337,20 +337,16 @@ export function sanitizePairedForwardHeaders(headers: Headers): void {
   headers.set("ngrok-skip-browser-warning", "true");
 }
 
-export type PairedForwardAuthorizationResult =
-  | { ok: true }
-  | { ok: false; status: number; error: string };
-
 /** Replace renderer authorization with the paired credential owned by the host. */
 export async function authorizePairedForwardHeaders(
   assistantId: string,
   headers: Headers,
-): Promise<PairedForwardAuthorizationResult> {
+): Promise<TokenResult> {
   sanitizePairedForwardHeaders(headers);
   const result = await getGuardianAccessToken(assistantId);
   if (!result.ok) {
     return result;
   }
   headers.set("authorization", `Bearer ${result.accessToken}`);
-  return { ok: true };
+  return result;
 }
