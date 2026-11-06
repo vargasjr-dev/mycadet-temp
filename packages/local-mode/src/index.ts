@@ -453,8 +453,3 @@ export {
   readBasetenSandboxToken,
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";
-export {
-  loopbackGatewayBearer,
-  clearLoopbackGatewayBearerCache,
-} from "./gateway-bearer";
-export type { GuardianTokenLease } from "./gateway-bearer";

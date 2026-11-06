@@ -17,7 +17,11 @@ import {
   isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
-import { getGuardianAccessToken, readLockfile } from "@mycadet/local-mode";
+import {
+  getGuardianAccessToken,
+  readLockfile,
+  TokenResult,
+} from "@mycadet/local-mode";
 import { hostname } from "node:os";
 
 import { onLockfileChange } from "../lockfile-watcher";
@@ -54,16 +58,6 @@ export interface HostProxyLogger {
   warn(message: string, context?: unknown): void;
   error(message: string, context?: unknown): void;
 }
-
-/**
- * Guardian-token result for a local host-proxy connect. Mirrors the
- * `TokenResult` from `@mycadet/local-mode` so the startup ride-out can
- * retry a still-starting gateway (`503`) without stalling on a missing
- * (`404`), spent (`401`), refused (`403`), or permanent (`500`) credential.
- */
-export type HostProxyGuardianTokenResult =
-  | { ok: true; accessToken: string }
-  | { ok: false; status: number; error?: string };
 
 export interface HostProxyRuntime {
   sseClientHeaders: () => Record<string, string>;
@@ -584,9 +578,7 @@ async function exchangeForGatewayToken(
   }
 }
 
-async function acquireGuardianToken(
-  assistantId: string,
-): Promise<HostProxyGuardianTokenResult> {
+async function acquireGuardianToken(assistantId: string): Promise<TokenResult> {
   try {
     // The shared token mint resolves the CLI invocation itself; hosts that
     // cannot reach a CLI get the package's structured error.
@@ -604,7 +596,7 @@ async function acquireGuardianToken(
       assistantId,
       err,
     });
-    return { ok: false, status: 500 };
+    return { ok: false, status: 500, error: String(err) };
   }
 }
 
