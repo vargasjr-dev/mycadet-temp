@@ -2,22 +2,12 @@
 /**
  * Pack the @mycadet/cli npm tarball for a release channel.
  *
- * Shared by the dev and production publish jobs (dev-release.yaml's
- * `publish-npm-cli-dev`, release.yml's `publish-npm-cli-prod`), which
- * previously duplicated five shell steps. The steps, in order:
+ * Shared by the release jobs to pack the CLI module:
  *
  *   1. optionally stamp the CLI manifest with the release version
- *      (--version; the dev channel computes its version, the production
- *      channel trusts the release branch's bump and keeps the desync guard
- *      meaningful, so it omits this)
  *   2. stamp every bundled dependency's manifest with the release version
- *      so the installed copies classify the same environment the CLI does
- *      (the bundled @mycadet/local-mode reads its own package.json version)
- *   3. strip the bundled deps from the CLI manifest (bundled packages keep
- *      their names but lose registry-version specifiers — they ship inside
- *      the tarball's node_modules)
- *   4. optionally rename the bin for the channel (--bin; the dev channel
- *      installs `cadet-dev` so it never shadows the production `cadet`)
+ *   3. strip the bundled deps from the CLI manifest
+ *   4. optionally rename the bin for the channel
  *   5. `bun pm pack` into the output directory and rewrite the bundled
  *      deps in the packed manifest to file: specifiers
  *

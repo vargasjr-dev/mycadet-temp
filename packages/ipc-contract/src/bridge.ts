@@ -144,13 +144,7 @@ export type LocalPairingPollResult =
   | LocalPairingFailure;
 
 /**
- * One paired-device row as returned by the devices-list route. Structural
- * duplicate of `@mycadet/local-mode`'s `DeviceRecord`, declared here so this
- * package has no `file:` dependency on local-mode (which carries a transitive
- * `file:` chain that breaks lockfile resolution in consumer packages; see the
- * lockfile types in `./types.ts`). The gateway stores only the HASHED device
- * id, so `hashedDeviceId` is both the display identifier and the revocation
- * key.
+ * One paired-device row as returned by the devices-list route.
  */
 export interface LocalPairedDeviceRecord {
   hashedDeviceId: string;

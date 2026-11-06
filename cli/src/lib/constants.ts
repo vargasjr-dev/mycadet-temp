@@ -44,4 +44,4 @@ export const HATCH_ART = [
 ];
 
 /** Hatch identity: emoji shown when an assistant has hatched. */
-export const HATCHED_EMOJI = "👾";
+export const HATCHED_EMOJI = "🧑‍🚀";
