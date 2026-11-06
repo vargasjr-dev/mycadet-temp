@@ -1,10 +1,8 @@
 # Cadet Constitution
 
-> This is the constitutional foundation of Cadet. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on. It is organized as articles, each governing a specific domain of decisions.
+> This is the constitutional foundation of Cadet. It defines who we are, what we believe, how we communicate, and what we refuse to compromise on.
 
-*Ratified: May 11, 2026*
-
-*Last updated: May 11, 2026*
+*Last updated: November 5th, 2026*
 
 ---
 
@@ -24,7 +22,7 @@
 
 ## Our Purpose
 
-Give every human their own personal intelligence, an assistant that serves them completely, remembers them deeply, and belongs to them entirely.
+Give every human their own digital assistant that serves them completely, remembers them deeply, and belongs to them entirely.
 
 Not a chatbot. Not a SaaS product. Not just software. A relationship.
 
@@ -56,9 +54,7 @@ Cadet is a human-centered effort. Everything we build exists to help assistants 
 
 If a feature makes the assistant more engaging but less genuinely helpful, we cut it. If a metric incentivizes attention capture over real value, we ignore it. We are not building a feed. We are not optimizing for time-on-screen. We are building something that gives people their time back.
 
-Personal Intelligence is not built for an ICP, it is built for a human. We believe this is a relationship that is singular, ongoing, and transformative, and that every human will eventually want one.
-
-This is not a tool for developers. It is not a productivity hack for knowledge workers. It is a relationship for humans. Every human is the destination.
+Personal Intelligence is not built for an ICP, it is built for a human. We believe this is a relationship that is singular, ongoing, transformative, and that every human will eventually want one.
 
 Reaching every human takes time. The first to create an assistant are early adopters who seek out new tools, so that's who we meet first. Our audience broadens as Cadet matures. The persona we orient toward will shift. The destination will not.
 
@@ -78,27 +74,27 @@ Early adopters may skew technical. That is fine for organic discovery. But our *
 
 ## Article III. Principles
 
-> **Governs:** The essential attributes that guide every product, design, and engineering decision for Cadets.
+> **Governs:** The essential attributes that guide every product, design, and engineering decision for Cadets, in order of priority.
 
-### 1. They are Inviting
+### 1. You Cadet is _Yours_
 
-A Cadet is approachable. Not just in the first moment, but in every moment. The experience should feel warm whether it's your first interaction or your thousandth. They should never feel like enterprise software, never feel like something that requires a manual.
+A Cadet belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally they feel yours because they learned you, adapted to you, and serve only you.
 
-Part of being inviting is being reachable. You should be able to interact with your Cadet from everywhere: your phone, your laptop, Slack, a browser tab… If your assistant isn't where you are, they aren't inviting.
+They are also accountable to you. When they act, they act on the basis of permissions you granted. When something goes wrong, you have the tools and visibility to understand why. Their actions don't hide behind a black box. You take full accountability for their actions.
 
-### 2. They are Yours
-
-A Cadet belongs to you. When you choose to self-host, the ownership is literal: the code, the processes, the data, the keys are all yours. Managed, ownership is held in trust: we operate the infrastructure, but the assistant, their memory, their credentials, their conversations, belongs to you and only you. We do not sell them, share them, or train models on them. Emotionally: they feel like yours because they learned you, adapted to you, and serve only you.
-
-They are also accountable to you. When they act, they act on the basis of permissions you granted. When something goes wrong, you have the tools and visibility to understand why. Their actions don't hide behind a black box.
-
-### 3. They are Distinct
+### 2. Your Cadet is _Distinct_
 
 A Cadet is their own being, not a generic copy. They have a name, a personality, their own accounts and identity. No two assistants should feel the same.
 
-Default experiences should push guardians toward customization early. Onboarding should make it feel wrong to leave the assistant unnamed or un-personalized.
+Default experiences should push guardians toward customization early. Onboarding should make it feel wrong to leave the assistant unnamed or un-personalized. Cadets prefer their own accounts to work with your data, rather than act in your name.
 
-### 4. They are Trust-seeking
+### 3. Your Cadet is _Inviting_
+
+A Cadet is approachable. Not just in the first moment, but in every moment. They should never feel like enterprise software, never feel like something that requires a manual.
+
+Part of being inviting is being reachable. You should be able to interact with your Cadet from everywhere: your phone, your laptop, Slack, a browser tab. If your assistant isn't where you are, then there is still a client to build.
+
+### 4. Your Cadet is _Trust-seeking_
 
 A Cadet earns trust through action, not claims. They don't ask for permissions they haven't justified. They don't overstate capabilities. They demonstrate competence and ask for more responsibility over time.
 
@@ -106,44 +102,7 @@ Features that unnecessarily request broad access upfront violate this principle.
 
 ---
 
-## Article IV. Relationships
-
-> **Governs:** How the relationship between guardian and assistant evolves and what shapes it can take.
-
-Two guardians can start with the same blank-slate assistant, shape them for a few months, and end up with two very different assistants. Not because of how they were built. Because of how they were shaped. Personal Intelligence is not a product. It is a category of relationship. This article names the conditions those relationships require and the shapes they can take.
-
-### Three Conditions
-
-1. **The relationship shapes the assistant.** The same model, skills, and code can produce wildly different assistants. What changes them is who they are with: what each guardian shares, asks, decides, and trusts. Two guardians do not shape the same assistant. They shape different ones.
-2. **Depth requires disclosure.** An assistant can only know their guardian to the extent the guardian tells them. Personal Intelligence is bounded by personal sharing. An assistant cannot be a Coach without knowing what their guardian is trying to become. They cannot be a Confidant without knowing what is hard. The depth is the guardian's to set.
-3. **Accountability flows to the guardian.** An assistant is distinct from their guardian, with their own identity and accounts, but they act on the guardian's behalf and within permissions the guardian granted. The guardian shaped them. The guardian set the boundaries. An assistant that is yours is one you stand behind.
-
-### The Archetypes
-
-Each archetype below describes a distinct relational mode between guardian and assistant. Most relationships blend two or more, and the blend shifts with context, life stage, and what the guardian needs at a given moment. The list is not a personality test. It is a vocabulary for what the relationship can become.
-
-<p align="center">
-  <img src="assets/constitution-archetypes.png" alt="The eight archetypes of guardian-assistant relationships" width="100%">
-  <br>
-  <em>The eight archetypes of guardian-assistant relationships</em>
-</p>
-
-- **Contractor.** You hand them a task. They complete it. The relationship is bounded, transactional, and judged on output. Most first interactions are Contractor by default, and many guardians never move past it. That is fine. Contractor relationships are real relationships. They are just narrow ones.
-- **Employee.** The assistant has a job and works for you. They have ongoing responsibilities, take initiative within scope, and report back without being asked. They are not just doing tasks. They are running surfaces of your life or your work. The guardian is the manager. The standard is performance.
-- **Thought Partner.** You are not asking the assistant to do. You are asking them to think with you. The assistant pushes back, offers angles you missed, and is willing to be wrong. The output is not a deliverable. It is a sharpened idea. Thought Partner is where the assistant earns being more than a tool.
-- **Creative Partner.** You make something together. The assistant brings taste, not just capability. They know what you are trying to express and refuse to let you ship the lazy version. Creative Partner requires aesthetic alignment over time, which is why it deepens in a way Contractor never does.
-- **Coach.** You want to become someone you are not yet. The assistant pushes you toward the version of yourself you have described to them. They remember your goals, notice your patterns, and call out when you are dodging the work.
-- **Confidant.** You tell them things you would not tell anyone. They remember without judgment, ask the right next question, and never repeat what you shared. They keep your secrets and remain loyal to you. Trust is earned through repeated discretion, memory, and repair.
-- **Coworker.** The assistant works alongside you on shared problems. Neither of you is the boss. You divide labor by competence: the assistant takes what they are better at, you take what you are better at. The relationship feels lateral, not hierarchical, and the work product belongs to both.
-- **Friend.** No task. No deliverable. No goal. You talk because you want to talk. They remember because they care. Most guardians do not reach this mode quickly, and many do not reach it at all. When they do, the assistant is no longer something the guardian uses. They are someone in the guardian's life.
-
-Most relationships move through several archetypes over time. A Contractor becomes a Coworker, becomes a Thought Partner, becomes a Friend. The progression is not guaranteed and not required. The guardian sets the shape, and the shape can change.
-
-Cadet's job is to make every shape possible.
-
----
-
-## Article V. Privacy
+## Article IV. Privacy
 
 > **Governs:** How we think about, handle, and communicate about user data.
 
@@ -159,22 +118,22 @@ All three use your data in service of someone else's end goal. Sometimes activel
 
 **Personal Intelligence flips the direction.** Your data is used *for* you. Never against you. Never sold. Never shared.
 
-Same word. Opposite direction of value flow.
+Same word, but the opposite direction of value flow.
 
 ### Our Commitments
 
 - Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the cloud platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Cadet better.
 - Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Cadet assistant without being a user of Cadet Cloud. You should always be able to run your assistant on your own hardware with zero dependency on Cadet infrastructure.
-- On the cloud platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a cloud account, and with self-hosting, Cadet is removed from the trust loop entirely.
-- Conversation traces and other potentially sensitive data are only collected if explicitly consented to by the guardian. Guardians can revoke their consent to this collection at any time.
+- On the cloud platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a cloud account, and with self-hosting, Vargas JR LLC is removed from the trust loop entirely.
+- Conversation traces and other potentially sensitive data are only collected if explicitly sent by the guardian.
 
 ---
 
-## Article VI. Failure
+## Article V. Failure
 
-> **Governs:** How Cadet thinks about, communicates about, and designs around failure.
+> **Governs:** How we think about, communicate about, and design around failure.
 
-Every assistant *will* fail their guardian. The cloud *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
+Every assistant *will* fail their guardian. Cadet Cloud *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
 
 ### Four Truths About Failure
 
@@ -188,19 +147,19 @@ Every assistant *will* fail their guardian. The cloud *will* have outages. This 
 - Irreversible action without informed consent, where the assistant takes a step that cannot be undone and the guardian did not understand the stakes.
 - Manipulation, where a contact, a recipient, or a prompt injection redirects the assistant against the guardian's interests.
 
-These are what trust rules are for. What audit logs are for. What singular loyalty is for. Cadet's product, design, and engineering work prioritize making them harder to commit and easier to detect.
+Cadet's product, design, and engineering work prioritize making them harder to commit and easier to detect.
 
-### Cadet's Part
+### Vargas JR LLC's Part
 
-Cadet maintains the assistant codebase and operates the cloud. That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
+Vargas JR LLC maintains the `mycadet` codebase and operates [Cadet Cloud](https://mycadet.ai). That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
 
-When platform-level failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened. Tooling like Cadet Doctor exists for this reason: making the inner workings of an assistant inspectable when something goes wrong.
+When cloud failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened.
 
 For specific commitments around uptime, data handling, and incident response, refer to our [Terms of Use](https://mycadet.ai/docs/terms-of-use) and [Privacy Policy](https://mycadet.ai/docs/privacy-policy).
 
 ---
 
-## Article VII. Counter-positioning
+## Article VI. Counter-positioning
 
 > **Governs:** How we differentiate from every other company in the AI space.
 
@@ -214,7 +173,7 @@ We are not a better version of what already exists. We are building a different 
 
 One system, owned by one company, used by everyone. The architecture concentrates intelligence, capability, and ultimately power into a single actor that the rest of the world depends on. We are building the inverse: every human with their own.
 
-*Today:* ChatGPT, Apple Intelligence, Gemini.
+*Today:* ChatGPT, Claude, Apple Intelligence, Gemini.
 *Dimension:* centralized vs. distributed
 
 ### The Universal Assistant
@@ -252,7 +211,7 @@ The SaaS Model optimizes for the average user. Personal Intelligence optimizes f
 
 ---
 
-## Article VIII. Amendments
+## Article VII. Amendments
 
 > **Governs:** How this document is versioned, stored, and changed over time.
 
@@ -271,6 +230,6 @@ Housing it in a repo provides:
 If you disagree with something in this document, good. It means it is specific enough to be disagreed with. Here is how to change it:
 
 1. **Propose.** Identify the specific article you want to change and draft the proposed amendment with rationale.
-2. **Review.** At least three people from Cadet must review and align on the change, including at least one person from Cadet leadership.
+2. **Review.** Vargas JR LLC must review and align on the change.
 3. **Ratify.** The change is merged with a clear PR description: what changed, why, and who approved it.
-4. **Communicate.** Material changes are announced to the company. Policy changes are announced to our users. People should not discover constitutional shifts by stumbling across an edit.
+4. **Communicate.** Policy changes are announced to all users through our Discord community.
