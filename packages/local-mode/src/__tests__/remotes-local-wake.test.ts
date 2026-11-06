@@ -24,19 +24,9 @@ const isProcessAliveMock = mock<typeof realProcess.isProcessAlive>(() => ({
   pid: null,
 }));
 
-mock.module("../process", () => ({
-  ...realProcess,
-  isProcessAlive: isProcessAliveMock,
-}));
-
 const findAvailablePortMock = mock<typeof realPorts.findAvailablePort>(
   async (port) => port,
 );
-
-mock.module("../ports", () => ({
-  ...realPorts,
-  findAvailablePort: findAvailablePortMock,
-}));
 
 const startLocalDaemonMock = mock<typeof realCommon.startLocalDaemon>(
   async () => {},
@@ -45,13 +35,6 @@ const startGatewayMock = mock<typeof realCommon.startGateway>(
   async () => "http://127.0.0.1:7830",
 );
 const startCesMock = mock<typeof realCommon.startCes>(async () => {});
-
-mock.module("../remotes/local/common", () => ({
-  ...realCommon,
-  startLocalDaemon: startLocalDaemonMock,
-  startGateway: startGatewayMock,
-  startCes: startCesMock,
-}));
 
 afterAll(() => {
   mock.module("../process", () => realProcess);
@@ -86,6 +69,20 @@ function makeLocalEntry(): LocalAssistant {
 }
 
 beforeEach(() => {
+  mock.module("../process", () => ({
+    ...realProcess,
+    isProcessAlive: isProcessAliveMock,
+  }));
+  mock.module("../ports", () => ({
+    ...realPorts,
+    findAvailablePort: findAvailablePortMock,
+  }));
+  mock.module("../remotes/local/common", () => ({
+    ...realCommon,
+    startLocalDaemon: startLocalDaemonMock,
+    startGateway: startGatewayMock,
+    startCes: startCesMock,
+  }));
   tempDir = "";
   logSpy = spyOn(console, "log").mockImplementation(() => {});
   warnSpy = spyOn(console, "warn").mockImplementation(() => {});

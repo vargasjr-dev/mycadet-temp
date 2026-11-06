@@ -47,19 +47,6 @@ const execModuleMock = mock(
 );
 let logSpy: ReturnType<typeof spyOn>;
 
-mock.module("../exec", () => ({
-  ...realExecModule,
-  exec: execModuleMock,
-}));
-mock.module("../remotes/docker/common", () => ({
-  ...realDockerCommon,
-  ensureDockerDaemonRunning: async () => {},
-}));
-mock.module("../remotes/docker/hatch", () => ({
-  ...realHatch,
-  pullImage: async () => {},
-}));
-
 afterAll(() => {
   mock.module("../exec", () => realExecModule);
   mock.module("../remotes/docker/common", () => realDockerCommon);
@@ -89,6 +76,18 @@ const startedContainers = (): number =>
   dockerCalls.filter(({ args }) => args[0] === "start").length;
 
 beforeEach(() => {
+  mock.module("../exec", () => ({
+    ...realExecModule,
+    exec: execModuleMock,
+  }));
+  mock.module("../remotes/docker/common", () => ({
+    ...realDockerCommon,
+    ensureDockerDaemonRunning: async () => {},
+  }));
+  mock.module("../remotes/docker/hatch", () => ({
+    ...realHatch,
+    pullImage: async () => {},
+  }));
   logSpy = spyOn(console, "log").mockImplementation(() => {});
   dockerCalls = [];
   startFailures = [];

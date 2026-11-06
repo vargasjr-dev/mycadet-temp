@@ -87,11 +87,6 @@ const makeExecFake = (
   return { exec, ran };
 };
 
-mock.module("../exec", () => ({
-  ...realExecModule,
-  exec: execModuleMock,
-}));
-
 const wakeLocalMock = mock<
   (
     entry: unknown,
@@ -103,23 +98,11 @@ const wakeDockerMock = mock<
   ) => Promise<{ ok: true } | { ok: false; status: number; error: string }>
 >(async () => ({ ok: true }));
 
-mock.module("../remotes/local/wake", () => ({
-  ...realLocalWake,
-  wakeLocal: wakeLocalMock,
-}));
-mock.module("../remotes/docker/wake", () => ({
-  ...realDockerWake,
-  wakeDocker: wakeDockerMock,
-}));
 const wakeBasetenMock = mock(
   async (): Promise<
     { ok: true } | { ok: false; status: number; error: string }
   > => ({ ok: true }),
 );
-mock.module("../remotes/baseten/lifecycle", () => ({
-  ...realBasetenLifecycle,
-  wakeBaseten: wakeBasetenMock,
-}));
 
 afterAll(() => {
   mock.module("../remotes/local/wake", () => realLocalWake);
@@ -137,6 +120,22 @@ let tmpDir: string;
 let lockfilePath: string;
 
 beforeEach(() => {
+  mock.module("../exec", () => ({
+    ...realExecModule,
+    exec: execModuleMock,
+  }));
+  mock.module("../remotes/local/wake", () => ({
+    ...realLocalWake,
+    wakeLocal: wakeLocalMock,
+  }));
+  mock.module("../remotes/docker/wake", () => ({
+    ...realDockerWake,
+    wakeDocker: wakeDockerMock,
+  }));
+  mock.module("../remotes/baseten/lifecycle", () => ({
+    ...realBasetenLifecycle,
+    wakeBaseten: wakeBasetenMock,
+  }));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-wake-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

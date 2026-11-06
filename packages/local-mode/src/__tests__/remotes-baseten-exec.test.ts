@@ -235,7 +235,10 @@ describe("execBasetenSandbox — the execution-API arm", () => {
       seenAuth = String(new Headers(init?.headers).get("Authorization"));
       seenBody = String(init?.body);
       return ndjsonResponse([
-        JSON.stringify({ type: "result", data: JSON.stringify({ exitCode: 0 }) }),
+        JSON.stringify({
+          type: "result",
+          data: JSON.stringify({ exitCode: 0 }),
+        }),
       ]);
     });
 

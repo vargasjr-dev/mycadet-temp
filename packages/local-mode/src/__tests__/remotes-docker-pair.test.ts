@@ -8,11 +8,6 @@ const realExec = { ...(await import("../exec")) };
 
 const execOutputMock = mock<typeof realExec.execOutput>(async () => "");
 
-mock.module("../exec", () => ({
-  ...realExec,
-  execOutput: execOutputMock,
-}));
-
 const { pairDocker } = await import("../remotes/docker/pair");
 
 const entry: DockerAssistant = {
@@ -27,6 +22,10 @@ afterAll(() => {
 
 describe("pairDocker — the in-container gateway CLI is the docker presence proof", () => {
   beforeEach(() => {
+    mock.module("../exec", () => ({
+      ...realExec,
+      execOutput: execOutputMock,
+    }));
     execOutputMock.mockResolvedValue("");
   });
 

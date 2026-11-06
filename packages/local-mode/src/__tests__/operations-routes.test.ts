@@ -98,7 +98,6 @@ const pairingPollMock = mock(
 );
 const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 
-
 import { readLockfile } from "../lockfile";
 import { stripSensitiveFields } from "../util";
 import { matchOperatorRequest } from "../operations/routes";

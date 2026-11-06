@@ -26,12 +26,6 @@ const execOutputMock = mock(async (_cmd: string, args: string[] = []) => {
   throw new Error(`unexpected inspect format: ${args[2]}`);
 });
 
-mock.module("../exec", () => ({
-  ...realExecModule,
-  exec: execMock,
-  execOutput: execOutputMock,
-}));
-
 afterAll(() => {
   mock.module("../exec", () => realExecModule);
 });
@@ -46,6 +40,11 @@ const entry: LockfileAssistant = {
 };
 
 beforeEach(() => {
+  mock.module("../exec", () => ({
+    ...realExecModule,
+    exec: execMock,
+    execOutput: execOutputMock,
+  }));
   execMock.mockReset();
   execOutputMock.mockReset();
   execOutputMock.mockImplementation(async (_cmd, args = []) => {

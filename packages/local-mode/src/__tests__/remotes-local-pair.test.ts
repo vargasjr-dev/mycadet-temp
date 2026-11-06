@@ -17,15 +17,6 @@ const gatewayCliInvocationMock = mock<typeof realCommon.gatewayCliInvocation>(
   }),
 );
 
-mock.module("../exec", () => ({
-  ...realExec,
-  execOutput: execOutputMock,
-}));
-mock.module("../remotes/local/common", () => ({
-  ...realCommon,
-  gatewayCliInvocation: gatewayCliInvocationMock,
-}));
-
 const { pairLocal } = await import("../remotes/local/pair");
 
 const entry: LocalAssistant = {
@@ -41,6 +32,14 @@ afterAll(() => {
 
 describe("pairLocal — running the gateway's own CLI is the local presence proof", () => {
   beforeEach(() => {
+    mock.module("../exec", () => ({
+      ...realExec,
+      execOutput: execOutputMock,
+    }));
+    mock.module("../remotes/local/common", () => ({
+      ...realCommon,
+      gatewayCliInvocation: gatewayCliInvocationMock,
+    }));
     execOutputMock.mockClear();
     execOutputMock.mockResolvedValue("");
     gatewayCliInvocationMock.mockClear();

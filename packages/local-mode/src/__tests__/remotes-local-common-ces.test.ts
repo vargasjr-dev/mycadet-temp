@@ -7,7 +7,15 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  beforeEach,
+  beforeAll,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
@@ -36,35 +44,9 @@ let lastSpawnCall: {
   };
 } | null = null;
 
-mock.module("node:child_process", () => ({
-  spawn: mock((cmd: string, args: string[], options: object) => {
-    lastSpawnCall = { cmd: [cmd, ...args], options };
-    // Return a fake subprocess with a pid and no-op methods.
-    return {
-      pid: 42,
-      unref: () => {},
-      stdout: { on: () => {} },
-      stderr: { on: () => {} },
-      on: () => {},
-    };
-  }),
-  execSync: () => "",
-  execFileSync: () => "",
-  spawnSync: () => ({ status: 0, stdout: "", stderr: "" }),
-}));
-
 // Mock xdg-log so we don't open real log files.
-mock.module("../xdg-log.js", () => ({
-  openLogFile: mock(() => 42),
-  pipeToLogFile: mock(() => {}),
-}));
 
 // Mock process helpers so stopProcessByPidFile is a no-op.
-mock.module("../process.js", () => ({
-  stopProcessByPidFile: mock(async () => {}),
-  isProcessAlive: mock(() => false),
-  stopProcessGracefully: mock(async () => {}),
-}));
 
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run. `mock.restore()` does
@@ -78,6 +60,34 @@ afterAll(() => {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+beforeEach(() => {
+  mock.module("node:child_process", () => ({
+    spawn: mock((cmd: string, args: string[], options: object) => {
+      lastSpawnCall = { cmd: [cmd, ...args], options };
+      // Return a fake subprocess with a pid and no-op methods.
+      return {
+        pid: 42,
+        unref: () => {},
+        stdout: { on: () => {} },
+        stderr: { on: () => {} },
+        on: () => {},
+      };
+    }),
+    execSync: () => "",
+    execFileSync: () => "",
+    spawnSync: () => ({ status: 0, stdout: "", stderr: "" }),
+  }));
+  mock.module("../xdg-log.js", () => ({
+    openLogFile: mock(() => 42),
+    pipeToLogFile: mock(() => {}),
+  }));
+  mock.module("../process.js", () => ({
+    stopProcessByPidFile: mock(async () => {}),
+    isProcessAlive: mock(() => false),
+    stopProcessGracefully: mock(async () => {}),
+  }));
+});
 
 describe("startCes", () => {
   let tempDir: string;

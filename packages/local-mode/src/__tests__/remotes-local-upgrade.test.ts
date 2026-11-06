@@ -44,13 +44,6 @@ const createBackupMock = mock<typeof backups.createBackup>(
 const pruneOldBackupsMock = mock<typeof backups.pruneOldBackups>(() => {});
 const restoreBackupMock = mock<typeof backups.restoreBackup>(async () => true);
 
-mock.module("../backup-ops", () => ({
-  ...realBackups,
-  createBackup: createBackupMock,
-  pruneOldBackups: pruneOldBackupsMock,
-  restoreBackup: restoreBackupMock,
-}));
-
 function makeGuardianToken() {
   const now = Date.now();
   return {
@@ -69,22 +62,12 @@ const leaseGuardianTokenMock = mock<typeof guardianModule.leaseGuardianToken>(
   async () => makeGuardianToken(),
 );
 
-mock.module("../guardian-token", () => ({
-  ...realGuardian,
-  leaseGuardianToken: leaseGuardianTokenMock,
-}));
-
 const ensureLocalRuntimeMock = mock<typeof commonModule.ensureLocalRuntime>(
   (resources, version) => ({
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }),
 );
-
-mock.module("../remotes/local/common", () => ({
-  ...realCommon,
-  ensureLocalRuntime: ensureLocalRuntimeMock,
-}));
 
 const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(async () => ({
   ok: true,
@@ -98,15 +81,6 @@ const sleepLocalMock = mock<typeof sleepModule.sleepLocal>(async () => ({
 }));
 const wakeLocalMock = mock<typeof wakeModule.wakeLocal>(async () => ({
   ok: true,
-}));
-
-mock.module("../remotes/local/sleep", () => ({
-  ...realSleep,
-  sleepLocal: sleepLocalMock,
-}));
-mock.module("../remotes/local/wake", () => ({
-  ...realWake,
-  wakeLocal: wakeLocalMock,
 }));
 
 const loopbackSafeFetchMock = mock<typeof loopbackModule.loopbackSafeFetch>(
@@ -123,11 +97,6 @@ const loopbackSafeFetchMock = mock<typeof loopbackModule.loopbackSafeFetch>(
     }) as Response,
 );
 
-mock.module("../loopback-fetch", () => ({
-  ...realLoopback,
-  loopbackSafeFetch: loopbackSafeFetchMock,
-}));
-
 const broadcastUpgradeEventMock = mock<typeof lifecycle.broadcastUpgradeEvent>(
   async () => {},
 );
@@ -135,13 +104,6 @@ const commitWorkspaceViaGatewayMock = mock<
   typeof lifecycle.commitWorkspaceViaGateway
 >(async () => {});
 const waitForReadyMock = mock<typeof lifecycle.waitForReady>(async () => true);
-
-mock.module("../upgrade-lifecycle", () => ({
-  ...realLifecycle,
-  broadcastUpgradeEvent: broadcastUpgradeEventMock,
-  commitWorkspaceViaGateway: commitWorkspaceViaGatewayMock,
-  waitForReady: waitForReadyMock,
-}));
 
 let tempDir: string;
 let consoleLogSpy: ReturnType<typeof spyOn>;
@@ -182,6 +144,38 @@ function runLeg() {
 }
 
 beforeEach(() => {
+  mock.module("../backup-ops", () => ({
+    ...realBackups,
+    createBackup: createBackupMock,
+    pruneOldBackups: pruneOldBackupsMock,
+    restoreBackup: restoreBackupMock,
+  }));
+  mock.module("../guardian-token", () => ({
+    ...realGuardian,
+    leaseGuardianToken: leaseGuardianTokenMock,
+  }));
+  mock.module("../remotes/local/common", () => ({
+    ...realCommon,
+    ensureLocalRuntime: ensureLocalRuntimeMock,
+  }));
+  mock.module("../remotes/local/sleep", () => ({
+    ...realSleep,
+    sleepLocal: sleepLocalMock,
+  }));
+  mock.module("../remotes/local/wake", () => ({
+    ...realWake,
+    wakeLocal: wakeLocalMock,
+  }));
+  mock.module("../loopback-fetch", () => ({
+    ...realLoopback,
+    loopbackSafeFetch: loopbackSafeFetchMock,
+  }));
+  mock.module("../upgrade-lifecycle", () => ({
+    ...realLifecycle,
+    broadcastUpgradeEvent: broadcastUpgradeEventMock,
+    commitWorkspaceViaGateway: commitWorkspaceViaGatewayMock,
+    waitForReady: waitForReadyMock,
+  }));
   tempDir = "";
   consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
   consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});

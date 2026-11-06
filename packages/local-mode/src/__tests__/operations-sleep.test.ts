@@ -50,33 +50,6 @@ const sleepBasetenMock = mock(
 );
 const isAssistantHealthyMock = mock(async (): Promise<boolean> => false);
 
-mock.module("../daemon-readiness", () => ({
-  ...realDaemonReadiness,
-  isAssistantHealthy: isAssistantHealthyMock,
-}));
-mock.module("../process", () => ({
-  ...realProcess,
-  isProcessAlive: isProcessAliveMock,
-  stopProcessByPidFile: stopProcessByPidFileMock,
-}));
-mock.module("../remotes/local/drain", () => ({
-  ...realDrain,
-  drainAssistant: drainAssistantMock,
-}));
-mock.module("../guardian-token", () => ({
-  ...realGuardianToken,
-  loadGuardianToken: loadGuardianTokenMock,
-  getGuardianAccessToken: getGuardianAccessTokenMock,
-}));
-mock.module("../remotes/docker/sleep", () => ({
-  ...realDockerSleep,
-  sleepDocker: sleepDockerMock,
-}));
-mock.module("../remotes/baseten/lifecycle", () => ({
-  ...realBasetenLifecycle,
-  sleepBaseten: sleepBasetenMock,
-}));
-
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
@@ -97,6 +70,37 @@ let tmpDir: string;
 let lockfilePath: string;
 
 beforeEach(() => {
+  // Register the module mocks per-test (not at module load): bun runs every
+  // test file in one process with a shared loader and the scheduler
+  // interleaves files, so a load-time registration leaks into whatever file
+  // it lands mid-flight of. The afterAll below re-registers the snapshotted
+  // real modules once this file finishes.
+  mock.module("../daemon-readiness", () => ({
+    ...realDaemonReadiness,
+    isAssistantHealthy: isAssistantHealthyMock,
+  }));
+  mock.module("../process", () => ({
+    ...realProcess,
+    isProcessAlive: isProcessAliveMock,
+    stopProcessByPidFile: stopProcessByPidFileMock,
+  }));
+  mock.module("../remotes/local/drain", () => ({
+    ...realDrain,
+    drainAssistant: drainAssistantMock,
+  }));
+  mock.module("../guardian-token", () => ({
+    ...realGuardianToken,
+    loadGuardianToken: loadGuardianTokenMock,
+    getGuardianAccessToken: getGuardianAccessTokenMock,
+  }));
+  mock.module("../remotes/docker/sleep", () => ({
+    ...realDockerSleep,
+    sleepDocker: sleepDockerMock,
+  }));
+  mock.module("../remotes/baseten/lifecycle", () => ({
+    ...realBasetenLifecycle,
+    sleepBaseten: sleepBasetenMock,
+  }));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-sleep-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

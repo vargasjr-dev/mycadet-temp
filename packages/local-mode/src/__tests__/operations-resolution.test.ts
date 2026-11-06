@@ -31,15 +31,6 @@ const checkHealthMock = mock(
   }> => ({ version: undefined, authenticated: true }),
 );
 
-mock.module("../loopback-fetch", () => ({
-  ...realLoopbackFetch,
-  loopbackSafeFetch: loopbackSafeFetchMock,
-}));
-mock.module("../daemon-readiness", () => ({
-  ...realDaemonReadiness,
-  checkHealth: checkHealthMock,
-}));
-
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
@@ -54,6 +45,14 @@ let tmpDir: string;
 let lockfilePath: string;
 
 beforeEach(() => {
+  mock.module("../loopback-fetch", () => ({
+    ...realLoopbackFetch,
+    loopbackSafeFetch: loopbackSafeFetchMock,
+  }));
+  mock.module("../daemon-readiness", () => ({
+    ...realDaemonReadiness,
+    checkHealth: checkHealthMock,
+  }));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-resolution-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

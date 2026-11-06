@@ -18,7 +18,11 @@ function localEntry(port: number | undefined): LockfileAssistant {
 
 describe("checkHealth — the baseten gateway doors", () => {
   test("a minted preview is the door: the probe rides it with the preview token", async () => {
-    const seen = { path: "", preview: null as string | null, auth: null as string | null };
+    const seen = {
+      path: "",
+      preview: null as string | null,
+      auth: null as string | null,
+    };
     const server = Bun.serve({
       port: 0,
       fetch(req) {

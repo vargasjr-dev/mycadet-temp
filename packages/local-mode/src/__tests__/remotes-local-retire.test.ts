@@ -38,19 +38,10 @@ const stopProcessByPidFileMock = mock(
 );
 
 const { DAEMON_STOP_TIMEOUT_MS } = await import("../lifecycle-budgets");
-mock.module("../process", () => ({
-  ...realProcess,
-  stopProcessByPidFile: stopProcessByPidFileMock,
-}));
 
 // Keep archive paths on the same filesystem as the test dir so rename doesn't
 // hit EXDEV (cross-device link).
 const retiredStagingDir = join(testDir, "retired");
-mock.module("../remotes/local/archive", () => ({
-  ...realArchive,
-  getArchivePath: () => join(retiredStagingDir, "test-assistant.tar.gz"),
-  getMetadataPath: () => join(retiredStagingDir, "test-assistant.meta.json"),
-}));
 
 // The self-hosted platform unregister rides INSIDE retireLocal (the local
 // retire leg owns it now), so the platform seams it dials are pinned here.
@@ -71,18 +62,6 @@ const cloudAuthHeadersMock = mock(async () => ({
 }));
 const resolveCloudUrlMock = mock(() => "https://platform.example.test");
 
-mock.module("../loopback-fetch", () => ({
-  ...realLoopbackFetch,
-  loopbackSafeFetch: loopbackSafeFetchMock,
-}));
-mock.module("../cloud-auth", () => ({
-  ...realCloudAuth,
-  readCloudToken: readCloudTokenMock,
-  authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
-  cloudAuthHeaders: cloudAuthHeadersMock,
-  resolveCloudUrl: resolveCloudUrlMock,
-}));
-
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
@@ -102,6 +81,27 @@ describe("retireLocal — CES sibling stop", () => {
   });
 
   beforeEach(() => {
+    mock.module("../process", () => ({
+      ...realProcess,
+      stopProcessByPidFile: stopProcessByPidFileMock,
+    }));
+    mock.module("../remotes/local/archive", () => ({
+      ...realArchive,
+      getArchivePath: () => join(retiredStagingDir, "test-assistant.tar.gz"),
+      getMetadataPath: () =>
+        join(retiredStagingDir, "test-assistant.meta.json"),
+    }));
+    mock.module("../loopback-fetch", () => ({
+      ...realLoopbackFetch,
+      loopbackSafeFetch: loopbackSafeFetchMock,
+    }));
+    mock.module("../cloud-auth", () => ({
+      ...realCloudAuth,
+      readCloudToken: readCloudTokenMock,
+      authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
+      cloudAuthHeaders: cloudAuthHeadersMock,
+      resolveCloudUrl: resolveCloudUrlMock,
+    }));
     stopProcessByPidFileMock.mockReset();
     stopProcessByPidFileMock.mockResolvedValue(true);
 

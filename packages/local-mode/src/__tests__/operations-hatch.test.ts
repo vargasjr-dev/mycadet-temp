@@ -30,9 +30,6 @@ const hatchDockerMock = mock<
   },
   ready: true,
 }));
-mock.module("../remotes/docker/hatch", () => ({
-  hatchDocker: hatchDockerMock,
-}));
 
 const basetenMock = mock<
   (params: HatchBasetenParams) => Promise<HatchBasetenResult>
@@ -47,15 +44,18 @@ const basetenMock = mock<
   },
   ready: false,
 }));
-mock.module("../remotes/baseten/hatch", () => ({
-  hatchBaseten: basetenMock,
-}));
 
 let home: string;
 const ENV_KEYS = ["XDG_CONFIG_HOME", "XDG_DATA_HOME"] as const;
 const saved = new Map<string, string | undefined>();
 
 beforeEach(() => {
+  mock.module("../remotes/docker/hatch", () => ({
+    hatchDocker: hatchDockerMock,
+  }));
+  mock.module("../remotes/baseten/hatch", () => ({
+    hatchBaseten: basetenMock,
+  }));
   home = mkdtempSync(path.join(os.tmpdir(), "hatch-op-"));
   for (const key of ENV_KEYS) {
     saved.set(key, process.env[key]);

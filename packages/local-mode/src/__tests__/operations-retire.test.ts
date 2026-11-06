@@ -56,38 +56,7 @@ const execMock = mock(
   (_cmd: string, _args: string[]): Promise<string> => Promise.resolve(""),
 );
 
-mock.module("../loopback-fetch", () => ({
-  ...realLoopbackFetch,
-  loopbackSafeFetch: loopbackSafeFetchMock,
-}));
-mock.module("../cloud-auth", () => ({
-  ...realCloudAuth,
-  readCloudToken: readCloudTokenMock,
-  authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
-  cloudAuthHeaders: cloudAuthHeadersMock,
-  resolveCloudUrl: resolveCloudUrlMock,
-}));
-mock.module("../exec", () => ({
-  ...realExec,
-  exec: execMock,
-}));
 const retireBasetenMock = mock(async (): Promise<void> => {});
-mock.module("../remotes/baseten/lifecycle", () => ({
-  ...realBasetenLifecycle,
-  retireBaseten: retireBasetenMock,
-}));
-mock.module("../remotes/local/retire", () => ({
-  ...realLocalRetire,
-  retireLocal: retireLocalMock,
-}));
-mock.module("../remotes/docker/retire", () => ({
-  ...realDockerRetire,
-  retireDocker: retireDockerMock,
-}));
-mock.module("../remotes/apple-container/retire", () => ({
-  ...realAppleRetire,
-  retireAppleContainer: retireAppleContainerMock,
-}));
 
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
@@ -110,6 +79,37 @@ let tmpDir: string;
 let lockfilePath: string;
 
 beforeEach(() => {
+  mock.module("../loopback-fetch", () => ({
+    ...realLoopbackFetch,
+    loopbackSafeFetch: loopbackSafeFetchMock,
+  }));
+  mock.module("../cloud-auth", () => ({
+    ...realCloudAuth,
+    readCloudToken: readCloudTokenMock,
+    authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
+    cloudAuthHeaders: cloudAuthHeadersMock,
+    resolveCloudUrl: resolveCloudUrlMock,
+  }));
+  mock.module("../exec", () => ({
+    ...realExec,
+    exec: execMock,
+  }));
+  mock.module("../remotes/baseten/lifecycle", () => ({
+    ...realBasetenLifecycle,
+    retireBaseten: retireBasetenMock,
+  }));
+  mock.module("../remotes/local/retire", () => ({
+    ...realLocalRetire,
+    retireLocal: retireLocalMock,
+  }));
+  mock.module("../remotes/docker/retire", () => ({
+    ...realDockerRetire,
+    retireDocker: retireDockerMock,
+  }));
+  mock.module("../remotes/apple-container/retire", () => ({
+    ...realAppleRetire,
+    retireAppleContainer: retireAppleContainerMock,
+  }));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-retire-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { resolveDataDir, resolveInstanceDir } from "../config";
-import { getDaemonPidPath, getLocalInstanceDir } from "../remotes/local/instance";
+import {
+  getDaemonPidPath,
+  getLocalInstanceDir,
+} from "../remotes/local/instance";
 import type { LocalAssistant } from "../lockfile-contract";
 
 const instanceRoot = join(resolveDataDir(), "assistants");
@@ -52,4 +55,3 @@ describe("getLocalInstanceDir — the local assistant's data root", () => {
     expect(dir.startsWith(instanceRoot)).toBe(true);
   });
 });
-

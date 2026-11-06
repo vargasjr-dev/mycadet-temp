@@ -44,7 +44,9 @@ function cliArm(
   describeUrl = '"https://sbx-my-cadet-abc123.us-pdx-1.b10.co"',
   createOutput = "",
 ) {
-  capture = spyOn(basetenCli, "captureBasetenCli").mockResolvedValue(describeUrl);
+  capture = spyOn(basetenCli, "captureBasetenCli").mockResolvedValue(
+    describeUrl,
+  );
   return [
     spyOn(basetenCli, "resolveBasetenCli").mockResolvedValue("baseten"),
     spyOn(basetenCli, "runBasetenCliCaptured").mockResolvedValue(createOutput),

@@ -24,15 +24,6 @@ const pairDockerMock = mock<typeof realDockerPair.pairDocker>(async () => ({
   response: { token: "docker" },
 }));
 
-mock.module("../remotes/local/pair", () => ({
-  ...realLocalPair,
-  pairLocal: pairLocalMock,
-}));
-mock.module("../remotes/docker/pair", () => ({
-  ...realDockerPair,
-  pairDocker: pairDockerMock,
-}));
-
 const { pairDevice } = await import("../operations/pair");
 
 const localEntry = (overrides: Record<string, unknown> = {}) =>
@@ -57,6 +48,14 @@ afterEach(() => {
 
 describe("pairDevice — the credential door routes by remote", () => {
   beforeEach(() => {
+    mock.module("../remotes/local/pair", () => ({
+      ...realLocalPair,
+      pairLocal: pairLocalMock,
+    }));
+    mock.module("../remotes/docker/pair", () => ({
+      ...realDockerPair,
+      pairDocker: pairDockerMock,
+    }));
     pairLocalMock.mockResolvedValue({ ok: true, response: { token: "local" } });
     pairDockerMock.mockResolvedValue({
       ok: true,
