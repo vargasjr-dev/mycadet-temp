@@ -23,7 +23,7 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
-import { existsSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as net from "node:net";
@@ -67,14 +67,6 @@ const journal: JournalEntry[] = [];
 // --- 1. node:child_process --------------------------------------------------
 
 const realChildProcess = { ...childProcess };
-
-// The lifecycle links ../process (PID-file liveness, graceful stops) and
-// ../daemon-readiness (the health verdict). Sibling suites in this package
-// register process-global mocks of both, so snapshot the reals here and
-// re-register them per-test below — a load-time-only registration leaks
-// into whatever file the shared-loader scheduler interleaves.
-const realProcessModule = { ...(await import("../process")) };
-const realDaemonReadinessModule = { ...(await import("../daemon-readiness")) };
 
 const alivePids = new Set<number>();
 
@@ -243,30 +235,28 @@ const mockedFetch = (async (input: Parameters<typeof fetch>[0]) => {
 }) as typeof fetch;
 globalThis.fetch = mockedFetch as typeof fetch;
 
-beforeEach(() => {
-  mock.module("node:child_process", () => ({
-    ...realChildProcess,
-    spawn: fakeSpawn,
-    execFileSync: fakeExecFileSync,
-  }));
-  mock.module("node:net", () => ({
-    ...realNet,
-    Socket: NeverConnectingSocket,
-    createServer: () => new AlwaysBindingServer(),
-  }));
-  mock.module("../process", () => realProcessModule);
-  mock.module("../daemon-readiness", () => realDaemonReadinessModule);
-  process.kill = mockedKill as typeof process.kill;
-  globalThis.fetch = mockedFetch as typeof fetch;
-});
+// The registrations must land before the dynamic import below links the
+// lifecycle's graph: mock.module does not propagate to a module that already
+// linked, so whatever is registered at load time is what the whole graph
+// sees for this file's run. No sibling registers these at load time (the
+// sweep moved them all into per-test beforeEach hooks), so these are the
+// last word for this process.
+mock.module("node:child_process", () => ({
+  ...realChildProcess,
+  spawn: fakeSpawn,
+  execFileSync: fakeExecFileSync,
+}));
+mock.module("node:net", () => ({
+  ...realNet,
+  Socket: NeverConnectingSocket,
+  createServer: () => new AlwaysBindingServer(),
+}));
 
 afterAll(() => {
   process.kill = realKill;
   globalThis.fetch = realFetch;
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:net", () => realNet);
-  mock.module("../process", () => realProcessModule);
-  mock.module("../daemon-readiness", () => realDaemonReadinessModule);
 });
 
 // The journal and the fake process table are per-test state.
@@ -487,16 +477,7 @@ describe("root tar backup", () => {
     healthPorts.add(7821);
     afterSpawnPorts.add(7821);
     healthPorts.add(7831);
-    // TEMP DEBUG
-    const probeMod = await import("../process");
-    console.log("PROBE kill===mocked:", process.kill === mockedKill);
-    console.log("PROBE alivePids:", [...alivePids]);
-    console.log("PROBE cadet.pid exists:", existsSync(join(root, "workspace", "cadet.pid")));
-    console.log("PROBE isProcessAlive:", probeMod.isProcessAlive(join(root, "workspace", "cadet.pid")));
-    console.log("PROBE fetch===mocked:", globalThis.fetch === mockedFetch);
-    try { process.kill(2000000000, 0); console.log("PROBE kill0: alive"); } catch (e) { console.log("PROBE kill0: dead", (e as Error).message); }
     await createRootBackup(entry, file);
-    console.log("PROBE journal:", JSON.stringify(journal));
 
     // The sleep leg really stopped the tracked services: SIGTERMs to the
     // fake pids, and the stop consumed their PID files.
