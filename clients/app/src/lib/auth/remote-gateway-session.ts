@@ -5,22 +5,9 @@ import type {
   RemoteWebPairingTokenRequest,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { readInjectedConfig } from "@app/lib/injected-config";
-
-const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
-const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
+const PAIRING_TOKEN_PATH = "/v1/assistant/remote-web/pairing-token";
+const PAIRING_CHALLENGE_PATH = "/v1/assistant/remote-web/pairing-challenge";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;
-
-/**
- * The pairing endpoints live on the assistant's gateway. The shell's injected
- * config carries that origin as `baseUrl` — the single origin for API, auth,
- * and the assistant mount — falling back to the serving origin when nothing
- * was injected (SSR / a host that injects nothing).
- */
-function pairingApiPath(path: string): string {
-  const base = readInjectedConfig()?.baseUrl ?? window.location.origin;
-  return `${base.replace(/\/+$/, "")}${path}`;
-}
 
 /**
  * Credential fields {@link activateRemoteGatewaySession} consumes. Broader than
@@ -96,7 +83,7 @@ export async function exchangeRemoteWebPairingToken(
   deviceCode: string,
   signal?: AbortSignal,
 ): Promise<RemoteWebPairingTokenResult> {
-  const response = await fetch(pairingApiPath(PAIRING_TOKEN_PATH), {
+  const response = await fetch(PAIRING_TOKEN_PATH, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -142,7 +129,7 @@ export async function exchangeRemoteWebPairingToken(
 export async function createRemoteWebPairingChallenge(
   signal?: AbortSignal,
 ): Promise<RemoteWebPairingChallengeResponse> {
-  const response = await fetch(pairingApiPath(PAIRING_CHALLENGE_PATH), {
+  const response = await fetch(PAIRING_CHALLENGE_PATH, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

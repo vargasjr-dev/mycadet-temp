@@ -6,24 +6,9 @@ import type {
   LiveVoiceAudioCaptureOptions,
   LiveVoiceCaptureResult,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 let ingressUrl: string | null = "http://localhost:8500";
-let actorToken: string | null = "actor-jwt";
 let pcmSupported = true;
-
-/**
- * Publish the two variables above into the real connection module.
- *
- * The real module rather than a `mock.module` stand-in, because that
- * replacement outlives this file: bun shares a process across test files, and
- * `connection.test.ts` primes the same module through `setSelfHostedConnection`
- * to test the transport rules. A stand-in here silently turns that call into a
- * no-op there.
- */
-const applyConnection = (): void => {
-  setSelfHostedConnection({ url: ingressUrl, token: actorToken });
-};
 
 // The real module imports an AudioWorklet asset via Vite's `?worker&url`
 // suffix, which Bun's test runner can't resolve. The capture itself is
@@ -348,8 +333,6 @@ const HELD = 200;
 
 beforeEach(() => {
   ingressUrl = "http://localhost:8500";
-  actorToken = "actor-jwt";
-  applyConnection();
   pcmSupported = true;
   mintCalls = [];
   mintedToken = "tunnel-token";
@@ -548,9 +531,6 @@ describe("toggling a watch session", () => {
   });
 
   test("dials without a token when none is provisioned — the host injects", async () => {
-    actorToken = null;
-    applyConnection();
-
     await startRunning();
 
     expect(sockets).toHaveLength(1);
@@ -675,8 +655,6 @@ describe("a watch session on a cloud assistant", () => {
   /** No self-hosted ingress is what makes an assistant managed here. */
   const managed = (): void => {
     ingressUrl = null;
-    actorToken = null;
-    applyConnection();
   };
 
   test("mints a tunnel token and dials tunnel with it", async () => {

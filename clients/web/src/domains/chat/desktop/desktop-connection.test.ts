@@ -4,26 +4,15 @@
  * covered in `live-voice/connection.test.ts`).
  */
 
-import { afterEach, describe, expect, test } from "bun:test";
-
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { describe, expect, test } from "bun:test";
 
 import {
   desktopEndReasonForClose,
   resolveDesktopStreamWsUrl,
 } from "./desktop-connection";
 
-afterEach(() => {
-  setSelfHostedConnection(null);
-});
-
 describe("resolving the desktop stream URL", () => {
   test("dials the desktop route on the gateway", async () => {
-    setSelfHostedConnection({
-      url: "http://localhost:8500",
-      token: "actor-jwt",
-    });
-
     const url = new URL(await resolveDesktopStreamWsUrl("asst-1"));
 
     expect(url.origin).toBe("ws://localhost:8500");

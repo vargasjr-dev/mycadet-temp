@@ -91,7 +91,6 @@ import { answerDictationOffer } from "@/domains/chat/voice/dictation-offer-actio
 import { answerCompanionPopover } from "@/domains/chat/companion-popover-actions";
 import { toggleCompanionPicker } from "@/domains/chat/companion-popover";
 import { useCompanionPickers } from "@/domains/chat/hooks/use-companion-pickers";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notification-avatar";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
@@ -141,11 +140,7 @@ export function RootLayout() {
   const assistantId = useActiveAssistantId();
   const activeAssistant = useResolvedAssistantStore.use.assistant();
   const assistantVersion = useAssistantIdentityStore.use.version();
-  const connectionFallback =
-    getSelfHostedIngressUrl() ??
-    (typeof globalThis.location === "undefined"
-      ? null
-      : globalThis.location.href);
+  const connectionFallback = globalThis.location.href;
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
   const notificationScopeId = activeAssistant

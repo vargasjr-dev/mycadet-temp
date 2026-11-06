@@ -16,7 +16,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { client } from "@/generated/api/client.gen";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 import {
   buildGatewayWsUrl,
@@ -53,13 +52,10 @@ beforeEach(() => {
     captured = options;
     return nextPostResult;
   }) as typeof client.post;
-  // Default to the cloud path; self-hosted tests prime this explicitly.
-  setSelfHostedConnection(null);
 });
 
 afterEach(() => {
   client.post = originalPost;
-  setSelfHostedConnection(null);
   window.__CADET_CONFIG__ = undefined;
 });
 
@@ -239,11 +235,6 @@ describe("resolveGatewayWsUrl", () => {
   };
 
   test("self-hosted: dials the scoped path on the ingress and mints nothing", async () => {
-    setSelfHostedConnection({
-      url: "http://localhost:8500",
-      token: "actor-jwt",
-    });
-
     const url = new URL(await resolveGatewayWsUrl(args));
 
     expect(url.origin).toBe("ws://localhost:8500");
@@ -253,8 +244,6 @@ describe("resolveGatewayWsUrl", () => {
   });
 
   test("self-hosted: dials without a token when none is provisioned — the host injects", async () => {
-    setSelfHostedConnection({ url: "http://localhost:8500", token: null });
-
     const url = new URL(await resolveGatewayWsUrl(args));
 
     expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
@@ -310,11 +299,6 @@ describe("resolveLiveVoiceWsUrl", () => {
 
   test("self-hosted path: dials the scoped path with the actor token, no mint", async () => {
     // GIVEN a primed self-hosted connection
-    setSelfHostedConnection({
-      url: "https://x.ngrok-free.app",
-      token: "actor-tok",
-    });
-
     const raw = await resolveLiveVoiceWsUrl({
       assistantId: "assistant-1",
       conversationId: "conv-xyz",
@@ -334,8 +318,6 @@ describe("resolveLiveVoiceWsUrl", () => {
   test("self-hosted with no actor token dials without one (and does not mint)", async () => {
     // GIVEN an ingress is known but no actor token is provisioned — a local
     // assistant's serving host injects the credential on the proxied upgrade.
-    setSelfHostedConnection({ url: "http://localhost:8500", token: null });
-
     const raw = await resolveLiveVoiceWsUrl({ assistantId: "assistant-1" });
 
     const url = new URL(raw);

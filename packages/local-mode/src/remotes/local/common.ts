@@ -1732,7 +1732,7 @@ export async function startLocalDaemon(
 
 export async function startGateway(
   watch: boolean = false,
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
   options?: {
     requireReady?: boolean;
   },

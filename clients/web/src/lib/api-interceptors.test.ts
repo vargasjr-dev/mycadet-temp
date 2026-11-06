@@ -61,7 +61,6 @@ import {
 } from "@/lib/api-interceptors";
 
 import { ApiError } from "@/utils/api-errors";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
 
@@ -241,15 +240,10 @@ describe("api-interceptors / remote gateway direct requests", () => {
 
   afterEach(() => {
     window.__CADET_CONFIG__ = undefined;
-    setSelfHostedConnection(null);
     clearCsrfCookie();
   });
 
   test("authorizes daemon same-origin flat /v1 requests with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
     const input = new Request(`${window.location.origin}/v1/contacts`, {});
 
     const output = await daemonRequestInterceptor(input);
@@ -263,10 +257,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("adds the ngrok browser-warning bypass header to rewritten assistant routes", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
     const input = new Request(
       `${window.location.origin}/v1/assistants/self/messages?conversationId=conv-1`,
     );
@@ -279,10 +269,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("preserves a remote ingress path prefix for flat /v1 requests", () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
     const input = new Request(
       `${window.location.origin}/assistant-123/v1/contacts`,
     );
@@ -294,20 +280,12 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("does not authorize non-prefixed /v1 requests when the remote ingress is path-prefixed", () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
     const input = new Request(`${window.location.origin}/v1/contacts`);
 
     expect(authorizeRemoteGatewayRequest(input)).toBeNull();
   });
 
   test("authorizes cloud-client push-token upserts with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
     const path = `/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
@@ -322,10 +300,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("authorizes cloud-client live-activity upserts with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
     const path = `/v1/assistants/${SELF_HOSTED_ID}/live-activity/tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
@@ -337,10 +311,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("preserves a remote ingress path prefix for cloud-client push-token upserts", async () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
     const path = `/assistant-123/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
@@ -353,10 +323,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
   });
 
   test("relocates an origin-root push-token upsert under a path-prefixed remote ingress", async () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
     const input = new Request(
       `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`,
       { method: "POST" },

@@ -46,10 +46,6 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import {
-  getSelfHostedActorToken,
-  getSelfHostedIngressUrl,
-} from "@/lib/self-hosted/connection";
 import { assertHasResponse } from "@/utils/api-errors";
 
 /**
@@ -315,17 +311,6 @@ export async function resolveGatewayWsUrl({
   routePath,
   params,
 }: ResolveGatewayWsUrlArgs): Promise<string> {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (ingressUrl) {
-    return buildGatewayWsUrl({
-      assistantId,
-      ingressUrl,
-      routePath,
-      token: getSelfHostedActorToken() ?? undefined,
-      params,
-    });
-  }
-
   const { token } = await mintTunnelWsToken(assistantId);
   return buildTunnelWsUrl({ assistantId, routePath, token, params });
 }

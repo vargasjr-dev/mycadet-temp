@@ -12,7 +12,6 @@ import { useSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-st
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import {
   getActiveAssistantId,
@@ -396,11 +395,7 @@ export function useAssistantAvatar(options?: AssistantAvatarOptions) {
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
   const assistant = useResolvedAssistantStore.use.assistant();
-  const connectionFallback =
-    getSelfHostedIngressUrl() ??
-    (typeof globalThis.location === "undefined"
-      ? null
-      : globalThis.location.href);
+  const connectionFallback = globalThis.location.href;
   const canonicalScopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
     connectionFallback,
