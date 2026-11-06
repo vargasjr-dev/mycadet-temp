@@ -161,25 +161,6 @@ export function resolveLocalServerUrl(): string | undefined {
 }
 
 /**
- * The id-keyed, same-origin gateway proxy base for any assistant entry: the
- * serving host (Electron `app://` handler, Vite dev middleware, CLI web
- * server) resolves the id through the lockfile to a loopback port (locally
- * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
- * renderer never encodes either.
- */
-/**
- * First segments whose scoped `/v1/assistants/{id}/` prefix the gateway does
- * not serve: the contact family lives on flat `/v1/...` control-plane routes
- * (the shape the cloud's runtime-proxy strip delivers). Every
- * forwarder to the gateway — the scoped host proxy and the request
- * interceptor's remote-ingress rewrite alike — flattens them to match.
- */
-export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
-  "contacts",
-  "contact-channels",
-]);
-
-/**
  * Clouds whose gateway listens on a loopback port of this machine: the
  * on-machine daemon ("local") and local Docker instances ("docker").
  */

@@ -684,10 +684,7 @@ export function parsePairingAddress(raw: string): ParsePairingAddressResult {
 }
 
 /**
- * What a pairing attempt failed on, for callers picking recovery copy. Every
- * pairing surface reports one of these: the host-side sessions in
- * `@mycadet/local-mode`, the Electron bridge, the desktop connect dialog, and
- * the `cadet connect import` CLI.
+ * What a pairing attempt failed on, for callers picking recovery copy
  */
 export type PairingFailureReason =
   /** The pasted address is not a usable assistant address. */

@@ -1,18 +1,8 @@
 import { crc32 } from "node:zlib";
 
 /**
- * A minimal zip writer for the Baseten image push context — the two text
- * files the upload URL expects, stored uncompressed. @mycadet/local-mode is
- * a source-only package inlined by bundler hosts (see the package boundary
- * test), so it carries no npm dependencies beyond its allowlist; the zip
- * container format for a handful of small files is a few fixed-size headers,
- * not a dependency.
- *
- * Entries use the STORED method (method 0): the context is two tiny text
- * files, compression buys nothing, and stored streams are the one variant
- * every unzipper accepts without negotiation.
+ * A minimal zip writer for the Baseten image push context.
  */
-
 interface ZipEntry {
   name: string;
   data: Buffer;

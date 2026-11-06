@@ -454,20 +454,7 @@ export {
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";
 export {
-  authorizePairedForwardHeaders,
-  parseAssistantGatewayUrl,
-  readGatewayTargets,
-  resolveGatewayProxyTarget,
-  sanitizePairedForwardHeaders,
-  FLATTENED_FIRST_SEGMENTS,
-} from "./gateway-proxy";
-export {
   loopbackGatewayBearer,
   clearLoopbackGatewayBearerCache,
 } from "./gateway-bearer";
 export type { GuardianTokenLease } from "./gateway-bearer";
-export type {
-  GatewayTarget,
-  GatewayParseResult,
-  GatewayEntryTarget,
-} from "./gateway-proxy";
