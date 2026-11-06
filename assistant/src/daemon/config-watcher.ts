@@ -23,7 +23,6 @@ import type { MemoryCleanupConfig } from "../config/schemas/memory-lifecycle.js"
 import { resetCleanupScheduleThrottle } from "../persistence/cleanup-schedule-state.js";
 import { clearEmbeddingBackendCache } from "../persistence/embeddings/embedding-backend.js";
 import { initializeProviders } from "../providers/registry.js";
-import { refreshAuthenticatedApiRateLimit } from "../runtime/middleware/rate-limiter.js";
 import {
   publishAvatarChanged,
   publishConfigChanged,
@@ -195,7 +194,6 @@ export class ConfigWatcher {
           const changed = await this.refreshConfigFromSources();
           if (changed) {
             evictConversationsForReload();
-            refreshAuthenticatedApiRateLimit();
             publishConfigChanged();
             const nextMcpGlobalMax = getConfig().tools.mcpGlobalMaxTools;
             if (prevMcpGlobalMax !== nextMcpGlobalMax) {

@@ -70,19 +70,10 @@ import { httpError, type HttpErrorCode } from "./http-errors.js";
 import { HttpRouter } from "./http-router.js";
 import type { RuntimeHttpServerOptions } from "./http-types.js";
 import {
-  extractBearerToken,
   isLoopbackHost,
   isPrivateNetworkOrigin,
   isPrivateNetworkPeer,
 } from "./middleware/auth.js";
-import {
-  extractClientIp,
-  ipRateLimiter,
-  isRateLimitExemptEndpoint,
-  rateLimitHeaders,
-  rateLimitResponse,
-  selectAuthenticatedRateLimiter,
-} from "./middleware/rate-limiter.js";
 import { withRequestLogging } from "./middleware/request-logger.js";
 import {
   cloneRequestWithBody,
@@ -927,58 +918,6 @@ export class RuntimeHttpServer {
     const endpoint = routerEndpointForPath(path);
     if (endpoint === null) {
       return httpError("NOT_FOUND", "Not found", 404);
-    }
-
-    // Per-client-IP rate limiting for /v1/* endpoints. Authenticated requests
-    // get a higher limit; unauthenticated requests get a lower limit to reduce
-    // abuse surface. We key on IP rather than bearer token because the gateway
-    // uses a single shared token for all proxied requests, which would collapse
-    // all users into one bucket.
-    // Shareable app pages are outside the limiter, as is local Docker dev with
-    // HTTP auth disabled.
-    if (path.startsWith("/v1/") && !isHttpAuthDisabled()) {
-      const clientIp = extractClientIp(req, server);
-      const token = extractBearerToken(req);
-      // Authenticated loopback clients (desktop app, CLI — anything on the
-      // daemon's own host) get a higher budget than remote clients.
-      const limiter = token
-        ? selectAuthenticatedRateLimiter(clientIp)
-        : ipRateLimiter;
-      const limiterKind = token ? "authenticated" : "unauthenticated";
-      // Streaming (SSE) and liveness endpoints bypass the per-minute request
-      // limiter — see isRateLimitExemptEndpoint. `result` stays null for them,
-      // so no 429 is returned and no rate-limit headers are attached.
-      const result = isRateLimitExemptEndpoint(endpoint)
-        ? null
-        : limiter.check(clientIp, path);
-      if (result && !result.allowed) {
-        return rateLimitResponse(result, {
-          clientIp,
-          deniedPath: path,
-          limiterKind: limiterKind as "authenticated" | "unauthenticated",
-          pathCounts: limiter.getRecentPathCounts(clientIp),
-        });
-      }
-      const routerResponse = await this.router.dispatch(
-        endpoint,
-        req,
-        url,
-        server,
-        authContext,
-      );
-      const response =
-        routerResponse ?? httpError("NOT_FOUND", "Not found", 404);
-      const headers = new Headers(response.headers);
-      if (result) {
-        for (const [k, v] of Object.entries(rateLimitHeaders(result))) {
-          headers.set(k, v);
-        }
-      }
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-      });
     }
 
     const routerResponse = await this.router.dispatch(
