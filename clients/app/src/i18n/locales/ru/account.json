@@ -104,7 +104,7 @@
     "remoteWithHost": "Удалённый · {host}",
     "removeFromDevice": "Убрать с этого устройства…",
     "unnamedAssistant": "ассистент",
-    "hatchAssistant": "TODO",
+    "hatchAssistant": "Создай нового ассистента",
     "localAssistant": "На этом компьютере",
     "cloudHosted": "Облачный",
     "cloudHostedWithHost": "В облаке · {host}",

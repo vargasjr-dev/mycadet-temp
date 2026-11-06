@@ -88,6 +88,10 @@ async function staticResponse(
   return new Response(file, { headers });
 }
 
+function notFound(): Response {
+  return new Response(null, { status: 404 });
+}
+
 function redirect(location: string): Response {
   return new Response(null, { status: 302, headers: { Location: location } });
 }
@@ -313,14 +317,10 @@ type AppServerHandle = {
  * the authority; a pass falls through), the static SPA surface, and the
  * streaming gateway proxy for everything else. `requestIP` is threaded in
  * because Bun exposes the peer address off the server handle, not the
- * Request; the live child passes Bun's real handle per call, and
- * handler-level tests pin the peer with the factory-level stub.
+ * Request; handler-level tests omit it.
  */
 export function createAppServerHandler(
   spec: AppServerSpec,
-  options?: {
-    requestIP: (request: Request) => string | null;
-  },
 ): (request: Request, server?: AppServerHandle) => Promise<Response> {
   const allowedOrigins = appOrigins(spec.config);
   return async function fetch(request, server) {
@@ -362,14 +362,12 @@ export function createAppServerHandler(
     const static_ = await serveStatic(request, spec);
     if (static_) return static_;
 
-    const peer =
-      server?.requestIP(request)?.address ??
-      options?.requestIP(request) ??
-      null;
-    // The catch-all: everything the edge serves but doesn't own rides to the
-    // gateway verbatim (the /web twin's rewrite lives inside the proxy), and
-    // the gateway's router resolves the optional /v1 prefix.
-    return proxyToGateway(request, spec, peer);
+    const peer = server?.requestIP(request)?.address ?? null;
+    if (pathname.startsWith("/assistant")) {
+      return proxyToGateway(request, spec, peer);
+    }
+
+    return notFound();
   };
 }
 

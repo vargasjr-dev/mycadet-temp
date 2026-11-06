@@ -329,14 +329,16 @@ function makeHandlerFixture(
 const EDGE_PEER_IP = "198.51.100.7";
 
 /**
- * The handler under test, with the edge's peer address pinned (the live
- * server threads `server.requestIP` here; direct handler tests pass a
- * stub).
+ * The handler under test, with the edge's peer address pinned: the handler
+ * reads the peer off the server handle's `requestIP`, so direct handler
+ * tests pass a stub handle (the live child passes Bun's real server).
  */
 function handlerFor(fixture: HandlerFixture) {
-  return createAppServerHandler(fixture.spec, {
-    requestIP: () => EDGE_PEER_IP,
-  });
+  const handler = createAppServerHandler(fixture.spec);
+  const server = {
+    requestIP: () => ({ address: EDGE_PEER_IP }),
+  } as unknown as Parameters<ReturnType<typeof createAppServerHandler>>[1];
+  return (request: Request) => handler(request, server);
 }
 
 /** Capture the proxy's upstream request and answer a canned response. */
@@ -390,79 +392,110 @@ async function readBody(response: Response): Promise<string> {
 describe("the app server's routes", () => {
   pinProductionEnvironment();
 
-  test("the edge no longer judges vocabulary — sensitive routes ride to the gateway's own gate", async () => {
+  test("blocks the sensitive gateway routes in both spellings at both prefixes", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
-    const gateway = stubGatewayFetch();
-    // The old edge denylist is gone: the edge forwards everything it serves
-    // but doesn't own, and the gateway's own auth gates the sensitive rows.
-    for (const path of [
-      "/v1/pair",
-      "/pair",
-      "/v1/shared/invites/redeem",
-      "/v1/remote-web/pairing-requests/approve",
-    ]) {
-      const response = await handler(
-        new Request(`http://127.0.0.1:7840${path}`, { method: "POST" }),
-      );
-      expect(response.status).toBe(200);
+    for (const route of ["/v1/pair", "/pair", "/v1/devices", "/devices"]) {
+      for (const path of [
+        route,
+        `${route}/`,
+        `/web${route}`,
+        `/web${route}/`,
+      ]) {
+        const response = await handler(
+          new Request(`http://127.0.0.1:7840${path}`),
+        );
+        expect(response.status).toBe(404);
+      }
     }
-    expect(gateway.calls).toHaveLength(4);
   });
 
-  test("proxies the versioned gateway API surface verbatim", async () => {
+  test("blocks the invite redemption and remote-web pairing helpers too", async () => {
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    for (const path of [
+      "/v1/shared/invites/redeem",
+      "/v1/remote-web/pairing-requests/approve",
+      "/web/v1/shared/invites/redeem",
+      "/web/v1/remote-web/pairing-verification",
+    ]) {
+      const response = await handler(
+        new Request(`http://127.0.0.1:7840${path}`),
+      );
+      expect(response.status).toBe(404);
+    }
+  });
+
+  test("the sensitive routes 404 before any dispatch could see them", async () => {
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    // /v1/pair is a real route at the gateway; the edge answers 404 before
+    // any dispatch could ever see it.
+    const response = await handler(
+      new Request("http://127.0.0.1:7840/v1/pair", { method: "POST" }),
+    );
+    expect(response.status).toBe(404);
+  });
+
+  test("the gateway's versioned API surface is no longer the edge's business", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
     const response = await handler(
       new Request("http://127.0.0.1:7840/v1/conversations?limit=5"),
     );
-    expect(response.status).toBe(200);
-    expect(await readBody(response)).toBe("gateway says hi");
-    expect(gateway.calls).toHaveLength(1);
-    expect(gateway.calls[0]!.url).toBe(
-      "http://127.0.0.1:7830/v1/conversations?limit=5",
-    );
+    expect(response.status).toBe(404);
+    expect(gateway.calls).toHaveLength(0);
   });
 
-  test("healthz answers locally; other probes and webhooks ride to the gateway", async () => {
+  test("answers its own liveness locally and leaves the gateway-only surfaces alone", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
+    // The app server answers its own liveness locally — the gateway being
+    // down must not read as the app server being dead.
     const health = await handler(new Request("http://127.0.0.1:7840/healthz"));
-    expect(health.status).toBe(200);
+    expect(await health.json()).toEqual({ ok: true });
+    // Readiness and webhook callbacks are the gateway's own ports to answer;
+    // the edge no longer fronts them.
     const ready = await handler(new Request("http://127.0.0.1:7840/readyz"));
-    expect(ready.status).toBe(200);
-    await handler(
+    expect(ready.status).toBe(404);
+    const webhook = await handler(
       new Request("http://127.0.0.1:7840/webhooks/telegram", {
         method: "POST",
         body: "{}",
       }),
     );
-    expect(gateway.calls.map((call) => new URL(call.url).pathname)).toEqual([
-      "/readyz",
-      "/webhooks/telegram",
-    ]);
+    expect(webhook.status).toBe(404);
+    expect(gateway.calls).toHaveLength(0);
   });
 
-  test("stamps the edge-observed client ip from the rightmost X-Forwarded-For entry", async () => {
+  test("the /assistant tail proxies verbatim, stamping the rightmost X-Forwarded-For entry", async () => {
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    const gateway = stubGatewayFetch();
+    // The /assistant tail is the edge's one remaining gateway-facing HTTP
+    // surface: the path forwards verbatim and the client ip rides along.
+    await handler(
+      new Request("http://127.0.0.1:7840/assistant-upstream/things", {
+        headers: { "x-forwarded-for": "203.0.113.9, 198.51.100.7" },
+      }),
+    );
+    expect(new URL(gateway.calls[0]!.url).pathname).toBe(
+      "/assistant-upstream/things",
+    );
+    expect(gateway.calls[0]!.headers.get("x-cadet-client-ip")).toBe(
+      "198.51.100.7",
+    );
+  });
+
+  test("the tail's proxy falls back to the raw peer when no X-Forwarded-For is set", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
     await handler(
-      new Request("http://127.0.0.1:7840/v1/things", {
-        headers: { "x-forwarded-for": "203.0.113.9, 198.51.100.7" },
-      }),
+      new Request("http://127.0.0.1:7840/assistant-upstream/things"),
     );
-    const headers = gateway.calls[0]!.headers;
-    expect(headers.get("x-cadet-client-ip")).toBe("198.51.100.7");
-  });
-
-  test("falls back to the raw peer when no X-Forwarded-For is set", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    const gateway = stubGatewayFetch();
-    await handler(new Request("http://127.0.0.1:7840/v1/things"));
     expect(gateway.calls[0]!.headers.get("x-cadet-client-ip")).toBe(
       EDGE_PEER_IP,
     );
@@ -473,7 +506,7 @@ describe("the app server's routes", () => {
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
     await handler(
-      new Request("http://127.0.0.1:7840/v1/things", {
+      new Request("http://127.0.0.1:7840/assistant-upstream/things", {
         headers: {
           host: "camping.ngrok-free.dev",
           connection: "keep-alive",
@@ -505,7 +538,9 @@ describe("the app server's routes", () => {
         }),
     );
     const response = await handler(
-      new Request("http://127.0.0.1:7840/v1/things"),
+      new Request(
+        "http://127.0.0.1:7840/assistant-upstream/things",
+      ),
     );
     expect(response.status).toBe(201);
     expect(response.headers.get("content-length")).toBeNull();
@@ -526,7 +561,7 @@ describe("the app server's routes", () => {
       return new Response(null, { status: 204 });
     }) as unknown as typeof fetch;
     const response = await handler(
-      new Request("http://127.0.0.1:7840/v1/messages", {
+      new Request("http://127.0.0.1:7840/assistant-upstream/messages", {
         method: "POST",
         body: "the message body",
         headers: { "content-type": "text/plain" },
@@ -536,26 +571,30 @@ describe("the app server's routes", () => {
     expect(received).toBe("the message body");
   });
 
-  test("the /web twin forwards the iframe namespace's remainder to the /v1 route", async () => {
+  test("the /web twin's non-assistant remainder 404s — no /v1 translation", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    await handler(new Request("http://127.0.0.1:7840/web/channels"));
-    await handler(new Request("http://127.0.0.1:7840/web/v1/channels"));
-    expect(gateway.calls.map((call) => new URL(call.url).pathname)).toEqual([
-      "/v1/channels",
-      "/v1/channels",
-    ]);
+    const plain = await handler(
+      new Request("http://127.0.0.1:7840/web/channels"),
+    );
+    expect(plain.status).toBe(404);
+    const versioned = await handler(
+      new Request("http://127.0.0.1:7840/web/v1/channels"),
+    );
+    expect(versioned.status).toBe(404);
+    expect(gateway.calls).toHaveLength(0);
   });
 
-  test("the root catch-all forwards unversioned paths verbatim — no rewrite", async () => {
+  test("unversioned, non-assistant paths have no catch-all to hide behind", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    // The gateway's router resolves the optional /v1 prefix (P7); the edge
-    // never enumerates gateway vocabulary.
-    await handler(new Request("http://127.0.0.1:7840/channels"));
-    expect(new URL(gateway.calls[0]!.url).pathname).toBe("/channels");
+    const response = await handler(
+      new Request("http://127.0.0.1:7840/channels"),
+    );
+    expect(response.status).toBe(404);
+    expect(gateway.calls).toHaveLength(0);
   });
 
   test("serves the app shell as the outer shell from the origin root", async () => {
@@ -622,14 +661,23 @@ describe("the app server's routes", () => {
     );
   });
 
-  test("unknown /web/assistant paths fall back to the injected web document", async () => {
+  test("the injected documents answer only where their namespace serves them", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
-    const fallback = await handler(
+    // The app index has no namespace of its own to hit directly.
+    const appIndex = await handler(
+      new Request("http://127.0.0.1:7840/__cadet-app-index.html"),
+    );
+    expect(appIndex.status).toBe(404);
+    // The remote index sits inside the /web/assistant mount, so a direct
+    // hit falls through to the mount's own document.
+    const remoteIndex = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__remote-index.html"),
     );
-    expect(fallback.status).toBe(200);
-    expect(await readBody(fallback)).toContain("__CADET_CONFIG__");
+    expect(remoteIndex.status).toBe(200);
+    const body = await readBody(remoteIndex);
+    expect(body).toContain("__CADET_CONFIG__");
+    expect(body).toContain("web-shell");
   });
 
   test("iframes the web UI from the distinct /web/assistant namespace", async () => {
@@ -735,7 +783,7 @@ describe("the app server's routes", () => {
         }),
     );
     const proxied = await handler(
-      new Request("http://127.0.0.1:7840/v1/page", {
+      new Request("http://127.0.0.1:7840/assistant-upstream/page", {
         headers: { "accept-encoding": "gzip" },
       }),
     );
@@ -814,9 +862,7 @@ describe("the app server's routes", () => {
   test("websocket upgrades relay to the gateway through the server handle", async () => {
     const fixture = makeHandlerFixture();
     const upgraded: Array<{ data: unknown }> = [];
-    const handler = createAppServerHandler(fixture.spec, {
-      requestIP: () => EDGE_PEER_IP,
-    });
+    const handler = createAppServerHandler(fixture.spec);
     // A stub server handle: the live child passes Bun's real Server.
     const server = {
       requestIP: () => ({ address: EDGE_PEER_IP }),
