@@ -235,12 +235,27 @@ const mockedFetch = (async (input: Parameters<typeof fetch>[0]) => {
 }) as typeof fetch;
 globalThis.fetch = mockedFetch as typeof fetch;
 
+// The preload (packages/local-mode/bunfig.toml → test-isolation.ts) runs
+// before every test file and snapshots the untouched real modules, so this
+// file can re-register them regardless of which sibling registrations the
+// scheduler has landed so far.
+const preloadGlobals = globalThis as typeof globalThis & {
+  __cadetRealProcess?: typeof import("../process");
+  __cadetRealDaemonReadiness?: typeof import("../daemon-readiness");
+};
+const reals = {
+  process: preloadGlobals.__cadetRealProcess!,
+  daemonReadiness: preloadGlobals.__cadetRealDaemonReadiness!,
+};
+
 // The registrations must land before the dynamic import below links the
 // lifecycle's graph: mock.module does not propagate to a module that already
 // linked, so whatever is registered at load time is what the whole graph
-// sees for this file's run. No sibling registers these at load time (the
-// sweep moved them all into per-test beforeEach hooks), so these are the
-// last word for this process.
+// sees for this file's run. ../process and ../daemon-readiness are
+// re-registered from the preload's snapshots (the untouched reals — a
+// sibling's per-test registration of them can be the live entry while this
+// file loads, because the scheduler interleaves files). These are the last
+// word for this process.
 mock.module("node:child_process", () => ({
   ...realChildProcess,
   spawn: fakeSpawn,
@@ -251,12 +266,16 @@ mock.module("node:net", () => ({
   Socket: NeverConnectingSocket,
   createServer: () => new AlwaysBindingServer(),
 }));
+mock.module("../process", () => reals.process);
+mock.module("../daemon-readiness", () => reals.daemonReadiness);
 
 afterAll(() => {
   process.kill = realKill;
   globalThis.fetch = realFetch;
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:net", () => realNet);
+  mock.module("../process", () => reals.process);
+  mock.module("../daemon-readiness", () => reals.daemonReadiness);
 });
 
 // The journal and the fake process table are per-test state.
