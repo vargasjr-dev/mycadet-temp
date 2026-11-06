@@ -56,14 +56,14 @@ export async function nativeSwitchToOrigin(url: string): Promise<boolean> {
 /**
  * Switch the shell to an origin and load a route atomically. A separate
  * bridge method preserves the skew fallback when an older shell lacks path
- * support.
+ * support. The origin is the page's own — the single-origin shell.
  */
-export async function nativeSwitchToOriginPath(
-  url: string,
-  path: string,
-): Promise<boolean> {
+export async function nativeSwitchToOriginPath(path: string): Promise<boolean> {
   try {
-    await SelfHostedServers.switchToPath({ url, path });
+    await SelfHostedServers.switchToPath({
+      url: window.location.origin,
+      path,
+    });
     return true;
   } catch (err) {
     console.debug("[self-hosted-servers] switchToPath unavailable:", err);

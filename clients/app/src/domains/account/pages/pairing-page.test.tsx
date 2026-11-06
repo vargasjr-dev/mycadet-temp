@@ -15,14 +15,7 @@ import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-w
 
 import type { RemoteWebPairingTokenResult } from "@app/lib/auth/remote-gateway-session";
 
-let cloudRemote = false;
-const nativeSwitchToOriginPathMock = mock(
-  async (_url: string | null, _path: string) => false,
-);
-
-mock.module("@app/lib/runtime-mode", () => ({
-  isLocalClient: () => !cloudRemote,
-}));
+const nativeSwitchToOriginPathMock = mock(async (_path: string) => false);
 
 mock.module("@app/runtime/self-hosted-servers", () => ({
   nativeSwitchToOriginPath: nativeSwitchToOriginPathMock,
@@ -72,7 +65,6 @@ const { PairingPage } = await import("@app/domains/account/pages/pairing-page");
 
 afterEach(() => {
   cleanup();
-  cloudRemote = false;
   exchangeRemoteWebPairingTokenMock.mockClear();
   activateRemoteGatewaySessionMock.mockClear();
   nativeSwitchToOriginPathMock.mockReset();
@@ -80,21 +72,6 @@ afterEach(() => {
 });
 
 describe("PairingPage", () => {
-  test("renders NotFound on a cloud remote", () => {
-    cloudRemote = true;
-
-    render(
-      <MemoryRouter
-        initialEntries={["/account/pair?deviceCode=device-1&userCode=ABCD"]}
-      >
-        <PairingPage />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText("Page not found")).not.toBeNull();
-    expect(exchangeRemoteWebPairingTokenMock).not.toHaveBeenCalled();
-  });
-
   test("polls for a token in remote-gateway mode", async () => {
     render(
       <MemoryRouter
@@ -136,7 +113,6 @@ describe("PairingPage", () => {
 
       await waitFor(() => {
         expect(nativeSwitchToOriginPathMock).toHaveBeenCalledWith(
-          window.location.origin,
           "/account/select-assistant",
         );
       });

@@ -61,8 +61,6 @@ export interface AppServerPaths {
   logPath: string;
 }
 
-/** The dir pre-rename installs recorded state under (read as a fallback). */
-
 export function getAppServerPaths(): AppServerPaths {
   const dir = join(resolveDataDir(), "app-server");
   return {

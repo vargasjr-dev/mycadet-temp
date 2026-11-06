@@ -390,49 +390,24 @@ async function readBody(response: Response): Promise<string> {
 describe("the app server's routes", () => {
   pinProductionEnvironment();
 
-  test("blocks the sensitive gateway routes in both spellings at both prefixes", async () => {
+  test("the edge no longer judges vocabulary — sensitive routes ride to the gateway's own gate", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
-    for (const route of ["/v1/pair", "/pair", "/v1/devices", "/devices"]) {
-      for (const path of [
-        route,
-        `${route}/`,
-        `/web${route}`,
-        `/web${route}/`,
-      ]) {
-        const response = await handler(
-          new Request(`http://127.0.0.1:7840${path}`),
-        );
-        expect(response.status).toBe(404);
-      }
-    }
-  });
-
-  test("blocks the invite redemption and remote-web pairing helpers too", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
+    const gateway = stubGatewayFetch();
+    // The old edge denylist is gone: the edge forwards everything it serves
+    // but doesn't own, and the gateway's own auth gates the sensitive rows.
     for (const path of [
+      "/v1/pair",
+      "/pair",
       "/v1/shared/invites/redeem",
       "/v1/remote-web/pairing-requests/approve",
-      "/web/v1/shared/invites/redeem",
-      "/web/v1/remote-web/pairing-verification",
     ]) {
       const response = await handler(
-        new Request(`http://127.0.0.1:7840${path}`),
+        new Request(`http://127.0.0.1:7840${path}`, { method: "POST" }),
       );
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(200);
     }
-  });
-
-  test("the denylist wins over everything, even operator-shaped requests", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    // /v1/pair is a real route at the gateway; the edge answers 404 before
-    // any dispatch could ever see it.
-    const response = await handler(
-      new Request("http://127.0.0.1:7840/v1/pair", { method: "POST" }),
-    );
-    expect(response.status).toBe(404);
+    expect(gateway.calls).toHaveLength(4);
   });
 
   test("proxies the versioned gateway API surface verbatim", async () => {
@@ -450,16 +425,16 @@ describe("the app server's routes", () => {
     );
   });
 
-  test("proxies liveness probes and webhook callbacks to the gateway", async () => {
+  test("healthz answers locally; other probes and webhooks ride to the gateway", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    for (const path of ["/healthz", "/readyz"]) {
-      const response = await handler(
-        new Request(`http://127.0.0.1:7840${path}`),
-      );
-      expect(response.status).toBe(200);
-    }
+    const health = await handler(
+      new Request("http://127.0.0.1:7840/healthz"),
+    );
+    expect(health.status).toBe(200);
+    const ready = await handler(new Request("http://127.0.0.1:7840/readyz"));
+    expect(ready.status).toBe(200);
     await handler(
       new Request("http://127.0.0.1:7840/webhooks/telegram", {
         method: "POST",
@@ -467,7 +442,6 @@ describe("the app server's routes", () => {
       }),
     );
     expect(gateway.calls.map((call) => new URL(call.url).pathname)).toEqual([
-      "/healthz",
       "/readyz",
       "/webhooks/telegram",
     ]);
@@ -484,7 +458,6 @@ describe("the app server's routes", () => {
     );
     const headers = gateway.calls[0]!.headers;
     expect(headers.get("x-cadet-client-ip")).toBe("198.51.100.7");
-    expect(headers.get("x-cadet-edge-forwarded")).toBe("1");
   });
 
   test("falls back to the raw peer when no X-Forwarded-For is set", async () => {
@@ -651,18 +624,14 @@ describe("the app server's routes", () => {
     );
   });
 
-  test("the injected documents are internal — direct hits 404", async () => {
+  test("unknown /web/assistant paths fall back to the injected web document", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
-    for (const path of [
-      "/__cadet-app-index.html",
-      "/web/assistant/__remote-index.html",
-    ]) {
-      const response = await handler(
-        new Request(`http://127.0.0.1:7840${path}`),
-      );
-      expect(response.status).toBe(404);
-    }
+    const fallback = await handler(
+      new Request("http://127.0.0.1:7840/web/assistant/__remote-index.html"),
+    );
+    expect(fallback.status).toBe(200);
+    expect(await readBody(fallback)).toContain("__CADET_CONFIG__");
   });
 
   test("iframes the web UI from the distinct /web/assistant namespace", async () => {

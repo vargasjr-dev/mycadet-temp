@@ -4,13 +4,11 @@ import { useLocation, useNavigate } from "react-router";
 
 import { Button } from "@mycadet/design-library/components/button";
 
-import { NotFound } from "@app/components/not-found";
 import {
   activateRemoteGatewaySession,
   exchangeRemoteWebPairingToken,
   RemoteWebPairingError,
 } from "@app/lib/auth/remote-gateway-session";
-import { isLocalClient } from "@app/lib/runtime-mode";
 import { nativeSwitchToOriginPath } from "@app/runtime/self-hosted-servers";
 import { sanitizeReturnTo } from "@app/utils/return-to";
 import { routes } from "@app/utils/routes";
@@ -120,7 +118,6 @@ export function PairingPage() {
   const { t } = useTranslation("account");
   const location = useLocation();
   const navigate = useNavigate();
-  const enabled = isLocalClient();
   const returnTo = useMemo(() => {
     const value = new URLSearchParams(location.search).get("returnTo");
     return sanitizeReturnTo(value, routes.assistant);
@@ -158,9 +155,6 @@ export function PairingPage() {
   }, [codeDraft]);
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
     if (!pairing?.deviceCode) {
       return;
     }
@@ -226,18 +220,11 @@ export function PairingPage() {
         clearTimeout(timeout);
       }
     };
-  }, [enabled, pairing?.deviceCode, navigate, returnTo]);
+  }, [pairing?.deviceCode, navigate, returnTo]);
 
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(
-      window.location.origin,
-      routes.account.selectAssistant,
-    );
+    void nativeSwitchToOriginPath(routes.account.selectAssistant);
   }, []);
-
-  if (!enabled) {
-    return <NotFound />;
-  }
 
   const copy = statusCopy(state);
 
