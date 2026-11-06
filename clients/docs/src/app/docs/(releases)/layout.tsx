@@ -48,7 +48,7 @@ export default async function ReleasesLayout({
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image
-                    src="/docs/cadet-logo.svg"
+                    src="/docs/cadet-mark.svg"
                     alt="Cadet"
                     width={26}
                     height={26}
