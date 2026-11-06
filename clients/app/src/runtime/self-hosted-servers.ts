@@ -54,9 +54,9 @@ export async function nativeSwitchToOrigin(url: string): Promise<boolean> {
 }
 
 /**
- * Switch the shell to an origin and load a route atomically. A separate
- * bridge method preserves the skew fallback when an older shell lacks path
- * support.
+ * Switch the shell to a remembered origin and load a route atomically. A
+ * separate bridge method preserves the skew fallback when an older shell
+ * lacks path support.
  */
 export async function nativeSwitchToOriginPath(
   url: string,

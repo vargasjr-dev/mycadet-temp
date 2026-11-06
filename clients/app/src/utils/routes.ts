@@ -19,6 +19,7 @@ export const routes = {
     login: "/account/login",
     selectAssistant: "/account/select-assistant",
     signup: "/account/signup",
+    pair: "/account/pair",
     providerSignup: "/account/provider/signup",
     providerCallback: "/account/provider/callback",
     oauth: {

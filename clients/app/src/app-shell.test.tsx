@@ -142,7 +142,6 @@ test("host navigation updates the active frame without another API lookup", asyn
 });
 
 for (const [status, message] of [
-  [401, "Please sign in to continue."],
   [409, "Your assistant isn't ready."],
   [410, "This assistant is unavailable."],
   [200, "We couldn't reach your assistant"],
@@ -154,6 +153,15 @@ for (const [status, message] of [
     expect(screen.queryByTitle("Assistant")).toBeNull();
   });
 }
+
+test("an unauthenticated session pairs at the app level", async () => {
+  respond(async () => new Response("{}", { status: 401 }));
+  render(<AppShell {...props()} />);
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/pair", { replace: true }),
+  );
+  expect(screen.queryByTitle("Assistant")).toBeNull();
+});
 
 test("wakes a not-ready assistant and mounts it once ready", async () => {
   request

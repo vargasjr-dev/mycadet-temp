@@ -195,5 +195,12 @@
       "connecting": "Connecting to your assistant…",
       "ready": "Ready"
     }
+  },
+  "pairingPage": {
+    "pairingCode": "Pairing code",
+    "pair": "Pair",
+    "expiresAt": "Expires {time}.",
+    "cancel": "Cancel",
+    "enterNewCode": "Enter a new code"
   }
 }

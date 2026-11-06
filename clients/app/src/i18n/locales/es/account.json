@@ -195,5 +195,12 @@
       "connecting": "Conectando con tu asistente…",
       "ready": "Listo"
     }
+  },
+  "pairingPage": {
+    "pairingCode": "Código de vinculación",
+    "pair": "Vincular",
+    "expiresAt": "Caduca {time}.",
+    "cancel": "Cancelar",
+    "enterNewCode": "Introducir un código nuevo"
   }
 }

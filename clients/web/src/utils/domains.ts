@@ -8,8 +8,3 @@ export const WWW_DOMAIN = "www.mycadet.ai";
 export function hostMatchesDomain(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
-
-/** Check if a hostname belongs to the mycadet.ai domain family. */
-export function isCadetDomain(host: string): boolean {
-  return hostMatchesDomain(host, APEX_DOMAIN);
-}

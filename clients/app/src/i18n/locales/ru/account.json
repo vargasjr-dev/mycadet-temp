@@ -195,5 +195,12 @@
       "connecting": "Подключаемся к ассистенту…",
       "ready": "Готово"
     }
+  },
+  "pairingPage": {
+    "pairingCode": "Код сопряжения",
+    "pair": "Подключить",
+    "expiresAt": "Истекает {time}.",
+    "cancel": "Отмена",
+    "enterNewCode": "Ввести новый код"
   }
 }
