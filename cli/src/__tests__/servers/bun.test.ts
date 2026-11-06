@@ -429,9 +429,7 @@ describe("the app server's routes", () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    const health = await handler(
-      new Request("http://127.0.0.1:7840/healthz"),
-    );
+    const health = await handler(new Request("http://127.0.0.1:7840/healthz"));
     expect(health.status).toBe(200);
     const ready = await handler(new Request("http://127.0.0.1:7840/readyz"));
     expect(ready.status).toBe(200);

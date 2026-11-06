@@ -9,7 +9,6 @@ import {
   exchangeRemoteWebPairingToken,
   RemoteWebPairingError,
 } from "@app/lib/auth/remote-gateway-session";
-import { nativeSwitchToOriginPath } from "@app/runtime/self-hosted-servers";
 import { sanitizeReturnTo } from "@app/utils/return-to";
 import { routes } from "@app/utils/routes";
 import { useTranslation } from "@app/i18n";
@@ -223,7 +222,9 @@ export function PairingPage() {
   }, [pairing?.deviceCode, navigate, returnTo]);
 
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(routes.account.selectAssistant);
+    // Single origin: the chooser is an app route on the origin the shell
+    // already serves.
+    navigate(routes.account.selectAssistant, { replace: true });
   }, []);
 
   const copy = statusCopy(state);

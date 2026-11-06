@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 
 // The implementation `@app/lib/auth/remote-gateway-session` re-exports,
 // imported from its owner so the mock below hands the page the production
@@ -14,12 +14,6 @@ import { MemoryRouter } from "react-router";
 import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-web-pairing";
 
 import type { RemoteWebPairingTokenResult } from "@app/lib/auth/remote-gateway-session";
-
-const nativeSwitchToOriginPathMock = mock(async (_path: string) => false);
-
-mock.module("@app/runtime/self-hosted-servers", () => ({
-  nativeSwitchToOriginPath: nativeSwitchToOriginPathMock,
-}));
 
 const exchangeRemoteWebPairingTokenMock = mock(
   async (
@@ -67,8 +61,6 @@ afterEach(() => {
   cleanup();
   exchangeRemoteWebPairingTokenMock.mockClear();
   activateRemoteGatewaySessionMock.mockClear();
-  nativeSwitchToOriginPathMock.mockReset();
-  nativeSwitchToOriginPathMock.mockImplementation(async () => false);
 });
 
 describe("PairingPage", () => {
@@ -90,39 +82,27 @@ describe("PairingPage", () => {
     );
   });
 
-  test("cancel uses the native origin switch when available", async () => {
-    nativeSwitchToOriginPathMock.mockResolvedValueOnce(true);
-    const assignMock = mock((_url: string) => {});
-    const originalAssign = window.location.assign;
-    Object.defineProperty(window.location, "assign", {
-      value: assignMock,
-      configurable: true,
+  test("cancel replaces to the account chooser on the same origin", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/account/pair?deviceCode=device-1&userCode=ABCD"]}
+      >
+        <Routes>
+          <Route path="/account/pair" element={<PairingPage />} />
+          <Route
+            path="/account/select-assistant"
+            element={<div>the chooser</div>}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Waiting for approval")).not.toBeNull();
+    fireEvent.click(screen.getByText("Cancel"));
+
+    await waitFor(() => {
+      expect(screen.getByText("the chooser")).not.toBeNull();
     });
-
-    try {
-      render(
-        <MemoryRouter
-          initialEntries={["/account/pair?deviceCode=device-1&userCode=ABCD"]}
-        >
-          <PairingPage />
-        </MemoryRouter>,
-      );
-
-      expect(await screen.findByText("Waiting for approval")).not.toBeNull();
-      fireEvent.click(screen.getByText("Cancel"));
-
-      await waitFor(() => {
-        expect(nativeSwitchToOriginPathMock).toHaveBeenCalledWith(
-          "/account/select-assistant",
-        );
-      });
-      expect(assignMock).not.toHaveBeenCalled();
-    } finally {
-      Object.defineProperty(window.location, "assign", {
-        value: originalAssign,
-        configurable: true,
-      });
-    }
   });
 
   test("asks for a pairing code when opened without one", () => {

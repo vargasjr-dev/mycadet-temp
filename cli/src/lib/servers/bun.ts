@@ -88,10 +88,6 @@ async function staticResponse(
   return new Response(file, { headers });
 }
 
-function notFound(): Response {
-  return new Response(null, { status: 404 });
-}
-
 function redirect(location: string): Response {
   return new Response(null, { status: 302, headers: { Location: location } });
 }
@@ -367,7 +363,9 @@ export function createAppServerHandler(
     if (static_) return static_;
 
     const peer =
-      server?.requestIP(request)?.address ?? options?.requestIP(request) ?? null;
+      server?.requestIP(request)?.address ??
+      options?.requestIP(request) ??
+      null;
     // The catch-all: everything the edge serves but doesn't own rides to the
     // gateway verbatim (the /web twin's rewrite lives inside the proxy), and
     // the gateway's router resolves the optional /v1 prefix.
