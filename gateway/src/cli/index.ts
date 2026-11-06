@@ -8,6 +8,7 @@
  */
 
 import { runContactsCommand } from "./contacts.js";
+import { runDevicesCommand } from "../http/routes/devices.js";
 import { runPairingCommand } from "./pairing.js";
 
 function printUsage(): void {
@@ -26,6 +27,7 @@ function printUsage(): void {
 
 const args = process.argv.slice(2);
 const command = args[0];
+const opts = args.slice(1);
 
 if (command === "--help" || command === "-h" || !command) {
   printUsage();
@@ -33,12 +35,17 @@ if (command === "--help" || command === "-h" || !command) {
 }
 
 if (command === "contacts") {
-  const code = await runContactsCommand(args.slice(1));
+  const code = await runContactsCommand(opts);
+  process.exit(code);
+}
+
+if (command === "devices") {
+  const code = await runDevicesCommand(opts);
   process.exit(code);
 }
 
 if (command === "pairing") {
-  const code = await runPairingCommand(args.slice(1));
+  const code = await runPairingCommand(opts);
   process.exit(code);
 }
 

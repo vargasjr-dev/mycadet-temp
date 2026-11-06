@@ -1,22 +1,5 @@
 /**
- * The Bun app server's serve half: the request handler (the sensitive-route
- * denylist, the operator dispatch, the static SPA surface, and the streaming
- * gateway proxy), the websocket relay, and the child process that binds
- * 127.0.0.1 and owns the port. The machine-level state and the start/reuse
- * machinery — the server-kind-agnostic primitive — live in `./common.ts`,
- * which launches this module as the detached child.
- *
- * One handler owns the whole surface, in priority order: the sensitive-route
- * denylist (never edge-reachable), the operator dispatch (the same route
- * table the Electron `app://` handler and the vite dev mount serve — the
- * real list and resolution rows replaced the frozen metadata JSON), the
- * static SPA surface (injected indexes, hashed assets, SPA fallbacks), and
- * the streaming gateway proxy for everything else. There is no loopback
- * gate: the server fronts remote browsers through the TLS front, and the
- * operator rows judge credentials from the forwarded headers themselves.
- *
- * The server binds 127.0.0.1 only, and every tunnel agent is pointed at
- * `http://127.0.0.1:<port>` explicitly.
+ * The App Server powered by Bun
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -189,7 +172,6 @@ async function proxyToGateway(
     if (HOP_BY_HOP_HEADERS.has(key.toLowerCase())) return;
     headers.set(key, value);
   });
-  headers.set("X-Cadet-Edge-Forwarded", "1");
   headers.set("X-Cadet-Client-Ip", edgeClientIp(request, peer));
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   const upstream = await fetch(target, {
@@ -474,7 +456,6 @@ function upgradeToGateway(
     }
     headers[key] = value;
   });
-  headers["X-Cadet-Edge-Forwarded"] = "1";
   headers["X-Cadet-Client-Ip"] = edgeClientIp(
     request,
     server.requestIP(request)?.address ?? null,

@@ -5,7 +5,7 @@ import {
   recordRemoteWebPairingVerificationFailure,
   type RemoteWebPairingVerificationRateLimit,
 } from "../../remote-web/pairing-verification-rate-limit-store.js";
-import { enforceLoopbackOnly, errorResponse } from "../loopback-guard.js";
+import { errorResponse } from "../loopback-guard.js";
 import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
 
 const MAX_VERIFICATION_BODY_BYTES = 256;
@@ -41,13 +41,6 @@ export async function handleVerifyRemoteWebPairingChallenge(
   if (req.method !== "POST") {
     return methodNotAllowed("POST");
   }
-
-  const guardError = enforceLoopbackOnly(
-    req,
-    clientIp,
-    "remote-web-pairing-verification",
-  );
-  if (guardError) return guardError;
 
   const rateLimitedBeforeBodyRead =
     checkRemoteWebPairingVerificationRateLimit(clientIp);

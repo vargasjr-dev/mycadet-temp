@@ -324,7 +324,6 @@ const ListChallengeSchema = z.object({
   expiresAtMs: z.number(),
   requesterIp: z.string(),
   requesterUserAgent: z.string().nullable(),
-  viaEdgeProxy: z.boolean(),
   expired: z.boolean(),
 });
 

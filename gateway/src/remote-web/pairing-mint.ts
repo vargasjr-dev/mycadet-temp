@@ -77,7 +77,6 @@ export function mintAndApproveRemoteWebPairingChallenge(
   const challenge = createRemoteWebPairingChallenge(publicBaseUrl, {
     ip: "cli",
     userAgent: null,
-    viaEdgeProxy: false,
   });
 
   const approved = approveRemoteWebPairingChallenge(challenge.userCode);

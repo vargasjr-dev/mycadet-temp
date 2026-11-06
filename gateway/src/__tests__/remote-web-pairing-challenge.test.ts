@@ -124,7 +124,6 @@ describe("remote web pairing challenge", () => {
         host: "paired.example.com",
       }),
       REMOTE_IP,
-      LOOPBACK_IP,
     );
 
     expect(res.status).toBe(200);
@@ -152,7 +151,6 @@ describe("remote web pairing challenge", () => {
         host: "paired.example.com",
       }),
       REMOTE_IP,
-      REMOTE_IP,
     );
 
     expect(res.status).toBe(403);
@@ -165,7 +163,6 @@ describe("remote web pairing challenge", () => {
         host: "paired.example.com",
       }),
       LOOPBACK_IP,
-      REMOTE_IP,
     );
 
     expect(res.status).toBe(403);
@@ -236,7 +233,6 @@ describe("remote web pairing challenge", () => {
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
     expect(record?.requesterUserAgent).toBe("PairBrowser/1.0");
-    expect(record?.viaEdgeProxy).toBe(false);
     expect(record?.userCode).toBe(body.userCode);
     expect(record?.id).toBeTruthy();
   });
@@ -249,20 +245,17 @@ describe("remote web pairing challenge", () => {
         host: "paired.example.com",
       }),
       LOOPBACK_IP,
-      LOOPBACK_IP,
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as { userCode: string };
 
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.requesterIp).toBe(REMOTE_IP);
-    expect(record?.viaEdgeProxy).toBe(true);
   });
 
   test("falls back to the peer ip when the edge stamps no client ip", async () => {
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({ edgeForwarded: true, host: "paired.example.com" }),
-      LOOPBACK_IP,
       LOOPBACK_IP,
     );
     expect(res.status).toBe(200);
@@ -270,7 +263,6 @@ describe("remote web pairing challenge", () => {
 
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
-    expect(record?.viaEdgeProxy).toBe(true);
   });
 
   test("ignores a forged client-ip header on direct loopback mints", async () => {
@@ -285,7 +277,6 @@ describe("remote web pairing challenge", () => {
 
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
-    expect(record?.viaEdgeProxy).toBe(false);
   });
 
   test("self-sources the recorded ingress url on a direct loopback mint", async () => {
@@ -315,7 +306,6 @@ describe("remote web pairing challenge", () => {
         body: JSON.stringify({}),
       }),
       REMOTE_IP,
-      LOOPBACK_IP,
     );
 
     expect(res.status).toBe(200);
@@ -370,7 +360,6 @@ describe("remote web pairing request list/approve/deny", () => {
     const second = createRemoteWebPairingChallenge(PUBLIC_BASE_URL, {
       ip: "198.51.100.7",
       userAgent: null,
-      viaEdgeProxy: false,
     });
     now = 3_000;
     const approved = createRemoteWebPairingChallenge(
@@ -398,11 +387,9 @@ describe("remote web pairing request list/approve/deny", () => {
       expiresAt: new Date(2_000 + 600_000).toISOString(),
       requesterIp: "198.51.100.7",
       requesterUserAgent: null,
-      viaEdgeProxy: false,
     });
     expect(requests[1]?.requesterIp).toBe(REMOTE_IP);
     expect(requests[1]?.requesterUserAgent).toBe("PairBrowser/1.0");
-    expect(requests[1]?.viaEdgeProxy).toBe(true);
 
     now = 1_000 + 600_000;
     expect(

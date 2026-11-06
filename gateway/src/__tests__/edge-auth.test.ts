@@ -75,9 +75,9 @@ const { actorTokenRecordHash, __resetLastUsedDebounceForTests } =
 
 const PLATFORM_USER_ID = "user-abc-123";
 
-function makeMiddleware(trustProxy = false) {
+function makeMiddleware() {
   const rl = new AuthRateLimiter();
-  return createAuthMiddleware(rl, () => "1.2.3.4", trustProxy);
+  return createAuthMiddleware(rl, () => "1.2.3.4");
 }
 
 function makeReq(headers: Record<string, string> = {}): Request {
@@ -169,7 +169,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
 
   test("uses platform header check before tokenless loopback fallback", async () => {
     const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(makeReq(), makeLoopbackServer());
+    const res = await requireEdgeAuth(makeReq());
     expect(res?.status).toBe(401);
     expect(mockReadCredential).not.toHaveBeenCalled();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -225,7 +225,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH alone is insufficient", () => {
 describe("requireEdgeAuth — JWT mode", () => {
   test("falls back to loopback when Authorization header is absent", async () => {
     const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(makeReq(), makeLoopbackServer());
+    const res = await requireEdgeAuth(makeReq());
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
   });
@@ -234,7 +234,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ "x-cadet-edge-forwarded": "1" }),
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -260,7 +259,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ authorization: "Bearer good.jwt.here" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).toHaveBeenCalledWith("good.jwt.here");
@@ -280,7 +278,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ authorization: "Bearer bad.jwt.here" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -289,7 +286,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ authorization: "Basic not-a-bearer" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -336,11 +332,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
 
   test("uses platform header check before tokenless loopback fallback", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(
-      makeReq(),
-      "ingress.write",
-      makeLoopbackServer(),
-    );
+    const res = await requireEdgeAuthWithScope(makeReq(), "ingress.write");
     expect(res?.status).toBe(401);
     expect(mockReadCredential).not.toHaveBeenCalled();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -356,11 +348,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
 describe("requireEdgeAuthWithScope — JWT mode", () => {
   test("falls back to loopback when Authorization header is absent", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(
-      makeReq(),
-      "chat.write",
-      makeLoopbackServer(),
-    );
+    const res = await requireEdgeAuthWithScope(makeReq(), "chat.write");
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
   });
@@ -370,7 +358,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
     const res = await requireEdgeAuthWithScope(
       makeReq({ "x-cadet-edge-forwarded": "1" }),
       "settings.write",
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -405,7 +392,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
     const res = await requireEdgeAuthWithScope(
       makeReq({ authorization: "Bearer good.jwt.here" }),
       "ingress.write",
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -416,7 +402,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
     const res = await requireEdgeAuthWithScope(
       makeReq({ authorization: "Bearer bad.jwt.here" }),
       "chat.write",
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -426,7 +411,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
     const res = await requireEdgeAuthWithScope(
       makeReq({ authorization: "Basic not-a-bearer" }),
       "chat.write",
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -493,7 +477,6 @@ describe("edge auth refuses a single-route grant", () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ authorization: "Bearer proxy.grant" }),
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
   });
@@ -520,7 +503,6 @@ describe("edge auth refuses a single-route grant", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ authorization: "Bearer proxy.grant" }),
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
   });
@@ -603,25 +585,23 @@ describe("edge auth refuses a single-route grant", () => {
 
 describe("requireEdgeAuth — trustProxy loopback fallback", () => {
   test("trustProxy=true: proxied remote caller (XFF non-loopback) is NOT granted the fallback → 401", async () => {
-    const { requireEdgeAuth } = makeMiddleware(true);
+    const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ "x-forwarded-for": "203.0.113.5" }),
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
   });
 
   test("trustProxy=true: direct-local caller (no XFF, loopback socket) still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware(true);
-    const res = await requireEdgeAuth(makeReq(), makeLoopbackServer());
+    const { requireEdgeAuth } = makeMiddleware();
+    const res = await requireEdgeAuth(makeReq());
     expect(res).toBeNull();
   });
 
   test("trustProxy=true: caller proxied from localhost (XFF=127.0.0.1) still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware(true);
+    const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ "x-forwarded-for": "127.0.0.1" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -629,19 +609,17 @@ describe("requireEdgeAuth — trustProxy loopback fallback", () => {
   test("trustProxy=true: direct non-loopback peer cannot spoof XFF=127.0.0.1 → 401", async () => {
     // Raw socket peer is NOT loopback (e.g. gateway port exposed directly), so
     // X-Forwarded-For is not trusted and the fallback is refused.
-    const { requireEdgeAuth } = makeMiddleware(true);
+    const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ "x-forwarded-for": "127.0.0.1" }),
-      makeLoopbackServer("203.0.113.9"),
     );
     expect(res?.status).toBe(401);
   });
 
   test("trustProxy=false (default): X-Forwarded-For is ignored, loopback socket still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware(false);
+    const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
       makeReq({ "x-forwarded-for": "203.0.113.5" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -649,10 +627,10 @@ describe("requireEdgeAuth — trustProxy loopback fallback", () => {
   test("platform bypass short-circuits before the fallback regardless of trustProxy", async () => {
     process.env.DISABLE_HTTP_AUTH = "true";
     process.env.IS_CLOUD = "true";
-    const { requireEdgeAuth } = makeMiddleware(true);
+    const { requireEdgeAuth } = makeMiddleware();
     // Missing X-Cadet-User-Id, loopback socket, trustProxy on: still the
     // platform 401 (missing user header), NOT a loopback free pass.
-    const res = await requireEdgeAuth(makeReq(), makeLoopbackServer());
+    const res = await requireEdgeAuth(makeReq());
     expect(res?.status).toBe(401);
   });
 });
