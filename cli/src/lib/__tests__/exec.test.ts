@@ -9,7 +9,7 @@ import {
   exec,
   execOutput,
   execWithStdin,
-} from "../step-runner";
+} from "@mycadet/local-mode";
 
 describe("buildExecErrorMessage", () => {
   it("omits the argv from the header so secrets in args can't leak", () => {
@@ -136,3 +136,4 @@ describe("execOutput — secret leak regression", () => {
     }
   });
 });
+

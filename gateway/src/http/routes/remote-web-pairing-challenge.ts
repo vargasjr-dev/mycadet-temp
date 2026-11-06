@@ -8,7 +8,6 @@ import {
   type RemoteWebPairingChallengeRateLimit,
 } from "../../remote-web/pairing-challenge-rate-limit-store.js";
 import { EDGE_CLIENT_IP_HEADER } from "../edge-forwarded-header.js";
-import { errorResponse } from "../loopback-guard.js";
 import {
   parsePublicBaseUrl,
   readSavedIngressPublicBaseUrl,
@@ -78,9 +77,9 @@ export async function handleCreateRemoteWebPairingChallenge(
   }
 
   // The public URL the challenge is minted for is always the gateway's own —
-  // the request's host when it arrived through the trusted edge (the edge
-  // fronts the public URL), else the ingress URL recorded in this gateway's
-  // own workspace. Callers cannot request a URL.
+  // the ingress URL recorded in this gateway's own workspace, defaulting to
+  // the gateway's local host when nothing is recorded. Callers cannot
+  // request a URL.
   const body = await readJsonObjectBody(req, MAX_CHALLENGE_BODY_BYTES);
   if (body instanceof Response) {
     return body;
@@ -89,15 +88,9 @@ export async function handleCreateRemoteWebPairingChallenge(
   let publicBaseUrl = readSavedIngressPublicBaseUrl();
   if (publicBaseUrl) {
     const strict = parsePublicBaseUrl(publicBaseUrl);
-    publicBaseUrl =
-      strict !== null && isPublicHttpAddress(strict) ? strict : null;
-  }
-  if (!publicBaseUrl) {
-    return errorResponse(
-      "BAD_REQUEST",
-      "no public URL is recorded for this gateway — run `cadet tunnel start` first",
-      400,
-    );
+    if (strict !== null && isPublicHttpAddress(strict)) {
+      publicBaseUrl = strict;
+    }
   }
 
   const rateLimited = recordRemoteWebPairingChallengeCreation();

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { getWorkspaceDir } from "../paths.js";
+import { loadConfig } from "../config.js";
 
 /**
  * Shared public-base-URL handling for the remote-web pairing flow — the
@@ -45,15 +46,16 @@ const SavedIngressConfigSchema = z.object({
     .optional(),
 });
 
-/** The ingress URL recorded in this gateway's own workspace, or null. */
-export function readSavedIngressPublicBaseUrl(): string | null {
+/** The ingress URL recorded in the Cadet's workspace, defaulting to localhost */
+export function readSavedIngressPublicBaseUrl(): string {
   try {
     const raw = readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8");
     const config = SavedIngressConfigSchema.parse(JSON.parse(raw));
     const url = config.ingress?.publicBaseUrl;
-    return url?.trim() ? url : null;
+    if (url?.trim()) return url;
   } catch {
-    return null;
+    // No workspace config (or an unreadable one) — the local default below
+    // is the answer for a local assistant.
   }
+  return `http://127.0.0.1:${loadConfig().port}`;
 }
-

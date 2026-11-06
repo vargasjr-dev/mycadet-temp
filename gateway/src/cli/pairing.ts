@@ -228,12 +228,6 @@ export async function runPairingCommand(args: string[]): Promise<number> {
   }
 
   const publicBaseUrl = readSavedIngressPublicBaseUrl();
-  if (!publicBaseUrl) {
-    console.error(
-      "Error: no ingress url saved — run `cadet tunnel start` first.",
-    );
-    return 1;
-  }
 
   try {
     const challenge = mintAndApproveRemoteWebPairingChallenge(publicBaseUrl);

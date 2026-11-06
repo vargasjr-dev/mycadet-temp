@@ -36,15 +36,17 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   loopbackSafeFetch,
+  pairDocker,
+  pairLocal,
 } from "@mycadet/local-mode";
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { dockerPair } from "../lib/remotes/docker.js";
+
 import { appleContainerPair } from "../lib/remotes/apple-container.js";
-import { localPair } from "../lib/remotes/local.js";
+
 import { cloudPair } from "../lib/remotes/cloud.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
@@ -160,7 +162,7 @@ async function gatewayPost(
  * Mint (and approve) a remote-web pairing challenge. `cadet pair` is a
  * wrapper around `gateway pairing mint` executed on the assistant's gateway:
  * each topology's own remote module owns its execution surface
- * (`localPair` through the gateway CLI invocation, `dockerPair` through
+ * (`pairLocal` through the gateway CLI invocation, `pairDocker` through
  * docker exec, `appleContainerPair` through the management socket,
  * `cloudPair` through the platform's terminal-session exec). Process
  * execution is the local-presence proof; the mint approves on the spot, so
@@ -172,9 +174,9 @@ async function mintPairingChallengeOrExit(
   let stdout: string;
   try {
     if (isLocalEntry(entry)) {
-      stdout = await localPair(entry);
+      stdout = await pairLocal(entry);
     } else if (isDockerEntry(entry)) {
-      stdout = await dockerPair(entry);
+      stdout = await pairDocker(entry);
     } else if (isAppleContainerEntry(entry)) {
       stdout = await appleContainerPair(entry);
     } else {
@@ -185,7 +187,6 @@ async function mintPairingChallengeOrExit(
       `Error: could not mint a pairing challenge on the gateway ` +
         `(${err instanceof Error ? err.message : String(err)}).`,
     );
-    console.error("Is the assistant running? Try `cadet wake`.");
     process.exit(1);
   }
 

@@ -326,7 +326,12 @@ export {
   removeContainer,
   retireDocker,
 } from "./remotes/docker/retire";
-export { exec, buildExecErrorMessage } from "./exec";
+export {
+  exec,
+  execOutput,
+  execWithStdin,
+  buildExecErrorMessage,
+} from "./exec";
 export {
   isCadetCommandLine,
   parseTasklistCsv,
@@ -357,6 +362,8 @@ export {
   type PairDeviceIdentity,
   type PairOperationResult,
 } from "./operations/pair";
+export { pairLocal } from "./remotes/local/pair";
+export { pairDocker } from "./remotes/docker/pair";
 export {
   cloudTokenPath,
   readCloudToken,
