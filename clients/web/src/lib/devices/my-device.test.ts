@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { fetchMyDevice } from "@/lib/devices/my-device";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 const realFetch = globalThis.fetch;
 
@@ -15,12 +14,10 @@ function withPreconnect(
 
 afterEach(() => {
   globalThis.fetch = realFetch;
-  setSelfHostedConnection(null);
 });
 
 describe("fetchMyDevice", () => {
   test("sends the paired bearer and returns the device row", async () => {
-    setSelfHostedConnection({ url: "http://localhost:7830", token: "tok-1" });
     // Object container, not bare `let`s: TS narrows a captured let to its
     // initializer's type at the read site — closure assignments don't reset it.
     const seen: { path: string; auth: string | null } = {
@@ -55,7 +52,6 @@ describe("fetchMyDevice", () => {
   });
 
   test("returns null without a paired gateway session", async () => {
-    setSelfHostedConnection(null);
     let called = false;
     globalThis.fetch = withPreconnect(async () => {
       called = true;
@@ -68,7 +64,6 @@ describe("fetchMyDevice", () => {
   });
 
   test("returns null when the gateway cannot answer", async () => {
-    setSelfHostedConnection({ url: "http://localhost:7830", token: "tok-1" });
     globalThis.fetch = withPreconnect(
       async () => new Response(null, { status: 404 }),
     );
@@ -78,7 +73,6 @@ describe("fetchMyDevice", () => {
   });
 
   test("returns null on a malformed body", async () => {
-    setSelfHostedConnection({ url: "http://localhost:7830", token: "tok-1" });
     globalThis.fetch = withPreconnect(
       async () => new Response("<html>oops</html>", { status: 200 }),
     );

@@ -7,15 +7,7 @@ import type {
   LiveVoiceCaptureResult,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
 
-let ingressUrl: string | null = "http://localhost:8500";
-let actorToken: string | null = "actor-jwt";
 let pcmSupported = true;
-
-mock.module("@/lib/self-hosted/connection", () => ({
-  getSelfHostedIngressUrl: () => ingressUrl,
-  getSelfHostedActorToken: () => actorToken,
-  setSelfHostedConnection: () => {},
-}));
 
 // The real module imports an AudioWorklet asset via Vite's `?worker&url`
 // suffix, which Bun's test runner can't resolve. The capture itself is
@@ -142,8 +134,6 @@ async function startWithFakes(
 const flushMicrotasks = () => Promise.resolve();
 
 afterEach(() => {
-  ingressUrl = "http://localhost:8500";
-  actorToken = "actor-jwt";
   pcmSupported = true;
 });
 
@@ -173,9 +163,6 @@ describe("resolveDictationStreamWsUrl", () => {
   });
 
   test("self-hosted: dials the scoped STT path with the audio-format params", async () => {
-    ingressUrl = "http://localhost:8500";
-    actorToken = "actor-jwt";
-
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
     expect(url.protocol).toBe("ws:");
@@ -188,9 +175,6 @@ describe("resolveDictationStreamWsUrl", () => {
   });
 
   test("self-hosted without an actor token dials without one — the host injects", async () => {
-    ingressUrl = "http://localhost:8500";
-    actorToken = null;
-
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
     expect(url.pathname).toBe("/v1/assistants/stt-1/stt/stream");
@@ -199,8 +183,6 @@ describe("resolveDictationStreamWsUrl", () => {
   });
 
   test("cloud: mints a tunnel token and dials tunnel with the audio-format params", async () => {
-    ingressUrl = null;
-
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
     expect(captured?.body).toEqual({ assistantId: "stt-1" });

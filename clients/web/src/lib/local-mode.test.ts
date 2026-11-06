@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
@@ -15,7 +14,6 @@ afterEach(() => {
   globalThis.fetch = realFetch;
   window.__CADET_CONFIG__ = { remote: "cloud" };
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
-  setSelfHostedConnection(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
 

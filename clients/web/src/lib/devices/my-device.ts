@@ -1,6 +1,3 @@
-import { remoteGatewayApiPath } from "@/lib/auth/remote-gateway-session";
-import { getSelfHostedActorToken } from "@/lib/self-hosted/connection";
-
 /** Mirrors one `/v1/devices` row — the same shape `cadet devices` prints. */
 export interface MyDeviceRecord {
   hashedDeviceId: string;
@@ -24,13 +21,8 @@ export interface MyDeviceRecord {
 export async function fetchMyDevice(
   signal?: AbortSignal,
 ): Promise<MyDeviceRecord | null> {
-  const token = getSelfHostedActorToken();
-  if (!token) {
-    return null;
-  }
-
-  const response = await fetch(remoteGatewayApiPath("/v1/devices/mine"), {
-    headers: { Authorization: `Bearer ${token}` },
+  // @eslint-ignore
+  const response = await fetch("/v1/assistant/devices/mine", {
     signal,
   });
   if (!response.ok) {

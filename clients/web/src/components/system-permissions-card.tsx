@@ -5,7 +5,6 @@ import {
   resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId,
 } from "@/hooks/use-assistant-avatar";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import {
   getUnreadBadgeSurface,
   setDockBadge,
@@ -345,10 +344,7 @@ export function SystemPermissionsCard({
         }
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
-          getSelfHostedIngressUrl() ??
-            (typeof globalThis.location === "undefined"
-              ? null
-              : globalThis.location.href),
+          globalThis.location.href,
         );
         if (!assistant || !scopeId) {
           return undefined;

@@ -110,10 +110,6 @@ mock.module("@/stores/resolved-assistant-store", () => ({
   },
 }));
 
-mock.module("@/lib/self-hosted/connection", () => ({
-  getSelfHostedIngressUrl: () => null,
-}));
-
 mock.module("@/hooks/use-assistant-avatar", () => ({
   resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId: () =>

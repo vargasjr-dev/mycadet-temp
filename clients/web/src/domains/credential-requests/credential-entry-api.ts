@@ -1,20 +1,5 @@
-/**
- * Public (unauthenticated) gateway API for one-time credential-request links.
- *
- * The credential entry page is served by the self-hosted gateway itself, so
- * these calls use the same base-URL mechanics as the remote-web pairing page:
- * plain `fetch()` against the current origin, with the public ingress path
- * prefix (if any) prepended via `remoteGatewayApiPath()` — see
- * `lib/auth/remote-gateway-session.ts`. No auth header is attached; the
- * single-use token is the only authorization, and it always travels in the
- * request BODY (never the URL path) so it can't leak into access logs,
- * proxies, or browser history.
- */
-
-import { remoteGatewayApiPath } from "@/lib/auth/remote-gateway-session";
-
-const PEEK_PATH = "/v1/credential-requests/peek";
-const SUBMIT_PATH = "/v1/credential-requests/submit";
+const PEEK_PATH = "/v1/assistant/credential-requests/peek";
+const SUBMIT_PATH = "/v1/assistant/credential-requests/submit";
 
 /** Metadata about a pending credential request, from `peek`. */
 export interface CredentialRequestDetails {
@@ -84,7 +69,7 @@ export async function peekCredentialRequest(
   token: string,
   signal?: AbortSignal,
 ): Promise<CredentialPeekResult> {
-  const response = await fetch(remoteGatewayApiPath(PEEK_PATH), {
+  const response = await fetch(PEEK_PATH, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -114,7 +99,7 @@ export async function submitCredentialRequest(
   value: string,
   signal?: AbortSignal,
 ): Promise<CredentialSubmitResult> {
-  const response = await fetch(remoteGatewayApiPath(SUBMIT_PATH), {
+  const response = await fetch(SUBMIT_PATH, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

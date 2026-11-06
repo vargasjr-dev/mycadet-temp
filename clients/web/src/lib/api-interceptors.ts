@@ -19,10 +19,6 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
-import {
-  getSelfHostedActorToken,
-  getSelfHostedIngressUrl,
-} from "@/lib/self-hosted/connection";
 import { currentLocale } from "@/i18n";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
@@ -31,7 +27,6 @@ import { getElectronSessionToken } from "@/runtime/session-token";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
-const NGROK_SKIP_BROWSER_WARNING_HEADER = "ngrok-skip-browser-warning";
 
 function getRendererTupleOrigin(): string {
   return `${window.location.protocol}//${window.location.host}`;
@@ -48,100 +43,9 @@ const PLATFORM_PUSH_FIRST_SEGMENTS = new Set<string>([
  */
 const ASSISTANT_RESOURCE_RE = /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
 
-function currentSelfHostedBearer(): string | null {
-  const token = getSelfHostedActorToken();
-  return token ? `Bearer ${token}` : null;
-}
-
-/**
- * Stamp the current self-hosted actor token as the request's bearer, or
- * strip any bearer a caller happened to set when there is none. Without a
- * token the gateway must see an unauthenticated request and answer 401, so
- * the chat surface lands on its error state rather than spinning on a
- * stale credential.
- */
-function applySelfHostedBearer(headers: Headers): void {
-  const authorization = currentSelfHostedBearer();
-  if (authorization) {
-    headers.set("Authorization", authorization);
-  } else {
-    headers.delete("Authorization");
-  }
-}
-
 function isPlatformPushPath(url: string): boolean {
   const match = ASSISTANT_RESOURCE_RE.exec(new URL(url).pathname);
   return match !== null && PLATFORM_PUSH_FIRST_SEGMENTS.has(match[2]);
-}
-
-/**
- * Platform clients emit `/v1/assistants/...` against the page origin. A
- * path-prefixed remote ingress only serves `/assistant-123/v1/...`, so
- * relocate the resource under that prefix before authorizing.
- */
-function relocateRemoteGatewayPushRequest(request: Request): Request {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (!ingressUrl) {
-    return request;
-  }
-
-  const url = new URL(request.url);
-  const ingress = new URL(ingressUrl);
-  if (url.origin !== ingress.origin) {
-    return request;
-  }
-
-  const resource = ASSISTANT_RESOURCE_RE.exec(url.pathname);
-  if (!resource || !PLATFORM_PUSH_FIRST_SEGMENTS.has(resource[2])) {
-    return request;
-  }
-
-  const prefix = ingress.pathname.replace(/\/$/, "");
-  const relocatedPath = `${prefix}${resource[0]}`;
-  if (url.pathname === relocatedPath) {
-    return request;
-  }
-
-  const relocated = new URL(request.url);
-  relocated.pathname = relocatedPath;
-  return new Request(relocated.toString(), request);
-}
-
-/**
- * Remote-gateway mode serves the app and the gateway from the same nginx edge.
- * Some platform-generated clients still call same-origin flat `/v1/...` routes
- * (for example client feature flags), so they do not pass through the
- * `/v1/assistants/{id}/...` self-hosted rewrite above. Treat those as gateway
- * requests too: attach the paired browser token and strip platform-only auth.
- */
-export function authorizeRemoteGatewayRequest(
-  request: Request,
-): Request | null {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (!ingressUrl) {
-    return null;
-  }
-
-  const url = new URL(request.url);
-  const ingress = new URL(ingressUrl);
-  const prefix = ingress.pathname.replace(/\/$/, "");
-  if (url.origin !== ingress.origin) {
-    return null;
-  }
-  if (!url.pathname.startsWith(`${prefix}/v1/`)) {
-    return null;
-  }
-
-  const headers = new Headers(request.headers);
-  headers.delete("X-CSRFToken");
-  headers.delete("Cadet-Organization-Id");
-  headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, "true");
-  applySelfHostedBearer(headers);
-
-  return new Request(request, {
-    headers,
-    credentials: "omit",
-  });
 }
 
 /**
@@ -180,18 +84,11 @@ function createInterceptor({
     newRequest.headers.set("Accept-Language", currentLocale());
 
     if (allowRemoteGatewayDirect) {
-      const remoteGateway = authorizeRemoteGatewayRequest(newRequest);
-      if (remoteGateway) {
-        return remoteGateway;
-      }
+      return newRequest;
     }
 
     if (!isDaemonClient && isPlatformPushPath(newRequest.url)) {
-      const relocated = relocateRemoteGatewayPushRequest(newRequest);
-      const remoteGateway = authorizeRemoteGatewayRequest(relocated);
-      if (remoteGateway) {
-        return remoteGateway;
-      }
+      return newRequest;
     }
 
     // Platform path — cloud session auth.
