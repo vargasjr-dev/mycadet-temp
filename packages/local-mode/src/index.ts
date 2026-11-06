@@ -388,59 +388,17 @@ export type {
   PairingPollResult,
 } from "./pair";
 export { runDevicesList, runDevicesRevoke } from "./devices";
-export type {
-  DeviceRecord,
-  DevicesListResult,
-  DevicesRevokeResult,
-} from "./devices";
+export type { DeviceRecord } from "./devices";
 export { stripVersionPrefix } from "./version";
-export {
-  upgradeAssistant,
-  type UpgradeAssistantParams,
-  type UpgradeAssistantResult,
-} from "./operations/upgrade";
-export {
-  attemptFailedStateRestore,
-  broadcastUpgradeEvent,
-  buildCompleteEvent,
-  buildProgressEvent,
-  buildReplayEnv,
-  buildReplayState,
-  buildStartingEvent,
-  buildUpgradeCommitMessage,
-  captureContainerEnv,
-  captureReplayState,
-  captureUpgradeFailureLogs,
-  commitWorkspaceViaGateway,
-  performDockerRollback,
-  rollbackMigrations,
-  UPGRADE_PROGRESS,
-  waitForReady,
-  type PerformDockerRollbackOptions,
-} from "./upgrade-lifecycle";
-export {
-  upgradeLocal,
-  targetVersionFromCli,
-  resolveLatestStableTag,
-} from "./remotes/local/upgrade";
-export {
-  teleportAssistant,
-  type TeleportAssistantResult,
-} from "./operations/teleport";
-export {
-  restoreAssistant,
-  type RestoreAssistantResult,
-} from "./operations/restore";
+export { upgradeAssistant } from "./operations/upgrade";
+export { broadcastUpgradeEvent, buildCompleteEvent } from "./upgrade-lifecycle";
+export { resolveLatestStableTag } from "./remotes/local/upgrade";
+export { teleportAssistant } from "./operations/teleport";
+export { restoreAssistant } from "./operations/restore";
 export {
   cloudPollJobStatus,
   cloudRequestSignedUrl,
-  parseUnifiedJobStatus,
-  cloudImportBundleFromGcs,
-  cloudImportPreflightFromGcs,
-  cloudUploadToSignedUrl,
   VersionMismatchError,
-  type BundleCompatibility,
-  type UnifiedJobStatus,
 } from "./remotes/cloud/migrations";
 export {
   getGuardianAccessToken,

@@ -14,22 +14,9 @@ export type {
 } from "../remotes/cloud/restore";
 
 /**
- * The restore OPERATION: the headless core of `cadet restore`, structured
- * like the wake/sleep/backup operations — a remote -> method router over the
- * entry's topology. The cloud leg pushes the root archive through the
- * cloud's migration API (signed-URL upload, preflight-or-import, job poll);
- * the local and docker legs unpack it over the machine's state roots under
- * the root-operation lock. Every other topology runs on its own host and
- * refuses here.
- *
- * One door for both scopes: with a `fromPath` the archive restores into the
- * given entry; without one the named retired assistant recovers from its
- * archive in $XDG_DATA_HOME/cadet/retired/ (the recoverAssistant arm).
- *
- * Never throws and never exits the process — failures come back structured
- * so the command layer maps them onto the CLI's error taxonomy.
+ * The restore OPERATION: unpack an assistant's data to its machine
  */
-export type RestoreAssistantResult =
+type RestoreAssistantResult =
   | { ok: true; kind: "recovery" }
   | { ok: true; kind: "cloud"; dryRun: true; preflight: CloudRestorePreflight }
   | { ok: true; kind: "cloud"; dryRun: false; import: CloudRestoreImport }

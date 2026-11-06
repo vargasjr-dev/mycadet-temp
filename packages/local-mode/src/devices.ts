@@ -25,11 +25,11 @@ export interface DeviceRecord {
   isCurrentHost?: boolean;
 }
 
-export type DevicesListResult =
+type DevicesListResult =
   | { ok: true; devices: DeviceRecord[] }
   | { ok: false; error: string };
 
-export type DevicesRevokeResult = { ok: true } | { ok: false; error: string };
+type DevicesRevokeResult = { ok: true } | { ok: false; error: string };
 
 type CliRunResult = { ok: true; stdout: string } | { ok: false; error: string };
 

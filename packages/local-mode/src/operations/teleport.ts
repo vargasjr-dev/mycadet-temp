@@ -12,20 +12,9 @@ import { initializeDockerTeleportTarget } from "../remotes/docker/teleport";
 import { initializeLocalTeleportTarget } from "../remotes/local/teleport";
 
 /**
- * The teleport OPERATION: the headless core of `cadet teleport` — move an
- * installation to another remote, keeping its assistant name. Five steps:
- * sleep the source, back it up (that exact snapshot is both the safety
- * archive and the transferred state), move (the source retires and frees the
- * name; the target initializes from the archive while nothing is up — the
- * install IS the restore), wake the target. The target is activated as the
- * entry saves; the pre-teleport backups prune.
- *
- * Never throws and never exits the process — failures come back structured.
- * The root-operation lock holds over the source for the whole move; a
- * failure rewinds what it can and reports the original error alongside the
- * archive that still holds the data.
+ * The teleport OPERATION: move an assistant to another remote.
  */
-export type TeleportAssistantResult =
+type TeleportAssistantResult =
   | { ok: true; sourceId: string; targetId: string }
   | { ok: false; status: number; error: string };
 
@@ -142,7 +131,11 @@ async function performTeleport(
 
     pruneOldBackups(source.assistantId, 3, "pre-teleport");
     log(`Teleport complete: ${source.assistantId} → ${target.assistantId}`);
-    return { ok: true, sourceId: source.assistantId, targetId: target.assistantId };
+    return {
+      ok: true,
+      sourceId: source.assistantId,
+      targetId: target.assistantId,
+    };
   } catch (error) {
     if (!ready) {
       // The half-built target goes — the one the init returned, or the one
@@ -154,7 +147,8 @@ async function performTeleport(
       if (built) {
         await sleepAssistant(built);
         const retired = await retireAssistant(built);
-        if (!retired.ok) log(`Teleport cleanup retire failed: ${retired.error}`);
+        if (!retired.ok)
+          log(`Teleport cleanup retire failed: ${retired.error}`);
         if (archive) {
           log(`The archive remains at ${archive}.`);
         }

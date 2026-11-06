@@ -15,8 +15,6 @@ import {
 } from "../../cloud-auth";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 
-const CLOUD_FETCH_TIMEOUT_MS = 10_000;
-
 const PassthroughBodySchema = z.record(z.string(), z.unknown()).catch({});
 
 const BundleUploadUrlSchema = z.object({
@@ -131,7 +129,7 @@ export async function cloudImportBundleFromGcs(
  * returned by `GET /v1/migrations/jobs/{job_id}/` on both the cloud and
  * the local runtime.
  */
-export type UnifiedJobStatus =
+type UnifiedJobStatus =
   | {
       jobId: string;
       type: "export" | "import";
@@ -165,9 +163,7 @@ interface RawUnifiedJobStatus {
  * discriminated union. Shared between platform and local-runtime helpers
  * since both endpoints return the same shape.
  */
-export function parseUnifiedJobStatus(
-  raw: RawUnifiedJobStatus,
-): UnifiedJobStatus {
+function parseUnifiedJobStatus(raw: RawUnifiedJobStatus): UnifiedJobStatus {
   if (raw.status === "processing") {
     return { jobId: raw.job_id, type: raw.type, status: "processing" };
   }
@@ -188,7 +184,7 @@ export function parseUnifiedJobStatus(
   };
 }
 
-export interface BundleCompatibility {
+interface BundleCompatibility {
   min_runtime_version: string;
   max_runtime_version: string | null;
 }
