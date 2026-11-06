@@ -320,9 +320,7 @@ export async function printRootProcessDetail(
   if (name === "app" || name === "bun") {
     console.log("App server:");
     if (!app?.pid) {
-      console.log(
-        `  not recorded — start one with \`${cliCommand()} app start\``,
-      );
+      console.log(`  not running`);
       return true;
     }
     const alive = isLocalProcessAlive(app.pid);
@@ -350,9 +348,7 @@ export async function printRootProcessDetail(
       name === "tunnel" ? "Tunnel agent:" : `Tunnel agent (${name}):`,
     );
     if (!tunnel) {
-      console.log(
-        `  not recorded — start one with \`${cliCommand()} tunnel start\``,
-      );
+      console.log(`  not running.`);
       return true;
     }
     if (name !== "tunnel" && (provider ?? DEFAULT_TUNNEL_PROVIDER) !== name) {

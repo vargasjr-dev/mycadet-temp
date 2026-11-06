@@ -191,9 +191,9 @@ function sourceDistDir(kind: "web" | "app", sourceDir: string): string {
     : join(sourceDir, "dist", "standalone");
 }
 
-/** HEAD commit of the checkout containing sourceDir (null when git-less). */
-function gitHeadSha(sourceDir: string): Promise<string | null> {
-  return new Promise((resolve) => {
+/** HEAD commit of the checkout containing sourceDir */
+function gitHeadSha(sourceDir: string): Promise<string> {
+  return new Promise((resolve, reject) => {
     const child = spawn("git", ["rev-parse", "HEAD"], {
       cwd: sourceDir,
       stdio: ["ignore", "pipe", "ignore"],
@@ -202,9 +202,10 @@ function gitHeadSha(sourceDir: string): Promise<string | null> {
     child.stdout?.on("data", (chunk: Buffer) => {
       stdout += chunk.toString();
     });
-    child.on("error", () => resolve(null));
+    child.on("error", (error) => reject(error));
     child.on("exit", (code) => {
-      resolve(code === 0 ? stdout.trim() || null : null);
+      if (code === 0) resolve(stdout.trim());
+      else reject(new Error(`git exited with error code ${code}`));
     });
   });
 }
@@ -214,10 +215,6 @@ async function buildDistFromSource(
   kind: "web" | "app",
   sourceDir: string,
 ): Promise<void> {
-  const recipe =
-    kind === "web"
-      ? "cd clients/web && bun run build"
-      : "cd clients/app && bun run build";
   try {
     await spawnDistBuild({
       command: "bun",
@@ -226,9 +223,8 @@ async function buildDistFromSource(
     });
   } catch (error) {
     throw new Error(
-      `Building the ${kind} bundle from source failed, so the edge cannot ` +
-        `start. Run the build by hand to see the full output: ` +
-        `\`${recipe}\`. ${error instanceof Error ? error.message : String(error)}`,
+      `App Server failed to start because the ${kind} bundle failed to build:
+${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
@@ -238,7 +234,7 @@ interface DistArm {
   /** The located dist, or null when there is none. */
   distDir: string | null;
   /** The checkout's `clients/<kind>` package, or null when there is none. */
-  sourceDir: string | null;
+  sourceDir: string;
   /** True when distDir is the source checkout's own build output. */
   sourceBuilt: boolean;
 }
@@ -249,10 +245,14 @@ async function resolveDistArm(
 ): Promise<DistArm> {
   const existing =
     kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
+  const sourceDir = findSourcePackageDir(kind, options.startDir);
+  if (!sourceDir) {
+    throw new Error(`Failed to find source for ${kind}`);
+  }
+
   if (existing) {
     // Only the source-checkout arm's dist can be refreshed here: installed
     // (npm package) and packaged dists are owned by their release.
-    const sourceDir = findSourcePackageDir(kind, options.startDir);
     return {
       distDir: existing,
       sourceDir,
@@ -262,7 +262,7 @@ async function resolveDistArm(
   }
   return {
     distDir: null,
-    sourceDir: findSourcePackageDir(kind, options.startDir),
+    sourceDir,
     sourceBuilt: false,
   };
 }
@@ -282,13 +282,7 @@ function isStale(
 }
 
 /**
- * Locate both client bundles the edge serves — the web SPA and the standalone
- * app shell — rebuilding from the source checkout when a dist is missing or
- * the checkout has moved past the recorded build. Both bundles build from the
- * same checkout, so one commit covers both: the built-sha stamp lives on the
- * lockfile's `app` record (the edge's own entry) rather than beside each
- * dist, and is recorded only after every build succeeded so a failed second
- * build can't leave the first bundle's freshness pretending to cover it.
+ * Build both client bundles
  */
 export async function resolveClientDists(
   options: DistBuildOptions = {},
@@ -305,52 +299,27 @@ export async function resolveClientDists(
     web: await resolveDistArm("web", options),
     app: await resolveDistArm("app", options),
   };
-  // clients/web and clients/app are siblings of one checkout — either
-  // source-built arm anchors the same HEAD.
-  // The app bundle is the primary bundle the App Server is tasked with
-  // serving — the build sha anchors to the app arm's checkout alone.
   const anchor = arms.app.sourceDir;
-  const headSha = anchor ? await gitHeadSha(anchor) : null;
+  const headSha = await gitHeadSha(anchor);
   const recordedSha = readAppBuiltSha();
 
-  // A build is pending when an arm has source but no dist, or a stale
-  // source-built dist. Everything else (installed/packaged arms, git-less
-  // trees, a recorded sha still matching HEAD) serves as-is.
-  const pending = (["web", "app"] as const).filter((kind) => {
-    const arm = arms[kind];
-    return (
-      arm.sourceDir !== null &&
-      (arm.distDir === null || isStale(arm, headSha, recordedSha))
-    );
-  });
-  let builtAny = false;
-  if (pending.length > 0) {
-    console.log("Building client...");
-  }
   for (const kind of ["web", "app"] as const) {
+    console.log(`Building ${kind} client...`);
     const arm = arms[kind];
     const sourceDir = arm.sourceDir;
-    // No dist and no source to build from: stays null (the caller reports it).
-    if (!sourceDir) continue;
     // An existing dist that isn't stale (installed/packaged arm, git-less
     // tree, or the recorded sha still matching HEAD) serves as-is.
     if (arm.distDir !== null && !isStale(arm, headSha, recordedSha)) continue;
     await buildDistFromSource(kind, sourceDir);
-    builtAny = true;
-  }
-  if (builtAny) {
-    console.log("Clients built.");
+    console.log(`${kind} client built.`);
   }
 
-  // Stamp only after every planned build succeeded (a failed build throws
-  // above) — a half-stamped state could serve a stale second bundle.
-  if (builtAny && headSha) {
-    stampAppBuiltSha(headSha);
-  }
+  stampAppBuiltSha(headSha);
+  console.log("Saved", headSha);
 
   return {
-    webDistDir: arms.web.distDir ?? (builtAny ? findWebDistDir(options) : null),
-    appDistDir: arms.app.distDir ?? (builtAny ? findAppDistDir(options) : null),
-    builtSha: headSha ?? "",
+    webDistDir: arms.web.distDir,
+    appDistDir: arms.app.distDir,
+    builtSha: headSha,
   };
 }

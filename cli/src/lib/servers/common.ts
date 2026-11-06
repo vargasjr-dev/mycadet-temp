@@ -897,24 +897,7 @@ function stuckAppServerRecoveryHint(): string {
 }
 
 /**
- * Bring up the app server as the canonical tunnel target and return the
- * listen port a tunnel should front.
- *
- * The server is assistant-agnostic: it carries no assistant identity in its
- * options. The assistant it fronts — and with it the gateway it proxies, via
- * `getGatewayUrl` — is resolved from the lockfile here (the active assistant,
- * else the only entry), so every caller shares one resolution instead of
- * threading bespoke ids and ports. Its own state (pidfile, recorded
- * upstream, serve spec) lives under the XDG data dir, never an assistant
- * workspace.
- *
- * The server always serves the SPA alongside the gateway proxy. It is always
- * delegated to `startAppServer`, which reuses a running server whose
- * gateway upstream and injected SPA config match and restarts one that
- * drifted in any respect, so the returned port always fronts the requested
- * config. `started` is false when a matching server was reused; a drifted
- * server that survives the restart attempt throws rather than reporting the
- * wrong config. Failures throw with actionable diagnostic text.
+ * Bring up the app server fronting all assistants for remote clients
  */
 export async function ensureAppServer(): Promise<AppServer> {
   const entry = resolveTargetAssistant();

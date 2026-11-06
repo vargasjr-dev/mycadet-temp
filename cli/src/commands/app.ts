@@ -14,7 +14,7 @@ import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status`,
+    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status\n       ${cliCommand()} app restart`,
   );
   console.log("");
   console.log(
@@ -92,6 +92,12 @@ async function stopAppServerCommand(): Promise<void> {
   }
 }
 
+/** `cadet app start`: bring the app server up for the active local assistant. */
+async function restartAppServer(): Promise<void> {
+  await stopAppServerCommand();
+  await startAppServer();
+}
+
 export const app = Object.assign(
   async function app(): Promise<void> {
     const subcommand = process.argv[3];
@@ -105,6 +111,7 @@ export const app = Object.assign(
       await printRootProcessDetail("app");
       return;
     }
+    if (subcommand === "restart") return restartAppServer();
     console.error(`Error: Unknown argument '${subcommand}'.`);
     printAppHelp();
   },

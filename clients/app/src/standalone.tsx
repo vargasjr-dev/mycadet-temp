@@ -152,7 +152,15 @@ export const router = createBrowserRouter(
       children: [
         accountRoute,
         consentRoute,
-        { path: "/", Component: () => <Navigate to="/assistant" replace /> },
+        {
+          path: "/",
+          lazy: {
+            Component: () =>
+              import("@app/domains/onboarding/pages/welcome-screen").then(
+                (m) => m.WelcomeScreen,
+              ),
+          },
+        },
         {
           // The onboarding funnel's post-hatch steps — claimed before the
           // /assistant/* shell catch-all so the funnel renders app-native

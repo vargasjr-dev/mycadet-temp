@@ -1,22 +1,16 @@
 import { WWW_DOMAIN } from "@app/utils/domains";
 
 export const routes = {
+  index: "/",
   assistant: "/assistant",
-  checkout: "/assistant/checkout",
   onboarding: {
     hatching: "/account/onboarding/hatching",
     privacy: "/assistant/onboarding/privacy",
     research: "/assistant/onboarding/research",
   },
-  // The local client's front door, rendered by the app's onboarding screens.
-  welcome: "/account/onboarding/welcome",
   account: {
     root: "/account",
     consent: "/account/consent",
-    // The pre-hatch onboarding front door, app-owned like the consent screens
-    // above. The remaining funnel step (research) still renders in the web
-    // bundle under /assistant/onboarding/* and is reached through the
-    // AssistantPage iframe mount.
     onboarding: {
       welcome: "/account/onboarding/welcome",
       start: "/account/onboarding/start",
