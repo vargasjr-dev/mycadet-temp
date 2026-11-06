@@ -67,6 +67,17 @@ export const accountRoute = {
               },
             },
             {
+              path: "pair",
+              ErrorBoundary: RouteErrorBoundary,
+              HydrateFallback: RootHydrateFallback,
+              lazy: {
+                Component: () =>
+                  import("@app/domains/account/pages/pairing-page").then(
+                    (m) => m.PairingPage,
+                  ),
+              },
+            },
+            {
               path: "onboarding/welcome",
               lazy: {
                 Component: () =>

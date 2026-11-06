@@ -223,7 +223,7 @@ export function appServerStatePath(): string {
   return join(getAppServerPaths().dir, "state.json");
 }
 
-/** The pre-rename state path, read when the renamed one has no record yet. */
+// TODO: Delete this method
 function legacyStatePath(): string {
   return join(resolveDataDir(), LEGACY_INGRESS_DIR, "state.json");
 }
@@ -231,6 +231,7 @@ function legacyStatePath(): string {
 export function readAppServerState(): AppServerState | null {
   let raw: unknown;
   try {
+    // TODO replace this with zod parsing
     raw = JSON.parse(readFileSync(appServerStatePath(), "utf-8"));
   } catch {
     // The renamed dir has no record yet; a pre-rename install's record

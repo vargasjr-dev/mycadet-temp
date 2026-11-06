@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { Button } from "@mycadet/design-library/components/button";
-
+// TODO: fix imports and stuff
 import { NotFound } from "@/components/not-found";
 import {
   activateRemoteGatewaySession,
@@ -24,8 +24,6 @@ import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
 import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { routes } from "@/utils/routes";
-
-import { useTranslation } from "@/i18n";
 
 type PairingDetails = {
   deviceCode: string;
@@ -211,7 +209,7 @@ function PairingHandoffActions({
   );
 }
 
-export function RemoteWebPairingPage() {
+export function PairingPage() {
   const { t } = useTranslation("remote-web");
   const location = useLocation();
   const navigate = useNavigate();

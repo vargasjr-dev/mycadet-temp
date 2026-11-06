@@ -119,21 +119,6 @@ export const routeTree = [
     },
   },
 
-  // Remote web pairing — standalone page for the RFC8628-style browser
-  // polling flow. It must stay outside the auth-protected app tree because
-  // its job is to obtain the first in-memory gateway access token.
-  {
-    path: "/assistant/pair",
-    ErrorBoundary: RouteErrorBoundary,
-    HydrateFallback: RootHydrateFallback,
-    lazy: {
-      Component: () =>
-        import("@/domains/remote-web/pairing-page").then(
-          (m) => m.RemoteWebPairingPage,
-        ),
-    },
-  },
-
   // One-time credential entry — public page opened from a single-use
   // credential-request link. Kept OUTSIDE the auth-protected tree (same
   // sibling pattern as /assistant/pair) because the recipient of the link

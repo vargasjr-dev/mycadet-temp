@@ -70,33 +70,16 @@ function AssistantShell({
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
-  // The wake flow — the user-facing recovery for the not-ready state: the
-  // same drive the admin console's Wake button gets (wake the vm; a
-  // missing vm hatches in place), through the same-origin /v1 proxy with
-  // the session cookie. On success the shell re-resolves (one GET
-  // /v1/assistant) and the frame mounts; on failure the node's own
-  // punchline shows under the button.
   const [wakePending, setWakePending] = useState(false);
   const [wakeReason, setWakeReason] = useState<string | null>(null);
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     assistantId,
   });
-  // The tray's status logic lives with the resolution: the shell resolves the
-  // assistant itself, and the web assistant iframe only mounts once that
-  // resolution came back ready — the web bundle carries no status notion. The
-  // dot reads the shell's own resolution; the unmount cleanup publishes
-  // `disconnected` when the router swaps to a chooser route.
+
+  // The tray's status logic lives with the resolution
   useElectronStatusSync(state);
-  // Picking is the account chooser's job — an assistant-agnostic account
-  // flow at a constant path on every surface. Without an id to act on (the
-  // list resolved with nothing chosen, no assistants at all, or no
-  // session), the shell replace-navigates to it and shows the state line
-  // until the router swaps; the chooser hands the pick back as location
-  // state, which AssistantPage feeds in as the assistantId prop.
-  // selection/empty bounce to the chooser; unauthenticated is an honest
-  // error state (the old web bundle's ActiveAssistantGate treatment) — the
-  // shell must not silently navigate away from a session it couldn't prove.
+
   const chooserOwned = state.status === "selection" || state.status === "empty";
   const redirected = useRef(false);
   useEffect(() => {
@@ -130,11 +113,11 @@ function AssistantShell({
     setWakePending(false);
   }
 
+  if (state.status === "unauthenticated")
+    return <PairRedirect onNavigate={onNavigate} />;
+
   if (state.status !== "ready") {
-    const alert =
-      state.status === "notReady" ||
-      state.status === "error" ||
-      state.status === "unauthenticated";
+    const alert = state.status === "notReady" || state.status === "error";
     return (
       <div
         role={alert ? "alert" : "status"}
@@ -160,7 +143,6 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {state.status === "unauthenticated" && <PairRedirect onNavigate={onNavigate} />}
         {(state.status === "error" || state.status === "unavailable") && (
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={reload} style={quietButton}>
@@ -180,6 +162,7 @@ function AssistantShell({
       </div>
     );
   }
+
   const assistant = state.assistant;
   return (
     <AssistantFrame
@@ -259,7 +242,7 @@ function PairRedirect({
   useEffect(() => {
     if (forwarded.current) return;
     forwarded.current = true;
-    onNavigate(routes.account.selectAssistant, { replace: true });
+    onNavigate(routes.account.pair, { replace: true });
   }, [onNavigate]);
   return null;
 }
