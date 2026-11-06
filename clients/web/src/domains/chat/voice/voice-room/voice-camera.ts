@@ -579,10 +579,7 @@ export function useVoiceCamera(
         }
       }
 
-      if (
-        typeof navigator === "undefined" ||
-        !navigator.mediaDevices?.getUserMedia
-      ) {
+      if (!navigator.mediaDevices?.getUserMedia) {
         return "unsupported";
       }
 

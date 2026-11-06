@@ -5,9 +5,6 @@ import { isElectron } from "@/runtime/is-electron";
 export type DesktopAppPlatform = "macos" | "windows";
 
 export function getBrowserPlatform(): string {
-  if (typeof navigator === "undefined") {
-    return "";
-  }
   const uaData = (
     navigator as Navigator & {
       userAgentData?: { platform?: string };
@@ -18,9 +15,6 @@ export function getBrowserPlatform(): string {
 
 /** Windows is the only positive match; every other signal defaults to macOS. */
 export function detectDesktopAppPlatform(): DesktopAppPlatform {
-  if (typeof navigator === "undefined") {
-    return "macos";
-  }
   if (isElectron() && window.cadet?.hostOS) {
     return window.cadet.hostOS === "windows" ? "windows" : "macos";
   }
@@ -30,9 +24,6 @@ export function detectDesktopAppPlatform(): DesktopAppPlatform {
 
 /** True when browser platform signals identify Windows. */
 export function isWindowsBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
   return (
     /win/i.test(getBrowserPlatform()) || /Windows/i.test(navigator.userAgent)
   );
@@ -40,9 +31,6 @@ export function isWindowsBrowser(): boolean {
 
 /** Excludes identified desktop systems outside the macOS/Windows promotion. */
 export function isKnownUnsupportedDesktopBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
   const platformSignals = `${getBrowserPlatform()} ${navigator.userAgent}`;
   return /\b(?:CrOS|Linux|X11|FreeBSD|OpenBSD|NetBSD)\b/i.test(platformSignals);
 }

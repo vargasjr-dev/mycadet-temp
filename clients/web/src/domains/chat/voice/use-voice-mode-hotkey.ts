@@ -87,7 +87,7 @@ export function useVoiceModeHotkey({
   }, [navigate]);
 
   useEffect(() => {
-    if (!enabled || typeof window === "undefined") {
+    if (!enabled) {
       return;
     }
 

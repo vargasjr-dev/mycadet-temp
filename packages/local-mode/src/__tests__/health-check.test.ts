@@ -59,34 +59,34 @@ describe("checkHealth — the baseten gateway doors", () => {
     }
   });
 
-  test("the probe rides /port/<PORT>/ presenting the sandbox token", async () => {
-    const seen = { path: "", auth: null as string | null };
+  test("the probe rides the gateway URL presenting the preview token", async () => {
+    const seen = { url: "", preview: null as string | null };
     const server = Bun.serve({
       port: 0,
       fetch(req) {
-        seen.path = new URL(req.url).pathname;
-        seen.auth = req.headers.get("authorization");
+        seen.url = req.url;
+        seen.preview = req.headers.get("x-blaxel-preview-token");
         return Response.json({ status: "healthy", version: "1.2.3" });
       },
     });
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-health-sbx-"));
     const oldXdg = process.env.XDG_CONFIG_HOME;
     process.env.XDG_CONFIG_HOME = tmp;
-    saveBasetenSandboxToken("asst-baseten", "sbx-tok-1");
+    saveBasetenSandboxToken("asst-baseten", "sbx-tok-1", "prev-tok-1");
     try {
-      // The gateway URL derives from the sandbox URL + the port route.
+      // The preview IS the door: the probe rides the recorded preview URL.
       const entry = {
         assistantId: "asst-baseten",
         cloud: "baseten",
         name: "sbx-x",
-        sandboxUrl: `http://127.0.0.1:${server.port}`,
+        sandboxUrl: "http://sandbox.example.test",
+        previewUrl: `http://127.0.0.1:${server.port}`,
         port: 7830,
       } as LockfileAssistant;
       const result = await checkHealth(entry);
       expect(result.status).toBe("healthy");
       expect(result.version).toBe("1.2.3");
-      expect(seen.path).toBe("/port/7830/healthz");
-      expect(seen.auth).toBe("Bearer sbx-tok-1");
+      expect(seen.preview).toBe("prev-tok-1");
     } finally {
       server.stop(true);
       if (oldXdg === undefined) {
@@ -98,7 +98,7 @@ describe("checkHealth — the baseten gateway doors", () => {
     }
   });
 
-  test("a missing sandbox token still probes (bare) instead of throwing", async () => {
+  test("a missing preview token still probes (bare) instead of throwing", async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-health-sbx-"));
     const oldXdg = process.env.XDG_CONFIG_HOME;
     process.env.XDG_CONFIG_HOME = tmp;
@@ -108,6 +108,7 @@ describe("checkHealth — the baseten gateway doors", () => {
         cloud: "baseten",
         name: "sbx-x",
         sandboxUrl: "http://127.0.0.1:1",
+        previewUrl: "http://127.0.0.1:1",
         port: 7830,
       } as LockfileAssistant);
       expect(result.status).toBe("unreachable");

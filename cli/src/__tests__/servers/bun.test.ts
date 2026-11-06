@@ -242,10 +242,8 @@ function stampTunnelRecord(url: string): void {
   realFs.writeFileSync(path, JSON.stringify(lockfile));
 }
 
-const PRODUCTION_HUB_URL = "https://mycadet.ai/assistant";
 const originalEnvironment = process.env.CADET_ENVIRONMENT;
 
-/** Pin the build environment so the stamped hubUrl is deterministic. */
 function pinProductionEnvironment(): void {
   beforeEach(() => {
     process.env.CADET_ENVIRONMENT = "production";
@@ -285,7 +283,6 @@ function makeHandlerFixture(
     remote: "local",
     assistantName: "Homelab",
     assistantId: "assistant-1",
-    hubUrl: PRODUCTION_HUB_URL,
     version: "1.2.3",
   },
 ): HandlerFixture {
@@ -706,7 +703,6 @@ describe("the app server's routes", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(JSON.parse(await readBody(response))).toMatchObject({
       assistantId: "assistant-1",
-      hubUrl: PRODUCTION_HUB_URL,
     });
   });
 
@@ -829,15 +825,6 @@ describe("the app server's routes", () => {
     );
     expect(shell.headers.get("access-control-allow-credentials")).toBe("true");
 
-    const hub = await handler(
-      new Request("http://127.0.0.1:7840/v1/assistants/", {
-        headers: { origin: "https://mycadet.ai" },
-      }),
-    );
-    expect(hub.headers.get("access-control-allow-origin")).toBe(
-      "https://mycadet.ai",
-    );
-
     const stranger = await handler(
       new Request("http://127.0.0.1:7840/v1/assistants/", {
         headers: { origin: "https://evil.example" },
@@ -855,19 +842,6 @@ describe("the app server's routes", () => {
     expect(preflight.headers.get("access-control-allow-origin")).toBe(
       "capacitor://localhost",
     );
-  });
-
-  test("rejects invalid app origins before any serving starts", () => {
-    expect(() =>
-      createAppServerHandler({
-        gatewayUrl: "http://127.0.0.1:7830",
-        webDistDir: "/tmp/web",
-        appDistDir: "/tmp/app",
-        indexHtmlPath: "/tmp/index.html",
-        appIndexHtmlPath: "/tmp/app-index.html",
-        config: { hubUrl: "http://insecure.example" },
-      }),
-    ).toThrow("App origins must be HTTPS origins or loopback HTTP origins.");
   });
 
   test("websocket upgrades relay to the gateway through the server handle", async () => {
@@ -1040,23 +1014,16 @@ function mockDistsMissing(which: "web" | "app"): void {
  * The fingerprint replica, computed against the SAME fixture dirs the
  * under-test start hashed — the dist roots are fingerprint inputs.
  */
-function appConfigHash(
-  fixture: HandlerFixture,
-  overrides: Record<string, unknown> = {},
-): string {
-  // Field order matters: JSON.stringify is order-sensitive and the derived
-  // config inserts cloudUrl between hubUrl and version.
+function appConfigHash(fixture: HandlerFixture): string {
+  // Field order matters: JSON.stringify is order-sensitive. The injected
+  // config is identity-only — the single-origin plan strips every
+  // origin-shaped field, so no cloudUrl/hubUrl rides the fingerprint.
   const base = fixture.config as Record<string, unknown>;
   const config: Record<string, unknown> = {
     remote: base.remote,
     assistantName: base.assistantName,
     assistantId: base.assistantId,
-    hubUrl: base.hubUrl,
-    ...(overrides.cloudUrl === undefined
-      ? {}
-      : { cloudUrl: overrides.cloudUrl }),
     version: base.version,
-    ...(overrides.cloudUrl === undefined ? overrides : {}),
   };
   return createHash("sha256")
     .update(
@@ -1157,7 +1124,6 @@ describe("startAppServer", () => {
     expect(state?.serve?.config).toMatchObject({
       assistantId: "assistant-1",
       assistantName: "Homelab",
-      hubUrl: PRODUCTION_HUB_URL,
     });
 
     // Both injected documents carry the served config.
@@ -1169,7 +1135,7 @@ describe("startAppServer", () => {
     expect(appIndex).toContain('"assistantId":"assistant-1"');
   });
 
-  test("stamps the saved tunnel URL as the served config's cloudUrl", async () => {
+  test("never stamps an origin — even with a tunnel URL on record", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
@@ -1183,34 +1149,15 @@ describe("startAppServer", () => {
     });
 
     expect(result.status).toBe("started");
+    // The single-origin plan: tunnel clients reach the origin they came
+    // in on, so the served config carries no base URL at all — the
+    // shell reads window.location.origin.
     const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    // Tunnel clients can only reach the origin they came in on, so the
-    // account/auth surfaces' backend base is the tunnel URL.
-    expect(appIndex).toContain('"cloudUrl":"https://camping.ngrok-free.dev"');
-    expect(readAppServerState()).toMatchObject({
-      remoteWebConfigHash: appConfigHash(fixture, {
-        cloudUrl: "https://camping.ngrok-free.dev",
-      }),
-    });
-  });
-
-  test("omits cloudUrl when no tunnel URL is on record", async () => {
-    makeWorkspace();
-    seedAssistant();
-    const fixture = makeHandlerFixture();
-    mockDistsPresent(fixture);
-    mockServerSpawn();
-
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
-
-    expect(result.status).toBe("started");
-    const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    // Omitted — the shell's same-origin fallbacks own it until a tunnel
-    // saves a URL.
     expect(appIndex).not.toContain("cloudUrl");
+    expect(appIndex).not.toContain("hubUrl");
+    expect(readAppServerState()).toMatchObject({
+      remoteWebConfigHash: appConfigHash(fixture),
+    });
   });
 
   test("requires the web dist", async () => {
@@ -1431,7 +1378,6 @@ describe("ensureAppServer", () => {
       remote: "local",
       assistantName: "Threaded Name",
       assistantId: "assistant-1",
-      hubUrl: PRODUCTION_HUB_URL,
       version: "1.2.3",
     });
     mockDistsPresent(fixture);

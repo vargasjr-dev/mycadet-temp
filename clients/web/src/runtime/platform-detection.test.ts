@@ -365,22 +365,6 @@ describe("isMobileBrowser", () => {
     expect(isMobileBrowser()).toBe(true);
   });
 
-  test("is false without a navigator", () => {
-    const originalNavigator = globalThis.navigator;
-    Object.defineProperty(globalThis, "navigator", {
-      value: undefined,
-      configurable: true,
-    });
-    try {
-      expect(isMobileBrowser()).toBe(false);
-    } finally {
-      Object.defineProperty(globalThis, "navigator", {
-        value: originalNavigator,
-        configurable: true,
-      });
-    }
-  });
-
   test("is false without matchMedia", () => {
     setUserAgent(ANDROID_TABLET_UA);
     Object.defineProperty(window, "matchMedia", {

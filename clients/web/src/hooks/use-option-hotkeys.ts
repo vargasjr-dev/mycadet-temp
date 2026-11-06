@@ -67,9 +67,6 @@ export function useOptionHotkeys(
     if (!enabled) {
       return;
     }
-    if (typeof window === "undefined") {
-      return;
-    }
 
     const handler = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {

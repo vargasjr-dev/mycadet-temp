@@ -4,7 +4,6 @@ import type { IncomingHttpHeaders } from "node:http";
 import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
 import {
   readBasetenPreviewToken,
-  readBasetenSandboxToken,
 } from "./guardian-token";
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { getGatewayUrl, isCloudEntry } from "./lockfile-contract";
@@ -268,8 +267,7 @@ export async function checkHealth(
 /**
  * The credentials the health probe itself should present, derived from the
  * entry: a cloud-managed entry presents the cloud URL stack's own token, a
- * baseten entry presents the preview token (or, without a preview, the
- * sandbox access token on the /port route), every other remote probes
+ * baseten entry presents the preview token, every other remote probes
  * bare.
  * Best-effort — a missing token or a failed derivation probes without
  * credentials (the /v1 routes' own 401s stay the signal there).
@@ -277,23 +275,12 @@ export async function checkHealth(
 async function gatewayAuthHeaders(
   entry: LockfileAssistant,
 ): Promise<Record<string, string>> {
-  // The baseten gateway's door decides the credential: a minted preview
-  // (the canonical address) is guarded by the PREVIEW token, sent as the
-  // vendor header — `Authorization` stays free for the gateway's own
-  // bearer end to end. Legacy entries without a preview ride the sandbox
-  // API's /port route, which the sandbox access token authenticates.
+  // The baseten gateway's door: the minted preview is the canonical
+  // address, guarded by the PREVIEW token, sent as the vendor header —
+  // `Authorization` stays free for the gateway's own bearer end to end.
   if (entry.cloud === "baseten") {
-    if (entry.previewUrl) {
-      const previewToken = readBasetenPreviewToken(entry.assistantId);
-      return previewToken
-        ? { "X-Blaxel-Preview-Token": previewToken }
-        : {};
-    }
-    const sandboxToken = readBasetenSandboxToken(entry.assistantId);
-    if (sandboxToken.ok) {
-      return { Authorization: `Bearer ${sandboxToken.accessToken}` };
-    }
-    return {};
+    const previewToken = readBasetenPreviewToken(entry.assistantId);
+    return previewToken ? { "X-Blaxel-Preview-Token": previewToken } : {};
   }
   if (!isCloudEntry(entry)) return {};
   const token = readCloudToken();

@@ -119,9 +119,6 @@ function boundDraftReplacements(
  * looked up is the same as one that was never recorded.
  */
 export function readStoredDraftReplacements(): Map<string, string> {
-  if (typeof window === "undefined") {
-    return new Map();
-  }
   try {
     const raw = sessionStorage.getItem(DRAFT_REPLACEMENTS_KEY);
     if (raw === null) {
@@ -146,9 +143,6 @@ export function readStoredDraftReplacements(): Map<string, string> {
 
 /** Store the map, dropping the key entirely when it is empty. */
 function writeStoredDraftReplacements(replacements: Map<string, string>): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     if (replacements.size === 0) {
       sessionStorage.removeItem(DRAFT_REPLACEMENTS_KEY);

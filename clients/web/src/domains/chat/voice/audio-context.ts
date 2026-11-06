@@ -21,9 +21,6 @@ export type AudioContextWindow = typeof globalThis & {
  * feature-detection sites can branch without constructing a context.
  */
 export function getAudioContextCtor(): typeof AudioContext | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
   return (
     window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext
   );

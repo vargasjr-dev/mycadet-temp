@@ -24,7 +24,6 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
-import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import { resolveVersion } from "@mycadet/shared/version";
 
@@ -126,6 +125,62 @@ export function getAppServerPid(): number | null {
   return pid !== null && isPidAlive(pid) && isAppServerProcess(pid, paths)
     ? pid
     : null;
+}
+
+/**
+ * A recorded PID that is alive but belongs to some OTHER process — the
+ * reuse case: the app server died and the OS handed its PID to something
+ * else (a stray nginx, another assistant's server). `app stop` reports it
+ * instead of the misleading "no app server is running", and offers to
+ * clear the squatter before continuing.
+ */
+export function getForeignAppServerProcess(): {
+  pid: number;
+  command: string;
+} | null {
+  const paths = getAppServerPaths();
+  const pid = readPidFile(paths.pidPath);
+  if (pid === null || !isPidAlive(pid) || isAppServerProcess(pid, paths)) {
+    return null;
+  }
+  let command = "";
+  try {
+    command = execFileSync("ps", ["-ww", "-p", String(pid), "-o", "command="], {
+      encoding: "utf-8",
+      timeout: 3000,
+      stdio: ["ignore", "pipe", "ignore"],
+      windowsHide: true,
+    }).trim();
+  } catch {
+    command = "(unidentified)";
+  }
+  return { pid, command };
+}
+
+/**
+ * Kill a foreign process sitting on the app server's recorded PID and
+ * clear the stale records. SIGTERM first, SIGKILL on a 2s timeout — the
+ * same escalation `stopAppServer` uses.
+ */
+export async function killForeignAppServerProcess(pid: number): Promise<boolean> {
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch {
+    clearStoppedAppServer(getAppServerPaths().pidPath);
+    return true;
+  }
+  if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // Already gone — the outcome the caller wanted.
+    }
+    if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+      return false;
+    }
+  }
+  clearStoppedAppServer(getAppServerPaths().pidPath);
+  return true;
 }
 
 export function isAppServerRunning(): boolean {
@@ -429,7 +484,6 @@ const AssistantHostConfigSchema = z.object({
   assistantId: z.string().min(1).optional(),
   assistantName: z.string().optional(),
   version: z.string().min(1).optional(),
-  hubUrl: z.string().url().optional(),
 });
 
 function assistantHostConfig(config: Record<string, unknown>) {
@@ -456,11 +510,9 @@ const CAPACITOR_APP_ORIGINS = [
 ];
 
 export function appOrigins(config: Record<string, unknown>): string[] {
-  const metadata = assistantHostConfig(config);
-  const origins = [
-    ...CAPACITOR_APP_ORIGINS,
-    ...(metadata.hubUrl ? [new URL(metadata.hubUrl).origin] : []),
-  ];
+  // Validation only — the fixed shell origins are the whole allowlist.
+  assistantHostConfig(config);
+  const origins = [...CAPACITOR_APP_ORIGINS];
   return [...new Set(origins)].map((origin) => {
     // The Capacitor shells' origins are fixed platform values, not parsed:
     // `new URL("capacitor://localhost").origin` serializes as "null" (a
@@ -484,20 +536,6 @@ export function appOrigins(config: Record<string, unknown>): string[] {
     }
     return url.origin;
   });
-}
-
-/** The tunnel URL on record (the root lockfile's `tunnel.publicUrl`, stamped
- * by whichever run established the tunnel), or undefined when none is — the
- * served config stamps it as `cloudUrl` so tunnel clients' account/auth
- * surfaces stay on the origin they came in on. */
-function savedPublicBaseUrl(): string | undefined {
-  try {
-    const url = readRootProcesses().tunnel?.publicUrl;
-    if (!url || !url.trim()) return undefined;
-    return url.trim();
-  } catch {
-    return undefined;
-  }
 }
 
 /**
@@ -663,8 +701,6 @@ export async function startAppServer(opts: {
     remote: assistant.entry.cloud,
     assistantName: getAssistantDisplayName(assistant.entry),
     assistantId: opts.assistantId,
-    hubUrl: cloudAssistantHubUrl(),
-    cloudUrl: savedPublicBaseUrl(),
     version,
   };
   const fingerprint = remoteWebConfigFingerprint(

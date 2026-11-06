@@ -67,10 +67,6 @@ export function getImpersonatedAssistantVersion(): string | null {
 export function setImpersonatedAssistantVersion(
   value?: string | null,
 ): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
   // Inspect-only branch — explicitly no-op, no reload.
   if (value === undefined) {
     const current = getImpersonatedAssistantVersion();

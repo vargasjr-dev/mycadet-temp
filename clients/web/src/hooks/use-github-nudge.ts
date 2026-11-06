@@ -126,8 +126,5 @@ export function useGitHubNudgeState(): GitHubNudgeState {
 // ---------------------------------------------------------------------------
 
 export function openGitHubRepo(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   window.open(CADET_GITHUB_REPOSITORY_URL, "_blank", "noopener,noreferrer");
 }

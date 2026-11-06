@@ -186,8 +186,7 @@ export function PdfPreview({ url, className, errorFallback }: PdfPreviewProps) {
         // at: callers cap its CSS width (the chat column, the drawer) and a
         // fixed scale would either blur on a retina display or waste memory.
         const cssWidth = canvas.clientWidth;
-        const reportedDpr =
-          typeof window === "undefined" ? 1 : window.devicePixelRatio;
+        const reportedDpr = window.devicePixelRatio;
         const dpr = reportedDpr > 0 ? reportedDpr : 1;
         const scale =
           cssWidth > 0

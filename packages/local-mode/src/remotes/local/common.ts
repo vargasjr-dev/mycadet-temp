@@ -659,7 +659,7 @@ function logDaemonReadiness(
         );
       }
       console.log(
-        "   ⚠️  Assistant did not become ready within 60s, continuing anyway\n",
+        "   ⚠️  Assistant did not report ready yet — continuing anyway (wake asks again at the gateway level)\n",
       );
   }
 }
@@ -1469,21 +1469,14 @@ export async function startLocalDaemon(
     // already-running daemon was classified and logged inside
     // startDaemonFromSource, and re-waiting would just block on a migration
     // the user was already told about.
-    const runtimeSpawn = await startDaemonFromSource(
+    // Spawn and return — readiness is the gateway's responsibility: its
+    // process gates its own traffic on the daemon's migrations.
+    await startDaemonFromSource(
       runtimeAssistantIndex,
       entry,
       daemonPort,
       options,
     );
-    if (runtimeSpawn) {
-      await reportFreshSpawnReadiness(
-        runtimeSpawn,
-        getDaemonPidPath(entry),
-        daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
-        options?.requireReady,
-      );
-    }
     return;
   }
 
@@ -1732,16 +1725,8 @@ export async function startLocalDaemon(
           options,
         )
       : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
-    // Attach case was classified and logged inside the start function.
-    if (sourceSpawn) {
-      await reportFreshSpawnReadiness(
-        sourceSpawn,
-        getDaemonPidPath(entry),
-        daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
-        options?.requireReady,
-      );
-    }
+    // Spawn and return — readiness is the gateway's responsibility: its
+    // process gates its own traffic on the daemon's migrations.
   }
 }
 

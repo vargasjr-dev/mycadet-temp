@@ -96,8 +96,7 @@ export function useCompanionPickers(): void {
     const unwatch = watchPreferredInputDevice(() => {
       void refresh();
     });
-    const mediaDevices =
-      typeof navigator === "undefined" ? undefined : navigator.mediaDevices;
+    const mediaDevices = navigator.mediaDevices;
     const onDeviceChange = (): void => {
       void refresh();
     };

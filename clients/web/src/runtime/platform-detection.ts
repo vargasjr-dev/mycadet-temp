@@ -18,13 +18,8 @@ import { isNativePlatform } from "@/runtime/native-platform";
  * real Macs report 0 or 1 touch points.
  *
  * Ref: https://developer.apple.com/forums/thread/119186
- *
- * Always returns `false` during SSR (no `navigator`).
  */
 export function isIOSBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
 
   const ua = navigator.userAgent;
   if (/iPhone|iPod/.test(ua)) {
@@ -52,9 +47,6 @@ export function isIOSBrowser(): boolean {
  * Ref: https://developer.chrome.com/docs/multidevice/user-agent/#chrome_for_ios_user_agent
  */
 export function isSafariBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
   const ua = navigator.userAgent;
   return (
     /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Chromium/.test(ua)
@@ -69,13 +61,8 @@ export function isSafariBrowser(): boolean {
  * iPadOS 13+ sends a macOS user agent by default, so this function
  * explicitly excludes iOS devices (detected via `isIOSBrowser()`) to
  * prevent iPads from seeing the macOS download nudge.
- *
- * Always returns `false` during SSR (no `navigator`).
  */
 export function isMacOSBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
   if (isIOSBrowser()) {
     return false;
   }
@@ -89,13 +76,8 @@ export function isMacOSBrowser(): boolean {
  * Samsung Internet, Firefox, WebView, etc.), so a substring check is the
  * reliable signal. Used so Android phone-web gets the same mobile-first
  * treatment as iOS phone-web.
- *
- * Always returns `false` during SSR (no `navigator`).
  */
 export function isAndroidBrowser(): boolean {
-  if (typeof navigator === "undefined") {
-    return false;
-  }
   return /Android/i.test(navigator.userAgent);
 }
 
@@ -108,14 +90,8 @@ export function isAndroidBrowser(): boolean {
  * `navigator.userAgentData.mobile` (Chromium only), the `Mobi` / `Tablet`
  * user-agent tokens that Firefox and Safari carry, then a media-query probe of
  * the input capability.
- *
- * Always returns `false` during SSR (no `navigator` / `window`).
  */
 export function isMobileBrowser(): boolean {
-  if (typeof navigator === "undefined" || typeof window === "undefined") {
-    return false;
-  }
-
   const uaData = (
     navigator as Navigator & {
       userAgentData?: { mobile?: boolean };
@@ -223,8 +199,6 @@ export function resolveDesktopHostOS(): ElectronHostOS {
  * wrapper reports its real OS. The remaining browser surfaces use
  * `isIOSBrowser()` / `isAndroidBrowser()`; everything else is `web`.
  *
- * Safe to call before hydration: each underlying helper falls through to
- * `false` when `window`/`navigator` are undefined, so SSR resolves to `web`.
  */
 export function detectClientOs(): ClientOs {
   const electronHostOS = detectElectronHostOS();
@@ -336,12 +310,9 @@ function browserFromUserAgent(ua: string): BrowserInfo | null {
 /**
  * Detect the current browser's family and major version for telemetry.
  * Prefers `userAgentData.brands` where available, falls back to UA-string
- * parsing. Returns `{}` when neither yields a match (or during SSR).
+ * parsing. Returns `{}` when neither yields a match.
  */
 export function detectBrowserInfo(): BrowserInfo {
-  if (typeof navigator === "undefined") {
-    return {};
-  }
   const uaData = (
     navigator as Navigator & {
       userAgentData?: { brands?: UADataBrand[] };

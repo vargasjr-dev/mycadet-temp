@@ -50,9 +50,6 @@ export interface NavigateToConversationOptions {
 
 /** The route on screen, router-relative like `useLocation().pathname`. */
 export function currentPathname(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
   const { pathname } = window.location;
   const prefix = remoteGatewayPublicPathPrefix();
   return prefix.length > 0 && pathname.startsWith(prefix)
@@ -65,9 +62,6 @@ export function currentPathname(): string {
  * `useLocation` of its own. React Router keeps a location's state under `usr`.
  */
 export function currentEntryState(): unknown {
-  if (typeof window === "undefined") {
-    return null;
-  }
   return (window.history.state as { usr?: unknown } | null)?.usr ?? null;
 }
 
@@ -95,10 +89,7 @@ function resetPerConversationState(): void {
 }
 
 function isNarrowViewport(): boolean {
-  if (
-    typeof window === "undefined" ||
-    typeof window.matchMedia !== "function"
-  ) {
+  if (typeof window.matchMedia !== "function") {
     return false;
   }
   return window.matchMedia(MOBILE_MEDIA_QUERY).matches;

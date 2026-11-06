@@ -12,10 +12,7 @@ function parseHttpUrl(href: string | undefined): URL | null {
 
   let url: URL;
   try {
-    const base =
-      typeof window === "undefined"
-        ? "http://localhost"
-        : window.location.origin;
+    const base = window.location.origin;
     url = new URL(href, base);
   } catch {
     return null;
@@ -53,9 +50,6 @@ export function shouldOpenMarkdownLinkInOAuthPopup(
 export function getSameOriginRoutePath(
   href: string | undefined,
 ): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
 
   const url = parseHttpUrl(href);
   if (!url || url.origin !== window.location.origin) {
