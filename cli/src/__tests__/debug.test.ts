@@ -18,7 +18,6 @@ process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import * as guardianToken from "../lib/guardian-token.js";
 import * as localMode from "@mycadet/local-mode";
 import { withPreconnect } from "./helpers/http.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
