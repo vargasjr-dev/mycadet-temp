@@ -9,7 +9,7 @@ import {
   exec,
   execOutput,
   execWithStdin,
-} from "../exec";
+} from "@mycadet/local-mode";
 
 describe("buildExecErrorMessage", () => {
   it("omits the argv from the header so secrets in args can't leak", () => {
