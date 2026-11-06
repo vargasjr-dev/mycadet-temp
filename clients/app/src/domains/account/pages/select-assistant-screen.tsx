@@ -2,10 +2,8 @@ import { CloudOff, Globe, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
-import { AddRemoteOriginDialog } from "@app/components/account/add-remote-origin-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
-import { ConnectAssistantDialog } from "@app/components/account/connect-assistant-dialog";
 import { OriginCardMenu } from "@app/components/account/origin-card-menu";
 import { RetireCardMenu } from "@app/components/account/retire-card-menu";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -15,7 +13,6 @@ import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
-import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import {
   useRememberedOriginsStore,
   type RememberedOrigin,
@@ -102,22 +99,14 @@ export function SelectAssistantScreen() {
   const [retireError, setRetireError] = useState<string | null>(null);
   // The remembered-origin list and the dialogs that manage it.
   const originEntries = useRememberedOriginsStore.use.origins();
-  const [addOriginOpen, setAddOriginOpen] = useState(false);
   const [removeOriginTarget, setRemoveOriginTarget] =
     useState<RememberedOrigin | null>(null);
   const [removeOriginPending, setRemoveOriginPending] = useState(false);
-  const [removeOriginError, setRemoveOriginError] = useState<string | null>(
-    null,
-  );
   const { state, retry } = useAssistantChoices();
   const status =
     state.status === "selection" && state.assistants.length === 0
       ? "empty"
       : state.status;
-
-  const connectDialogOpen = useConnectDialogStore.use.open();
-  const connectInitialAddress = useConnectDialogStore.use.initialAddress();
-  const connectGuidanceKind = useConnectDialogStore.use.guidanceKind();
 
   const closeRetireDialog = () => {
     if (retirePending) {
@@ -138,48 +127,6 @@ export function SelectAssistantScreen() {
       return;
     }
     setRemoveOriginTarget(null);
-    setRemoveOriginError(null);
-  };
-
-  const handleRemoveOriginConfirm = async () => {
-    if (!removeOriginTarget || removeOriginPending) {
-      return;
-    }
-    setRemoveOriginPending(true);
-    await useRememberedOriginsStore.removeOrigin(removeOriginTarget.url);
-    setRemoveOriginPending(false);
-    // removeOrigin resolves silently on a persistence failure, so the entry
-    // still being listed is the failure signal — the dialog stays open.
-    const stillListed = useRememberedOriginsStore
-      .getState()
-      .origins.some((o) => o.url === removeOriginTarget.url);
-    if (stillListed) {
-      setRemoveOriginError(t("addRemoteOriginDialog.addFailed"));
-      return;
-    }
-    closeRemoveOriginDialog();
-  };
-
-  // `deviceCode` is one-time credential material and is never persisted: the
-  // store holds the base alone, and the code lives just long enough to ride
-  // the navigation into the origin's own pair page.
-  const handleOriginAdded = (
-    origin: RememberedOrigin,
-    deviceCode: string | null,
-  ) => {
-    setAddOriginOpen(false);
-    // Landing on the origin runs its own pair flow when no session exists.
-    void switchToOrigin(origin, deviceCode ?? undefined);
-  };
-
-  const handleImported = (assistantId: string) => {
-    useConnectDialogStore.getState().closeConnectDialog();
-    // The import registered the assistant before resolving; the choice list
-    // refetches behind the navigation so the chooser reflects it on return.
-    void navigate(routes.assistant, {
-      state: assistantSelectionState(assistantId),
-    });
-    void retry();
   };
 
   const handleRetireConfirm = async () => {
@@ -295,20 +242,10 @@ export function SelectAssistantScreen() {
             />
           );
         })}
-        {/* Pair in place through the connect dialog: the exchange runs in
-            the serving host's trusted process. Hostless surfaces (hub
-            browser, remote-gateway mode, native mobile) — and any shell
-            pointing at another deployment — add an origin by address or
-            pairing link and navigate to it. */}
         <DashedActionButton
           icon={<Link2 className="h-4 w-4" />}
-          label={t("selectAssistantScreen.connectRemote")}
-          onClick={() => useConnectDialogStore.getState().openConnectDialog()}
-        />
-        <DashedActionButton
-          icon={<Globe className="h-4 w-4" />}
-          label={t("selectAssistantScreen.addRemote")}
-          onClick={() => setAddOriginOpen(true)}
+          label={t("selectAssistantScreen.hatchAssistant")}
+          onClick={() => navigate(routes.account.onboarding.hosting)}
         />
         {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
@@ -316,10 +253,6 @@ export function SelectAssistantScreen() {
         {status === "unauthenticated" && (
           <Link to={routes.account.login}>{t("accountPage.signIn")}</Link>
         )}
-        {/* A dead list still leaves a way forward: hatch a new assistant from
-            the chooser itself (the dialog's failures toast on their own), so
-            an unreachable API reads as a degraded chooser rather than a dead
-            end. */}
         {(status === "empty" || status === "error") && (
           <>
             <Button variant="primary" onClick={() => setCreating(true)}>
@@ -339,8 +272,6 @@ export function SelectAssistantScreen() {
             />
           </>
         )}
-        {/* Gated by retireTarget, not by the list status: a row can be
-            retired from any state the chooser renders. */}
         <RetireConfirmDialog
           open={retireTarget != null}
           error={retireError}
@@ -348,29 +279,15 @@ export function SelectAssistantScreen() {
           onConfirm={() => void handleRetireConfirm()}
           onCancel={closeRetireDialog}
         />
-        <AddRemoteOriginDialog
-          open={addOriginOpen}
-          onClose={() => setAddOriginOpen(false)}
-          onAdded={handleOriginAdded}
-        />
         <RemoveFromDeviceDialog
+          url={removeOriginTarget?.url ?? ""}
           open={removeOriginTarget != null}
           assistantName={
             removeOriginTarget
               ? originLabel(removeOriginTarget)
               : t("selectAssistantScreen.unnamedAssistant")
           }
-          errorMessage={removeOriginError ?? undefined}
-          isPending={removeOriginPending}
-          onConfirm={() => void handleRemoveOriginConfirm()}
-          onCancel={closeRemoveOriginDialog}
-        />
-        <ConnectAssistantDialog
-          open={connectDialogOpen}
-          initialAddress={connectInitialAddress ?? undefined}
-          guidanceKind={connectGuidanceKind ?? undefined}
-          onClose={() => useConnectDialogStore.getState().closeConnectDialog()}
-          onImported={handleImported}
+          closeDialog={closeRemoveOriginDialog}
         />
       </div>
     </AccountShell>

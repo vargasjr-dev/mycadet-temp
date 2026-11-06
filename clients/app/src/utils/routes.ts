@@ -12,7 +12,6 @@ export const routes = {
     root: "/account",
     consent: "/account/consent",
     onboarding: {
-      welcome: "/account/onboarding/welcome",
       start: "/account/onboarding/start",
       hosting: "/account/onboarding/hosting",
       apiKey: "/account/onboarding/api-key",
