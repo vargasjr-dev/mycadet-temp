@@ -26,10 +26,9 @@ import { withPreconnect } from "./helpers/http.js";
 // answer it in-process and record the invocations (the fetch stubs below
 // still serve the loopback HTTP mint the other topologies keep using).
 const mintCalls: Array<{ command: string; args: readonly string[] }> = [];
-// The cutover: the mint runs inside the package's pairChallenge pair —
+// The cutover: the mint runs inside the package's pairLocal/pairDocker —
 // the mock stands in for THOSE, recording the invocation the package
-// would have run (command + the mint args) so the argv assertions below
-// keep biting.
+// would have run so the argv assertions below keep biting.
 // The gateway CLI self-sources its advertised url from its own workspace
 // config, so the mint carries no url argument; the mock echoes the base the
 // test seeded there.
@@ -54,8 +53,8 @@ const mockMint = (entry: { assistantId: string }): Promise<string> => {
 };
 mock.module("@mycadet/local-mode", () => ({
   ...actualLocalMode,
-  pairChallengeLocal: mockMint,
-  pairChallengeDocker: mockMint,
+  pairLocal: mockMint,
+  pairDocker: mockMint,
 }));
 
 // The cloud-home arms (cloud/custom/baseten) mint through the platform's

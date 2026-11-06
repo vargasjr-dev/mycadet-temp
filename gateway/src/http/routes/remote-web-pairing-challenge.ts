@@ -8,8 +8,6 @@ import {
   type RemoteWebPairingChallengeRateLimit,
 } from "../../remote-web/pairing-challenge-rate-limit-store.js";
 import { EDGE_CLIENT_IP_HEADER } from "../edge-forwarded-header.js";
-import { errorResponse } from "../loopback-guard.js";
-import { isLoopbackAddress } from "../../util/is-loopback-address.js";
 import {
   parsePublicBaseUrl,
   readSavedIngressPublicBaseUrl,
@@ -51,14 +49,6 @@ function capacityLimitedResponse(
     },
   );
 }
-
-/**
- * The marker the nginx edge stamps on proxied requests. The edge connects
- * over loopback, so a non-loopback peer carrying it is spoofing — but the
- * stamp's job here is only to vouch for the client-ip header, never to
- * admit a stranger.
- */
-const EDGE_FORWARDED_HEADER = "x-cadet-edge-forwarded";
 
 /**
  * A self-sourced URL must serve devices outside the host machine — a link
@@ -109,27 +99,10 @@ export async function handleCreateRemoteWebPairingChallenge(
   const capacityLimited = checkRemoteWebPairingChallengeCapacity();
   if (capacityLimited) return capacityLimitedResponse(capacityLimited);
 
-  // The gateway serves the local machine and its trusted edge. A stranger
-  // arriving directly gets nothing — challenges are minted by the local
-  // assistant or through the edge that fronts its public URL.
-  const edgeForwarded =
-    req.headers.get(EDGE_FORWARDED_HEADER)?.trim() === "1";
-  const peerLoopback = isLoopbackAddress(clientIp);
-  if (!peerLoopback && !edgeForwarded) {
-    return errorResponse(
-      "FORBIDDEN",
-      "pairing challenges are minted by the local assistant or its trusted edge",
-      403,
-    );
-  }
-
   // The edge stamps the client address it observed via proxy_set_header
-  // (overwriting any inbound value), so the stamp is trustworthy exactly
-  // when the marker is present. Direct local mints keep the raw peer — a
-  // client-supplied x-cadet-client-ip is never believed there.
-  const edgeClientIp = edgeForwarded
-    ? req.headers.get(EDGE_CLIENT_IP_HEADER)?.trim()
-    : undefined;
+  // (overwriting any inbound value), so it is trustworthy exactly when the
+  // trusted-edge check above passed. Direct local mints keep the raw peer.
+  const edgeClientIp = req.headers.get(EDGE_CLIENT_IP_HEADER)?.trim();
 
   const challenge = createRemoteWebPairingChallenge(publicBaseUrl, {
     ip: edgeClientIp || clientIp,

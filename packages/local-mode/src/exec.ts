@@ -33,19 +33,11 @@ export function buildExecErrorMessage(
   return output ? `${header}\n${output}` : header;
 }
 
-/**
- * Run a child to completion. Fire-and-forget by default (resolves void);
- * pass `captureStdout: true` to also receive the child's trimmed stdout —
- * for callers that want the output without needing it as the run's product.
- * Either way a non-zero exit rejects with the secret-safe message that
- * carries the child's stderr AND stdout, so a failed step's diagnostics
- * print at the call site's error surface.
- */
 export function exec(
   command: string,
   args: string[],
-  options: { cwd?: string; captureStdout?: boolean } = {},
-): Promise<string | void> {
+  options: { cwd?: string } = {},
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
@@ -65,7 +57,7 @@ export function exec(
 
     child.on("close", (code) => {
       if (code === 0) {
-        resolve(options.captureStdout ? stdout.trim() : undefined);
+        resolve();
       } else {
         reject(new Error(buildExecErrorMessage(command, code, stderr, stdout)));
       }

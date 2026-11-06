@@ -31,7 +31,6 @@ export function parsePublicBaseUrl(value: string): string | null {
 }
 
 /**
-/**
  * The gateway's own minimal read of the workspace config. This is
  * deliberately a gateway-side schema rather than the workspace config's
  * shared definition: the saved ingress URL is expected to move out of the
@@ -60,8 +59,3 @@ export function readSavedIngressPublicBaseUrl(): string {
   }
   return `http://127.0.0.1:${loadConfig().port}`;
 }
-  }
-  return `http://127.0.0.1:${loadConfig().port}`;
-}
-}
-

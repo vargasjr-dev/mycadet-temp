@@ -36,8 +36,8 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   loopbackSafeFetch,
-  pairChallengeDocker,
-  pairChallengeLocal,
+  pairDocker,
+  pairLocal,
 } from "@mycadet/local-mode";
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -162,7 +162,7 @@ async function gatewayPost(
  * Mint (and approve) a remote-web pairing challenge. `cadet pair` is a
  * wrapper around `gateway pairing mint` executed on the assistant's gateway:
  * each topology's own remote module owns its execution surface
- * (`pairChallengeLocal` through the gateway CLI invocation, `pairChallengeDocker` through
+ * (`pairLocal` through the gateway CLI invocation, `pairDocker` through
  * docker exec, `appleContainerPair` through the management socket,
  * `cloudPair` through the platform's terminal-session exec). Process
  * execution is the local-presence proof; the mint approves on the spot, so
@@ -174,9 +174,9 @@ async function mintPairingChallengeOrExit(
   let stdout: string;
   try {
     if (isLocalEntry(entry)) {
-      stdout = await pairChallengeLocal(entry);
+      stdout = await pairLocal(entry);
     } else if (isDockerEntry(entry)) {
-      stdout = await pairChallengeDocker(entry);
+      stdout = await pairDocker(entry);
     } else if (isAppleContainerEntry(entry)) {
       stdout = await appleContainerPair(entry);
     } else {

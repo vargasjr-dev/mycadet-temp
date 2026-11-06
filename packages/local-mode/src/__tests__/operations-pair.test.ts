@@ -8,6 +8,10 @@ import {
   test,
 } from "bun:test";
 import type { LocalAssistant, LockfileAssistant } from "../lockfile-contract";
+import type {
+  PairDeviceIdentity,
+  PairOperationResult,
+} from "../operations/pair";
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -15,11 +19,21 @@ import type { LocalAssistant, LockfileAssistant } from "../lockfile-contract";
 const realLocalPair = { ...(await import("../remotes/local/pair")) };
 const realDockerPair = { ...(await import("../remotes/docker/pair")) };
 
-const pairLocalMock = mock<typeof realLocalPair.pairLocal>(async () => ({
+const pairLocalMock = mock<
+  (
+    entry: LocalAssistant,
+    device?: PairDeviceIdentity,
+  ) => Promise<string | PairOperationResult>
+>(async () => ({
   ok: true,
   response: { token: "local" },
 }));
-const pairDockerMock = mock<typeof realDockerPair.pairDocker>(async () => ({
+const pairDockerMock = mock<
+  (
+    entry: LockfileAssistant,
+    device?: PairDeviceIdentity,
+  ) => Promise<string | PairOperationResult>
+>(async () => ({
   ok: true,
   response: { token: "docker" },
 }));

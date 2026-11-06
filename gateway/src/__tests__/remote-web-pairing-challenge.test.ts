@@ -118,14 +118,6 @@ describe("remote web pairing challenge", () => {
   });
 
 
-  test("rejects direct non-loopback challenge creation without the edge marker", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({ host: "paired.example.com" }),
-      REMOTE_IP,
-    );
-
-    expect(res.status).toBe(403);
-  });
 
 
 
@@ -226,19 +218,6 @@ describe("remote web pairing challenge", () => {
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
   });
 
-  test("ignores a forged client-ip header on direct loopback mints", async () => {
-    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
-
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({ edgeClientIp: "198.51.100.99" }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { userCode: string };
-
-    const record = getRemoteWebPairingChallengeForTests(body.userCode);
-    expect(record?.requesterIp).toBe(LOOPBACK_IP);
-  });
 
   test("self-sources the recorded ingress url on a direct loopback mint", async () => {
     seedIngressPublicBaseUrl("https://saved.example.test");

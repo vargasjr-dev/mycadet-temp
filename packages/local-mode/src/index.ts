@@ -362,8 +362,8 @@ export {
   type PairDeviceIdentity,
   type PairOperationResult,
 } from "./operations/pair";
-export { pairChallengeLocal } from "./remotes/local/pair";
-export { pairChallengeDocker } from "./remotes/docker/pair";
+export { pairLocal } from "./remotes/local/pair";
+export { pairDocker } from "./remotes/docker/pair";
 export {
   cloudTokenPath,
   readCloudToken,
