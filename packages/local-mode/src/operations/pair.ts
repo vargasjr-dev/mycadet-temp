@@ -42,6 +42,7 @@ export async function pairDevice(
   entry: LockfileAssistant,
   device: PairDeviceIdentity,
 ): Promise<PairOperationResult> {
+  console.log("pair me", entry);
   let result: PairOperationResult;
   switch (entry.cloud) {
     case "local":

@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { getWorkspaceDir } from "../paths.js";
+import { loadConfig } from "../config.js";
+import { getLogger } from "../logger.js";
 
 /**
  * Shared public-base-URL handling for the remote-web pairing flow — the
@@ -15,11 +17,18 @@ import { getWorkspaceDir } from "../paths.js";
  * or null when the value is empty, unparseable, non-http(s), or hostless.
  */
 export function parsePublicBaseUrl(value: string): string | null {
+  console.log("parsePublicBaseUrl", value);
+  const logger = getLogger("parsePublicBaseUrl");
+  logger.info("parsePublicBaseUrl | " + value);
   if (!value.trim()) {
     return null;
   }
   try {
     const url = new URL(value);
+    logger.info("protocol | " + url.protocol + " | " + url.host);
+
+    console.log("protocol", url.protocol, url.host);
+
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     if (!url.host) return null;
     const pathPrefix = url.pathname.replace(/\/+$/, "");
@@ -45,15 +54,18 @@ const SavedIngressConfigSchema = z.object({
     .optional(),
 });
 
-/** The ingress URL recorded in this gateway's own workspace, or null. */
-export function readSavedIngressPublicBaseUrl(): string | null {
+/** The ingress URL recorded in the Cadet's workspace, defaulting to localhost */
+export function readSavedIngressPublicBaseUrl(): string {
   try {
     const raw = readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8");
     const config = SavedIngressConfigSchema.parse(JSON.parse(raw));
     const url = config.ingress?.publicBaseUrl;
-    return url?.trim() ? url : null;
+    if (url?.trim()) return url;
   } catch {
-    return null;
+    // No workspace config (or an unreadable one) — the local default below
+    // is the answer for a local assistant.
   }
+  return `http://127.0.0.1:${loadConfig().port}`;
+}
 }
 
