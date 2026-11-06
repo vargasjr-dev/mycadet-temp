@@ -8,7 +8,6 @@ import {
   sanitizePairedForwardHeaders,
   type GuardianTokenLease,
   type LockfileAssistant,
-  type PairedGuardianTokenProvider,
 } from "@mycadet/local-mode";
 
 import {
@@ -63,28 +62,7 @@ export type GatewayForwardPlan =
     };
 
 /**
- * Resolve a renderer request to a gateway-proxy plan, reusing the shared
- * lockfile decision so the security boundary is defined once for this handler,
- * the Vite dev proxy, and the CLI web server: only assistants the user
- * actually hatched or imported are reachable.
- *
- * On a loopback forward, the request's `Origin` is rewritten to the gateway's
- * own loopback origin (the gateway gates loopback web origins on its
- * browser-reachable routes). The executor owns the `Authorization` header: it
- * overwrites whatever the renderer sent with the bearer it mints from the
- * on-disk guardian token, so nothing token-shaped ever crosses into the
- * renderer.
- *
- * On a remote forward, renderer-controlled authorization and browser-ambient
- * headers (`Origin`, `Referer`, `Cookie`, `Sec-Fetch-*`) are stripped via the
- * shared `sanitizePairedForwardHeaders`, and the trusted main process installs
- * the paired assistant's guardian bearer via
- * {@link authorizeGatewayForwardPlan} before the plan executes.
- *
- * Electron's WebRequest boundary verifies the requesting frame before this
- * planner runs. The lockfile target map then constrains the destination. A
- * compromised trusted renderer retains access through the running proxy but
- * cannot read or reuse the guardian credential outside it.
+ * How requests should be forwarded.
  */
 function planGatewayForward(
   request: Request,
@@ -136,7 +114,6 @@ function planGatewayForward(
 /** Resolve and install the host-owned bearer required by a remote plan. */
 async function authorizeGatewayForwardPlan(
   plan: GatewayForwardPlan,
-  getGuardianToken: PairedGuardianTokenProvider,
 ): Promise<GatewayForwardPlan> {
   if (plan.kind !== "forward" || !plan.remote) {
     return plan;
@@ -144,7 +121,6 @@ async function authorizeGatewayForwardPlan(
   const result = await authorizePairedForwardHeaders(
     plan.assistantId,
     plan.headers,
-    getGuardianToken,
   );
   if (!result.ok) {
     return { kind: "reject", status: result.status, message: result.error };
@@ -158,10 +134,6 @@ export const forwardGatewayRequest = async (
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readGatewayTargets),
-    // The trusted main-process proxy reads the paired bearer through the
-    // shared seam, resolving the invocation here (the old electron-local
-    // wrapper lived only to do this).
-    getGuardianAccessToken,
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };
