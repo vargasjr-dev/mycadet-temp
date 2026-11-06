@@ -24,11 +24,6 @@ describe("getLocalCategorySlugs", () => {
   });
 
   test("falls back to the module-relative catalog when getRepoSkillsDir is undefined (Docker source-run)", () => {
-    // Regression: in Docker mode the launcher runs `bun run src/index.ts`
-    // without CADET_DEV, so getRepoSkillsDir() returns undefined. The reader
-    // previously returned an empty set, which made normalizeMarketplaceCategory
-    // treat every marketplace category as invalid and bucket all plugins under
-    // System. The module-relative fallback must still resolve the bundled YAML.
     repoSkillsDirOverride = undefined;
     const slugs = getLocalCategorySlugs();
     expect(slugs.size).toBeGreaterThan(0);

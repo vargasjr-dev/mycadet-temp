@@ -11,9 +11,6 @@ import {
   test,
 } from "bun:test";
 
-const originalCadetDev = process.env.CADET_DEV;
-process.env.CADET_DEV = "1";
-
 let oauthConnectionStore: Record<string, { id: string; status: string }> = {};
 
 mock.module("../oauth/manual-token-connection.js", () => ({
@@ -79,11 +76,6 @@ afterAll(() => {
   globalThis.fetch = originalFetch;
   _setMetadataPath(null);
   _resetBackend();
-  if (originalCadetDev === undefined) {
-    delete process.env.CADET_DEV;
-  } else {
-    process.env.CADET_DEV = originalCadetDev;
-  }
 });
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;

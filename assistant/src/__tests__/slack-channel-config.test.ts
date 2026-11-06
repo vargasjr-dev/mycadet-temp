@@ -13,9 +13,6 @@ import {
 const testDir = process.env.CADET_WORKSPACE_DIR!;
 const secureStorePath = join(testDir, "keys.enc");
 const metadataPath = join(testDir, "metadata.json");
-const originalCadetDev = process.env.CADET_DEV;
-
-process.env.CADET_DEV = "1";
 
 // Mock oauth-store (getConnectionByProvider)
 let oauthConnectionStore: Record<
@@ -108,11 +105,6 @@ afterAll(() => {
   globalThis.fetch = originalFetch;
   _setMetadataPath(null);
   _resetBackend();
-  if (originalCadetDev === undefined) {
-    delete process.env.CADET_DEV;
-  } else {
-    process.env.CADET_DEV = originalCadetDev;
-  }
 });
 
 describe("Slack channel config handler", () => {

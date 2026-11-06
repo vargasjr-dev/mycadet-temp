@@ -24,12 +24,17 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, join, sep } from "node:path";
 
-import {
-  findAssistantCommand,
-  isRepoCheckoutPath,
-} from "@mycadet/environments";
-
 import { getLogger } from "../util/logger.js";
+
+const NODE_MODULES_SEGMENT = `${sep}node_modules${sep}`;
+
+/**
+ * Whether `path` sits in a developer's repo checkout rather than inside an
+ * installed package.
+ */
+export function isRepoCheckoutPath(path: string): boolean {
+  return !path.includes(NODE_MODULES_SEGMENT);
+}
 
 const log = getLogger("install-assistant-command");
 
@@ -50,6 +55,32 @@ export type AssistantCommandTarget =
 function isBunRuntime(execPath: string): boolean {
   const base = basename(execPath);
   return base === "bun" || base === "bunx" || base.startsWith("bun-");
+}
+
+/**
+ * The `assistant` command shipped with the install that contains `path`, or
+ * null when there is none (a repo checkout, or an install whose dependency
+ * graph omits the package declaring the bin).
+ *
+ * Searches innermost `node_modules` outward, since a nested install shadows a
+ * hoisted one.
+ */
+export function findAssistantCommand(path: string): string | null {
+  let index = path.lastIndexOf(NODE_MODULES_SEGMENT);
+
+  while (index !== -1) {
+    const nodeModulesDir = path.slice(
+      0,
+      index + NODE_MODULES_SEGMENT.length - 1,
+    );
+    const command = join(nodeModulesDir, ".bin", "assistant");
+    if (existsSync(command)) {
+      return command;
+    }
+    index = path.lastIndexOf(NODE_MODULES_SEGMENT, index - 1);
+  }
+
+  return null;
 }
 
 /**
@@ -278,14 +309,8 @@ function commandResolvesElsewhere(
  *
  * Tries `/usr/local/bin/assistant` first, then falls back to
  * `~/.local/bin/assistant` (and patches the shell profile if needed).
- *
- * Skipped when CADET_DEV=1 (developers manage their own PATH).
  */
 export function installAssistantCommand(): void {
-  if (process.env.CADET_DEV === "1") {
-    return;
-  }
-
   const target = resolveAssistantCommandTarget();
   if (!target) {
     return;

@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { findAssistantCommand, isRepoCheckoutPath } from "../index.js";
+import {
+  findAssistantCommand,
+  isRepoCheckoutPath,
+} from "../install-assistant-command.js";
 
 let root: string;
 

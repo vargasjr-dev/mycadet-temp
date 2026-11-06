@@ -575,10 +575,11 @@ async function runProxyRoute(
   });
   const outHeaders = new Headers();
   upstream.headers.forEach((value, key) => {
+    console.log("UPSTREAM HEADER", key, value);
     const lower = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lower)) return;
     if (lower === "content-length" || lower === "content-encoding") return;
-    outHeaders.set(key, value);
+    outHeaders.append(key, value);
   });
   return new Response(upstream.body, {
     status: upstream.status,

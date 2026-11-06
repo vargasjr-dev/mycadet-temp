@@ -36,7 +36,6 @@ export function AssistantPage() {
       apiBaseUrl={
         selection?.apiBase ?? (isNativePlatform() ? config?.baseUrl : undefined)
       }
-      location={`${location.pathname}${location.search}${location.hash}`}
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,

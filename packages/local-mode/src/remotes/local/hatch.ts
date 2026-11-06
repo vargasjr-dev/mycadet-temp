@@ -44,11 +44,6 @@ export async function allocateLocalPlacement(
   const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
-  // The probe is the source of truth — anything actually listening claims
-  // its port, whether that listener is another assistant or not.
-  // Env-aware bases: non-prod envs sit in their own 1000-port window so
-  // running prod and staging assistants side-by-side doesn't collide. See
-  // the `@mycadet/environments` `portBlock` layout.
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
   const gatewayPort = await findAvailablePort(basePorts.gateway);
