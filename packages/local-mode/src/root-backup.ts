@@ -693,9 +693,12 @@ export async function restoreRootBackup(
   entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
+  // Optional storage override, matching initializeRootArchive's seam: tests
+  // inject a real storage with scripted faults; production callers omit it.
+  storage?: RootStorage,
 ): Promise<string | undefined> {
   return withRootOperationLock(entry, () =>
-    restoreBackup(entry, file, options),
+    restoreBackup(entry, file, options, storage),
   );
 }
 
@@ -724,8 +727,9 @@ async function restoreBackup(
   entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean },
+  storageOverride?: RootStorage,
 ): Promise<string | undefined> {
-  const storage = storageFor(entry);
+  const storage = storageOverride ?? storageFor(entry);
   const stage = await stageRootArchive(file);
   const source = join(stage, "state");
   const snapshot = join(stage, "previous");

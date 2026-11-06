@@ -1,5 +1,16 @@
-import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 import { Database } from "bun:sqlite";
+import type { ChildProcess } from "node:child_process";
+import * as childProcess from "node:child_process";
+import { EventEmitter } from "node:events";
 import {
   chmod,
   lstat,
@@ -12,11 +23,247 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import * as net from "node:net";
 import * as tar from "tar";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
+
+// ---------------------------------------------------------------------------
+// Boundary mocks. The backup/restore lifecycle talks to the world through
+// four real I/O surfaces, and only those are faked — never our own source:
+//
+//   1. node:child_process — what the lifecycle spawns (`ps` for PID
+//      ownership proof, port-to-pid recovery, daemon/gateway/ces starts).
+//      Faked as a request-mock: every spawn is journaled; nothing real ever
+//      runs.
+//   2. process.kill       — the OS signal boundary (liveness probes, SIGTERM
+//      stops). Fake pids are tracked in an alive-set so the real
+//      liveness/graceful-stop code runs unmodified; real pids pass through.
+//   3. node:net           — the port-probe boundary (connect probes used by
+//      the allocators and the port-heal). Connects never answer.
+//   4. globalThis.fetch   — the network boundary (the gateway health verdict
+//      the sleep's wasRunning rides, drain calls, readiness probes).
+//      Journaled requests; scripted per-test answers.
+//
+// Tests script the world (PID files + the alive-set, health answers) and
+// assert on the journal: the ordering/failure assertions the old source-level
+// mocks made become assertions about real I/O requests. ../root-backup is
+// imported dynamically BELOW the mock.module calls, so it binds to the
+// mocked builtins.
+// ---------------------------------------------------------------------------
+
+/** Above every plausible pid_max (Linux caps at 4194304): never a real pid. */
+const FAKE_PID_BASE = 2_000_000_000;
+
+type JournalEntry =
+  | { kind: "spawn"; command: string; args: string[] }
+  | { kind: "signal"; pid: number; signal: string | number }
+  | { kind: "fetch"; url: string };
+
+const journal: JournalEntry[] = [];
+
+// --- 1. node:child_process --------------------------------------------------
+
+const realChildProcess = { ...childProcess };
+
+const alivePids = new Set<number>();
+
+/** Scripted spawn outcomes by substring of "command args"; default: exit 0. */
+const spawnScript = new Map<string, "error" | { code: number }>();
+
+/** Where the fake CES sibling binds its socket, set per-fixture. */
+let cesSocketPath = "";
+
+let spawnCounter = 0;
+function fakeSpawn(command: string, args: string[]): ChildProcess {
+  journal.push({ kind: "spawn", command, args });
+  const spawned = `${command} ${args.join(" ")}`;
+  const scripted = [...spawnScript.entries()].find(([needle]) =>
+    spawned.includes(needle),
+  )?.[1];
+  const isCesSpawn = /credential|ces[\\/]src/.test(spawned);
+  const pid = FAKE_PID_BASE + ++spawnCounter;
+  const child = new EventEmitter() as EventEmitter & ChildProcess;
+  Object.assign(child, {
+    stdout: new EventEmitter(),
+    stderr: new EventEmitter(),
+    killed: false,
+    kill: () => true,
+    unref: () => {},
+    pid: scripted === "error" ? undefined : pid,
+  });
+  // Absorb the error event when the spawning source attaches no handler of
+  // its own — an unhandled 'error' on a child process kills the runner.
+  child.on("error", () => {});
+  if (scripted !== "error") alivePids.add(pid);
+  queueMicrotask(() => {
+    if (scripted === "error") child.emit("error", new Error("spawn failed"));
+    else {
+      // A started CES binds its bootstrap socket; the fake world models
+      // that observable effect so the starter's readiness loop sees it.
+      if (isCesSpawn && cesSocketPath) writeFileSync(cesSocketPath, "");
+      child.emit("close", typeof scripted === "object" ? scripted.code : 0);
+    }
+  });
+  return child;
+}
+
+function fakeExecFileSync(command: string, args: string[]): string {
+  // `ps -p <pid> -o command=` is how the stop path proves a PID still
+  // belongs to a cadet process before killing it. Answer only for pids the
+  // fake world says are alive; anything else throws exactly like a dead pid.
+  if (command === "ps" && args[0] === "-p") {
+    const pid = Number(args[1]);
+    if (alivePids.has(pid)) return "bun /home/user/.cadet/cadet-daemon";
+    throw new Error(`ps: no process named with pid ${pid}`);
+  }
+  // Port-to-pid recovery tools see the fake world too: no listeners exist
+  // in it (the real host's own listeners must never leak into the journal
+  // as recovered daemon pids).
+  if (command === "lsof" || command === "fuser" || command === "tasklist.exe")
+    throw new Error(`${command}: no matching processes in the fake world`);
+  return String(
+    realChildProcess.execFileSync(command, args, { encoding: "utf8" }),
+  );
+}
+
+// --- 2. process.kill (the signal boundary) ----------------------------------
+
+const realKill = process.kill.bind(process);
+const killSpy = spyOn(process, "kill").mockImplementation(
+  (pid: number, signal?: string | number) => {
+    if (Math.abs(pid) >= FAKE_PID_BASE) {
+      journal.push({ kind: "signal", pid, signal: signal ?? "SIGTERM" });
+      if ((signal ?? "SIGTERM") === 0) {
+        if (!alivePids.has(pid))
+          throw Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
+        return true;
+      }
+      // A real signal stops the fake service — SIGTERM'd local services
+      // exit, which is what the graceful-stop code waits to observe.
+      alivePids.delete(Math.abs(pid));
+      return true;
+    }
+    return realKill(pid, signal as never);
+  },
+);
+
+mock.module("node:child_process", () => ({
+  ...realChildProcess,
+  spawn: fakeSpawn,
+  execFileSync: fakeExecFileSync,
+}));
+
+// --- 3. node:net (the port-probe boundary) ----------------------------------
+
+const realNet = { ...net };
+class NeverConnectingSocket extends EventEmitter {
+  setTimeout() {}
+  destroy() {}
+  connect() {
+    queueMicrotask(() =>
+      this.emit(
+        "error",
+        Object.assign(new Error("connect ECONNREFUSED (mocked)"), {
+          code: "ECONNREFUSED",
+        }),
+      ),
+    );
+  }
+}
+// The fake world has no listeners: every bind probe succeeds, so the
+// port-heal never fires and the allocators hand out the preferred ports.
+class AlwaysBindingServer extends EventEmitter {
+  listen() {
+    queueMicrotask(() => this.emit("listening"));
+    return this;
+  }
+  close(cb?: () => void) {
+    cb?.();
+    return this;
+  }
+  address() {
+    return {};
+  }
+  unref() {
+    return this;
+  }
+}
+mock.module("node:net", () => ({
+  ...realNet,
+  Socket: NeverConnectingSocket,
+  createServer: () => new AlwaysBindingServer(),
+}));
+
+// --- 4. globalThis.fetch (the network boundary) -----------------------------
+
+const realFetch = globalThis.fetch;
+const healthPorts = new Set<number>();
+/** Ports whose health answers only once their daemon spawn is journaled. */
+const afterSpawnPorts = new Set<number>();
+/** What `/readyz` answers on scripted health ports: "ready" or "failed". */
+let readyzAnswer: "ready" | "failed" = "ready";
+
+globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+  journal.push({ kind: "fetch", url });
+  const parsed = new URL(url);
+  // A daemon's port answers only once the fake world has seen it spawn —
+  // before that it is dark (no orphan adoption, no phantom listeners).
+  const port = Number(parsed.port);
+  const daemonSpawned = journal.some(
+    (e) =>
+      e.kind === "spawn" && /daemon/.test(`${e.command} ${e.args.join(" ")}`),
+  );
+  if (
+    healthPorts.has(port) &&
+    (!afterSpawnPorts.has(port) || daemonSpawned) &&
+    (parsed.pathname.endsWith("/healthz") ||
+      parsed.pathname.endsWith("/readyz"))
+  ) {
+    if (parsed.pathname.endsWith("/readyz"))
+      return new Response(
+        readyzAnswer === "ready"
+          ? JSON.stringify({ ready: true })
+          : JSON.stringify({ dbMigrations: { state: "failed" } }),
+        { status: 200 },
+      );
+    // The gateway's /healthz body carries the service-group version — the
+    // verdict `sleep`'s wasRunning signal is derived from.
+    return new Response(JSON.stringify({ version: "test" }), { status: 200 });
+  }
+  // Everything else (drain calls, cloud metadata, token refresh) finds no
+  // listener — exactly the degraded world a stopped install presents.
+  throw new Error(`connect ECONNREFUSED (mocked): ${url}`);
+}) as typeof fetch;
+
+afterAll(() => {
+  killSpy.mockRestore();
+  globalThis.fetch = realFetch;
+  mock.module("node:child_process", () => realChildProcess);
+  mock.module("node:net", () => realNet);
+});
+
+// The journal and the fake process table are per-test state.
+afterEach(() => {
+  journal.length = 0;
+  alivePids.clear();
+  healthPorts.clear();
+  afterSpawnPorts.clear();
+  spawnScript.clear();
+  readyzAnswer = "ready";
+  cesSocketPath = "";
+});
+
+// The module under test binds to the mocked builtins above.
+const {
   createRootBackup,
   initializeRootArchive,
   DockerRootStorage,
@@ -24,91 +271,33 @@ import {
   packRoot,
   restoreRootBackup,
   stageRootArchive,
+  withRootOperationLock,
   STATE_ROOTS,
   validateRootArchive,
-} from "../root-backup";
-import * as localMode from "@mycadet/local-mode";
+} = await import("../root-backup");
+const { resolveCesSocketPath } = await import("../remotes/local/common");
 
-// The backup/restore lifecycle constructs its own storage and sleep now, so
-// the tests simulate service state through the real seams: the storage
-// prototype's methods and the local-mode package's assistant entrypoint.
-const realCapture = LocalRootStorage.prototype.capture;
-const realReplace = LocalRootStorage.prototype.replace;
-const captureMock = spyOn(LocalRootStorage.prototype, "capture");
-const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
-const sleepMock = spyOn(localMode, "sleepAssistant");
-// The flow's wake hook is the package's wake operation — module-mocked here
-// so the real operation never runs.
-const wakeMock = mock(async (_entry: { assistantId: string }) => ({
-  ok: true as const,
-}));
-mock.module("@mycadet/local-mode", () => ({
-  ...localMode,
-  wakeAssistant: wakeMock,
-}));
-
-let running: boolean | undefined;
-let onCapture: ((path: string) => void) | undefined;
-let onReplace: ((path: string) => void) | undefined;
-let onResume: (() => void) | undefined;
-let onSleep: (() => void) | undefined;
-captureMock.mockImplementation(async function (
-  this: LocalRootStorage,
-  path: string,
-) {
-  onCapture?.(path);
-  return realCapture.call(this, path);
-});
-replaceMock.mockImplementation(async function (
-  this: LocalRootStorage,
-  path: string,
-) {
-  onReplace?.(path);
-  return realReplace.call(this, path);
-});
-wakeMock.mockImplementation(async () => {
-  running = true;
-  onResume?.();
-  return { ok: true as const };
-});
-// The flow derives its restart signal from the sleep result itself — the
-// mock models the local operation's report from the pre-sleep state (the
-// onSleep hooks run after the state is captured, since they simulate the
-// stop).
-sleepMock.mockImplementation(async () => {
-  const wasRunning = running ?? false;
-  onSleep?.();
-  return {
-    ok: true,
-    kind: "services",
-    services: {
-      assistant: wasRunning ? "stopped" : "not-running",
-      gateway: wasRunning ? "stopped" : "not-running",
-      ces: wasRunning ? "stopped" : "not-running",
-    },
-    notes: [],
-    wasRunning,
-  };
-});
-
-afterEach(() => {
-  running = undefined;
-  onCapture = undefined;
-  onReplace = undefined;
-  onResume = undefined;
-  onSleep = undefined;
-});
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
 
 const scratch: string[] = [];
+const defaultConfigHome = process.env.XDG_CONFIG_HOME;
+const defaultDataHome = process.env.XDG_DATA_HOME;
+
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), "root-backup-test-"));
   scratch.push(dir);
+  // Isolate the XDG-backed state (operation locks, guardian bootstrap
+  // secrets) from the ambient home — the tests must see only the world this
+  // fixture describes.
+  process.env.XDG_CONFIG_HOME = join(dir, "xdg-config");
+  process.env.XDG_DATA_HOME = join(dir, "xdg-data");
   const root = join(dir, "instance");
   for (const name of STATE_ROOTS)
     await mkdir(join(root, name), { recursive: true, mode: 0o700 });
   await mkdir(join(root, "workspace", "data", "db"), { recursive: true });
   await writeFile(join(root, "workspace", "notes.md"), "source notes");
-  await writeFile(join(root, "workspace", "cadet.pid"), "99999999");
   await mkdir(join(root, "workspace", "signals"));
   await writeFile(join(root, "workspace", "signals", "old"), "transient");
   await writeFile(
@@ -141,12 +330,46 @@ async function fixture() {
     port: 7831,
     cesPort: 7790,
   };
+  cesSocketPath = resolveCesSocketPath(entry);
   return { dir, root, entry, file: join(dir, "backup.tar.gz") };
 }
+
+/**
+ * Bring the fake world's services up: write the PID files the lifecycle
+ * reads and register the fake pids in the alive-set, so `process.kill(pid, 0)`
+ * reports them alive and `ps` proves them cadet-owned. Services not listed
+ * stay stopped (no PID file at all).
+ */
+let nextPid = FAKE_PID_BASE;
+async function startServices(
+  root: string,
+  services: Array<"assistant" | "gateway" | "ces">,
+) {
+  const pidFiles: Array<[string, "assistant" | "gateway" | "ces"]> = [
+    [join(root, "workspace", "cadet.pid"), "assistant"],
+    [join(root, "gateway.pid"), "gateway"],
+    [join(root, "ces.pid"), "ces"],
+  ];
+  for (const [file, service] of pidFiles) {
+    if (!services.includes(service)) continue;
+    const pid = nextPid++;
+    await writeFile(file, String(pid));
+    alivePids.add(pid);
+  }
+}
+
 afterEach(async () => {
+  process.env.XDG_CONFIG_HOME = defaultConfigHome;
+  process.env.XDG_DATA_HOME = defaultDataHome;
   for (const dir of scratch.splice(0))
     await rm(dir, { recursive: true, force: true });
 });
+
+const sigterms = () =>
+  journal.filter((e) => e.kind === "signal" && e.signal === "SIGTERM");
+const spawns = () => journal.filter((e) => e.kind === "spawn");
+
+// ---------------------------------------------------------------------------
 
 describe("root tar backup", () => {
   test("initializes a fresh stopped instance with complete roots", async () => {
@@ -240,35 +463,62 @@ describe("root tar backup", () => {
     }
   });
 
-  test("resumes services before compression, but never captures after failed graceful shutdown", async () => {
-    const { entry, file } = await fixture();
-    running = true;
-    const events: string[] = [];
-    onSleep = () => {
-      events.push("sleep");
-      running = false;
-    };
-    onCapture = () => {
-      events.push("capture");
-      expect(running).toBe(false);
-    };
-    onResume = () => {
-      events.push("wake");
-    };
+  test("stops services before capture and resumes them after, in journal order", async () => {
+    const { root, entry, file } = await fixture();
+    await startServices(root, ["assistant", "gateway"]);
+    healthPorts.add(7821);
+    afterSpawnPorts.add(7821);
+    healthPorts.add(7831);
     await createRootBackup(entry, file);
-    expect(events).toEqual(["sleep", "capture", "wake"]);
-    events.length = 0;
-    onSleep = () => {
-      events.push("sleep");
-      throw new Error("refused shutdown");
-    };
-    // A failed sleep surfaces its own error and nothing is captured; the
-    // flow no longer second-guesses the operation with a liveness check, so
-    // there is no recovery wake on its behalf either.
-    await expect(createRootBackup(entry, file)).rejects.toThrow(
-      "refused shutdown",
+
+    // The sleep leg really stopped the tracked services: SIGTERMs to the
+    // fake pids, and the stop consumed their PID files.
+    expect(sigterms().length).toBeGreaterThanOrEqual(2);
+
+    // The resume leg started the world again: CES, daemon and gateway
+    // spawned (fresh PID files, all fake pids).
+    expect(spawns().length).toBeGreaterThanOrEqual(3);
+    for (const pidFile of [
+      join(root, "workspace", "cadet.pid"),
+      join(root, "gateway.pid"),
+      join(root, "ces.pid"),
+    ]) {
+      expect(Number(await readFile(pidFile, "utf8"))).toBeGreaterThanOrEqual(
+        FAKE_PID_BASE,
+      );
+    }
+
+    // Journal order: the last stop precedes the first resume action, and the
+    // 0600 archive exists — capture happened between the stop and the wake.
+    const lastStop = journal.findIndex(
+      (e) => e.kind === "signal" && e.signal === "SIGTERM",
     );
-    expect(events).toEqual(["sleep"]);
+    const firstSpawn = journal.findIndex((e) => e.kind === "spawn");
+    expect(firstSpawn).toBeGreaterThan(lastStop);
+    expect((await stat(file)).mode & 0o777).toBe(0o600);
+  });
+
+  test("an active call lease refuses the sleep, so nothing is captured or stopped", async () => {
+    const { root, entry, file } = await fixture();
+    await startServices(root, ["assistant"]);
+    healthPorts.add(7831);
+    // The production refusal path: a phone-call keepalive lease holds the
+    // assistant, and the real sleep operation refuses before stopping
+    // anything — its structured failure is the error the backup raises.
+    await writeFile(
+      join(root, "active-call-leases.json"),
+      JSON.stringify({ version: 1, leases: [{ callSessionId: "call-1" }] }),
+    );
+    await expect(createRootBackup(entry, file)).rejects.toThrow(
+      "staying awake for active phone calls",
+    );
+    await expect(stat(file)).rejects.toThrow();
+    // Nothing was ever stopped: no signals, and the daemon's PID file still
+    // names a live process.
+    expect(sigterms()).toEqual([]);
+    expect(await readFile(join(root, "workspace", "cadet.pid"), "utf8")).toBe(
+      String([...alivePids][0] ?? ""),
+    );
   });
 
   test("restore replaces stale state and retains a restorable recovery archive", async () => {
@@ -277,10 +527,6 @@ describe("root tar backup", () => {
     await writeFile(join(root, "workspace", "notes.md"), "newer destination");
     await writeFile(join(root, "ces-data", "stale.json"), "remove me");
     const recovery = join(dir, "recovery.tar.gz");
-    running = false;
-    onResume = () => {
-      throw new Error("must stay stopped");
-    };
     expect(
       await restoreRootBackup(entry, file, { recoveryPath: recovery }),
     ).toBe(recovery);
@@ -292,48 +538,60 @@ describe("root tar backup", () => {
     expect(
       await readFile(join(previous, "state", "workspace", "notes.md"), "utf8"),
     ).toBe("newer destination");
+    // Nothing was running beforehand, so the restore must not touch the
+    // process world at all.
+    expect(spawns()).toEqual([]);
+    expect(sigterms()).toEqual([]);
   });
 
   test("dry-run leaves services and destination untouched", async () => {
     const { entry, file, root } = await fixture();
     await createRootBackup(entry, file);
     await writeFile(join(root, "workspace", "notes.md"), "destination");
-    running = false;
-    onResume = () => {
-      throw new Error("must not wake");
-    };
-    onSleep = () => {
-      throw new Error("must not stop");
-    };
     await restoreRootBackup(entry, file, { dryRun: true });
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "destination",
     );
+    expect(spawns()).toEqual([]);
+    expect(sigterms()).toEqual([]);
   });
 
   test("a failed replacement recovers every service root before resuming", async () => {
     const { entry, file, root, dir } = await fixture();
     await createRootBackup(entry, file);
     await writeFile(join(root, "workspace", "notes.md"), "destination");
+    // One-shot real fault injected through the module's own dependency-
+    // injection seam (the same one initializeRootArchive exposes): the first
+    // replacement throws, and the lifecycle's own rollback must recover the
+    // pre-restore snapshot. Both attempts call through to the real storage.
     let attempts = 0;
-    running = true;
-    onSleep = () => {
-      running = false;
-    };
-    onReplace = () => {
+    const storage = new LocalRootStorage(entry);
+    const realReplace = storage.replace.bind(storage);
+    storage.replace = async (source: string) => {
       attempts++;
       if (attempts === 1) throw new Error("partial restore failure");
+      await realReplace(source);
     };
+    await startServices(root, ["assistant", "gateway"]);
+    healthPorts.add(7821);
+    afterSpawnPorts.add(7821);
+    healthPorts.add(7831);
     await expect(
-      restoreRootBackup(entry, file, {
-        recoveryPath: join(dir, "recovery.tar.gz"),
-      }),
+      restoreRootBackup(
+        entry,
+        file,
+        { recoveryPath: join(dir, "recovery.tar.gz") },
+        storage,
+      ),
     ).rejects.toThrow("partial restore failure");
     expect(attempts).toBe(2);
-    expect(running).toBe(true);
+    // The failed restore rolled the snapshot back and resumed the services
+    // that were running before it.
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "destination",
     );
+    expect(sigterms().length).toBeGreaterThanOrEqual(2);
+    expect(spawns().length).toBeGreaterThanOrEqual(2);
   });
 
   test("rejects traversal, unsafe links, missing roots, legacy bundles and truncated gzip before stopping", async () => {
@@ -357,7 +615,7 @@ describe("root tar backup", () => {
     ).rejects.toThrow("vellum-to-cadet");
   });
 
-  test.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+  test.skipIf(process.platform === "win32" || (process.getuid?.() ?? 0) === 0)(
     "unreadable credential files fail capture without publishing an incomplete archive",
     async () => {
       // Root ignores file permissions entirely, so the chmod-0 mechanism
@@ -418,76 +676,72 @@ describe("root tar backup", () => {
   test("interrupted startup leaves restored services stopped and keeps the recovery archive", async () => {
     const { entry, root, file, dir } = await fixture();
     await createRootBackup(entry, file);
-    running = true;
-    let sleeps = 0,
-      wakes = 0;
-    onSleep = () => {
-      running = false;
-      sleeps++;
-    };
-    onResume = () => {
-      wakes++;
-      if (wakes === 1) throw new Error("failed startup");
-      running = true;
-    };
+    await startServices(root, ["assistant", "gateway"]);
+    // The restored state's assistant dies during its restart: the daemon
+    // spawn fails (a real spawn-error world), so the wake refuses with
+    // "exited during startup" and its cleanup stops everything again.
+    healthPorts.add(7821);
+    afterSpawnPorts.add(7821);
+    healthPorts.add(7831);
+    spawnScript.set("/daemon/", "error");
     const recovery = join(dir, "recovery.tar.gz");
     await expect(
       restoreRootBackup(entry, file, { recoveryPath: recovery }),
     ).rejects.toThrow("services were stopped");
-    expect(running).toBe(false);
-    expect(sleeps).toBe(2);
+    // The failed wake's cleanup stopped the restored services again.
+    expect(await lstat(join(root, "gateway.pid")).catch(() => null)).toBeNull();
+    expect(
+      await lstat(join(root, "workspace", "cadet.pid")).catch(() => null),
+    ).toBeNull();
     await validateRootArchive(recovery);
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "source notes",
     );
   });
+
   test("concurrent captures of one installation are serialized by an operation lock", async () => {
     const { entry, file, dir } = await fixture();
-    running = false;
+    // Hold the same operation lock the lifecycle takes, fire a concurrent
+    // capture at it, then let the holder finish and confirm the capture
+    // succeeds once the lock frees.
     let release!: () => void;
-    let started!: () => void;
-    const waiting = new Promise<void>((done) => {
-      release = done;
+    let acquired!: () => void;
+    const acquired$ = new Promise<void>((resolve) => {
+      acquired = resolve;
     });
-    const capturing = new Promise<void>((done) => {
-      started = done;
+    const held = withRootOperationLock(entry, () => {
+      // Runs only once the lock is held, so the contention below is
+      // deterministic.
+      acquired();
+      return new Promise<void>((resolve) => {
+        release = resolve;
+      });
     });
-    let firstCaptureCalled = false;
-    onCapture = () => {
-      if (!firstCaptureCalled) {
-        firstCaptureCalled = true;
-        started();
-        void waiting.then(() => {
-          /* released below */
-        });
-      }
-    };
-    const first = createRootBackup(entry, file);
-    await capturing;
-    try {
-      await expect(
-        createRootBackup(entry, join(dir, "second.tar.gz")),
-      ).rejects.toThrow("Another backup/restore");
-    } finally {
-      release();
-      await first;
-    }
-    await validateRootArchive(file);
+    await acquired$;
+    await expect(createRootBackup(entry, file)).rejects.toThrow(
+      "Another backup/restore",
+    );
+    release();
+    await held;
+    const second = join(dir, "second.tar.gz");
+    await createRootBackup(entry, second);
+    await validateRootArchive(second);
   });
+
   test("deferred recovery restore keeps services stopped so its caller can select the runtime", async () => {
-    const { entry, file, dir } = await fixture();
+    const { entry, file, dir, root } = await fixture();
     await createRootBackup(entry, file);
-    running = true;
-    onSleep = () => {
-      running = false;
-    };
-    onResume = () => {
-      throw new Error("caller owns restart");
-    };
+    await startServices(root, ["assistant"]);
+    healthPorts.add(7831);
     await restoreRootBackup(entry, file, {
       recoveryPath: join(dir, "recovery.tar.gz"),
       resume: false,
     });
-    expect(running).toBe(false);
+    // Services stayed stopped: the PID file was consumed by the stop and no
+    // wake was attempted.
+    expect(
+      await lstat(join(root, "workspace", "cadet.pid")).catch(() => null),
+    ).toBeNull();
+    expect(spawns()).toEqual([]);
   });
 });
