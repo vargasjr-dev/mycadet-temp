@@ -23,6 +23,7 @@ import {
   loadGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
+  resolveEnvironmentName,
   resolveLogDir,
   type GatewayHealth,
   type ManagedProcessEntry,
@@ -34,7 +35,6 @@ import {
   readRootProcesses,
 } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { resolveEnvironmentSource } from "../lib/environments/resolve";
 
 import { withStatusEmoji } from "../lib/status-emoji";
 import {
@@ -415,7 +415,7 @@ function formatAssistantListRow(
 }
 
 export async function listAllAssistants(verbose: boolean): Promise<void> {
-  const { name: envName } = resolveEnvironmentSource();
+  const envName = resolveEnvironmentName();
   // Production is what everyone gets by default — saying so is noise. Only
   // surface the line when the environment differs from the default.
   if (envName !== "production") {

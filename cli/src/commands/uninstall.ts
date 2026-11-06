@@ -10,6 +10,7 @@ import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
   cliCommand,
   loadAllAssistants,
+  resolveEnvironmentName,
   retireDocker,
   retireLocal,
 } from "@mycadet/local-mode";
@@ -19,7 +20,6 @@ import {
   resolveDataDir,
   resolveLogDir,
 } from "@mycadet/local-mode";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 
 /** A directory (or file) scheduled for deletion, with what it holds. */
 interface DeleteTarget {
@@ -212,8 +212,7 @@ export const uninstall = Object.assign(
     }
     const yes = args.includes("--yes");
 
-    const env = getCurrentEnvironment();
-    const envLabel = env.name ?? "production";
+    const envLabel = resolveEnvironmentName();
     const existing = loadAllAssistants();
     const targets = collectDeleteTargets();
     const selfTarget = resolveSelfDeleteTarget();

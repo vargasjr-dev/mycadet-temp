@@ -8,6 +8,7 @@
  * actually asked.
  */
 
+import { resolveEnvironmentName } from "@mycadet/local-mode";
 import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@mycadet/service-contracts/remote-web-pairing";
 
 const CODE_TTL_MINUTES = Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000);
@@ -28,16 +29,11 @@ export function parseGatewayErrorCode(body: string): string | null {
 
 /**
  * Diagnostic for a failed `--web-approve`, naming which gateway rejected the
- * code and hinting at cross-assistant / cross-environment mismatches. Returns
- * null for error codes this helper doesn't recognize, so the caller falls
- * back to the generic HTTP error text. `assistantReference` should carry the
- * stable assistant ID (see `formatAssistantReference`); `envName` should be
- * the effective environment actually used (see `getCurrentEnvironment`).
+ * code and hinting at cross-assistant / cross-environment mismatches.
  */
 export function formatWebApproveFailure(
   gatewayUrl: string,
   assistantReference: string,
-  envName: string,
   errorCode: string | null,
 ): string | null {
   if (errorCode !== "INVALID_USER_CODE" && errorCode !== "EXPIRED_USER_CODE") {
@@ -48,7 +44,7 @@ export function formatWebApproveFailure(
       ? "Pairing code expired on"
       : "No such pairing code on";
   return [
-    `${rejection} ${gatewayUrl} (assistant "${assistantReference}", environment "${envName}").`,
+    `${rejection} ${gatewayUrl} (assistant "${assistantReference}", environment "${resolveEnvironmentName()}").`,
     `Codes are minted by the gateway that serves the pair page, expire after ${CODE_TTL_MINUTES} minutes, and are single-use.`,
     "If the pair page came from a different assistant or environment, such as the desktop app's, re-run with that environment's CADET_ENVIRONMENT and that assistant's name.",
   ].join("\n");
