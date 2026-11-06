@@ -142,11 +142,17 @@ describe("matchOperatorRequest — the four prefixes", () => {
     );
   });
 
-  test("does not match other methods or foreign tails", () => {
+  test("the proxy catch-all owns foreign methods and tails", () => {
+    // The bare shared form has no tail for the proxy row's `.+`, so it
+    // genuinely passes; anything scoped now falls to the ALL proxy row.
     expect(matchOperatorRequest("/v1/assistant", "POST")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant", "DELETE")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistant/meta", "GET")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
+    expect(
+      matchOperatorRequest("/v1/assistant/meta", "GET")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistant/meta", "DELETE")?.route.method,
+    ).toBe("ALL");
   });
 
   test("the derivation helpers give every row both versioned spellings", () => {

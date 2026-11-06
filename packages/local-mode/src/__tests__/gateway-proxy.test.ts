@@ -33,6 +33,18 @@ const entries = (map: Record<string, unknown>) => () =>
     ),
   );
 
+// The reader (and the inlined guardian-token read) resolve their paths from
+// the environment; a per-test XDG home points them at the fixture's cadet
+// dir.
+const withAmbientLockfile = (write: (lockfilePath: string) => void): string => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
+  process.env.XDG_CONFIG_HOME = dir;
+  const lockfilePath = path.join(dir, "cadet", "lockfile.json");
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
+  write(lockfilePath);
+  return dir;
+};
+
 describe("parseAssistantGatewayUrl", () => {
   test("parses the scoped SDK surface and forwards the full path", () => {
     expect(parseAssistantGatewayUrl("/v1/assistants/abc-123")).toEqual({
@@ -299,19 +311,6 @@ describe("gateway target derivation", () => {
 });
 
 describe("readGatewayTargets", () => {
-  // The reader resolves its path from the environment; a per-test XDG home
-  // points it at the fixture's cadet dir.
-  const withAmbientLockfile = (
-    write: (lockfilePath: string) => void,
-  ): string => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
-    process.env.XDG_CONFIG_HOME = dir;
-    const lockfilePath = path.join(dir, "cadet", "lockfile.json");
-    fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
-    write(lockfilePath);
-    return dir;
-  };
-
   test("reads the id-keyed target map from disk", () => {
     const dir = withAmbientLockfile((lockfilePath) =>
       fs.writeFileSync(
@@ -415,9 +414,34 @@ describe("remote-forward header handling", () => {
   });
 
   test("authorizePairedForwardHeaders installs the host's guardian bearer", async () => {
+    // The token read is all on-disk now (the injectable provider is gone):
+    // stage a baseten entry plus the sandbox token file hatch saves beside
+    // the config dir, and the host's own credential is what gets installed.
+    const dir = withAmbientLockfile((lockfilePath) =>
+      fs.writeFileSync(
+        lockfilePath,
+        JSON.stringify({
+          assistants: [
+            {
+              assistantId: "abc-123",
+              cloud: "baseten",
+              sandboxUrl: "https://sb.example.com",
+              port: 8080,
+            },
+          ],
+        }),
+      ),
+    );
+    const tokenDir = path.join(dir, "cadet", "assistants", "abc-123");
+    fs.mkdirSync(tokenDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(tokenDir, "baseten-token.json"),
+      JSON.stringify({ token: "host-token" }),
+    );
     const headers = new Headers({ authorization: "Bearer renderer" });
     const result = await authorizePairedForwardHeaders("abc-123", headers);
     expect(result.ok).toEqual(true);
     expect(headers.get("authorization")).toBe("Bearer host-token");
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });
