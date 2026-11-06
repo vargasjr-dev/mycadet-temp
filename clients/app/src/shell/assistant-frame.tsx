@@ -11,7 +11,10 @@ export interface AssistantFrameProps {
 const mount = "/web";
 
 function frameUrl(): string {
-  return `${mount}${location.pathname}${location.search}${location.hash}`;
+  return new URL(
+    `${mount}${location.pathname}${location.search}${location.hash}`,
+    window.location.origin,
+  ).href;
 }
 
 export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
@@ -31,11 +34,26 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
       if (!message.success) {
         return;
       }
-      if (message.data.path === currentPath.current) {
+      const path = message.data.path;
+      if (path === currentPath.current) {
         return;
       }
-      currentPath.current = message.data.path;
-      const target = currentPath.current.replace(new RegExp(`^\\${mount}`), "");
+      // The frame may only steer its own url space: the mount prefix is the
+      // frame's home, so anything else (host routes, protocol-relative,
+      // traversal) never reaches the host router.
+      if (!path.startsWith(`${mount}/`) || path.includes("\\")) {
+        return;
+      }
+      if (
+        path
+          .split(/[?#]/)[0]
+          .split("/")
+          .some((part) => part === "." || part === "..")
+      ) {
+        return;
+      }
+      currentPath.current = path;
+      const target = path.slice(mount.length) || "/";
       onNavigate(target, { replace: message.data.nav === "replace" });
     };
     window.addEventListener("message", listener);
