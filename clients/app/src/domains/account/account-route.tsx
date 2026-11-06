@@ -33,14 +33,9 @@ export const accountRoute = {
   ErrorBoundary: RouteErrorBoundary,
   HydrateFallback: RootHydrateFallback,
   children: [
-    // Pathless wrapper so lazy-chunk failures render the chunk-fail
-    // variant of `RouteErrorBoundary` (inline copy + Reload button)
-    // rather than the full-page variant inherited from the top.
     {
       ErrorBoundary: RouteErrorBoundary,
       children: [
-        // Auth screens that render in the MAIN window. AccountLayout sizes
-        // it compact (440×630) for these, matching onboarding.
         {
           Component: AccountLayout,
           children: [
@@ -154,12 +149,6 @@ export const accountRoute = {
             },
           ],
         },
-        // OAuth completion / loopback machinery. These render inside the
-        // OAuth popup child window (or are transient redirects), NOT the
-        // main window — so they're deliberately OUTSIDE AccountLayout and
-        // never mount the sizing hook. The resize IPC targets the
-        // module-scoped main window, so sizing from a popup would shrink
-        // the wrong window. See `use-onboarding-window-size`.
         {
           path: "oauth/popup-complete",
           lazy: {

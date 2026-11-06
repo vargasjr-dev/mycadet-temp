@@ -10,8 +10,6 @@
 
 import { getLogger } from "../logger.js";
 import { isLoopbackAddress } from "../util/is-loopback-address.js";
-import { TUNNEL_FORWARDED_HEADER } from "../tunnel/bridge-utils.js";
-import { requestArrivedViaEdgeProxy } from "./edge-forwarded-header.js";
 
 const log = getLogger("loopback-guard");
 
@@ -69,51 +67,6 @@ function auditDeny(
     },
     `${auditTag}_denied: ${reason}`,
   );
-}
-
-/**
- * Enforce that a request originates from the local machine. Returns a 403
- * `Response` if any check fails, or `null` if the request is loopback-local.
- *
- * Rejects, in order: Tunnel-bridged requests, requests forwarded by the
- * self-hosted nginx edge, non-loopback peer IPs, non-loopback `Host` headers,
- * and any request carrying `X-Forwarded-For`.
- */
-export function enforceLoopbackOnly(
-  req: Request,
-  clientIp: string,
-  auditTag = "loopback",
-): Response | null {
-  // The Tunnel bridge injects this header on every forwarded request; a Tunnel
-  // client cannot strip it.
-  if (req.headers.get(TUNNEL_FORWARDED_HEADER)) {
-    auditDeny(req, clientIp, auditTag, "tunnel_bridged");
-    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
-  }
-
-  // The self-hosted nginx edge (e.g. the SPA over a tunnel) sets this
-  // marker unconditionally; it cannot be spoofed or stripped by the client.
-  if (requestArrivedViaEdgeProxy(req)) {
-    auditDeny(req, clientIp, auditTag, "edge_proxy_forwarded");
-    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
-  }
-
-  if (!clientIp || !isLoopbackAddress(clientIp)) {
-    auditDeny(req, clientIp, auditTag, "non_loopback_peer");
-    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
-  }
-
-  if (!isLoopbackHostHeader(req.headers.get("host"))) {
-    auditDeny(req, clientIp, auditTag, "non_loopback_host_header");
-    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
-  }
-
-  if (req.headers.get("x-forwarded-for")) {
-    auditDeny(req, clientIp, auditTag, "x_forwarded_for_present");
-    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
-  }
-
-  return null;
 }
 
 /**

@@ -39,7 +39,6 @@ export interface PendingRemoteWebPairingChallenge {
   expiresAtMs: number;
   requesterIp: string;
   requesterUserAgent: string | null;
-  viaEdgeProxy: boolean;
   approvedAtMs?: number;
   exchangeStartedAtMs?: number;
   consumedAtMs?: number;
@@ -219,7 +218,7 @@ export function checkRemoteWebPairingChallengeCapacity(): RemoteWebPairingChalle
 
 export function createRemoteWebPairingChallenge(
   publicBaseUrl: string,
-  requester: { ip: string; userAgent: string | null; viaEdgeProxy: boolean },
+  requester: { ip: string; userAgent: string | null },
 ): RemoteWebPairingChallengeResponse {
   loadFromDisk();
   cleanupExpiredChallenges();
@@ -248,7 +247,6 @@ export function createRemoteWebPairingChallenge(
     expiresAtMs,
     requesterIp: requester.ip,
     requesterUserAgent: requester.userAgent,
-    viaEdgeProxy: requester.viaEdgeProxy,
   };
   challengesByUserCodeHash.set(userCodeHash, challenge);
   challengesByDeviceCodeHash.set(deviceCodeHash, challenge);
@@ -328,7 +326,6 @@ export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequest
     expiresAt: new Date(challenge.expiresAtMs).toISOString(),
     requesterIp: challenge.requesterIp,
     requesterUserAgent: challenge.requesterUserAgent,
-    viaEdgeProxy: challenge.viaEdgeProxy,
   }));
 }
 

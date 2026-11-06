@@ -107,11 +107,6 @@ export interface RemoteWebPairingRequestSummary {
   requesterIp: string;
   /** User-Agent header of the mint request, or null when absent. */
   requesterUserAgent: string | null;
-  /**
-   * Whether the mint arrived through the public app server rather than the
-   * host itself.
-   */
-  viaEdgeProxy: boolean;
 }
 
 /** `GET /v1/remote-web/pairing-requests` success response body (200). */

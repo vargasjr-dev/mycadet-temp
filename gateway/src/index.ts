@@ -98,13 +98,8 @@ import {
   handleContactPromptSubmit,
   handleContactRecordSubmit,
 } from "./http/routes/contact-prompt.js";
-import {
-  handleListDevices,
-  handleRevokeDevice,
-} from "./http/routes/devices.js";
 import { handleGetMyDevice } from "./http/routes/devices-mine.js";
 import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
-import { handlePair } from "./http/routes/pair.js";
 import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
 import {
   handleCredentialRequestPeek,
@@ -216,7 +211,6 @@ import {
   handlePreflight,
   withCorsHeaders,
 } from "./http/middleware/cors.js";
-import { handleCreateToken } from "./http/routes/auth-token.js";
 import {
   createRouter,
   type RouteDefinition,
@@ -1008,21 +1002,11 @@ async function main() {
 
     // ── Generic loopback pairing (localhost-only, auth: none) ──
     {
-      path: "/pair",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) => handlePair(req, getClientIp()),
-    },
-    {
       path: "/remote-web/pairing-challenge",
       method: "POST",
       auth: "none",
-      handler: (req, _params, getClientIp, getRawPeerIp) =>
-        handleCreateRemoteWebPairingChallenge(
-          req,
-          getClientIp(),
-          getRawPeerIp(),
-        ),
+      handler: (req, _params, getClientIp) =>
+        handleCreateRemoteWebPairingChallenge(req, getClientIp()),
     },
     {
       path: "/remote-web/pairing-verification",
@@ -1041,22 +1025,19 @@ async function main() {
       path: "/remote-web/pairing-requests",
       method: "GET",
       auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleListRemoteWebPairingRequests(req, getClientIp()),
+      handler: (req, _params) => handleListRemoteWebPairingRequests(req),
     },
     {
       path: "/remote-web/pairing-requests/approve",
       method: "POST",
       auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleApproveRemoteWebPairingRequest(req, getClientIp()),
+      handler: (req, _params) => handleApproveRemoteWebPairingRequest(req),
     },
     {
       path: "/remote-web/pairing-requests/deny",
       method: "POST",
       auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleDenyRemoteWebPairingRequest(req, getClientIp()),
+      handler: (req, _params) => handleDenyRemoteWebPairingRequest(req),
     },
     // ── Shared-invite redemption (auth: none) ──
     // The invite link token in the request body is the credential.
@@ -1092,21 +1073,6 @@ async function main() {
       auth: "track-failures",
       trackFailureStatuses: [404],
       handler: (req) => handleCredentialRequestSubmit(req),
-    },
-    // ── Device management (localhost-only, auth: none; self-guards loopback) ──
-    {
-      path: "/devices",
-      method: "GET",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleListDevices(req, getClientIp()),
-    },
-    {
-      path: "/devices/revoke",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleRevokeDevice(req, getClientIp()),
     },
 
     // ── The caller's own paired-device row (bearer-authed, browser-legit) ──
@@ -1848,14 +1814,6 @@ async function main() {
       handler: (req, params) => handleTrustRulesDelete(req, params[0]),
     },
   ];
-
-  // ── Web token auth ──
-  routes.push({
-    path: "/auth/token",
-    method: "POST",
-    auth: "custom",
-    handler: (req) => handleCreateToken(req, server, config.trustProxy),
-  });
 
   for (const method of ["GET", "POST"] as const) {
     const setupRoute = {

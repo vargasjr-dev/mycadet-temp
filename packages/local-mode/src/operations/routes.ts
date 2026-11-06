@@ -172,7 +172,7 @@ const json = (body: unknown, status = 200): Response =>
  * `/v1` spelling. The absolute rows apply it alone.
  */
 function v1Friendly(rooted: RegExp): RegExp {
-  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1)?"));
+  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1|\\/api)"));
 }
 
 /**

@@ -25,7 +25,7 @@ export function WelcomeScreen() {
       if (result.ok && result.data.length > 0) {
         void navigate(routes.assistant, SETUP_NAVIGATE);
       } else {
-        void navigate(routes.account.onboarding.hosting, SETUP_NAVIGATE);
+        void navigate(routes.account.selectAssistant, SETUP_NAVIGATE);
       }
     });
   };

@@ -104,7 +104,7 @@
     "remoteWithHost": "遠端 · {host}",
     "removeFromDevice": "從此裝置移除…",
     "unnamedAssistant": "該助理",
-    "connectRemote": "連線遠端助理",
+    "hatchAssistant": "TODO",
     "localAssistant": "在這部電腦上"
   },
   "appShell": {
@@ -137,12 +137,6 @@
     "back": "返回",
     "loginToUse": "登入以使用",
     "tryAgain": "再試一次"
-  },
-  "addRemoteOriginDialog": {
-    "title": "新增遠端助理",
-    "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
-    "addressLabel": "助理位址",
-    "addFailed": "新增助理失敗。請再試一次。"
   },
   "connectAssistantDialog": {
     "title": "連接遠端助理",

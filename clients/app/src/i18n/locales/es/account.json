@@ -104,7 +104,7 @@
     "remoteWithHost": "Remoto · {host}",
     "removeFromDevice": "Quitar de este dispositivo…",
     "unnamedAssistant": "el asistente",
-    "connectRemote": "Conectar un asistente remoto",
+    "hatchAssistant": "TODO",
     "localAssistant": "En este equipo",
     "cloudHosted": "En la nube",
     "cloudHostedWithHost": "En la nube · {host}",
@@ -140,12 +140,6 @@
     "back": "Atrás",
     "loginToUse": "Inicia sesión para usar",
     "tryAgain": "Volver a intentarlo"
-  },
-  "addRemoteOriginDialog": {
-    "title": "Añadir un asistente remoto",
-    "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
-    "addressLabel": "Dirección del asistente",
-    "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
   },
   "connectAssistantDialog": {
     "title": "Conectar un asistente remoto",

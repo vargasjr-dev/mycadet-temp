@@ -1,6 +1,8 @@
-import { cpSync, mkdirSync, readdirSync, statSync, rmSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { spawnSync } from "child_process";
+import { cpSync, mkdirSync, readdirSync, statSync, rmSync } from "fs";
+import { dirname, join, resolve } from "path";
+import { fileURLToPath } from "url";
+import { build } from "vite";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = resolve(__dirname, "../../../skills");
@@ -29,3 +31,16 @@ for (const entry of readdirSync(SKILLS_DIR, { withFileTypes: true })) {
 }
 
 console.log(`Copied assets from ${copied} skill(s) to ${PUBLIC_SKILLS_DIR}`);
+
+const install = spawnSync("bun", ["install"], {
+  cwd: resolve(import.meta.dirname, ".."),
+  stdio: "inherit",
+  timeout: 10 * 1000,
+});
+if (install.status !== 0) {
+  console.warn(
+    `bun install failed with exit code ${install.status ?? "signal"}, continuing...`,
+  );
+}
+
+await build();

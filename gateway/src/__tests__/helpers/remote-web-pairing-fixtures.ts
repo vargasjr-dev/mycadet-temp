@@ -8,7 +8,6 @@ export const PUBLIC_BASE_URL = "https://paired.example.com";
 export const TEST_REQUESTER = {
   ip: REMOTE_IP,
   userAgent: "PairBrowser/1.0",
-  viaEdgeProxy: true,
 };
 
 /** A request as sent by a local loopback client (host machine). */

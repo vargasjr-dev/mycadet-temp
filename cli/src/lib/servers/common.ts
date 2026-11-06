@@ -327,46 +327,6 @@ export async function stopAppServer(): Promise<boolean> {
   return true;
 }
 
-/**
- * Sensitive local-only gateway paths the app server must never expose to the
- * internet, regardless of which client bundles are being served. Each exact
- * path is blocked with and without its trailing slash, in both the versioned
- * and — since the version prefix is optional at the gateway — the unversioned
- * spelling, from the origin root and from the `/web` iframe prefix (the web
- * UI's prefix-aware API paths put the same routes at `/web/v1/...`).
- */
-const SENSITIVE_GATEWAY_ROUTES = [
-  "/auth/token",
-  "/v1/pair",
-  "/v1/pair/web-init",
-  "/v1/devices",
-  "/v1/devices/revoke",
-  "/v1/remote-web/pairing-requests",
-  "/v1/remote-web/pairing-requests/approve",
-  "/v1/remote-web/pairing-requests/deny",
-  "/v1/remote-web/pairing-verification",
-  "/v1/shared/invites/redeem",
-] as const;
-
-export const DENY_PATHS: ReadonlySet<string> = (() => {
-  const paths = new Set<string>();
-  for (const route of SENSITIVE_GATEWAY_ROUTES) {
-    // The version prefix is optional at the gateway (P7 of the one-url plan):
-    // block the unversioned spelling of every /v1 route too, so the sensitive
-    // paths never gain a reachable alias through the new unversioned surface.
-    const unversioned = route.replace(/^\/v1(?=\/)/, "");
-    for (const spelling of unversioned === route
-      ? [route]
-      : [route, unversioned]) {
-      paths.add(spelling);
-      paths.add(`${spelling}/`);
-      paths.add(`/web${spelling}`);
-      paths.add(`/web${spelling}/`);
-    }
-  }
-  return paths;
-})();
-
 /** Stable fingerprint of the injected SPA config and its source bundles,
  * recorded alongside the app server's state so a reuse decision can tell
  * whether a running server already serves the requested config. Any change
@@ -897,24 +857,7 @@ function stuckAppServerRecoveryHint(): string {
 }
 
 /**
- * Bring up the app server as the canonical tunnel target and return the
- * listen port a tunnel should front.
- *
- * The server is assistant-agnostic: it carries no assistant identity in its
- * options. The assistant it fronts — and with it the gateway it proxies, via
- * `getGatewayUrl` — is resolved from the lockfile here (the active assistant,
- * else the only entry), so every caller shares one resolution instead of
- * threading bespoke ids and ports. Its own state (pidfile, recorded
- * upstream, serve spec) lives under the XDG data dir, never an assistant
- * workspace.
- *
- * The server always serves the SPA alongside the gateway proxy. It is always
- * delegated to `startAppServer`, which reuses a running server whose
- * gateway upstream and injected SPA config match and restarts one that
- * drifted in any respect, so the returned port always fronts the requested
- * config. `started` is false when a matching server was reused; a drifted
- * server that survives the restart attempt throws rather than reporting the
- * wrong config. Failures throw with actionable diagnostic text.
+ * Bring up the app server fronting all assistants for remote clients
  */
 export async function ensureAppServer(): Promise<AppServer> {
   const entry = resolveTargetAssistant();

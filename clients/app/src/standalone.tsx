@@ -120,11 +120,6 @@ export function DesktopChrome() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
       />
-      {/* Single app-wide toast outlet. Sonner only renders toasts when a
-          <Toaster /> is mounted in the tree; without this every `toast.*`
-          call (the create dialog's confirmations, "Assistant retired", etc.)
-          silently no-ops. Every route renders through this layout, and both
-          entries (standalone and capacitor) boot through it. */}
       <Toaster />
       <RetireConfirmDialog
         open={retireTargetId !== null}
@@ -152,7 +147,15 @@ export const router = createBrowserRouter(
       children: [
         accountRoute,
         consentRoute,
-        { path: "/", Component: () => <Navigate to="/assistant" replace /> },
+        {
+          path: "/",
+          lazy: {
+            Component: () =>
+              import("@app/domains/onboarding/pages/welcome-screen").then(
+                (m) => m.WelcomeScreen,
+              ),
+          },
+        },
         {
           // The onboarding funnel's post-hatch steps — claimed before the
           // /assistant/* shell catch-all so the funnel renders app-native

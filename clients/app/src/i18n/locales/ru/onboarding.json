@@ -12,12 +12,6 @@
     "downloadWindowsApp": "Скачать приложение для Windows",
     "claim": "Забрать"
   },
-  "addRemoteOriginDialog": {
-    "title": "Добавить удалённого ассистента",
-    "body": "Вставка https-ссылки со страницы привязки ассистента.",
-    "addressLabel": "Адрес ассистента",
-    "addFailed": "Не удалось добавить ассистента. Повторите попытку."
-  },
   "onboardingAutocomplete": {
     "addOption": "Добавить «{value}»",
     "enterHint": "↵ Enter",

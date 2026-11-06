@@ -31,7 +31,7 @@
  * timestamp, so the host can see in-flight and stale pairing sessions.
  */
 
-import { mintCliPairPayload } from "../http/routes/pair.js";
+import { mintPairingPayload } from "../http/routes/pair.js";
 import {
   listPersistedRemoteWebPairingChallenges,
   type PendingRemoteWebPairingChallenge,
@@ -210,7 +210,7 @@ export async function runPairingCommand(args: string[]): Promise<number> {
   const mintFlags = parsePairingMintArgs(mintArgv);
   if (mintFlags.deviceId) {
     try {
-      const payload = await mintCliPairPayload({
+      const payload = await mintPairingPayload({
         deviceId: mintFlags.deviceId,
         platform: mintFlags.platform,
         clientReportedName: mintFlags.clientReportedName,

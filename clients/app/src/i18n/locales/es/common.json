@@ -547,7 +547,8 @@
     "messageOrigin": "Esto no afectará a {assistantName} ni cerrará tu sesión allí. Solo olvida la entrada en este dispositivo. Puedes añadirla de nuevo cuando quieras.",
     "messagePaired": "Esto no afectará a {assistantName} en su máquina anfitriona. Solo olvida el emparejamiento en este dispositivo. Puedes emparejarlo de nuevo cuando quieras con cadet connect import.",
     "messagePlatform": "Esto no eliminará a {assistantName}. Solo lo quita de este dispositivo. Al iniciar sesión volverá a estar disponible.",
-    "title": "¿Eliminar de este dispositivo?"
+    "title": "¿Eliminar de este dispositivo?",
+    "removeFailed": "TODO"
   },
   "resourcePressureBanner": {
     "body": "Tu asistente está trabajando duro y está alcanzando sus límites de recursos actuales. Mejora tu plan para que siga funcionando sin problemas.",
