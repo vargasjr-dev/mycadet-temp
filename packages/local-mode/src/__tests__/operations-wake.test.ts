@@ -322,10 +322,17 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     expect(await response.json()).toEqual({ detail: "wake blew up" });
   });
 
-  test("the wake route does not answer GET or the retire path", () => {
-    expect(matchOperatorRequest("/v1/assistants/a/wake/", "GET")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/wake/", "DELETE")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "POST")).toBeNull();
+  test("the proxy catch-all answers GET and the retire path", () => {
+    // The wake row is POST-only; other methods ride the ALL proxy row.
+    expect(
+      matchOperatorRequest("/v1/assistants/a/wake/", "GET")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/wake/", "DELETE")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
+    ).toBe("ALL");
   });
 });
 

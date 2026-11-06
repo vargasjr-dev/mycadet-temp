@@ -470,106 +470,10 @@ describe("the app server's routes", () => {
     expect(gateway.calls).toHaveLength(0);
   });
 
-  test("the /assistant tail proxies verbatim, stamping the rightmost X-Forwarded-For entry", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    const gateway = stubGatewayFetch();
-    // The /assistant tail is the edge's one remaining gateway-facing HTTP
-    // surface: the path forwards verbatim and the client ip rides along.
-    await handler(
-      new Request("http://127.0.0.1:7840/assistant-upstream/things", {
-        headers: { "x-forwarded-for": "203.0.113.9, 198.51.100.7" },
-      }),
-    );
-    expect(new URL(gateway.calls[0]!.url).pathname).toBe(
-      "/assistant-upstream/things",
-    );
-    expect(gateway.calls[0]!.headers.get("x-cadet-client-ip")).toBe(
-      "198.51.100.7",
-    );
-  });
-
-  test("the tail's proxy falls back to the raw peer when no X-Forwarded-For is set", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    const gateway = stubGatewayFetch();
-    await handler(
-      new Request("http://127.0.0.1:7840/assistant-upstream/things"),
-    );
-    expect(gateway.calls[0]!.headers.get("x-cadet-client-ip")).toBe(
-      EDGE_PEER_IP,
-    );
-  });
-
-  test("strips the host and hop-by-hop headers from the upstream request", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    const gateway = stubGatewayFetch();
-    await handler(
-      new Request("http://127.0.0.1:7840/assistant-upstream/things", {
-        headers: {
-          host: "camping.ngrok-free.dev",
-          connection: "keep-alive",
-          "keep-alive": "timeout=5",
-          authorization: "Bearer device-token",
-        },
-      }),
-    );
-    const headers = gateway.calls[0]!.headers;
-    expect(headers.get("host")).toBeNull();
-    expect(headers.get("connection")).toBeNull();
-    expect(headers.get("keep-alive")).toBeNull();
-    // The caller's own headers ride as-is.
-    expect(headers.get("authorization")).toBe("Bearer device-token");
-  });
-
-  test("drops the length and encoding headers a decoded proxied response outgrows", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    stubGatewayFetch(
-      () =>
-        new Response("gateway body", {
-          status: 201,
-          headers: {
-            "Content-Type": "application/json",
-            "Content-Length": "999",
-            "Content-Encoding": "gzip",
-          },
-        }),
-    );
-    const response = await handler(
-      new Request(
-        "http://127.0.0.1:7840/assistant-upstream/things",
-      ),
-    );
-    expect(response.status).toBe(201);
-    expect(response.headers.get("content-length")).toBeNull();
-    expect(response.headers.get("content-encoding")).toBeNull();
-    expect(response.headers.get("content-type")).toBe("application/json");
-  });
-
-  test("streams a POST body to the gateway", async () => {
-    const fixture = makeHandlerFixture();
-    const handler = handlerFor(fixture);
-    let received = "";
-    globalThis.fetch = mock(async (input: unknown, init?: unknown) => {
-      const request =
-        input instanceof Request
-          ? input
-          : new Request(input as string, init as RequestInit | undefined);
-      received = await request.text();
-      return new Response(null, { status: 204 });
-    }) as unknown as typeof fetch;
-    const response = await handler(
-      new Request("http://127.0.0.1:7840/assistant-upstream/messages", {
-        method: "POST",
-        body: "the message body",
-        headers: { "content-type": "text/plain" },
-      }),
-    );
-    expect(response.status).toBe(204);
-    expect(received).toBe("the message body");
-  });
+  // The /assistant-upstream proxy-internals tests (verbatim path, client-ip
+  // stamping, header stripping, POST streaming, response-header dropping)
+  // moved with the proxy itself — they live in local-mode's
+  // operations-proxy.test.ts now, driving the operator's catch-all row.
 
   test("the /web twin's non-assistant remainder 404s — no /v1 translation", async () => {
     const fixture = makeHandlerFixture();
@@ -761,7 +665,7 @@ describe("the app server's routes", () => {
     expect(await readBody(rootFile)).toBe("console.log('web root file');");
   });
 
-  test("compresses the static documents and never a proxied response", async () => {
+  test("compresses the static documents", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
 
@@ -776,19 +680,9 @@ describe("the app server's routes", () => {
       "__CADET_CONFIG__",
     );
 
-    stubGatewayFetch(
-      () =>
-        new Response("<html>gateway html</html>", {
-          headers: { "content-type": "text/html" },
-        }),
-    );
-    const proxied = await handler(
-      new Request("http://127.0.0.1:7840/assistant-upstream/page", {
-        headers: { "accept-encoding": "gzip" },
-      }),
-    );
-    expect(proxied.headers.get("content-encoding")).toBeNull();
-    expect(await readBody(proxied)).toBe("<html>gateway html</html>");
+    // The proxied responses this edge no longer produces are the operator
+    // row's business — local-mode's operations-proxy tests pin that the
+    // proxied stream is passed through un-recompressed.
   });
 
   test("revalidates the shell with an etag and answers 304 on a match", async () => {

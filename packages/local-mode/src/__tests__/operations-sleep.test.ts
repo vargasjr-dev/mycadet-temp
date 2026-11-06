@@ -45,8 +45,7 @@ const getGuardianAccessTokenMock = mock(
 const sleepDockerMock = mock(async (): Promise<void> => {});
 const sleepBasetenMock = mock(
   async (): Promise<
-    | { ok: true; kind: "remote" }
-    | { ok: false; status: number; error: string }
+    { ok: true; kind: "remote" } | { ok: false; status: number; error: string }
   > => ({ ok: true, kind: "remote" }),
 );
 const isAssistantHealthyMock = mock(async (): Promise<boolean> => false);
@@ -437,7 +436,7 @@ describe("sleepAssistant — the dispatch", () => {
 });
 
 describe("the operator route table — the scoped surface's sleep arm", () => {
-  test("POST matches; other methods and paths never do", () => {
+  test("POST matches; foreign methods ride the proxy catch-all", () => {
     expect(
       matchOperatorRequest("/v1/assistants/a/sleep/", "POST"),
     ).not.toBeNull();
@@ -445,12 +444,15 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       matchOperatorRequest("/v1/assistants/a/sleep", "POST"),
     ).not.toBeNull();
     expect(
-      matchOperatorRequest("/v1/assistants/a/sleep/", "DELETE"),
-    ).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "POST")).toBeNull();
+      matchOperatorRequest("/v1/assistants/a/sleep/", "DELETE")?.route.method,
+    ).toBe("ALL");
     expect(
-      matchOperatorRequest("/v1/assistants/a/conversations", "POST"),
-    ).toBeNull();
+      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/conversations", "POST")?.route
+        .method,
+    ).toBe("ALL");
   });
 
   test("a malformed id decode passes", () => {

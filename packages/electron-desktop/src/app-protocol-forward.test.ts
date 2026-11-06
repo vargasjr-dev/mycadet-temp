@@ -29,7 +29,6 @@ mock.module("electron", () => ({
 import * as realLocalMode from "@mycadet/local-mode";
 
 const forwardOperator = mock(async (): Promise<Response | null> => null);
-const forwardGateway = mock(async (): Promise<Response | null> => null);
 const forwardCloud = mock(async (): Promise<Response | null> => null);
 
 mock.module("@mycadet/local-mode", () => ({
@@ -87,10 +86,8 @@ const writeRenderer = async (root: string, body: string): Promise<void> => {
 
 afterEach(async () => {
   forwardOperator.mockClear();
-  forwardGateway.mockClear();
   forwardCloud.mockClear();
   forwardOperator.mockResolvedValue(null);
-  forwardGateway.mockResolvedValue(null);
   forwardCloud.mockResolvedValue(null);
   isPackaged = false;
   delete (process as unknown as { resourcesPath?: string }).resourcesPath;
@@ -126,7 +123,7 @@ const setupPackaged = async (): Promise<void> => {
 };
 
 describe("registerAppProtocol", () => {
-  test("the operator answer wins over the gateway proxy", async () => {
+  test("the operator answer wins over the cloud forward", async () => {
     await setupDev();
     await register();
     forwardOperator.mockResolvedValueOnce(new Response("retired"));
@@ -136,22 +133,10 @@ describe("registerAppProtocol", () => {
       }),
     );
     expect(await response.text()).toBe("retired");
-    expect(forwardGateway).not.toHaveBeenCalled();
     expect(forwardCloud).not.toHaveBeenCalled();
   });
 
-  test("the gateway proxy wins over the cloud forward", async () => {
-    await setupDev();
-    await register();
-    forwardGateway.mockResolvedValueOnce(new Response("gateway"));
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistants/a/conversations"),
-    );
-    expect(await response.text()).toBe("gateway");
-    expect(forwardCloud).not.toHaveBeenCalled();
-  });
-
-  test("the cloud forward answers what the gateway passes", async () => {
+  test("the cloud forward answers what the operator passes", async () => {
     await setupDev();
     await register();
     forwardCloud.mockResolvedValueOnce(new Response("cloud"));

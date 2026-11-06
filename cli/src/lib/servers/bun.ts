@@ -302,6 +302,9 @@ export function createAppServerHandler(
     if (match) {
       const response = await match.route.run({
         assistantId: match.assistantId,
+        method: request.method,
+        path: pathname + new URL(request.url).search,
+        peer: server?.requestIP(request)?.address ?? null,
         headers: request.headers,
         body: request.body,
       });

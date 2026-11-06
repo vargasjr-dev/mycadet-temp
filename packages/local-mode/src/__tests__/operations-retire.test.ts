@@ -253,12 +253,20 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     port: 7830,
   };
 
-  test("non-DELETE methods and non-retire paths never match", () => {
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "POST")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "GET")).toBeNull();
+  test("foreign methods and paths fall to the proxy catch-all", () => {
+    // The retire row is DELETE-only; other methods on its path (and other
+    // paths on DELETE) ride the ALL proxy row to the gateway. The bare
+    // unscoped form has no tail, so it genuinely passes.
     expect(
-      matchOperatorRequest("/v1/assistants/a/conversations", "DELETE"),
-    ).toBeNull();
+      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/retire/", "GET")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/conversations", "DELETE")?.route
+        .method,
+    ).toBe("ALL");
     expect(matchOperatorRequest("/v1/assistants/", "DELETE")).toBeNull();
   });
 
