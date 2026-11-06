@@ -4,7 +4,6 @@ import {
   VersionMismatchError,
   cloudPollJobStatus,
   cloudRequestSignedUrl,
-  type UnifiedJobStatus,
 } from "@mycadet/local-mode";
 
 const PLATFORM_URL = "https://platform.example.test";
@@ -560,7 +559,7 @@ describe("cloudPollJobStatus", () => {
       jobId: "job-1",
       type: "export",
       status: "processing",
-    } satisfies UnifiedJobStatus);
+    });
     expect(calls[0]!.url).toBe(`${PLATFORM_URL}/v1/migrations/jobs/job-1/`);
     expect(calls[0]!.method).toBe("GET");
   });

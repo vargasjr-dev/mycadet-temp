@@ -12,29 +12,17 @@ import os from "node:os";
 import path from "node:path";
 import type { ViteDevServer, Connect } from "vite";
 
-import {
-  AVATAR_IMAGE_FILENAME,
-  AVATAR_MANIFEST_FILENAME,
-  AVATAR_TRAITS_FILENAME,
-  resolveAvatarDir,
-} from "@mycadet/avatar-manifest";
 import * as actualLocalMode from "@mycadet/local-mode";
-import {
-  guardianTokenPath,
-  type DevicesListResult,
-  type DevicesRevokeResult,
-} from "@mycadet/local-mode";
+import { guardianTokenPath } from "@mycadet/local-mode";
 
 // Per-test stubs for the CLI-spawning device helpers. The rest of the module
 // stays real so the other middlewares under test keep their behavior.
-let devicesListResult: DevicesListResult = { ok: true, devices: [] };
-let devicesRevokeResult: DevicesRevokeResult = { ok: true };
 const runDevicesListMock = mock((_assistantId: string) =>
-  Promise.resolve(devicesListResult),
+  Promise.resolve({ ok: true, devices: [] }),
 );
 const runDevicesRevokeMock = mock(
   (_assistantId: string, _hashedDeviceId: string) =>
-    Promise.resolve(devicesRevokeResult),
+    Promise.resolve({ ok: true }),
 );
 
 mock.module("@mycadet/local-mode", () => {

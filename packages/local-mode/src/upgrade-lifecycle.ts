@@ -186,7 +186,7 @@ export function buildUpgradeCommitMessage(options: {
  * Capture environment variables from a running Docker container so they
  * can be replayed onto the replacement container after upgrade.
  */
-export async function captureContainerEnv(
+async function captureContainerEnv(
   containerName: string,
 ): Promise<Record<string, string>> {
   const captured: Record<string, string> = {};
@@ -481,7 +481,7 @@ export async function attemptFailedStateRestore(opts: {
 // Shared Docker rollback orchestration
 // ---------------------------------------------------------------------------
 
-export interface PerformDockerRollbackOptions {
+interface PerformDockerRollbackOptions {
   /** The caller's own version — the fallback image tag when a pull has no ref. */
   cliVersion?: string;
   /** Root archive must be installed before the target runtime starts. */

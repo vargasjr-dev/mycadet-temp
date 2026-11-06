@@ -33,7 +33,7 @@ const readCloudTokenMock = spyOn(localMode, "readCloudToken").mockReturnValue(
   "test-cloud-token",
 );
 const loadGuardianTokenSpy = spyOn(
-  guardianToken,
+  localMode,
   "loadGuardianToken",
 ).mockReturnValue(
   makeGuardianTokenData({
