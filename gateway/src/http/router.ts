@@ -14,9 +14,7 @@ import {
 
 export type GetClientIp = () => string;
 export type GetRawPeerIp = () => string;
-export type { AuthStrategy } from "./routes/types.js";
 
-export type { GatewayRouteDefinition };
 
 /** Params extracted from a regex path match (capture groups). */
 export type RouteParams = string[];

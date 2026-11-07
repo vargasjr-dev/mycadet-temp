@@ -212,6 +212,39 @@ export function buildContactsControlPlaneRoutes({
 > {
   return [
     {
+      path: "/contacts",
+      method: "post",
+      operationId: "contactsUpsert",
+      summary: "Create or update a contact",
+      description:
+        "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
+      tags: ["contacts"],
+      requestBody: UpsertContactRequestSchema,
+      responseBody: z.object({
+        ok: z.boolean(),
+        contact: ContactPayloadSchema,
+      }),
+      auth: "edge",
+      createHandler: () => (req) => contactsControlPlaneProxy.handleUpsertContact(req),
+    },
+    {
+      // Keep DELETE on the invite collection unsupported; only
+      // /contacts/invites/:id should revoke an invite.
+      path: /^\/contacts\/(?!invites\/?$)([^/]+)\/?$/,
+      specPath: "/contacts/{contact_id}",
+      method: "delete",
+      operationId: "contactDelete",
+      summary: "Delete a contact",
+      description:
+        "Deletes a non-guardian contact from the gateway ACL store and the assistant mirror. 404 when the contact exists in neither; 403 for guardian contacts.",
+      tags: ["contacts"],
+      pathParameters: [{ name: "contact_id", description: "The contact id" }],
+      responseStatus: "204",
+      auth: "edge",
+      createHandler: () => (_req, params) =>
+        contactsControlPlaneProxy.handleDeleteContact(params[0]!),
+    },
+    {
       path: "/contacts/prompt/submit",
       method: "post",
       operationId: "contactsPromptSubmit",
@@ -256,41 +289,6 @@ export function buildContactsControlPlaneRoutes({
       createHandler: () => (req) => handleContactRecordSubmit(req),
     },
     {
-      path: "/contacts",
-      method: "get",
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleListContacts(req),
-    },
-    {
-      path: "/contacts",
-      method: "post",
-      operationId: "contactsUpsert",
-      summary: "Create or update a contact",
-      description:
-        "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
-      tags: ["contacts"],
-      requestBody: UpsertContactRequestSchema,
-      responseBody: z.object({
-        ok: z.boolean(),
-        contact: ContactPayloadSchema,
-      }),
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleUpsertContact(req),
-    },
-    {
-      path: "/contacts/merge",
-      method: "post",
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleMergeContacts(req),
-    },
-    {
-      path: "/contact-channels/{channel_id}",
-      method: "patch",
-      auth: "edge",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleUpdateContactChannel(req, params[0]!),
-    },
-    {
       path: "/contact-channels/{channel_id}/verify",
       method: "post",
       operationId: "contactChannelVerify",
@@ -312,6 +310,25 @@ export function buildContactsControlPlaneRoutes({
     // ── Contacts/invites control plane ──
     // Scope map: invites list → settings.read; create/redeem/revoke/call →
     // settings.write.
+    {
+      path: "/contacts",
+      method: "get",
+      auth: "edge",
+      createHandler: () => (req) => contactsControlPlaneProxy.handleListContacts(req),
+    },
+    {
+      path: "/contacts/merge",
+      method: "post",
+      auth: "edge",
+      createHandler: () => (req) => contactsControlPlaneProxy.handleMergeContacts(req),
+    },
+    {
+      path: "/contact-channels/{channel_id}",
+      method: "patch",
+      auth: "edge",
+      createHandler: () => (req, params) =>
+        contactsControlPlaneProxy.handleUpdateContactChannel(req, params[0]!),
+    },
     {
       path: "/contacts/invites",
       method: "get",
@@ -356,23 +373,6 @@ export function buildContactsControlPlaneRoutes({
     // template cannot express. The published metadata (contactDelete)
     // travels on the entry regardless — the spec documents the canonical
     // /contacts/{contact_id} shape. ──
-    {
-      // Keep DELETE on the invite collection unsupported; only
-      // /contacts/invites/:id should revoke an invite.
-      path: /^\/contacts\/(?!invites\/?$)([^/]+)\/?$/,
-      specPath: "/contacts/{contact_id}",
-      method: "delete",
-      operationId: "contactDelete",
-      summary: "Delete a contact",
-      description:
-        "Deletes a non-guardian contact from the gateway ACL store and the assistant mirror. 404 when the contact exists in neither; 403 for guardian contacts.",
-      tags: ["contacts"],
-      pathParameters: [{ name: "contact_id", description: "The contact id" }],
-      responseStatus: "204",
-      auth: "edge",
-      createHandler: () => (_req, params) =>
-        contactsControlPlaneProxy.handleDeleteContact(params[0]!),
-    },
     {
       path: /^\/contacts\/([^/]+)$/,
       method: "get",
