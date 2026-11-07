@@ -10,9 +10,11 @@
  */
 
 import {
+  AdmissionPolicySchema,
   isAdmissionPolicyExemptChannel,
   isAdmissionPolicyHiddenChannel,
 } from "@mycadet/gateway-client";
+import { z } from "zod";
 import {
   ADMISSION_POLICY_DEFAULT,
   ADMISSION_POLICY_VALUES,
@@ -28,7 +30,6 @@ import {
   type ChannelId,
 } from "../../channels/types.js";
 import { getLogger } from "../../logger.js";
-import { SetChannelPolicyRequestSchema } from "./channel-admission-policy-routes.js";
 
 const log = getLogger("channel-admission-policy");
 
@@ -36,8 +37,22 @@ const log = getLogger("channel-admission-policy");
 // Validation
 // ---------------------------------------------------------------------------
 
-// Wire schema shared with the published OpenAPI spec (single source).
+// Wire schemas shared with the published OpenAPI spec (single source).
+
+export const SetChannelPolicyRequestSchema = z.object({
+  policy: AdmissionPolicySchema,
+  note: z.string().nullable().optional(),
+});
+
+const ChannelPolicyViewSchema = z.object({
+  channelType: z.string(),
+  policy: AdmissionPolicySchema,
+  note: z.string().nullable(),
+  updatedAt: z.number().nullable(),
+});
+
 const SetPolicyBodySchema = SetChannelPolicyRequestSchema;
+
 
 // ---------------------------------------------------------------------------
 // Response shape
@@ -237,3 +252,65 @@ export function createChannelAdmissionPolicyDeleteHandler() {
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script. The DELETE reset and
+// the POST-as-PUT alias serve legacy native clients and are dispatch-only
+// (unpublished) — only the canonical GET/PUT surface is in the spec.
+// ---------------------------------------------------------------------------
+
+import type { GatewayRouteDefinition } from "./types.js";
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/channel-admission-policy",
+    method: "get",
+    operationId: "channelAdmissionPolicyList",
+    summary: "List per-channel admission floors",
+    description:
+      "Returns one entry per enforced channel, excluding exempt and hidden channels, seeded with defaults for channels without a stored row.",
+    tags: ["channel-admission-policy"],
+    responseBody: z.object({
+      policies: z.array(ChannelPolicyViewSchema),
+    }),
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createChannelAdmissionPolicyListHandler(),
+  },
+  {
+    path: "/channel-admission-policy/{channel_type}",
+    method: "put",
+    operationId: "channelAdmissionPolicySet",
+    summary: "Set a channel's admission floor",
+    description:
+      "Upserts the channel's admission policy. Exempt and hidden channels return 403.",
+    tags: ["channel-admission-policy"],
+    pathParameters: [
+      { name: "channel_type", description: "The channel type, e.g. slack" },
+    ],
+    requestBody: SetChannelPolicyRequestSchema,
+    responseBody: z.object({ policy: ChannelPolicyViewSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    aliases: ["post"],
+    createHandler: () => {
+      const handler = createChannelAdmissionPolicySetHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+  {
+    // Reset to seed default — dispatch-only, unpublished.
+    path: "/channel-admission-policy/{channel_type}",
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => {
+      const handler = createChannelAdmissionPolicyDeleteHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+];
