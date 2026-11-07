@@ -473,7 +473,13 @@ export async function attemptFailedStateRestore(opts: {
     "   Backup imported — restarting containers to complete recovery...",
   );
   await sleepDocker(opts.entry);
-  await startContainers(opts.containerOptions, (msg) => console.log(msg));
+  await startContainers(
+    {
+      ...opts.containerOptions,
+      assistantMemory: opts.entry.machine?.memory ?? null,
+    },
+    (msg) => console.log(msg),
+  );
   return { restored: true, ready: await waitForReady(opts.runtimeUrl) };
 }
 
@@ -691,6 +697,7 @@ export async function performDockerRollback(
     console.log("Creating stopped containers with the target version...");
     await startContainers(
       {
+        assistantMemory: entry.machine?.memory ?? null,
         cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
@@ -795,6 +802,7 @@ export async function performDockerRollback(
 
         await startContainers(
           {
+            assistantMemory: entry.machine?.memory ?? null,
             cesServiceToken,
             extraAssistantEnv,
             extraGatewayEnv,

@@ -1,6 +1,9 @@
 import { platform } from "node:os";
 
-import type { DockerAssistant } from "../../lockfile-contract";
+import type {
+  DockerAssistant,
+  MachineMemoryPolicy,
+} from "../../lockfile-contract";
 import { exec } from "../../exec";
 import { saveLockfileAssistant } from "../../lockfile";
 import { getOrCreateHostDeviceId } from "../../device-id";
@@ -180,6 +183,7 @@ async function recreateDockerContainers(
   const assistantPort = ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   const runArgs = buildServiceRunArgs({
+    assistantMemory: entry.machine?.memory ?? null,
     extraAssistantEnv: {
       CADET_DEVICE_ID: device,
       ...options.extraAssistantEnv,
@@ -245,6 +249,7 @@ export async function startContainers(
     res: ReturnType<typeof dockerResourceNames>;
     netnsContainer?: string;
     assistantCaCertPath?: string;
+    assistantMemory?: MachineMemoryPolicy | null;
   },
   log: (msg: string) => void,
 ): Promise<void> {

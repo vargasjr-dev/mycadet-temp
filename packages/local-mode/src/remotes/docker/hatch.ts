@@ -926,6 +926,7 @@ export async function hatchDocker(
     }
     await startContainers(
       {
+        assistantMemory: dockerEntry.machine?.memory ?? null,
         createOnly: !!params.createOnly,
         cesServiceToken,
         extraAssistantEnv,

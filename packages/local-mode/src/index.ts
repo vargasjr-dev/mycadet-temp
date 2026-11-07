@@ -117,7 +117,6 @@ export type {
   LockfileWriteResult,
   MachinePolicy,
   MachineMemoryPolicy,
-  MachineApplicability,
 } from "./lockfile-contract";
 export {
   configureCliPaths,
@@ -298,6 +297,14 @@ export {
   machineSetKey,
   type MachineMutationResult,
 } from "./operations/machine";
+export { machinePolicyPaths } from "./lockfile-contract";
+export { planMachine } from "./operations/machine-plan";
+export type {
+  MachinePlanResult,
+  MachinePlanChange,
+  AppliedMemoryState,
+} from "./operations/machine-plan";
+export { machineMemoryRunArgs } from "./remotes/docker/memory";
 export { parseWaitDuration } from "./remotes/local/drain";
 export {
   loadAllAssistants,
@@ -326,12 +333,7 @@ export {
   removeContainer,
   retireDocker,
 } from "./remotes/docker/retire";
-export {
-  exec,
-  execOutput,
-  execWithStdin,
-  buildExecErrorMessage,
-} from "./exec";
+export { exec, execOutput, execWithStdin, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,
   parseTasklistCsv,
