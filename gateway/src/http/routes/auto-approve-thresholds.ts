@@ -301,3 +301,107 @@ export function createConversationThresholdDeleteHandler() {
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script. Every entry declares
+// its spec metadata, its auth, and its handler factory together.
+// ---------------------------------------------------------------------------
+
+import { z } from "zod";
+
+import type { GatewayRouteDefinition } from "./types.js";
+
+const ThresholdSchema = z.enum(["none", "low", "medium", "high"]);
+
+const GlobalThresholdsSchema = z.object({
+  interactive: ThresholdSchema,
+  autonomous: ThresholdSchema,
+  headless: ThresholdSchema,
+});
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/permissions/thresholds",
+    method: "get",
+    operationId: "permissionsThresholdsGet",
+    summary: "Get global auto-approve thresholds",
+    tags: ["permissions"],
+    responseBody: GlobalThresholdsSchema,
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createGlobalThresholdGetHandler(),
+  },
+  {
+    path: "/permissions/thresholds",
+    method: "put",
+    operationId: "permissionsThresholdsPut",
+    summary: "Update global auto-approve thresholds",
+    description:
+      "Partial update — omitted modes keep their current value. Returns the full post-update set.",
+    tags: ["permissions"],
+    requestBody: z.object({
+      interactive: ThresholdSchema.optional(),
+      autonomous: ThresholdSchema.optional(),
+      headless: ThresholdSchema.optional(),
+    }),
+    responseBody: GlobalThresholdsSchema,
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createGlobalThresholdPutHandler(),
+  },
+  {
+    path: "/permissions/thresholds/conversations/{conversation_id}",
+    method: "get",
+    operationId: "conversationThresholdGet",
+    summary: "Get a conversation's threshold override",
+    description:
+      "Returns { threshold: null } when no override exists. Gateways predating that behavior returned 404 for the same condition; clients tolerate both during rollout.",
+    tags: ["permissions"],
+    pathParameters: [
+      { name: "conversation_id", description: "The conversation id" },
+    ],
+    responseBody: z.object({ threshold: z.string().nullable() }),
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createConversationThresholdGetHandler(),
+  },
+  {
+    path: "/permissions/thresholds/conversations/{conversation_id}",
+    method: "put",
+    operationId: "conversationThresholdPut",
+    summary: "Set a conversation's threshold override",
+    tags: ["permissions"],
+    pathParameters: [
+      { name: "conversation_id", description: "The conversation id" },
+    ],
+    requestBody: z.object({ threshold: ThresholdSchema }),
+    responseBody: z.object({
+      conversationId: z.string(),
+      threshold: ThresholdSchema,
+    }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createConversationThresholdPutHandler(),
+  },
+  {
+    path: "/permissions/thresholds/conversations/{conversation_id}",
+    method: "delete",
+    operationId: "conversationThresholdDelete",
+    summary: "Clear a conversation's threshold override",
+    description: "Idempotent — succeeds even when no override exists.",
+    tags: ["permissions"],
+    pathParameters: [
+      { name: "conversation_id", description: "The conversation id" },
+    ],
+    responseStatus: "204",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createConversationThresholdDeleteHandler(),
+  },
+];

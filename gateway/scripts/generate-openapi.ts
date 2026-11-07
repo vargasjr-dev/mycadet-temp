@@ -20,16 +20,17 @@ import { createDocument } from "zod-openapi";
 
 import type { GatewayRouteDefinition } from "../src/http/routes/types.js";
 
-// Import ROUTES from each route module that declares schemas.
-// Add new route modules here as they adopt zod-openapi schemas.
-import { ROUTES as autoApproveThresholdRoutes } from "../src/http/routes/auto-approve-thresholds-routes.js";
-import { ROUTES as channelAdmissionPolicyRoutes } from "../src/http/routes/channel-admission-policy-routes.js";
-import { ROUTES as channelIngressRoutes } from "../src/http/routes/channel-ingress-routes.js";
-import { ROUTES as channelPermissionOverrideRoutes } from "../src/http/routes/channel-permission-overrides-routes.js";
-import { ROUTES as contactsControlPlaneRoutes } from "../src/http/routes/contacts-control-plane-routes.js";
+// Import ROUTES from each route module. These are the SAME arrays the
+// runtime dispatch table consumes (see src/http/routes/types.ts) — the
+// generation script reads only the spec fields and never invokes handlers.
+import { ROUTES as autoApproveThresholdRoutes } from "../src/http/routes/auto-approve-thresholds.js";
+import { ROUTES as channelAdmissionPolicyRoutes } from "../src/http/routes/channel-admission-policy.js";
+import { ROUTES as channelIngressRoutes } from "../src/http/routes/channel-ingress.js";
+import { ROUTES as channelPermissionOverrideRoutes } from "../src/http/routes/channel-permission-overrides.js";
+import { buildContactsControlPlaneRoutes } from "../src/http/routes/contacts-control-plane-route-table.js";
 import { ROUTES as credentialRequestRoutes } from "../src/http/routes/credential-requests.js";
-import { ROUTES as trustRuleRoutes } from "../src/http/routes/trust-rules-routes.js";
-import { ROUTES as upgradePolicyRoutes } from "../src/http/routes/upgrade-policy-routes.js";
+import { ROUTES as trustRuleRoutes } from "../src/http/routes/trust-rules.js";
+import { ROUTES as upgradePolicyRoutes } from "../src/http/routes/upgrade-policy.js";
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUTPUT_PATH = resolve(ROOT, "openapi.json");
@@ -41,7 +42,13 @@ const ALL_ROUTES: GatewayRouteDefinition[] = [
   ...channelAdmissionPolicyRoutes,
   ...channelIngressRoutes,
   ...channelPermissionOverrideRoutes,
-  ...contactsControlPlaneRoutes,
+  // The contacts table is built with stub deps: handlers are never invoked
+  // during generation, only the metadata and zod schemas are read.
+  ...buildContactsControlPlaneRoutes({
+    contactsControlPlaneProxy: {} as never,
+    handleContactPromptSubmit: async () => new Response(""),
+    handleContactRecordSubmit: async () => new Response(""),
+  }),
   ...credentialRequestRoutes,
   ...trustRuleRoutes,
   ...upgradePolicyRoutes,
@@ -55,7 +62,13 @@ function buildSpec(version: string) {
   const paths: Record<string, Record<string, unknown>> = {};
 
   for (const route of ALL_ROUTES) {
-    if (!paths[route.path]) paths[route.path] = {};
+    // Dispatch-only, unpublished: no operationId. Raw-regex dispatch paths
+    // publish under their `specPath` override instead.
+    if (!route.operationId) continue;
+    const specPath =
+      typeof route.path === "string" ? route.path : route.specPath;
+    if (!specPath) continue;
+    if (!paths[specPath]) paths[specPath] = {};
 
     const parameters: Array<Record<string, unknown>> = [];
     if (route.pathParameters) {
@@ -115,7 +128,7 @@ function buildSpec(version: string) {
       };
     }
 
-    paths[route.path][route.method] = operation;
+    paths[specPath][route.method] = operation;
   }
 
   return createDocument({

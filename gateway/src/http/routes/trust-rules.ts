@@ -17,16 +17,47 @@ import { getGatewayDb } from "../../db/connection.js";
 import { autoApproveThresholds } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 
-import { TrustRuleSuggestRequestSchema } from "./trust-rules-routes.js";
+import { z } from "zod";
+import type { GatewayRouteDefinition } from "./types.js";
 
 const log = getLogger("trust-rules");
 
 // ---------------------------------------------------------------------------
-// Zod schema for POST /v1/trust-rules/suggest request body
+// Zod schemas for POST /v1/trust-rules/suggest — wire + published spec
+// (single source)
 // ---------------------------------------------------------------------------
 
-// Wire schema shared with the published OpenAPI spec (single source).
-const SuggestRequestSchema = TrustRuleSuggestRequestSchema;
+const SuggestRequestSchema = z.object({
+  tool: z.string().min(1),
+  command: z.string().min(1),
+  riskAssessment: z.object({
+    risk: z.string(),
+    reasoning: z.string(),
+    reasonDescription: z.string(),
+  }),
+  scopeOptions: z.array(
+    z.object({
+      pattern: z.string(),
+      label: z.string(),
+    }),
+  ),
+  directoryScopeOptions: z
+    .array(
+      z.object({
+        scope: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
+  intent: z.enum(["auto_approve", "escalate"]),
+  existingRule: z
+    .object({
+      id: z.string(),
+      pattern: z.string(),
+      risk: z.string(),
+    })
+    .optional(),
+});
 
 export interface TrustRulesListParams {
   origin?: string;
@@ -421,3 +452,177 @@ export function createTrustRulesResetHandler() {
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script. Suggest/create order
+// is load-bearing only in spirit (methods are disjoint); the /:id catch-alls
+// are PATCH/DELETE so the literal suggest path can never shadow them.
+// ---------------------------------------------------------------------------
+
+const TrustRuleRiskSchema = z.enum(["low", "medium", "high"]);
+
+const TrustRuleSchema = z.object({
+  id: z.string(),
+  tool: z.string(),
+  pattern: z.string(),
+  risk: TrustRuleRiskSchema,
+  description: z.string(),
+  origin: z.enum(["default", "user_defined"]),
+  userModified: z.boolean(),
+  deleted: z.boolean(),
+  /**
+   * Optional directory scope. When non-null the rule applies only when the
+   * tool is invoked from within this directory (or a subdirectory). Null
+   * means global.
+   */
+  scope: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const CreateTrustRuleRequestSchema = z.object({
+  tool: z.string().min(1),
+  pattern: z.string().min(1),
+  risk: TrustRuleRiskSchema,
+  description: z.string().min(1),
+  scope: z
+    .literal("everywhere")
+    .optional()
+    .describe(
+      'Compatibility field. Trust rules apply workspace-wide: the engine matches on tool and pattern only, so a narrower scope cannot be honored and any value other than "everywhere" is rejected rather than stored broader than the consent it records.',
+    ),
+});
+
+const UpdateTrustRuleRequestSchema = z.object({
+  risk: TrustRuleRiskSchema.optional(),
+  description: z.string().optional(),
+});
+
+const TrustRuleSuggestionSchema = z.object({
+  pattern: z.string(),
+  risk: z.string(),
+  scope: z.string().nullable(),
+  description: z.string(),
+  scopeOptions: z.array(z.object({ pattern: z.string(), label: z.string() })),
+  directoryScopeOptions: z
+    .array(z.object({ scope: z.string(), label: z.string() }))
+    .nullable()
+    .optional(),
+});
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/trust-rules",
+    method: "get",
+    operationId: "trustRulesList",
+    summary: "List trust rules",
+    description:
+      "Returns trust rules, filtered to user-relevant rules by default. Pass include_all=true for the full set or origin/tool to filter.",
+    tags: ["trust-rules"],
+    queryParameters: [
+      {
+        name: "origin",
+        description: "Filter by origin: default or user_defined",
+      },
+      { name: "tool", description: "Filter by tool name" },
+      {
+        name: "include_deleted",
+        description: '"true" to include soft-deleted rules',
+      },
+      {
+        name: "include_all",
+        description: '"true" to disable the user-relevant filter',
+      },
+    ],
+    responseBody: z.object({ rules: z.array(TrustRuleSchema) }),
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createTrustRulesListHandler(),
+  },
+  {
+    path: "/trust-rules",
+    method: "post",
+    operationId: "trustRuleCreate",
+    summary: "Create a trust rule",
+    tags: ["trust-rules"],
+    requestBody: CreateTrustRuleRequestSchema,
+    responseStatus: "201",
+    responseBody: z.object({ rule: TrustRuleSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createTrustRulesCreateHandler(),
+  },
+  {
+    path: "/trust-rules/suggest",
+    method: "post",
+    operationId: "trustRuleSuggest",
+    summary: "Generate a trust-rule suggestion",
+    description:
+      "LLM-backed suggestion for a rule matching the given tool invocation. Returns 503 when the daemon suggestion relay is unavailable.",
+    tags: ["trust-rules"],
+    requestBody: SuggestRequestSchema,
+    responseBody: z.object({ suggestion: TrustRuleSuggestionSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createTrustRulesSuggestHandler(),
+  },
+  {
+    path: "/trust-rules/{rule_id}",
+    method: "patch",
+    operationId: "trustRuleUpdate",
+    summary: "Update a trust rule",
+    description:
+      "Updates risk and/or description. Updating a default-origin rule marks it userModified.",
+    tags: ["trust-rules"],
+    pathParameters: [{ name: "rule_id", description: "The trust rule id" }],
+    requestBody: UpdateTrustRuleRequestSchema,
+    responseBody: z.object({ rule: TrustRuleSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => {
+      const handler = createTrustRulesUpdateHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+  {
+    path: "/trust-rules/{rule_id}",
+    method: "delete",
+    operationId: "trustRuleDelete",
+    summary: "Delete a trust rule",
+    description:
+      "Soft-deletes the rule. Default-origin rules can be reset later.",
+    tags: ["trust-rules"],
+    pathParameters: [{ name: "rule_id", description: "The trust rule id" }],
+    responseBody: z.object({ success: z.boolean() }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => {
+      const handler = createTrustRulesDeleteHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+  {
+    path: "/trust-rules/{rule_id}/reset",
+    method: "post",
+    operationId: "trustRuleReset",
+    summary: "Reset a default trust rule",
+    description:
+      "Restores a default-origin rule to its registry risk and description, clearing userModified and deleted.",
+    tags: ["trust-rules"],
+    pathParameters: [{ name: "rule_id", description: "The trust rule id" }],
+    responseBody: z.object({ rule: TrustRuleSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => {
+      const handler = createTrustRulesResetHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+];
