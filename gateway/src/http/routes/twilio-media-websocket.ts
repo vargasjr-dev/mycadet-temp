@@ -7,7 +7,6 @@ import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twi
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
 import { getAssistantBaseUrl } from "../../config.js";
-import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("twilio-media-ws");
@@ -82,7 +81,7 @@ export function extractMediaStreamMetadata(url: URL): {
  *
  * Uses the same edge-token auth model as the relay websocket upgrades.
  */
-export function createTwilioMediaWebsocketHandler(config: GatewayConfig) {
+export function createTwilioMediaWebsocketHandler() {
   return function handleUpgrade(
     req: Request,
     server: import("bun").Server<unknown>,

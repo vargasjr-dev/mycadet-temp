@@ -216,10 +216,7 @@ async function checkLiveVoiceAuth(
 export function getLiveVoiceWebsocketHandlers() {
   return {
     open(ws: import("bun").ServerWebSocket<LiveVoiceSocketData>) {
-      const { config } = ws.data;
-
       ws.data.pendingMessages = [];
-
       const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
         buildWsUpstreamUrl({
           baseUrl: getAssistantBaseUrl(),

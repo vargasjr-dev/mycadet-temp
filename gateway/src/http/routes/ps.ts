@@ -31,7 +31,7 @@ interface PsResponse {
 
 export function createPsHandler(config: GatewayConfig) {
   async function handlePs(): Promise<Response> {
-    const assistantProcesses = await fetchAssistantPs(config);
+    const assistantProcesses = await fetchAssistantPs();
 
     const processes: ProcessEntry[] = [
       ...assistantProcesses,
@@ -49,9 +49,7 @@ export function createPsHandler(config: GatewayConfig) {
   return { handlePs };
 }
 
-async function fetchAssistantPs(
-  config: GatewayConfig,
-): Promise<ProcessEntry[]> {
+async function fetchAssistantPs(): Promise<ProcessEntry[]> {
   try {
     const url = `${getAssistantBaseUrl()}/v1/ps`;
     const controller = new AbortController();

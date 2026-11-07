@@ -564,7 +564,7 @@ async function main() {
   );
   const handleTwilioVoiceVerifyCallback =
     createTwilioVoiceVerifyCallbackHandler(config, twilioValidationCaches);
-  const handleTwilioMediaWs = createTwilioMediaWebsocketHandler(config);
+  const handleTwilioMediaWs = createTwilioMediaWebsocketHandler();
   const handlePluginWebhookWs = createPluginWebhookWebsocketHandler({
     config,
     resolve: resolveCachedPluginIngress,
@@ -677,7 +677,7 @@ async function main() {
   const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
   const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
   const upgradeBroadcastProxy = createUpgradeBroadcastProxyHandler(config);
-  const migrationRollbackProxy = createMigrationRollbackProxyHandler(config);
+  const migrationRollbackProxy = createMigrationRollbackProxyHandler();
   const workspaceCommitProxy = createWorkspaceCommitProxyHandler(config);
   const desktopSetupProxy = createDesktopSetupProxyHandler(config);
   const brainGraphProxy = createBrainGraphProxyHandler(config);

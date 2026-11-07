@@ -1,5 +1,4 @@
 import { describe, test, expect, mock, beforeEach, afterAll } from "bun:test";
-import type { GatewayConfig } from "../config.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 import {
@@ -55,29 +54,6 @@ const WS_CLOSED = WebSocket.CLOSED; // 3
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
-  const merged: GatewayConfig = {
-    routingEntries: [],
-    port: 7830,
-    runtimeProxyRequireAuth: true,
-    runtimeTimeoutMs: 30000,
-    runtimeMaxRetries: 2,
-    runtimeInitialBackoffMs: 500,
-    maxWebhookPayloadBytes: 1048576,
-    logFile: { dir: undefined, retentionDays: 30 },
-    maxAttachmentBytes: {
-      telegram: 50 * 1024 * 1024,
-      slack: 100 * 1024 * 1024,
-      whatsapp: 16 * 1024 * 1024,
-      default: 50 * 1024 * 1024,
-    },
-    maxAttachmentConcurrency: 3,
-    gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-    trustProxy: false,
-    ...overrides,
-  };
-  return merged;
-}
 
 /**
  * Lightweight fake that mimics a Bun ServerWebSocket for the media-stream handler.
@@ -207,7 +183,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   const TEST_TOKEN = mintEdgeToken();
 
   test("returns 400 when callSessionId is missing from both path and query", () => {
-    const handler = createTwilioMediaWebsocketHandler(makeConfig());
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream",
     );
@@ -222,8 +198,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("succeeds with path-based callSessionId and token", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       `http://localhost:7830/webhooks/twilio/media-stream/sess-42/${TEST_TOKEN}`,
     );
@@ -251,8 +226,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("legacy: succeeds with query-based callSessionId and token", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       `http://localhost:7830/webhooks/twilio/media-stream?callSessionId=sess-42&token=${TEST_TOKEN}`,
     );
@@ -275,8 +249,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("calls server.upgrade when Authorization header provides valid token", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream/sess-42",
       { headers: { authorization: `Bearer ${TEST_TOKEN}` } },
@@ -291,8 +264,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("returns 500 when server.upgrade fails", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       `http://localhost:7830/webhooks/twilio/media-stream/sess-1/${TEST_TOKEN}`,
     );
@@ -308,7 +280,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   // --- Auth tests ---
 
   test("returns 401 when no token provided via path, query, or header", () => {
-    const handler = createTwilioMediaWebsocketHandler(makeConfig());
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream/sess-1",
     );
@@ -323,8 +295,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("returns 401 when token is missing from legacy query request", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream?callSessionId=sess-1",
     );
@@ -349,7 +320,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
       "local:self:oauth-proxy.stripe_link",
       "oauth_proxy_v1",
     );
-    const handler = createTwilioMediaWebsocketHandler(makeConfig());
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       `http://localhost:7830/webhooks/twilio/media-stream/sess-1/${grant}`,
     );
@@ -368,7 +339,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
       "actor:asst_1:user_1",
       "actor_client_v1",
     );
-    const handler = createTwilioMediaWebsocketHandler(makeConfig());
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream/sess-1",
       { headers: { authorization: `Bearer ${actorToken}` } },
@@ -385,7 +356,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
 
   test("returns 401 for a gateway-minted token on another profile", () => {
     const uiPageToken = mintNonRelayToken("svc:gateway:self", "ui_page_v1");
-    const handler = createTwilioMediaWebsocketHandler(makeConfig());
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       `http://localhost:7830/webhooks/twilio/media-stream/sess-1/${uiPageToken}`,
     );
@@ -400,8 +371,7 @@ describe("createTwilioMediaWebsocketHandler", () => {
   });
 
   test("returns 401 when path-based token is invalid", () => {
-    const config = makeConfig({});
-    const handler = createTwilioMediaWebsocketHandler(config);
+    const handler = createTwilioMediaWebsocketHandler();
     const req = new Request(
       "http://localhost:7830/webhooks/twilio/media-stream/sess-1/wrong-token",
     );
