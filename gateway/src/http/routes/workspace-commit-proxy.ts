@@ -11,6 +11,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("workspace-commit-proxy");
 
@@ -42,3 +44,21 @@ export function createWorkspaceCommitProxyHandler(config: GatewayConfig) {
     return response;
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createWorkspaceCommitProxyHandler>
+>("Workspace commit proxy used before initialization");
+
+export function initWorkspaceCommitRoutes(config: GatewayConfig): void {
+  routeProxy.set(createWorkspaceCommitProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/admin/workspace-commit",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "admin.write",
+    handler: (req) => routeProxy.get()(req),
+  },
+];

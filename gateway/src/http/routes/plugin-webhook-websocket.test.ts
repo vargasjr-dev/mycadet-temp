@@ -118,12 +118,7 @@ describe("upgrade gate", () => {
     const handle = makeHandler();
     const { server, upgrades } = fakeServer();
 
-    const res = await handle(
-      upgradeRequest(),
-      server,
-      "example",
-      "realtime",
-    );
+    const res = await handle(upgradeRequest(), server, "example", "realtime");
 
     expect(res).toBeUndefined();
     expect(upgrades).toHaveLength(1);
@@ -157,12 +152,7 @@ describe("upgrade gate", () => {
     });
     const { server, upgrades } = fakeServer();
 
-    const res = await handle(
-      upgradeRequest(),
-      server,
-      "example",
-      "realtime",
-    );
+    const res = await handle(upgradeRequest(), server, "example", "realtime");
 
     expect(res?.status).toBe(404);
     expect(upgrades).toEqual([]);
@@ -230,12 +220,7 @@ describe("upgrade gate", () => {
     });
     const { server, upgrades } = fakeServer();
 
-    const res = await handle(
-      upgradeRequest(),
-      server,
-      "example",
-      "realtime",
-    );
+    const res = await handle(upgradeRequest(), server, "example", "realtime");
 
     expect(res?.status).toBe(404);
     expect(upgrades).toEqual([]);
@@ -264,12 +249,7 @@ describe("upgrade gate", () => {
     });
     const { server, upgrades } = fakeServer();
 
-    const res = await handle(
-      upgradeRequest(),
-      server,
-      "example",
-      "realtime",
-    );
+    const res = await handle(upgradeRequest(), server, "example", "realtime");
 
     expect(res?.status).toBe(500);
     expect(upgrades).toEqual([]);
@@ -360,12 +340,7 @@ describe("handshake signature", () => {
     const handle = makeHandler({ credentials: credentialsFor({}) });
     const { server, upgrades } = fakeServer();
 
-    const res = await handle(
-      upgradeRequest(),
-      server,
-      "example",
-      "realtime",
-    );
+    const res = await handle(upgradeRequest(), server, "example", "realtime");
 
     expect(res?.status).toBe(409);
     expect(upgrades).toEqual([]);

@@ -20,6 +20,8 @@ import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@mycadet/service
 import type { ConfigFileCache } from "../../config-file-cache.js";
 import { writeManagedPublicBaseUrl } from "../../tunnel/client.js";
 import { errorResponse, rejectBrowserOrigin } from "../loopback-guard.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const SaveIngressDomainRequestSchema = z.object({
   publicBaseUrl: z.string(),
@@ -65,3 +67,22 @@ export async function handleSaveIngressDomain(
   await writeManagedPublicBaseUrl(publicUrl, configFile);
   return Response.json({ ok: true });
 }
+
+const configFile = lazyRef<ConfigFileCache>(
+  "ingress domain routes used before initialization",
+);
+
+export function initIngressDomainRoutes(cache: ConfigFileCache): void {
+  configFile.set(cache);
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    // Ingress domain recording (guardian bearer, loopback fallback)
+    path: "/ingress/domains",
+    method: "post",
+    auth: "edge-guardian",
+    handler: (req, _params, getClientIp) =>
+      handleSaveIngressDomain(req, getClientIp(), configFile.get()),
+  },
+];

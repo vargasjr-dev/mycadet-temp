@@ -20,6 +20,14 @@ import {
 
 import "./test-preload.js";
 
+import { eq } from "drizzle-orm";
+import { ContactStore } from "../db/contact-store.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 type FakeChannelRow = {
   id: string;
   contact_id: string;
@@ -123,16 +131,6 @@ mock.module("../ipc/assistant-client.js", () => ({
     },
   ),
 }));
-
-import { eq } from "drizzle-orm";
-
-import { ContactStore } from "../db/contact-store.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 beforeAll(async () => {
   await initGatewayDb();

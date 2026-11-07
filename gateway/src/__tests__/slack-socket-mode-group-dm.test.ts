@@ -18,6 +18,7 @@ import * as schema from "../db/schema.js";
 import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { NormalizedSlackEvent } from "../slack/message-schemas.js";
 
+import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 type FetchFn = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -82,7 +83,6 @@ const { clearChannelInfoCache, clearUserInfoCache, clearInFlightFetches } =
 const { initGatewayDb, resetGatewayDb } = await import("../db/connection.js");
 const { initAdmissionPolicyCache, resetAdmissionPolicyCache } =
   await import("../risk/admission-policy-cache.js");
-import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 
 type SocketModeHarness = {
   config: SlackSocketModeConfig;

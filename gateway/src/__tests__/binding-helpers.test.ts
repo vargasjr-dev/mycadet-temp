@@ -19,16 +19,6 @@ import "./test-preload.js";
 
 // Assistant DB proxy: every call throws so the tests prove the helpers read
 // and write only the gateway DB.
-mock.module("../db/assistant-db-proxy.js", () => ({
-  assistantDbQuery: mock(async () => {
-    throw new Error("assistant DB read not expected in binding helpers");
-  }),
-  assistantDbRun: mock(async () => {
-    throw new Error("assistant DB write not expected in binding helpers");
-  }),
-  assistantDbExec: mock(async () => undefined),
-}));
-
 import {
   getExistingGuardianBinding,
   getMostRecentChannelGuardianTimestamp,
@@ -41,6 +31,15 @@ import {
   resetGatewayDb,
 } from "../db/connection.js";
 import { contacts, contactChannels } from "../db/schema.js";
+mock.module("../db/assistant-db-proxy.js", () => ({
+  assistantDbQuery: mock(async () => {
+    throw new Error("assistant DB read not expected in binding helpers");
+  }),
+  assistantDbRun: mock(async () => {
+    throw new Error("assistant DB write not expected in binding helpers");
+  }),
+  assistantDbExec: mock(async () => undefined),
+}));
 
 beforeAll(async () => {
   await initGatewayDb();

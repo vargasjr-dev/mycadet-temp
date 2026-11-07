@@ -19,6 +19,17 @@ import { eq } from "drizzle-orm";
 // proxy, and emits contacts_changed via ipcCallAssistant. None of that is
 // reachable in this unit test, so stub both modules. The gateway DB is the
 // source of truth and remains real.
+import { GatewayIpcServer } from "../ipc/server.js";
+import { contactRoutes } from "../ipc/contact-handlers.js";
+import { ContactStore } from "../db/contact-store.js";
+import { contacts, contactChannels } from "../db/schema.js";
+import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { testWorkspaceDir } from "./test-preload.js";
 type DbQueryFn = (sql: string, bind?: unknown[]) => Promise<unknown[]>;
 let assistantDbQueryMock: ReturnType<typeof mock<DbQueryFn>> = mock(
   async () => [],
@@ -57,18 +68,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   ipcCallAssistant: (...args: Parameters<IpcCallFn>) =>
     ipcCallAssistantMock(...args),
 }));
-
-import { GatewayIpcServer } from "../ipc/server.js";
-import { contactRoutes } from "../ipc/contact-handlers.js";
-import { ContactStore } from "../db/contact-store.js";
-import { contacts, contactChannels } from "../db/schema.js";
-import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { testWorkspaceDir } from "./test-preload.js";
 
 const socketPath = join(testWorkspaceDir, "gateway.sock");
 

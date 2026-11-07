@@ -11,6 +11,8 @@ import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { isLoopbackAddress } from "../../util/is-loopback-address.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("channel-verification-session-proxy");
 
@@ -112,3 +114,51 @@ export function createChannelVerificationSessionProxyHandler(
     },
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createChannelVerificationSessionProxyHandler>
+>("Channel verification session proxy used before initialization");
+
+export function initChannelVerificationSessionRoutes(
+  config: GatewayConfig,
+): void {
+  routeProxy.set(createChannelVerificationSessionProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/channel-verification-sessions",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleCreateVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions",
+    method: "delete",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleCancelVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions/resend",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleResendVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions/status",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleGetVerificationStatus(req),
+  },
+  {
+    path: "/channel-verification-sessions/revoke",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleRevokeVerificationBinding(req),
+  },
+];

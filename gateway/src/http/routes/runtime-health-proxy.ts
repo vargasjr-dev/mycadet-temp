@@ -10,6 +10,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("runtime-health-proxy");
 
@@ -46,3 +48,26 @@ export function createRuntimeHealthProxyHandler(config: GatewayConfig) {
 
   return { handleRuntimeHealth };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createRuntimeHealthProxyHandler>>(
+  "Runtime health proxy used before initialization",
+);
+
+export function initRuntimeHealthRoutes(config: GatewayConfig): void {
+  routeProxy.set(createRuntimeHealthProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/health",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleRuntimeHealth(req),
+  },
+  {
+    path: "/healthz",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleRuntimeHealth(req),
+  },
+];

@@ -18,7 +18,6 @@ mock.module("../fetch.js", () => ({
 
 let registeredWebhookPaths = new Set<string>();
 
-
 mock.module("../db/webhook-ingress-route-store.js", () => ({
   hasWebhookIngressRoute: (path: string) => registeredWebhookPaths.has(path),
 }));

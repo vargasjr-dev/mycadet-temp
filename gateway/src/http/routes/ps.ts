@@ -8,12 +8,12 @@
  * the gateway's own entry.
  */
 
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("ps");
 
@@ -75,3 +75,20 @@ async function fetchAssistantPs(
     return [{ name: "assistant", status: "unreachable" }];
   }
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createPsHandler>>(
+  "Process status handler used before initialization",
+);
+
+export function initPsRoutes(config: GatewayConfig): void {
+  routeProxy.set(createPsHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/ps",
+    method: "get",
+    auth: "edge",
+    handler: (_req, _params) => routeProxy.get().handlePs(),
+  },
+];

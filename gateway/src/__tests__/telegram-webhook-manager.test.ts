@@ -34,7 +34,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   },
 }));
 
-
 const { reconcileTelegramWebhook } =
   await import("../telegram/webhook-manager.js");
 const { applyCloudIdentityIds, _resetCloudIdentityForTests } =

@@ -19,6 +19,8 @@ import { getLogger } from "../../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import { getCloudBaseUrl } from "../../cloud-url.js";
 import { errorResponse } from "../loopback-guard.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("cloud-push-proxy");
 
@@ -141,3 +143,48 @@ export function createCloudPushProxyHandler(credentials: CredentialCache) {
     },
   };
 }
+
+// Cloud-owned registration. Remote-gateway clients hit these
+// same-origin; without a dedicated route they fall through to the
+// runtime-proxy catch-all and 404.
+const routeProxy = lazyRef<ReturnType<typeof createCloudPushProxyHandler>>(
+  "Cloud push proxy used before initialization",
+);
+
+export function initCloudPushRoutes(credentials: CredentialCache): void {
+  routeProxy.set(createCloudPushProxyHandler(credentials));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: /^\/assistants\/[^/]+\/push-tokens\/?$/,
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, _params) => routeProxy.get().handleUpsertPushToken(req),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      routeProxy.get().handleDeletePushToken(req, params[0]),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, _params) =>
+      routeProxy.get().handleUpsertLiveActivityToken(req),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      routeProxy.get().handleDeleteLiveActivityToken(req, params[0]),
+  },
+];

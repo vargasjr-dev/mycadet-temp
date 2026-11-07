@@ -10,6 +10,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("oauth-apps-proxy");
 
@@ -81,3 +83,58 @@ export function createOAuthAppsProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createOAuthAppsProxyHandler>>(
+  "OAuth apps proxy used before initialization",
+);
+
+export function initOAuthAppsRoutes(config: GatewayConfig): void {
+  routeProxy.set(createOAuthAppsProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/oauth/apps",
+    method: "get",
+    auth: "edge-scoped",
+    scope: "settings.read",
+    handler: (req, _params) => routeProxy.get().handleListApps(req),
+  },
+  {
+    path: "/oauth/apps",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, _params) => routeProxy.get().handleCreateApp(req),
+  },
+  {
+    path: /^\/oauth\/apps\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) => routeProxy.get().handleDeleteApp(req, params[0]),
+  },
+  {
+    path: /^\/oauth\/apps\/([^/]+)\/connections\/?$/,
+    method: "get",
+    auth: "edge-scoped",
+    scope: "settings.read",
+    handler: (req, params) =>
+      routeProxy.get().handleListConnections(req, params[0]),
+  },
+  {
+    path: /^\/oauth\/connections\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      routeProxy.get().handleDeleteConnection(req, params[0]),
+  },
+  {
+    path: /^\/oauth\/apps\/([^/]+)\/connect\/?$/,
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) => routeProxy.get().handleConnect(req, params[0]),
+  },
+];

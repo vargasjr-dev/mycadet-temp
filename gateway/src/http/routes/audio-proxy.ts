@@ -12,6 +12,8 @@
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("audio-proxy");
 
@@ -42,12 +44,16 @@ export function createAudioProxyHandler(config: GatewayConfig) {
       const body = await response.text();
       return new Response(body, {
         status: response.status,
-        headers: { "Content-Type": response.headers.get("Content-Type") ?? "application/json" },
+        headers: {
+          "Content-Type":
+            response.headers.get("Content-Type") ?? "application/json",
+        },
       });
     }
 
     const headers: Record<string, string> = {
-      "Content-Type": response.headers.get("Content-Type") ?? "application/octet-stream",
+      "Content-Type":
+        response.headers.get("Content-Type") ?? "application/octet-stream",
     };
     const contentLength = response.headers.get("Content-Length");
     if (contentLength) {
@@ -61,3 +67,20 @@ export function createAudioProxyHandler(config: GatewayConfig) {
 
   return { handleGetAudio };
 }
+
+// Audio serving (unauthenticated — Twilio fetches these URLs directly).
+const routeProxy = lazyRef<ReturnType<typeof createAudioProxyHandler>>(
+  "Audio proxy used before initialization",
+);
+
+export function initAudioRoutes(config: GatewayConfig): void {
+  routeProxy.set(createAudioProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: /^\/audio\/([^/]+)$/,
+    method: "get",
+    handler: (req, params) => routeProxy.get().handleGetAudio(req, params[0]),
+  },
+];

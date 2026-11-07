@@ -25,15 +25,12 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   assistantDbExec: mock(),
 }));
 
-const { initGatewayDb, resetGatewayDb, getGatewayDb } = await import(
-  "../db/connection.js"
-);
-const { actorTokenRecords, contacts, contactChannels } = await import(
-  "../db/schema.js"
-);
-const { hashToken, mintAndRecordBrowserTokenPair } = await import(
-  "../auth/guardian-bootstrap.js"
-);
+const { initGatewayDb, resetGatewayDb, getGatewayDb } =
+  await import("../db/connection.js");
+const { actorTokenRecords, contacts, contactChannels } =
+  await import("../db/schema.js");
+const { hashToken, mintAndRecordBrowserTokenPair } =
+  await import("../auth/guardian-bootstrap.js");
 const { handleGetMyDevice } = await import("../http/routes/devices-mine.js");
 
 const GUARDIAN_ID = "guardian-001";
@@ -153,7 +150,9 @@ describe("GET /v1/devices/mine", () => {
 
     const response = await handleGetMyDevice(mineRequest(pair.accessToken));
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { device: { lastUsedAt: number | null } };
+    const body = (await response.json()) as {
+      device: { lastUsedAt: number | null };
+    };
     expect(body.device.lastUsedAt).toBe(now - 60_000);
   });
 

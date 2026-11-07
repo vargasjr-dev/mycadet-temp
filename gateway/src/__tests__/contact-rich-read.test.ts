@@ -29,6 +29,17 @@ import "./test-preload.js";
 // demand to exercise the caller's soft-fail path. Mirrors the mock in
 // contacts-info-joiner.test.ts.
 
+import {
+  ContactReadSchema,
+  GetContactIpcResponseSchema,
+} from "@mycadet/gateway-client/gateway-ipc-contracts";
+import { ContactStore } from "../db/contact-store.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 type FakeInfoRow = {
   id: string;
   notes: string | null;
@@ -96,19 +107,6 @@ mock.module("../ipc/assistant-client.js", () => ({
     },
   ),
 }));
-
-import {
-  ContactReadSchema,
-  GetContactIpcResponseSchema,
-} from "@mycadet/gateway-client/gateway-ipc-contracts";
-
-import { ContactStore } from "../db/contact-store.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 beforeAll(async () => {
   await initGatewayDb();

@@ -11,6 +11,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("upgrade-broadcast-proxy");
 
@@ -44,3 +46,21 @@ export function createUpgradeBroadcastProxyHandler(config: GatewayConfig) {
     return response;
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createUpgradeBroadcastProxyHandler>
+>("Upgrade broadcast proxy used before initialization");
+
+export function initUpgradeBroadcastRoutes(config: GatewayConfig): void {
+  routeProxy.set(createUpgradeBroadcastProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/admin/upgrade-broadcast",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "admin.write",
+    handler: (req) => routeProxy.get()(req),
+  },
+];

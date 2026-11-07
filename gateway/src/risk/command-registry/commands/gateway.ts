@@ -17,7 +17,8 @@ const spec: CommandRiskSpec = {
         },
         "set-risk-threshold": {
           baseRisk: "high",
-          reason: "Writes a contact risk ceiling and can escalate auto-approval",
+          reason:
+            "Writes a contact risk ceiling and can escalate auto-approval",
         },
       },
     },

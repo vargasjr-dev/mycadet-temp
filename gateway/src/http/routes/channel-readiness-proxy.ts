@@ -10,6 +10,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("channel-readiness-proxy");
 
@@ -60,3 +62,33 @@ export function createChannelReadinessProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createChannelReadinessProxyHandler>
+>("Channel readiness proxy used before initialization");
+
+export function initChannelReadinessRoutes(config: GatewayConfig): void {
+  routeProxy.set(createChannelReadinessProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/channels/readiness",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleGetChannelReadiness(req),
+  },
+  {
+    path: "/channels/readiness/refresh",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy.get().handleRefreshChannelReadiness(req),
+  },
+  {
+    path: /^\/assistants\/([^/]+)\/channels\/readiness\/$/,
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleGetChannelReadiness(req),
+  },
+];

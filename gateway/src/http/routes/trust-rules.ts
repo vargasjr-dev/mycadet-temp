@@ -453,13 +453,6 @@ export function createTrustRulesResetHandler() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script. Suggest/create order
-// is load-bearing only in spirit (methods are disjoint); the /:id catch-alls
-// are PATCH/DELETE so the literal suggest path can never shadow them.
-// ---------------------------------------------------------------------------
-
 const TrustRuleRiskSchema = z.enum(["low", "medium", "high"]);
 
 const TrustRuleSchema = z.object({
@@ -511,6 +504,10 @@ const TrustRuleSuggestionSchema = z.object({
     .optional(),
 });
 
+const trustRuleUpdateHandler = createTrustRulesUpdateHandler();
+const trustRuleDeleteHandler = createTrustRulesDeleteHandler();
+const trustRuleResetHandler = createTrustRulesResetHandler();
+
 export const ROUTES: GatewayRouteDefinition[] = [
   {
     path: "/trust-rules",
@@ -539,7 +536,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createTrustRulesListHandler(),
+    handler: createTrustRulesListHandler(),
   },
   {
     path: "/trust-rules",
@@ -553,7 +550,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createTrustRulesCreateHandler(),
+    handler: createTrustRulesCreateHandler(),
   },
   {
     path: "/trust-rules/suggest",
@@ -568,7 +565,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createTrustRulesSuggestHandler(),
+    handler: createTrustRulesSuggestHandler(),
   },
   {
     path: "/trust-rules/{rule_id}",
@@ -584,10 +581,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => {
-      const handler = createTrustRulesUpdateHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => trustRuleUpdateHandler(req, params[0]!),
   },
   {
     path: "/trust-rules/{rule_id}",
@@ -602,10 +596,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => {
-      const handler = createTrustRulesDeleteHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => trustRuleDeleteHandler(req, params[0]!),
   },
   {
     path: "/trust-rules/{rule_id}/reset",
@@ -620,9 +611,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => {
-      const handler = createTrustRulesResetHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => trustRuleResetHandler(req, params[0]!),
   },
 ];

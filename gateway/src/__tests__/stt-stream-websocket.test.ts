@@ -16,6 +16,8 @@ import {
 // principal that no token below matches, so any consultation of it would
 // refuse every case in this file. Mocked before the module under test is
 // imported, the way the guardian-only handlers' tests do it.
+import type { SttStreamSocketData } from "../http/routes/stt-stream-websocket.js";
+import { setTunnelBridgeAuthHeader } from "../tunnel/bridge-auth.js";
 const mockFindCadetGuardian = mock(
   async (): Promise<{ principalId: string } | null> => ({
     principalId: "somebody-who-is-not-the-caller",
@@ -27,8 +29,6 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 
 const { createSttStreamWebsocketHandler, getSttStreamWebsocketHandlers } =
   await import("../http/routes/stt-stream-websocket.js");
-import type { SttStreamSocketData } from "../http/routes/stt-stream-websocket.js";
-import { setTunnelBridgeAuthHeader } from "../tunnel/bridge-auth.js";
 
 // ---------------------------------------------------------------------------
 // createSttStreamWebsocketHandler — upgrade handler tests

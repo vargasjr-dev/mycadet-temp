@@ -37,6 +37,8 @@ import { z } from "zod";
 
 // Swappable assistant-DB backend — the device-bound mint reads the
 // assistant mirror through the proxy; give it a minimal in-memory schema.
+import { initSigningKey } from "../../auth/token-service.js";
+import { bustGuardianIntegrityCache } from "../../auth/guardian-integrity.js";
 type AssistantBackend = {
   query: (sql: string, params?: unknown[]) => unknown[];
   run: (sql: string, params?: unknown[]) => { changes: number };
@@ -59,8 +61,6 @@ mock.module("../../db/assistant-db-proxy.js", () => ({
   assistantDbExec: mock(async (sql: string) => assistantBackend.exec(sql)),
 }));
 
-import { initSigningKey } from "../../auth/token-service.js";
-
 // Initialize signing key before any module that mints tokens is imported.
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
 
@@ -74,7 +74,7 @@ const {
   actorTokenRecords,
   actorRefreshTokenRecords,
 } = await import("../../db/schema.js");
-import { bustGuardianIntegrityCache } from "../../auth/guardian-integrity.js";
+
 const {
   getRemoteWebPairingChallengeForTests,
   resetRemoteWebPairingChallengesForTests,

@@ -51,16 +51,12 @@ export interface GatewayRouteDefinition {
    * `/channel-admission-policy/{channel_type}`, which the router compiles
    * to a regex (trailing-slash tolerant) and the generator emits verbatim.
    * A raw RegExp is allowed for the rare dispatch pattern a template cannot
-   * express (see `specPath`).
+   * express (e.g. the contacts DELETE catch-all's negative lookahead); when
+   * such a route is published in the spec, its capture groups must be NAMED
+   * so the generator can map them to `{param}` templates.
    */
   path: string | RegExp;
-  /**
-   * Canonical spec path for entries whose `path` is a raw RegExp (rare —
-   * the contacts DELETE catch-all's lookahead). The generator documents the
-   * route under this template.
-   */
-  specPath?: string;
-  method: "get" | "post" | "put" | "patch" | "delete";
+  method?: "get" | "post" | "put" | "patch" | "delete";
   /** Required for spec publication. Omit on runtime-only routes. */
   operationId?: string;
   summary?: string;
@@ -105,9 +101,10 @@ export interface GatewayRouteDefinition {
    */
   precondition?: () => Response | null;
   /**
-   * Pure handler factory — invoked exactly once when the router is built.
-   * Kept as a factory (not a handler value) so importing a ROUTES module
-   * stays free of side effects for the codegen script.
+   * The route's handler. Built once at module scope (typically
+   * `handler: createXHandler(deps)` over injected module state) — importing
+   * a ROUTES module stays free of side effects because the factories only
+   * build closures.
    */
-  createHandler: () => RouteHandler;
+  handler: RouteHandler;
 }

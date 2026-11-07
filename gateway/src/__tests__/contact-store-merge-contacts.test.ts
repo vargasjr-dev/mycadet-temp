@@ -23,6 +23,13 @@ import "./test-preload.js";
 
 // ── Mocked daemon IPC ────────────────────────────────────────────────────────
 
+import { ContactStore } from "../db/contact-store.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 type IpcCall = { method: string; params?: Record<string, unknown> };
 
 const ipcCalls: IpcCall[] = [];
@@ -57,14 +64,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
 }));
 
 // ── Imports ──────────────────────────────────────────────────────────────────
-
-import { ContactStore } from "../db/contact-store.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 

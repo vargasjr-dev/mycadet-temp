@@ -12,6 +12,7 @@ import {
   SLACK_THREAD_MUTE_SUCCESS,
 } from "../webhook-copy.js";
 
+import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 type FetchFn = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -87,7 +88,6 @@ const { handleInbound } = await import("../handlers/handle-inbound.js");
 const { initGatewayDb, resetGatewayDb } = await import("../db/connection.js");
 const { initAdmissionPolicyCache, resetAdmissionPolicyCache } =
   await import("../risk/admission-policy-cache.js");
-import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 
 type SocketModeHarness = {
   config: SlackSocketModeConfig;

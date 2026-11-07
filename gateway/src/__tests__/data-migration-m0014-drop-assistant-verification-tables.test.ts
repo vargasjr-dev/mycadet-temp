@@ -24,6 +24,18 @@ import "./test-preload.js";
 
 // ── Fake assistant DB ───────────────────────────────────────────────────────
 
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { oneTimeMigrations } from "../db/schema.js";
+import { MIGRATIONS } from "../db/data-migrations/index.js";
+import {
+  up as m0014Up,
+  down as m0014Down,
+  M0013_CHECKPOINT_KEY,
+} from "../db/data-migrations/m0014-drop-assistant-verification-tables.js";
 const fakeAssistantDb = {
   tables: new Set<string>(),
   failDrop: false,
@@ -53,19 +65,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   }),
   assistantDbExec: mock(async () => undefined),
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { oneTimeMigrations } from "../db/schema.js";
-import { MIGRATIONS } from "../db/data-migrations/index.js";
-import {
-  up as m0014Up,
-  down as m0014Down,
-  M0013_CHECKPOINT_KEY,
-} from "../db/data-migrations/m0014-drop-assistant-verification-tables.js";
 
 beforeAll(async () => {
   await initGatewayDb();

@@ -21,6 +21,10 @@ import { resolvePublicBaseWssUrl } from "../../runtime/client.js";
 
 // ── Mocks ──────────────────────────────────────────────────────────────
 
+import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
+import type { GatewayConfig } from "../../config.js";
+import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
+import type { ConfigFileCache } from "../../config-file-cache.js";
 let lastForwardedParams: Record<string, string> | undefined;
 let _lastForwardedOriginalUrl: string | undefined;
 let forwardCalled = false;
@@ -81,11 +85,6 @@ mock.module("@mycadet/gateway-client", () => ({
 mock.module("../../risk/admission-policy-cache.js", () => ({
   getAdmissionPolicyCache: () => ({ get: () => phonePolicy }),
 }));
-
-import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
-import type { GatewayConfig } from "../../config.js";
-import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
 
 // ── Test config ────────────────────────────────────────────────────────
 

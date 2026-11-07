@@ -25,6 +25,14 @@ import "./test-preload.js";
 // Honors the typed info-batch read (already-gated infos) and throws on demand
 // so the caller's soft-fail path can be exercised.
 
+import { ContactStore } from "../db/contact-store.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
+import { fetchInfoForContacts } from "../db/contacts-info-joiner.js";
 type FakeInfoRow = {
   id: string;
   notes: string | null;
@@ -95,15 +103,6 @@ mock.module("../ipc/assistant-client.js", () => ({
     },
   ),
 }));
-
-import { ContactStore } from "../db/contact-store.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
-import { fetchInfoForContacts } from "../db/contacts-info-joiner.js";
 
 beforeAll(async () => {
   await initGatewayDb();

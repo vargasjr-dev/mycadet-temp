@@ -1,19 +1,22 @@
 /**
- * Builds the REAL contact-family route table (`buildContactsControlPlaneRoutes`,
- * the same builder index.ts spreads) with marker handlers, so suites can pin
- * route matching and auth/scope against production registrations. The handler
- * bindings are closures, so a route is identified by invoking its handler and
- * reading the `{ marker }` body. No import-time side effects.
+ * Wires the REAL contact-family route table with marker handlers, so suites
+ * can pin route matching and auth/scope against production registrations.
+ * The contacts module's static ROUTES array is initialized with a marked
+ * proxy, then flattened through the router's own expansion. A route is
+ * identified by invoking its handler and reading the `{ marker }` body.
  */
-import { expandRoute, type RouteDefinition } from "../../http/router.js";
+import { expandRoute } from "../../http/router.js";
 import {
-  buildContactsControlPlaneRoutes,
+  initContactsControlPlaneRoutes,
+  ROUTES as contactRoutes,
   type ContactsControlPlaneProxy,
 } from "../../http/routes/contacts-control-plane-route-table.js";
 
+type FlatContactRoute = ReturnType<typeof expandRoute>[number];
+
 const marker = (name: string) => async () => Response.json({ marker: name });
 
-export function buildMarkedContactRoutes(): RouteDefinition[] {
+export function buildMarkedContactRoutes(): FlatContactRoute[] {
   const contactsControlPlaneProxy: ContactsControlPlaneProxy = {
     handleListContacts: marker("handleListContacts"),
     handleUpsertContact: marker("handleUpsertContact"),
@@ -28,16 +31,17 @@ export function buildMarkedContactRoutes(): RouteDefinition[] {
     handleCallInvite: marker("handleCallInvite"),
     handleRevokeInvite: marker("handleRevokeInvite"),
   };
-  return buildContactsControlPlaneRoutes({
+  initContactsControlPlaneRoutes({
     contactsControlPlaneProxy,
     handleContactPromptSubmit: marker("handleContactPromptSubmit"),
     handleContactRecordSubmit: marker("handleContactRecordSubmit"),
-  }).flatMap(expandRoute);
+  });
+  return contactRoutes.flatMap(expandRoute);
 }
 
 /** Resolves which proxy binding a marked route's handler is bound to. */
 export async function markedHandlerName(
-  route: RouteDefinition,
+  route: FlatContactRoute,
 ): Promise<string> {
   const res = await route.handler(
     new Request("http://gateway.local/"),

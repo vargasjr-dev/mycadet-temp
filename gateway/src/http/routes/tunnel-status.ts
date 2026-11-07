@@ -8,6 +8,8 @@
  */
 
 import type { TunnelClient } from "../../tunnel/client.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 export interface TunnelStatusResponse {
   connected: boolean;
@@ -27,3 +29,31 @@ export function createTunnelStatusHandler(
 
   return { handleTunnelStatus };
 }
+
+// Assistant-scoped mirror: self-hosted clients emit /v1/assistants/<id>/tunnel/status
+// and rewriteForSelfHostedIngress preserves that path, so a flat-only route
+// would fall through to the runtime proxy and 404.
+const routeProxy = lazyRef<ReturnType<typeof createTunnelStatusHandler>>(
+  "Tunnel status handler used before initialization",
+);
+
+export function initTunnelStatusRoutes(
+  tunnelClient: TunnelClient | undefined,
+): void {
+  routeProxy.set(createTunnelStatusHandler(tunnelClient));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/tunnel/status",
+    method: "get",
+    auth: "edge",
+    handler: (_req, _params) => routeProxy.get().handleTunnelStatus(),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/tunnel\/status\/?$/,
+    method: "get",
+    auth: "edge-scoped",
+    handler: (_req, _params) => routeProxy.get().handleTunnelStatus(),
+  },
+];

@@ -1,6 +1,10 @@
 import type { Server } from "bun";
 
-import type { AuthStrategy, GatewayRouteDefinition, RouteHandler } from "./routes/types.js";
+import type {
+  AuthStrategy,
+  GatewayRouteDefinition,
+  RouteHandler,
+} from "./routes/types.js";
 import type { Scope } from "../auth/types.js";
 import type { AuthRateLimiter } from "../auth-rate-limiter.js";
 import {
@@ -8,45 +12,11 @@ import {
   wrapWithAuthFailureTracking,
 } from "./middleware/auth.js";
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
-
 export type GetClientIp = () => string;
 export type GetRawPeerIp = () => string;
 
-
 /** Params extracted from a regex path match (capture groups). */
 export type RouteParams = string[];
-
-export interface RouteDefinition {
-  /** Static path string or regex pattern. Regex capture groups become `params`. */
-  path: string | RegExp;
-  /**
-   * Canonical spec path for raw-regex routes the OpenAPI generator publishes
-   * under a `{param}` template (e.g. the contacts DELETE catch-all's
-   * lookahead, which a template cannot express).
-   */
-  specPath?: string;
-  /** HTTP method to match. Omit to match any method. */
-  method?: string;
-  /** Auth strategy (default: "none"). */
-  auth?: AuthStrategy;
-  /** Required scope when auth is "edge-scoped". */
-  scope?: Scope;
-  /**
-   * Status codes that count as auth failures for rate limiting.
-   * Only used with "track-failures" auth. Defaults to [401].
-   */
-  trackFailureStatuses?: readonly number[];
-  /**
-   * Optional precondition check. Return a Response to short-circuit,
-   * or null to continue to the handler.
-   */
-  precondition?: () => Response | null;
-  /** Route handler. Params are populated from regex capture groups. */
-  handler: RouteHandler;
-}
 
 export interface RouterDeps {
   authRateLimiter: AuthRateLimiter;
@@ -58,9 +28,24 @@ export interface RouterDeps {
   trustProxy?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Router factory
-// ---------------------------------------------------------------------------
+/**
+ * One route declaration, compiled for dispatch. `GatewayRouteDefinition` is
+ * the only route type callers see; this is the router's internal expansion of
+ * it (template compiled, methods uppercased, aliases and scoped mirrors
+ * unfolded).
+ */
+interface CompiledRoute {
+  /** Declared path: a template or static string, or a raw regex. */
+  path: string | RegExp;
+  /** Compiled dispatch pattern (set iff `path` is a `{param}` template). */
+  pattern?: RegExp;
+  method: string;
+  auth?: AuthStrategy;
+  scope?: Scope;
+  trackFailureStatuses?: readonly number[];
+  precondition?: () => Response | null;
+  handler: RouteHandler;
+}
 
 /**
  * Create a router function from a declarative route table.
@@ -70,7 +55,7 @@ export interface RouterDeps {
  * handler. Returns null if no route matches.
  */
 export function createRouter(
-  routes: ReadonlyArray<GatewayRouteDefinition | RouteDefinition>,
+  routes: ReadonlyArray<GatewayRouteDefinition>,
   deps: RouterDeps,
 ): (
   req: Request,
@@ -79,7 +64,7 @@ export function createRouter(
   server?: Server<unknown>,
 ) => Promise<Response | null> {
   const { authRateLimiter } = deps;
-  const table: RouteDefinition[] = routes.flatMap(expandRoute);
+  const table: CompiledRoute[] = routes.flatMap(expandRoute);
 
   return async (
     req: Request,
@@ -184,10 +169,6 @@ export function createRouter(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Internals
-// ---------------------------------------------------------------------------
-
 /**
  * Strip one optional leading `/v1` version segment (P7 of the one-url plan:
  * the version digit is leaving the URL path — match definitions read the
@@ -198,11 +179,6 @@ export function withoutVersionPrefix(pathname: string): string {
   const stripped = pathname.replace(/^\/v1(?=\/|$)/, "");
   return stripped === "" ? "/" : stripped;
 }
-
-
-// ---------------------------------------------------------------------------
-// Fused-route expansion
-// ---------------------------------------------------------------------------
 
 /**
  * Compile a `{param}` path template into the dispatch regex: single-segment
@@ -230,44 +206,49 @@ export function compilePath(template: string): RegExp {
 }
 
 /**
- * Expand one fused route declaration into the internal definitions the
- * matcher consumes: the flat route, its dispatch-only method aliases, and —
- * when `scoped` — the assistant-scoped mirror whose first capture (the
- * assistant id) is discarded before the handler sees the params.
+ * Expand one route declaration into the internal definitions the matcher
+ * consumes: the flat route, its dispatch-only method aliases, and — when
+ * `scoped` — the assistant-scoped mirror whose first capture (the assistant
+ * id) is discarded before the handler sees the params.
  */
-export function expandRoute(
-  route: GatewayRouteDefinition | RouteDefinition,
-): RouteDefinition[] {
-  if (!isFused(route)) return [route as RouteDefinition];
-
-  const handler = route.createHandler();
-  const flat: RouteDefinition = {
-    path: typeof route.path === "string" ? compilePath(route.path) : route.path,
-    method: route.method.toUpperCase(),
+export function expandRoute(route: GatewayRouteDefinition): CompiledRoute[] {
+  const pattern =
+    typeof route.path === "string" && route.path.includes("{")
+      ? compilePath(route.path)
+      : undefined;
+  const flat: CompiledRoute = {
+    path: route.path,
+    pattern,
+    method: route.method?.toUpperCase() ?? "",
     auth: route.auth,
     scope: route.scope,
     trackFailureStatuses: route.trackFailureStatuses,
     precondition: route.precondition,
-    handler: (req, params, getClientIp, getRawPeerIp) =>
-      handler(req, params, getClientIp, getRawPeerIp),
+    handler: route.handler,
   };
-  const expanded: RouteDefinition[] = [flat];
+  const expanded: CompiledRoute[] = [flat];
   for (const alias of route.aliases ?? []) {
     expanded.push({ ...flat, method: alias.toUpperCase() });
   }
   if (route.scoped) {
-    expanded.push({
-      ...flat,
-      path: compilePath(`/assistants/{assistant_id}${route.path}`),
-      handler: (req, params, getClientIp, getRawPeerIp) =>
-        handler(req, params.slice(1), getClientIp, getRawPeerIp),
-    });
+    if (typeof route.path !== "string") {
+      throw new Error(
+        `Scoped route mirrors require a template path: ${route.path}`,
+      );
+    }
+    const scopedPath = `/assistants/{assistant_id}${route.path}`;
+    const scopedPattern = compilePath(scopedPath);
+    for (const variant of [...expanded]) {
+      expanded.push({
+        ...variant,
+        path: scopedPath,
+        pattern: scopedPattern,
+        handler: (req, params, getClientIp, getRawPeerIp) =>
+          variant.handler(req, params.slice(1), getClientIp, getRawPeerIp),
+      });
+    }
   }
   return expanded;
-}
-
-function isFused(route: GatewayRouteDefinition | RouteDefinition): route is GatewayRouteDefinition {
-  return "createHandler" in route;
 }
 
 interface MatchResult {
@@ -275,15 +256,22 @@ interface MatchResult {
 }
 
 function matchRoute(
-  route: RouteDefinition,
+  route: CompiledRoute,
   pathname: string,
   method: string,
 ): MatchResult | null {
-  // Check method first (cheapest check)
+  // Check method first (cheapest check). "" means any method (webhook receivers).
   if (route.method && route.method !== method) return null;
 
+  if (route.pattern) {
+    const match = pathname.match(route.pattern);
+    return match ? { params: match.slice(1) } : null;
+  }
+
   if (typeof route.path === "string") {
-    // Normalize trailing slashes so "/v1/foo/" matches "/v1/foo"
+    // Static path — exact match against the declared spelling, plus the two
+    // legacy assistant prefixes some long-lived clients still dial.
+    // Normalize trailing slashes so "/v1/foo/" matches "/v1/foo".
     const normalized =
       pathname.length > 1 && pathname.endsWith("/")
         ? pathname.slice(0, -1)
@@ -294,7 +282,7 @@ function matchRoute(
     return null;
   }
 
-  // Regex path — use original pathname since regex routes may
+  // Raw regex path — use the original pathname since regex routes may
   // explicitly include trailing slashes in their patterns.
   const match = pathname.match(route.path);
   if (!match) return null;

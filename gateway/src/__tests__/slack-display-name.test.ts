@@ -3,6 +3,7 @@ import type { GatewayConfig } from "../config.js";
 import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { RuntimeInboundResponse } from "../runtime/client.js";
 
+import type { SlackAppMentionEvent } from "../slack/message-schemas.js";
 type FetchFn = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -54,7 +55,6 @@ const { handleInbound } = await import("../handlers/handle-inbound.js");
 const { initGatewayDb, resetGatewayDb } = await import("../db/connection.js");
 const { initAdmissionPolicyCache, resetAdmissionPolicyCache } =
   await import("../risk/admission-policy-cache.js");
-import type { SlackAppMentionEvent } from "../slack/message-schemas.js";
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   return {

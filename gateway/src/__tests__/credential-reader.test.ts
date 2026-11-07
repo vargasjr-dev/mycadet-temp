@@ -9,6 +9,15 @@ import { credentialKey } from "../credential-key.js";
 // Logger mock — captures all log calls so the secret-leak test can inspect them
 // ---------------------------------------------------------------------------
 
+import {
+  ALL_CREDENTIAL_SPECS,
+  readCredential,
+  readCredentialResult,
+  readServiceCredentials,
+  readServiceCredentialsResult,
+  type ServiceCredentialSpec,
+} from "../credential-reader.js";
+import { testSecurityDir, testWorkspaceDir } from "./test-preload.js";
 const logCalls: { method: string; args: unknown[] }[] = [];
 
 mock.module("../logger.js", () => ({
@@ -22,15 +31,6 @@ mock.module("../logger.js", () => ({
       },
     }),
 }));
-
-import {
-  ALL_CREDENTIAL_SPECS,
-  readCredential,
-  readCredentialResult,
-  readServiceCredentials,
-  readServiceCredentialsResult,
-  type ServiceCredentialSpec,
-} from "../credential-reader.js";
 
 // ---------------------------------------------------------------------------
 // Temp directory for metadata / encrypted store fixtures
@@ -132,8 +132,6 @@ function writeEncryptedStoreV2(entries: Record<string, string>): void {
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
-
-import { testSecurityDir, testWorkspaceDir } from "./test-preload.js";
 
 beforeEach(() => {
   logCalls.length = 0;

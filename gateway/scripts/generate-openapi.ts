@@ -2,8 +2,10 @@
 /**
  * Generate an OpenAPI 3.1 JSON specification from the gateway's route schemas.
  *
- * Route files export a `ROUTES` array with Zod `responseBody` / `requestBody`
- * schemas. This script imports them and calls zod-openapi's `createDocument()`.
+ * The gateway server owns the routes barrel (`src/http/routes/index.ts`);
+ * this script imports the SAME `ROUTES` array the runtime dispatch table
+ * consumes and calls zod-openapi's `createDocument()`. Handlers are never
+ * invoked here — only the spec fields and zod schemas are read.
  *
  * Usage:
  *   cd gateway && bun run scripts/generate-openapi.ts
@@ -18,41 +20,12 @@ import { resolve } from "node:path";
 import { format } from "prettier";
 import { createDocument } from "zod-openapi";
 
-import type { GatewayRouteDefinition } from "../src/http/routes/types.js";
-
-// Import ROUTES from each route module. These are the SAME arrays the
-// runtime dispatch table consumes (see src/http/routes/types.ts) — the
-// generation script reads only the spec fields and never invokes handlers.
-import { ROUTES as autoApproveThresholdRoutes } from "../src/http/routes/auto-approve-thresholds.js";
-import { ROUTES as channelAdmissionPolicyRoutes } from "../src/http/routes/channel-admission-policy.js";
-import { ROUTES as channelIngressRoutes } from "../src/http/routes/channel-ingress.js";
-import { ROUTES as channelPermissionOverrideRoutes } from "../src/http/routes/channel-permission-overrides.js";
-import { buildContactsControlPlaneRoutes } from "../src/http/routes/contacts-control-plane-route-table.js";
-import { ROUTES as credentialRequestRoutes } from "../src/http/routes/credential-requests.js";
-import { ROUTES as trustRuleRoutes } from "../src/http/routes/trust-rules.js";
-import { ROUTES as upgradePolicyRoutes } from "../src/http/routes/upgrade-policy.js";
+import { ROUTES } from "../src/http/routes/index.js";
+import { regexToOpenApiPath } from "../src/http/routes/regex-to-openapi-path.js";
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUTPUT_PATH = resolve(ROOT, "openapi.json");
 const PKG_PATH = resolve(ROOT, "package.json");
-
-// Collect all route definitions
-const ALL_ROUTES: GatewayRouteDefinition[] = [
-  ...autoApproveThresholdRoutes,
-  ...channelAdmissionPolicyRoutes,
-  ...channelIngressRoutes,
-  ...channelPermissionOverrideRoutes,
-  // The contacts table is built with stub deps: handlers are never invoked
-  // during generation, only the metadata and zod schemas are read.
-  ...buildContactsControlPlaneRoutes({
-    contactsControlPlaneProxy: {} as never,
-    handleContactPromptSubmit: async () => new Response(""),
-    handleContactRecordSubmit: async () => new Response(""),
-  }),
-  ...credentialRequestRoutes,
-  ...trustRuleRoutes,
-  ...upgradePolicyRoutes,
-];
 
 // ---------------------------------------------------------------------------
 // Spec builder
@@ -61,12 +34,13 @@ const ALL_ROUTES: GatewayRouteDefinition[] = [
 function buildSpec(version: string) {
   const paths: Record<string, Record<string, unknown>> = {};
 
-  for (const route of ALL_ROUTES) {
-    // Dispatch-only, unpublished: no operationId. Raw-regex dispatch paths
-    // publish under their `specPath` override instead.
+  for (const route of ROUTES) {
+    // Dispatch-only, unpublished: no operationId.
     if (!route.operationId) continue;
     const specPath =
-      typeof route.path === "string" ? route.path : route.specPath;
+      typeof route.path === "string"
+        ? route.path
+        : regexToOpenApiPath(route.path);
     if (!specPath) continue;
     if (!paths[specPath]) paths[specPath] = {};
 
@@ -181,7 +155,7 @@ async function main() {
   }
 
   await writeFile(OUTPUT_PATH, output);
-  console.log(`Wrote ${OUTPUT_PATH} (${ALL_ROUTES.length} routes)`);
+  console.log(`Wrote ${OUTPUT_PATH} (${ROUTES.length} routes)`);
 }
 
 main().catch((err) => {

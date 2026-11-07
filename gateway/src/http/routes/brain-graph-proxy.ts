@@ -14,15 +14,14 @@
  * themselves, eliminating the need for embedded tokens entirely. See ATL-307.
  */
 
-import {
-  proxyForwardToResponse,
-
-} from "@mycadet/assistant-client";
+import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { mintUiPageToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("brain-graph-proxy");
 
@@ -83,3 +82,26 @@ export function createBrainGraphProxyHandler(config: GatewayConfig) {
 
   return { handleBrainGraph, handleBrainGraphUI };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createBrainGraphProxyHandler>>(
+  "Brain graph proxy used before initialization",
+);
+
+export function initBrainGraphRoutes(config: GatewayConfig): void {
+  routeProxy.set(createBrainGraphProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/brain-graph",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleBrainGraph(req),
+  },
+  {
+    path: "/brain-graph-ui",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleBrainGraphUI(req),
+  },
+];

@@ -33,6 +33,28 @@ import "./test-preload.js";
 
 // Swappable assistant-DB backend. Default: throw (the gateway reads must
 // not touch the assistant mirror). Mint tests install an in-memory DB.
+import {
+  findCadetGuardian,
+  findGuardianForChannelActor,
+  ensureCadetGuardianBinding,
+  bootstrapGuardian,
+  CadetGuardianMintRefusedError,
+} from "../auth/guardian-bootstrap.js";
+import { bustGuardianIntegrityCache } from "../auth/guardian-integrity.js";
+import { initSigningKey } from "../auth/token-service.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import {
+  contacts,
+  contactChannels,
+  actorTokenRecords,
+  actorRefreshTokenRecords,
+} from "../db/schema.js";
+import * as guardianIntegrityReporter from "../guardian-integrity-reporter.js";
+import { seedActorToken, seedContact } from "./helpers/contact-fixtures.js";
 type AssistantBackend = {
   query: (sql: string, params?: unknown[]) => unknown[];
   run: (sql: string, params?: unknown[]) => { changes: number };
@@ -62,29 +84,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   ),
   assistantDbExec: mock(async (sql: string) => assistantBackend.exec(sql)),
 }));
-
-import {
-  findCadetGuardian,
-  findGuardianForChannelActor,
-  ensureCadetGuardianBinding,
-  bootstrapGuardian,
-  CadetGuardianMintRefusedError,
-} from "../auth/guardian-bootstrap.js";
-import { bustGuardianIntegrityCache } from "../auth/guardian-integrity.js";
-import { initSigningKey } from "../auth/token-service.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import {
-  contacts,
-  contactChannels,
-  actorTokenRecords,
-  actorRefreshTokenRecords,
-} from "../db/schema.js";
-import * as guardianIntegrityReporter from "../guardian-integrity-reporter.js";
-import { seedActorToken, seedContact } from "./helpers/contact-fixtures.js";
 
 // Initialize signing key so bootstrapGuardian's JWT minting works.
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
@@ -189,7 +188,6 @@ beforeEach(() => {
   assistantBackend = throwingBackend;
   reportCalls.length = 0;
 });
-
 
 afterAll(() => {
   resetGatewayDb();

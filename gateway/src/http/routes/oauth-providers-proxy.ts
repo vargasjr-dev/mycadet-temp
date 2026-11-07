@@ -10,6 +10,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("oauth-providers-proxy");
 
@@ -66,3 +68,29 @@ export function createOAuthProvidersProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createOAuthProvidersProxyHandler>>(
+  "OAuth providers proxy used before initialization",
+);
+
+export function initOAuthProvidersRoutes(config: GatewayConfig): void {
+  routeProxy.set(createOAuthProvidersProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/oauth/providers",
+    method: "get",
+    auth: "edge-scoped",
+    scope: "settings.read",
+    handler: (req, _params) => routeProxy.get().handleListProviders(req),
+  },
+  {
+    path: /^\/oauth\/providers\/([^/]+)\/?$/,
+    method: "get",
+    auth: "edge-scoped",
+    scope: "settings.read",
+    handler: (req, params) =>
+      routeProxy.get().handleGetProvider(req, params[0]),
+  },
+];

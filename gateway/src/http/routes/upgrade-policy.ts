@@ -15,6 +15,7 @@ import { getGatewayDb } from "../../db/connection.js";
 import { upgradePolicy } from "../../db/schema.js";
 import { getLogger } from "../../logger.js";
 
+import type { GatewayRouteDefinition } from "./types.js";
 const log = getLogger("upgrade-policy");
 
 // ---------------------------------------------------------------------------
@@ -87,12 +88,17 @@ export function createUpgradePolicyGetHandler() {
       try {
         parsedPolicy = JSON.parse(row.policy);
       } catch {
-        log.error("Stored upgrade policy is not valid JSON — answering defaults");
+        log.error(
+          "Stored upgrade policy is not valid JSON — answering defaults",
+        );
         return Response.json(defaultUpgradePolicy());
       }
       const parsed = UpgradePolicySchema.safeParse(parsedPolicy);
       if (!parsed.success) {
-        log.error({ err: parsed.error }, "Stored upgrade policy failed validation — answering defaults");
+        log.error(
+          { err: parsed.error },
+          "Stored upgrade policy failed validation — answering defaults",
+        );
         return Response.json(defaultUpgradePolicy());
       }
 
@@ -153,14 +159,6 @@ export function createUpgradePolicyPutHandler() {
   };
 }
 
-
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script.
-// ---------------------------------------------------------------------------
-
-import type { GatewayRouteDefinition } from "./types.js";
-
 export const ROUTES: GatewayRouteDefinition[] = [
   {
     path: "/upgrade-policy",
@@ -175,7 +173,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createUpgradePolicyGetHandler(),
+    handler: createUpgradePolicyGetHandler(),
   },
   {
     path: "/upgrade-policy",
@@ -189,6 +187,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createUpgradePolicyPutHandler(),
+    handler: createUpgradePolicyPutHandler(),
   },
 ];

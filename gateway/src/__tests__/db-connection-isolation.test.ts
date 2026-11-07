@@ -38,8 +38,7 @@ afterEach(() => {
   if (originalTestRealSecurity === undefined) {
     delete process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR;
   } else {
-    process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR =
-      originalTestRealSecurity;
+    process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR = originalTestRealSecurity;
   }
 
   if (originalHome === undefined) {

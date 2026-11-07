@@ -11,8 +11,7 @@ import {
   type GatewayIpcCall,
 } from "../contacts.js";
 
-let lastIpc: { method: string; params?: Record<string, unknown> } | null =
-  null;
+let lastIpc: { method: string; params?: Record<string, unknown> } | null = null;
 let ipcResult: unknown = { ok: true, contacts: [] };
 
 const ipc: GatewayIpcCall = async (method, params) => {

@@ -9,13 +9,13 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import "./test-preload.js";
 
 import { AuthRateLimiter } from "../auth-rate-limiter.js";
-import type { RouteDefinition } from "../http/router.js";
+import type { GatewayRouteDefinition } from "../http/routes/types.js";
 import { createRouter } from "../http/router.js";
 import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
 
@@ -27,13 +27,14 @@ import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
 // real registrations.
 describe("contact route registrations (index.ts)", () => {
   test("no route path scopes a contact-family path under /v1/assistants", () => {
-    const indexSource = readFileSync(
-      join(import.meta.dir, "..", "index.ts"),
-      "utf8",
-    );
-    const pathLines = indexSource
-      .split("\n")
-      .filter((line) => /^\s*path:/.test(line));
+    const routesDir = join(import.meta.dir, "..", "http", "routes");
+    const pathLines = readdirSync(routesDir)
+      .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+      .flatMap((f) =>
+        readFileSync(join(routesDir, f), "utf8")
+          .split("\n")
+          .filter((line) => /^\s*path:/.test(line)),
+      );
 
     expect(pathLines.length).toBeGreaterThan(0);
     const scopedContactPaths = pathLines.filter(
@@ -54,11 +55,14 @@ describe("contact route registrations (index.ts)", () => {
  * harness pins matching only.
  */
 function makeContactsRouter() {
-  const routes: RouteDefinition[] = buildMarkedContactRoutes().map((route) => ({
-    ...route,
-    auth: "none" as const,
-    scope: undefined,
-  }));
+  const routes: GatewayRouteDefinition[] = buildMarkedContactRoutes().map(
+    (route) => ({
+      path: route.path,
+      method: route.method.toLowerCase() as GatewayRouteDefinition["method"],
+      auth: "none" as const,
+      handler: route.handler,
+    }),
+  );
   // Runtime proxy catch-all — must be last, matches everything.
   routes.push({
     path: /^\//,

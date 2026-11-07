@@ -26,6 +26,22 @@ import type { SqliteValue } from "../db/assistant-db-proxy.js";
 
 import "./test-preload.js";
 
+import { eq } from "drizzle-orm";
+import {
+  createGuardianBinding,
+  GuardianAddressHeldByContactError,
+} from "../auth/guardian-bootstrap.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import {
+  actorRefreshTokenRecords,
+  actorTokenRecords,
+  contacts,
+  contactChannels,
+} from "../db/schema.js";
 let assistantDb: Database | null = null;
 
 function db(): Database {
@@ -135,24 +151,6 @@ mock.module("../ipc/contacts-info-client.js", () => ({
     return row ?? null;
   },
 }));
-
-import { eq } from "drizzle-orm";
-
-import {
-  createGuardianBinding,
-  GuardianAddressHeldByContactError,
-} from "../auth/guardian-bootstrap.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import {
-  actorRefreshTokenRecords,
-  actorTokenRecords,
-  contacts,
-  contactChannels,
-} from "../db/schema.js";
 
 function seedGwGuardianContact(): void {
   getGatewayDb()

@@ -25,6 +25,16 @@ import "./test-preload.js";
 
 // ── Fake assistant DB ───────────────────────────────────────────────────────
 
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
+import {
+  up as m0008Up,
+  down as m0008Down,
+} from "../db/data-migrations/m0008-upsert-acl-columns-from-assistant.js";
 type FakeContact = {
   id: string;
   display_name: string;
@@ -115,17 +125,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   assistantDbRun: mock(async () => ({ changes: 1, lastInsertRowid: 0 })),
   assistantDbExec: mock(async () => undefined),
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
-import {
-  up as m0008Up,
-  down as m0008Down,
-} from "../db/data-migrations/m0008-upsert-acl-columns-from-assistant.js";
 
 beforeAll(async () => {
   await initGatewayDb();

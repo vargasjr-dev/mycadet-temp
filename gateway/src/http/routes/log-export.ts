@@ -27,9 +27,7 @@ import { randomBytes } from "node:crypto";
 
 import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import {
@@ -37,6 +35,8 @@ import {
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("log-export");
 
@@ -481,3 +481,21 @@ async function collectCesExport(
   log.info("CES export collected");
   return "ok";
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createLogExportHandler>>(
+  "log export routes used before initialization",
+);
+
+export function initLogExportRoutes(config: GatewayConfig): void {
+  routeProxy.set(createLogExportHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/logs/export",
+    method: "post",
+    auth: "edge",
+    handler: (req, params, getClientIp) =>
+      routeProxy.get()(req, params, getClientIp),
+  },
+];

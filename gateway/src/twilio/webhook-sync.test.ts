@@ -55,7 +55,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   },
 }));
 
-
 const { syncConfiguredTwilioPhoneNumberWebhooks } =
   await import("./webhook-sync.js");
 

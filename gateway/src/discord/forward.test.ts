@@ -3,6 +3,8 @@ import type { Logger } from "pino";
 
 import "../__tests__/test-preload.js";
 
+import type { DiscordInboundEvent } from "../channels/inbound-event.js";
+import type { GatewayConfig } from "../config.js";
 const seededContacts: Array<{
   externalUserId: string;
   externalChatId?: string;
@@ -32,8 +34,6 @@ mock.module("../handlers/handle-inbound.js", () => ({
 const { createDiscordInboundEventHandler } = await import("./forward.js");
 const { createConversationTaskQueue } =
   await import("../channels/conversation-queue.js");
-import type { DiscordInboundEvent } from "../channels/inbound-event.js";
-import type { GatewayConfig } from "../config.js";
 
 const noopLog = {
   debug() {},

@@ -62,7 +62,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-
 // Token minting stays real; a test can make the next mint throw to fail a
 // redemption after its claim.
 let failNextMint = false;

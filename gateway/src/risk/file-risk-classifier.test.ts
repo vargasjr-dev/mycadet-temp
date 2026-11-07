@@ -331,13 +331,7 @@ describe("FileRiskClassifier", () => {
       testSkillSourceDirs = [];
       const result = await classifyInput({
         toolName: "file_write",
-        filePath: join(
-          homedir(),
-          ".cadet",
-          "workspace",
-          "workflows-data",
-          "x",
-        ),
+        filePath: join(homedir(), ".cadet", "workspace", "workflows-data", "x"),
         workingDir: "/",
       });
       expect(result.riskLevel).toBe("low");
@@ -537,7 +531,6 @@ describe("FileRiskClassifier", () => {
       });
       expect(result.riskLevel).toBe("medium");
     });
-
   });
 
   // -- host_file_write --------------------------------------------------------

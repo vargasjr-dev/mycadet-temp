@@ -10,6 +10,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("slack-control-plane-proxy");
 
@@ -61,3 +63,26 @@ export function createSlackControlPlaneProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createSlackControlPlaneProxyHandler>
+>("Slack control-plane proxy used before initialization");
+
+export function initSlackControlPlaneRoutes(config: GatewayConfig): void {
+  routeProxy.set(createSlackControlPlaneProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/slack/channels",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleListSlackChannels(req),
+  },
+  {
+    path: "/slack/share",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleShareToSlack(req),
+  },
+];

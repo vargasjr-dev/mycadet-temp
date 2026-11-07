@@ -31,6 +31,7 @@ import {
 } from "../../channels/types.js";
 import { getLogger } from "../../logger.js";
 
+import type { GatewayRouteDefinition } from "./types.js";
 const log = getLogger("channel-admission-policy");
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,6 @@ const ChannelPolicyViewSchema = z.object({
 });
 
 const SetPolicyBodySchema = SetChannelPolicyRequestSchema;
-
 
 // ---------------------------------------------------------------------------
 // Response shape
@@ -253,14 +253,9 @@ export function createChannelAdmissionPolicyDeleteHandler() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script. The DELETE reset and
-// the POST-as-PUT alias serve legacy native clients and are dispatch-only
-// (unpublished) — only the canonical GET/PUT surface is in the spec.
-// ---------------------------------------------------------------------------
-
-import type { GatewayRouteDefinition } from "./types.js";
+const admissionPolicySetHandler = createChannelAdmissionPolicySetHandler();
+const admissionPolicyDeleteHandler =
+  createChannelAdmissionPolicyDeleteHandler();
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
@@ -277,7 +272,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createChannelAdmissionPolicyListHandler(),
+    handler: createChannelAdmissionPolicyListHandler(),
   },
   {
     path: "/channel-admission-policy/{channel_type}",
@@ -296,10 +291,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     scope: "settings.write",
     scoped: true,
     aliases: ["post"],
-    createHandler: () => {
-      const handler = createChannelAdmissionPolicySetHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => admissionPolicySetHandler(req, params[0]!),
   },
   {
     // Reset to seed default — dispatch-only, unpublished.
@@ -308,9 +300,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => {
-      const handler = createChannelAdmissionPolicyDeleteHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => admissionPolicyDeleteHandler(req, params[0]!),
   },
 ];

@@ -1,27 +1,27 @@
 import { describe, expect, test } from "bun:test";
 
 import { AuthRateLimiter } from "../auth-rate-limiter.js";
-import type { RouteDefinition } from "../http/router.js";
+import type { GatewayRouteDefinition } from "../http/routes/types.js";
 
 /** Dynamic import AFTER module setup so the router always loads fresh. */
 const { createRouter } = await import("../http/router.js");
 
-const ROUTES: RouteDefinition[] = [
+const ROUTES: GatewayRouteDefinition[] = [
   {
     path: "/ps",
-    method: "GET",
+    method: "get",
     handler: (req) =>
       Response.json({ route: "ps", seen: new URL(req.url).pathname }),
   },
   {
     path: /^\/assistants\/([^/]+)$/,
-    method: "GET",
+    method: "get",
     handler: (_req, params) => Response.json({ route: "assistant", params }),
   },
   {
     // The gateway's native unversioned routes read the same way.
     path: "/integrations",
-    method: "GET",
+    method: "get",
     handler: () => Response.json({ route: "native-unversioned" }),
   },
 ];

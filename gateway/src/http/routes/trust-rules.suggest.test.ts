@@ -12,6 +12,9 @@ import "../../__tests__/test-preload.js";
 // Mocks — must be registered before importing the handler under test
 // ---------------------------------------------------------------------------
 
+import { initGatewayDb, resetGatewayDb } from "../../db/connection.js";
+import { getGatewayDb } from "../../db/connection.js";
+import { autoApproveThresholds } from "../../db/schema.js";
 const ipcSuggestTrustRuleMock = mock((_params: unknown) =>
   Promise.resolve({
     pattern: "git push",
@@ -32,10 +35,6 @@ mock.module("../../ipc/assistant-client.js", () => ({
 
 // Import after mocks are registered
 const { createTrustRulesSuggestHandler } = await import("./trust-rules.js");
-
-import { initGatewayDb, resetGatewayDb } from "../../db/connection.js";
-import { getGatewayDb } from "../../db/connection.js";
-import { autoApproveThresholds } from "../../db/schema.js";
 
 // ---------------------------------------------------------------------------
 // Setup / teardown

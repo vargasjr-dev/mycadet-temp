@@ -52,7 +52,10 @@ describe("readSavedIngressPublicBaseUrl — the gateway's own config read", () =
 
   test("answers null when the saved shape doesn't match the schema", () => {
     // A non-string URL.
-    writeFileSync(CONFIG_PATH, JSON.stringify({ ingress: { publicBaseUrl: 7 } }));
+    writeFileSync(
+      CONFIG_PATH,
+      JSON.stringify({ ingress: { publicBaseUrl: 7 } }),
+    );
     expect(readSavedIngressPublicBaseUrl()).toBeNull();
 
     // Malformed JSON.

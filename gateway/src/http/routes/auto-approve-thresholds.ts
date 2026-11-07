@@ -14,6 +14,8 @@ import {
 } from "../../db/schema.js";
 import { getLogger } from "../../logger.js";
 
+import { z } from "zod";
+import type { GatewayRouteDefinition } from "./types.js";
 const log = getLogger("auto-approve-thresholds");
 
 // ---------------------------------------------------------------------------
@@ -302,16 +304,6 @@ export function createConversationThresholdDeleteHandler() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script. Every entry declares
-// its spec metadata, its auth, and its handler factory together.
-// ---------------------------------------------------------------------------
-
-import { z } from "zod";
-
-import type { GatewayRouteDefinition } from "./types.js";
-
 const ThresholdSchema = z.enum(["none", "low", "medium", "high"]);
 
 const GlobalThresholdsSchema = z.object({
@@ -331,7 +323,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createGlobalThresholdGetHandler(),
+    handler: createGlobalThresholdGetHandler(),
   },
   {
     path: "/permissions/thresholds",
@@ -350,7 +342,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createGlobalThresholdPutHandler(),
+    handler: createGlobalThresholdPutHandler(),
   },
   {
     path: "/permissions/thresholds/conversations/{conversation_id}",
@@ -367,7 +359,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createConversationThresholdGetHandler(),
+    handler: createConversationThresholdGetHandler(),
   },
   {
     path: "/permissions/thresholds/conversations/{conversation_id}",
@@ -386,7 +378,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createConversationThresholdPutHandler(),
+    handler: createConversationThresholdPutHandler(),
   },
   {
     path: "/permissions/thresholds/conversations/{conversation_id}",
@@ -402,6 +394,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createConversationThresholdDeleteHandler(),
+    handler: createConversationThresholdDeleteHandler(),
   },
 ];

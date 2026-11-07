@@ -10,6 +10,8 @@ import { proxyForward } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("telegram-control-plane-proxy");
 
@@ -77,3 +79,44 @@ export function createTelegramControlPlaneProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createTelegramControlPlaneProxyHandler>
+>("Telegram control-plane proxy used before initialization");
+
+export function initTelegramControlPlaneRoutes(config: GatewayConfig): void {
+  routeProxy.set(createTelegramControlPlaneProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/integrations/telegram/config",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleGetTelegramConfig(req),
+  },
+  {
+    path: "/integrations/telegram/config",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleSetTelegramConfig(req),
+  },
+  {
+    path: "/integrations/telegram/config",
+    method: "delete",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleClearTelegramConfig(req),
+  },
+  {
+    path: "/integrations/telegram/commands",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleSetTelegramCommands(req),
+  },
+  {
+    path: "/integrations/telegram/setup",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy.get().handleSetupTelegram(req),
+  },
+];

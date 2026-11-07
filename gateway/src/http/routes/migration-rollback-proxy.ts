@@ -11,6 +11,8 @@ import { proxyForwardToResponse } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("migration-rollback-proxy");
 
@@ -47,3 +49,21 @@ export function createMigrationRollbackProxyHandler(config: GatewayConfig) {
     return response;
   };
 }
+
+const routeProxy = lazyRef<
+  ReturnType<typeof createMigrationRollbackProxyHandler>
+>("Migration rollback proxy used before initialization");
+
+export function initMigrationRollbackRoutes(config: GatewayConfig): void {
+  routeProxy.set(createMigrationRollbackProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/admin/rollback-migrations",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "admin.write",
+    handler: (req) => routeProxy.get()(req),
+  },
+];

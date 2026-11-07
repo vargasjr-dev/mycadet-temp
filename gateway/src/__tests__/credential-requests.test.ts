@@ -23,6 +23,7 @@ import "./test-preload.js";
 import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 
 // Mock the daemon IPC client before importing the handlers under test.
+import type { ConfigFileCache } from "../config-file-cache.js";
 let ipcCalls: Array<{ method: string; params: unknown }> = [];
 let ipcFailure: Error | null = null;
 mock.module("../ipc/assistant-client.js", () => ({
@@ -45,8 +46,6 @@ const { handleCredentialRequestPeek, handleCredentialRequestSubmit } =
   await import("../http/routes/credential-requests.js");
 const { createCredentialRequest, resetCredentialRequestRateLimiterForTests } =
   await import("../ipc/credential-request-handlers.js");
-
-import type { ConfigFileCache } from "../config-file-cache.js";
 
 beforeAll(async () => {
   await initGatewayDb();

@@ -12,6 +12,8 @@ import {
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("log-tail");
 
@@ -124,3 +126,20 @@ export function createLogTailHandler(
     );
   };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createLogTailHandler>>(
+  "log tail routes used before initialization",
+);
+
+export function initLogTailRoutes(config: GatewayConfig): void {
+  routeProxy.set(createLogTailHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/logs/tail",
+    method: "get",
+    auth: "edge",
+    handler: (req) => routeProxy.get()(req),
+  },
+];

@@ -24,6 +24,12 @@ import "./test-preload.js";
 // Record info output. Real logger exports are preserved; the migration
 // module loads dynamically below, after this mock, so its module-level
 // `log` binds to the recorder.
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 const realLogger = await import("../logger.js");
 const infoLogs: unknown[][] = [];
 const recordingLog = {
@@ -40,13 +46,6 @@ mock.module("../logger.js", () => ({
   ...realLogger,
   getLogger: () => recordingLog,
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 const { MIGRATIONS } = await import("../db/data-migrations/index.js");
 const { up: m0017Up, down: m0017Down } =

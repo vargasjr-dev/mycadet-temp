@@ -24,6 +24,8 @@ import {
 } from "../middleware/auth.js";
 import { tryIpcProxy } from "./ipc-runtime-proxy.js";
 import { rewriteOAuthProxyUpstreamPath } from "./oauth-proxy-path.js";
+import type { GatewayRouteDefinition } from "./types.js";
+import { lazyRef } from "./lazy.js";
 
 const log = getLogger("runtime-proxy");
 
@@ -313,3 +315,22 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
     });
   };
 }
+
+const routeProxy = lazyRef<ReturnType<typeof createRuntimeProxyHandler>>(
+  "Runtime proxy used before initialization",
+);
+
+export function initRuntimeProxyRoutes(config: GatewayConfig): void {
+  routeProxy.set(createRuntimeProxyHandler(config));
+}
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    // Runtime proxy catch-all — must be LAST so specific routes win first.
+    path: /^\//,
+    method: "get",
+    auth: "track-failures",
+    handler: (req, _params, getClientIp) =>
+      routeProxy.get()(req, getClientIp()),
+  },
+];
