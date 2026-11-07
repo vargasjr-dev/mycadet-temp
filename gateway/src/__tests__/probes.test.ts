@@ -12,7 +12,7 @@ for (const [k, v] of Object.entries(env)) {
   process.env[k] = v;
 }
 
-const { loadConfig } = await import("../config.js");
+const { getAssistantBaseUrl, loadConfig } = await import("../config.js");
 const { createTelegramWebhookHandler } =
   await import("../http/routes/telegram-webhook.js");
 
@@ -199,8 +199,8 @@ describe("/readyz upstream probe", () => {
     );
     try {
       // Simulate the real /readyz handler from gateway/src/index.ts:
-      // it fetches `${config.assistantRuntimeBaseUrl}/readyz` with a 3s timeout.
-      const upstream = await fetch(`${config.assistantRuntimeBaseUrl}/readyz`, {
+      // it fetches `${getAssistantBaseUrl()}/readyz` with a 3s timeout.
+      const upstream = await fetch(`${getAssistantBaseUrl()}/readyz`, {
         signal: AbortSignal.timeout(3000),
       });
       expect(upstream.ok).toBe(true);

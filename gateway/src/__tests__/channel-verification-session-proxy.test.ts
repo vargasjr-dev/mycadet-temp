@@ -22,7 +22,6 @@ const { createChannelVerificationSessionProxyHandler } =
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -91,11 +90,11 @@ describe("channel verification session proxy", () => {
     );
 
     expect(captured).toEqual([
-      "http://localhost:7821/v1/channel-verification-sessions",
-      "http://localhost:7821/v1/channel-verification-sessions/status?channel=phone",
-      "http://localhost:7821/v1/channel-verification-sessions",
-      "http://localhost:7821/v1/channel-verification-sessions/resend",
-      "http://localhost:7821/v1/channel-verification-sessions",
+      "http://127.0.0.1:7821/v1/channel-verification-sessions",
+      "http://127.0.0.1:7821/v1/channel-verification-sessions/status?channel=phone",
+      "http://127.0.0.1:7821/v1/channel-verification-sessions",
+      "http://127.0.0.1:7821/v1/channel-verification-sessions/resend",
+      "http://127.0.0.1:7821/v1/channel-verification-sessions",
     ]);
   });
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, test, expect } from "bun:test";
 
 import { testWorkspaceDir } from "./test-preload.js";
-import { loadConfig } from "../config.js";
+import { getAssistantBaseUrl, loadConfig } from "../config.js";
 
 describe("config: hardcoded defaults", () => {
   test("GATEWAY_PORT defaults to 7830", () => {
@@ -85,12 +85,11 @@ describe("config: hardcoded defaults", () => {
     }
   });
 
-  test("assistantRuntimeBaseUrl derives from RUNTIME_HTTP_PORT", () => {
+  test("getAssistantBaseUrl derives from RUNTIME_HTTP_PORT", () => {
     const saved = process.env.RUNTIME_HTTP_PORT;
     process.env.RUNTIME_HTTP_PORT = "9999";
     try {
-      const config = loadConfig();
-      expect(config.assistantRuntimeBaseUrl).toBe("http://127.0.0.1:9999");
+      expect(getAssistantBaseUrl()).toBe("http://127.0.0.1:9999");
     } finally {
       if (saved !== undefined) process.env.RUNTIME_HTTP_PORT = saved;
       else delete process.env.RUNTIME_HTTP_PORT;

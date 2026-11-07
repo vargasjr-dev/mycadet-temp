@@ -547,23 +547,7 @@ function normalizeForwardHeaders(
   return headers;
 }
 
-/**
- * The catch-all proxy row: everything the route table doesn't answer rides
- * to the entry's Cadet Gateway, which supports its own surface. The forward
- * streams both ways — the request body rides as the raw stream (`duplex:
- * "half"` is the fetch spec's requirement whenever body is a stream), and
- * redirects pass through un-followed (`redirect: "manual"` — the caller,
- * not this host, owns its own 3xx). The response streams back with the
- * hop-by-hop and length headers stripped: fetch decodes the upstream's
- * content-encoding, so the lengths no longer describe the bytes.
- *
- * `ASSISTANT_PROXY_TRANSPORT=ipc` opts the proxy row into the gateway's
- * IPC cutover: the forwarded request carries `x-cadet-proxy-server: ipc`,
- * the header the gateway's runtime-proxy treats as "serve via the
- * assistant's IPC socket when the route table admits it". The header is
- * SET (not appended) so the operator's toggle overrides anything the
- * browser supplied; the default stays HTTP until the cutover lands.
- */
+/** Catch-all proxy to the entry's gateway; `CADET_PROXY_TRANSPORT=ipc` opts its forwards into the gateway's IPC arm via `x-cadet-proxy-server: ipc` (set over any client value; the env rides the app-server spawn). */
 async function runProxyRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
@@ -575,7 +559,7 @@ async function runProxyRoute(
   const target = new URL(request.path ?? "/", getGatewayUrl(entry));
   const hasBody = method !== "GET" && method !== "HEAD";
   const headers = normalizeForwardHeaders(request.headers, request.peer ?? null);
-  if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
+  if (process.env.CADET_PROXY_TRANSPORT === "ipc") {
     headers.set("x-cadet-proxy-server", "ipc");
   }
   const upstream = await fetch(target, {

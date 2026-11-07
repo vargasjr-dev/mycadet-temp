@@ -237,7 +237,6 @@ function makeConfig(overrides?: { runtimeProxyRequireAuth?: boolean }) {
   return {
     runtimeProxyRequireAuth: false,
     // Read only by the HTTP proxy, which a couple of tests drive end to end.
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     runtimeTimeoutMs: 30_000,
     ...overrides,
   } as unknown as import("../../config.js").GatewayConfig;
@@ -454,7 +453,7 @@ describe("tryIpcProxy", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("forwarded");
     expect(forwarded).toEqual({
-      url: "http://localhost:7821/v1/acp/test-id/steer",
+      url: "http://127.0.0.1:7821/v1/acp/test-id/steer",
       method: "POST",
       body: payload,
     });

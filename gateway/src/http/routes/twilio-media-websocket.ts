@@ -6,6 +6,7 @@ import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twi
 
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
+import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
 
@@ -27,7 +28,6 @@ const MAX_PENDING_MESSAGES = 100;
 type MediaStreamSocketData = {
   wsType: "twilio-media-stream";
   callSessionId: string;
-  assistantRuntimeBaseUrl: string;
   upstream?: WebSocket;
   pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
 };
@@ -105,7 +105,6 @@ export function createTwilioMediaWebsocketHandler(config: GatewayConfig) {
       data: {
         wsType: "twilio-media-stream",
         callSessionId,
-        assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
       } satisfies MediaStreamSocketData,
     });
 
@@ -179,7 +178,7 @@ function checkMediaStreamAuth(
 export function getMediaStreamWebsocketHandlers() {
   return {
     open(ws: import("bun").ServerWebSocket<MediaStreamSocketData>) {
-      const { callSessionId, assistantRuntimeBaseUrl } = ws.data;
+      const { callSessionId } = ws.data;
 
       // Initialize message buffer for frames arriving before upstream connects
       ws.data.pendingMessages = [];
@@ -187,7 +186,7 @@ export function getMediaStreamWebsocketHandlers() {
       // Build upstream URL to runtime with JWT service token for auth
       const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
         buildWsUpstreamUrl({
-          baseUrl: assistantRuntimeBaseUrl,
+          baseUrl: getAssistantBaseUrl(),
           path: "/v1/calls/media-stream",
           extraParams: { callSessionId },
         });

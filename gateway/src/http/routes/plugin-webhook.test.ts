@@ -109,7 +109,6 @@ const ADMIT_GUARDIAN = {
 } as unknown as InboundAdmission;
 
 const CONFIG = {
-  assistantRuntimeBaseUrl: "http://runtime.test:7821",
   runtimeTimeoutMs: 1000,
   maxWebhookPayloadBytes: 1024,
 } as GatewayConfig;
@@ -208,7 +207,7 @@ describe("approved routes", () => {
     expect(res.status).toBe(200);
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe(
-      "http://runtime.test:7821/v1/x/plugins/meeting-bot/realtime",
+      "http://127.0.0.1:7821/v1/x/plugins/meeting-bot/realtime",
     );
     expect(calls[0]!.method).toBe("POST");
     expect(calls[0]!.body).toBe('{"event":"joined"}');
@@ -252,7 +251,7 @@ describe("approved routes", () => {
 
     expect(res.status).toBe(200);
     expect(calls[0]!.url).toBe(
-      "http://runtime.test:7821/v1/x/plugins/meeting-bot/realtime",
+      "http://127.0.0.1:7821/v1/x/plugins/meeting-bot/realtime",
     );
   });
 });
@@ -1322,7 +1321,7 @@ describe("inbound delivery", () => {
 
     expect(forwards).toHaveLength(1);
     expect(forwards[0]!.url).toBe(
-      "http://runtime.test:7821/v1/x/plugins/meeting-bot/events",
+      "http://127.0.0.1:7821/v1/x/plugins/meeting-bot/events",
     );
     expect(JSON.parse(forwards[0]!.body)).toEqual(MESSAGE as never);
   });
@@ -1365,7 +1364,7 @@ describe("inbound delivery", () => {
     expect(res.status).toBe(200);
     expect(forwards).toHaveLength(1);
     expect(forwards[0]!.url).toBe(
-      `http://runtime.test:7821/v1/x/plugins/meeting-bot/${PLUGIN_ADMISSION_DENIED_NOTICE_PATH}`,
+      `http://127.0.0.1:7821/v1/x/plugins/meeting-bot/${PLUGIN_ADMISSION_DENIED_NOTICE_PATH}`,
     );
     expect(JSON.parse(forwards[0]!.body)).toEqual({
       reason: "admission_floor",

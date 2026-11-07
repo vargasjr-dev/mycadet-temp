@@ -7,6 +7,7 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
+import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -49,7 +50,7 @@ export function createChannelVerificationSessionProxyHandler(
     const prepared = withForwardedFor(req, clientIp);
     const start = performance.now();
     const response = await proxyForwardToResponse(prepared, {
-      baseUrl: config.assistantRuntimeBaseUrl,
+      baseUrl: getAssistantBaseUrl(),
       path: upstreamPath,
       search: upstreamSearch || undefined,
       timeoutMs: config.runtimeTimeoutMs,

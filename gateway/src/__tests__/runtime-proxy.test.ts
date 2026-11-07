@@ -22,7 +22,6 @@ const { createRuntimeProxyHandler } =
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: false,
@@ -63,7 +62,7 @@ describe("runtime proxy handler", () => {
     );
     await handler(req);
 
-    expect(captured[0].url).toBe("http://localhost:7821/v1/channels/inbound");
+    expect(captured[0].url).toBe("http://127.0.0.1:7821/v1/channels/inbound");
   });
 
   test("forwards request to upstream with correct path and query (legacy assistant-scoped rewrite)", async () => {
@@ -86,7 +85,7 @@ describe("runtime proxy handler", () => {
 
     expect(res.status).toBe(200);
     // Legacy /v1/assistants/test/health is rewritten to /v1/health
-    expect(captured[0].url).toBe("http://localhost:7821/v1/health?foo=bar");
+    expect(captured[0].url).toBe("http://127.0.0.1:7821/v1/health?foo=bar");
     expect(captured[0].method).toBe("GET");
     const body = await res.json();
     expect(body).toEqual({ ok: true });
@@ -447,7 +446,7 @@ describe("runtime proxy handler", () => {
 
       expect(res.status).toBe(200);
       expect(captured).toHaveLength(1);
-      expect(captured[0].url).toBe("http://localhost:7821/v1/stt/transcribe");
+      expect(captured[0].url).toBe("http://127.0.0.1:7821/v1/stt/transcribe");
       expect(captured[0].method).toBe("POST");
     });
 

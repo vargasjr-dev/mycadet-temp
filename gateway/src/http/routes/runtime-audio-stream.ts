@@ -34,6 +34,7 @@ import {
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { parseSub } from "../../auth/subject.js";
+import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
@@ -208,7 +209,7 @@ export function createRuntimeAudioStreamHandlers<
 
       const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
         buildWsUpstreamUrl({
-          baseUrl: ws.data.config.assistantRuntimeBaseUrl,
+          baseUrl: getAssistantBaseUrl(),
           path: upstreamPath,
           extraParams: upstreamParams(ws.data),
         });

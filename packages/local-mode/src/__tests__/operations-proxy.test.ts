@@ -237,20 +237,20 @@ describe("the operator route table — the proxy catch-all", () => {
   });
 });
 
-describe("the proxy catch-all — the ASSISTANT_PROXY_TRANSPORT=ipc toggle", () => {
-  const savedTransport = process.env.ASSISTANT_PROXY_TRANSPORT;
+describe("the proxy catch-all — the CADET_PROXY_TRANSPORT=ipc toggle", () => {
+  const savedTransport = process.env.CADET_PROXY_TRANSPORT;
 
   afterEach(() => {
     if (savedTransport === undefined) {
-      delete process.env.ASSISTANT_PROXY_TRANSPORT;
+      delete process.env.CADET_PROXY_TRANSPORT;
     } else {
-      process.env.ASSISTANT_PROXY_TRANSPORT = savedTransport;
+      process.env.CADET_PROXY_TRANSPORT = savedTransport;
     }
   });
 
   test("the toggle stamps x-cadet-proxy-server: ipc on the forward", async () => {
     seedLocalEntry();
-    process.env.ASSISTANT_PROXY_TRANSPORT = "ipc";
+    process.env.CADET_PROXY_TRANSPORT = "ipc";
     const calls = stubGatewayFetch();
     await runProxy("things");
     expect(calls[0]!.headers.get("x-cadet-proxy-server")).toBe("ipc");
@@ -258,19 +258,19 @@ describe("the proxy catch-all — the ASSISTANT_PROXY_TRANSPORT=ipc toggle", () 
 
   test("unset (or http) forwards without the header", async () => {
     seedLocalEntry();
-    delete process.env.ASSISTANT_PROXY_TRANSPORT;
+    delete process.env.CADET_PROXY_TRANSPORT;
     const calls = stubGatewayFetch();
     await runProxy("things");
     expect(calls[0]!.headers.get("x-cadet-proxy-server")).toBeNull();
 
-    process.env.ASSISTANT_PROXY_TRANSPORT = "http";
+    process.env.CADET_PROXY_TRANSPORT = "http";
     await runProxy("things");
     expect(calls[1]!.headers.get("x-cadet-proxy-server")).toBeNull();
   });
 
   test("the toggle overrides whatever the client supplied", async () => {
     seedLocalEntry();
-    process.env.ASSISTANT_PROXY_TRANSPORT = "ipc";
+    process.env.CADET_PROXY_TRANSPORT = "ipc";
     const calls = stubGatewayFetch();
     await runProxy("things", {
       headers: new Headers({ "x-cadet-proxy-server": "http" }),

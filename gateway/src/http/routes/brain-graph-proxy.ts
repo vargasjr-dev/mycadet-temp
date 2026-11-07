@@ -20,6 +20,7 @@ import {
 } from "@mycadet/assistant-client";
 
 import { mintUiPageToken } from "../../auth/token-exchange.js";
+import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -31,7 +32,7 @@ export function createBrainGraphProxyHandler(config: GatewayConfig) {
     const start = performance.now();
 
     const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
+      baseUrl: getAssistantBaseUrl(),
       path,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,

@@ -11,7 +11,6 @@ const log = pino({ level: "silent" });
 
 function config(overrides?: Partial<GatewayConfig>): GatewayConfig {
   const base: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: {

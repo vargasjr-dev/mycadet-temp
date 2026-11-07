@@ -421,7 +421,6 @@ afterAll(() => {
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -507,8 +506,8 @@ describe("contacts control-plane proxy", () => {
     );
 
     expect(captured).toEqual([
-      "http://localhost:7821/v1/contacts?limit=10&query=alice",
-      "http://localhost:7821/v1/contacts/ct_1",
+      "http://127.0.0.1:7821/v1/contacts?limit=10&query=alice",
+      "http://127.0.0.1:7821/v1/contacts/ct_1",
     ]);
   });
 

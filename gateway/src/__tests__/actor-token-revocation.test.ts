@@ -250,7 +250,6 @@ describe("signature-encoding canonicalization (revocation bypass)", () => {
 describe("runtime proxy enforcement", () => {
   function makeConfig() {
     return {
-      assistantRuntimeBaseUrl: "http://localhost:7821",
       routingEntries: [],
       port: 7830,
       runtimeProxyRequireAuth: true,

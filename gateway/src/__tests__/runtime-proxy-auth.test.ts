@@ -36,7 +36,6 @@ const TOKEN = mintEdgeToken();
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -411,7 +410,7 @@ describe("runtime proxy OAuth grant path rewrite", () => {
     );
 
     expect(url).toBe(
-      "http://localhost:7821/v1/oauth/proxy/google/upload/gmail/v1/users/me/drafts?uploadType=media",
+      "http://127.0.0.1:7821/v1/oauth/proxy/google/upload/gmail/v1/users/me/drafts?uploadType=media",
     );
     const headers = init?.headers as Headers;
     expect(headers.get("content-type")).toBe("message/rfc822");
@@ -442,7 +441,7 @@ describe("runtime proxy OAuth grant path rewrite", () => {
     );
 
     expect(url).toBe(
-      "http://localhost:7821/v1/oauth/proxy/google/upload/gmail/v1/users/me/drafts?uploadType=multipart",
+      "http://127.0.0.1:7821/v1/oauth/proxy/google/upload/gmail/v1/users/me/drafts?uploadType=multipart",
     );
     const headers = init?.headers as Headers;
     expect(headers.get("content-type")).toBe(contentType);
@@ -459,7 +458,7 @@ describe("runtime proxy OAuth grant path rewrite", () => {
     );
 
     expect(url).toBe(
-      "http://localhost:7821/v1/oauth/proxy/google/gmail/v1/users/me/drafts",
+      "http://127.0.0.1:7821/v1/oauth/proxy/google/gmail/v1/users/me/drafts",
     );
   });
 
@@ -473,7 +472,7 @@ describe("runtime proxy OAuth grant path rewrite", () => {
     );
 
     expect(url).toBe(
-      "http://localhost:7821/v1/oauth/proxy/stripe_link/v1/charges",
+      "http://127.0.0.1:7821/v1/oauth/proxy/stripe_link/v1/charges",
     );
   });
 
@@ -484,7 +483,7 @@ describe("runtime proxy OAuth grant path rewrite", () => {
     );
 
     expect(url).toBe(
-      "http://localhost:7821/upload/gmail/v1/users/me/drafts?uploadType=media",
+      "http://127.0.0.1:7821/upload/gmail/v1/users/me/drafts?uploadType=media",
     );
   });
 });

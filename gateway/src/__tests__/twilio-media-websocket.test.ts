@@ -57,7 +57,6 @@ const WS_CLOSED = WebSocket.CLOSED; // 3
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -244,15 +243,11 @@ describe("createTwilioMediaWebsocketHandler", () => {
         data: {
           wsType: string;
           callSessionId: string;
-          assistantRuntimeBaseUrl: string;
         };
       }
     ).data;
     expect(upgradeData.wsType).toBe("twilio-media-stream");
     expect(upgradeData.callSessionId).toBe("sess-42");
-    expect(upgradeData.assistantRuntimeBaseUrl).toBe(
-      config.assistantRuntimeBaseUrl,
-    );
   });
 
   test("legacy: succeeds with query-based callSessionId and token", () => {
@@ -457,7 +452,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -468,20 +462,26 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "s&id=1",
-      assistantRuntimeBaseUrl: "http://runtime:8000",
     });
-    handlers.open(ws as never);
+    const savedPort = process.env.RUNTIME_HTTP_PORT;
+    process.env.RUNTIME_HTTP_PORT = "8000";
+    try {
+      handlers.open(ws as never);
 
-    const ctorCall = (
-      globalThis.WebSocket as unknown as ReturnType<typeof mock>
-    ).mock.calls[0] as unknown[];
-    const url = ctorCall[0] as string;
-    // Identity rides the dial's headers, not the URL.
-    expect(url).toStartWith(
-      "ws://runtime:8000/v1/calls/media-stream?callSessionId=s%26id%3D1",
-    );
-    const options = ctorCall[1] as { headers: Record<string, string> };
-    expect(options.headers["x-cadet-subject"]).toBe("svc:gateway:self");
+      const ctorCall = (
+        globalThis.WebSocket as unknown as ReturnType<typeof mock>
+      ).mock.calls[0] as unknown[];
+      const url = ctorCall[0] as string;
+      // Identity rides the dial's headers, not the URL.
+      expect(url).toStartWith(
+        "ws://127.0.0.1:8000/v1/calls/media-stream?callSessionId=s%26id%3D1",
+      );
+      const options = ctorCall[1] as { headers: Record<string, string> };
+      expect(options.headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    } finally {
+      if (savedPort !== undefined) process.env.RUNTIME_HTTP_PORT = savedPort;
+      else delete process.env.RUNTIME_HTTP_PORT;
+    }
   });
 
   // --- message buffering before upstream open --------------------------------
@@ -490,7 +490,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -508,7 +507,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -530,7 +528,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -549,7 +546,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -572,7 +568,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -597,7 +592,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -614,7 +608,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -631,7 +624,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -645,7 +637,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -662,7 +653,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 
@@ -681,7 +671,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
     const ws = createFakeDownstreamWs({
       wsType: "twilio-media-stream",
       callSessionId: "sess-1",
-      assistantRuntimeBaseUrl: "http://localhost:7821",
     });
     handlers.open(ws as never);
 

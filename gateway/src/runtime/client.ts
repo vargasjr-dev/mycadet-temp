@@ -16,6 +16,7 @@ import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { ChannelId } from "../channels/types.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
 import { mintRelayToken } from "../auth/token-exchange.js";
+import { getAssistantBaseUrl } from "../config.js";
 import type { GatewayConfig } from "../config.js";
 import { fetchImpl } from "../fetch.js";
 import { getLogger } from "../logger.js";
@@ -212,7 +213,7 @@ export async function forwardToRuntime(
   const isHalfOpenProbe = cbBeforeRequest();
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/channels/inbound",
   );
 
@@ -300,7 +301,7 @@ export async function resetConversation(
   cbBeforeRequest();
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/channels/conversation",
   );
 
@@ -526,7 +527,7 @@ export async function forwardTwilioVoiceWebhook(
   cbBeforeRequest();
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/internal/twilio/voice-webhook",
   );
 
@@ -593,7 +594,7 @@ export async function forwardTwilioStatusWebhook(
   cbBeforeRequest();
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/internal/twilio/status",
   );
 
@@ -640,7 +641,7 @@ export async function uploadAttachment(
   const recordOutcome = !skipCb || isProbe;
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/attachments",
   );
 
@@ -702,7 +703,7 @@ export async function forwardOAuthCallback(
   cbBeforeRequest();
 
   const url = buildUpstreamUrl(
-    config.assistantRuntimeBaseUrl,
+    getAssistantBaseUrl(),
     "/v1/internal/oauth/callback",
   );
 

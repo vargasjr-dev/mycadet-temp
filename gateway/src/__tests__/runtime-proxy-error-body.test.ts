@@ -71,7 +71,6 @@ const TOKEN = mintToken({
 
 function makeConfig(): GatewayConfig {
   return {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
