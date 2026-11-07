@@ -37,6 +37,7 @@ export type GatewayDb = ReturnType<typeof drizzle<typeof schema>>;
 async function importDrizzleKitApi(): Promise<{
   pushSQLiteSchema: (
     imports: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pushSQLiteSchema types against LibSQLDatabase; BunSQLiteDatabase is duck-type compatible
     drizzleInstance: any,
   ) => Promise<{ statementsToExecute: string[]; apply: () => Promise<void> }>;
 }> {
