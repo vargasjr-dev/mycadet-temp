@@ -56,7 +56,6 @@ describe("getBuilderManagedEnvKeys", () => {
     const expected = [
       "CADET_WORKSPACE_DIR",
       "GATEWAY_SECURITY_DIR",
-      "ASSISTANT_HOST",
       "CES_CREDENTIAL_URL",
       "GATEWAY_IPC_SOCKET_DIR",
       "ASSISTANT_IPC_SOCKET_DIR",

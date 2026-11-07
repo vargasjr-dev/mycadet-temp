@@ -556,6 +556,13 @@ function normalizeForwardHeaders(
  * not this host, owns its own 3xx). The response streams back with the
  * hop-by-hop and length headers stripped: fetch decodes the upstream's
  * content-encoding, so the lengths no longer describe the bytes.
+ *
+ * `ASSISTANT_PROXY_TRANSPORT=ipc` opts the proxy row into the gateway's
+ * IPC cutover: the forwarded request carries `x-cadet-proxy-server: ipc`,
+ * the header the gateway's runtime-proxy treats as "serve via the
+ * assistant's IPC socket when the route table admits it". The header is
+ * SET (not appended) so the operator's toggle overrides anything the
+ * browser supplied; the default stays HTTP until the cutover lands.
  */
 async function runProxyRoute(
   request: OperatorRequest,
@@ -567,9 +574,13 @@ async function runProxyRoute(
   const method = request.method ?? "GET";
   const target = new URL(request.path ?? "/", getGatewayUrl(entry));
   const hasBody = method !== "GET" && method !== "HEAD";
+  const headers = normalizeForwardHeaders(request.headers, request.peer ?? null);
+  if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
+    headers.set("x-cadet-proxy-server", "ipc");
+  }
   const upstream = await fetch(target, {
     method,
-    headers: normalizeForwardHeaders(request.headers, request.peer ?? null),
+    headers,
     ...(hasBody ? { body: request.body, duplex: "half" as const } : {}),
     redirect: "manual",
   });
