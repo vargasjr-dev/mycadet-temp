@@ -90,7 +90,7 @@ describe("config: hardcoded defaults", () => {
     process.env.RUNTIME_HTTP_PORT = "9999";
     try {
       const config = loadConfig();
-      expect(config.assistantRuntimeBaseUrl).toBe("http://localhost:9999");
+      expect(config.assistantRuntimeBaseUrl).toBe("http://127.0.0.1:9999");
     } finally {
       if (saved !== undefined) process.env.RUNTIME_HTTP_PORT = saved;
       else delete process.env.RUNTIME_HTTP_PORT;

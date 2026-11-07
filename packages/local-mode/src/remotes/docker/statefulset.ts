@@ -212,7 +212,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       env: [
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "GATEWAY_SECURITY_DIR",      value: "/gateway-security" },
-        { kind: "static", name: "ASSISTANT_HOST",            value: "localhost" },
         { kind: "static", name: "CES_CREDENTIAL_URL",        value: "http://localhost:8090" },
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
         { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },

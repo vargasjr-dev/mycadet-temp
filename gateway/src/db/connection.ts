@@ -1,7 +1,8 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { existsSync, mkdirSync } from "node:fs";
-import { join, sep } from "node:path";
+import { dirname, join, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 
 import { getGatewaySecurityDir } from "../paths.js";
@@ -23,6 +24,37 @@ export type GatewayDb = ReturnType<typeof drizzle<typeof schema>>;
  * auto-selects the first option (index 0 = "create column") without human
  * interaction. Works across all current and future ambiguous schema diffs.
  */
+/**
+ * Import drizzle-kit/api in a way that works in the compiled Windows
+ * runtime. Compiled Bun binaries resolve bare external specifiers relative
+ * to the LAUNCH CWD, not the executable's directory — a cadet-gateway.exe
+ * spawned from any other directory dies at the schema push with
+ * "Cannot find module 'drizzle-kit/api'" (Velcro case 4). When drizzle-kit
+ * ships next to the binary (package-runtime.ts copies it into
+ * cli-runtime/node_modules), import it by absolute file:// URL so CWD never
+ * matters. Source/dev/test runs fall back to the bare specifier.
+ */
+async function importDrizzleKitApi(): Promise<{
+  pushSQLiteSchema: (
+    imports: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pushSQLiteSchema types against LibSQLDatabase; BunSQLiteDatabase is duck-type compatible
+    drizzleInstance: any,
+  ) => Promise<{ statementsToExecute: string[]; apply: () => Promise<void> }>;
+}> {
+  try {
+    const exeNodeModules = join(dirname(process.execPath), "node_modules");
+    const packageDir = join(exeNodeModules, "drizzle-kit");
+    if (existsSync(join(packageDir, "api.mjs"))) {
+      return (await import(
+        pathToFileURL(join(packageDir, "api.mjs")).href
+      )) as typeof import("drizzle-kit/api");
+    }
+  } catch {
+    // fall through to the bare specifier
+  }
+  return await import("drizzle-kit/api");
+}
+
 async function pushSchemaNoPrompt(
   imports: Record<string, unknown>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pushSQLiteSchema types against LibSQLDatabase; BunSQLiteDatabase is duck-type compatible
@@ -55,7 +87,7 @@ async function pushSchemaNoPrompt(
   }, 50);
 
   try {
-    const { pushSQLiteSchema } = await import("drizzle-kit/api");
+    const { pushSQLiteSchema } = await importDrizzleKitApi();
     return await pushSQLiteSchema(imports, drizzleInstance);
   } finally {
     clearInterval(interval);

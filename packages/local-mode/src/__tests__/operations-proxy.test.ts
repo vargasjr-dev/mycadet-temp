@@ -236,3 +236,45 @@ describe("the operator route table — the proxy catch-all", () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe("the proxy catch-all — the ASSISTANT_PROXY_TRANSPORT=ipc toggle", () => {
+  const savedTransport = process.env.ASSISTANT_PROXY_TRANSPORT;
+
+  afterEach(() => {
+    if (savedTransport === undefined) {
+      delete process.env.ASSISTANT_PROXY_TRANSPORT;
+    } else {
+      process.env.ASSISTANT_PROXY_TRANSPORT = savedTransport;
+    }
+  });
+
+  test("the toggle stamps x-cadet-proxy-server: ipc on the forward", async () => {
+    seedLocalEntry();
+    process.env.ASSISTANT_PROXY_TRANSPORT = "ipc";
+    const calls = stubGatewayFetch();
+    await runProxy("things");
+    expect(calls[0]!.headers.get("x-cadet-proxy-server")).toBe("ipc");
+  });
+
+  test("unset (or http) forwards without the header", async () => {
+    seedLocalEntry();
+    delete process.env.ASSISTANT_PROXY_TRANSPORT;
+    const calls = stubGatewayFetch();
+    await runProxy("things");
+    expect(calls[0]!.headers.get("x-cadet-proxy-server")).toBeNull();
+
+    process.env.ASSISTANT_PROXY_TRANSPORT = "http";
+    await runProxy("things");
+    expect(calls[1]!.headers.get("x-cadet-proxy-server")).toBeNull();
+  });
+
+  test("the toggle overrides whatever the client supplied", async () => {
+    seedLocalEntry();
+    process.env.ASSISTANT_PROXY_TRANSPORT = "ipc";
+    const calls = stubGatewayFetch();
+    await runProxy("things", {
+      headers: new Headers({ "x-cadet-proxy-server": "http" }),
+    });
+    expect(calls[0]!.headers.get("x-cadet-proxy-server")).toBe("ipc");
+  });
+});
