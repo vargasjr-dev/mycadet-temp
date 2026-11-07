@@ -122,9 +122,13 @@ export function loadConfig(): GatewayConfig {
   // discover its co-located daemon's HTTP port. In multi-instance setups,
   // the CLI passes a per-instance daemon port so each gateway proxies to
   // the correct daemon process (see cli/src/lib/local.ts startGateway).
-  const assistantHost = process.env.ASSISTANT_HOST || "localhost";
+  //
+  // 127.0.0.1, never `localhost`: the daemon binds IPv4 loopback only
+  // (RUNTIME_HTTP_HOST defaults to 127.0.0.1), and Bun's fetch resolves
+  // `localhost` to ::1 first without falling back — the ConnectionRefused
+  // every topology with a shared netns would otherwise trip over.
   const runtimePort = process.env.RUNTIME_HTTP_PORT || "7821";
-  const assistantRuntimeBaseUrl = `http://${assistantHost}:${runtimePort}`;
+  const assistantRuntimeBaseUrl = `http://127.0.0.1:${runtimePort}`;
 
   const gatewayInternalBaseUrl = `http://127.0.0.1:${port}`;
   const tunnelBaseUrl = process.env.TUNNEL_BASE_URL?.trim() || undefined;
