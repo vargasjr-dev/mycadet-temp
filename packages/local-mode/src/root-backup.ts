@@ -27,7 +27,6 @@ import { DOCKER_STATEFUL_SET_SPEC } from "./remotes/docker/statefulset";
 import { getLocalInstanceDir } from "./remotes/local/instance";
 import { sleepAssistant } from "./operations/sleep";
 import { wakeAssistant } from "./operations/wake";
-import { isAssistantHealthy } from "./health-check";
 import type { DockerAssistant, LocalAssistant } from "./lockfile-contract";
 import type { LockfileAssistant } from "./lockfile-contract";
 import { getBackupsDir } from "./backup-ops";
@@ -256,12 +255,12 @@ export interface RootStorage {
 
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
-  private readonly localEntry: LocalAssistant | DockerAssistant;
+  private readonly localEntry: LocalAssistant;
   constructor(readonly entry: LockfileAssistant) {
-    // Local-style roots: plain on-machine instances and docker instances
-    // (whose state roots are volumes) both carry the recorded paths.
-    if (entry.cloud !== "local" && entry.cloud !== "docker")
-      throw new Error("Local backup requires an on-machine instance.");
+    // The instance dir is a local-topology concept — only local assistants
+    // carry a state root on this machine to back up.
+    if (entry.cloud !== "local")
+      throw new Error("Local backup requires a local assistant.");
     this.localEntry = entry;
     this.root = resolve(getLocalInstanceDir(entry));
   }
@@ -643,6 +642,18 @@ export async function createRootBackup(
   return withRootOperationLock(entry, () => captureBackup(entry, output));
 }
 
+/**
+ * Fresh archive path for a root backup: the backups dir keyed by assistant
+ * and timestamp (colons and dots swapped for dashes — filesystem- and
+ * shell-safe).
+ */
+export function newRootBackupPath(entry: LockfileAssistant): string {
+  return join(
+    getBackupsDir(),
+    `${entry.assistantId}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
+  );
+}
+
 async function captureBackup(
   entry: LockfileAssistant,
   output: string,
@@ -654,13 +665,14 @@ async function captureBackup(
   let running = false;
   let stopped = false;
   try {
-    // The restart signal is the gateway's own health probe — remote
-    // agnostic — taken before the sleep. The sleep itself runs
-    // unconditionally (it is idempotent) and its structured failure
-    // throws its own error.
-    running = await isAssistantHealthy(entry);
+    // The restart signal rides the sleep result: the sleep operation probes
+    // the gateway's health before stopping and returns the verdict on every
+    // variant — result or structured error. The sleep itself runs
+    // unconditionally (it is idempotent) and its structured failure throws
+    // its own error.
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
+    running = slept.wasRunning;
     stopped = true;
     await storage.capture(stage);
     if (running) {
@@ -725,9 +737,9 @@ async function restoreBackup(
   try {
     await storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
-    running = await isAssistantHealthy(entry);
     const slept = await sleepAssistant(entry);
     if (!slept.ok) throw new Error(slept.error);
+    running = slept.wasRunning;
     stopped = true;
     await mkdir(snapshot, { mode: 0o700 });
     await storage.capture(snapshot);

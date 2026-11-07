@@ -19,7 +19,7 @@ let nativeAndroid = true;
 mock.module("@/runtime/platform-detection", () => ({
   isNativeAndroid: () => nativeAndroid,
 }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => true,
 }));
 

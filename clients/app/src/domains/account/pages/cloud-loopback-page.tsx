@@ -94,7 +94,7 @@ export function CloudLoopbackPage() {
           <button
             type="button"
             className="mt-4 rounded-lg border border-[var(--border-disabled)] px-4 py-2 text-sm hover:bg-[var(--surface-lift)]"
-            onClick={() => void navigate(routes.welcome)}
+            onClick={() => void navigate(routes.index)}
           >
             {t("platformLoopbackPage.backToWelcome")}
           </button>

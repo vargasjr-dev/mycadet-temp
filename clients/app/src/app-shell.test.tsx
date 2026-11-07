@@ -42,8 +42,6 @@ function json(value: unknown) {
 function props(id: string | undefined = "assistant-1") {
   return {
     assistantId: id,
-    location: "/admin/assistant/conversations/123?tab=files#last",
-    mountPath: "/admin/assistant",
     onNavigate: navigate,
   };
 }
@@ -82,18 +80,19 @@ test("server rendering never fetches or mounts a browser router", () => {
   expect(request).not.toHaveBeenCalled();
 });
 
-test("admin deep links and active-frame navigation preserve the host prefix", async () => {
+test("the frame loads the bundle mount and its echoes reach the host router", async () => {
   await mounted();
   const frame = iframe();
+  const route = (path: string) =>
+    new URL(path, window.location.origin).href;
   expect(frame.src).toBe(
-    `${origin}/admin/assistant/conversations/123?tab=files#last`,
+    route(`/web${window.location.pathname}${window.location.search}${window.location.hash}`),
   );
-  message(frame, "/assistant/settings?tab=profile#name");
-  expect(navigate).toHaveBeenCalledWith(
-    "/admin/assistant/settings?tab=profile#name",
-    { replace: false },
-  );
-  message(frame, "/admin/assistant/files", { nav: "pop" });
+  message(frame, "/web/assistant/settings?tab=profile#name");
+  expect(navigate).toHaveBeenCalledWith("/assistant/settings?tab=profile#name", {
+    replace: false,
+  });
+  message(frame, "/web/admin/assistant/files", { nav: "replace" });
   expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/files", {
     replace: true,
   });
@@ -108,8 +107,8 @@ test("rejects messages from other origins, windows, versions, or paths", async (
   message(frame, "/assistant/settings", { source: window });
   for (const path of [
     "/account/login",
-    "/web/2.0.0/assistant/settings",
-    "/assistant/../account",
+    "/assistant/settings",
+    "/web/../account",
     "//elsewhere.example/assistant",
   ]) {
     message(frame, path);
@@ -117,32 +116,17 @@ test("rejects messages from other origins, windows, versions, or paths", async (
   expect(navigate).not.toHaveBeenCalled();
 });
 
-test("host navigation updates the active frame without another API lookup", async () => {
+test("a rerender keeps the active frame mounted without another API lookup", async () => {
   const view = await mounted();
   const frame = iframe();
-  if (!frame.contentWindow) {
-    throw new Error("No frame window");
-  }
-  const post = spyOn(frame.contentWindow, "postMessage");
   const src = frame.src;
-  view.rerender(
-    <AppShell {...props()} location="/admin/assistant/identity?edit=1#name" />,
-  );
+  view.rerender(<AppShell {...props()} />);
   expect(iframe()).toBe(frame);
   expect(frame.src).toBe(src);
   expect(request).toHaveBeenCalledTimes(1);
-  expect(post).toHaveBeenCalledWith(
-    {
-      source: "mycadet-web-parent-nav",
-      path: "/admin/assistant/identity?edit=1#name",
-    },
-    origin,
-  );
-  post.mockRestore();
 });
 
 for (const [status, message] of [
-  [401, "Please sign in to continue."],
   [409, "Your assistant isn't ready."],
   [410, "This assistant is unavailable."],
   [200, "We couldn't reach your assistant"],
@@ -154,6 +138,15 @@ for (const [status, message] of [
     expect(screen.queryByTitle("Assistant")).toBeNull();
   });
 }
+
+test("an unauthenticated session pairs at the app level", async () => {
+  respond(async () => new Response("{}", { status: 401 }));
+  render(<AppShell {...props()} />);
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith("/account/pair", { replace: true }),
+  );
+  expect(screen.queryByTitle("Assistant")).toBeNull();
+});
 
 test("wakes a not-ready assistant and mounts it once ready", async () => {
   request
@@ -337,27 +330,26 @@ test("a late reply for a previous assistant cannot replace the current selection
 test("frame navigation echoes do not create duplicate host history entries", async () => {
   await mounted();
   const frame = iframe();
-  message(frame, "/assistant/files");
-  message(frame, "/assistant/files");
+  message(frame, "/web/files");
+  message(frame, "/web/files");
   expect(navigate).toHaveBeenCalledTimes(1);
 });
 
-test("a frame that loads late receives the latest host route", async () => {
-  const view = await mounted();
+test("a frame that loads late receives the current host route", async () => {
+  await mounted();
   const frame = iframe();
   if (!frame.contentWindow) {
     throw new Error("Missing frame window");
   }
   const post = spyOn(frame.contentWindow, "postMessage");
-  view.rerender(
-    <AppShell {...props()} location="/admin/assistant/files?view=grid#last" />,
-  );
-  post.mockClear();
   fireEvent.load(frame);
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
-      path: "/admin/assistant/files?view=grid#last",
+      path: new URL(
+        `/web${window.location.pathname}${window.location.search}${window.location.hash}`,
+        window.location.origin,
+      ).href,
     },
     origin,
   );

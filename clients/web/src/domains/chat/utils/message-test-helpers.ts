@@ -85,19 +85,6 @@ export function wireTextBody(
 }
 
 /**
- * Build the wire-shape `thinkingSegments` + `contentOrder` for a server
- * message whose body is a single reasoning (thinking) block. Mirrors
- * `wireTextBody` for the reasoning content kind.
- */
-export function wireThinkingBody(
-  thinking: string,
-): Pick<ConversationMessage, "thinkingSegments" | "contentOrder"> {
-  return thinking
-    ? { thinkingSegments: [thinking], contentOrder: ["thinking:0"] }
-    : { thinkingSegments: [], contentOrder: [] };
-}
-
-/**
  * Build a server-shape history row (`ConversationMessage`) from a partial,
  * filling the fields the wire contract requires (`timestamp`, `attachments`).
  */
@@ -106,13 +93,4 @@ export function makeServerMessage(
     Pick<ConversationMessage, "id" | "role">,
 ): ConversationMessage {
   return { timestamp: "", attachments: [], ...partial };
-}
-
-/**
- * Encode epoch milliseconds as the wire contract's ISO-8601 `timestamp`
- * string. Round-trips through the client's timestamp parser back to the same
- * epoch value, so ordering assertions written against `ms` still hold.
- */
-export function wireTimestamp(ms: number): string {
-  return new Date(ms).toISOString();
 }

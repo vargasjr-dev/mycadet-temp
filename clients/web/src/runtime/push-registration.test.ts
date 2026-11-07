@@ -35,7 +35,7 @@ const androidSetForegroundHandlerMock = mock(
   },
 );
 
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => isNative,
 }));
 mock.module("@capacitor/core", () => ({

@@ -4,28 +4,13 @@ import type {
   LocalAssistant,
   LockfileAssistant,
 } from "../../lockfile-contract";
-import { GATEWAY_PORT, isLocalEntry } from "../../lockfile-contract";
+import { isLocalEntry } from "../../lockfile-contract";
 import { findAvailablePort, getDefaultPorts } from "../../ports";
-import {
-  isProcessAlive,
-  resolveProcessState,
-  stopProcessByPidFile,
-} from "../../process";
-import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import {
-  probeDaemonReadinessWithRetry,
-  waitForDaemonMigrationsReady,
-} from "../../daemon-readiness";
+import { isProcessAlive } from "../../process";
 import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
-import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
-import {
-  isAssistantWatchModeAvailable,
-  isGatewayWatchModeAvailable,
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "./common";
+import { getDaemonPidPath } from "./instance";
+import { startCes, startGateway, startLocalDaemon } from "./common";
 import type { WakeResult } from "../../operations/wake";
 
 export async function wakeLocal(
@@ -115,194 +100,31 @@ async function wakeLocalSteps(
 
   const pidFile = getDaemonPidPath(entry);
 
-  // Budget anchor for the migration-coordination wait below: the hung-daemon
-  // health wait + post-spawn wait + gateway start can consume most of a
-  // headless host's patience on their own.
-  const wakeStartedAt = Date.now();
+  // Simple parallel bring-up — the same shape as the Docker topology's
+  // sibling containers coming up together. startCes and startGateway clear
+  // their own stale processes before spawning; startLocalDaemon classifies
+  // an already-running assistant internally. Readiness is the gateway's
+  // responsibility: its process gates its own traffic on the daemon's
+  // migrations, so an early start just means it holds the gate a little
+  // longer.
+  await Promise.all([
+    startCes(watch, entry),
+    startLocalDaemon(watch, entry, {
+      defaultWorkspaceConfigPath,
+    }),
+    startGateway(watch, entry),
+  ]);
 
-  let daemonRunning = false;
-  let daemonUnready = false;
-  let daemonMigrationsFailed = false;
-  const daemonState = await resolveProcessState(
-    pidFile,
-    daemonPort,
-    "Assistant",
-    60_000,
-    "readyz",
-  );
-  if (daemonState.status !== "needs_start") {
-    if (daemonState.status === "stuck") {
-      daemonRunning = true;
-      daemonUnready = true;
-      console.log(
-        `Assistant running (pid ${daemonState.pid}) but is not responding and could not be stopped.`,
-      );
-    } else if (watch && isAssistantWatchModeAvailable()) {
-      console.log(
-        `Assistant running (pid ${daemonState.pid}) — restarting in watch mode...`,
-      );
-      const stopped = await stopProcessByPidFile(
-        pidFile,
-        "assistant",
-        undefined,
-        DAEMON_STOP_TIMEOUT_MS,
-      );
-      if (!stopped && isProcessAlive(pidFile).alive) {
-        daemonRunning = true;
-        daemonUnready = true;
-        console.log(
-          `Assistant running (pid ${daemonState.pid}) but could not be stopped for watch mode.`,
-        );
-      }
-    } else {
-      daemonRunning = true;
-      daemonUnready = daemonState.status !== "healthy";
-      daemonMigrationsFailed = daemonState.status === "migration_failed";
-      if (watch) {
-        console.log(
-          `Assistant running (pid ${daemonState.pid}) — watch mode not available, no source files. Keeping existing process.`,
-        );
-      } else if (daemonMigrationsFailed) {
-        console.log(
-          `Assistant running (pid ${daemonState.pid}) but its database migrations failed.`,
-        );
-      } else if (daemonUnready) {
-        console.log(
-          `Assistant running (pid ${daemonState.pid}) — database migrations still running.`,
-        );
-      } else {
-        console.log(`Assistant already running (pid ${daemonState.pid}).`);
-      }
-    }
-  }
-
-  if (!daemonRunning) {
-    // Spin up CES and the daemon in parallel, the way the Docker topology
-    // brings its sibling containers up together — the assistant polls for the
-    // CES socket during startup (discoverCesWithRetry), so it tolerates CES
-    // still binding. CES's lifecycle tracks the daemon (its only consumer):
-    // restarting it under a live daemon would sever the daemon's open
-    // connection, so it is only (re)started alongside the daemon. startCes
-    // always launches the CES sibling unconditionally.
-    await Promise.all([
-      startCes(watch, entry),
-      startLocalDaemon(watch, entry, {
-        defaultWorkspaceConfigPath,
-      }),
-    ]);
-    // A daemon that aborts during startup (an occupied runtime HTTP port, a
-    // fatal subsystem failure) leaves no process behind, and readiness alone
-    // cannot see that: whatever foreign listener holds the port answers the
-    // probe in its place. Liveness is the authoritative signal, so check it
-    // first and fail the command instead of reporting a successful wake for
-    // an assistant that is not running.
-    if (!isProcessAlive(pidFile).alive) {
-      throw new WakeRefused(
-        `the assistant exited during startup and is not running. Its runtime HTTP port ${daemonPort} may be held by another process (check \`lsof -i :${daemonPort}\`); the daemon log records the startup error it reported.`,
-      );
-    }
-    // startLocalDaemon's post-spawn wait is bounded (60s), and a longer
-    // migration outlives it. Classify the fresh spawn the same way the
-    // attach path does, so the gateway-coordination wait below applies to
-    // both paths and wake's closing summary stays honest.
-    const readiness = await probeDaemonReadinessWithRetry(daemonPort);
-    daemonUnready = readiness === "migrating";
-    daemonMigrationsFailed = readiness === "failed";
-  } else {
-    // Self-heal: the daemon is already healthy, but the CES sibling may have
-    // died independently (crash, OOM kill). A dead ces.pid under a live daemon
-    // means credential operations will fail until the next wake. Relaunch the
-    // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
-    // the next credential read. startCes always launches the sibling.
-    const cadetDir = getLocalInstanceDir(entry);
-    const cesPidFile = join(cadetDir, "ces.pid");
-    const cesAlive = isProcessAlive(cesPidFile).alive;
-    if (!cesAlive) {
-      console.log("CES sibling not running — relaunching...");
-      await startCes(watch, entry);
-    }
-  }
-
-  // Start gateway
-  let gatewayStarted = false;
-  {
-    const cadetDir = getLocalInstanceDir(entry);
-    const gatewayPidFile = join(cadetDir, "gateway.pid");
-    const gatewayState = await resolveProcessState(
-      gatewayPidFile,
-      entry.port ?? GATEWAY_PORT,
-      "Gateway",
-    );
-    const gatewayAlive = gatewayState.status === "healthy";
-    const gatewayStuck = gatewayState.status === "stuck";
-    const restartGateway = async (
-      restartWithWatch: boolean,
-    ): Promise<boolean> => {
-      const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
-      if (!stopped && isProcessAlive(gatewayPidFile).alive) {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
-        );
-        return false;
-      }
-      await startGateway(restartWithWatch, entry);
-      return true;
-    };
-    if (gatewayStuck) {
-      console.log(
-        `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
-      );
-    } else if (gatewayAlive) {
-      if (watch && isGatewayWatchModeAvailable()) {
-        console.log(
-          `Gateway running (pid ${gatewayState.pid}) — restarting in watch mode...`,
-        );
-        gatewayStarted = await restartGateway(watch);
-      } else {
-        if (watch) {
-          console.log(
-            `Gateway running (pid ${gatewayState.pid}) — watch mode not available, no source files. Keeping existing process.`,
-          );
-        } else {
-          console.log(`Gateway already running (pid ${gatewayState.pid}).`);
-        }
-      }
-    } else {
-      await startGateway(watch, entry);
-      gatewayStarted = true;
-    }
-  }
-
-  // A freshly-(re)started gateway refuses all non-probe traffic until the
-  // daemon reports migration readiness, so consumers that act right after
-  // wake (the web connect-repair retry, the guardian re-provision below)
-  // would hit its closed gate. When the daemon is migrating AND the gateway
-  // was just started (or a guardian repair was requested), wait out the
-  // migration — capped at 60s and at whatever budget remains before the
-  // 180s host-wrapper SIGTERM (30s headroom kept), since earlier bounded
-  // waits may already have consumed most of it. Fast path (gateway already
-  // serving, no repair) stays ~1s.
-  if (daemonUnready && !daemonMigrationsFailed && gatewayStarted) {
-    const waitBudgetMs = Math.min(60_000, wakeStartedAt + 150_000 - Date.now());
-    if (waitBudgetMs > 0) {
-      const readiness = await waitForDaemonMigrationsReady(
-        daemonPort,
-        Date.now() + waitBudgetMs,
-      );
-      daemonUnready = readiness !== "ready";
-      daemonMigrationsFailed = readiness === "failed";
-    }
-  }
-
-  if (daemonMigrationsFailed) {
-    console.log(
-      "Assistant database migrations FAILED — DB-backed routes will return 503 until the assistant is restarted. Check the daemon logs.",
-    );
-  } else if (daemonUnready) {
-    console.log(
-      "Assistant is still running database migrations; DB-backed routes return 503 until they finish.",
+  // A daemon that aborts during startup (an occupied runtime HTTP port, a
+  // fatal subsystem failure) leaves no process behind: whatever foreign
+  // listener holds the port answers the gateway's probes in its place.
+  // Liveness is the one thing wake itself must answer for.
+  if (!isProcessAlive(pidFile).alive) {
+    throw new WakeRefused(
+      `the assistant exited during startup and is not running. Its runtime HTTP port ${daemonPort} may be held by another process (check \`lsof -i :${daemonPort}\`); the daemon log records the startup error it reported.`,
     );
   }
+
   return { ok: true };
 }
 

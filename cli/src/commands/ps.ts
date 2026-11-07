@@ -3,7 +3,6 @@ import {
   getAppServerPaths,
   readAppServerState,
 } from "../lib/servers/common.js";
-import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
 import {
@@ -13,15 +12,21 @@ import {
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
+  checkHealth,
   cliCommand,
   dockerResourceNames,
+  fetchGatewayPs,
   formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
+  resolveEnvironmentName,
   resolveLogDir,
+  type GatewayHealth,
+  type ManagedProcessEntry,
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -29,20 +34,9 @@ import {
   findAssistantByName,
   readRootProcesses,
 } from "../lib/assistant-config";
-import { getLocalInstanceDir } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { resolveEnvironmentSource } from "../lib/environments/resolve";
-import { loadGuardianToken } from "../lib/guardian-token";
-import {
-  checkCloudHealth,
-  checkHealth,
-  fetchGatewayPs,
-  type ManagedProcessEntry,
-} from "@mycadet/local-mode";
 
-import { isPidAlive, readPidFile } from "../lib/process-utils";
 import { withStatusEmoji } from "../lib/status-emoji";
-import { execOutput } from "../lib/step-runner";
 import {
   syncCloudAssistants,
   type SyncLogger,
@@ -215,23 +209,6 @@ function flattenProcessTree(
 
 // ── Remote process listing via SSH ──────────────────────────────
 
-const LOCAL_CMD_TIMEOUT_MS = 5_000;
-
-async function getDockerContainerState(
-  containerName: string,
-): Promise<string | null> {
-  try {
-    const output = await execOutput(
-      "docker",
-      ["inspect", "--format", "{{.State.Status}}", containerName],
-      { timeoutMs: LOCAL_CMD_TIMEOUT_MS },
-    );
-    return output.trim() || "unknown";
-  } catch {
-    return null;
-  }
-}
-
 function isLocalProcessAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -343,9 +320,7 @@ export async function printRootProcessDetail(
   if (name === "app" || name === "bun") {
     console.log("App server:");
     if (!app?.pid) {
-      console.log(
-        `  not recorded — start one with \`${cliCommand()} app start\``,
-      );
+      console.log(`  not running`);
       return true;
     }
     const alive = isLocalProcessAlive(app.pid);
@@ -373,9 +348,7 @@ export async function printRootProcessDetail(
       name === "tunnel" ? "Tunnel agent:" : `Tunnel agent (${name}):`,
     );
     if (!tunnel) {
-      console.log(
-        `  not recorded — start one with \`${cliCommand()} tunnel start\``,
-      );
+      console.log(`  not running.`);
       return true;
     }
     if (name !== "tunnel" && (provider ?? DEFAULT_TUNNEL_PROVIDER) !== name) {
@@ -408,7 +381,7 @@ export async function printRootProcessDetail(
  */
 async function assistantRowsWithRootProcesses(
   assistants: LockfileAssistant[],
-  healths: AssistantHealth[],
+  healths: GatewayHealth[],
   activeAssistantId: string | null,
 ): Promise<TableRow[]> {
   const rootRows = (await getRootManagedRows()).map((managed) => managed.row);
@@ -423,62 +396,14 @@ async function assistantRowsWithRootProcesses(
 
 // ── List all assistants (no arg) ────────────────────────────────
 
-type AssistantHealth = {
-  status: string;
-  detail: string | null;
-  version?: string;
-};
-
-async function getAssistantListHealth(
-  entry: LockfileAssistant,
-): Promise<AssistantHealth> {
-  if (entry.cloud === "local") {
-    // Liveness reads the gateway's pid file: the gateway is what the health
-    // probe addresses, and the daemon can outlive a dead gateway (and vice
-    // versa) after a crash.
-    const pid = readPidFile(join(getLocalInstanceDir(entry), "gateway.pid"));
-    const alive = pid !== null && isPidAlive(pid);
-    if (!alive) {
-      return { status: "sleeping", detail: null };
-    }
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
-  }
-
-  if (entry.cloud === "docker") {
-    const res = dockerResourceNames(entry.assistantId);
-    const state = await getDockerContainerState(res.assistantContainer);
-    if (!state || state !== "running") {
-      return { status: "sleeping", detail: null };
-    }
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
-  }
-
-  if (entry.cloud === "apple-container") {
-    // Apple containers are managed by the macOS app. Probe the gateway
-    // (the macOS app records its loopback port on the entry).
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(getGatewayUrl(entry), token);
-  }
-
-  if (isCloudHome(entry.cloud)) {
-    return checkCloudHealth(entry);
-  }
-
-  const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  return checkHealth(getGatewayUrl(entry), token);
-}
-
 function formatAssistantListRow(
   entry: LockfileAssistant,
   activeAssistantId: string | null,
-  health: AssistantHealth,
+  health: GatewayHealth,
 ): TableRow {
   const infoParts: string[] = [];
   infoParts.push(getGatewayUrl(entry));
   if (entry.cloud) infoParts.push(`remote: ${entry.cloud}`);
-  if (health.detail) infoParts.push(health.detail);
 
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";
   return {
@@ -490,7 +415,7 @@ function formatAssistantListRow(
 }
 
 export async function listAllAssistants(verbose: boolean): Promise<void> {
-  const { name: envName } = resolveEnvironmentSource();
+  const envName = resolveEnvironmentName();
   // Production is what everyone gets by default — saying so is noise. Only
   // surface the line when the environment differs from the default.
   if (envName !== "production") {
@@ -524,8 +449,9 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     return;
   }
 
+  // The arrow keeps map's index out of checkHealth's opts param.
   const healths = await Promise.all(
-    assistants.map((entry) => getAssistantListHealth(entry)),
+    assistants.map((entry) => checkHealth(entry)),
   );
 
   printTable(

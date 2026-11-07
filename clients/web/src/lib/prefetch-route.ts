@@ -22,7 +22,8 @@ const warmed = new Set<string>();
 
 /** The `lazy` shapes a route may carry: a single loader or one per property. */
 type LazyRouteValue =
-  (() => Promise<unknown>) | Record<string, () => Promise<unknown>>;
+  | (() => Promise<unknown>)
+  | Record<string, () => Promise<unknown>>;
 
 function warmLazy(lazy: LazyRouteValue): void {
   if (typeof lazy === "function") {

@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AssistantNavigationSchema } from "../assistant/resolution-contract";
-import { framePath, frameUrl, hostPath } from "./assistant-navigation";
 
 export interface AssistantFrameProps {
-  location: string;
-  mountPath: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title: string;
 }
 
-export function AssistantFrame({
-  location,
-  mountPath,
-  onNavigate,
-  title,
-}: AssistantFrameProps) {
+const mount = "/web";
+
+function frameUrl(): string {
+  return new URL(
+    `${mount}${location.pathname}${location.search}${location.hash}`,
+    window.location.origin,
+  ).href;
+}
+
+export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [src] = useState(() => frameUrl(location, mountPath));
-  const currentPath = useRef(framePath(location, mountPath));
-  const frameOrigin = new URL(src).origin;
+  const [src] = useState(frameUrl);
+  const currentPath = useRef(src);
+  const frameOrigin = useMemo(() => window.location.origin, []);
   useEffect(() => {
     const listener = (event: MessageEvent) => {
       if (
@@ -33,24 +34,34 @@ export function AssistantFrame({
       if (!message.success) {
         return;
       }
-      try {
-        const target = hostPath(message.data.path, mountPath);
-        const targetFramePath = framePath(target, mountPath);
-        if (targetFramePath === currentPath.current) {
-          return;
-        }
-        currentPath.current = targetFramePath;
-        onNavigate(target, { replace: message.data.nav !== "push" });
-      } catch {
-        // Frames can announce only assistant routes inside the host mount.
+      const path = message.data.path;
+      if (path === currentPath.current) {
+        return;
       }
+      // The frame may only steer its own url space: the mount prefix is the
+      // frame's home, so anything else (host routes, protocol-relative,
+      // traversal) never reaches the host router.
+      if (!path.startsWith(`${mount}/`) || path.includes("\\")) {
+        return;
+      }
+      if (
+        path
+          .split(/[?#]/)[0]
+          .split("/")
+          .some((part) => part === "." || part === "..")
+      ) {
+        return;
+      }
+      currentPath.current = path;
+      const target = path.slice(mount.length) || "/";
+      onNavigate(target, { replace: message.data.nav === "replace" });
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [frameOrigin, mountPath, onNavigate]);
+  }, [frameOrigin, onNavigate]);
 
   useEffect(() => {
-    const next = framePath(location, mountPath);
+    const next = frameUrl();
     if (next !== currentPath.current) {
       currentPath.current = next;
       ref.current?.contentWindow?.postMessage(
@@ -58,7 +69,7 @@ export function AssistantFrame({
         frameOrigin,
       );
     }
-  }, [location, mountPath, frameOrigin]);
+  }, [location, frameOrigin]);
 
   return (
     <iframe

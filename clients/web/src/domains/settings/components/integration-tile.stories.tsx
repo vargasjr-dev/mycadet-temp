@@ -107,10 +107,7 @@ export const IdleSelfHosted: Story = {
         name: "Other ways to connect Notion",
       }),
     );
-    for (const label of [
-      "Notion MCP server",
-      "Use your own OAuth app",
-    ]) {
+    for (const label of ["Notion MCP server", "Use your own OAuth app"]) {
       await expect(
         await screen.findByRole("menuitem", { name: label }),
       ).toBeInTheDocument();

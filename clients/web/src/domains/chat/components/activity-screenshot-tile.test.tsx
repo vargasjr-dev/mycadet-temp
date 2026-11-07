@@ -23,7 +23,7 @@ mock.module(
   "@/domains/chat/components/chat-attachments/use-attachment-object-url",
   () => ({ useAttachmentObjectUrl: objectUrlHook }),
 );
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   useIsNativePlatform: () => false,
 }));
 

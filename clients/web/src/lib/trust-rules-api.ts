@@ -10,7 +10,6 @@
  */
 import {
   assistantTrustRuleCreate,
-  assistantTrustRuleDelete,
   assistantTrustRuleSuggest,
   assistantTrustRulesList,
   assistantTrustRuleUpdate,
@@ -122,21 +121,4 @@ export async function suggestTrustRule(
     throw new ApiError(500, "No suggestion in response.");
   }
   return data.suggestion;
-}
-
-export async function deleteTrustRule(
-  assistantId: string,
-  ruleId: string,
-): Promise<void> {
-  const { error, response } = await assistantTrustRuleDelete({
-    path: { assistant_id: assistantId, rule_id: ruleId },
-    throwOnError: false,
-  });
-  assertHasResponse(response, error, "Failed to delete trust rule.");
-  if (!response.ok && response.status !== 204) {
-    throw new ApiError(
-      response.status,
-      extractErrorMessage(error, response, "Failed to delete trust rule."),
-    );
-  }
 }

@@ -161,7 +161,7 @@ const MUTATION_LOCK_NAME = "cadet:remembered-origins:mutate";
  * queue still applies and concurrent-tab writes fall back to last-writer.
  */
 async function withCrossTabLock<T>(mutation: () => Promise<T>): Promise<T> {
-  const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+  const locks = navigator.locks;
   if (!locks) {
     return mutation();
   }
@@ -265,7 +265,10 @@ export interface RememberedOriginsActions {
    * an already-remembered url keeps its original `addedAt` and updates
    * `name` only when a new one is provided.
    */
-  addOrigin: (input: { url: string; name?: string }) => Promise<AddOriginResult>;
+  addOrigin: (input: {
+    url: string;
+    name?: string;
+  }) => Promise<AddOriginResult>;
   removeOrigin: (url: string) => Promise<void>;
 }
 

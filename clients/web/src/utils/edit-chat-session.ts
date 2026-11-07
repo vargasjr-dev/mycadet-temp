@@ -20,7 +20,7 @@ interface Entry {
 
 function storage(): Storage | null {
   try {
-    return typeof window === "undefined" ? null : window.sessionStorage;
+    return window.sessionStorage;
   } catch {
     return null;
   }

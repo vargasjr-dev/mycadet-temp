@@ -9,15 +9,15 @@ import {
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
 import {
+  checkHealth,
   getAssistantDisplayName,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { checkHealth } from "@mycadet/local-mode";
 import {
   guardianTokenDueForRenewal,
-  loadGuardianToken,
   refreshGuardianToken,
 } from "../lib/guardian-token";
 import { trustedRefreshUrl } from "../lib/runtime-url";
@@ -1014,11 +1014,9 @@ export function render(
 
   const statusCanvasLine = RIGHT_PANEL_LINE_COUNT + HEADER_TOP_BORDER_LINES;
   const statusCol = LEFT_PANEL_WIDTH + 1;
-  checkHealth(runtimeUrl)
+  checkHealth(entry)
     .then((health) => {
-      const statusText = health.detail
-        ? `${withStatusEmoji(health.status)} (${health.detail})`
-        : withStatusEmoji(health.status);
+      const statusText = withStatusEmoji(health.status);
       process.stdout.write(
         `\x1b7\x1b[${statusCanvasLine};${statusCol}H\x1b[K${statusText}\x1b8`,
       );

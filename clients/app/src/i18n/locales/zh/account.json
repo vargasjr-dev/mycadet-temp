@@ -104,7 +104,7 @@
     "remoteWithHost": "远程 · {host}",
     "removeFromDevice": "从本设备移除…",
     "unnamedAssistant": "该助手",
-    "connectRemote": "连接远程助手",
+    "hatchAssistant": "孵化新助手",
     "localAssistant": "在这台电脑上",
     "cloudHosted": "云端托管",
     "cloudHostedWithHost": "云端托管 · {host}",
@@ -140,12 +140,6 @@
     "back": "返回",
     "loginToUse": "登录以使用",
     "tryAgain": "重试"
-  },
-  "addRemoteOriginDialog": {
-    "title": "添加远程助手",
-    "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
-    "addressLabel": "助手地址",
-    "addFailed": "添加助手失败。请重试。"
   },
   "connectAssistantDialog": {
     "title": "连接远程助手",
@@ -201,5 +195,12 @@
       "connecting": "正在连接到您的助手…",
       "ready": "就绪"
     }
+  },
+  "pairingPage": {
+    "pairingCode": "配对码",
+    "pair": "配对",
+    "expiresAt": "{time} 过期。",
+    "cancel": "取消",
+    "enterNewCode": "输入新代码"
   }
 }

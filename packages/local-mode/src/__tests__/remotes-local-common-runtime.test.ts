@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { isValidReleaseVersion } from "../upgrade";
 
 import { ensureLocalRuntime } from "../remotes/local/common";
 

@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 
 import {
   OVERLAY_PROCESS_KINDS,
-  POPOUT_OVERLAY_PROCESS_KINDS,
   PROCESS_KINDS,
 } from "@/domains/chat/process-registry/registry";
 
@@ -50,17 +49,17 @@ describe("OVERLAY_PROCESS_KINDS", () => {
   });
 });
 
-describe("POPOUT_OVERLAY_PROCESS_KINDS", () => {
+describe("PROCESS_KINDS", () => {
   it("covers every kind", () => {
     // A pop-out renders no header, so the overlay is its only ambient surface.
     // Dropping a kind here makes that work invisible in a pop-out entirely.
-    expect(POPOUT_OVERLAY_PROCESS_KINDS.map((d) => d.kind).sort()).toEqual(
+    expect(PROCESS_KINDS.map((d) => d.kind).sort()).toEqual(
       PROCESS_KINDS.map((d) => d.kind).sort(),
     );
   });
 
   it("covers the kinds the windowed overlay leaves to the header", () => {
-    const popout = POPOUT_OVERLAY_PROCESS_KINDS.map((d) => d.kind);
+    const popout = PROCESS_KINDS.map((d) => d.kind);
     expect(popout).toContain("subagent");
     expect(popout).toContain("acp-run");
   });

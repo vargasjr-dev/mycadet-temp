@@ -6,14 +6,14 @@ import {
   cloudAuthHeaders,
   getAssistantDisplayName,
   getCloudUrl,
+  loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "../lib/cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { loadGuardianToken } from "../lib/guardian-token";
 import { leaseGuardianToken } from "@mycadet/local-mode";
 
 // Renew a cached guardian token that is about to lapse instead of starting
@@ -61,7 +61,7 @@ export const debug = Object.assign(
 
     const entry = resolveTargetAssistant(parseAssistantTargetArg(args));
     const reference = getAssistantDisplayName(entry);
-    if (isCloudHome(entry.cloud)) {
+    if (isCloudEntry(entry)) {
       console.error(
         `${reference} is hosted by Cadet, so staff can clone it directly. No bundle is needed.`,
       );

@@ -71,16 +71,10 @@ export function PendingPairingRequests({ base }: PendingPairingRequestsProps) {
                 </code>
                 <div className="flex flex-col gap-0.5">
                   <p className="text-body-small-default text-[var(--content-tertiary)]">
-                    {request.viaEdgeProxy === false
-                      ? // Host-originated mint: the requester IP is a loopback
-                        // address, so naming this computer is the honest label.
-                        t("pendingPairingRequests.requestedMetaHost", {
-                          when: formatRelativeAge(request.requestedAt),
-                        })
-                      : t("pendingPairingRequests.requestedMeta", {
-                          when: formatRelativeAge(request.requestedAt),
-                          ip: request.requesterIp,
-                        })}
+                    {t("pendingPairingRequests.requestedMeta", {
+                      when: formatRelativeAge(request.requestedAt),
+                      ip: request.requesterIp,
+                    })}
                   </p>
                   {request.requesterUserAgent && (
                     <p

@@ -20,6 +20,9 @@ const realLocalWake = {
 const realDockerWake = {
   ...(await import("../remotes/docker/wake")),
 };
+const realBasetenLifecycle = {
+  ...(await import("../remotes/baseten/lifecycle")),
+};
 const realDockerCommon = {
   ...(await import("../remotes/docker/common")),
 };
@@ -108,10 +111,20 @@ mock.module("../remotes/docker/wake", () => ({
   ...realDockerWake,
   wakeDocker: wakeDockerMock,
 }));
+const wakeBasetenMock = mock(
+  async (): Promise<
+    { ok: true } | { ok: false; status: number; error: string }
+  > => ({ ok: true }),
+);
+mock.module("../remotes/baseten/lifecycle", () => ({
+  ...realBasetenLifecycle,
+  wakeBaseten: wakeBasetenMock,
+}));
 
 afterAll(() => {
   mock.module("../remotes/local/wake", () => realLocalWake);
   mock.module("../remotes/docker/wake", () => realDockerWake);
+  mock.module("../remotes/baseten/lifecycle", () => realBasetenLifecycle);
   mock.module("../exec", () => realExecModule);
 });
 
@@ -235,7 +248,7 @@ describe("the wake operation — a remote -> method router", () => {
   });
 
   test("unsupported remotes refuse like sleep's do — one message shape", async () => {
-    for (const cloud of ["apple-container", "cloud", "custom", "baseten"]) {
+    for (const cloud of ["apple-container", "cloud", "custom"]) {
       const result = await wakeAssistant({
         assistantId: "asst-remote",
         cloud,
@@ -244,9 +257,6 @@ describe("the wake operation — a remote -> method router", () => {
           : {}),
         ...(cloud === "custom"
           ? { ipAddress: "gw.example.com", port: 7830 }
-          : {}),
-        ...(cloud === "baseten"
-          ? { sandboxUrl: "https://x.baseten.co", port: 7830 }
           : {}),
       } as LockfileAssistant);
       expect(result).toEqual({
@@ -312,10 +322,17 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     expect(await response.json()).toEqual({ detail: "wake blew up" });
   });
 
-  test("the wake route does not answer GET or the retire path", () => {
-    expect(matchOperatorRequest("/v1/assistants/a/wake/", "GET")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/wake/", "DELETE")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "POST")).toBeNull();
+  test("the proxy catch-all answers GET and the retire path", () => {
+    // The wake row is POST-only; other methods ride the ALL proxy row.
+    expect(
+      matchOperatorRequest("/v1/assistants/a/wake/", "GET")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/wake/", "DELETE")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
+    ).toBe("ALL");
   });
 });
 
@@ -377,5 +394,38 @@ describe("ensureDockerDaemonRunning", () => {
     expect(
       realDockerCommon.ensureDockerDaemonRunning({ settleTimeoutMs: 0 }),
     ).rejects.toThrow(/Failed to restart Colima/);
+  });
+});
+
+describe("wakeAssistant — the baseten arm", () => {
+  test("the sandbox's own `cadet wake` runs through the leg", async () => {
+    const entry = {
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+    } as LockfileAssistant;
+    const result = await wakeAssistant(entry);
+    expect(result.ok).toBe(true);
+    expect(wakeBasetenMock).toHaveBeenCalledWith(entry);
+  });
+
+  test("a wake failure inside the sandbox comes back structured", async () => {
+    wakeBasetenMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: "'cadet wake' inside the sandbox exited with 1.",
+    });
+    const result = await wakeAssistant({
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+    } as LockfileAssistant);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(500);
   });
 });

@@ -25,7 +25,7 @@ const ORIGINAL_FETCH = globalThis.fetch;
 
 import { createHash } from "node:crypto";
 
-import * as stepRunner from "../lib/step-runner.js";
+import * as localMode from "@mycadet/local-mode";
 import { devices } from "../commands/devices.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { computeDeviceId } from "@mycadet/local-mode";
@@ -107,7 +107,7 @@ describe("cadet devices", () => {
       cloud: "docker",
     });
     const calls: string[][] = [];
-    const docker = spyOn(stepRunner, "execOutput").mockImplementation(
+    const docker = spyOn(localMode, "execOutput").mockImplementation(
       async (_command, args) => {
         calls.push(args);
         return JSON.stringify({
@@ -147,7 +147,7 @@ describe("cadet devices", () => {
       assistantId: "docker-invalid",
       cloud: "docker",
     });
-    const docker = spyOn(stepRunner, "execOutput").mockResolvedValue(
+    const docker = spyOn(localMode, "execOutput").mockResolvedValue(
       '{"status":"200","body":{}}',
     );
     try {

@@ -237,10 +237,7 @@ describe("handleOpenUrl", () => {
     setMockWindow({ open: null });
     const { ctx, push } = makeOpenUrlCtx();
 
-    handleOpenUrl(
-      makeOpenUrlEvent("https://mycadet.ai/settings?tab=x"),
-      ctx,
-    );
+    handleOpenUrl(makeOpenUrlEvent("https://mycadet.ai/settings?tab=x"), ctx);
 
     expect(push).toHaveBeenCalledWith("/settings?tab=x");
   });

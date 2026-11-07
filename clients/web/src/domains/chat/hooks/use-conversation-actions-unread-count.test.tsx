@@ -58,7 +58,6 @@ mock.module("@/utils/haptics", () => ({
   haptic: { medium: () => {}, light: () => {} },
 }));
 
-
 const { useConversationActions } =
   await import("@/domains/chat/hooks/use-conversation-actions");
 

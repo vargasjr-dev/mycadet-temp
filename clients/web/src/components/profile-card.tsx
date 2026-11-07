@@ -615,19 +615,6 @@ function ProfileCardSkeleton() {
 // ---------------------------------------------------------------------------
 
 interface ProfileCardProps {
-  /**
-   * Platform assistant whose handle this user can edit. ``null`` /
-   * ``undefined`` hides the assistant section entirely (self-hosted-local
-   * fallback, no platform assistant, or feature gated off upstream).
-   */
-  assistant?: Assistant | null;
-  /**
-   * Render the handle editors. Handles live on the user's platform
-   * account, so parents withhold them when there is no usable platform
-   * session. The card itself still renders — any extra sections
-   * (e.g. timezone) work for every assistant.
-   */
-  showHandles?: boolean;
   /** Extra sections rendered after the handles, divider-separated. */
   children?: ReactNode;
 }
@@ -652,10 +639,7 @@ function SectionDivider() {
  * Each section has its own Save button; mistakes in one don't block the
  * other.
  */
-export function ProfileCard({
-  showHandles = true,
-  children,
-}: ProfileCardProps = {}) {
+export function ProfileCard({ children }: ProfileCardProps = {}) {
   const { t } = useTranslation();
 
   return (
@@ -664,10 +648,10 @@ export function ProfileCard({
       subtitle={t("profileCard.subtitle")}
     >
       <div className="flex flex-col gap-6">
-        {showHandles && <ProfileHandles />}
+        <ProfileHandles />
         {children != null && (
           <>
-            {showHandles && <SectionDivider />}
+            <SectionDivider />
             {children}
           </>
         )}

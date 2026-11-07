@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import {
-  resetHostDeviceIdCache,
-  type DockerStatefulSetSpec,
-} from "@mycadet/local-mode";
+import { resetHostDeviceIdCache } from "../device-id";
+import type { DockerStatefulSetSpec } from "../remotes/docker/statefulset";
 import { buildReplayEnv, buildReplayState } from "../upgrade-lifecycle";
 import { snapshotEnv } from "../../../../cli/src/__tests__/helpers/env.js";
 

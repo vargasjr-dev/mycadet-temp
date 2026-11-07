@@ -15,7 +15,7 @@ import {
   loadGuardianToken,
   getGuardianAccessToken,
 } from "../../guardian-token";
-import type { LockfileAssistant } from "../../lockfile-contract";
+import type { LocalAssistant } from "../../lockfile-contract";
 
 const ACTIVE_CALL_LEASES_FILE = "active-call-leases.json";
 
@@ -69,7 +69,7 @@ export interface SleepLocalOptions {
  * operation route's wire mapping render the same detail.
  */
 export async function sleepLocal(
-  entry: LockfileAssistant,
+  entry: LocalAssistant,
   options: SleepLocalOptions = {},
 ): Promise<
   | {
@@ -133,6 +133,7 @@ export async function sleepLocal(
       notes,
     });
     if (outcome === "cancelled") {
+      options.log?.("Sleep cancelled — the assistant is still running.");
       return { ok: true, cancelled: true };
     }
   }
@@ -173,6 +174,21 @@ export async function sleepLocal(
     ? "stopped"
     : "not-running";
 
+  // The leg narrates its own verdict — the command layer adds nothing.
+  const { log } = options;
+  for (const note of notes) log?.(note);
+  log?.(
+    services.assistant === "stopped"
+      ? "Assistant stopped."
+      : "Assistant is not running.",
+  );
+  log?.(
+    services.gateway === "stopped"
+      ? "Gateway stopped."
+      : "Gateway is not running.",
+  );
+  if (services.ces === "stopped") log?.("credential-executor stopped.");
+
   return { ok: true, kind: "services", services, notes };
 }
 
@@ -183,7 +199,7 @@ export async function sleepLocal(
  * never make sleep less reliable than it is without `--wait`.
  */
 async function runDrainPhase(
-  entry: LockfileAssistant,
+  entry: LocalAssistant,
   assistantPidFile: string,
   waitMs: number | null,
   io: {

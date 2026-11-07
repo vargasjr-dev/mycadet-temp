@@ -12,7 +12,7 @@ import { type Dispatch, type SetStateAction, useCallback } from "react";
 
 import { useNavigate } from "react-router";
 
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { useMessageReconciliation } from "@/domains/chat/hooks/use-message-reconciliation";
 import { useStreamEventHandler } from "@/domains/chat/hooks/use-stream-event-handler";
 import { useEventStream } from "@/domains/chat/hooks/use-event-stream";
@@ -98,7 +98,7 @@ export function useMessageLifecycle({
   // 3. SSE subscription lifecycle — subscribes, filters, and tears down
   //    the bus-owned SSE for the active conversation.
   useEventStream({
-      assistantId,
+    assistantId,
     activeConversationId,
     conversationExistsOnServer,
     handleStreamEvent,

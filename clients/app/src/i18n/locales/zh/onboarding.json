@@ -12,12 +12,6 @@
     "downloadWindowsApp": "下载 Windows 应用",
     "claim": "认领"
   },
-  "addRemoteOriginDialog": {
-    "title": "添加远程助手",
-    "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
-    "addressLabel": "助手地址",
-    "addFailed": "添加助手失败。请重试。"
-  },
   "onboardingAutocomplete": {
     "addOption": "添加“{value}”",
     "enterHint": "↵ 回车",

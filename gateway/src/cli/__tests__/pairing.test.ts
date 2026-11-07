@@ -184,12 +184,12 @@ describe("gateway pairing mint", () => {
     expect(errors.join("\n")).toContain("publicBaseUrl is required");
   });
 
-  test("fails when no ingress url is saved", async () => {
+  test("defaults the mint to the local host when no ingress url is saved", async () => {
     writeIngressPublicBaseUrl(null);
     const code = await runPairingCommand(["mint"]);
 
-    expect(code).toBe(1);
-    expect(errors.join("\n")).toContain("no ingress url saved");
+    // The default base is the gateway's own local host — the mint succeeds.
+    expect(code).toBe(0);
   });
 });
 
@@ -324,7 +324,6 @@ const ListChallengeSchema = z.object({
   expiresAtMs: z.number(),
   requesterIp: z.string(),
   requesterUserAgent: z.string().nullable(),
-  viaEdgeProxy: z.boolean(),
   expired: z.boolean(),
 });
 

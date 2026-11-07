@@ -204,43 +204,43 @@ export function buildIntegrationItems(
   const groupedMethods = new Set<McpPluginMethod>();
   const matchedServers = new Set(methods.flatMap((method) => method.servers));
   const oauth: IntegrationItem[] = providers.flatMap((provider) => {
-      const accounts = connectionsForOAuthProvider(
-        connections,
-        provider.provider_key,
-      );
-      if (
-        isChannelUserIntegration(provider.provider_key) &&
-        accounts.length === 0
-      ) {
-        return [];
-      }
-      const alternatives = methods.filter(
-        (method) => method.definition.oauthProvider === provider.provider_key,
-      );
-      alternatives.forEach((method) => groupedMethods.add(method));
-      return [
-        {
-          kind: "oauth" as const,
-          id: `oauth:${provider.provider_key}`,
-          name: provider.display_name ?? provider.provider_key,
-          description: [
-            provider.description,
-            ...alternatives.map((method) => method.definition.description),
-          ]
-            .filter(Boolean)
-            .join(" "),
-          configured: summarizeIntegrationConnections(
-            accounts,
-            alternatives,
-            mcpServersKnown,
-          ).configured,
-          category: integrationCategory(provider.category),
-          provider,
-          connections: accounts,
-          methods: alternatives,
-        },
-      ];
-    });
+    const accounts = connectionsForOAuthProvider(
+      connections,
+      provider.provider_key,
+    );
+    if (
+      isChannelUserIntegration(provider.provider_key) &&
+      accounts.length === 0
+    ) {
+      return [];
+    }
+    const alternatives = methods.filter(
+      (method) => method.definition.oauthProvider === provider.provider_key,
+    );
+    alternatives.forEach((method) => groupedMethods.add(method));
+    return [
+      {
+        kind: "oauth" as const,
+        id: `oauth:${provider.provider_key}`,
+        name: provider.display_name ?? provider.provider_key,
+        description: [
+          provider.description,
+          ...alternatives.map((method) => method.definition.description),
+        ]
+          .filter(Boolean)
+          .join(" "),
+        configured: summarizeIntegrationConnections(
+          accounts,
+          alternatives,
+          mcpServersKnown,
+        ).configured,
+        category: integrationCategory(provider.category),
+        provider,
+        connections: accounts,
+        methods: alternatives,
+      },
+    ];
+  });
 
   return [
     ...oauth,

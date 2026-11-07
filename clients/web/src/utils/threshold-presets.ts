@@ -69,23 +69,3 @@ export function presetFromThreshold(threshold: string): ThresholdPreset {
   const match = THRESHOLD_PRESETS.find((p) => p.riskThreshold === threshold);
   return match ?? THRESHOLD_PRESETS[1]!;
 }
-
-/**
- * Determine whether selecting a preset in the per-conversation picker should
- * set an explicit override or clear the existing one (falling back to the
- * global interactive threshold).
- *
- * Matches the macOS ComposerThresholdPicker logic: the "Conservative" option
- * in the composer means "no override / use whatever the global setting is",
- * so any preset whose riskThreshold matches the global interactive threshold
- * triggers a clear, not a set.
- */
-export function overrideAction(
-  preset: ThresholdPreset,
-  globalInteractive: string,
-): { action: "set"; threshold: RiskThreshold } | { action: "clear" } {
-  if (preset.riskThreshold === globalInteractive) {
-    return { action: "clear" };
-  }
-  return { action: "set", threshold: preset.riskThreshold };
-}

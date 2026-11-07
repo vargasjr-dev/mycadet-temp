@@ -44,7 +44,6 @@ export function ChannelsPage({
         pluginChannels={pluginChannels}
         {...channelsController}
       />
-
     </div>
   );
 }

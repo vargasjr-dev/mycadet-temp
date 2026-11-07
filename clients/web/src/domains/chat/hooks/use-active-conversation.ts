@@ -91,7 +91,13 @@ export function useActiveConversation(
         });
       },
     );
-  }, [allowFetch, assistantId, conversationId, activeConversation, queryClient]);
+  }, [
+    allowFetch,
+    assistantId,
+    conversationId,
+    activeConversation,
+    queryClient,
+  ]);
 
   return activeConversation;
 }

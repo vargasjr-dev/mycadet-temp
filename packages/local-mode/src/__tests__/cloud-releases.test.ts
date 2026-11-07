@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { dockerhubImages, resolveImageRefs } from "@mycadet/local-mode";
+import { dockerhubImages, resolveImageRefs } from "../remotes/docker/hatch";
 import { fetchLatestVersion, fetchReleases } from "../cloud-releases";
 import {
   isDevVersion,

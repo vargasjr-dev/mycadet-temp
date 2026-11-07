@@ -1,7 +1,9 @@
 import type { LockfileAssistant } from "../lockfile-contract";
 import { cliCommand } from "../environment";
+import { isAssistantHealthy } from "../daemon-readiness";
 import { sleepLocal, type SleepServiceStop } from "../remotes/local/sleep";
 import { sleepDocker } from "../remotes/docker/sleep";
+import { sleepBaseten } from "../remotes/baseten/lifecycle";
 
 /**
  * The sleep OPERATION: the headless core of `cadet sleep`, moved out of the
@@ -15,7 +17,6 @@ import { sleepDocker } from "../remotes/docker/sleep";
  * token against the entry's trusted URL) — callers never thread a token
  * through, mirroring the retire operation's contract.
  */
-
 export type SleepResult =
   | {
       ok: true;
@@ -24,10 +25,12 @@ export type SleepResult =
       services: Record<"assistant" | "gateway" | "ces", SleepServiceStop>;
       /** Degradation notes (a skipped drain, an unreachable API) for the UX. */
       notes: string[];
+      wasRunning: boolean;
     }
-  | { ok: true; cancelled?: false; kind: "containers" }
-  | { ok: true; cancelled: true; kind?: undefined }
-  | { ok: false; status: number; error: string };
+  | { ok: true; cancelled?: false; kind: "containers"; wasRunning: boolean }
+  | { ok: true; cancelled?: false; kind: "remote"; wasRunning: boolean }
+  | { ok: true; cancelled: true; kind?: undefined; wasRunning: boolean }
+  | { ok: false; status: number; error: string; wasRunning: boolean };
 
 export type { SleepServiceStop };
 
@@ -46,7 +49,8 @@ export interface SleepOptions {
 
 /**
  * Sleep one assistant entry: per-cloud stop (the local leg drains then
- * stops the process tree; the docker leg SIGTERMs the containers). Never
+ * stops the process tree; the docker leg SIGTERMs the containers; the
+ * baseten leg runs `cadet sleep` inside the sandbox). Never
  * throws and never exits the process — failures come back structured so
  * both the CLI's exit-code UX and the route's wire mapping render the same
  * detail.
@@ -55,24 +59,42 @@ export async function sleepAssistant(
   entry: LockfileAssistant,
   options: SleepOptions = {},
 ): Promise<SleepResult> {
+  // The was-running signal is the gateway's own health probe — remote
+  // agnostic — taken once, above the switch, before the stop; every result
+  // variant (and the raised structured error) carries it so callers never
+  // probe separately.
+  const wasRunning = await isAssistantHealthy(entry);
   try {
     if (entry.cloud === "docker") {
-      await sleepDocker(entry);
-      return { ok: true, kind: "containers" };
+      await sleepDocker(entry, { wait: options.wait, log: options.log });
+      return { ok: true, kind: "containers", wasRunning };
     }
     if (entry.cloud === "local") {
-      return await sleepLocal(entry, options);
+      return { ...(await sleepLocal(entry, options)), wasRunning };
+    }
+    if (entry.cloud === "baseten") {
+      // The remote's own teardown — `cadet sleep` inside the sandbox —
+      // narrates itself over the exec stream.
+      return {
+        ...(await sleepBaseten(entry, {
+          force: options.force,
+          wait: options.wait,
+        })),
+        wasRunning,
+      };
     }
     return {
       ok: false,
       status: 400,
       error: `'${cliCommand()} sleep' is unsupported for a ${entry.cloud} assistant.`,
+      wasRunning,
     };
   } catch (err) {
     return {
       ok: false,
       status: 500,
       error: err instanceof Error ? err.message : String(err),
+      wasRunning,
     };
   }
 }

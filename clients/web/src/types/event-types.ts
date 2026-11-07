@@ -44,18 +44,6 @@ export type UserFacingInteractionKind =
   | "secret"
   | "question"
   | "acp_confirmation";
-
-export type HostProxyInteractionKind =
-  | "host_bash"
-  | "host_file"
-  | "host_cu"
-  | "host_browser"
-  | "host_transfer";
-
-export type InteractionKind =
-  | UserFacingInteractionKind
-  | HostProxyInteractionKind;
-
 /**
  * Allowlist of interaction kinds that signal the daemon has handed control
  * back to a person (vs intermediate host-proxy tool steps). Attention

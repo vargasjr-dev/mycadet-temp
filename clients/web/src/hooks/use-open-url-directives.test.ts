@@ -16,7 +16,7 @@ mock.module("@capacitor/core", () => ({
   Capacitor: {
     isNativePlatform: () => isNativePlatformMock,
   },
-  // `@/runtime/native-auth` (imported by the hook module) registers a
+  // `@/runtime/native-platform` (imported by the hook module) registers a
   // Capacitor plugin at module load.
   registerPlugin: () => ({}),
 }));

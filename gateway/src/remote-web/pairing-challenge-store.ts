@@ -39,7 +39,6 @@ export interface PendingRemoteWebPairingChallenge {
   expiresAtMs: number;
   requesterIp: string;
   requesterUserAgent: string | null;
-  viaEdgeProxy: boolean;
   approvedAtMs?: number;
   exchangeStartedAtMs?: number;
   consumedAtMs?: number;
@@ -81,14 +80,7 @@ function nowMs(): number {
 }
 
 /**
- * The challenge store is FILE-BACKED under GATEWAY_SECURITY_DIR so a mint can
- * run in ANY process: `gateway pairing mint` executes the mint logic directly
- * (deliberately never over the gateway's IPC socket — the assistant daemon
- * shares that socket, and an IPC-exposed mint would let the assistant
- * approve pairings for itself) and persists the challenge here. The running
- * gateway's verification and token-exchange routes re-read the file on every
- * store call, so cross-process writes land. Writes are atomic (tmp + rename)
- * and the single-user local flow makes last-writer-wins races a non-issue.
+ * The challenge store so a mint can persists the challenge.
  */
 const STORE_FILENAME = "remote-web-pairing-challenges.json";
 
@@ -219,7 +211,7 @@ export function checkRemoteWebPairingChallengeCapacity(): RemoteWebPairingChalle
 
 export function createRemoteWebPairingChallenge(
   publicBaseUrl: string,
-  requester: { ip: string; userAgent: string | null; viaEdgeProxy: boolean },
+  requester: { ip: string; userAgent: string | null },
 ): RemoteWebPairingChallengeResponse {
   loadFromDisk();
   cleanupExpiredChallenges();
@@ -248,7 +240,6 @@ export function createRemoteWebPairingChallenge(
     expiresAtMs,
     requesterIp: requester.ip,
     requesterUserAgent: requester.userAgent,
-    viaEdgeProxy: requester.viaEdgeProxy,
   };
   challengesByUserCodeHash.set(userCodeHash, challenge);
   challengesByDeviceCodeHash.set(deviceCodeHash, challenge);
@@ -328,7 +319,6 @@ export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequest
     expiresAt: new Date(challenge.expiresAtMs).toISOString(),
     requesterIp: challenge.requesterIp,
     requesterUserAgent: challenge.requesterUserAgent,
-    viaEdgeProxy: challenge.viaEdgeProxy,
   }));
 }
 

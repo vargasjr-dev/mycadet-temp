@@ -1,12 +1,5 @@
 /**
- * @mycadet/local-mode - shared host library for serving the local-assistant
- * surface (lockfile reads, guardian-token issuance, gateway proxying, and the
- * hatch/retire/wake lifecycle ops) over a loopback HTTP boundary. Consumed by the
- * CLI `client` server and the web app's dev-server middleware so the local
- * endpoint behaviour is defined exactly once instead of one host reaching into
- * another's source tree. `@mycadet/environments`,
- * `@mycadet/service-contracts`, and the source-only
- * `@mycadet/avatar-manifest` are its only workspace dependencies.
+ * @mycadet/local-mode - shared assistant-agnostic operations for assistant operators
  */
 export {
   stripSensitiveFields,
@@ -35,7 +28,8 @@ export {
   basetenTokenPath,
 } from "./config";
 export { stageBasetenBuildContext } from "./remotes/baseten/context";
-export type { LocalEndpointConfig } from "./config";
+export { execBasetenSandbox } from "./remotes/baseten/exec";
+export { localExecDirForService } from "./remotes/local/exec";
 export {
   assistantBackupFilenamePattern,
   CLI_BACKUP_KINDS,
@@ -60,15 +54,7 @@ export {
   type RootStorage,
   STATE_ROOTS,
 } from "./root-backup";
-export type { DockerBackupOps } from "./root-backup";
-export {
-  checkCloudHealth,
-  checkHealth,
-  isAssistantHealthy,
-  HEALTH_CHECK_TIMEOUT_MS,
-  type HealthCheckResult,
-  type ManagedProcessEntry,
-} from "./health-check";
+export { type ManagedProcessEntry } from "./daemon-readiness";
 export {
   compareVersions,
   isVersionCompatible,
@@ -86,7 +72,7 @@ export {
   type UpgradePollState,
   type UpgradeTargetResolution,
 } from "./upgrade-preflight";
-export { fetchGatewayPs } from "./health-check";
+export { fetchGatewayPs } from "./daemon-readiness";
 export {
   cliCommand,
   defaultEnvironmentFilePath,
@@ -107,9 +93,7 @@ export {
   isActiveAssistant,
 } from "./lockfile";
 export { servedConfigFromLockfile } from "./served-config";
-export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
-export type { LockfileLockResult } from "./lockfile-lock";
 export {
   GATEWAY_PORT,
   getGatewayUrl,
@@ -134,8 +118,6 @@ export type {
   MachinePolicy,
   MachineMemoryPolicy,
 } from "./lockfile-contract";
-export { machinePolicyPaths } from "./lockfile-contract";
-export type { LockfileAssistantPatch } from "./lockfile";
 export {
   configureCliPaths,
   resolveCliInvocation,
@@ -152,35 +134,47 @@ export type {
   OperatorRequest,
 } from "./operations/routes";
 export { retireAssistant } from "./operations/retire";
-export type { RetireResult } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";
 export {
   hatchAssistant,
   type HatchAssistantParams,
   type HatchAssistantResult,
 } from "./operations/hatch";
-export { generateInstanceName } from "./naming";
-export { withLocalHatchLock } from "./remotes/local/hatch-lock";
 export { allocateLocalPlacement } from "./remotes/local/hatch";
 export {
   buildHatchConfigValues,
   writeInitialConfig,
 } from "./remotes/local/hatch-config";
-export { wakeAssistant, type WakeResult } from "./operations/wake";
-export { recreateDockerContainers } from "./remotes/docker/recreate";
+export { wakeAssistant } from "./operations/wake";
+export {
+  restartAssistant,
+  type RestartReport,
+  type RestartAssistantResult,
+} from "./operations/restart";
+export {
+  backupAssistant,
+  type BackupAssistantResult,
+} from "./operations/backup";
+export {
+  createCloudBackup,
+  listCloudBackups,
+  type CreateCloudBackupOptions,
+} from "./remotes/cloud/backup";
 export {
   AVATAR_DEVICE_ENV_VAR,
   DOCKER_STATEFUL_SET_SPEC,
-  SERVICE_START_ORDER,
   buildServiceRunArgs,
   getBuilderManagedEnvKeys,
   resolveAvatarDevicePath,
-  startContainers,
   stopContainers,
   type DockerStatefulSetSpec,
   type ServiceName,
 } from "./remotes/docker/statefulset";
-export { getOrCreateHostDeviceId, resetHostDeviceIdCache } from "./device-id";
+export {
+  startContainers,
+  wakeDocker,
+  type WakeDockerOptions,
+} from "./remotes/docker/wake";
 export {
   PROVIDER_ENV_VAR_NAMES,
   SEARCH_PROVIDER_ENV_VAR_NAMES,
@@ -198,7 +192,6 @@ export {
   resolveOwnImageRefs,
   ensureDockerInstalled,
   pullImage,
-  DOCKER_READY_TIMEOUT_MS,
 } from "./remotes/docker/hatch";
 
 export {
@@ -283,8 +276,7 @@ export {
   probeDaemonReadiness,
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
-  fetchCurrentVersion,
-  getGatewayHealth,
+  checkHealth,
   type DaemonReadiness,
   type GatewayHealth,
   type HttpProbeEndpoint,
@@ -298,14 +290,14 @@ export {
   pipeToLogFile,
   openRuntimeLogFile,
 } from "./xdg-log";
-export {} from "./guardian-token";
-export type { SleepResult, SleepServiceStop } from "./operations/sleep";
+export type { SleepResult } from "./operations/sleep";
 export {
   machineGet,
   machineResetKey,
   machineSetKey,
   type MachineMutationResult,
 } from "./operations/machine";
+export { machinePolicyPaths } from "./lockfile-contract";
 export { planMachine } from "./operations/machine-plan";
 export type {
   MachinePlanResult,
@@ -313,9 +305,7 @@ export type {
   AppliedMemoryState,
 } from "./operations/machine-plan";
 export { machineMemoryRunArgs } from "./remotes/docker/memory";
-export { drainAssistant, parseWaitDuration } from "./remotes/local/drain";
-export type { DrainOutcome, DrainOptions } from "./remotes/local/drain";
-export { sleepDocker } from "./remotes/docker/sleep";
+export { parseWaitDuration } from "./remotes/local/drain";
 export {
   loadAllAssistants,
   lookupAssistantByIdentifier,
@@ -326,13 +316,11 @@ export {
   extractHostFromEntry,
   clearAppProcessRecord,
 } from "./operations/lookup";
-export type { AssistantLookupResult } from "./operations/lookup";
 export {
   getLocalInstanceDir,
   getDaemonPidPath,
 } from "./remotes/local/instance";
-export { retireLocal, getRetireArchiveCommand } from "./remotes/local/retire";
-export type { RetireLocalResult } from "./remotes/local/retire";
+export { retireLocal } from "./remotes/local/retire";
 export {
   validateAssistantName,
   getRetiredDir,
@@ -345,8 +333,7 @@ export {
   removeContainer,
   retireDocker,
 } from "./remotes/docker/retire";
-export { retireAppleContainer } from "./remotes/apple-container/retire";
-export { exec, buildExecErrorMessage } from "./exec";
+export { exec, execOutput, execWithStdin, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,
   parseTasklistCsv,
@@ -371,13 +358,14 @@ export type {
   ProcessHealthResult,
   ProcessState,
 } from "./process";
-export { readWindowsProcesses } from "./process";
 export { loopbackSafeFetch, isLoopbackUrl } from "./loopback-fetch";
 export {
   pairDevice,
   type PairDeviceIdentity,
   type PairOperationResult,
 } from "./operations/pair";
+export { pairLocal } from "./remotes/local/pair";
+export { pairDocker } from "./remotes/docker/pair";
 export {
   cloudTokenPath,
   readCloudToken,
@@ -388,7 +376,6 @@ export {
   fetchOrganizationId,
 } from "./cloud-auth";
 export { consoleLifecycleReporter } from "./lifecycle-reporter";
-export type { LifecycleReporter } from "./lifecycle-reporter";
 export { unpairAssistant } from "./unpair";
 export {
   pairAssistant,
@@ -410,47 +397,18 @@ export type {
   PairingPollResult,
 } from "./pair";
 export { runDevicesList, runDevicesRevoke } from "./devices";
-export type {
-  DeviceRecord,
-  DevicesListResult,
-  DevicesRevokeResult,
-} from "./devices";
+export type { DeviceRecord } from "./devices";
 export { stripVersionPrefix } from "./version";
-export { isValidReleaseVersion } from "./upgrade";
+export { upgradeAssistant } from "./operations/upgrade";
+export { broadcastUpgradeEvent, buildCompleteEvent } from "./upgrade-lifecycle";
+export { resolveLatestStableTag } from "./remotes/local/upgrade";
+export { teleportAssistant } from "./operations/teleport";
+export { restoreAssistant } from "./operations/restore";
 export {
-  upgradeAssistant,
-  type UpgradeAssistantParams,
-  type UpgradeAssistantResult,
-} from "./operations/upgrade";
-export { UpgradeError } from "./upgrade-lifecycle";
-export {
-  attemptFailedStateRestore,
-  broadcastUpgradeEvent,
-  buildCompleteEvent,
-  buildProgressEvent,
-  buildReplayEnv,
-  buildReplayState,
-  buildStartingEvent,
-  buildUpgradeCommitMessage,
-  captureContainerEnv,
-  captureReplayState,
-  captureUpgradeFailureLogs,
-  commitWorkspaceViaGateway,
-  performDockerRollback,
-  rollbackMigrations,
-  UPGRADE_PROGRESS,
-  waitForReady,
-  type PerformDockerRollbackOptions,
-} from "./upgrade-lifecycle";
-export { upgradeDocker } from "./remotes/docker/upgrade";
-export {
-  upgradeLocal,
-  targetVersionFromCli,
-  resolveLatestStableTag,
-} from "./remotes/local/upgrade";
-export { upgradeCloud } from "./remotes/cloud/upgrade";
-export { isCloudHome } from "./cloud-values";
-export { readLockfileAssistantAvatar } from "./avatar";
+  cloudPollJobStatus,
+  cloudRequestSignedUrl,
+  VersionMismatchError,
+} from "./remotes/cloud/migrations";
 export {
   getGuardianAccessToken,
   isConfidentialRefreshUrl,
@@ -460,26 +418,6 @@ export {
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,
+  loadGuardianToken,
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";
-export {
-  authorizePairedForwardHeaders,
-  parseAssistantGatewayUrl,
-  readGatewayTargets,
-  resolveGatewayProxyTarget,
-  sanitizePairedForwardHeaders,
-  FLATTENED_FIRST_SEGMENTS,
-} from "./gateway-proxy";
-export {
-  loopbackGatewayBearer,
-  clearLoopbackGatewayBearerCache,
-} from "./gateway-bearer";
-export type { GuardianTokenLease } from "./gateway-bearer";
-export type {
-  GatewayTarget,
-  GatewayParseResult,
-  GatewayEntryTarget,
-  GatewayProxyDecision,
-  PairedForwardAuthorizationResult,
-  PairedGuardianTokenProvider,
-} from "./gateway-proxy";

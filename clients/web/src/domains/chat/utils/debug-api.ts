@@ -949,15 +949,11 @@ declare global {
  * Returns a cleanup function that removes all bindings (identity-
  * checking the chat API in case a newer mount replaced it) and the
  * root object if it's empty afterwards. Safe to call on the server —
- * no-op when `window` is undefined.
  */
 export function installCadetDebugApi(
   chatApi: ChatDebugApi,
   flagsApi: CadetDebugFlagsApi,
 ): () => void {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
   const win = window as Omit<Window, typeof ROOT_NS> & {
     [ROOT_NS]?: CadetDebugRoot;
   };

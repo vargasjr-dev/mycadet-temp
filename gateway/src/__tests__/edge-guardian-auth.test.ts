@@ -78,12 +78,6 @@ function makeReq(headers: Record<string, string> = {}): Request {
   });
 }
 
-function makeLoopbackServer(address = "127.0.0.1") {
-  return {
-    requestIP: () => ({ address, port: 12345 }),
-  } as never;
-}
-
 beforeEach(() => {
   mockReadCredential = mock(async () => undefined);
   mockPlatformUserIdUnreachable = false;
@@ -161,7 +155,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
 
   test("uses platform header check before tokenless loopback fallback", async () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(makeReq(), makeLoopbackServer());
+    const res = await requireEdgeGuardianAuth(makeReq());
     expect(res?.status).toBe(401);
     expect(mockReadCredential).not.toHaveBeenCalled();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -201,7 +195,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
 describe("requireEdgeGuardianAuth — actor principal mode", () => {
   test("falls back to loopback when Authorization header is absent", async () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(makeReq(), makeLoopbackServer());
+    const res = await requireEdgeGuardianAuth(makeReq());
     expect(res).toBeNull();
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
@@ -211,7 +205,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ "x-cadet-edge-forwarded": "1" }),
-      makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
@@ -223,7 +216,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ authorization: "Bearer bad-jwt" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
@@ -261,7 +253,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ authorization: "Bearer fake-jwt" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
   });
@@ -277,7 +268,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ authorization: "Bearer fake-jwt" }),
-      makeLoopbackServer(),
     );
     expect(res).toBeNull();
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();

@@ -135,7 +135,6 @@ export function VoiceSessionPillHost({
   const { t } = useTranslation("chat");
   const state = useLiveVoiceStore.use.state();
   const error = useLiveVoiceStore.use.error();
-  const sessionAssistantId = useLiveVoiceStore.use.assistantId();
   const sessionConversationId = useLiveVoiceStore.use.conversationId();
   const muted = useLiveVoiceStore.use.muted();
   const outputMuted = useLiveVoiceStore.use.outputMuted();
@@ -177,7 +176,7 @@ export function VoiceSessionPillHost({
   // assistant's avatar, so the pill and the room are the same surface at two
   // sizes. Fetch-gated to a visible pill; the query is shared with every other
   // avatar consumer.
-  const paint = useVoiceSurfacePaint(visible ? sessionAssistantId : null);
+  const paint = useVoiceSurfacePaint();
 
   const handleNavigate = useCallback(() => {
     if (sessionConversationId) {

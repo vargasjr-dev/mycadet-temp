@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import {
   ComposerConfigurationContent,
   ComposerSettingsSurface,

@@ -36,7 +36,6 @@ import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
-
 /**
  * The hosting answer lives on the lockfile entry's remote field, not the
  * resolution kind. A local stamp synthesizes a self-hosted entry for the
@@ -109,8 +108,6 @@ const { ProfileEditorModal } =
 // ---------------------------------------------------------------------------
 
 const ASSISTANT_ID = "asst-1";
-
-
 
 function makeConnection(
   name: string,
@@ -419,7 +416,6 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-
 
 describe("the model list", () => {
   test("offers each model once, and says nothing else on the row", () => {
@@ -937,6 +933,5 @@ describe("the cloud route's annotation", () => {
     const card = candidateCard("cadet");
     expect(card.textContent).toContain("Recommended");
     expect(card.textContent).not.toContain("Managed");
-
   });
 });

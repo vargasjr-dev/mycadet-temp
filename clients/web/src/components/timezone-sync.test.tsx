@@ -37,7 +37,7 @@ mock.module("@/utils/browser-timezone", () => ({
   getBrowserTimezone: () => browserTz,
 }));
 
-mock.module("@/generated/api/client.gen", () => ({
+mock.module("@/generated/gateway/client.gen", () => ({
   client: { patch: patchMock },
 }));
 

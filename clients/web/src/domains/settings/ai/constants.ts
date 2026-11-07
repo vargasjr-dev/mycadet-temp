@@ -64,9 +64,7 @@ export const CHATGPT_CONNECTION_PROVIDER = "chatgpt";
  * connection, so the editor must treat that connection as available for these
  * providers even though its own `provider` is `cadet`.
  */
-export const CLOUD_ROUTABLE_PROVIDERS = new Set<string>(
-  CADET_SERVED_PROVIDERS,
-);
+export const CLOUD_ROUTABLE_PROVIDERS = new Set<string>(CADET_SERVED_PROVIDERS);
 
 export const TOKEN_SLIDER_MIN_TOKENS = 1_000;
 export const TOKEN_SLIDER_STEP_TOKENS = 1_000;

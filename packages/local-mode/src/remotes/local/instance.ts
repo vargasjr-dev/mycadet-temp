@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
-import { resolveDataDir } from "../../config";
-import type { LockfileAssistant } from "../../lockfile-contract";
+import { resolveInstanceDir } from "../../config";
+import type { LocalAssistant } from "../../lockfile-contract";
 
 /**
  * The local topology's on-disk geography: the instance's data root and the
@@ -10,29 +10,19 @@ import type { LockfileAssistant } from "../../lockfile-contract";
  */
 
 /**
- * The instance's data root: the recorded instanceDir, or the shared state
- * root for legacy entries predating per-instance dirs.
+ * The instance's data root: the recorded instanceDir, else the assistant's
+ * own directory under the state root's assistants/ tree. Only local
+ * assistants have one — the instance dir is a local-topology concept, so
+ * this takes a LocalAssistant and nothing else.
  */
-export function getLocalInstanceDir(
-  entry?: LockfileAssistant | undefined,
-): string {
-  return (
-    (entry &&
-    (entry.cloud === "local" ||
-      entry.cloud === "docker" ||
-      entry.cloud === "apple-container")
-      ? entry.instanceDir
-      : undefined) ?? resolveDataDir()
-  );
+export function getLocalInstanceDir(entry: LocalAssistant): string {
+  return entry.instanceDir ?? resolveInstanceDir(entry.assistantId);
 }
 
 /**
  * Derive the daemon PID file path from an entry. The PID file lives inside
- * the instance's workspace directory. Falls back to the XDG data root's
- * workspace when the entry carries no instance dir.
+ * the instance's workspace directory.
  */
-export function getDaemonPidPath(
-  entry?: LockfileAssistant | undefined,
-): string {
+export function getDaemonPidPath(entry: LocalAssistant): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }

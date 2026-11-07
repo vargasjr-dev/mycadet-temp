@@ -10,7 +10,7 @@ import {
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { type VoiceInputButtonHandle } from "@/domains/chat/components/voice-input-button";
 import { shouldShowMicPrimer } from "@/domains/chat/components/mic-permission-primer";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { postDictation } from "@/domains/chat/voice/dictation-api";
 import { registerPushToTalkTarget } from "@/domains/chat/voice/push-to-talk-target";
 import { useVoiceRecordingStore } from "@/domains/chat/voice/voice-recording-store";

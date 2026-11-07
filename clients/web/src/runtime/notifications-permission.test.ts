@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 mock.module("@/runtime/is-electron", () => ({
   isElectron: () => false,
 }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => false,
 }));
 mock.module("@/runtime/platform-detection", () => ({
@@ -47,8 +47,11 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   },
 }));
 
-const { postLocalNotification, requestBrowserNotificationPermission, __resetNotificationsStateForTests } =
-  await import("@/runtime/notifications");
+const {
+  postLocalNotification,
+  requestBrowserNotificationPermission,
+  __resetNotificationsStateForTests,
+} = await import("@/runtime/notifications");
 
 // ── Notification stub ────────────────────────────────────────────────────────
 //
@@ -181,7 +184,9 @@ test("background events never open a browser permission prompt", async () => {
   expect(promptCallCount).toBe(0);
   expect(posted).toEqual([]);
   expect(ackArgs[0]?.body).toEqual({
-    deliveryId: "d1", success: false, errorMessage: "Notification authorization prompt",
+    deliveryId: "d1",
+    success: false,
+    errorMessage: "Notification authorization prompt",
   });
 });
 

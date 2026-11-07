@@ -90,25 +90,10 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "Punto en el tiempo",
     "typePreview": "Vista previa",
-    "typeScheduled": "Programada",
-    "cliOnly": "Usa cadet backup y cadet restore en una terminal para instalaciones locales o Docker."
+    "typeScheduled": "Programada"
   },
   "assistantStatusPanel": {
-    "assistantId": "ID del asistente",
-    "cpuUsage": "Uso de CPU",
-    "created": "Creado",
-    "diskUnavailable": "Estado del disco no disponible",
-    "diskUsage": "Uso del disco",
-    "loadHealthzFailed": "No se pudo cargar la información del asistente",
-    "loadingCpu": "Cargando estado de la CPU...",
-    "loadingDisk": "Cargando estado del disco...",
-    "loadingMemory": "Cargando estado de la memoria...",
-    "memoryUsage": "Uso de memoria",
-    "name": "Nombre",
-    "status": "Estado",
-    "unknown": "Desconocido",
-    "usedOf": "{used} usados de {total}",
-    "version": "Versión"
+    "loadHealthzFailed": "No se pudo cargar la información del asistente"
   },
   "assistantTerminalPanel": {
     "subtitle": "Sesión de shell interactiva en la máquina de tu asistente",
@@ -135,7 +120,6 @@
     "updating": "Actualizando..."
   },
   "autoTopUpPaymentMethodModal": {
-    "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
   "bulkOverrideSwapModal": {
@@ -550,26 +534,6 @@
     "toolsHeading": "Herramientas registradas",
     "toolsLoading": "Cargando herramientas..."
   },
-  "mediaEmbedsCard": {
-    "add": "Añadir",
-    "addDomainLabel": "Añadir dominio",
-    "addDomainPlaceholder": "Añadir dominio (p. ej. example.com)",
-    "allowlist": "Lista de dominios de video permitidos",
-    "autoToggle": "Incrustaciones de medios automáticas",
-    "domainCount": "{count, plural, one {# dominio} other {# dominios}}",
-    "removeDomainAria": "Eliminar {domain}",
-    "resetDefaults": "Restablecer valores predeterminados",
-    "subtitle": "Incrusta automáticamente imágenes, videos y otros medios compartidos en los mensajes del chat.",
-    "title": "Incrustaciones de medios"
-  },
-  "memoryRetrospectiveToggle": {
-    "ariaLabel": "Activar retrospectivas de memoria",
-    "description": "Permite que tu asistente vuelva a leer conversaciones recientes en segundo plano y guarde lo que se le escapó en el momento. Pausar esto mantiene el resto de la memoria en funcionamiento.",
-    "title": "Retrospectivas",
-    "toastEnabled": "Retrospectivas de memoria activadas.",
-    "toastFailed": "No se pudieron actualizar las retrospectivas de memoria.",
-    "toastPaused": "Retrospectivas de memoria en pausa."
-  },
   "memoryWorkerToggle": {
     "ariaLabel": "Activar el proceso de memoria en segundo plano",
     "description": "Ejecuta la consolidación de memoria en un proceso dedicado en segundo plano. Se inicia automáticamente; deténlo para pausar el procesamiento de memoria en segundo plano hasta el próximo reinicio.",
@@ -956,18 +920,6 @@
     "skipped": "Saltada",
     "title": "Ejecuciones recientes"
   },
-  "riskToleranceSettings": {
-    "advanced": "Avanzado",
-    "backgroundDescription": "Cuando tu asistente actúa sin ti: tareas programadas, trabajos en segundo plano y disparadores externos.",
-    "backgroundTitle": "Segundo plano",
-    "conversationsDescription": "Cuando chateas directamente con tu asistente.",
-    "conversationsTitle": "Conversaciones",
-    "description": "Controla qué acciones puede realizar tu asistente sin preguntar primero. Cada acción se clasifica por nivel de riesgo: tu nivel de acceso determina qué niveles se aprueban automáticamente. Las reglas de confianza afinan esto para acciones concretas subiendo o bajando su riesgo.",
-    "headlessDescription": "Cuando se dispara externamente sin un cliente interactivo.",
-    "headlessTitle": "Sin interfaz",
-    "loadError": "No se pudieron cargar los ajustes de umbral. Comprueba tu conexión y vuelve a cargar.",
-    "title": "Acceso del asistente"
-  },
   "scheduleProfileRebase": {
     "alreadyOnProfileToast": "Todas las programaciones ya se ejecutan en {profile}.",
     "dialogMessage": "{count, plural, one {# de las programaciones siguientes se ejecuta en un modelo diferente. Esto mueve todas las programaciones, incluidos los recordatorios que tu asistente dejó para más tarde, a {profile}, tu valor predeterminado actual. Las programaciones que pusiste deliberadamente en otro modelo también se mueven.} other {# de las programaciones siguientes se ejecutan en un modelo diferente. Esto mueve todas las programaciones, incluidos los recordatorios que tu asistente dejó para más tarde, a {profile}, tu valor predeterminado actual. Las programaciones que pusiste deliberadamente en otro modelo también se mueven.}}",
@@ -1075,20 +1027,6 @@
     "system": "Sistema",
     "title": "Tema"
   },
-  "tierPicker": {
-    "machineAriaLabel": "Nivel de máquina",
-    "machineLabel": "Máquina",
-    "machineOption": "{label} {priceLabel}",
-    "machinePlaceholder": "Selecciona un nivel de máquina",
-    "machineTooltip": "Determina la CPU y la memoria asignadas a tu asistente",
-    "priceAddon": "+{price}",
-    "priceCurrent": "({price}, actual)",
-    "storageAriaLabel": "Nivel de almacenamiento",
-    "storageLabel": "Almacenamiento",
-    "storageOption": "{gib} GB {priceLabel}",
-    "storagePlaceholder": "Selecciona un nivel de almacenamiento",
-    "storageTooltip": "Espacio de disco persistente para los archivos y datos de tu asistente"
-  },
   "timezonePicker": {
     "noMatches": "Sin coincidencias",
     "notSet": "No configurada",
@@ -1105,52 +1043,6 @@
     "title": "Este dispositivo",
     "description": "El id que la gateway del asistente registró para este navegador. Compáralo con los ids de dispositivo hasheados que lista `cadet devices` en el host.",
     "copyHint": "Copiar id del dispositivo"
-  },
-  "trustRuleFormModal": {
-    "cancel": "Cancelar",
-    "closeAriaLabel": "Cerrar",
-    "defaultDescription": "{tool} - {pattern}",
-    "descriptionLabel": "Descripción (opcional)",
-    "patternFallback": "patrón",
-    "patternLabel": "Patrón",
-    "patternPlaceholder": "p. ej., git *",
-    "riskHigh": "Alto",
-    "riskHighDescription": "Siempre requiere aprobación explícita",
-    "riskLevelLabel": "Nivel de riesgo",
-    "riskLow": "Bajo",
-    "riskLowDescription": "Aprobar automáticamente sin preguntar",
-    "riskMedium": "Medio",
-    "riskMediumDescription": "Preguntar antes de ejecutar",
-    "save": "Guardar",
-    "saveFailed": "No se pudo guardar la regla de confianza.",
-    "saving": "Guardando…",
-    "title": "Editar regla de confianza",
-    "toolLabel": "Herramienta"
-  },
-  "trustRules": {
-    "description": "Administra reglas por herramienta que controlan qué acciones se aprueban automáticamente y cuáles requieren tu permiso explícito.",
-    "manage": "Administrar",
-    "title": "Reglas de confianza"
-  },
-  "trustRulesModal": {
-    "cancel": "Cancelar",
-    "defaultTag": "Predeterminada",
-    "delete": "Eliminar",
-    "deleteErrorFallback": "No se pudo eliminar la regla de confianza.",
-    "deleteMessage": "¿Eliminar la regla de riesgo {risk} para {tool} que coincide con \"{pattern}\"?",
-    "deleteRuleAria": "Eliminar regla de {tool}",
-    "deleteTitle": "¿Eliminar regla de confianza?",
-    "done": "Listo",
-    "editRuleAria": "Editar regla de {tool}",
-    "empty": "Aún no hay reglas de confianza. Se crean cuando clasificas acciones desde los avisos de permiso.",
-    "loadErrorFallback": "No se pudieron cargar las reglas de confianza.",
-    "loading": "Cargando…",
-    "modifiedTag": "Modificada",
-    "riskHigh": "Alto",
-    "riskLow": "Bajo",
-    "riskMedium": "Medio",
-    "showAllDefaults": "Mostrar todos los valores predeterminados",
-    "title": "Reglas de confianza"
   },
   "tunnelStatusRow": {
     "checkedAt": "Comprobado {when}",

@@ -7,7 +7,7 @@ import { publish } from "@/lib/event-bus";
  * AND an `app.resume` (for consumers that want a single "we're back"
  * channel covering visibility, app-state, and online).
  *
- * Browser-only; same SSR guard as `publishVisibilitySource`.
+ * Browser-only.
  */
 export function publishWindowOnlineSource(): () => void {
   const onOnline = () => {

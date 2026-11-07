@@ -7,7 +7,6 @@ import { formatWebApproveFailure, parseGatewayErrorCode } from "./pair.js";
 const GATEWAY_URL = "http://127.0.0.1:20100";
 // Callers pass formatAssistantReference() output: display name plus stable ID.
 const ASSISTANT_REFERENCE = "example-assistant (asst_0123456789abcdef)";
-const ENV_NAME = "local";
 const TTL_NOTE = `expire after ${Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000)} minutes`;
 
 describe("formatWebApproveFailure", () => {
@@ -15,21 +14,18 @@ describe("formatWebApproveFailure", () => {
     const message = formatWebApproveFailure(
       GATEWAY_URL,
       ASSISTANT_REFERENCE,
-      ENV_NAME,
       "INVALID_USER_CODE",
     );
     expect(message).not.toBeNull();
     expect(message).toContain(`No such pairing code on ${GATEWAY_URL}`);
     expect(message).toContain(`assistant "${ASSISTANT_REFERENCE}"`);
     expect(message).toContain("asst_0123456789abcdef");
-    expect(message).toContain(`environment "${ENV_NAME}"`);
   });
 
   test("INVALID_USER_CODE includes the TTL note and the cross-environment hint", () => {
     const message = formatWebApproveFailure(
       GATEWAY_URL,
       ASSISTANT_REFERENCE,
-      ENV_NAME,
       "INVALID_USER_CODE",
     );
     expect(message).toContain(TTL_NOTE);
@@ -42,7 +38,6 @@ describe("formatWebApproveFailure", () => {
     const message = formatWebApproveFailure(
       GATEWAY_URL,
       ASSISTANT_REFERENCE,
-      ENV_NAME,
       "EXPIRED_USER_CODE",
     );
     expect(message).toContain(`Pairing code expired on ${GATEWAY_URL}`);
@@ -56,7 +51,6 @@ describe("formatWebApproveFailure", () => {
         formatWebApproveFailure(
           GATEWAY_URL,
           ASSISTANT_REFERENCE,
-          ENV_NAME,
           code,
         ),
       ).toBeNull();

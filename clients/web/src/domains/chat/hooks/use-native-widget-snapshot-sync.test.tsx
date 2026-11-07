@@ -1109,7 +1109,6 @@ describe("useNativeWidgetSnapshotSync", () => {
     expect(syncedSnapshots).toHaveLength(1);
   });
 
-
   it("drops the previous assistant's payload from the heartbeat on a switch", async () => {
     const { rerender } = render({
       conversations: [conversation("c1", { title: "Groceries" })],

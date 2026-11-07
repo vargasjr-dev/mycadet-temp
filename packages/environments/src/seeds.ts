@@ -70,8 +70,6 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
   },
   test: {
     name: "test",
-    // Non-functional URL — used only by unit tests for URL resolution, never
-    // hit in production.
     cloudUrl: "https://test-cloud.mycadet.ai",
     webUrl: "https://dev.mycadet.ai",
     portsOverride: portBlock(19000),
@@ -86,9 +84,6 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
     name: "local",
     cloudUrl: "http://localhost:8000",
     webUrl: "http://localhost:3000",
-    // assistantCloudUrl: "http://host.docker.internal:8000",
-    // ^ uncomment this once dockerized hatch path is live.
-    // The assistant runs in a different network namespace than the host.
     portsOverride: portBlock(20000),
   },
 };

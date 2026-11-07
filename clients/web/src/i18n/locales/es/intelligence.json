@@ -155,22 +155,8 @@
     "backToAriaLabel": "Volver a {name}",
     "backToTitle": "Volver a {name}"
   },
-  "listConceptPages": {
-    "failureMessage": "No se pudieron cargar las páginas de conceptos."
-  },
-  "memoryFormat": {
-    "justNow": "justo ahora"
-  },
   "memoryPage": {
     "createMemory": "Crear recuerdo"
-  },
-  "memoryTypes": {
-    "sourceType": {
-      "direct": "Dicho directamente",
-      "inferred": "Inferido",
-      "observed": "Observado",
-      "toldByOther": "Dicho por otra persona"
-    }
   },
   "memoryUpgradePrompt": {
     "tryAgain": "Intentar de nuevo",

@@ -21,7 +21,6 @@ import {
   makeLocalRequest,
   makeRemoteRequest,
   PUBLIC_BASE_URL,
-  REMOTE_IP as CLIENT_IP,
 } from "./helpers/remote-web-pairing-fixtures.js";
 
 const LIST_PATH = "/v1/remote-web/pairing-requests";
@@ -72,13 +71,11 @@ interface ListedRequest {
   requestId: string;
   userCode: string;
   publicBaseUrl: string;
-  viaEdgeProxy: boolean;
 }
 
 async function listRequests(): Promise<ListedRequest[]> {
   const res = handleListRemoteWebPairingRequests(
     makeLocalRequest(LIST_PATH, { method: "GET" }),
-    LOOPBACK_IP,
   );
   expect(res.status).toBe(200);
   expect(res.headers.get("Cache-Control")).toBe("no-store");
@@ -98,21 +95,18 @@ describe("remote web pairing requests", () => {
     const responses = await Promise.all([
       handleListRemoteWebPairingRequests(
         makeRemoteRequest(LIST_PATH, { method: "GET" }),
-        CLIENT_IP,
       ),
       handleApproveRemoteWebPairingRequest(
         makeRemoteRequest(APPROVE_PATH, {
           method: "POST",
           body: JSON.stringify({ requestId: "some-id" }),
         }),
-        CLIENT_IP,
       ),
       handleDenyRemoteWebPairingRequest(
         makeRemoteRequest(DENY_PATH, {
           method: "POST",
           body: JSON.stringify({ requestId: "some-id" }),
         }),
-        CLIENT_IP,
       ),
     ]);
 
@@ -130,21 +124,18 @@ describe("remote web pairing requests", () => {
         method: "POST",
         body: JSON.stringify({}),
       }),
-      LOOPBACK_IP,
     );
     expect(listPost.status).toBe(405);
     expect(listPost.headers.get("Allow")).toBe("GET");
 
     const approveGet = await handleApproveRemoteWebPairingRequest(
       makeLocalRequest(APPROVE_PATH, { method: "GET" }),
-      LOOPBACK_IP,
     );
     expect(approveGet.status).toBe(405);
     expect(approveGet.headers.get("Allow")).toBe("POST");
 
     const denyGet = await handleDenyRemoteWebPairingRequest(
       makeLocalRequest(DENY_PATH, { method: "GET" }),
-      LOOPBACK_IP,
     );
     expect(denyGet.status).toBe(405);
     expect(denyGet.headers.get("Allow")).toBe("POST");
@@ -158,11 +149,9 @@ describe("remote web pairing requests", () => {
     expect(requests).toHaveLength(1);
     expect(requests[0]?.userCode).toBe(challenge.userCode);
     expect(requests[0]?.publicBaseUrl).toBe(PUBLIC_BASE_URL);
-    expect(requests[0]?.viaEdgeProxy).toBe(false);
 
     const approveRes = await handleApproveRemoteWebPairingRequest(
       makeActionRequest(APPROVE_PATH, { requestId: requests[0]?.requestId }),
-      LOOPBACK_IP,
     );
     expect(approveRes.status).toBe(200);
     expect(approveRes.headers.get("Cache-Control")).toBe("no-store");
@@ -185,7 +174,6 @@ describe("remote web pairing requests", () => {
 
     const denyRes = await handleDenyRemoteWebPairingRequest(
       makeActionRequest(DENY_PATH, { requestId: requests[0]?.requestId }),
-      LOOPBACK_IP,
     );
     expect(denyRes.status).toBe(200);
     expect(await denyRes.json()).toEqual({ status: "denied" });
@@ -203,13 +191,11 @@ describe("remote web pairing requests", () => {
 
     const approveRes = await handleApproveRemoteWebPairingRequest(
       makeActionRequest(APPROVE_PATH, { requestId: requests[0]?.requestId }),
-      LOOPBACK_IP,
     );
     expect(approveRes.status).toBe(200);
 
     const denyRes = await handleDenyRemoteWebPairingRequest(
       makeActionRequest(DENY_PATH, { requestId: requests[0]?.requestId }),
-      LOOPBACK_IP,
     );
     expect(denyRes.status).toBe(409);
     expect(await denyRes.json()).toEqual({
@@ -227,7 +213,6 @@ describe("remote web pairing requests", () => {
   test("returns 404 for unknown request ids", async () => {
     const approveRes = await handleApproveRemoteWebPairingRequest(
       makeActionRequest(APPROVE_PATH, { requestId: "nope" }),
-      LOOPBACK_IP,
     );
     expect(approveRes.status).toBe(404);
     expect(await approveRes.json()).toEqual({
@@ -236,7 +221,6 @@ describe("remote web pairing requests", () => {
 
     const denyRes = await handleDenyRemoteWebPairingRequest(
       makeActionRequest(DENY_PATH, { requestId: "nope" }),
-      LOOPBACK_IP,
     );
     expect(denyRes.status).toBe(404);
     expect(await denyRes.json()).toEqual({
@@ -253,7 +237,6 @@ describe("remote web pairing requests", () => {
     setRemoteWebPairingChallengeNowForTests(() => 601_000);
     const res = await handleApproveRemoteWebPairingRequest(
       makeActionRequest(APPROVE_PATH, { requestId: requests[0]?.requestId }),
-      LOOPBACK_IP,
     );
     expect(res.status).toBe(410);
     expect(await res.json()).toEqual({
@@ -269,7 +252,6 @@ describe("remote web pairing requests", () => {
     ]) {
       const res = await handleApproveRemoteWebPairingRequest(
         makeLocalRequest(APPROVE_PATH, { method: "POST", body }),
-        LOOPBACK_IP,
       );
       expect(res.status).toBe(400);
     }
@@ -283,7 +265,6 @@ describe("remote web pairing requests", () => {
         body,
         headers: { "content-length": String(body.length) },
       }),
-      LOOPBACK_IP,
     );
     expect(res.status).toBe(413);
     expect(await res.json()).toEqual({

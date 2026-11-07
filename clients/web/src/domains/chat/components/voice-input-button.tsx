@@ -29,7 +29,7 @@ import {
   MOBILE_GLYPH_CLASS,
   preventPressFocusTransfer,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { getVoiceInputMediaStream } from "@/utils/voice-input-device";
 import { isHoldDictation } from "@/utils/voice-key";
@@ -126,9 +126,6 @@ interface SpeechRecognitionWindow {
  * Exported for unit testing.
  */
 export function getSpeechRecognitionCtor(): SpeechRecognitionConstructor | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
   const w = window as unknown as SpeechRecognitionWindow;
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
@@ -146,15 +143,12 @@ export function getSpeechRecognitionCtor(): SpeechRecognitionConstructor | null 
  * iOS WKWebView (deployment target ≥ 14.5 for `MediaRecorder`). The
  * captured audio is posted to the daemon's STT service, which fans out
  * to the user's configured provider, so the same path serves every
- * webview-based client. Returns false during SSR.
+ * webview-based client.
  *
  * Exported for unit testing; prefer the component's own `supported`
  * signal inside React code.
  */
 export function isBatchSttSupported(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
   return (
     typeof MediaRecorder !== "undefined" &&
     typeof navigator !== "undefined" &&

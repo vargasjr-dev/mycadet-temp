@@ -11,16 +11,11 @@
  */
 
 import {
-  assistantConversationThresholdDelete,
   assistantConversationThresholdGet,
   assistantConversationThresholdPut,
   assistantPermissionsThresholdsGet,
-  assistantPermissionsThresholdsPut,
 } from "@/generated/gateway/sdk.gen";
-import type {
-  AssistantPermissionsThresholdsGetResponse,
-  AssistantPermissionsThresholdsPutData,
-} from "@/generated/gateway/types.gen";
+import type { AssistantPermissionsThresholdsGetResponse } from "@/generated/gateway/types.gen";
 import {
   ApiError,
   assertHasResponse,
@@ -42,27 +37,6 @@ export async function getGlobalThresholds(
       error,
       response,
       "Failed to fetch global thresholds.",
-    );
-    throw new ApiError(response.status, msg);
-  }
-  return data;
-}
-
-export async function setGlobalThresholds(
-  assistantId: string,
-  thresholds: AssistantPermissionsThresholdsPutData["body"],
-): Promise<GlobalThresholds> {
-  const { data, error, response } = await assistantPermissionsThresholdsPut({
-    path: { assistant_id: assistantId },
-    body: thresholds,
-    throwOnError: false,
-  });
-  assertHasResponse(response, error, "Failed to update global thresholds.");
-  if (!response.ok || !data) {
-    const msg = extractErrorMessage(
-      error,
-      response,
-      "Failed to update global thresholds.",
     );
     throw new ApiError(response.status, msg);
   }
@@ -121,29 +95,6 @@ export async function setConversationOverride(
       error,
       response,
       "Failed to set conversation threshold override.",
-    );
-    throw new ApiError(response.status, msg);
-  }
-}
-
-export async function deleteConversationOverride(
-  assistantId: string,
-  conversationId: string,
-): Promise<void> {
-  const { error, response } = await assistantConversationThresholdDelete({
-    path: { assistant_id: assistantId, conversation_id: conversationId },
-    throwOnError: false,
-  });
-  assertHasResponse(
-    response,
-    error,
-    "Failed to delete conversation threshold override.",
-  );
-  if (!response.ok && response.status !== 204) {
-    const msg = extractErrorMessage(
-      error,
-      response,
-      "Failed to delete conversation threshold override.",
     );
     throw new ApiError(response.status, msg);
   }

@@ -31,13 +31,12 @@ export interface EmailNavItemProps {
  * icon tile the rail draws its other entries as.
  */
 export function EmailNavItem({
-  assistantId,
   collapsed,
   onSelect,
   onUnpin,
 }: EmailNavItemProps) {
   const { t } = useTranslation("chat");
-  const { accentHex } = useAssistantAvatar(assistantId);
+  const { accentHex } = useAssistantAvatar();
   const label = t("emailNavItem.label");
 
   const tint: CustomPropertyStyle | undefined = accentHex

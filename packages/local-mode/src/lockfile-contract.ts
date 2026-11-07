@@ -80,8 +80,6 @@ export const SENSITIVE_KEYS = [
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
   remote: RemoteSchema.catch("local"),
-  /** Cloud API base (auth endpoints + assistant API). */
-  cloudUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */
@@ -90,8 +88,6 @@ export const InjectedConfigSchema = z.object({
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
-  /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
-  hubUrl: z.string().optional(),
 });
 
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
@@ -165,25 +161,6 @@ export function resolveLocalServerUrl(): string | undefined {
 }
 
 /**
- * The id-keyed, same-origin gateway proxy base for any assistant entry: the
- * serving host (Electron `app://` handler, Vite dev middleware, CLI web
- * server) resolves the id through the lockfile to a loopback port (locally
- * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
- * renderer never encodes either.
- */
-/**
- * First segments whose scoped `/v1/assistants/{id}/` prefix the gateway does
- * not serve: the contact family lives on flat `/v1/...` control-plane routes
- * (the shape the cloud's runtime-proxy strip delivers). Every
- * forwarder to the gateway — the scoped host proxy and the request
- * interceptor's remote-ingress rewrite alike — flattens them to match.
- */
-export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
-  "contacts",
-  "contact-channels",
-]);
-
-/**
  * Clouds whose gateway listens on a loopback port of this machine: the
  * on-machine daemon ("local") and local Docker instances ("docker").
  */
@@ -226,8 +203,15 @@ function getCloudUrl(): string {
  *   recorded loopback gateway port, else the default gateway port.
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
-  // Baseten: the gateway rides the sandbox API server's `/port/<PORT>/` route.
+  // Baseten: the private preview is the door when one was minted — the
+  // preview edge opens the port dynamically and guards it with a preview
+  // token, so `Authorization` stays free for the gateway's own bearer.
+  // Without one, the sandbox API's `/port/<PORT>/` route (the sandbox
+  // access token authenticates it).
   if (entry.cloud === "baseten") {
+    if (entry.previewUrl) {
+      return entry.previewUrl.replace(/\/+$/, "");
+    }
     return `${entry.sandboxUrl.replace(/\/+$/, "")}/port/${entry.port}`;
   }
   if (entry.cloud === "custom") {
@@ -368,16 +352,13 @@ const BaseAssistantSchema = z.object({
 
 /**
  * The fields the self-hosted, on-machine topologies (local, docker,
- * apple-container) share: host-recorded ports and instance dir.
+ * apple-container) share: host-recorded ports.
  */
 const LocalRuntimeAssistantFields = {
   /** The gateway port a freshly hatched assistant's gateway listens on. */
   port: z.number(),
   /** The runtime daemon's port, recorded at hatch. */
   daemonPort: z.number().optional(),
-  /** The instance's state root on this machine. Local instances keep their
-   * data here; docker instances record their host-side volume root. */
-  instanceDir: z.string().optional(),
   /** The content-editor server's port, recorded at hatch. */
   cesPort: z.number().optional(),
 };
@@ -385,6 +366,9 @@ const LocalRuntimeAssistantFields = {
 /** A plain on-machine assistant: host-managed ports and instance dir. */
 const LocalAssistantSchema = BaseAssistantSchema.extend({
   ...LocalRuntimeAssistantFields,
+  /** The instance's state root on this machine. Local instances keep their
+   * data here. */
+  instanceDir: z.string().optional(),
   cloud: z.literal("local"),
 });
 
@@ -420,15 +404,21 @@ const CustomAssistantSchema = BaseAssistantSchema.extend({
 
 /**
  * A Baseten sandbox entry: the sandbox server URL and the sandbox-internal
- * gateway port are pinned at creation, so every reader can address
- * `{sandboxUrl}/port/{port}` without a fallback.
+ * gateway port are pinned at creation. When the hatch also minted the
+ * gateway's private preview, `previewUrl` is the gateway's canonical
+ * address — the preview edge opens the port dynamically and guards it with
+ * a preview token, leaving `Authorization` free for the gateway's own
+ * bearer end to end. Entries without one (tokenless hatches, legacy) ride
+ * the `{sandboxUrl}/port/{port}` route with the sandbox access token.
  */
 const BasetenAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("baseten"),
-  /** The Baseten sandbox server URL; the gateway rides `{sandboxUrl}/port/{port}`. */
+  /** The Baseten sandbox server URL; the port route rides on it. */
   sandboxUrl: z.string(),
   /** The sandbox-internal gateway port, piped in as `GATEWAY_PORT` at creation. */
   port: z.number(),
+  /** The gateway's private preview URL, minted at hatch when a token resolves. */
+  previewUrl: z.string().optional(),
 });
 
 /**

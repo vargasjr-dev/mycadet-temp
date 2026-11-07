@@ -91,7 +91,10 @@ import { beginWatchRetro } from "@/domains/chat/watch/watch-retro";
 import { supportsWatchCaptureTarget } from "@/lib/backwards-compat/watch-capture-target";
 import { supportsWatchRetroCompletion } from "@/lib/backwards-compat/watch-retro-completion";
 import { resolveSupportsWatchSessions } from "@/lib/backwards-compat/watch-sessions";
-import { getActiveAssistantId, useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getActiveAssistantId,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
 
 /**

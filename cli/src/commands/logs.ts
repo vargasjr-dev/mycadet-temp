@@ -12,8 +12,8 @@ import {
   dockerResourceNames,
   extractHostFromEntry,
   resolveLogDir,
+  execOutput,
 } from "@mycadet/local-mode";
-import { execOutput } from "../lib/step-runner";
 
 // ── Arg parsing ─────────────────────────────────────────────────
 

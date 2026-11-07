@@ -107,11 +107,6 @@ export interface RemoteWebPairingRequestSummary {
   requesterIp: string;
   /** User-Agent header of the mint request, or null when absent. */
   requesterUserAgent: string | null;
-  /**
-   * Whether the mint arrived through the public app server rather than the
-   * host itself.
-   */
-  viaEdgeProxy: boolean;
 }
 
 /** `GET /v1/remote-web/pairing-requests` success response body (200). */
@@ -689,10 +684,7 @@ export function parsePairingAddress(raw: string): ParsePairingAddressResult {
 }
 
 /**
- * What a pairing attempt failed on, for callers picking recovery copy. Every
- * pairing surface reports one of these: the host-side sessions in
- * `@mycadet/local-mode`, the Electron bridge, the desktop connect dialog, and
- * the `cadet connect import` CLI.
+ * What a pairing attempt failed on, for callers picking recovery copy
  */
 export type PairingFailureReason =
   /** The pasted address is not a usable assistant address. */

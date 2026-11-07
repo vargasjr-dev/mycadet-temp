@@ -1,14 +1,5 @@
 /**
- * Loopback-guarded device management for the local assistant.
- *
- *   GET  /v1/devices         — list devices paired to this assistant
- *   POST /v1/devices/revoke  — revoke a device's tokens (by hashedDeviceId)
- *
- * These are the host side of pairing lifecycle (the machine running the
- * assistant manages the devices paired to it). The gateway only ever stores the
- * HASHED device id, so list returns `hashedDeviceId` and revoke accepts the same
- * value — the raw deviceId is never persisted. Both endpoints scope strictly to
- * the local assistant's guardian principal.
+ * Device Management
  */
 
 import { and, eq, max } from "drizzle-orm";
@@ -19,29 +10,9 @@ import {
 } from "../../auth/guardian-bootstrap.js";
 import { getGatewayDb } from "../../db/connection.js";
 import { actorTokenRecords } from "../../db/schema.js";
-import {
-  enforceLoopbackOnly,
-  errorResponse,
-  rejectBrowserOrigin,
-} from "../loopback-guard.js";
 import { resolveLocalGuardianPrincipalId } from "./pair.js";
 
-export async function handleListDevices(
-  req: Request,
-  clientIp: string,
-): Promise<Response> {
-  if (req.method !== "GET") {
-    return new Response("method not allowed", {
-      status: 405,
-      headers: { Allow: "GET" },
-    });
-  }
-
-  const guardError = enforceLoopbackOnly(req, clientIp, "devices");
-  if (guardError) return guardError;
-  const originError = rejectBrowserOrigin(req, clientIp, "devices");
-  if (originError) return originError;
-
+export async function handleListDevices() {
   const guardianPrincipalId = await resolveLocalGuardianPrincipalId();
   const db = getGatewayDb();
 
@@ -94,41 +65,73 @@ export async function handleListDevices(
     lastUsedAt: lastUsedByDevice.get(t.hashedDeviceId) ?? null,
   }));
 
-  return Response.json({ devices });
+  return devices;
 }
 
-export async function handleRevokeDevice(
-  req: Request,
-  clientIp: string,
-): Promise<Response> {
-  if (req.method !== "POST") {
-    return new Response("method not allowed", {
-      status: 405,
-      headers: { Allow: "POST" },
-    });
-  }
-
-  const guardError = enforceLoopbackOnly(req, clientIp, "devices");
-  if (guardError) return guardError;
-  const originError = rejectBrowserOrigin(req, clientIp, "devices");
-  if (originError) return originError;
-
-  let body: { hashedDeviceId?: unknown };
-  try {
-    body = (await req.json()) as { hashedDeviceId?: unknown };
-  } catch {
-    body = {};
-  }
-  const hashedDeviceId =
-    typeof body.hashedDeviceId === "string" ? body.hashedDeviceId.trim() : "";
-  if (!hashedDeviceId) {
-    return errorResponse("BAD_REQUEST", "hashedDeviceId is required", 400);
-  }
-
+export async function handleRevokeDevice(id: string) {
   // Idempotent: revoking an unknown/already-revoked device is a no-op success.
   const guardianPrincipalId = await resolveLocalGuardianPrincipalId();
-  revokeActorTokensByDevice(guardianPrincipalId, hashedDeviceId);
-  revokeRefreshTokensByDevice(guardianPrincipalId, hashedDeviceId);
+  revokeActorTokensByDevice(guardianPrincipalId, id);
+  revokeRefreshTokensByDevice(guardianPrincipalId, id);
 
-  return Response.json({ revoked: true, hashedDeviceId });
+  return { revoked: true, hashedDeviceId: id };
+}
+
+export function devicesUsage(): string {
+  return [
+    "Usage: gateway devices <subcommand>",
+    "",
+    "Operator commands for gateway-owned device management",
+    "",
+    "Subcommands:",
+    "  list                              List devices",
+    "  revoke <contactId>                Revoke a device",
+    "",
+    "From the host: cadet exec --service gateway -- gateway devices list",
+  ].join("\n");
+}
+
+export async function runDevicesCommand(args: string[]): Promise<number> {
+  const method = args[0];
+  const params = args.slice(1);
+  if (!method || method === "--help" || method === "-h") {
+    console.log(devicesUsage());
+    return 0;
+  }
+
+  if (method === "list") {
+    const devices = await handleListDevices();
+    if (devices.length === 0) {
+      console.log("No contacts found.");
+      return 0;
+    }
+    for (const device of devices) {
+      console.log(
+        `${device.hashedDeviceId}  ${device.platform}  ${device.clientReportedName}`,
+      );
+    }
+    console.log("");
+    console.log(
+      `${devices.length} ${devices.length === 1 ? "device" : "devices"}`,
+    );
+    return 0;
+  }
+
+  if (method === "revoke") {
+    const deviceId = params[0];
+    if (!deviceId) {
+      console.error(`Device Id required to revoke.`);
+      return 1;
+    }
+    const result = await handleRevokeDevice(deviceId);
+    if (result.revoked) {
+      console.log(`Device ${deviceId} revoked.`);
+    } else {
+      console.error(`Failed to revoke device ${deviceId}`);
+    }
+    return 0;
+  }
+
+  console.log(`Unexpected devices method: '${method}'`);
+  return 0;
 }

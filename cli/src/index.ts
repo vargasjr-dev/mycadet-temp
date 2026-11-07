@@ -3,7 +3,7 @@
 import { join } from "path";
 import { readFileSync } from "node:fs";
 
-import { resolveConfigDir } from "@mycadet/local-mode";
+import { checkHealth, resolveConfigDir } from "@mycadet/local-mode";
 
 import { stampedVersion } from "@mycadet/shared/version";
 
@@ -40,10 +40,6 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { loadGuardianToken } from "./lib/guardian-token";
-import { checkHealth } from "@mycadet/local-mode";
-
 const commands = {
   backup,
   app,
@@ -172,11 +168,8 @@ async function tryLaunchClient(): Promise<boolean> {
 
   if (!entry) return false;
 
-  const url = getGatewayUrl(entry);
-
-  const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  const result = await checkHealth(url, token);
-  if (result.status !== "healthy") return false;
+  const health = await checkHealth(entry);
+  if (health.status !== "healthy") return false;
 
   // Ensure the resolved assistant is active so client() can find it
   // (client() independently reads the active assistant from config).

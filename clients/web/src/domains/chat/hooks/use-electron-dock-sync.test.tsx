@@ -76,14 +76,10 @@ function setup(opts: {
     client.setQueryData(unreadConversationCountQueryKey(ASSISTANT_ID), count);
   }
 
-  renderHook(
-    () =>
-      useElectronDockSync(ASSISTANT_ID, opts.conversations),
-    {
-      wrapper: ({ children }: { children: ReactNode }) =>
-        createElement(QueryClientProvider, { client }, children),
-    },
-  );
+  renderHook(() => useElectronDockSync(ASSISTANT_ID, opts.conversations), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client }, children),
+  });
 
   return { client };
 }
@@ -143,7 +139,6 @@ describe("useElectronDockSync", () => {
       expect(setDockBadgeCalls.at(-1)).toBe(1);
     });
   });
-
 
   test("never publishes a negative badge", async () => {
     // Optimistic decrements are deliberately unclamped so a revert is exact,

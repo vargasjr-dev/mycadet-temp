@@ -37,7 +37,7 @@ import { shareFileViaMacSheet } from "@/runtime/native-share";
  * - **Web (plain browser):** the `<a download>` pattern for both intents, since
  *   no reliable cross-browser file-share surface exists to prefer.
  *
- * The Capacitor plugins are lazy-imported so they are never loaded in SSR or
+ * The Capacitor plugins are lazy-imported so they are never loaded in
  * plain-browser contexts.
  *
  * References:

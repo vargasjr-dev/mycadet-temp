@@ -93,7 +93,7 @@ const { APP_ICON_UNSUPPORTED, useAppIconStore } =
 const { publish } = await import("@/lib/event-bus");
 
 async function renderSync() {
-  const view = renderHook(() => useAppIconSync("asst-1"));
+  const view = renderHook(() => useAppIconSync());
   await waitFor(() => {
     expect(getAppIconState).toHaveBeenCalled();
   });
@@ -129,7 +129,7 @@ describe("useAppIconSync", () => {
   test("stays off the whole way down off native iOS", async () => {
     nativeIOS = false;
 
-    const { result } = renderHook(() => useAppIconSync("asst-1"));
+    const { result } = renderHook(() => useAppIconSync());
 
     expect(result.current.enabled).toBe(false);
     expect(result.current.canSyncAvatar).toBe(false);
@@ -414,7 +414,7 @@ describe("useAppIconSync", () => {
 
   test("refuses to apply while the surface is disabled", async () => {
     nativeIOS = false;
-    const { result } = renderHook(() => useAppIconSync("asst-1"));
+    const { result } = renderHook(() => useAppIconSync());
 
     let applied: boolean | undefined;
     await act(async () => {
@@ -438,7 +438,7 @@ describe("useAppIconSync", () => {
   test("reports no bundled names while the surface is disabled", async () => {
     nativeIOS = false;
 
-    const { result } = renderHook(() => useAppIconSync("asst-1"));
+    const { result } = renderHook(() => useAppIconSync());
 
     expect(result.current.availableIcons).toEqual([]);
   });
@@ -446,7 +446,7 @@ describe("useAppIconSync", () => {
   test("an apply in one consumer reaches every other consumer", async () => {
     // The picker modal and the settings row behind it, both mounted at once.
     const modal = await renderSync();
-    const row = renderHook(() => useAppIconSync("asst-1"));
+    const row = renderHook(() => useAppIconSync());
     await waitFor(() => {
       expect(row.result.current.canSyncAvatar).toBe(true);
     });
@@ -467,7 +467,7 @@ describe("useAppIconSync", () => {
   test("a reset in one consumer reaches every other consumer", async () => {
     iconState = { supported: true, current: ICON, available: [ICON] };
     const modal = await renderSync();
-    const row = renderHook(() => useAppIconSync("asst-1"));
+    const row = renderHook(() => useAppIconSync());
     await waitFor(() => {
       expect(row.result.current.currentIcon).toBe(ICON);
     });

@@ -98,44 +98,6 @@ const pairingPollMock = mock(
 );
 const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 
-mock.module("../operations/hatch", () => ({
-  ...realHatch,
-  hatchAssistant: hatchAssistantMock,
-}));
-mock.module("../devices", () => ({
-  ...realDevices,
-  runDevicesList: runDevicesListMock,
-  runDevicesRevoke: runDevicesRevokeMock,
-}));
-mock.module("../operations/upgrade", () => ({
-  ...realUpgrade,
-  upgradeAssistant: upgradeAssistantMock,
-}));
-mock.module("../avatar", () => ({
-  ...realAvatar,
-  readLockfileAssistantAvatar: readLockfileAssistantAvatarMock,
-}));
-mock.module("../unpair", () => ({
-  ...realUnpair,
-  unpairAssistant: unpairAssistantMock,
-}));
-mock.module("../pair", () => ({
-  ...realPair,
-  pairingStart: pairingStartMock,
-  pairingPoll: pairingPollMock,
-  pairingCancel: pairingCancelMock,
-}));
-
-// Restore the real modules once this file finishes so the mocks above do not
-// leak into other test files in the same `bun test` run.
-afterAll(() => {
-  mock.module("../hatch", () => realHatch);
-  mock.module("../devices", () => realDevices);
-  mock.module("../operations/upgrade", () => realUpgrade);
-  mock.module("../avatar", () => realAvatar);
-  mock.module("../unpair", () => realUnpair);
-  mock.module("../pair", () => realPair);
-});
 
 import { readLockfile } from "../lockfile";
 import { stripSensitiveFields } from "../util";
@@ -144,7 +106,40 @@ import { matchOperatorRequest } from "../operations/routes";
 let tmpDir: string;
 let lockfilePath: string;
 
+// Register the module mocks per-test (not at module load): bun runs every
+// test file in one process with a shared loader and `mock.restore()` does
+// not undo `mock.module()`, so a load-time registration leaks into whatever
+// file the scheduler interleaves. The afterAll below re-registers the
+// snapshotted real modules once this file finishes.
 beforeEach(() => {
+  mock.module("../operations/hatch", () => ({
+    ...realHatch,
+    hatchAssistant: hatchAssistantMock,
+  }));
+  mock.module("../devices", () => ({
+    ...realDevices,
+    runDevicesList: runDevicesListMock,
+    runDevicesRevoke: runDevicesRevokeMock,
+  }));
+  mock.module("../operations/upgrade", () => ({
+    ...realUpgrade,
+    upgradeAssistant: upgradeAssistantMock,
+  }));
+  mock.module("../avatar", () => ({
+    ...realAvatar,
+    readLockfileAssistantAvatar: readLockfileAssistantAvatarMock,
+  }));
+  mock.module("../unpair", () => ({
+    ...realUnpair,
+    unpairAssistant: unpairAssistantMock,
+  }));
+  mock.module("../pair", () => ({
+    ...realPair,
+    pairingStart: pairingStartMock,
+    pairingPoll: pairingPollMock,
+    pairingCancel: pairingCancelMock,
+  }));
+
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-routes-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
@@ -204,6 +199,17 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.XDG_CONFIG_HOME;
   fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// Once this file finishes, re-register the snapshotted real modules so the
+// per-test mocks above cannot leak into files the scheduler runs later.
+afterAll(() => {
+  mock.module("../operations/hatch", () => realHatch);
+  mock.module("../devices", () => realDevices);
+  mock.module("../operations/upgrade", () => realUpgrade);
+  mock.module("../avatar", () => realAvatar);
+  mock.module("../unpair", () => realUnpair);
+  mock.module("../pair", () => realPair);
 });
 
 const writeLockfile = (data: Record<string, unknown>): void => {

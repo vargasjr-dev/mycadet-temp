@@ -59,10 +59,7 @@ export function mintAndApproveRemoteWebPairingChallenge(
 ): RemoteWebPairingChallengeResponse {
   const publicBaseUrl = parsePublicBaseUrl(publicBaseUrlRaw);
   if (!publicBaseUrl) {
-    throw new PairingMintError(
-      "publicBaseUrl is required (an http(s) URL with a host)",
-      "BAD_REQUEST",
-    );
+    throw new PairingMintError("publicBaseUrl is required", "BAD_REQUEST");
   }
 
   const rateLimited = recordRemoteWebPairingChallengeCreation();
@@ -77,7 +74,6 @@ export function mintAndApproveRemoteWebPairingChallenge(
   const challenge = createRemoteWebPairingChallenge(publicBaseUrl, {
     ip: "cli",
     userAgent: null,
-    viaEdgeProxy: false,
   });
 
   const approved = approveRemoteWebPairingChallenge(challenge.userCode);

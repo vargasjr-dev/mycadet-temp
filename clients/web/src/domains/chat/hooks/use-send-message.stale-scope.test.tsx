@@ -203,7 +203,9 @@ beforeEach(() => {
     ephemeralMetaResults: [],
     contextWindowUsage: null,
   });
-  useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+  useResolvedAssistantStore
+    .getState()
+    .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
   // The draft map is module state shared across tests; reloading it for the
   // assistant from an empty localStorage is how the store itself resets it.
   localStorage.clear();
@@ -542,7 +544,9 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -594,7 +598,9 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -661,7 +667,9 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantStore.getState().setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);

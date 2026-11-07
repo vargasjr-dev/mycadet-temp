@@ -110,9 +110,6 @@ export interface KeyedStorageAccessor<T> {
 // ---------------------------------------------------------------------------
 
 function readRaw(key: string): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
   try {
     return localStorage.getItem(key);
   } catch {

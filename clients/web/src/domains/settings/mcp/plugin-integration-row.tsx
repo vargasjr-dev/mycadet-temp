@@ -16,12 +16,10 @@ import {
 import { PluginIntegrationIcon } from "./plugin-integration-icon";
 
 export function PluginIntegrationRow({
-  assistantId,
   method,
   disabled,
   onOpen,
 }: {
-  assistantId: string;
   method: McpPluginMethod;
   disabled?: boolean;
   onOpen: () => void;
@@ -31,12 +29,7 @@ export function PluginIntegrationRow({
 
   return (
     <IntegrationListRow
-      icon={
-        <PluginIntegrationIcon
-          assistantId={assistantId}
-          definition={method.definition}
-        />
-      }
+      icon={<PluginIntegrationIcon definition={method.definition} />}
       title={method.definition.displayName}
       subtitle={method.definition.description}
       status={

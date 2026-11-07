@@ -9,23 +9,13 @@ import {
 } from "@/assistant/resource-pressure";
 import { useAssistantStatusMonitor } from "@/assistant/use-assistant-status-monitor";
 
-export interface UseResourcePressureMonitorOptions {
-  assistantId: string | null;
-  enabled: boolean;
-}
-
 export interface UseResourcePressureMonitorResult {
   status: ResourcePressureStatus | null;
   mode: ResourcePressureMonitorMode;
 }
 
-export function useResourcePressureMonitor({
-  assistantId,
-  enabled,
-}: UseResourcePressureMonitorOptions): UseResourcePressureMonitorResult {
+export function useResourcePressureMonitor(): UseResourcePressureMonitorResult {
   const { status, mode } = useAssistantStatusMonitor({
-    assistantId,
-    enabled,
     cadenceMs: RESOURCE_PRESSURE_POLL_INTERVAL_MS,
     fetchStatus: getAssistantResourcePressureStatus,
     areStatusesEqual: areResourcePressureStatusesEqual,

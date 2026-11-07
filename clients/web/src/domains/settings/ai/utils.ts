@@ -1,4 +1,3 @@
-import type { LlmCatalogModel } from "@/assistant/llm-model-catalog";
 import { WEB_FETCH_PROVIDER_KEY_STORAGE } from "@/assistant/generated/web-fetch-provider-catalog.gen";
 import { WEB_SEARCH_PROVIDER_KEY_STORAGE } from "@/assistant/generated/web-search-provider-catalog.gen";
 import type { ProfileEntry } from "@/generated/daemon/types.gen";
@@ -11,14 +10,6 @@ import { TOKEN_SLIDER_MIN_TOKENS } from "@/domains/settings/ai/constants";
 // ---------------------------------------------------------------------------
 
 export type ProfileWithName = { name: string } & ProfileEntry;
-
-export interface InferenceTokenBudgetState {
-  maxOutputTokens: number;
-  maxOutputTouched: boolean;
-  contextWindowTokens: number;
-  contextWindowTouched: boolean;
-}
-
 // ---------------------------------------------------------------------------
 // Profile utilities
 // ---------------------------------------------------------------------------
@@ -96,39 +87,6 @@ export function formatCompactTokens(value: number | number[]): string {
     return `${formatCompactNumber(roundedValue / 1_000, 1)}K`;
   }
   return roundedValue.toLocaleString("en-US");
-}
-
-export function resolveTokenBudgetStateForModel(
-  model: LlmCatalogModel,
-  state: InferenceTokenBudgetState,
-): InferenceTokenBudgetState {
-  const contextBudget = state.contextWindowTouched
-    ? state.contextWindowTokens
-    : model.defaultContextWindowTokens;
-  const maxOutputBudget = state.maxOutputTouched
-    ? state.maxOutputTokens
-    : model.maxOutputTokens;
-
-  return {
-    maxOutputTokens: clampTokenBudget(maxOutputBudget, model.maxOutputTokens),
-    maxOutputTouched: state.maxOutputTouched,
-    contextWindowTokens: clampTokenBudget(
-      contextBudget,
-      model.contextWindowTokens,
-    ),
-    contextWindowTouched: state.contextWindowTouched,
-  };
-}
-
-export function getLongContextPricingHint(
-  model: LlmCatalogModel,
-  contextWindowTokens: number,
-): string | null {
-  const threshold = model.longContextPricingThresholdTokens;
-  if (threshold === undefined || contextWindowTokens <= threshold) {
-    return null;
-  }
-  return `Budgets above ${formatCompactTokens(threshold)} may use long-context pricing for ${model.displayName}.`;
 }
 
 /**

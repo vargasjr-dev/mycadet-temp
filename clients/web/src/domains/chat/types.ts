@@ -8,7 +8,6 @@
 
 import { AllowlistOption } from "@mycadet/assistant-api";
 import { DirectoryScopeOption } from "@mycadet/assistant-api";
-import { QuestionEntry } from "@mycadet/assistant-api";
 import { ScopeOption } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
@@ -66,26 +65,5 @@ export interface PendingConfirmationState {
   directoryScopeOptions?: DirectoryScopeOption[];
   persistentDecisionsAllowed?: boolean;
   input?: Record<string, unknown>;
-  toolUseId?: string;
-}
-
-export interface PendingContactRequestState {
-  requestId: string;
-  channel?: string;
-  placeholder?: string;
-  label?: string;
-  description?: string;
-  role?: string;
-  verify?: boolean;
-}
-
-export interface PendingQuestionState {
-  requestId: string;
-  /**
-   * Normalized list of questions for the card. Always ≥1; legacy
-   * single-question payloads are flattened to a one-element batch by
-   * `normalizeQuestionRequest` upstream.
-   */
-  entries: QuestionEntry[];
   toolUseId?: string;
 }

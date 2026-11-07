@@ -17,6 +17,7 @@ import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
 import { z } from "zod";
+import { getGatewayUrl } from "../lockfile-contract";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -39,6 +40,24 @@ import { z } from "zod";
 export interface OperatorRequest {
   /** The scoped rows' decoded target id; the unscoped rows resolve it. */
   assistantId: string;
+  /**
+   * The caller's method, carried for the proxy row (the other rows ignore
+   * it — their table entry already names the method). Absent (direct `run`
+   * calls in tests) reads as GET.
+   */
+  method?: string;
+  /**
+   * The caller's pathname + search, carried for the proxy row, which
+   * forwards it verbatim to the entry's gateway. Absent (direct `run` calls
+   * in tests) reads as the gateway root.
+   */
+  path?: string;
+  /**
+   * The raw peer address off the mount's server handle (Bun exposes it off
+   * the handle, not the Request), carried for the proxy row's client-ip
+   * fallback. Absent reads as a chain-less local caller (127.0.0.1).
+   */
+  peer?: string | null;
   /**
    * The caller's own headers, forwarded so a credential-judging operation can
    * send the caller's own proof upstream — a verdict read host-side without
@@ -168,11 +187,13 @@ const json = (body: unknown, status = 200): Response =>
  * `null`.
  */
 /**
- * Helper 1 — the v1-friendly derivation: a rooted pattern also matches its
- * `/v1` spelling. The absolute rows apply it alone.
+ * Helper 1 — the versioned derivation: a rooted pattern matches ONLY its
+ * `/v1` and `/api` spellings — every api route nests under a version
+ * prefix, since a bare spelling would collide with the frontend routes.
+ * The absolute rows apply it alone.
  */
 function v1Friendly(rooted: RegExp): RegExp {
-  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1)?"));
+  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1|\\/api)"));
 }
 
 /**
@@ -208,8 +229,30 @@ async function readJsonBody(
 
 /** The hatch row's body: the requested remote override; junk degrades to a plain hatch. */
 const HatchBodySchema = z
-  .object({ remote: z.string().optional().catch(undefined) })
-  .catch({});
+  .object({
+    remote: z
+      .string()
+      .nullish()
+      .catch(undefined)
+      .transform((remote) => remote ?? "local"),
+  })
+  .catch({ remote: "local" });
+
+/** The upgrade row's body: the target version and force flag; junk reads as the defaults. */
+const UpgradeBodySchema = z
+  .object({
+    version: z
+      .string()
+      .nullish()
+      .catch(undefined)
+      .transform((version) => version ?? null),
+    force: z
+      .boolean()
+      .optional()
+      .catch(undefined)
+      .transform((force) => force ?? false),
+  })
+  .catch({ version: null, force: false });
 
 /**
  * Provision a local assistant. Never rejects — failures resolve with
@@ -219,11 +262,9 @@ const HatchBodySchema = z
  * ever invokes the CLI as a subprocess.
  */
 async function runHatchRoute(request: OperatorRequest): Promise<Response> {
-  const { remote } = HatchBodySchema.parse(
-    (await readJsonBody(request.body)) ?? {},
-  );
+  const { remote } = HatchBodySchema.parse(await readJsonBody(request.body));
   try {
-    const result = await hatchAssistant({ remote: remote ?? "local" });
+    const result = await hatchAssistant({ remote });
     if (result.ok) {
       return json({ ok: true, assistantId: result.assistant.assistantId });
     }
@@ -403,11 +444,9 @@ async function runUpgradeRoute(
   if (!entry) {
     return null;
   }
-  const body = await readJsonBody(request.body);
-  const version =
-    body !== null && typeof body.version === "string" ? body.version : null;
-  const force =
-    body !== null && typeof body.force === "boolean" ? body.force : false;
+  const { version, force } = UpgradeBodySchema.parse(
+    await readJsonBody(request.body),
+  );
   if (!isActiveAssistant(assistantId)) {
     return json({
       ok: false,
@@ -454,6 +493,98 @@ async function runAvatarRoute(
     return null;
   }
   return json(readLockfileAssistantAvatar(request.assistantId));
+}
+
+/**
+ * The hop-by-hop headers (RFC 9110 §7.6.1): connection-scoped wiring that
+ * dies at the first proxy hop and must not ride a forward.
+ */
+const HOP_BY_HOP_HEADERS = new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+]);
+
+/**
+ * The caller's headers, normalized for the forward: whatever the mount held
+ * (a fetch Request's Headers, or the connect record's IncomingHttpHeaders)
+ * becomes a real Headers — undefined values dropped, list values
+ * comma-joined — with the host and the hop-by-hop wiring stripped. The
+ * gateway's client-ip stamp is re-derived here: the rightmost
+ * X-Forwarded-For entry is the edge-observed client (tunnel providers append
+ * one; tailscale serve sets it); a chain-less caller of the local operator
+ * is 127.0.0.1.
+ */
+function normalizeForwardHeaders(
+  input: Headers | IncomingHttpHeaders | undefined,
+  peer: string | null,
+): Headers {
+  const headers = new Headers();
+  if (input instanceof Headers) {
+    input.forEach((value, key) => {
+      const lower = key.toLowerCase();
+      if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) return;
+      headers.append(lower, value);
+    });
+  } else if (input) {
+    for (const [key, value] of Object.entries(input)) {
+      const lower = key.toLowerCase();
+      if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) continue;
+      if (value === undefined) continue;
+      headers.append(lower, Array.isArray(value) ? value.join(", ") : value);
+    }
+  }
+  const forwarded = headers.get("x-forwarded-for");
+  headers.set(
+    "X-Cadet-Client-Ip",
+    forwarded?.split(",").pop()?.trim() || peer || "127.0.0.1",
+  );
+  return headers;
+}
+
+/**
+ * The catch-all proxy row: everything the route table doesn't answer rides
+ * to the entry's Cadet Gateway, which supports its own surface. The forward
+ * streams both ways — the request body rides as the raw stream (`duplex:
+ * "half"` is the fetch spec's requirement whenever body is a stream), and
+ * redirects pass through un-followed (`redirect: "manual"` — the caller,
+ * not this host, owns its own 3xx). The response streams back with the
+ * hop-by-hop and length headers stripped: fetch decodes the upstream's
+ * content-encoding, so the lengths no longer describe the bytes.
+ */
+async function runProxyRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  const entry = findAssistantByName(request.assistantId);
+  if (!entry) {
+    return null;
+  }
+  const method = request.method ?? "GET";
+  const target = new URL(request.path ?? "/", getGatewayUrl(entry));
+  const hasBody = method !== "GET" && method !== "HEAD";
+  const upstream = await fetch(target, {
+    method,
+    headers: normalizeForwardHeaders(request.headers, request.peer ?? null),
+    ...(hasBody ? { body: request.body, duplex: "half" as const } : {}),
+    redirect: "manual",
+  });
+  const outHeaders = new Headers();
+  upstream.headers.forEach((value, key) => {
+    console.log("UPSTREAM HEADER", key, value);
+    const lower = key.toLowerCase();
+    if (HOP_BY_HOP_HEADERS.has(lower)) return;
+    if (lower === "content-length" || lower === "content-encoding") return;
+    outHeaders.append(key, value);
+  });
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: outHeaders,
+  });
 }
 
 /** The operator route table, in match order. */
@@ -531,6 +662,11 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^avatar\/get$/),
     run: runAvatarRoute,
   },
+  {
+    method: "ALL",
+    pattern: scopedAssistant(/^.+$/),
+    run: runProxyRoute,
+  },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
@@ -552,7 +688,7 @@ export function matchOperatorRequest(
   method: string,
 ): OperatorMatch | null {
   for (const route of OPERATOR_ROUTES) {
-    if (method !== route.method) {
+    if (method !== route.method && route.method !== "ALL") {
       continue;
     }
     const match = route.pattern.exec(pathname);
@@ -597,8 +733,11 @@ export async function forwardOperatorRequest(
   if (!match) {
     return null;
   }
+  const url = new URL(request.url);
   return match.route.run({
     assistantId: match.assistantId,
+    method: request.method,
+    path: url.pathname + url.search,
     headers: request.headers,
     body: request.body,
   });

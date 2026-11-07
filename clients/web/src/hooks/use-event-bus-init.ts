@@ -53,20 +53,8 @@ interface UseEventBusInitParams {
   assistantId: string | null;
 }
 
-export function useEventBusInit({
-  assistantId,
-}: UseEventBusInitParams): void {
+export function useEventBusInit({ assistantId }: UseEventBusInitParams): void {
   useEffect(() => {
-    // Source helpers touch `document` / `window` at call time and
-    // document their "caller guards under SSR/Node" contract in their
-    // own JSDoc. `useEffect` already doesn't run during SSR render,
-    // but the guard makes the contract explicit and survives any
-    // future move to a non-React caller (e.g. invoking from a
-    // module-level bootstrap). Keep aligned with CONVENTIONS.md's
-    // "SSR/build-safe rendering" rule.
-    if (typeof window === "undefined") {
-      return;
-    }
     // The post-resume request counter is deliberately absent: React runs
     // descendant effects before ancestor ones, so a counter registered here
     // would open its window after in-tree subscribers had already fired their

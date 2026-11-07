@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    ".storybook/story-parameters.ts",
+    "eslint-rules/*.test.mjs",
+    "scripts/publish-android-play.ts",
+    "scripts/test-browser-notification-delivery.ts"
+  ],
+  "project": ["**/*"],
+  "ignoreExportsUsedInFile": true
+}

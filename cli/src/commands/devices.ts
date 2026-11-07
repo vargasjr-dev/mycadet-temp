@@ -18,13 +18,14 @@ import {
   DeviceRecord,
   dockerResourceNames,
   getAssistantDisplayName,
+  loadGuardianToken,
   loopbackSafeFetch,
+  execOutput,
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../lib/assistant-config";
 import type { GuardianTokenData } from "@mycadet/local-mode";
-import { loadGuardianToken } from "../lib/guardian-token.js";
 import { computeDeviceId } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
@@ -36,7 +37,6 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
-import { execOutput } from "../lib/step-runner.js";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),

@@ -29,18 +29,15 @@ import type { VoiceSurfacePaint } from "./voice-surface-paint";
  * minimizes into stayed dark would be the more visible wrong, and a failed
  * sample still lands on that same dark.
  *
- * Pass a null `assistantId` to skip the fetch entirely (a hidden surface).
  */
-export function useVoiceSurfacePaint(
-  assistantId: string | null,
-): VoiceSurfacePaint | null {
+export function useVoiceSurfacePaint(): VoiceSurfacePaint | null {
   const { components, traits, customImageUrl, accentHex, isLoading } =
-    useAssistantAvatar(assistantId);
+    useAssistantAvatar();
   const sampledAccentHex = useSampledAvatarAccentHex(
     accentHex === null ? customImageUrl : null,
   );
 
-  if (!assistantId || isLoading) {
+  if (isLoading) {
     return null;
   }
 

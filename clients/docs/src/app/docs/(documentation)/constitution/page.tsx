@@ -1,5 +1,5 @@
-import { ConstitutionContent } from "@/app/docs/_components/constitution-content";
 import { createMetadata } from "@/lib/metadata";
+import ConstitutionMarkdown from "@/app/docs/_components/constitution-markdown";
 
 export const metadata = createMetadata({
   title: "Cadet Constitution - Cadet Docs",
@@ -9,5 +9,5 @@ export const metadata = createMetadata({
 });
 
 export default function ConstitutionPage() {
-  return <ConstitutionContent />;
+  return <ConstitutionMarkdown />;
 }

@@ -13,9 +13,7 @@ import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
  * tap for any other assistant has no answer here — which assistant a
  * surface serves is the host's fact, not a web selection.
  */
-function resolveCurrentTapAssistant(
-  payload: NotificationTapPayload,
-): boolean {
+function resolveCurrentTapAssistant(payload: NotificationTapPayload): boolean {
   const identity = payload.identity;
   if (!identity) {
     return false;

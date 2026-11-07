@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 
 import { getWorkspaceDir } from "../paths.js";
+import { loadConfig } from "../config.js";
 
 /**
  * Shared public-base-URL handling for the remote-web pairing flow — the
@@ -28,16 +30,32 @@ export function parsePublicBaseUrl(value: string): string | null {
   }
 }
 
-/** The ingress URL recorded in this gateway's own workspace, or null. */
-export function readSavedIngressPublicBaseUrl(): string | null {
+/**
+ * The gateway's own minimal read of the workspace config. This is
+ * deliberately a gateway-side schema rather than the workspace config's
+ * shared definition: the saved ingress URL is expected to move out of the
+ * workspace config and live gateway-side entirely, so the gateway describes
+ * only the little shape it reads and shares no field literals with the
+ * workspace config's schema.
+ */
+const SavedIngressConfigSchema = z.object({
+  ingress: z
+    .object({
+      publicBaseUrl: z.string(),
+    })
+    .optional(),
+});
+
+/** The ingress URL recorded in the Cadet's workspace, defaulting to localhost */
+export function readSavedIngressPublicBaseUrl(): string {
   try {
-    const config = JSON.parse(
-      readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8"),
-    ) as Record<string, unknown>;
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    return typeof url === "string" && url.trim() ? url : null;
+    const raw = readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8");
+    const config = SavedIngressConfigSchema.parse(JSON.parse(raw));
+    const url = config.ingress?.publicBaseUrl;
+    if (url?.trim()) return url;
   } catch {
-    return null;
+    // No workspace config (or an unreadable one) — the local default below
+    // is the answer for a local assistant.
   }
+  return `http://127.0.0.1:${loadConfig().port}`;
 }

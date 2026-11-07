@@ -1,32 +1,47 @@
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 
 import { useTranslation } from "@app/i18n";
+import { useCallback, useState } from "react";
+import { useRememberedOriginsStore } from "@app/stores/remembered-origins-store";
 
-/**
- * The "Remove from this device?" confirmation for a remembered remote origin —
- * web's `RemoveFromDeviceDialog` scoped to its origin arm, so the copy cannot
- * drift from the surfaces that share it. No removal touches the assistant
- * itself, which is what the copy explains: only the entry on this device is
- * forgotten.
- */
 export function RemoveFromDeviceDialog({
+  url,
   open,
   assistantName,
-  errorMessage,
-  isPending,
-  onConfirm,
-  onCancel,
+  closeDialog,
 }: {
+  url: string;
   open: boolean;
-  /** The entry's label, echoed in the copy. */
   assistantName: string;
-  /** Inline failure line under the message when a removal attempt failed. */
-  errorMessage?: string;
-  isPending: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
+  closeDialog: () => void;
 }) {
   const { t } = useTranslation();
+  const [isPending, setIsPending] = useState(false);
+  const [errorMessage, setRemoveOriginError] = useState<string | null>(null);
+
+  const handleRemoveOriginConfirm = useCallback(async () => {
+    if (!isPending) {
+      return;
+    }
+    setIsPending(true);
+    await useRememberedOriginsStore.removeOrigin(url);
+    setIsPending(false);
+    // removeOrigin resolves silently on a persistence failure, so the entry
+    // still being listed is the failure signal — the dialog stays open.
+    const stillListed = useRememberedOriginsStore
+      .getState()
+      .origins.some((o) => o.url === url);
+    if (stillListed) {
+      setRemoveOriginError(t("removeFromDeviceDialog.removeFailed"));
+      return;
+    }
+    closeDialog();
+  }, [isPending]);
+
+  const onCancel = useCallback(() => {
+    setRemoveOriginError(null);
+    closeDialog();
+  }, []);
 
   return (
     <ConfirmDialog
@@ -45,7 +60,7 @@ export function RemoveFromDeviceDialog({
       confirmLabel={t("removeFromDeviceDialog.confirm")}
       destructive
       isPending={isPending}
-      onConfirm={onConfirm}
+      onConfirm={handleRemoveOriginConfirm}
       onCancel={onCancel}
     />
   );

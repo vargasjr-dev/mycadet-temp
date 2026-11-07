@@ -42,13 +42,10 @@
 /**
  * The host's preferred languages as BCP 47 tags, most-preferred first.
  *
- * Returns an empty array when there is no `navigator` (SSR, non-DOM test
- * contexts) so callers fall through to their own default.
+ * Non-DOM contexts have no locales; callers fall through to their own
+ * default.
  */
 export function systemLocales(): string[] {
-  if (typeof navigator === "undefined") {
-    return [];
-  }
 
   // `navigator.languages` is the full ordered preference list. Safari and some
   // WebViews have historically left it empty or absent, so `navigator.language`

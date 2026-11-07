@@ -17,10 +17,7 @@ import {
   UsageTrendSkeleton,
   type UsageTrendChartLegendItem,
 } from "@/domains/settings/usage/usage-trend-chart";
-import {
-  formatCost,
-  formatTokens,
-} from "@/domains/settings/usage/format";
+import { formatCost, formatTokens } from "@/domains/settings/usage/format";
 import { decorateUsageBreakdownGroups } from "@/domains/settings/usage/group-labels";
 import {
   buildUsageBreakdownQuery,

@@ -58,7 +58,7 @@ import {
   type AndroidNotificationOwnershipBridge,
 } from "@/runtime/android-sender-notification";
 import { resolveSignedApnsEnvironment } from "@/runtime/apns-environment";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import {
   dispatchNotificationTap,
   type NotificationTapPayload,

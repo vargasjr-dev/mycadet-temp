@@ -49,8 +49,8 @@ export function AssistantHandleModal({
 }
 
 export interface AssistantHandleModalControl {
-  /** The assistant's current handle; `null` when there is none to show. */
-  handle: string | null;
+  /** The assistant's current handle — the id is the handle. */
+  handle: string;
   /** Opens the modal; `null` when the handle is not this user's to edit here. */
   openModal: (() => void) | null;
   /** Mount once, anywhere in the caller's tree. */
@@ -72,7 +72,7 @@ export function useAssistantHandleModal(): AssistantHandleModalControl {
   const openModal = useCallback(() => setOpen(true), []);
 
   return {
-    handle: handle || null,
+    handle,
     openModal,
     modal: <AssistantHandleModal open={open} onOpenChange={setOpen} />,
   };

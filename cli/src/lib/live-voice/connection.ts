@@ -1,43 +1,20 @@
 /**
  * Resolving the live-voice WebSocket URL and the credential to open it with.
- *
- * Two transports, chosen by how the assistant is deployed. A cloud assistant
- * goes through tunnel with a minted WS token (see `./tunnel.ts`, which owns that
- * path end to end). Everything below is the local and self-hosted one.
- *
- * The endpoint is the **gateway's** `/v1/live-voice`, not the runtime's. That
- * distinction is the whole of the auth story: the runtime's copy demands a
- * gateway service token, which no client can mint, while the gateway's copy
- * authenticates the caller and then mints that service token itself on the way
- * upstream (`gateway/src/http/routes/live-voice-websocket.ts`).
- *
- * What the gateway wants is an actor edge JWT belonging to the *bound
- * guardian*. Live voice is a guardian-only surface, because the daemon stamps
- * each voice turn with the guardian's trust context and the proxy replaces the
- * caller's identity upstream, so the pin at the gateway is the only place a
- * non-guardian can be stopped.
- *
- * The CLI already holds exactly that credential and has since it first paired:
- * `leaseGuardianToken` pairs via `/v1/pair`, which resolves the *cadet*
- * guardian principal and mints an access token subject
- * `actor:<assistantId>:<guardianPrincipalId>`, the same principal
- * `findCadetGuardian()` returns on the other side of the check. So the pin
- * passes by construction, and there is nothing new to provision here.
  */
 
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
+  loadGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "../cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../assistant-config.js";
 import {
   guardianTokenDueForRenewal,
-  loadGuardianToken,
   refreshGuardianToken,
 } from "../guardian-token.js";
 import {
@@ -93,7 +70,7 @@ export async function resolveLiveVoiceConnection(
   // is behind tunnel, which authenticates nobody and forwards an attestation
   // the gateway trusts, so the credential is not the guardian JWT below but a
   // WS token minted from the cloud session the CLI already holds.
-  if (isCloudHome(entry.cloud)) {
+  if (isCloudEntry(entry)) {
     return await resolveCloudConnection(entry);
   }
 

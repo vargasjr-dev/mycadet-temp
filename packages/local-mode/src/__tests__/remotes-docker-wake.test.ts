@@ -16,37 +16,36 @@ const realExecModule = { ...(await import("../exec")) };
 const realDockerCommon = {
   ...(await import("../remotes/docker/common")),
 };
-const realRecreate = {
-  ...(await import("../remotes/docker/recreate")),
-};
+const realHatch = { ...(await import("../remotes/docker/hatch")) };
 
 /**
  * The recreate arm under test: `wakeDocker` starts the three service
  * containers; a "No such container" failure (a migrated install whose
  * volumes hold data but whose containers were never created) is healed by
  * recreating the group from the entry's recorded images and retrying the
- * start once. The exec fake models the daemon's answers per round of three
- * `docker start` calls.
+ * start once. The exec fake answers every docker command the recreate path
+ * runs — start, rm, inspect, create, pull, run.
  */
+type DockerCommand = { cmd: string; args: string[] };
+let dockerCalls: DockerCommand[] = [];
 let startFailures: (string | undefined)[];
 let recreateFailure: Error | undefined;
 
 const execModuleMock = mock(
   async (cmd: string, args: string[] = []): Promise<void> => {
-    if (cmd === "docker" && args[0] === "start") {
-      startCalls++;
-      const failure = startFailures.shift();
-      if (failure) throw new Error(failure);
+    if (cmd === "docker") {
+      dockerCalls.push({ cmd, args: [...args] });
+      if (args[0] === "start") {
+        const failure = startFailures.shift();
+        if (failure) throw new Error(failure);
+        return;
+      }
+      if (recreateFailure) throw recreateFailure;
       return;
     }
   },
 );
-let startCalls = 0;
 let logSpy: ReturnType<typeof spyOn>;
-
-const recreateDockerContainersMock = mock<
-  typeof realRecreate.recreateDockerContainers
->(async () => {});
 
 mock.module("../exec", () => ({
   ...realExecModule,
@@ -56,15 +55,15 @@ mock.module("../remotes/docker/common", () => ({
   ...realDockerCommon,
   ensureDockerDaemonRunning: async () => {},
 }));
-mock.module("../remotes/docker/recreate", () => ({
-  ...realRecreate,
-  recreateDockerContainers: recreateDockerContainersMock,
+mock.module("../remotes/docker/hatch", () => ({
+  ...realHatch,
+  pullImage: async () => {},
 }));
 
 afterAll(() => {
   mock.module("../exec", () => realExecModule);
   mock.module("../remotes/docker/common", () => realDockerCommon);
-  mock.module("../remotes/docker/recreate", () => realRecreate);
+  mock.module("../remotes/docker/hatch", () => realHatch);
 });
 
 import type { DockerAssistant } from "../lockfile-contract";
@@ -86,20 +85,18 @@ function makeEntry(): DockerAssistant {
   };
 }
 
+const startedContainers = (): number =>
+  dockerCalls.filter(({ args }) => args[0] === "start").length;
+
 beforeEach(() => {
   logSpy = spyOn(console, "log").mockImplementation(() => {});
-  startCalls = 0;
+  dockerCalls = [];
   startFailures = [];
   recreateFailure = undefined;
-  recreateDockerContainersMock.mockReset();
-  recreateDockerContainersMock.mockImplementation(async () => {
-    if (recreateFailure) throw recreateFailure;
-  });
 });
 
 afterEach(() => {
   logSpy.mockRestore();
-  recreateDockerContainersMock.mockReset();
 });
 
 describe("wakeDocker — the docker wake leg", () => {
@@ -107,8 +104,7 @@ describe("wakeDocker — the docker wake leg", () => {
     const result = await wakeDocker(makeEntry());
 
     expect(result).toEqual({ ok: true });
-    expect(startCalls).toBe(3);
-    expect(recreateDockerContainersMock).not.toHaveBeenCalled();
+    expect(startedContainers()).toBe(3);
     expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
   });
 
@@ -128,10 +124,8 @@ describe("wakeDocker — the docker wake leg", () => {
     const result = await wakeDocker(makeEntry());
 
     expect(result).toEqual({ ok: true });
-    expect(recreateDockerContainersMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "docker-1" }),
-    );
-    expect(startCalls).toBe(4); // one aborted start + the retried round of three
+    // one aborted start + the retried round of three
+    expect(startedContainers()).toBe(4);
     expect(logSpy).toHaveBeenCalledWith(
       "Containers for 'docker-1' don't exist yet — recreating from the recorded images...",
     );
@@ -147,17 +141,14 @@ describe("wakeDocker — the docker wake leg", () => {
       NO_SUCH_CONTAINER,
       NO_SUCH_CONTAINER,
     ];
-    recreateFailure = new Error(
-      "no container images recorded for 'docker-1' — re-hatch or run `cadet upgrade` to set them",
-    );
+    recreateFailure = new Error("docker network create failed");
 
     const result = await wakeDocker(makeEntry());
 
     expect(result).toEqual({
       ok: false,
       status: 500,
-      error:
-        "no container images recorded for 'docker-1' — re-hatch or run `cadet upgrade` to set them",
+      error: "docker network create failed",
     });
   });
 
@@ -171,6 +162,5 @@ describe("wakeDocker — the docker wake leg", () => {
       status: 500,
       error: "Cannot connect to the Docker daemon",
     });
-    expect(recreateDockerContainersMock).not.toHaveBeenCalled();
   });
 });

@@ -556,4 +556,3 @@ describe("ProfileAdvancedParams read-only segment controls", () => {
     expect(onSpeedChange).toHaveBeenLastCalledWith("fast");
   });
 });
-

@@ -204,7 +204,6 @@ interface AssistantNavItemProps {
 }
 
 export function AssistantNavItem({
-  assistantId,
   label,
   active,
   collapsed = false,
@@ -218,7 +217,7 @@ export function AssistantNavItem({
     traits,
     customImageUrl,
     accentHex: hex,
-  } = useAssistantAvatar(assistantId);
+  } = useAssistantAvatar();
   const reduce = useReducedMotion();
   /* Drives the collapsed rail's pulse only. The expanded row's eyes hold still,
      so nothing there subscribes to these controls and the loop leaves them

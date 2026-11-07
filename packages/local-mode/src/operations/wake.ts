@@ -2,6 +2,7 @@ import type { LockfileAssistant } from "../lockfile-contract";
 import { cliCommand } from "../environment";
 import { wakeLocal } from "../remotes/local/wake";
 import { wakeDocker } from "../remotes/docker/wake";
+import { wakeBaseten } from "../remotes/baseten/lifecycle";
 
 /**
  * The wake operation: start (or restart) an assistant's services in place —
@@ -9,8 +10,10 @@ import { wakeDocker } from "../remotes/docker/wake";
  * stack (healing conflicted ports, backfilling a missing bootstrap secret,
  * restarting the gateway when the secret was just backfilled); a docker wake
  * starts the service containers (recreating them from the recorded images
- * when they were never created). Like sleep, the operation is just a
- * remote -> method router: every unsupported remote refuses the same way.
+ * when they were never created); a baseten wake runs `cadet wake` inside
+ * the sandbox — the request itself already resumed it from standby. Like
+ * sleep, the operation is just a remote -> method router: every unsupported
+ * remote refuses the same way.
  */
 export type WakeResult =
   | { ok: true }
@@ -30,6 +33,8 @@ export async function wakeAssistant(
       return await wakeLocal(entry, opts);
     case "docker":
       return await wakeDocker(entry);
+    case "baseten":
+      return await wakeBaseten(entry);
     default:
       return {
         ok: false,

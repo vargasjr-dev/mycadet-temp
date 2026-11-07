@@ -16,10 +16,6 @@ import { homedir, platform, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import {
-  findAssistantCommand,
-  isRepoCheckoutPath,
-} from "@mycadet/environments";
-import {
   isNamedPipePath,
   removeIpcEndpointFile,
   resolveIpcEndpoint,
@@ -27,13 +23,7 @@ import {
 
 import { resolveDataDir, resolveLogDir } from "../../config";
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import {
-  GATEWAY_PORT,
-  isLocalEntry,
-  type AppleContainerAssistant,
-  type DockerAssistant,
-  type LocalAssistant,
-} from "../../lockfile-contract";
+import { GATEWAY_PORT, type LocalAssistant } from "../../lockfile-contract";
 import {
   httpHealthCheck,
   probeDaemonReadiness,
@@ -98,7 +88,7 @@ function normalizeRuntimeVersion(version: string): string {
 }
 
 export function getLocalRuntimeInstallDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   version: string,
 ): string {
   return join(
@@ -168,13 +158,11 @@ function resolveBunExecutable(): string {
 
 function envWithBunPath(
   env: Record<string, string | undefined>,
-  commandDirs: string[] = [],
 ): Record<string, string | undefined> {
   const bunPath = resolveBunExecutable();
   const basePath = env.PATH || DEFAULT_EXECUTABLE_PATH;
   const extraDirs = [
     isAbsolute(bunPath) ? dirname(bunPath) : "",
-    ...commandDirs,
     join(homedir(), ".bun", "bin"),
     join(homedir(), ".local", "bin"),
   ].filter((dir) => dir && !basePath.split(PATH_DELIMITER).includes(dir));
@@ -184,9 +172,7 @@ function envWithBunPath(
   };
 }
 
-function localRuntimeAssistantIndex(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): string | undefined {
+function localRuntimeAssistantIndex(entry: LocalAssistant): string | undefined {
   const installDir = latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
   const candidate = packagePath(
@@ -198,7 +184,7 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
+  entry: LocalAssistant | undefined,
 ): string | undefined {
   const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
@@ -207,7 +193,7 @@ function localRuntimeGatewayDir(
 }
 
 function localRuntimeCesDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant | undefined,
+  entry: LocalAssistant | undefined,
 ): string | undefined {
   const installDir = entry && latestLocalRuntimeInstallDir(entry);
   if (!installDir) return undefined;
@@ -224,7 +210,7 @@ function localRuntimeCesDir(
  * making its mtime the install order.
  */
 function latestLocalRuntimeInstallDir(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
 ): string | undefined {
   const runtimeRoot = join(getLocalInstanceDir(entry), "runtime");
   let installed: string[];
@@ -250,7 +236,7 @@ function latestLocalRuntimeInstallDir(
 }
 
 export function ensureLocalRuntime(
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   version: string,
   options: { force?: boolean } = {},
 ): LocalRuntimeInstall {
@@ -429,9 +415,7 @@ function findGatewaySourceFromCwd(): string | undefined {
   }
 }
 
-function resolveAssistantIndexPath(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): string | undefined {
+function resolveAssistantIndexPath(entry?: LocalAssistant): string | undefined {
   if (entry) {
     const runtimeIndex = localRuntimeAssistantIndex(entry);
     if (runtimeIndex) return runtimeIndex;
@@ -567,7 +551,7 @@ type DaemonStartOptions = {
  * writable per-instance directory used outside containers.
  */
 function resolveCesBootstrapSocketDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
   env?: Record<string, string | undefined>,
 ): string {
   if (entry) {
@@ -585,7 +569,7 @@ function resolveCesBootstrapSocketDir(
  */
 function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
-  entry: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): void {
   {
@@ -626,6 +610,10 @@ export function setStartupLogging(enabled: boolean): void {
   startupLogging = enabled;
 }
 
+export function isStartupLoggingEnabled(): boolean {
+  return startupLogging;
+}
+
 function startupLog(message = ""): void {
   if (startupLogging) console.log(message);
 }
@@ -655,7 +643,7 @@ function logDaemonReadiness(
         );
       }
       console.log(
-        "   ⚠️  Assistant did not become ready within 60s, continuing anyway\n",
+        "   ⚠️  Assistant did not report ready yet — continuing anyway (wake asks again at the gateway level)\n",
       );
   }
 }
@@ -804,13 +792,6 @@ async function startDaemonFromSource(
     CADET_CLOUD: "local",
     CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
-  // "From source" covers both a developer's checkout and the npm-installed
-  // runtime the desktop app runs. Only the former is a dev run: marking an
-  // installed runtime as dev suppresses its telemetry and skips the
-  // `assistant` command install. An inherited CADET_DEV is left alone.
-  if (isRepoCheckoutPath(assistantIndex)) {
-    env.CADET_DEV = "1";
-  }
   applyDaemonEnvOverrides(env, entry, options);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
@@ -818,11 +799,7 @@ async function startDaemonFromSource(
   writeFileSync(pidFile, "starting", "utf-8");
 
   const bunPath = resolveBunExecutable();
-  const assistantCommand = findAssistantCommand(assistantIndex);
-  const spawnEnv = envWithBunPath(
-    env,
-    assistantCommand ? [dirname(assistantCommand)] : [],
-  );
+  const spawnEnv = envWithBunPath(env);
   const daemonLogFd = openRuntimeLogFile(
     getLocalInstanceDir(entry),
     "assistant",
@@ -889,7 +866,6 @@ async function startDaemonWatchFromSource(
   const env: Record<string, string | undefined> = {
     ...process.env,
     RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    CADET_DEV: "1",
     CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
   };
   applyDaemonEnvOverrides(env, entry, options);
@@ -930,9 +906,7 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): string {
+function resolveGatewayDir(entry?: LocalAssistant): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
@@ -985,13 +959,7 @@ function resolveGatewayDir(
  * entry's `entry` (undefined for the default instance, where both
  * processes fall back to the same cwd-relative paths).
  */
-export function gatewayCliInvocation(
-  entry?:
-    | LocalAssistant
-    | DockerAssistant
-    | AppleContainerAssistant
-    | undefined,
-): {
+export function gatewayCliInvocation(entry?: LocalAssistant): {
   command: string;
   args: string[];
   cwd: string;
@@ -1003,7 +971,7 @@ export function gatewayCliInvocation(
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(entry && isLocalEntry(entry)
+      ...(entry
         ? {
             CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
             GATEWAY_SECURITY_DIR: join(
@@ -1016,9 +984,7 @@ export function gatewayCliInvocation(
   };
 }
 
-function resolveCesDir(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
-): string {
+function resolveCesDir(entry?: LocalAssistant): string {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
@@ -1055,7 +1021,7 @@ function resolveCesDir(
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
 export function resolveCesSocketPath(
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry?: LocalAssistant,
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
@@ -1097,9 +1063,9 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  */
 export async function startCes(
   watch: boolean = false,
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
 ): Promise<void> {
-  const cadetDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+  const cadetDir = getLocalInstanceDir(entry);
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1465,21 +1431,14 @@ export async function startLocalDaemon(
     // already-running daemon was classified and logged inside
     // startDaemonFromSource, and re-waiting would just block on a migration
     // the user was already told about.
-    const runtimeSpawn = await startDaemonFromSource(
+    // Spawn and return — readiness is the gateway's responsibility: its
+    // process gates its own traffic on the daemon's migrations.
+    await startDaemonFromSource(
       runtimeAssistantIndex,
       entry,
       daemonPort,
       options,
     );
-    if (runtimeSpawn) {
-      await reportFreshSpawnReadiness(
-        runtimeSpawn,
-        getDaemonPidPath(entry),
-        daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
-        options?.requireReady,
-      );
-    }
     return;
   }
 
@@ -1587,7 +1546,6 @@ export async function startLocalDaemon(
         "USER",
         "LANG",
         "CADET_DEBUG",
-        "CADET_DEV",
         "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
         "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
         "CADET_WORKSPACE_DIR",
@@ -1728,22 +1686,14 @@ export async function startLocalDaemon(
           options,
         )
       : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
-    // Attach case was classified and logged inside the start function.
-    if (sourceSpawn) {
-      await reportFreshSpawnReadiness(
-        sourceSpawn,
-        getDaemonPidPath(entry),
-        daemonPort,
-        await waitForDaemonMigrationsReady(daemonPort, Date.now() + 60000),
-        options?.requireReady,
-      );
-    }
+    // Spawn and return — readiness is the gateway's responsibility: its
+    // process gates its own traffic on the daemon's migrations.
   }
 }
 
 export async function startGateway(
   watch: boolean = false,
-  entry?: LocalAssistant | DockerAssistant | AppleContainerAssistant,
+  entry: LocalAssistant,
   options?: {
     requireReady?: boolean;
   },
@@ -1754,7 +1704,7 @@ export async function startGateway(
   // Without this, crashed/stale gateways accumulate as zombies — the old
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
-  const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+  const gwPidDir = getLocalInstanceDir(entry);
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1774,7 +1724,6 @@ export async function startGateway(
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
     ...(watch
       ? {
-          CADET_DEV: "1",
           CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
         }
       : {}),
@@ -1843,7 +1792,7 @@ export async function startGateway(
   gateway.unref();
 
   if (gateway.pid) {
-    const gwPidDir = entry ? getLocalInstanceDir(entry) : resolveDataDir();
+    const gwPidDir = getLocalInstanceDir(entry);
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 

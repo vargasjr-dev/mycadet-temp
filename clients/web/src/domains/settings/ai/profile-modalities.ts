@@ -111,9 +111,7 @@ export function serializeInputModalities(
     if (!enabled && supported === catalog) {
       continue;
     }
-    out[modality] = enabled
-      ? { enabled: true, supported }
-      : { enabled: false };
+    out[modality] = enabled ? { enabled: true, supported } : { enabled: false };
     any = true;
   }
   return any ? out : null;

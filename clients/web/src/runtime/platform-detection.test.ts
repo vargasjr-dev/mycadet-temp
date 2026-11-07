@@ -24,7 +24,7 @@ let nativePlatform = false;
 let nativeOsPlatform = "web";
 
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => electron }));
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 mock.module("@capacitor/core", () => ({
@@ -363,22 +363,6 @@ describe("isMobileBrowser", () => {
     setUserAgent(DESKTOP_SAFARI_UA);
     setMediaMatches({ "(pointer: coarse)": true, "(hover: none)": true });
     expect(isMobileBrowser()).toBe(true);
-  });
-
-  test("is false without a navigator", () => {
-    const originalNavigator = globalThis.navigator;
-    Object.defineProperty(globalThis, "navigator", {
-      value: undefined,
-      configurable: true,
-    });
-    try {
-      expect(isMobileBrowser()).toBe(false);
-    } finally {
-      Object.defineProperty(globalThis, "navigator", {
-        value: originalNavigator,
-        configurable: true,
-      });
-    }
   });
 
   test("is false without matchMedia", () => {

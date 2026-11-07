@@ -5,7 +5,11 @@
  */
 
 export type AcpRunStatus =
-  "initializing" | "running" | "completed" | "failed" | "cancelled";
+  | "initializing"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 /** Whether the run is in an active (non-terminal) state. */
 export function isActiveAcpStatus(status: AcpRunStatus): boolean {

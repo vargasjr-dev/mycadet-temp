@@ -22,9 +22,6 @@ import {
   watchSetting,
 } from "@/utils/local-settings";
 
-/** Prefix for all device-scoped localStorage keys. */
-export const DEVICE_PREFIX = "device:";
-
 /** One device-scoped setting: its `device:`-prefixed localStorage key. */
 interface DeviceSettingEntry {
   key: string;
@@ -71,9 +68,6 @@ export function getDeviceSetting(
   name: DeviceSettingName,
   fallback: string,
 ): string {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     return localStorage.getItem(DEVICE_SETTINGS[name].key) ?? fallback;
   } catch {
@@ -86,26 +80,11 @@ export function setDeviceSetting(name: DeviceSettingName, value: string): void {
   setLocalSetting(DEVICE_SETTINGS[name].key, value);
 }
 
-/** Whether a device-scoped setting is stored at all, an empty value included. */
-export function hasDeviceSetting(name: DeviceSettingName): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return localStorage.getItem(DEVICE_SETTINGS[name].key) !== null;
-  } catch {
-    return false;
-  }
-}
-
 /** Read a boolean device setting. */
 export function getDeviceBool(
   name: DeviceSettingName,
   fallback: boolean,
 ): boolean {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     const raw = localStorage.getItem(DEVICE_SETTINGS[name].key);
     if (raw === "true") {

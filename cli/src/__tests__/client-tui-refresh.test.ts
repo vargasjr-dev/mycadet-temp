@@ -13,8 +13,7 @@ const ORIGINAL_ENV = process.env.CADET_ENVIRONMENT;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { resolveFreshBearerToken } from "../commands/client.js";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
-import { saveGuardianToken } from "../lib/guardian-token.js";
+import { saveGuardianToken, saveLockfileAssistant } from "@mycadet/local-mode";
 
 const RUNTIME = "https://gw.example.com";
 const past = () => new Date(Date.now() - 60_000).toISOString();

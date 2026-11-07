@@ -30,7 +30,7 @@ export async function initSafeAreaBridge(): Promise<void> {
   if (initialized) {
     return;
   }
-  if (typeof window === "undefined" || !Capacitor.isNativePlatform()) {
+  if (!Capacitor.isNativePlatform()) {
     return;
   }
   initialized = true;

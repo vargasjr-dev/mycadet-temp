@@ -2,16 +2,19 @@ import { cliCommand } from "@mycadet/local-mode";
 import {
   ensureAppServer,
   getAppServerPaths,
+  getForeignAppServerProcess,
   isAppServerRunning,
+  killForeignAppServerProcess,
   readAppServerState,
   stopAppServer,
   type AppServer,
 } from "../lib/servers/common.js";
+import { confirmAction } from "../lib/confirm-action.js";
 import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status`,
+    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status\n       ${cliCommand()} app restart`,
   );
   console.log("");
   console.log(
@@ -49,6 +52,32 @@ async function stopAppServerCommand(): Promise<void> {
   // One machine-level app server: its pid/state live under the XDG data
   // dir, not any assistant workspace, so there is exactly one candidate.
   if (!isAppServerRunning()) {
+    // A recorded PID the OS handed to something else reads as "not
+    // running" while the squatter still holds the port — surface it and
+    // offer to clear the way instead of the misleading no-op.
+    const foreign = getForeignAppServerProcess();
+    if (foreign) {
+      console.log(
+        `The recorded app server pid ${foreign.pid} is held by another process: ${foreign.command || "(unidentified)"}`,
+      );
+      if (
+        await confirmAction(
+          "Kill that process so the app server can be stopped? [Enter/Esc] ",
+        )
+      ) {
+        if (await killForeignAppServerProcess(foreign.pid)) {
+          console.log(`Killed pid ${foreign.pid}. No app server is running.`);
+        } else {
+          console.error(
+            `Error: pid ${foreign.pid} did not exit — kill it manually and re-run.`,
+          );
+          process.exit(1);
+        }
+      } else {
+        console.log("Left it running.");
+      }
+      return;
+    }
     console.log("No app server is running.");
     return;
   }
@@ -61,6 +90,12 @@ async function stopAppServerCommand(): Promise<void> {
     );
     process.exit(1);
   }
+}
+
+/** `cadet app start`: bring the app server up for the active local assistant. */
+async function restartAppServer(): Promise<void> {
+  await stopAppServerCommand();
+  await startAppServer();
 }
 
 export const app = Object.assign(
@@ -76,6 +111,7 @@ export const app = Object.assign(
       await printRootProcessDetail("app");
       return;
     }
+    if (subcommand === "restart") return restartAppServer();
     console.error(`Error: Unknown argument '${subcommand}'.`);
     printAppHelp();
   },

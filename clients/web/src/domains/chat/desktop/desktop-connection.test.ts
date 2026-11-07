@@ -4,31 +4,38 @@
  * covered in `live-voice/connection.test.ts`).
  */
 
-import { afterEach, describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { client } from "@/generated/api/client.gen";
 
 import {
   desktopEndReasonForClose,
   resolveDesktopStreamWsUrl,
 } from "./desktop-connection";
 
-afterEach(() => {
-  setSelfHostedConnection(null);
-});
+// The unified transport mints off the shared client; stood in for so the
+// URL smoke test doesn't leave the process.
+let originalPost: typeof client.post;
 
 describe("resolving the desktop stream URL", () => {
   test("dials the desktop route on the gateway", async () => {
-    setSelfHostedConnection({
-      url: "http://localhost:8500",
-      token: "actor-jwt",
-    });
+    originalPost = client.post;
+    client.post = mock(async () => ({
+      data: { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+      error: null,
+      response: new Response(null, { status: 200 }),
+    })) as typeof client.post;
+    try {
+      const url = new URL(await resolveDesktopStreamWsUrl("asst-1"));
 
-    const url = new URL(await resolveDesktopStreamWsUrl("asst-1"));
-
-    expect(url.origin).toBe("ws://localhost:8500");
-    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
-    expect(url.searchParams.get("token")).toBe("actor-jwt");
+      // The unified transport: a minted token rides the id-prefixed tunnel
+      // path (the routing rules are covered in live-voice/connection.test.ts).
+      expect(url.protocol).toBe("wss:");
+      expect(url.pathname).toBe("/asst-1/v1/desktop/stream");
+      expect(url.searchParams.get("token")).toBe("tok-abc");
+    } finally {
+      client.post = originalPost;
+    }
   });
 });
 

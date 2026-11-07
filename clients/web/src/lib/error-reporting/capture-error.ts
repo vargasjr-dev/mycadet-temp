@@ -4,7 +4,6 @@ import {
 } from "@mycadet/design-library/utils/capture-error";
 import { isExpectedDaemonTransientError } from "@/utils/daemon-errors";
 
-
 /** Web retains its daemon-specific policy around the general reporter. */
 export function captureError(
   error: unknown,

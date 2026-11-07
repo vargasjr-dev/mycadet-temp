@@ -125,10 +125,6 @@ export function getRepoSkillsDir(): string | undefined {
     return undefined;
   }
 
-  if (!process.env.CADET_DEV) {
-    return undefined;
-  }
-
   // assistant/src/skills/catalog-install.ts -> ../../../skills/
   const candidate = join(importDir, "..", "..", "..", "skills");
   if (existsSync(join(candidate, "catalog.json"))) {

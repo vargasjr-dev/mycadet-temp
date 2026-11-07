@@ -122,7 +122,6 @@ export function pendingRequest(
     expiresAt: "2026-08-17T10:10:00.000Z",
     requesterIp: "203.0.113.7",
     requesterUserAgent: "Mozilla/5.0",
-    viaEdgeProxy: false,
     ...overrides,
   };
 }

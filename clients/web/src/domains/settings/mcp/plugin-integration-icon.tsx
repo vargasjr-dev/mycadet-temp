@@ -1,3 +1,4 @@
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { PluginIcon } from "@/components/plugins/plugin-icon";
 import { usePluginIconSrc } from "@/hooks/use-plugin-icon-src";
 
@@ -6,12 +7,11 @@ import type { McpPluginDefinition } from "../integration-items";
 import { pluginLogoUrl } from "./plugin-logo";
 
 export function PluginIntegrationIcon({
-  assistantId,
   definition,
 }: {
-  assistantId: string;
   definition: McpPluginDefinition;
 }) {
+  const assistantId = useActiveAssistantId();
   const iconSrc = usePluginIconSrc(
     assistantId,
     definition.pluginName,

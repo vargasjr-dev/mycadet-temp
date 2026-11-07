@@ -7,7 +7,7 @@
  * sender with no display name, a long subject, an outbound reply that
  * threads an inbound message, and an assistant-initiated send.
  */
-import type { InboxEmail, InboxUsage } from "./types";
+import type { InboxEmail } from "./types";
 
 export const MOCK_NOW = new Date("2026-09-16T15:40:00");
 
@@ -158,9 +158,3 @@ export const MOCK_SENT: InboxEmail[] = [
     ],
   },
 ];
-
-export const MOCK_USAGE: InboxUsage = {
-  sentToday: 3,
-  receivedToday: 2,
-  dailyLimit: 100,
-};

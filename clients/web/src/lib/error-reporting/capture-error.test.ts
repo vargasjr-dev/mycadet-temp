@@ -5,10 +5,11 @@ const consoleWarnMock = mock((..._args: unknown[]) => {});
 console.error = consoleErrorMock as unknown as typeof console.error;
 console.warn = consoleWarnMock as unknown as typeof console.warn;
 
-const { normalizeToError } = await import("@mycadet/design-library/utils/normalize-error");
-const { isExpectedDaemonTransientError } = await import("@/utils/daemon-errors");
-const { captureError } =
-  await import("@/lib/error-reporting/capture-error");
+const { normalizeToError } =
+  await import("@mycadet/design-library/utils/normalize-error");
+const { isExpectedDaemonTransientError } =
+  await import("@/utils/daemon-errors");
+const { captureError } = await import("@/lib/error-reporting/capture-error");
 const { ApiError } = await import("@/utils/api-errors");
 const { CancelledError } = await import("@tanstack/react-query");
 
@@ -87,9 +88,9 @@ describe("captureError", () => {
     expect(label).toBe("[test-ctx]");
     expect(reported).toBeInstanceOf(Error);
     expect((reported as Error).message).toBe("still starting up");
-    expect(
-      (detail as Record<string, unknown>).extra,
-    ).toMatchObject({ originalError: raw });
+    expect((detail as Record<string, unknown>).extra).toMatchObject({
+      originalError: raw,
+    });
   });
 
   test("reports Error instances directly without extra detail", () => {

@@ -11,7 +11,7 @@ const openUrlMock = mock((_url: string) => Promise.resolve());
 // Include every export other same-process test files consume — bun's
 // mock.module is process-global, so an incomplete factory breaks sibling
 // suites that import the unmocked names.
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   isNativePlatform: () => isNativeRef.value,
   useIsNativePlatform: () => isNativeRef.value,
 }));

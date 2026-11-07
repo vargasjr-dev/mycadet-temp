@@ -18,6 +18,10 @@ const realProcess = { ...(await import("../process")) };
 const realDrain = { ...(await import("../remotes/local/drain")) };
 const realGuardianToken = { ...(await import("../guardian-token")) };
 const realDockerSleep = { ...(await import("../remotes/docker/sleep")) };
+const realBasetenLifecycle = {
+  ...(await import("../remotes/baseten/lifecycle")),
+};
+const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
 
 const isProcessAliveMock = mock(
   (_pidFile?: string): { alive: boolean; pid: number | null } => ({
@@ -39,7 +43,17 @@ const getGuardianAccessTokenMock = mock(
   > => ({ ok: true, accessToken: "test-guardian-token" }),
 );
 const sleepDockerMock = mock(async (): Promise<void> => {});
+const sleepBasetenMock = mock(
+  async (): Promise<
+    { ok: true; kind: "remote" } | { ok: false; status: number; error: string }
+  > => ({ ok: true, kind: "remote" }),
+);
+const isAssistantHealthyMock = mock(async (): Promise<boolean> => false);
 
+mock.module("../daemon-readiness", () => ({
+  ...realDaemonReadiness,
+  isAssistantHealthy: isAssistantHealthyMock,
+}));
 mock.module("../process", () => ({
   ...realProcess,
   isProcessAlive: isProcessAliveMock,
@@ -58,6 +72,10 @@ mock.module("../remotes/docker/sleep", () => ({
   ...realDockerSleep,
   sleepDocker: sleepDockerMock,
 }));
+mock.module("../remotes/baseten/lifecycle", () => ({
+  ...realBasetenLifecycle,
+  sleepBaseten: sleepBasetenMock,
+}));
 
 // Restore the real modules once this file finishes so the mocks above do not
 // leak into other test files in the same `bun test` run.
@@ -66,6 +84,8 @@ afterAll(() => {
   mock.module("../remotes/local/drain", () => realDrain);
   mock.module("../guardian-token", () => realGuardianToken);
   mock.module("../remotes/docker/sleep", () => realDockerSleep);
+  mock.module("../remotes/baseten/lifecycle", () => realBasetenLifecycle);
+  mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
 import type { LockfileAssistant } from "../lockfile-contract";
@@ -87,9 +107,11 @@ beforeEach(() => {
     loadGuardianTokenMock,
     getGuardianAccessTokenMock,
     sleepDockerMock,
+    isAssistantHealthyMock,
   ]) {
     m.mockReset();
   }
+  isAssistantHealthyMock.mockResolvedValue(false);
   isProcessAliveMock.mockReturnValue({ alive: false, pid: null });
   stopProcessByPidFileMock.mockResolvedValue(true);
   drainAssistantMock.mockResolvedValue("drained");
@@ -177,6 +199,7 @@ describe("sleepAssistant — the local stop core", () => {
         ces: "not-running",
       },
       notes: [],
+      wasRunning: false,
     });
     // assistant + gateway + CES sibling
     expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3);
@@ -257,6 +280,21 @@ describe("sleepAssistant — the local stop core", () => {
       expect(result.error).toContain("did not stop gracefully");
     }
   });
+
+  test("the local leg narrates its own verdict through the log callback", async () => {
+    const entry = localEntry() as LockfileAssistant;
+    stopProcessByPidFileMock.mockImplementation(
+      async (...args: unknown[]) => (args[1] as string) === "assistant",
+    );
+    const lines: string[] = [];
+
+    const result = await sleepAssistant(entry, {
+      log: (line) => lines.push(line),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(lines).toEqual(["Assistant stopped.", "Gateway is not running."]);
+  });
 });
 
 describe("sleepAssistant — the --wait drain phase", () => {
@@ -297,8 +335,22 @@ describe("sleepAssistant — the --wait drain phase", () => {
 
     const result = await sleepAssistant(entry, { wait: true });
 
-    expect(result).toEqual({ ok: true, cancelled: true });
+    expect(result).toEqual({ ok: true, cancelled: true, wasRunning: false });
     expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
+  });
+
+  test("a cancelled drain narrates the cancel line through the log callback", async () => {
+    const entry = localEntry() as LockfileAssistant;
+    isProcessAliveMock.mockReturnValue({ alive: true, pid: 4321 });
+    drainAssistantMock.mockResolvedValue("cancelled");
+    const lines: string[] = [];
+
+    await sleepAssistant(entry, { wait: true, log: (l) => lines.push(l) });
+
+    expect(lines).toEqual([
+      "Waiting for the assistant to finish background work (Ctrl-C cancels)…",
+      "Sleep cancelled — the assistant is still running.",
+    ]);
   });
 
   test("skips the drain when the assistant is not running", async () => {
@@ -342,21 +394,28 @@ describe("sleepAssistant — the --wait drain phase", () => {
 });
 
 describe("sleepAssistant — the dispatch", () => {
-  test("docker entries stop their containers", async () => {
+  test("docker entries stop their containers and report the pre-sleep liveness", async () => {
     const entry = {
       assistantId: "asst-docker",
       cloud: "docker",
       port: 7831,
     } as LockfileAssistant;
+    isAssistantHealthyMock.mockResolvedValue(true);
 
     const result = await sleepAssistant(entry, {});
 
     expect(result).toEqual({
       ok: true,
       kind: "containers",
+      wasRunning: true,
     });
+    // The probe fires BEFORE the stop — the verdict is the pre-sleep state.
+    expect(isAssistantHealthyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
+    );
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
   });
 
@@ -377,7 +436,7 @@ describe("sleepAssistant — the dispatch", () => {
 });
 
 describe("the operator route table — the scoped surface's sleep arm", () => {
-  test("POST matches; other methods and paths never do", () => {
+  test("POST matches; foreign methods ride the proxy catch-all", () => {
     expect(
       matchOperatorRequest("/v1/assistants/a/sleep/", "POST"),
     ).not.toBeNull();
@@ -385,12 +444,15 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       matchOperatorRequest("/v1/assistants/a/sleep", "POST"),
     ).not.toBeNull();
     expect(
-      matchOperatorRequest("/v1/assistants/a/sleep/", "DELETE"),
-    ).toBeNull();
-    expect(matchOperatorRequest("/v1/assistants/a/retire/", "POST")).toBeNull();
+      matchOperatorRequest("/v1/assistants/a/sleep/", "DELETE")?.route.method,
+    ).toBe("ALL");
     expect(
-      matchOperatorRequest("/v1/assistants/a/conversations", "POST"),
-    ).toBeNull();
+      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistants/a/conversations", "POST")?.route
+        .method,
+    ).toBe("ALL");
   });
 
   test("a malformed id decode passes", () => {
@@ -417,6 +479,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(response?.status).toBe(204);
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
   });
 
@@ -474,3 +537,47 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(body.detail).toContain("active phone calls");
   });
 });
+
+describe("sleepAssistant — the baseten arm", () => {
+  const basetenEntry = (overrides: Record<string, unknown> = {}) =>
+    ({
+      assistantId: "asst-baseten",
+      cloud: "baseten",
+      name: "sbx-abc123",
+      sandboxUrl: "https://sbx-abc123.b10.co",
+      port: 7830,
+      ...overrides,
+    }) as LockfileAssistant;
+
+  test("the sandbox's own `cadet sleep` runs, with the caller's flags", async () => {
+    sleepBasetenMock.mockResolvedValue({ ok: true, kind: "remote" });
+    const entry = seedEntry(batenSafe(basetenEntry()));
+    const result = await sleepAssistant(entry, { force: true, wait: true });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.kind).toBe("remote");
+    expect(sleepBasetenMock).toHaveBeenCalledWith(
+      expect.objectContaining({ cloud: "baseten" }),
+      { force: true, wait: true },
+    );
+  });
+
+  test("the leg's structured failure rides back with the was-running probe", async () => {
+    sleepBasetenMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      error: "'cadet sleep' inside the sandbox exited with 1.",
+    });
+    const entry = seedEntry(batenSafe(basetenEntry()));
+    const result = await sleepAssistant(entry);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("inside the sandbox");
+    expect(result.wasRunning).toBe(false);
+  });
+});
+
+/** The lockfile's baseten schema is strict — seed through the parse. */
+function batenSafe(entry: Record<string, unknown>): Record<string, unknown> {
+  return entry;
+}

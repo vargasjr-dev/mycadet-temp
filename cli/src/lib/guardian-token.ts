@@ -2,7 +2,6 @@ import {
   closeSync,
   mkdirSync,
   openSync,
-  readFileSync,
   statSync,
   unlinkSync,
   writeSync,
@@ -13,36 +12,12 @@ import {
   computeDeviceId,
   guardianTokenPath,
   isConfidentialRefreshUrl,
+  loadGuardianToken,
   loopbackSafeFetch,
   parseGuardianTokenFields,
-  saveGuardianToken as writeGuardianToken,
+  saveGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
-
-/**
- * Read a previously persisted guardian token for the given assistant.
- * Returns the parsed token data, or null if the file does not exist or is
- * unreadable.
- */
-export function loadGuardianToken(
-  assistantId: string,
-): GuardianTokenData | null {
-  try {
-    const raw = readFileSync(guardianTokenPath(assistantId), "utf-8");
-    return JSON.parse(raw) as GuardianTokenData;
-  } catch {
-    return null;
-  }
-}
-
-export function saveGuardianToken(
-  assistantId: string,
-  data: GuardianTokenData,
-): void {
-  // Delegates to the shared @mycadet/local-mode writer (0700 dir, 0600 file)
-  // resolving the same env-driven config dir the path resolver above uses.
-  writeGuardianToken(assistantId, data);
-}
 
 /** Abort the refresh POST if the gateway is slow/unreachable (it's now on the
  *  hot request path, so it must never hang indefinitely). */

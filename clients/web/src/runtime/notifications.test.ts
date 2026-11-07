@@ -25,7 +25,7 @@ import {
   browserNotificationConversationKey,
   BrowserNotificationDelivery,
 } from "@/runtime/browser-notification-delivery";
-import * as nativeAuthRuntime from "@/runtime/native-auth";
+import * as nativeAuthRuntime from "@/runtime/native-platform";
 import * as platformDetection from "@/runtime/platform-detection";
 import * as pushRegistration from "@/runtime/push-registration";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
@@ -38,7 +38,7 @@ import { useConversationStore } from "@/stores/conversation-store";
 // the code under test.
 
 let nativePlatform = true;
-mock.module("@/runtime/native-auth", () => ({
+mock.module("@/runtime/native-platform", () => ({
   ...nativeAuthRuntime,
   isNativePlatform: () => nativePlatform,
 }));

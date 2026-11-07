@@ -267,7 +267,10 @@ export function ensureSectionInIndex(
   const index = queryClient.getQueryData<SidebarIndexSection[] | null>(
     queryKey,
   );
-  if (index == null || index.some((row) => matchesIndexBucket(conversation, row))) {
+  if (
+    index == null ||
+    index.some((row) => matchesIndexBucket(conversation, row))
+  ) {
     return;
   }
 

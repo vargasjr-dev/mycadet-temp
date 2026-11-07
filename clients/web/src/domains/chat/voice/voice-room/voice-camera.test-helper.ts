@@ -26,7 +26,10 @@ const originalMediaDevices = Object.getOwnPropertyDescriptor(
  */
 export function stubMediaDevices(
   mediaDevices:
-    FakeGetUserMedia | { getUserMedia: FakeGetUserMedia } | null | undefined,
+    | FakeGetUserMedia
+    | { getUserMedia: FakeGetUserMedia }
+    | null
+    | undefined,
 ): void {
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,

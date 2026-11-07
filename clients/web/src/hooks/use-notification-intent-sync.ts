@@ -36,7 +36,6 @@ import {
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { supportsGuardianNotificationTargeting } from "@/lib/backwards-compat/guardian-notification-targeting";
 import { getSoundManager } from "@/lib/sounds/sound-manager";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { createNotificationIdentity } from "@/runtime/notification-avatar";
 import {
   browserNotificationConversationKey,
@@ -67,13 +66,8 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
   const entry = useResolvedAssistantStore.use.assistant();
-  const assistant =
-    entry && entry.assistantId === assistantId ? entry : null;
-  const connectionFallback =
-    getSelfHostedIngressUrl() ??
-    (typeof globalThis.location === "undefined"
-      ? null
-      : globalThis.location.href);
+  const assistant = entry && entry.assistantId === assistantId ? entry : null;
+  const connectionFallback = globalThis.location.href;
   // Keyed on the resolved assistant — a resolved assistant is the whole
   // fact; there is no separate session question to ask first.
   const scopeId = assistant

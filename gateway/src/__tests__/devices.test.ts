@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 
 import { initSigningKey } from "../auth/token-service.js";
+import { mintPairingPayload } from "../http/routes/pair.js";
 
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
 
@@ -42,10 +43,7 @@ const { MAX_PAIRING_USER_AGENT_CHARS } =
   await import("../auth/device-identity-text.js");
 const { handleListDevices, handleRevokeDevice } =
   await import("../http/routes/devices.js");
-const { handlePair, resetPairRateLimiterForTests } =
-  await import("../http/routes/pair.js");
-
-const LOOPBACK_IP = "127.0.0.1";
+const { resetPairRateLimiterForTests } = await import("../http/routes/pair.js");
 const GUARDIAN_ID = "guardian-001";
 
 let testRoot: string;
@@ -109,21 +107,6 @@ function seedRefresh(opts: {
       updatedAt: now,
     })
     .run();
-}
-
-function listRequest(): Request {
-  return new Request("http://localhost:7830/v1/devices", {
-    method: "GET",
-    headers: { host: "localhost:7830" },
-  });
-}
-
-function revokeRequest(body?: Record<string, unknown>): Request {
-  return new Request("http://localhost:7830/v1/devices/revoke", {
-    method: "POST",
-    headers: { host: "localhost:7830", "content-type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
 }
 
 function activeActorCount(device: string): number {
@@ -400,11 +383,8 @@ describe("bootstrapGuardian host identity", () => {
 
     // isCurrentHost (cli/src/commands/devices.ts) keys off hashedDeviceId; the
     // name must not disturb it.
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; clientReportedName: string | null }[];
-    };
-    const listed = body.devices.find(
+    const devices = await handleListDevices();
+    const listed = devices.find(
       (d) => d.hashedDeviceId === hashToken("host-device"),
     );
     expect(listed?.hashedDeviceId).toBe(hashToken("host-device"));
@@ -447,42 +427,13 @@ describe("bootstrapGuardian host identity", () => {
 });
 
 describe("/v1/pair clientReportedName", () => {
-  const PROD_ORIGIN = "chrome-extension://hphbdmpffeigpcdjkckleobjmhhokpne";
-
-  function makeExtensionPairRequest(body?: Record<string, unknown>): Request {
-    return new Request("http://localhost:7830/v1/pair", {
-      method: "POST",
-      headers: {
-        host: "localhost:7830",
-        "content-type": "application/json",
-        origin: PROD_ORIGIN,
-        "x-cadet-interface-id": "chrome-extension",
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  }
-
-  function makeCliPairRequest(body?: Record<string, unknown>): Request {
-    return new Request("http://localhost:7830/v1/pair", {
-      method: "POST",
-      headers: {
-        host: "localhost:7830",
-        "content-type": "application/json",
-        "x-cadet-interface-id": "cli",
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  }
-
   test("persists a client-reported name on both minted rows (chrome-extension)", async () => {
-    const res = await handlePair(
-      makeExtensionPairRequest({
-        deviceId: "device-ext-name",
-        clientReportedName: "Alice's Chromebook",
-      }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
+    const res = await mintPairingPayload({
+      deviceId: "device-ext-name",
+      platform: "test",
+      clientReportedName: "Alice's Chromebook",
+    });
+    expect(res.token).toBeTruthy();
 
     expect(actorRow("device-ext-name")?.clientReportedName).toBe(
       "Alice's Chromebook",
@@ -493,14 +444,12 @@ describe("/v1/pair clientReportedName", () => {
   });
 
   test("persists a client-reported name on both minted rows (cli)", async () => {
-    const res = await handlePair(
-      makeCliPairRequest({
-        deviceId: "device-cli-name",
-        clientReportedName: "Alice's MacBook Pro",
-      }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
+    const res = await mintPairingPayload({
+      deviceId: "device-cli-name",
+      platform: "test",
+      clientReportedName: "Alice's MacBook Pro",
+    });
+    expect(res.token).toBeTruthy();
 
     expect(actorRow("device-cli-name")?.clientReportedName).toBe(
       "Alice's MacBook Pro",
@@ -511,47 +460,14 @@ describe("/v1/pair clientReportedName", () => {
   });
 
   test("records null when clientReportedName is omitted, and still pairs", async () => {
-    const res = await handlePair(
-      makeCliPairRequest({ deviceId: "device-no-name" }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
+    const res = await mintPairingPayload({
+      deviceId: "device-no-name",
+      platform: "test",
+    });
+    expect(res.token).toBeTruthy();
 
     expect(actorRow("device-no-name")?.clientReportedName).toBeNull();
     expect(refreshRow("device-no-name")?.clientReportedName).toBeNull();
-  });
-
-  test("records null and still pairs when clientReportedName is not a string", async () => {
-    const res = await handlePair(
-      makeCliPairRequest({
-        deviceId: "device-bad-name",
-        clientReportedName: 12345,
-      }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
-
-    expect(actorRow("device-bad-name")?.clientReportedName).toBeNull();
-    expect(refreshRow("device-bad-name")?.clientReportedName).toBeNull();
-  });
-
-  test("a body that is not JSON at all still takes the stateless path unchanged", async () => {
-    const req = new Request("http://localhost:7830/v1/pair", {
-      method: "POST",
-      headers: {
-        host: "localhost:7830",
-        "content-type": "application/json",
-        origin: PROD_ORIGIN,
-        "x-cadet-interface-id": "chrome-extension",
-      },
-      body: "not json",
-    });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(typeof body.token).toBe("string");
-    // Stateless path: no device-bound row, so no refreshToken either.
-    expect(body.refreshToken).toBeUndefined();
   });
 });
 
@@ -562,17 +478,12 @@ describe("GET /v1/devices", () => {
     seedActor({ device: "device-C", principal: "other-guardian" });
     seedActor({ device: "device-D", status: "revoked" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; platform: string }[];
-    };
+    const devices = await handleListDevices();
+    expect(devices.length).toBe(4);
 
-    const ids = body.devices.map((d) => d.hashedDeviceId).sort();
+    const ids = devices.map((d) => d.hashedDeviceId).sort();
     expect(ids).toEqual([hashToken("device-A"), hashToken("device-B")].sort());
-    const a = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-A"),
-    );
+    const a = devices.find((d) => d.hashedDeviceId === hashToken("device-A"));
     expect(a?.platform).toBe("cli");
   });
 
@@ -585,28 +496,16 @@ describe("GET /v1/devices", () => {
     });
     seedActor({ device: "device-B" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: {
-        hashedDeviceId: string;
-        pairingUserAgent: string | null;
-        clientReportedName: string | null;
-        lastUsedAt: number | null;
-      }[];
-    };
+    const devices = await handleListDevices();
 
-    const a = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-A"),
-    );
+    const a = devices.find((d) => d.hashedDeviceId === hashToken("device-A"));
     expect(a?.pairingUserAgent).toBe(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
     );
     expect(a?.clientReportedName).toBe("Alice's MacBook Pro");
     expect(a?.lastUsedAt).toBe(1_700_000_000_000);
 
-    const b = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-B"),
-    );
+    const b = devices.find((d) => d.hashedDeviceId === hashToken("device-B"));
     expect(b).toHaveProperty("pairingUserAgent", null);
     expect(b).toHaveProperty("clientReportedName", null);
   });
@@ -614,13 +513,8 @@ describe("GET /v1/devices", () => {
   test("surfaces lastUsedAt from the actor token row", async () => {
     seedActor({ device: "device-A", lastUsedAt: 1_700_000_000_000 });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    const a = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-A"),
-    );
+    const devices = await handleListDevices();
+    const a = devices.find((d) => d.hashedDeviceId === hashToken("device-A"));
     expect(a?.lastUsedAt).toBe(1_700_000_000_000);
   });
 
@@ -629,13 +523,8 @@ describe("GET /v1/devices", () => {
     // Guards against the refresh record's timestamp leaking into the response.
     seedRefresh({ device: "device-B", lastUsedAt: 1_700_000_000_000 });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    const b = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-B"),
-    );
+    const devices = await handleListDevices();
+    const b = devices.find((d) => d.hashedDeviceId === hashToken("device-B"));
     expect(b?.lastUsedAt).toBeNull();
   });
 
@@ -649,12 +538,9 @@ describe("GET /v1/devices", () => {
     });
     seedActor({ device: "device-A" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices).toHaveLength(1);
-    expect(body.devices[0]?.lastUsedAt).toBe(1_700_000_000_000);
+    const devices = await handleListDevices();
+    expect(devices).toHaveLength(1);
+    expect(devices[0]?.lastUsedAt).toBe(1_700_000_000_000);
   });
 
   test("prefers the active row's stamp when it is newer than a rotated-out one", async () => {
@@ -665,22 +551,16 @@ describe("GET /v1/devices", () => {
     });
     seedActor({ device: "device-A", lastUsedAt: 1_800_000_000_000 });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices[0]?.lastUsedAt).toBe(1_800_000_000_000);
+    const devices = await handleListDevices();
+    expect(devices[0]?.lastUsedAt).toBe(1_800_000_000_000);
   });
 
   test("returns null when no row for the device carries a stamp", async () => {
     seedActor({ device: "device-A", status: "revoked" });
     seedActor({ device: "device-A" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices[0]?.lastUsedAt).toBeNull();
+    const devices = await handleListDevices();
+    expect(devices[0]?.lastUsedAt).toBeNull();
   });
 
   test("does not borrow another principal's stamp for the same device hash", async () => {
@@ -691,31 +571,9 @@ describe("GET /v1/devices", () => {
     });
     seedActor({ device: "device-A" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices).toHaveLength(1);
-    expect(body.devices[0]?.lastUsedAt).toBeNull();
-  });
-
-  test("rejects a non-loopback caller (403)", async () => {
-    seedActor({ device: "device-A" });
-    const res = await handleListDevices(listRequest(), "8.8.8.8");
-    expect(res.status).toBe(403);
-  });
-
-  test("rejects a request carrying an Origin header (WebView vector, 403)", async () => {
-    // A real host CLI never sends an Origin; a present Origin means a
-    // browser/WebView (e.g. *.cadet.local) is calling and could read back
-    // device hashes via the gateway's WebView CORS allowance. Must be refused.
-    seedActor({ device: "device-A" });
-    const req = new Request("http://localhost:7830/v1/devices", {
-      method: "GET",
-      headers: { host: "localhost:7830", origin: "https://app.cadet.local" },
-    });
-    const res = await handleListDevices(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
+    const devices = await handleListDevices();
+    expect(devices).toHaveLength(1);
+    expect(devices[0]?.lastUsedAt).toBeNull();
   });
 });
 
@@ -726,14 +584,8 @@ describe("POST /v1/devices/revoke", () => {
     seedActor({ device: "device-B" });
     seedRefresh({ device: "device-B" });
 
-    const res = await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      LOOPBACK_IP,
-    );
-    expect(res.status).toBe(200);
-    expect(
-      (await res.json()) as { revoked: boolean; hashedDeviceId: string },
-    ).toEqual({
+    const res = await handleRevokeDevice(hashToken("device-A"));
+    expect(res).toEqual({
       revoked: true,
       hashedDeviceId: hashToken("device-A"),
     });
@@ -751,20 +603,14 @@ describe("POST /v1/devices/revoke", () => {
     seedActor({ device: "device-A", lastUsedAt: 1_700_000_000_000 });
     seedRefresh({ device: "device-A" });
 
-    await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      LOOPBACK_IP,
-    );
+    await handleRevokeDevice(hashToken("device-A"));
 
     // Re-pair: a fresh, unstamped active row for the same device.
     seedActor({ device: "device-A" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices).toHaveLength(1);
-    expect(body.devices[0]?.lastUsedAt).toBeNull();
+    const devices = await handleListDevices();
+    expect(devices).toHaveLength(1);
+    expect(devices[0]?.lastUsedAt).toBeNull();
   });
 
   test("clears the stamp on a rotated-out row so a re-pair starts fresh", async () => {
@@ -780,20 +626,14 @@ describe("POST /v1/devices/revoke", () => {
     seedActor({ device: "device-A", lastUsedAt: 1_800_000_000_000 });
     seedRefresh({ device: "device-A" });
 
-    await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      LOOPBACK_IP,
-    );
+    await handleRevokeDevice(hashToken("device-A"));
 
     // Re-pair: a fresh, unstamped active row for the same device.
     seedActor({ device: "device-A" });
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    expect(body.devices).toHaveLength(1);
-    expect(body.devices[0]?.lastUsedAt).toBeNull();
+    const devices = await handleListDevices();
+    expect(devices).toHaveLength(1);
+    expect(devices[0]?.lastUsedAt).toBeNull();
   });
 
   test("does not bump updatedAt on rows whose status is already revoked", async () => {
@@ -807,10 +647,7 @@ describe("POST /v1/devices/revoke", () => {
     });
     seedActor({ device: "device-A" });
 
-    await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      LOOPBACK_IP,
-    );
+    await handleRevokeDevice(hashToken("device-A"));
 
     const rows = getGatewayDb()
       .select()
@@ -826,49 +663,10 @@ describe("POST /v1/devices/revoke", () => {
     seedActor({ device: "device-A", lastUsedAt: 1_700_000_000_000 });
     seedActor({ device: "device-B", lastUsedAt: 1_800_000_000_000 });
 
-    await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      LOOPBACK_IP,
-    );
+    await handleRevokeDevice(hashToken("device-A"));
 
-    const res = await handleListDevices(listRequest(), LOOPBACK_IP);
-    const body = (await res.json()) as {
-      devices: { hashedDeviceId: string; lastUsedAt: number | null }[];
-    };
-    const b = body.devices.find(
-      (d) => d.hashedDeviceId === hashToken("device-B"),
-    );
+    const devices = await handleListDevices();
+    const b = devices.find((d) => d.hashedDeviceId === hashToken("device-B"));
     expect(b?.lastUsedAt).toBe(1_800_000_000_000);
-  });
-
-  test("rejects a request without hashedDeviceId (400)", async () => {
-    const res = await handleRevokeDevice(revokeRequest({}), LOOPBACK_IP);
-    expect(res.status).toBe(400);
-  });
-
-  test("rejects a non-loopback caller (403)", async () => {
-    const res = await handleRevokeDevice(
-      revokeRequest({ hashedDeviceId: hashToken("device-A") }),
-      "8.8.8.8",
-    );
-    expect(res.status).toBe(403);
-  });
-
-  test("rejects a request carrying an Origin header (WebView vector, 403)", async () => {
-    seedActor({ device: "device-A" });
-    seedRefresh({ device: "device-A" });
-    const req = new Request("http://localhost:7830/v1/devices/revoke", {
-      method: "POST",
-      headers: {
-        host: "localhost:7830",
-        "content-type": "application/json",
-        origin: "https://app.cadet.local",
-      },
-      body: JSON.stringify({ hashedDeviceId: hashToken("device-A") }),
-    });
-    const res = await handleRevokeDevice(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
-    // Refused before touching state — device-A stays active.
-    expect(activeActorCount("device-A")).toBe(1);
   });
 });

@@ -90,26 +90,10 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "Point-in-time",
     "typePreview": "Preview",
-    "typeScheduled": "Scheduled",
-    "cliOnly": "Use cadet backup and cadet restore in a terminal for local or Docker installations."
+    "typeScheduled": "Scheduled"
   },
   "assistantStatusPanel": {
-    "assistantId": "Assistant ID",
-    "active": "Active",
-    "cpuUsage": "CPU Usage",
-    "created": "Created",
-    "diskUnavailable": "Disk status unavailable",
-    "diskUsage": "Disk Usage",
-    "loadHealthzFailed": "Failed to load assistant info",
-    "loadingCpu": "Loading CPU status...",
-    "loadingDisk": "Loading disk status...",
-    "loadingMemory": "Loading memory status...",
-    "memoryUsage": "Memory Usage",
-    "name": "Name",
-    "status": "Status",
-    "unknown": "Unknown",
-    "usedOf": "{used} used of {total}",
-    "version": "Version"
+    "loadHealthzFailed": "Failed to load assistant info"
   },
   "assistantTerminalPanel": {
     "subtitle": "Interactive shell session on your assistant machine",
@@ -136,7 +120,6 @@
     "updating": "Updating..."
   },
   "autoTopUpPaymentMethodModal": {
-    "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
   "bulkOverrideSwapModal": {
@@ -620,26 +603,6 @@
     "toolsHeading": "Registered tools",
     "toolsLoading": "Loading tools..."
   },
-  "mediaEmbedsCard": {
-    "add": "Add",
-    "addDomainLabel": "Add Domain",
-    "addDomainPlaceholder": "Add domain (e.g. example.com)",
-    "allowlist": "Video Domain Allowlist",
-    "autoToggle": "Auto Media Embeds",
-    "domainCount": "{count, plural, one {# domain} other {# domains}}",
-    "removeDomainAria": "Remove {domain}",
-    "resetDefaults": "Reset to Defaults",
-    "subtitle": "Automatically embed images, videos, and other media shared in chat messages.",
-    "title": "Media Embeds"
-  },
-  "memoryRetrospectiveToggle": {
-    "ariaLabel": "Enable memory retrospectives",
-    "description": "Let your assistant re-read recent conversations in the background and save what it missed in the moment. Pausing this keeps the rest of memory working.",
-    "title": "Retrospectives",
-    "toastEnabled": "Memory retrospectives enabled.",
-    "toastFailed": "Failed to update memory retrospectives.",
-    "toastPaused": "Memory retrospectives paused."
-  },
   "memoryWorkerToggle": {
     "ariaLabel": "Enable background memory worker",
     "description": "Run memory consolidation in a dedicated background process. It starts automatically; stop it to pause background memory processing until the next restart.",
@@ -1026,18 +989,6 @@
     "skipped": "Skipped",
     "title": "Recent runs"
   },
-  "riskToleranceSettings": {
-    "advanced": "Advanced",
-    "backgroundDescription": "When your assistant acts without you - scheduled tasks, background jobs, and external triggers.",
-    "backgroundTitle": "Background",
-    "conversationsDescription": "When you're chatting with your assistant directly.",
-    "conversationsTitle": "Conversations",
-    "description": "Control which actions your assistant can take without asking first. Each action is classified by risk level - your access level determines which levels auto-approve. Trust Rules fine-tune this for specific actions by raising or lowering their risk.",
-    "headlessDescription": "When triggered externally with no interactive client.",
-    "headlessTitle": "Headless",
-    "loadError": "Could not load threshold settings. Check your connection and reload.",
-    "title": "Assistant Access"
-  },
   "scheduleProfileRebase": {
     "alreadyOnProfileToast": "Every schedule already runs on {profile}.",
     "dialogMessage": "{count, plural, one {# of the schedules below runs on a different model. This moves every schedule, including reminders your assistant set aside for later, onto {profile}, your current default. Schedules you deliberately put on another model move too.} other {# of the schedules below run on a different model. This moves every schedule, including reminders your assistant set aside for later, onto {profile}, your current default. Schedules you deliberately put on another model move too.}}",
@@ -1145,20 +1096,6 @@
     "system": "System",
     "title": "Theme"
   },
-  "tierPicker": {
-    "machineAriaLabel": "Machine tier",
-    "machineLabel": "Machine",
-    "machineOption": "{label} {priceLabel}",
-    "machinePlaceholder": "Select a machine tier",
-    "machineTooltip": "Determines the CPU and memory allocated to your assistant",
-    "priceAddon": "+{price}",
-    "priceCurrent": "({price}, current)",
-    "storageAriaLabel": "Storage tier",
-    "storageLabel": "Storage",
-    "storageOption": "{gib} GB {priceLabel}",
-    "storagePlaceholder": "Select a storage tier",
-    "storageTooltip": "Persistent disk space for your assistant's files and data"
-  },
   "timezonePicker": {
     "noMatches": "No matches",
     "notSet": "Not set",
@@ -1175,52 +1112,6 @@
     "title": "This device",
     "description": "The id the assistant's gateway recorded for this browser. Match it against the hashed device ids listed by `cadet devices` on the host.",
     "copyHint": "Copy device id"
-  },
-  "trustRuleFormModal": {
-    "cancel": "Cancel",
-    "closeAriaLabel": "Close",
-    "defaultDescription": "{tool} - {pattern}",
-    "descriptionLabel": "Description (optional)",
-    "patternFallback": "pattern",
-    "patternLabel": "Pattern",
-    "patternPlaceholder": "e.g., git *",
-    "riskHigh": "High",
-    "riskHighDescription": "Always require explicit approval",
-    "riskLevelLabel": "Risk Level",
-    "riskLow": "Low",
-    "riskLowDescription": "Auto-approve without prompting",
-    "riskMedium": "Medium",
-    "riskMediumDescription": "Prompt before executing",
-    "save": "Save",
-    "saveFailed": "Failed to save trust rule.",
-    "saving": "Saving…",
-    "title": "Edit Trust Rule",
-    "toolLabel": "Tool"
-  },
-  "trustRules": {
-    "description": "Manage per-tool rules that control which actions auto-approve and which require your explicit permission.",
-    "manage": "Manage",
-    "title": "Trust Rules"
-  },
-  "trustRulesModal": {
-    "cancel": "Cancel",
-    "defaultTag": "Default",
-    "delete": "Delete",
-    "deleteErrorFallback": "Failed to delete trust rule.",
-    "deleteMessage": "Remove the {risk}-risk rule for {tool} matching \"{pattern}\"?",
-    "deleteRuleAria": "Delete {tool} rule",
-    "deleteTitle": "Delete Trust Rule?",
-    "done": "Done",
-    "editRuleAria": "Edit {tool} rule",
-    "empty": "No trust rules yet. Rules are created when you classify actions from permission prompts.",
-    "loadErrorFallback": "Failed to load trust rules.",
-    "loading": "Loading…",
-    "modifiedTag": "Modified",
-    "riskHigh": "High",
-    "riskLow": "Low",
-    "riskMedium": "Medium",
-    "showAllDefaults": "Show all defaults",
-    "title": "Trust Rules"
   },
   "tunnelStatusRow": {
     "checkedAt": "Checked {when}",

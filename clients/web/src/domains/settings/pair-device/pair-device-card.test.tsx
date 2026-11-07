@@ -126,8 +126,6 @@ function pendingRequestBody(
     requestedAt: new Date(Date.now() - 2 * 60_000).toISOString(),
     expiresAt: futureIso(),
     requesterUserAgent: "Mozilla/5.0 (iPhone; like Mac OS X)",
-    // Default rows carry a public requester IP, so they read as edge mints.
-    viaEdgeProxy: true,
     ...overrides,
   });
 }
@@ -532,7 +530,6 @@ describe("PairDeviceCard: pending pairing requests", () => {
           requests: [
             pendingRequestBody({
               requesterIp: "127.0.0.1",
-              viaEdgeProxy: false,
             }),
           ],
         }),
@@ -550,7 +547,7 @@ describe("PairDeviceCard: pending pairing requests", () => {
     installPendingFetch({
       onPendingRequests: () =>
         jsonResponse({
-          requests: [pendingRequestBody({ viaEdgeProxy: true })],
+          requests: [pendingRequestBody()],
         }),
     });
     renderCard();

@@ -14,8 +14,7 @@ const ORIGINAL_ENV = process.env.CADET_ENVIRONMENT;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
-import { saveLockfileAssistant } from "@mycadet/local-mode";
-import { saveGuardianToken } from "../lib/guardian-token";
+import { saveGuardianToken, saveLockfileAssistant } from "@mycadet/local-mode";
 
 const RUNTIME = "https://gw.example.com";
 const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();

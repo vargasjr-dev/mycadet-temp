@@ -40,7 +40,6 @@ import {
 } from "@/domains/chat/voice/live-voice/pcm-capture";
 import { resolveGatewayWsUrl } from "@/domains/chat/voice/live-voice/connection";
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 
 export interface DictationStreamHandle {
   /**
@@ -319,9 +318,6 @@ export function startDictationStream(
         return;
       }
       // Which way in, and how long the token took, without the token.
-      console.info(
-        `dictation-stream: dialling ${new URL(url).host} (${getSelfHostedIngressUrl() ? "self-hosted" : "tunnel"}) after ${Date.now() - startedAt}ms`,
-      );
       try {
         attach(webSocketFactory(url));
       } catch (err) {

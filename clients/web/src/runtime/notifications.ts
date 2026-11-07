@@ -50,7 +50,7 @@ import {
   browserNotificationDelivery,
 } from "@/runtime/browser-notification-delivery";
 import { isElectron } from "@/runtime/is-electron";
-import { isNativePlatform } from "@/runtime/native-auth";
+import { isNativePlatform } from "@/runtime/native-platform";
 import { getNotificationIdentitySnapshot } from "@/runtime/notification-avatar";
 import {
   resolveNotificationSender,
@@ -177,9 +177,6 @@ export function shouldSuppressFocusedNotificationDelivery(
  * Notification API).
  */
 export function isNotificationsSupported(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
   if (isElectron()) {
     return !!window.cadet?.notifications;
   }

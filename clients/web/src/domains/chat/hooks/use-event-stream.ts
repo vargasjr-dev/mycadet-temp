@@ -159,11 +159,7 @@ export function useEventStream({
   // refs at call time, so the factory deps are only the identity keys.
   // --------------------------------------------------------------------------
   const consumer = useMemo(() => {
-    if (
-      !assistantId ||
-      !activeConversationId ||
-      !conversationExistsOnServer
-    ) {
+    if (!assistantId || !activeConversationId || !conversationExistsOnServer) {
       return null;
     }
     // Refs read inside closures that run at event-dispatch time, not during render.

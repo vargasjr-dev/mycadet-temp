@@ -1,33 +1,18 @@
 /**
  * Gateway client for authenticated requests to a hatched assistant's runtime.
- *
- * Encapsulates lockfile reading, credential resolution, and authenticated
- * fetch so callers can simply do:
- *
- * ```ts
- * const client = new AssistantClient();                          // active / latest
- * const client = new AssistantClient({ assistantId: "my-bot" }); // by name
- * await client.get("/healthz");
- * await client.post("/messages/", { content: "hi" });
- * ```
- *
- * The auth scheme follows the assistant's topology, so callers never pick it.
- * Platform-managed entries in particular have no local guardian token: they
- * authenticate against the wildcard runtime proxy at
- * `{cloudUrl}/v1/assistants/<id>/<rest>` with the stored cloud credential.
  */
 
 import {
   cloudAuthHeaders,
   invalidateOrgIdCache,
+  loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudHome } from "./cloud-values.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
 import {
-  loadGuardianToken,
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "./guardian-token.js";
@@ -99,7 +84,7 @@ export class AssistantClient {
     }
 
     this._assistantId = entry.assistantId;
-    const cloudManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
+    const cloudManaged = !opts?.sessionToken && isCloudEntry(entry);
     this.runtimeUrl = getGatewayUrl(entry);
 
     if (opts?.sessionToken) {

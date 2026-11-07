@@ -16,7 +16,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { client } from "@/generated/api/client.gen";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 import {
   buildGatewayWsUrl,
@@ -53,13 +52,10 @@ beforeEach(() => {
     captured = options;
     return nextPostResult;
   }) as typeof client.post;
-  // Default to the cloud path; self-hosted tests prime this explicitly.
-  setSelfHostedConnection(null);
 });
 
 afterEach(() => {
   client.post = originalPost;
-  setSelfHostedConnection(null);
   window.__CADET_CONFIG__ = undefined;
 });
 
@@ -129,18 +125,13 @@ describe("buildTunnelWsUrl", () => {
     expect(raw).not.toContain("token=a/b+c=d e");
   });
 
-  test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
-    window.__CADET_CONFIG__ = {
-      cloudUrl: "https://staging-cloud.mycadet.ai",
-    };
+  test("derives the tunnel host from the page's own origin, falling back to prod off-convention", () => {
+    // The single-origin plan: no injected URL — the origin the page is
+    // served AT decides. The test env's origin (localhost) matches no
+    // platform convention, so the prod tunnel is the answer. The
+    // convention mapping itself is tunnelHostForCloudHost's own tests.
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("staging-tunnel.mycadet.ai");
-  });
-
-  test("falls back to the prod tunnel host for an off-convention platform URL", () => {
-    window.__CADET_CONFIG__ = { cloudUrl: "http://localhost:8000" };
-    const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.host).toBe("tunnel.mycadet.ai");
   });
 });
@@ -243,30 +234,8 @@ describe("resolveGatewayWsUrl", () => {
     routePath: "/v1/desktop/stream",
   };
 
-  test("self-hosted: dials the scoped path on the ingress and mints nothing", async () => {
-    setSelfHostedConnection({
-      url: "http://localhost:8500",
-      token: "actor-jwt",
-    });
-
-    const url = new URL(await resolveGatewayWsUrl(args));
-
-    expect(url.origin).toBe("ws://localhost:8500");
-    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
-    expect(url.searchParams.get("token")).toBe("actor-jwt");
-    expect(captured).toBeNull();
-  });
-
-  test("self-hosted: dials without a token when none is provisioned — the host injects", async () => {
-    setSelfHostedConnection({ url: "http://localhost:8500", token: null });
-
-    const url = new URL(await resolveGatewayWsUrl(args));
-
-    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
-    expect(url.searchParams.has("token")).toBe(false);
-    expect(captured).toBeNull();
-  });
-
+  // The self-hosted ingress branch is gone — the resolver always mints,
+  // so the managed case below is the only dial shape left.
   test("managed: mints a tunnel token and dials tunnel with it, params included", async () => {
     const url = new URL(
       await resolveGatewayWsUrl({ ...args, params: { sampleRate: "16000" } }),
@@ -284,7 +253,7 @@ describe("resolveGatewayWsUrl", () => {
 });
 
 // ---------------------------------------------------------------------------
-// resolveLiveVoiceWsUrl — transport routing (cloud vs self-hosted)
+// resolveLiveVoiceWsUrl — the transport every live-voice session shares
 // ---------------------------------------------------------------------------
 describe("resolveLiveVoiceWsUrl", () => {
   test("cloud path: mints a tunnel token and builds the tunnel URL", async () => {
@@ -313,38 +282,4 @@ describe("resolveLiveVoiceWsUrl", () => {
     expect(new URL(raw).searchParams.has("conversationId")).toBe(false);
   });
 
-  test("self-hosted path: dials the scoped path with the actor token, no mint", async () => {
-    // GIVEN a primed self-hosted connection
-    setSelfHostedConnection({
-      url: "https://x.ngrok-free.app",
-      token: "actor-tok",
-    });
-
-    const raw = await resolveLiveVoiceWsUrl({
-      assistantId: "assistant-1",
-      conversationId: "conv-xyz",
-    });
-
-    // THEN no tunnel token is minted...
-    expect(captured).toBeNull();
-    // ...and the URL targets the gateway's scoped route with the actor token
-    const url = new URL(raw);
-    expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("x.ngrok-free.app");
-    expect(url.pathname).toBe("/v1/assistants/assistant-1/live-voice");
-    expect(url.searchParams.get("token")).toBe("actor-tok");
-    expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
-  });
-
-  test("self-hosted with no actor token dials without one (and does not mint)", async () => {
-    // GIVEN an ingress is known but no actor token is provisioned — a local
-    // assistant's serving host injects the credential on the proxied upgrade.
-    setSelfHostedConnection({ url: "http://localhost:8500", token: null });
-
-    const raw = await resolveLiveVoiceWsUrl({ assistantId: "assistant-1" });
-
-    const url = new URL(raw);
-    expect(url.searchParams.has("token")).toBe(false);
-    expect(captured).toBeNull();
-  });
 });

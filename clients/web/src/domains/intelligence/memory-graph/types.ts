@@ -13,9 +13,6 @@ import type {
 } from "@/generated/daemon/types.gen";
 
 export type MemoryGraph = MemorygraphGetResponse;
-export type MemoryGraphNode = MemoryGraph["nodes"][number];
-export type MemoryGraphEdge = MemoryGraph["edges"][number];
-
 /**
  * Two-state result. `unsupported` is a success-shaped outcome (the active
  * memory backend exposes no graph) that the UI renders as a dedicated empty
@@ -23,7 +20,8 @@ export type MemoryGraphEdge = MemoryGraph["edges"][number];
  * nodes and gets its own "no concepts yet" copy.
  */
 export type MemoryGraphResult =
-  { kind: "ready"; graph: MemoryGraph } | { kind: "unsupported" };
+  | { kind: "ready"; graph: MemoryGraph }
+  | { kind: "unsupported" };
 
 /** Detail for a single node — the concept's rendered markdown, fetched on open. */
 export type MemoryGraphNodeDetail = MemorygraphnodeGetResponse;

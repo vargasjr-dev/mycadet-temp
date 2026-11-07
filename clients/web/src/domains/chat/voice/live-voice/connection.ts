@@ -46,11 +46,6 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import {
-  getSelfHostedActorToken,
-  getSelfHostedIngressUrl,
-} from "@/lib/self-hosted/connection";
 import { assertHasResponse } from "@/utils/api-errors";
 
 /**
@@ -135,8 +130,8 @@ export async function mintTunnelWsToken(
 
 /**
  * Resolve the tunnel host (no scheme). An explicit `VITE_TUNNEL_HOST` always
- * wins (local `vel up` tunnel); otherwise derive it from the cloud runtime
- * URL so one renderer build follows whichever platform environment it is
+ * wins (local `vel up` tunnel); otherwise derive it from the page's own
+ * origin so one renderer build follows whichever platform environment it is
  * connected to — the Electron web bundle is built without `VITE_TUNNEL_HOST`,
  * and baking the prod default would send a staging assistant's token to prod
  * tunnel, which rejects it on the WS upgrade.
@@ -145,15 +140,9 @@ function getTunnelHost(): string {
   if (import.meta.env.VITE_TUNNEL_HOST) {
     return import.meta.env.VITE_TUNNEL_HOST;
   }
-  try {
-    const derived = tunnelHostForCloudHost(
-      new URL(getCloudRuntimeUrl()).hostname,
-    );
-    if (derived) {
-      return derived;
-    }
-  } catch {
-    // Unparseable platform URL — fall through to the prod default.
+  const derived = tunnelHostForCloudHost();
+  if (derived) {
+    return derived;
   }
   return DEFAULT_TUNNEL_HOST;
 }
@@ -322,17 +311,6 @@ export async function resolveGatewayWsUrl({
   routePath,
   params,
 }: ResolveGatewayWsUrlArgs): Promise<string> {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (ingressUrl) {
-    return buildGatewayWsUrl({
-      assistantId,
-      ingressUrl,
-      routePath,
-      token: getSelfHostedActorToken() ?? undefined,
-      params,
-    });
-  }
-
   const { token } = await mintTunnelWsToken(assistantId);
   return buildTunnelWsUrl({ assistantId, routePath, token, params });
 }

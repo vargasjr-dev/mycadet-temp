@@ -763,7 +763,6 @@ describe("TranscriptMessageBody", () => {
     expect(rows[0]!.textContent).toBe("I will check that.");
   });
 
-
   describe("quiet-turn projection", () => {
     const slackCommand =
       "TOKEN=$(assistant credentials reveal --service slack_channel --field bot_token)";

@@ -27,7 +27,7 @@ test("resolves a typed action through the localized catalog key", () => {
 });
 
 test("uses the legacy label when no activity or action is available", () => {
-  expect(resolveActionDisplayLabel({ fallback: "Legacy command" }, translate)).toBe(
-    "Legacy command",
-  );
+  expect(
+    resolveActionDisplayLabel({ fallback: "Legacy command" }, translate),
+  ).toBe("Legacy command");
 });

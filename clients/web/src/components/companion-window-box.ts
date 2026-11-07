@@ -16,8 +16,8 @@ export interface WindowBox {
 
 export function useWindowBox(): WindowBox {
   const [box, setBox] = useState<WindowBox>(() => ({
-    width: typeof window === "undefined" ? 0 : window.innerWidth,
-    height: typeof window === "undefined" ? 0 : window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight,
   }));
   useEffect(() => {
     // The shell resizes this window whenever the share moves to another

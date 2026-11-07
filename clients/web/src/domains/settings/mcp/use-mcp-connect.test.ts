@@ -12,7 +12,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type * as BrowserRuntime from "@/runtime/browser";
-import type * as NativeAuth from "@/runtime/native-auth";
+import type * as NativeAuth from "@/runtime/native-platform";
 
 import type * as McpApi from "./mcp-api";
 import { mcpQueryKeys } from "./mcp-query-keys";
@@ -43,14 +43,14 @@ let startImplementation: () => Promise<AuthStartResult>;
 let pollImplementation: () => Promise<AuthStatusResult>;
 let listImplementation: () => Promise<ServerListResult>;
 
-const startMcpAuthMock = mock(
-  async (_assistantId: string, _serverId: string) => startImplementation(),
+const startMcpAuthMock = mock(async (_assistantId: string, _serverId: string) =>
+  startImplementation(),
 );
 const pollMcpAuthStatusMock = mock(
   async (_assistantId: string, _serverId: string) => pollImplementation(),
 );
-const fetchMcpServersMock = mock(
-  async (_assistantId: string) => listImplementation(),
+const fetchMcpServersMock = mock(async (_assistantId: string) =>
+  listImplementation(),
 );
 
 mock.module(
@@ -89,7 +89,7 @@ mock.module(
 );
 
 mock.module(
-  "@/runtime/native-auth",
+  "@/runtime/native-platform",
   (): Partial<typeof NativeAuth> => ({
     isNativePlatform: () => nativePlatform,
   }),
@@ -105,9 +105,8 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
 }));
 
 const { useMcpConnect } = await import("./use-mcp-connect");
-const { CONNECTION_POLL_WINDOW_MS } = await import(
-  "@/lib/auth/oauth-connect-timing"
-);
+const { CONNECTION_POLL_WINDOW_MS } =
+  await import("@/lib/auth/oauth-connect-timing");
 
 const clients = new Set<QueryClient>();
 const originalWindowOpen = window.open;
@@ -155,7 +154,10 @@ function createQueryClient() {
   return client;
 }
 
-function mountConnect(assistantId = ASSISTANT_ID, client = createQueryClient()) {
+function mountConnect(
+  assistantId = ASSISTANT_ID,
+  client = createQueryClient(),
+) {
   function wrapper({ children }: { children: ReactNode }) {
     return createElement(QueryClientProvider, { client }, children);
   }
@@ -237,7 +239,9 @@ describe("useMcpConnect", () => {
     expect(startMcpAuthMock).not.toHaveBeenCalled();
     prepareGate.resolve(SERVER_ID);
 
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("authorizing"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("authorizing"),
+    );
     expect(result.current.attempt?.serverId).toBe(SERVER_ID);
     expect(startMcpAuthMock).toHaveBeenCalledWith(ASSISTANT_ID, SERVER_ID);
     expect(popup.location.replace).toHaveBeenCalledWith(
@@ -261,11 +265,7 @@ describe("useMcpConnect", () => {
     const { result } = mountConnect();
 
     act(() =>
-      result.current.connect(
-        "plugin:example",
-        async () => null,
-        DISPLAY_NAME,
-      ),
+      result.current.connect("plugin:example", async () => null, DISPLAY_NAME),
     );
 
     await waitFor(() => expect(result.current.attempt).toBeNull());
@@ -309,7 +309,9 @@ describe("useMcpConnect", () => {
     expect(startMcpAuthMock).not.toHaveBeenCalled();
 
     prepareGate.resolve();
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("authorizing"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("authorizing"),
+    );
     expect(startMcpAuthMock).toHaveBeenCalledWith(ASSISTANT_ID, SERVER_ID);
     expect(popup.location.replace).toHaveBeenCalledWith(
       "https://auth.example.com/authorize",
@@ -324,22 +326,32 @@ describe("useMcpConnect", () => {
         ),
       });
     });
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("connecting"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("connecting"),
+    );
     expect(popup.close).toHaveBeenCalledTimes(1);
 
     await waitFor(() => expect(fetchMcpServersMock).toHaveBeenCalledTimes(1));
     firstRuntimeResponse.resolve(legacyErrorServers());
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("connecting"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("connecting"),
+    );
 
     act(() => {
-      void client.invalidateQueries({ queryKey: mcpQueryKeys.list(ASSISTANT_ID) });
+      void client.invalidateQueries({
+        queryKey: mcpQueryKeys.list(ASSISTANT_ID),
+      });
     });
     await waitFor(() => expect(fetchMcpServersMock).toHaveBeenCalledTimes(2));
     secondRuntimeResponse.resolve(legacyErrorServers());
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("connecting"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("connecting"),
+    );
 
     act(() => {
-      void client.invalidateQueries({ queryKey: mcpQueryKeys.list(ASSISTANT_ID) });
+      void client.invalidateQueries({
+        queryKey: mcpQueryKeys.list(ASSISTANT_ID),
+      });
     });
     await waitFor(() => expect(fetchMcpServersMock).toHaveBeenCalledTimes(3));
     connectedRuntimeResponse.resolve(connectedServers());
@@ -372,7 +384,9 @@ describe("useMcpConnect", () => {
 
     act(() => result.current.retry());
 
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("authorizing"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("authorizing"),
+    );
     expect(startMcpAuthMock).toHaveBeenCalledTimes(2);
     expect(prepare).toHaveBeenCalledTimes(1);
     expect(openExternalUrlMock).toHaveBeenCalledWith(
@@ -492,7 +506,9 @@ describe("useMcpConnect", () => {
     expect(openExternalUrlMock).not.toHaveBeenCalled();
 
     act(() => result.current.connect(SERVER_ID, undefined, DISPLAY_NAME));
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("authorizing"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("authorizing"),
+    );
     expect(startMcpAuthMock.mock.calls[1]).toEqual(["assistant-2", SERVER_ID]);
     expect(openExternalUrlMock).toHaveBeenCalledWith(
       "https://auth.example.com/new-assistant",
@@ -503,7 +519,9 @@ describe("useMcpConnect", () => {
     const { result, client } = mountConnect();
     const invalidatedKeys: ReadonlyArray<unknown>[] = [];
     const originalInvalidate = client.invalidateQueries.bind(client);
-    client.invalidateQueries = ((...args: Parameters<QueryClient["invalidateQueries"]>) => {
+    client.invalidateQueries = ((
+      ...args: Parameters<QueryClient["invalidateQueries"]>
+    ) => {
       if (args[0]?.queryKey) {
         invalidatedKeys.push(args[0].queryKey);
       }
@@ -511,7 +529,9 @@ describe("useMcpConnect", () => {
     }) as QueryClient["invalidateQueries"];
 
     await beginConnect(result);
-    await waitFor(() => expect(result.current.attempt?.phase).toBe("authorizing"));
+    await waitFor(() =>
+      expect(result.current.attempt?.phase).toBe("authorizing"),
+    );
     const operationId = result.current.attempt!.operationId;
     const pollCallsBeforeFinish = pollMcpAuthStatusMock.mock.calls.length;
     const finish = browserFinishedCallback;

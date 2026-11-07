@@ -1,5 +1,6 @@
 import type { LockfileAssistant } from "../lockfile-contract";
 import type { LifecycleReporter } from "../lifecycle-reporter";
+import { ensureLockfile } from "../lockfile";
 import { hatchCloud } from "../remotes/cloud/hatch";
 import { hatchDocker } from "../remotes/docker/hatch";
 import { hatchLocal } from "../remotes/local/hatch";
@@ -69,6 +70,17 @@ export type HatchAssistantResult =
   | { ok: false; status: number; error: string; assistantId?: string };
 
 export async function hatchAssistant(
+  params: HatchAssistantParams,
+): Promise<HatchAssistantResult> {
+  const result = await hatchRemote(params);
+  // A failed hatch still leaves the lockfile behind — an empty registry (and
+  // its xdg directory), so the assistant's absence is recorded state and the
+  // next writer has its home.
+  if (!result.ok) ensureLockfile();
+  return result;
+}
+
+async function hatchRemote(
   params: HatchAssistantParams,
 ): Promise<HatchAssistantResult> {
   switch (params.remote) {

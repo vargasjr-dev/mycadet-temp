@@ -54,14 +54,11 @@ mock.module("@/lib/diagnostics", () => ({
 }));
 
 import {
-  authorizeRemoteGatewayRequest,
   daemonErrorInterceptor,
-  daemonRequestInterceptor,
   requestInterceptor,
 } from "@/lib/api-interceptors";
 
 import { ApiError } from "@/utils/api-errors";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
 
@@ -223,155 +220,6 @@ describe("api-interceptors / Electron session-token header", () => {
 // connection is set, (b) the path's first segment isn't on the allowlist
 // (`activate`, `system-events`, `terminal`, …), or
 // (c) the path is the bare retrieve route `/v1/assistants/{id}/`.
-
-const SELF_HOSTED_ID = "01h1234567890abcdefg";
-const ACTOR_TOKEN = "test-actor-token-abc123";
-
-// ---------------------------------------------------------------------------
-//
-// Remote web serves the SPA from the same nginx edge as the gateway. Daemon and
-// gateway generated clients can call flat same-origin `/v1/...` routes directly
-// instead of `/v1/assistants/{id}/...`; those need the paired browser token too.
-
-describe("api-interceptors / remote gateway direct requests", () => {
-  beforeEach(() => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setCsrfCookie("test-csrf-token");
-  });
-
-  afterEach(() => {
-    window.__CADET_CONFIG__ = undefined;
-    setSelfHostedConnection(null);
-    clearCsrfCookie();
-  });
-
-  test("authorizes daemon same-origin flat /v1 requests with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
-    const input = new Request(`${window.location.origin}/v1/contacts`, {});
-
-    const output = await daemonRequestInterceptor(input);
-
-    expect(output.url).toBe(input.url);
-    expect(output.credentials).toBe("omit");
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("X-CSRFToken")).toBeNull();
-    expect(output.headers.get("ngrok-skip-browser-warning")).toBe("true");
-    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
-  });
-
-  test("adds the ngrok browser-warning bypass header to rewritten assistant routes", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
-    const input = new Request(
-      `${window.location.origin}/v1/assistants/self/messages?conversationId=conv-1`,
-    );
-
-    const output = await daemonRequestInterceptor(input);
-
-    expect(output.url).toBe(input.url);
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("ngrok-skip-browser-warning")).toBe("true");
-  });
-
-  test("preserves a remote ingress path prefix for flat /v1 requests", () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
-    const input = new Request(
-      `${window.location.origin}/assistant-123/v1/contacts`,
-    );
-
-    const output = authorizeRemoteGatewayRequest(input);
-
-    expect(output?.url).toBe(input.url);
-    expect(output?.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-  });
-
-  test("does not authorize non-prefixed /v1 requests when the remote ingress is path-prefixed", () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
-    const input = new Request(`${window.location.origin}/v1/contacts`);
-
-    expect(authorizeRemoteGatewayRequest(input)).toBeNull();
-  });
-
-  test("authorizes cloud-client push-token upserts with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
-    const path = `/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
-    const input = new Request(`${window.location.origin}${path}`, {
-      method: "POST",
-    });
-
-    const output = await requestInterceptor(input);
-
-    expect(output.url).toBe(input.url);
-    expect(output.credentials).toBe("omit");
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("X-CSRFToken")).toBeNull();
-  });
-
-  test("authorizes cloud-client live-activity upserts with the paired browser token", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: ACTOR_TOKEN,
-    });
-    const path = `/v1/assistants/${SELF_HOSTED_ID}/live-activity/tokens/`;
-    const input = new Request(`${window.location.origin}${path}`, {
-      method: "POST",
-    });
-
-    const output = await requestInterceptor(input);
-
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-  });
-
-  test("preserves a remote ingress path prefix for cloud-client push-token upserts", async () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
-    const path = `/assistant-123/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
-    const input = new Request(`${window.location.origin}${path}`, {
-      method: "POST",
-    });
-
-    const output = await requestInterceptor(input);
-
-    expect(output.url).toBe(input.url);
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-  });
-
-  test("relocates an origin-root push-token upsert under a path-prefixed remote ingress", async () => {
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant-123`,
-      token: ACTOR_TOKEN,
-    });
-    const input = new Request(
-      `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`,
-      { method: "POST" },
-    );
-
-    const output = await requestInterceptor(input);
-
-    expect(new URL(output.url).pathname).toBe(
-      `/assistant-123/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`,
-    );
-    expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-  });
-});
-
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Daemon error interceptor — ApiError normalization

@@ -12,8 +12,6 @@ import { routes } from "./utils/routes";
 export interface AppShellProps {
   apiBaseUrl?: string;
   assistantId?: string;
-  location: string;
-  mountPath?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title?: string;
 }
@@ -64,39 +62,20 @@ function wakeFailureMessage(body: unknown): string | null {
 function AssistantShell({
   apiBaseUrl = "/",
   assistantId,
-  location,
-  mountPath = "/assistant",
   onNavigate,
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
-  // The wake flow — the user-facing recovery for the not-ready state: the
-  // same drive the admin console's Wake button gets (wake the vm; a
-  // missing vm hatches in place), through the same-origin /v1 proxy with
-  // the session cookie. On success the shell re-resolves (one GET
-  // /v1/assistant) and the frame mounts; on failure the node's own
-  // punchline shows under the button.
   const [wakePending, setWakePending] = useState(false);
   const [wakeReason, setWakeReason] = useState<string | null>(null);
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     assistantId,
   });
-  // The tray's status logic lives with the resolution: the shell resolves the
-  // assistant itself, and the web assistant iframe only mounts once that
-  // resolution came back ready — the web bundle carries no status notion. The
-  // dot reads the shell's own resolution; the unmount cleanup publishes
-  // `disconnected` when the router swaps to a chooser route.
+
+  // The tray's status logic lives with the resolution
   useElectronStatusSync(state);
-  // Picking is the account chooser's job — an assistant-agnostic account
-  // flow at a constant path on every surface. Without an id to act on (the
-  // list resolved with nothing chosen, no assistants at all, or no
-  // session), the shell replace-navigates to it and shows the state line
-  // until the router swaps; the chooser hands the pick back as location
-  // state, which AssistantPage feeds in as the assistantId prop.
-  // selection/empty bounce to the chooser; unauthenticated is an honest
-  // error state (the old web bundle's ActiveAssistantGate treatment) — the
-  // shell must not silently navigate away from a session it couldn't prove.
+
   const chooserOwned = state.status === "selection" || state.status === "empty";
   const redirected = useRef(false);
   useEffect(() => {
@@ -130,11 +109,11 @@ function AssistantShell({
     setWakePending(false);
   }
 
+  if (state.status === "unauthenticated")
+    return <PairRedirect onNavigate={onNavigate} />;
+
   if (state.status !== "ready") {
-    const alert =
-      state.status === "notReady" ||
-      state.status === "error" ||
-      state.status === "unauthenticated";
+    const alert = state.status === "notReady" || state.status === "error";
     return (
       <div
         role={alert ? "alert" : "status"}
@@ -160,9 +139,7 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {(state.status === "error" ||
-          state.status === "unavailable" ||
-          state.status === "unauthenticated") && (
+        {(state.status === "error" || state.status === "unavailable") && (
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={reload} style={quietButton}>
               {t("appShell.retry")}
@@ -181,12 +158,11 @@ function AssistantShell({
       </div>
     );
   }
+
   const assistant = state.assistant;
   return (
     <AssistantFrame
-      key={`${assistant.id}:${assistant.version}:${mountPath}`}
-      location={location}
-      mountPath={mountPath}
+      key={`${assistant.id}:${assistant.version}`}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}
     />
@@ -245,6 +221,24 @@ function NotReadyBody({
       </button>
     </>
   );
+}
+
+/** An unauthenticated shell IS a pairing problem — forward to the pair
+ * page once, replaced, so the dead assistant URL doesn't linger in
+ * history. Renders nothing; the unauthenticated message shows for the
+ * beat before the navigation lands. */
+function PairRedirect({
+  onNavigate,
+}: {
+  onNavigate: (path: string, options: { replace: boolean }) => void;
+}): null {
+  const forwarded = useRef(false);
+  useEffect(() => {
+    if (forwarded.current) return;
+    forwarded.current = true;
+    onNavigate(routes.account.pair, { replace: true });
+  }, [onNavigate]);
+  return null;
 }
 
 /** The generic resolution failure — the request itself did not go through

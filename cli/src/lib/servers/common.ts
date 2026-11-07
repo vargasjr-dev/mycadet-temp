@@ -12,7 +12,6 @@ import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   closeSync,
-  existsSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -23,8 +22,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
-
-import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import { resolveVersion } from "@mycadet/shared/version";
 
@@ -63,9 +60,6 @@ export interface AppServerPaths {
   pidPath: string;
   logPath: string;
 }
-
-/** The dir pre-rename installs recorded state under (read as a fallback). */
-const LEGACY_INGRESS_DIR = "ingress";
 
 export function getAppServerPaths(): AppServerPaths {
   const dir = join(resolveDataDir(), "app-server");
@@ -128,6 +122,64 @@ export function getAppServerPid(): number | null {
     : null;
 }
 
+/**
+ * A recorded PID that is alive but belongs to some OTHER process — the
+ * reuse case: the app server died and the OS handed its PID to something
+ * else (a stray nginx, another assistant's server). `app stop` reports it
+ * instead of the misleading "no app server is running", and offers to
+ * clear the squatter before continuing.
+ */
+export function getForeignAppServerProcess(): {
+  pid: number;
+  command: string;
+} | null {
+  const paths = getAppServerPaths();
+  const pid = readPidFile(paths.pidPath);
+  if (pid === null || !isPidAlive(pid) || isAppServerProcess(pid, paths)) {
+    return null;
+  }
+  let command = "";
+  try {
+    command = execFileSync("ps", ["-ww", "-p", String(pid), "-o", "command="], {
+      encoding: "utf-8",
+      timeout: 3000,
+      stdio: ["ignore", "pipe", "ignore"],
+      windowsHide: true,
+    }).trim();
+  } catch {
+    command = "(unidentified)";
+  }
+  return { pid, command };
+}
+
+/**
+ * Kill a foreign process sitting on the app server's recorded PID and
+ * clear the stale records. SIGTERM first, SIGKILL on a 2s timeout — the
+ * same escalation `stopAppServer` uses.
+ */
+export async function killForeignAppServerProcess(
+  pid: number,
+): Promise<boolean> {
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch {
+    clearStoppedAppServer(getAppServerPaths().pidPath);
+    return true;
+  }
+  if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // Already gone — the outcome the caller wanted.
+    }
+    if (!(await waitForPidExit(pid, STOP_TIMEOUT_MS))) {
+      return false;
+    }
+  }
+  clearStoppedAppServer(getAppServerPaths().pidPath);
+  return true;
+}
+
 export function isAppServerRunning(): boolean {
   return getAppServerPid() !== null;
 }
@@ -168,40 +220,31 @@ export function appServerStatePath(): string {
   return join(getAppServerPaths().dir, "state.json");
 }
 
-/** The pre-rename state path, read when the renamed one has no record yet. */
-function legacyStatePath(): string {
-  return join(resolveDataDir(), LEGACY_INGRESS_DIR, "state.json");
-}
+const AppServerStateSchema = z.object({
+  listenPort: z.number(),
+  gatewayUrl: z.string().optional(),
+  remoteWebConfigHash: z.string().optional(),
+  serve: z
+    .object({
+      gatewayUrl: z.string(),
+      webDistDir: z.string(),
+      appDistDir: z.string(),
+      indexHtmlPath: z.string(),
+      appIndexHtmlPath: z.string(),
+      config: z.record(z.string(), z.unknown()),
+    })
+    .optional(),
+});
 
 export function readAppServerState(): AppServerState | null {
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(appServerStatePath(), "utf-8"));
   } catch {
-    // The renamed dir has no record yet; a pre-rename install's record
-    // still tells the truth about a running pre-rename server.
-    if (!existsSync(appServerStatePath()) && existsSync(legacyStatePath())) {
-      try {
-        raw = JSON.parse(readFileSync(legacyStatePath(), "utf-8"));
-      } catch {
-        return null;
-      }
-    } else {
-      return null;
-    }
+    return null;
   }
-  const state = (raw ?? {}) as Record<string, unknown>;
-  const listenPort = state.listenPort;
-  if (typeof listenPort !== "number") return null;
-  const gatewayUrl = state.gatewayUrl;
-  const remoteWebConfigHash = state.remoteWebConfigHash;
-  const serve = state.serve as AppServerState["serve"] | undefined;
-  return {
-    listenPort,
-    ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
-    ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
-    ...(serve && typeof serve === "object" ? { serve } : {}),
-  };
+  const result = AppServerStateSchema.safeParse(raw ?? {});
+  return result.success ? result.data : null;
 }
 
 function clearStoppedAppServer(pidPath: string): void {
@@ -271,46 +314,6 @@ export async function stopAppServer(): Promise<boolean> {
   clearStoppedAppServer(paths.pidPath);
   return true;
 }
-
-/**
- * Sensitive local-only gateway paths the app server must never expose to the
- * internet, regardless of which client bundles are being served. Each exact
- * path is blocked with and without its trailing slash, in both the versioned
- * and — since the version prefix is optional at the gateway — the unversioned
- * spelling, from the origin root and from the `/web` iframe prefix (the web
- * UI's prefix-aware API paths put the same routes at `/web/v1/...`).
- */
-const SENSITIVE_GATEWAY_ROUTES = [
-  "/auth/token",
-  "/v1/pair",
-  "/v1/pair/web-init",
-  "/v1/devices",
-  "/v1/devices/revoke",
-  "/v1/remote-web/pairing-requests",
-  "/v1/remote-web/pairing-requests/approve",
-  "/v1/remote-web/pairing-requests/deny",
-  "/v1/remote-web/pairing-verification",
-  "/v1/shared/invites/redeem",
-] as const;
-
-export const DENY_PATHS: ReadonlySet<string> = (() => {
-  const paths = new Set<string>();
-  for (const route of SENSITIVE_GATEWAY_ROUTES) {
-    // The version prefix is optional at the gateway (P7 of the one-url plan):
-    // block the unversioned spelling of every /v1 route too, so the sensitive
-    // paths never gain a reachable alias through the new unversioned surface.
-    const unversioned = route.replace(/^\/v1(?=\/)/, "");
-    for (const spelling of unversioned === route
-      ? [route]
-      : [route, unversioned]) {
-      paths.add(spelling);
-      paths.add(`${spelling}/`);
-      paths.add(`/web${spelling}`);
-      paths.add(`/web${spelling}/`);
-    }
-  }
-  return paths;
-})();
 
 /** Stable fingerprint of the injected SPA config and its source bundles,
  * recorded alongside the app server's state so a reuse decision can tell
@@ -429,7 +432,6 @@ const AssistantHostConfigSchema = z.object({
   assistantId: z.string().min(1).optional(),
   assistantName: z.string().optional(),
   version: z.string().min(1).optional(),
-  hubUrl: z.string().url().optional(),
 });
 
 function assistantHostConfig(config: Record<string, unknown>) {
@@ -456,11 +458,9 @@ const CAPACITOR_APP_ORIGINS = [
 ];
 
 export function appOrigins(config: Record<string, unknown>): string[] {
-  const metadata = assistantHostConfig(config);
-  const origins = [
-    ...CAPACITOR_APP_ORIGINS,
-    ...(metadata.hubUrl ? [new URL(metadata.hubUrl).origin] : []),
-  ];
+  // Validation only — the fixed shell origins are the whole allowlist.
+  assistantHostConfig(config);
+  const origins = [...CAPACITOR_APP_ORIGINS];
   return [...new Set(origins)].map((origin) => {
     // The Capacitor shells' origins are fixed platform values, not parsed:
     // `new URL("capacitor://localhost").origin` serializes as "null" (a
@@ -484,20 +484,6 @@ export function appOrigins(config: Record<string, unknown>): string[] {
     }
     return url.origin;
   });
-}
-
-/** The tunnel URL on record (the root lockfile's `tunnel.publicUrl`, stamped
- * by whichever run established the tunnel), or undefined when none is — the
- * served config stamps it as `cloudUrl` so tunnel clients' account/auth
- * surfaces stay on the origin they came in on. */
-function savedPublicBaseUrl(): string | undefined {
-  try {
-    const url = readRootProcesses().tunnel?.publicUrl;
-    if (!url || !url.trim()) return undefined;
-    return url.trim();
-  } catch {
-    return undefined;
-  }
 }
 
 /**
@@ -663,8 +649,6 @@ export async function startAppServer(opts: {
     remote: assistant.entry.cloud,
     assistantName: getAssistantDisplayName(assistant.entry),
     assistantId: opts.assistantId,
-    hubUrl: cloudAssistantHubUrl(),
-    cloudUrl: savedPublicBaseUrl(),
     version,
   };
   const fingerprint = remoteWebConfigFingerprint(
@@ -861,24 +845,7 @@ function stuckAppServerRecoveryHint(): string {
 }
 
 /**
- * Bring up the app server as the canonical tunnel target and return the
- * listen port a tunnel should front.
- *
- * The server is assistant-agnostic: it carries no assistant identity in its
- * options. The assistant it fronts — and with it the gateway it proxies, via
- * `getGatewayUrl` — is resolved from the lockfile here (the active assistant,
- * else the only entry), so every caller shares one resolution instead of
- * threading bespoke ids and ports. Its own state (pidfile, recorded
- * upstream, serve spec) lives under the XDG data dir, never an assistant
- * workspace.
- *
- * The server always serves the SPA alongside the gateway proxy. It is always
- * delegated to `startAppServer`, which reuses a running server whose
- * gateway upstream and injected SPA config match and restarts one that
- * drifted in any respect, so the returned port always fronts the requested
- * config. `started` is false when a matching server was reused; a drifted
- * server that survives the restart attempt throws rather than reporting the
- * wrong config. Failures throw with actionable diagnostic text.
+ * Bring up the app server fronting all assistants for remote clients
  */
 export async function ensureAppServer(): Promise<AppServer> {
   const entry = resolveTargetAssistant();

@@ -14,6 +14,7 @@ import { retireDocker } from "../remotes/docker/retire";
 import { retireAppleContainer } from "../remotes/apple-container/retire";
 import { retireCustom } from "../remotes/custom/retire";
 import { retireCloudEntry } from "../remotes/cloud/retire";
+import { retireBaseten } from "../remotes/baseten/lifecycle";
 
 /**
  * The retire OPERATION: the headless core of `cadet retire`, moved out of the
@@ -34,8 +35,9 @@ export type RetireResult =
 
 /**
  * Retire one assistant entry: per-cloud teardown (each remote's retire
- * method owns its process and edge stops, first), then the lockfile removal
- * and the dock-display-name sentinel cleanup. Never throws and never exits
+ * method owns its process and edge stops, first — the baseten leg runs
+ * `cadet retire` inside the sandbox and then deletes the sandbox itself),
+ * then the lockfile removal and the dock-display-name sentinel cleanup. Never throws and never exits
  * the process — failures (including the not-logged-in cloud leg and an
  * unknown remote type) come back structured so both the CLI's exit-code UX
  * and the route's wire mapping render the same detail.
@@ -53,6 +55,8 @@ export async function retireAssistant(
       await retireDocker(assistantId);
     } else if (cloud === "local") {
       await retireLocal(assistantId, entry);
+    } else if (cloud === "baseten") {
+      await retireBaseten(entry);
     } else if (cloud === "custom") {
       await retireCustom(entry);
     } else if (isCloudEntry(entry)) {

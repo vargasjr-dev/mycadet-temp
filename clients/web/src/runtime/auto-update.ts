@@ -20,14 +20,6 @@ export async function getUpdateState(): Promise<UpdateState> {
   return (await window.cadet?.update?.getState()) ?? { status: "idle" };
 }
 
-/** Trigger a manual check for updates. No-op off Electron. */
-export async function checkForUpdates(): Promise<void> {
-  if (!isElectron()) {
-    return;
-  }
-  await window.cadet?.update?.check();
-}
-
 /** Quit and install the downloaded update. No-op off Electron. */
 export async function installUpdate(): Promise<void> {
   if (!isElectron()) {

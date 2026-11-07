@@ -76,7 +76,7 @@ export function HostingScreen() {
   };
 
   const onBack = () => {
-    void navigate(routes.account.onboarding.welcome, SETUP_NAVIGATE);
+    void navigate(routes.account.selectAssistant, SETUP_NAVIGATE);
   };
 
   return (

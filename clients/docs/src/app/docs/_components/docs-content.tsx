@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { CopyPageButton } from "@/app/docs/_components/copy-page-button";
 
 interface DocsContentProps {
+  id?: string;
   title: string;
   breadcrumb: string;
   /** Small accent-colored label rendered above the title. Replaces the
@@ -27,11 +28,14 @@ function deriveEyebrow(breadcrumb: string): string | null {
     .split("/")
     .map((segment) => segment.trim())
     .filter(Boolean);
-  if (parts.length < 3) {return null;}
+  if (parts.length < 3) {
+    return null;
+  }
   return parts[parts.length - 2] ?? null;
 }
 
 export function DocsContent({
+  id,
   title,
   breadcrumb,
   eyebrow,
@@ -43,9 +47,11 @@ export function DocsContent({
   const resolvedEyebrow = eyebrow ?? deriveEyebrow(breadcrumb);
 
   return (
-    <div className="docs-main min-w-0 flex-1">
+    <div className="docs-main min-w-0 flex-1" id={id}>
       {resolvedEyebrow ? (
-        <div className="docs-eyebrow mb-2 text-sm font-medium">{resolvedEyebrow}</div>
+        <div className="docs-eyebrow mb-2 text-sm font-medium">
+          {resolvedEyebrow}
+        </div>
       ) : (
         <div className="docs-breadcrumb mb-2 text-sm">{breadcrumb}</div>
       )}

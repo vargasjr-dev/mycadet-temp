@@ -10,16 +10,8 @@ import {
 } from "./daemon-readiness";
 
 /**
- * Process inspection and stopping for PID-tracked local services (daemon,
- * gateway, credential-executor, file watcher) and the app server.
- *
- * Lives in `@mycadet/local-mode` because the lifecycle OPERATIONS stop these
- * processes in-process now (the hosts no longer spawn the CLI for them), and
- * the CLI keeps the same behavior by re-exporting this module — one stop
- * contract for every caller, with the PID-ownership proof (a stale PID file
- * whose number the OS recycled must never be killed) defined once.
+ * Process inspection and stopping for PID-tracked local services
  */
-
 const CADET_COMMAND_PATTERN =
   /cadet-daemon|cadet-cli|cadet-gateway|credential-executor|@mycadet|[\\/]\.?cadet[\\/]|[\\/]daemon[\\/]main|[\\/]\.cadet[\\/].*qdrant[\\/]bin[\\/]qdrant/;
 

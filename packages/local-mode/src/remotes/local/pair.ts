@@ -9,40 +9,48 @@ import { gatewayCliInvocation } from "./common";
 
 /**
  * Pair by running the gateway's OWN CLI on this host (local topology): the
- * `gateway pairing mint --device-id` command mints the device-bound
- * credential in-process — process execution is the local-presence proof,
- * and the invocation resolves the same workspace and gateway security dir
- * as the locally spawned gateway server. No HTTP, no loopback. Prints the
- * pair payload as single-line JSON on stdout.
+ * `gateway pairing mint` command, invoked in-process — process execution is
+ * the local-presence proof, and the invocation resolves the same workspace
+ * and gateway security dir as the locally spawned gateway server. No HTTP,
+ * no loopback.
+ *
+ * With a device identity the mint carries the --device-id flags and the
+ * result parses to the pair payload (single-line JSON, persisted by the
+ * caller). Without one it is the bare remote-web challenge mint the
+ * `cadet pair` command wraps — the command's raw stdout, whose last line
+ * is the challenge JSON.
  */
-export async function pairLocal(
+export function pairLocal(entry: LocalAssistant): Promise<string>;
+export function pairLocal(
   entry: LocalAssistant,
   device: PairDeviceIdentity,
-): Promise<PairOperationResult> {
+): Promise<PairOperationResult>;
+export async function pairLocal(
+  entry: LocalAssistant,
+  device?: PairDeviceIdentity,
+): Promise<string | PairOperationResult> {
   const invocation = gatewayCliInvocation(entry);
-  try {
-    const stdout = await execOutput(
-      invocation.command,
-      [
-        ...invocation.args,
-        "pairing",
-        "mint",
-        "--platform",
-        device.platform,
-        "--device-id",
-        device.deviceId,
-        ...(device.clientReportedName
-          ? ["--client-reported-name", device.clientReportedName]
-          : []),
-      ],
-      {
-        cwd: invocation.cwd,
-        env: invocation.env,
-        timeoutMs: 30_000,
-      },
+  const args = [...invocation.args, "pairing", "mint"];
+  if (device) {
+    args.push(
+      "--platform",
+      device.platform,
+      "--device-id",
+      device.deviceId,
+      ...(device.clientReportedName
+        ? ["--client-reported-name", device.clientReportedName]
+        : []),
     );
-    return pairCliStdoutToResult(stdout);
+  }
+  try {
+    const stdout = await execOutput(invocation.command, args, {
+      cwd: invocation.cwd,
+      env: invocation.env,
+      timeoutMs: 30_000,
+    });
+    return device ? pairCliStdoutToResult(stdout) : stdout;
   } catch (err) {
+    if (!device) throw err;
     return {
       ok: false,
       status: 0,

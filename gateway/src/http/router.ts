@@ -99,7 +99,7 @@ export function createRouter(
   getClientIp: GetClientIp,
   server?: Server<unknown>,
 ) => Promise<Response | null> {
-  const { authRateLimiter, trustProxy = false } = deps;
+  const { authRateLimiter } = deps;
 
   return async (
     req: Request,
@@ -137,9 +137,8 @@ export function createRouter(
             const { requireEdgeAuth } = createAuthMiddleware(
               authRateLimiter,
               getClientIp,
-              trustProxy,
             );
-            const authError = await requireEdgeAuth(req, server);
+            const authError = await requireEdgeAuth(req);
             if (authError) return authError;
             return route.handler(
               req,
@@ -153,13 +152,8 @@ export function createRouter(
             const { requireEdgeAuthWithScope } = createAuthMiddleware(
               authRateLimiter,
               getClientIp,
-              trustProxy,
             );
-            const authError = await requireEdgeAuthWithScope(
-              req,
-              route.scope!,
-              server,
-            );
+            const authError = await requireEdgeAuthWithScope(req, route.scope!);
             if (authError) return authError;
             return route.handler(
               req,
@@ -173,9 +167,8 @@ export function createRouter(
             const { requireEdgeGuardianAuth } = createAuthMiddleware(
               authRateLimiter,
               getClientIp,
-              trustProxy,
             );
-            const authError = await requireEdgeGuardianAuth(req, server);
+            const authError = await requireEdgeGuardianAuth(req);
             if (authError) return authError;
             return route.handler(
               req,
@@ -244,8 +237,10 @@ function matchRoute(
       pathname.length > 1 && pathname.endsWith("/")
         ? pathname.slice(0, -1)
         : pathname;
-    if (normalized !== route.path) return null;
-    return { params: [] };
+    if (normalized === route.path) return { params: [] };
+    if (normalized === `/v1/assistant${route.path}`) return { params: [] };
+    if (normalized === `/assistant${route.path}`) return { params: [] };
+    return null;
   }
 
   // Regex path — use original pathname since regex routes may

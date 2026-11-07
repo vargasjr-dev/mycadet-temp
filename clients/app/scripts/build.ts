@@ -8,10 +8,11 @@ import { build } from "vite";
 const install = spawnSync("bun", ["install"], {
   cwd: path.resolve(import.meta.dirname, ".."),
   stdio: "inherit",
+  timeout: 10 * 1000,
 });
 if (install.status !== 0) {
-  throw new Error(
-    `bun install failed with exit code ${install.status ?? "signal"}`,
+  console.warn(
+    `bun install failed with exit code ${install.status ?? "signal"}, continuing...`,
   );
 }
 

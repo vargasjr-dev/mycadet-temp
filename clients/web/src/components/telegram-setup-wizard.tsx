@@ -16,7 +16,6 @@ import { openExternalUrl } from "@/runtime/browser";
 const BOTFATHER_URL = "https://t.me/BotFather";
 
 const WIZARD_STEP_IDS = ["create", "connect"] as const;
-export type TelegramSetupStepId = (typeof WIZARD_STEP_IDS)[number];
 
 export interface TelegramSetupWizardProps {
   /** Assistant the setup panel was opened for. */

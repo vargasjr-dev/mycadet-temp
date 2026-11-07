@@ -167,9 +167,6 @@ class SoundManager {
   }
 
   private async playFallbackBlip(volume: number): Promise<void> {
-    if (typeof window === "undefined") {
-      return;
-    }
     try {
       const AudioContextCtor =
         window.AudioContext ||

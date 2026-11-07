@@ -12,9 +12,6 @@ function normalizeThemePreference(
 }
 
 export function readStoredThemePreference(): ThemePreference {
-  if (typeof window === "undefined") {
-    return "system";
-  }
   const raw = getDeviceSetting("theme", "");
   return normalizeThemePreference(raw || null);
 }
@@ -36,20 +33,4 @@ export function applyThemePreference(theme: ThemePreference): void {
   const root = document.documentElement;
   root.setAttribute("data-theme", shouldBeDark ? "dark" : "light");
   root.classList.toggle("dark", shouldBeDark);
-}
-
-export function getEffectiveThemePreference(
-  theme: ThemePreference,
-): "light" | "dark" {
-  if (theme === "dark") {
-    return "dark";
-  }
-  if (
-    theme === "system" &&
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    return "dark";
-  }
-  return "light";
 }

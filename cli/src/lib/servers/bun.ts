@@ -1,22 +1,5 @@
 /**
- * The Bun app server's serve half: the request handler (the sensitive-route
- * denylist, the operator dispatch, the static SPA surface, and the streaming
- * gateway proxy), the websocket relay, and the child process that binds
- * 127.0.0.1 and owns the port. The machine-level state and the start/reuse
- * machinery — the server-kind-agnostic primitive — live in `./common.ts`,
- * which launches this module as the detached child.
- *
- * One handler owns the whole surface, in priority order: the sensitive-route
- * denylist (never edge-reachable), the operator dispatch (the same route
- * table the Electron `app://` handler and the vite dev mount serve — the
- * real list and resolution rows replaced the frozen metadata JSON), the
- * static SPA surface (injected indexes, hashed assets, SPA fallbacks), and
- * the streaming gateway proxy for everything else. There is no loopback
- * gate: the server fronts remote browsers through the TLS front, and the
- * operator rows judge credentials from the forwarded headers themselves.
- *
- * The server binds 127.0.0.1 only, and every tunnel agent is pointed at
- * `http://127.0.0.1:<port>` explicitly.
+ * The App Server powered by Bun
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -28,7 +11,6 @@ import { matchOperatorRequest } from "@mycadet/local-mode";
 
 import {
   appOrigins,
-  DENY_PATHS,
   getAppServerPaths,
   readAppServerState,
   type AppServerSpec,
@@ -168,51 +150,6 @@ function edgeClientIp(request: Request, peer: string | null): string {
 }
 
 /**
- * Proxy a request to the gateway upstream, streaming both ways: the body
- * rides as the raw stream (a passing operator row leaves it untouched), the
- * response streams back with the hop-by-hop and length headers stripped
- * (fetch decodes the upstream's content-encoding, so the lengths no longer
- * describe the bytes).
- */
-async function proxyToGateway(
-  request: Request,
-  spec: AppServerSpec,
-  peer: string | null,
-  rewritePath?: (pathname: string) => string,
-): Promise<Response> {
-  const url = new URL(request.url);
-  const path = rewritePath ? rewritePath(url.pathname) : url.pathname;
-  const target = new URL(`${path}${url.search}`, spec.gatewayUrl);
-  const headers = new Headers();
-  request.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "host") return;
-    if (HOP_BY_HOP_HEADERS.has(key.toLowerCase())) return;
-    headers.set(key, value);
-  });
-  headers.set("X-Cadet-Edge-Forwarded", "1");
-  headers.set("X-Cadet-Client-Ip", edgeClientIp(request, peer));
-  const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  const upstream = await fetch(target, {
-    method: request.method,
-    headers,
-    ...(hasBody ? { body: request.body, duplex: "half" as const } : {}),
-    redirect: "manual",
-  });
-  const outHeaders = new Headers();
-  upstream.headers.forEach((value, key) => {
-    if (HOP_BY_HOP_HEADERS.has(key.toLowerCase())) return;
-    if (["content-length", "content-encoding"].includes(key.toLowerCase())) {
-      return;
-    }
-    outHeaders.set(key, value);
-  });
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: outHeaders,
-  });
-}
-
-/**
  * The static SPA surface, ported from the nginx location map: the web
  * bundle's iframe mount at /web/assistant/ (injected index, inline config,
  * SPA fallback), the web bundle's own files under its baked /assistant/
@@ -247,9 +184,6 @@ async function serveStatic(
       { text: configJson, type: "application/json" },
       "no-store",
     );
-  }
-  if (pathname === "/web/assistant/__remote-index.html") {
-    return notFound(); // internal in the nginx map; not directly fetchable
   }
   if (pathname.startsWith("/web/assistant/")) {
     const file = join(
@@ -296,9 +230,6 @@ async function serveStatic(
   if (pathname === "/") {
     return staticResponse(request, { file: spec.appIndexHtmlPath }, "no-cache");
   }
-  if (pathname === "/__cadet-app-index.html") {
-    return notFound(); // internal in the nginx map; not directly fetchable
-  }
   if (pathname.startsWith("/assets/")) {
     return staticResponse(
       request,
@@ -341,29 +272,22 @@ type AppServerHandle = {
  */
 export function createAppServerHandler(
   spec: AppServerSpec,
-  options: {
-    requestIP?: (request: Request, server?: AppServerHandle) => string | null;
-  } = {},
 ): (request: Request, server?: AppServerHandle) => Promise<Response> {
   const allowedOrigins = appOrigins(spec.config);
-  const peerOf = options.requestIP;
   return async function fetch(request, server) {
     const pathname = new URL(request.url).pathname;
 
-    if (DENY_PATHS.has(pathname)) {
-      return notFound();
-    }
+    if (pathname === "/healthz")
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
 
-    // Websocket upgrades are handled here, before any HTTP tier: the
-    // gateway's channels are never operator rows or static paths.
+    console.log(
+      `[${new Date().toISOString()}] [${request.method}] ${pathname}`,
+    );
+
     if ((request.headers.get("upgrade") ?? "") !== "" && server) {
       return upgradeToGateway(request, server, spec);
     }
 
-    // A preflight is blessed where a read is served (the old nginx map
-    // answered OPTIONS only inside the read locations): the allowlisted
-    // shells' cross-origin reads get the browser's blessing, everything
-    // else stays same-origin-governed.
     if (request.method === "OPTIONS") {
       if (matchOperatorRequest(pathname, "GET")) {
         return withAppOriginCors(
@@ -378,6 +302,9 @@ export function createAppServerHandler(
     if (match) {
       const response = await match.route.run({
         assistantId: match.assistantId,
+        method: request.method,
+        path: pathname + new URL(request.url).search,
+        peer: server?.requestIP(request)?.address ?? null,
         headers: request.headers,
         body: request.body,
       });
@@ -389,17 +316,7 @@ export function createAppServerHandler(
     const static_ = await serveStatic(request, spec);
     if (static_) return static_;
 
-    const peer = peerOf?.(request, server) ?? null;
-    return proxyToGateway(request, spec, peer, (p) =>
-      // The /web twin hands the iframe namespace's remainder to the same /v1
-      // translation the ^~ /web/v1/ location did; the gateway's router
-      // resolves the /v1 prefix on the unversioned spellings.
-      p.startsWith("/web/v1/")
-        ? p.slice("/web".length)
-        : p.startsWith("/web/")
-          ? `/v1/${p.slice("/web/".length)}`
-          : p,
-    );
+    return notFound();
   };
 }
 
@@ -416,9 +333,7 @@ function runAppServerChild(): void {
     console.error("No app server serve spec on record; refusing to serve.");
     process.exit(1);
   }
-  const handler = createAppServerHandler(spec, {
-    requestIP: (request, server) => server?.requestIP(request)?.address ?? null,
-  });
+  const handler = createAppServerHandler(spec);
   const websocket = gatewayRelayHandlers();
   const server = Bun.serve({
     port: state.listenPort,
@@ -426,10 +341,12 @@ function runAppServerChild(): void {
     fetch: handler,
     websocket,
   });
+  console.log("Booting on", state.listenPort);
   const pidPath = getAppServerPaths().pidPath;
   mkdirSync(join(pidPath, ".."), { recursive: true });
   writeFileSync(pidPath, `${process.pid}\n`);
   process.on("SIGTERM", () => {
+    console.warn("Received termination signal...");
     server.stop(true);
     process.exit(0);
   });
@@ -440,11 +357,6 @@ type RelayData = {
   /** Browser→gateway messages sent before the upstream opened. */
   queue: (string | Uint8Array<ArrayBuffer>)[];
 };
-
-type HeaderCapableWebSocket = {
-  new (url: URL, options?: { headers?: Record<string, string> }): WebSocket;
-};
-const HeaderWebSocket = WebSocket as unknown as HeaderCapableWebSocket;
 
 /**
  * The gateway-facing side of a websocket upgrade: open the upstream with the
@@ -474,14 +386,16 @@ function upgradeToGateway(
     }
     headers[key] = value;
   });
-  headers["X-Cadet-Edge-Forwarded"] = "1";
   headers["X-Cadet-Client-Ip"] = edgeClientIp(
     request,
     server.requestIP(request)?.address ?? null,
   );
   let upstream: WebSocket;
   try {
-    upstream = new HeaderWebSocket(target, { headers });
+    upstream = new WebSocket(target, {
+      // @ts-expect-error ts(2353) - seems like a TS bug
+      headers,
+    });
   } catch {
     return new Response(null, { status: 502 });
   }
@@ -510,7 +424,7 @@ function gatewayRelayHandlers(): Bun.WebSocketHandler<RelayData> {
         for (const pending of queue.splice(0)) upstream.send(pending);
       });
       upstream.addEventListener("message", (event) => {
-        ws.send(event.data as string | Uint8Array<ArrayBuffer>);
+        ws.send(event.data);
       });
       const lose = () => {
         try {

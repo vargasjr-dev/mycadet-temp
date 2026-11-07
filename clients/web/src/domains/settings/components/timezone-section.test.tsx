@@ -30,7 +30,7 @@ const captureErrorMock = mock(
   (_error: unknown, _opts: { context: string }) => {},
 );
 
-mock.module("@/generated/api/client.gen", () => ({
+mock.module("@/generated/gateway/client.gen", () => ({
   client: {
     patch: patchMock,
     getConfig: () => ({ baseUrl: "http://test.local" }),

@@ -7,16 +7,7 @@ import {
   recordRemoteWebPairingChallengeCreation,
   type RemoteWebPairingChallengeRateLimit,
 } from "../../remote-web/pairing-challenge-rate-limit-store.js";
-import { isLoopbackAddress } from "../../util/is-loopback-address.js";
-import {
-  EDGE_CLIENT_IP_HEADER,
-  requestArrivedViaEdgeProxy,
-} from "../edge-forwarded-header.js";
-import {
-  enforceLoopbackOnly,
-  errorResponse,
-  parseHostHeader,
-} from "../loopback-guard.js";
+import { EDGE_CLIENT_IP_HEADER } from "../edge-forwarded-header.js";
 import {
   parsePublicBaseUrl,
   readSavedIngressPublicBaseUrl,
@@ -80,58 +71,25 @@ function isPublicHttpAddress(url: string): boolean {
 export async function handleCreateRemoteWebPairingChallenge(
   req: Request,
   clientIp: string,
-  rawPeerIp = clientIp,
 ): Promise<Response> {
   if (req.method !== "POST") {
     return methodNotAllowed("POST");
   }
 
-  const arrivedViaEdgeProxy = requestArrivedViaEdgeProxy(req);
-  const arrivedViaTrustedEdgeProxy =
-    arrivedViaEdgeProxy && isLoopbackAddress(rawPeerIp);
-  if (!arrivedViaTrustedEdgeProxy) {
-    const guardError = enforceLoopbackOnly(
-      req,
-      clientIp,
-      "remote-web-pairing-challenge",
-    );
-    if (guardError) return guardError;
-  }
-
   // The public URL the challenge is minted for is always the gateway's own —
-  // the request's host when it arrived through the trusted edge (the edge
-  // fronts the public URL), else the ingress URL recorded in this gateway's
-  // own workspace. Callers cannot request a URL.
+  // the ingress URL recorded in this gateway's own workspace, defaulting to
+  // the gateway's local host when nothing is recorded. Callers cannot
+  // request a URL.
   const body = await readJsonObjectBody(req, MAX_CHALLENGE_BODY_BYTES);
   if (body instanceof Response) {
     return body;
   }
 
-  let publicBaseUrl: string | null;
-  if (arrivedViaTrustedEdgeProxy) {
-    const host = req.headers.get("host");
-    const parsedHost = host ? parseHostHeader(host) : null;
-    if (!parsedHost) {
-      return errorResponse(
-        "BAD_REQUEST",
-        "no host header to self-source the public url from",
-        400,
-      );
-    }
-    publicBaseUrl = `https://${parsedHost}`;
-  } else {
-    publicBaseUrl = readSavedIngressPublicBaseUrl();
-    if (publicBaseUrl) {
-      const strict = parsePublicBaseUrl(publicBaseUrl);
-      publicBaseUrl =
-        strict !== null && isPublicHttpAddress(strict) ? strict : null;
-    }
-    if (!publicBaseUrl) {
-      return errorResponse(
-        "BAD_REQUEST",
-        "no public URL is recorded for this gateway — run `cadet tunnel start` first",
-        400,
-      );
+  let publicBaseUrl = readSavedIngressPublicBaseUrl();
+  if (publicBaseUrl) {
+    const strict = parsePublicBaseUrl(publicBaseUrl);
+    if (strict !== null && isPublicHttpAddress(strict)) {
+      publicBaseUrl = strict;
     }
   }
 
@@ -144,14 +102,11 @@ export async function handleCreateRemoteWebPairingChallenge(
   // The edge stamps the client address it observed via proxy_set_header
   // (overwriting any inbound value), so it is trustworthy exactly when the
   // trusted-edge check above passed. Direct local mints keep the raw peer.
-  const edgeClientIp = arrivedViaTrustedEdgeProxy
-    ? req.headers.get(EDGE_CLIENT_IP_HEADER)?.trim()
-    : undefined;
+  const edgeClientIp = req.headers.get(EDGE_CLIENT_IP_HEADER)?.trim();
 
   const challenge = createRemoteWebPairingChallenge(publicBaseUrl, {
     ip: edgeClientIp || clientIp,
     userAgent: req.headers.get("user-agent"),
-    viaEdgeProxy: arrivedViaTrustedEdgeProxy,
   });
 
   return Response.json(challenge, {

@@ -40,7 +40,7 @@ let objectUrl: string | null = null;
 let sharedAudio: HTMLAudioElement | null = null;
 
 function getSpeechSynthesis(): SpeechSynthesis | null {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+  if (!("speechSynthesis" in window)) {
     return null;
   }
   const synth = window.speechSynthesis;

@@ -6,9 +6,6 @@
 // navigable when storage is unavailable.
 
 export function getLocalSetting(key: string, fallback: string): string {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     return localStorage.getItem(key) ?? fallback;
   } catch {
@@ -22,9 +19,6 @@ export function getLocalSetting(key: string, fallback: string): string {
  * persistence as fire-and-forget can ignore the result.
  */
 export function setLocalSetting(key: string, value: string): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
   try {
     localStorage.setItem(key, value);
   } catch {
@@ -42,16 +36,10 @@ export function setLocalSetting(key: string, value: string): boolean {
  * that case; the notification carries the value the caller is standing behind.
  */
 export function notifySettingChange(key: string, value: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   notifyChange(key, value);
 }
 
 export function removeLocalSetting(key: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
   try {
     localStorage.removeItem(key);
   } catch {
@@ -65,9 +53,6 @@ export function removeLocalSetting(key: string): void {
 // ---------------------------------------------------------------------------
 
 export function getLocalBool(key: string, fallback: boolean): boolean {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     const raw = localStorage.getItem(key);
     if (raw === "true") {
@@ -86,33 +71,7 @@ export function setLocalBool(key: string, value: boolean): void {
   setLocalSetting(key, value ? "true" : "false");
 }
 
-/**
- * Tri-state boolean read: `true`/`false` for an explicitly stored value,
- * `null` when the key is absent or unreadable. Lets callers distinguish
- * "never chosen" from an explicit choice.
- */
-export function getLocalBoolOrNull(key: string): boolean | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw === "true") {
-      return true;
-    }
-    if (raw === "false") {
-      return false;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 export function getLocalNumber(key: string, fallback: number): number {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) {
@@ -140,9 +99,6 @@ interface PrefChangedDetail {
 }
 
 export function watchSetting(key: string, callback: () => void): () => void {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
   const onStorage = (event: StorageEvent) => {
     if (event.key === key) {
       callback();

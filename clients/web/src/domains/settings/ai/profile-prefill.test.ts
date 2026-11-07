@@ -149,14 +149,16 @@ describe("uniqueProfileName", () => {
   });
 
   test("matches a taken name case-insensitively", () => {
-    expect(uniqueProfileName("Anthropic", ["ANTHROPIC"])).toBe(
-      "Anthropic (2)",
-    );
+    expect(uniqueProfileName("Anthropic", ["ANTHROPIC"])).toBe("Anthropic (2)");
   });
 
   test("lets a profile being edited keep its own name", () => {
     expect(
-      uniqueProfileName("Claude Opus 4.8", ["claude-opus-4-8"], "claude-opus-4-8"),
+      uniqueProfileName(
+        "Claude Opus 4.8",
+        ["claude-opus-4-8"],
+        "claude-opus-4-8",
+      ),
     ).toBe("Claude Opus 4.8");
   });
 });

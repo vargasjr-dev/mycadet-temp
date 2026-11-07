@@ -9,44 +9,45 @@ import { dockerResourceNames } from "./retire";
 
 /**
  * Pair by running the gateway's OWN CLI inside the container (docker
- * topology): the `gateway pairing mint --device-id` command mints the
- * device-bound credential in-process — the docker exec is the
- * local-presence proof, and no localhost fetch is fed through. `bun run
- * gateway` resolves the gateway package's own bin (node_modules/.bin), so
- * the CLI resolves exactly like the server's own run command from the
- * container's WORKDIR. Prints the pair payload as single-line JSON on
- * stdout.
+ * topology): the `gateway pairing mint` command, docker-exec'd from the
+ * container's WORKDIR — the exec is the local-presence proof. `bun run
+ * gateway` resolves the gateway package's own bin (node_modules/.bin).
+ *
+ * With a device identity the mint carries the --device-id flags and the
+ * result parses to the pair payload (single-line JSON, persisted by the
+ * caller). Without one it is the bare remote-web challenge mint the
+ * `cadet pair` command wraps — the command's raw stdout, whose last line
+ * is the challenge JSON.
  */
-export async function pairDocker(
+export function pairDocker(entry: LockfileAssistant): Promise<string>;
+export function pairDocker(
   entry: LockfileAssistant,
   device: PairDeviceIdentity,
-): Promise<PairOperationResult> {
+): Promise<PairOperationResult>;
+export async function pairDocker(
+  entry: LockfileAssistant,
+  device?: PairDeviceIdentity,
+): Promise<string | PairOperationResult> {
   const container = dockerResourceNames(entry.assistantId).gatewayContainer;
-  try {
-    const stdout = await execOutput(
-      "docker",
-      [
-        "exec",
-        container,
-        "bun",
-        "run",
-        "gateway",
-        "pairing",
-        "mint",
-        "--platform",
-        device.platform,
-        "--device-id",
-        device.deviceId,
-        ...(device.clientReportedName
-          ? ["--client-reported-name", device.clientReportedName]
-          : []),
-      ],
-      {
-        timeoutMs: 30_000,
-      },
+  const args = ["exec", container, "bun", "run", "gateway", "pairing", "mint"];
+  if (device) {
+    args.push(
+      "--platform",
+      device.platform,
+      "--device-id",
+      device.deviceId,
+      ...(device.clientReportedName
+        ? ["--client-reported-name", device.clientReportedName]
+        : []),
     );
-    return pairCliStdoutToResult(stdout);
+  }
+  try {
+    const stdout = await execOutput("docker", args, {
+      timeoutMs: 30_000,
+    });
+    return device ? pairCliStdoutToResult(stdout) : stdout;
   } catch (err) {
+    if (!device) throw err;
     return {
       ok: false,
       status: 0,

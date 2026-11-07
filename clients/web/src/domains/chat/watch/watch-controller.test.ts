@@ -1,29 +1,21 @@
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
 import type { WatchCaptureTarget } from "@mycadet/ipc-contract";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 import type {
   LiveVoiceAudioCaptureOptions,
   LiveVoiceCaptureResult,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
-let ingressUrl: string | null = "http://localhost:8500";
-let actorToken: string | null = "actor-jwt";
 let pcmSupported = true;
-
-/**
- * Publish the two variables above into the real connection module.
- *
- * The real module rather than a `mock.module` stand-in, because that
- * replacement outlives this file: bun shares a process across test files, and
- * `connection.test.ts` primes the same module through `setSelfHostedConnection`
- * to test the transport rules. A stand-in here silently turns that call into a
- * no-op there.
- */
-const applyConnection = (): void => {
-  setSelfHostedConnection({ url: ingressUrl, token: actorToken });
-};
 
 // The real module imports an AudioWorklet asset via Vite's `?worker&url`
 // suffix, which Bun's test runner can't resolve. The capture itself is
@@ -51,6 +43,28 @@ mock.module("@/domains/chat/voice/live-voice/pcm-capture", () => ({
  */
 const realConnection =
   await import("@/domains/chat/voice/live-voice/connection");
+
+/**
+ * Only the mint is stood in for — the resolver now always mints (the
+ * self-hosted branch it used to branch on is gone), so the dial every
+ * test asserts on is the real builder's output with a controllable token.
+ * The real module is restored in the module-scoped afterAll: bun shares a
+ * process across test files, and the connection module's own tests need
+ * the real mint back.
+ */
+mock.module("@/domains/chat/voice/live-voice/connection", () => ({
+  ...realConnection,
+  mintTunnelWsToken: async (assistantId: string) => {
+    mintCalls.push(assistantId);
+    if (mintGate) {
+      await mintGate;
+    }
+    if (mintedToken === null) {
+      throw new realConnection.TunnelWsTokenError(403, "mint refused");
+    }
+    return { token: mintedToken, expiresAt: "2030-01-01T00:00:00Z" };
+  },
+}));
 
 /** Assistant ids the mint was called for, in order. */
 let mintCalls: string[] = [];
@@ -256,22 +270,7 @@ const toggle = ({
       dialTarget?: WatchCaptureTarget,
     ) => {
       resolvedTargets.push(dialTarget);
-      if (ingressUrl !== null) {
-        return resolveWatchStreamWsUrl(assistantId, dialTarget);
-      }
-      mintCalls.push(assistantId);
-      if (mintGate) {
-        await mintGate;
-      }
-      if (mintedToken === null) {
-        throw new realConnection.TunnelWsTokenError(403, "mint refused");
-      }
-      return realConnection.buildTunnelWsUrl({
-        assistantId,
-        routePath: "/v1/watch/stream",
-        token: mintedToken,
-        params: LIVE_VOICE_AUDIO_FORMAT_PARAMS,
-      });
+      return resolveWatchStreamWsUrl(assistantId, dialTarget);
     },
     readyTimeoutMs,
     drainTimeoutMs,
@@ -347,9 +346,6 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const HELD = 200;
 
 beforeEach(() => {
-  ingressUrl = "http://localhost:8500";
-  actorToken = "actor-jwt";
-  applyConnection();
   pcmSupported = true;
   mintCalls = [];
   mintedToken = "tunnel-token";
@@ -367,6 +363,10 @@ beforeEach(() => {
   // Module state like the session slot, and with a give-up timer behind it that
   // would otherwise outlive the case that armed it.
   clearWatchRetro();
+});
+
+afterAll(() => {
+  mock.module("@/domains/chat/voice/live-voice/connection", () => realConnection);
 });
 
 afterEach(() => {
@@ -413,11 +413,11 @@ describe("the watch stream URL", () => {
     expect(url.searchParams.get("captureDisplayId")).toBeNull();
   });
 
-  test("carries the actor token and the capture's audio format", async () => {
+  test("carries the minted token and the capture's audio format", async () => {
     const url = new URL(await resolveWatchStreamWsUrl(ASSISTANT_ID));
-    expect(url.protocol).toBe("ws:");
-    expect(url.pathname).toBe(`/v1/assistants/${ASSISTANT_ID}/watch/stream`);
-    expect(url.searchParams.get("token")).toBe("actor-jwt");
+    expect(url.protocol).toBe("wss:");
+    expect(url.pathname).toBe(`/${ASSISTANT_ID}/v1/watch/stream`);
+    expect(url.searchParams.get("token")).toBe("tunnel-token");
     expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
     expect(url.searchParams.get("sampleRate")).toBe("16000");
   });
@@ -547,14 +547,13 @@ describe("toggling a watch session", () => {
     expect(useWatchStore.getState().watching).toBe(true);
   });
 
-  test("dials without a token when none is provisioned — the host injects", async () => {
-    actorToken = null;
-    applyConnection();
+  test("a refused mint leaves nothing open — the token is the credential", async () => {
+    mintedToken = null;
 
-    await startRunning();
+    await toggle();
 
-    expect(sockets).toHaveLength(1);
-    expect(new URL(socket().url).searchParams.has("token")).toBe(false);
+    expect(sockets).toHaveLength(0);
+    expect(useWatchStore.getState().watching).toBe(false);
   });
 
   test("opens nothing where the capture pipeline cannot run", async () => {
@@ -672,16 +671,7 @@ describe("a watch session on a cloud assistant", () => {
     }
   };
 
-  /** No self-hosted ingress is what makes an assistant managed here. */
-  const managed = (): void => {
-    ingressUrl = null;
-    actorToken = null;
-    applyConnection();
-  };
-
   test("mints a tunnel token and dials tunnel with it", async () => {
-    managed();
-
     await startRunning();
 
     expect(mintCalls).toEqual([ASSISTANT_ID]);
@@ -698,7 +688,6 @@ describe("a watch session on a cloud assistant", () => {
   });
 
   test("opens nothing when the cloud refuses the mint", async () => {
-    managed();
     mintedToken = null;
 
     await toggle();
@@ -708,7 +697,6 @@ describe("a watch session on a cloud assistant", () => {
   });
 
   test("leaves the slot free for a later press when the mint is refused", async () => {
-    managed();
     mintedToken = null;
     await toggle();
 
@@ -721,7 +709,6 @@ describe("a watch session on a cloud assistant", () => {
   });
 
   test("a stop pressed while the token is being minted opens nothing", async () => {
-    managed();
     let releaseMint = (): void => {};
     mintGate = new Promise<void>((resolve) => {
       releaseMint = resolve;
@@ -742,7 +729,6 @@ describe("a watch session on a cloud assistant", () => {
   });
 
   test("a stop mid-mint does not wedge the next press", async () => {
-    managed();
     let releaseMint = (): void => {};
     mintGate = new Promise<void>((resolve) => {
       releaseMint = resolve;

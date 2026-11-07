@@ -21,7 +21,7 @@ const loopbackSafeFetchMock = mock(
   async (_input: string | URL, _init?: RequestInit): Promise<Response> =>
     new Response(null, { status: 204 }),
 );
-const getGatewayHealthMock = mock(
+const checkHealthMock = mock(
   async (
     _entry: unknown,
     _opts?: { signal?: AbortSignal; headers?: unknown },
@@ -37,7 +37,7 @@ mock.module("../loopback-fetch", () => ({
 }));
 mock.module("../daemon-readiness", () => ({
   ...realDaemonReadiness,
-  getGatewayHealth: getGatewayHealthMock,
+  checkHealth: checkHealthMock,
 }));
 
 // Restore the real modules once this file finishes so the mocks above do not
@@ -59,11 +59,11 @@ beforeEach(() => {
   process.env.XDG_CONFIG_HOME = tmpDir;
   delete process.env.CADET_PLATFORM_TOKEN;
   delete process.env.CADET_CLOUD_TOKEN;
-  for (const m of [loopbackSafeFetchMock, getGatewayHealthMock]) {
+  for (const m of [loopbackSafeFetchMock, checkHealthMock]) {
     m.mockReset();
   }
   loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status: 204 }));
-  getGatewayHealthMock.mockResolvedValue({
+  checkHealthMock.mockResolvedValue({
     version: undefined,
     authenticated: true,
   });
@@ -79,7 +79,7 @@ const writeLockfile = (data: Record<string, unknown>): void => {
 };
 
 const sentHeaders = (): Headers => {
-  const forwarded = getGatewayHealthMock.mock.calls[0]?.[1]?.headers;
+  const forwarded = checkHealthMock.mock.calls[0]?.[1]?.headers;
   if (!(forwarded instanceof Headers)) {
     throw new Error("the resolution did not forward a Headers instance");
   }
@@ -105,18 +105,23 @@ const resolutionBody = async (response: Response): Promise<unknown> =>
   (await response.json()) as unknown;
 
 describe("matchOperatorRequest — the four prefixes", () => {
-  test("the resolution answers every assistant-reference spelling", () => {
+  test("the resolution answers every versioned assistant-reference spelling", () => {
     for (const requestPath of [
       "/v1/assistant",
       "/v1/assistant/",
-      "/assistant",
-      "/assistant/",
+      "/api/assistant",
+      "/api/assistant/",
       "/v1/assistants/a1",
       "/v1/assistants/a1/",
-      "/assistants/a1",
-      "/assistants/a1/",
+      "/api/assistants/a1",
+      "/api/assistants/a1/",
     ]) {
       expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+    }
+    // The bare spellings are gone on purpose: api routes nest under a
+    // version prefix, or they collide with the frontend routes.
+    for (const requestPath of ["/assistant", "/assistant/", "/assistants/a1"]) {
+      expect(matchOperatorRequest(requestPath, "GET")).toBeNull();
     }
   });
 
@@ -137,23 +142,30 @@ describe("matchOperatorRequest — the four prefixes", () => {
     );
   });
 
-  test("does not match other methods or foreign tails", () => {
+  test("the proxy catch-all owns foreign methods and tails", () => {
+    // The bare shared form has no tail for the proxy row's `.+`, so it
+    // genuinely passes; anything scoped now falls to the ALL proxy row.
     expect(matchOperatorRequest("/v1/assistant", "POST")).toBeNull();
     expect(matchOperatorRequest("/v1/assistant", "DELETE")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistant/meta", "GET")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistant/meta", "DELETE")).toBeNull();
+    expect(
+      matchOperatorRequest("/v1/assistant/meta", "GET")?.route.method,
+    ).toBe("ALL");
+    expect(
+      matchOperatorRequest("/v1/assistant/meta", "DELETE")?.route.method,
+    ).toBe("ALL");
   });
 
-  test("the derivation helpers give every row both spellings", () => {
+  test("the derivation helpers give every row both versioned spellings", () => {
     for (const route of OPERATOR_ROUTES) {
       const derived = route.pattern.source;
       if (derived.includes("(?<id>")) {
-        // An assistant row: helper 2's id capture plus helper 1's /v1 arm.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An assistant row: helper 2's id capture plus helper 1's required
+        // version arm.
+        expect(derived).toContain("(?:\\/v1|\\/api)");
         expect(derived).toContain("|\\/assistant");
       } else {
-        // An absolute row: helper 1's /v1 arm, no scoping.
-        expect(derived).toContain("(?:\\/v1)?");
+        // An absolute row: helper 1's required version arm, no scoping.
+        expect(derived).toContain("(?:\\/v1|\\/api)");
         expect(derived).not.toContain("(?<id>");
       }
     }
@@ -172,7 +184,7 @@ describe("runResolveRoute — the lockfile arms", () => {
       assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
       activeAssistant: null,
     });
-    getGatewayHealthMock.mockResolvedValue({
+    checkHealthMock.mockResolvedValue({
       version: "0.13.0",
       authenticated: true,
     });
@@ -203,7 +215,7 @@ describe("runResolveRoute — the lockfile arms", () => {
       ],
       activeAssistant: "a2",
     });
-    getGatewayHealthMock.mockResolvedValue({
+    checkHealthMock.mockResolvedValue({
       version: "1.4.0",
       authenticated: true,
     });
@@ -235,7 +247,7 @@ describe("runResolveRoute — the lockfile arms", () => {
         { id: "a2", remote: "docker" },
       ],
     });
-    expect(getGatewayHealthMock).not.toHaveBeenCalled();
+    expect(checkHealthMock).not.toHaveBeenCalled();
   });
 
   test("a health read with no verdict and no version answers notReady", async () => {
@@ -243,7 +255,7 @@ describe("runResolveRoute — the lockfile arms", () => {
       assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
       activeAssistant: null,
     });
-    getGatewayHealthMock.mockResolvedValue({
+    checkHealthMock.mockResolvedValue({
       version: undefined,
       authenticated: true,
     });
@@ -258,13 +270,14 @@ describe("runResolveRoute — the lockfile arms", () => {
       assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
       activeAssistant: null,
     });
-    getGatewayHealthMock.mockResolvedValue({
+    checkHealthMock.mockResolvedValue({
       version: "0.13.0",
       authenticated: false,
     });
 
     const response = await runResolution();
 
+    expect(response.status).toBe(401);
     expect(await resolutionBody(response)).toEqual({
       status: "unauthenticated",
     });
@@ -300,7 +313,7 @@ describe("runResolveRoute — the cloud leg", () => {
       assistants: [{ assistantId: "c1", cloud: "cloud" }],
       activeAssistant: null,
     });
-    getGatewayHealthMock.mockResolvedValue({
+    checkHealthMock.mockResolvedValue({
       version: "9.9.9",
       authenticated: true,
     });

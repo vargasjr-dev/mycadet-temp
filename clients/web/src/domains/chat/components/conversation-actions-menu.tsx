@@ -34,7 +34,7 @@ import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { type ConversationMenuShortcuts } from "@/domains/chat/hooks/use-conversation-menu-shortcuts";
 import { useTranslation, type TFunction } from "@/i18n";
 import { openExternalUrl } from "@/runtime/browser";
-import { useIsNativePlatform } from "@/runtime/native-auth";
+import { useIsNativePlatform } from "@/runtime/native-platform";
 import { READ_ICON, UNREAD_ICON } from "@/utils/read-state-icon";
 import {
   BottomSheet,

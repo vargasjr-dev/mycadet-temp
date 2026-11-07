@@ -39,5 +39,3 @@ export const OVERLAY_PROCESS_KINDS: BackgroundProcessDescriptor[] = [
  * subagent and ACP sessions. The overlay is the only ambient surface there, and
  * it covers all four kinds so running work stays visible.
  */
-export const POPOUT_OVERLAY_PROCESS_KINDS: BackgroundProcessDescriptor[] =
-  PROCESS_KINDS;

@@ -3,11 +3,8 @@ import {
   getGatewayUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
-import { cliCommand } from "@mycadet/local-mode";
-import {
-  loadGuardianToken,
-  refreshGuardianToken,
-} from "../lib/guardian-token.js";
+import { cliCommand, loadGuardianToken } from "@mycadet/local-mode";
+import { refreshGuardianToken } from "../lib/guardian-token.js";
 import {
   ensureProviderApiKey,
   formatProviderName,

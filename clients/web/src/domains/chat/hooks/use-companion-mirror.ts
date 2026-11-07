@@ -132,9 +132,7 @@ function currentContext(): CompanionContext {
     // its picker on a yes and starts the whole-screen session on anything
     // else. Re-read on every identity write, so it flips once the version
     // resolves and again on an assistant switch.
-    watchTargets: supportsWatchCaptureTarget(
-      getActiveAssistantId(),
-    ),
+    watchTargets: supportsWatchCaptureTarget(getActiveAssistantId()),
     // What the call is being shown, and whether it can be shown anything.
     // Published from here for the reason `captureTarget` is: the session the
     // frames land in lives in this window, and the surface draws the share as

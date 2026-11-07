@@ -12,12 +12,6 @@
     "downloadWindowsApp": "Descargar la app de Windows",
     "claim": "Reclamar"
   },
-  "addRemoteOriginDialog": {
-    "title": "Añadir un asistente remoto",
-    "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
-    "addressLabel": "Dirección del asistente",
-    "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
-  },
   "onboardingAutocomplete": {
     "addOption": "Añadir «{value}»",
     "enterHint": "↵ Intro",

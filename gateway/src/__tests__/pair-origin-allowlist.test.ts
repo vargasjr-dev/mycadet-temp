@@ -17,8 +17,7 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   assistantDbExec: mock(),
 }));
 
-const { handlePair, resetPairRateLimiterForTests } =
-  await import("../http/routes/pair.js");
+const { resetPairRateLimiterForTests } = await import("../http/routes/pair.js");
 const { resolveExtensionOrigin, corsHeaders, extensionCorsHeaders } =
   await import("../http/middleware/cors.js");
 const { KNOWN_EXTENSION_ORIGINS } =
@@ -26,49 +25,9 @@ const { KNOWN_EXTENSION_ORIGINS } =
 const { CLIENT_METADATA_HEADERS } =
   await import("@mycadet/service-contracts/client-metadata");
 
-// Simulate a loopback peer IP as supplied by the gateway server to the handler.
-const LOOPBACK_IP = "127.0.0.1";
-
-// A valid Cadet extension origin (production).
-const PROD_ORIGIN = "chrome-extension://hphbdmpffeigpcdjkckleobjmhhokpne";
 // A non-Cadet extension origin.
 const MALICIOUS_ORIGIN =
   "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-function makePairRequest(
-  overrides: {
-    method?: string;
-    origin?: string | null;
-    interfaceId?: string | null;
-    xForwardedFor?: string;
-    edgeForwarded?: boolean;
-  } = {},
-): Request {
-  const {
-    method = "POST",
-    origin,
-    interfaceId = "chrome-extension",
-    xForwardedFor,
-    edgeForwarded,
-  } = overrides;
-  const headers: Record<string, string> = {
-    host: "localhost:7830",
-    "content-type": "application/json",
-  };
-  if (origin !== null) {
-    headers["origin"] = origin ?? PROD_ORIGIN;
-  }
-  if (interfaceId !== null) {
-    headers["x-cadet-interface-id"] = interfaceId;
-  }
-  if (xForwardedFor) {
-    headers["x-forwarded-for"] = xForwardedFor;
-  }
-  if (edgeForwarded) {
-    headers["x-cadet-edge-forwarded"] = "1";
-  }
-  return new Request("http://localhost:7830/v1/pair", { method, headers });
-}
 
 beforeEach(() => {
   resetPairRateLimiterForTests();
@@ -140,80 +99,5 @@ describe("webview CORS headers", () => {
     for (const header of Object.values(CLIENT_METADATA_HEADERS)) {
       expect(allowHeaders).toContain(header);
     }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// /v1/pair — Origin check for chrome-extension interface
-// ---------------------------------------------------------------------------
-
-describe("handlePair — Origin allowlist", () => {
-  test("pairs successfully with a known prod extension origin", async () => {
-    const req = makePairRequest({ origin: PROD_ORIGIN });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(typeof body.token).toBe("string");
-  });
-
-  test("pairs successfully with each known extension origin", async () => {
-    for (const origin of KNOWN_EXTENSION_ORIGINS) {
-      resetPairRateLimiterForTests();
-      const req = makePairRequest({ origin });
-      const res = await handlePair(req, LOOPBACK_IP);
-      expect(res.status).toBe(200);
-    }
-  });
-
-  test("rejects a request from an unknown extension origin with 403", async () => {
-    const req = makePairRequest({ origin: MALICIOUS_ORIGIN });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect((body.error as Record<string, unknown>).code).toBe("FORBIDDEN");
-  });
-
-  test("rejects a request with no Origin header with 403", async () => {
-    const req = makePairRequest({ origin: null });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
-  });
-
-  test("still rejects non-loopback callers regardless of origin", async () => {
-    const req = makePairRequest({ origin: PROD_ORIGIN });
-    const res = await handlePair(req, "8.8.8.8");
-    expect(res.status).toBe(403);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect((body.error as Record<string, unknown>).code).toBe("FORBIDDEN");
-  });
-
-  test("still rejects requests with X-Forwarded-For regardless of origin", async () => {
-    const req = makePairRequest({
-      origin: PROD_ORIGIN,
-      xForwardedFor: "1.2.3.4",
-    });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
-  });
-
-  test("still rejects unknown interface IDs (unrelated to origin check)", async () => {
-    const req = makePairRequest({
-      origin: PROD_ORIGIN,
-      interfaceId: "unknown-client",
-    });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(400);
-  });
-
-  // The edge marker is set by the self-hosted nginx edge (SPA over a tunnel).
-  // Every hop in that chain is loopback, so the peer IP passed here is the
-  // legitimate-looking 127.0.0.1 — the marker is what proves the request did
-  // not come directly from a local client and must be rejected.
-  test("rejects a request carrying the edge-forwarded marker even from a loopback peer", async () => {
-    const req = makePairRequest({ origin: PROD_ORIGIN, edgeForwarded: true });
-    const res = await handlePair(req, LOOPBACK_IP);
-    expect(res.status).toBe(403);
-    const body = (await res.json()) as Record<string, unknown>;
-    expect((body.error as Record<string, unknown>).code).toBe("FORBIDDEN");
   });
 });

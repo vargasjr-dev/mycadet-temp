@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 
-
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";

@@ -718,26 +718,6 @@ function buildBridgeLogicScript(
 </script>`;
 }
 
-/**
- * Build the complete bridge script (polyfill + logic) as a single string.
- *
- * Useful for tests that want to inspect the full output. In production,
- * `injectBridge` is preferred because it places the polyfill and bridge
- * logic at separate positions in the HTML.
- */
-export function buildBridgeScript(
-  frameId: string,
-  options?: BridgeOptions,
-): string {
-  return (
-    buildStoragePolyfill() +
-    buildBridgeLogicScript(frameId, options) +
-    buildLinkInterceptorScript(frameId, {
-      relayAppRoutes: options?.relayAppRoutes,
-    })
-  );
-}
-
 // ---------------------------------------------------------------------------
 // HTML injection
 // ---------------------------------------------------------------------------
