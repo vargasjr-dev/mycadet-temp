@@ -77,17 +77,8 @@ import { createResendWebhookHandler } from "./http/routes/resend-webhook.js";
 
 import { createOAuthCallbackHandler } from "./http/routes/oauth-callback.js";
 import { createMcpOAuthClientMetadataHandler } from "./http/routes/mcp-oauth-client-metadata.js";
-import {
-  createGlobalThresholdGetHandler,
-  createGlobalThresholdPutHandler,
-  createConversationThresholdGetHandler,
-  createConversationThresholdPutHandler,
-  createConversationThresholdDeleteHandler,
-} from "./http/routes/auto-approve-thresholds.js";
-import {
-  createUpgradePolicyGetHandler,
-  createUpgradePolicyPutHandler,
-} from "./http/routes/upgrade-policy.js";
+import { ROUTES as autoApproveThresholdRoutes } from "./http/routes/auto-approve-thresholds.js";
+import { ROUTES as upgradePolicyRoutes } from "./http/routes/upgrade-policy.js";
 import { createChannelVerificationSessionProxyHandler } from "./http/routes/channel-verification-session-proxy.js";
 import { createTelegramControlPlaneProxyHandler } from "./http/routes/telegram-control-plane-proxy.js";
 import { createTwilioControlPlaneProxyHandler } from "./http/routes/twilio-control-plane-proxy.js";
@@ -101,10 +92,7 @@ import {
 import { handleGetMyDevice } from "./http/routes/devices-mine.js";
 import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
 import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
-import {
-  handleCredentialRequestPeek,
-  handleCredentialRequestSubmit,
-} from "./http/routes/credential-requests.js";
+import { ROUTES as credentialRequestRoutes } from "./http/routes/credential-requests.js";
 import { handleCreateRemoteWebPairingChallenge } from "./http/routes/remote-web-pairing-challenge.js";
 import {
   handleApproveRemoteWebPairingRequest,
@@ -129,26 +117,11 @@ import { createDesktopSetupProxyHandler } from "./http/routes/desktop-setup-prox
 import { createBrainGraphProxyHandler } from "./http/routes/brain-graph-proxy.js";
 import { createLogExportHandler } from "./http/routes/log-export.js";
 import { createLogTailHandler } from "./http/routes/log-tail.js";
-import {
-  createTrustRulesListHandler,
-  createTrustRulesCreateHandler,
-  createTrustRulesUpdateHandler,
-  createTrustRulesDeleteHandler,
-  createTrustRulesResetHandler,
-  createTrustRulesSuggestHandler,
-} from "./http/routes/trust-rules.js";
+import { ROUTES as trustRuleRoutes } from "./http/routes/trust-rules.js";
 import { initTrustRuleCache } from "./risk/trust-rule-cache.js";
 import { initAdmissionPolicyCache } from "./risk/admission-policy-cache.js";
-import {
-  createChannelAdmissionPolicyListHandler,
-  createChannelAdmissionPolicySetHandler,
-  createChannelAdmissionPolicyDeleteHandler,
-} from "./http/routes/channel-admission-policy.js";
-import {
-  createChannelIngressApproveHandler,
-  createChannelIngressListHandler,
-  createChannelIngressRevokeHandler,
-} from "./http/routes/channel-ingress.js";
+import { ROUTES as channelAdmissionPolicyRoutes } from "./http/routes/channel-admission-policy.js";
+import { ROUTES as channelIngressRoutes } from "./http/routes/channel-ingress.js";
 import { createPluginWebhookHandler } from "./http/routes/plugin-webhook.js";
 import {
   createPluginWebhookWebsocketHandler,
@@ -161,12 +134,7 @@ import {
   watchPluginIngressForWebhookRoutes,
 } from "./channels/plugin-webhook-route-sync.js";
 import { PLUGIN_WEBHOOK_PATH_PATTERN } from "./channels/plugin-ingress.js";
-import {
-  createChannelPermissionOverridesListHandler,
-  createChannelPermissionOverrideSetHandler,
-  createChannelPermissionOverrideDeleteHandler,
-  createChannelPermissionResolveHandler,
-} from "./http/routes/channel-permission-overrides.js";
+import { ROUTES as channelPermissionOverrideRoutes } from "./http/routes/channel-permission-overrides.js";
 import {
   getLogger,
   initLogger,
@@ -216,6 +184,7 @@ import {
   type RouteDefinition,
   type GetClientIp,
 } from "./http/router.js";
+import type { GatewayRouteDefinition } from "./http/routes/types.js";
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
@@ -714,31 +683,6 @@ async function main() {
   const brainGraphProxy = createBrainGraphProxyHandler(config);
   const handleLogExport = createLogExportHandler(config);
   const handleLogTail = createLogTailHandler(config);
-  const handleGlobalThresholdGet = createGlobalThresholdGetHandler();
-  const handleGlobalThresholdPut = createGlobalThresholdPutHandler();
-  const handleConversationThresholdGet =
-    createConversationThresholdGetHandler();
-  const handleConversationThresholdPut =
-    createConversationThresholdPutHandler();
-  const handleConversationThresholdDelete =
-    createConversationThresholdDeleteHandler();
-  const handleUpgradePolicyGet = createUpgradePolicyGetHandler();
-  const handleUpgradePolicyPut = createUpgradePolicyPutHandler();
-  const handleTrustRulesList = createTrustRulesListHandler();
-  const handleTrustRulesCreate = createTrustRulesCreateHandler();
-  const handleTrustRulesUpdate = createTrustRulesUpdateHandler();
-  const handleTrustRulesDelete = createTrustRulesDeleteHandler();
-  const handleTrustRulesReset = createTrustRulesResetHandler();
-  const handleTrustRulesSuggest = createTrustRulesSuggestHandler();
-  const handleChannelAdmissionPolicyList =
-    createChannelAdmissionPolicyListHandler();
-  const handleChannelAdmissionPolicySet =
-    createChannelAdmissionPolicySetHandler();
-  const handleChannelAdmissionPolicyDelete =
-    createChannelAdmissionPolicyDeleteHandler();
-  const handleChannelIngressList = createChannelIngressListHandler();
-  const handleChannelIngressApprove = createChannelIngressApproveHandler();
-  const handleChannelIngressRevoke = createChannelIngressRevokeHandler();
   const handlePluginWebhook = createPluginWebhookHandler({
     config,
     resolve: resolveCachedPluginIngress,
@@ -748,14 +692,6 @@ async function main() {
     ingressPublicBaseUrl: () =>
       configFileCache.getString("ingress", "publicBaseUrl"),
   });
-  const handleChannelPermissionOverridesList =
-    createChannelPermissionOverridesListHandler();
-  const handleChannelPermissionOverrideSet =
-    createChannelPermissionOverrideSetHandler();
-  const handleChannelPermissionOverrideDelete =
-    createChannelPermissionOverrideDeleteHandler();
-  const handleChannelPermissionResolve =
-    createChannelPermissionResolveHandler();
 
   const audioProxy = createAudioProxyHandler(config);
 
@@ -788,7 +724,7 @@ async function main() {
   // Routes are matched top-to-bottom. The first match wins.
   // Auth middleware is applied declaratively per route — no manual
   // requireEdgeAuth/wrapWithAuthFailureTracking calls needed.
-  const routes: RouteDefinition[] = [
+  const routes: Array<GatewayRouteDefinition | RouteDefinition> = [
     // ── Webhooks (unauthenticated, validated by provider-specific mechanisms) ──
     {
       path: "/webhooks/telegram",
@@ -1060,20 +996,8 @@ async function main() {
       auth: "none",
       handler: (req) => handleCredentialEntryPage(req),
     },
-    {
-      path: "/credential-requests/peek",
-      method: "POST",
-      auth: "track-failures",
-      trackFailureStatuses: [404],
-      handler: (req) => handleCredentialRequestPeek(req),
-    },
-    {
-      path: "/credential-requests/submit",
-      method: "POST",
-      auth: "track-failures",
-      trackFailureStatuses: [404],
-      handler: (req) => handleCredentialRequestSubmit(req),
-    },
+    // Gateway-owned credential-request landing surface (token collection).
+    ...credentialRequestRoutes,
 
     // ── The caller's own paired-device row (bearer-authed, browser-legit) ──
     {
@@ -1388,114 +1312,10 @@ async function main() {
         }),
     },
 
-    // ── Auto-approve thresholds (scope-protected) ──
-    {
-      path: "/permissions/thresholds",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleGlobalThresholdGet(req),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleGlobalThresholdGet(req),
-    },
-    {
-      path: "/permissions/thresholds",
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleGlobalThresholdPut(req),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleGlobalThresholdPut(req),
-    },
+    // ── Auto-approve thresholds + per-conversation overrides (scope-protected) ──
+    ...autoApproveThresholdRoutes,
 
-    // ── Per-conversation threshold overrides (scope-protected) ──
-    {
-      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req, params) => handleConversationThresholdGet(req, params),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req, params) =>
-        handleConversationThresholdGet(req, params.slice(1)),
-    },
-    {
-      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleConversationThresholdPut(req, params),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        handleConversationThresholdPut(req, params.slice(1)),
-    },
-    {
-      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleConversationThresholdDelete(req, params),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        handleConversationThresholdDelete(req, params.slice(1)),
-    },
-
-    // ── Upgrade policy (scope-protected) ──
-    {
-      path: "/upgrade-policy",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleUpgradePolicyGet(req),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/upgrade-policy\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleUpgradePolicyGet(req),
-    },
-    {
-      path: "/upgrade-policy",
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleUpgradePolicyPut(req),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/upgrade-policy\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleUpgradePolicyPut(req),
-    },
-
-    // ── Log export ──
+    // ── Log access ──
     {
       path: "/logs/export",
       method: "POST",
@@ -1510,309 +1330,14 @@ async function main() {
       handler: (req) => handleLogTail(req),
     },
 
-    // ── Trust rules v3 ──
-    {
-      path: "/trust-rules",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleTrustRulesList(req),
-    },
-    {
-      // Must appear before the POST /v1/trust-rules create entry and before
-      // the /:id catch-all regex so the literal path is matched first.
-      path: "/trust-rules/suggest",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleTrustRulesSuggest(req),
-    },
-    {
-      path: "/trust-rules",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleTrustRulesCreate(req),
-    },
-    {
-      // Reset must be registered before the /:id catch-all regex
-      path: /^\/trust-rules\/([^/]+)\/reset$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesReset(req, params[0]),
-    },
-    {
-      path: /^\/trust-rules\/([^/]+)$/,
-      method: "PATCH",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesUpdate(req, params[0]),
-    },
-    {
-      path: /^\/trust-rules\/([^/]+)$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesDelete(req, params[0]),
-    },
-
-    // ── Channel admission policy — flat routes ──
-    // Storage + CRUD for the per-channel admission floor. Gateway-owned: the
-    // admission-policy store and cache live here, not in the daemon. The
-    // platform's RuntimeProxyView strips the `/v1/assistants/<id>/` prefix and
-    // forwards the flat path to the gateway via `/gateway-query`, so these flat
-    // routes are what actually serve client traffic. The mutation regexes
-    // tolerate a trailing slash.
-    {
-      path: /^\/channel-admission-policy\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelAdmissionPolicyList(req),
-    },
-    {
-      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
-    },
-    {
-      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
-    },
-    {
-      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        handleChannelAdmissionPolicyDelete(req, params[0]),
-    },
-
-    // ── Channel admission policy — assistant-scoped variants ──
-    // Mirror the flat routes for clients that use GatewayHTTPClient's
-    // auto-prefix, which builds URLs like
-    // /v1/assistants/<id>/channel-admission-policy/<channel>/. Without these,
-    // the request falls through to the runtime-proxy catch-all and the daemon
-    // serves 404 (the daemon does not implement this gateway storage API).
-    // Admission policy is gateway-global, so the assistant id is matched and
-    // discarded — same precedent as the assistant-scoped trust-rules routes
-    // below.
-    {
-      path: /^\/assistants\/[^/]+\/channel-admission-policy\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelAdmissionPolicyList(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        handleChannelAdmissionPolicyDelete(req, params[0]),
-    },
-
-    // ── Channel ingress approval ──
-    // Same shape as channel-permission-overrides below, with two differences:
-    // auth is edge-guardian rather than edge-scoped, because approving ingress
-    // is the decision the assistant must not make for itself; and there are no
-    // assistant-scoped variants, because the guardian reaches these directly
-    // rather than through the cloud proxy. Deliberately absent from the IPC
-    // surface for the same reason as the auth choice. Approve and revoke are
-    // POST verb paths because a grant has no id of its own until a guardian
-    // creates one. The listing is guardian-only for a different reason: it says
-    // which declarations are waiting, which the public surface will not.
-    {
-      path: /^\/channel-ingress\/?$/,
-      method: "GET",
-      auth: "edge-guardian",
-      handler: () => handleChannelIngressList(),
-    },
-    {
-      path: /^\/channel-ingress\/([^/]+)\/approve\/?$/,
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req, params) => handleChannelIngressApprove(req, params[0]!),
-    },
-    {
-      path: /^\/channel-ingress\/([^/]+)\/revoke\/?$/,
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req, params) => handleChannelIngressRevoke(req, params[0]!),
-    },
-
-    // ── Channel ingress: assistant-scoped variants ──
-    // Same handlers, same guardian auth, reached through the prefix a client
-    // built on the cloud's addressing produces. Approvals are
-    // gateway-global, so the assistant id is matched and discarded, the same
-    // precedent as channel-permission-overrides below. These exist because the
-    // web client's generated gateway SDK only speaks the prefixed form; the
-    // guardian decision they carry is unchanged, since `edge-guardian` is what
-    // decides who may call them and it applies to both spellings.
-    {
-      path: /^\/assistants\/[^/]+\/channel-ingress\/?$/,
-      method: "GET",
-      auth: "edge-guardian",
-      handler: () => handleChannelIngressList(),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/approve\/?$/,
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req, params) => handleChannelIngressApprove(req, params[0]!),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/revoke\/?$/,
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req, params) => handleChannelIngressRevoke(req, params[0]!),
-    },
-
-    // ── Channel permission overrides (matrix cells) — flat routes ──
-    // HTTP mirror of the channel-permission IPC surface so configuration
-    // clients can read/write cascade cells. Gateway-owned storage; same
-    // cloud-proxy path shape as channel-admission-policy above. The
-    // delete is a POST verb path because cells are keyed by a composite
-    // (selector × contact-type), not a row id.
-    {
-      path: /^\/channel-permission-overrides\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelPermissionOverridesList(req),
-    },
-    {
-      path: /^\/channel-permission-overrides\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleChannelPermissionOverrideSet(req),
-    },
-    {
-      path: /^\/channel-permission-overrides\/delete\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleChannelPermissionOverrideDelete(req),
-    },
-    // Resolve is a read (settings.read) despite the POST verb — the body
-    // carries a composite query, same rationale as /delete above.
-    {
-      path: /^\/channel-permission-overrides\/resolve\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelPermissionResolve(req),
-    },
-
-    // ── Channel permission overrides — assistant-scoped variants ──
-    // Matrix cells are gateway-global, so the assistant id is matched and
-    // discarded — same precedent as channel-admission-policy above.
-    {
-      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelPermissionOverridesList(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
-      method: "PUT",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleChannelPermissionOverrideSet(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/delete\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleChannelPermissionOverrideDelete(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/resolve\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleChannelPermissionResolve(req),
-    },
-
-    // ── Trust rules v3 — assistant-scoped variants ──
-    // Mirror the flat /v1/trust-rules routes for clients that use
-    // GatewayHTTPClient's auto-prefix (Swift TrustRuleClient and
-    // mycadet-platform's web/src/lib/trust-rules/api.ts), which build
-    // URLs like /v1/assistants/<id>/trust-rules/. Without these, the request
-    // falls through to the runtime-proxy catch-all and the daemon serves 404
-    // on mutations (the daemon HTTP handlers were stripped by #28784).
-    //
-    // Trust rules are gateway-global, so the assistant id is matched and
-    // discarded. Same precedent as channel-admission-policy above.
-    {
-      path: /^\/assistants\/[^/]+\/trust-rules\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleTrustRulesList(req),
-    },
-    {
-      // Must appear before the create entry and before the /:id catch-all
-      // so the literal /suggest segment is matched first.
-      path: /^\/assistants\/[^/]+\/trust-rules\/suggest\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleTrustRulesSuggest(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/trust-rules\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleTrustRulesCreate(req),
-    },
-    {
-      // Reset must be registered before the /:id catch-all regex.
-      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/reset\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesReset(req, params[0]),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
-      method: "PATCH",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesUpdate(req, params[0]),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => handleTrustRulesDelete(req, params[0]),
-    },
+    // ── Gateway-owned route areas — one declaration per route (spec fields,
+    // auth, and handler factories fused; scoped mirrors generated by the
+    // router) ──
+    ...upgradePolicyRoutes,
+    ...trustRuleRoutes,
+    ...channelAdmissionPolicyRoutes,
+    ...channelIngressRoutes,
+    ...channelPermissionOverrideRoutes,
   ];
 
   for (const method of ["GET", "POST"] as const) {

@@ -20,7 +20,9 @@
 import {
   ChannelPermissionCellKeySchema,
   ChannelPermissionCellSchema,
+  ChannelPermissionScopeSchema,
   ResolveChannelPermissionRequestSchema,
+  RiskThresholdSchema,
   type ChannelPermissionSelector,
 } from "@mycadet/gateway-client";
 
@@ -199,3 +201,86 @@ export function createChannelPermissionOverrideDeleteHandler() {
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script.
+// ---------------------------------------------------------------------------
+
+import { z } from "zod";
+import type { GatewayRouteDefinition } from "./types.js";
+
+const ChannelPermissionCellRowSchema = ChannelPermissionCellSchema.extend({
+  updatedAt: z.number(),
+});
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/channel-permission-overrides",
+    method: "get",
+    operationId: "channelPermissionOverridesList",
+    summary: "List channel-permission matrix cells",
+    description:
+      "Returns every persisted cell in the cascade selector × contact-type → RiskThreshold map. Unset cells fall through the cascade; the list contains only explicit overrides.",
+    tags: ["channel-permission-overrides"],
+    responseBody: z.object({
+      cells: z.array(ChannelPermissionCellRowSchema),
+    }),
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createChannelPermissionOverridesListHandler(),
+  },
+  {
+    path: "/channel-permission-overrides",
+    method: "put",
+    operationId: "channelPermissionOverrideSet",
+    summary: "Upsert a channel-permission matrix cell",
+    description:
+      "Upserts one cell, identified by the selector × contact-type in the body. The adapter must be a known channel id.",
+    tags: ["channel-permission-overrides"],
+    requestBody: ChannelPermissionCellSchema,
+    responseBody: z.object({ cell: ChannelPermissionCellRowSchema }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createChannelPermissionOverrideSetHandler(),
+  },
+  {
+    path: "/channel-permission-overrides/resolve",
+    method: "post",
+    operationId: "channelPermissionResolve",
+    summary: "Resolve the effective channel-permission threshold",
+    description:
+      "Read-only cascade resolution for one coordinate: walks channel → channel_type → adapter → workspace for the given selector keys and contact-type, returning the winning cell's threshold and scope, or null when no cell matches, in which case the caller falls through to the global thresholds. Same resolver the runtime evaluator uses over IPC.",
+    tags: ["channel-permission-overrides"],
+    requestBody: ResolveChannelPermissionRequestSchema,
+    responseBody: z.object({
+      resolved: z
+        .object({
+          threshold: RiskThresholdSchema,
+          scope: ChannelPermissionScopeSchema,
+        })
+        .nullable(),
+    }),
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createChannelPermissionResolveHandler(),
+  },
+  {
+    path: "/channel-permission-overrides/delete",
+    method: "post",
+    operationId: "channelPermissionOverrideDelete",
+    summary: "Delete a channel-permission matrix cell",
+    description:
+      "Removes one cell by its composite key, selector × contact-type, letting the next cascade tier up win. Returns whether a cell was removed.",
+    tags: ["channel-permission-overrides"],
+    requestBody: ChannelPermissionCellKeySchema,
+    responseBody: z.object({ removed: z.boolean() }),
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createChannelPermissionOverrideDeleteHandler(),
+  },
+];

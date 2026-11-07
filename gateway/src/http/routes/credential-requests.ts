@@ -301,6 +301,9 @@ export const ROUTES: GatewayRouteDefinition[] = [
       }),
       TokenErrorSchema,
     ]),
+    auth: "track-failures",
+    trackFailureStatuses: [404],
+    createHandler: () => handleCredentialRequestPeek,
   },
   {
     path: "/credential-requests/submit",
@@ -312,5 +315,8 @@ export const ROUTES: GatewayRouteDefinition[] = [
     tags: ["credential-requests"],
     requestBody: SubmitRequestSchema,
     responseBody: z.union([z.object({ ok: z.boolean() }), TokenErrorSchema]),
+    auth: "track-failures",
+    trackFailureStatuses: [404],
+    createHandler: () => handleCredentialRequestSubmit,
   },
 ];

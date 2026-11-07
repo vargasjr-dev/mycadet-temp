@@ -152,3 +152,43 @@ export function createUpgradePolicyPutHandler() {
     }
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script.
+// ---------------------------------------------------------------------------
+
+import type { GatewayRouteDefinition } from "./types.js";
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/upgrade-policy",
+    method: "get",
+    operationId: "upgradePolicyGet",
+    summary: "Get the assistant's automatic-upgrade schedule",
+    description:
+      "Returns the stored policy, or the defaults (enabled, weekly, " +
+      "Mon 06:00–08:00 UTC) when none has been saved yet.",
+    tags: ["settings"],
+    responseBody: UpgradePolicySchema,
+    auth: "edge-scoped",
+    scope: "settings.read",
+    scoped: true,
+    createHandler: () => createUpgradePolicyGetHandler(),
+  },
+  {
+    path: "/upgrade-policy",
+    method: "put",
+    operationId: "upgradePolicyPut",
+    summary: "Save the assistant's automatic-upgrade schedule",
+    description: "Full replace — the request body is the complete policy.",
+    tags: ["settings"],
+    requestBody: UpgradePolicySchema,
+    responseBody: UpgradePolicySchema,
+    auth: "edge-scoped",
+    scope: "settings.write",
+    scoped: true,
+    createHandler: () => createUpgradePolicyPutHandler(),
+  },
+];

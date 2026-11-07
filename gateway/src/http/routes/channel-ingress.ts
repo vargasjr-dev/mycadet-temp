@@ -15,6 +15,9 @@
  * error conventions.
  */
 
+import { z } from "zod";
+import type { GatewayRouteDefinition } from "./types.js";
+
 import {
   findServableRoute,
   listServablePluginWebhookPaths,
@@ -38,7 +41,6 @@ import {
   type PluginWebhookRouteReconciliation,
 } from "../../db/webhook-ingress-route-store.js";
 import { getLogger } from "../../logger.js";
-import { ApproveChannelIngressRequestSchema } from "./channel-ingress-routes.js";
 
 const log = getLogger("channel-ingress");
 
@@ -71,6 +73,19 @@ function settleServableWebhookRoutes(
 // ---------------------------------------------------------------------------
 
 // Wire schema shared with the published OpenAPI spec (single source).
+/**
+ * Request body for POST /v1/channel-ingress/{source}/approve. Wire schema
+ * shared with the published OpenAPI spec (single source).
+ */
+export const ApproveChannelIngressRequestSchema = z.object({
+  /**
+   * Digest of the declaration being approved, as produced by
+   * `ingressDeclarationDigest`. Must match what the source declares now, so
+   * an approval is always a decision about routes the guardian has seen.
+   */
+  digest: z.string().regex(/^[0-9a-f]{32}$/),
+});
+
 const ApproveBodySchema = ApproveChannelIngressRequestSchema;
 
 // ---------------------------------------------------------------------------
@@ -358,3 +373,124 @@ export function createChannelIngressRevokeHandler(
     }
   };
 }
+
+// ---------------------------------------------------------------------------
+// Route declarations — the single source of truth for both the dispatch
+// table (index.ts) and the OpenAPI generation script. Guardian-authenticated,
+// not scope-authenticated: approving ingress is the decision the assistant
+// must not be able to make for itself. The assistant-scoped mirrors exist in
+// dispatch only (the guardian reaches the flat paths directly).
+// ---------------------------------------------------------------------------
+
+const ApprovalViewSchema = z.object({
+  source: z.string(),
+  digest: z.string(),
+  approvedAt: z.number(),
+});
+
+const IngressRouteViewSchema = z.object({
+  path: z.string(),
+  /** Absolute path the gateway would serve, which is the reach being granted. */
+  publicPath: z.string(),
+  kind: z.string(),
+  signer: z.string(),
+  handshake: z.string(),
+  description: z.string(),
+  /** Credential the route's signatures are verified against. */
+  credential: z.string(),
+  /**
+   * Whether the gateway serves this route right now. Not implied by the
+   * source's state: a `cadet`-signed route is served without approval.
+   */
+  served: z.boolean(),
+  /**
+   * Whether this route's replies deliver messages into the assistant, rather
+   * than the route being a callback the plugin merely receives. Approving one
+   * of these grants the plugin a way to start conversations, which is a
+   * different decision than opening an address.
+   */
+  deliversInbound: z.boolean(),
+  /** Present when the route declares its own verification scheme. */
+  verification: z
+    .object({ algorithm: z.string(), signatureHeader: z.string() })
+    .optional(),
+});
+
+const IngressSourceViewSchema = z.object({
+  source: z.string(),
+  /** Approval state. Whether a given route is live is per-route `served`. */
+  state: z.enum(["approved", "pending"]),
+  /** Digest of what the source declares now: the one to approve. */
+  digest: z.string(),
+  approvedAt: z.number().optional(),
+  /** On a pending source holding a grant for an earlier declaration. */
+  approvedDigest: z.string().optional(),
+  routes: z.array(IngressRouteViewSchema),
+});
+
+const ChannelIngressListSchema = z.object({
+  sources: z.array(IngressSourceViewSchema),
+  /** Declarations that failed validation. Unservable regardless of approval. */
+  problems: z.array(z.object({ source: z.string(), reason: z.string() })),
+});
+
+export const ROUTES: GatewayRouteDefinition[] = [
+  {
+    path: "/channel-ingress",
+    method: "get",
+    operationId: "channelIngressList",
+    summary: "List ingress declarations and their approval state",
+    description:
+      "Every declaration the gateway can see, each with the digest a guardian would approve, the public paths it would open, and the credential its signatures are verified against. This is the only way to learn that a declaration is waiting: on the public surface a route held back by approval 404s exactly like one nobody declared.",
+    tags: ["channel-ingress"],
+    responseBody: ChannelIngressListSchema,
+    auth: "edge-guardian",
+    scoped: true,
+    createHandler: () => createChannelIngressListHandler(),
+  },
+  {
+    path: "/channel-ingress/{source}/approve",
+    method: "post",
+    operationId: "channelIngressApprove",
+    summary: "Approve an ingress declaration",
+    description:
+      "Records the guardian's approval of the declaration identified by the body's digest, after which the gateway serves its routes. Returns 409 when the digest is not what the source currently declares, and 404 when it declares nothing servable.",
+    tags: ["channel-ingress"],
+    pathParameters: [
+      {
+        name: "source",
+        description: "The declaring ingress source, today a plugin name",
+      },
+    ],
+    requestBody: ApproveChannelIngressRequestSchema,
+    responseBody: ApprovalViewSchema,
+    auth: "edge-guardian",
+    scoped: true,
+    createHandler: () => {
+      const handler = createChannelIngressApproveHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+  {
+    path: "/channel-ingress/{source}/revoke",
+    method: "post",
+    operationId: "channelIngressRevoke",
+    summary: "Revoke an ingress approval",
+    description:
+      "Withdraws the source's grant, after which its routes stop being served. Reports whether there was a grant to withdraw. Succeeds even when the declaration itself has become unreadable.",
+    tags: ["channel-ingress"],
+    pathParameters: [
+      {
+        name: "source",
+        description: "The declaring ingress source, today a plugin name",
+      },
+    ],
+    responseBody: z.object({ source: z.string(), revoked: z.boolean() }),
+    auth: "edge-guardian",
+    scoped: true,
+    createHandler: () => {
+      const handler = createChannelIngressRevokeHandler();
+      return (req, params) => handler(req, params[0]!);
+    },
+  },
+];

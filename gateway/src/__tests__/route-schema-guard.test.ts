@@ -9,6 +9,14 @@ import {
 } from "@mycadet/service-contracts/twilio-ingress";
 import { buildSchema } from "../schema.js";
 import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
+import { ROUTES as autoApproveThresholdRoutes } from "../http/routes/auto-approve-thresholds.js";
+import { ROUTES as channelAdmissionPolicyRoutes } from "../http/routes/channel-admission-policy.js";
+import { ROUTES as channelIngressRoutes } from "../http/routes/channel-ingress.js";
+import { ROUTES as channelPermissionOverrideRoutes } from "../http/routes/channel-permission-overrides.js";
+import { buildContactsControlPlaneRoutes } from "../http/routes/contacts-control-plane-route-table.js";
+import { ROUTES as credentialRequestRoutes } from "../http/routes/credential-requests.js";
+import { ROUTES as trustRuleRoutes } from "../http/routes/trust-rules.js";
+import { ROUTES as upgradePolicyRoutes } from "../http/routes/upgrade-policy.js";
 
 /** A route extracted from source: path + optional HTTP method. */
 interface ExtractedRoute {
@@ -29,10 +37,12 @@ const ROUTE_PATH_CONSTANTS: Record<string, string> = {
 /**
  * Extracts route paths from the gateway index.ts source code.
  *
- * Routes are defined in three places:
- * 1. The `routes` array (RouteDefinition[]) — matched by the router
+ * Routes are defined in four places:
+ * 1. The `routes` array (RouteDefinition[] / GatewayRouteDefinition[]) — matched by the router
  * 2. Pre-router paths in the `fetch()` handler (healthz, readyz, schema, WS upgrades)
- * 3. The contact-family route table spread into the array (imported directly)
+ * 3. The fused ROUTES arrays (one per gateway-owned area), imported directly —
+ *    both the dispatch table and the spec generator consume these
+ * 4. The contact-family route table spread into the array (imported directly)
  *
  * We parse the source text rather than importing index.ts because it calls
  * `main()` at module scope which starts the server.
@@ -148,10 +158,103 @@ function findMethodNearPath(
   return null;
 }
 
+/**
+ * The fused per-area ROUTES arrays (the same declarations index.ts spreads
+ * and the spec generator reads), flattened to source-shaped entries. Only
+ * the flat route + its dispatch-only aliases are listed: the assistant-scoped
+ * mirrors the router generates are unpublished by construction.
+ */
+function extractFusedRoutes(): ExtractedRoute[] {
+  const contacts = buildContactsControlPlaneRoutes({
+    contactsControlPlaneProxy: {} as never,
+    handleContactPromptSubmit: async () => new Response(""),
+    handleContactRecordSubmit: async () => new Response(""),
+  });
+
+  return [
+    ...autoApproveThresholdRoutes,
+    ...channelAdmissionPolicyRoutes,
+    ...channelIngressRoutes,
+    ...channelPermissionOverrideRoutes,
+    ...contacts,
+    ...credentialRequestRoutes,
+    ...trustRuleRoutes,
+    ...upgradePolicyRoutes,
+  ].flatMap((route) => {
+    if (!("createHandler" in route)) {
+      // A legacy raw definition (none remain in the fused areas, but the
+      // union allows them).
+      if (typeof route.path !== "string") return [];
+      return [
+        { path: route.path, method: route.method?.toUpperCase() ?? null },
+      ];
+    }
+    // Raw regex dispatch paths (the contacts catch-alls) convert like the
+    // inline regexes; the specPath override names the canonical template.
+    if (typeof route.path !== "string") {
+      const converted = regexToOpenApiPath(
+        route.path.source.replace(/^\^/, "").replace(/\$$/, ""),
+      );
+      return converted
+        ? [
+            {
+              path: route.specPath ?? converted,
+              method: route.method.toUpperCase(),
+            },
+          ]
+        : [];
+    }
+    const path: string = route.path;
+    const routes: ExtractedRoute[] = [
+      { path, method: route.method.toUpperCase() },
+    ];
+    for (const alias of route.aliases ?? []) {
+      routes.push({ path, method: alias.toUpperCase() });
+    }
+    // The assistant-scoped mirrors the router generates (`route.scoped`)
+    // are published only for the global settings surfaces — the same set
+    // the hand-built schema documented when the mirrors were inline (the
+    // old source parse only saw the ones whose regexes captured the
+    // assistant id, which were exactly these). Everything else stays
+    // dispatch-only.
+    if (route.scoped && SCHEMA_DOCUMENTED_SCOPED.has(route.operationId!)) {
+      routes.push({
+        path: `/assistants/{param1}${path}`,
+        method: route.method.toUpperCase(),
+      });
+      for (const alias of route.aliases ?? []) {
+        routes.push({
+          path: `/assistants/{param1}${path}`,
+          method: alias.toUpperCase(),
+        });
+      }
+    }
+    return routes;
+  });
+}
+
+/**
+ * The assistant-scoped mirrors the hand-built schema (buildSchema) documents.
+ * The router generates a mirror for every `scoped: true` entry; the schema
+ * publishes the prefixed spelling only for the global settings surfaces, so
+ * only those join the guard's route set.
+ */
+const SCHEMA_DOCUMENTED_SCOPED = new Set([
+  "permissionsThresholdsGet",
+  "permissionsThresholdsPut",
+  "conversationThresholdGet",
+  "conversationThresholdPut",
+  "conversationThresholdDelete",
+  "upgradePolicyGet",
+  "upgradePolicyPut",
+]);
+
 /** Deduplicated, sorted list of unique route paths (canonical — unversioned). */
 function extractRoutePathsFromSource(): string[] {
   const paths = new Set(
-    extractRoutesFromSource().map((r) => withoutVersionPrefix(r.path)),
+    [...extractRoutesFromSource(), ...extractFusedRoutes()].map((r) =>
+      withoutVersionPrefix(r.path),
+    ),
   );
   return [...paths].sort();
 }
@@ -196,8 +299,6 @@ function regexToOpenApiPath(escaped: string): string | null {
 const EXCLUDED_FROM_SCHEMA = new Set([
   // Runtime proxy catch-all — documented as /{path} in the schema
   "catch-all",
-  // Loopback-only pairing endpoint — not part of the public gateway API
-  "/v1/pair",
   // Loopback-only remote web pairing challenge — not part of the public gateway API
   "/v1/remote-web/pairing-challenge",
   // Remote web pairing verification bootstrap — not part of the public gateway API
@@ -211,13 +312,8 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   // Shared-invite redemption, called by the cloud on an invitee's behalf;
   // not part of the public gateway API
   "/v1/shared/invites/redeem",
-  // Loopback-only device management — not part of the public gateway API
-  "/v1/devices",
-  "/v1/devices/revoke",
   // Internal-only: reachable only via vembda's trusted gateway-query proxy
   "/v1/contacts/guardian/channel",
-  // BFF token auth — loopback-only, not part of the public gateway API
-  "/auth/token",
   // Managed-speech relay — daemon-only WS egress to tunnel, rejected on any
   // ingress path; not part of the public gateway API
   "/v1/speech/stt/stream",

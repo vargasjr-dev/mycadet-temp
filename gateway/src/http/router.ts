@@ -1,5 +1,6 @@
 import type { Server } from "bun";
 
+import type { AuthStrategy, GatewayRouteDefinition, RouteHandler } from "./routes/types.js";
 import type { Scope } from "../auth/types.js";
 import type { AuthRateLimiter } from "../auth-rate-limiter.js";
 import {
@@ -13,30 +14,9 @@ import {
 
 export type GetClientIp = () => string;
 export type GetRawPeerIp = () => string;
+export type { AuthStrategy } from "./routes/types.js";
 
-/**
- * Auth strategy for a route:
- * - "none"         — no auth check, handler called directly
- * - "edge"         — edge JWT token required (aud=cadet-gateway)
- * - "edge-scoped"  — edge JWT + scope check (requires `scope` field)
- * - "edge-guardian" — caller must be the bound cadet guardian. In the default
- *                      path, edge JWT is validated and the caller's actor
- *                      principal must match the guardian's principal id.
- *                      When DISABLE_HTTP_AUTH=true (cloud-managed), the
- *                      caller is asserted via X-Cadet-User-Id forwarded by
- *                      vembda, cross-referenced with the bound platform
- *                      user id.
- * - "track-failures" — no gateway-level auth, but downstream 401s are
- *                      recorded against the rate limiter
- * - "custom"       — the handler manages auth internally
- */
-type AuthStrategy =
-  | "none"
-  | "edge"
-  | "edge-scoped"
-  | "edge-guardian"
-  | "track-failures"
-  | "custom";
+export type { GatewayRouteDefinition };
 
 /** Params extracted from a regex path match (capture groups). */
 export type RouteParams = string[];
@@ -44,6 +24,12 @@ export type RouteParams = string[];
 export interface RouteDefinition {
   /** Static path string or regex pattern. Regex capture groups become `params`. */
   path: string | RegExp;
+  /**
+   * Canonical spec path for raw-regex routes the OpenAPI generator publishes
+   * under a `{param}` template (e.g. the contacts DELETE catch-all's
+   * lookahead, which a template cannot express).
+   */
+  specPath?: string;
   /** HTTP method to match. Omit to match any method. */
   method?: string;
   /** Auth strategy (default: "none"). */
@@ -61,12 +47,7 @@ export interface RouteDefinition {
    */
   precondition?: () => Response | null;
   /** Route handler. Params are populated from regex capture groups. */
-  handler: (
-    req: Request,
-    params: RouteParams,
-    getClientIp: GetClientIp,
-    getRawPeerIp: GetRawPeerIp,
-  ) => Promise<Response> | Response;
+  handler: RouteHandler;
 }
 
 export interface RouterDeps {
@@ -91,7 +72,7 @@ export interface RouterDeps {
  * handler. Returns null if no route matches.
  */
 export function createRouter(
-  routes: RouteDefinition[],
+  routes: ReadonlyArray<GatewayRouteDefinition | RouteDefinition>,
   deps: RouterDeps,
 ): (
   req: Request,
@@ -100,6 +81,7 @@ export function createRouter(
   server?: Server<unknown>,
 ) => Promise<Response | null> {
   const { authRateLimiter } = deps;
+  const table: RouteDefinition[] = routes.flatMap(expandRoute);
 
   return async (
     req: Request,
@@ -111,7 +93,7 @@ export function createRouter(
       server?.requestIP(req)?.address ?? "unknown";
 
     const dispatchAt = async (pathname: string): Promise<Response | null> => {
-      for (const route of routes) {
+      for (const route of table) {
         const matchResult = matchRoute(route, pathname, req.method);
         if (!matchResult) continue;
 
@@ -217,6 +199,77 @@ export function createRouter(
 export function withoutVersionPrefix(pathname: string): string {
   const stripped = pathname.replace(/^\/v1(?=\/|$)/, "");
   return stripped === "" ? "/" : stripped;
+}
+
+
+// ---------------------------------------------------------------------------
+// Fused-route expansion
+// ---------------------------------------------------------------------------
+
+/**
+ * Compile a `{param}` path template into the dispatch regex: single-segment
+ * captures, trailing slash tolerated. Mirrors the hand-written regexes this
+ * replaces (`/^\/x\/([^/]+)\/?$/`).
+ */
+export function compilePath(template: string): RegExp {
+  if (!template.startsWith("/")) {
+    throw new Error(`Route template must start with "/": ${template}`);
+  }
+  const pattern = template
+    .split("/")
+    .map((segment) => {
+      if (!segment.startsWith("{") || !segment.endsWith("}")) {
+        return segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+      const name = segment.slice(1, -1);
+      if (!/^[A-Za-z0-9_]+$/.test(name)) {
+        throw new Error(`Invalid route parameter: {${name}}`);
+      }
+      return "([^/]+)";
+    })
+    .join("/");
+  return new RegExp(`^${pattern}/?$`);
+}
+
+/**
+ * Expand one fused route declaration into the internal definitions the
+ * matcher consumes: the flat route, its dispatch-only method aliases, and —
+ * when `scoped` — the assistant-scoped mirror whose first capture (the
+ * assistant id) is discarded before the handler sees the params.
+ */
+export function expandRoute(
+  route: GatewayRouteDefinition | RouteDefinition,
+): RouteDefinition[] {
+  if (!isFused(route)) return [route as RouteDefinition];
+
+  const handler = route.createHandler();
+  const flat: RouteDefinition = {
+    path: typeof route.path === "string" ? compilePath(route.path) : route.path,
+    method: route.method.toUpperCase(),
+    auth: route.auth,
+    scope: route.scope,
+    trackFailureStatuses: route.trackFailureStatuses,
+    precondition: route.precondition,
+    handler: (req, params, getClientIp, getRawPeerIp) =>
+      handler(req, params, getClientIp, getRawPeerIp),
+  };
+  const expanded: RouteDefinition[] = [flat];
+  for (const alias of route.aliases ?? []) {
+    expanded.push({ ...flat, method: alias.toUpperCase() });
+  }
+  if (route.scoped) {
+    expanded.push({
+      ...flat,
+      path: compilePath(`/assistants/{assistant_id}${route.path}`),
+      handler: (req, params, getClientIp, getRawPeerIp) =>
+        handler(req, params.slice(1), getClientIp, getRawPeerIp),
+    });
+  }
+  return expanded;
+}
+
+function isFused(route: GatewayRouteDefinition | RouteDefinition): route is GatewayRouteDefinition {
+  return "createHandler" in route;
 }
 
 interface MatchResult {

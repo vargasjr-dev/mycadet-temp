@@ -5,7 +5,7 @@
  * bindings are closures, so a route is identified by invoking its handler and
  * reading the `{ marker }` body. No import-time side effects.
  */
-import type { RouteDefinition } from "../../http/router.js";
+import { expandRoute, type RouteDefinition } from "../../http/router.js";
 import {
   buildContactsControlPlaneRoutes,
   type ContactsControlPlaneProxy,
@@ -32,7 +32,7 @@ export function buildMarkedContactRoutes(): RouteDefinition[] {
     contactsControlPlaneProxy,
     handleContactPromptSubmit: marker("handleContactPromptSubmit"),
     handleContactRecordSubmit: marker("handleContactRecordSubmit"),
-  });
+  }).flatMap(expandRoute);
 }
 
 /** Resolves which proxy binding a marked route's handler is bound to. */
