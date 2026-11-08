@@ -138,8 +138,7 @@ function buildCloudSkillAllowlistOptions(
   toolName: string,
   skillId?: string,
 ): AllowlistOption[] {
-  const toolLabel =
-    toolName === "scaffold_cloud_skill" ? "scaffold" : "delete";
+  const toolLabel = toolName === "scaffold_cloud_skill" ? "scaffold" : "delete";
   const options: AllowlistOption[] = [];
   if (skillId) {
     options.push({

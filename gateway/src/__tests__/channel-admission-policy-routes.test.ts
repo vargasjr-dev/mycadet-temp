@@ -261,7 +261,6 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
     }
   });
 
-
   test("upserts `phone` like any enforced channel (voice ingress wired)", async () => {
     const handler = createChannelAdmissionPolicySetHandler();
     const res = await handler(

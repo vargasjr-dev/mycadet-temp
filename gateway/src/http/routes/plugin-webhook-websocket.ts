@@ -102,10 +102,7 @@ export function isPluginWebhookSocketData(
 }
 
 function signingCredentialKey(plugin: string, signer: IngressSigner): string {
-  return credentialKey(
-    signer === "cadet" ? "cadet" : plugin,
-    "webhook_secret",
-  );
+  return credentialKey(signer === "cadet" ? "cadet" : plugin, "webhook_secret");
 }
 
 export interface PluginWebhookWsDeps {

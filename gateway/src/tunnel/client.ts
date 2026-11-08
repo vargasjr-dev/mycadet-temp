@@ -4,8 +4,11 @@ import { normalizeHttpPublicBaseUrl } from "@mycadet/service-contracts/ingress";
 
 import { getGatewayInternalBaseUrl } from "../config.js";
 import type { GatewayConfig } from "../config.js";
+import { getConfig } from "../config.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
+import { getConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
+import { getCredentials } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { mutateConfigFile } from "../config-file-utils.js";
 import { getLogger } from "../logger.js";
@@ -945,4 +948,20 @@ function buildRegisterWebSocketUrl(baseUrl: string): string {
     throw new Error("TUNNEL_BASE_URL must use http, https, ws, or wss");
   }
   return url.toString();
+}
+
+let cachedTunnelClient: TunnelClient | undefined | null = null;
+/**
+ * The process-wide tunnel client, built on first call from the singleton
+ * config/credential/config-file caches. Undefined when no tunnel is
+ * configured. The gateway server and the tunnel-status routes share it.
+ */
+export function getTunnelClient(): TunnelClient | undefined {
+  if (cachedTunnelClient === null) {
+    cachedTunnelClient = createTunnelClient(getConfig(), {
+      credentials: getCredentials(),
+      configFile: getConfigFileCache(),
+    });
+  }
+  return cachedTunnelClient;
 }

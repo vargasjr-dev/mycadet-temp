@@ -42,7 +42,6 @@ describe("seedAdmissionPolicyDefaults", () => {
     expect(byChannel.get("phone")).toBe("trusted_contacts");
   });
 
-
   test("is idempotent and never overwrites a configurable channel's row", () => {
     store.set("slack", "strangers", "user choice");
     store.set("telegram", "any_contact", "user widened telegram");
@@ -79,9 +78,7 @@ describe("seedAdmissionPolicyDefaults", () => {
 
     expect(isChannelId("cadet-shared")).toBe(true);
     expect(store.get("cadet-shared")).toBe("guardian_only");
-    expect(getAdmissionPolicyCache().get("cadet-shared")).toBe(
-      "guardian_only",
-    );
+    expect(getAdmissionPolicyCache().get("cadet-shared")).toBe("guardian_only");
   });
 
   test("resets a stranded hidden-channel row back to its default", () => {

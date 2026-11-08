@@ -8,8 +8,10 @@
 import { proxyForward } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("twilio-control-plane-proxy");
 
@@ -85,3 +87,59 @@ export function createTwilioControlPlaneProxyHandler(config: GatewayConfig) {
     },
   };
 }
+
+let routeProxyImpl: ReturnType<typeof createTwilioControlPlaneProxyHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createTwilioControlPlaneProxyHandler> {
+  return (routeProxyImpl ??= createTwilioControlPlaneProxyHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/integrations/twilio/config",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleGetTwilioConfig(req),
+  },
+  {
+    path: "/integrations/twilio/credentials",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleSetTwilioCredentials(req),
+  },
+  {
+    path: "/integrations/twilio/credentials",
+    method: "delete",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleClearTwilioCredentials(req),
+  },
+  {
+    path: "/integrations/twilio/numbers",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleListTwilioNumbers(req),
+  },
+  {
+    path: "/integrations/twilio/numbers/provision",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleProvisionTwilioNumber(req),
+  },
+  {
+    path: "/integrations/twilio/numbers/assign",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleAssignTwilioNumber(req),
+  },
+  {
+    path: "/integrations/twilio/numbers/release",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleReleaseTwilioNumber(req),
+  },
+];

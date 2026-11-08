@@ -9,6 +9,7 @@
 import type { AdmissionPolicy } from "@mycadet/gateway-client";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { admissionPolicyRoutes } from "../admission-policy-handlers.js";
 const policiesByChannel = new Map<string, AdmissionPolicy>();
 
 mock.module("../../risk/admission-policy-cache.js", () => ({
@@ -17,8 +18,6 @@ mock.module("../../risk/admission-policy-cache.js", () => ({
       policiesByChannel.get(channelType) ?? "trusted_contacts",
   }),
 }));
-
-import { admissionPolicyRoutes } from "../admission-policy-handlers.js";
 
 function getPolicy(channelType: string) {
   return admissionPolicyRoutes[0].handler({ channelType });

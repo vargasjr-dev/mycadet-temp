@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 import {
-  createConversationThresholdGetHandler,
-  createConversationThresholdPutHandler,
-  createConversationThresholdDeleteHandler,
+  handleConversationThresholdGet,
+  handleConversationThresholdPut,
+  handleConversationThresholdDelete,
 } from "../http/routes/auto-approve-thresholds.js";
 
 beforeEach(async () => {
@@ -67,7 +67,7 @@ describe("GET /v1/permissions/thresholds/conversations/:conversationId", () => {
     // `{ threshold: null }` (rather than 404) avoids surfacing a
     // misleading network error in the browser console for the default
     // case and matches the IPC contract, which also returns null.
-    const handler = createConversationThresholdGetHandler();
+    const handler = handleConversationThresholdGet;
     const [req, params] = makeGet("conv-xyz");
 
     const res = await handler(req, params);
@@ -78,8 +78,8 @@ describe("GET /v1/permissions/thresholds/conversations/:conversationId", () => {
   });
 
   test("returns threshold after PUT creates it", async () => {
-    const putHandler = createConversationThresholdPutHandler();
-    const getHandler = createConversationThresholdGetHandler();
+    const putHandler = handleConversationThresholdPut;
+    const getHandler = handleConversationThresholdGet;
 
     // Create the override
     const [putReq, putParams] = makePut("conv-xyz", { threshold: "medium" });
@@ -98,7 +98,7 @@ describe("GET /v1/permissions/thresholds/conversations/:conversationId", () => {
 
 describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
   test("creates override and returns conversationId + threshold", async () => {
-    const handler = createConversationThresholdPutHandler();
+    const handler = handleConversationThresholdPut;
     const [req, params] = makePut("conv-abc", { threshold: "low" });
 
     const res = await handler(req, params);
@@ -109,8 +109,8 @@ describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
   });
 
   test("updates existing override with new value", async () => {
-    const handler = createConversationThresholdPutHandler();
-    const getHandler = createConversationThresholdGetHandler();
+    const handler = handleConversationThresholdPut;
+    const getHandler = handleConversationThresholdGet;
 
     // Create initial
     const [req1, params1] = makePut("conv-abc", { threshold: "low" });
@@ -132,7 +132,7 @@ describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
   });
 
   test("returns 400 for invalid threshold", async () => {
-    const handler = createConversationThresholdPutHandler();
+    const handler = handleConversationThresholdPut;
     const [req, params] = makePut("conv-abc", { threshold: "invalid" });
 
     const res = await handler(req, params);
@@ -143,7 +143,7 @@ describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
   });
 
   test("returns 400 for missing threshold", async () => {
-    const handler = createConversationThresholdPutHandler();
+    const handler = handleConversationThresholdPut;
     const [req, params] = makePut("conv-abc", {});
 
     const res = await handler(req, params);
@@ -151,7 +151,7 @@ describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
   });
 
   test("returns 400 for non-JSON body", async () => {
-    const handler = createConversationThresholdPutHandler();
+    const handler = handleConversationThresholdPut;
     const req = new Request(
       `${BASE_URL}/v1/permissions/thresholds/conversations/conv-abc`,
       {
@@ -167,9 +167,9 @@ describe("PUT /v1/permissions/thresholds/conversations/:conversationId", () => {
 
 describe("DELETE /v1/permissions/thresholds/conversations/:conversationId", () => {
   test("removes existing override, subsequent GET returns threshold:null", async () => {
-    const putHandler = createConversationThresholdPutHandler();
-    const getHandler = createConversationThresholdGetHandler();
-    const deleteHandler = createConversationThresholdDeleteHandler();
+    const putHandler = handleConversationThresholdPut;
+    const getHandler = handleConversationThresholdGet;
+    const deleteHandler = handleConversationThresholdDelete;
 
     // Create
     const [putReq, putParams] = makePut("conv-del", { threshold: "medium" });
@@ -189,7 +189,7 @@ describe("DELETE /v1/permissions/thresholds/conversations/:conversationId", () =
   });
 
   test("returns 204 on nonexistent conversation (idempotent)", async () => {
-    const handler = createConversationThresholdDeleteHandler();
+    const handler = handleConversationThresholdDelete;
     const [req, params] = makeDelete("conv-nonexistent");
 
     const res = await handler(req, params);

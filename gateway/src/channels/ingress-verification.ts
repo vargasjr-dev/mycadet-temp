@@ -227,7 +227,8 @@ function requestUrlCandidates(opts: {
   }
 
   const proto =
-    opts.headers.get("x-forwarded-proto") ?? opts.headers.get("x-original-proto");
+    opts.headers.get("x-forwarded-proto") ??
+    opts.headers.get("x-original-proto");
   const host =
     opts.headers.get("x-forwarded-host") ?? opts.headers.get("x-original-host");
   if (raw && proto && host) {
@@ -382,7 +383,10 @@ function verifyStandardWebhooks(opts: {
   if (!Number.isSafeInteger(Number(timestamp))) {
     return { ok: false, reason: "missing_timestamp" };
   }
-  if (Math.abs(nowMs - stampedMs) > STANDARD_WEBHOOKS_TOLERANCE_SECONDS * 1000) {
+  if (
+    Math.abs(nowMs - stampedMs) >
+    STANDARD_WEBHOOKS_TOLERANCE_SECONDS * 1000
+  ) {
     return { ok: false, reason: "stale_timestamp" };
   }
 
@@ -536,7 +540,10 @@ export function verifyDeclaredSignature(opts: {
 
     // Length is compared first because timingSafeEqual throws on a mismatch,
     // and digest length is a function of the declared algorithm.
-    if (digest.length === expected.length && timingSafeEqual(digest, expected)) {
+    if (
+      digest.length === expected.length &&
+      timingSafeEqual(digest, expected)
+    ) {
       return { ok: true };
     }
   }

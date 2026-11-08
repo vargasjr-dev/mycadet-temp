@@ -30,6 +30,8 @@ import { ChannelPermissionStore } from "../../db/channel-permission-store.js";
 import { CHANNEL_IDS, isChannelId } from "../../channels/types.js";
 import { getLogger } from "../../logger.js";
 
+import { z } from "zod";
+import type { RouteDefinition } from "./types.js";
 const log = getLogger("channel-permission-overrides");
 
 /**
@@ -202,19 +204,11 @@ export function createChannelPermissionOverrideDeleteHandler() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script.
-// ---------------------------------------------------------------------------
-
-import { z } from "zod";
-import type { GatewayRouteDefinition } from "./types.js";
-
 const ChannelPermissionCellRowSchema = ChannelPermissionCellSchema.extend({
   updatedAt: z.number(),
 });
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-permission-overrides",
     method: "get",
@@ -229,7 +223,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createChannelPermissionOverridesListHandler(),
+    handler: createChannelPermissionOverridesListHandler(),
   },
   {
     path: "/channel-permission-overrides",
@@ -244,7 +238,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createChannelPermissionOverrideSetHandler(),
+    handler: createChannelPermissionOverrideSetHandler(),
   },
   {
     path: "/channel-permission-overrides/resolve",
@@ -266,7 +260,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    createHandler: () => createChannelPermissionResolveHandler(),
+    handler: createChannelPermissionResolveHandler(),
   },
   {
     path: "/channel-permission-overrides/delete",
@@ -281,6 +275,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    createHandler: () => createChannelPermissionOverrideDeleteHandler(),
+    handler: createChannelPermissionOverrideDeleteHandler(),
   },
 ];

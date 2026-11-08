@@ -25,8 +25,22 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake assistant DB ───────────────────────────────────────────────────────
-
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import {
+  guardianRequests,
+  guardianRequestDeliveries,
+  oneTimeMigrations,
+} from "../db/schema.js";
+import { MIGRATIONS } from "../db/data-migrations/index.js";
+import {
+  up as m0016Up,
+  down as m0016Down,
+  M0015_CHECKPOINT_KEY,
+} from "../db/data-migrations/m0016-drop-assistant-guardian-tables.js";
 type FakeRequest = {
   id: string;
   kind: string;
@@ -139,23 +153,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   }),
   assistantDbExec: mock(async () => undefined),
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import {
-  guardianRequests,
-  guardianRequestDeliveries,
-  oneTimeMigrations,
-} from "../db/schema.js";
-import { MIGRATIONS } from "../db/data-migrations/index.js";
-import {
-  up as m0016Up,
-  down as m0016Down,
-  M0015_CHECKPOINT_KEY,
-} from "../db/data-migrations/m0016-drop-assistant-guardian-tables.js";
 
 beforeAll(async () => {
   await initGatewayDb();

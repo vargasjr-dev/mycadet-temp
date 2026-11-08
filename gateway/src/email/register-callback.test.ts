@@ -40,8 +40,7 @@ function makeCaches(opts: {
   ingressUrl?: string;
 }): { credentials: CredentialCache; configFile?: ConfigFileCache } {
   const store = new Map<string, string>();
-  if (opts.cloudBaseUrl)
-    process.env.CADET_CLOUD_URL = opts.cloudBaseUrl;
+  if (opts.cloudBaseUrl) process.env.CADET_CLOUD_URL = opts.cloudBaseUrl;
   if (opts.assistantApiKey)
     store.set(
       credentialKey("cadet", "assistant_api_key"),

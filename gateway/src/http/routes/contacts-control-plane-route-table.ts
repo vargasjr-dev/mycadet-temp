@@ -11,30 +11,30 @@
  * DELETE catch-all keeps its negative lookahead for the same reason.
  *
  * The five published operations carry their OpenAPI metadata inline; the
- * rest are dispatch-only. Handlers arrive as deps (the proxy is built from
- * config in index.ts), so the generation script calls this builder with
- * stub deps and reads only the metadata.
+ * rest are dispatch-only. Handlers read what they need (config, the proxy)
+ * at request time, so the ROUTES array is import-safe for the OpenAPI
+ * generation script.
  */
 
 import { RiskThresholdSchema } from "@mycadet/gateway-client";
 import { z } from "zod";
 
-import type { RouteDefinition } from "../router.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import type {
+import type { RouteDefinition } from "./types.js";
+import { createContactsControlPlaneProxyHandler } from "./contacts-control-plane-proxy.js";
+import {
   handleContactPromptSubmit,
   handleContactRecordSubmit,
 } from "./contact-prompt.js";
-import type { createContactsControlPlaneProxyHandler } from "./contacts-control-plane-proxy.js";
+import { getConfig } from "../../config.js";
 
-export type ContactsControlPlaneProxy = ReturnType<
+type ContactsControlPlaneProxy = ReturnType<
   typeof createContactsControlPlaneProxyHandler
 >;
 
-export interface ContactsControlPlaneRouteDeps {
-  contactsControlPlaneProxy: ContactsControlPlaneProxy;
-  handleContactPromptSubmit: typeof handleContactPromptSubmit;
-  handleContactRecordSubmit: typeof handleContactRecordSubmit;
+/** Built on first request — module import stays side-effect-free. */
+let contactsProxy: ContactsControlPlaneProxy | undefined;
+function contactsControlPlaneProxy(): ContactsControlPlaneProxy {
+  return (contactsProxy ??= createContactsControlPlaneProxyHandler(getConfig()));
 }
 
 // ---------------------------------------------------------------------------
@@ -203,182 +203,188 @@ const ContactRecordSubmitRequestSchema = z.object({
     ),
 });
 
-export function buildContactsControlPlaneRoutes({
-  contactsControlPlaneProxy,
-  handleContactPromptSubmit,
-  handleContactRecordSubmit,
-}: ContactsControlPlaneRouteDeps): Array<
-  GatewayRouteDefinition | RouteDefinition
-> {
-  return [
-    {
-      path: "/contacts",
-      method: "post",
-      operationId: "contactsUpsert",
-      summary: "Create or update a contact",
-      description:
-        "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
-      tags: ["contacts"],
-      requestBody: UpsertContactRequestSchema,
-      responseBody: z.object({
-        ok: z.boolean(),
-        contact: ContactPayloadSchema,
-      }),
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleUpsertContact(req),
-    },
-    {
-      // Keep DELETE on the invite collection unsupported; only
-      // /contacts/invites/:id should revoke an invite.
-      path: /^\/contacts\/(?!invites\/?$)([^/]+)\/?$/,
-      specPath: "/contacts/{contact_id}",
-      method: "delete",
-      operationId: "contactDelete",
-      summary: "Delete a contact",
-      description:
-        "Deletes a non-guardian contact from the gateway ACL store and the assistant mirror. 404 when the contact exists in neither; 403 for guardian contacts.",
-      tags: ["contacts"],
-      pathParameters: [{ name: "contact_id", description: "The contact id" }],
-      responseStatus: "204",
-      auth: "edge",
-      createHandler: () => (_req, params) =>
-        contactsControlPlaneProxy.handleDeleteContact(params[0]!),
-    },
-    {
-      path: "/contacts/prompt/submit",
-      method: "post",
-      operationId: "contactsPromptSubmit",
-      summary: "Submit a contact-prompt address",
-      description:
-        "Completes a contact_request the assistant broadcast: writes the contact and channel gateway-first, then unblocks the waiting prompt.",
-      tags: ["contacts"],
-      requestBody: ContactPromptSubmitRequestSchema,
-      responseBody: z.object({
-        accepted: z.boolean(),
-        error: z.string().optional(),
-        duplicate: z
-          .boolean()
-          .optional()
-          .describe(
-            "Another client answered this form first. Nothing is wrong, but none of this submission's values were written.",
-          ),
-      }),
-      auth: "edge",
-      createHandler: () => (req) => handleContactPromptSubmit(req),
-    },
-    {
-      path: "/contacts/record/submit",
-      method: "post",
-      operationId: "contactsRecordSubmit",
-      summary: "Submit a contact-record form",
-      description:
-        "Completes a contact_record_request the assistant broadcast: writes the record the guardian confirmed, then unblocks the waiting command. A create or update writes display name and notes, never a channel; a merge moves the donor's channels to the survivor and deletes the donor. A cancelled submission unblocks the command without writing.",
-      tags: ["contacts"],
-      requestBody: ContactRecordSubmitRequestSchema,
-      responseBody: z.object({
-        accepted: z.boolean(),
-        error: z.string().optional(),
-        duplicate: z
-          .boolean()
-          .optional()
-          .describe(
-            "Another client answered this form first. Nothing is wrong, but none of this submission's values were written.",
-          ),
-      }),
-      auth: "edge",
-      createHandler: () => (req) => handleContactRecordSubmit(req),
-    },
-    {
-      path: "/contact-channels/{channel_id}/verify",
-      method: "post",
-      operationId: "contactChannelVerify",
-      summary: "Manually verify a contact channel",
-      description:
-        "Guardian-only manual attestation: marks the channel active/verified in the gateway store, the source of truth, with a best-effort assistant mirror. Idempotent.",
-      tags: ["contacts"],
-      pathParameters: [
-        { name: "channel_id", description: "The contact-channel id" },
-      ],
-      responseBody: z.object({
-        ok: z.boolean(),
-        channel: ContactChannelRowSchema,
-      }),
-      auth: "edge-guardian",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleVerifyContactChannel(req, params[0]!),
-    },
-    // ── Contacts/invites control plane ──
-    // Scope map: invites list → settings.read; create/redeem/revoke/call →
-    // settings.write.
-    {
-      path: "/contacts",
-      method: "get",
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleListContacts(req),
-    },
-    {
-      path: "/contacts/merge",
-      method: "post",
-      auth: "edge",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleMergeContacts(req),
-    },
-    {
-      path: "/contact-channels/{channel_id}",
-      method: "patch",
-      auth: "edge",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleUpdateContactChannel(req, params[0]!),
-    },
-    {
-      path: "/contacts/invites",
-      method: "get",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleListInvites(req),
-    },
-    {
-      path: "/contacts/invites",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleCreateInvite(req),
-    },
-    {
-      path: "/contacts/invites/redeem",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      createHandler: () => (req) => contactsControlPlaneProxy.handleRedeemInvite(req),
-    },
-    {
-      path: "/contacts/invites/{invite_id}/call",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleCallInvite(req, params[0]!),
-    },
-    {
-      path: "/contacts/invites/{invite_id}",
-      method: "delete",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleRevokeInvite(req, params[0]!),
-    },
-    // ── Contacts catch-alls — LAST: the invites routes above must win on
-    // /contacts/invites/*. Raw regexes because the DELETE needs a negative
-    // lookahead: DELETE on the invite collection stays unsupported (only
-    // /contacts/invites/:id revokes an invite), which a {contact_id}
-    // template cannot express. The published metadata (contactDelete)
-    // travels on the entry regardless — the spec documents the canonical
-    // /contacts/{contact_id} shape. ──
-    {
-      path: /^\/contacts\/([^/]+)$/,
-      method: "get",
-      auth: "edge",
-      createHandler: () => (req, params) =>
-        contactsControlPlaneProxy.handleGetContact(req, params[0]!),
-    },
-  ];
-}
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/contacts",
+    method: "post",
+    operationId: "contactsUpsert",
+    summary: "Create or update a contact",
+    description:
+      "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
+    tags: ["contacts"],
+    requestBody: UpsertContactRequestSchema,
+    responseBody: z.object({
+      ok: z.boolean(),
+      contact: ContactPayloadSchema,
+    }),
+    auth: "edge",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleUpsertContact(req),
+  },
+  {
+    // Keep DELETE on the invite collection unsupported; only
+    // /contacts/invites/:id should revoke an invite.
+    path: /^\/contacts\/(?!invites\/?$)(?<contact_id>[^/]+)\/?$/,
+    method: "delete",
+    operationId: "contactDelete",
+    summary: "Delete a contact",
+    description:
+      "Deletes a non-guardian contact from the gateway ACL store and the assistant mirror. 404 when the contact exists in neither; 403 for guardian contacts.",
+    tags: ["contacts"],
+    pathParameters: [{ name: "contact_id", description: "The contact id" }],
+    responseStatus: "204",
+    auth: "edge",
+    handler: (_req, params) =>
+      contactsControlPlaneProxy().handleDeleteContact(params[0]!),
+  },
+  {
+    path: "/contacts/prompt/submit",
+    method: "post",
+    operationId: "contactsPromptSubmit",
+    summary: "Submit a contact-prompt address",
+    description:
+      "Completes a contact_request the assistant broadcast: writes the contact and channel gateway-first, then unblocks the waiting prompt.",
+    tags: ["contacts"],
+    requestBody: ContactPromptSubmitRequestSchema,
+    responseBody: z.object({
+      accepted: z.boolean(),
+      error: z.string().optional(),
+      duplicate: z
+        .boolean()
+        .optional()
+        .describe(
+          "Another client answered this form first. Nothing is wrong, but none of this submission's values were written.",
+        ),
+    }),
+    auth: "edge",
+    handler: (req) => handleContactPromptSubmit(req),
+  },
+  {
+    path: "/contacts/record/submit",
+    method: "post",
+    operationId: "contactsRecordSubmit",
+    summary: "Submit a contact-record form",
+    description:
+      "Completes a contact_record_request the assistant broadcast: writes the record the guardian confirmed, then unblocks the waiting command. A create or update writes display name and notes, never a channel; a merge moves the donor's channels to the survivor and deletes the donor. A cancelled submission unblocks the command without writing.",
+    tags: ["contacts"],
+    requestBody: ContactRecordSubmitRequestSchema,
+    responseBody: z.object({
+      accepted: z.boolean(),
+      error: z.string().optional(),
+      duplicate: z
+        .boolean()
+        .optional()
+        .describe(
+          "Another client answered this form first. Nothing is wrong, but none of this submission's values were written.",
+        ),
+    }),
+    auth: "edge",
+    handler: (req) => handleContactRecordSubmit(req),
+  },
+  {
+    path: "/contact-channels/{channel_id}/verify",
+    method: "post",
+    operationId: "contactChannelVerify",
+    summary: "Manually verify a contact channel",
+    description:
+      "Guardian-only manual attestation: marks the channel active/verified in the gateway store, the source of truth, with a best-effort assistant mirror. Idempotent.",
+    tags: ["contacts"],
+    pathParameters: [
+      { name: "channel_id", description: "The contact-channel id" },
+    ],
+    responseBody: z.object({
+      ok: z.boolean(),
+      channel: ContactChannelRowSchema,
+    }),
+    auth: "edge-guardian",
+    handler: (req, params) =>
+      contactsControlPlaneProxy().handleVerifyContactChannel(
+        req,
+        params[0]!,
+      ),
+  },
+  // ── Contacts/invites control plane ──
+  // Scope map: invites list → settings.read; create/redeem/revoke/call →
+  // settings.write.
+  {
+    path: "/contacts",
+    method: "get",
+    auth: "edge",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleListContacts(req),
+  },
+  {
+    path: "/contacts/merge",
+    method: "post",
+    auth: "edge",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleMergeContacts(req),
+  },
+  {
+    path: "/contact-channels/{channel_id}",
+    method: "patch",
+    auth: "edge",
+    handler: (req, params) =>
+      contactsControlPlaneProxy().handleUpdateContactChannel(
+        req,
+        params[0]!,
+      ),
+  },
+  {
+    path: "/contacts/invites",
+    method: "get",
+    auth: "edge-scoped",
+    scope: "settings.read",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleListInvites(req),
+  },
+  {
+    path: "/contacts/invites",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleCreateInvite(req),
+  },
+  {
+    path: "/contacts/invites/redeem",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req) =>
+      contactsControlPlaneProxy().handleRedeemInvite(req),
+  },
+  {
+    path: "/contacts/invites/{invite_id}/call",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      contactsControlPlaneProxy().handleCallInvite(req, params[0]!),
+  },
+  {
+    path: "/contacts/invites/{invite_id}",
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      contactsControlPlaneProxy().handleRevokeInvite(
+        req,
+        params[0]!,
+      ),
+  },
+  // ── Contacts catch-alls — LAST: the invites routes above must win on
+  // /contacts/invites/*. Raw regexes because the DELETE needs a negative
+  // lookahead: DELETE on the invite collection stays unsupported (only
+  // /contacts/invites/:id revokes an invite), which a {contact_id}
+  // template cannot express. The published metadata (contactDelete)
+  // travels on the entry regardless — the spec documents the canonical
+  // /contacts/{contact_id} shape. ──
+  {
+    path: /^\/contacts\/(?<contact_id>[^/]+)$/,
+    method: "get",
+    auth: "edge",
+    handler: (req, params) =>
+      contactsControlPlaneProxy().handleGetContact(req, params[0]!),
+  },
+];

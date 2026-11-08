@@ -24,8 +24,7 @@ mock.module("../../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createCloudPushProxyHandler } =
-  await import("./cloud-push-proxy.js");
+const { createCloudPushProxyHandler } = await import("./cloud-push-proxy.js");
 const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
   await import("../../cloud-identity.js");
 

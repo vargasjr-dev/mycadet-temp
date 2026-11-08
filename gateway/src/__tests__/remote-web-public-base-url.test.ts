@@ -34,30 +34,33 @@ describe("readSavedIngressPublicBaseUrl — the gateway's own config read", () =
     expect(readSavedIngressPublicBaseUrl()).toBe("https://pair.example.test");
   });
 
-  test("answers null for every kind of absence", () => {
+  test("answers the localhost default for every kind of absence", () => {
     // No config file at all.
-    expect(readSavedIngressPublicBaseUrl()).toBeNull();
+    expect(readSavedIngressPublicBaseUrl()).toBe("http://127.0.0.1:7830");
 
     // No ingress block.
     writeFileSync(CONFIG_PATH, JSON.stringify({ daemon: { port: 39393 } }));
-    expect(readSavedIngressPublicBaseUrl()).toBeNull();
+    expect(readSavedIngressPublicBaseUrl()).toBe("http://127.0.0.1:7830");
 
     // A blank saved value.
     writeFileSync(
       CONFIG_PATH,
       JSON.stringify({ ingress: { publicBaseUrl: "   " } }),
     );
-    expect(readSavedIngressPublicBaseUrl()).toBeNull();
+    expect(readSavedIngressPublicBaseUrl()).toBe("http://127.0.0.1:7830");
   });
 
-  test("answers null when the saved shape doesn't match the schema", () => {
+  test("answers the localhost default when the saved shape doesn't match the schema", () => {
     // A non-string URL.
-    writeFileSync(CONFIG_PATH, JSON.stringify({ ingress: { publicBaseUrl: 7 } }));
-    expect(readSavedIngressPublicBaseUrl()).toBeNull();
+    writeFileSync(
+      CONFIG_PATH,
+      JSON.stringify({ ingress: { publicBaseUrl: 7 } }),
+    );
+    expect(readSavedIngressPublicBaseUrl()).toBe("http://127.0.0.1:7830");
 
     // Malformed JSON.
     writeFileSync(CONFIG_PATH, "{not json");
-    expect(readSavedIngressPublicBaseUrl()).toBeNull();
+    expect(readSavedIngressPublicBaseUrl()).toBe("http://127.0.0.1:7830");
   });
 });
 

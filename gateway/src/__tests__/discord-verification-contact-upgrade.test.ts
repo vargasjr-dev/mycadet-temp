@@ -30,8 +30,16 @@ import { join } from "node:path";
 
 import "./test-preload.js";
 
-// `upsertContactChannel` skips its work entirely when the assistant IPC socket
-// is absent, so point the resolver at a real file to keep the seeding path live.
+import {
+  upsertContactChannel,
+  upsertVerifiedContactChannel,
+} from "../verification/contact-helpers.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 const socketDir = mkdtempSync(join(tmpdir(), "discord-verify-upgrade-"));
 const socketPath = join(socketDir, "assistant.sock");
 writeFileSync(socketPath, "");
@@ -101,17 +109,6 @@ mock.module("../ipc/contacts-info-client.js", () => ({
     hasMetadata: false,
   })),
 }));
-
-import {
-  upsertContactChannel,
-  upsertVerifiedContactChannel,
-} from "../verification/contact-helpers.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 /** A Discord user snowflake, as the gateway sees it on inbound. */
 const DISCORD_USER = "900000000000000042";

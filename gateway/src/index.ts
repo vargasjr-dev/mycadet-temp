@@ -1,43 +1,24 @@
-process.title = "cadet-gateway";
-
 import { eventRefersToAnotherMessage } from "./channels/inbound-event.js";
 import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
 import { randomBytes } from "node:crypto";
-
-import {
-  TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
-  TWILIO_STATUS_WEBHOOK_PATH,
-  TWILIO_VOICE_WEBHOOK_PATH,
-} from "@mycadet/service-contracts/twilio-ingress";
-
-import { AuthRateLimiter } from "./auth-rate-limiter.js";
+import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
+import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
-import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
-import { ConfigFileCache } from "./config-file-cache.js";
+import { getConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
-
 import { loadConfig } from "./config.js";
+import { getCredentials } from "./credential-cache.js";
 import { readSavedIngressPublicBaseUrl } from "./remote-web/public-base-url.js";
-import { CredentialCache } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
 import {
   CredentialWatcher,
   type CredentialChangeEvent,
 } from "./credential-watcher.js";
-import { createRuntimeProxyHandler } from "./http/routes/runtime-proxy.js";
-import { hasRemoteWebRefreshCookie } from "./http/browser-auth-cookies.js";
-import { handleGuardianRefresh } from "./http/routes/guardian-refresh.js";
-
-import { createTelegramWebhookHandler } from "./http/routes/telegram-webhook.js";
-import { createAudioProxyHandler } from "./http/routes/audio-proxy.js";
-import { createTwilioVoiceWebhookHandler } from "./http/routes/twilio-voice-webhook.js";
-import { createTwilioStatusWebhookHandler } from "./http/routes/twilio-status-webhook.js";
-import { createTwilioVoiceVerifyCallbackHandler } from "./http/routes/twilio-voice-verify-callback.js";
 import {
   createTwilioMediaWebsocketHandler,
   getMediaStreamWebsocketHandlers,
@@ -68,62 +49,8 @@ import {
   getLiveVoiceWebsocketHandlers,
   type LiveVoiceSocketData,
 } from "./http/routes/live-voice-websocket.js";
-import { createWhatsAppWebhookHandler } from "./http/routes/whatsapp-webhook.js";
-
-import { createEmailWebhookHandler } from "./http/routes/email-webhook.js";
-import { createGuardianChannelHandler } from "./http/routes/guardian-channel-create.js";
-import { createInboundRegisterHandler } from "./http/routes/inbound-register.js";
-import { createMailgunWebhookHandler } from "./http/routes/mailgun-webhook.js";
-import { createResendWebhookHandler } from "./http/routes/resend-webhook.js";
-
-import { createOAuthCallbackHandler } from "./http/routes/oauth-callback.js";
-import { createMcpOAuthClientMetadataHandler } from "./http/routes/mcp-oauth-client-metadata.js";
-import { ROUTES as autoApproveThresholdRoutes } from "./http/routes/auto-approve-thresholds.js";
-import { ROUTES as upgradePolicyRoutes } from "./http/routes/upgrade-policy.js";
-import { createChannelVerificationSessionProxyHandler } from "./http/routes/channel-verification-session-proxy.js";
-import { createTelegramControlPlaneProxyHandler } from "./http/routes/telegram-control-plane-proxy.js";
-import { createTwilioControlPlaneProxyHandler } from "./http/routes/twilio-control-plane-proxy.js";
-import { createVercelControlPlaneProxyHandler } from "./http/routes/vercel-control-plane-proxy.js";
-import { createContactsControlPlaneProxyHandler } from "./http/routes/contacts-control-plane-proxy.js";
-import { buildContactsControlPlaneRoutes } from "./http/routes/contacts-control-plane-route-table.js";
-import {
-  handleContactPromptSubmit,
-  handleContactRecordSubmit,
-} from "./http/routes/contact-prompt.js";
-import { handleGetMyDevice } from "./http/routes/devices-mine.js";
-import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
-import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
-import { ROUTES as credentialRequestRoutes } from "./http/routes/credential-requests.js";
-import { handleCreateRemoteWebPairingChallenge } from "./http/routes/remote-web-pairing-challenge.js";
-import {
-  handleApproveRemoteWebPairingRequest,
-  handleDenyRemoteWebPairingRequest,
-  handleListRemoteWebPairingRequests,
-} from "./http/routes/remote-web-pairing-requests.js";
-import { handleRemoteWebPairingToken } from "./http/routes/remote-web-pairing-token.js";
-import { handleVerifyRemoteWebPairingChallenge } from "./http/routes/remote-web-pairing-verification.js";
-import { handleSharedInviteRedeem } from "./http/routes/shared-invite-redeem.js";
-import { createSlackControlPlaneProxyHandler } from "./http/routes/slack-control-plane-proxy.js";
-import { createOAuthAppsProxyHandler } from "./http/routes/oauth-apps-proxy.js";
-import { createOAuthProvidersProxyHandler } from "./http/routes/oauth-providers-proxy.js";
-import { createChannelReadinessProxyHandler } from "./http/routes/channel-readiness-proxy.js";
-import { createCloudPushProxyHandler } from "./http/routes/cloud-push-proxy.js";
-import { createPsHandler } from "./http/routes/ps.js";
-import { createTunnelStatusHandler } from "./http/routes/tunnel-status.js";
-import { createRuntimeHealthProxyHandler } from "./http/routes/runtime-health-proxy.js";
-import { createUpgradeBroadcastProxyHandler } from "./http/routes/upgrade-broadcast-proxy.js";
-import { createMigrationRollbackProxyHandler } from "./http/routes/migration-rollback-proxy.js";
-import { createWorkspaceCommitProxyHandler } from "./http/routes/workspace-commit-proxy.js";
-import { createDesktopSetupProxyHandler } from "./http/routes/desktop-setup-proxy.js";
-import { createBrainGraphProxyHandler } from "./http/routes/brain-graph-proxy.js";
-import { createLogExportHandler } from "./http/routes/log-export.js";
-import { createLogTailHandler } from "./http/routes/log-tail.js";
-import { ROUTES as trustRuleRoutes } from "./http/routes/trust-rules.js";
 import { initTrustRuleCache } from "./risk/trust-rule-cache.js";
 import { initAdmissionPolicyCache } from "./risk/admission-policy-cache.js";
-import { ROUTES as channelAdmissionPolicyRoutes } from "./http/routes/channel-admission-policy.js";
-import { ROUTES as channelIngressRoutes } from "./http/routes/channel-ingress.js";
-import { createPluginWebhookHandler } from "./http/routes/plugin-webhook.js";
 import {
   createPluginWebhookWebsocketHandler,
   getPluginWebhookWebsocketHandlers,
@@ -135,7 +62,6 @@ import {
   watchPluginIngressForWebhookRoutes,
 } from "./channels/plugin-webhook-route-sync.js";
 import { PLUGIN_WEBHOOK_PATH_PATTERN } from "./channels/plugin-ingress.js";
-import { ROUTES as channelPermissionOverrideRoutes } from "./http/routes/channel-permission-overrides.js";
 import {
   getLogger,
   initLogger,
@@ -180,12 +106,9 @@ import {
   handlePreflight,
   withCorsHeaders,
 } from "./http/middleware/cors.js";
-import {
-  createRouter,
-  type RouteDefinition,
-  type GetClientIp,
-} from "./http/router.js";
-import type { GatewayRouteDefinition } from "./http/routes/types.js";
+import { validateEdgeToken } from "./auth/token-exchange.js";
+import { createRouter, type GetClientIp } from "./http/router.js";
+import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
@@ -213,7 +136,6 @@ import { createCredentialRequestIpcRoutes } from "./ipc/credential-request-handl
 import { slackThreadRoutes } from "./ipc/slack-thread-handlers.js";
 import { thresholdRoutes } from "./ipc/threshold-handlers.js";
 import { trustRulesRoutes } from "./ipc/trust-rules-handlers.js";
-
 import { riskClassificationRoutes } from "./ipc/risk-classification-handlers.js";
 import { createTunnelRoutes } from "./ipc/tunnel-handlers.js";
 import { createWebhookRouteRoutes } from "./ipc/webhook-route-handlers.js";
@@ -222,13 +144,14 @@ import { initGatewayDb } from "./db/connection.js";
 import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
+import { enablePublicIngress, getTunnelClient } from "./tunnel/client.js";
 import {
   APP_VERSION,
   VERSION_HEADER_NAME,
   VERSION_HEADER_VALUE,
 } from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
+process.title = "cadet-gateway";
 
 const log = getLogger("main");
 
@@ -272,7 +195,7 @@ function detectCredentialChanges(
 }
 
 // Shared rate limiter for auth failures and unauthenticated endpoints
-const authRateLimiter = new AuthRateLimiter();
+const authRateLimiter = getAuthRateLimiter();
 
 function isMediaStreamSocketData(data: unknown): data is MediaStreamSocketData {
   return (
@@ -421,14 +344,11 @@ async function main() {
   // Instantiate caches for credential and config file reads.
   // Handlers read dynamic credentials and config.json values from these
   // caches at call time, with automatic TTL refresh.
-  const credentialCache = new CredentialCache();
+  const credentialCache = getCredentials();
   bindCloudIdentityCredentialCache(credentialCache);
   void ensureCloudIdentityIds();
-  const configFileCache = new ConfigFileCache();
-  const tunnelClient = createTunnelClient(config, {
-    credentials: credentialCache,
-    configFile: configFileCache,
-  });
+  const configFileCache = getConfigFileCache();
+  const tunnelClient = getTunnelClient();
   // Tunnel only sees a webhook route on the next tunnel connect, so a registry
   // write changes the advertised rules, so the tunnel re-advertises them on
   // its next connect.
@@ -441,7 +361,6 @@ async function main() {
   // preconditions can gate requests synchronously. Updated by the
   // credential watcher callback whenever credentials change.
   let telegramReady = false;
-  let whatsappReady = false;
   let cadetReady = false;
   let tunnelStartRequested = false;
 
@@ -542,29 +461,8 @@ async function main() {
     }
   }
 
-  const twilioValidationCaches = {
-    credentials: credentialCache,
-    configFile: configFileCache,
-  };
-
-  const { handler: handleTelegramWebhook, dedupCache: telegramDedupCache } =
-    createTelegramWebhookHandler(config, {
-      credentials: credentialCache,
-      configFile: configFileCache,
-    });
   const isTelegramConfigured = () => telegramReady;
-  const isWhatsAppConfigured = () => whatsappReady;
 
-  const handleTwilioVoiceWebhook = createTwilioVoiceWebhookHandler(
-    config,
-    twilioValidationCaches,
-  );
-  const handleTwilioStatusWebhook = createTwilioStatusWebhookHandler(
-    config,
-    twilioValidationCaches,
-  );
-  const handleTwilioVoiceVerifyCallback =
-    createTwilioVoiceVerifyCallbackHandler(config, twilioValidationCaches);
   const handleTwilioMediaWs = createTwilioMediaWebsocketHandler(config);
   const handlePluginWebhookWs = createPluginWebhookWebsocketHandler({
     config,
@@ -632,739 +530,20 @@ async function main() {
   const desktopStreamWebsocketHandlers = getDesktopStreamWebsocketHandlers();
   const liveVoiceWebsocketHandlers = getLiveVoiceWebsocketHandlers();
   const speechRelayWebsocketHandlers = getSpeechRelayWebsocketHandlers();
-  const { handler: handleWhatsAppWebhook, dedupCache: whatsappDedupCache } =
-    createWhatsAppWebhookHandler(config, {
-      credentials: credentialCache,
-      configFile: configFileCache,
-    });
-  const { handler: handleEmailWebhook, dedupCache: emailDedupCache } =
-    createEmailWebhookHandler(config, {
-      credentials: credentialCache,
-      configFile: configFileCache,
-    });
-  const { handler: handleResendWebhook } = createResendWebhookHandler(config, {
-    credentials: credentialCache,
-    configFile: configFileCache,
-  });
-  const { handler: handleMailgunWebhook } = createMailgunWebhookHandler(
-    config,
-    {
-      credentials: credentialCache,
-      configFile: configFileCache,
-    },
-  );
-  const handleInboundRegister = createInboundRegisterHandler(
-    config,
-    credentialCache,
-  );
-  const handleGuardianChannelCreate = createGuardianChannelHandler();
-  const handleOAuthCallback = createOAuthCallbackHandler(config);
-  const handleMcpOAuthClientMetadata =
-    createMcpOAuthClientMetadataHandler(configFileCache);
-  const channelVerificationSessionProxy =
-    createChannelVerificationSessionProxyHandler(config);
-  const telegramControlPlaneProxy =
-    createTelegramControlPlaneProxyHandler(config);
-  const vercelControlPlaneProxy = createVercelControlPlaneProxyHandler(config);
-  const contactsControlPlaneProxy =
-    createContactsControlPlaneProxyHandler(config);
-  const twilioControlPlaneProxy = createTwilioControlPlaneProxyHandler(config);
-  const slackControlPlaneProxy = createSlackControlPlaneProxyHandler(config);
-  const oauthAppsProxy = createOAuthAppsProxyHandler(config);
-  const oauthProvidersProxy = createOAuthProvidersProxyHandler(config);
-  const channelReadinessProxy = createChannelReadinessProxyHandler(config);
-  const cloudPushProxy = createCloudPushProxyHandler(credentialCache);
-  const psHandler = createPsHandler(config);
-  const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
-  const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
-  const upgradeBroadcastProxy = createUpgradeBroadcastProxyHandler(config);
-  const migrationRollbackProxy = createMigrationRollbackProxyHandler(config);
-  const workspaceCommitProxy = createWorkspaceCommitProxyHandler(config);
-  const desktopSetupProxy = createDesktopSetupProxyHandler(config);
-  const brainGraphProxy = createBrainGraphProxyHandler(config);
-  const handleLogExport = createLogExportHandler(config);
-  const handleLogTail = createLogTailHandler(config);
-  const handlePluginWebhook = createPluginWebhookHandler({
-    config,
-    resolve: resolveCachedPluginIngress,
-    credentials: credentialCache,
-    // HMAC payloads can sign the public request URL. Read through the cache
-    // so a tunnel registering a public base is picked up without a restart.
-    ingressPublicBaseUrl: () =>
-      configFileCache.getString("ingress", "publicBaseUrl"),
-  });
-
-  const audioProxy = createAudioProxyHandler(config);
-
-  const handleRuntimeProxy = createRuntimeProxyHandler(config);
-
-  // Helper to reject when an integration isn't configured
-  const requireConfigured = (
-    check: () => boolean,
-    name: string,
-  ): (() => Response | null) => {
-    return () => {
-      if (!check()) {
-        log.warn(
-          { integration: name },
-          `${name} integration not configured — rejecting request with 503`,
-        );
-        return Response.json(
-          { error: `${name} integration not configured` },
-          { status: 503 },
-        );
-      }
-      return null;
-    };
-  };
-
-  const requireTelegram = requireConfigured(isTelegramConfigured, "Telegram");
-  const requireWhatsApp = requireConfigured(isWhatsAppConfigured, "WhatsApp");
-
   // ── Route table ──
-  // Routes are matched top-to-bottom. The first match wins.
-  // Auth middleware is applied declaratively per route — no manual
-  // requireEdgeAuth/wrapWithAuthFailureTracking calls needed.
-  const routes: Array<GatewayRouteDefinition | RouteDefinition> = [
-    // ── Webhooks (unauthenticated, validated by provider-specific mechanisms) ──
-    {
-      path: "/webhooks/telegram",
-      precondition: requireTelegram,
-      handler: (req) => handleTelegramWebhook(req),
-    },
-    {
-      path: TWILIO_VOICE_WEBHOOK_PATH,
-      handler: (req) => handleTwilioVoiceWebhook(req),
-    },
-    {
-      path: TWILIO_STATUS_WEBHOOK_PATH,
-      handler: (req) => handleTwilioStatusWebhook(req),
-    },
-    {
-      path: "/webhooks/twilio/voice-verify",
-      handler: (req) => handleTwilioVoiceVerifyCallback(req),
-    },
-    {
-      path: "/webhooks/whatsapp",
-      precondition: requireWhatsApp,
-      handler: (req) => handleWhatsAppWebhook(req),
-    },
-    {
-      path: "/webhooks/email",
-      handler: (req) => handleEmailWebhook(req),
-    },
-    {
-      path: "/webhooks/resend",
-      handler: (req) => handleResendWebhook(req),
-    },
-    {
-      path: "/webhooks/mailgun",
-      handler: (req) => handleMailgunWebhook(req),
-    },
-    // Plugin-declared webhooks. Public like their neighbours above; what makes
-    // them safe is that only a guardian-approved declaration creates one, every
-    // other path here 404s, and each request is signature-checked. Any method —
-    // the plugin's route module decides which verbs it answers. WebSocket-kind
-    // declarations are upgraded in the pre-router, before this entry is reached.
-    {
-      path: PLUGIN_WEBHOOK_PATH_PATTERN,
-      handler: (req, params) =>
-        handlePluginWebhook(req, params[0]!, params[1]!),
-    },
-
-    // ── BYO provider registration (auto-verify guardian email) ──
-    {
-      path: "/inbound/register",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "internal.write",
-      handler: (req) => handleInboundRegister(req),
-    },
-
-    // ── Guardian channel creation (platform auto-verify) ──
-    {
-      path: "/contacts/guardian/channel",
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req) => handleGuardianChannelCreate(req),
-    },
-
-    // ── Audio serving (unauthenticated — Twilio fetches these URLs directly) ──
-    {
-      path: /^\/audio\/([^/]+)$/,
-      method: "GET",
-      handler: (_req, params) => audioProxy.handleGetAudio(_req, params[0]),
-    },
-    {
-      path: "/webhooks/oauth/callback",
-      method: "GET",
-      auth: "track-failures",
-      trackFailureStatuses: [400],
-      handler: (req) => handleOAuthCallback(req),
-    },
-    {
-      path: "/oauth/client-metadata.json",
-      method: "GET",
-      handler: () => handleMcpOAuthClientMetadata(),
-    },
-
-    // ── Runtime health ──
-    {
-      path: "/health",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => runtimeHealthProxy.handleRuntimeHealth(req),
-    },
-    {
-      path: "/healthz",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => runtimeHealthProxy.handleRuntimeHealth(req),
-    },
-
-    // ── Process status ──
-    {
-      path: "/ps",
-      method: "GET",
-      auth: "edge",
-      handler: () => psHandler.handlePs(),
-    },
-
-    // ── Ingress domain recording (guardian bearer, loopback fallback) ──
-    {
-      path: "/ingress/domains",
-      method: "POST",
-      auth: "edge-guardian",
-      handler: (req, _params, getClientIp) =>
-        handleSaveIngressDomain(req, getClientIp(), configFileCache),
-    },
-
-    // ── Tunnel status ──
-    {
-      path: "/tunnel/status",
-      method: "GET",
-      auth: "edge",
-      handler: () => tunnelStatusHandler.handleTunnelStatus(),
-    },
-    // Assistant-scoped mirror: self-hosted clients emit /v1/assistants/<id>/tunnel/status
-    // and rewriteForSelfHostedIngress preserves that path, so a flat-only route
-    // would fall through to the runtime proxy and 404. The assistant id is discarded.
-    {
-      path: /^\/assistants\/[^/]+\/tunnel\/status\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      handler: () => tunnelStatusHandler.handleTunnelStatus(),
-    },
-
-    // ── Brain graph ──
-    {
-      path: "/brain-graph",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => brainGraphProxy.handleBrainGraph(req),
-    },
-    {
-      path: "/brain-graph-ui",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => brainGraphProxy.handleBrainGraphUI(req),
-    },
-    // ── Telegram control plane ──
-    {
-      path: "/integrations/telegram/config",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => telegramControlPlaneProxy.handleGetTelegramConfig(req),
-    },
-    {
-      path: "/integrations/telegram/config",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => telegramControlPlaneProxy.handleSetTelegramConfig(req),
-    },
-    {
-      path: "/integrations/telegram/config",
-      method: "DELETE",
-      auth: "edge",
-      handler: (req) =>
-        telegramControlPlaneProxy.handleClearTelegramConfig(req),
-    },
-    {
-      path: "/integrations/telegram/commands",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        telegramControlPlaneProxy.handleSetTelegramCommands(req),
-    },
-    {
-      path: "/integrations/telegram/setup",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => telegramControlPlaneProxy.handleSetupTelegram(req),
-    },
-
-    // ── Vercel control plane ──
-    // The dedicated proxy mints a gateway service token, so the daemon
-    // never sees the caller's scopes. Edge-scoped auth is the check.
-    {
-      path: "/integrations/vercel/config",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => vercelControlPlaneProxy.handleGetVercelConfig(req),
-    },
-    {
-      path: "/integrations/vercel/config",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => vercelControlPlaneProxy.handleSetVercelConfig(req),
-    },
-    {
-      path: "/integrations/vercel/config",
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => vercelControlPlaneProxy.handleDeleteVercelConfig(req),
-    },
-
-    // ── Contacts control plane ──
-    // Route table shared with the fall-through regression test; see
-    // contacts-control-plane-route-table.ts.
-    ...buildContactsControlPlaneRoutes({
-      contactsControlPlaneProxy,
-      handleContactPromptSubmit,
-      handleContactRecordSubmit,
-    }),
-
-    // ── Generic loopback pairing (localhost-only, auth: none) ──
-    {
-      path: "/remote-web/pairing-challenge",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleCreateRemoteWebPairingChallenge(req, getClientIp()),
-    },
-    {
-      path: "/remote-web/pairing-verification",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleVerifyRemoteWebPairingChallenge(req, getClientIp()),
-    },
-    {
-      path: "/remote-web/pairing-token",
-      method: "POST",
-      auth: "none",
-      handler: (req) => handleRemoteWebPairingToken(req),
-    },
-    {
-      path: "/remote-web/pairing-requests",
-      method: "GET",
-      auth: "none",
-      handler: (req, _params) => handleListRemoteWebPairingRequests(req),
-    },
-    {
-      path: "/remote-web/pairing-requests/approve",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params) => handleApproveRemoteWebPairingRequest(req),
-    },
-    {
-      path: "/remote-web/pairing-requests/deny",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params) => handleDenyRemoteWebPairingRequest(req),
-    },
-    // ── Shared-invite redemption (auth: none) ──
-    // The invite link token in the request body is the credential.
-    {
-      path: "/shared/invites/redeem",
-      method: "POST",
-      auth: "none",
-      handler: (req, _params, getClientIp) =>
-        handleSharedInviteRedeem(req, getClientIp()),
-    },
-    // ── Credential requests (one-time credential-collection links) ──
-    // Unauthenticated by design: the single-use token in the request BODY is
-    // the credential to act. Invalid tokens count as auth failures.
-    // The entry page is a static self-contained HTML shell (no token
-    // server-side — it rides the URL fragment); Tunnel-tunneled deployments
-    // have no SPA server behind the tunnel, so the gateway serves it.
-    {
-      path: "/assistant/credentials/enter",
-      method: "GET",
-      auth: "none",
-      handler: (req) => handleCredentialEntryPage(req),
-    },
-    // Gateway-owned credential-request landing surface (token collection).
-    ...credentialRequestRoutes,
-
-    // ── The caller's own paired-device row (bearer-authed, browser-legit) ──
-    {
-      path: "/devices/mine",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => handleGetMyDevice(req),
-    },
-
-    // ── Channel verification sessions ──
-    {
-      path: "/channel-verification-sessions",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        channelVerificationSessionProxy.handleCreateVerificationSession(req),
-    },
-    {
-      path: "/channel-verification-sessions",
-      method: "DELETE",
-      auth: "edge",
-      handler: (req) =>
-        channelVerificationSessionProxy.handleCancelVerificationSession(req),
-    },
-    {
-      path: "/channel-verification-sessions/resend",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        channelVerificationSessionProxy.handleResendVerificationSession(req),
-    },
-    {
-      path: "/channel-verification-sessions/status",
-      method: "GET",
-      auth: "edge",
-      handler: (req) =>
-        channelVerificationSessionProxy.handleGetVerificationStatus(req),
-    },
-    {
-      path: "/channel-verification-sessions/revoke",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        channelVerificationSessionProxy.handleRevokeVerificationBinding(req),
-    },
-
-    // ── Guardian refresh (custom auth: accepts expired JWTs) ──
-    // The refresh endpoint's purpose is to obtain a new access token,
-    // so rejecting expired tokens would create a deadlock once the JWT
-    // expires. Signature, audience, and policy epoch are still verified
-    // — only the expiration check is relaxed.
-    {
-      path: "/guardian/refresh",
-      method: "POST",
-      auth: "custom",
-      handler: (req, _params, getClientIp) => {
-        if (hasRemoteWebRefreshCookie(req)) {
-          return handleGuardianRefresh(req);
-        }
-
-        const authHeader = req.headers.get("authorization");
-        if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
-          authRateLimiter.recordFailure(getClientIp());
-          log.warn(
-            { path: new URL(req.url).pathname },
-            "Guardian refresh auth rejected: missing or malformed Authorization header",
-          );
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const token = authHeader.slice(7);
-        const result = validateEdgeToken(token, { allowExpired: true });
-        if (!result.ok) {
-          authRateLimiter.recordFailure(getClientIp());
-          log.warn(
-            { path: new URL(req.url).pathname, reason: result.reason },
-            "Guardian refresh auth rejected: token validation failed",
-          );
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        return handleGuardianRefresh(req);
-      },
-    },
-
-    // ── Twilio control plane ──
-    {
-      path: "/integrations/twilio/config",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => twilioControlPlaneProxy.handleGetTwilioConfig(req),
-    },
-    {
-      path: "/integrations/twilio/credentials",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => twilioControlPlaneProxy.handleSetTwilioCredentials(req),
-    },
-    {
-      path: "/integrations/twilio/credentials",
-      method: "DELETE",
-      auth: "edge",
-      handler: (req) =>
-        twilioControlPlaneProxy.handleClearTwilioCredentials(req),
-    },
-    {
-      path: "/integrations/twilio/numbers",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => twilioControlPlaneProxy.handleListTwilioNumbers(req),
-    },
-    {
-      path: "/integrations/twilio/numbers/provision",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        twilioControlPlaneProxy.handleProvisionTwilioNumber(req),
-    },
-    {
-      path: "/integrations/twilio/numbers/assign",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => twilioControlPlaneProxy.handleAssignTwilioNumber(req),
-    },
-    {
-      path: "/integrations/twilio/numbers/release",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => twilioControlPlaneProxy.handleReleaseTwilioNumber(req),
-    },
-    // ── Slack control plane ──
-    {
-      path: "/slack/channels",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => slackControlPlaneProxy.handleListSlackChannels(req),
-    },
-    {
-      path: "/slack/share",
-      method: "POST",
-      auth: "edge",
-      handler: (req) => slackControlPlaneProxy.handleShareToSlack(req),
-    },
-
-    // ── OAuth providers ──
-    {
-      path: "/oauth/providers",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => oauthProvidersProxy.handleListProviders(req),
-    },
-    {
-      path: /^\/oauth\/providers\/([^/]+)\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req, params) =>
-        oauthProvidersProxy.handleGetProvider(req, params[0]),
-    },
-
-    // ── OAuth apps ──
-    {
-      path: "/oauth/apps",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => oauthAppsProxy.handleListApps(req),
-    },
-    {
-      path: "/oauth/apps",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => oauthAppsProxy.handleCreateApp(req),
-    },
-    {
-      path: /^\/oauth\/apps\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => oauthAppsProxy.handleDeleteApp(req, params[0]),
-    },
-    {
-      path: /^\/oauth\/apps\/([^/]+)\/connections\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req, params) =>
-        oauthAppsProxy.handleListConnections(req, params[0]),
-    },
-    {
-      path: /^\/oauth\/connections\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        oauthAppsProxy.handleDeleteConnection(req, params[0]),
-    },
-    {
-      path: /^\/oauth\/apps\/([^/]+)\/connect\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) => oauthAppsProxy.handleConnect(req, params[0]),
-    },
-
-    // ── Upgrade broadcast ──
-    {
-      path: "/admin/upgrade-broadcast",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "admin.write",
-      handler: (req) => upgradeBroadcastProxy(req),
-    },
-
-    // ── Workspace commit ──
-    {
-      path: "/admin/workspace-commit",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "admin.write",
-      handler: (req) => workspaceCommitProxy(req),
-    },
-
-    // ── Migration rollback ──
-    {
-      path: "/admin/rollback-migrations",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "admin.write",
-      handler: (req) => migrationRollbackProxy(req),
-    },
-
-    // ── Platform push / Live Activity tokens ──
-    // Cloud-owned registration. Remote-gateway clients hit these
-    // same-origin; without a dedicated route they fall through to the
-    // runtime-proxy catch-all and 404. The handler forwards to the cloud
-    // with the stored assistant API key and platform assistant UUID.
-    {
-      path: /^\/assistants\/[^/]+\/push-tokens\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => cloudPushProxy.handleUpsertPushToken(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        cloudPushProxy.handleDeletePushToken(req, params[0]),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => cloudPushProxy.handleUpsertLiveActivityToken(req),
-    },
-    {
-      path: /^\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
-      method: "DELETE",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req, params) =>
-        cloudPushProxy.handleDeleteLiveActivityToken(req, params[0]),
-    },
-
-    // ── Channel readiness ──
-    {
-      path: "/channels/readiness",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => channelReadinessProxy.handleGetChannelReadiness(req),
-    },
-    {
-      path: "/channels/readiness/refresh",
-      method: "POST",
-      auth: "edge",
-      handler: (req) =>
-        channelReadinessProxy.handleRefreshChannelReadiness(req),
-    },
-
-    {
-      path: /^\/assistants\/([^/]+)\/channels\/readiness\/$/,
-      method: "GET",
-      auth: "edge",
-      handler: (req) => channelReadinessProxy.handleGetChannelReadiness(req),
-    },
-
-    // ── Integration status ──
-    {
-      path: "/integrations/status",
-      method: "GET",
-      auth: "edge",
-      handler: () =>
-        Response.json({
-          email: {
-            address: configFileCache.getString("email", "address") ?? null,
-          },
-        }),
-    },
-    {
-      path: /^\/assistants\/([^/]+)\/integrations\/status\/$/,
-      method: "GET",
-      auth: "edge",
-      handler: () =>
-        Response.json({
-          email: {
-            address: configFileCache.getString("email", "address") ?? null,
-          },
-        }),
-    },
-
-    // ── Auto-approve thresholds + per-conversation overrides (scope-protected) ──
-    ...autoApproveThresholdRoutes,
-
-    // ── Log access ──
-    {
-      path: "/logs/export",
-      method: "POST",
-      auth: "edge",
-      handler: (req, params, getClientIp) =>
-        handleLogExport(req, params, getClientIp),
-    },
-    {
-      path: "/logs/tail",
-      method: "GET",
-      auth: "edge",
-      handler: (req) => handleLogTail(req),
-    },
-
-    // ── Gateway-owned route areas — one declaration per route (spec fields,
-    // auth, and handler factories fused; scoped mirrors generated by the
-    // router) ──
-    ...upgradePolicyRoutes,
-    ...trustRuleRoutes,
-    ...channelAdmissionPolicyRoutes,
-    ...channelIngressRoutes,
-    ...channelPermissionOverrideRoutes,
-  ];
-
-  for (const method of ["GET", "POST"] as const) {
-    const setupRoute = {
-      method,
-      auth: "edge-guardian" as const,
-      handler: desktopSetupProxy,
-    };
-    routes.push(
-      { path: /^\/desktop\/setup\/?$/, ...setupRoute },
-      { path: /^\/assistants\/[^/]+\/desktop\/setup\/?$/, ...setupRoute },
-    );
-  }
-
-  // Runtime proxy catch-all — must be last so specific routes are checked first.
-  routes.push({
-    path: /^\//, // match everything
-    auth: "track-failures",
-    handler: (req, _params, getClientIp) =>
-      handleRuntimeProxy(req, getClientIp()),
-  });
-
-  const router = createRouter(routes, {
+  // One routes array, owned by the routes barrel: every HTTP route is
+  // declared in a per-domain ROUTES array and concatenated there, in
+  // dispatch order (the runtime-proxy catch-all last). Routes are matched
+  // top-to-bottom; auth middleware is applied declaratively per route.
+  const router = createRouter(ROUTES, {
     authRateLimiter,
     trustProxy: config.trustProxy,
   });
+
+  // The webhook dedup caches whose lifecycle (cleanup timers, credential
+  // resets) this process manages below.
+  const { telegramDedupCache, whatsappDedupCache, emailDedupCache } =
+    webhookDedupCaches();
 
   /** Stamp the assistant version header on a response. */
   function stampVersion<T extends Response>(res: T): T {
@@ -2243,11 +1422,6 @@ async function main() {
     const telegramCreds = event.credentials.get("telegram");
     telegramReady = !!(
       telegramCreds?.bot_token && telegramCreds?.webhook_secret
-    );
-
-    const whatsappCreds = event.credentials.get("whatsapp");
-    whatsappReady = !!(
-      whatsappCreds?.phone_number_id && whatsappCreds?.access_token
     );
 
     const cadetCreds = event.credentials.get("cadet");

@@ -220,3 +220,13 @@ export function loadConfig(): GatewayConfig {
 export function getGatewayInternalBaseUrl(): string {
   return `http://127.0.0.1:${process.env.GATEWAY_PORT || "7830"}`;
 }
+
+/**
+ * The process-wide gateway config, loaded once on first call. Route modules
+ * and other late consumers read config at request time through this instead
+ * of receiving it piped in through init functions.
+ */
+let cachedConfig: GatewayConfig | undefined;
+export function getConfig(): GatewayConfig {
+  return (cachedConfig ??= loadConfig());
+}

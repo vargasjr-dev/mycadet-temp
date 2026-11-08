@@ -152,7 +152,9 @@ export class TunnelWebSocketBridge {
     });
   }
 
-  message(frame: TunnelWebSocketMessageFrame | TunnelBinaryWebSocketFrame): void {
+  message(
+    frame: TunnelWebSocketMessageFrame | TunnelBinaryWebSocketFrame,
+  ): void {
     const connection = this.connections.get(frame.connection_id);
     if (!connection) return;
 

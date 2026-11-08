@@ -8,15 +8,8 @@ import {
   TWILIO_VOICE_WEBHOOK_PATH,
 } from "@mycadet/service-contracts/twilio-ingress";
 import { buildSchema } from "../schema.js";
-import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
-import { ROUTES as autoApproveThresholdRoutes } from "../http/routes/auto-approve-thresholds.js";
-import { ROUTES as channelAdmissionPolicyRoutes } from "../http/routes/channel-admission-policy.js";
-import { ROUTES as channelIngressRoutes } from "../http/routes/channel-ingress.js";
-import { ROUTES as channelPermissionOverrideRoutes } from "../http/routes/channel-permission-overrides.js";
-import { buildContactsControlPlaneRoutes } from "../http/routes/contacts-control-plane-route-table.js";
-import { ROUTES as credentialRequestRoutes } from "../http/routes/credential-requests.js";
-import { ROUTES as trustRuleRoutes } from "../http/routes/trust-rules.js";
-import { ROUTES as upgradePolicyRoutes } from "../http/routes/upgrade-policy.js";
+import { ROUTES as barrelRoutes } from "../http/routes/index.js";
+import { regexToOpenApiPath } from "../http/routes/regex-to-openapi-path.js";
 
 /** A route extracted from source: path + optional HTTP method. */
 interface ExtractedRoute {
@@ -35,17 +28,14 @@ const ROUTE_PATH_CONSTANTS: Record<string, string> = {
 };
 
 /**
- * Extracts route paths from the gateway index.ts source code.
+ * Extracts the pre-router route paths from the gateway index.ts source code —
+ * paths matched in the `fetch()` handler before the router runs (healthz,
+ * readyz, schema, WS upgrades).
  *
- * Routes are defined in four places:
- * 1. The `routes` array (RouteDefinition[] / GatewayRouteDefinition[]) — matched by the router
- * 2. Pre-router paths in the `fetch()` handler (healthz, readyz, schema, WS upgrades)
- * 3. The fused ROUTES arrays (one per gateway-owned area), imported directly —
- *    both the dispatch table and the spec generator consume these
- * 4. The contact-family route table spread into the array (imported directly)
- *
- * We parse the source text rather than importing index.ts because it calls
- * `main()` at module scope which starts the server.
+ * The route TABLE itself is not parsed from source: the barrel
+ * (`src/http/routes/index.ts`) is import-safe (the spec generator imports
+ * it), so the guard reads the same `ROUTES` array the router and generator
+ * consume (see extractFusedRoutes).
  */
 function extractRoutesFromSource(): ExtractedRoute[] {
   const src = readFileSync(
@@ -59,36 +49,6 @@ function extractRoutesFromSource(): ExtractedRoute[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-
-    // Match string literal paths: `path: "/some/path"`
-    const stringMatch = line.match(/path:\s*"([^"]+)"/);
-    if (stringMatch) {
-      const method = findMethodNearPath(lines, i);
-      routes.push({ path: stringMatch[1], method });
-      continue;
-    }
-
-    // Match shared path constants: `path: SOME_WEBHOOK_PATH`
-    const constantMatch = line.match(/path:\s*([A-Z0-9_]+)\b/);
-    const constantPath = constantMatch
-      ? ROUTE_PATH_CONSTANTS[constantMatch[1]]
-      : undefined;
-    if (constantPath) {
-      const method = findMethodNearPath(lines, i);
-      routes.push({ path: constantPath, method });
-      continue;
-    }
-
-    // Match regex paths: `path: /^\/v1\/contacts\/([^/]+)$/`
-    const regexMatch = line.match(/path:\s*\/\^(.*?)\$\//);
-    if (regexMatch) {
-      const converted = regexToOpenApiPath(regexMatch[1]);
-      if (converted) {
-        const method = findMethodNearPath(lines, i);
-        routes.push({ path: converted, method });
-      }
-      continue;
-    }
 
     // Pre-router paths matched via `url.pathname === "/..."` in the fetch handler
     const preRouterMatch = line.match(/url\.pathname\s*===\s*"([^"]+)"/);
@@ -112,101 +72,29 @@ function extractRoutesFromSource(): ExtractedRoute[] {
     }
   }
 
-  // The contact family is registered via a spread of the shared route table;
-  // extract it from the real builder rather than source text.
-  if (!src.includes("...buildContactsControlPlaneRoutes(")) {
-    throw new Error(
-      "index.ts no longer spreads buildContactsControlPlaneRoutes — update this guard",
-    );
-  }
-  routes.push(...extractContactTableRoutes());
-
   return routes;
 }
 
-/** Contact-family routes from the builder index.ts spreads. */
-function extractContactTableRoutes(): ExtractedRoute[] {
-  return buildMarkedContactRoutes().flatMap((route) => {
-    const method = route.method ?? null;
-    if (typeof route.path === "string") {
-      return [{ path: route.path, method }];
-    }
-    const converted = regexToOpenApiPath(
-      route.path.source.replace(/^\^/, "").replace(/\$$/, ""),
-    );
-    return converted ? [{ path: converted, method }] : [];
-  });
-}
-
 /**
- * Looks for a `method: "..."` declaration near a `path:` line.
- * In the route table, method is always declared within a few lines
- * of path (same object literal). We scan up to 3 lines after path.
- */
-function findMethodNearPath(
-  lines: string[],
-  pathLineIndex: number,
-): string | null {
-  // method can appear before or after path within the same object.
-  // Scan a small window around the path line, stopping at object boundaries.
-  for (let offset = -3; offset <= 3; offset++) {
-    const idx = pathLineIndex + offset;
-    if (idx < 0 || idx >= lines.length) continue;
-    const methodMatch = lines[idx].match(/method:\s*"([A-Z]+)"/);
-    if (methodMatch) return methodMatch[1];
-  }
-  return null;
-}
-
-/**
- * The fused per-area ROUTES arrays (the same declarations index.ts spreads
- * and the spec generator reads), flattened to source-shaped entries. Only
- * the flat route + its dispatch-only aliases are listed: the assistant-scoped
- * mirrors the router generates are unpublished by construction.
+ * The routes barrel (the same declarations index.ts spreads and the spec
+ * generator reads), flattened to source-shaped entries. Only the flat route
+ * + its dispatch-only aliases are listed — plus the assistant-scoped mirrors
+ * the schema documents (see SCHEMA_DOCUMENTED_SCOPED) and the dispatch-only
+ * scoped mirrors (e.g. desktop setup) whose hand-written regexes the source
+ * parse used to see.
  */
 function extractFusedRoutes(): ExtractedRoute[] {
-  const contacts = buildContactsControlPlaneRoutes({
-    contactsControlPlaneProxy: {} as never,
-    handleContactPromptSubmit: async () => new Response(""),
-    handleContactRecordSubmit: async () => new Response(""),
-  });
-
-  return [
-    ...autoApproveThresholdRoutes,
-    ...channelAdmissionPolicyRoutes,
-    ...channelIngressRoutes,
-    ...channelPermissionOverrideRoutes,
-    ...contacts,
-    ...credentialRequestRoutes,
-    ...trustRuleRoutes,
-    ...upgradePolicyRoutes,
-  ].flatMap((route) => {
-    if (!("createHandler" in route)) {
-      // A legacy raw definition (none remain in the fused areas, but the
-      // union allows them).
-      if (typeof route.path !== "string") return [];
-      return [
-        { path: route.path, method: route.method?.toUpperCase() ?? null },
-      ];
-    }
-    // Raw regex dispatch paths (the contacts catch-alls) convert like the
-    // inline regexes; the specPath override names the canonical template.
+  return barrelRoutes.flatMap((route) => {
     if (typeof route.path !== "string") {
-      const converted = regexToOpenApiPath(
-        route.path.source.replace(/^\^/, "").replace(/\$$/, ""),
-      );
+      // Raw regex dispatch path — convert like the source parse did.
+      const converted = regexToOpenApiPath(route.path);
       return converted
-        ? [
-            {
-              path: route.specPath ?? converted,
-              method: route.method.toUpperCase(),
-            },
-          ]
+        ? [{ path: converted, method: route.method?.toUpperCase() ?? null }]
         : [];
     }
     const path: string = route.path;
     const routes: ExtractedRoute[] = [
-      { path, method: route.method.toUpperCase() },
+      { path, method: route.method?.toUpperCase() ?? null },
     ];
     for (const alias of route.aliases ?? []) {
       routes.push({ path, method: alias.toUpperCase() });
@@ -220,7 +108,7 @@ function extractFusedRoutes(): ExtractedRoute[] {
     if (route.scoped && SCHEMA_DOCUMENTED_SCOPED.has(route.operationId!)) {
       routes.push({
         path: `/assistants/{param1}${path}`,
-        method: route.method.toUpperCase(),
+        method: route.method?.toUpperCase() ?? null,
       });
       for (const alias of route.aliases ?? []) {
         routes.push({
@@ -259,77 +147,44 @@ function extractRoutePathsFromSource(): string[] {
   return [...paths].sort();
 }
 
-/**
- * Converts an escaped regex path to an OpenAPI-style path.
- * e.g. `\/v1\/contacts\/([^/]+)` → `/v1/contacts/{id}`
- *
- * Each capture group `([^/]+)` is replaced with `{paramN}` where N is the
- * 1-based index of the group.
- */
-function regexToOpenApiPath(escaped: string): string | null {
-  // Unescape forward slashes
-  let path = escaped.replace(/\\\//g, "/");
-
-  // Zero-width lookarounds constrain which parameter values are accepted,
-  // but they do not change the structural path shape we compare to the schema.
-  path = path.replace(/\(\?(?:=|!|<=|<!).*?\)/g, "");
-
-  // Replace capture groups with numbered params.
-  // Handles `([^/]+)` (single segment), `(.+)` (greedy), and `(.+?)`
-  // (non-greedy, used when an optional trailing slash sits outside the group).
-  let paramIndex = 0;
-  path = path.replace(/\(\[\^\/\]\+\)|\(\.\+\??\)/g, () => {
-    paramIndex++;
-    return `{param${paramIndex}}`;
-  });
-
-  // Strip optional trailing slash (`/?`) — common in route regexes
-  path = path.replace(/\/\?$/, "");
-
-  // If there are remaining regex constructs we can't convert, skip
-  if (/[\\()\[\].*+?{}|^$]/.test(path.replace(/\{param\d+\}/g, ""))) {
-    return null;
-  }
-
-  return path;
-}
-
 // ── Routes that are intentionally undocumented in the OpenAPI schema ──
 // Each entry must have a comment explaining why it's excluded.
-const EXCLUDED_FROM_SCHEMA = new Set([
-  // Runtime proxy catch-all — documented as /{path} in the schema
-  "catch-all",
-  // Loopback-only remote web pairing challenge — not part of the public gateway API
-  "/v1/remote-web/pairing-challenge",
-  // Remote web pairing verification bootstrap — not part of the public gateway API
-  "/v1/remote-web/pairing-verification",
-  // Remote web pairing token bootstrap — not part of the public gateway API
-  "/v1/remote-web/pairing-token",
-  // Loopback-only pairing-request approval surface: not part of the public gateway API
-  "/v1/remote-web/pairing-requests",
-  "/v1/remote-web/pairing-requests/approve",
-  "/v1/remote-web/pairing-requests/deny",
-  // Shared-invite redemption, called by the cloud on an invitee's behalf;
-  // not part of the public gateway API
-  "/v1/shared/invites/redeem",
-  // Internal-only: reachable only via vembda's trusted gateway-query proxy
-  "/v1/contacts/guardian/channel",
-  // Managed-speech relay — daemon-only WS egress to tunnel, rejected on any
-  // ingress path; not part of the public gateway API
-  "/v1/speech/stt/stream",
-  "/v2/speech/stt/stream",
-  "/v1/speech/tts/stream",
-  // Loopback-only ingress domain recording — the local CLI reports its
-  // tunnel's public URL (bearer-authed); not part of the public gateway API
-  "/v1/ingress/domains",
-  // Plugin-declared webhooks — which paths exist is decided at runtime by the
-  // installed plugins and the guardian's approvals, so there is no fixed set
-  // to document. The declaration schema is the contract, not this path.
-  "/webhooks/plugins/{param1}/{param2}",
-  // The entries above are written in the versioned spelling they're excluded
-  // under in the schema; the guard compares canonical (unversioned) paths, so
-  // they normalize once here — P7's optional /v1 prefix.
-].map(withoutVersionPrefix));
+const EXCLUDED_FROM_SCHEMA = new Set(
+  [
+    // Runtime proxy catch-all — documented as /{path} in the schema
+    "catch-all",
+    // Loopback-only remote web pairing challenge — not part of the public gateway API
+    "/v1/remote-web/pairing-challenge",
+    // Remote web pairing verification bootstrap — not part of the public gateway API
+    "/v1/remote-web/pairing-verification",
+    // Remote web pairing token bootstrap — not part of the public gateway API
+    "/v1/remote-web/pairing-token",
+    // Loopback-only pairing-request approval surface: not part of the public gateway API
+    "/v1/remote-web/pairing-requests",
+    "/v1/remote-web/pairing-requests/approve",
+    "/v1/remote-web/pairing-requests/deny",
+    // Shared-invite redemption, called by the cloud on an invitee's behalf;
+    // not part of the public gateway API
+    "/v1/shared/invites/redeem",
+    // Internal-only: reachable only via vembda's trusted gateway-query proxy
+    "/v1/contacts/guardian/channel",
+    // Managed-speech relay — daemon-only WS egress to tunnel, rejected on any
+    // ingress path; not part of the public gateway API
+    "/v1/speech/stt/stream",
+    "/v2/speech/stt/stream",
+    "/v1/speech/tts/stream",
+    // Loopback-only ingress domain recording — the local CLI reports its
+    // tunnel's public URL (bearer-authed); not part of the public gateway API
+    "/v1/ingress/domains",
+    // Plugin-declared webhooks — which paths exist is decided at runtime by the
+    // installed plugins and the guardian's approvals, so there is no fixed set
+    // to document. The declaration schema is the contract, not this path.
+    "/webhooks/plugins/{param1}/{param2}",
+    // The entries above are written in the versioned spelling they're excluded
+    // under in the schema; the guard compares canonical (unversioned) paths, so
+    // they normalize once here — P7's optional /v1 prefix.
+  ].map(withoutVersionPrefix),
+);
 
 // ── Schema paths that don't map to a discrete route definition ──
 // These are documented in the schema but correspond to pre-router logic
@@ -377,8 +232,20 @@ describe("route-schema sync guard", () => {
   test("every schema path should have a corresponding route", () => {
     const orphaned: string[] = [];
 
+    // Regex dispatch routes the template converter can't express (optional
+    // path prefixes etc.) still serve their schema spellings — the regex
+    // itself is the serving contract, so coverage is proven by matching it
+    // against the canonical schema path.
+    const rawRegexRoutes = barrelRoutes
+      .map((route) => route.path)
+      .filter(
+        (p): p is RegExp =>
+          p instanceof RegExp && regexToOpenApiPath(p) === undefined,
+      );
+
     for (const schemaPath of schemaPaths) {
       if (SCHEMA_ONLY_PATHS.has(schemaPath)) continue;
+      if (rawRegexRoutes.some((re) => re.test(schemaPath))) continue;
 
       const matched = findMatchingRoutePath(schemaPath, routePaths);
       if (!matched) {
@@ -390,7 +257,7 @@ describe("route-schema sync guard", () => {
   });
 
   test("HTTP methods for each path should match between routes and schema", () => {
-    const routes = extractRoutesFromSource().map((r) => ({
+    const routes = extractFusedRoutes().map((r) => ({
       ...r,
       // Canonical (unversioned) shape — the matcher strips the optional
       // /v1 prefix at dispatch, so comparisons read the bare spelling.
@@ -424,9 +291,9 @@ describe("route-schema sync guard", () => {
     // For each path that has explicit methods in the route table,
     // verify the schema documents exactly the same set of methods.
     for (const [path, routeMethods] of routeMethodsByPath) {
-      const schemaEntry = (schema.paths as Record<string, Record<string, unknown>>)[
-        schemaKeyByCanonical.get(path) ?? path
-      ];
+      const schemaEntry = (
+        schema.paths as Record<string, Record<string, unknown>>
+      )[schemaKeyByCanonical.get(path) ?? path];
       if (!schemaEntry) continue; // path-level mismatch is caught by the other tests
 
       const schemaMethods = new Set(
@@ -476,7 +343,9 @@ describe("route-schema sync guard", () => {
 
   test("regex route normalization ignores negative lookaheads", () => {
     expect(
-      regexToOpenApiPath(String.raw`\/v1\/contacts\/(?!invites$)([^/]+)`),
+      regexToOpenApiPath(
+        new RegExp(String.raw`\/v1\/contacts\/(?!invites$)([^/]+)`),
+      ),
     ).toBe("/v1/contacts/{param1}");
   });
 });

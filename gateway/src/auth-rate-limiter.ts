@@ -78,3 +78,9 @@ export class AuthRateLimiter {
     }
   }
 }
+
+let cachedLimiter: AuthRateLimiter | undefined;
+/** The process-wide auth rate limiter — the router and guarded routes share it. */
+export function getAuthRateLimiter(): AuthRateLimiter {
+  return (cachedLimiter ??= new AuthRateLimiter());
+}

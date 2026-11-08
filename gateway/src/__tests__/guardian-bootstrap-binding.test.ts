@@ -23,6 +23,13 @@ import type { SqliteValue } from "../db/assistant-db-proxy.js";
 
 import "./test-preload.js";
 
+import { createGuardianBinding } from "../auth/guardian-bootstrap.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 let assistantDb: Database | null = null;
 
 function asstDb(): Database {
@@ -62,14 +69,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   ...actualAssistantClient,
   ipcCallAssistant: ipcMock,
 }));
-
-import { createGuardianBinding } from "../auth/guardian-bootstrap.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 function seedGwChannel(opts: {
   contactId: string;

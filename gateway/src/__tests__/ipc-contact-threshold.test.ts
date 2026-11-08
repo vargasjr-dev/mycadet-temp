@@ -6,10 +6,25 @@
  * assistant-DB mirror that ContactStore.upsertContact performs.
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 import "./test-preload.js";
 
+import {
+  getGatewayDb,
+  initGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts } from "../db/schema.js";
+import { thresholdRoutes } from "../ipc/threshold-handlers.js";
 const assistantIpcCalls: Array<{
   method: string;
   params?: Record<string, unknown>;
@@ -24,14 +39,6 @@ mock.module("../ipc/assistant-client.js", () => ({
     return undefined;
   },
 }));
-
-import {
-  getGatewayDb,
-  initGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts } from "../db/schema.js";
-import { thresholdRoutes } from "../ipc/threshold-handlers.js";
 
 beforeAll(async () => {
   await initGatewayDb();

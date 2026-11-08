@@ -479,7 +479,7 @@ describe("GET /v1/devices", () => {
     seedActor({ device: "device-D", status: "revoked" });
 
     const devices = await handleListDevices();
-    expect(devices.length).toBe(4);
+    expect(devices.length).toBe(2);
 
     const ids = devices.map((d) => d.hashedDeviceId).sort();
     expect(ids).toEqual([hashToken("device-A"), hashToken("device-B")].sort());

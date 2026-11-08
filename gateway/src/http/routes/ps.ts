@@ -8,12 +8,12 @@
  * the gateway's own entry.
  */
 
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("ps");
 
@@ -75,3 +75,21 @@ async function fetchAssistantPs(
     return [{ name: "assistant", status: "unreachable" }];
   }
 }
+
+let routeProxyImpl: ReturnType<typeof createPsHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createPsHandler> {
+  return (routeProxyImpl ??= createPsHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/ps",
+    method: "get",
+    auth: "edge",
+    handler: (_req, _params) => routeProxy().handlePs(),
+  },
+];

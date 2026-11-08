@@ -22,9 +22,13 @@ import {
 
 import "./test-preload.js";
 
-// ── Mocked daemon IPC (leak-safe: delegates to a mutable mock, spreads the
-// actual module so other exports stay importable across suites) ─────────────
-
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
+import * as mirrorOpReporter from "../contacts-mirror-op-reporter.js";
 type IpcCallFn = (
   method: string,
   params?: Record<string, unknown>,
@@ -46,14 +50,6 @@ mock.module("../ipc/assistant-client.js", () => ({
 }));
 
 // ── Imports ──────────────────────────────────────────────────────────────────
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
-import * as mirrorOpReporter from "../contacts-mirror-op-reporter.js";
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 

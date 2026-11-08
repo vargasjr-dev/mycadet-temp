@@ -9,8 +9,10 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("migration-rollback-proxy");
 
@@ -47,3 +49,22 @@ export function createMigrationRollbackProxyHandler(config: GatewayConfig) {
     return response;
   };
 }
+
+let routeProxyImpl: ReturnType<typeof createMigrationRollbackProxyHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createMigrationRollbackProxyHandler> {
+  return (routeProxyImpl ??= createMigrationRollbackProxyHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/admin/rollback-migrations",
+    method: "post",
+    auth: "edge-scoped",
+    scope: "admin.write",
+    handler: (req) => routeProxy()(req),
+  },
+];

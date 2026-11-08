@@ -8,9 +8,11 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { isLoopbackAddress } from "../../util/is-loopback-address.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("channel-verification-session-proxy");
 
@@ -112,3 +114,50 @@ export function createChannelVerificationSessionProxyHandler(
     },
   };
 }
+
+let routeProxyImpl: ReturnType<typeof createChannelVerificationSessionProxyHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createChannelVerificationSessionProxyHandler> {
+  return (routeProxyImpl ??= createChannelVerificationSessionProxyHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/channel-verification-sessions",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleCreateVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions",
+    method: "delete",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleCancelVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions/resend",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleResendVerificationSession(req),
+  },
+  {
+    path: "/channel-verification-sessions/status",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleGetVerificationStatus(req),
+  },
+  {
+    path: "/channel-verification-sessions/revoke",
+    method: "post",
+    auth: "edge",
+    handler: (req, _params) =>
+      routeProxy().handleRevokeVerificationBinding(req),
+  },
+];

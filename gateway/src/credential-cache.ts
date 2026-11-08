@@ -149,3 +149,9 @@ export class CredentialCache {
     return promise;
   }
 }
+
+let cachedCredentials: CredentialCache | undefined;
+/** The process-wide credential cache — one instance so invalidations are shared. */
+export function getCredentials(): CredentialCache {
+  return (cachedCredentials ??= new CredentialCache());
+}

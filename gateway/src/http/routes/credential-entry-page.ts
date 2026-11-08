@@ -1,3 +1,4 @@
+import type { RouteDefinition } from "./types.js";
 /**
  * Gateway-served one-time credential entry page.
  *
@@ -191,3 +192,14 @@ export function handleCredentialEntryPage(req: Request): Response {
     },
   });
 }
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    // Gateway-owned credential-request landing surface (token collection).
+    // Unauthenticated by design: the single-use token in the request BODY or
+    // URL fragment is the credential to act.
+    path: "/assistant/credentials/enter",
+    method: "get",
+    handler: (req) => handleCredentialEntryPage(req),
+  },
+];

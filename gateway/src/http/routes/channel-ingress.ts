@@ -16,7 +16,7 @@
  */
 
 import { z } from "zod";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 
 import {
   findServableRoute,
@@ -374,14 +374,6 @@ export function createChannelIngressRevokeHandler(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Route declarations — the single source of truth for both the dispatch
-// table (index.ts) and the OpenAPI generation script. Guardian-authenticated,
-// not scope-authenticated: approving ingress is the decision the assistant
-// must not be able to make for itself. The assistant-scoped mirrors exist in
-// dispatch only (the guardian reaches the flat paths directly).
-// ---------------------------------------------------------------------------
-
 const ApprovalViewSchema = z.object({
   source: z.string(),
   digest: z.string(),
@@ -434,7 +426,10 @@ const ChannelIngressListSchema = z.object({
   problems: z.array(z.object({ source: z.string(), reason: z.string() })),
 });
 
-export const ROUTES: GatewayRouteDefinition[] = [
+const ingressApproveHandler = createChannelIngressApproveHandler();
+const ingressRevokeHandler = createChannelIngressRevokeHandler();
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-ingress",
     method: "get",
@@ -446,7 +441,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: ChannelIngressListSchema,
     auth: "edge-guardian",
     scoped: true,
-    createHandler: () => createChannelIngressListHandler(),
+    handler: createChannelIngressListHandler(),
   },
   {
     path: "/channel-ingress/{source}/approve",
@@ -466,10 +461,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: ApprovalViewSchema,
     auth: "edge-guardian",
     scoped: true,
-    createHandler: () => {
-      const handler = createChannelIngressApproveHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => ingressApproveHandler(req, params[0]!),
   },
   {
     path: "/channel-ingress/{source}/revoke",
@@ -488,9 +480,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ source: z.string(), revoked: z.boolean() }),
     auth: "edge-guardian",
     scoped: true,
-    createHandler: () => {
-      const handler = createChannelIngressRevokeHandler();
-      return (req, params) => handler(req, params[0]!);
-    },
+    handler: (req, params) => ingressRevokeHandler(req, params[0]!),
   },
 ];

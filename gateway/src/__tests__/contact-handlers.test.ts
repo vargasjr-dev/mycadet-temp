@@ -20,6 +20,14 @@ import {
 
 import "./test-preload.js";
 
+import { eq } from "drizzle-orm";
+import { contactRoutes } from "../ipc/contact-handlers.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 type FakeChannelRow = {
   id: string;
   contact_id: string;
@@ -120,16 +128,6 @@ mock.module("../ipc/contacts-info-client.js", () => ({
     },
   ),
 }));
-
-import { eq } from "drizzle-orm";
-
-import { contactRoutes } from "../ipc/contact-handlers.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 const markChannelRevokedHandler = contactRoutes.find(
   (r) => r.method === "mark_channel_revoked",

@@ -22,8 +22,16 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake assistant DB ───────────────────────────────────────────────────────
-
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, ingressInvites } from "../db/schema.js";
+import {
+  up as m0007Up,
+  down as m0007Down,
+} from "../db/data-migrations/m0007-backfill-ingress-invites.js";
 type FakeInvite = {
   id: string;
   source_channel: string;
@@ -69,17 +77,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
   assistantDbRun: mock(async () => ({ changes: 1, lastInsertRowid: 0 })),
   assistantDbExec: mock(async () => undefined),
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, ingressInvites } from "../db/schema.js";
-import {
-  up as m0007Up,
-  down as m0007Down,
-} from "../db/data-migrations/m0007-backfill-ingress-invites.js";
 
 beforeAll(async () => {
   await initGatewayDb();
@@ -136,15 +133,15 @@ function seedAssistantInvite(opts: Partial<FakeInvite> & { id: string }): void {
 }
 
 function gatewayInviteIds(): string[] {
-  const rows = getGatewayDb().$client
-    .prepare("SELECT id FROM ingress_invites")
+  const rows = getGatewayDb()
+    .$client.prepare("SELECT id FROM ingress_invites")
     .all() as { id: string }[];
   return rows.map((r) => r.id).sort();
 }
 
 function gatewayInvite(id: string): Record<string, unknown> | undefined {
-  return getGatewayDb().$client
-    .prepare("SELECT * FROM ingress_invites WHERE id = ?")
+  return getGatewayDb()
+    .$client.prepare("SELECT * FROM ingress_invites WHERE id = ?")
     .get(id) as Record<string, unknown> | undefined;
 }
 

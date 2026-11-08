@@ -181,3 +181,9 @@ export class ConfigFileCache {
     };
   }
 }
+
+let cachedConfigFile: ConfigFileCache | undefined;
+/** The process-wide config-file cache — one instance so invalidations are shared. */
+export function getConfigFileCache(): ConfigFileCache {
+  return (cachedConfigFile ??= new ConfigFileCache());
+}

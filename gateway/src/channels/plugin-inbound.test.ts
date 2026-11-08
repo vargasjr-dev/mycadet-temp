@@ -75,9 +75,10 @@ describe("readPluginInbound", () => {
   });
 
   it("maps a scoped plugin actor onto the plugin's own contact channel", () => {
-    expect(
-      pluginMemberIdentity("plugin", "imessage:+12025550142"),
-    ).toEqual({ type: "imessage", address: "+12025550142" });
+    expect(pluginMemberIdentity("plugin", "imessage:+12025550142")).toEqual({
+      type: "imessage",
+      address: "+12025550142",
+    });
     expect(pluginMemberIdentity("plugin", "meeting-bot:room-42")).toEqual({
       type: "meeting-bot",
       address: "room-42",

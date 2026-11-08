@@ -28,8 +28,12 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake assistant DB ───────────────────────────────────────────────────────
-
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { guardianRequests, guardianRequestDeliveries } from "../db/schema.js";
 type FakeRequest = {
   id: string;
   kind: string;
@@ -144,13 +148,6 @@ mock.module("../logger.js", () => ({
   ...realLogger,
   getLogger: () => recordingLog,
 }));
-
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { guardianRequests, guardianRequestDeliveries } from "../db/schema.js";
 
 const { MIGRATIONS } = await import("../db/data-migrations/index.js");
 const { up: m0015Up, down: m0015Down } =

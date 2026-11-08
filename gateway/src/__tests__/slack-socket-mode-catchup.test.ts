@@ -7,6 +7,7 @@ import { SlackStore } from "../db/slack-store.js";
 import * as schema from "../db/schema.js";
 import type { NormalizedSlackEvent } from "../slack/message-schemas.js";
 
+import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 type FetchFn = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -26,7 +27,6 @@ mock.module("../fetch.js", () => ({
 const { SlackSocketModeClient } = await import("../slack/socket-mode.js");
 const { clearUserInfoCache, clearChannelInfoCache, clearInFlightFetches } =
   await import("../slack/user-directory.js");
-import type { SlackSocketModeConfig } from "../slack/socket-mode.js";
 
 type CatchupHarness = {
   config: SlackSocketModeConfig;

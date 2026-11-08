@@ -8,6 +8,7 @@ import {
   admittedActorTokenRecord,
   isCloudAuthBypassActive,
 } from "../middleware/auth.js";
+import type { RouteDefinition } from "./types.js";
 
 /**
  * `GET /v1/devices/mine` — the caller's own paired-device row.
@@ -101,3 +102,13 @@ export async function handleGetMyDevice(req: Request): Promise<Response> {
     { headers: { "Cache-Control": "no-store" } },
   );
 }
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    // The caller's own paired-device row (bearer-authed, browser-legit)
+    path: "/devices/mine",
+    method: "get",
+    auth: "edge",
+    handler: (req) => handleGetMyDevice(req),
+  },
+];

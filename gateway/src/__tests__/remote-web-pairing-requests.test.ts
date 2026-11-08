@@ -2,6 +2,12 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import {
+  LOOPBACK_IP,
+  makeLocalRequest,
+  makeRemoteRequest,
+  PUBLIC_BASE_URL,
+} from "./helpers/remote-web-pairing-fixtures.js";
 const { handleCreateRemoteWebPairingChallenge } =
   await import("../http/routes/remote-web-pairing-challenge.js");
 const {
@@ -15,13 +21,6 @@ const {
   setRemoteWebPairingChallengeNowForTests,
 } = await import("../remote-web/pairing-challenge-store.js");
 const { testWorkspaceDir } = await import("./test-preload.js");
-
-import {
-  LOOPBACK_IP,
-  makeLocalRequest,
-  makeRemoteRequest,
-  PUBLIC_BASE_URL,
-} from "./helpers/remote-web-pairing-fixtures.js";
 
 const LIST_PATH = "/v1/remote-web/pairing-requests";
 const APPROVE_PATH = "/v1/remote-web/pairing-requests/approve";

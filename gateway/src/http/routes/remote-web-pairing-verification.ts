@@ -5,6 +5,7 @@ import {
   recordRemoteWebPairingVerificationFailure,
   type RemoteWebPairingVerificationRateLimit,
 } from "../../remote-web/pairing-verification-rate-limit-store.js";
+import { isLoopbackAddress } from "../../util/is-loopback-address.js";
 import { errorResponse } from "../loopback-guard.js";
 import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
 
@@ -40,6 +41,12 @@ export async function handleVerifyRemoteWebPairingChallenge(
 ): Promise<Response> {
   if (req.method !== "POST") {
     return methodNotAllowed("POST");
+  }
+
+  // Verifying (approving) a pairing request is a host-side action — the user
+  // types the code into the local approval UI. Remote callers are rejected.
+  if (!isLoopbackAddress(clientIp)) {
+    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
   }
 
   const rateLimitedBeforeBodyRead =

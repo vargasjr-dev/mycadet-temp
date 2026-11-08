@@ -20,9 +20,9 @@ describe("capDeviceIdentityText", () => {
   });
 
   test("whitespace-only value becomes null", () => {
-    expect(
-      capDeviceIdentityText("   ", MAX_CLIENT_REPORTED_NAME_CHARS),
-    ).toBe(null);
+    expect(capDeviceIdentityText("   ", MAX_CLIENT_REPORTED_NAME_CHARS)).toBe(
+      null,
+    );
   });
 
   test("trims surrounding whitespace", () => {
@@ -106,9 +106,7 @@ describe("capDeviceIdentityText", () => {
     // entirely: never a lone unpaired surrogate.
     const withEmoji = "a".repeat(maxChars - 1) + emoji;
     const withoutEmoji = "a".repeat(maxChars);
-    expect(safeResult === withEmoji || safeResult === withoutEmoji).toBe(
-      true,
-    );
+    expect(safeResult === withEmoji || safeResult === withoutEmoji).toBe(true);
 
     // Directly rule out an unpaired high or low surrogate anywhere in the
     // result, regardless of which branch above it landed on.

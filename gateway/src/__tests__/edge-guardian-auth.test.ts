@@ -193,13 +193,6 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
 // =========================================================================
 
 describe("requireEdgeGuardianAuth — actor principal mode", () => {
-  test("falls back to loopback when Authorization header is absent", async () => {
-    const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(makeReq());
-    expect(res).toBeNull();
-    expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
-  });
 
   test("rejects edge-forwarded loopback requests when Authorization header is absent", async () => {
     const { requireEdgeGuardianAuth } = makeMiddleware();
@@ -211,15 +204,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
-  test("invalid bearer token falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({ ok: false, reason: "expired" }));
-    const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(
-      makeReq({ authorization: "Bearer bad-jwt" }),
-    );
-    expect(res).toBeNull();
-    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
-  });
 
   test("returns 503 when findCadetGuardian throws (transient assistant DB outage)", async () => {
     mockValidateEdgeToken = mock(() => ({
@@ -239,39 +223,7 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     expect(res?.status).toBe(503);
   });
 
-  test("guardian mismatch falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({
-      ok: true,
-      claims: {
-        sub: `actor:test-assistant:some-other-actor`,
-        scope_profile: "actor_client_v1",
-      },
-    }));
-    mockFindCadetGuardian = mock(async () => ({
-      principalId: GUARDIAN_PRINCIPAL,
-    }));
-    const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(
-      makeReq({ authorization: "Bearer fake-jwt" }),
-    );
-    expect(res).toBeNull();
-  });
 
-  test("non-actor principal falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({
-      ok: true,
-      claims: {
-        sub: "user:test-user",
-        scope_profile: "actor_client_v1",
-      },
-    }));
-    const { requireEdgeGuardianAuth } = makeMiddleware();
-    const res = await requireEdgeGuardianAuth(
-      makeReq({ authorization: "Bearer fake-jwt" }),
-    );
-    expect(res).toBeNull();
-    expect(mockFindCadetGuardian).not.toHaveBeenCalled();
-  });
 
   test("returns 403 when actor principal does not match the bound guardian", async () => {
     mockValidateEdgeToken = mock(() => ({

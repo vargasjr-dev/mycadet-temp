@@ -9,12 +9,10 @@
  */
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import "./test-preload.js";
 
-import type { RouteDefinition } from "../http/router.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 
 let mockValidateEdgeToken = mock(
   (
@@ -32,45 +30,33 @@ mock.module("../auth/token-exchange.js", () => ({
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
 const { createRouter } = await import("../http/router.js");
 
-const indexSource = readFileSync(
-  join(import.meta.dir, "..", "index.ts"),
-  "utf8",
-);
-
-function extractVercelRouteObjects(): string[] {
-  const start = indexSource.indexOf("// ── Vercel control plane ──");
-  const end = indexSource.indexOf("// ── Contacts control plane ──", start);
-  const vercelRoutesSource = indexSource.slice(start, end);
-
-  return vercelRoutesSource
-    .split(/\n    \},\n/)
-    .filter((routeObject) =>
-      routeObject.includes("/integrations/vercel/config"),
-    );
-}
+const { ROUTES } = await import("../http/routes/vercel-control-plane-proxy.js");
 
 describe("vercel control-plane route registrations", () => {
   test("GET/POST/DELETE use edge-scoped auth with settings scopes", () => {
-    const routeObjects = extractVercelRouteObjects();
+    const routeObjects = ROUTES.filter(
+      (route: RouteDefinition) =>
+        route.path === "/integrations/vercel/config",
+    );
     expect(routeObjects).toHaveLength(3);
 
     for (const routeObject of routeObjects) {
-      expect(routeObject).toMatch(/auth:\s*"edge-scoped"/);
+      expect(routeObject.auth).toBe("edge-scoped");
     }
 
-    const getRoute = routeObjects.find((routeObject) =>
-      routeObject.includes('method: "GET"'),
+    const getRoute = routeObjects.find(
+      (routeObject) => routeObject.method === "get",
     );
-    const postRoute = routeObjects.find((routeObject) =>
-      routeObject.includes('method: "POST"'),
+    const postRoute = routeObjects.find(
+      (routeObject) => routeObject.method === "post",
     );
-    const deleteRoute = routeObjects.find((routeObject) =>
-      routeObject.includes('method: "DELETE"'),
+    const deleteRoute = routeObjects.find(
+      (routeObject) => routeObject.method === "delete",
     );
 
-    expect(getRoute).toContain('scope: "settings.read"');
-    expect(postRoute).toContain('scope: "settings.write"');
-    expect(deleteRoute).toContain('scope: "settings.write"');
+    expect(getRoute?.scope).toBe("settings.read");
+    expect(postRoute?.scope).toBe("settings.write");
+    expect(deleteRoute?.scope).toBe("settings.write");
   });
 });
 
@@ -81,21 +67,21 @@ function makeVercelRouter() {
   const routes: RouteDefinition[] = [
     {
       path: "/integrations/vercel/config",
-      method: "GET",
+      method: "get",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: () => Response.json({ ok: true, route: "get" }),
     },
     {
       path: "/integrations/vercel/config",
-      method: "POST",
+      method: "post",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "post" }),
     },
     {
       path: "/integrations/vercel/config",
-      method: "DELETE",
+      method: "delete",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "delete" }),

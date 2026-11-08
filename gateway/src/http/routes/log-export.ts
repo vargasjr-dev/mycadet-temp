@@ -27,16 +27,16 @@ import { randomBytes } from "node:crypto";
 
 import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import {
   getLogger,
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("log-export");
 
@@ -481,3 +481,22 @@ async function collectCesExport(
   log.info("CES export collected");
   return "ok";
 }
+
+let routeProxyImpl: ReturnType<typeof createLogExportHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createLogExportHandler> {
+  return (routeProxyImpl ??= createLogExportHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/logs/export",
+    method: "post",
+    auth: "edge",
+    handler: (req, params, getClientIp) =>
+      routeProxy()(req, params, getClientIp),
+  },
+];

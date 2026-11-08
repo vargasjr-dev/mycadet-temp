@@ -21,8 +21,18 @@ import { eq } from "drizzle-orm";
 
 import "./test-preload.js";
 
-// ── Mocked daemon IPC ────────────────────────────────────────────────────────
-
+import {
+  BindContactPrincipalError,
+  ContactStore,
+  ReservedChannelTypeError,
+  writeSharedPrincipalChannel,
+} from "../db/contact-store.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 mock.module("../ipc/assistant-client.js", () => ({
   ipcCallAssistant: mock(async (method: string) => {
     if (method === "contacts_info_batch") {
@@ -42,19 +52,6 @@ mock.module("../db/assistant-db-proxy.js", () => ({
 }));
 
 // ── Imports ──────────────────────────────────────────────────────────────────
-
-import {
-  BindContactPrincipalError,
-  ContactStore,
-  ReservedChannelTypeError,
-  writeSharedPrincipalChannel,
-} from "../db/contact-store.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 

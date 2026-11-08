@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import "./test-preload.js";
 
-import type { RouteDefinition } from "../http/router.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 
 // --- Mocks (set BEFORE importing the modules under test) ------------------
 
@@ -45,7 +45,10 @@ const { buildMarkedContactRoutes, markedHandlerName } =
 
 describe("invite route registrations (contact route table)", () => {
   test("all five invite routes use edge-scoped auth with the original runtime scopes", async () => {
-    const expectedScopeByHandler: Record<string, RouteDefinition["scope"]> = {
+    const expectedScopeByHandler: Record<
+      string,
+      RouteDefinition["scope"]
+    > = {
       handleListInvites: "settings.read",
       handleCreateInvite: "settings.write",
       handleRedeemInvite: "settings.write",
@@ -80,35 +83,35 @@ function makeInviteRouter() {
   const routes: RouteDefinition[] = [
     {
       path: "/contacts/invites",
-      method: "GET",
+      method: "get",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: () => Response.json({ ok: true, route: "list" }),
     },
     {
       path: "/contacts/invites",
-      method: "POST",
+      method: "post",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "create" }),
     },
     {
       path: "/contacts/invites/redeem",
-      method: "POST",
+      method: "post",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "redeem" }),
     },
     {
       path: /^\/contacts\/invites\/([^/]+)\/call$/,
-      method: "POST",
+      method: "post",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "call" }),
     },
     {
       path: /^\/contacts\/invites\/([^/]+)$/,
-      method: "DELETE",
+      method: "delete",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "revoke" }),

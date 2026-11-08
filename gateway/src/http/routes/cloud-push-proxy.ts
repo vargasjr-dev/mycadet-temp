@@ -12,13 +12,14 @@
  * authenticates the hop with the stored assistant API key.
  */
 
-import type { CredentialCache } from "../../credential-cache.js";
+import { getCredentials, type CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import { getCloudBaseUrl } from "../../cloud-url.js";
 import { errorResponse } from "../loopback-guard.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("cloud-push-proxy");
 
@@ -141,3 +142,46 @@ export function createCloudPushProxyHandler(credentials: CredentialCache) {
     },
   };
 }
+
+// Cloud-owned registration. Remote-gateway clients hit these
+// same-origin; without a dedicated route they fall through to the
+// runtime-proxy catch-all and 404.
+/** Built on first request — module import stays side-effect-free. */
+let routeProxyImpl: ReturnType<typeof createCloudPushProxyHandler> | undefined;
+function routeProxy(): ReturnType<typeof createCloudPushProxyHandler> {
+  return (routeProxyImpl ??= createCloudPushProxyHandler(getCredentials()));
+}
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: /^\/assistants\/[^/]+\/push-tokens\/?$/,
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, _params) => routeProxy().handleUpsertPushToken(req),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      routeProxy().handleDeletePushToken(req, params[0]),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
+    method: "post",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, _params) =>
+      routeProxy().handleUpsertLiveActivityToken(req),
+  },
+  {
+    path: /^\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
+    method: "delete",
+    auth: "edge-scoped",
+    scope: "settings.write",
+    handler: (req, params) =>
+      routeProxy().handleDeleteLiveActivityToken(req, params[0]),
+  },
+];

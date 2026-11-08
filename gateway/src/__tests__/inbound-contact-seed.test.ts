@@ -28,6 +28,13 @@ import { join } from "node:path";
 
 import "./test-preload.js";
 
+import { upsertContactChannel } from "../verification/contact-helpers.js";
+import {
+  initGatewayDb,
+  getGatewayDb,
+  resetGatewayDb,
+} from "../db/connection.js";
+import { contacts, contactChannels } from "../db/schema.js";
 const socketDir = mkdtempSync(join(tmpdir(), "inbound-contact-seed-"));
 const socketPath = join(socketDir, "assistant.sock");
 // Per-test switch: when false, resolveIpcSocketPath points at a missing file,
@@ -73,14 +80,6 @@ mock.module("../ipc/contacts-info-client.js", () => ({
     throw new Error("probeContactMirror not exercised by seeding");
   }),
 }));
-
-import { upsertContactChannel } from "../verification/contact-helpers.js";
-import {
-  initGatewayDb,
-  getGatewayDb,
-  resetGatewayDb,
-} from "../db/connection.js";
-import { contacts, contactChannels } from "../db/schema.js";
 
 const SLACK_USER = "U06GUARDIAN1";
 

@@ -8,8 +8,10 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("runtime-health-proxy");
 
@@ -46,3 +48,27 @@ export function createRuntimeHealthProxyHandler(config: GatewayConfig) {
 
   return { handleRuntimeHealth };
 }
+
+let routeProxyImpl: ReturnType<typeof createRuntimeHealthProxyHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createRuntimeHealthProxyHandler> {
+  return (routeProxyImpl ??= createRuntimeHealthProxyHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/health",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleRuntimeHealth(req),
+  },
+  {
+    path: "/healthz",
+    method: "get",
+    auth: "edge",
+    handler: (req, _params) => routeProxy().handleRuntimeHealth(req),
+  },
+];

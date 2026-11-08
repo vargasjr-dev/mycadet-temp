@@ -20,6 +20,11 @@ import {
 } from "../slack/socket-liveness.js";
 import type { CancelTimer, ScheduleFn } from "../util/schedule.js";
 
+import type {
+  SlackSocketLike,
+  SlackSocketModeConfig,
+} from "../slack/socket-mode.js";
+import { CONNECT_DEADLINE_MS, MAX_BACKOFF_MS } from "../slack/socket-mode.js";
 type FetchFn = (
   input: string | URL | Request,
   init?: RequestInit,
@@ -54,11 +59,6 @@ mock.module("../db/slack-store.js", () => ({
 }));
 
 const { SlackSocketModeClient } = await import("../slack/socket-mode.js");
-import type {
-  SlackSocketLike,
-  SlackSocketModeConfig,
-} from "../slack/socket-mode.js";
-import { CONNECT_DEADLINE_MS, MAX_BACKOFF_MS } from "../slack/socket-mode.js";
 
 /** Deterministic stand-in for the client's timers. */
 class FakeClock {

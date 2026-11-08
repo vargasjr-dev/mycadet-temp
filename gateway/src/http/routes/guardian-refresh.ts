@@ -9,6 +9,10 @@ import {
   buildRemoteWebBrowserAuthCookies,
   getRemoteWebRefreshCookie,
 } from "../browser-auth-cookies.js";
+import type { RouteDefinition } from "./types.js";
+import { getAuthRateLimiter } from "../../auth-rate-limiter.js";
+import { validateEdgeToken } from "../../auth/token-exchange.js";
+import { hasRemoteWebRefreshCookie } from "../browser-auth-cookies.js";
 
 const log = getLogger("guardian-refresh-route");
 const REQUIRED_BROWSER_REFRESH_FETCH_SITE = "same-origin";
@@ -174,3 +178,43 @@ export async function handleGuardianRefresh(req: Request): Promise<Response> {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    // The refresh endpoint's purpose is to obtain a new access token,
+    // so rejecting expired tokens would create a deadlock once the JWT
+    // expires. Signature, audience, and policy epoch are still verified
+    // — only the expiration check is relaxed.
+    path: "/guardian/refresh",
+    method: "post",
+    auth: "custom",
+    handler: (req, _params, getClientIp) => {
+      if (hasRemoteWebRefreshCookie(req)) {
+        return handleGuardianRefresh(req);
+      }
+
+      const authHeader = req.headers.get("authorization");
+      if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+        getAuthRateLimiter().recordFailure(getClientIp());
+        log.warn(
+          { path: new URL(req.url).pathname },
+          "Guardian refresh auth rejected: missing or malformed Authorization header",
+        );
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const token = authHeader.slice(7);
+      const result = validateEdgeToken(token, { allowExpired: true });
+      if (!result.ok) {
+        getAuthRateLimiter().recordFailure(getClientIp());
+        log.warn(
+          { path: new URL(req.url).pathname, reason: result.reason },
+          "Guardian refresh auth rejected: token validation failed",
+        );
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return handleGuardianRefresh(req);
+    },
+  },
+];

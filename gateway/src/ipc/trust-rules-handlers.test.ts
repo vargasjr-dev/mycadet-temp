@@ -4,6 +4,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { trustRulesRoutes } from "./trust-rules-handlers.js";
 type ListTrustRulesParams = {
   origin?: string;
   tool?: string;
@@ -35,8 +36,6 @@ const listTrustRulesMock = mock(
 mock.module("../http/routes/trust-rules.js", () => ({
   listTrustRules: listTrustRulesMock,
 }));
-
-import { trustRulesRoutes } from "./trust-rules-handlers.js";
 
 beforeEach(() => {
   listTrustRulesMock.mockClear();

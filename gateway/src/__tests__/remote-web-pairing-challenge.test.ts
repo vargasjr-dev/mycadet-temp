@@ -2,6 +2,13 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import {
+  LOOPBACK_IP,
+  makePairingChallengeRequest as makeRequest,
+  PUBLIC_BASE_URL,
+  REMOTE_IP,
+  TEST_REQUESTER,
+} from "./helpers/remote-web-pairing-fixtures.js";
 const { handleCreateRemoteWebPairingChallenge } =
   await import("../http/routes/remote-web-pairing-challenge.js");
 const {
@@ -18,14 +25,6 @@ const {
 const { resetRemoteWebPairingChallengeRateLimiterForTests } =
   await import("../remote-web/pairing-challenge-rate-limit-store.js");
 const { testSecurityDir, testWorkspaceDir } = await import("./test-preload.js");
-
-import {
-  LOOPBACK_IP,
-  makePairingChallengeRequest as makeRequest,
-  PUBLIC_BASE_URL,
-  REMOTE_IP,
-  TEST_REQUESTER,
-} from "./helpers/remote-web-pairing-fixtures.js";
 
 beforeEach(() => {
   resetRemoteWebPairingChallengesForTests();
@@ -116,10 +115,6 @@ describe("remote web pairing challenge", () => {
     expect(record?.publicBaseUrl).toBe(PUBLIC_BASE_URL);
     expect(record?.status).toBe("pending");
   });
-
-
-
-
 
   test("rate limits repeated challenge creation globally across rotated public hosts", async () => {
     for (let i = 0; i < 20; i++) {
@@ -218,7 +213,6 @@ describe("remote web pairing challenge", () => {
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
   });
 
-
   test("self-sources the recorded ingress url on a direct loopback mint", async () => {
     seedIngressPublicBaseUrl("https://saved.example.test");
 
@@ -237,7 +231,6 @@ describe("remote web pairing challenge", () => {
     );
     expect(body.publicBaseUrl).toBe("https://saved.example.test");
   });
-
 
   test("defaults a self-sourced loopback mint to the local host", async () => {
     // No ingress url recorded — a local assistant pairs on its own host:

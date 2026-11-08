@@ -15,6 +15,7 @@ import {
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import type { TokenClaims } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { isLoopbackAddress } from "../../util/is-loopback-address.js";
@@ -24,6 +25,7 @@ import {
 } from "../middleware/auth.js";
 import { tryIpcProxy } from "./ipc-runtime-proxy.js";
 import { rewriteOAuthProxyUpstreamPath } from "./oauth-proxy-path.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("runtime-proxy");
 
@@ -313,3 +315,23 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
     });
   };
 }
+
+let routeProxyImpl: ReturnType<typeof createRuntimeProxyHandler> | undefined;
+
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createRuntimeProxyHandler> {
+  return (routeProxyImpl ??= createRuntimeProxyHandler(getConfig()));
+}
+
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    // Runtime proxy catch-all — must be LAST so specific routes win first.
+    path: /^\//,
+    method: "get",
+    auth: "track-failures",
+    handler: (req, _params, getClientIp) =>
+      routeProxy()(req, getClientIp()),
+  },
+];

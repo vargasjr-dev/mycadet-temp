@@ -1,10 +1,7 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { credentialKey } from "../credential-key.js";
 
-// ---------------------------------------------------------------------------
-// Mock readCredential so tests don't touch the real credential store
-// ---------------------------------------------------------------------------
-
+import { CredentialCache } from "../credential-cache.js";
 let readCredentialImpl: (account: string) => Promise<string | undefined>;
 let readCredentialResultImpl:
   | ((account: string) => Promise<{
@@ -23,8 +20,6 @@ mock.module("../credential-reader.js", () => ({
     return { value, unreachable: false };
   },
 }));
-
-import { CredentialCache } from "../credential-cache.js";
 
 // ---------------------------------------------------------------------------
 // Setup
