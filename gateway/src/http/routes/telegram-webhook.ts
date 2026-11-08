@@ -1,6 +1,7 @@
 import { eventRefersToAnotherMessage } from "../../channels/inbound-event.js";
 import { buildTelegramTransportMetadata } from "../../channels/transport-hints.js";
 import type { ConfigFileCache } from "../../config-file-cache.js";
+import { readSavedIngressPublicBaseUrl } from "../../remote-web/public-base-url.js";
 import type { GatewayConfig } from "../../config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
@@ -366,8 +367,8 @@ export function createTelegramWebhookHandler(
       ...threadOpts,
     };
     const replyCallbackUrl = topicThreadId
-      ? `${config.gatewayInternalBaseUrl}/deliver/telegram?${new URLSearchParams({ threadId: topicThreadId })}`
-      : `${config.gatewayInternalBaseUrl}/deliver/telegram`;
+      ? `${readSavedIngressPublicBaseUrl()}/deliver/telegram?${new URLSearchParams({ threadId: topicThreadId })}`
+      : `${readSavedIngressPublicBaseUrl()}/deliver/telegram`;
 
     // Handle /start command — forward to runtime as a channel command intent
     const startCmd = parseTelegramStartCommand(normalized.message.content);

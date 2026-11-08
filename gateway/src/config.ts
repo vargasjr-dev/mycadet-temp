@@ -16,7 +16,6 @@ export type AttachmentByteLimits = {
 
 export type GatewayConfig = {
   assistantRuntimeBaseUrl: string;
-  gatewayInternalBaseUrl: string;
   tunnelBaseUrl?: string;
   logFile: LogFileConfig;
   maxAttachmentBytes: AttachmentByteLimits;
@@ -130,7 +129,6 @@ export function loadConfig(): GatewayConfig {
   const runtimePort = process.env.RUNTIME_HTTP_PORT || "7821";
   const assistantRuntimeBaseUrl = `http://127.0.0.1:${runtimePort}`;
 
-  const gatewayInternalBaseUrl = `http://127.0.0.1:${port}`;
   const tunnelBaseUrl = process.env.TUNNEL_BASE_URL?.trim() || undefined;
 
   // Read operational settings from workspace config (Docker) or env vars (CLI).
@@ -176,7 +174,6 @@ export function loadConfig(): GatewayConfig {
   log.info(
     {
       assistantRuntimeBaseUrl,
-      gatewayInternalBaseUrl,
       routingEntryCount: routingEntries.length,
       hasTunnelBaseUrl: !!tunnelBaseUrl,
       port,
@@ -189,7 +186,6 @@ export function loadConfig(): GatewayConfig {
 
   return {
     assistantRuntimeBaseUrl,
-    gatewayInternalBaseUrl,
     tunnelBaseUrl,
     logFile,
     maxAttachmentBytes: {
@@ -215,6 +211,14 @@ export function loadConfig(): GatewayConfig {
     runtimeTimeoutMs,
     trustProxy,
   };
+}
+
+/**
+ * This gateway's own loopback URL. Derived per call so tests can point it
+ * elsewhere via GATEWAY_PORT.
+ */
+export function getGatewayInternalBaseUrl(): string {
+  return `http://127.0.0.1:${process.env.GATEWAY_PORT || "7830"}`;
 }
 
 /**

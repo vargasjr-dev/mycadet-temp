@@ -45,7 +45,6 @@ const noopLog = {
 function makeHandler() {
   return createDiscordInboundEventHandler({
     config: {
-      gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     } as GatewayConfig,
     log: noopLog,
     notifyRecordActivity: () => {},
