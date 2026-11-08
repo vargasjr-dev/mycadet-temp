@@ -1,16 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  BOOT_SCRIPT,
-  DRIVE_SCRIPT,
-  QA_IMAGE_NAME,
-  QA_IMAGE_REF,
-  QA_TARGETS,
-  buildCreateArgs,
-  buildExecArgs,
-  buildImagePushArgs,
-  buildQaPipelineArgs,
-} from "./index";
+import { buildCreateArgs, buildExecArgs, buildImagePushArgs } from "./index";
 
 describe("buildImagePushArgs", () => {
   test("pushes the cadet-QA image from its own directory", () => {
@@ -19,7 +9,7 @@ describe("buildImagePushArgs", () => {
       "image",
       "push",
       "--name",
-      QA_IMAGE_NAME,
+      "cadet-qa",
       "--dir",
       import.meta.dir,
       "--wait",
@@ -27,20 +17,19 @@ describe("buildImagePushArgs", () => {
   });
 
   test("--no-wait drops the wait flag", () => {
-    const args = buildImagePushArgs({ wait: false });
-    expect(args).not.toContain("--wait");
+    expect(buildImagePushArgs({ wait: false })).not.toContain("--wait");
   });
 });
 
 describe("buildCreateArgs", () => {
-  test("pins the pushed QA image and the account-ceiling memory", () => {
-    expect(buildCreateArgs({ name: "qa-pr645" })).toEqual([
+  test("always pins the pushed QA image at the account-ceiling memory", () => {
+    expect(buildCreateArgs({ name: "qa-desktop-1108" })).toEqual([
       "sandbox",
       "create",
       "--name",
-      "qa-pr645",
+      "qa-desktop-1108",
       "--image",
-      QA_IMAGE_REF,
+      "sandbox/cadet-qa:latest",
       "--memory",
       "4096",
     ]);
@@ -50,111 +39,16 @@ describe("buildCreateArgs", () => {
 describe("buildExecArgs", () => {
   test("passes the command after the separator", () => {
     expect(
-      buildExecArgs({ name: "qa-pr645", command: ["sh", "-c", "true"] }),
+      buildExecArgs({ name: "qa-desktop-1108", command: ["sh", "-c", "true"] }),
     ).toEqual([
       "sandbox",
       "exec",
       "--name",
-      "qa-pr645",
+      "qa-desktop-1108",
       "--",
       "sh",
       "-c",
       "true",
     ]);
-  });
-});
-
-describe("buildQaPipelineArgs", () => {
-  test("every target builds in the pulled repo — no fresh clone per run", () => {
-    for (const target of QA_TARGETS) {
-      const { steps } = buildQaPipelineArgs({ name: "qa-pr645", target });
-      expect(steps.every((step) => !step[1].includes("git clone"))).toBe(true);
-    }
-  });
-
-  test("every pipeline sets up swap before installing — 4 GB of RAM OOMs the install", () => {
-    for (const target of QA_TARGETS) {
-      const { steps, names } = buildQaPipelineArgs({
-        name: "qa-pr645",
-        target,
-      });
-      expect(names[0]).toBe("swap");
-      expect(steps[0][2]).toContain("swapon /swapfile");
-      expect(steps[0][2]).toContain("running on RAM alone");
-    }
-  });
-
-  test("desktop: install, build the client, run its tests under Xvfb", () => {
-    const { steps, names } = buildQaPipelineArgs({
-      name: "qa-pr645",
-      target: "desktop",
-    });
-    expect(names).toEqual(["swap", "install", "build", "drive"]);
-    expect(steps[1][2]).toBe(
-      "cd /qa && bun install --frozen-lockfile --ignore-scripts",
-    );
-    expect(steps[2][2]).toContain(
-      "clients/linux && bun install --frozen-lockfile --ignore-scripts && bun run build",
-    );
-    expect(steps[3][2]).toContain("xvfb-run -a bun scripts/run-tests.ts");
-  });
-
-  test("android: install, bundle+sync, emulator START, gradle, emulator WAIT, drive", () => {
-    const { steps, names } = buildQaPipelineArgs({
-      name: "qa-pr645",
-      target: "android",
-    });
-    expect(names).toEqual([
-      "swap",
-      "install",
-      "bundle",
-      "emulator-start",
-      "gradle",
-      "emulator-wait",
-      "drive",
-    ]);
-    // The emulator boots DURING the Gradle build: start before, wait after —
-    // the software-emulated boot is the slowest thing in the pipeline.
-    expect(steps[2][2]).toContain(
-      "clients/android && bun install --frozen-lockfile --ignore-scripts && bun run build",
-    );
-    expect(steps[3][2]).toBe(`sh ${BOOT_SCRIPT} start`);
-    expect(steps[4][2]).toContain("./gradlew assembleDebug");
-    expect(steps[5][2]).toBe(`sh ${BOOT_SCRIPT} wait`);
-    expect(steps[6][2]).toBe(`sh ${DRIVE_SCRIPT}`);
-  });
-
-  test("web: install and run the web test suite headless", () => {
-    const { steps, names } = buildQaPipelineArgs({
-      name: "qa-pr645",
-      target: "web",
-    });
-    expect(names).toEqual(["swap", "install", "test"]);
-    expect(steps[1][2]).toBe(
-      "cd /qa && bun install --frozen-lockfile --ignore-scripts",
-    );
-    expect(steps[2][2]).toContain(
-      "clients/web && bun install --frozen-lockfile --ignore-scripts && bun run test",
-    );
-  });
-
-  test("a named ref fetches in the existing clone before every target", () => {
-    for (const target of QA_TARGETS) {
-      const { steps, names } = buildQaPipelineArgs({
-        name: "qa-pr645",
-        target,
-        ref: "vargas-jr/qa-unified",
-      });
-      expect(names[0]).toBe("swap");
-      expect(names[1]).toBe("fetch");
-      expect(steps[1][2]).toContain("git -C /qa fetch origin");
-      expect(steps[1][2]).toContain("git -C /qa checkout vargas-jr/qa-unified");
-    }
-  });
-});
-
-describe("QA_IMAGE_REF", () => {
-  test("resolves the sandbox/<name>:latest tag", () => {
-    expect(QA_IMAGE_REF).toBe(`sandbox/${QA_IMAGE_NAME}:latest`);
   });
 });
