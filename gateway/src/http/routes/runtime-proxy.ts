@@ -14,7 +14,6 @@ import {
 } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import type { TokenClaims } from "../../auth/types.js";
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -105,8 +104,12 @@ function withOAuthProxyGrantPath(req: Request): Request {
   return new Request(url, req);
 }
 
-export function createRuntimeProxyHandler(config: GatewayConfig) {
-  return async (req: Request, clientIp?: string): Promise<Response> => {
+export async function handleRuntimeProxy(
+  req: Request,
+  clientIp?: string,
+): Promise<Response> {
+  const config = getConfig();
+  {
     const start = performance.now();
     const url = new URL(req.url);
 
@@ -313,17 +316,8 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
       status: response.status,
       headers: resHeaders,
     });
-  };
+  }
 }
-
-let routeProxyImpl: ReturnType<typeof createRuntimeProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createRuntimeProxyHandler> {
-  return (routeProxyImpl ??= createRuntimeProxyHandler(getConfig()));
-}
-
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -332,6 +326,6 @@ export const ROUTES: RouteDefinition[] = [
     method: "get",
     auth: "track-failures",
     handler: (req, _params, getClientIp) =>
-      routeProxy()(req, getClientIp()),
+      handleRuntimeProxy(req, getClientIp()),
   },
 ];

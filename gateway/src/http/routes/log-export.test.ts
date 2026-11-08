@@ -86,8 +86,16 @@ mock.module("@mycadet/ces-client/http-log-export", () => ({
   fetchCesLogExport: fetchCesLogExportMock,
 }));
 
+// The handler reads the process-wide config; the tests point it at a
+// per-test config via the module mock.
+let logConfig: GatewayConfig;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => logConfig,
+}));
+
 // Import after mocks
-const { createLogExportHandler } = await import("./log-export.js");
+const { handleLogExport } = await import("./log-export.js");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -244,8 +252,8 @@ describe("gateway log export handler", () => {
     });
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/gzip");
@@ -278,17 +286,13 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
+    logConfig = config;
 
     // Start of 2025-01-15 to end of 2025-01-16
     const startTime = new Date("2025-01-15T00:00:00Z").getTime();
     const endTime = new Date("2025-01-16T23:59:59Z").getTime();
 
-    const res = await handler(
-      makeRequest({ startTime, endTime }),
-      [],
-      getClientIp,
-    );
+    const res = await handleLogExport(makeRequest({ startTime, endTime }));
     expect(res.status).toBe(200);
 
     const entries = extractTarGzEntries(await res.arrayBuffer());
@@ -328,13 +332,13 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
+    logConfig = config;
     const body = {
       startTime: 1000,
       endTime: 2000,
       conversationId: "conv-123",
     };
-    await handler(makeRequest(body), [], getClientIp);
+    await handleLogExport(makeRequest(body));
 
     // Verify the daemon fetch received the body
     expect(capturedUrl).toContain("/v1/export");
@@ -368,12 +372,8 @@ describe("gateway log export handler", () => {
     });
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    await handler(
-      makeRequest({ startTime: 1000, endTime: 2000 }),
-      [],
-      getClientIp,
-    );
+    logConfig = config;
+    await handleLogExport(makeRequest({ startTime: 1000, endTime: 2000 }));
 
     // Verify the shared CES log export client was called with the right config/options
     expect(fetchCesLogExportMock).toHaveBeenCalledTimes(1);
@@ -397,8 +397,8 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     // Should still succeed — daemon failure is graceful
     expect(res.status).toBe(200);
@@ -445,8 +445,8 @@ describe("gateway log export handler", () => {
     });
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     expect(res.status).toBe(200);
 
@@ -475,8 +475,8 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     expect(res.status).toBe(200);
 
@@ -512,8 +512,8 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/gzip");
@@ -535,8 +535,8 @@ describe("gateway log export handler", () => {
     );
 
     const config = configWithLogDir(tmpLogDir);
-    const handler = createLogExportHandler(config);
-    const res = await handler(makeRequest(), [], getClientIp);
+    logConfig = config;
+    const res = await handleLogExport(makeRequest());
 
     expect(res.status).toBe(200);
     const entries = extractTarGzEntries(await res.arrayBuffer());

@@ -17,7 +17,10 @@ import { z } from "zod";
 
 import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@mycadet/service-contracts/ingress";
 
-import { getConfigFileCache, type ConfigFileCache } from "../../config-file-cache.js";
+import {
+  getConfigFileCache,
+  type ConfigFileCache,
+} from "../../config-file-cache.js";
 import { writeManagedPublicBaseUrl } from "../../tunnel/client.js";
 import { errorResponse, rejectBrowserOrigin } from "../loopback-guard.js";
 import type { RouteDefinition } from "./types.js";
@@ -66,8 +69,6 @@ export async function handleSaveIngressDomain(
   await writeManagedPublicBaseUrl(publicUrl, configFile);
   return Response.json({ ok: true });
 }
-
-
 
 export const ROUTES: RouteDefinition[] = [
   {

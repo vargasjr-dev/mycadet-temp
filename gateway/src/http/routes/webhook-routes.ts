@@ -1,14 +1,8 @@
 /**
- * Provider webhook route declarations (dispatch-only — never published in
- * the spec). These endpoints are unauthenticated by design: each provider's
- * payload is validated by its own mechanism (signature, HMAC, dedup cache),
- * not by gateway auth middleware.
- *
- * Handlers are built once on first request from the process-wide config,
- * credential, and config-file singletons; module import stays
- * side-effect-free for the OpenAPI generation script. The dedup caches are
- * exported because the gateway process owns their lifecycle (cleanup
- * timers, credential-change resets).
+ * Provider webhook route declarations (dispatch-only, never in the spec):
+ * unauthenticated by design — each provider's payload validates by its own
+ * mechanism. The dedup caches are exported because the gateway process owns
+ * their lifecycle.
  */
 
 import {
@@ -188,8 +182,7 @@ export const ROUTES: RouteDefinition[] = [
   // declarations are upgraded in the pre-router, before this entry is reached.
   {
     path: PLUGIN_WEBHOOK_PATH_PATTERN,
-    handler: (req, params) =>
-      handlers().plugin(req, params[0]!, params[1]!),
+    handler: (req, params) => handlers().plugin(req, params[0]!, params[1]!),
   },
   {
     // BYO provider registration (auto-verify guardian email)

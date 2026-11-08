@@ -36,9 +36,9 @@ import {
   registerWebhookIngressRoute,
 } from "../../db/webhook-ingress-route-store.js";
 import {
-  createChannelIngressApproveHandler,
-  createChannelIngressListHandler,
-  createChannelIngressRevokeHandler,
+  handleChannelIngressApprove,
+  handleChannelIngressList,
+  handleChannelIngressRevoke,
 } from "./channel-ingress.js";
 
 const created: string[] = [];
@@ -57,15 +57,16 @@ const ROUTES = [
 // Resolve against this test's scratch workspace rather than the ambient one.
 // Another suite mocks `paths.js` process-wide, so reading the env here would
 // make these assertions depend on test file ordering.
-const approve = createChannelIngressApproveHandler(() =>
-  resolvePluginIngress({ workspaceDir }),
-);
-const revoke = createChannelIngressRevokeHandler(() =>
-  resolvePluginIngress({ workspaceDir }),
-);
-const list = createChannelIngressListHandler(() =>
-  resolvePluginIngress({ workspaceDir }),
-);
+const testResolver = () => resolvePluginIngress({ workspaceDir });
+const approve = (
+  req: Parameters<typeof handleChannelIngressApprove>[0],
+  source: string,
+) => handleChannelIngressApprove(req, source, testResolver);
+const revoke = (
+  req: Parameters<typeof handleChannelIngressRevoke>[0],
+  source: string,
+) => handleChannelIngressRevoke(req, source, testResolver);
+const list = () => handleChannelIngressList(testResolver);
 
 function writePlugin(plugin: string, routes: unknown = ROUTES): void {
   const pluginDir = join(workspaceDir, "plugins", plugin);
@@ -249,13 +250,17 @@ describe("approve", () => {
     expect(reconcilePluginWebhookRoutes(resolve)).toBe(true);
 
     let calls = 0;
-    const approveThenFail = createChannelIngressApproveHandler(() => {
-      calls += 1;
-      if (calls > 1) {
-        throw new Error("transient");
-      }
-      return resolve();
-    });
+    const approveThenFail = (
+      req: Parameters<typeof handleChannelIngressApprove>[0],
+      source: string,
+    ) =>
+      handleChannelIngressApprove(req, source, () => {
+        calls += 1;
+        if (calls > 1) {
+          throw new Error("transient");
+        }
+        return resolve();
+      });
 
     const res = await approveThenFail(
       approveRequest({ digest: ingressDeclarationDigest(ROUTES) }),

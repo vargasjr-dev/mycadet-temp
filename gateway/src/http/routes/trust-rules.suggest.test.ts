@@ -30,7 +30,7 @@ mock.module("../../ipc/assistant-client.js", () => ({
 }));
 
 // Import after mocks are registered
-const { createTrustRulesSuggestHandler } = await import("./trust-rules.js");
+const { handleTrustRulesSuggest } = await import("./trust-rules.js");
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -93,7 +93,7 @@ function jsonRequest(body?: unknown): Request {
 
 describe("POST /v1/trust-rules/suggest", () => {
   test("returns 400 when body is not valid JSON", async () => {
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const req = new Request("http://localhost/v1/trust-rules/suggest", {
       method: "POST",
       body: "not json {{{{",
@@ -106,7 +106,7 @@ describe("POST /v1/trust-rules/suggest", () => {
   });
 
   test("returns 400 when intent field is missing", async () => {
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const { intent: _omitted, ...bodyWithoutIntent } = VALID_BODY;
     const res = await handler(jsonRequest(bodyWithoutIntent));
 
@@ -117,7 +117,7 @@ describe("POST /v1/trust-rules/suggest", () => {
   });
 
   test("returns 400 when intent value is invalid", async () => {
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const res = await handler(
       jsonRequest({ ...VALID_BODY, intent: "approve_forever" }),
     );
@@ -128,7 +128,7 @@ describe("POST /v1/trust-rules/suggest", () => {
   });
 
   test("returns 400 when required string fields are missing", async () => {
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
 
     // Missing tool
     const res1 = await handler(jsonRequest({ ...VALID_BODY, tool: undefined }));
@@ -146,7 +146,7 @@ describe("POST /v1/trust-rules/suggest", () => {
       throw new Error("assistant is unreachable");
     });
 
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const res = await handler(jsonRequest(VALID_BODY));
 
     expect(res.status).toBe(503);
@@ -168,7 +168,7 @@ describe("POST /v1/trust-rules/suggest", () => {
       Promise.resolve(mockSuggestion),
     );
 
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const res = await handler(jsonRequest(VALID_BODY));
 
     expect(res.status).toBe(200);
@@ -187,7 +187,7 @@ describe("POST /v1/trust-rules/suggest", () => {
       })
       .run();
 
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     await handler(jsonRequest(VALID_BODY));
 
     expect(ipcSuggestTrustRuleMock).toHaveBeenCalledTimes(1);
@@ -199,7 +199,7 @@ describe("POST /v1/trust-rules/suggest", () => {
 
   test("currentThreshold defaults to 'medium' when no threshold row in DB", async () => {
     // No row inserted — DB is fresh from beforeEach
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     await handler(jsonRequest(VALID_BODY));
 
     expect(ipcSuggestTrustRuleMock).toHaveBeenCalledTimes(1);
@@ -219,7 +219,7 @@ describe("POST /v1/trust-rules/suggest", () => {
       },
     };
 
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const res = await handler(jsonRequest(bodyWithExistingRule));
 
     expect(res.status).toBe(200);
@@ -242,7 +242,7 @@ describe("POST /v1/trust-rules/suggest", () => {
       ],
     };
 
-    const handler = createTrustRulesSuggestHandler();
+    const handler = handleTrustRulesSuggest;
     const res = await handler(jsonRequest(bodyWithDirScope));
 
     expect(res.status).toBe(200);

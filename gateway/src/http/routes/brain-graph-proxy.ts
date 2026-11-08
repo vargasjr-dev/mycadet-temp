@@ -17,75 +17,66 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { mintUiPageToken } from "../../auth/token-exchange.js";
-import { getConfig, type GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("brain-graph-proxy");
 
-export function createBrainGraphProxyHandler(config: GatewayConfig) {
-  async function proxyTo(req: Request, path: string): Promise<Response> {
-    const start = performance.now();
+async function proxyTo(req: Request, path: string): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
 
-    const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path,
-      timeoutMs: config.runtimeTimeoutMs,
-      fetchImpl,
-    });
+  const response = await proxyForwardToResponse(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path,
+    timeoutMs: config.runtimeTimeoutMs,
+    fetchImpl,
+  });
 
-    const duration = Math.round(performance.now() - start);
+  const duration = Math.round(performance.now() - start);
 
-    if (response.status >= 400) {
-      log.warn(
-        { status: response.status, duration, path },
-        "Brain graph proxy upstream error",
-      );
-    } else {
-      log.info(
-        { status: response.status, duration, path },
-        "Brain graph proxy completed",
-      );
-    }
-
-    return response;
+  if (response.status >= 400) {
+    log.warn(
+      { status: response.status, duration, path },
+      "Brain graph proxy upstream error",
+    );
+  } else {
+    log.info(
+      { status: response.status, duration, path },
+      "Brain graph proxy completed",
+    );
   }
 
-  async function handleBrainGraph(req: Request): Promise<Response> {
-    return proxyTo(req, "/v1/brain-graph");
-  }
-
-  async function handleBrainGraphUI(req: Request): Promise<Response> {
-    const response = await proxyTo(req, "/v1/brain-graph-ui");
-    if (!response.ok) return response;
-
-    const html = await response.text();
-    const token = mintUiPageToken();
-    const escapedToken = token
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const metaTag = `  <meta name="api-token" content="${escapedToken}">\n`;
-    const injected = html.replace("</head>", `${metaTag}</head>`);
-
-    const headers = new Headers(response.headers);
-    headers.delete("content-length");
-
-    return new Response(injected, {
-      status: response.status,
-      headers,
-    });
-  }
-
-  return { handleBrainGraph, handleBrainGraphUI };
+  return response;
 }
 
-/** Built on first request — module import stays side-effect-free. */
-let routeProxyImpl: ReturnType<typeof createBrainGraphProxyHandler> | undefined;
-function routeProxy(): ReturnType<typeof createBrainGraphProxyHandler> {
-  return (routeProxyImpl ??= createBrainGraphProxyHandler(getConfig()));
+export async function handleBrainGraph(req: Request): Promise<Response> {
+  return proxyTo(req, "/v1/brain-graph");
+}
+
+export async function handleBrainGraphUI(req: Request): Promise<Response> {
+  const response = await proxyTo(req, "/v1/brain-graph-ui");
+  if (!response.ok) return response;
+
+  const html = await response.text();
+  const token = mintUiPageToken();
+  const escapedToken = token
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const metaTag = `  <meta name="api-token" content="${escapedToken}">\n`;
+  const injected = html.replace("</head>", `${metaTag}</head>`);
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+
+  return new Response(injected, {
+    status: response.status,
+    headers,
+  });
 }
 
 export const ROUTES: RouteDefinition[] = [
@@ -93,12 +84,12 @@ export const ROUTES: RouteDefinition[] = [
     path: "/brain-graph",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleBrainGraph(req),
+    handler: (req) => handleBrainGraph(req),
   },
   {
     path: "/brain-graph-ui",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleBrainGraphUI(req),
+    handler: (req) => handleBrainGraphUI(req),
   },
 ];

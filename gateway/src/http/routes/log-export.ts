@@ -67,12 +67,9 @@ interface ExportRequestBody {
   conversationId?: string;
 }
 
-export function createLogExportHandler(config: GatewayConfig) {
-  return async (
-    req: Request,
-    _params: string[],
-    _getClientIp: () => string,
-  ): Promise<Response> => {
+export async function handleLogExport(req: Request): Promise<Response> {
+  const config = getConfig();
+  {
     const start = performance.now();
 
     // Parse optional JSON body
@@ -203,7 +200,7 @@ export function createLogExportHandler(config: GatewayConfig) {
         // best-effort
       }
     }
-  };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -482,21 +479,11 @@ async function collectCesExport(
   return "ok";
 }
 
-let routeProxyImpl: ReturnType<typeof createLogExportHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createLogExportHandler> {
-  return (routeProxyImpl ??= createLogExportHandler(getConfig()));
-}
-
-
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/logs/export",
     method: "post",
     auth: "edge",
-    handler: (req, params, getClientIp) =>
-      routeProxy()(req, params, getClientIp),
+    handler: (req) => handleLogExport(req),
   },
 ];

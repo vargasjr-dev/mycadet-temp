@@ -227,7 +227,13 @@ const { matchRoute, refreshRouteSchema } =
 await refreshRouteSchema();
 
 const { tryIpcProxy } = await import("./ipc-runtime-proxy.js");
-const { createRuntimeProxyHandler } = await import("./runtime-proxy.js");
+let proxyConfig: import("../../config.js").GatewayConfig;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => proxyConfig,
+}));
+
+const { handleRuntimeProxy } = await import("./runtime-proxy.js");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -363,8 +369,10 @@ describe("tryIpcProxy", () => {
   });
 
   test("the malformed path does not escape the proxy handler as a 500", async () => {
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const response = await handler(makeRequest("/v1/oauth/proxy/gh/a%zz"));
+    proxyConfig = makeConfig(makeConfig());
+    const response = await handleRuntimeProxy(
+      makeRequest("/v1/oauth/proxy/gh/a%zz"),
+    );
     expect(response.status).toBe(400);
   });
 
@@ -442,8 +450,8 @@ describe("tryIpcProxy", () => {
     );
 
     const payload = JSON.stringify({ message: "hello" });
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const response = await handler(
+    proxyConfig = makeConfig(makeConfig());
+    const response = await handleRuntimeProxy(
       makeRequest("/v1/acp/test-id/steer", {
         method: "POST",
         headers: { "content-type": "application/json" },

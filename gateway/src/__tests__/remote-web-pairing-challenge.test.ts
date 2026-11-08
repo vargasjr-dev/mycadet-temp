@@ -18,7 +18,7 @@ const {
   createRemoteWebPairingChallenge,
   denyRemoteWebPairingChallengeById,
   getRemoteWebPairingChallengeForTests,
-  listPendingRemoteWebPairingChallenges,
+  listPersistedRemoteWebPairingChallenges,
   resetRemoteWebPairingChallengesForTests,
   setRemoteWebPairingChallengeNowForTests,
 } = await import("../remote-web/pairing-challenge-store.js");
@@ -287,28 +287,22 @@ describe("remote web pairing request list/approve/deny", () => {
       approveRemoteWebPairingChallengeById(approvedRecord!.id).status,
     ).toBe("approved");
 
-    const requests = listPendingRemoteWebPairingChallenges();
+    const pending = () =>
+      listPersistedRemoteWebPairingChallenges().filter(
+        (r) => r.status === "pending",
+      );
 
-    expect(requests.map((r) => r.userCode)).toEqual([
+    expect(pending().map((r) => r.userCode)).toEqual([
       second.userCode,
       first.userCode,
     ]);
-    expect(requests[0]).toEqual({
-      requestId: getRemoteWebPairingChallengeForTests(second.userCode)!.id,
-      userCode: second.userCode,
-      publicBaseUrl: PUBLIC_BASE_URL,
-      requestedAt: new Date(2_000).toISOString(),
-      expiresAt: new Date(2_000 + 600_000).toISOString(),
-      requesterIp: "198.51.100.7",
-      requesterUserAgent: null,
-    });
-    expect(requests[1]?.requesterIp).toBe(REMOTE_IP);
-    expect(requests[1]?.requesterUserAgent).toBe("PairBrowser/1.0");
-
-    now = 1_000 + 600_000;
-    expect(
-      listPendingRemoteWebPairingChallenges().map((r) => r.userCode),
-    ).toEqual([second.userCode]);
+    const secondRecord = getRemoteWebPairingChallengeForTests(second.userCode)!;
+    expect(secondRecord.publicBaseUrl).toBe(PUBLIC_BASE_URL);
+    expect(secondRecord.requesterIp).toBe("198.51.100.7");
+    expect(secondRecord.requesterUserAgent).toBeNull();
+    const firstRecord = getRemoteWebPairingChallengeForTests(first.userCode)!;
+    expect(firstRecord.requesterIp).toBe(REMOTE_IP);
+    expect(firstRecord.requesterUserAgent).toBe("PairBrowser/1.0");
   });
 
   test("approve-by-id transitions pending to approved and the exchange succeeds", () => {
@@ -399,7 +393,6 @@ describe("remote web pairing request list/approve/deny", () => {
     expect(
       claimRemoteWebPairingChallengeExchange(challenge.deviceCode).status,
     ).toBe("invalid");
-    expect(listPendingRemoteWebPairingChallenges()).toEqual([]);
   });
 
   test("deny of an approved challenge reports already_approved and keeps it", () => {

@@ -17,8 +17,13 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createRuntimeProxyHandler } =
-  await import("../http/routes/runtime-proxy.js");
+let proxyConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => proxyConfig,
+}));
+
+const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
@@ -56,11 +61,11 @@ describe("runtime proxy handler", () => {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     });
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/assistants/test-assistant/channels/inbound",
     );
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     expect(captured[0].url).toBe("http://localhost:7821/v1/channels/inbound");
   });
@@ -77,11 +82,11 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/assistants/test/health?foo=bar",
     );
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(200);
     // Legacy /v1/assistants/test/health is rewritten to /v1/health
@@ -103,13 +108,13 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/chat", {
       method: "POST",
       body: JSON.stringify({ message: "hello" }),
       headers: { "content-type": "application/json" },
     });
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(200);
     expect(capturedBody).toBe('{"message":"hello"}');
@@ -120,9 +125,9 @@ describe("runtime proxy handler", () => {
       return new Response("Not Found", { status: 404 });
     });
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/nonexistent");
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(404);
   });
@@ -132,9 +137,9 @@ describe("runtime proxy handler", () => {
       throw new Error("Connection refused");
     });
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/health");
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(502);
     const body = await res.json();
@@ -150,7 +155,7 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/health", {
       headers: {
         connection: "keep-alive",
@@ -159,7 +164,7 @@ describe("runtime proxy handler", () => {
         "x-custom": "preserved",
       },
     });
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     expect(capturedHeaders!.has("connection")).toBe(false);
     expect(capturedHeaders!.has("keep-alive")).toBe(false);
@@ -180,9 +185,9 @@ describe("runtime proxy handler", () => {
       });
     });
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/health");
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.headers.has("connection")).toBe(false);
     expect(res.headers.has("transfer-encoding")).toBe(false);
@@ -199,11 +204,9 @@ describe("runtime proxy handler", () => {
       throw timeoutError;
     });
 
-    const handler = createRuntimeProxyHandler(
-      makeConfig({ runtimeTimeoutMs: 100 }),
-    );
+    proxyConfig = makeConfig(makeConfig({ runtimeTimeoutMs: 100 }));
     const req = new Request("http://localhost:7830/v1/health");
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(504);
     const body = await res.json();
@@ -219,11 +222,9 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(
-      makeConfig({ runtimeTimeoutMs: 5000 }),
-    );
+    proxyConfig = makeConfig(makeConfig({ runtimeTimeoutMs: 5000 }));
     const req = new Request("http://localhost:7830/v1/health");
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     expect(capturedSignal).toBeDefined();
     expect(capturedSignal).toBeInstanceOf(AbortSignal);
@@ -238,11 +239,11 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/health", {
       headers: { authorization: "Bearer upstream-token" },
     });
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     // The daemon verifies no tokens — the gateway asserts its service
     // identity in x-cadet-* headers, never a bearer.
@@ -262,11 +263,11 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig({}));
+    proxyConfig = makeConfig(makeConfig({}));
     const req = new Request("http://localhost:7830/v1/health", {
       headers: { authorization: "Bearer client-token" },
     });
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     expect(capturedHeaders!.get("authorization")).toBeNull();
     expect(capturedHeaders!.get("x-cadet-subject")).toBe("svc:gateway:self");
@@ -278,9 +279,9 @@ describe("runtime proxy handler", () => {
       return new Response(longBody, { status: 500 });
     });
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/fail");
-    const res = await handler(req);
+    const res = await handleRuntimeProxy(req);
 
     expect(res.status).toBe(500);
     // The full body is still returned to the client
@@ -297,11 +298,11 @@ describe("runtime proxy handler", () => {
       },
     );
 
-    const handler = createRuntimeProxyHandler(makeConfig());
+    proxyConfig = makeConfig(makeConfig());
     const req = new Request("http://localhost:7830/v1/health", {
       headers: { host: "localhost:7830" },
     });
-    await handler(req);
+    await handleRuntimeProxy(req);
 
     expect(capturedHeaders!.has("host")).toBe(false);
   });
@@ -316,13 +317,13 @@ describe("runtime proxy handler", () => {
         return new Response("ok", { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/webhooks/telegram", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ update_id: 1 }),
       });
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(404);
       const body = await res.json();
@@ -338,11 +339,11 @@ describe("runtime proxy handler", () => {
         return new Response("ok", { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/webhooks/twilio/voice", {
         method: "POST",
       });
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(404);
       expect(fetchCalls.length).toBe(0);
@@ -355,9 +356,9 @@ describe("runtime proxy handler", () => {
         return new Response("ok", { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/webhooks/oauth/callback");
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(404);
       expect(fetchCalls.length).toBe(0);
@@ -370,14 +371,14 @@ describe("runtime proxy handler", () => {
         return new Response("ok", { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request(
         "http://localhost:7830/webhooks/any-future-channel",
         {
           method: "POST",
         },
       );
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(404);
       expect(fetchCalls.length).toBe(0);
@@ -390,13 +391,13 @@ describe("runtime proxy handler", () => {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/v1/channels/inbound", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ message: "hello" }),
       });
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(200);
       expect(fetchCalls.length).toBe(1);
@@ -409,9 +410,9 @@ describe("runtime proxy handler", () => {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/v1/health");
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(200);
       expect(fetchCalls.length).toBe(1);
@@ -433,7 +434,7 @@ describe("runtime proxy handler", () => {
         },
       );
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request(
         "http://localhost:7830/v1/assistants/my-assistant/stt/transcribe",
         {
@@ -442,7 +443,7 @@ describe("runtime proxy handler", () => {
           body: JSON.stringify({ audio: "base64data" }),
         },
       );
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(200);
       expect(captured).toHaveLength(1);
@@ -475,7 +476,7 @@ describe("runtime proxy handler", () => {
         },
       );
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request(
         "http://localhost:7830/v1/assistants/test-asst/stt/transcribe",
         {
@@ -484,7 +485,7 @@ describe("runtime proxy handler", () => {
           body: requestPayload,
         },
       );
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(200);
 
@@ -516,13 +517,13 @@ describe("runtime proxy handler", () => {
         });
       });
 
-      const handler = createRuntimeProxyHandler(makeConfig());
+      proxyConfig = makeConfig(makeConfig());
       const req = new Request("http://localhost:7830/v1/stt/transcribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ audio: "data" }),
       });
-      const res = await handler(req);
+      const res = await handleRuntimeProxy(req);
 
       expect(res.status).toBe(200);
       const body = await res.text();

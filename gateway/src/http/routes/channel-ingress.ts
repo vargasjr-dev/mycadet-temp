@@ -195,43 +195,41 @@ function routeView(
  * regardless of approval, and a guardian looking for a route that is missing
  * needs to see the reason rather than an absence.
  */
-export function createChannelIngressListHandler(
+export async function handleChannelIngressList(
   resolve: () => PluginIngressResolution = resolvePluginIngress,
-) {
-  return async (): Promise<Response> => {
-    try {
-      const resolution = resolve();
-      const { approved, pending, problems } = resolution;
-      const approvals = new Map(
-        listPluginIngressApprovals().map((a) => [a.plugin, a]),
-      );
-      const routes = (plugin: string, declared: readonly IngressRoute[]) =>
-        declared.map((r) => routeView(resolution, plugin, r));
+): Promise<Response> {
+  try {
+    const resolution = resolve();
+    const { approved, pending, problems } = resolution;
+    const approvals = new Map(
+      listPluginIngressApprovals().map((a) => [a.plugin, a]),
+    );
+    const routes = (plugin: string, declared: readonly IngressRoute[]) =>
+      declared.map((r) => routeView(resolution, plugin, r));
 
-      return Response.json({
-        sources: [
-          ...approved.map((d) => ({
-            source: d.plugin,
-            state: "approved" as const,
-            digest: d.digest,
-            approvedAt: approvals.get(d.plugin)?.approvedAt,
-            routes: routes(d.plugin, d.routes),
-          })),
-          ...pending.map((d) => ({
-            source: d.plugin,
-            state: "pending" as const,
-            digest: d.digest,
-            approvedDigest: approvals.get(d.plugin)?.digest,
-            routes: routes(d.plugin, d.routes),
-          })),
-        ],
-        problems: problems.map((p) => ({ source: p.plugin, reason: p.reason })),
-      });
-    } catch (err) {
-      log.error({ err }, "Failed to resolve channel ingress");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+    return Response.json({
+      sources: [
+        ...approved.map((d) => ({
+          source: d.plugin,
+          state: "approved" as const,
+          digest: d.digest,
+          approvedAt: approvals.get(d.plugin)?.approvedAt,
+          routes: routes(d.plugin, d.routes),
+        })),
+        ...pending.map((d) => ({
+          source: d.plugin,
+          state: "pending" as const,
+          digest: d.digest,
+          approvedDigest: approvals.get(d.plugin)?.digest,
+          routes: routes(d.plugin, d.routes),
+        })),
+      ],
+      problems: problems.map((p) => ({ source: p.plugin, reason: p.reason })),
+    });
+  } catch (err) {
+    log.error({ err }, "Failed to resolve channel ingress");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -244,97 +242,95 @@ export function createChannelIngressListHandler(
  * that check a digest could be recorded for routes nobody reviewed, and the
  * grant would take effect the moment some later manifest happened to match.
  */
-export function createChannelIngressApproveHandler(
-  // Where declarations are read from is not this route's concern; injecting
-  // the resolver keeps it decidable without reaching for ambient state.
+export async function handleChannelIngressApprove(
+  req: Request,
+  source: string,
   resolve: () => PluginIngressResolution = resolvePluginIngress,
-) {
-  return async (req: Request, source: string): Promise<Response> => {
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json(
-        { error: "Request body must be valid JSON" },
-        { status: 400 },
-      );
-    }
+): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 },
+    );
+  }
 
-    const parsed = ApproveBodySchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error:
-            'Invalid request body: "digest" must be a 32-character hex declaration digest',
-          issues: parsed.error.issues,
-        },
-        { status: 400 },
-      );
-    }
-    const { digest } = parsed.data;
+  const parsed = ApproveBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error:
+          'Invalid request body: "digest" must be a 32-character hex declaration digest',
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
+  const { digest } = parsed.data;
 
-    let current;
-    try {
-      const { approved, pending } = resolve();
-      current = [...approved, ...pending].find((d) => d.plugin === source);
-    } catch (err) {
-      log.error({ err, source }, "Failed to resolve channel ingress");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
+  let current;
+  try {
+    const { approved, pending } = resolve();
+    current = [...approved, ...pending].find((d) => d.plugin === source);
+  } catch (err) {
+    log.error({ err, source }, "Failed to resolve channel ingress");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 
-    if (!current) {
-      return Response.json(
-        { error: `"${source}" declares no ingress routes`, source },
-        { status: 404 },
-      );
-    }
-    if (current.digest !== digest) {
-      return Response.json(
-        {
-          error:
-            `Digest does not match what "${source}" currently declares. ` +
-            `Re-read the declaration and approve that.`,
-          source,
-          declaredDigest: current.digest,
-        },
-        { status: 409 },
-      );
-    }
+  if (!current) {
+    return Response.json(
+      { error: `"${source}" declares no ingress routes`, source },
+      { status: 404 },
+    );
+  }
+  if (current.digest !== digest) {
+    return Response.json(
+      {
+        error:
+          `Digest does not match what "${source}" currently declares. ` +
+          `Re-read the declaration and approve that.`,
+        source,
+        declaredDigest: current.digest,
+      },
+      { status: 409 },
+    );
+  }
 
-    try {
-      const row = approvePluginIngress({ plugin: source, digest });
-      // Tunnel forwards a webhook path only once this assistant has claimed it,
-      // so the claim is part of the grant: a failure here is reported as one,
-      // rather than left as an approval that reaches nothing. Reconciling the
-      // whole set rather than this source's paths costs one more declaration
-      // scan and settles anything else that has drifted since the last one.
-      const claimed = settleServableWebhookRoutes(resolve);
-      if (claimed.rejected.length > 0) {
-        log.warn(
-          { source, rejected: claimed.rejected },
-          "Declared paths the webhook registry will not claim were skipped",
-        );
-      }
-      log.info(
-        {
-          source,
-          digest,
-          routes: current.routes.length,
-          claimedPaths: claimed.added.length,
-          releasedPaths: claimed.removed.length,
-        },
-        "Guardian approved channel ingress declaration",
+  try {
+    const row = approvePluginIngress({ plugin: source, digest });
+    // Tunnel forwards a webhook path only once this assistant has claimed it,
+    // so the claim is part of the grant: a failure here is reported as one,
+    // rather than left as an approval that reaches nothing. Reconciling the
+    // whole set rather than this source's paths costs one more declaration
+    // scan and settles anything else that has drifted since the last one.
+    const claimed = settleServableWebhookRoutes(resolve);
+    if (claimed.rejected.length > 0) {
+      log.warn(
+        { source, rejected: claimed.rejected },
+        "Declared paths the webhook registry will not claim were skipped",
       );
-      return Response.json({
-        source: row.plugin,
-        digest: row.digest,
-        approvedAt: row.approvedAt,
-      });
-    } catch (err) {
-      log.error({ err, source }, "Failed to record ingress approval");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
     }
-  };
+    log.info(
+      {
+        source,
+        digest,
+        routes: current.routes.length,
+        claimedPaths: claimed.added.length,
+        releasedPaths: claimed.removed.length,
+      },
+      "Guardian approved channel ingress declaration",
+    );
+    return Response.json({
+      source: row.plugin,
+      digest: row.digest,
+      approvedAt: row.approvedAt,
+    });
+  } catch (err) {
+    log.error({ err, source }, "Failed to record ingress approval");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -353,25 +349,25 @@ export function createChannelIngressApproveHandler(
  * and an allowlist that dropped it would block a route the gateway still
  * answers.
  */
-export function createChannelIngressRevokeHandler(
+export async function handleChannelIngressRevoke(
+  _req: Request,
+  source: string,
   resolve: () => PluginIngressResolution = resolvePluginIngress,
-) {
-  return async (_req: Request, source: string): Promise<Response> => {
-    try {
-      const revoked = revokePluginIngressApproval(source);
-      const claimed = settleServableWebhookRoutes(resolve);
-      if (revoked) {
-        log.info(
-          { source, releasedPaths: claimed.removed.length },
-          "Guardian revoked channel ingress approval",
-        );
-      }
-      return Response.json({ source, revoked });
-    } catch (err) {
-      log.error({ err, source }, "Failed to revoke ingress approval");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+): Promise<Response> {
+  try {
+    const revoked = revokePluginIngressApproval(source);
+    const claimed = settleServableWebhookRoutes(resolve);
+    if (revoked) {
+      log.info(
+        { source, releasedPaths: claimed.removed.length },
+        "Guardian revoked channel ingress approval",
+      );
     }
-  };
+    return Response.json({ source, revoked });
+  } catch (err) {
+    log.error({ err, source }, "Failed to revoke ingress approval");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 const ApprovalViewSchema = z.object({
@@ -426,9 +422,6 @@ const ChannelIngressListSchema = z.object({
   problems: z.array(z.object({ source: z.string(), reason: z.string() })),
 });
 
-const ingressApproveHandler = createChannelIngressApproveHandler();
-const ingressRevokeHandler = createChannelIngressRevokeHandler();
-
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-ingress",
@@ -441,7 +434,7 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: ChannelIngressListSchema,
     auth: "edge-guardian",
     scoped: true,
-    handler: createChannelIngressListHandler(),
+    handler: () => handleChannelIngressList(),
   },
   {
     path: "/channel-ingress/{source}/approve",
@@ -461,7 +454,7 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: ApprovalViewSchema,
     auth: "edge-guardian",
     scoped: true,
-    handler: (req, params) => ingressApproveHandler(req, params[0]!),
+    handler: (req, params) => handleChannelIngressApprove(req, params[0]!),
   },
   {
     path: "/channel-ingress/{source}/revoke",
@@ -480,6 +473,6 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: z.object({ source: z.string(), revoked: z.boolean() }),
     auth: "edge-guardian",
     scoped: true,
-    handler: (req, params) => ingressRevokeHandler(req, params[0]!),
+    handler: (req, params) => handleChannelIngressRevoke(req, params[0]!),
   },
 ];

@@ -17,8 +17,18 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createChannelVerificationSessionProxyHandler } =
-  await import("../http/routes/channel-verification-session-proxy.js");
+let cvsConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => cvsConfig,
+}));
+
+const {
+  handleCancelVerificationSession,
+  handleCreateVerificationSession,
+  handleGetVerificationStatus,
+  handleResendVerificationSession,
+} = await import("../http/routes/channel-verification-session-proxy.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
@@ -59,31 +69,31 @@ describe("channel verification session proxy", () => {
       });
     });
 
-    const handler = createChannelVerificationSessionProxyHandler(makeConfig());
+    cvsConfig = makeConfig();
 
-    await handler.handleCreateVerificationSession(
+    await handleCreateVerificationSession(
       new Request("http://localhost:7830/v1/channel-verification-sessions", {
         method: "POST",
       }),
     );
-    await handler.handleGetVerificationStatus(
+    await handleGetVerificationStatus(
       new Request(
         "http://localhost:7830/v1/channel-verification-sessions/status?channel=phone",
         { method: "GET" },
       ),
     );
-    await handler.handleCreateVerificationSession(
+    await handleCreateVerificationSession(
       new Request("http://localhost:7830/v1/channel-verification-sessions", {
         method: "POST",
       }),
     );
-    await handler.handleResendVerificationSession(
+    await handleResendVerificationSession(
       new Request(
         "http://localhost:7830/v1/channel-verification-sessions/resend",
         { method: "POST" },
       ),
     );
-    await handler.handleCancelVerificationSession(
+    await handleCancelVerificationSession(
       new Request("http://localhost:7830/v1/channel-verification-sessions", {
         method: "DELETE",
       }),
@@ -111,8 +121,8 @@ describe("channel verification session proxy", () => {
       },
     );
 
-    const handler = createChannelVerificationSessionProxyHandler(makeConfig());
-    const res = await handler.handleCreateVerificationSession(
+    cvsConfig = makeConfig();
+    const res = await handleCreateVerificationSession(
       new Request("http://localhost:7830/v1/channel-verification-sessions", {
         method: "POST",
         headers: {
@@ -152,8 +162,8 @@ describe("channel verification session proxy", () => {
       );
     });
 
-    const handler = createChannelVerificationSessionProxyHandler(makeConfig());
-    const res = await handler.handleCreateVerificationSession(
+    cvsConfig = makeConfig();
+    const res = await handleCreateVerificationSession(
       new Request("http://localhost:7830/v1/channel-verification-sessions", {
         method: "POST",
       }),
@@ -174,10 +184,8 @@ describe("channel verification session proxy", () => {
       );
     });
 
-    const handler = createChannelVerificationSessionProxyHandler(
-      makeConfig({ runtimeTimeoutMs: 100 }),
-    );
-    const res = await handler.handleGetVerificationStatus(
+    cvsConfig = makeConfig({ runtimeTimeoutMs: 100 });
+    const res = await handleGetVerificationStatus(
       new Request(
         "http://localhost:7830/v1/channel-verification-sessions/status?channel=phone",
       ),
@@ -192,8 +200,8 @@ describe("channel verification session proxy", () => {
       throw new Error("Connection refused");
     });
 
-    const handler = createChannelVerificationSessionProxyHandler(makeConfig());
-    const res = await handler.handleGetVerificationStatus(
+    cvsConfig = makeConfig();
+    const res = await handleGetVerificationStatus(
       new Request(
         "http://localhost:7830/v1/channel-verification-sessions/status?channel=phone",
       ),

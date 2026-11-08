@@ -70,93 +70,87 @@ export function defaultUpgradePolicy(): UpgradePolicy {
 // GET /v1/upgrade-policy
 // ---------------------------------------------------------------------------
 
-export function createUpgradePolicyGetHandler() {
-  return async (_req: Request): Promise<Response> => {
-    try {
-      const db = getGatewayDb();
-      const row = db
-        .select()
-        .from(upgradePolicy)
-        .where(eq(upgradePolicy.id, 1))
-        .get();
+export async function handleUpgradePolicyGet(): Promise<Response> {
+  try {
+    const db = getGatewayDb();
+    const row = db
+      .select()
+      .from(upgradePolicy)
+      .where(eq(upgradePolicy.id, 1))
+      .get();
 
-      if (!row) {
-        return Response.json(defaultUpgradePolicy());
-      }
-
-      let parsedPolicy: unknown;
-      try {
-        parsedPolicy = JSON.parse(row.policy);
-      } catch {
-        log.error(
-          "Stored upgrade policy is not valid JSON — answering defaults",
-        );
-        return Response.json(defaultUpgradePolicy());
-      }
-      const parsed = UpgradePolicySchema.safeParse(parsedPolicy);
-      if (!parsed.success) {
-        log.error(
-          { err: parsed.error },
-          "Stored upgrade policy failed validation — answering defaults",
-        );
-        return Response.json(defaultUpgradePolicy());
-      }
-
-      return Response.json(parsed.data);
-    } catch (err) {
-      log.error({ err }, "Failed to read upgrade policy");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+    if (!row) {
+      return Response.json(defaultUpgradePolicy());
     }
-  };
+
+    let parsedPolicy: unknown;
+    try {
+      parsedPolicy = JSON.parse(row.policy);
+    } catch {
+      log.error("Stored upgrade policy is not valid JSON — answering defaults");
+      return Response.json(defaultUpgradePolicy());
+    }
+    const parsed = UpgradePolicySchema.safeParse(parsedPolicy);
+    if (!parsed.success) {
+      log.error(
+        { err: parsed.error },
+        "Stored upgrade policy failed validation — answering defaults",
+      );
+      return Response.json(defaultUpgradePolicy());
+    }
+
+    return Response.json(parsed.data);
+  } catch (err) {
+    log.error({ err }, "Failed to read upgrade policy");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // PUT /v1/upgrade-policy
 // ---------------------------------------------------------------------------
 
-export function createUpgradePolicyPutHandler() {
-  return async (req: Request): Promise<Response> => {
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json(
-        { error: "Request body must be valid JSON" },
-        { status: 400 },
-      );
-    }
+export async function handleUpgradePolicyPut(req: Request): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 },
+    );
+  }
 
-    const parsed = UpgradePolicySchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error: "Invalid upgrade policy",
-          details: parsed.error.issues.map((issue) => ({
-            path: issue.path.join("."),
-            message: issue.message,
-          })),
-        },
-        { status: 400 },
-      );
-    }
+  const parsed = UpgradePolicySchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: "Invalid upgrade policy",
+        details: parsed.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+        })),
+      },
+      { status: 400 },
+    );
+  }
 
-    try {
-      const db = getGatewayDb();
-      const policy = JSON.stringify(parsed.data);
-      db.insert(upgradePolicy)
-        .values({ id: 1, policy })
-        .onConflictDoUpdate({
-          target: upgradePolicy.id,
-          set: { policy, updatedAt: sql`(datetime('now'))` },
-        })
-        .run();
+  try {
+    const db = getGatewayDb();
+    const policy = JSON.stringify(parsed.data);
+    db.insert(upgradePolicy)
+      .values({ id: 1, policy })
+      .onConflictDoUpdate({
+        target: upgradePolicy.id,
+        set: { policy, updatedAt: sql`(datetime('now'))` },
+      })
+      .run();
 
-      return Response.json(parsed.data);
-    } catch (err) {
-      log.error({ err }, "Failed to save upgrade policy");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+    return Response.json(parsed.data);
+  } catch (err) {
+    log.error({ err }, "Failed to save upgrade policy");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export const ROUTES: RouteDefinition[] = [
@@ -173,7 +167,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    handler: createUpgradePolicyGetHandler(),
+    handler: () => handleUpgradePolicyGet(),
   },
   {
     path: "/upgrade-policy",
@@ -187,6 +181,6 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: createUpgradePolicyPutHandler(),
+    handler: (req) => handleUpgradePolicyPut(req),
   },
 ];

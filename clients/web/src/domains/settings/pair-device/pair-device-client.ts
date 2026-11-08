@@ -8,38 +8,26 @@
  *      code. Running on the host IS the authorization, so the scan alone
  *      completes pairing.
  *
- * It also drives the request-approval routes behind the settings surface that
- * lists pairing requests minted elsewhere (e.g. the public `/assistant/pair`
- * page) so the host can approve or deny them by request id:
- *   3. `GET  /v1/remote-web/pairing-requests`: list pending requests.
- *   4. `POST /v1/remote-web/pairing-requests/approve`: approve one.
- *   5. `POST /v1/remote-web/pairing-requests/deny`: deny one.
- *
- * The routes are loopback-gated server-side; minting and approval are
- * possible only from the host, which is why the UI is hidden outside local
- * mode rather than relying on a client-side check.
+ * Approving requests minted elsewhere (e.g. the public `/assistant/pair`
+ * page) is the host operator's job through the gateway CLI:
+ * `gateway pairing list`, then `gateway pairing approve|deny <requestId>`.
+ * Loopback HTTP is not an authorization check the gateway should trust, so
+ * those routes are gone.
  */
 
 import type {
   RemoteWebPairingChallengeResponse,
-  RemoteWebPairingRequestActionRequest,
-  RemoteWebPairingRequestListResponse,
-  RemoteWebPairingRequestSummary,
   RemoteWebPairingVerificationRequest,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
-import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
 import { buildRemoteWebPairingUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 const PAIRING_CHALLENGE_PATH = "/pairing-challenge";
 const PAIRING_VERIFICATION_PATH = "/pairing-verification";
-const PAIRING_REQUESTS_PATH = "/pairing-requests";
-const PAIRING_REQUEST_APPROVE_PATH = `${PAIRING_REQUESTS_PATH}/approve`;
-const PAIRING_REQUEST_DENY_PATH = `${PAIRING_REQUESTS_PATH}/deny`;
 
 /**
  * Guidance appended when the host rejects the mint. The routes themselves only
@@ -74,9 +62,6 @@ export class PairDeviceError extends Error {
 
 /** Error code the deny route returns when the request was approved first. */
 export const ALREADY_APPROVED_ERROR_CODE = "ALREADY_APPROVED";
-
-/** Bounds the best-effort orphan cleanup so it can't wedge a failed mint. */
-const ORPHAN_CLEANUP_TIMEOUT_MS = 5000;
 
 export interface DevicePairing {
   /** The scannable https pair URL (verification URI + `#device_code=…`). */
@@ -214,20 +199,8 @@ export async function mintDevicePairing(args: {
       pairingConnectivityHint(),
     );
   } catch (err) {
-    // The minted challenge would otherwise stay pending for its TTL and show
-    // up in the sibling approval list as a foreign request.
-    const cleanupTimeout = AbortSignal.timeout(ORPHAN_CLEANUP_TIMEOUT_MS);
-    if (isCancellationError(err)) {
-      // The caller's signal is dead; run cleanup fire-and-forget on its own
-      // timeout so the orphan still gets denied.
-      void denyOrphanedChallenge(base, challenge.userCode, cleanupTimeout);
-    } else {
-      await denyOrphanedChallenge(
-        base,
-        challenge.userCode,
-        signal ? AbortSignal.any([signal, cleanupTimeout]) : cleanupTimeout,
-      );
-    }
+    // A failed verification leaves the minted challenge pending until its
+    // TTL; the store's own expiry cleanup reaps it.
     throw err;
   }
 
@@ -235,90 +208,4 @@ export async function mintDevicePairing(args: {
     pairUrl: buildRemoteWebPairingUrl(challenge),
     expiresAt: challenge.expiresAt,
   };
-}
-
-/**
- * Best-effort removal of a freshly minted challenge whose verification step
- * failed. Swallows every cleanup error (the mint failure is what the caller
- * must see); the challenge's TTL bounds the damage when cleanup also fails.
- */
-async function denyOrphanedChallenge(
-  base: string,
-  userCode: string,
-  signal: AbortSignal,
-): Promise<void> {
-  try {
-    const pending = await listPendingPairingRequests({ base, signal });
-    const orphan = pending.find((request) => request.userCode === userCode);
-    if (orphan) {
-      await denyPairingRequest({ base, requestId: orphan.requestId, signal });
-    }
-  } catch (err) {
-    if (isCancellationError(err)) {
-      return;
-    }
-    captureError(err, {
-      context: "pair-device-orphan-cleanup",
-      bestEffort: true,
-    });
-  }
-}
-
-/**
- * List the pending pairing requests awaiting host approval. Throws
- * {@link PairDeviceError} on rejection or an unreachable gateway; rethrows an
- * `AbortError` when the caller cancels.
- */
-export async function listPendingPairingRequests(args: {
-  base: string;
-  signal?: AbortSignal;
-}): Promise<RemoteWebPairingRequestSummary[]> {
-  const payload =
-    await pairingRouteRequest<RemoteWebPairingRequestListResponse>(
-      `${args.base}${PAIRING_REQUESTS_PATH}`,
-      { method: "GET" },
-      args.signal,
-    );
-  return Array.isArray(payload.requests) ? payload.requests : [];
-}
-
-interface PairingRequestActionArgs {
-  base: string;
-  requestId: string;
-  signal?: AbortSignal;
-}
-
-async function postPairingRequestAction(
-  path: string,
-  args: PairingRequestActionArgs,
-): Promise<void> {
-  await postPairingRoute(
-    `${args.base}${path}`,
-    {
-      requestId: args.requestId,
-    } satisfies RemoteWebPairingRequestActionRequest,
-    args.signal,
-  );
-}
-
-/**
- * Approve one pending pairing request by id. Throws {@link PairDeviceError} on
- * rejection (e.g. an unknown or expired request id) or an unreachable gateway;
- * rethrows an `AbortError` when the caller cancels.
- */
-export function approvePairingRequest(
-  args: PairingRequestActionArgs,
-): Promise<void> {
-  return postPairingRequestAction(PAIRING_REQUEST_APPROVE_PATH, args);
-}
-
-/**
- * Deny (delete) one pending pairing request by id. Throws
- * {@link PairDeviceError} on rejection or an unreachable gateway; rethrows an
- * `AbortError` when the caller cancels.
- */
-export function denyPairingRequest(
-  args: PairingRequestActionArgs,
-): Promise<void> {
-  return postPairingRequestAction(PAIRING_REQUEST_DENY_PATH, args);
 }

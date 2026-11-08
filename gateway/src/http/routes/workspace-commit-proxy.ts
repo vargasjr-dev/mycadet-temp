@@ -8,7 +8,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -16,43 +15,33 @@ import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("workspace-commit-proxy");
 
-export function createWorkspaceCommitProxyHandler(config: GatewayConfig) {
-  return async function handleWorkspaceCommit(req: Request): Promise<Response> {
-    const start = performance.now();
+export async function handleWorkspaceCommit(req: Request): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
 
-    const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path: "/v1/admin/workspace-commit",
-      timeoutMs: config.runtimeTimeoutMs,
-      fetchImpl,
-    });
+  const response = await proxyForwardToResponse(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path: "/v1/admin/workspace-commit",
+    timeoutMs: config.runtimeTimeoutMs,
+    fetchImpl,
+  });
 
-    const duration = Math.round(performance.now() - start);
+  const duration = Math.round(performance.now() - start);
 
-    if (response.status >= 400) {
-      log.warn(
-        { status: response.status, duration },
-        "Workspace commit proxy upstream error",
-      );
-    } else {
-      log.info(
-        { status: response.status, duration },
-        "Workspace commit proxy completed",
-      );
-    }
+  if (response.status >= 400) {
+    log.warn(
+      { status: response.status, duration },
+      "Workspace commit proxy upstream error",
+    );
+  } else {
+    log.info(
+      { status: response.status, duration },
+      "Workspace commit proxy completed",
+    );
+  }
 
-    return response;
-  };
+  return response;
 }
-
-let routeProxyImpl: ReturnType<typeof createWorkspaceCommitProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createWorkspaceCommitProxyHandler> {
-  return (routeProxyImpl ??= createWorkspaceCommitProxyHandler(getConfig()));
-}
-
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -60,6 +49,6 @@ export const ROUTES: RouteDefinition[] = [
     method: "post",
     auth: "edge-scoped",
     scope: "admin.write",
-    handler: (req) => routeProxy()(req),
+    handler: (req) => handleWorkspaceCommit(req),
   },
 ];

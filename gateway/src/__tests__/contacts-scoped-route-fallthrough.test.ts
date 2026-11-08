@@ -55,14 +55,12 @@ describe("contact route registrations (index.ts)", () => {
  * harness pins matching only.
  */
 function makeContactsRouter() {
-  const routes: RouteDefinition[] = buildMarkedContactRoutes().map(
-    (route) => ({
-      path: route.path,
-      method: route.method.toLowerCase() as RouteDefinition["method"],
-      auth: "none" as const,
-      handler: route.handler,
-    }),
-  );
+  const routes: RouteDefinition[] = buildMarkedContactRoutes().map((route) => ({
+    path: route.path,
+    method: route.method?.toLowerCase() as RouteDefinition["method"],
+    auth: "none" as const,
+    handler: route.handler,
+  }));
   // Runtime proxy catch-all — must be last, matches everything.
   routes.push({
     path: /^\//,

@@ -88,8 +88,13 @@ const { actorTokenRecords } = await import("../db/schema.js");
 const { actorTokenRecordHash, __resetLastUsedDebounceForTests } =
   await import("../auth/actor-token-revocation.js");
 const { refreshRouteSchema } = await import("../ipc/route-schema-cache.js");
-const { createRuntimeProxyHandler } =
-  await import("../http/routes/runtime-proxy.js");
+let proxyConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => proxyConfig,
+}));
+
+const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 
 await refreshRouteSchema();
 
@@ -231,8 +236,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     insertTokenRecord(jwt, "active");
     const before = Date.now();
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(jwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(messageRequest(jwt), CLIENT_IP);
 
     expect(res.status).toBe(200);
     expect(upstreamFetch).toHaveBeenCalledTimes(1);
@@ -247,8 +252,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     insertTokenRecord(derivedJwt, "derived");
     const before = Date.now();
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(derivedJwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(messageRequest(derivedJwt), CLIENT_IP);
 
     expect(res.status).toBe(200);
     expect(readRow(activeJwt)?.lastUsedAt).toBeGreaterThanOrEqual(before);
@@ -265,8 +270,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
       .where(eq(actorTokenRecords.tokenHash, actorTokenRecordHash(jwt)))
       .run();
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    await handler(messageRequest(jwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    await handleRuntimeProxy(messageRequest(jwt), CLIENT_IP);
 
     const row = readRow(jwt);
     expect(row?.lastUsedAt).toBeGreaterThan(seeded);
@@ -281,8 +286,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     insertTokenRecord(revokedJwt, "revoked");
     insertTokenRecord(activeJwt, "active");
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(revokedJwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(messageRequest(revokedJwt), CLIENT_IP);
 
     expect(res.status).toBe(401);
     expect(upstreamFetch).not.toHaveBeenCalled();
@@ -294,8 +299,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     const expiredJwt = mintEdge(ACTOR_SUB, -60);
     insertTokenRecord(expiredJwt, "active");
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(expiredJwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(messageRequest(expiredJwt), CLIENT_IP);
 
     expect(res.status).toBe(401);
     expect(upstreamFetch).not.toHaveBeenCalled();
@@ -306,8 +311,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     const svcJwt = mintEdge("svc:gateway:self", 3600, "gateway_service_v1");
     insertTokenRecord(svcJwt, "active");
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(svcJwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(messageRequest(svcJwt), CLIENT_IP);
 
     expect(res.status).toBe(200);
     expect(readRow(svcJwt)?.lastUsedAt).toBeNull();
@@ -317,10 +322,8 @@ describe("runtime proxy (HTTP) device stamping", () => {
     const jwt = mintEdge(ACTOR_SUB);
     insertTokenRecord(jwt, "active");
 
-    const handler = createRuntimeProxyHandler(
-      makeConfig({ runtimeProxyRequireAuth: false }),
-    );
-    const res = await handler(messageRequest(jwt), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig({ runtimeProxyRequireAuth: false }));
+    const res = await handleRuntimeProxy(messageRequest(jwt), CLIENT_IP);
 
     expect(res.status).toBe(200);
     expect(readRow(jwt)?.lastUsedAt).toBeNull();
@@ -337,8 +340,11 @@ describe("runtime proxy (IPC) device stamping", () => {
     insertTokenRecord(jwt, "active");
     const before = Date.now();
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(messageRequest(jwt, { ipc: true }), CLIENT_IP);
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(
+      messageRequest(jwt, { ipc: true }),
+      CLIENT_IP,
+    );
 
     expect(res.status).toBe(200);
     expect(ipcCall).toHaveBeenCalledTimes(1);
@@ -352,8 +358,8 @@ describe("runtime proxy (IPC) device stamping", () => {
     insertTokenRecord(revokedJwt, "revoked");
     insertTokenRecord(activeJwt, "active");
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(
+    proxyConfig = makeConfig(makeConfig());
+    const res = await handleRuntimeProxy(
       messageRequest(revokedJwt, { ipc: true }),
       CLIENT_IP,
     );

@@ -6,8 +6,7 @@ import {
   type GatewayLogLevelName,
 } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
-import type { GatewayConfig } from "../../config.js";
-import { getConfig } from "../../config.js";
+import { getConfig, type GatewayConfig } from "../../config.js";
 import {
   getLogger,
   LOG_FILE_JSON_PATTERN,
@@ -103,44 +102,35 @@ export function tailGatewayLogs(
   }
 }
 
-export function createLogTailHandler(
-  config: GatewayConfig,
-): (req: Request) => Promise<Response> {
-  return async (req: Request): Promise<Response> => {
-    const searchParams = new URL(req.url).searchParams;
+export async function handleLogTail(req: Request): Promise<Response> {
+  const searchParams = new URL(req.url).searchParams;
 
-    // Parse and clamp `n`
-    const nRaw = parseInt(searchParams.get("n") ?? "10", 10);
-    const n = Math.max(1, Math.min(1000, Number.isNaN(nRaw) ? 10 : nRaw));
+  // Parse and clamp `n`
+  const nRaw = parseInt(searchParams.get("n") ?? "10", 10);
+  const n = Math.max(1, Math.min(1000, Number.isNaN(nRaw) ? 10 : nRaw));
 
-    // Parse and validate `level`
-    const levelParam = searchParams.get("level") ?? "info";
-    if (!isLevelName(levelParam)) {
-      return Response.json({ error: "Invalid level" }, { status: 400 });
-    }
+  // Parse and validate `level`
+  const levelParam = searchParams.get("level") ?? "info";
+  if (!isLevelName(levelParam)) {
+    return Response.json({ error: "Invalid level" }, { status: 400 });
+  }
 
-    // Parse optional module filter
-    const moduleFilter = searchParams.get("module") ?? undefined;
-    return Response.json(
-      tailGatewayLogs(config, { n, level: levelParam, module: moduleFilter }),
-    );
-  };
+  // Parse optional module filter
+  const moduleFilter = searchParams.get("module") ?? undefined;
+  return Response.json(
+    tailGatewayLogs(getConfig(), {
+      n,
+      level: levelParam,
+      module: moduleFilter,
+    }),
+  );
 }
-
-let routeProxyImpl: ReturnType<typeof createLogTailHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createLogTailHandler> {
-  return (routeProxyImpl ??= createLogTailHandler(getConfig()));
-}
-
 
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/logs/tail",
     method: "get",
     auth: "edge",
-    handler: (req) => routeProxy()(req),
+    handler: (req) => handleLogTail(req),
   },
 ];

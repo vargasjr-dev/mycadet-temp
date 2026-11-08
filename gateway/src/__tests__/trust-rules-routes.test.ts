@@ -12,11 +12,11 @@ import {
   resetTrustRuleCache,
 } from "../risk/trust-rule-cache.js";
 import {
-  createTrustRulesListHandler,
-  createTrustRulesCreateHandler,
-  createTrustRulesUpdateHandler,
-  createTrustRulesDeleteHandler,
-  createTrustRulesResetHandler,
+  handleTrustRulesList,
+  handleTrustRulesCreate,
+  handleTrustRulesUpdate,
+  handleTrustRulesDelete,
+  handleTrustRulesReset,
 } from "../http/routes/trust-rules.js";
 import "./test-preload.js";
 
@@ -58,7 +58,7 @@ function jsonRequest(url: string, method: string, body?: unknown): Request {
 
 describe("GET /v1/trust-rules — list", () => {
   test("default listing returns only user-relevant rules (user_defined + modified defaults)", async () => {
-    const handler = createTrustRulesListHandler();
+    const handler = handleTrustRulesList;
 
     // Without any user-defined or user-modified rules, the default listing
     // should return 0 results (seeded defaults are unmodified).
@@ -98,7 +98,7 @@ describe("GET /v1/trust-rules — list", () => {
   });
 
   test("origin=default returns all defaults including unmodified", async () => {
-    const handler = createTrustRulesListHandler();
+    const handler = handleTrustRulesList;
     const req = jsonRequest(
       "http://localhost/v1/trust-rules?origin=default",
       "GET",
@@ -127,7 +127,7 @@ describe("GET /v1/trust-rules — list", () => {
       description: "test rule",
     });
 
-    const handler = createTrustRulesListHandler();
+    const handler = handleTrustRulesList;
     const req = jsonRequest(
       "http://localhost/v1/trust-rules?origin=default",
       "GET",
@@ -144,7 +144,7 @@ describe("GET /v1/trust-rules — list", () => {
   });
 
   test("filters by tool=bash", async () => {
-    const handler = createTrustRulesListHandler();
+    const handler = handleTrustRulesList;
     // Combine with origin=default to bypass userRelevantOnly filtering
     const req = jsonRequest(
       "http://localhost/v1/trust-rules?tool=bash&origin=default",
@@ -169,7 +169,7 @@ describe("GET /v1/trust-rules — list", () => {
     const targetRule = defaults[0];
     store.remove(targetRule.id);
 
-    const handler = createTrustRulesListHandler();
+    const handler = handleTrustRulesList;
 
     // Without include_deleted, the deleted rule should not appear
     // Use origin=default to bypass userRelevantOnly filtering
@@ -209,7 +209,7 @@ describe("GET /v1/trust-rules — list", () => {
 
 describe("POST /v1/trust-rules — create", () => {
   test("creates a rule with valid body (201)", async () => {
-    const handler = createTrustRulesCreateHandler();
+    const handler = handleTrustRulesCreate;
     const req = jsonRequest("http://localhost/v1/trust-rules", "POST", {
       tool: "bash",
       pattern: "echo hello",
@@ -236,7 +236,7 @@ describe("POST /v1/trust-rules — create", () => {
   });
 
   test("returns 400 for missing fields", async () => {
-    const handler = createTrustRulesCreateHandler();
+    const handler = handleTrustRulesCreate;
 
     // Missing tool
     const res1 = await handler(
@@ -280,7 +280,7 @@ describe("POST /v1/trust-rules — create", () => {
   });
 
   test("returns 400 for invalid risk value", async () => {
-    const handler = createTrustRulesCreateHandler();
+    const handler = handleTrustRulesCreate;
     const req = jsonRequest("http://localhost/v1/trust-rules", "POST", {
       tool: "bash",
       pattern: "echo",
@@ -298,7 +298,7 @@ describe("POST /v1/trust-rules — create", () => {
     // The engine matches on (tool, pattern) only. A request scoped to a
     // directory must fail loudly: accepting it would persist a rule that
     // auto-approves everywhere while the user consented to one directory.
-    const handler = createTrustRulesCreateHandler();
+    const handler = handleTrustRulesCreate;
     const res = await handler(
       jsonRequest("http://localhost/v1/trust-rules", "POST", {
         tool: "bash",
@@ -315,7 +315,7 @@ describe("POST /v1/trust-rules — create", () => {
   });
 
   test('accepts scope "everywhere", which matches what the store does (201)', async () => {
-    const handler = createTrustRulesCreateHandler();
+    const handler = handleTrustRulesCreate;
     const res = await handler(
       jsonRequest("http://localhost/v1/trust-rules", "POST", {
         tool: "bash",
@@ -342,7 +342,7 @@ describe("PATCH /v1/trust-rules/:id — update", () => {
       description: "original",
     });
 
-    const handler = createTrustRulesUpdateHandler();
+    const handler = handleTrustRulesUpdate;
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${created.id}`,
       "PATCH",
@@ -359,7 +359,7 @@ describe("PATCH /v1/trust-rules/:id — update", () => {
   });
 
   test("returns 404 for non-existent rule", async () => {
-    const handler = createTrustRulesUpdateHandler();
+    const handler = handleTrustRulesUpdate;
     const fakeId = "00000000-0000-4000-8000-000000000000";
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${fakeId}`,
@@ -384,7 +384,7 @@ describe("DELETE /v1/trust-rules/:id — delete", () => {
       description: "to be deleted",
     });
 
-    const handler = createTrustRulesDeleteHandler();
+    const handler = handleTrustRulesDelete;
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${created.id}`,
       "DELETE",
@@ -401,7 +401,7 @@ describe("DELETE /v1/trust-rules/:id — delete", () => {
   });
 
   test("returns 404 for non-existent rule", async () => {
-    const handler = createTrustRulesDeleteHandler();
+    const handler = handleTrustRulesDelete;
     const fakeId = "00000000-0000-4000-8000-000000000000";
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${fakeId}`,
@@ -430,7 +430,7 @@ describe("POST /v1/trust-rules/:id/reset — reset", () => {
     expect(modified.risk).toBe("high");
     expect(modified.userModified).toBe(true);
 
-    const handler = createTrustRulesResetHandler();
+    const handler = handleTrustRulesReset;
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${lsRule.id}/reset`,
       "POST",
@@ -447,7 +447,7 @@ describe("POST /v1/trust-rules/:id/reset — reset", () => {
   });
 
   test("returns 404 for non-existent rule", async () => {
-    const handler = createTrustRulesResetHandler();
+    const handler = handleTrustRulesReset;
     const fakeId = "00000000-0000-4000-8000-000000000000";
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${fakeId}/reset`,
@@ -465,7 +465,7 @@ describe("POST /v1/trust-rules/:id/reset — reset", () => {
       description: "user-defined, cannot reset",
     });
 
-    const handler = createTrustRulesResetHandler();
+    const handler = handleTrustRulesReset;
     const req = jsonRequest(
       `http://localhost/v1/trust-rules/${created.id}/reset`,
       "POST",

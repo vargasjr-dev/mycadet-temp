@@ -13,7 +13,6 @@ import { getGatewaySecurityDir } from "../paths.js";
 import {
   REMOTE_WEB_PAIRING_CODE_TTL_MS,
   type RemoteWebPairingChallengeResponse,
-  type RemoteWebPairingRequestSummary,
   type RemoteWebPairingTokenPendingResponse,
   type RemoteWebPairingVerificationResponse,
 } from "@mycadet/service-contracts/remote-web-pairing";
@@ -29,8 +28,8 @@ export interface PendingRemoteWebPairingChallenge {
   id: string;
   deviceCodeHash: string;
   userCodeHash: string;
-  // Deliberately plaintext: the loopback-gated list route shows it to the
-  // host approver. The hash fields remain the lookup keys.
+  // Deliberately plaintext: `gateway pairing list` shows it to the host
+  // approver. The hash fields remain the lookup keys.
   userCode: string;
   publicBaseUrl: string;
   verificationUri: string;
@@ -301,25 +300,6 @@ function findChallengeById(
     }
   }
   return undefined;
-}
-
-export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequestSummary[] {
-  loadFromDisk();
-  cleanupExpiredChallenges();
-
-  const pending = [...challengesByUserCodeHash.values()]
-    .filter((challenge) => challenge.status === "pending")
-    .sort((a, b) => b.createdAtMs - a.createdAtMs);
-
-  return pending.map((challenge) => ({
-    requestId: challenge.id,
-    userCode: challenge.userCode,
-    publicBaseUrl: challenge.publicBaseUrl,
-    requestedAt: new Date(challenge.createdAtMs).toISOString(),
-    expiresAt: new Date(challenge.expiresAtMs).toISOString(),
-    requesterIp: challenge.requesterIp,
-    requesterUserAgent: challenge.requesterUserAgent,
-  }));
 }
 
 /**

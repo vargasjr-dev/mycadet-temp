@@ -10,9 +10,9 @@ import {
   getAdmissionPolicyCache,
 } from "../risk/admission-policy-cache.js";
 import {
-  createChannelAdmissionPolicyDeleteHandler,
-  createChannelAdmissionPolicyListHandler,
-  createChannelAdmissionPolicySetHandler,
+  handleChannelAdmissionPolicyDelete,
+  handleChannelAdmissionPolicyList,
+  handleChannelAdmissionPolicySet,
 } from "../http/routes/channel-admission-policy.js";
 import { CHANNEL_IDS } from "../channels/types.js";
 import {
@@ -73,7 +73,7 @@ function jsonRequest(url: string, method: string, body?: unknown): Request {
 
 describe("GET /v1/channel-admission-policy", () => {
   test("returns every visible channel id, with defaults for unconfigured channels", async () => {
-    const handler = createChannelAdmissionPolicyListHandler();
+    const handler = handleChannelAdmissionPolicyList;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy", "GET"),
     );
@@ -102,7 +102,7 @@ describe("GET /v1/channel-admission-policy", () => {
   test("merges persisted rows with default rows for missing channels", async () => {
     store.set("telegram", "no_one", "off");
 
-    const handler = createChannelAdmissionPolicyListHandler();
+    const handler = handleChannelAdmissionPolicyList;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy", "GET"),
     );
@@ -133,7 +133,7 @@ describe("GET /v1/channel-admission-policy", () => {
     store.set("whatsapp", "guardian_only");
     store.set("cadet-shared", "guardian_only");
 
-    const handler = createChannelAdmissionPolicyListHandler();
+    const handler = handleChannelAdmissionPolicyList;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy", "GET"),
     );
@@ -159,7 +159,7 @@ describe("GET /v1/channel-admission-policy", () => {
 
 describe("PUT /v1/channel-admission-policy/:channelType", () => {
   test("upserts a valid policy and invalidates the cache", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy/slack", "PUT", {
         policy: "guardian_only",
@@ -181,7 +181,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   });
 
   test("rejects unknown channelType with 400", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-admission-policy/not-a-channel",
@@ -196,7 +196,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   });
 
   test("rejects invalid policy with 400", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy/email", "PUT", {
         policy: "lets-everyone-in",
@@ -209,7 +209,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   });
 
   test("rejects malformed JSON with 400", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const req = new Request(
       "http://localhost/v1/channel-admission-policy/email",
       {
@@ -223,7 +223,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   });
 
   test("missing note is stored as null", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-admission-policy/telegram",
@@ -242,7 +242,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   test("rejects PUT for hidden channels (`cadet`, `cadet-shared`, `whatsapp`) with 403", async () => {
     // Hidden channels are managed automatically and not user-configurable;
     // even a non-kill-switch policy must be rejected so no stranded row forms.
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     for (const channel of ["cadet", "cadet-shared", "whatsapp"] as const) {
       const res = await handler(
         jsonRequest(
@@ -262,7 +262,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
   });
 
   test("upserts `phone` like any enforced channel (voice ingress wired)", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
+    const handler = handleChannelAdmissionPolicySet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy/phone", "PUT", {
         policy: "strangers",
@@ -281,7 +281,7 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
 describe("DELETE /v1/channel-admission-policy/:channelType", () => {
   test("removes a configurable channel's row, resetting it to the default", async () => {
     store.set("slack", "guardian_only");
-    const handler = createChannelAdmissionPolicyDeleteHandler();
+    const handler = handleChannelAdmissionPolicyDelete;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-admission-policy/slack",
@@ -295,7 +295,7 @@ describe("DELETE /v1/channel-admission-policy/:channelType", () => {
 
   test("rejects DELETE for hidden channels (`cadet`, `whatsapp`) with 403", async () => {
     store.set("whatsapp", "no_one");
-    const handler = createChannelAdmissionPolicyDeleteHandler();
+    const handler = handleChannelAdmissionPolicyDelete;
     for (const channel of ["cadet", "whatsapp"] as const) {
       const res = await handler(
         jsonRequest(
@@ -318,7 +318,7 @@ describe("DELETE /v1/channel-admission-policy/:channelType", () => {
 
 describe("GET /v1/channel-admission-policy — phone enforced", () => {
   test("includes `phone` in the list response", async () => {
-    const handler = createChannelAdmissionPolicyListHandler();
+    const handler = handleChannelAdmissionPolicyList;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-admission-policy", "GET"),
     );

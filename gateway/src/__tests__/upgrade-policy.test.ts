@@ -3,8 +3,8 @@ import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 import "./test-preload.js";
 
 import {
-  createUpgradePolicyGetHandler,
-  createUpgradePolicyPutHandler,
+  handleUpgradePolicyGet,
+  handleUpgradePolicyPut,
   defaultUpgradePolicy,
 } from "../http/routes/upgrade-policy.js";
 
@@ -47,8 +47,7 @@ function validPolicy() {
 describe("upgrade policy", () => {
   describe("GET handler", () => {
     test("returns defaults when no row exists", async () => {
-      const handler = createUpgradePolicyGetHandler();
-      const res = await handler(makeRequest(undefined, "GET"));
+      const res = await handleUpgradePolicyGet();
 
       expect(res.status).toBe(200);
       const data = await res.json();
@@ -56,8 +55,8 @@ describe("upgrade policy", () => {
     });
 
     test("returns the stored policy after a PUT", async () => {
-      const putHandler = createUpgradePolicyPutHandler();
-      const getHandler = createUpgradePolicyGetHandler();
+      const putHandler = handleUpgradePolicyPut;
+      const getHandler = handleUpgradePolicyGet;
 
       const policy = {
         ...validPolicy(),
@@ -73,13 +72,13 @@ describe("upgrade policy", () => {
       const putRes = await putHandler(makeRequest(policy));
       expect(putRes.status).toBe(200);
 
-      const getRes = await getHandler(makeRequest(undefined, "GET"));
+      const getRes = await handleUpgradePolicyGet();
       const data = await getRes.json();
       expect(data).toEqual(policy);
     });
 
     test("answers defaults instead of erroring when the stored row is corrupt", async () => {
-      const putHandler = createUpgradePolicyPutHandler();
+      const putHandler = handleUpgradePolicyPut;
       await putHandler(makeRequest(validPolicy()));
 
       // Corrupt the singleton row directly — the read discipline (a bad
@@ -93,8 +92,7 @@ describe("upgrade policy", () => {
         .where(eq(upgradePolicy.id, 1))
         .run();
 
-      const getHandler = createUpgradePolicyGetHandler();
-      const res = await getHandler(makeRequest(undefined, "GET"));
+      const res = await handleUpgradePolicyGet();
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual(defaultUpgradePolicy());
     });
@@ -102,7 +100,7 @@ describe("upgrade policy", () => {
 
   describe("PUT handler", () => {
     test("full-replaces the policy and echoes it back", async () => {
-      const handler = createUpgradePolicyPutHandler();
+      const handler = handleUpgradePolicyPut;
 
       const policy = {
         ...validPolicy(),
@@ -121,7 +119,7 @@ describe("upgrade policy", () => {
     });
 
     test("rejects a malformed policy with 400", async () => {
-      const handler = createUpgradePolicyPutHandler();
+      const handler = handleUpgradePolicyPut;
 
       const res = await handler(
         makeRequest({ enabled: true, timezone: "UTC", schedule: "nope" }),
@@ -133,7 +131,7 @@ describe("upgrade policy", () => {
     });
 
     test("rejects a non-JSON body with 400", async () => {
-      const handler = createUpgradePolicyPutHandler();
+      const handler = handleUpgradePolicyPut;
 
       const res = await handler(
         new Request("http://localhost/v1/upgrade-policy", {
@@ -147,7 +145,7 @@ describe("upgrade policy", () => {
     });
 
     test("the window is HH:MM (UTC) or rejected", async () => {
-      const handler = createUpgradePolicyPutHandler();
+      const handler = handleUpgradePolicyPut;
 
       const bad = {
         ...validPolicy(),

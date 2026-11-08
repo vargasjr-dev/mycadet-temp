@@ -4,13 +4,14 @@
  * activity off the same lookup, with fail-open semantics for non-actor,
  * unrecorded, and DB-error cases.
  */
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { eq } from "drizzle-orm";
 
+import type { GatewayConfig } from "../config.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 import type { TokenClaims } from "../auth/types.js";
@@ -26,8 +27,13 @@ const {
   actorTokenRecordHash,
   __resetLastUsedDebounceForTests,
 } = await import("../auth/actor-token-revocation.js");
-const { createRuntimeProxyHandler } =
-  await import("../http/routes/runtime-proxy.js");
+let proxyConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => proxyConfig,
+}));
+
+const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
 
@@ -284,8 +290,8 @@ describe("runtime proxy enforcement", () => {
     const jwt = mintActorJwt();
     insertTokenRecord(jwt, "revoked");
 
-    const handler = createRuntimeProxyHandler(makeConfig());
-    const res = await handler(
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(
       new Request("http://127.0.0.1:7830/v1/assistants/self/messages", {
         method: "POST",
         headers: {

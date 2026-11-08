@@ -1121,11 +1121,6 @@
   "usePairDevice": {
     "mintErrorFallback": "Что-то пошло не так при создании кода."
   },
-  "usePendingPairingRequests": {
-    "actionErrorFallback": "Что-то пошло не так. Повторите попытку.",
-    "denyAlreadyApproved": "Этот запрос уже одобрили в другом месте, поэтому отклонение не сработало, и устройство уже привязано.",
-    "pollErrorFallback": "Что-то пошло не так при проверке запросов на привязку."
-  },
   "useProfileSave": {
     "createdToast": "Профиль \"{name}\" создан"
   },
