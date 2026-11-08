@@ -8,6 +8,9 @@ import {
   resetAdmissionPolicyCache,
 } from "../risk/admission-policy-cache.js";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { testWorkspaceDir } from "./test-preload.js";
 
 const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
@@ -220,7 +223,7 @@ function installFetchMock() {
   );
 }
 
-describe("telegram webhook handler: gatewayInternalBaseUrl", () => {
+describe("telegram webhook handler: replyCallbackUrl", () => {
   test("builds the replyCallbackUrl from GATEWAY_PORT", async () => {
     const saved = process.env.GATEWAY_PORT;
     process.env.GATEWAY_PORT = "9000";
@@ -277,6 +280,36 @@ describe("telegram webhook handler: gatewayInternalBaseUrl", () => {
     } finally {
       if (saved !== undefined) process.env.GATEWAY_PORT = saved;
       else delete process.env.GATEWAY_PORT;
+    }
+  });
+
+  test("uses the saved ingress URL when the workspace records one", async () => {
+    writeFileSync(
+      join(testWorkspaceDir, "config.json"),
+      JSON.stringify({ ingress: { publicBaseUrl: "https://ingress.example.test" } }),
+    );
+    try {
+      const config = makeConfig({
+        routingEntries: [
+          { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
+        ],
+      });
+      installFetchMock();
+      const { handler } = createTelegramWebhookHandler(config, makeCaches());
+
+      const payload = makeTelegramPayload("hello ingress");
+      const req = makeWebhookRequest(payload);
+      const res = await handler(req);
+
+      expect(res.status).toBe(200);
+
+      const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
+      expect(runtimeCall).toBeDefined();
+      expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
+        "https://ingress.example.test/deliver/telegram",
+      );
+    } finally {
+      writeFileSync(join(testWorkspaceDir, "config.json"), "{}");
     }
   });
 

@@ -3,7 +3,7 @@
  */
 import type { Logger } from "pino";
 
-import { getGatewayInternalBaseUrl } from "../config.js";
+import { readSavedIngressPublicBaseUrl } from "../remote-web/public-base-url.js";
 import type { GatewayConfig } from "../config.js";
 import {
   appendFailedAttachmentNotice,
@@ -58,8 +58,8 @@ export function createDiscordInboundEventHandler(options: {
     // snowflake so replies stay inside the thread.
     const threadId = event.source.threadId;
     const replyCallbackUrl = threadId
-      ? `${getGatewayInternalBaseUrl()}/deliver/discord?${new URLSearchParams({ threadId })}`
-      : `${getGatewayInternalBaseUrl()}/deliver/discord`;
+      ? `${readSavedIngressPublicBaseUrl()}/deliver/discord?${new URLSearchParams({ threadId })}`
+      : `${readSavedIngressPublicBaseUrl()}/deliver/discord`;
 
     const forward = async () => {
       try {
