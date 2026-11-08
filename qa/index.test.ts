@@ -33,12 +33,16 @@ describe("buildImagePushArgs", () => {
 });
 
 describe("buildCreateArgs", () => {
-  test("creates from the pushed image — name only, no env or image args", () => {
+  test("pins the pushed QA image and the account-ceiling memory", () => {
     expect(buildCreateArgs({ name: "qa-pr645" })).toEqual([
       "sandbox",
       "create",
       "--name",
       "qa-pr645",
+      "--image",
+      QA_IMAGE_REF,
+      "--memory",
+      "4096",
     ]);
   });
 });
@@ -68,17 +72,31 @@ describe("buildQaPipelineArgs", () => {
     }
   });
 
+  test("every pipeline sets up swap before installing — 4 GB of RAM OOMs the install", () => {
+    for (const target of QA_TARGETS) {
+      const { steps, names } = buildQaPipelineArgs({
+        name: "qa-pr645",
+        target,
+      });
+      expect(names[0]).toBe("swap");
+      expect(steps[0][2]).toContain("swapon /swapfile");
+      expect(steps[0][2]).toContain("running on RAM alone");
+    }
+  });
+
   test("desktop: install, build the client, run its tests under Xvfb", () => {
     const { steps, names } = buildQaPipelineArgs({
       name: "qa-pr645",
       target: "desktop",
     });
-    expect(names).toEqual(["install", "build", "drive"]);
-    expect(steps[0][2]).toBe("cd /qa && bun install --frozen-lockfile");
-    expect(steps[1][2]).toContain(
-      "clients/linux && bun install --frozen-lockfile && bun run build",
+    expect(names).toEqual(["swap", "install", "build", "drive"]);
+    expect(steps[1][2]).toBe(
+      "cd /qa && bun install --frozen-lockfile --ignore-scripts",
     );
-    expect(steps[2][2]).toContain("xvfb-run -a bun scripts/run-tests.ts");
+    expect(steps[2][2]).toContain(
+      "clients/linux && bun install --frozen-lockfile --ignore-scripts && bun run build",
+    );
+    expect(steps[3][2]).toContain("xvfb-run -a bun scripts/run-tests.ts");
   });
 
   test("android: install, bundle+sync, emulator START, gradle, emulator WAIT, drive", () => {
@@ -87,6 +105,7 @@ describe("buildQaPipelineArgs", () => {
       target: "android",
     });
     expect(names).toEqual([
+      "swap",
       "install",
       "bundle",
       "emulator-start",
@@ -96,13 +115,13 @@ describe("buildQaPipelineArgs", () => {
     ]);
     // The emulator boots DURING the Gradle build: start before, wait after —
     // the software-emulated boot is the slowest thing in the pipeline.
-    expect(steps[1][2]).toContain(
-      "clients/android && bun install --frozen-lockfile && bun run build",
+    expect(steps[2][2]).toContain(
+      "clients/android && bun install --frozen-lockfile --ignore-scripts && bun run build",
     );
-    expect(steps[2][2]).toBe(`sh ${BOOT_SCRIPT} start`);
-    expect(steps[3][2]).toContain("./gradlew assembleDebug");
-    expect(steps[4][2]).toBe(`sh ${BOOT_SCRIPT} wait`);
-    expect(steps[5][2]).toBe(`sh ${DRIVE_SCRIPT}`);
+    expect(steps[3][2]).toBe(`sh ${BOOT_SCRIPT} start`);
+    expect(steps[4][2]).toContain("./gradlew assembleDebug");
+    expect(steps[5][2]).toBe(`sh ${BOOT_SCRIPT} wait`);
+    expect(steps[6][2]).toBe(`sh ${DRIVE_SCRIPT}`);
   });
 
   test("web: install and run the web test suite headless", () => {
@@ -110,10 +129,12 @@ describe("buildQaPipelineArgs", () => {
       name: "qa-pr645",
       target: "web",
     });
-    expect(names).toEqual(["install", "test"]);
-    expect(steps[0][2]).toBe("cd /qa && bun install --frozen-lockfile");
-    expect(steps[1][2]).toContain(
-      "clients/web && bun install --frozen-lockfile && bun run test",
+    expect(names).toEqual(["swap", "install", "test"]);
+    expect(steps[1][2]).toBe(
+      "cd /qa && bun install --frozen-lockfile --ignore-scripts",
+    );
+    expect(steps[2][2]).toContain(
+      "clients/web && bun install --frozen-lockfile --ignore-scripts && bun run test",
     );
   });
 
@@ -124,9 +145,10 @@ describe("buildQaPipelineArgs", () => {
         target,
         ref: "vargas-jr/qa-unified",
       });
-      expect(names[0]).toBe("fetch");
-      expect(steps[0][2]).toContain("git -C /qa fetch origin");
-      expect(steps[0][2]).toContain("git -C /qa checkout vargas-jr/qa-unified");
+      expect(names[0]).toBe("swap");
+      expect(names[1]).toBe("fetch");
+      expect(steps[1][2]).toContain("git -C /qa fetch origin");
+      expect(steps[1][2]).toContain("git -C /qa checkout vargas-jr/qa-unified");
     }
   });
 });

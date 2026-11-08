@@ -1,41 +1,25 @@
-#!/usr/bin/env bun
 /**
  * Baseten sandbox manager for Cadet QA — desktop, Android, web.
  *
- * One sandbox = one QA run: the image (see ./Dockerfile) carries the
- * toolchain for every target — Xvfb + the Electron/Chromium runtime libs,
- * JDK 21 + the Android SDK + emulator, bun — and the open-source repo
- * pulled at build time. Each run builds the client under test inside the
- * sandbox from the ref it names and drives it headless. QA is performed
- * through the sandbox itself (the sandbox-api control plane), not through a
- * baked-in cadet stack: nothing hatches, nothing wakes.
- *
- * One image for every target is the point: a single sandbox can QA anything,
- * and — since the image pulls the repo into /qa and the control plane is a
- * general process/filesystem API — the sandbox is as much a place to WORK on
- * the repo as to test it. A session with no local clone at all survives the
- * worktree churn that has eaten local runs.
- *
- * The Android emulator runs QEMU TCG (software emulation) on Baseten —
- * Firecracker microVMs expose no nested virtualization — so boot costs
- * minutes and the android pipeline starts the emulator BEFORE the Gradle
- * build and waits after, overlapping the boot with dependency downloads
- * (see ./scripts/android/boot-emulator.sh).
+ * One sandbox-image family (`cadet-qa` — this directory's Dockerfiles) for
+ * every client-QA need. One sandbox = one QA run: the image carries the
+ * toolchain plus the open-source repo pulled into /qa at build time; the runs
+ * build the client under test from the ref they name and drive it headless
+ * inside the sandbox.
  *
  * Usage:
+ *
  *   bun qa/index.ts image push
  *   bun qa/index.ts create --name qa-pr645
  *   bun qa/index.ts run --name qa-pr645 --target desktop [--ref <git-ref>]
- *   bun qa/index.ts run --name qa-pr645 --target android [--ref <git-ref>]
- *   bun qa/index.ts run --name qa-pr645 --target web [--ref <git-ref>]
- *   bun qa/index.ts boot --name qa-pr645        (android emulator warm-up)
- *   bun qa/index.ts exec --name qa-pr645 -- <command>...
+ *   bun qa/index.ts boot --name qa-pr645     # android only: warm the emulator
+ *   bun qa/index.ts exec --name qa-desktop-1108 -- <command>...
  *   bun qa/index.ts delete --name qa-pr645
  *
- * The Baseten CLI authenticates from BASETEN_API_KEY in the environment
- * (vaulted as `baseten:api_key` — never committed, never baked into images).
+ * The Baseten CLI authenticates from BASETEN_API_KEY (vaulted as
+ * baseten:api_key — pass it in the environment, never bake it into the
+ * image).
  */
-import { spawnSync } from "node:child_process";
 
 import {
   BASETEN_API_KEY_ENV,
@@ -82,11 +66,34 @@ export function buildImagePushArgs(options: ImagePushOptions = {}): string[] {
 export type CreateOptions = {
   /** Sandbox name — one QA run per name. */
   name: string;
+  /** Sandbox memory in MB — also sets the CPU allocation. */
+  memory?: number;
+  /** Image to create from. Defaults to the pushed QA image. */
+  image?: string;
 };
+
+/**
+ * The account ceiling on sandbox memory (Baseten rejects bigger creates with
+ * a 429) — the monorepo's frozen install needs more than RAM alone, so the
+ * pipelines also set up swap before installing (see SWAP_SETUP).
+ */
+export const QA_SANDBOX_MEMORY_MB = 4096;
 
 /** Assemble the `baseten sandbox create` argv. Exported for tests. */
 export function buildCreateArgs(options: CreateOptions): string[] {
-  return ["sandbox", "create", "--name", options.name];
+  // The platform default is baseten/base-image — a bare sandbox with no QA
+  // toolchain. The runs assume the cadet-qa image (the /qa workspace, Xvfb,
+  // bun), so create pins it explicitly.
+  return [
+    "sandbox",
+    "create",
+    "--name",
+    options.name,
+    "--image",
+    options.image ?? QA_IMAGE_REF,
+    "--memory",
+    String(options.memory ?? QA_SANDBOX_MEMORY_MB),
+  ];
 }
 
 export type ExecOptions = {
@@ -102,23 +109,33 @@ export function buildExecArgs(options: ExecOptions): string[] {
 }
 
 export type RunOptions = {
-  /** Sandbox name for the QA run. */
   name: string;
-  /** Which client to QA. */
   target: QaTarget;
-  /**
-   * Optional git ref to move the pulled repo to before building — the image
-   * clones the default branch, so a PR run names its ref here and the run
-   * fetches it in the existing clone (never a fresh one).
-   */
+  /** Optional git ref to move the pulled repo to before building — the image
+   * clones the default branch at build time, so a run against a PR names the
+   * branch here. */
   ref?: string;
 };
 
-/** The in-sandbox path of the emulator boot script, in the pulled repo. */
+/** The in-sandbox path of the emulator boot script's two halves. */
 export const BOOT_SCRIPT = `${QA_WORKSPACE}/qa/scripts/android/boot-emulator.sh`;
 
 /** The in-sandbox path of the android install/launch/screenshot script. */
 export const DRIVE_SCRIPT = `${QA_WORKSPACE}/qa/scripts/android/drive.sh`;
+
+/**
+ * Swap, set up before any install: the account ceiling is 4 GB of RAM and
+ * the monorepo's frozen install (plus the Electron/Playwright downloads)
+ * OOMs a 4 GB sandbox (exit 137). Best effort — a sandbox that refuses
+ * swapon runs without it and the installs are on their own.
+ */
+export const SWAP_SETUP = [
+  "fallocate -l 6G /swapfile",
+  "chmod 600 /swapfile",
+  "mkswap /swapfile >/dev/null 2>&1",
+  "swapon /swapfile 2>/dev/null || echo '[qa] swap unavailable — running on RAM alone'",
+  "free -m | head -3",
+].join(" && ");
 
 /**
  * The scenario pipelines, target by target. Every scenario builds the client
@@ -140,6 +157,8 @@ export function buildQaPipelineArgs(options: RunOptions): {
 } {
   const steps: string[][] = [];
   const names: string[] = [];
+  steps.push(["sh", "-c", SWAP_SETUP]);
+  names.push("swap");
   if (options.ref) {
     steps.push([
       "sh",
@@ -149,7 +168,11 @@ export function buildQaPipelineArgs(options: RunOptions): {
     names.push("fetch");
   }
 
-  const rootInstall = `cd ${QA_WORKSPACE} && bun install --frozen-lockfile`;
+  // --ignore-scripts: the account ceiling is 4 GB and electron's binary
+  // download is the spike that OOMs the install (exit 137). electron-vite's
+  // build and the per-file bun tests don't run the binary — vite bundles
+  // renderer/main/preload from source.
+  const rootInstall = `cd ${QA_WORKSPACE} && bun install --frozen-lockfile --ignore-scripts`;
   steps.push(["sh", "-c", rootInstall]);
   names.push("install");
 
@@ -158,7 +181,7 @@ export function buildQaPipelineArgs(options: RunOptions): {
       [
         "sh",
         "-c",
-        `cd ${QA_WORKSPACE}/clients/linux && bun install --frozen-lockfile && bun run build`,
+        `cd ${QA_WORKSPACE}/clients/linux && bun install --frozen-lockfile --ignore-scripts && bun run build`,
       ],
       [
         "sh",
@@ -172,7 +195,7 @@ export function buildQaPipelineArgs(options: RunOptions): {
       [
         "sh",
         "-c",
-        `cd ${QA_WORKSPACE}/clients/android && bun install --frozen-lockfile && bun run build`,
+        `cd ${QA_WORKSPACE}/clients/android && bun install --frozen-lockfile --ignore-scripts && bun run build`,
       ],
       ["sh", "-c", `sh ${BOOT_SCRIPT} start`],
       [
@@ -188,7 +211,7 @@ export function buildQaPipelineArgs(options: RunOptions): {
     steps.push([
       "sh",
       "-c",
-      `cd ${QA_WORKSPACE}/clients/web && bun install --frozen-lockfile && bun run test`,
+      `cd ${QA_WORKSPACE}/clients/web && bun install --frozen-lockfile --ignore-scripts && bun run test`,
     ]);
     names.push("test");
   }
@@ -199,8 +222,26 @@ export function buildQaPipelineArgs(options: RunOptions): {
 /** Run the full QA pipeline for `target` inside sandbox `name`. */
 export function runQa(options: RunOptions): void {
   const { steps, names } = buildQaPipelineArgs(options);
+  // One sandbox = one QA run: create it here (from the pinned image) so a
+  // `run` is self-sufficient. A sandbox that already exists under the name
+  // is reused — the platform's create errors on duplicates and the steps
+  // below are what matter.
+  requireApiKey();
+  try {
+    createSandbox({ name: options.name });
+  } catch (error) {
+    console.log(
+      `[qa] create failed (reusing the sandbox if it exists): ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
   for (const [index, command] of steps.entries()) {
-    console.log(`[qa] ${names[index]}: ${command[1]}`);
+    // The steps are `sh -c <script>` pairs — the script is the last element,
+    // and printing argv[1] would log the literal "-c".
+    console.log(
+      `[qa] ${names[index]}: ${command[command.length - 1] ?? command.join(" ")}`,
+    );
     requireApiKey();
     runBaseten(
       buildExecArgs({ name: options.name, command }),
@@ -224,32 +265,30 @@ export function bootSandbox(options: CreateOptions): void {
         name: options.name,
         command: ["sh", "-c", `sh ${BOOT_SCRIPT} ${mode}`],
       }),
-      `Emulator boot (${mode}) failed`,
+      `Emulator ${mode} failed`,
     );
   }
 }
 
-/** Push (and by default build) the cadet-QA image, streaming build logs. */
 export function pushImage(options: ImagePushOptions = {}): void {
+  requireApiKey();
   runBaseten(buildImagePushArgs(options), "Image push failed");
 }
 
-/** Create a sandbox from the pushed image. */
 export function createSandbox(options: CreateOptions): void {
+  requireApiKey();
   runBaseten(buildCreateArgs(options), "Sandbox create failed");
 }
 
 /** Exec a command inside the named sandbox, streaming output. */
 export function execSandbox(options: ExecOptions): void {
+  requireApiKey();
   runBaseten(buildExecArgs(options), "Sandbox exec failed");
 }
 
-/** Delete the named sandbox (irreversible — its local files go with it). */
 export function deleteSandbox(name: string): void {
-  runBaseten(
-    ["sandbox", "delete", "--name", name, "--yes"],
-    "Sandbox delete failed",
-  );
+  requireApiKey();
+  runBaseten(["sandbox", "delete", "--name", name, "--yes"], "Sandbox delete failed");
 }
 
 /**
