@@ -2,6 +2,7 @@ import type { OutgoingHttpHeaders } from "node:http";
 
 import { normalizeHttpPublicBaseUrl } from "@mycadet/service-contracts/ingress";
 
+import { getGatewayInternalBaseUrl } from "../config.js";
 import type { GatewayConfig } from "../config.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
@@ -799,7 +800,7 @@ export function createTunnelClient(
   }
   return new TunnelClient({
     tunnelBaseUrl: config.tunnelBaseUrl,
-    gatewayLoopbackBaseUrl: config.gatewayInternalBaseUrl,
+    gatewayLoopbackBaseUrl: getGatewayInternalBaseUrl(),
     credentials: deps.credentials,
     configFile: deps.configFile,
   });

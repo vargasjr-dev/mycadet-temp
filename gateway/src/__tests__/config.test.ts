@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, test, expect } from "bun:test";
 
 import { testWorkspaceDir } from "./test-preload.js";
-import { loadConfig } from "../config.js";
+import { getGatewayInternalBaseUrl, loadConfig } from "../config.js";
 
 describe("config: hardcoded defaults", () => {
   test("GATEWAY_PORT defaults to 7830", () => {
@@ -141,12 +141,11 @@ describe("config: hardcoded defaults", () => {
     }
   });
 
-  test("gatewayInternalBaseUrl derives from port", () => {
+  test("getGatewayInternalBaseUrl derives from GATEWAY_PORT", () => {
     const saved = process.env.GATEWAY_PORT;
     process.env.GATEWAY_PORT = "8080";
     try {
-      const config = loadConfig();
-      expect(config.gatewayInternalBaseUrl).toBe("http://127.0.0.1:8080");
+      expect(getGatewayInternalBaseUrl()).toBe("http://127.0.0.1:8080");
     } finally {
       if (saved !== undefined) process.env.GATEWAY_PORT = saved;
       else delete process.env.GATEWAY_PORT;

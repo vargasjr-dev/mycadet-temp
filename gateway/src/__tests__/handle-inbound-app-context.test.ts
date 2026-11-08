@@ -73,7 +73,6 @@ const APP_CONTEXT = {
 function makeConfig(): GatewayConfig {
   return {
     assistantRuntimeBaseUrl: "http://localhost:7821",
-    gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: { default: 50 * 1024 * 1024 },
     maxAttachmentConcurrency: 3,

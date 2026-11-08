@@ -266,7 +266,6 @@ describe("runtime proxy enforcement", () => {
         default: 50 * 1024 * 1024,
       },
       maxAttachmentConcurrency: 3,
-      gatewayInternalBaseUrl: "http://127.0.0.1:7830",
       trustProxy: false,
     };
   }

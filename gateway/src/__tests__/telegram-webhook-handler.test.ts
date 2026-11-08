@@ -8,6 +8,9 @@ import {
   resetAdmissionPolicyCache,
 } from "../risk/admission-policy-cache.js";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { testWorkspaceDir } from "./test-preload.js";
 
 const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
@@ -45,7 +48,6 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
       default: 50 * 1024 * 1024,
     },
     maxAttachmentConcurrency: 3,
-    gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     trustProxy: false,
     ...overrides,
   };
@@ -221,78 +223,126 @@ function installFetchMock() {
   );
 }
 
-describe("telegram webhook handler: gatewayInternalBaseUrl", () => {
-  test("uses configured gatewayInternalBaseUrl in replyCallbackUrl", async () => {
-    const config = makeConfig({
-      gatewayInternalBaseUrl: "http://gateway.internal:9000",
-      routingEntries: [
-        { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
-      ],
-    });
-    installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
+describe("telegram webhook handler: replyCallbackUrl", () => {
+  test("builds the replyCallbackUrl from GATEWAY_PORT", async () => {
+    const saved = process.env.GATEWAY_PORT;
+    process.env.GATEWAY_PORT = "9000";
+    try {
+      const config = makeConfig({
+        routingEntries: [
+          { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
+        ],
+      });
+      installFetchMock();
+      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const payload = makeTelegramPayload("hello");
-    const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+      const payload = makeTelegramPayload("hello");
+      const req = makeWebhookRequest(payload);
+      const res = await handler(req);
 
-    expect(res.status).toBe(200);
+      expect(res.status).toBe(200);
 
-    // Find the runtime forward call and verify the replyCallbackUrl
-    const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
-    expect(runtimeCall).toBeDefined();
-    expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
-      "http://gateway.internal:9000/deliver/telegram",
-    );
+      // Find the runtime forward call and verify the replyCallbackUrl
+      const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
+      expect(runtimeCall).toBeDefined();
+      expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
+        "http://127.0.0.1:9000/deliver/telegram",
+      );
+    } finally {
+      if (saved !== undefined) process.env.GATEWAY_PORT = saved;
+      else delete process.env.GATEWAY_PORT;
+    }
   });
 
-  test("falls back to localhost URL when gatewayInternalBaseUrl uses default", async () => {
-    const config = makeConfig({
-      gatewayInternalBaseUrl: "http://127.0.0.1:7830",
-      routingEntries: [
-        { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
-      ],
-    });
-    installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
+  test("falls back to the default loopback URL", async () => {
+    const saved = process.env.GATEWAY_PORT;
+    delete process.env.GATEWAY_PORT;
+    try {
+      const config = makeConfig({
+        routingEntries: [
+          { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
+        ],
+      });
+      installFetchMock();
+      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const payload = makeTelegramPayload("hello", 2001);
-    const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+      const payload = makeTelegramPayload("hello", 2001);
+      const req = makeWebhookRequest(payload);
+      const res = await handler(req);
 
-    expect(res.status).toBe(200);
+      expect(res.status).toBe(200);
 
-    const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
-    expect(runtimeCall).toBeDefined();
-    expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
-      "http://127.0.0.1:7830/deliver/telegram",
+      const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
+      expect(runtimeCall).toBeDefined();
+      expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
+        "http://127.0.0.1:7830/deliver/telegram",
+      );
+    } finally {
+      if (saved !== undefined) process.env.GATEWAY_PORT = saved;
+      else delete process.env.GATEWAY_PORT;
+    }
+  });
+
+  test("uses the saved ingress URL when the workspace records one", async () => {
+    writeFileSync(
+      join(testWorkspaceDir, "config.json"),
+      JSON.stringify({ ingress: { publicBaseUrl: "https://ingress.example.test" } }),
     );
+    try {
+      const config = makeConfig({
+        routingEntries: [
+          { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
+        ],
+      });
+      installFetchMock();
+      const { handler } = createTelegramWebhookHandler(config, makeCaches());
+
+      const payload = makeTelegramPayload("hello ingress");
+      const req = makeWebhookRequest(payload);
+      const res = await handler(req);
+
+      expect(res.status).toBe(200);
+
+      const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
+      expect(runtimeCall).toBeDefined();
+      expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
+        "https://ingress.example.test/deliver/telegram",
+      );
+    } finally {
+      writeFileSync(join(testWorkspaceDir, "config.json"), "{}");
+    }
   });
 
   test("topic messages append threadId to the replyCallbackUrl", async () => {
-    const config = makeConfig({
-      gatewayInternalBaseUrl: "http://gateway.internal:9000",
-      routingEntries: [
-        { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
-      ],
-    });
-    installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
+    const saved = process.env.GATEWAY_PORT;
+    process.env.GATEWAY_PORT = "9000";
+    try {
+      const config = makeConfig({
+        routingEntries: [
+          { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
+        ],
+      });
+      installFetchMock();
+      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const base = makeTelegramPayload("hello topic", 2002);
-    const payload = {
-      ...base,
-      message: { ...base.message, message_thread_id: 777 },
-    };
-    const res = await handler(makeWebhookRequest(payload));
+      const base = makeTelegramPayload("hello topic", 2002);
+      const payload = {
+        ...base,
+        message: { ...base.message, message_thread_id: 777 },
+      };
+      const res = await handler(makeWebhookRequest(payload));
 
-    expect(res.status).toBe(200);
+      expect(res.status).toBe(200);
 
-    const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
-    expect(runtimeCall).toBeDefined();
-    expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
-      "http://gateway.internal:9000/deliver/telegram?threadId=777",
-    );
+      const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
+      expect(runtimeCall).toBeDefined();
+      expect((runtimeCall!.body as any).replyCallbackUrl).toBe(
+        "http://127.0.0.1:9000/deliver/telegram?threadId=777",
+      );
+    } finally {
+      if (saved !== undefined) process.env.GATEWAY_PORT = saved;
+      else delete process.env.GATEWAY_PORT;
+    }
   });
 });
 
