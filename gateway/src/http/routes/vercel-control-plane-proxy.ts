@@ -8,7 +8,6 @@
 
 import { proxyForward } from "@mycadet/assistant-client";
 
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -23,7 +22,7 @@ export function createVercelControlPlaneProxyHandler(config: GatewayConfig) {
   ): Promise<Response> {
     const start = performance.now();
     const result = await proxyForward(req, {
-      baseUrl: getAssistantBaseUrl(),
+      baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch,
       timeoutMs: config.runtimeTimeoutMs,

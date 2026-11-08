@@ -11,7 +11,6 @@
 import {
   forwardedIdentityHeaders,
 } from "@mycadet/assistant-client";
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -31,7 +30,7 @@ interface PsResponse {
 
 export function createPsHandler(config: GatewayConfig) {
   async function handlePs(): Promise<Response> {
-    const assistantProcesses = await fetchAssistantPs();
+    const assistantProcesses = await fetchAssistantPs(config);
 
     const processes: ProcessEntry[] = [
       ...assistantProcesses,
@@ -49,9 +48,11 @@ export function createPsHandler(config: GatewayConfig) {
   return { handlePs };
 }
 
-async function fetchAssistantPs(): Promise<ProcessEntry[]> {
+async function fetchAssistantPs(
+  config: GatewayConfig,
+): Promise<ProcessEntry[]> {
   try {
-    const url = `${getAssistantBaseUrl()}/v1/ps`;
+    const url = `${config.assistantRuntimeBaseUrl}/v1/ps`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
 

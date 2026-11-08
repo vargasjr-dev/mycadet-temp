@@ -340,22 +340,19 @@ describe("a dropped downstream frame does not end a dictation session", () => {
   let runtime: FakeRuntime;
   afterEach(() => {
     runtime?.server.stop(true);
-    delete process.env.RUNTIME_HTTP_PORT;
   });
 
-  const makeViewerWs = (sendStatus?: number) => {
-    // The handler derives its dial from getAssistantBaseUrl() — point
-    // RUNTIME_HTTP_PORT at the fake runtime for the duration of the test.
-    process.env.RUNTIME_HTTP_PORT = String(runtime.server.port);
-    return createFakeDownstreamWs<SttStreamSocketData>(
+  const makeViewerWs = (sendStatus?: number) =>
+    createFakeDownstreamWs<SttStreamSocketData>(
       {
         wsType: "stt-stream",
-        config: makeConfig({}),
+        config: makeConfig({
+          assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+        }),
         mimeType: "audio/webm",
       },
       { sendStatus },
     );
-  };
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"transcript","text":"hello"}');

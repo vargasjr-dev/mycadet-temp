@@ -8,7 +8,7 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { getAssistantBaseUrl } from "../../config.js";
+import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 
@@ -17,14 +17,14 @@ const log = getLogger("migration-rollback-proxy");
 /** Timeout for migration rollback requests (120 seconds) — rollbacks can be slow when many migrations have complex down() functions. */
 const MIGRATION_ROLLBACK_TIMEOUT_MS = 120_000;
 
-export function createMigrationRollbackProxyHandler() {
+export function createMigrationRollbackProxyHandler(config: GatewayConfig) {
   return async function handleMigrationRollback(
     req: Request,
   ): Promise<Response> {
     const start = performance.now();
 
     const response = await proxyForwardToResponse(req, {
-      baseUrl: getAssistantBaseUrl(),
+      baseUrl: config.assistantRuntimeBaseUrl,
       path: "/v1/admin/rollback-migrations",
       timeoutMs: MIGRATION_ROLLBACK_TIMEOUT_MS,
       fetchImpl,

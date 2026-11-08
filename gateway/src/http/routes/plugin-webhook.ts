@@ -53,7 +53,6 @@ import {
   admitInbound,
   type InboundAdmission,
 } from "../../handlers/handle-inbound.js";
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
@@ -166,7 +165,7 @@ async function forwardToPlugin(forward: PluginForward): Promise<Response> {
     body: METHODS_WITHOUT_BODY.has(req.method) ? undefined : body,
   });
   const forwarded = await proxyForwardToResponse(forwardable, {
-    baseUrl: getAssistantBaseUrl(),
+    baseUrl: config.assistantRuntimeBaseUrl,
     // Forward under the declared path, not the requested spelling: matching
     // ignores a trailing slash, and the plugin serves the path it declared.
     path: pluginRouteUpstreamPath(plugin, routePath),
@@ -242,7 +241,7 @@ async function notifyPluginAdmissionDenied(opts: {
       },
     );
     const response = await proxyForwardToResponse(noticeReq, {
-      baseUrl: getAssistantBaseUrl(),
+      baseUrl: forward.config.assistantRuntimeBaseUrl,
       path: pluginRouteUpstreamPath(
         plugin,
         PLUGIN_ADMISSION_DENIED_NOTICE_PATH,

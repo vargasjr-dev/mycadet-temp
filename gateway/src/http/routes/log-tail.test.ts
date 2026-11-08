@@ -62,6 +62,7 @@ function makeReq(url: string): Request {
 
 function makeConfig(dir: string | undefined): GatewayConfig {
   return {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     logFile: { dir, retentionDays: 30 },
     maxAttachmentBytes: {

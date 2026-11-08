@@ -80,13 +80,12 @@ describe("createDesktopStreamWebsocketHandler", () => {
 describe("getDesktopStreamWebsocketHandlers", () => {
   /** A viewer socket whose pump dials `runtime`. */
   function makeViewerWs(runtime: FakeRuntime, sendStatus?: number) {
-    // The handler derives its dial from getAssistantBaseUrl() — point
-    // RUNTIME_HTTP_PORT at the fake runtime for the duration of the test.
-    process.env.RUNTIME_HTTP_PORT = String(runtime.server.port);
     return createFakeDownstreamWs<DesktopStreamSocketData>(
       {
         wsType: "desktop-stream",
-        config: makeConfig({}),
+        config: makeConfig({
+          assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+        }),
       },
       { sendStatus },
     );

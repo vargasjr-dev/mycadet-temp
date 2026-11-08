@@ -3,7 +3,6 @@ import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { RuntimeAttachmentMeta } from "../runtime/client.js";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey } from "../auth/token-service.js";
-import { getAssistantBaseUrl } from "../config.js";
 
 const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
@@ -37,6 +36,7 @@ const fakeConfigFile = (publicBaseUrl?: string) =>
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -113,17 +113,13 @@ describe("forwardToRuntime", () => {
       async () => new Response(JSON.stringify(successBody), { status: 200 }),
     );
 
-    const saved = process.env.RUNTIME_HTTP_PORT;
-    process.env.RUNTIME_HTTP_PORT = "9999";
-    try {
-      await forwardToRuntime(makeConfig(), payload);
+    const config = makeConfig({
+      assistantRuntimeBaseUrl: "http://localhost:9999",
+    });
+    await forwardToRuntime(config, payload);
 
-      const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
-      expect(calledUrl).toBe("http://127.0.0.1:9999/v1/channels/inbound");
-    } finally {
-      if (saved !== undefined) process.env.RUNTIME_HTTP_PORT = saved;
-      else delete process.env.RUNTIME_HTTP_PORT;
-    }
+    const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
+    expect(calledUrl).toBe("http://localhost:9999/v1/channels/inbound");
   });
 
   test("4xx error throws immediately without retry", async () => {
@@ -139,7 +135,7 @@ describe("forwardToRuntime", () => {
 
   test("5xx error retries and eventually succeeds", async () => {
     const config = makeConfig();
-    const expectedUrl = `${getAssistantBaseUrl()}/v1/channels/inbound`;
+    const expectedUrl = `${config.assistantRuntimeBaseUrl}/v1/channels/inbound`;
     let inboundCallCount = 0;
     fetchMock = mock(async (input) => {
       const calledUrl =
@@ -317,7 +313,7 @@ describe("forwardTwilioVoiceWebhook", () => {
 
     const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
     expect(calledUrl).toBe(
-      "http://127.0.0.1:7821/v1/internal/twilio/voice-webhook",
+      "http://localhost:7821/v1/internal/twilio/voice-webhook",
     );
 
     const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
@@ -403,7 +399,7 @@ describe("forwardTwilioStatusWebhook", () => {
     expect(result.status).toBe(200);
 
     const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
-    expect(calledUrl).toBe("http://127.0.0.1:7821/v1/internal/twilio/status");
+    expect(calledUrl).toBe("http://localhost:7821/v1/internal/twilio/status");
 
     const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
     const sentBody = JSON.parse(calledInit.body as string);

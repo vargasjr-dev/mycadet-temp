@@ -8,7 +8,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -20,7 +19,7 @@ export function createWorkspaceCommitProxyHandler(config: GatewayConfig) {
     const start = performance.now();
 
     const response = await proxyForwardToResponse(req, {
-      baseUrl: getAssistantBaseUrl(),
+      baseUrl: config.assistantRuntimeBaseUrl,
       path: "/v1/admin/workspace-commit",
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,

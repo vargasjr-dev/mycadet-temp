@@ -22,6 +22,7 @@ const { createSlackControlPlaneProxyHandler } =
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -73,8 +74,8 @@ describe("slack control-plane proxy", () => {
     );
 
     expect(captured).toEqual([
-      "http://127.0.0.1:7821/v1/slack/channels",
-      "http://127.0.0.1:7821/v1/slack/share",
+      "http://localhost:7821/v1/slack/channels",
+      "http://localhost:7821/v1/slack/share",
     ]);
   });
 
@@ -95,7 +96,7 @@ describe("slack control-plane proxy", () => {
     );
 
     expect(captured).toEqual([
-      "http://127.0.0.1:7821/v1/slack/channels?types=public",
+      "http://localhost:7821/v1/slack/channels?types=public",
     ]);
   });
 

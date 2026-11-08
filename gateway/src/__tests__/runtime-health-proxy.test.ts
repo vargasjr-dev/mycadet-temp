@@ -22,6 +22,7 @@ const { createRuntimeHealthProxyHandler } =
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -65,7 +66,7 @@ describe("runtime health proxy", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(captured).toEqual(["http://127.0.0.1:7821/v1/health"]);
+    expect(captured).toEqual(["http://localhost:7821/v1/health"]);
     expect(await res.json()).toEqual({ status: "healthy" });
   });
 

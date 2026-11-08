@@ -9,7 +9,6 @@
  * endpoint is served before the auth middleware.
  */
 
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -21,7 +20,7 @@ export function createAudioProxyHandler(config: GatewayConfig) {
     _req: Request,
     audioId: string,
   ): Promise<Response> {
-    const upstream = `${getAssistantBaseUrl()}/v1/audio/${encodeURIComponent(audioId)}`;
+    const upstream = `${config.assistantRuntimeBaseUrl}/v1/audio/${encodeURIComponent(audioId)}`;
 
     let response: Response;
     try {

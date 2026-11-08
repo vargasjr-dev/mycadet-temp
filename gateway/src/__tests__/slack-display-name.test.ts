@@ -58,6 +58,7 @@ import type { SlackAppMentionEvent } from "../slack/message-schemas.js";
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   return {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: {

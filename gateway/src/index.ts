@@ -21,7 +21,7 @@ import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 
-import { getAssistantBaseUrl, loadConfig } from "./config.js";
+import { loadConfig } from "./config.js";
 import { CredentialCache } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
 import {
@@ -564,7 +564,7 @@ async function main() {
   );
   const handleTwilioVoiceVerifyCallback =
     createTwilioVoiceVerifyCallbackHandler(config, twilioValidationCaches);
-  const handleTwilioMediaWs = createTwilioMediaWebsocketHandler();
+  const handleTwilioMediaWs = createTwilioMediaWebsocketHandler(config);
   const handlePluginWebhookWs = createPluginWebhookWebsocketHandler({
     config,
     resolve: resolveCachedPluginIngress,
@@ -677,7 +677,7 @@ async function main() {
   const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
   const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
   const upgradeBroadcastProxy = createUpgradeBroadcastProxyHandler(config);
-  const migrationRollbackProxy = createMigrationRollbackProxyHandler();
+  const migrationRollbackProxy = createMigrationRollbackProxyHandler(config);
   const workspaceCommitProxy = createWorkspaceCommitProxyHandler(config);
   const desktopSetupProxy = createDesktopSetupProxyHandler(config);
   const brainGraphProxy = createBrainGraphProxyHandler(config);
@@ -1538,7 +1538,7 @@ async function main() {
       // pre-upgrade migration state through the gateway.
       try {
         const upstream = await fetch(
-          `${getAssistantBaseUrl()}/v1/health`,
+          `${config.assistantRuntimeBaseUrl}/v1/health`,
           {
             signal: AbortSignal.timeout(3000),
             headers: forwardedIdentityHeaders(),
@@ -1588,7 +1588,7 @@ async function main() {
       //   gate).
       try {
         const upstream = await fetch(
-          `${getAssistantBaseUrl()}/readyz`,
+          `${config.assistantRuntimeBaseUrl}/readyz`,
           { signal: AbortSignal.timeout(3000) },
         );
         const upstreamBody = (await upstream

@@ -15,6 +15,7 @@ export type AttachmentByteLimits = {
 } & Partial<Record<AttachmentByteChannel, number>>;
 
 export type GatewayConfig = {
+  assistantRuntimeBaseUrl: string;
   gatewayInternalBaseUrl: string;
   tunnelBaseUrl?: string;
   logFile: LogFileConfig;
@@ -117,8 +118,18 @@ export function loadConfig(): GatewayConfig {
     throw new Error("GATEWAY_PORT must be a valid port number");
   }
 
-  // 127.0.0.1, never `localhost` (the daemon binds IPv4 loopback only and
-  // Bun's fetch resolves `localhost` to ::1 without falling back).
+  // Port-based routing: each gateway instance reads RUNTIME_HTTP_PORT to
+  // discover its co-located daemon's HTTP port. In multi-instance setups,
+  // the CLI passes a per-instance daemon port so each gateway proxies to
+  // the correct daemon process (see cli/src/lib/local.ts startGateway).
+  //
+  // 127.0.0.1, never `localhost`: the daemon binds IPv4 loopback only
+  // (RUNTIME_HTTP_HOST defaults to 127.0.0.1), and Bun's fetch resolves
+  // `localhost` to ::1 first without falling back — the ConnectionRefused
+  // every topology with a shared netns would otherwise trip over.
+  const runtimePort = process.env.RUNTIME_HTTP_PORT || "7821";
+  const assistantRuntimeBaseUrl = `http://127.0.0.1:${runtimePort}`;
+
   const gatewayInternalBaseUrl = `http://127.0.0.1:${port}`;
   const tunnelBaseUrl = process.env.TUNNEL_BASE_URL?.trim() || undefined;
 
@@ -164,6 +175,7 @@ export function loadConfig(): GatewayConfig {
 
   log.info(
     {
+      assistantRuntimeBaseUrl,
       gatewayInternalBaseUrl,
       routingEntryCount: routingEntries.length,
       hasTunnelBaseUrl: !!tunnelBaseUrl,
@@ -176,6 +188,7 @@ export function loadConfig(): GatewayConfig {
   );
 
   return {
+    assistantRuntimeBaseUrl,
     gatewayInternalBaseUrl,
     tunnelBaseUrl,
     logFile,
@@ -202,12 +215,4 @@ export function loadConfig(): GatewayConfig {
     runtimeTimeoutMs,
     trustProxy,
   };
-}
-
-/**
- * Base URL of the co-located assistant daemon. Derived per call so tests can
- * point it at a mock server via RUNTIME_HTTP_PORT.
- */
-export function getAssistantBaseUrl(): string {
-  return `http://127.0.0.1:${process.env.RUNTIME_HTTP_PORT || "7821"}`;
 }

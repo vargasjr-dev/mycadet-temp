@@ -30,7 +30,6 @@ import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 import {
   forwardedIdentityHeaders,
 } from "@mycadet/assistant-client";
-import { getAssistantBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import {
@@ -336,7 +335,7 @@ async function collectDaemonExport(
   mkdirSync(destDir, { recursive: true });
 
   const upstreamIdentity = forwardedIdentityHeaders();
-  const upstream = `${getAssistantBaseUrl()}/v1/export`;
+  const upstream = `${config.assistantRuntimeBaseUrl}/v1/export`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {

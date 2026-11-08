@@ -91,6 +91,7 @@ import type { ConfigFileCache } from "../../config-file-cache.js";
 
 const baseConfig: GatewayConfig = makeGatewayConfig({
   runtimeProxyRequireAuth: true,
+  assistantRuntimeBaseUrl: "http://127.0.0.1:7821",
 });
 
 function makeVoiceRequest(
@@ -357,6 +358,7 @@ describe("twilio voice webhook handler", () => {
 
 describe("resolvePublicBaseWssUrl", () => {
   const baseConfig = {
+    assistantRuntimeBaseUrl: "http://localhost:3000",
   } as Parameters<typeof resolvePublicBaseWssUrl>[0];
 
   test("returns undefined when neither tunnelBaseUrl nor configFile publicBaseUrl is set", () => {

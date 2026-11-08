@@ -75,6 +75,7 @@ function readLogRecords(): Array<Record<string, unknown>> {
 
 function makeConfig(): GatewayConfig {
   return {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: false,

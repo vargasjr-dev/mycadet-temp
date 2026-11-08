@@ -558,7 +558,7 @@ describe("getLiveVoiceWebsocketHandlers", () => {
 
   test("open targets the runtime live voice websocket with forwarded identity", async () => {
     const ws = makeLiveVoiceWs(
-      makeConfig({}),
+      makeConfig({ assistantRuntimeBaseUrl: "http://runtime.internal:7821" }),
     );
 
     handlers.open(ws as never);
@@ -567,7 +567,7 @@ describe("getLiveVoiceWebsocketHandlers", () => {
     const call = MockWS.mock.calls[0] as unknown[];
     const parsed = new URL(call[0] as string);
     expect(parsed.protocol).toBe("ws:");
-    expect(parsed.host).toBe("127.0.0.1:7821");
+    expect(parsed.host).toBe("runtime.internal:7821");
     expect(parsed.pathname).toBe("/v1/live-voice");
     expect(parsed.searchParams.has("token")).toBe(false);
     const options = call[1] as { headers: Record<string, string> };

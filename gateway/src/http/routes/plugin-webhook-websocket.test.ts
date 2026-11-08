@@ -18,6 +18,7 @@ import { IngressRoute } from "../../channels/plugin-ingress.js";
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
 
 const CONFIG = {
+  assistantRuntimeBaseUrl: "http://runtime.test:7821",
   runtimeTimeoutMs: 1000,
   maxWebhookPayloadBytes: 1024,
 } as GatewayConfig;

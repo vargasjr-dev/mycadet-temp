@@ -29,6 +29,7 @@ const VALID_STATE_2 = "f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6";
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
@@ -75,7 +76,7 @@ describe("OAuth callback handler", () => {
 
     // Verify fetch was called with the runtime internal endpoint
     const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
-    expect(calledUrl).toBe("http://127.0.0.1:7821/v1/internal/oauth/callback");
+    expect(calledUrl).toBe("http://localhost:7821/v1/internal/oauth/callback");
 
     const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
     const sentBody = JSON.parse(calledInit.body as string);

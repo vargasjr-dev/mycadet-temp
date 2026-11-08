@@ -403,22 +403,19 @@ describe("a dropped downstream frame does not end a watch session", () => {
   let runtime: FakeRuntime;
   afterEach(() => {
     runtime?.server.stop(true);
-    delete process.env.RUNTIME_HTTP_PORT;
   });
 
-  const makeViewerWs = (sendStatus?: number) => {
-    // The handler derives its dial from getAssistantBaseUrl() — point
-    // RUNTIME_HTTP_PORT at the fake runtime for the duration of the test.
-    process.env.RUNTIME_HTTP_PORT = String(runtime.server.port);
-    return createFakeDownstreamWs<WatchStreamSocketData>(
+  const makeViewerWs = (sendStatus?: number) =>
+    createFakeDownstreamWs<WatchStreamSocketData>(
       {
         wsType: "watch-stream",
-        config: makeConfig({}),
+        config: makeConfig({
+          assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+        }),
         mimeType: "audio/pcm",
       },
       { sendStatus },
     );
-  };
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"session_started"}');

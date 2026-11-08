@@ -53,6 +53,7 @@ const { createChannelVerificationSessionProxyHandler } =
 
 function makeConfig(overrides?: Partial<GatewayConfig>): GatewayConfig {
   return {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
     runtimeTimeoutMs: 30_000,
     ...overrides,
   } as GatewayConfig;

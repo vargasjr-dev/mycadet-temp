@@ -22,41 +22,41 @@ import {
 // ---------------------------------------------------------------------------
 
 describe("HTTP proxy upstream URL construction via assistant-client", () => {
-  const baseUrl = "http://127.0.0.1:7821";
+  const baseUrl = "http://localhost:7821";
 
   test("brain-graph proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/brain-graph");
-    expect(url).toBe("http://127.0.0.1:7821/v1/brain-graph");
+    expect(url).toBe("http://localhost:7821/v1/brain-graph");
   });
 
   test("brain-graph-ui proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/brain-graph-ui");
-    expect(url).toBe("http://127.0.0.1:7821/v1/brain-graph-ui");
+    expect(url).toBe("http://localhost:7821/v1/brain-graph-ui");
   });
 
   test("upgrade-broadcast proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/admin/upgrade-broadcast");
-    expect(url).toBe("http://127.0.0.1:7821/v1/admin/upgrade-broadcast");
+    expect(url).toBe("http://localhost:7821/v1/admin/upgrade-broadcast");
   });
 
   test("workspace-commit proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/admin/workspace-commit");
-    expect(url).toBe("http://127.0.0.1:7821/v1/admin/workspace-commit");
+    expect(url).toBe("http://localhost:7821/v1/admin/workspace-commit");
   });
 
   test("migration-export proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/migrations/export");
-    expect(url).toBe("http://127.0.0.1:7821/v1/migrations/export");
+    expect(url).toBe("http://localhost:7821/v1/migrations/export");
   });
 
   test("migration-import proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/migrations/import");
-    expect(url).toBe("http://127.0.0.1:7821/v1/migrations/import");
+    expect(url).toBe("http://localhost:7821/v1/migrations/import");
   });
 
   test("migration-rollback proxy builds correct upstream URL", () => {
     const url = buildUpstreamUrl(baseUrl, "/v1/admin/rollback-migrations");
-    expect(url).toBe("http://127.0.0.1:7821/v1/admin/rollback-migrations");
+    expect(url).toBe("http://localhost:7821/v1/admin/rollback-migrations");
   });
 
   test("runtime proxy builds upstream URL with path rewrite and search", () => {
@@ -64,7 +64,7 @@ describe("HTTP proxy upstream URL construction via assistant-client", () => {
     const upstreamPath = "/v1/conversations";
     const search = "?limit=10";
     const url = buildUpstreamUrl(baseUrl, upstreamPath, search);
-    expect(url).toBe("http://127.0.0.1:7821/v1/conversations?limit=10");
+    expect(url).toBe("http://localhost:7821/v1/conversations?limit=10");
   });
 
   test("runtime proxy rewrites assistant-scoped paths correctly", () => {
@@ -73,7 +73,7 @@ describe("HTTP proxy upstream URL construction via assistant-client", () => {
     const match = originalPath.match(/^\/v1\/assistants\/[^/]+\/(.+)$/);
     const rewrittenPath = match ? `/v1/${match[1]}` : originalPath;
     const url = buildUpstreamUrl(baseUrl, rewrittenPath);
-    expect(url).toBe("http://127.0.0.1:7821/v1/conversations");
+    expect(url).toBe("http://localhost:7821/v1/conversations");
   });
 });
 
@@ -167,7 +167,7 @@ describe("HTTP proxy timeout/error via assistant-client", () => {
 // ---------------------------------------------------------------------------
 
 describe("WS upstream URL construction via assistant-client", () => {
-  const baseUrl = "http://127.0.0.1:7821";
+  const baseUrl = "http://localhost:7821";
 
   test("twilio-media builds correct upstream WS URL with callSessionId", () => {
     const result = buildWsUpstreamUrl({
@@ -233,7 +233,7 @@ describe("WS upstream log-safe URL", () => {
 
     for (const route of routes) {
       const result = buildWsUpstreamUrl({
-        baseUrl: "http://127.0.0.1:7821",
+        baseUrl: "http://localhost:7821",
         path: route.path,
         extraParams: route.params,
       });
@@ -256,7 +256,7 @@ describe("WS upstream log-safe URL", () => {
 
 describe("WS protocol conversion via assistant-client", () => {
   test("http base URL converts to ws", () => {
-    expect(httpToWs("http://127.0.0.1:7821")).toBe("ws://127.0.0.1:7821");
+    expect(httpToWs("http://localhost:7821")).toBe("ws://localhost:7821");
   });
 
   test("https base URL converts to wss", () => {
@@ -266,8 +266,8 @@ describe("WS protocol conversion via assistant-client", () => {
   });
 
   test("preserves path in base URL", () => {
-    expect(httpToWs("http://127.0.0.1:7821/api")).toBe(
-      "ws://127.0.0.1:7821/api",
+    expect(httpToWs("http://localhost:7821/api")).toBe(
+      "ws://localhost:7821/api",
     );
   });
 });
