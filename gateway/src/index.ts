@@ -21,7 +21,7 @@ import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 
-import { loadConfig } from "./config.js";
+import { getGatewayInternalBaseUrl, loadConfig } from "./config.js";
 import { CredentialCache } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
 import {
@@ -1964,7 +1964,7 @@ async function main() {
         // can target it for emoji-based thinking indicators.
         const origMessageTs = normalized.event.source.messageId;
         if (!threadTs && origMessageTs) params.set("messageTs", origMessageTs);
-        const replyCallbackUrl = `${config.gatewayInternalBaseUrl}/deliver/slack?${params}`;
+        const replyCallbackUrl = `${getGatewayInternalBaseUrl()}/deliver/slack?${params}`;
 
         const refersToAnotherMessage = eventRefersToAnotherMessage(
           normalized.event.message,

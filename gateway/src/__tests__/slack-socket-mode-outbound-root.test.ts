@@ -116,7 +116,6 @@ const FOUR_HOURS_MS = 4 * 60 * 60 * 1_000;
 function makeConfig(): GatewayConfig {
   return {
     assistantRuntimeBaseUrl: "http://localhost:7821",
-    gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     logFile: { dir: undefined, retentionDays: 30 },
     maxAttachmentBytes: {
       telegram: 50 * 1024 * 1024,

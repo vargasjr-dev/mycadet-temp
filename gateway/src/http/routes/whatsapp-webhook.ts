@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "crypto";
 import { buildWhatsAppTransportMetadata } from "../../channels/transport-hints.js";
+import { getGatewayInternalBaseUrl } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import type { ConfigFileCache } from "../../config-file-cache.js";
 import type { CredentialCache } from "../../credential-cache.js";
@@ -311,7 +312,7 @@ export function createWhatsAppWebhookHandler(
         const result = await handleInbound(config, event, {
           attachmentIds,
           transportMetadata: buildWhatsAppTransportMetadata(),
-          replyCallbackUrl: `${config.gatewayInternalBaseUrl}/deliver/whatsapp`,
+          replyCallbackUrl: `${getGatewayInternalBaseUrl()}/deliver/whatsapp`,
           traceId,
           routingOverride: routing,
         });
