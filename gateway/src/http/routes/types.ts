@@ -101,10 +101,14 @@ export interface RouteDefinition {
    */
   precondition?: () => Response | null;
   /**
-   * The route's handler. Built once at module scope (typically
-   * `handler: createXHandler(deps)` over injected module state) — importing
-   * a ROUTES module stays free of side effects because the factories only
-   * build closures.
+   * Compiled dispatch pattern for `{param}` template paths — set by the
+   * router's expansion, never declared by hand.
+   */
+  pattern?: RegExp;
+  /**
+   * The route's handler — a plain function that reads the config, credential,
+   * and config-file singletons at request time. Importing a ROUTES module
+   * stays side-effect-free because nothing here runs at import.
    */
   handler: RouteHandler;
 }

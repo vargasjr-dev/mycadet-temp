@@ -28,24 +28,21 @@ interface PsResponse {
   processes: ProcessEntry[];
 }
 
-export function createPsHandler(config: GatewayConfig) {
-  async function handlePs(): Promise<Response> {
-    const assistantProcesses = await fetchAssistantPs(config);
+export async function handlePs(): Promise<Response> {
+  const config = getConfig();
+  const assistantProcesses = await fetchAssistantPs(config);
 
-    const processes: ProcessEntry[] = [
-      ...assistantProcesses,
-      {
-        name: "gateway",
-        status: "running",
-        info: `port ${config.port}`,
-      },
-    ];
+  const processes: ProcessEntry[] = [
+    ...assistantProcesses,
+    {
+      name: "gateway",
+      status: "running",
+      info: `port ${config.port}`,
+    },
+  ];
 
-    const body: PsResponse = { processes };
-    return Response.json(body);
-  }
-
-  return { handlePs };
+  const body: PsResponse = { processes };
+  return Response.json(body);
 }
 
 async function fetchAssistantPs(
@@ -75,21 +72,11 @@ async function fetchAssistantPs(
     return [{ name: "assistant", status: "unreachable" }];
   }
 }
-
-let routeProxyImpl: ReturnType<typeof createPsHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createPsHandler> {
-  return (routeProxyImpl ??= createPsHandler(getConfig()));
-}
-
-
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/ps",
     method: "get",
     auth: "edge",
-    handler: (_req, _params) => routeProxy().handlePs(),
+    handler: () => handlePs(),
   },
 ];

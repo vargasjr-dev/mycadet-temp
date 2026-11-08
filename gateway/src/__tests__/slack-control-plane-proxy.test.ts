@@ -17,7 +17,13 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createSlackControlPlaneProxyHandler } =
+let slackConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => slackConfig,
+}));
+
+const { handleListSlackChannels, handleShareToSlack } =
   await import("../http/routes/slack-control-plane-proxy.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
@@ -59,12 +65,12 @@ describe("slack control-plane proxy", () => {
       });
     });
 
-    const handler = createSlackControlPlaneProxyHandler(makeConfig());
+    slackConfig = makeConfig();
 
-    await handler.handleListSlackChannels(
+    await handleListSlackChannels(
       new Request("http://localhost:7830/v1/slack/channels"),
     );
-    await handler.handleShareToSlack(
+    await handleShareToSlack(
       new Request("http://localhost:7830/v1/slack/share", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -88,9 +94,9 @@ describe("slack control-plane proxy", () => {
       });
     });
 
-    const handler = createSlackControlPlaneProxyHandler(makeConfig());
+    slackConfig = makeConfig();
 
-    await handler.handleListSlackChannels(
+    await handleListSlackChannels(
       new Request("http://localhost:7830/v1/slack/channels?types=public"),
     );
 
@@ -108,8 +114,8 @@ describe("slack control-plane proxy", () => {
       },
     );
 
-    const handler = createSlackControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleShareToSlack(
+    slackConfig = makeConfig();
+    const res = await handleShareToSlack(
       new Request("http://localhost:7830/v1/slack/share", {
         method: "POST",
         headers: {
@@ -140,8 +146,8 @@ describe("slack control-plane proxy", () => {
       });
     });
 
-    const handler = createSlackControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleShareToSlack(
+    slackConfig = makeConfig();
+    const res = await handleShareToSlack(
       new Request("http://localhost:7830/v1/slack/share", {
         method: "POST",
       }),
@@ -156,8 +162,8 @@ describe("slack control-plane proxy", () => {
       throw new Error("Connection refused");
     });
 
-    const handler = createSlackControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleListSlackChannels(
+    slackConfig = makeConfig();
+    const res = await handleListSlackChannels(
       new Request("http://localhost:7830/v1/slack/channels"),
     );
 

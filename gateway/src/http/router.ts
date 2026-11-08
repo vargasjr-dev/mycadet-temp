@@ -24,16 +24,6 @@ export interface RouterDeps {
 }
 
 /**
- * One route declaration, expanded for dispatch: aliases and scoped mirrors
- * unfolded, `{param}` templates compiled to `pattern`, methods uppercased.
- */
-type DispatchRoute = Omit<RouteDefinition, "method"> & {
-  /** Compiled dispatch pattern (set iff `path` is a `{param}` template). */
-  pattern?: RegExp;
-  method: string;
-};
-
-/**
  * Create a router function from a declarative route table.
  *
  * The returned function matches the first route whose path and method match,
@@ -50,7 +40,7 @@ export function createRouter(
   server?: Server<unknown>,
 ) => Promise<Response | null> {
   const { authRateLimiter } = deps;
-  const table: DispatchRoute[] = routes.flatMap(expandRoute);
+  const table: RouteDefinition[] = routes.flatMap(expandRoute);
 
   return async (
     req: Request,
@@ -192,24 +182,22 @@ export function compilePath(template: string): RegExp {
 }
 
 /**
- * Expand one route declaration into the internal definitions the matcher
- * consumes: the flat route, its dispatch-only method aliases, and — when
- * `scoped` — the assistant-scoped mirror whose first capture (the assistant
- * id) is discarded before the handler sees the params.
+ * Expand one route declaration into the definitions the matcher consumes:
+ * the flat route, its dispatch-only method aliases, and — when `scoped` —
+ * the assistant-scoped mirror whose first capture (the assistant id) is
+ * discarded before the handler sees the params. Same `RouteDefinition` type
+ * in and out; the expansion only compiles the path template and unfolds
+ * variants.
  */
-export function expandRoute(route: RouteDefinition): DispatchRoute[] {
+export function expandRoute(route: RouteDefinition): RouteDefinition[] {
   const pattern =
     typeof route.path === "string" && route.path.includes("{")
       ? compilePath(route.path)
       : undefined;
-  const flat: DispatchRoute = {
-    ...route,
-    pattern,
-    method: route.method?.toUpperCase() ?? "",
-  };
-  const expanded: DispatchRoute[] = [flat];
+  const flat: RouteDefinition = { ...route, pattern };
+  const expanded: RouteDefinition[] = [flat];
   for (const alias of route.aliases ?? []) {
-    expanded.push({ ...flat, method: alias.toUpperCase() });
+    expanded.push({ ...flat, method: alias });
   }
   if (route.scoped) {
     if (typeof route.path !== "string") {
@@ -237,12 +225,13 @@ interface MatchResult {
 }
 
 function matchRoute(
-  route: DispatchRoute,
+  route: RouteDefinition,
   pathname: string,
   method: string,
 ): MatchResult | null {
-  // Check method first (cheapest check). "" means any method (webhook receivers).
-  if (route.method && route.method !== method) return null;
+  // Check method first (cheapest check). An omitted method serves any method
+  // (webhook receivers).
+  if (route.method && route.method.toUpperCase() !== method) return null;
 
   if (route.pattern) {
     const match = pathname.match(route.pattern);

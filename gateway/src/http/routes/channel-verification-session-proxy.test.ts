@@ -45,8 +45,16 @@ mock.module("../../auth/guardian-bootstrap.js", () => ({
   REFRESH_AFTER_FRACTION: 0.8,
 }));
 
+// The handler reads the process-wide config; the tests point it at a
+// per-test config via the module mock.
+let cvsConfig: GatewayConfig;
+
+mock.module("./config.js", () => ({
+  getConfig: () => cvsConfig,
+}));
+
 // Import after mocks are registered
-const { createChannelVerificationSessionProxyHandler } =
+const { handleCreateVerificationSession, handleGetVerificationStatus } =
   await import("./channel-verification-session-proxy.js");
 
 // --- Helpers -----------------------------------------------------------------
@@ -69,8 +77,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
   });
 
   it("strips x-forwarded-for for loopback client IP", async () => {
-    const config = makeConfig();
-    const handler = createChannelVerificationSessionProxyHandler(config);
+    cvsConfig = makeConfig();
 
     const req = new Request("http://gateway/v1/channel-verification-sessions", {
       method: "POST",
@@ -83,15 +90,14 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
 
     // proxyToRuntime is called without clientIp from handleCreateVerificationSession,
     // so x-forwarded-for should be stripped
-    await handler.handleCreateVerificationSession(req);
+    await handleCreateVerificationSession(req);
 
     expect(capturedFetchHeaders).toBeDefined();
     expect(capturedFetchHeaders!.has("x-forwarded-for")).toBe(false);
   });
 
   it("asserts the gateway service identity in x-cadet-* headers", async () => {
-    const config = makeConfig();
-    const handler = createChannelVerificationSessionProxyHandler(config);
+    cvsConfig = makeConfig();
 
     const req = new Request("http://gateway/v1/channel-verification-sessions", {
       method: "POST",
@@ -99,7 +105,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
       body: JSON.stringify({ channel: "test" }),
     });
 
-    await handler.handleCreateVerificationSession(req);
+    await handleCreateVerificationSession(req);
 
     expect(capturedFetchHeaders).toBeDefined();
     // The daemon verifies no tokens — the proxy asserts the gateway's
@@ -114,15 +120,14 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
   });
 
   it("forwards query params for status endpoint", async () => {
-    const config = makeConfig();
-    const handler = createChannelVerificationSessionProxyHandler(config);
+    cvsConfig = makeConfig();
 
     const req = new Request(
       "http://gateway/v1/channel-verification-sessions/status?channel=telegram&id=123",
       { method: "GET" },
     );
 
-    await handler.handleGetVerificationStatus(req);
+    await handleGetVerificationStatus(req);
 
     expect(capturedFetchUrl).toBeDefined();
     expect(capturedFetchUrl).toContain(
@@ -133,8 +138,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
   });
 
   it("strips hop-by-hop headers from forwarded request", async () => {
-    const config = makeConfig();
-    const handler = createChannelVerificationSessionProxyHandler(config);
+    cvsConfig = makeConfig();
 
     const req = new Request("http://gateway/v1/channel-verification-sessions", {
       method: "POST",
@@ -146,7 +150,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
       body: JSON.stringify({ channel: "test" }),
     });
 
-    await handler.handleCreateVerificationSession(req);
+    await handleCreateVerificationSession(req);
 
     expect(capturedFetchHeaders).toBeDefined();
     expect(capturedFetchHeaders!.has("connection")).toBe(false);
@@ -155,8 +159,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
   });
 
   it("removes incoming host and authorization headers", async () => {
-    const config = makeConfig();
-    const handler = createChannelVerificationSessionProxyHandler(config);
+    cvsConfig = makeConfig();
 
     const req = new Request("http://gateway/v1/channel-verification-sessions", {
       method: "POST",
@@ -168,7 +171,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
       body: JSON.stringify({ channel: "test" }),
     });
 
-    await handler.handleCreateVerificationSession(req);
+    await handleCreateVerificationSession(req);
 
     expect(capturedFetchHeaders).toBeDefined();
     expect(capturedFetchHeaders!.has("host")).toBe(false);

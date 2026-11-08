@@ -23,19 +23,28 @@ const log = getLogger("auto-approve-thresholds");
 // ---------------------------------------------------------------------------
 
 export const VALID_THRESHOLDS = ["none", "low", "medium", "high"] as const;
-type Threshold = (typeof VALID_THRESHOLDS)[number];
 
-function isValidThreshold(value: unknown): value is Threshold {
-  return (
-    typeof value === "string" && VALID_THRESHOLDS.includes(value as Threshold)
-  );
+/** Shared 400 text for the PUT bodies. */
+function thresholdsBodyError(error: z.ZodError): string {
+  if (error.issues.some((issue) => issue.path.length === 0)) {
+    return "Request body must be a JSON object";
+  }
+  const details = error.issues
+    .map(
+      (issue) =>
+        `"${String(issue.path[0])}" must be one of: ${VALID_THRESHOLDS.join(", ")}`,
+    )
+    .join("; ");
+  return `Invalid request body: ${details}`;
 }
 
 // ---------------------------------------------------------------------------
 // GET /v1/permissions/thresholds — global thresholds
 // ---------------------------------------------------------------------------
 
-export async function handleGlobalThresholdGet(_req: Request): Promise<Response> {
+export async function handleGlobalThresholdGet(
+  _req: Request,
+): Promise<Response> {
   try {
     const db = getGatewayDb();
     const row = db
@@ -68,7 +77,9 @@ export async function handleGlobalThresholdGet(_req: Request): Promise<Response>
 // PUT /v1/permissions/thresholds — upsert global thresholds
 // ---------------------------------------------------------------------------
 
-export async function handleGlobalThresholdPut(req: Request): Promise<Response> {
+export async function handleGlobalThresholdPut(
+  req: Request,
+): Promise<Response> {
   let body: unknown;
   try {
     body = await req.json();
@@ -79,42 +90,15 @@ export async function handleGlobalThresholdPut(req: Request): Promise<Response> 
     );
   }
 
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+  const parsed = GlobalThresholdsPutSchema.safeParse(body);
+  if (!parsed.success) {
     return Response.json(
-      { error: "Request body must be a JSON object" },
+      { error: thresholdsBodyError(parsed.error) },
       { status: 400 },
     );
   }
 
-  const { interactive, autonomous, headless } = body as Record<
-    string,
-    unknown
-  >;
-
-  if (interactive !== undefined && !isValidThreshold(interactive)) {
-    return Response.json(
-      {
-        error: `"interactive" must be one of: ${VALID_THRESHOLDS.join(", ")}`,
-      },
-      { status: 400 },
-    );
-  }
-  if (autonomous !== undefined && !isValidThreshold(autonomous)) {
-    return Response.json(
-      {
-        error: `"autonomous" must be one of: ${VALID_THRESHOLDS.join(", ")}`,
-      },
-      { status: 400 },
-    );
-  }
-  if (headless !== undefined && !isValidThreshold(headless)) {
-    return Response.json(
-      {
-        error: `"headless" must be one of: ${VALID_THRESHOLDS.join(", ")}`,
-      },
-      { status: 400 },
-    );
-  }
+  const { interactive, autonomous, headless } = parsed.data;
 
   try {
     const db = getGatewayDb();
@@ -162,7 +146,10 @@ export async function handleGlobalThresholdPut(req: Request): Promise<Response> 
 // which already returns `null` for the same condition.
 // ---------------------------------------------------------------------------
 
-export async function handleConversationThresholdGet(_req: Request, params: string[]): Promise<Response> {
+export async function handleConversationThresholdGet(
+  _req: Request,
+  params: string[],
+): Promise<Response> {
   const conversationId = params[0];
   if (!conversationId) {
     return Response.json(
@@ -176,9 +163,7 @@ export async function handleConversationThresholdGet(_req: Request, params: stri
     const row = db
       .select()
       .from(conversationThresholdOverrides)
-      .where(
-        eq(conversationThresholdOverrides.conversationId, conversationId),
-      )
+      .where(eq(conversationThresholdOverrides.conversationId, conversationId))
       .get();
 
     if (!row) {
@@ -199,7 +184,10 @@ export async function handleConversationThresholdGet(_req: Request, params: stri
 // PUT /v1/permissions/thresholds/conversations/:conversationId
 // ---------------------------------------------------------------------------
 
-export async function handleConversationThresholdPut(req: Request, params: string[]): Promise<Response> {
+export async function handleConversationThresholdPut(
+  req: Request,
+  params: string[],
+): Promise<Response> {
   const conversationId = params[0];
   if (!conversationId) {
     return Response.json(
@@ -225,16 +213,15 @@ export async function handleConversationThresholdPut(req: Request, params: strin
     );
   }
 
-  const { threshold } = body as Record<string, unknown>;
-
-  if (!isValidThreshold(threshold)) {
+  const parsed = ConversationThresholdPutSchema.safeParse(body);
+  if (!parsed.success) {
     return Response.json(
-      {
-        error: `"threshold" must be one of: ${VALID_THRESHOLDS.join(", ")}`,
-      },
+      { error: thresholdsBodyError(parsed.error) },
       { status: 400 },
     );
   }
+
+  const { threshold } = parsed.data;
 
   try {
     const db = getGatewayDb();
@@ -266,7 +253,10 @@ export async function handleConversationThresholdPut(req: Request, params: strin
 // DELETE /v1/permissions/thresholds/conversations/:conversationId
 // ---------------------------------------------------------------------------
 
-export async function handleConversationThresholdDelete(_req: Request, params: string[]): Promise<Response> {
+export async function handleConversationThresholdDelete(
+  _req: Request,
+  params: string[],
+): Promise<Response> {
   const conversationId = params[0];
   if (!conversationId) {
     return Response.json(
@@ -278,9 +268,7 @@ export async function handleConversationThresholdDelete(_req: Request, params: s
   try {
     const db = getGatewayDb();
     db.delete(conversationThresholdOverrides)
-      .where(
-        eq(conversationThresholdOverrides.conversationId, conversationId),
-      )
+      .where(eq(conversationThresholdOverrides.conversationId, conversationId))
       .run();
 
     // 204 No Content — idempotent, succeeds even if row didn't exist
@@ -301,6 +289,14 @@ const GlobalThresholdsSchema = z.object({
   autonomous: ThresholdSchema,
   headless: ThresholdSchema,
 });
+
+const GlobalThresholdsPutSchema = z.object({
+  interactive: ThresholdSchema.optional(),
+  autonomous: ThresholdSchema.optional(),
+  headless: ThresholdSchema.optional(),
+});
+
+const ConversationThresholdPutSchema = z.object({ threshold: ThresholdSchema });
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -323,11 +319,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Partial update — omitted modes keep their current value. Returns the full post-update set.",
     tags: ["permissions"],
-    requestBody: z.object({
-      interactive: ThresholdSchema.optional(),
-      autonomous: ThresholdSchema.optional(),
-      headless: ThresholdSchema.optional(),
-    }),
+    requestBody: GlobalThresholdsPutSchema,
     responseBody: GlobalThresholdsSchema,
     auth: "edge-scoped",
     scope: "settings.write",
@@ -360,7 +352,7 @@ export const ROUTES: RouteDefinition[] = [
     pathParameters: [
       { name: "conversation_id", description: "The conversation id" },
     ],
-    requestBody: z.object({ threshold: ThresholdSchema }),
+    requestBody: ConversationThresholdPutSchema,
     responseBody: z.object({
       conversationId: z.string(),
       threshold: ThresholdSchema,

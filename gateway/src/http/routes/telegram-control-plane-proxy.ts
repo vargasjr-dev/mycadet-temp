@@ -7,7 +7,6 @@
 
 import { proxyForward } from "@mycadet/assistant-client";
 
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -15,109 +14,97 @@ import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("telegram-control-plane-proxy");
 
-export function createTelegramControlPlaneProxyHandler(config: GatewayConfig) {
-  async function forward(
-    req: Request,
-    upstreamPath: string,
-    upstreamSearch?: string,
-  ): Promise<Response> {
-    const start = performance.now();
-    const result = await proxyForward(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path: upstreamPath,
-      search: upstreamSearch,
-      timeoutMs: config.runtimeTimeoutMs,
-      fetchImpl,
-    });
+async function forward(
+  req: Request,
+  upstreamPath: string,
+  upstreamSearch?: string,
+): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
+  const result = await proxyForward(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path: upstreamPath,
+    search: upstreamSearch,
+    timeoutMs: config.runtimeTimeoutMs,
+    fetchImpl,
+  });
 
-    const duration = Math.round(performance.now() - start);
+  const duration = Math.round(performance.now() - start);
 
-    if (result.gatewayError) {
-      log.error(
-        { path: upstreamPath, duration },
-        result.status === 504
-          ? "Telegram control-plane proxy upstream timed out"
-          : "Telegram control-plane proxy upstream connection failed",
-      );
-    } else if (result.status >= 400) {
-      log.warn(
-        { path: upstreamPath, status: result.status, duration },
-        "Telegram control-plane proxy upstream error",
-      );
-    } else {
-      log.info(
-        { path: upstreamPath, status: result.status, duration },
-        "Telegram control-plane proxy completed",
-      );
-    }
-
-    return new Response(result.body, {
-      status: result.status,
-      headers: result.headers,
-    });
+  if (result.gatewayError) {
+    log.error(
+      { path: upstreamPath, duration },
+      result.status === 504
+        ? "Telegram control-plane proxy upstream timed out"
+        : "Telegram control-plane proxy upstream connection failed",
+    );
+  } else if (result.status >= 400) {
+    log.warn(
+      { path: upstreamPath, status: result.status, duration },
+      "Telegram control-plane proxy upstream error",
+    );
+  } else {
+    log.info(
+      { path: upstreamPath, status: result.status, duration },
+      "Telegram control-plane proxy completed",
+    );
   }
 
-  return {
-    async handleGetTelegramConfig(req: Request): Promise<Response> {
-      return forward(req, "/v1/integrations/telegram/config");
-    },
-
-    async handleSetTelegramConfig(req: Request): Promise<Response> {
-      return forward(req, "/v1/integrations/telegram/config");
-    },
-
-    async handleClearTelegramConfig(req: Request): Promise<Response> {
-      return forward(req, "/v1/integrations/telegram/config");
-    },
-
-    async handleSetTelegramCommands(req: Request): Promise<Response> {
-      return forward(req, "/v1/integrations/telegram/commands");
-    },
-
-    async handleSetupTelegram(req: Request): Promise<Response> {
-      return forward(req, "/v1/integrations/telegram/setup");
-    },
-  };
+  return new Response(result.body, {
+    status: result.status,
+    headers: result.headers,
+  });
 }
 
-let routeProxyImpl: ReturnType<typeof createTelegramControlPlaneProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createTelegramControlPlaneProxyHandler> {
-  return (routeProxyImpl ??= createTelegramControlPlaneProxyHandler(getConfig()));
+export function handleGetTelegramConfig(req: Request): Promise<Response> {
+  return forward(req, "/v1/integrations/telegram/config");
 }
 
+export function handleSetTelegramConfig(req: Request): Promise<Response> {
+  return forward(req, "/v1/integrations/telegram/config");
+}
+
+export function handleClearTelegramConfig(req: Request): Promise<Response> {
+  return forward(req, "/v1/integrations/telegram/config");
+}
+
+export function handleSetTelegramCommands(req: Request): Promise<Response> {
+  return forward(req, "/v1/integrations/telegram/commands");
+}
+
+export function handleSetupTelegram(req: Request): Promise<Response> {
+  return forward(req, "/v1/integrations/telegram/setup");
+}
 
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/integrations/telegram/config",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleGetTelegramConfig(req),
+    handler: (req) => handleGetTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/config",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleSetTelegramConfig(req),
+    handler: (req) => handleSetTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/config",
     method: "delete",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleClearTelegramConfig(req),
+    handler: (req) => handleClearTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/commands",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleSetTelegramCommands(req),
+    handler: (req) => handleSetTelegramCommands(req),
   },
   {
     path: "/integrations/telegram/setup",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleSetupTelegram(req),
+    handler: (req) => handleSetupTelegram(req),
   },
 ];

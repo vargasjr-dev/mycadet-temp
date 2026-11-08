@@ -10,8 +10,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mock } from "bun:test";
 import { createElement, type ReactElement, type ReactNode } from "react";
 
-import type { RemoteWebPairingRequestSummary } from "@mycadet/service-contracts/remote-web-pairing";
-
 import type { IntegrationsIngressStatusGetResponse } from "@/generated/daemon/types.gen";
 
 /** Scoped same-origin remote-web base used across the pair-device tests. */
@@ -109,21 +107,6 @@ export function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
-}
-
-export function pendingRequest(
-  overrides: Partial<RemoteWebPairingRequestSummary> = {},
-): RemoteWebPairingRequestSummary {
-  return {
-    requestId: "req-1",
-    userCode: "WXYZ-1234",
-    publicBaseUrl: "https://foo.ts.net",
-    requestedAt: "2026-08-17T10:00:00.000Z",
-    expiresAt: "2026-08-17T10:10:00.000Z",
-    requesterIp: "203.0.113.7",
-    requesterUserAgent: "Mozilla/5.0",
-    ...overrides,
-  };
 }
 
 interface RecordedFetch {

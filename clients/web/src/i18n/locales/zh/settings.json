@@ -1121,11 +1121,6 @@
   "usePairDevice": {
     "mintErrorFallback": "生成代码时出现问题。"
   },
-  "usePendingPairingRequests": {
-    "actionErrorFallback": "出现问题。请重试。",
-    "denyAlreadyApproved": "此请求已在其他地方批准，因此拒绝操作未生效，设备现已配对。",
-    "pollErrorFallback": "检查配对请求时出现问题。"
-  },
   "useProfileSave": {
     "createdToast": "配置文件“{name}”已创建"
   },

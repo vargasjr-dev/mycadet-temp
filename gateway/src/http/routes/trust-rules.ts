@@ -102,247 +102,243 @@ function readInteractiveThreshold(): string {
 // POST /v1/trust-rules/suggest — LLM-generated trust rule suggestion
 // ---------------------------------------------------------------------------
 
-export function createTrustRulesSuggestHandler() {
-  return async (req: Request): Promise<Response> => {
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json(
-        { error: "Request body must be valid JSON" },
-        { status: 400 },
-      );
-    }
+export async function handleTrustRulesSuggest(req: Request): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 },
+    );
+  }
 
-    const parsed = SuggestRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        { error: "Invalid request body", issues: parsed.error.issues },
-        { status: 400 },
-      );
-    }
+  const parsed = SuggestRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: "Invalid request body", issues: parsed.error.issues },
+      { status: 400 },
+    );
+  }
 
-    const currentThreshold = readInteractiveThreshold();
+  const currentThreshold = readInteractiveThreshold();
 
-    try {
-      const suggestion = await ipcSuggestTrustRule({
-        ...parsed.data,
-        currentThreshold,
-      });
-      return Response.json({ suggestion });
-    } catch (err) {
-      log.error({ err }, "Trust rule suggestion failed");
-      const message =
-        err instanceof Error ? err.message : "Suggestion generation failed";
-      return Response.json({ error: message }, { status: 503 });
-    }
-  };
+  try {
+    const suggestion = await ipcSuggestTrustRule({
+      ...parsed.data,
+      currentThreshold,
+    });
+    return Response.json({ suggestion });
+  } catch (err) {
+    log.error({ err }, "Trust rule suggestion failed");
+    const message =
+      err instanceof Error ? err.message : "Suggestion generation failed";
+    return Response.json({ error: message }, { status: 503 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // GET /v1/trust-rules — list rules
 // ---------------------------------------------------------------------------
 
-export function createTrustRulesListHandler() {
-  return async (req: Request): Promise<Response> => {
-    try {
-      const url = new URL(req.url);
-      const origin = url.searchParams.get("origin") ?? undefined;
-      const tool = url.searchParams.get("tool") ?? undefined;
-      const includeDeleted = url.searchParams.get("include_deleted") === "true";
-      const includeAll = url.searchParams.get("include_all") === "true";
+export async function handleTrustRulesList(req: Request): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const origin = url.searchParams.get("origin") ?? undefined;
+    const tool = url.searchParams.get("tool") ?? undefined;
+    const includeDeleted = url.searchParams.get("include_deleted") === "true";
+    const includeAll = url.searchParams.get("include_all") === "true";
 
-      return Response.json(
-        listTrustRules({ origin, tool, includeDeleted, includeAll }),
-      );
-    } catch (err) {
-      log.error({ err }, "Failed to list trust rules");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+    return Response.json(
+      listTrustRules({ origin, tool, includeDeleted, includeAll }),
+    );
+  } catch (err) {
+    log.error({ err }, "Failed to list trust rules");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // POST /v1/trust-rules — create rule
 // ---------------------------------------------------------------------------
 
-export function createTrustRulesCreateHandler() {
+export async function handleTrustRulesCreate(req: Request): Promise<Response> {
   const store = new TrustRuleStore();
 
-  return async (req: Request): Promise<Response> => {
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json(
-        { error: "Request body must be valid JSON" },
-        { status: 400 },
-      );
-    }
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 },
+    );
+  }
 
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return Response.json(
-        { error: "Request body must be a JSON object" },
-        { status: 400 },
-      );
-    }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json(
+      { error: "Request body must be a JSON object" },
+      { status: 400 },
+    );
+  }
 
-    const { tool, pattern, risk, description, scope } = body as Record<
-      string,
-      unknown
-    >;
+  const { tool, pattern, risk, description, scope } = body as Record<
+    string,
+    unknown
+  >;
 
-    if (typeof tool !== "string" || !tool) {
-      return Response.json(
-        { error: '"tool" must be a non-empty string' },
-        { status: 400 },
-      );
-    }
-    if (typeof pattern !== "string" || !pattern) {
-      return Response.json(
-        { error: '"pattern" must be a non-empty string' },
-        { status: 400 },
-      );
-    }
-    if (typeof risk !== "string" || !VALID_RISK_VALUES.has(risk)) {
-      return Response.json(
-        { error: '"risk" must be one of: low, medium, high' },
-        { status: 400 },
-      );
-    }
-    if (typeof description !== "string" || !description) {
-      return Response.json(
-        { error: '"description" must be a non-empty string' },
-        { status: 400 },
-      );
-    }
-    // The engine matches rules on (tool, pattern) only, so a directory scope
-    // cannot narrow one. Storing a scoped request anyway would persist a rule
-    // broader than the consent it records; refuse it instead. "everywhere"
-    // is the one value that means what the store does, so it stays accepted
-    // for clients that send it explicitly.
-    if (scope !== undefined && scope !== "everywhere") {
-      return Response.json(
-        {
-          error:
-            'Trust rules apply workspace-wide; "scope" cannot narrow one. Omit it or send "everywhere".',
-        },
-        { status: 400 },
-      );
-    }
+  if (typeof tool !== "string" || !tool) {
+    return Response.json(
+      { error: '"tool" must be a non-empty string' },
+      { status: 400 },
+    );
+  }
+  if (typeof pattern !== "string" || !pattern) {
+    return Response.json(
+      { error: '"pattern" must be a non-empty string' },
+      { status: 400 },
+    );
+  }
+  if (typeof risk !== "string" || !VALID_RISK_VALUES.has(risk)) {
+    return Response.json(
+      { error: '"risk" must be one of: low, medium, high' },
+      { status: 400 },
+    );
+  }
+  if (typeof description !== "string" || !description) {
+    return Response.json(
+      { error: '"description" must be a non-empty string' },
+      { status: 400 },
+    );
+  }
+  // The engine matches rules on (tool, pattern) only, so a directory scope
+  // cannot narrow one. Storing a scoped request anyway would persist a rule
+  // broader than the consent it records; refuse it instead. "everywhere"
+  // is the one value that means what the store does, so it stays accepted
+  // for clients that send it explicitly.
+  if (scope !== undefined && scope !== "everywhere") {
+    return Response.json(
+      {
+        error:
+          'Trust rules apply workspace-wide; "scope" cannot narrow one. Omit it or send "everywhere".',
+      },
+      { status: 400 },
+    );
+  }
 
-    try {
-      const rule = store.create({
-        tool,
-        pattern,
-        risk,
-        description,
-        scope: typeof scope === "string" ? scope : null,
-      });
-      invalidateTrustRuleCache();
-      return Response.json({ rule }, { status: 201 });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create trust rule";
-      log.error({ err }, "Failed to create trust rule");
-      return Response.json({ error: message }, { status: 500 });
-    }
-  };
+  try {
+    const rule = store.create({
+      tool,
+      pattern,
+      risk,
+      description,
+      scope: typeof scope === "string" ? scope : null,
+    });
+    invalidateTrustRuleCache();
+    return Response.json({ rule }, { status: 201 });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to create trust rule";
+    log.error({ err }, "Failed to create trust rule");
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // PATCH /v1/trust-rules/:id — update rule
 // ---------------------------------------------------------------------------
 
-export function createTrustRulesUpdateHandler() {
+export async function handleTrustRulesUpdate(
+  req: Request,
+  ruleId: string,
+): Promise<Response> {
   const store = new TrustRuleStore();
 
-  return async (req: Request, ruleId: string): Promise<Response> => {
-    if (!ruleId) {
-      return Response.json({ error: "Rule ID is required" }, { status: 400 });
-    }
+  if (!ruleId) {
+    return Response.json({ error: "Rule ID is required" }, { status: 400 });
+  }
 
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json(
-        { error: "Request body must be valid JSON" },
-        { status: 400 },
-      );
-    }
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 },
+    );
+  }
 
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return Response.json(
-        { error: "Request body must be a JSON object" },
-        { status: 400 },
-      );
-    }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json(
+      { error: "Request body must be a JSON object" },
+      { status: 400 },
+    );
+  }
 
-    const { risk, description } = body as Record<string, unknown>;
+  const { risk, description } = body as Record<string, unknown>;
 
-    if (
-      risk !== undefined &&
-      (typeof risk !== "string" || !VALID_RISK_VALUES.has(risk))
-    ) {
-      return Response.json(
-        { error: '"risk" must be one of: low, medium, high' },
-        { status: 400 },
-      );
-    }
+  if (
+    risk !== undefined &&
+    (typeof risk !== "string" || !VALID_RISK_VALUES.has(risk))
+  ) {
+    return Response.json(
+      { error: '"risk" must be one of: low, medium, high' },
+      { status: 400 },
+    );
+  }
 
-    if (description !== undefined && typeof description !== "string") {
-      return Response.json(
-        { error: '"description" must be a string' },
-        { status: 400 },
-      );
-    }
+  if (description !== undefined && typeof description !== "string") {
+    return Response.json(
+      { error: '"description" must be a string' },
+      { status: 400 },
+    );
+  }
 
-    try {
-      const rule = store.update(ruleId, {
-        risk: risk as string | undefined,
-        description: description as string | undefined,
-      });
-      invalidateTrustRuleCache();
-      return Response.json({ rule });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Internal server error";
-      if (message.includes("not found")) {
-        return Response.json({ error: message }, { status: 404 });
-      }
-      log.error({ err }, "Failed to update trust rule");
-      return Response.json({ error: message }, { status: 400 });
+  try {
+    const rule = store.update(ruleId, {
+      risk: risk as string | undefined,
+      description: description as string | undefined,
+    });
+    invalidateTrustRuleCache();
+    return Response.json({ rule });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    if (message.includes("not found")) {
+      return Response.json({ error: message }, { status: 404 });
     }
-  };
+    log.error({ err }, "Failed to update trust rule");
+    return Response.json({ error: message }, { status: 400 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // DELETE /v1/trust-rules/:id — delete rule
 // ---------------------------------------------------------------------------
 
-export function createTrustRulesDeleteHandler() {
+export async function handleTrustRulesDelete(
+  _req: Request,
+  ruleId: string,
+): Promise<Response> {
   const store = new TrustRuleStore();
 
-  return async (_req: Request, ruleId: string): Promise<Response> => {
-    if (!ruleId) {
-      return Response.json({ error: "Rule ID is required" }, { status: 400 });
-    }
+  if (!ruleId) {
+    return Response.json({ error: "Rule ID is required" }, { status: 400 });
+  }
 
-    try {
-      store.remove(ruleId);
-      invalidateTrustRuleCache();
-      return Response.json({ success: true });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Internal server error";
-      if (message.includes("not found")) {
-        return Response.json({ error: message }, { status: 404 });
-      }
-      log.error({ err }, "Failed to delete trust rule");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+  try {
+    store.remove(ruleId);
+    invalidateTrustRuleCache();
+    return Response.json({ success: true });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    if (message.includes("not found")) {
+      return Response.json({ error: message }, { status: 404 });
     }
-  };
+    log.error({ err }, "Failed to delete trust rule");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -398,59 +394,60 @@ function lookupOriginalDefaults(
   return { risk: resolved.baseRisk, description };
 }
 
-export function createTrustRulesResetHandler() {
+export async function handleTrustRulesReset(
+  _req: Request,
+  ruleId: string,
+): Promise<Response> {
   const store = new TrustRuleStore();
 
-  return async (_req: Request, ruleId: string): Promise<Response> => {
-    if (!ruleId) {
-      return Response.json({ error: "Rule ID is required" }, { status: 400 });
-    }
+  if (!ruleId) {
+    return Response.json({ error: "Rule ID is required" }, { status: 400 });
+  }
 
-    // Look up the rule first to validate origin
-    const existing = store.getById(ruleId);
-    if (!existing) {
-      return Response.json(
-        { error: `Trust rule not found: ${ruleId}` },
-        { status: 404 },
-      );
-    }
+  // Look up the rule first to validate origin
+  const existing = store.getById(ruleId);
+  if (!existing) {
+    return Response.json(
+      { error: `Trust rule not found: ${ruleId}` },
+      { status: 404 },
+    );
+  }
 
-    if (existing.origin !== "default") {
-      return Response.json(
-        { error: "Can only reset default rules" },
-        { status: 400 },
-      );
-    }
+  if (existing.origin !== "default") {
+    return Response.json(
+      { error: "Can only reset default rules" },
+      { status: 400 },
+    );
+  }
 
-    // Determine original risk and description from the command registry
-    const originalDefaults = lookupOriginalDefaults(existing.pattern);
-    if (!originalDefaults) {
-      return Response.json(
-        {
-          error: `Cannot determine original values for pattern: ${existing.pattern}`,
-        },
-        { status: 400 },
-      );
-    }
+  // Determine original risk and description from the command registry
+  const originalDefaults = lookupOriginalDefaults(existing.pattern);
+  if (!originalDefaults) {
+    return Response.json(
+      {
+        error: `Cannot determine original values for pattern: ${existing.pattern}`,
+      },
+      { status: 400 },
+    );
+  }
 
-    try {
-      const rule = store.reset(
-        ruleId,
-        originalDefaults.risk,
-        originalDefaults.description,
-      );
-      invalidateTrustRuleCache();
-      return Response.json({ rule });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Internal server error";
-      if (message.includes("not found")) {
-        return Response.json({ error: message }, { status: 404 });
-      }
-      log.error({ err }, "Failed to reset trust rule");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+  try {
+    const rule = store.reset(
+      ruleId,
+      originalDefaults.risk,
+      originalDefaults.description,
+    );
+    invalidateTrustRuleCache();
+    return Response.json({ rule });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    if (message.includes("not found")) {
+      return Response.json({ error: message }, { status: 404 });
     }
-  };
+    log.error({ err }, "Failed to reset trust rule");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 const TrustRuleRiskSchema = z.enum(["low", "medium", "high"]);
@@ -504,10 +501,6 @@ const TrustRuleSuggestionSchema = z.object({
     .optional(),
 });
 
-const trustRuleUpdateHandler = createTrustRulesUpdateHandler();
-const trustRuleDeleteHandler = createTrustRulesDeleteHandler();
-const trustRuleResetHandler = createTrustRulesResetHandler();
-
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/trust-rules",
@@ -536,7 +529,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    handler: createTrustRulesListHandler(),
+    handler: (req) => handleTrustRulesList(req),
   },
   {
     path: "/trust-rules",
@@ -550,7 +543,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: createTrustRulesCreateHandler(),
+    handler: (req) => handleTrustRulesCreate(req),
   },
   {
     path: "/trust-rules/suggest",
@@ -565,7 +558,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: createTrustRulesSuggestHandler(),
+    handler: (req) => handleTrustRulesSuggest(req),
   },
   {
     path: "/trust-rules/{rule_id}",
@@ -581,7 +574,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: (req, params) => trustRuleUpdateHandler(req, params[0]!),
+    handler: (req, params) => handleTrustRulesUpdate(req, params[0]!),
   },
   {
     path: "/trust-rules/{rule_id}",
@@ -596,7 +589,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: (req, params) => trustRuleDeleteHandler(req, params[0]!),
+    handler: (req, params) => handleTrustRulesDelete(req, params[0]!),
   },
   {
     path: "/trust-rules/{rule_id}/reset",
@@ -611,6 +604,6 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: (req, params) => trustRuleResetHandler(req, params[0]!),
+    handler: (req, params) => handleTrustRulesReset(req, params[0]!),
   },
 ];

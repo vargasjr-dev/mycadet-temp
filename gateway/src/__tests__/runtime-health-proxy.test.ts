@@ -17,7 +17,13 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createRuntimeHealthProxyHandler } =
+let healthConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => healthConfig,
+}));
+
+const { handleRuntimeHealth } =
   await import("../http/routes/runtime-health-proxy.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
@@ -59,8 +65,8 @@ describe("runtime health proxy", () => {
       });
     });
 
-    const handler = createRuntimeHealthProxyHandler(makeConfig());
-    const res = await handler.handleRuntimeHealth(
+    healthConfig = makeConfig();
+    const res = await handleRuntimeHealth(
       new Request("http://localhost:7830/v1/health"),
     );
 
@@ -78,8 +84,8 @@ describe("runtime health proxy", () => {
       },
     );
 
-    const handler = createRuntimeHealthProxyHandler(makeConfig());
-    const res = await handler.handleRuntimeHealth(
+    healthConfig = makeConfig();
+    const res = await handleRuntimeHealth(
       new Request("http://localhost:7830/v1/health", {
         headers: {
           authorization: "Bearer caller-token",
@@ -102,10 +108,8 @@ describe("runtime health proxy", () => {
       );
     });
 
-    const handler = createRuntimeHealthProxyHandler(
-      makeConfig({ runtimeTimeoutMs: 100 }),
-    );
-    const res = await handler.handleRuntimeHealth(
+    healthConfig = makeConfig({ runtimeTimeoutMs: 100 });
+    const res = await handleRuntimeHealth(
       new Request("http://localhost:7830/v1/health"),
     );
 

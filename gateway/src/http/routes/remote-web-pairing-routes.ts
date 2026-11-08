@@ -8,11 +8,6 @@
 import { handleCreateRemoteWebPairingChallenge } from "./remote-web-pairing-challenge.js";
 import { handleVerifyRemoteWebPairingChallenge } from "./remote-web-pairing-verification.js";
 import { handleRemoteWebPairingToken } from "./remote-web-pairing-token.js";
-import {
-  handleApproveRemoteWebPairingRequest,
-  handleDenyRemoteWebPairingRequest,
-  handleListRemoteWebPairingRequests,
-} from "./remote-web-pairing-requests.js";
 import { handleSharedInviteRedeem } from "./shared-invite-redeem.js";
 import type { RouteDefinition } from "./types.js";
 
@@ -33,21 +28,6 @@ export const ROUTES: RouteDefinition[] = [
     path: "/remote-web/pairing-token",
     method: "post",
     handler: (req) => handleRemoteWebPairingToken(req),
-  },
-  {
-    path: "/remote-web/pairing-requests",
-    method: "get",
-    handler: (req) => handleListRemoteWebPairingRequests(req),
-  },
-  {
-    path: "/remote-web/pairing-requests/approve",
-    method: "post",
-    handler: (req) => handleApproveRemoteWebPairingRequest(req),
-  },
-  {
-    path: "/remote-web/pairing-requests/deny",
-    method: "post",
-    handler: (req) => handleDenyRemoteWebPairingRequest(req),
   },
   {
     // The invite link token in the request body is the credential.

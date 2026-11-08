@@ -20,7 +20,6 @@ import { docsUrl, routes } from "@/utils/routes";
 import { CODE_CHIP_CLASS } from "./code-chip";
 import { resolvePairDeviceTarget } from "./pair-device-client";
 import { PairDeviceReady } from "./pair-device-ready";
-import { PendingPairingRequests } from "./pending-pairing-requests";
 import { useRelativeAgeTick } from "./relative-age";
 import { TunnelRecheckButton } from "./tunnel-recheck-button";
 import {
@@ -64,9 +63,7 @@ const PAIRING_DOCS_URL = docsUrl(routes.docs.pairADevice);
  * Settings card that pairs another device to this assistant without shell
  * commands, the UI equivalent of `cadet pair`. It mints and auto-approves a
  * device-code challenge against the host's loopback gateway and renders the
- * https pair URL as a QR with a copyable link and expiry countdown. It also
- * hosts the approval list for pairing requests minted elsewhere
- * ({@link PendingPairingRequests}).
+ * https pair URL as a QR with a copyable link and expiry countdown.
  *
  * What the tunnel is doing comes from the daemon-side probe
  * ({@link useTunnelStatus}), which drives the status row, the first-run
@@ -301,8 +298,6 @@ export function PairDeviceCard() {
             onCopy={copy}
           />
         )}
-
-        <PendingPairingRequests base={target.base} />
 
         <ExternalAnchor
           href={PAIRING_DOCS_URL}

@@ -8,7 +8,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -19,45 +18,33 @@ const log = getLogger("migration-rollback-proxy");
 /** Timeout for migration rollback requests (120 seconds) — rollbacks can be slow when many migrations have complex down() functions. */
 const MIGRATION_ROLLBACK_TIMEOUT_MS = 120_000;
 
-export function createMigrationRollbackProxyHandler(config: GatewayConfig) {
-  return async function handleMigrationRollback(
-    req: Request,
-  ): Promise<Response> {
-    const start = performance.now();
+export async function handleMigrationRollback(req: Request): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
 
-    const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path: "/v1/admin/rollback-migrations",
-      timeoutMs: MIGRATION_ROLLBACK_TIMEOUT_MS,
-      fetchImpl,
-    });
+  const response = await proxyForwardToResponse(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path: "/v1/admin/rollback-migrations",
+    timeoutMs: MIGRATION_ROLLBACK_TIMEOUT_MS,
+    fetchImpl,
+  });
 
-    const duration = Math.round(performance.now() - start);
+  const duration = Math.round(performance.now() - start);
 
-    if (response.status >= 400) {
-      log.warn(
-        { status: response.status, duration },
-        "Migration rollback proxy upstream error",
-      );
-    } else {
-      log.info(
-        { status: response.status, duration },
-        "Migration rollback proxy completed",
-      );
-    }
+  if (response.status >= 400) {
+    log.warn(
+      { status: response.status, duration },
+      "Migration rollback proxy upstream error",
+    );
+  } else {
+    log.info(
+      { status: response.status, duration },
+      "Migration rollback proxy completed",
+    );
+  }
 
-    return response;
-  };
+  return response;
 }
-
-let routeProxyImpl: ReturnType<typeof createMigrationRollbackProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createMigrationRollbackProxyHandler> {
-  return (routeProxyImpl ??= createMigrationRollbackProxyHandler(getConfig()));
-}
-
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -65,6 +52,6 @@ export const ROUTES: RouteDefinition[] = [
     method: "post",
     auth: "edge-scoped",
     scope: "admin.write",
-    handler: (req) => routeProxy()(req),
+    handler: (req) => handleMigrationRollback(req),
   },
 ];

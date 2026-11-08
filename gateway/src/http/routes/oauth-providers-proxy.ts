@@ -7,7 +7,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -15,68 +14,52 @@ import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("oauth-providers-proxy");
 
-export function createOAuthProvidersProxyHandler(config: GatewayConfig) {
-  async function proxyToRuntime(
-    req: Request,
-    upstreamPath: string,
-    upstreamSearch: string,
-  ): Promise<Response> {
-    const start = performance.now();
-    const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path: upstreamPath,
-      search: upstreamSearch || undefined,
-      timeoutMs: config.runtimeTimeoutMs,
-      fetchImpl,
-    });
-    const duration = Math.round(performance.now() - start);
+async function proxyToRuntime(
+  req: Request,
+  upstreamPath: string,
+  upstreamSearch: string,
+): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
+  const response = await proxyForwardToResponse(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path: upstreamPath,
+    search: upstreamSearch || undefined,
+    timeoutMs: config.runtimeTimeoutMs,
+    fetchImpl,
+  });
+  const duration = Math.round(performance.now() - start);
 
-    if (response.status >= 500) {
-      log.error(
-        { path: upstreamPath, status: response.status, duration },
-        "OAuth providers proxy upstream error",
-      );
-    } else if (response.status >= 400) {
-      log.warn(
-        { path: upstreamPath, status: response.status, duration },
-        "OAuth providers proxy upstream error",
-      );
-    } else {
-      log.info(
-        { path: upstreamPath, status: response.status, duration },
-        "OAuth providers proxy completed",
-      );
-    }
-
-    return response;
+  if (response.status >= 500) {
+    log.error(
+      { path: upstreamPath, status: response.status, duration },
+      "OAuth providers proxy upstream error",
+    );
+  } else if (response.status >= 400) {
+    log.warn(
+      { path: upstreamPath, status: response.status, duration },
+      "OAuth providers proxy upstream error",
+    );
+  } else {
+    log.info(
+      { path: upstreamPath, status: response.status, duration },
+      "OAuth providers proxy completed",
+    );
   }
 
-  return {
-    async handleListProviders(req: Request): Promise<Response> {
-      return proxyToRuntime(
-        req,
-        "/v1/oauth/providers",
-        new URL(req.url).search,
-      );
-    },
-
-    async handleGetProvider(
-      req: Request,
-      providerKey: string,
-    ): Promise<Response> {
-      return proxyToRuntime(req, `/v1/oauth/providers/${providerKey}`, "");
-    },
-  };
+  return response;
 }
 
-let routeProxyImpl: ReturnType<typeof createOAuthProvidersProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createOAuthProvidersProxyHandler> {
-  return (routeProxyImpl ??= createOAuthProvidersProxyHandler(getConfig()));
+export async function handleListProviders(req: Request): Promise<Response> {
+  return proxyToRuntime(req, "/v1/oauth/providers", new URL(req.url).search);
 }
 
+export async function handleGetProvider(
+  req: Request,
+  providerKey: string,
+): Promise<Response> {
+  return proxyToRuntime(req, `/v1/oauth/providers/${providerKey}`, "");
+}
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -84,14 +67,13 @@ export const ROUTES: RouteDefinition[] = [
     method: "get",
     auth: "edge-scoped",
     scope: "settings.read",
-    handler: (req, _params) => routeProxy().handleListProviders(req),
+    handler: (req) => handleListProviders(req),
   },
   {
     path: /^\/oauth\/providers\/([^/]+)\/?$/,
     method: "get",
     auth: "edge-scoped",
     scope: "settings.read",
-    handler: (req, params) =>
-      routeProxy().handleGetProvider(req, params[0]),
+    handler: (req, params) => handleGetProvider(req, params[0]!),
   },
 ];

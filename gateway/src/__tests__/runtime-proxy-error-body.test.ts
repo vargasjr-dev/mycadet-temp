@@ -55,8 +55,13 @@ mock.module("../logger.js", () => ({
   }),
 }));
 
-const { createRuntimeProxyHandler } =
-  await import("../http/routes/runtime-proxy.js");
+let proxyConfig!: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => proxyConfig,
+}));
+
+const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 
 const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
 initSigningKey(TEST_SIGNING_KEY);
@@ -128,9 +133,8 @@ describe("runtime proxy error bodies", () => {
     ]);
     mockUpstream(bytes, 402, { "content-type": "application/json" });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     expect(res.status).toBe(402);
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
@@ -141,9 +145,8 @@ describe("runtime proxy error bodies", () => {
     // A stale upstream length: text round-tripping these bytes would grow them.
     mockUpstream(bytes, 409, { "content-length": "99" });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     expect(res.headers.get("content-length")).toBe("4");
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
@@ -153,9 +156,8 @@ describe("runtime proxy error bodies", () => {
     const text = `{"error":"${"日本語テキスト🎉".repeat(40)}"}`;
     mockUpstream(text, 429, { "content-type": "application/json" });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     expect(await res.text()).toBe(text);
   });
@@ -164,7 +166,8 @@ describe("runtime proxy error bodies", () => {
     const secret = "cus_9f3 alice@example.com sk_live_notatoken";
     mockUpstream(`{"error":{"message":"${secret}"}}`, 400);
 
-    await createRuntimeProxyHandler(makeConfig())(proxyRequest(PROXY_PATH));
+    proxyConfig = makeConfig();
+    await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     const record = upstreamErrorLog();
     expect(record).toBeDefined();
@@ -179,9 +182,8 @@ describe("runtime proxy error bodies", () => {
     // would leak again the next time a passthrough family is added.
     mockUpstream("assistant said no", 404);
 
-    await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest("/v1/conversations/abc"),
-    );
+    proxyConfig = makeConfig();
+    await handleRuntimeProxy(proxyRequest("/v1/conversations/abc"));
 
     const record = upstreamErrorLog();
     expect(record).toBeDefined();
@@ -194,9 +196,8 @@ describe("runtime proxy error bodies", () => {
   test("logs a 5xx at error level, still without the body", async () => {
     mockUpstream("upstream stack trace", 502);
 
-    await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest("/v1/conversations/abc"),
-    );
+    proxyConfig = makeConfig();
+    await handleRuntimeProxy(proxyRequest("/v1/conversations/abc"));
 
     const record = upstreamErrorLog();
     expect(record!.level).toBe("error");
@@ -215,9 +216,8 @@ describe("runtime proxy error bodies", () => {
       "content-type": "application/json",
     });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH, "HEAD"),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH, "HEAD"));
 
     expect(res.status).toBe(404);
     expect(res.headers.get("content-length")).toBe("5120");
@@ -231,9 +231,8 @@ describe("runtime proxy error bodies", () => {
       "content-encoding": "gzip",
     });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     expect(res.headers.get("content-length")).toBe("4");
     expect(res.headers.get("content-encoding")).toBeNull();
@@ -243,9 +242,8 @@ describe("runtime proxy error bodies", () => {
   test("leaves a successful response streaming and untouched", async () => {
     mockUpstream('{"ok":true}', 200, { "content-type": "application/json" });
 
-    const res = await createRuntimeProxyHandler(makeConfig())(
-      proxyRequest(PROXY_PATH),
-    );
+    proxyConfig = makeConfig();
+    const res = await handleRuntimeProxy(proxyRequest(PROXY_PATH));
 
     expect(res.status).toBe(200);
     expect(await res.text()).toBe('{"ok":true}');

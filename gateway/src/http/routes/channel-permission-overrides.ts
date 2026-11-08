@@ -72,136 +72,134 @@ async function readJsonBody(req: Request): Promise<unknown | Response> {
 // GET /v1/channel-permission-overrides — list persisted cells
 // ---------------------------------------------------------------------------
 
-export function createChannelPermissionOverridesListHandler() {
-  return async (_req: Request): Promise<Response> => {
-    try {
-      const store = new ChannelPermissionStore();
-      return Response.json({ cells: store.list() });
-    } catch (err) {
-      log.error({ err }, "Failed to list channel permission overrides");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+export async function handleChannelPermissionOverridesList(): Promise<Response> {
+  try {
+    const store = new ChannelPermissionStore();
+    return Response.json({ cells: store.list() });
+  } catch (err) {
+    log.error({ err }, "Failed to list channel permission overrides");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // PUT /v1/channel-permission-overrides — upsert one cell
 // ---------------------------------------------------------------------------
 
-export function createChannelPermissionOverrideSetHandler() {
-  return async (req: Request): Promise<Response> => {
-    const body = await readJsonBody(req);
-    if (body instanceof Response) {
-      return body;
-    }
+export async function handleChannelPermissionOverrideSet(
+  req: Request,
+): Promise<Response> {
+  const body = await readJsonBody(req);
+  if (body instanceof Response) {
+    return body;
+  }
 
-    const parsed = ChannelPermissionCellSchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error:
-            "Invalid request body: expected a cell (selector, contactType, threshold, note?)",
-          issues: parsed.error.issues,
-        },
-        { status: 400 },
-      );
-    }
+  const parsed = ChannelPermissionCellSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error:
+          "Invalid request body: expected a cell (selector, contactType, threshold, note?)",
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
 
-    const rejected = unknownAdapterResponse(parsed.data.selector);
-    if (rejected) {
-      return rejected;
-    }
+  const rejected = unknownAdapterResponse(parsed.data.selector);
+  if (rejected) {
+    return rejected;
+  }
 
-    try {
-      const store = new ChannelPermissionStore();
-      return Response.json({ cell: store.set(parsed.data) });
-    } catch (err) {
-      log.error({ err }, "Failed to set channel permission override");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+  try {
+    const store = new ChannelPermissionStore();
+    return Response.json({ cell: store.set(parsed.data) });
+  } catch (err) {
+    log.error({ err }, "Failed to set channel permission override");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // POST /v1/channel-permission-overrides/resolve — resolve the cascade
 // ---------------------------------------------------------------------------
 
-export function createChannelPermissionResolveHandler() {
-  return async (req: Request): Promise<Response> => {
-    const body = await readJsonBody(req);
-    if (body instanceof Response) {
-      return body;
-    }
+export async function handleChannelPermissionResolve(
+  req: Request,
+): Promise<Response> {
+  const body = await readJsonBody(req);
+  if (body instanceof Response) {
+    return body;
+  }
 
-    const parsed = ResolveChannelPermissionRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error:
-            "Invalid request body: expected a resolve query (adapter, channelType?, channelExternalId?, contactType)",
-          issues: parsed.error.issues,
-        },
-        { status: 400 },
-      );
-    }
+  const parsed = ResolveChannelPermissionRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error:
+          "Invalid request body: expected a resolve query (adapter, channelType?, channelExternalId?, contactType)",
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
 
-    if (!isChannelId(parsed.data.adapter)) {
-      return Response.json(
-        {
-          error: `Unknown channel adapter: "${parsed.data.adapter}". Must be one of: ${CHANNEL_IDS.join(", ")}`,
-        },
-        { status: 400 },
-      );
-    }
+  if (!isChannelId(parsed.data.adapter)) {
+    return Response.json(
+      {
+        error: `Unknown channel adapter: "${parsed.data.adapter}". Must be one of: ${CHANNEL_IDS.join(", ")}`,
+      },
+      { status: 400 },
+    );
+  }
 
-    try {
-      const store = new ChannelPermissionStore();
-      return Response.json({ resolved: store.resolve(parsed.data) });
-    } catch (err) {
-      log.error({ err }, "Failed to resolve channel permission threshold");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+  try {
+    const store = new ChannelPermissionStore();
+    return Response.json({ resolved: store.resolve(parsed.data) });
+  } catch (err) {
+    log.error({ err }, "Failed to resolve channel permission threshold");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // POST /v1/channel-permission-overrides/delete — remove one cell
 // ---------------------------------------------------------------------------
 
-export function createChannelPermissionOverrideDeleteHandler() {
-  return async (req: Request): Promise<Response> => {
-    const body = await readJsonBody(req);
-    if (body instanceof Response) {
-      return body;
-    }
+export async function handleChannelPermissionOverrideDelete(
+  req: Request,
+): Promise<Response> {
+  const body = await readJsonBody(req);
+  if (body instanceof Response) {
+    return body;
+  }
 
-    const parsed = ChannelPermissionCellKeySchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error:
-            "Invalid request body: expected a cell key (selector, contactType)",
-          issues: parsed.error.issues,
-        },
-        { status: 400 },
-      );
-    }
+  const parsed = ChannelPermissionCellKeySchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error:
+          "Invalid request body: expected a cell key (selector, contactType)",
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
 
-    const rejected = unknownAdapterResponse(parsed.data.selector);
-    if (rejected) {
-      return rejected;
-    }
+  const rejected = unknownAdapterResponse(parsed.data.selector);
+  if (rejected) {
+    return rejected;
+  }
 
-    try {
-      const store = new ChannelPermissionStore();
-      return Response.json({
-        removed: store.remove(parsed.data.selector, parsed.data.contactType),
-      });
-    } catch (err) {
-      log.error({ err }, "Failed to delete channel permission override");
-      return Response.json({ error: "Internal server error" }, { status: 500 });
-    }
-  };
+  try {
+    const store = new ChannelPermissionStore();
+    return Response.json({
+      removed: store.remove(parsed.data.selector, parsed.data.contactType),
+    });
+  } catch (err) {
+    log.error({ err }, "Failed to delete channel permission override");
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 const ChannelPermissionCellRowSchema = ChannelPermissionCellSchema.extend({
@@ -223,7 +221,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    handler: createChannelPermissionOverridesListHandler(),
+    handler: () => handleChannelPermissionOverridesList(),
   },
   {
     path: "/channel-permission-overrides",
@@ -238,7 +236,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: createChannelPermissionOverrideSetHandler(),
+    handler: (req) => handleChannelPermissionOverrideSet(req),
   },
   {
     path: "/channel-permission-overrides/resolve",
@@ -260,7 +258,7 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     scoped: true,
-    handler: createChannelPermissionResolveHandler(),
+    handler: (req) => handleChannelPermissionResolve(req),
   },
   {
     path: "/channel-permission-overrides/delete",
@@ -275,6 +273,6 @@ export const ROUTES: RouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     scoped: true,
-    handler: createChannelPermissionOverrideDeleteHandler(),
+    handler: (req) => handleChannelPermissionOverrideDelete(req),
   },
 ];

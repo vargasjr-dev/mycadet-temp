@@ -3,10 +3,10 @@ import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 import type { ChannelPermissionCellRow } from "@mycadet/gateway-client";
 import { ChannelPermissionStore } from "../db/channel-permission-store.js";
 import {
-  createChannelPermissionOverrideDeleteHandler,
-  createChannelPermissionOverridesListHandler,
-  createChannelPermissionOverrideSetHandler,
-  createChannelPermissionResolveHandler,
+  handleChannelPermissionOverrideDelete,
+  handleChannelPermissionOverridesList,
+  handleChannelPermissionOverrideSet,
+  handleChannelPermissionResolve,
 } from "../http/routes/channel-permission-overrides.js";
 import "./test-preload.js";
 
@@ -60,10 +60,7 @@ describe("GET /v1/channel-permission-overrides", () => {
   test("returns only persisted cells", async () => {
     store.set(SLACK_CHANNEL_CELL);
 
-    const handler = createChannelPermissionOverridesListHandler();
-    const res = await handler(
-      jsonRequest("http://localhost/v1/channel-permission-overrides", "GET"),
-    );
+    const res = await handleChannelPermissionOverridesList();
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as { cells: ChannelPermissionCellRow[] };
@@ -73,10 +70,7 @@ describe("GET /v1/channel-permission-overrides", () => {
   });
 
   test("returns an empty list when nothing is persisted", async () => {
-    const handler = createChannelPermissionOverridesListHandler();
-    const res = await handler(
-      jsonRequest("http://localhost/v1/channel-permission-overrides", "GET"),
-    );
+    const res = await handleChannelPermissionOverridesList();
     const body = (await res.json()) as { cells: ChannelPermissionCellRow[] };
     expect(body.cells).toEqual([]);
   });
@@ -88,7 +82,7 @@ describe("GET /v1/channel-permission-overrides", () => {
 
 describe("PUT /v1/channel-permission-overrides", () => {
   test("upserts a cell and returns the stored row", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-permission-overrides",
@@ -105,7 +99,7 @@ describe("PUT /v1/channel-permission-overrides", () => {
   });
 
   test("second write to the same key updates in place", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     await handler(
       jsonRequest(
         "http://localhost/v1/channel-permission-overrides",
@@ -126,7 +120,7 @@ describe("PUT /v1/channel-permission-overrides", () => {
   });
 
   test("rejects an unknown adapter with 400", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-permission-overrides", "PUT", {
         ...SLACK_CHANNEL_CELL,
@@ -142,7 +136,7 @@ describe("PUT /v1/channel-permission-overrides", () => {
   });
 
   test("rejects an invalid body with 400 and zod issues", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-permission-overrides", "PUT", {
         selector: { scope: "channel", adapter: "slack" },
@@ -156,7 +150,7 @@ describe("PUT /v1/channel-permission-overrides", () => {
   });
 
   test("rejects stale cross-scope keys (strict selector branches)", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     const res = await handler(
       jsonRequest("http://localhost/v1/channel-permission-overrides", "PUT", {
         ...SLACK_CHANNEL_CELL,
@@ -167,7 +161,7 @@ describe("PUT /v1/channel-permission-overrides", () => {
   });
 
   test("rejects malformed JSON with 400", async () => {
-    const handler = createChannelPermissionOverrideSetHandler();
+    const handler = handleChannelPermissionOverrideSet;
     const res = await handler(
       new Request("http://localhost/v1/channel-permission-overrides", {
         method: "PUT",
@@ -195,7 +189,7 @@ describe("POST /v1/channel-permission-overrides/resolve", () => {
     });
     store.set(SLACK_CHANNEL_CELL); // channel scope, threshold none
 
-    const handler = createChannelPermissionResolveHandler();
+    const handler = handleChannelPermissionResolve;
     const res = await handler(
       jsonRequest(RESOLVE_URL, "POST", {
         adapter: "slack",
@@ -218,7 +212,7 @@ describe("POST /v1/channel-permission-overrides/resolve", () => {
       threshold: "medium",
     });
 
-    const handler = createChannelPermissionResolveHandler();
+    const handler = handleChannelPermissionResolve;
     const res = await handler(
       jsonRequest(RESOLVE_URL, "POST", {
         adapter: "slack",
@@ -232,7 +226,7 @@ describe("POST /v1/channel-permission-overrides/resolve", () => {
   });
 
   test("resolves null when no cell matches — caller falls through to global", async () => {
-    const handler = createChannelPermissionResolveHandler();
+    const handler = handleChannelPermissionResolve;
     const res = await handler(
       jsonRequest(RESOLVE_URL, "POST", {
         adapter: "slack",
@@ -246,7 +240,7 @@ describe("POST /v1/channel-permission-overrides/resolve", () => {
   });
 
   test("rejects an unknown adapter with 400", async () => {
-    const handler = createChannelPermissionResolveHandler();
+    const handler = handleChannelPermissionResolve;
     const res = await handler(
       jsonRequest(RESOLVE_URL, "POST", {
         adapter: "carrier-pigeon",
@@ -257,7 +251,7 @@ describe("POST /v1/channel-permission-overrides/resolve", () => {
   });
 
   test("rejects an invalid body with 400 and zod issues", async () => {
-    const handler = createChannelPermissionResolveHandler();
+    const handler = handleChannelPermissionResolve;
     const res = await handler(
       jsonRequest(RESOLVE_URL, "POST", {
         adapter: "slack",
@@ -278,7 +272,7 @@ describe("POST /v1/channel-permission-overrides/delete", () => {
   test("removes the cell and reports removal", async () => {
     store.set(SLACK_CHANNEL_CELL);
 
-    const handler = createChannelPermissionOverrideDeleteHandler();
+    const handler = handleChannelPermissionOverrideDelete;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-permission-overrides/delete",
@@ -297,7 +291,7 @@ describe("POST /v1/channel-permission-overrides/delete", () => {
   });
 
   test("reports removed: false for an absent cell", async () => {
-    const handler = createChannelPermissionOverrideDeleteHandler();
+    const handler = handleChannelPermissionOverrideDelete;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-permission-overrides/delete",
@@ -314,7 +308,7 @@ describe("POST /v1/channel-permission-overrides/delete", () => {
   });
 
   test("rejects an unknown adapter with 400", async () => {
-    const handler = createChannelPermissionOverrideDeleteHandler();
+    const handler = handleChannelPermissionOverrideDelete;
     const res = await handler(
       jsonRequest(
         "http://localhost/v1/channel-permission-overrides/delete",

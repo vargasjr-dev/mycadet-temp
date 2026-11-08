@@ -47,8 +47,16 @@ mock.module("../../logger.js", () => {
   };
 });
 
+// The handler reads the process-wide config; the tests point it at a
+// per-test config via the module mock.
+let logConfig: GatewayConfig;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => logConfig,
+}));
+
 // Import handler after mocks
-const { createLogTailHandler } = await import("./log-tail.js");
+const { handleLogTail } = await import("./log-tail.js");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -103,16 +111,20 @@ afterEach(() => {
 describe("log-tail handler", () => {
   test("config.logFile.dir is undefined → returns { lines: [], truncated: false }", async () => {
     const config = makeConfig(undefined);
-    const handler = createLogTailHandler(config);
-    const res = await handler(makeReq("http://localhost:7830/v1/logs/tail"));
+    logConfig = config;
+    const res = await handleLogTail(
+      makeReq("http://localhost:7830/v1/logs/tail"),
+    );
     const body = await res.json();
     expect(body).toEqual({ lines: [], truncated: false });
   });
 
   test("dir path doesn't exist → returns { lines: [], truncated: false }", async () => {
     const config = makeConfig("/nonexistent/path/that/does/not/exist");
-    const handler = createLogTailHandler(config);
-    const res = await handler(makeReq("http://localhost:7830/v1/logs/tail"));
+    logConfig = config;
+    const res = await handleLogTail(
+      makeReq("http://localhost:7830/v1/logs/tail"),
+    );
     const body = await res.json();
     expect(body).toEqual({ lines: [], truncated: false });
   });
@@ -122,8 +134,10 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "other.log"), "some content\n");
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(makeReq("http://localhost:7830/v1/logs/tail"));
+    logConfig = config;
+    const res = await handleLogTail(
+      makeReq("http://localhost:7830/v1/logs/tail"),
+    );
     const body = await res.json();
     expect(body).toEqual({ lines: [], truncated: false });
   });
@@ -141,8 +155,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=3"),
     );
     const body = (await res.json()) as {
@@ -170,8 +184,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?level=error"),
     );
     const body = (await res.json()) as {
@@ -198,8 +212,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?module=mcp"),
     );
     const body = (await res.json()) as {
@@ -220,8 +234,10 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(makeReq("http://localhost:7830/v1/logs/tail"));
+    logConfig = config;
+    const res = await handleLogTail(
+      makeReq("http://localhost:7830/v1/logs/tail"),
+    );
     const body = (await res.json()) as {
       lines: { msg: string }[];
       truncated: boolean;
@@ -243,8 +259,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=2"),
     );
     const body = (await res.json()) as { lines: unknown[]; truncated: boolean };
@@ -264,8 +280,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.jsonl"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=10"),
     );
     const body = (await res.json()) as { lines: unknown[]; truncated: boolean };
@@ -296,8 +312,8 @@ describe("log-tail handler", () => {
     );
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=3"),
     );
     const body = (await res.json()) as {
@@ -332,8 +348,8 @@ describe("log-tail handler", () => {
     );
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=1001"),
     );
 
@@ -346,8 +362,8 @@ describe("log-tail handler", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "gw-log-tail-test-"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?level=INVALID"),
     );
 
@@ -363,8 +379,10 @@ describe("log-tail handler", () => {
 
     // Point dir at a file path — readdirSync will throw ENOTDIR
     const config = makeConfig(filePath);
-    const handler = createLogTailHandler(config);
-    const res = await handler(makeReq("http://localhost:7830/v1/logs/tail"));
+    logConfig = config;
+    const res = await handleLogTail(
+      makeReq("http://localhost:7830/v1/logs/tail"),
+    );
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -385,8 +403,8 @@ describe("log-tail handler", () => {
     writeFileSync(join(tmpDir, "gateway-2026-05-04.log"), lines.join("\n"));
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=10"),
     );
 
@@ -425,8 +443,8 @@ describe("log-tail handler", () => {
     );
 
     const config = makeConfig(tmpDir);
-    const handler = createLogTailHandler(config);
-    const res = await handler(
+    logConfig = config;
+    const res = await handleLogTail(
       makeReq("http://localhost:7830/v1/logs/tail?n=10"),
     );
 

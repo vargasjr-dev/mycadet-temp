@@ -18,7 +18,6 @@ import {
   installFetch as installRecordingFetch,
   installIngressProbe,
   jsonResponse,
-  pendingRequest,
   requestBody,
   resetFetchLog,
   restoreFetch,
@@ -117,23 +116,8 @@ function challengeBody() {
   };
 }
 
-function pendingRequestBody(
-  overrides: Parameters<typeof pendingRequest>[0] = {},
-) {
-  return pendingRequest({
-    userCode: "QRST-7890",
-    publicBaseUrl: PUBLIC_URL,
-    requestedAt: new Date(Date.now() - 2 * 60_000).toISOString(),
-    expiresAt: futureIso(),
-    requesterUserAgent: "Mozilla/5.0 (iPhone; like Mac OS X)",
-    ...overrides,
-  });
-}
-
 interface FetchHandlers {
   onVerification?: () => Response;
-  onPendingRequests?: () => Response | Promise<Response>;
-  onRequestAction?: () => Response | Promise<Response>;
 }
 
 function unexpectedMint(): Response {
@@ -150,8 +134,6 @@ function installFetch(
         verificationUri: "https://foo.ts.net/assistant/pair",
         expiresAt: futureIso(),
       }),
-    onPendingRequests = () => jsonResponse({ requests: [] }),
-    onRequestAction = () => jsonResponse({ status: "done" }),
   }: FetchHandlers = {},
 ) {
   return installRecordingFetch((url) => {
@@ -161,23 +143,8 @@ function installFetch(
     if (url.endsWith("/remote-web/pairing-verification")) {
       return onVerification();
     }
-    if (url.endsWith("/remote-web/pairing-requests")) {
-      return onPendingRequests();
-    }
-    if (
-      url.endsWith("/remote-web/pairing-requests/approve") ||
-      url.endsWith("/remote-web/pairing-requests/deny")
-    ) {
-      return onRequestAction();
-    }
     throw new Error(`unexpected fetch: ${url}`);
   });
-}
-
-function actionCalls(action: "approve" | "deny") {
-  return fetchLog.filter((request) =>
-    request.url.endsWith(`/remote-web/pairing-requests/${action}`),
-  );
 }
 
 /** The mint-flow calls (challenge + verification), without the section's list polls. */
@@ -373,204 +340,6 @@ describe("PairDeviceCard", () => {
         "Scan it with a phone's camera, or paste the link into another computer, to use this assistant there.",
       ),
     ).toBeTruthy();
-  });
-});
-
-describe("PairDeviceCard: pending pairing requests", () => {
-  function installPendingFetch(handlers: FetchHandlers = {}) {
-    return installFetch(unexpectedMint, {
-      onPendingRequests: () =>
-        jsonResponse({ requests: [pendingRequestBody()] }),
-      ...handlers,
-    });
-  }
-
-  test("hides the approval section while no request is pending", async () => {
-    renderCard();
-
-    // The list was polled and came back empty.
-    await waitFor(() =>
-      expect(
-        fetchLog.some((r) => r.url.endsWith("/remote-web/pairing-requests")),
-      ).toBe(true),
-    );
-    expect(screen.queryByText("Pairing requests")).toBeNull();
-  });
-
-  test("a failing list poll surfaces the error notice even with no rows", async () => {
-    installFetch(unexpectedMint, {
-      onPendingRequests: () =>
-        jsonResponse({ error: { message: "gateway unreachable" } }, 500),
-    });
-    renderCard();
-
-    await waitFor(() =>
-      expect(screen.getByText("gateway unreachable")).toBeTruthy(),
-    );
-    // The section shows with the error so an outage isn't mistaken for an
-    // empty queue, but no request rows or actions are offered.
-    expect(screen.getByText("Pairing requests")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Deny" })).toBeNull();
-  });
-
-  test("renders a pending request's user code and requester metadata", async () => {
-    installPendingFetch();
-    renderCard();
-
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-    expect(screen.getByText("Pairing requests")).toBeTruthy();
-    // The anti-phishing binding: approval is tied to matching the code shown
-    // on the requesting device.
-    expect(
-      screen.getByText(/matches the one shown on the requesting device/),
-    ).toBeTruthy();
-    // The relative timestamp is locale-aware (en active in tests).
-    expect(
-      screen.getByText(/Requested 2 minutes ago from 203\.0\.113\.7/),
-    ).toBeTruthy();
-    expect(
-      screen.getByText("Mozilla/5.0 (iPhone; like Mac OS X)"),
-    ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Approve" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Deny" })).toBeTruthy();
-  });
-
-  test("the relative request age advances while the request stays pending", async () => {
-    installPendingFetch();
-    // Timer harness instead of fake timers (bun has none): `waitFor` needs
-    // real timers, so this test flushes with `act` and restores in `finally`.
-    const timerHarness = createTimerHarness();
-    const realDateNow = Date.now;
-    timerHarness.install();
-    try {
-      await act(async () => {
-        renderCard();
-      });
-      expect(screen.getByText(/Requested 2 minutes ago/)).toBeTruthy();
-
-      // Advance the clock 3 minutes and fire the age-refresh tick.
-      const now = realDateNow();
-      Date.now = () => now + 3 * 60_000;
-      const ageTick = timerHarness.timers.find(
-        (timer) => timer.delay === 30_000,
-      );
-      expect(ageTick).toBeTruthy();
-      act(() => ageTick?.handler());
-
-      expect(screen.getByText(/Requested 5 minutes ago/)).toBeTruthy();
-    } finally {
-      timerHarness.restore();
-      Date.now = realDateNow;
-    }
-  });
-
-  test("Approve posts the request id and removes the row", async () => {
-    installPendingFetch();
-    renderCard();
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-
-    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
-
-    await waitFor(() => expect(actionCalls("approve")).toHaveLength(1));
-    expect(requestBody(actionCalls("approve")[0])).toEqual({
-      requestId: "req-1",
-    });
-    await waitFor(() => expect(screen.queryByText("QRST-7890")).toBeNull());
-    expect(actionCalls("deny")).toHaveLength(0);
-  });
-
-  test("Deny posts the request id and removes the row", async () => {
-    installPendingFetch();
-    renderCard();
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-
-    fireEvent.click(screen.getByRole("button", { name: "Deny" }));
-
-    await waitFor(() => expect(actionCalls("deny")).toHaveLength(1));
-    expect(requestBody(actionCalls("deny")[0])).toEqual({ requestId: "req-1" });
-    await waitFor(() => expect(screen.queryByText("QRST-7890")).toBeNull());
-    expect(actionCalls("approve")).toHaveLength(0);
-  });
-
-  test("action buttons disable and the acted button shows busy while an action is in flight", async () => {
-    // An approve that never resolves keeps the action in flight.
-    installPendingFetch({
-      onRequestAction: () => new Promise<Response>(() => {}),
-    });
-    renderCard();
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-
-    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
-
-    await waitFor(() =>
-      expect(
-        (screen.getByRole("button", { name: "Approve" }) as HTMLButtonElement)
-          .disabled,
-      ).toBe(true),
-    );
-    expect(
-      (screen.getByRole("button", { name: "Deny" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
-
-    // Only the acted button carries the busy state.
-    const approveButton = screen.getByRole("button", { name: "Approve" });
-    expect(approveButton.getAttribute("aria-busy")).toBe("true");
-    expect(approveButton.querySelector(".animate-spin")).toBeTruthy();
-    const denyButton = screen.getByRole("button", { name: "Deny" });
-    expect(denyButton.getAttribute("aria-busy")).toBeNull();
-    expect(denyButton.querySelector(".animate-spin")).toBeNull();
-  });
-
-  test("a host-originated request says 'from this computer' instead of a loopback IP", async () => {
-    installPendingFetch({
-      onPendingRequests: () =>
-        jsonResponse({
-          requests: [
-            pendingRequestBody({
-              requesterIp: "127.0.0.1",
-            }),
-          ],
-        }),
-    });
-    renderCard();
-
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-    expect(
-      screen.getByText(/Requested 2 minutes ago from this computer/),
-    ).toBeTruthy();
-    expect(screen.queryByText(/127\.0\.0\.1/)).toBeNull();
-  });
-
-  test("a app-server request keeps showing the requester IP", async () => {
-    installPendingFetch({
-      onPendingRequests: () =>
-        jsonResponse({
-          requests: [pendingRequestBody()],
-        }),
-    });
-    renderCard();
-
-    await waitFor(() => expect(screen.getByText("QRST-7890")).toBeTruthy());
-    expect(
-      screen.getByText(/Requested 2 minutes ago from 203\.0\.113\.7/),
-    ).toBeTruthy();
-  });
-
-  test("the pending-request poll runs for any resolved assistant too", async () => {
-    // No gateway-address gate: the pairing data plane is same-origin /v1 for
-    // every assistant entry, so the card polls there as well.
-    selectedAssistant = { assistantId: "self", cloud: "cloud" };
-    installPendingFetch();
-    renderCard();
-
-    await waitFor(() =>
-      expect(
-        fetchLog.some((r) => r.url.endsWith("/remote-web/pairing-requests")),
-      ).toBe(true),
-    );
-    expect(screen.getByText("Pair a device")).toBeTruthy();
   });
 });
 

@@ -17,8 +17,19 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createTelegramControlPlaneProxyHandler } =
-  await import("../http/routes/telegram-control-plane-proxy.js");
+let telegramConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  getConfig: () => telegramConfig,
+}));
+
+const {
+  handleClearTelegramConfig,
+  handleGetTelegramConfig,
+  handleSetTelegramCommands,
+  handleSetTelegramConfig,
+  handleSetupTelegram,
+} = await import("../http/routes/telegram-control-plane-proxy.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
@@ -59,27 +70,27 @@ describe("telegram control-plane proxy", () => {
       });
     });
 
-    const handler = createTelegramControlPlaneProxyHandler(makeConfig());
+    telegramConfig = makeConfig();
 
-    await handler.handleGetTelegramConfig(
+    await handleGetTelegramConfig(
       new Request("http://localhost:7830/v1/integrations/telegram/config"),
     );
-    await handler.handleSetTelegramConfig(
+    await handleSetTelegramConfig(
       new Request("http://localhost:7830/v1/integrations/telegram/config", {
         method: "POST",
       }),
     );
-    await handler.handleClearTelegramConfig(
+    await handleClearTelegramConfig(
       new Request("http://localhost:7830/v1/integrations/telegram/config", {
         method: "DELETE",
       }),
     );
-    await handler.handleSetTelegramCommands(
+    await handleSetTelegramCommands(
       new Request("http://localhost:7830/v1/integrations/telegram/commands", {
         method: "POST",
       }),
     );
-    await handler.handleSetupTelegram(
+    await handleSetupTelegram(
       new Request("http://localhost:7830/v1/integrations/telegram/setup", {
         method: "POST",
       }),
@@ -103,8 +114,8 @@ describe("telegram control-plane proxy", () => {
       },
     );
 
-    const handler = createTelegramControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleSetupTelegram(
+    telegramConfig = makeConfig();
+    const res = await handleSetupTelegram(
       new Request("http://localhost:7830/v1/integrations/telegram/setup", {
         method: "POST",
         headers: {
@@ -138,8 +149,8 @@ describe("telegram control-plane proxy", () => {
       );
     });
 
-    const handler = createTelegramControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleSetupTelegram(
+    telegramConfig = makeConfig();
+    const res = await handleSetupTelegram(
       new Request("http://localhost:7830/v1/integrations/telegram/setup", {
         method: "POST",
       }),
@@ -157,8 +168,8 @@ describe("telegram control-plane proxy", () => {
       throw new Error("Connection refused");
     });
 
-    const handler = createTelegramControlPlaneProxyHandler(makeConfig());
-    const res = await handler.handleGetTelegramConfig(
+    telegramConfig = makeConfig();
+    const res = await handleGetTelegramConfig(
       new Request("http://localhost:7830/v1/integrations/telegram/config"),
     );
 

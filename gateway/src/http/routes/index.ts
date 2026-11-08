@@ -1,21 +1,3 @@
-/**
- * The gateway's route barrel.
- *
- * This module owns the single ordered route table: every HTTP route the
- * gateway serves is declared in a per-domain `ROUTES` array and concatenated
- * here, in dispatch order (first match wins — the runtime-proxy catch-all
- * must stay last). Both consumers import THIS module:
- *
- * - the gateway server (`index.ts`) spreads `ROUTES` into `createRouter`, and
- * - the OpenAPI generation script (`scripts/generate-openapi.ts`) reads the
- *   same `ROUTES` to project the published spec, so the tested routes cannot
- *   drift from production.
- *
- * Route modules stay import-safe (no side effects): handlers read config and
- * the shared caches at request time, so the generation script can import the
- * table without wiring a live gateway.
- */
-
 import type { RouteDefinition } from "./types.js";
 import { ROUTES as webhookRoutes } from "./webhook-routes.js";
 import { ROUTES as audioRoutes } from "./audio-proxy.js";
@@ -54,12 +36,12 @@ import { ROUTES as channelPermissionOverrideRoutes } from "./channel-permission-
 import { ROUTES as desktopSetupRoutes } from "./desktop-setup-proxy.js";
 import { ROUTES as runtimeProxyRoutes } from "./runtime-proxy.js";
 
-export { webhookDedupCaches, type WebhookDedupCaches } from "./webhook-routes.js";
+export {
+  webhookDedupCaches,
+  type WebhookDedupCaches,
+} from "./webhook-routes.js";
 
-/**
- * The gateway's full route table, in dispatch order. The runtime-proxy
- * catch-all is last on purpose — every specific route must win first.
- */
+/** The full route table, in dispatch order — the runtime-proxy catch-all last. */
 export const ROUTES: readonly RouteDefinition[] = [
   ...webhookRoutes,
   ...audioRoutes,

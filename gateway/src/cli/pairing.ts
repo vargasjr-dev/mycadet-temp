@@ -3,6 +3,8 @@
  *
  *   gateway pairing mint [--device-id <id> [--platform <p>] [--client-reported-name <n>]]
  *   gateway pairing list [--json]
+ *   gateway pairing approve <requestId>
+ *   gateway pairing deny <requestId>
  *
  * Mints (and approves) a remote-web pairing challenge by executing the
  * pairing mint logic DIRECTLY in this process — deliberately NOT over the
@@ -33,6 +35,8 @@
 
 import { mintPairingPayload } from "../http/routes/pair.js";
 import {
+  approveRemoteWebPairingChallengeById,
+  denyRemoteWebPairingChallengeById,
   listPersistedRemoteWebPairingChallenges,
   type PendingRemoteWebPairingChallenge,
 } from "../remote-web/pairing-challenge-store.js";
@@ -66,6 +70,11 @@ function printUsage(): void {
   console.log(
     "               expired — with its mint and expiration timestamp.",
   );
+  console.log(
+    "  approve <id> Approve a pending pairing request minted elsewhere",
+  );
+  console.log("               (e.g. the public /assistant/pair page).");
+  console.log("  deny <id>    Deny (delete) a pending pairing request by id.");
   console.log("");
   console.log("Options:");
   console.log("  --json       Machine-readable JSON (list)");
@@ -82,6 +91,8 @@ function printUsage(): void {
   console.log("  $ gateway pairing mint --device-id device-1");
   console.log("  $ gateway pairing list");
   console.log("  $ gateway pairing list --json");
+  console.log("  $ gateway pairing approve <requestId>");
+  console.log("  $ gateway pairing deny <requestId>");
   console.log("");
   console.log(
     "From the host: cadet exec --service gateway -- gateway pairing list",
@@ -168,8 +179,8 @@ function runPairingList(json: boolean): number {
   for (const challenge of challenges) {
     const liveness = listLiveness(challenge, now);
     console.log(
-      `${challenge.userCode}  ${challenge.status}  ${liveness}  ` +
-        `minted ${new Date(challenge.createdAtMs).toISOString()}  ` +
+      `${challenge.id}  ${challenge.userCode}  ${challenge.status}  ` +
+        `${liveness}  minted ${new Date(challenge.createdAtMs).toISOString()}  ` +
         `expires ${new Date(challenge.expiresAtMs).toISOString()}`,
     );
     const userAgent = challenge.requesterUserAgent
@@ -182,6 +193,42 @@ function runPairingList(json: boolean): number {
   return 0;
 }
 
+/**
+ * Approve a pending pairing challenge by id — the same in-process store
+ * write the old loopback approval routes did, minus the HTTP surface:
+ * process execution is the local-presence proof, so no loopback-peer check
+ * applies.
+ */
+function runPairingApprove(requestId: string): number {
+  const result = approveRemoteWebPairingChallengeById(requestId);
+  if (result.status === "invalid") {
+    console.error(`Error: unknown pairing request '${requestId}'.`);
+    return 1;
+  }
+  if (result.status === "expired") {
+    console.error(`Error: pairing request '${requestId}' expired.`);
+    return 1;
+  }
+  console.log(JSON.stringify(result));
+  return 0;
+}
+
+function runPairingDeny(requestId: string): number {
+  const result = denyRemoteWebPairingChallengeById(requestId);
+  if (result.status === "invalid") {
+    console.error(`Error: unknown pairing request '${requestId}'.`);
+    return 1;
+  }
+  if (result.status === "already_approved") {
+    console.error(
+      `Error: pairing request '${requestId}' was already approved on another surface.`,
+    );
+    return 1;
+  }
+  console.log(`Pairing request ${requestId} denied.`);
+  return 0;
+}
+
 export async function runPairingCommand(args: string[]): Promise<number> {
   const { subcommand } = parsePairingArgs(args);
 
@@ -191,6 +238,18 @@ export async function runPairingCommand(args: string[]): Promise<number> {
   }
   if (subcommand === "list") {
     return runPairingList(args.includes("--json"));
+  }
+  if (subcommand === "approve" || subcommand === "deny") {
+    const requestId = parsePairingArgs(args).positional;
+    if (!requestId) {
+      console.error(
+        `Error: ${subcommand} needs a request id (see 'gateway pairing list').`,
+      );
+      return 1;
+    }
+    return subcommand === "approve"
+      ? runPairingApprove(requestId)
+      : runPairingDeny(requestId);
   }
   if (subcommand !== "mint") {
     console.error(`Error: unknown pairing subcommand '${subcommand}'.`);

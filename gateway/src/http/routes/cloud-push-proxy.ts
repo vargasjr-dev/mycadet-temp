@@ -12,7 +12,7 @@
  * authenticates the hop with the stored assistant API key.
  */
 
-import { getCredentials, type CredentialCache } from "../../credential-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -31,125 +31,112 @@ interface PlatformTarget {
   assistantId: string;
 }
 
-export function createCloudPushProxyHandler(credentials: CredentialCache) {
-  async function resolvePlatformTarget(): Promise<PlatformTarget | Response> {
-    const [assistantApiKeyRaw, assistantId] = await Promise.all([
-      credentials.get(credentialKey("cadet", "assistant_api_key")),
-      resolveCloudAssistantIdOrUndefined(),
-    ]);
+async function resolvePlatformTarget(): Promise<PlatformTarget | Response> {
+  const [assistantApiKeyRaw, assistantId] = await Promise.all([
+    getCredentials().get(credentialKey("cadet", "assistant_api_key")),
+    resolveCloudAssistantIdOrUndefined(),
+  ]);
 
-    const cloudBaseUrl = getCloudBaseUrl();
-    const assistantApiKey = assistantApiKeyRaw?.trim() || undefined;
+  const cloudBaseUrl = getCloudBaseUrl();
+  const assistantApiKey = assistantApiKeyRaw?.trim() || undefined;
 
-    if (!cloudBaseUrl || !assistantApiKey || !assistantId) {
-      return errorResponse(
-        "PLATFORM_UNAVAILABLE",
-        "This assistant is not registered with Cadet Cloud, so push notifications are unavailable.",
-        503,
-      );
-    }
-
-    return { cloudBaseUrl, assistantApiKey, assistantId };
+  if (!cloudBaseUrl || !assistantApiKey || !assistantId) {
+    return errorResponse(
+      "PLATFORM_UNAVAILABLE",
+      "This assistant is not registered with Cadet Cloud, so push notifications are unavailable.",
+      503,
+    );
   }
 
-  async function forward(
-    req: Request,
-    resourcePath: string,
-  ): Promise<Response> {
-    const target = await resolvePlatformTarget();
-    if (target instanceof Response) {
-      return target;
-    }
+  return { cloudBaseUrl, assistantApiKey, assistantId };
+}
 
-    const search = new URL(req.url).search;
-    const upstreamUrl = `${target.cloudBaseUrl}/v1/assistants/${target.assistantId}${resourcePath}${search}`;
+async function forward(req: Request, resourcePath: string): Promise<Response> {
+  const target = await resolvePlatformTarget();
+  if (target instanceof Response) {
+    return target;
+  }
 
-    const headers = new Headers();
-    headers.set("Authorization", `Api-Key ${target.assistantApiKey}`);
-    const contentType = req.headers.get("content-type");
-    if (contentType) {
-      headers.set("Content-Type", contentType);
-    }
+  const search = new URL(req.url).search;
+  const upstreamUrl = `${target.cloudBaseUrl}/v1/assistants/${target.assistantId}${resourcePath}${search}`;
 
-    let body: ArrayBuffer | undefined;
-    if (
-      req.method !== "GET" &&
-      req.method !== "HEAD" &&
-      req.method !== "DELETE"
-    ) {
-      body = await req.arrayBuffer();
-    }
+  const headers = new Headers();
+  headers.set("Authorization", `Api-Key ${target.assistantApiKey}`);
+  const contentType = req.headers.get("content-type");
+  if (contentType) {
+    headers.set("Content-Type", contentType);
+  }
 
-    try {
-      const res = await fetchImpl(upstreamUrl, {
-        method: req.method,
-        headers,
-        body,
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      });
+  let body: ArrayBuffer | undefined;
+  if (
+    req.method !== "GET" &&
+    req.method !== "HEAD" &&
+    req.method !== "DELETE"
+  ) {
+    body = await req.arrayBuffer();
+  }
 
-      if (!res.ok) {
-        log.warn(
-          { status: res.status, path: resourcePath },
-          "Non-OK response from platform push token endpoint",
-        );
-      }
+  try {
+    const res = await fetchImpl(upstreamUrl, {
+      method: req.method,
+      headers,
+      body,
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
-      const responseHeaders = new Headers();
-      const upstreamContentType = res.headers.get("content-type");
-      if (upstreamContentType) {
-        responseHeaders.set("content-type", upstreamContentType);
-      }
-
-      return new Response(res.body, {
-        status: res.status,
-        headers: responseHeaders,
-      });
-    } catch (err) {
+    if (!res.ok) {
       log.warn(
-        { err, path: resourcePath },
-        "Failed to reach platform push token endpoint",
-      );
-      return errorResponse(
-        "PLATFORM_UNAVAILABLE",
-        "Could not reach Cadet Cloud to register this device.",
-        502,
+        { status: res.status, path: resourcePath },
+        "Non-OK response from platform push token endpoint",
       );
     }
+
+    const responseHeaders = new Headers();
+    const upstreamContentType = res.headers.get("content-type");
+    if (upstreamContentType) {
+      responseHeaders.set("content-type", upstreamContentType);
+    }
+
+    return new Response(res.body, {
+      status: res.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    log.warn(
+      { err, path: resourcePath },
+      "Failed to reach platform push token endpoint",
+    );
+    return errorResponse(
+      "PLATFORM_UNAVAILABLE",
+      "Could not reach Cadet Cloud to register this device.",
+      502,
+    );
   }
-
-  return {
-    handleUpsertPushToken(req: Request): Promise<Response> {
-      return forward(req, "/push-tokens/");
-    },
-
-    handleDeletePushToken(req: Request, token: string): Promise<Response> {
-      return forward(req, `/push-tokens/${encodeURIComponent(token)}/`);
-    },
-
-    handleUpsertLiveActivityToken(req: Request): Promise<Response> {
-      return forward(req, "/live-activity/tokens/");
-    },
-
-    handleDeleteLiveActivityToken(
-      req: Request,
-      token: string,
-    ): Promise<Response> {
-      return forward(
-        req,
-        `/live-activity/tokens/${encodeURIComponent(token)}/`,
-      );
-    },
-  };
 }
 
 // Cloud-owned registration. Remote-gateway clients hit these
 // same-origin; without a dedicated route they fall through to the
 // runtime-proxy catch-all and 404.
-/** Built on first request — module import stays side-effect-free. */
-let routeProxyImpl: ReturnType<typeof createCloudPushProxyHandler> | undefined;
-function routeProxy(): ReturnType<typeof createCloudPushProxyHandler> {
-  return (routeProxyImpl ??= createCloudPushProxyHandler(getCredentials()));
+export function handleUpsertPushToken(req: Request): Promise<Response> {
+  return forward(req, "/push-tokens/");
+}
+
+export function handleDeletePushToken(
+  req: Request,
+  token: string,
+): Promise<Response> {
+  return forward(req, `/push-tokens/${encodeURIComponent(token)}/`);
+}
+
+export function handleUpsertLiveActivityToken(req: Request): Promise<Response> {
+  return forward(req, "/live-activity/tokens/");
+}
+
+export function handleDeleteLiveActivityToken(
+  req: Request,
+  token: string,
+): Promise<Response> {
+  return forward(req, `/live-activity/tokens/${encodeURIComponent(token)}/`);
 }
 
 export const ROUTES: RouteDefinition[] = [
@@ -158,30 +145,27 @@ export const ROUTES: RouteDefinition[] = [
     method: "post",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, _params) => routeProxy().handleUpsertPushToken(req),
+    handler: (req) => handleUpsertPushToken(req),
   },
   {
     path: /^\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
     method: "delete",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, params) =>
-      routeProxy().handleDeletePushToken(req, params[0]),
+    handler: (req, params) => handleDeletePushToken(req, params[0]!),
   },
   {
     path: /^\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
     method: "post",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, _params) =>
-      routeProxy().handleUpsertLiveActivityToken(req),
+    handler: (req) => handleUpsertLiveActivityToken(req),
   },
   {
     path: /^\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
     method: "delete",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, params) =>
-      routeProxy().handleDeleteLiveActivityToken(req, params[0]),
+    handler: (req, params) => handleDeleteLiveActivityToken(req, params[0]!),
   },
 ];

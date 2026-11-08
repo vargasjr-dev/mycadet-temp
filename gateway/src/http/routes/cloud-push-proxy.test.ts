@@ -8,7 +8,6 @@ import {
   test,
 } from "bun:test";
 
-import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 
 type FetchFn = (
@@ -24,7 +23,20 @@ mock.module("../../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createCloudPushProxyHandler } = await import("./cloud-push-proxy.js");
+let credentialValues: Record<string, string | undefined> = {};
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => ({
+    get: async (key: string) => credentialValues[key],
+  }),
+}));
+
+const {
+  handleDeleteLiveActivityToken,
+  handleDeletePushToken,
+  handleUpsertLiveActivityToken,
+  handleUpsertPushToken,
+} = await import("./cloud-push-proxy.js");
 const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
   await import("../../cloud-identity.js");
 
@@ -32,24 +44,16 @@ const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
 const PLATFORM_BASE_URL = "https://test-cloud.mycadet.ai";
 const ASSISTANT_API_KEY = "assistant-api-key-123";
 
-function makeKeyedCredentials(
-  values: Record<string, string | undefined>,
-): CredentialCache {
-  return {
-    get: mock(async (key: string) => values[key]),
-  } as unknown as CredentialCache;
-}
-
-function registeredCredentials(): CredentialCache {
+function registeredCredentials() {
   applyCloudIdentityIds({
     assistantId: PLATFORM_ASSISTANT_ID,
     organizationId: "",
     userId: "",
   });
   process.env.CADET_CLOUD_URL = PLATFORM_BASE_URL;
-  return makeKeyedCredentials({
+  credentialValues = {
     [credentialKey("cadet", "assistant_api_key")]: ASSISTANT_API_KEY,
-  });
+  };
 }
 
 function decodeBody(body: unknown): string {
@@ -102,9 +106,7 @@ describe("platform push proxy", () => {
   });
 
   test("returns 503 and does not fetch when platform credentials are missing", async () => {
-    const handler = createCloudPushProxyHandler(makeKeyedCredentials({}));
-
-    const res = await handler.handleUpsertPushToken(
+    const res = await handleUpsertPushToken(
       new Request("http://localhost:7830/v1/assistants/self/push-tokens/", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -129,14 +131,14 @@ describe("platform push proxy", () => {
           headers: { "content-type": "application/json" },
         }),
     );
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
     const payload = {
       token: "device-token",
       platform: "ios",
       bundle_id: "ai.mycadet.android",
     };
 
-    const res = await handler.handleUpsertPushToken(
+    const res = await handleUpsertPushToken(
       new Request("http://localhost:7830/v1/assistants/self/push-tokens/", {
         method: "POST",
         headers: {
@@ -164,9 +166,9 @@ describe("platform push proxy", () => {
 
   test("preserves bundle_id on push-token delete and ignores the URL assistant id", async () => {
     fetchMock = mock(async () => new Response(null, { status: 204 }));
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
 
-    const res = await handler.handleDeletePushToken(
+    const res = await handleDeletePushToken(
       new Request(
         "http://localhost:7830/v1/assistants/self/push-tokens/device-token/?bundle_id=ai.mycadet.android",
         { method: "DELETE" },
@@ -193,9 +195,9 @@ describe("platform push proxy", () => {
           headers: { "content-type": "application/json" },
         }),
     );
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
 
-    const res = await handler.handleUpsertLiveActivityToken(
+    const res = await handleUpsertLiveActivityToken(
       new Request(
         "http://localhost:7830/v1/assistants/self/live-activity/tokens/",
         {
@@ -215,9 +217,9 @@ describe("platform push proxy", () => {
 
   test("forwards a Live Activity token delete to the cloud", async () => {
     fetchMock = mock(async () => new Response(null, { status: 204 }));
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
 
-    const res = await handler.handleDeleteLiveActivityToken(
+    const res = await handleDeleteLiveActivityToken(
       new Request(
         "http://localhost:7830/v1/assistants/self/live-activity/tokens/activity-token/",
         { method: "DELETE" },
@@ -240,9 +242,9 @@ describe("platform push proxy", () => {
           headers: { "content-type": "application/json" },
         }),
     );
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
 
-    const res = await handler.handleDeletePushToken(
+    const res = await handleDeletePushToken(
       new Request(
         "http://localhost:7830/v1/assistants/self/push-tokens/device-token/",
         { method: "DELETE" },
@@ -258,9 +260,9 @@ describe("platform push proxy", () => {
     fetchMock = mock(async () => {
       throw new Error("network down");
     });
-    const handler = createCloudPushProxyHandler(registeredCredentials());
+    registeredCredentials();
 
-    const res = await handler.handleUpsertPushToken(
+    const res = await handleUpsertPushToken(
       new Request("http://localhost:7830/v1/assistants/self/push-tokens/", {
         method: "POST",
         headers: { "content-type": "application/json" },

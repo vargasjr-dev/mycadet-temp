@@ -7,7 +7,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -15,75 +14,63 @@ import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("slack-control-plane-proxy");
 
-export function createSlackControlPlaneProxyHandler(config: GatewayConfig) {
-  async function proxyToRuntime(
-    req: Request,
-    upstreamPath: string,
-    upstreamSearch: string,
-  ): Promise<Response> {
-    const start = performance.now();
-    const timeoutMs = config.runtimeTimeoutMs;
-    const response = await proxyForwardToResponse(req, {
-      baseUrl: config.assistantRuntimeBaseUrl,
-      path: upstreamPath,
-      search: upstreamSearch || undefined,
-      timeoutMs,
-      fetchImpl,
-    });
-    const duration = Math.round(performance.now() - start);
+async function proxyToRuntime(
+  req: Request,
+  upstreamPath: string,
+  upstreamSearch: string,
+): Promise<Response> {
+  const config = getConfig();
+  const start = performance.now();
+  const timeoutMs = config.runtimeTimeoutMs;
+  const response = await proxyForwardToResponse(req, {
+    baseUrl: config.assistantRuntimeBaseUrl,
+    path: upstreamPath,
+    search: upstreamSearch || undefined,
+    timeoutMs,
+    fetchImpl,
+  });
+  const duration = Math.round(performance.now() - start);
 
-    if (response.status >= 500) {
-      log.error(
-        { path: upstreamPath, status: response.status, duration },
-        "Slack control-plane proxy upstream error",
-      );
-    } else if (response.status >= 400) {
-      log.warn(
-        { path: upstreamPath, status: response.status, duration },
-        "Slack control-plane proxy upstream error",
-      );
-    } else {
-      log.info(
-        { path: upstreamPath, status: response.status, duration },
-        "Slack control-plane proxy completed",
-      );
-    }
-
-    return response;
+  if (response.status >= 500) {
+    log.error(
+      { path: upstreamPath, status: response.status, duration },
+      "Slack control-plane proxy upstream error",
+    );
+  } else if (response.status >= 400) {
+    log.warn(
+      { path: upstreamPath, status: response.status, duration },
+      "Slack control-plane proxy upstream error",
+    );
+  } else {
+    log.info(
+      { path: upstreamPath, status: response.status, duration },
+      "Slack control-plane proxy completed",
+    );
   }
 
-  return {
-    async handleListSlackChannels(req: Request): Promise<Response> {
-      const url = new URL(req.url);
-      return proxyToRuntime(req, "/v1/slack/channels", url.search);
-    },
-
-    async handleShareToSlack(req: Request): Promise<Response> {
-      return proxyToRuntime(req, "/v1/slack/share", "");
-    },
-  };
+  return response;
 }
 
-let routeProxyImpl: ReturnType<typeof createSlackControlPlaneProxyHandler> | undefined;
-
-
-/** Built on first request — module import stays side-effect-free. */
-function routeProxy(): ReturnType<typeof createSlackControlPlaneProxyHandler> {
-  return (routeProxyImpl ??= createSlackControlPlaneProxyHandler(getConfig()));
+export async function handleListSlackChannels(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  return proxyToRuntime(req, "/v1/slack/channels", url.search);
 }
 
+export async function handleShareToSlack(req: Request): Promise<Response> {
+  return proxyToRuntime(req, "/v1/slack/share", "");
+}
 
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/slack/channels",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleListSlackChannels(req),
+    handler: (req) => handleListSlackChannels(req),
   },
   {
     path: "/slack/share",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy().handleShareToSlack(req),
+    handler: (req) => handleShareToSlack(req),
   },
 ];

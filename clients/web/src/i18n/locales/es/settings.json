@@ -1143,11 +1143,6 @@
   "usePairDevice": {
     "mintErrorFallback": "Algo salió mal al generar el código."
   },
-  "usePendingPairingRequests": {
-    "actionErrorFallback": "Algo salió mal. Inténtalo de nuevo.",
-    "denyAlreadyApproved": "Esta solicitud ya se había aprobado en otro lugar, así que la denegación no tuvo efecto y el dispositivo ya está vinculado.",
-    "pollErrorFallback": "Algo salió mal al comprobar las solicitudes de vinculación."
-  },
   "useProfileSave": {
     "createdToast": "Perfil \"{name}\" creado"
   },
