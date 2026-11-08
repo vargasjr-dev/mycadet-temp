@@ -25,4 +25,9 @@ jobs:
           tar -xzf /tmp/actionlint.tgz -C /tmp actionlint
 
       - name: Lint workflow files
+        # GOGC=off: the 1.7.12 binary panics nondeterministically in Go's GC
+        # sweep ("found pointer to free object") on newer Go runtimes — with
+        # GC off it lints clean every run (and OOM is not a risk at this size).
+        env:
+          GOGC: "off"
         run: /tmp/actionlint -shellcheck= -ignore 'constant expression "false" in condition' -color
