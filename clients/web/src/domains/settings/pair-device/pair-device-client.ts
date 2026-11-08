@@ -61,8 +61,6 @@ export class PairDeviceError extends Error {
 }
 
 /** Error code the deny route returns when the request was approved first. */
-export const ALREADY_APPROVED_ERROR_CODE = "ALREADY_APPROVED";
-
 export interface DevicePairing {
   /** The scannable https pair URL (verification URI + `#device_code=…`). */
   pairUrl: string;

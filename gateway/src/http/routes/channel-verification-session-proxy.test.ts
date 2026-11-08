@@ -54,12 +54,8 @@ mock.module("./config.js", () => ({
 }));
 
 // Import after mocks are registered
-const {
-  handleCancelVerificationSession,
-  handleCreateVerificationSession,
-  handleGetVerificationStatus,
-  handleResendVerificationSession,
-} = await import("./channel-verification-session-proxy.js");
+const { handleCreateVerificationSession, handleGetVerificationStatus } =
+  await import("./channel-verification-session-proxy.js");
 
 // --- Helpers -----------------------------------------------------------------
 

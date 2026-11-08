@@ -56,7 +56,6 @@ describe("upgrade policy", () => {
 
     test("returns the stored policy after a PUT", async () => {
       const putHandler = handleUpgradePolicyPut;
-      const getHandler = handleUpgradePolicyGet;
 
       const policy = {
         ...validPolicy(),
