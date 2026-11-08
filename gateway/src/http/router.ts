@@ -1,11 +1,6 @@
 import type { Server } from "bun";
 
-import type {
-  AuthStrategy,
-  GatewayRouteDefinition,
-  RouteHandler,
-} from "./routes/types.js";
-import type { Scope } from "../auth/types.js";
+import type { RouteDefinition } from "./routes/types.js";
 import type { AuthRateLimiter } from "../auth-rate-limiter.js";
 import {
   createAuthMiddleware,
@@ -29,23 +24,14 @@ export interface RouterDeps {
 }
 
 /**
- * One route declaration, compiled for dispatch. `GatewayRouteDefinition` is
- * the only route type callers see; this is the router's internal expansion of
- * it (template compiled, methods uppercased, aliases and scoped mirrors
- * unfolded).
+ * One route declaration, expanded for dispatch: aliases and scoped mirrors
+ * unfolded, `{param}` templates compiled to `pattern`, methods uppercased.
  */
-interface CompiledRoute {
-  /** Declared path: a template or static string, or a raw regex. */
-  path: string | RegExp;
+type DispatchRoute = Omit<RouteDefinition, "method"> & {
   /** Compiled dispatch pattern (set iff `path` is a `{param}` template). */
   pattern?: RegExp;
   method: string;
-  auth?: AuthStrategy;
-  scope?: Scope;
-  trackFailureStatuses?: readonly number[];
-  precondition?: () => Response | null;
-  handler: RouteHandler;
-}
+};
 
 /**
  * Create a router function from a declarative route table.
@@ -55,7 +41,7 @@ interface CompiledRoute {
  * handler. Returns null if no route matches.
  */
 export function createRouter(
-  routes: ReadonlyArray<GatewayRouteDefinition>,
+  routes: ReadonlyArray<RouteDefinition>,
   deps: RouterDeps,
 ): (
   req: Request,
@@ -64,7 +50,7 @@ export function createRouter(
   server?: Server<unknown>,
 ) => Promise<Response | null> {
   const { authRateLimiter } = deps;
-  const table: CompiledRoute[] = routes.flatMap(expandRoute);
+  const table: DispatchRoute[] = routes.flatMap(expandRoute);
 
   return async (
     req: Request,
@@ -211,22 +197,17 @@ export function compilePath(template: string): RegExp {
  * `scoped` — the assistant-scoped mirror whose first capture (the assistant
  * id) is discarded before the handler sees the params.
  */
-export function expandRoute(route: GatewayRouteDefinition): CompiledRoute[] {
+export function expandRoute(route: RouteDefinition): DispatchRoute[] {
   const pattern =
     typeof route.path === "string" && route.path.includes("{")
       ? compilePath(route.path)
       : undefined;
-  const flat: CompiledRoute = {
-    path: route.path,
+  const flat: DispatchRoute = {
+    ...route,
     pattern,
     method: route.method?.toUpperCase() ?? "",
-    auth: route.auth,
-    scope: route.scope,
-    trackFailureStatuses: route.trackFailureStatuses,
-    precondition: route.precondition,
-    handler: route.handler,
   };
-  const expanded: CompiledRoute[] = [flat];
+  const expanded: DispatchRoute[] = [flat];
   for (const alias of route.aliases ?? []) {
     expanded.push({ ...flat, method: alias.toUpperCase() });
   }
@@ -256,7 +237,7 @@ interface MatchResult {
 }
 
 function matchRoute(
-  route: CompiledRoute,
+  route: DispatchRoute,
   pathname: string,
   method: string,
 ): MatchResult | null {

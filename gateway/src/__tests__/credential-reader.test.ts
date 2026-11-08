@@ -5,10 +5,6 @@ import { hostname, userInfo } from "node:os";
 import { createCipheriv, pbkdf2Sync, randomBytes } from "node:crypto";
 import { credentialKey } from "../credential-key.js";
 
-// ---------------------------------------------------------------------------
-// Logger mock — captures all log calls so the secret-leak test can inspect them
-// ---------------------------------------------------------------------------
-
 import {
   ALL_CREDENTIAL_SPECS,
   readCredential,

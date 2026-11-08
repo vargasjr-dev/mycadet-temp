@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-// Import the handler directly for integration testing. We invoke the route
-// handler function with params matching the ClassifyRiskSchema to exercise
-// the full dispatch path through each classifier.
 import { riskClassificationRoutes } from "./risk-classification-handlers.js";
 
 // ── Helper ──────────────────────────────────────────────────────────────────

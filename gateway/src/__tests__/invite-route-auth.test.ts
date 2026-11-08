@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import "./test-preload.js";
 
-import type { GatewayRouteDefinition } from "../http/routes/types.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 
 // --- Mocks (set BEFORE importing the modules under test) ------------------
 
@@ -47,7 +47,7 @@ describe("invite route registrations (contact route table)", () => {
   test("all five invite routes use edge-scoped auth with the original runtime scopes", async () => {
     const expectedScopeByHandler: Record<
       string,
-      GatewayRouteDefinition["scope"]
+      RouteDefinition["scope"]
     > = {
       handleListInvites: "settings.read",
       handleCreateInvite: "settings.write",
@@ -80,7 +80,7 @@ const ACTOR_TOKEN = "tok-actor"; // actor_client_v1 → settings.read + write
 
 /** Router with the invite routes exactly as registered in index.ts. */
 function makeInviteRouter() {
-  const routes: GatewayRouteDefinition[] = [
+  const routes: RouteDefinition[] = [
     {
       path: "/contacts/invites",
       method: "get",

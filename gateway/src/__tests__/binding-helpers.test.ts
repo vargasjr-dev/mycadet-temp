@@ -17,8 +17,6 @@ import {
 
 import "./test-preload.js";
 
-// Assistant DB proxy: every call throws so the tests prove the helpers read
-// and write only the gateway DB.
 import {
   getExistingGuardianBinding,
   getMostRecentChannelGuardianTimestamp,

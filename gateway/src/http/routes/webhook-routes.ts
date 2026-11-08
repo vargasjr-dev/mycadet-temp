@@ -4,24 +4,30 @@
  * payload is validated by its own mechanism (signature, HMAC, dedup cache),
  * not by gateway auth middleware.
  *
- * Handlers are built once at server startup via `initWebhookRoutes`; the
- * dedup caches are returned to the caller because the gateway process owns
- * their lifecycle (cleanup timers, credential-change resets).
+ * Handlers are built once on first request from the process-wide config,
+ * credential, and config-file singletons; module import stays
+ * side-effect-free for the OpenAPI generation script. The dedup caches are
+ * exported because the gateway process owns their lifecycle (cleanup
+ * timers, credential-change resets).
  */
 
 import {
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
 } from "@mycadet/service-contracts/twilio-ingress";
+import { getConfig } from "../../config.js";
+import { getCredentials } from "../../credential-cache.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
 import { createTelegramWebhookHandler } from "./telegram-webhook.js";
+import { createWhatsAppWebhookHandler } from "./whatsapp-webhook.js";
+import { createEmailWebhookHandler } from "./email-webhook.js";
 import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
 import { createTwilioStatusWebhookHandler } from "./twilio-status-webhook.js";
 import { createTwilioVoiceVerifyCallbackHandler } from "./twilio-voice-verify-callback.js";
-import { createWhatsAppWebhookHandler } from "./whatsapp-webhook.js";
-import { createEmailWebhookHandler } from "./email-webhook.js";
-import { createMailgunWebhookHandler } from "./mailgun-webhook.js";
 import { createResendWebhookHandler } from "./resend-webhook.js";
+import { createMailgunWebhookHandler } from "./mailgun-webhook.js";
 import { createOAuthCallbackHandler } from "./oauth-callback.js";
 import { createMcpOAuthClientMetadataHandler } from "./mcp-oauth-client-metadata.js";
 import { createInboundRegisterHandler } from "./inbound-register.js";
@@ -29,19 +35,7 @@ import { createGuardianChannelHandler } from "./guardian-channel-create.js";
 import { createPluginWebhookHandler } from "./plugin-webhook.js";
 import { PLUGIN_WEBHOOK_PATH_PATTERN } from "../../channels/plugin-ingress.js";
 import { resolveCachedPluginIngress } from "../../channels/plugin-ingress-approvals.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
-
-export interface WebhookRoutesDeps {
-  config: GatewayConfig;
-  credentials: CredentialCache;
-  configFile: ConfigFileCache;
-  isTelegramConfigured: () => boolean;
-  isWhatsAppConfigured: () => boolean;
-}
+import type { RouteDefinition } from "./types.js";
 
 /** The webhook dedup caches the gateway process lifecycle-manages. */
 export type WebhookDedupCaches = {
@@ -55,155 +49,137 @@ export type WebhookDedupCaches = {
 };
 
 const log = getLogger("webhook-routes");
-const deps = lazyRef<WebhookRoutesDeps>(
-  "webhook routes used before initialization",
-);
+
+interface WebhookHandlers {
+  telegram: ReturnType<typeof createTelegramWebhookHandler>;
+  whatsapp: ReturnType<typeof createWhatsAppWebhookHandler>;
+  email: ReturnType<typeof createEmailWebhookHandler>;
+  resend: ReturnType<typeof createResendWebhookHandler>;
+  mailgun: ReturnType<typeof createMailgunWebhookHandler>;
+  twilioVoice: ReturnType<typeof createTwilioVoiceWebhookHandler>;
+  twilioStatus: ReturnType<typeof createTwilioStatusWebhookHandler>;
+  twilioVerify: ReturnType<typeof createTwilioVoiceVerifyCallbackHandler>;
+  plugin: ReturnType<typeof createPluginWebhookHandler>;
+  oauthCallback: ReturnType<typeof createOAuthCallbackHandler>;
+  mcpMetadata: ReturnType<typeof createMcpOAuthClientMetadataHandler>;
+  inboundRegister: ReturnType<typeof createInboundRegisterHandler>;
+  guardianChannel: ReturnType<typeof createGuardianChannelHandler>;
+}
+
+let built: WebhookHandlers | undefined;
+
+/** Built on first request — module import stays side-effect-free. */
+function handlers(): WebhookHandlers {
+  return (built ??= (() => {
+    const config = getConfig();
+    const credentials = getCredentials();
+    const configFile = getConfigFileCache();
+    const validationCaches = { credentials, configFile };
+    return {
+      telegram: createTelegramWebhookHandler(config, validationCaches),
+      whatsapp: createWhatsAppWebhookHandler(config, validationCaches),
+      email: createEmailWebhookHandler(config, validationCaches),
+      resend: createResendWebhookHandler(config, validationCaches),
+      mailgun: createMailgunWebhookHandler(config, validationCaches),
+      twilioVoice: createTwilioVoiceWebhookHandler(config, validationCaches),
+      twilioStatus: createTwilioStatusWebhookHandler(config, validationCaches),
+      twilioVerify: createTwilioVoiceVerifyCallbackHandler(
+        config,
+        validationCaches,
+      ),
+      plugin: createPluginWebhookHandler({
+        config,
+        resolve: resolveCachedPluginIngress,
+        credentials,
+        // HMAC payloads can sign the public request URL. Read through the cache
+        // so a tunnel registering a public base is picked up without a restart.
+        ingressPublicBaseUrl: () =>
+          configFile.getString("ingress", "publicBaseUrl"),
+      }),
+      oauthCallback: createOAuthCallbackHandler(config),
+      mcpMetadata: createMcpOAuthClientMetadataHandler(configFile),
+      inboundRegister: createInboundRegisterHandler(config, credentials),
+      guardianChannel: createGuardianChannelHandler(),
+    };
+  })());
+}
+
+/** The dedup caches, for the gateway process's lifecycle management. */
+export function webhookDedupCaches(): WebhookDedupCaches {
+  const h = handlers();
+  return {
+    telegramDedupCache: h.telegram.dedupCache,
+    whatsappDedupCache: h.whatsapp.dedupCache,
+    emailDedupCache: h.email.dedupCache,
+  };
+}
+
+async function telegramConfigured(): Promise<boolean> {
+  const [token, secret] = await Promise.all([
+    getCredentials().get(credentialKey("telegram", "bot_token")),
+    getCredentials().get(credentialKey("telegram", "webhook_secret")),
+  ]);
+  return !!(token && secret);
+}
+
+async function whatsappConfigured(): Promise<boolean> {
+  const [phoneId, token] = await Promise.all([
+    getCredentials().get(credentialKey("whatsapp", "phone_number_id")),
+    getCredentials().get(credentialKey("whatsapp", "access_token")),
+  ]);
+  return !!(phoneId && token);
+}
 
 /** Reject when an integration isn't configured (503, logged). */
-function requireConfigured(
-  check: () => boolean,
-  name: string,
-): () => Response | null {
-  return () => {
-    if (!check()) {
-      log.warn(
-        { integration: name },
-        `${name} integration not configured — rejecting request with 503`,
-      );
-      return Response.json(
-        { error: `${name} integration not configured` },
-        { status: 503 },
-      );
-    }
-    return null;
-  };
+function notConfigured(name: string): Response {
+  log.warn(
+    { integration: name },
+    `${name} integration not configured — rejecting request with 503`,
+  );
+  return Response.json(
+    { error: `${name} integration not configured` },
+    { status: 503 },
+  );
 }
 
-export function initWebhookRoutes(
-  injected: WebhookRoutesDeps,
-): WebhookDedupCaches {
-  deps.set(injected);
-  const { config, credentials, configFile } = injected;
-  const validationCaches = { credentials, configFile };
-  const telegram = createTelegramWebhookHandler(config, validationCaches);
-  const whatsapp = createWhatsAppWebhookHandler(config, validationCaches);
-  const email = createEmailWebhookHandler(config, validationCaches);
-  webhookHandler.set(telegram.handler);
-  whatsappHandler.set(whatsapp.handler);
-  emailHandler.set(email.handler);
-  resendHandler.set(
-    createResendWebhookHandler(config, validationCaches).handler,
-  );
-  mailgunHandler.set(
-    createMailgunWebhookHandler(config, validationCaches).handler,
-  );
-  twilioVoiceHandler.set(
-    createTwilioVoiceWebhookHandler(config, validationCaches),
-  );
-  twilioStatusHandler.set(
-    createTwilioStatusWebhookHandler(config, validationCaches),
-  );
-  twilioVerifyHandler.set(
-    createTwilioVoiceVerifyCallbackHandler(config, validationCaches),
-  );
-  pluginHandler.set(
-    createPluginWebhookHandler({
-      config,
-      resolve: resolveCachedPluginIngress,
-      credentials,
-      // HMAC payloads can sign the public request URL. Read through the cache
-      // so a tunnel registering a public base is picked up without a restart.
-      ingressPublicBaseUrl: () =>
-        configFile.getString("ingress", "publicBaseUrl"),
-    }),
-  );
-  oauthCallbackHandler.set(createOAuthCallbackHandler(config));
-  mcpMetadataHandler.set(createMcpOAuthClientMetadataHandler(configFile));
-  inboundRegisterHandler.set(createInboundRegisterHandler(config, credentials));
-  guardianChannelHandler.set(createGuardianChannelHandler());
-  return {
-    telegramDedupCache: telegram.dedupCache,
-    whatsappDedupCache: whatsapp.dedupCache,
-    emailDedupCache: email.dedupCache,
-  };
-}
-
-const webhookHandler = lazyRef<
-  ReturnType<typeof createTelegramWebhookHandler>["handler"]
->("Telegram webhook handler");
-const whatsappHandler = lazyRef<
-  ReturnType<typeof createWhatsAppWebhookHandler>["handler"]
->("WhatsApp webhook handler");
-const emailHandler = lazyRef<
-  ReturnType<typeof createEmailWebhookHandler>["handler"]
->("Email webhook handler");
-const resendHandler = lazyRef<
-  ReturnType<typeof createResendWebhookHandler>["handler"]
->("Resend webhook handler");
-const mailgunHandler = lazyRef<
-  ReturnType<typeof createMailgunWebhookHandler>["handler"]
->("Mailgun webhook handler");
-const twilioVoiceHandler = lazyRef<
-  ReturnType<typeof createTwilioVoiceWebhookHandler>
->("Twilio voice webhook handler");
-const twilioStatusHandler = lazyRef<
-  ReturnType<typeof createTwilioStatusWebhookHandler>
->("Twilio status webhook handler");
-const twilioVerifyHandler = lazyRef<
-  ReturnType<typeof createTwilioVoiceVerifyCallbackHandler>
->("Twilio verify webhook handler");
-const pluginHandler = lazyRef<ReturnType<typeof createPluginWebhookHandler>>(
-  "Plugin webhook handler",
-);
-const oauthCallbackHandler = lazyRef<
-  ReturnType<typeof createOAuthCallbackHandler>
->("OAuth callback handler");
-const mcpMetadataHandler = lazyRef<
-  ReturnType<typeof createMcpOAuthClientMetadataHandler>
->("MCP OAuth metadata handler");
-const inboundRegisterHandler = lazyRef<
-  ReturnType<typeof createInboundRegisterHandler>
->("Inbound register handler");
-const guardianChannelHandler = lazyRef<
-  ReturnType<typeof createGuardianChannelHandler>
->("Guardian channel handler");
-
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/webhooks/telegram",
-    precondition: () =>
-      requireConfigured(deps.get().isTelegramConfigured, "Telegram")(),
-    handler: (req) => webhookHandler.get()(req),
+    handler: async (req) =>
+      (await telegramConfigured())
+        ? handlers().telegram.handler(req)
+        : notConfigured("Telegram"),
   },
   {
     path: TWILIO_VOICE_WEBHOOK_PATH,
-    handler: (req) => twilioVoiceHandler.get()(req),
+    handler: (req) => handlers().twilioVoice(req),
   },
   {
     path: TWILIO_STATUS_WEBHOOK_PATH,
-    handler: (req) => twilioStatusHandler.get()(req),
+    handler: (req) => handlers().twilioStatus(req),
   },
   {
     path: "/webhooks/twilio/voice-verify",
-    handler: (req) => twilioVerifyHandler.get()(req),
+    handler: (req) => handlers().twilioVerify(req),
   },
   {
     path: "/webhooks/whatsapp",
-    precondition: () =>
-      requireConfigured(deps.get().isWhatsAppConfigured, "WhatsApp")(),
-    handler: (req) => whatsappHandler.get()(req),
+    handler: async (req) =>
+      (await whatsappConfigured())
+        ? handlers().whatsapp.handler(req)
+        : notConfigured("WhatsApp"),
   },
   {
     path: "/webhooks/email",
-    handler: (req) => emailHandler.get()(req),
+    handler: (req) => handlers().email.handler(req),
   },
   {
     path: "/webhooks/resend",
-    handler: (req) => resendHandler.get()(req),
+    handler: (req) => handlers().resend.handler(req),
   },
   {
     path: "/webhooks/mailgun",
-    handler: (req) => mailgunHandler.get()(req),
+    handler: (req) => handlers().mailgun.handler(req),
   },
   // Plugin-declared webhooks. Public like their neighbours above; what makes
   // them safe is that only a guardian-approved declaration creates one, every
@@ -212,7 +188,8 @@ export const ROUTES: GatewayRouteDefinition[] = [
   // declarations are upgraded in the pre-router, before this entry is reached.
   {
     path: PLUGIN_WEBHOOK_PATH_PATTERN,
-    handler: (req, params) => pluginHandler.get()(req, params[0]!, params[1]!),
+    handler: (req, params) =>
+      handlers().plugin(req, params[0]!, params[1]!),
   },
   {
     // BYO provider registration (auto-verify guardian email)
@@ -220,25 +197,25 @@ export const ROUTES: GatewayRouteDefinition[] = [
     method: "post",
     auth: "edge-scoped",
     scope: "internal.write",
-    handler: (req) => inboundRegisterHandler.get()(req),
+    handler: (req) => handlers().inboundRegister(req),
   },
   {
     // Guardian channel creation (platform auto-verify)
     path: "/contacts/guardian/channel",
     method: "post",
     auth: "edge-guardian",
-    handler: (req) => guardianChannelHandler.get()(req),
+    handler: (req) => handlers().guardianChannel(req),
   },
   {
     path: "/webhooks/oauth/callback",
     method: "get",
     auth: "track-failures",
     trackFailureStatuses: [400],
-    handler: (req) => oauthCallbackHandler.get()(req),
+    handler: (req) => handlers().oauthCallback(req),
   },
   {
     path: "/oauth/client-metadata.json",
     method: "get",
-    handler: () => mcpMetadataHandler.get()(),
+    handler: () => handlers().mcpMetadata(),
   },
 ];

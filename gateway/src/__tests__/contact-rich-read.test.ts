@@ -22,13 +22,6 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake daemon IPC (contacts_info_batch) ────────────────────────────────────
-// The info read now goes over typed IPC (`contacts_info_batch`), so we mock
-// `ipcCallAssistant` behind `fakeAssistantDb` — the daemon applies the metadata
-// gating + JSON parse, so this fake returns already-shaped infos and throws on
-// demand to exercise the caller's soft-fail path. Mirrors the mock in
-// contacts-info-joiner.test.ts.
-
 import {
   ContactReadSchema,
   GetContactIpcResponseSchema,

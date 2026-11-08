@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import "./test-preload.js";
 
-import type { GatewayRouteDefinition } from "../http/routes/types.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 
 let mockValidateEdgeToken = mock(
   (
@@ -35,7 +35,7 @@ const { ROUTES } = await import("../http/routes/vercel-control-plane-proxy.js");
 describe("vercel control-plane route registrations", () => {
   test("GET/POST/DELETE use edge-scoped auth with settings scopes", () => {
     const routeObjects = ROUTES.filter(
-      (route: GatewayRouteDefinition) =>
+      (route: RouteDefinition) =>
         route.path === "/integrations/vercel/config",
     );
     expect(routeObjects).toHaveLength(3);
@@ -64,7 +64,7 @@ const UI_PAGE_TOKEN = "tok-ui-page";
 const ACTOR_TOKEN = "tok-actor";
 
 function makeVercelRouter() {
-  const routes: GatewayRouteDefinition[] = [
+  const routes: RouteDefinition[] = [
     {
       path: "/integrations/vercel/config",
       method: "get",

@@ -10,10 +10,10 @@
 
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("ps");
 
@@ -76,19 +76,20 @@ async function fetchAssistantPs(
   }
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createPsHandler>>(
-  "Process status handler used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createPsHandler> | undefined;
 
-export function initPsRoutes(config: GatewayConfig): void {
-  routeProxy.set(createPsHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createPsHandler> {
+  return (routeProxyImpl ??= createPsHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/ps",
     method: "get",
     auth: "edge",
-    handler: (_req, _params) => routeProxy.get().handlePs(),
+    handler: (_req, _params) => routeProxy().handlePs(),
   },
 ];

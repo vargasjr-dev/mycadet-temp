@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { AuthRateLimiter } from "../auth-rate-limiter.js";
-import type { GatewayRouteDefinition } from "../http/routes/types.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 
 /** Dynamic import AFTER module setup so the router always loads fresh. */
 const { createRouter } = await import("../http/router.js");
 
-const ROUTES: GatewayRouteDefinition[] = [
+const ROUTES: RouteDefinition[] = [
   {
     path: "/ps",
     method: "get",

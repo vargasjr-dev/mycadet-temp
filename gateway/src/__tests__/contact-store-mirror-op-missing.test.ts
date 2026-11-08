@@ -22,9 +22,6 @@ import {
 
 import "./test-preload.js";
 
-// ── Mocked daemon IPC (leak-safe: delegates to a mutable mock, spreads the
-// actual module so other exports stay importable across suites) ─────────────
-
 import {
   initGatewayDb,
   getGatewayDb,

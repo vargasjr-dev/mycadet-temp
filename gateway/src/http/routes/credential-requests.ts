@@ -27,7 +27,7 @@ import {
 } from "../../ipc/assistant-client.js";
 import { getLogger } from "../../logger.js";
 import { readLimitedBody } from "../read-limited-body.js";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("credential-requests");
 
@@ -282,7 +282,7 @@ const TokenErrorSchema = z.object({
   }),
 });
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/credential-requests/peek",
     method: "post",

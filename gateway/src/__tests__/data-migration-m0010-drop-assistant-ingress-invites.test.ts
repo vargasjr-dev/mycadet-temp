@@ -24,8 +24,6 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake assistant DB ───────────────────────────────────────────────────────
-
 import {
   initGatewayDb,
   getGatewayDb,

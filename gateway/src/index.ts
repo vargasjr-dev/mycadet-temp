@@ -2,17 +2,17 @@ import { eventRefersToAnotherMessage } from "./channels/inbound-event.js";
 import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
 import { randomBytes } from "node:crypto";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
-import { AuthRateLimiter } from "./auth-rate-limiter.js";
+import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
-import { ConfigFileCache } from "./config-file-cache.js";
+import { getConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 import { loadConfig } from "./config.js";
-import { CredentialCache } from "./credential-cache.js";
+import { getCredentials } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
 import {
   CredentialWatcher,
@@ -107,8 +107,7 @@ import {
 } from "./http/middleware/cors.js";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { createRouter, type GetClientIp } from "./http/router.js";
-import { initGatewayRoutes, ROUTES } from "./http/routes/index.js";
-import type { GatewayRouteDefinition } from "./http/routes/types.js";
+import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
@@ -144,7 +143,7 @@ import { initGatewayDb } from "./db/connection.js";
 import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
+import { enablePublicIngress, getTunnelClient } from "./tunnel/client.js";
 import {
   APP_VERSION,
   VERSION_HEADER_NAME,
@@ -195,7 +194,7 @@ function detectCredentialChanges(
 }
 
 // Shared rate limiter for auth failures and unauthenticated endpoints
-const authRateLimiter = new AuthRateLimiter();
+const authRateLimiter = getAuthRateLimiter();
 
 function isMediaStreamSocketData(data: unknown): data is MediaStreamSocketData {
   return (
@@ -344,14 +343,11 @@ async function main() {
   // Instantiate caches for credential and config file reads.
   // Handlers read dynamic credentials and config.json values from these
   // caches at call time, with automatic TTL refresh.
-  const credentialCache = new CredentialCache();
+  const credentialCache = getCredentials();
   bindCloudIdentityCredentialCache(credentialCache);
   void ensureCloudIdentityIds();
-  const configFileCache = new ConfigFileCache();
-  const tunnelClient = createTunnelClient(config, {
-    credentials: credentialCache,
-    configFile: configFileCache,
-  });
+  const configFileCache = getConfigFileCache();
+  const tunnelClient = getTunnelClient();
   // Tunnel only sees a webhook route on the next tunnel connect, so a registry
   // write changes the advertised rules, so the tunnel re-advertises them on
   // its next connect.
@@ -364,7 +360,6 @@ async function main() {
   // preconditions can gate requests synchronously. Updated by the
   // credential watcher callback whenever credentials change.
   let telegramReady = false;
-  let whatsappReady = false;
   let cadetReady = false;
   let tunnelStartRequested = false;
 
@@ -466,7 +461,6 @@ async function main() {
   }
 
   const isTelegramConfigured = () => telegramReady;
-  const isWhatsAppConfigured = () => whatsappReady;
 
   const handleTwilioMediaWs = createTwilioMediaWebsocketHandler(config);
   const handlePluginWebhookWs = createPluginWebhookWebsocketHandler({
@@ -540,22 +534,15 @@ async function main() {
   // declared in a per-domain ROUTES array and concatenated there, in
   // dispatch order (the runtime-proxy catch-all last). Routes are matched
   // top-to-bottom; auth middleware is applied declaratively per route.
-  const { telegramDedupCache, whatsappDedupCache, emailDedupCache } =
-    initGatewayRoutes({
-      config,
-      credentials: credentialCache,
-      configFile: configFileCache,
-      tunnelClient,
-      authRateLimiter,
-      isTelegramConfigured,
-      isWhatsAppConfigured,
-    });
-  const routes: readonly GatewayRouteDefinition[] = ROUTES;
-
-  const router = createRouter(routes, {
+  const router = createRouter(ROUTES, {
     authRateLimiter,
     trustProxy: config.trustProxy,
   });
+
+  // The webhook dedup caches whose lifecycle (cleanup timers, credential
+  // resets) this process manages below.
+  const { telegramDedupCache, whatsappDedupCache, emailDedupCache } =
+    webhookDedupCaches();
 
   /** Stamp the assistant version header on a response. */
   function stampVersion<T extends Response>(res: T): T {
@@ -1434,11 +1421,6 @@ async function main() {
     const telegramCreds = event.credentials.get("telegram");
     telegramReady = !!(
       telegramCreds?.bot_token && telegramCreds?.webhook_secret
-    );
-
-    const whatsappCreds = event.credentials.get("whatsapp");
-    whatsappReady = !!(
-      whatsappCreds?.phone_number_id && whatsappCreds?.access_token
     );
 
     const cadetCreds = event.credentials.get("cadet");

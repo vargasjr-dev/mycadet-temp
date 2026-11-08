@@ -16,7 +16,7 @@
  */
 
 import { z } from "zod";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 
 import {
   findServableRoute,
@@ -429,7 +429,7 @@ const ChannelIngressListSchema = z.object({
 const ingressApproveHandler = createChannelIngressApproveHandler();
 const ingressRevokeHandler = createChannelIngressRevokeHandler();
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-ingress",
     method: "get",

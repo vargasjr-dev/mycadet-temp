@@ -8,10 +8,6 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
 import "../../__tests__/test-preload.js";
 
-// ---------------------------------------------------------------------------
-// Mocks — must be registered before importing the handler under test
-// ---------------------------------------------------------------------------
-
 import { initGatewayDb, resetGatewayDb } from "../../db/connection.js";
 import { getGatewayDb } from "../../db/connection.js";
 import { autoApproveThresholds } from "../../db/schema.js";

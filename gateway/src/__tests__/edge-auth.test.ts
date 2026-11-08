@@ -223,12 +223,6 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH alone is insufficient", () => {
 // =========================================================================
 
 describe("requireEdgeAuth — JWT mode", () => {
-  test("falls back to loopback when Authorization header is absent", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(makeReq());
-    expect(res).toBeNull();
-    expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-  });
 
   test("rejects edge-forwarded loopback requests when Authorization header is absent", async () => {
     const { requireEdgeAuth } = makeMiddleware();
@@ -273,23 +267,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     expect(res?.status).toBe(401);
   });
 
-  test("invalid bearer token falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({ ok: false, reason: "expired" }));
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ authorization: "Bearer bad.jwt.here" }),
-    );
-    expect(res).toBeNull();
-  });
-
-  test("malformed Authorization header falls back to loopback", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ authorization: "Basic not-a-bearer" }),
-    );
-    expect(res).toBeNull();
-    expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-  });
 });
 
 // =========================================================================
@@ -346,12 +323,6 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
 });
 
 describe("requireEdgeAuthWithScope — JWT mode", () => {
-  test("falls back to loopback when Authorization header is absent", async () => {
-    const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(makeReq(), "chat.write");
-    expect(res).toBeNull();
-    expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-  });
 
   test("rejects edge-forwarded loopback requests when scoped Authorization is absent", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
@@ -378,42 +349,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
       "ingress.write",
     );
     expect(res?.status).toBe(403);
-  });
-
-  test("under-scoped bearer token falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({
-      ok: true,
-      claims: {
-        sub: "actor:asst:123",
-        scope_profile: "actor_client_v1",
-      },
-    }));
-    const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(
-      makeReq({ authorization: "Bearer good.jwt.here" }),
-      "ingress.write",
-    );
-    expect(res).toBeNull();
-  });
-
-  test("invalid bearer token falls back to loopback", async () => {
-    mockValidateEdgeToken = mock(() => ({ ok: false, reason: "expired" }));
-    const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(
-      makeReq({ authorization: "Bearer bad.jwt.here" }),
-      "chat.write",
-    );
-    expect(res).toBeNull();
-  });
-
-  test("malformed Authorization header falls back to loopback", async () => {
-    const { requireEdgeAuthWithScope } = makeMiddleware();
-    const res = await requireEdgeAuthWithScope(
-      makeReq({ authorization: "Basic not-a-bearer" }),
-      "chat.write",
-    );
-    expect(res).toBeNull();
-    expect(mockValidateEdgeToken).not.toHaveBeenCalled();
   });
 
   test("null when token's scope_profile contains the required scope", async () => {
@@ -582,58 +517,6 @@ describe("edge auth refuses a single-route grant", () => {
 // keeping it for genuinely-local clients (no X-Forwarded-For). trustProxy
 // defaults false, so existing deployments are unaffected.
 // =========================================================================
-
-describe("requireEdgeAuth — trustProxy loopback fallback", () => {
-  test("trustProxy=true: proxied remote caller (XFF non-loopback) is NOT granted the fallback → 401", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ "x-forwarded-for": "203.0.113.5" }),
-    );
-    expect(res?.status).toBe(401);
-  });
-
-  test("trustProxy=true: direct-local caller (no XFF, loopback socket) still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(makeReq());
-    expect(res).toBeNull();
-  });
-
-  test("trustProxy=true: caller proxied from localhost (XFF=127.0.0.1) still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ "x-forwarded-for": "127.0.0.1" }),
-    );
-    expect(res).toBeNull();
-  });
-
-  test("trustProxy=true: direct non-loopback peer cannot spoof XFF=127.0.0.1 → 401", async () => {
-    // Raw socket peer is NOT loopback (e.g. gateway port exposed directly), so
-    // X-Forwarded-For is not trusted and the fallback is refused.
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ "x-forwarded-for": "127.0.0.1" }),
-    );
-    expect(res?.status).toBe(401);
-  });
-
-  test("trustProxy=false (default): X-Forwarded-For is ignored, loopback socket still gets the fallback → null", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    const res = await requireEdgeAuth(
-      makeReq({ "x-forwarded-for": "203.0.113.5" }),
-    );
-    expect(res).toBeNull();
-  });
-
-  test("platform bypass short-circuits before the fallback regardless of trustProxy", async () => {
-    process.env.DISABLE_HTTP_AUTH = "true";
-    process.env.IS_CLOUD = "true";
-    const { requireEdgeAuth } = makeMiddleware();
-    // Missing X-Cadet-User-Id, loopback socket, trustProxy on: still the
-    // platform 401 (missing user header), NOT a loopback free pass.
-    const res = await requireEdgeAuth(makeReq());
-    expect(res?.status).toBe(401);
-  });
-});
 
 // =========================================================================
 // Device last-used stamping: the edge allow path records activity for the

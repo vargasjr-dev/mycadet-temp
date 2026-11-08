@@ -3,8 +3,8 @@ import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 import "./test-preload.js";
 
 import {
-  createGlobalThresholdGetHandler,
-  createGlobalThresholdPutHandler,
+  handleGlobalThresholdGet,
+  handleGlobalThresholdPut,
 } from "../http/routes/auto-approve-thresholds.js";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ function makeRequest(body?: unknown, method = "PUT"): Request {
 describe("auto-approve thresholds", () => {
   describe("GET handler", () => {
     test("returns defaults when no row exists", async () => {
-      const handler = createGlobalThresholdGetHandler();
+      const handler = handleGlobalThresholdGet;
       const res = await handler(makeRequest(undefined, "GET"));
 
       expect(res.status).toBe(200);
@@ -57,8 +57,8 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns updated values after PUT", async () => {
-      const putHandler = createGlobalThresholdPutHandler();
-      const getHandler = createGlobalThresholdGetHandler();
+      const putHandler = handleGlobalThresholdPut;
+      const getHandler = handleGlobalThresholdGet;
 
       await putHandler(makeRequest({ interactive: "none" }));
 
@@ -75,7 +75,7 @@ describe("auto-approve thresholds", () => {
 
   describe("PUT handler", () => {
     test("partial update only changes provided fields", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ interactive: "none" }));
       expect(res.status).toBe(200);
@@ -88,7 +88,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for invalid threshold value", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ interactive: "extreme" }));
       expect(res.status).toBe(400);
@@ -98,7 +98,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("accepts high as a valid threshold value", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ interactive: "high" }));
       expect(res.status).toBe(200);
@@ -111,7 +111,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for invalid body (non-JSON)", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const req = new Request("http://localhost/v1/permissions/thresholds", {
         method: "PUT",
@@ -124,7 +124,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for non-object body", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest("just a string"));
       expect(res.status).toBe(400);
@@ -133,7 +133,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for array body", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest([1, 2, 3]));
       expect(res.status).toBe(400);
@@ -142,7 +142,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for invalid autonomous value", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ autonomous: "invalid" }));
       expect(res.status).toBe(400);
@@ -151,7 +151,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for non-string autonomous value", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ autonomous: 42 }));
       expect(res.status).toBe(400);
@@ -160,7 +160,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("upserts correctly — first write creates, second write updates", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res1 = await handler(
         makeRequest({ interactive: "none", autonomous: "low" }),
@@ -184,7 +184,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("updates all fields at once", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(
         makeRequest({ interactive: "medium", autonomous: "low" }),
@@ -199,7 +199,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("empty object preserves existing values when row exists", async () => {
-      const putHandler = createGlobalThresholdPutHandler();
+      const putHandler = handleGlobalThresholdPut;
 
       await putHandler(
         makeRequest({ interactive: "medium", autonomous: "low" }),
@@ -218,7 +218,7 @@ describe("auto-approve thresholds", () => {
     // ── headless field ────────────────────────────────────────────────────────
 
     test("can set headless threshold", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ headless: "low" }));
       expect(res.status).toBe(200);
@@ -231,7 +231,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("returns 400 for invalid headless value", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       const res = await handler(makeRequest({ headless: "extreme" }));
       expect(res.status).toBe(400);
@@ -241,7 +241,7 @@ describe("auto-approve thresholds", () => {
     });
 
     test("headless is preserved when other fields are updated", async () => {
-      const handler = createGlobalThresholdPutHandler();
+      const handler = handleGlobalThresholdPut;
 
       // Explicitly set headless to a non-default value
       await handler(makeRequest({ headless: "low" }));

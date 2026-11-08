@@ -35,8 +35,6 @@ import {
 } from "bun:test";
 import { z } from "zod";
 
-// Swappable assistant-DB backend — the device-bound mint reads the
-// assistant mirror through the proxy; give it a minimal in-memory schema.
 import { initSigningKey } from "../../auth/token-service.js";
 import { bustGuardianIntegrityCache } from "../../auth/guardian-integrity.js";
 type AssistantBackend = {

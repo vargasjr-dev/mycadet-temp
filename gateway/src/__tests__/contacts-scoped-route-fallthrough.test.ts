@@ -15,7 +15,7 @@ import { join } from "node:path";
 import "./test-preload.js";
 
 import { AuthRateLimiter } from "../auth-rate-limiter.js";
-import type { GatewayRouteDefinition } from "../http/routes/types.js";
+import type { RouteDefinition } from "../http/routes/types.js";
 import { createRouter } from "../http/router.js";
 import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
 
@@ -55,10 +55,10 @@ describe("contact route registrations (index.ts)", () => {
  * harness pins matching only.
  */
 function makeContactsRouter() {
-  const routes: GatewayRouteDefinition[] = buildMarkedContactRoutes().map(
+  const routes: RouteDefinition[] = buildMarkedContactRoutes().map(
     (route) => ({
       path: route.path,
-      method: route.method.toLowerCase() as GatewayRouteDefinition["method"],
+      method: route.method.toLowerCase() as RouteDefinition["method"],
       auth: "none" as const,
       handler: route.handler,
     }),

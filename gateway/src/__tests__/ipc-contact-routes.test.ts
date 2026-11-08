@@ -13,12 +13,6 @@ import { join } from "node:path";
 import { type Socket } from "node:net";
 import { eq } from "drizzle-orm";
 
-// ── Assistant DB proxy + IPC mocks ──────────────────────────────────────────
-// The gateway-native channel write (updateContactChannelCore) resolves
-// assistant-side channel IDs and mirrors into the assistant DB over the IPC
-// proxy, and emits contacts_changed via ipcCallAssistant. None of that is
-// reachable in this unit test, so stub both modules. The gateway DB is the
-// source of truth and remains real.
 import { GatewayIpcServer } from "../ipc/server.js";
 import { contactRoutes } from "../ipc/contact-handlers.js";
 import { ContactStore } from "../db/contact-store.js";

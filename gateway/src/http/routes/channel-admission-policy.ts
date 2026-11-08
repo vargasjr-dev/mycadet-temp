@@ -31,7 +31,7 @@ import {
 } from "../../channels/types.js";
 import { getLogger } from "../../logger.js";
 
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 const log = getLogger("channel-admission-policy");
 
 // ---------------------------------------------------------------------------
@@ -257,7 +257,7 @@ const admissionPolicySetHandler = createChannelAdmissionPolicySetHandler();
 const admissionPolicyDeleteHandler =
   createChannelAdmissionPolicyDeleteHandler();
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-admission-policy",
     method: "get",

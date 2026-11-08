@@ -19,8 +19,6 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { resolvePublicBaseWssUrl } from "../../runtime/client.js";
 
-// ── Mocks ──────────────────────────────────────────────────────────────
-
 import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
 import type { GatewayConfig } from "../../config.js";
 import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";

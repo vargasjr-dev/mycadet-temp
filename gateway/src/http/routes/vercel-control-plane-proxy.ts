@@ -9,10 +9,10 @@
 import { proxyForward } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("vercel-control-plane-proxy");
 
@@ -75,34 +75,35 @@ export function createVercelControlPlaneProxyHandler(config: GatewayConfig) {
 
 // The dedicated proxy mints a gateway service token, so the daemon
 // never sees the caller's scopes. Edge-scoped auth is the check.
-const routeProxy = lazyRef<
-  ReturnType<typeof createVercelControlPlaneProxyHandler>
->("Vercel control-plane proxy used before initialization");
+let routeProxyImpl: ReturnType<typeof createVercelControlPlaneProxyHandler> | undefined;
 
-export function initVercelControlPlaneRoutes(config: GatewayConfig): void {
-  routeProxy.set(createVercelControlPlaneProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createVercelControlPlaneProxyHandler> {
+  return (routeProxyImpl ??= createVercelControlPlaneProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/integrations/vercel/config",
     method: "get",
     auth: "edge-scoped",
     scope: "settings.read",
-    handler: (req, _params) => routeProxy.get().handleGetVercelConfig(req),
+    handler: (req, _params) => routeProxy().handleGetVercelConfig(req),
   },
   {
     path: "/integrations/vercel/config",
     method: "post",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, _params) => routeProxy.get().handleSetVercelConfig(req),
+    handler: (req, _params) => routeProxy().handleSetVercelConfig(req),
   },
   {
     path: "/integrations/vercel/config",
     method: "delete",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, _params) => routeProxy.get().handleDeleteVercelConfig(req),
+    handler: (req, _params) => routeProxy().handleDeleteVercelConfig(req),
   },
 ];

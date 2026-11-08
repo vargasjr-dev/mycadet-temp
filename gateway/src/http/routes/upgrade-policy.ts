@@ -15,7 +15,7 @@ import { getGatewayDb } from "../../db/connection.js";
 import { upgradePolicy } from "../../db/schema.js";
 import { getLogger } from "../../logger.js";
 
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 const log = getLogger("upgrade-policy");
 
 // ---------------------------------------------------------------------------
@@ -159,7 +159,7 @@ export function createUpgradePolicyPutHandler() {
   };
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/upgrade-policy",
     method: "get",

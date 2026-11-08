@@ -7,13 +7,13 @@ import {
 } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import {
   getLogger,
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("log-tail");
 
@@ -127,19 +127,20 @@ export function createLogTailHandler(
   };
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createLogTailHandler>>(
-  "log tail routes used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createLogTailHandler> | undefined;
 
-export function initLogTailRoutes(config: GatewayConfig): void {
-  routeProxy.set(createLogTailHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createLogTailHandler> {
+  return (routeProxyImpl ??= createLogTailHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/logs/tail",
     method: "get",
     auth: "edge",
-    handler: (req) => routeProxy.get()(req),
+    handler: (req) => routeProxy()(req),
   },
 ];

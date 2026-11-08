@@ -31,8 +31,6 @@ import {
 
 import "./test-preload.js";
 
-// Swappable assistant-DB backend. Default: throw (the gateway reads must
-// not touch the assistant mirror). Mint tests install an in-memory DB.
 import {
   findCadetGuardian,
   findGuardianForChannelActor,

@@ -30,8 +30,6 @@ import { join } from "node:path";
 
 import "./test-preload.js";
 
-// `upsertContactChannel` skips its work entirely when the assistant IPC socket
-// is absent, so point the resolver at a real file to keep the seeding path live.
 import {
   upsertContactChannel,
   upsertVerifiedContactChannel,

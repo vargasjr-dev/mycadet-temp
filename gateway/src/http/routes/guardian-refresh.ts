@@ -9,9 +9,8 @@ import {
   buildRemoteWebBrowserAuthCookies,
   getRemoteWebRefreshCookie,
 } from "../browser-auth-cookies.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
-import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
+import type { RouteDefinition } from "./types.js";
+import { getAuthRateLimiter } from "../../auth-rate-limiter.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { hasRemoteWebRefreshCookie } from "../browser-auth-cookies.js";
 
@@ -180,15 +179,9 @@ export async function handleGuardianRefresh(req: Request): Promise<Response> {
   }
 }
 
-const rateLimiter = lazyRef<AuthRateLimiter>(
-  "guardian refresh routes used before initialization",
-);
 
-export function initGuardianRefreshRoutes(limiter: AuthRateLimiter): void {
-  rateLimiter.set(limiter);
-}
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     // The refresh endpoint's purpose is to obtain a new access token,
     // so rejecting expired tokens would create a deadlock once the JWT
@@ -204,7 +197,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
 
       const authHeader = req.headers.get("authorization");
       if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
-        rateLimiter.get().recordFailure(getClientIp());
+        getAuthRateLimiter().recordFailure(getClientIp());
         log.warn(
           { path: new URL(req.url).pathname },
           "Guardian refresh auth rejected: missing or malformed Authorization header",
@@ -214,7 +207,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
       const token = authHeader.slice(7);
       const result = validateEdgeToken(token, { allowExpired: true });
       if (!result.ok) {
-        rateLimiter.get().recordFailure(getClientIp());
+        getAuthRateLimiter().recordFailure(getClientIp());
         log.warn(
           { path: new URL(req.url).pathname, reason: result.reason },
           "Guardian refresh auth rejected: token validation failed",

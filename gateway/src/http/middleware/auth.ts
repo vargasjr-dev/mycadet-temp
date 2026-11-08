@@ -81,13 +81,6 @@ export function admittedActorTokenRecord(
 /**
  * Build edge-auth guard functions that share a rate limiter and IP resolver.
  *
- * All three guards retain a legacy loopback fallback for self-hosted local
- * clients. Each fallback endpoint and failure kind logs once per cooldown
- * window (see `loopbackFallbackLogThrottle`) so callers still missing or
- * failing auth are visible during rollout without per-request log noise. The
- * cloud-managed bypass is checked first, so this fallback only applies in
- * default mode.
- *
  *   - `requireEdgeAuth` — validates a JWT bearer token (aud=cadet-gateway)
  *     OR (when bypass is active) cross-checks X-Cadet-User-Id against the
  *     bound platform user id.
@@ -97,9 +90,9 @@ export function admittedActorTokenRecord(
  *   - `requireEdgeGuardianAuth` — same pattern, additionally requires the
  *     authenticated principal to match the bound guardian.
  *
- * All three refuse a single-route grant (see `isSingleRouteGrant`) outright,
- * with no loopback fallback: such a grant is handed to code outside this
- * install's trust boundary, which usually runs on the loopback host itself.
+ * All three refuse a single-route grant (see `isSingleRouteGrant`) outright:
+ * such a grant is handed to code outside this install's trust boundary,
+ * which usually runs on the loopback host itself.
  */
 export function createAuthMiddleware(
   authRateLimiter: AuthRateLimiter,

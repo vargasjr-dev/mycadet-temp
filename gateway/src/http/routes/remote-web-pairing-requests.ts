@@ -21,12 +21,22 @@ import {
   denyRemoteWebPairingChallengeById,
   listPendingRemoteWebPairingChallenges,
 } from "../../remote-web/pairing-challenge-store.js";
-import { errorResponse } from "../loopback-guard.js";
+import { errorResponse, isLoopbackHostHeader } from "../loopback-guard.js";
 import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
 
 const MAX_ACTION_BODY_BYTES = 256;
 
+/** The three routes are host-machine-only; running on the host is the auth. */
+function rejectRemoteCaller(req: Request): Response | null {
+  if (!isLoopbackHostHeader(req.headers.get("host"))) {
+    return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
+  }
+  return null;
+}
+
 export function handleListRemoteWebPairingRequests(req: Request): Response {
+  const remote = rejectRemoteCaller(req);
+  if (remote) return remote;
   if (req.method !== "GET") {
     return methodNotAllowed("GET");
   }
@@ -44,6 +54,11 @@ export function handleListRemoteWebPairingRequests(req: Request): Response {
 export async function handleApproveRemoteWebPairingRequest(
   req: Request,
 ): Promise<Response> {
+  const remote = rejectRemoteCaller(req);
+  if (remote) return remote;
+  if (req.method !== "POST") {
+    return methodNotAllowed("POST");
+  }
   const requestId = await readJsonStringField(
     req,
     MAX_ACTION_BODY_BYTES,
@@ -67,6 +82,11 @@ export async function handleApproveRemoteWebPairingRequest(
 export async function handleDenyRemoteWebPairingRequest(
   req: Request,
 ): Promise<Response> {
+  const remote = rejectRemoteCaller(req);
+  if (remote) return remote;
+  if (req.method !== "POST") {
+    return methodNotAllowed("POST");
+  }
   const requestId = await readJsonStringField(
     req,
     MAX_ACTION_BODY_BYTES,

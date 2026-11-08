@@ -8,10 +8,10 @@
 import { proxyForward } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("telegram-control-plane-proxy");
 
@@ -80,43 +80,44 @@ export function createTelegramControlPlaneProxyHandler(config: GatewayConfig) {
   };
 }
 
-const routeProxy = lazyRef<
-  ReturnType<typeof createTelegramControlPlaneProxyHandler>
->("Telegram control-plane proxy used before initialization");
+let routeProxyImpl: ReturnType<typeof createTelegramControlPlaneProxyHandler> | undefined;
 
-export function initTelegramControlPlaneRoutes(config: GatewayConfig): void {
-  routeProxy.set(createTelegramControlPlaneProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createTelegramControlPlaneProxyHandler> {
+  return (routeProxyImpl ??= createTelegramControlPlaneProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/integrations/telegram/config",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleGetTelegramConfig(req),
+    handler: (req, _params) => routeProxy().handleGetTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/config",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleSetTelegramConfig(req),
+    handler: (req, _params) => routeProxy().handleSetTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/config",
     method: "delete",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleClearTelegramConfig(req),
+    handler: (req, _params) => routeProxy().handleClearTelegramConfig(req),
   },
   {
     path: "/integrations/telegram/commands",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleSetTelegramCommands(req),
+    handler: (req, _params) => routeProxy().handleSetTelegramCommands(req),
   },
   {
     path: "/integrations/telegram/setup",
     method: "post",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleSetupTelegram(req),
+    handler: (req, _params) => routeProxy().handleSetupTelegram(req),
   },
 ];

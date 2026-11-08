@@ -45,7 +45,7 @@ export type RouteHandler = (
  * off the spec by omitting `operationId` — the generator projects only
  * fully-documented entries.
  */
-export interface GatewayRouteDefinition {
+export interface RouteDefinition {
   /**
    * Unversioned path — usually a `{param}` template, e.g.
    * `/channel-admission-policy/{channel_type}`, which the router compiles

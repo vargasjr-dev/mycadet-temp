@@ -8,11 +8,11 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { isLoopbackAddress } from "../../util/is-loopback-address.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("channel-verification-session-proxy");
 
@@ -115,50 +115,49 @@ export function createChannelVerificationSessionProxyHandler(
   };
 }
 
-const routeProxy = lazyRef<
-  ReturnType<typeof createChannelVerificationSessionProxyHandler>
->("Channel verification session proxy used before initialization");
+let routeProxyImpl: ReturnType<typeof createChannelVerificationSessionProxyHandler> | undefined;
 
-export function initChannelVerificationSessionRoutes(
-  config: GatewayConfig,
-): void {
-  routeProxy.set(createChannelVerificationSessionProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createChannelVerificationSessionProxyHandler> {
+  return (routeProxyImpl ??= createChannelVerificationSessionProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-verification-sessions",
     method: "post",
     auth: "edge",
     handler: (req, _params) =>
-      routeProxy.get().handleCreateVerificationSession(req),
+      routeProxy().handleCreateVerificationSession(req),
   },
   {
     path: "/channel-verification-sessions",
     method: "delete",
     auth: "edge",
     handler: (req, _params) =>
-      routeProxy.get().handleCancelVerificationSession(req),
+      routeProxy().handleCancelVerificationSession(req),
   },
   {
     path: "/channel-verification-sessions/resend",
     method: "post",
     auth: "edge",
     handler: (req, _params) =>
-      routeProxy.get().handleResendVerificationSession(req),
+      routeProxy().handleResendVerificationSession(req),
   },
   {
     path: "/channel-verification-sessions/status",
     method: "get",
     auth: "edge",
     handler: (req, _params) =>
-      routeProxy.get().handleGetVerificationStatus(req),
+      routeProxy().handleGetVerificationStatus(req),
   },
   {
     path: "/channel-verification-sessions/revoke",
     method: "post",
     auth: "edge",
     handler: (req, _params) =>
-      routeProxy.get().handleRevokeVerificationBinding(req),
+      routeProxy().handleRevokeVerificationBinding(req),
   },
 ];

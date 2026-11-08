@@ -21,10 +21,6 @@ import {
 
 import "./test-preload.js";
 
-// ── Fake daemon IPC (contacts_info_batch) ────────────────────────────────────
-// Honors the typed info-batch read (already-gated infos) and throws on demand
-// so the caller's soft-fail path can be exercised.
-
 import { ContactStore } from "../db/contact-store.js";
 import {
   initGatewayDb,

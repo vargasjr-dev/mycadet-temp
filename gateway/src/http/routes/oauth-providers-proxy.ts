@@ -8,10 +8,10 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("oauth-providers-proxy");
 
@@ -69,21 +69,22 @@ export function createOAuthProvidersProxyHandler(config: GatewayConfig) {
   };
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createOAuthProvidersProxyHandler>>(
-  "OAuth providers proxy used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createOAuthProvidersProxyHandler> | undefined;
 
-export function initOAuthProvidersRoutes(config: GatewayConfig): void {
-  routeProxy.set(createOAuthProvidersProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createOAuthProvidersProxyHandler> {
+  return (routeProxyImpl ??= createOAuthProvidersProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/oauth/providers",
     method: "get",
     auth: "edge-scoped",
     scope: "settings.read",
-    handler: (req, _params) => routeProxy.get().handleListProviders(req),
+    handler: (req, _params) => routeProxy().handleListProviders(req),
   },
   {
     path: /^\/oauth\/providers\/([^/]+)\/?$/,
@@ -91,6 +92,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     handler: (req, params) =>
-      routeProxy.get().handleGetProvider(req, params[0]),
+      routeProxy().handleGetProvider(req, params[0]),
   },
 ];

@@ -10,10 +10,10 @@
  */
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("audio-proxy");
 
@@ -69,18 +69,19 @@ export function createAudioProxyHandler(config: GatewayConfig) {
 }
 
 // Audio serving (unauthenticated — Twilio fetches these URLs directly).
-const routeProxy = lazyRef<ReturnType<typeof createAudioProxyHandler>>(
-  "Audio proxy used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createAudioProxyHandler> | undefined;
 
-export function initAudioRoutes(config: GatewayConfig): void {
-  routeProxy.set(createAudioProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createAudioProxyHandler> {
+  return (routeProxyImpl ??= createAudioProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: /^\/audio\/([^/]+)$/,
     method: "get",
-    handler: (req, params) => routeProxy.get().handleGetAudio(req, params[0]),
+    handler: (req, params) => routeProxy().handleGetAudio(req, params[0]),
   },
 ];

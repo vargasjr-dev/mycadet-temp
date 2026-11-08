@@ -17,11 +17,10 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { mintUiPageToken } from "../../auth/token-exchange.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig, type GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("brain-graph-proxy");
 
@@ -83,25 +82,23 @@ export function createBrainGraphProxyHandler(config: GatewayConfig) {
   return { handleBrainGraph, handleBrainGraphUI };
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createBrainGraphProxyHandler>>(
-  "Brain graph proxy used before initialization",
-);
-
-export function initBrainGraphRoutes(config: GatewayConfig): void {
-  routeProxy.set(createBrainGraphProxyHandler(config));
+/** Built on first request — module import stays side-effect-free. */
+let routeProxyImpl: ReturnType<typeof createBrainGraphProxyHandler> | undefined;
+function routeProxy(): ReturnType<typeof createBrainGraphProxyHandler> {
+  return (routeProxyImpl ??= createBrainGraphProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/brain-graph",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleBrainGraph(req),
+    handler: (req, _params) => routeProxy().handleBrainGraph(req),
   },
   {
     path: "/brain-graph-ui",
     method: "get",
     auth: "edge",
-    handler: (req, _params) => routeProxy.get().handleBrainGraphUI(req),
+    handler: (req, _params) => routeProxy().handleBrainGraphUI(req),
   },
 ];

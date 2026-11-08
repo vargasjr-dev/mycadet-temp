@@ -31,7 +31,7 @@ import { CHANNEL_IDS, isChannelId } from "../../channels/types.js";
 import { getLogger } from "../../logger.js";
 
 import { z } from "zod";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 const log = getLogger("channel-permission-overrides");
 
 /**
@@ -208,7 +208,7 @@ const ChannelPermissionCellRowSchema = ChannelPermissionCellSchema.extend({
   updatedAt: z.number(),
 });
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/channel-permission-overrides",
     method: "get",

@@ -29,14 +29,14 @@ import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import {
   getLogger,
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("log-export");
 
@@ -482,20 +482,21 @@ async function collectCesExport(
   return "ok";
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createLogExportHandler>>(
-  "log export routes used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createLogExportHandler> | undefined;
 
-export function initLogExportRoutes(config: GatewayConfig): void {
-  routeProxy.set(createLogExportHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createLogExportHandler> {
+  return (routeProxyImpl ??= createLogExportHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/logs/export",
     method: "post",
     auth: "edge",
     handler: (req, params, getClientIp) =>
-      routeProxy.get()(req, params, getClientIp),
+      routeProxy()(req, params, getClientIp),
   },
 ];

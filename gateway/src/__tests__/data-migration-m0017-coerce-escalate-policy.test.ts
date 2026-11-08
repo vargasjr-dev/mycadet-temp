@@ -21,9 +21,6 @@ import {
 
 import "./test-preload.js";
 
-// Record info output. Real logger exports are preserved; the migration
-// module loads dynamically below, after this mock, so its module-level
-// `log` binds to the recorder.
 import {
   initGatewayDb,
   getGatewayDb,

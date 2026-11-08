@@ -11,48 +11,30 @@
  * DELETE catch-all keeps its negative lookahead for the same reason.
  *
  * The five published operations carry their OpenAPI metadata inline; the
- * rest are dispatch-only. Handler dependencies (the proxy built from config)
- * are injected once at server startup via `initContactsControlPlaneRoutes`;
- * the ROUTES array itself is static, so the OpenAPI generation script imports
- * it without any wiring.
+ * rest are dispatch-only. Handlers read what they need (config, the proxy)
+ * at request time, so the ROUTES array is import-safe for the OpenAPI
+ * generation script.
  */
 
 import { RiskThresholdSchema } from "@mycadet/gateway-client";
 import { z } from "zod";
 
-import type { GatewayRouteDefinition } from "./types.js";
-import type { createContactsControlPlaneProxyHandler } from "./contacts-control-plane-proxy.js";
-import type {
+import type { RouteDefinition } from "./types.js";
+import { createContactsControlPlaneProxyHandler } from "./contacts-control-plane-proxy.js";
+import {
   handleContactPromptSubmit,
   handleContactRecordSubmit,
 } from "./contact-prompt.js";
+import { getConfig } from "../../config.js";
 
-export type ContactsControlPlaneProxy = ReturnType<
+type ContactsControlPlaneProxy = ReturnType<
   typeof createContactsControlPlaneProxyHandler
 >;
 
-export interface ContactsControlPlaneRouteDeps {
-  contactsControlPlaneProxy: ContactsControlPlaneProxy;
-  handleContactPromptSubmit: typeof handleContactPromptSubmit;
-  handleContactRecordSubmit: typeof handleContactRecordSubmit;
-}
-
-let deps: ContactsControlPlaneRouteDeps | undefined;
-
-/** Inject the contacts handlers once, at server startup. */
-export function initContactsControlPlaneRoutes(
-  injected: ContactsControlPlaneRouteDeps,
-): void {
-  deps = injected;
-}
-
-function requireDeps(): ContactsControlPlaneRouteDeps {
-  if (!deps) {
-    throw new Error(
-      "contacts control-plane routes used before initContactsControlPlaneRoutes",
-    );
-  }
-  return deps;
+/** Built on first request — module import stays side-effect-free. */
+let contactsProxy: ContactsControlPlaneProxy | undefined;
+function contactsControlPlaneProxy(): ContactsControlPlaneProxy {
+  return (contactsProxy ??= createContactsControlPlaneProxyHandler(getConfig()));
 }
 
 // ---------------------------------------------------------------------------
@@ -221,7 +203,7 @@ const ContactRecordSubmitRequestSchema = z.object({
     ),
 });
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/contacts",
     method: "post",
@@ -237,7 +219,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
     auth: "edge",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleUpsertContact(req),
+      contactsControlPlaneProxy().handleUpsertContact(req),
   },
   {
     // Keep DELETE on the invite collection unsupported; only
@@ -253,7 +235,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseStatus: "204",
     auth: "edge",
     handler: (_req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleDeleteContact(params[0]!),
+      contactsControlPlaneProxy().handleDeleteContact(params[0]!),
   },
   {
     path: "/contacts/prompt/submit",
@@ -275,7 +257,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
         ),
     }),
     auth: "edge",
-    handler: (req) => requireDeps().handleContactPromptSubmit(req),
+    handler: (req) => handleContactPromptSubmit(req),
   },
   {
     path: "/contacts/record/submit",
@@ -297,7 +279,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
         ),
     }),
     auth: "edge",
-    handler: (req) => requireDeps().handleContactRecordSubmit(req),
+    handler: (req) => handleContactRecordSubmit(req),
   },
   {
     path: "/contact-channels/{channel_id}/verify",
@@ -316,7 +298,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
     auth: "edge-guardian",
     handler: (req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleVerifyContactChannel(
+      contactsControlPlaneProxy().handleVerifyContactChannel(
         req,
         params[0]!,
       ),
@@ -329,21 +311,21 @@ export const ROUTES: GatewayRouteDefinition[] = [
     method: "get",
     auth: "edge",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleListContacts(req),
+      contactsControlPlaneProxy().handleListContacts(req),
   },
   {
     path: "/contacts/merge",
     method: "post",
     auth: "edge",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleMergeContacts(req),
+      contactsControlPlaneProxy().handleMergeContacts(req),
   },
   {
     path: "/contact-channels/{channel_id}",
     method: "patch",
     auth: "edge",
     handler: (req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleUpdateContactChannel(
+      contactsControlPlaneProxy().handleUpdateContactChannel(
         req,
         params[0]!,
       ),
@@ -354,7 +336,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleListInvites(req),
+      contactsControlPlaneProxy().handleListInvites(req),
   },
   {
     path: "/contacts/invites",
@@ -362,7 +344,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleCreateInvite(req),
+      contactsControlPlaneProxy().handleCreateInvite(req),
   },
   {
     path: "/contacts/invites/redeem",
@@ -370,7 +352,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     handler: (req) =>
-      requireDeps().contactsControlPlaneProxy.handleRedeemInvite(req),
+      contactsControlPlaneProxy().handleRedeemInvite(req),
   },
   {
     path: "/contacts/invites/{invite_id}/call",
@@ -378,7 +360,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     handler: (req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleCallInvite(req, params[0]!),
+      contactsControlPlaneProxy().handleCallInvite(req, params[0]!),
   },
   {
     path: "/contacts/invites/{invite_id}",
@@ -386,7 +368,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     handler: (req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleRevokeInvite(
+      contactsControlPlaneProxy().handleRevokeInvite(
         req,
         params[0]!,
       ),
@@ -403,6 +385,6 @@ export const ROUTES: GatewayRouteDefinition[] = [
     method: "get",
     auth: "edge",
     handler: (req, params) =>
-      requireDeps().contactsControlPlaneProxy.handleGetContact(req, params[0]!),
+      contactsControlPlaneProxy().handleGetContact(req, params[0]!),
   },
 ];

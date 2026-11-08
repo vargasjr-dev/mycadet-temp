@@ -21,8 +21,6 @@ import {
 
 import "./test-preload.js";
 
-// ── Mocked daemon IPC ────────────────────────────────────────────────────────
-
 import { ContactStore } from "../db/contact-store.js";
 import {
   initGatewayDb,

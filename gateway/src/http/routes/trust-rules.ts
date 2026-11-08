@@ -18,7 +18,7 @@ import { autoApproveThresholds } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 
 import { z } from "zod";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("trust-rules");
 
@@ -508,7 +508,7 @@ const trustRuleUpdateHandler = createTrustRulesUpdateHandler();
 const trustRuleDeleteHandler = createTrustRulesDeleteHandler();
 const trustRuleResetHandler = createTrustRulesResetHandler();
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/trust-rules",
     method: "get",

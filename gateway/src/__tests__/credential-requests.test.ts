@@ -22,7 +22,6 @@ import "./test-preload.js";
 
 import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
 
-// Mock the daemon IPC client before importing the handlers under test.
 import type { ConfigFileCache } from "../config-file-cache.js";
 let ipcCalls: Array<{ method: string; params: unknown }> = [];
 let ipcFailure: Error | null = null;

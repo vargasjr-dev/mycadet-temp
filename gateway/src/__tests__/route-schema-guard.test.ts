@@ -28,16 +28,14 @@ const ROUTE_PATH_CONSTANTS: Record<string, string> = {
 };
 
 /**
- * Extracts route paths from the gateway index.ts source code.
+ * Extracts the pre-router route paths from the gateway index.ts source code —
+ * paths matched in the `fetch()` handler before the router runs (healthz,
+ * readyz, schema, WS upgrades).
  *
- * Routes are defined in two places:
- * 1. The routes barrel (src/http/routes/index.ts) — every HTTP route lives in
- *    a per-domain ROUTES array concatenated there; the same array the router
- *    and the spec generator consume
- * 2. Pre-router paths in the `fetch()` handler (healthz, readyz, schema, WS upgrades)
- *
- * We parse the source text rather than importing index.ts because it calls
- * `main()` at module scope which starts the server.
+ * The route TABLE itself is not parsed from source: the barrel
+ * (`src/http/routes/index.ts`) is import-safe (the spec generator imports
+ * it), so the guard reads the same `ROUTES` array the router and generator
+ * consume (see extractFusedRoutes).
  */
 function extractRoutesFromSource(): ExtractedRoute[] {
   const src = readFileSync(
@@ -51,36 +49,6 @@ function extractRoutesFromSource(): ExtractedRoute[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-
-    // Match string literal paths: `path: "/some/path"`
-    const stringMatch = line.match(/path:\s*"([^"]+)"/);
-    if (stringMatch) {
-      const method = findMethodNearPath(lines, i);
-      routes.push({ path: stringMatch[1], method });
-      continue;
-    }
-
-    // Match shared path constants: `path: SOME_WEBHOOK_PATH`
-    const constantMatch = line.match(/path:\s*([A-Z0-9_]+)\b/);
-    const constantPath = constantMatch
-      ? ROUTE_PATH_CONSTANTS[constantMatch[1]]
-      : undefined;
-    if (constantPath) {
-      const method = findMethodNearPath(lines, i);
-      routes.push({ path: constantPath, method });
-      continue;
-    }
-
-    // Match regex paths: `path: /^\/v1\/contacts\/([^/]+)$/`
-    const regexMatch = line.match(/path:\s*\/\^(.*?)\$\//);
-    if (regexMatch) {
-      const converted = regexToOpenApiPath(new RegExp(regexMatch[1]));
-      if (converted) {
-        const method = findMethodNearPath(lines, i);
-        routes.push({ path: converted, method });
-      }
-      continue;
-    }
 
     // Pre-router paths matched via `url.pathname === "/..."` in the fetch handler
     const preRouterMatch = line.match(/url\.pathname\s*===\s*"([^"]+)"/);
@@ -104,36 +72,7 @@ function extractRoutesFromSource(): ExtractedRoute[] {
     }
   }
 
-  // The route table must come from the barrel, not an inline array.
-  if (
-    !src.includes("const routes: readonly GatewayRouteDefinition[] = ROUTES;")
-  ) {
-    throw new Error(
-      "index.ts no longer spreads the routes barrel — update this guard",
-    );
-  }
-
   return routes;
-}
-
-/**
- * Looks for a `method: "..."` declaration near a `path:` line.
- * In the route table, method is always declared within a few lines
- * of path (same object literal). We scan up to 3 lines after path.
- */
-function findMethodNearPath(
-  lines: string[],
-  pathLineIndex: number,
-): string | null {
-  // method can appear before or after path within the same object.
-  // Scan a small window around the path line, stopping at object boundaries.
-  for (let offset = -3; offset <= 3; offset++) {
-    const idx = pathLineIndex + offset;
-    if (idx < 0 || idx >= lines.length) continue;
-    const methodMatch = lines[idx].match(/method:\s*"([A-Z]+)"/);
-    if (methodMatch) return methodMatch[1];
-  }
-  return null;
 }
 
 /**
@@ -293,8 +232,20 @@ describe("route-schema sync guard", () => {
   test("every schema path should have a corresponding route", () => {
     const orphaned: string[] = [];
 
+    // Regex dispatch routes the template converter can't express (optional
+    // path prefixes etc.) still serve their schema spellings — the regex
+    // itself is the serving contract, so coverage is proven by matching it
+    // against the canonical schema path.
+    const rawRegexRoutes = barrelRoutes
+      .map((route) => route.path)
+      .filter(
+        (p): p is RegExp =>
+          p instanceof RegExp && regexToOpenApiPath(p) === undefined,
+      );
+
     for (const schemaPath of schemaPaths) {
       if (SCHEMA_ONLY_PATHS.has(schemaPath)) continue;
+      if (rawRegexRoutes.some((re) => re.test(schemaPath))) continue;
 
       const matched = findMatchingRoutePath(schemaPath, routePaths);
       if (!matched) {
@@ -306,7 +257,7 @@ describe("route-schema sync guard", () => {
   });
 
   test("HTTP methods for each path should match between routes and schema", () => {
-    const routes = extractRoutesFromSource().map((r) => ({
+    const routes = extractFusedRoutes().map((r) => ({
       ...r,
       // Canonical (unversioned) shape — the matcher strips the optional
       // /v1 prefix at dispatch, so comparisons read the bare spelling.

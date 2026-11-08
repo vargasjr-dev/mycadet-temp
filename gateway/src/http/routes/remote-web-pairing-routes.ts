@@ -14,9 +14,9 @@ import {
   handleListRemoteWebPairingRequests,
 } from "./remote-web-pairing-requests.js";
 import { handleSharedInviteRedeem } from "./shared-invite-redeem.js";
-import type { GatewayRouteDefinition } from "./types.js";
+import type { RouteDefinition } from "./types.js";
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/remote-web/pairing-challenge",
     method: "post",

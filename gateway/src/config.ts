@@ -216,3 +216,13 @@ export function loadConfig(): GatewayConfig {
     trustProxy,
   };
 }
+
+/**
+ * The process-wide gateway config, loaded once on first call. Route modules
+ * and other late consumers read config at request time through this instead
+ * of receiving it piped in through init functions.
+ */
+let cachedConfig: GatewayConfig | undefined;
+export function getConfig(): GatewayConfig {
+  return (cachedConfig ??= loadConfig());
+}

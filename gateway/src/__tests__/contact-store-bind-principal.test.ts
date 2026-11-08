@@ -21,8 +21,6 @@ import { eq } from "drizzle-orm";
 
 import "./test-preload.js";
 
-// ── Mocked daemon IPC ────────────────────────────────────────────────────────
-
 import {
   BindContactPrincipalError,
   ContactStore,

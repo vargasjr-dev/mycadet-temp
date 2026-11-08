@@ -8,10 +8,10 @@
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("oauth-apps-proxy");
 
@@ -84,35 +84,36 @@ export function createOAuthAppsProxyHandler(config: GatewayConfig) {
   };
 }
 
-const routeProxy = lazyRef<ReturnType<typeof createOAuthAppsProxyHandler>>(
-  "OAuth apps proxy used before initialization",
-);
+let routeProxyImpl: ReturnType<typeof createOAuthAppsProxyHandler> | undefined;
 
-export function initOAuthAppsRoutes(config: GatewayConfig): void {
-  routeProxy.set(createOAuthAppsProxyHandler(config));
+
+/** Built on first request — module import stays side-effect-free. */
+function routeProxy(): ReturnType<typeof createOAuthAppsProxyHandler> {
+  return (routeProxyImpl ??= createOAuthAppsProxyHandler(getConfig()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/oauth/apps",
     method: "get",
     auth: "edge-scoped",
     scope: "settings.read",
-    handler: (req, _params) => routeProxy.get().handleListApps(req),
+    handler: (req, _params) => routeProxy().handleListApps(req),
   },
   {
     path: "/oauth/apps",
     method: "post",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, _params) => routeProxy.get().handleCreateApp(req),
+    handler: (req, _params) => routeProxy().handleCreateApp(req),
   },
   {
     path: /^\/oauth\/apps\/([^/]+)\/?$/,
     method: "delete",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, params) => routeProxy.get().handleDeleteApp(req, params[0]),
+    handler: (req, params) => routeProxy().handleDeleteApp(req, params[0]),
   },
   {
     path: /^\/oauth\/apps\/([^/]+)\/connections\/?$/,
@@ -120,7 +121,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.read",
     handler: (req, params) =>
-      routeProxy.get().handleListConnections(req, params[0]),
+      routeProxy().handleListConnections(req, params[0]),
   },
   {
     path: /^\/oauth\/connections\/([^/]+)\/?$/,
@@ -128,13 +129,13 @@ export const ROUTES: GatewayRouteDefinition[] = [
     auth: "edge-scoped",
     scope: "settings.write",
     handler: (req, params) =>
-      routeProxy.get().handleDeleteConnection(req, params[0]),
+      routeProxy().handleDeleteConnection(req, params[0]),
   },
   {
     path: /^\/oauth\/apps\/([^/]+)\/connect\/?$/,
     method: "post",
     auth: "edge-scoped",
     scope: "settings.write",
-    handler: (req, params) => routeProxy.get().handleConnect(req, params[0]),
+    handler: (req, params) => routeProxy().handleConnect(req, params[0]),
   },
 ];

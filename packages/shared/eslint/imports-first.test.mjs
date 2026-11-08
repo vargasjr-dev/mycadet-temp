@@ -61,6 +61,16 @@ ruleTester.run("imports-first", importsFirst, {
         "export const y = other();",
       ].join("\n"),
       errors: [{ messageId: "hoist" }],
+      output: [
+        'import { helper } from "./helper.js";',
+        "",
+        'import { other } from "./other.js";',
+        "export const x = helper();",
+        "",
+        "",
+        "",
+        "export const y = other();",
+      ].join("\n"),
     },
     {
       name: "each late import is flagged once",
@@ -72,6 +82,14 @@ ruleTester.run("imports-first", importsFirst, {
         "export const y = helper() + other();",
       ].join("\n"),
       errors: [{ messageId: "hoist" }, { messageId: "hoist" }],
+      output: [
+        'import { helper } from "./helper.js";',
+        "export const x = 1;",
+        "",
+        'import { other } from "./other.js";',
+        "",
+        "export const y = helper() + other();",
+      ].join("\n"),
     },
   ],
 });

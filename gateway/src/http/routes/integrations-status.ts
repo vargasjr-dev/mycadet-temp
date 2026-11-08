@@ -1,41 +1,26 @@
 /**
  * Integration status route declarations (dispatch-only — never published in
  * the spec). Reports the config-file values the gateway owns; the config
- * cache is injected at server startup.
+ * file cache is read at request time.
  */
 
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import type { RouteDefinition } from "./types.js";
 
-const configFile = lazyRef<ConfigFileCache>(
-  "integrations status routes used before initialization",
-);
-
-export function initIntegrationsStatusRoutes(cache: ConfigFileCache): void {
-  configFile.set(cache);
-}
-
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
-    path: "/integrations/status",
+    // The optional `assistants/{id}/` prefix keeps the assistant-flavored
+    // spelling alive without a second declaration; the `/assistant` variants
+    // are the legacy prefixes long-lived clients still dial (the flat static
+    // matcher accepted them before this route grew the optional prefix).
+    path: /^\/(?:assistant\/|assistants\/[^/]+\/)?integrations\/status\/?$/,
     method: "get",
     auth: "edge",
     handler: () =>
       Response.json({
         email: {
-          address: configFile.get().getString("email", "address") ?? null,
-        },
-      }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)\/integrations\/status\/$/,
-    method: "get",
-    auth: "edge",
-    handler: () =>
-      Response.json({
-        email: {
-          address: configFile.get().getString("email", "address") ?? null,
+          address:
+            getConfigFileCache().getString("email", "address") ?? null,
         },
       }),
   },

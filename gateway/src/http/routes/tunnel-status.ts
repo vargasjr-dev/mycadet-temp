@@ -7,9 +7,8 @@
  * (TUNNEL_BASE_URL not set).
  */
 
-import type { TunnelClient } from "../../tunnel/client.js";
-import type { GatewayRouteDefinition } from "./types.js";
-import { lazyRef } from "./lazy.js";
+import { getTunnelClient, type TunnelClient } from "../../tunnel/client.js";
+import type { RouteDefinition } from "./types.js";
 
 export interface TunnelStatusResponse {
   connected: boolean;
@@ -33,27 +32,23 @@ export function createTunnelStatusHandler(
 // Assistant-scoped mirror: self-hosted clients emit /v1/assistants/<id>/tunnel/status
 // and rewriteForSelfHostedIngress preserves that path, so a flat-only route
 // would fall through to the runtime proxy and 404.
-const routeProxy = lazyRef<ReturnType<typeof createTunnelStatusHandler>>(
-  "Tunnel status handler used before initialization",
-);
-
-export function initTunnelStatusRoutes(
-  tunnelClient: TunnelClient | undefined,
-): void {
-  routeProxy.set(createTunnelStatusHandler(tunnelClient));
+/** Built on first request — module import stays side-effect-free. */
+let routeProxyImpl: ReturnType<typeof createTunnelStatusHandler> | undefined;
+function routeProxy(): ReturnType<typeof createTunnelStatusHandler> {
+  return (routeProxyImpl ??= createTunnelStatusHandler(getTunnelClient()));
 }
 
-export const ROUTES: GatewayRouteDefinition[] = [
+export const ROUTES: RouteDefinition[] = [
   {
     path: "/tunnel/status",
     method: "get",
     auth: "edge",
-    handler: (_req, _params) => routeProxy.get().handleTunnelStatus(),
+    handler: (_req, _params) => routeProxy().handleTunnelStatus(),
   },
   {
     path: /^\/assistants\/[^/]+\/tunnel\/status\/?$/,
     method: "get",
     auth: "edge-scoped",
-    handler: (_req, _params) => routeProxy.get().handleTunnelStatus(),
+    handler: (_req, _params) => routeProxy().handleTunnelStatus(),
   },
 ];
