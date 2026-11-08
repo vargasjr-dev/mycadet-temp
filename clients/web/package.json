@@ -22,7 +22,7 @@
     "pretypecheck": "bun run openapi-ts",
     "typecheck": "bunx tsgo --noEmit",
     "postinstall": "bash scripts/postinstall.sh",
-    "openapi-ts": "bun run scripts/transform-daemon-spec.ts && bun run scripts/transform-gateway-spec.ts && openapi-ts",
+    "openapi-ts": "bun run --cwd ../../assistant generate:openapi && bun run scripts/transform-daemon-spec.ts && bun run --cwd ../../gateway generate:openapi && bun run scripts/transform-gateway-spec.ts && openapi-ts",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
     "test": "bun test",

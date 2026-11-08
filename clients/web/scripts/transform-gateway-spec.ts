@@ -11,6 +11,8 @@
  *
  * Usage: bun run scripts/transform-gateway-spec.ts
  * Output: openapi-schemas/gateway.json (gitignored, consumed by openapi-ts)
+ * Source: gateway/openapi.json — itself generated on the fly by the
+ * `openapi-ts` script (nothing spec-shaped is checked in).
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";

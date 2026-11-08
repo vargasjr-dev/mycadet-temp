@@ -69,136 +69,131 @@ interface ExportRequestBody {
 
 export async function handleLogExport(req: Request): Promise<Response> {
   const config = getConfig();
-  {
-    const start = performance.now();
+  const start = performance.now();
 
-    // Parse optional JSON body
-    let body: ExportRequestBody = {};
-    try {
-      const text = await req.text();
-      if (text.trim()) {
-        const parsed = JSON.parse(text);
-        if (
-          typeof parsed !== "object" ||
-          parsed === null ||
-          Array.isArray(parsed)
-        ) {
-          return Response.json(
-            { error: "Body must be a JSON object" },
-            { status: 400 },
-          );
-        }
-        body = parsed;
+  // Parse optional JSON body
+  let body: ExportRequestBody = {};
+  try {
+    const text = await req.text();
+    if (text.trim()) {
+      const parsed = JSON.parse(text);
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
+        return Response.json(
+          { error: "Body must be a JSON object" },
+          { status: 400 },
+        );
       }
-    } catch {
-      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+      body = parsed;
+    }
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { startTime, endTime } = body;
+
+  // Create a temporary staging directory
+  const stagingDir = join(
+    tmpdir(),
+    `cadet-log-export-${randomBytes(8).toString("hex")}`,
+  );
+  mkdirSync(stagingDir, { recursive: true });
+
+  try {
+    // Run all three collections in parallel
+    const [gatewayResult, daemonResult, cesResult] = await Promise.allSettled([
+      collectGatewayLogs(config, stagingDir, startTime, endTime),
+      collectDaemonExport(config, stagingDir, body),
+      collectCesExport(stagingDir, startTime, endTime),
+    ]);
+
+    // Process results and write error files for failures
+    const gatewayStatus = processResult(gatewayResult, "gateway", stagingDir);
+    const daemonStatus = processResult(
+      daemonResult,
+      "daemon-export",
+      stagingDir,
+    );
+    const cesStatus = processResult(cesResult, "ces-export", stagingDir);
+
+    // Write export manifest
+    const manifest: ExportManifest = {
+      type: "multi-service-export",
+      exportedAt: new Date().toISOString(),
+      ...(startTime !== undefined ? { startTime } : {}),
+      ...(endTime !== undefined ? { endTime } : {}),
+      services: {
+        gateway: gatewayStatus,
+        daemon: daemonStatus,
+        ces: cesStatus,
+      },
+    };
+
+    await Bun.write(
+      join(stagingDir, "export-manifest.json"),
+      JSON.stringify(manifest, null, 2),
+    );
+
+    // Build final tar.gz archive
+    const archivePath = `${stagingDir}.tar.gz`;
+    const tarProc = Bun.spawn(
+      ["/usr/bin/tar", "czf", archivePath, "-C", stagingDir, "."],
+      { stdout: "pipe", stderr: "pipe", windowsHide: true },
+    );
+    const tarExit = await tarProc.exited;
+    if (tarExit !== 0) {
+      const stderr = await new Response(tarProc.stderr).text();
+      log.error(
+        { exitCode: tarExit, stderr },
+        "Failed to create tar.gz archive",
+      );
+      return Response.json(
+        { error: "Failed to create export archive" },
+        { status: 500 },
+      );
     }
 
-    const { startTime, endTime } = body;
-
-    // Create a temporary staging directory
-    const stagingDir = join(
-      tmpdir(),
-      `cadet-log-export-${randomBytes(8).toString("hex")}`,
+    const archiveData = await Bun.file(archivePath).arrayBuffer();
+    const duration = Math.round(performance.now() - start);
+    log.info(
+      {
+        duration,
+        archiveBytes: archiveData.byteLength,
+        gateway: gatewayStatus,
+        daemon: daemonStatus,
+        ces: cesStatus,
+      },
+      "Log export completed",
     );
-    mkdirSync(stagingDir, { recursive: true });
 
+    // Clean up the archive file (staging dir cleaned in finally)
     try {
-      // Run all three collections in parallel
-      const [gatewayResult, daemonResult, cesResult] = await Promise.allSettled(
-        [
-          collectGatewayLogs(config, stagingDir, startTime, endTime),
-          collectDaemonExport(config, stagingDir, body),
-          collectCesExport(stagingDir, startTime, endTime),
-        ],
-      );
+      rmSync(archivePath, { force: true });
+    } catch {
+      // best-effort
+    }
 
-      // Process results and write error files for failures
-      const gatewayStatus = processResult(gatewayResult, "gateway", stagingDir);
-      const daemonStatus = processResult(
-        daemonResult,
-        "daemon-export",
-        stagingDir,
-      );
-      const cesStatus = processResult(cesResult, "ces-export", stagingDir);
-
-      // Write export manifest
-      const manifest: ExportManifest = {
-        type: "multi-service-export",
-        exportedAt: new Date().toISOString(),
-        ...(startTime !== undefined ? { startTime } : {}),
-        ...(endTime !== undefined ? { endTime } : {}),
-        services: {
-          gateway: gatewayStatus,
-          daemon: daemonStatus,
-          ces: cesStatus,
-        },
-      };
-
-      await Bun.write(
-        join(stagingDir, "export-manifest.json"),
-        JSON.stringify(manifest, null, 2),
-      );
-
-      // Build final tar.gz archive
-      const archivePath = `${stagingDir}.tar.gz`;
-      const tarProc = Bun.spawn(
-        ["/usr/bin/tar", "czf", archivePath, "-C", stagingDir, "."],
-        { stdout: "pipe", stderr: "pipe", windowsHide: true },
-      );
-      const tarExit = await tarProc.exited;
-      if (tarExit !== 0) {
-        const stderr = await new Response(tarProc.stderr).text();
-        log.error(
-          { exitCode: tarExit, stderr },
-          "Failed to create tar.gz archive",
-        );
-        return Response.json(
-          { error: "Failed to create export archive" },
-          { status: 500 },
-        );
-      }
-
-      const archiveData = await Bun.file(archivePath).arrayBuffer();
-      const duration = Math.round(performance.now() - start);
-      log.info(
-        {
-          duration,
-          archiveBytes: archiveData.byteLength,
-          gateway: gatewayStatus,
-          daemon: daemonStatus,
-          ces: cesStatus,
-        },
-        "Log export completed",
-      );
-
-      // Clean up the archive file (staging dir cleaned in finally)
-      try {
-        rmSync(archivePath, { force: true });
-      } catch {
-        // best-effort
-      }
-
-      return new Response(archiveData, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/gzip",
-          "Content-Disposition":
-            "attachment; filename=cadet-logs-export.tar.gz",
-        },
-      });
-    } finally {
-      // Clean up staging directory and archive file (which is a sibling, not inside staging)
-      try {
-        rmSync(stagingDir, { recursive: true, force: true });
-      } catch {
-        // best-effort
-      }
-      try {
-        rmSync(`${stagingDir}.tar.gz`, { force: true });
-      } catch {
-        // best-effort
-      }
+    return new Response(archiveData, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/gzip",
+        "Content-Disposition": "attachment; filename=cadet-logs-export.tar.gz",
+      },
+    });
+  } finally {
+    // Clean up staging directory and archive file (which is a sibling, not inside staging)
+    try {
+      rmSync(stagingDir, { recursive: true, force: true });
+    } catch {
+      // best-effort
+    }
+    try {
+      rmSync(`${stagingDir}.tar.gz`, { force: true });
+    } catch {
+      // best-effort
     }
   }
 }

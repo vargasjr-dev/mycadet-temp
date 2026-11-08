@@ -101,11 +101,6 @@ export interface RouteDefinition {
    */
   precondition?: () => Response | null;
   /**
-   * Compiled dispatch pattern for `{param}` template paths — set by the
-   * router's expansion, never declared by hand.
-   */
-  pattern?: RegExp;
-  /**
    * The route's handler — a plain function that reads the config, credential,
    * and config-file singletons at request time. Importing a ROUTES module
    * stays side-effect-free because nothing here runs at import.

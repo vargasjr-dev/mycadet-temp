@@ -7,7 +7,7 @@ on:
       - "clients/app/**"
       - "clients/web/**"
       - "assistant/src/api/**"
-      - "assistant/openapi.yaml"
+      - "assistant/src/runtime/routes/**"
       - "packages/design-library/**"
       - "packages/ipc-contract/**"
       - "packages/local-mode/**"
@@ -42,7 +42,7 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/app --filter=@mycadet/web
+        run: bun install --frozen-lockfile --filter=@mycadet/app --filter=@mycadet/web --filter=@mycadet/assistant --filter=@mycadet/gateway
 
       - name: Generate API clients
         working-directory: clients/web
