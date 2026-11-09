@@ -282,6 +282,24 @@ export const upgradePolicy = sqliteTable("upgrade_policy", {
 });
 
 // ---------------------------------------------------------------------------
+// User profile (the assistant tracks the user's account profile for them)
+// ---------------------------------------------------------------------------
+
+export const userProfile = sqliteTable("user_profile", {
+  id: integer("id").primaryKey().default(1),
+  // Stable identity for the profile record — minted locally on first write.
+  // NOT the platform user id: this record is the assistant's own.
+  profileId: text("profile_id").notNull(),
+  username: text("username").notNull().default(""),
+  email: text("email").notNull().default(""),
+  firstName: text("first_name").notNull().default(""),
+  lastName: text("last_name").notNull().default(""),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
 // Actor tokens (auth — gateway-owned)
 // ---------------------------------------------------------------------------
 
