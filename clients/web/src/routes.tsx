@@ -1,4 +1,10 @@
-import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
+import {
+  createBrowserRouter,
+  Navigate,
+  useNavigate,
+  useSearchParams,
+} from "react-router";
+import { useEffect } from "react";
 
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
@@ -7,6 +13,7 @@ import { NotificationsBell } from "@/domains/home/components/notifications-bell"
 import { NotFound } from "@/components/not-found";
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
+import { navigateToNewConversation } from "@/utils/conversation-navigation";
 
 import {
   BUNDLE_BASE_NAME,
@@ -20,6 +27,21 @@ function FloatingHydrateFallback() {
 
 function McpSettingsRedirect() {
   return <Navigate to={`${routes.settings.integrations}?tab=mcp`} replace />;
+}
+
+/**
+ * The bare `/assistant/conversations` route — a conversations URL with no id
+ * is a new chat. Mounting ChatPage here left its bootstrap forever resolving
+ * a conversation from a null id, so this does exactly what the new-chat
+ * entry does instead: mint a draft and replace into it, leaving no
+ * conversation to load.
+ */
+function NewConversationRoute() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigateToNewConversation(navigate, { silent: true });
+  }, [navigate]);
+  return null;
 }
 
 /**
@@ -525,7 +547,7 @@ export const routeTree = [
                   { index: true, Component: ChatPage },
                   {
                     path: "conversations",
-                    Component: ChatPage,
+                    Component: NewConversationRoute,
                   },
                   {
                     path: "conversations/:conversationId",
@@ -770,14 +792,14 @@ export const routeTree = [
           },
 
           // Catch-all within /assistant/*
-          { path: "*", Component: NestedLevelNotFound },
+          { path: "*", Component: NotFound },
         ], // end outer chunk-fail boundary (/assistant)
       },
     ],
   },
 
   // Top-level catch-all
-  { path: "*", ErrorBoundary: RouteErrorBoundary, Component: TopLevelNotFound },
+  { path: "*", ErrorBoundary: RouteErrorBoundary, Component: NotFound },
 ];
 
 export const router = createBrowserRouter(routeTree as never, {
