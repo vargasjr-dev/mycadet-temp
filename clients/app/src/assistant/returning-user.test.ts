@@ -4,7 +4,6 @@ const fetchSpy = spyOn(globalThis, "fetch");
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 beforeEach(() => {
   fetchSpy.mockReset();
-  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   Reflect.deleteProperty(window, "cadet");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
@@ -12,7 +11,6 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
-  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
     new StorageEvent("storage", { key: "device:onboarded_assistants" }),
@@ -27,6 +25,9 @@ function response(value: unknown) {
   return new Response(JSON.stringify(value));
 }
 test("fresh cloud membership and assistant data determine returning-user status", async () => {
+  // The host's lockfile read answers first (no returning signal recorded),
+  // then the cloud membership and assistant pages decide.
+  fetchSpy.mockResolvedValueOnce(response({ assistants: [] }));
   fetchSpy.mockResolvedValueOnce(response({ results: [{ id: "org-1" }] }));
   fetchSpy.mockResolvedValueOnce(
     response({
@@ -34,7 +35,10 @@ test("fresh cloud membership and assistant data determine returning-user status"
     }),
   );
   expect(await readReturningUser()).toBe(true);
-  expect(fetchSpy.mock.calls[1]?.[0]).toContain("/v1/assistants/");
+  // The first fetch is the host read (/v1/assistants/), the third the
+  // cloud assistant page — same surface, two authorities.
+  expect(fetchSpy.mock.calls[0]?.[0]).toContain("/v1/assistants/");
+  expect(fetchSpy.mock.calls[2]?.[0]).toContain("/v1/assistants/");
 });
 test("completion records are read live; malformed and missing signals do not skip consent", () => {
   expect(isReturningAssistant({ id: "assistant-1" })).toBe(false);
@@ -120,23 +124,7 @@ test("same-tab completion notifications survive unavailable storage and cross-ta
   expect(isReturningAssistant({ id: "assistant-1" })).toBe(false);
 });
 
-test("a completed serving assistant identifies a mobile returning user without a cloud session", async () => {
-  Reflect.set(window, "__CADET_CONFIG__", {
-    remote: "custom",
-    assistantId: "assistant-1",
-  });
-  localStorage.setItem(
-    "device:onboarded_assistants",
-    JSON.stringify({ "assistant-1": "2026-10-01" }),
-  );
-  expect(await readReturningUser()).toBe(true);
-  expect(fetchSpy).not.toHaveBeenCalled();
-});
 test("an injected id without a completion stamp does not bypass first-run signup", async () => {
-  Reflect.set(window, "__CADET_CONFIG__", {
-    remote: "custom",
-    assistantId: "assistant-1",
-  });
   fetchSpy.mockResolvedValueOnce(
     response({ detail: "Authentication required" }),
   );

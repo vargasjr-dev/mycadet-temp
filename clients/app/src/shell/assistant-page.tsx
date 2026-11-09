@@ -1,15 +1,12 @@
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { AppShell } from "@app/app-shell";
 import { useTranslation } from "@app/i18n";
-import { readInjectedConfig } from "@app/lib/injected-config";
-import { isNativePlatform } from "@app/runtime/native-platform";
 import { selectedAssistantState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
 import { useConsentGate } from "@app/domains/consent/use-consent-gate";
 
 export function AssistantPage() {
   useTranslation();
-  const config = readInjectedConfig();
   const location = useLocation();
   const navigate = useNavigate();
   const selection = selectedAssistantState(location.state);
@@ -32,14 +29,15 @@ export function AssistantPage() {
 
   return (
     <AppShell
-      assistantId={selection?.id ?? config?.assistantId}
-      apiBaseUrl={
-        selection?.apiBase ?? (isNativePlatform() ? config?.baseUrl : undefined)
-      }
+      assistantId={selection?.id}
+      apiBaseUrl={selection?.apiBase}
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,
-          state: selection,
+          // The selection state rides every frame-driven navigation
+          // unwrapped-and-verbatim, so a reload of the deeper entry still
+          // restores it (the reader parses the wrapped shape).
+          state: location.state,
         });
       }}
     />

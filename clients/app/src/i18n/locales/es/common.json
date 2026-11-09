@@ -494,13 +494,6 @@
     "title": "Obtén la app de {appName}",
     "titleGeneric": "Obtén la app de Cadet"
   },
-  "notFound": {
-    "backToAssistant": "Volver a tu asistente",
-    "badge": "Error 404",
-    "body": "La página que buscas no existe o puede haberse movido.",
-    "goBack": "Atrás",
-    "title": "Página no encontrada"
-  },
   "nudgeChatBanner": {
     "dismissAria": "Descartar"
   },

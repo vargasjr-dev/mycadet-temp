@@ -1,8 +1,5 @@
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import {
-  getAppServerPaths,
-  readAppServerState,
-} from "../lib/servers/common.js";
+import { getAppServerPaths } from "../lib/servers/common.js";
 import { join } from "path";
 
 import {
@@ -326,14 +323,9 @@ export async function printRootProcessDetail(
     const alive = isLocalProcessAlive(app.pid);
     // The app server's state is machine-level (XDG), so it reads the same record
     // no matter which assistant the root lockfile names.
-    const state = readAppServerState();
     detailLine("Status:", alive ? "running" : "not running");
     detailLine("PID:", String(app.pid));
     detailLine("Listen:", `http://127.0.0.1:${app.port}`);
-    detailLine(
-      "Gateway:",
-      state?.gatewayUrl !== undefined ? state.gatewayUrl : null,
-    );
     detailLine("Started:", app.startedAt);
     detailLine("Log:", getAppServerPaths().logPath);
     return true;

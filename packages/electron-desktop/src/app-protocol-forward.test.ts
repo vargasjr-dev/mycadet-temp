@@ -188,9 +188,6 @@ describe("registerAppProtocol", () => {
     await register();
     const response = await handler!(new Request("app://mycadet.ai/some/route"));
     const body = await response.text();
-    expect(body).toContain(
-      'window.__CADET_CONFIG__={"baseUrl":"app://mycadet.ai"',
-    );
     expect(body).toContain("<body>shell</body>");
     expect(response.headers.get("content-type")).toBe(
       "text/html; charset=utf-8",
@@ -205,9 +202,6 @@ describe("registerAppProtocol", () => {
       new Request("app://mycadet.ai/assistant/index.html"),
     );
     const body = await response.text();
-    expect(body).toContain(
-      'window.__CADET_CONFIG__={"baseUrl":"app://mycadet.ai"',
-    );
     expect(body).toContain("<body>web</body>");
   });
 

@@ -5,7 +5,6 @@ let native = false;
 let electron = false;
 let local = false;
 const provider = mock(async () => {});
-const loopback = mock(async () => {});
 const nativeFlow = mock(async () => {});
 const mobileLogin = mock(async (_options: unknown) => {});
 mock.module("@app/runtime/native-login", () => ({
@@ -18,9 +17,6 @@ mock.module("@app/runtime/electron-bridge", () => ({
   getElectronBridge: () => (electron ? { platform: "electron" } : undefined),
 }));
 mock.module("@app/lib/runtime-mode", () => ({ isLocalClient: () => local }));
-mock.module("@app/lib/auth/loopback-auth", () => ({
-  startLoopbackAuth: loopback,
-}));
 mock.module("@app/lib/auth/provider-redirect", () => ({
   startProviderRedirect: provider,
 }));
@@ -41,7 +37,6 @@ afterEach(() => {
   native = electron = local = false;
   contextPending = undefined;
   provider.mockClear();
-  loopback.mockClear();
   nativeFlow.mockClear();
   mobileLogin.mockClear();
 });
@@ -61,11 +56,14 @@ test("cloud browser forwards callback and provider options to the local redirect
   );
   expect(nativeFlow).not.toHaveBeenCalled();
 });
-test("a local client uses loopback — every environment injects its config", async () => {
+test("a local client follows the same provider redirect — no loopback special case", async () => {
   local = true;
   await startAuthFlow("workos", "/account/provider/callback", options);
-  expect(loopback).toHaveBeenCalledWith(options.returnTo, { intent: "signup" });
-  expect(provider).not.toHaveBeenCalled();
+  expect(provider).toHaveBeenCalledWith(
+    "workos",
+    "/account/provider/callback",
+    options,
+  );
 });
 for (const host of ["native", "electron"]) {
   test(`${host} preserves its native destination and session handoff contract`, async () => {
@@ -86,7 +84,6 @@ for (const host of ["native", "electron"]) {
       expect(mobileLogin).not.toHaveBeenCalled();
     }
     expect(provider).not.toHaveBeenCalled();
-    expect(loopback).not.toHaveBeenCalled();
   });
 }
 

@@ -28,6 +28,10 @@ const config: CapacitorConfig = {
     scheme: SCHEME_NAMES[process.env.CADET_ENVIRONMENT ?? "local"] ?? "App",
   },
   plugins: {
+    // Spreads the base config's shared plugin block (`CadetCloud` — the
+    // baked cloud origin the native half dials) alongside the iOS-only
+    // keys below; a literal here would drop the shared entries.
+    ...baseConfig.plugins,
     Keyboard: {
       // `native` resizes the whole WKWebView frame above the keyboard, which
       // `src/hooks/use-visible-viewport.ts` measures against; `body`,

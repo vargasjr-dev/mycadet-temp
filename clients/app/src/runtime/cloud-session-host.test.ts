@@ -1,27 +1,11 @@
 import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
 import { registerLocalCloudSession } from "@app/runtime/cloud-session-host";
-import { readInjectedConfig } from "@app/lib/injected-config";
 
-const originalConfig = Object.getOwnPropertyDescriptor(
-  window,
-  "__CADET_CONFIG__",
-);
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 const requests = spyOn(globalThis, "fetch");
 
-function setConfig(value: unknown) {
-  Object.defineProperty(window, "__CADET_CONFIG__", {
-    configurable: true,
-    writable: true,
-    value,
-  });
-}
-
 afterEach(() => {
   requests.mockReset();
-  if (originalConfig)
-    Object.defineProperty(window, "__CADET_CONFIG__", originalConfig);
-  else Reflect.deleteProperty(window, "__CADET_CONFIG__");
   if (originalBridge) Object.defineProperty(window, "cadet", originalBridge);
   else Reflect.deleteProperty(window, "cadet");
 });
@@ -29,25 +13,19 @@ afterEach(() => {
 // The isolated file owns the fetch spy and restores it after its last test.
 afterAll(() => requests.mockRestore());
 
-test("plain and remote browser hosts never receive a session token", async () => {
-  Reflect.deleteProperty(window, "cadet");
-  for (const config of [
-    undefined,
-    { remote: "cloud" },
-    { remote: "docker" },
-    { remote: "custom" },
-  ]) {
-    setConfig(config);
-    expect(await registerLocalCloudSession("session123")).toBe(false);
-  }
-  expect(requests).not.toHaveBeenCalled();
+test("session registration posts same-origin — the serving host is the only target", async () => {
+  // The stamped config is gone: there is no remote signal left to guard
+  // on. The shell posts to the origin that served it — a locally served
+  // shell exchanges with the local host, a cloud-served one with the cloud
+  // that issued the token — and the exchange result settles the answer.
+  requests.mockResolvedValueOnce(new Response('{"ok":true}'));
+  expect(await registerLocalCloudSession("session123")).toBe(true);
+  expect(requests.mock.calls[0]?.[0]).toBe("/v1/session");
 });
 
 test("local browser hosts receive the same cloud-session POST", async () => {
   Reflect.deleteProperty(window, "cadet");
-  setConfig({ remote: "local", baseUrl: "https://mycadet.ai" });
   requests.mockResolvedValue(new Response('{"ok":true}'));
-  expect(readInjectedConfig()?.baseUrl).toBe("https://mycadet.ai");
   expect(await registerLocalCloudSession("session123")).toBe(true);
   expect(requests).toHaveBeenCalledWith("/v1/session", {
     method: "POST",
@@ -57,7 +35,6 @@ test("local browser hosts receive the same cloud-session POST", async () => {
 });
 
 test("Electron exposes the host endpoint without injected browser config", async () => {
-  setConfig(undefined);
   Object.defineProperty(window, "cadet", {
     configurable: true,
     value: { platform: "electron" },
@@ -67,7 +44,6 @@ test("Electron exposes the host endpoint without injected browser config", async
 });
 
 test("unreachable, invalid JSON, and invalid command results fail without throwing", async () => {
-  setConfig({ remote: "local" });
   requests.mockRejectedValueOnce(new Error("offline"));
   expect(await registerLocalCloudSession("session123")).toBe(false);
   for (const body of ["not JSON", '{"ok":false}', '{"ok":"true"}', "{}"]) {

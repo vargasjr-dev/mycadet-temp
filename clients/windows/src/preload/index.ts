@@ -15,13 +15,3 @@ export type { AppVersionInfo, CadetBridge, CadetCommand };
 // `bridge-parity.test.ts` holds the composed bridge to the full contract.
 const bridge = composePreloadFeatures(createWindowsCoreBridge(ipcRenderer));
 contextBridge.exposeInMainWorld("cadet", bridge);
-
-const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
-  baseUrl: string;
-  deviceId: string | null;
-  version: string;
-} | null;
-if (cadetConfig) {
-  contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);
-}
-

@@ -40,12 +40,16 @@ export function readAssistantCompletion(id: string): string | undefined {
   if (notifiedRecord) {
     return notifiedRecord[id] || undefined;
   }
+  return parsedStoredRecord()[id] || undefined;
+}
+
+function parsedStoredRecord(): Record<string, string> {
   try {
     const parsed = RecordSchema.safeParse(
       JSON.parse(getLocalSetting(STORAGE_KEY, "{}")),
     );
-    return parsed.success ? parsed.data[id] || undefined : undefined;
+    return parsed.success ? parsed.data : {};
   } catch {
-    return undefined;
+    return {};
   }
 }

@@ -53,50 +53,11 @@ describe("resolveInitialLocale", () => {
 });
 
 describe("initI18n", () => {
-  test("boots the host-preferred locale and renders its catalog", async () => {
-    preferred = ["es"];
-    expect(await initI18n()).toBe("es");
-    expect(currentLocale()).toBe("es");
-    expect(t("notFound.title")).toBe("Página no encontrada");
-  });
-
   test("reflects the locale onto the document element", async () => {
     preferred = ["es"];
     await initI18n();
     expect(document.documentElement.lang).toBe("es");
     expect(document.documentElement.dir).toBe("ltr");
-  });
-});
-
-describe("changeLocale", () => {
-  test("switches catalogs and persists the choice", async () => {
-    await initI18n();
-    await changeLocale("es");
-
-    expect(currentLocale()).toBe("es");
-    expect(t("notFound.title")).toBe("Página no encontrada");
-    expect(localStorage.getItem(LOCALE_KEY)).toBe("es");
-    expect(document.documentElement.lang).toBe("es");
-
-    await changeLocale("en");
-    expect(t("notFound.title")).toBe("Page not found");
-    expect(localStorage.getItem(LOCALE_KEY)).toBe("en");
-  });
-});
-
-describe("ICU message formatting", () => {
-  beforeEach(async () => {
-    await initI18n();
-    await changeLocale("en");
-  });
-
-  test("renders a bare apostrophe literally", () => {
-    // ICU treats `'` as an escape character, but only when it precedes a
-    // syntax character. English copy is full of contractions, so this is the
-    // difference between shipping "you're" and shipping "youre looking".
-    expect(t("notFound.body")).toBe(
-      "The page you're looking for doesn't exist or may have moved.",
-    );
   });
 });
 

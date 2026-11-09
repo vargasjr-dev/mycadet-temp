@@ -1,8 +1,6 @@
-import { readInjectedConfig } from "@app/lib/injected-config";
 import { z } from "zod";
 import { listAssistants } from "@app/assistant/api";
 import { readAssistantCompletion } from "@app/assistant/completion-record";
-import { isLocalModeHostAvailable } from "@app/runtime/local-host-transport";
 
 const LockfileSchema = z.object({
   assistants: z.array(
@@ -50,30 +48,24 @@ export async function readReturningUser(
 }
 
 async function findReturningUser(signal: AbortSignal): Promise<boolean> {
-  const servingId = readInjectedConfig()?.assistantId;
-  if (servingId && isReturningAssistant({ id: servingId })) {
-    return true;
-  }
-  if (isLocalModeHostAvailable()) {
-    try {
-      const response = await fetch("/v1/assistants/", { signal });
-      const payload: unknown = response.ok ? await response.json() : null;
-      const parsed = LockfileSchema.safeParse(payload);
-      if (
-        parsed.success &&
-        parsed.data.assistants.some((assistant) =>
-          isReturningAssistant({
-            id: assistant.assistantId,
-            created: assistant.hatchedAt,
-            onboardedAt: assistant.onboardedAt,
-          }),
-        )
-      ) {
-        return true;
-      }
-    } catch {
-      // Cloud membership can still identify a returning user when the host is offline.
+  try {
+    const response = await fetch("/v1/assistants/", { signal });
+    const payload: unknown = response.ok ? await response.json() : null;
+    const parsed = LockfileSchema.safeParse(payload);
+    if (
+      parsed.success &&
+      parsed.data.assistants.some((assistant) =>
+        isReturningAssistant({
+          id: assistant.assistantId,
+          created: assistant.hatchedAt,
+          onboardedAt: assistant.onboardedAt,
+        }),
+      )
+    ) {
+      return true;
     }
+  } catch {
+    // Cloud membership can still identify a returning user when the host is offline.
   }
   if (signal.aborted) {
     return false;

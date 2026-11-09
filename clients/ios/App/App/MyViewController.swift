@@ -64,10 +64,10 @@ class MyViewController: CAPBridgeViewController {
 
     /// The baked Cadet Cloud URL, captured before any self-hosted override
     /// is applied so a cleared preference and the unreachable alert's
-    /// "Choose Assistant" fallback can always return here. The native config
-    /// no longer carries a `server.url` — the boot bundle's stamped
-    /// `handoffUrl` is the build's source of truth for the baked default —
-    /// so this falls back to reading it out of the synced bundle.
+    /// "Choose Assistant" fallback can always return here. The native
+    /// config carries no `server.url` (the webview boots on the local
+    /// bundle, not a network URL) — the baked config's `CadetCloud.cloudUrl`,
+    /// resolved at sync time, is the build's source of truth instead.
     private var bakedServerURL: URL?
 
     /// The baked Cadet Cloud URL as a string, exposed for the
@@ -116,7 +116,7 @@ class MyViewController: CAPBridgeViewController {
     override open func instanceDescriptor() -> InstanceDescriptor {
         let descriptor = super.instanceDescriptor()
         bakedServerURL = descriptor.serverURL.flatMap { URL(string: $0) }
-            ?? SelfHostedServer.stampedHandoffURL()
+            ?? SelfHostedServer.bakedCloudURL()
 
         let configured = SelfHostedServer.configuredURL()
         appliedServerURL = configured ?? bakedServerURL
@@ -211,7 +211,7 @@ class MyViewController: CAPBridgeViewController {
         fresh.setURLSchemeHandler(
             SameOriginAPIHandler(
                 wrapping: stock,
-                base: SelfHostedServer.stampedHandoffURL()
+                base: SelfHostedServer.bakedCloudURL()
             ),
             forURLScheme: scheme
         )

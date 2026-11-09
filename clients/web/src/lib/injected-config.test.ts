@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { InjectedConfigSchema } from "@mycadet/local-mode/contract";
-import { readInjectedConfig } from "./injected-config";
+import {
+  InjectedConfigSchema,
+  readInjectedConfig,
+} from "./injected-config";
 
 const originalConfig =
   typeof window === "undefined" ? undefined : window.__CADET_CONFIG__;

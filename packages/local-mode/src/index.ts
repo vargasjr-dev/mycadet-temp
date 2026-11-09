@@ -92,7 +92,10 @@ export {
   saveLockfileAssistant,
   isActiveAssistant,
 } from "./lockfile";
-export { servedConfigFromLockfile } from "./served-config";
+export {
+  servedAssistantFromLockfile,
+  servedConfigFromLockfile,
+} from "./served-config";
 export { withLockfileLock } from "./lockfile-lock";
 export {
   GATEWAY_PORT,

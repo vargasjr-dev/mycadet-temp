@@ -95,14 +95,6 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-// Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
-const resolvedConfig = resolveLocalConfigFromEnv();
-handleSync("cadet:config:get", () => ({
-  baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
-  deviceId: getDeviceId(),
-  version: getVersionInfo().version,
-}));
-
 // ---------------------------------------------------------------------------
 // App lifecycle
 // ---------------------------------------------------------------------------

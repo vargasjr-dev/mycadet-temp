@@ -17,7 +17,7 @@ beforeAll(async () => {
     resources: {
       en: {
         common: {
-          notFound: { title: "Page not found" },
+          aboutPage: { version: "Web copy" },
           rootHydrateFallback: { loadingAria: "Loading" },
         },
       },
@@ -30,7 +30,7 @@ function AccountCopy() {
   return (
     <>
       <span>{t("signupScreen.haveAccountPrompt")}</span>
-      <Trans ns="common" i18nKey="notFound.title" />
+      <Trans ns="common" i18nKey="aboutPage.version" />
     </>
   );
 }
@@ -50,15 +50,16 @@ test("app hooks and Trans use app language even inside a web provider", async ()
       <AccountCopy />
     </I18nextProvider>,
   );
-  expect(screen.getByText("Página no encontrada")).toBeDefined();
-  expect(webI18next.t("notFound.title")).toBe("Page not found");
+  expect(screen.getByText("Versión")).toBeDefined();
+  expect(webI18next.t("aboutPage.version")).toBe("Web copy");
   expect(
     screen.getByText(
       i18next.getFixedT(null, "account")("signupScreen.haveAccountPrompt"),
     ),
   ).toBeDefined();
   await webI18next.changeLanguage("ru");
-  expect(t("notFound.title")).toBe("Página no encontrada");
+  // The web instance's language move leaves the app's own language alone.
+  expect(t("aboutPage.version")).toBe("Versión");
 });
 
 test("app and web own separate resource stores", () => {

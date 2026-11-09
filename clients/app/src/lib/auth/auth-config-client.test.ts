@@ -2,19 +2,12 @@ import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
 import { getAuthConfig } from "@app/lib/auth/auth-config-client";
 import { changeLocale } from "@app/i18n";
 
-const originalConfig = Object.getOwnPropertyDescriptor(
-  window,
-  "__CADET_CONFIG__",
-);
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 const fetchSpy = spyOn(globalThis, "fetch");
 afterAll(() => fetchSpy.mockRestore());
 afterEach(async () => {
   fetchSpy.mockReset();
-  for (const [key, descriptor] of [
-    ["cadet", originalBridge],
-    ["__CADET_CONFIG__", originalConfig],
-  ] as const) {
+  for (const [key, descriptor] of [["cadet", originalBridge]] as const) {
     if (descriptor) Object.defineProperty(window, key, descriptor);
     else Reflect.deleteProperty(window, key);
   }
@@ -45,10 +38,6 @@ test("Electron configuration uses the host cloud origin and current session toke
   Object.defineProperty(window, "cadet", {
     configurable: true,
     value: { platform: "electron", auth: { getSessionToken: () => token } },
-  });
-  Object.defineProperty(window, "__CADET_CONFIG__", {
-    configurable: true,
-    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockImplementation(
     Object.assign(

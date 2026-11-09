@@ -19,7 +19,6 @@ import {
   peekPendingProviderKey,
   setPendingProviderKey,
 } from "@app/domains/onboarding/provider-key";
-import { isLocalClient } from "@app/lib/runtime-mode";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
@@ -100,16 +99,7 @@ export function ApiKeyScreen() {
       params.set("hosting", hosting);
     }
     const qs = params.toString();
-    // Consent settles at the shell's screen before this funnel runs, so the
-    // continue hands straight to the post-consent destination: a local-hosting
-    // onboarding (hosting=local/docker in a local-mode build) must run the
-    // foreground local hatch first, so it goes to `hatching`, which then
-    // redirects into the research flow. Cadet-Cloud goes straight to research
-    // (managed background hatch). Web's copy also probes the selected
-    // assistant's onboarded stamp here, but this call pins newAssistant: true,
-    // which mutes that probe — the port drops it.
-    const isLocalHatch =
-      isLocalClient() && hosting !== null && hosting !== "cloud";
+    const isLocalHatch = hosting !== null && hosting !== "cloud";
     const destination = onboardingDestinationAfterConsent({
       isLocalHatch,
       newAssistant: true,

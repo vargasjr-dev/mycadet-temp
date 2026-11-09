@@ -55,7 +55,7 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
   return hasSameOriginCredentialProof(host, origin, siteValue);
 }
 
-export function localModePlugin(env: Record<string, string>): Plugin {
+export function localModePlugin(): Plugin {
   const config = resolveLocalConfigFromEnv();
 
   const configJson = JSON.stringify({
@@ -66,12 +66,6 @@ export function localModePlugin(env: Record<string, string>): Plugin {
 
   return {
     name: "cadet-local-mode",
-    transformIndexHtml(html) {
-      return html.replace(
-        "</head>",
-        `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
-      );
-    },
     configureServer(server) {
       server.middlewares.use(loopbackCallbackMiddleware());
       server.middlewares.use(cloudSessionMiddleware());

@@ -129,13 +129,14 @@ export function registerAppProtocol(): void {
       const headers = new Headers(response.headers);
       headers.delete("content-length");
       headers.set("content-type", "text/html; charset=utf-8");
-      return new Response(
-        html.replace(
-          "</head>",
-          `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
-        ),
-        { status: response.status, headers },
-      );
+      const finalHtml =
+        asset.path === webIndexHtml
+          ? html.replace(
+              "</head>",
+              `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
+            )
+          : html;
+      return new Response(finalHtml, { status: response.status, headers });
     }
     return new Response("Not Found", { status: 404 });
   });

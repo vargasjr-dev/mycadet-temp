@@ -27,7 +27,6 @@ import {
 import { resolveLockfilePath } from "@mycadet/local-mode";
 import * as httpClient from "@mycadet/local-mode";
 import * as versionModule from "@mycadet/shared/version";
-import * as assistantConfigModule from "../../lib/assistant-config.js";
 import * as webDistModule from "../../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
@@ -76,19 +75,6 @@ mock.module("@mycadet/shared/version", () => ({
   resolveVersion: stampedVersionMock,
 }));
 
-// The server resolves the assistant it fronts itself (see ensureAppServer),
-// so the resolution seam is mocked per test while the rest of
-// assistant-config (name lookups, process records) stays real.
-const realAssistantConfig = { ...assistantConfigModule };
-const resolveTargetAssistantMock = mock(
-  assistantConfigModule.resolveTargetAssistant,
-);
-
-mock.module("../../lib/assistant-config.js", () => ({
-  ...realAssistantConfig,
-  resolveTargetAssistant: resolveTargetAssistantMock,
-}));
-
 // The dist resolution is mocked onto REAL fixture directories, so both the
 // lifecycle (reads the dist indexes, fingerprints them) and the handler
 // (serves the files) test against bytes on disk.
@@ -105,16 +91,13 @@ afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
   mock.module("@mycadet/local-mode", () => realHttpClient);
   mock.module("@mycadet/shared/version", () => realVersionModule);
-  mock.module("../../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../../lib/web-dist.js", () => realWebDist);
 });
 
 import { createAppServerHandler } from "../../lib/servers/bun.js";
 import {
   DEFAULT_APP_SERVER_PORT,
-  MAX_PRESERVED_MODULE_PRELOADS,
   appServerStatePath,
-  buildRemoteWebIndexHtml,
   ensureAppServer,
   findAvailableServerPort,
   getAppServerPaths,
@@ -173,7 +156,6 @@ afterEach(() => {
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   resolveClientDistsMock.mockReset();
-  resolveTargetAssistantMock.mockReset();
   for (const dir of workspaces.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -192,15 +174,16 @@ afterEach(() => {
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "cadet-app-server-test-"));
   workspaces.push(dir);
-  // The server reads the lockfile and keeps its own state under the XDG
-  // data dir — pin both config and data homes so every test is hermetic.
+  // The server reads the lockfile (now at REQUEST time, per served document)
+  // and keeps its own state under the XDG data dir — pin both config and
+  // data homes so every test is hermetic.
   process.env.CADET_WORKSPACE_DIR = dir;
   process.env.XDG_CONFIG_HOME = dir;
   process.env.XDG_DATA_HOME = dir;
   return dir;
 }
 
-/** Seed the one assistant entry the server's strict lookup fronts. */
+/** Seed the one assistant entry the served config resolves from the lockfile. */
 function seedAssistant(name = "Homelab"): void {
   const path = resolveLockfilePath();
   realFs.mkdirSync(join(path, ".."), { recursive: true });
@@ -218,28 +201,6 @@ function seedAssistant(name = "Homelab"): void {
       activeAssistant: "assistant-1",
     }),
   );
-}
-
-/** Stamp the lockfile's tunnel record with a published URL. */
-function stampTunnelRecord(url: string): void {
-  const path = resolveLockfilePath();
-  let lockfile: Record<string, unknown> = {};
-  try {
-    lockfile = JSON.parse(realFs.readFileSync(path, "utf-8")) as Record<
-      string,
-      unknown
-    >;
-  } catch {
-    // No lockfile yet: the stamp creates it.
-  }
-  lockfile.tunnel = {
-    pid: 4242,
-    provider: "ngrok",
-    startedAt: new Date().toISOString(),
-    publicUrl: url,
-  };
-  realFs.mkdirSync(join(path, ".."), { recursive: true });
-  realFs.writeFileSync(path, JSON.stringify(lockfile));
 }
 
 const originalEnvironment = process.env.CADET_ENVIRONMENT;
@@ -270,22 +231,14 @@ interface HandlerFixture {
   appDistDir: string;
   indexHtmlPath: string;
   appIndexHtmlPath: string;
-  spec: Parameters<typeof createAppServerHandler>[0];
-  config: Record<string, unknown>;
 }
 
 /**
- * Real dist trees in a tmpdir plus the two injected documents the start
- * path would write, and the handler bound to them.
+ * Real dist trees in a tmpdir plus the two documents the start path writes —
+ * the STRIPPED dist indexes, NOT config-injected: the config is injected at
+ * request time (from the lockfile) and only for the web bundle.
  */
-function makeHandlerFixture(
-  config: Record<string, unknown> = {
-    remote: "local",
-    assistantName: "Homelab",
-    assistantId: "assistant-1",
-    version: "1.2.3",
-  },
-): HandlerFixture {
+function makeHandlerFixture(): HandlerFixture {
   const root = mkdtempSync(join(tmpdir(), "cadet-app-server-fixtures-"));
   workspaces.push(root);
   const webDistDir = join(root, "web");
@@ -301,28 +254,13 @@ function makeHandlerFixture(
   mkdirSync(paths.dir, { recursive: true });
   const indexHtmlPath = join(paths.dir, "assistant-index.html");
   const appIndexHtmlPath = join(paths.dir, "app-index.html");
-  writeFileSync(
-    indexHtmlPath,
-    buildRemoteWebIndexHtml(FAKE_WEB_INDEX_HTML, config),
-  );
-  writeFileSync(
-    appIndexHtmlPath,
-    buildRemoteWebIndexHtml(FAKE_APP_INDEX_HTML, config),
-  );
+  writeFileSync(indexHtmlPath, FAKE_WEB_INDEX_HTML);
+  writeFileSync(appIndexHtmlPath, FAKE_APP_INDEX_HTML);
   return {
     webDistDir,
     appDistDir,
     indexHtmlPath,
     appIndexHtmlPath,
-    config,
-    spec: {
-      gatewayUrl: "http://127.0.0.1:7830",
-      webDistDir,
-      appDistDir,
-      indexHtmlPath,
-      appIndexHtmlPath,
-      config,
-    },
   };
 }
 
@@ -334,51 +272,27 @@ const EDGE_PEER_IP = "198.51.100.7";
  * tests pass a stub handle (the live child passes Bun's real server).
  */
 function handlerFor(fixture: HandlerFixture) {
-  const handler = createAppServerHandler(fixture.spec);
+  const handler = createAppServerHandler(fixture);
   const server = {
     requestIP: () => ({ address: EDGE_PEER_IP }),
   } as unknown as Parameters<ReturnType<typeof createAppServerHandler>>[1];
   return (request: Request) => handler(request, server);
 }
 
-/** Capture the proxy's upstream request and answer a canned response. */
-function stubGatewayFetch(
-  respond: (init: {
-    url: string;
-    method: string;
-    headers: Headers;
-    body: ReadableStream<Uint8Array> | null;
-  }) => Response = () => new Response("gateway says hi"),
-): {
-  calls: Array<{
-    url: string;
-    method: string;
-    headers: Headers;
-    body: ReadableStream<Uint8Array> | null;
-  }>;
-} {
-  const calls: Array<{
-    url: string;
-    method: string;
-    headers: Headers;
-    body: ReadableStream<Uint8Array> | null;
-  }> = [];
+/**
+ * Capture proxied upstream requests. The edge no longer proxies /v1 — the
+ * remaining stubs exist to prove it: a request that must not reach a
+ * gateway records zero calls.
+ */
+function stubGatewayFetch(): { calls: Array<{ url: string }> } {
+  const calls: Array<{ url: string }> = [];
   globalThis.fetch = mock(async (input: unknown, init?: unknown) => {
     const request =
       input instanceof Request
         ? input
         : new Request(input as string, init as RequestInit | undefined);
-    const body =
-      request.body instanceof ReadableStream
-        ? (request.body as ReadableStream<Uint8Array>)
-        : null;
-    calls.push({
-      url: request.url,
-      method: request.method,
-      headers: request.headers,
-      body,
-    });
-    return respond(calls[calls.length - 1]!);
+    calls.push({ url: request.url });
+    return new Response("gateway says hi");
   }) as unknown as typeof fetch;
   return { calls };
 }
@@ -452,8 +366,8 @@ describe("the app server's routes", () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     const gateway = stubGatewayFetch();
-    // The app server answers its own liveness locally — the gateway being
-    // down must not read as the app server being dead.
+    // The app server answers its own liveness locally — no gateway probe
+    // behind it at all.
     const health = await handler(new Request("http://127.0.0.1:7840/healthz"));
     expect(await health.json()).toEqual({ ok: true });
     // Readiness and webhook callbacks are the gateway's own ports to answer;
@@ -469,11 +383,6 @@ describe("the app server's routes", () => {
     expect(webhook.status).toBe(404);
     expect(gateway.calls).toHaveLength(0);
   });
-
-  // The /assistant-upstream proxy-internals tests (verbatim path, client-ip
-  // stamping, header stripping, POST streaming, response-header dropping)
-  // moved with the proxy itself — they live in local-mode's
-  // operations-proxy.test.ts now, driving the operator's catch-all row.
 
   test("the /web twin's non-assistant remainder 404s — no /v1 translation", async () => {
     const fixture = makeHandlerFixture();
@@ -507,13 +416,12 @@ describe("the app server's routes", () => {
     const response = await handler(new Request("http://127.0.0.1:7840/"));
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-cache");
-    const body = await readBody(response);
-    // The INJECTED document — the served config rides the script tag.
-    expect(body).toContain("__CADET_CONFIG__");
-    expect(body).toContain('"assistantId":"assistant-1"');
+    // The shell document is the app dist's own index, UNINJECTED — the
+    // config is a web-bundle affordance now (the shell reads its origin).
+    expect(await readBody(response)).toBe(FAKE_APP_INDEX_HTML);
   });
 
-  test("the shell's SPA routes fall back to the injected document", async () => {
+  test("the shell's SPA routes fall back to the shell document", async () => {
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
     for (const path of ["/account", "/account/keys", "/logout"]) {
@@ -521,7 +429,7 @@ describe("the app server's routes", () => {
         new Request(`http://127.0.0.1:7840${path}`),
       );
       expect(response.status).toBe(200);
-      expect(await readBody(response)).toContain("__CADET_CONFIG__");
+      expect(await readBody(response)).toBe(FAKE_APP_INDEX_HTML);
     }
   });
 
@@ -539,7 +447,7 @@ describe("the app server's routes", () => {
       new Request("http://127.0.0.1:7840/cadet-scene-cut.mp4"),
     );
     expect(missing.status).toBe(200);
-    expect(await readBody(missing)).toContain("__CADET_CONFIG__");
+    expect(await readBody(missing)).toBe(FAKE_APP_INDEX_HTML);
   });
 
   test("serves the app dist's own index at /index.html (nginx try_files parity)", async () => {
@@ -573,15 +481,14 @@ describe("the app server's routes", () => {
       new Request("http://127.0.0.1:7840/__cadet-app-index.html"),
     );
     expect(appIndex.status).toBe(404);
-    // The remote index sits inside the /web/assistant mount, so a direct
-    // hit falls through to the mount's own document.
+    // A direct hit on a made-up name inside the /web/assistant mount falls
+    // through to the mount's SPA fallback — the web dist's own document,
+    // still uninjected (only the mount's exact paths get the config).
     const remoteIndex = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__remote-index.html"),
     );
     expect(remoteIndex.status).toBe(200);
-    const body = await readBody(remoteIndex);
-    expect(body).toContain("__CADET_CONFIG__");
-    expect(body).toContain("web-shell");
+    expect(await readBody(remoteIndex)).toBe(FAKE_WEB_INDEX_HTML);
   });
 
   test("iframes the web UI from the distinct /web/assistant namespace", async () => {
@@ -591,8 +498,10 @@ describe("the app server's routes", () => {
     const noSlash = await handler(
       new Request("http://127.0.0.1:7840/web/assistant"),
     );
-    expect(noSlash.status).toBe(302);
-    expect(noSlash.headers.get("location")).toBe("/web/assistant/");
+    // The no-slash spelling serves the injected document directly (the
+    // config injection is the mount's whole job; there is no redirect).
+    expect(noSlash.status).toBe(200);
+    expect(await readBody(noSlash)).toContain("__CADET_CONFIG__");
 
     const root = await handler(new Request("http://127.0.0.1:7840/web"));
     expect(root.status).toBe(302);
@@ -612,9 +521,12 @@ describe("the app server's routes", () => {
     expect(await readBody(byName)).toContain("__CADET_CONFIG__");
   });
 
-  test("serves remote web config inline with no-store", async () => {
+  test("serves remote web config inline with no-store, read from the LIVE lockfile", async () => {
+    makeWorkspace();
+    seedAssistant();
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
+
     const response = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__config"),
     );
@@ -622,7 +534,35 @@ describe("the app server's routes", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(JSON.parse(await readBody(response))).toMatchObject({
       assistantId: "assistant-1",
+      assistantName: "Homelab",
+      remote: "local",
     });
+
+    // The config is read from the lockfile per request — renaming or
+    // re-pointing the assistant reaches the served document with no
+    // restart.
+    seedAssistant("Renamed");
+    const reread = await handler(
+      new Request("http://127.0.0.1:7840/web/assistant/__config"),
+    );
+    expect(JSON.parse(await readBody(reread))).toMatchObject({
+      assistantId: "assistant-1",
+      assistantName: "Renamed",
+    });
+  });
+
+  test("the iframe mount's config injection rides the served document", async () => {
+    makeWorkspace();
+    seedAssistant();
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    const index = await handler(
+      new Request("http://127.0.0.1:7840/web/assistant/"),
+    );
+    const body = await readBody(index);
+    expect(body).toContain("__CADET_CONFIG__");
+    expect(body).toContain('"assistantId":"assistant-1"');
+    expect(body).toContain("web-shell");
   });
 
   test("the iframe mount serves the web dist's files with the web index as SPA fallback", async () => {
@@ -638,7 +578,7 @@ describe("the app server's routes", () => {
       new Request("http://127.0.0.1:7840/web/assistant/channels/inbox"),
     );
     expect(fallback.status).toBe(200);
-    expect(await readBody(fallback)).toContain("__CADET_CONFIG__");
+    expect(await readBody(fallback)).toBe(FAKE_WEB_INDEX_HTML);
   });
 
   test("the web bundle's baked /assistant/ base serves its files; the shell owns the fallback", async () => {
@@ -655,7 +595,6 @@ describe("the app server's routes", () => {
     );
 
     // Real files win under the baked base...
-    expect(fixture.spec.webDistDir).toBeDefined();
     const webFile = join(fixture.webDistDir, "channels.js");
     writeFileSync(webFile, "console.log('web root file');");
     const rootFile = await handler(
@@ -663,6 +602,13 @@ describe("the app server's routes", () => {
     );
     expect(rootFile.status).toBe(200);
     expect(await readBody(rootFile)).toBe("console.log('web root file');");
+
+    // ...and a miss falls back to the shell document.
+    const miss = await handler(
+      new Request("http://127.0.0.1:7840/assistant/nothing-here"),
+    );
+    expect(miss.status).toBe(200);
+    expect(await readBody(miss)).toBe(FAKE_APP_INDEX_HTML);
   });
 
   test("compresses the static documents", async () => {
@@ -676,9 +622,7 @@ describe("the app server's routes", () => {
     );
     expect(compressed.headers.get("content-encoding")).toBe("gzip");
     const bytes = new Uint8Array(await compressed.arrayBuffer());
-    expect(new TextDecoder().decode(gunzipSync(bytes))).toContain(
-      "__CADET_CONFIG__",
-    );
+    expect(new TextDecoder().decode(gunzipSync(bytes))).toContain("app-shell");
 
     // The proxied responses this edge no longer produces are the operator
     // row's business — local-mode's operations-proxy tests pin that the
@@ -753,10 +697,11 @@ describe("the app server's routes", () => {
     );
   });
 
-  test("websocket upgrades relay to the gateway through the server handle", async () => {
+  test("websocket upgrades relay through the server handle", async () => {
+    makeWorkspace();
     const fixture = makeHandlerFixture();
     const upgraded: Array<{ data: unknown }> = [];
-    const handler = createAppServerHandler(fixture.spec);
+    const handler = createAppServerHandler(fixture);
     // A stub server handle: the live child passes Bun's real Server.
     const server = {
       requestIP: () => ({ address: EDGE_PEER_IP }),
@@ -766,71 +711,30 @@ describe("the app server's routes", () => {
         return true;
       },
     };
-    // The upstream connect happens against the (stubbed) global fetch
-    // socket-level, not fetch — a client WebSocket to a closed port fails
-    // async; the upgrade decision itself is what this pins.
-    globalThis.fetch = mock(
-      async () => new Response(null, { status: 200 }),
-    ) as unknown as typeof fetch;
-    const response = await handler(
+    const upgradeRequest = () =>
       new Request("http://127.0.0.1:7840/v1/channels/ws", {
         headers: {
           upgrade: "websocket",
           "sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==",
           "sec-websocket-version": "13",
         },
-      }),
-      server,
-    );
+      });
+    // No lockfile entry, no upstream to relay to.
+    const orphan = await handler(upgradeRequest(), server);
+    expect(orphan.status).toBe(502);
+    expect(upgraded).toHaveLength(0);
+    // The seeded entry resolves the relay target (the assistant's gateway);
+    // the upstream connect happens at the socket level, not through fetch —
+    // a client WebSocket to a closed port fails async; the upgrade decision
+    // itself is what this pins.
+    seedAssistant();
+    const response = await handler(upgradeRequest(), server);
     // The socket is hijacked; the handler's response body is never used.
     expect(upgraded).toHaveLength(1);
     const data = upgraded[0]!.data as { upstream: WebSocket; queue: unknown[] };
     expect(data.upstream).toBeInstanceOf(WebSocket);
     expect(data.queue).toEqual([]);
     expect(response).toBeDefined();
-  });
-});
-
-// ── The injected document ────────────────────────────────────
-
-describe("buildRemoteWebIndexHtml", () => {
-  test("injects the remote gateway config after any bundled local config", () => {
-    const raw = `<html><head><script>window.__CADET_CONFIG__={"stamped":"local"}</script></head></html>`;
-    const html = buildRemoteWebIndexHtml(raw, { remote: "docker" });
-    const first = html.indexOf("__CADET_CONFIG__");
-    const second = html.indexOf("__CADET_CONFIG__", first + 1);
-    expect(second).toBeGreaterThan(first);
-    expect(html.slice(second)).toContain('"remote":"docker"');
-  });
-
-  test("escapes config JSON before embedding it in a script tag", () => {
-    const html = buildRemoteWebIndexHtml("<html><head></head></html>", {
-      assistantName: "</script><script>alert(1)</script>",
-    });
-    expect(html).not.toContain("</script><script>alert(1)</script>");
-    expect(html).toContain("\\u003c/script\\u003e");
-  });
-
-  test("keeps the consolidated boot graph's modulepreload hints", () => {
-    const hints = Array.from(
-      { length: MAX_PRESERVED_MODULE_PRELOADS },
-      (_, i) => `<link rel="modulepreload" href="/assets/${i}.js">`,
-    ).join("");
-    const raw = `<html><head>${hints}</head></html>`;
-    expect(buildRemoteWebIndexHtml(raw, {})).toContain(
-      `<link rel="modulepreload" href="/assets/0.js">`,
-    );
-  });
-
-  test("strips a whole-graph preload set past the threshold, keeping entry and stylesheet", () => {
-    const hints = Array.from(
-      { length: MAX_PRESERVED_MODULE_PRELOADS + 1 },
-      (_, i) => `<link rel="modulepreload" href="/assets/${i}.js">`,
-    ).join("");
-    const raw = `<html><head>${hints}<link rel="stylesheet" href="/assets/entry.css"></head></html>`;
-    const html = buildRemoteWebIndexHtml(raw, {});
-    expect(html).not.toContain("modulepreload");
-    expect(html).toContain("/assets/entry.css");
   });
 });
 
@@ -922,20 +826,9 @@ function mockDistsMissing(which: "web" | "app"): void {
  * under-test start hashed — the dist roots are fingerprint inputs.
  */
 function appConfigHash(fixture: HandlerFixture): string {
-  // Field order matters: JSON.stringify is order-sensitive. The injected
-  // config is identity-only — the single-origin plan strips every
-  // origin-shaped field, so no cloudUrl/hubUrl rides the fingerprint.
-  const base = fixture.config as Record<string, unknown>;
-  const config: Record<string, unknown> = {
-    remote: base.remote,
-    assistantName: base.assistantName,
-    assistantId: base.assistantId,
-    version: base.version,
-  };
   return createHash("sha256")
     .update(
       JSON.stringify({
-        config,
         webDistDir: fixture.webDistDir,
         version: "1.2.3",
         appDistDir: fixture.appDistDir,
@@ -948,7 +841,6 @@ function appConfigHash(fixture: HandlerFixture): string {
 
 function writeRunningState(opts: {
   listenPort: number;
-  gatewayUrl?: string;
   remoteWebConfigHash?: string;
 }): number {
   const pid = 123_460;
@@ -958,9 +850,6 @@ function writeRunningState(opts: {
     JSON.stringify(
       {
         listenPort: opts.listenPort,
-        ...(opts.gatewayUrl === undefined
-          ? {}
-          : { gatewayUrl: opts.gatewayUrl }),
         ...(opts.remoteWebConfigHash === undefined
           ? {}
           : { remoteWebConfigHash: opts.remoteWebConfigHash }),
@@ -982,17 +871,14 @@ function writeRunningState(opts: {
 describe("startAppServer", () => {
   pinProductionEnvironment();
 
-  test("starts the server, writes the serve spec, and fingerprints the config", async () => {
+  test("starts the server, writes the serve spec, and fingerprints the dists", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     mockServerSpawn();
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     if (result.status !== "started") {
       throw new Error(`expected started, got ${result.status}`);
@@ -1016,30 +902,24 @@ describe("startAppServer", () => {
     expect(options?.detached).toBe(true);
 
     // The serve spec rides the state file; the child is stateless beyond
-    // it.
+    // it. No config in the spec and none in the documents — the config is
+    // read from the lockfile per request, and only the web bundle gets it.
     const state = readAppServerState();
     expect(state).toMatchObject({
       listenPort: result.listenPort,
-      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(fixture),
     });
     expect(state?.serve).toMatchObject({
-      gatewayUrl: "http://127.0.0.1:7830",
       webDistDir: fixture.webDistDir,
       appDistDir: fixture.appDistDir,
     });
-    expect(state?.serve?.config).toMatchObject({
-      assistantId: "assistant-1",
-      assistantName: "Homelab",
-    });
-
-    // Both injected documents carry the served config.
-    const webIndex = readFileSync(fixture.indexHtmlPath, "utf-8");
-    expect(webIndex).toContain('"remote":"local"');
-    expect(webIndex).toContain('"assistantName":"Homelab"');
-    const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    expect(appIndex).toContain("__CADET_CONFIG__");
-    expect(appIndex).toContain('"assistantId":"assistant-1"');
+    expect(state?.serve).not.toHaveProperty("config");
+    expect(readFileSync(fixture.indexHtmlPath, "utf-8")).toBe(
+      FAKE_WEB_INDEX_HTML,
+    );
+    expect(readFileSync(fixture.appIndexHtmlPath, "utf-8")).toBe(
+      FAKE_APP_INDEX_HTML,
+    );
   });
 
   test("never stamps an origin — even with a tunnel URL on record", async () => {
@@ -1048,23 +928,16 @@ describe("startAppServer", () => {
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     mockServerSpawn();
-    stampTunnelRecord("https://camping.ngrok-free.dev");
+    stampTunnelRecordForTest("https://camping.ngrok-free.dev");
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result.status).toBe("started");
     // The single-origin plan: tunnel clients reach the origin they came
-    // in on, so the served config carries no base URL at all — the
-    // shell reads window.location.origin.
+    // in on, so nothing the server writes carries a base URL at all.
     const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
     expect(appIndex).not.toContain("cloudUrl");
     expect(appIndex).not.toContain("hubUrl");
-    expect(readAppServerState()).toMatchObject({
-      remoteWebConfigHash: appConfigHash(fixture),
-    });
   });
 
   test("requires the web dist", async () => {
@@ -1072,10 +945,7 @@ describe("startAppServer", () => {
     seedAssistant();
     mockDistsMissing("web");
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result).toEqual({ status: "web-dist-missing" });
     expect(spawnMock).not.toHaveBeenCalled();
@@ -1086,30 +956,23 @@ describe("startAppServer", () => {
     seedAssistant();
     mockDistsMissing("app");
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result).toEqual({ status: "app-dist-missing" });
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  test("short-circuits when the running server already serves the requested config", async () => {
+  test("short-circuits when the running server already serves the built dists", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     writeRunningState({
       listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(fixture),
     });
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result).toMatchObject({
       status: "already-running",
@@ -1118,79 +981,48 @@ describe("startAppServer", () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  test("restarts the server when its recorded gateway upstream drifts", async () => {
+  test("restarts the server when the built dists drift", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     const pid = writeRunningState({
       listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:9999",
-      remoteWebConfigHash: appConfigHash(fixture),
+      remoteWebConfigHash: "drifted-fingerprint",
     });
     fakePids.set(pid, { alive: true });
     installKillMock();
     mockServerSpawn();
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result.status).toBe("started");
     // The drifted server was stopped first: SIGTERM to its recorded pid.
     expect(fakePids.get(pid)?.alive).toBe(false);
     expect(readAppServerState()).toMatchObject({
-      gatewayUrl: "http://127.0.0.1:7830",
+      remoteWebConfigHash: appConfigHash(fixture),
     });
   });
 
-  test("restarts the server when the injected SPA config drifts", async () => {
+  test("a drifted server that survives the restart attempt is reported as already-running", async () => {
     makeWorkspace();
-    seedAssistant("Renamed");
+    seedAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     const pid = writeRunningState({
       listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:7830",
-      remoteWebConfigHash: appConfigHash(fixture),
-    });
-    fakePids.set(pid, { alive: true });
-    installKillMock();
-    mockServerSpawn();
-
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
-
-    expect(result.status).toBe("started");
-    expect(fakePids.get(pid)?.alive).toBe(false);
-  });
-
-  test("a config-drifted server that survives the restart attempt reports it as stale", async () => {
-    makeWorkspace();
-    seedAssistant("Renamed");
-    const fixture = makeHandlerFixture();
-    mockDistsPresent(fixture);
-    const pid = writeRunningState({
-      listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:7830",
-      remoteWebConfigHash: appConfigHash(fixture),
+      remoteWebConfigHash: "drifted-fingerprint",
     });
     fakePids.set(pid, { alive: true, unkillable: true });
     installKillMock();
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result).toMatchObject({
       status: "already-running",
-      staleRemoteWebConfig: true,
       listenPort: 7840,
     });
+    expect(spawnMock).not.toHaveBeenCalled();
     expect(fakePids.get(pid)?.alive).toBe(true);
   });
 
@@ -1207,10 +1039,7 @@ describe("startAppServer", () => {
     }) as unknown as typeof childProcess.spawn);
     waitForDaemonReadyMock.mockImplementation(async () => false);
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result.status).toBe("unreachable");
   });
@@ -1222,10 +1051,7 @@ describe("startAppServer", () => {
     mockDistsPresent(fixture);
     mockServerSpawnExitsOnStartup();
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     // A dead spawn is a port conflict even when the probe succeeded: that
     // probe reached some other process bound to the port, not this one.
@@ -1253,10 +1079,7 @@ describe("startAppServer", () => {
       return child;
     }) as unknown as typeof childProcess.spawn);
 
-    const result = await startAppServer({
-      gatewayUrl: "http://127.0.0.1:7830",
-      assistantId: "assistant-1",
-    });
+    const result = await startAppServer();
 
     expect(result.status).toBe("port-conflict");
     // The unowned child was killed before rolling back.
@@ -1264,48 +1087,37 @@ describe("startAppServer", () => {
   });
 });
 
+/** Stamp the lockfile's tunnel record with a published URL. */
+function stampTunnelRecordForTest(url: string): void {
+  const path = resolveLockfilePath();
+  let lockfile: Record<string, unknown> = {};
+  try {
+    lockfile = JSON.parse(realFs.readFileSync(path, "utf-8")) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    // No lockfile yet: the stamp creates it.
+  }
+  lockfile.tunnel = {
+    pid: 4242,
+    provider: "ngrok",
+    startedAt: new Date().toISOString(),
+    publicUrl: url,
+  };
+  realFs.mkdirSync(join(path, ".."), { recursive: true });
+  realFs.writeFileSync(path, JSON.stringify(lockfile));
+}
+
 describe("ensureAppServer", () => {
   pinProductionEnvironment();
 
-  function mockTargetAssistant(name = "Homelab"): void {
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "assistant-1",
-      name,
-      cloud: "local",
-      localUrl: "http://127.0.0.1:7830",
-      port: 7830,
-    } as never);
-  }
-
-  test("threads the lockfile display name and assistant id into the served config", async () => {
+  test("reuses a running server that already serves the built dists", async () => {
     makeWorkspace();
-    seedAssistant("Threaded Name");
-    mockTargetAssistant("Threaded Name");
-    const fixture = makeHandlerFixture({
-      remote: "local",
-      assistantName: "Threaded Name",
-      assistantId: "assistant-1",
-      version: "1.2.3",
-    });
-    mockDistsPresent(fixture);
-    mockServerSpawn();
-
-    const server = await ensureAppServer();
-
-    expect(server.started).toBe(true);
-    const appIndex = readFileSync(fixture.appIndexHtmlPath, "utf-8");
-    expect(appIndex).toContain('"assistantName":"Threaded Name"');
-  });
-
-  test("reuses a running server that already serves the requested config", async () => {
-    makeWorkspace();
-    seedAssistant();
-    mockTargetAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     writeRunningState({
       listenPort: 7841,
-      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(fixture),
     });
 
@@ -1315,50 +1127,8 @@ describe("ensureAppServer", () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  test("a drifted server that survives the restart attempt throws", async () => {
-    makeWorkspace();
-    // The LOCKFILE's display name changed under the recorded fingerprint —
-    // the derived config drifts, the restart is attempted, and the
-    // unkillable survivor reports stale.
-    seedAssistant("Renamed");
-    mockTargetAssistant("Renamed");
-    const fixture = makeHandlerFixture();
-    mockDistsPresent(fixture);
-    writeRunningState({
-      listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:7830",
-      remoteWebConfigHash: appConfigHash(fixture),
-    });
-    fakePids.set(123_460, { alive: true, unkillable: true });
-    installKillMock();
-
-    await expect(ensureAppServer()).rejects.toThrow(
-      /still serving an outdated remote web config/,
-    );
-  });
-
-  test("a gateway-drifted server that survives the restart attempt throws", async () => {
-    makeWorkspace();
-    seedAssistant();
-    mockTargetAssistant();
-    const fixture = makeHandlerFixture();
-    mockDistsPresent(fixture);
-    writeRunningState({
-      listenPort: 7840,
-      gatewayUrl: "http://127.0.0.1:9999",
-      remoteWebConfigHash: appConfigHash(fixture),
-    });
-    fakePids.set(123_460, { alive: true, unkillable: true });
-    installKillMock();
-
-    await expect(ensureAppServer()).rejects.toThrow(
-      /is still proxying http:\/\/127\.0\.0\.1:9999/,
-    );
-  });
-
   test("missing web dist throws build guidance", async () => {
     makeWorkspace();
-    mockTargetAssistant();
     mockDistsMissing("web");
 
     await expect(ensureAppServer()).rejects.toThrow(
@@ -1369,7 +1139,6 @@ describe("ensureAppServer", () => {
   test("an unreachable server throws with the log path", async () => {
     makeWorkspace();
     seedAssistant();
-    mockTargetAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     spawnMock.mockImplementation((() => {
@@ -1387,7 +1156,6 @@ describe("ensureAppServer", () => {
   test("a port conflict throws naming the port and the log path", async () => {
     makeWorkspace();
     seedAssistant();
-    mockTargetAssistant();
     const fixture = makeHandlerFixture();
     mockDistsPresent(fixture);
     mockServerSpawnExitsOnStartup();
@@ -1403,7 +1171,7 @@ describe("ensureAppServer", () => {
 describe("the live server child", () => {
   pinProductionEnvironment();
 
-  test("binds both loopback stacks, owns the port via its pidfile, and serves", async () => {
+  test("binds loopback, owns the port via its pidfile, and serves", async () => {
     // The one place a socket is actually opened: the bind, the post-bind
     // pidfile, and the readiness probe are the facts under test.
     makeWorkspace();
@@ -1413,88 +1181,79 @@ describe("the live server child", () => {
     if (freePort === null) {
       throw new Error("no free port for the live probe");
     }
-    // A stub gateway so /healthz's proxy answers.
-    const gateway = Bun.serve({
-      port: 0,
-      hostname: "127.0.0.1",
-      fetch: () =>
-        new Response('{status:"ok"}', {
-          headers: { "content-type": "application/json" },
-        }),
-    });
-    try {
-      mkdirSync(getAppServerPaths().dir, { recursive: true });
-      writeFileSync(
-        appServerStatePath(),
-        JSON.stringify(
-          {
-            listenPort: freePort,
-            gatewayUrl: `http://127.0.0.1:${gateway.port}`,
-            serve: {
-              gatewayUrl: `http://127.0.0.1:${gateway.port}`,
-              webDistDir: fixture.webDistDir,
-              appDistDir: fixture.appDistDir,
-              indexHtmlPath: fixture.indexHtmlPath,
-              appIndexHtmlPath: fixture.appIndexHtmlPath,
-              config: fixture.config,
-            },
-          },
-          null,
-          2,
-        ) + "\n",
-      );
-      const child = Bun.spawn(
-        [
-          process.execPath,
-          fileURLToPath(new URL("../../lib/servers/bun.ts", import.meta.url)),
-          getAppServerPaths().dir,
-        ],
+    mkdirSync(getAppServerPaths().dir, { recursive: true });
+    writeFileSync(
+      appServerStatePath(),
+      JSON.stringify(
         {
-          env: {
-            ...process.env,
-            XDG_DATA_HOME: process.env.XDG_DATA_HOME!,
-            XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME!,
-            CADET_WORKSPACE_DIR: process.env.CADET_WORKSPACE_DIR!,
-            CADET_ENVIRONMENT: "production",
+          listenPort: freePort,
+          serve: {
+            webDistDir: fixture.webDistDir,
+            appDistDir: fixture.appDistDir,
+            indexHtmlPath: fixture.indexHtmlPath,
+            appIndexHtmlPath: fixture.appIndexHtmlPath,
           },
-          stdout: "ignore",
-          stderr: "pipe",
         },
-      );
-      try {
-        const deadline = Date.now() + 10_000;
-        for (;;) {
-          const status = await fetch(`http://127.0.0.1:${freePort}/healthz`)
-            .then((r) => r.status)
-            .catch(() => 0);
-          if (status === 200) break;
-          if (Date.now() > deadline || child.exitCode !== null) {
-            throw new Error(
-              `the server child never became ready (exit ${child.exitCode})`,
-            );
-          }
-          await new Promise((resolve) => setTimeout(resolve, 200));
+        null,
+        2,
+      ) + "\n",
+    );
+    const child = Bun.spawn(
+      [
+        process.execPath,
+        fileURLToPath(new URL("../../lib/servers/bun.ts", import.meta.url)),
+        getAppServerPaths().dir,
+      ],
+      {
+        env: {
+          ...process.env,
+          XDG_DATA_HOME: process.env.XDG_DATA_HOME!,
+          XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME!,
+          CADET_WORKSPACE_DIR: process.env.CADET_WORKSPACE_DIR!,
+          CADET_ENVIRONMENT: "production",
+        },
+        stdout: "ignore",
+        stderr: "pipe",
+      },
+    );
+    try {
+      const deadline = Date.now() + 10_000;
+      for (;;) {
+        const status = await fetch(`http://127.0.0.1:${freePort}/healthz`)
+          .then((r) => r.status)
+          .catch(() => 0);
+        if (status === 200) break;
+        if (Date.now() > deadline || child.exitCode !== null) {
+          throw new Error(
+            `the server child never became ready (exit ${child.exitCode})`,
+          );
         }
-        // Ownership: the pidfile names a live process of ours.
-        const pid = parseInt(
-          readFileSync(getAppServerPaths().pidPath, "utf-8").trim(),
-          10,
-        );
-        expect(pid).toBeGreaterThan(0);
-        expect(child.pid).toBe(pid);
-        // The SPA document is served through the live socket.
-        const doc = await fetch(`http://127.0.0.1:${freePort}/`);
-        expect(doc.status).toBe(200);
-        expect(await doc.text()).toContain("__CADET_CONFIG__");
-        // A graceful stop.
-        child.kill("SIGTERM");
-        await child.exited;
-        expect(child.exitCode).toBe(0);
-      } finally {
-        if (child.exitCode === null) child.kill("SIGKILL");
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
+      // Ownership: the pidfile names a live process of ours.
+      const pid = parseInt(
+        readFileSync(getAppServerPaths().pidPath, "utf-8").trim(),
+        10,
+      );
+      expect(pid).toBeGreaterThan(0);
+      expect(child.pid).toBe(pid);
+      // The shell document is served plain through the live socket...
+      const doc = await fetch(`http://127.0.0.1:${freePort}/`);
+      expect(doc.status).toBe(200);
+      expect(await doc.text()).toBe(FAKE_APP_INDEX_HTML);
+      // ...while the web mount's config is injected AT REQUEST TIME from
+      // the lockfile.
+      const mount = await fetch(`http://127.0.0.1:${freePort}/web/assistant/`);
+      expect(mount.status).toBe(200);
+      const mountBody = await mount.text();
+      expect(mountBody).toContain("__CADET_CONFIG__");
+      expect(mountBody).toContain('"assistantId":"assistant-1"');
+      // A graceful stop.
+      child.kill("SIGTERM");
+      await child.exited;
+      expect(child.exitCode).toBe(0);
     } finally {
-      gateway.stop(true);
+      if (child.exitCode === null) child.kill("SIGKILL");
     }
   }, 30_000);
 });

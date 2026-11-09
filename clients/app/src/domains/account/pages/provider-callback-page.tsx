@@ -12,7 +12,6 @@ import { listAssistants } from "@app/assistant/api";
 import { getSession } from "@app/lib/auth/session-client";
 import { resolvePostAuthDestination } from "@app/domains/account/post-auth-destination";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
-import { isLocalClient } from "@app/lib/runtime-mode";
 import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -64,18 +63,16 @@ export function ProviderCallbackPage() {
           case "authenticated": {
             await refreshSession();
 
-            if (isLocalClient()) {
-              try {
-                const assistants = await listAssistants();
-                if (assistants.ok && assistants.data.length > 0) {
-                  if (!returnTo) {
-                    navigate(routes.assistant, { replace: true });
-                    break;
-                  }
+            try {
+              const assistants = await listAssistants();
+              if (assistants.ok && assistants.data.length > 0) {
+                if (!returnTo) {
+                  navigate(routes.assistant, { replace: true });
+                  break;
                 }
-              } catch {
-                // Fall through to normal destination
               }
+            } catch {
+              // Fall through to normal destination
             }
 
             const fallback = routes.assistant;

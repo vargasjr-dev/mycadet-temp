@@ -1,8 +1,6 @@
 import { startNativeLogin } from "@app/runtime/native-login";
 import { isNativePlatform } from "@app/runtime/native-platform";
 import { getElectronBridge } from "@app/runtime/electron-bridge";
-import { isLocalClient } from "@app/lib/runtime-mode";
-import { startLoopbackAuth } from "@app/lib/auth/loopback-auth";
 import {
   startProviderRedirect,
   type ProviderRedirectOptions,
@@ -38,12 +36,6 @@ export async function startAuthFlow(
   }
   if (getElectronBridge()) {
     await startDesktopLogin(options);
-    return;
-  }
-  if (isLocalClient()) {
-    await startLoopbackAuth(options.returnTo ?? undefined, {
-      intent: options.intent,
-    });
     return;
   }
   await startProviderRedirect(providerId, callbackUrl, options);
