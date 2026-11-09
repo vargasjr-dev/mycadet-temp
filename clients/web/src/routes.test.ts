@@ -1,4 +1,3 @@
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 import { matchRoutes } from "react-router";
 
@@ -79,35 +78,6 @@ describe("nuked account pages", () => {
   });
 });
 
-describe("remote web pairing route", () => {
-  // The /assistant/pair page itself moved to the app (#731, finished by
-  // #734's end-to-end simplification) — only the basename arithmetic its
-  // URLs used to need is still the web router's business.
-  test("uses the remote-gateway public path prefix as the router basename", () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    window.history.pushState(
-      null,
-      "",
-      "/assistant-123/assistant/pair?deviceCode=abc",
-    );
-
-    expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
-  });
-
-  test("uses the cloud artifact's versioned path as the router basename", () => {
-    // Cloud bundles load from /web/<version>/assistant/… — the gateway's
-    // artifact surface, proxied 1:1 by the cloud host. The prefix is
-    // where the bundle was loaded from (a topology fact), not an auth
-    // question, so it strips exactly like the remote-gateway prefix does.
-    // Without it the router matched the full iframe path, found no /web
-    // route, and /assistant rendered the not-found catch-all.
-    window.__CADET_CONFIG__ = { remote: "cloud" };
-    window.history.pushState(null, "", "/web/2026.10.14-1/assistant/");
-
-    expect(remoteGatewayPublicPathPrefix()).toBe("/web/2026.10.14-1");
-  });
-});
-
 describe("credential entry route", () => {
   // The one-time credential entry page must stay outside the auth-protected
   // assistant app tree: the link recipient may have no Cadet session, and
@@ -119,23 +89,6 @@ describe("credential entry route", () => {
     expect(matches.at(-1)?.pathname).toBe("/assistant/credentials/enter");
     expect(
       isUnderComponent("/assistant/credentials/enter?token=abc", "RootLayout"),
-    ).toBe(false);
-  });
-
-  test("matches under the remote-gateway public path prefix basename", () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    window.history.pushState(
-      null,
-      "",
-      "/assistant-123/assistant/credentials/enter",
-    );
-
-    expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
-    expect(
-      isUnderComponent(
-        "/assistant-123/assistant/credentials/enter",
-        "RootLayout",
-      ),
     ).toBe(false);
   });
 });

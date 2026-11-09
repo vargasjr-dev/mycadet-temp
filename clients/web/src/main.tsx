@@ -4,6 +4,5 @@
 import "@/utils/run-storage-migrations";
 
 import { start } from "@/boot";
-import { router } from "./routes";
 
-start(router);
+start();

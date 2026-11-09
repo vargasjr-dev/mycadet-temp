@@ -221,7 +221,7 @@ export type TokenResult =
  * to stderr on failure so hosts can distinguish a spent credential (401)
  * from an unreachable gateway (503) without scraping the human message.
  */
-export const GUARDIAN_REFRESH_ERROR_PREFIX = "CADET_REFRESH_ERROR=";
+const GUARDIAN_REFRESH_ERROR_PREFIX = "CADET_REFRESH_ERROR=";
 
 /** Encode a structured refresh failure for the CLI's stderr. */
 export function formatGuardianRefreshCliFailure(

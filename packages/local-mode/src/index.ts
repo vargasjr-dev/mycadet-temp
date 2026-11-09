@@ -329,12 +329,7 @@ export {
   removeContainer,
   retireDocker,
 } from "./remotes/docker/retire";
-export {
-  exec,
-  execOutput,
-  execWithStdin,
-  buildExecErrorMessage,
-} from "./exec";
+export { exec, execOutput, execWithStdin, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,
   parseTasklistCsv,
@@ -406,16 +401,12 @@ export { resolveLatestStableTag } from "./remotes/local/upgrade";
 export { teleportAssistant } from "./operations/teleport";
 export { restoreAssistant } from "./operations/restore";
 export {
-  cloudPollJobStatus,
   cloudRequestSignedUrl,
   VersionMismatchError,
 } from "./remotes/cloud/migrations";
 export {
   getGuardianAccessToken,
   isConfidentialRefreshUrl,
-  formatGuardianRefreshCliFailure,
-  parseGuardianRefreshCliFailure,
-  GUARDIAN_REFRESH_ERROR_PREFIX,
   saveGuardianToken,
   saveBasetenSandboxToken,
   readBasetenSandboxToken,

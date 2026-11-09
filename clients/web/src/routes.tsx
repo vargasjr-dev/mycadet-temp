@@ -3,26 +3,20 @@ import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
-import { ConversationRedirect } from "@/domains/chat/conversation-redirect";
 import { NotificationsBell } from "@/domains/home/components/notifications-bell";
 import { NotFound } from "@/components/not-found";
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
 
-/**
- * What a floating window shows while its route's chunk loads: nothing.
- *
- * These routes are drawn in transparent, click-through windows the desktop
- * shell floats over the desktop, sized well past what they draw. A spinner
- * centred in one of those is a spinner floating over the desktop with nothing
- * around it, and the shell's HTML splash is kept off them for the same reason
- * (`index.html`). The surface appears when it is ready.
- */
+import {
+  BUNDLE_BASE_NAME,
+  CONVERSATION_APP_SEGMENT,
+  routes,
+} from "@/utils/routes";
+
 function FloatingHydrateFallback() {
   return null;
 }
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
 
 function McpSettingsRedirect() {
   return <Navigate to={`${routes.settings.integrations}?tab=mcp`} replace />;
@@ -306,19 +300,6 @@ export const routeTree = [
     HydrateFallback: RootHydrateFallback,
     Component: RootLayout,
     children: [
-      // Pathless wrapper attaching `RouteErrorBoundary` at the layer
-      // *inside* RootLayout. Any error from a child route (chunk-fetch
-      // failure or genuine render bug) is caught here — React Router
-      // doesn't support selective bubbling. The boundary picks a UI
-      // variant based on the error shape:
-      //   - chunk fail  → inline "section couldn't load" within
-      //                   RootLayout's chrome (sidebar stays visible)
-      //   - other error → full-page "Something went wrong" treatment
-      //                   (full-viewport `min-h-svh` so it reads as a
-      //                   takeover even when mounted inside chrome)
-      // The outer boundary on `/assistant` only fires for errors that
-      // happen *during* the resolution of `/assistant` itself (loader,
-      // middleware, RootLayout render) — not for child-route errors.
       {
         ErrorBoundary: RouteErrorBoundary,
         children: [
@@ -536,20 +517,16 @@ export const routeTree = [
           {
             Component: ChatLayoutRoute,
             children: [
-              // Inner pathless wrapper: catches every error from chat-side
-              // routes (home, library, identity, inspector, etc.) one layer
-              // deeper than the `/assistant` boundary so the chunk-fail UI
-              // variant renders *inside* ChatLayout's chrome (sidebar stays
-              // visible). Non-chunk render errors are caught here too —
-              // `RouteErrorBoundary` shows the full-page variant in that
-              // case (`min-h-svh`), which visually takes over the route
-              // content area.
               {
                 ErrorBoundary: RouteErrorBoundary,
                 children: [
                   // ChatPage / DocumentViewerPage render for the resolved
                   // assistant the serving shell loaded web with.
-                  { index: true, Component: ConversationRedirect },
+                  { index: true, Component: ChatPage },
+                  {
+                    path: "conversations",
+                    Component: ChatPage,
+                  },
                   {
                     path: "conversations/:conversationId",
                     Component: ChatPage,
@@ -793,24 +770,17 @@ export const routeTree = [
           },
 
           // Catch-all within /assistant/*
-          { path: "*", Component: NotFound },
+          { path: "*", Component: NestedLevelNotFound },
         ], // end outer chunk-fail boundary (/assistant)
       },
     ],
   },
 
   // Top-level catch-all
-  { path: "*", ErrorBoundary: RouteErrorBoundary, Component: NotFound },
+  { path: "*", ErrorBoundary: RouteErrorBoundary, Component: TopLevelNotFound },
 ];
 
 export const router = createBrowserRouter(routeTree as never, {
-  // A served prefix is a topology fact — read it from where the bundle was
-  // actually loaded, never from the auth scheme. Cloud-hosted bundles serve
-  // under a versioned artifact path (`/web/<version>/assistant/…`) on both
-  // the gateway and the cloud host; without the prefix the router matches
-  // the full iframe path, finds no `/web` route, and lands in the not-found
-  // catch-all. Root-served bundles (local, electron) match at index 0 and
-  // keep no basename.
-  basename: remoteGatewayPublicPathPrefix() || undefined,
+  basename: BUNDLE_BASE_NAME,
   future: { v8_middleware: true },
 });

@@ -19,9 +19,6 @@ import { isChunkLoadError } from "@/lib/chunk-errors";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { createBrowserRouter } from "react-router";
-
-type Router = ReturnType<typeof createBrowserRouter>;
 
 import "@/lib/api-interceptors";
 import "./index.css";
@@ -32,12 +29,13 @@ import { initNativePlatformAttributes } from "@/runtime/native-platform-attribut
 import { initSafeAreaBridge } from "@/runtime/native-safe-area";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
 import { initInputModality } from "@mycadet/design-library";
+import { router } from "./routes";
 
-export function start(router: Router): void {
-  void boot(router).catch(showBootFailure);
+export function start(): void {
+  void boot().catch(showBootFailure);
 }
 
-async function boot(router: Router) {
+async function boot() {
   // Install before React first commits so the reconciler survives DOM
   // mutations from browser page translation.
   installTranslateDomGuard();
@@ -80,10 +78,6 @@ async function boot(router: Router) {
           <RouterProvider
             router={router}
             onError={(error) => {
-              // Single report point for every router error.
-              // `RouteErrorBoundary` (used at every layer of the tree) owns
-              // only the UI variant and intentionally does NOT report again
-              // to avoid duplicate reports.
               captureError(error, {
                 context: "RouterProvider",
                 tags: {

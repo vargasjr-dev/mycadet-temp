@@ -12,6 +12,8 @@ const SETTINGS_USAGE_PATH = r("/assistant/settings/usage");
  */
 export const SCROLL_TO_MESSAGE_PARAM = "message";
 
+export const BUNDLE_BASE_NAME = "web";
+
 /**
  * Path segment introducing the app a conversation URL keeps on screen
  * (`/assistant/conversations/:conversationId/app/:appId`). Shared by the route
