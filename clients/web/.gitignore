@@ -9,3 +9,4 @@ openapi-schemas/gateway.json
 
 # Local tool logs
 *.log
+openapi-schemas/.codegen-stamp.json

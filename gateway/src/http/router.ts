@@ -190,10 +190,9 @@ export function compilePath(template: string): RegExp {
  * happens at dispatch.
  */
 export function expandRoute(route: RouteDefinition): RouteDefinition[] {
-  const flat: RouteDefinition = { ...route };
-  const expanded: RouteDefinition[] = [flat];
+  const expanded: RouteDefinition[] = [route];
   for (const alias of route.aliases ?? []) {
-    expanded.push({ ...flat, method: alias });
+    expanded.push({ ...route, method: alias });
   }
   if (route.scoped) {
     if (typeof route.path !== "string") {
