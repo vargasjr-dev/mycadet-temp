@@ -15,16 +15,6 @@ import { TrustRuleStore } from "./trust-rule-store.js";
 export type GatewayDb = ReturnType<typeof drizzle<typeof schema>>;
 
 /**
- * drizzle-kit's pushSQLiteSchema prompts interactively on stdin when it
- * detects ambiguous column changes (new column vs rename of an existing
- * one). In a headless container the prompt hangs forever.
- *
- * Our policy: always "create column", never rename. This wrapper spoofs a
- * TTY and emits Enter keypresses on a timer so drizzle-kit's hanji prompt
- * auto-selects the first option (index 0 = "create column") without human
- * interaction. Works across all current and future ambiguous schema diffs.
- */
-/**
  * Import drizzle-kit/api in a way that works in the compiled Windows
  * runtime. Compiled Bun binaries resolve bare external specifiers relative
  * to the LAUNCH CWD, not the executable's directory — a cadet-gateway.exe
@@ -33,6 +23,9 @@ export type GatewayDb = ReturnType<typeof drizzle<typeof schema>>;
  * ships next to the binary (package-runtime.ts copies it into
  * cli-runtime/node_modules), import it by absolute file:// URL so CWD never
  * matters. Source/dev/test runs fall back to the bare specifier.
+ *
+ * Resolved once at module load, so a mis-packaged binary fails loudly at
+ * boot instead of at the first schema push.
  */
 async function importDrizzleKitApi(): Promise<{
   pushSQLiteSchema: (
@@ -55,6 +48,18 @@ async function importDrizzleKitApi(): Promise<{
   return await import("drizzle-kit/api");
 }
 
+const drizzleKitApi = await importDrizzleKitApi();
+
+/**
+ * drizzle-kit's pushSQLiteSchema prompts interactively on stdin when it
+ * detects ambiguous column changes (new column vs rename of an existing
+ * one). In a headless container the prompt hangs forever.
+ *
+ * Our policy: always "create column", never rename. This wrapper spoofs a
+ * TTY and emits Enter keypresses on a timer so drizzle-kit's hanji prompt
+ * auto-selects the first option (index 0 = "create column") without human
+ * interaction. Works across all current and future ambiguous schema diffs.
+ */
 async function pushSchemaNoPrompt(
   imports: Record<string, unknown>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pushSQLiteSchema types against LibSQLDatabase; BunSQLiteDatabase is duck-type compatible
@@ -87,8 +92,7 @@ async function pushSchemaNoPrompt(
   }, 50);
 
   try {
-    const { pushSQLiteSchema } = await importDrizzleKitApi();
-    return await pushSQLiteSchema(imports, drizzleInstance);
+    return await drizzleKitApi.pushSQLiteSchema(imports, drizzleInstance);
   } finally {
     clearInterval(interval);
     Object.defineProperty(stdin, "isTTY", {
