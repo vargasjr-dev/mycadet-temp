@@ -4,13 +4,13 @@ import { autoSendPromptState } from "@/utils/auto-send-prompt";
 import { haptic } from "@/utils/haptics";
 import {
   appIdForPath,
+  BUNDLE_BASE_NAME,
   conversationIdForPath,
   isConversationChatPath,
   routes,
 } from "@/utils/routes";
 import { hasAppReturnEntry } from "@/utils/app-navigation";
 
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
@@ -51,9 +51,8 @@ export interface NavigateToConversationOptions {
 /** The route on screen, router-relative like `useLocation().pathname`. */
 export function currentPathname(): string {
   const { pathname } = window.location;
-  const prefix = remoteGatewayPublicPathPrefix();
-  return prefix.length > 0 && pathname.startsWith(prefix)
-    ? pathname.slice(prefix.length)
+  return pathname.startsWith(BUNDLE_BASE_NAME)
+    ? pathname.slice(BUNDLE_BASE_NAME.length)
     : pathname;
 }
 

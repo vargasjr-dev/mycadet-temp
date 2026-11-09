@@ -618,9 +618,6 @@ async function acquireGatewayToken(
 
 /**
  * `503` is the CLI's labeled "gateway unreachable / still starting" status
- * (`parseGuardianRefreshCliFailure`). Missing (404), spent (401), refused
- * (403), and permanent 500 failures (malformed file, spawn failure, refresh
- * timeout) do not heal by waiting.
  */
 function isTransientGuardianStatus(status: number): boolean {
   return status === 503;
