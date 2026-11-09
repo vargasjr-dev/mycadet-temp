@@ -140,13 +140,6 @@ export const contacts = sqliteTable("contacts", {
   displayName: text("display_name").notNull(),
   role: text("role").notNull().default("contact"),
   principalId: text("principal_id"),
-  // The guardian's account profile — the assistant tracks the user's
-  // profile for them on the guardian's own row (written host-side by the
-  // operator profile operation; null until first set).
-  username: text("username"),
-  email: text("email"),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
   /**
    * Per-contact auto-approve ceiling (`none` | `low` | `medium` | `high`).
    * Null means unset: later approval resolution inherits the existing
