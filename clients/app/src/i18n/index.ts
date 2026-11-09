@@ -15,14 +15,14 @@
  *
  * ```tsx
  * const { t } = useTranslation();
- * return <h1>{t("notFound.title")}</h1>;
+ * return <h1>{t("aboutPage.version")}</h1>;
  * ```
  *
  * Outside React (stores, event handlers, toasts) use the bound `t`:
  *
  * ```ts
  * import { t } from "@app/i18n";
- * toast.error(t("notFound.title"));
+ * toast.error(t("aboutPage.version"));
  * ```
  *
  * Keys are type-checked against `locales/en/common.json` via the `i18next`

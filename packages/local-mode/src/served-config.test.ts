@@ -2,7 +2,47 @@ import { GATEWAY_PORT } from "./lockfile-contract";
 import { describe, expect, test } from "bun:test";
 
 import type { Lockfile, LockfileAssistant } from "./lockfile-contract";
-import { servedConfigFromLockfile } from "./served-config";
+import {
+  servedAssistantFromLockfile,
+  servedConfigFromLockfile,
+} from "./served-config";
+
+describe("servedAssistantFromLockfile", () => {
+  test("selects the entry the served config names — the same rule, whole entry", () => {
+    const lockfile: Lockfile = {
+      assistants: [
+        { assistantId: "other", cloud: "local", port: GATEWAY_PORT },
+        {
+          assistantId: "active",
+          name: "Example Assistant",
+          cloud: "docker",
+          port: 7830,
+          daemonPort: 7831,
+        },
+      ],
+      activeAssistant: "active",
+    };
+    // The relay target and the served config must never disagree about
+    // which assistant is being fronted.
+    expect(servedAssistantFromLockfile(lockfile)?.assistantId).toBe("active");
+    expect(servedConfigFromLockfile(lockfile).assistantId).toBe("active");
+  });
+
+  test("no entry, no relay target", () => {
+    expect(
+      servedAssistantFromLockfile({ assistants: [], activeAssistant: null }),
+    ).toBeUndefined();
+    expect(
+      servedAssistantFromLockfile({
+        assistants: [
+          { assistantId: "first", cloud: "local", port: GATEWAY_PORT },
+          { assistantId: "second", cloud: "local", port: GATEWAY_PORT },
+        ],
+        activeAssistant: null,
+      }),
+    ).toBeUndefined();
+  });
+});
 
 describe("servedConfigFromLockfile", () => {
   test("selects the active entry and exposes only public config fields", () => {

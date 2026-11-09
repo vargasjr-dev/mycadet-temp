@@ -25,6 +25,9 @@ function response(value: unknown) {
   return new Response(JSON.stringify(value));
 }
 test("fresh cloud membership and assistant data determine returning-user status", async () => {
+  // The host's lockfile read answers first (no returning signal recorded),
+  // then the cloud membership and assistant pages decide.
+  fetchSpy.mockResolvedValueOnce(response({ assistants: [] }));
   fetchSpy.mockResolvedValueOnce(response({ results: [{ id: "org-1" }] }));
   fetchSpy.mockResolvedValueOnce(
     response({
@@ -32,7 +35,10 @@ test("fresh cloud membership and assistant data determine returning-user status"
     }),
   );
   expect(await readReturningUser()).toBe(true);
-  expect(fetchSpy.mock.calls[1]?.[0]).toContain("/v1/assistants/");
+  // The first fetch is the host read (/v1/assistants/), the third the
+  // cloud assistant page — same surface, two authorities.
+  expect(fetchSpy.mock.calls[0]?.[0]).toContain("/v1/assistants/");
+  expect(fetchSpy.mock.calls[2]?.[0]).toContain("/v1/assistants/");
 });
 test("completion records are read live; malformed and missing signals do not skip consent", () => {
   expect(isReturningAssistant({ id: "assistant-1" })).toBe(false);

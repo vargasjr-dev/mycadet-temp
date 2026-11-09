@@ -17,7 +17,7 @@ test("an offline catalog leaves readable English and reports the failure", async
   try {
     expect(await initI18n()).toBe("en");
     expect(currentLocale()).toBe("en");
-    expect(i18next.t("notFound.title")).toBe("Page not found");
+    expect(i18next.t("aboutPage.version")).toBe("Version");
     expect(await initI18n()).toBe("en");
     expect(warning).toHaveBeenCalledTimes(2);
   } finally {

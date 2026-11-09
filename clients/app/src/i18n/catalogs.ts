@@ -45,7 +45,7 @@ import {
 
 /**
  * A parsed catalog. Values are ICU MessageFormat strings; nesting mirrors the
- * dotted key path used at the call site (`t("notFound.title")`).
+ * dotted key path used at the call site (`t("aboutPage.version")`).
  */
 export type Catalog = Record<string, unknown>;
 

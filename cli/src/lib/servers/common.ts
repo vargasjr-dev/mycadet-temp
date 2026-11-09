@@ -555,8 +555,15 @@ export async function startAppServer(): Promise<StartAppServerResult> {
     listenPort: recorded?.listenPort ?? listenPort,
     ...(survivingBuiltSha ? { builtSha: survivingBuiltSha } : {}),
   });
-  // An unknown recorded gateway upstream is unverified (see AppServerState).
+  // An unmatched fingerprint on a live server means the dists or the CLI
+  // version moved under it — the reuse contract only covers a server whose
+  // inputs match, so stop the drifted one before a fresh child binds; a
+  // false stop can mean the old server exited on its own after the check
+  // above, so recheck liveness and only report reuse when it still serves.
   if (running && configMatches) {
+    return alreadyRunning();
+  }
+  if (running && !(await stopAppServer()) && isAppServerRunning()) {
     return alreadyRunning();
   }
 

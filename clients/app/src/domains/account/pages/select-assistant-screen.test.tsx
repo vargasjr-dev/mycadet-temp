@@ -154,10 +154,10 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
   expect(withAvatar.textContent).toContain("O");
 });
 
-test("rows on a cloud build render the cloud-hosted subtitle with a relative creation date", async () => {
-  // The build's stamp (`remote`) is only the FALLBACK: these rows carry no
-  // per-assistant remote (a server predating the stamp), so they inherit the
-  // build's own — a cloud build lists the cloud's assistants.
+test("cloud rows render the cloud-hosted subtitle with a relative creation date", async () => {
+  // The row's own `remote` is the whole signal now — the build's baked
+  // stamp is gone (config is served at request time) — so a cloud-hosted
+  // row is simply one whose lockfile entry is the cloud.
   setup(undefined, false, undefined);
   request.mockResolvedValueOnce(
     Response.json({
@@ -166,13 +166,14 @@ test("rows on a cloud build render the cloud-hosted subtitle with a relative cre
         {
           id: "assistant-1",
           name: "One",
+          remote: "cloud",
           // Three whole days back, with a minute of margin so the day floor
           // lands on 3 regardless of how long the test takes to run.
           created: new Date(
             Date.now() - 3 * 24 * 3_600_000 - 60_000,
           ).toISOString(),
         },
-        { id: "assistant-2", name: "Two" },
+        { id: "assistant-2", name: "Two", remote: "cloud" },
       ],
     }),
   );

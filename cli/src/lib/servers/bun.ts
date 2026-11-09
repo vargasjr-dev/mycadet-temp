@@ -9,9 +9,11 @@ import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/in
 
 import {
   matchOperatorRequest,
+  servedAssistantFromLockfile,
   servedConfigFromLockfile,
   readLockfile,
 } from "@mycadet/local-mode";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
   appOrigins,
@@ -76,7 +78,12 @@ async function staticResponse(
   // so the gzip check reads the base type.
   const baseType = type?.split(";")[0]?.trim();
   if (baseType && GZIP_TYPES.has(baseType)) {
-    const text = await file.text();
+    // The request-time config injection transforms the document BEFORE the
+    // validator is computed (the etag fingerprints the served bytes) and
+    // before the gzip decision, so the injected document ships on both the
+    // compressed and the identity path.
+    const rawText = await file.text();
+    const text = transform ? transform(rawText) : rawText;
     headers.set("ETag", etagFor(text));
     const noneMatch = request.headers.get("if-none-match");
     if (noneMatch && noneMatch === headers.get("ETag")) {
@@ -89,8 +96,7 @@ async function staticResponse(
         .pipeThrough(new CompressionStream("gzip"));
       return new Response(stream, { headers });
     }
-    const transformedText = transform ? transform(text) : text;
-    return new Response(transformedText, { headers });
+    return new Response(text, { headers });
   }
   return new Response(file, { headers });
 }
@@ -388,7 +394,14 @@ type RelayData = {
  */
 function upgradeToGateway(request: Request, server: AppServerHandle): Response {
   const url = new URL(request.url);
-  const target = new URL(`${url.pathname}${url.search}`, url.host);
+  // The relay targets the fronted assistant's gateway — the same live
+  // lockfile resolution the web bundle's config rides. No entry, no
+  // upstream to relay to.
+  const entry = servedAssistantFromLockfile(readLockfile());
+  if (!entry) {
+    return new Response(null, { status: 502 });
+  }
+  const target = new URL(`${url.pathname}${url.search}`, getGatewayUrl(entry));
   target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => {

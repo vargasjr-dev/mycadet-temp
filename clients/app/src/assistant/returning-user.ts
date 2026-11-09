@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { listAssistants } from "@app/assistant/api";
-import { readAssistantCompletion } from "@app/assistant/completion-record";
+import {
+  deviceHasCompletionStamp,
+  readAssistantCompletion,
+} from "@app/assistant/completion-record";
 
 const LockfileSchema = z.object({
   assistants: z.array(
@@ -48,6 +51,12 @@ export async function readReturningUser(
 }
 
 async function findReturningUser(signal: AbortSignal): Promise<boolean> {
+  // The device's own completion stamps answer first — a shell that already
+  // finished onboarding is a returning user even with the host and the
+  // cloud both unreachable (the mobile zero-fetch path).
+  if (deviceHasCompletionStamp()) {
+    return true;
+  }
   try {
     const response = await fetch("/v1/assistants/", { signal });
     const payload: unknown = response.ok ? await response.json() : null;

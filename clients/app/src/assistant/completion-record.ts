@@ -40,12 +40,28 @@ export function readAssistantCompletion(id: string): string | undefined {
   if (notifiedRecord) {
     return notifiedRecord[id] || undefined;
   }
+  return parsedStoredRecord()[id] || undefined;
+}
+
+/**
+ * Whether the device carries ANY completion stamp — the mobile shell's
+ * zero-network returning-user signal (a shell that already finished
+ * onboarding is returning before any host or cloud read).
+ */
+export function deviceHasCompletionStamp(): boolean {
+  if (notifiedRecord) {
+    return Object.keys(notifiedRecord).length > 0;
+  }
+  return Object.keys(parsedStoredRecord()).length > 0;
+}
+
+function parsedStoredRecord(): Record<string, string> {
   try {
     const parsed = RecordSchema.safeParse(
       JSON.parse(getLocalSetting(STORAGE_KEY, "{}")),
     );
-    return parsed.success ? parsed.data[id] || undefined : undefined;
+    return parsed.success ? parsed.data : {};
   } catch {
-    return undefined;
+    return {};
   }
 }
