@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { within } from "@testing-library/react";
+import { routes } from "@app/utils/routes";
 import { SelectAssistantScreen } from "./select-assistant-screen";
 import { accountRoute } from "../account-route";
 import { AssistantPage } from "@app/shell/assistant-page";
@@ -59,6 +60,9 @@ function setup(
             Component: SelectAssistantScreen,
           },
       { path: "/assistant/*", Component: AssistantPage },
+      // The chooser's hatch affordance hands off to the onboarding hosting
+      // chooser — a stub keeps the handoff navigable in isolation.
+      { path: routes.account.onboarding.hosting, Component: () => null },
     ],
     { initialEntries: [entry] },
   );
@@ -82,6 +86,7 @@ afterEach(() => {
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
   // The route's own auth machinery probes the cloud session between API
   // calls (see the create-flow pin below) — seed by URL, not FIFO order.
+  window.history.pushState({}, "", "/assistant");
   const router = setup(undefined, true, async (url) => {
     const target = String(url);
     if (target.endsWith("/v1/assistants/")) {
@@ -106,7 +111,8 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("radio", { name: /^New Assistant/ }));
   const frame = await screen.findByTitle("Assistant");
-  expect(frame.getAttribute("src")).toBe("http://localhost:3001/assistant/");
+  // The frame rides the /web mount over the host's assistant route.
+  expect(frame.getAttribute("src")).toBe("http://localhost:3001/web/assistant");
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
@@ -121,6 +127,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
     "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
+  window.history.pushState({}, "", "/");
 });
 
 test("rows render the cloud's synced avatar when the list carries one", async () => {
@@ -244,6 +251,7 @@ test("arrow keys move focus across cards without selecting", async () => {
 });
 
 test("Enter selects the focused card", async () => {
+  window.history.pushState({}, "", "/assistant");
   const router = setup(undefined, false, async (url) => {
     const target = String(url);
     if (target.endsWith("/v1/assistants/")) {
@@ -269,10 +277,12 @@ test("Enter selects the focused card", async () => {
   const one = await screen.findByRole("radio", { name: /^One/ });
   fireEvent.keyDown(one, { key: "Enter" });
   const frame = await screen.findByTitle("Assistant");
-  expect(frame.getAttribute("src")).toBe("http://localhost:3001/assistant/");
+  // The frame rides the /web mount over the host's assistant route.
+  expect(frame.getAttribute("src")).toBe("http://localhost:3001/web/assistant");
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-1"),
   );
+  window.history.pushState({}, "", "/");
 });
 
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
@@ -303,51 +313,21 @@ test("an empty host list can be refreshed", async () => {
   await screen.findByRole("radio", { name: /^One/ });
 });
 
-test("an empty list offers creation and lands in the created assistant", async () => {
+test("an empty list offers creation into the hosting chooser", async () => {
   const router = setup("/account/select-assistant", false, async (url) => {
     const target = String(url);
     if (target.endsWith("/v1/assistants/")) {
       return Response.json({ status: "empty" });
     }
-    // The dialog's create flow resolves the organization, hatches, and the
-    // shell then resolves the created assistant's detail same-origin.
-    if (target.includes("/v1/organizations/")) {
-      return Response.json({ results: [{ id: "org-1" }] });
-    }
-    if (target.includes("/hatch/")) {
-      return Response.json(detail);
-    }
-    if (target.includes("/v1/assistants/assistant-2/")) {
-      return Response.json({
-        status: "ready",
-        assistant: {
-          id: "assistant-2",
-          version: detail.version,
-          url: detail.url,
-        },
-      });
-    }
     return iframeDocument.clone();
   });
   await screen.findByText("No assistant is available.");
-  fireEvent.click(screen.getByRole("button", { name: "Create an assistant" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Create" }));
-  await screen.findByTitle("Assistant");
-  expect(router.state.location.state).toEqual(
-    assistantSelectionState("assistant-2"),
+  // The create affordance hands off to the onboarding hosting chooser —
+  // the dialog-era inline hatch is gone.
+  fireEvent.click(screen.getByRole("button", { name: "Hatch a new assistant" }));
+  expect(router.state.location.pathname).toBe(
+    routes.account.onboarding.hosting,
   );
-  expect(
-    request.mock.calls
-      .map(([url]) => String(url))
-      // The create flow rides the bundle's own auth machinery, which probes
-      // the cloud session between API calls; pin the load-bearing chain.
-      .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
-  ).toEqual([
-    "http://localhost:3001/v1/assistants/",
-    "/v1/organizations/?limit=100&offset=0",
-    "/v1/assistants/hatch/?mode=create",
-    "http://localhost:3001/v1/assistants/assistant-2/",
-  ]);
 });
 
 test("401 displays sign-in without running Web account or onboarding probes", async () => {
@@ -450,20 +430,22 @@ test("a failed list renders a degraded disabled row plus the way forward", async
   // affordances (#449's colocated way forward) survive the dead list.
   expect(screen.getByRole("button", { name: "Retry" })).toBeDefined();
   expect(
-    screen.getByRole("button", { name: "Create an assistant" }),
+    screen.getByRole("button", { name: "Hatch a new assistant" }),
   ).toBeDefined();
 });
 
 test("a dead list still offers hatching from the chooser", async () => {
   request.mockRejectedValueOnce(new Error("no control plane"));
-  setup();
+  const router = setup();
   // The chooser's own failure line — not the shell panel's
   // "We couldn't reach your assistant": the list died, not the assistant.
   await screen.findByText("Unable to load assistant.");
-  // And the way forward survives the dead list: hatch from the chooser.
-  fireEvent.click(screen.getByRole("button", { name: "Create an assistant" }));
-  const dialog = await screen.findByRole("dialog");
-  expect(within(dialog).getByRole("button", { name: "Create" })).toBeDefined();
+  // And the way forward survives the dead list: hatch from the chooser —
+  // the handoff rides to the onboarding hosting chooser.
+  fireEvent.click(screen.getByRole("button", { name: "Hatch a new assistant" }));
+  expect(router!.state.location.pathname).toBe(
+    routes.account.onboarding.hosting,
+  );
 });
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
@@ -527,7 +509,7 @@ test("browser history restores selection and frame navigation retains it", async
         data: {
           source: "mycadet-web-nav",
           nav: "push",
-          path: "/assistant/settings?tab=profile#name",
+          path: "/web/assistant/settings?tab=profile#name",
         },
       }),
     );

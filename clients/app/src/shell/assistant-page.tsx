@@ -34,7 +34,10 @@ export function AssistantPage() {
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,
-          state: selection,
+          // The selection state rides every frame-driven navigation
+          // unwrapped-and-verbatim, so a reload of the deeper entry still
+          // restores it (the reader parses the wrapped shape).
+          state: location.state,
         });
       }}
     />
