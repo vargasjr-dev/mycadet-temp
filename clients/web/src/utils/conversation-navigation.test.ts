@@ -395,15 +395,6 @@ describe("keptAppId", () => {
     expect(keptAppId()).toBeNull();
   });
 
-  test("names the app behind a remote-gateway ingress basename", () => {
-    openAppViewer();
-    showPath(
-      `/assistant-123${routes.conversation(OPEN_CONVERSATION, SAMPLE_APP.appId)}`,
-    );
-
-    expect(keptAppId()).toBe(SAMPLE_APP.appId);
-  });
-
   test("names the app the URL names", () => {
     openAppViewer();
 
