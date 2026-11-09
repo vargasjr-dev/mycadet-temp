@@ -47,13 +47,13 @@ import {
   assistantsDoctorHistoryListOptions,
   assistantsDoctorHistoryRetrieveOptions,
   useAssistantsDoctorSessionsMessagesCreateMutation,
-} from "@/generated/api/@tanstack/react-query.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
 import {
   type Options,
   assistantsDoctorSessionsCreate,
   assistantsDoctorSessionsUserOutcomeCreate,
-} from "@/generated/api/sdk.gen";
-import type { AssistantsDoctorSessionsCreateData } from "@/generated/api/types.gen";
+} from "@/generated/operator/sdk.gen";
+import type { AssistantsDoctorSessionsCreateData } from "@/generated/operator/types.gen";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ApiError, extractErrorMessage } from "@/utils/api-errors";

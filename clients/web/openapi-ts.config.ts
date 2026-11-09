@@ -9,8 +9,8 @@ const reactQueryPlugin = {
 
 export default defineConfig([
   {
-    input: "./openapi-schemas/cloud.yaml",
-    output: "src/generated/api",
+    input: "./openapi-schemas/operator.yaml",
+    output: "src/generated/operator",
     parser: {
       // HeyAPI only detects pagination params by exact keyword match, so the
       // invoices endpoint's starting_after cursor needs an explicit entry to

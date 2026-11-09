@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   assistantsEmailAddressesStatusRetrieveOptions,
   assistantsEmailsListOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
 import {
   emailAttachmentlistGet,
   emailDownloadGet,

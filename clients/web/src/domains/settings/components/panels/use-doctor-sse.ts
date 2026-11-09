@@ -40,8 +40,8 @@ import { shouldResetDoctorSseReconnectBudget } from "@/domains/settings/componen
 import {
   assistantsDoctorHistoryRetrieve,
   assistantsDoctorSessionsEventsRetrieve,
-} from "@/generated/api";
-import type { DoctorMessage } from "@/generated/api/types.gen";
+} from "@/generated/operator";
+import type { DoctorMessage } from "@/generated/operator/types.gen";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { createStreamWatchdog } from "@/lib/streaming/stream-watchdog";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";

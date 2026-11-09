@@ -21,7 +21,7 @@ import {
 import type { ReactNode } from "react";
 import { MemoryRouter, useNavigate } from "react-router";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/generated/operator/types.gen";
 import type {
   OauthProvidersGetResponse,
   PluginsGetResponse,
@@ -148,8 +148,8 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   }),
 }));
 const apiReactQueryActual =
-  await import("@/generated/api/@tanstack/react-query.gen");
-mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  await import("@/generated/operator/@tanstack/react-query.gen");
+mock.module("@/generated/operator/@tanstack/react-query.gen", () => ({
   ...apiReactQueryActual,
   assistantsOauthConnectionsListOptions: () => ({
     queryKey: ["oauth-connections"],

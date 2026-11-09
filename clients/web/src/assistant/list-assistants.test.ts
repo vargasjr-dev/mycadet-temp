@@ -29,7 +29,7 @@ const noop = mock(async () => ({
   error: undefined,
   response: { ok: true, status: 200 },
 }));
-mock.module("@/generated/api/sdk.gen", () => ({
+mock.module("@/generated/operator/sdk.gen", () => ({
   assistantsActivateCreate: noop,
   assistantsBackupsCreate: noop,
   assistantsBackupsRestoreCreate: noop,

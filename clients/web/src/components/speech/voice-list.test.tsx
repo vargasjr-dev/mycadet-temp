@@ -79,7 +79,7 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   configGetQueryKey: () => ["config-get-test"],
 }));
 
-mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+mock.module("@/generated/operator/@tanstack/react-query.gen", () => ({
   assistantsListQueryKey: () => ["assistants", "email-test-listing"],
 
   // The voice catalog is read straight from the cloud API now — the daemon's

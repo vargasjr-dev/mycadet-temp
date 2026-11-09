@@ -1,4 +1,4 @@
-import type { MachineSizeEnum } from "@/generated/api/types.gen";
+import type { MachineSizeEnum } from "@/generated/operator/types.gen";
 /**
  * Pro tier ceilings → machine sizes the org may run at within that tier.
  * Keys mirror `BillingAccount.max_machine_tier` ("medium" | "large" | "xl");

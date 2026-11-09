@@ -13,7 +13,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { managedSpeechTtsVoicesRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
+import { managedSpeechTtsVoicesRetrieveOptions } from "@/generated/operator/@tanstack/react-query.gen";
 
 /**
  * A cloud voice as offered to the UI. `source` is a plain `string` so

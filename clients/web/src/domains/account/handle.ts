@@ -12,8 +12,8 @@
 import {
   assistantsHandleAvailableRetrieve,
   assistantsPartialUpdate,
-} from "@/generated/api/sdk.gen";
-import type { Assistant } from "@/generated/api/types.gen";
+} from "@/generated/operator/sdk.gen";
+import type { Assistant } from "@/generated/operator/types.gen";
 import {
   ApiError,
   assertHasResponse,

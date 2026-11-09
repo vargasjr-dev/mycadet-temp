@@ -130,13 +130,13 @@ const darkPairedColorScaleRules = [
 const universalAuthRules = [
   // No new `createClient(...)` outside generated/. There must be exactly
   // one HeyAPI client instance per app — the generated singleton. Hand-
-  // written wrappers import `client` from `@/generated/api/client.gen`.
+  // written wrappers import `client` from `@/generated/operator/client.gen` (the platform's operator api).
   // Note: `src/generated/**` is globally ignored, so this effectively
   // means "no createClient anywhere we lint".
   {
     selector: "CallExpression[callee.name='createClient']",
     message:
-      'Do not call createClient(...) outside src/generated/. Import the singleton: `import { client } from "@/generated/api/client.gen"`. A second instance does not inherit the auth-header interceptors and silently sends unauthenticated requests.',
+      'Do not call createClient(...) outside src/generated/. Import the singleton: `import { client } from "@/generated/operator/client.gen"`. A second instance does not inherit the auth-header interceptors and silently sends unauthenticated requests.',
   },
 
   // No `localStorage.setItem(key, …)` / `sessionStorage.setItem(key, …)`

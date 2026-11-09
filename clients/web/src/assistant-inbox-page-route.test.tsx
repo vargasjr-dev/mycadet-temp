@@ -17,11 +17,11 @@ import {
 import { MemoryRouter } from "react-router";
 
 import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
-import * as apiSdk from "@/generated/api/sdk.gen";
+import * as apiSdk from "@/generated/operator/sdk.gen";
 import type {
   AssistantDomain,
   AssistantEmailAddress,
-} from "@/generated/api/types.gen";
+} from "@/generated/operator/types.gen";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
 import * as cloudGate from "@/assistant/hosting";
@@ -87,7 +87,7 @@ function page<T>(results: T[]) {
   };
 }
 
-mock.module("@/generated/api/sdk.gen", () => ({
+mock.module("@/generated/operator/sdk.gen", () => ({
   ...apiSdk,
   assistantsList: () =>
     Promise.resolve(

@@ -45,8 +45,8 @@ import type { PushNotificationSchema } from "@capacitor/push-notifications";
 import {
   assistantsPushTokensDelete,
   assistantsPushTokensUpsert,
-} from "@/generated/api/sdk.gen";
-import type { AssistantsPushTokensUpsertData } from "@/generated/api/types.gen";
+} from "@/generated/operator/sdk.gen";
+import type { AssistantsPushTokensUpsertData } from "@/generated/operator/types.gen";
 import { publish } from "@/lib/event-bus";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureAndroidAlertsChannel } from "@/runtime/android-notification-channels";

@@ -4,7 +4,7 @@ import {
   isIntegrationCategory,
 } from "@mycadet/service-contracts/integration-categories";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/generated/operator/types.gen";
 import type { OauthProvidersGetResponse } from "@/generated/daemon/types.gen";
 
 import type { McpServerEntry } from "./mcp/mcp-api";

@@ -205,7 +205,7 @@ const deleteMock = mock(async (arg: DeleteArg) => {
   lastDeleteArg = arg;
   return { data: undefined, error: deleteError };
 });
-mock.module("@/generated/api/sdk.gen", () => ({
+mock.module("@/generated/operator/sdk.gen", () => ({
   assistantsPushTokensUpsert: upsertMock,
   assistantsPushTokensDelete: deleteMock,
 }));

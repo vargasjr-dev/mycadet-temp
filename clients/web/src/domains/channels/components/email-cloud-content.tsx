@@ -20,8 +20,8 @@ import {
   assistantsEmailAddressesStatusRetrieveQueryKey,
   assistantsListQueryKey,
   useAssistantsDomainsProvisionCreateMutation,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { DomainVerificationStatusStatusEnum } from "@/generated/api/types.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
+import type { DomainVerificationStatusStatusEnum } from "@/generated/operator/types.gen";
 import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,

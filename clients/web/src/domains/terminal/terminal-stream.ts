@@ -6,7 +6,7 @@
  * provides the subscription primitive that {@link useTerminalSession} drives.
  */
 
-import { client as cloudClient } from "@/generated/api/client.gen";
+import { client as operatorClient } from "@/generated/operator/client.gen";
 import {
   normalizeSSEPayload,
   unwrapMessageEnvelope,
@@ -64,7 +64,7 @@ export function subscribeTerminalEvents(
 
     let streamError: Error | null = null;
     try {
-      const { stream } = await cloudClient.sse.get<
+      const { stream } = await operatorClient.sse.get<
         Record<string, unknown> | string
       >({
         url: "/v1/assistants/{assistant_id}/terminal/sessions/{session_id}/events/",

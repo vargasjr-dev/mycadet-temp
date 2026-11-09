@@ -48,7 +48,7 @@ const upsertMock = mock(async (arg: UpsertArg) => {
   return { data: {}, error: undefined };
 });
 const deleteMock = mock(async () => ({ data: undefined, error: undefined }));
-mock.module("@/generated/api/sdk.gen", () => ({
+mock.module("@/generated/operator/sdk.gen", () => ({
   assistantsLiveActivityTokensUpsert: upsertMock,
   assistantsLiveActivityTokensDelete: deleteMock,
 }));

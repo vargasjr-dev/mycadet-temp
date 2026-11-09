@@ -36,7 +36,7 @@
 import {
   assistantsLiveActivityTokensDelete,
   assistantsLiveActivityTokensUpsert,
-} from "@/generated/api/sdk.gen";
+} from "@/generated/operator/sdk.gen";
 import {
   isLiveVoiceSessionActive,
   LIVE_VOICE_STATE_KEYS,

@@ -6,7 +6,7 @@
  * constants that multiple consumers reference.
  */
 
-import { assistantsDoctorSessionsDestroy } from "@/generated/api/sdk.gen";
+import { assistantsDoctorSessionsDestroy } from "@/generated/operator/sdk.gen";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
 // ---------------------------------------------------------------------------

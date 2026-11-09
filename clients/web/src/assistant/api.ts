@@ -13,11 +13,11 @@ import {
   assistantsBackupsRetrieve,
   assistantsHatchCreate,
   assistantsList,
-} from "@/generated/api/sdk.gen";
+} from "@/generated/operator/sdk.gen";
 import type {
   Assistant as GeneratedAssistant,
   HatchAssistantRequest,
-} from "@/generated/api/types.gen";
+} from "@/generated/operator/types.gen";
 import {
   diskpressureAcknowledgePost,
   diskpressureStatusGet,

@@ -3,7 +3,7 @@ import { Settings } from "lucide-react";
 import { Button } from "@mycadet/design-library/components/button";
 import { Tag } from "@mycadet/design-library/components/tag";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/generated/operator/types.gen";
 import { useTranslation } from "@/i18n";
 
 import { IntegrationIcon } from "@/components/integrations/integration-icon";

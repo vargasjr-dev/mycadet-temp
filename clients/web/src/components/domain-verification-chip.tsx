@@ -2,7 +2,7 @@ import { AlertCircle, Check, Clock, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 
-import type { DomainVerificationStatusStatusEnum } from "@/generated/api/types.gen";
+import type { DomainVerificationStatusStatusEnum } from "@/generated/operator/types.gen";
 
 interface DomainVerificationChipProps {
   status: DomainVerificationStatusStatusEnum | undefined;

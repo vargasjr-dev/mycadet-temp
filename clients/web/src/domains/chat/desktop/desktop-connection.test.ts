@@ -6,7 +6,7 @@
 
 import { describe, expect, mock, test } from "bun:test";
 
-import { client } from "@/generated/api/client.gen";
+import { client } from "@/generated/operator/client.gen";
 
 import {
   desktopEndReasonForClose,

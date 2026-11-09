@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/generated/operator/types.gen";
 
 import { IntegrationRow } from "./integration-row";
 

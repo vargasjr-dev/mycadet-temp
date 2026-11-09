@@ -19,7 +19,7 @@ import {
   assistantsTerminalSessionsDestroy,
   assistantsTerminalSessionsInputCreate,
   assistantsTerminalSessionsResizeCreate,
-} from "@/generated/api/sdk.gen";
+} from "@/generated/operator/sdk.gen";
 import {
   subscribeTerminalEvents,
   type TerminalOutputStream,

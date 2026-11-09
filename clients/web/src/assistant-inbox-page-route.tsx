@@ -37,8 +37,8 @@ import {
   assistantsEmailAddressesCreateMutation,
   assistantsEmailAddressesListQueryKey,
   assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { PaginatedAssistantEmailAddressList } from "@/generated/api/types.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
+import type { PaginatedAssistantEmailAddressList } from "@/generated/operator/types.gen";
 import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,

@@ -6,7 +6,7 @@ import {
   assistantsDomainsListQueryKey,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 

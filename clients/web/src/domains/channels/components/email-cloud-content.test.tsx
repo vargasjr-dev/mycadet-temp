@@ -22,14 +22,14 @@ import {
   assistantsDomainsVerificationStatusRetrieveQueryKey,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesStatusRetrieveOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
-import * as sdkGen from "@/generated/api/sdk.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
+import * as sdkGen from "@/generated/operator/sdk.gen";
 import type {
   AssistantDomain,
   AssistantEmailAddress,
   DomainVerificationStatus,
   DomainVerificationStatusStatusEnum,
-} from "@/generated/api/types.gen";
+} from "@/generated/operator/types.gen";
 
 const ASSISTANT_ID = "assistant-123";
 const DOMAIN_ID = "domain-123";
@@ -73,7 +73,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
 
-mock.module("@/generated/api/sdk.gen", () => ({
+mock.module("@/generated/operator/sdk.gen", () => ({
   ...sdkGen,
   assistantsDomainsList: () =>
     Promise.resolve({

@@ -44,8 +44,8 @@
 
 import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
-import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
-import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
+import { authLiveVoiceTokenCreate } from "@/generated/operator/sdk.gen";
+import type { LiveVoiceTokenResponse } from "@/generated/operator/types.gen";
 import { assertHasResponse } from "@/utils/api-errors";
 
 /**

@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { AssistantBackup } from "@/assistant/api";
 import { setHosting } from "@/assistant/hosting.test-helper";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
-import { client as cloudClient } from "@/generated/api/client.gen";
+import { client as operatorClient } from "@/generated/operator/client.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
 /**
  * The hosting answer lives on the lockfile entry's remote field: a local
@@ -102,7 +102,7 @@ const meta = {
     },
   },
   beforeEach: () => {
-    const restorePlatform = stubClientFetch(cloudClient, platformFetch);
+    const restorePlatform = stubClientFetch(operatorClient, platformFetch);
     return () => {
       restorePlatform();
     };

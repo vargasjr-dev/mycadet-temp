@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { DoctorMessage } from "@/generated/api/types.gen";
+import type { DoctorMessage } from "@/generated/operator/types.gen";
 
 import {
   USER_OUTCOME_PROMPT_QUESTION,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { client } from "@/generated/api/client.gen";
+import { client } from "@/generated/operator/client.gen";
 
 export async function requestSignedDownloadUrl(
   bundleKey: string,

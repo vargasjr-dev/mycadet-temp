@@ -21,7 +21,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
 import type * as AssistantApi from "@/assistant/api";
-import type { Assistant } from "@/generated/api";
+import type { Assistant } from "@/generated/operator";
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 const actualLocalMode = await import("@/lib/local-mode");

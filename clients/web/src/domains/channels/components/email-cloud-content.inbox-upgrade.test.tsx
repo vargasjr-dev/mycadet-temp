@@ -7,8 +7,8 @@ import {
   assistantsDomainsListOptions,
   assistantsEmailAddressesListOptions,
   assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { AssistantDomain } from "@/generated/api/types.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
+import type { AssistantDomain } from "@/generated/operator/types.gen";
 
 const ASSISTANT_ID = "assistant-123";
 

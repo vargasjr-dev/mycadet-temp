@@ -14,7 +14,7 @@
  *
  * Reference: https://heyapi.dev/openapi-ts/clients/fetch#interceptors
  */
-import { client as cloudClient } from "@/generated/api/client.gen";
+import { client as operatorClient } from "@/generated/operator/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCsrfToken } from "@/lib/auth/csrf";
@@ -205,10 +205,10 @@ gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 // sites (blob downloads) explicitly override `parseAs` per-request.
 //
 // Reference: https://heyapi.dev/openapi-ts/clients/fetch#parser
-for (const apiClient of [daemonClient, gatewayClient, cloudClient]) {
+for (const apiClient of [daemonClient, gatewayClient, operatorClient]) {
   apiClient.setConfig({ parseAs: "json" });
 }
 
-for (const apiClient of [cloudClient]) {
+for (const apiClient of [operatorClient]) {
   apiClient.interceptors.request.use(requestInterceptor);
 }

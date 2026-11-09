@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
-import { assistantsDomainsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
-import type { Assistant } from "@/generated/api/types.gen";
+import { assistantsDomainsListQueryKey } from "@/generated/operator/@tanstack/react-query.gen";
+import type { Assistant } from "@/generated/operator/types.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
 
 import { AssistantHandleModal } from "./assistant-handle-modal";

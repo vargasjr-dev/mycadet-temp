@@ -13,7 +13,7 @@ import {
   assistantsDomainsVerificationStatusRetrieveOptions,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesStatusRetrieveOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
 import { assistantChannelAdmissionPolicyListQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";

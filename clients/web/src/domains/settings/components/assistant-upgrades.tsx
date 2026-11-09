@@ -7,9 +7,9 @@ import {
   assistantsRetrieveOptions,
   assistantsRetrieveQueryKey,
   releasesListOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
-import { assistantsUpgradeDetailCreate } from "@/generated/api/sdk.gen";
-import type { ReleaseListItem } from "@/generated/api/types.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
+import { assistantsUpgradeDetailCreate } from "@/generated/operator/sdk.gen";
+import type { ReleaseListItem } from "@/generated/operator/types.gen";
 import { t, useTranslation } from "@/i18n";
 import { compareParsed, parseSemver } from "@/utils/semver";
 import { Button } from "@mycadet/design-library/components/button";

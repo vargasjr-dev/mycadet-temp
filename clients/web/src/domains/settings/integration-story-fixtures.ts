@@ -1,6 +1,6 @@
 import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/generated/operator/types.gen";
 import {
   buildConnectPlan,
   type ConnectPlan,

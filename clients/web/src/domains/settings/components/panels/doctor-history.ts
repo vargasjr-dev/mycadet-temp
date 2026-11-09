@@ -1,7 +1,7 @@
 import type {
   DoctorMessage,
   DoctorSessionStatusEnum,
-} from "@/generated/api/types.gen";
+} from "@/generated/operator/types.gen";
 import type { FeedbackReason } from "@/components/share-feedback-types";
 
 // ---------------------------------------------------------------------------

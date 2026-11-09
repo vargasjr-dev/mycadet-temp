@@ -21,7 +21,7 @@ import {
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
-import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack/react-query.gen";
+import { assistantsOauthConnectionsListOptions } from "@/generated/operator/@tanstack/react-query.gen";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";

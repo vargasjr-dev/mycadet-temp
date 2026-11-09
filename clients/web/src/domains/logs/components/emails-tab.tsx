@@ -9,11 +9,11 @@ import {
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesStatusRetrieveOptions,
   assistantsEmailsListOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+} from "@/generated/operator/@tanstack/react-query.gen";
 import type {
   EmailAddressUsage,
   EmailMessage,
-} from "@/generated/api/types.gen";
+} from "@/generated/operator/types.gen";
 import { routes } from "@/utils/routes";
 
 import { useTranslation } from "@/i18n";

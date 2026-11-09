@@ -23,7 +23,7 @@
 
 import { registerPlugin } from "@capacitor/core";
 
-import type { ApnsEnvironmentEnum } from "@/generated/api/types.gen";
+import type { ApnsEnvironmentEnum } from "@/generated/operator/types.gen";
 
 interface ApnsEnvironmentPlugin {
   get(): Promise<{ environment?: string }>;
