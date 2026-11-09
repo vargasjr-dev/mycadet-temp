@@ -23,6 +23,7 @@ import { ROUTES as upgradeBroadcastRoutes } from "./upgrade-broadcast-proxy.js";
 import { ROUTES as workspaceCommitRoutes } from "./workspace-commit-proxy.js";
 import { ROUTES as migrationRollbackRoutes } from "./migration-rollback-proxy.js";
 import { ROUTES as cloudPushRoutes } from "./cloud-push-proxy.js";
+import { ROUTES as userProfileRoutes } from "./user-profile-proxy.js";
 import { ROUTES as channelReadinessRoutes } from "./channel-readiness-proxy.js";
 import { ROUTES as integrationsStatusRoutes } from "./integrations-status.js";
 import { ROUTES as autoApproveThresholdRoutes } from "./auto-approve-thresholds.js";
@@ -67,6 +68,7 @@ export const ROUTES: readonly RouteDefinition[] = [
   ...workspaceCommitRoutes,
   ...migrationRollbackRoutes,
   ...cloudPushRoutes,
+  ...userProfileRoutes,
   ...channelReadinessRoutes,
   ...integrationsStatusRoutes,
   ...autoApproveThresholdRoutes,
