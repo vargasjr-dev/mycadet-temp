@@ -1,4 +1,3 @@
-import { spawnSync } from "child_process";
 import { cpSync, mkdirSync, readdirSync, statSync, rmSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -31,19 +30,5 @@ for (const entry of readdirSync(SKILLS_DIR, { withFileTypes: true })) {
 }
 
 console.log(`Copied assets from ${copied} skill(s) to ${PUBLIC_SKILLS_DIR}`);
-
-// Best-effort node_modules top-up. --ignore-scripts: the 10s cap must never
-// kill a lifecycle script mid-write — the web postinstall regenerates the
-// API clients, and codegen interrupted halfway leaves src/generated emptied.
-const install = spawnSync("bun", ["install", "--ignore-scripts"], {
-  cwd: resolve(import.meta.dirname, ".."),
-  stdio: "inherit",
-  timeout: 10 * 1000,
-});
-if (install.status !== 0) {
-  console.warn(
-    `bun install failed with exit code ${install.status ?? "signal"}, continuing...`,
-  );
-}
 
 await build();

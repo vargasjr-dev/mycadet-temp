@@ -5,17 +5,6 @@ on:
     types: [synchronize, opened, reopened]
     paths:
       - "clients/app/**"
-      - "clients/web/**"
-      - "assistant/src/api/**"
-      - "assistant/src/runtime/routes/**"
-      - "packages/design-library/**"
-      - "packages/ipc-contract/**"
-      - "packages/local-mode/**"
-      - "packages/environments/**"
-      - "packages/avatar-catalog/**"
-      - "packages/avatar-manifest/**"
-      - "packages/service-contracts/**"
-      - "packages/shared/**"
       - ".github/workflows/pr-app.yaml"
   workflow_dispatch:
 concurrency:
