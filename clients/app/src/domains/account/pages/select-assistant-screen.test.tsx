@@ -18,7 +18,6 @@ import {
   REMEMBERED_ORIGINS_STORAGE_KEY,
   resetRememberedOriginsForTesting,
 } from "@app/stores/remembered-origins-store";
-import { __resetConnectDialogForTesting } from "@app/stores/connect-dialog-store";
 
 const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
@@ -324,7 +323,9 @@ test("an empty list offers creation into the hosting chooser", async () => {
   await screen.findByText("No assistant is available.");
   // The create affordance hands off to the onboarding hosting chooser —
   // the dialog-era inline hatch is gone.
-  fireEvent.click(screen.getByRole("button", { name: "Hatch a new assistant" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Hatch a new assistant" }),
+  );
   expect(router.state.location.pathname).toBe(
     routes.account.onboarding.hosting,
   );
@@ -442,7 +443,9 @@ test("a dead list still offers hatching from the chooser", async () => {
   await screen.findByText("Unable to load assistant.");
   // And the way forward survives the dead list: hatch from the chooser —
   // the handoff rides to the onboarding hosting chooser.
-  fireEvent.click(screen.getByRole("button", { name: "Hatch a new assistant" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Hatch a new assistant" }),
+  );
   expect(router!.state.location.pathname).toBe(
     routes.account.onboarding.hosting,
   );
@@ -565,33 +568,6 @@ describe("remembered origins", () => {
     }
   });
 
-  test("the add dialog remembers an origin and rides its device code out of the navigation", async () => {
-    const assign = spyOn(window.location, "assign").mockImplementation(
-      () => {},
-    );
-    try {
-      setup("/account/select-assistant", false, async () =>
-        Response.json({ status: "empty" }),
-      );
-      fireEvent.click(await screen.findByText("Add a remote assistant"));
-      fireEvent.change(screen.getByLabelText("Assistant address"), {
-        target: {
-          value: "https://workshop.example/assistant/pair#device_code=CODE-1",
-        },
-      });
-      await act(async () => {
-        fireEvent.click(screen.getByRole("button", { name: "Add" }));
-      });
-      expect(assign).toHaveBeenCalledWith(
-        "https://workshop.example/assistant/pair#device_code=CODE-1",
-      );
-      // The dialog closed and the remembered card took its place in the list.
-      expect(await screen.findByText("Remote · workshop.example")).toBeTruthy();
-    } finally {
-      assign.mockRestore();
-    }
-  });
-
   test("a remembered origin can be removed from this device", async () => {
     seedOrigin("https://workshop.example/assistant-9", "Workshop");
     setup("/account/select-assistant", false, async () =>
@@ -613,25 +589,7 @@ describe("remembered origins", () => {
     await waitFor(() => expect(screen.queryByText("Workshop")).toBeNull());
   });
 
-  describe("with a local-mode host", () => {
-    afterEach(() => {
-      __resetConnectDialogForTesting();
-    });
-
-    test("both pairing affordances render and the connect one opens the connect dialog", async () => {
-      setup("/account/select-assistant", false, async () =>
-        Response.json({ status: "empty" }),
-      );
-      expect(
-        await screen.findByText("Connect a remote assistant"),
-      ).toBeDefined();
-      // The add-origin arm rides alongside the connect dialog: a paired
-      // shell can still point the chooser at another deployment.
-      expect(screen.getByText("Add a remote assistant")).toBeDefined();
-      fireEvent.click(screen.getByText("Connect a remote assistant"));
-      expect(
-        await screen.findByText("Connect a Remote Assistant"),
-      ).toBeDefined();
-    });
-  });
+  // The connect/add-origin pairing affordances and their dialog renderers
+  // are pending (the connect-dialog store is mounted, no renderer yet) —
+  // the tests return with the flow.
 });

@@ -1,7 +1,11 @@
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { renameSync } from "node:fs";
 import path from "node:path";
 import { build } from "vite";
 
+// The Capacitor app bundle: one `capacitor.html` entry booting the same
+// `main.tsx` app shell every other host serves. The bundle carries no
+// config stamp — the shell boots on local assets and the native config
+// (`capacitor.config.json`, resolved at sync time) owns the baked origins.
 process.env.APP_BUILD_TARGET = "capacitor";
 await build();
 
@@ -11,12 +15,3 @@ const distDir = path.resolve(import.meta.dirname, "../dist/capacitor");
 const builtHtml = path.join(distDir, "capacitor.html");
 const indexHtmlPath = path.join(distDir, "index.html");
 renameSync(builtHtml, indexHtmlPath);
-
-const html = readFileSync(indexHtmlPath, "utf8");
-const marker = "</head>";
-if (!html.includes(marker)) {
-  throw new Error("Built app index.html has no </head> to stamp.");
-}
-// The function-form replacement keeps `$` sequences in the JSON payload
-// from being interpreted as replacement patterns.
-writeFileSync(indexHtmlPath, html);

@@ -3,8 +3,8 @@ import WebKit
 
 /// Serves the baked web bundle's same-origin API contract: requests under
 /// `/v1/` are forwarded over URLSession to the environment's control-plane
-/// base — the stamped `cloudUrl` (a tunnel URL, the app server's loopback
-/// port, or the cloud web origin) — and every other request is handed to
+/// base — the baked config's `cloudUrl` (the cloud web origin; local dials
+/// the control-plane default) — and every other request is handed to
 /// Capacitor's stock asset handler.
 ///
 /// Every other Cadet surface keeps this contract one way or another: the

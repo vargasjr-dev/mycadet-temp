@@ -27,10 +27,12 @@ hands off to the deployed assistant entry (e.g.
 
 **How:** `bun run build:capacitor` builds the bundle. 
 `cap sync ios` copies the bundle into the Xcode
-project as the `webDir`. At launch, `WKWebView` renders the boot bundle's
-splash and navigates to the handoff URL. Each environment (production,
-staging, dev) has its own origin — set `CADET_ENVIRONMENT` before the build
-to select which URL is stamped into the bundle.
+project as the `webDir`, resolving the environment's cloud origin into the
+baked native config (`plugins.CadetCloud` in
+`App/App/capacitor.config.json`) — the scheme handler forwards the boot
+bundle's same-origin `/v1` fetches at it. Each environment (production,
+staging, dev) has its own origin — set `CADET_ENVIRONMENT` before the sync
+to select which origin is baked.
 
 **Why remote URL, not a local bundle (like the Electron app):**
 
@@ -461,24 +463,21 @@ re-runs `cap sync ios` (regenerating
 
 ### Point at a different server
 
-The boot bundle's control-plane base is stamped at build time
-(`build:capacitor` → `clients/app/src/capacitor/stamp.ts`) and resolved
-from the CLI lockfile: a running tunnel's public URL wins — reachable
-from devices — else the app server edge's loopback port — simulator only
-— else the seed default (`http://localhost:8000`). The common cases need
-no configuration:
+The boot bundle's control-plane base is resolved at sync time
+(`cap sync ios` → `clients/app/capacitor.config.base.ts`) from
+`CADET_ENVIRONMENT`: cloud environments bake their cloud web origin, and
+`local` bakes the control-plane seed default (`http://localhost:8000`).
+A lockfile-dialed stack — the running tunnel's public URL for device
+builds, the app server edge's loopback port for the simulator — is the
+mobile iteration's follow-up; until then:
 
-- **Simulator:** have the local stack up (`cadet-local app start`)
-  before `bun run build` — the stamp bakes the edge's loopback port.
-- **Physical device:** the device can't reach the host's loopback, so
-  start the tunnel first (`cadet-local tunnel start`) and build after —
-  the stamp bakes the tunnel's https URL.
-- **A cloud environment:** `CADET_ENVIRONMENT=dev bun run build` stamps
-  the dev cloud origin instead of the local cadet.
+- **Simulator:** the seed default dials the local control plane on the
+  host's loopback.
+- **A cloud environment:** `CADET_ENVIRONMENT=dev bun run build:capacitor
+  && bun run sync` bakes the dev cloud origin instead of the local cadet.
 
-A build made before the stack (or tunnel) was up keeps the seed default —
-the build warns loudly when no local server resolved; rerun
-`bun run build` once it's up, then rebuild in Xcode.
+Re-run `cap sync ios` after changing `CADET_ENVIRONMENT` so the baked
+config picks the origin up, then rebuild in Xcode.
 
 ### Add a new Capacitor plugin
 

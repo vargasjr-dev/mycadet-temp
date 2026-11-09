@@ -19,8 +19,8 @@ if [ "$(uname -s)" != "Darwin" ]; then
 fi
 
 # — Build the baked app-shell boot bundle the sync copies into the project:
-#   the initial Cadet screens ship as local assets, and the bundle's stamped
-#   `__CADET_CONFIG__.handoffUrl` resolves from this run's environment
+#   the initial Cadet screens ship as local assets, and the shell's baked
+#   cloud origin resolves from this run's environment at sync time
 #   (defaults to local — the simulator shares the host's loopback) —
 info "Building the app-shell boot bundle"
 (cd "${IOS_DIR}/../app" && bun run build:capacitor)

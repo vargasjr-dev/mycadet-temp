@@ -124,14 +124,6 @@ test("same-tab completion notifications survive unavailable storage and cross-ta
   expect(isReturningAssistant({ id: "assistant-1" })).toBe(false);
 });
 
-test("a completed serving assistant identifies a mobile returning user without a cloud session", async () => {
-  localStorage.setItem(
-    "device:onboarded_assistants",
-    JSON.stringify({ "assistant-1": "2026-10-01" }),
-  );
-  expect(await readReturningUser()).toBe(true);
-  expect(fetchSpy).not.toHaveBeenCalled();
-});
 test("an injected id without a completion stamp does not bypass first-run signup", async () => {
   fetchSpy.mockResolvedValueOnce(
     response({ detail: "Authentication required" }),

@@ -20,7 +20,8 @@ export function RemoveFromDeviceDialog({
   const [errorMessage, setRemoveOriginError] = useState<string | null>(null);
 
   const handleRemoveOriginConfirm = useCallback(async () => {
-    if (!isPending) {
+    // A second confirm while the remove is in flight is a no-op.
+    if (isPending) {
       return;
     }
     setIsPending(true);
@@ -36,12 +37,14 @@ export function RemoveFromDeviceDialog({
       return;
     }
     closeDialog();
-  }, [isPending]);
+    // `url` must be current: the dialog mounts closed with an empty url,
+    // and a callback cached from that first render would remove "".
+  }, [isPending, url, closeDialog, t]);
 
   const onCancel = useCallback(() => {
     setRemoveOriginError(null);
     closeDialog();
-  }, []);
+  }, [closeDialog]);
 
   return (
     <ConfirmDialog

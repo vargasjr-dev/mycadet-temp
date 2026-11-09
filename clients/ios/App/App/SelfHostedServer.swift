@@ -87,22 +87,23 @@ enum SelfHostedServer {
         return url
     }
 
-    /// The boot bundle's stamped handoff URL — the Cadet Cloud origin the
-    /// shell ships with. `build:capacitor` stamps `__CADET_CONFIG__` (with
-    /// `cloudUrl`) into the synced `public/index.html` before `cap sync`
-    /// copies it, so the bundled document — not the native config, which no
-    /// longer carries a `server.url` — is the build's source of truth for
-    /// the baked default. `nil` when the bundle or the stamp is unreadable.
-    static func stampedHandoffURL(bundle: Bundle = .main) -> URL? {
+    /// The baked cloud origin — the environment's control-plane base the
+    /// scheme handler forwards `/v1` at, and the baked-default fallback
+    /// behind the chooser escape and the widget identity. `cap sync`
+    /// resolves it from `CADET_ENVIRONMENT` into the native config
+    /// (`plugins.CadetCloud` in the baked `capacitor.config.json`) — the
+    /// boot bundle, which the build no longer stamps, is out of the
+    /// business. `nil` when the config is unreadable.
+    static func bakedCloudURL(bundle: Bundle = .main) -> URL? {
         guard
-            let htmlPath = bundle.path(
-                forResource: "index", ofType: "html", inDirectory: "public"
+            let configPath = bundle.path(
+                forResource: "capacitor.config", ofType: "json"
             ),
-            let html = try? String(contentsOfFile: htmlPath, encoding: .utf8)
+            let data = try? Data(contentsOf: URL(fileURLWithPath: configPath))
         else {
             return nil
         }
-        return StampedHandoffURL.parse(html)
+        return BakedCloudConfig.parse(data)
     }
 
     /// Canonical identity of a server URL, shared with the web chooser's
