@@ -27,9 +27,6 @@ function run(
 
 /**
  * Builds the boot bundle with `env` and syncs it into the native project.
- * The stamp must resolve from the same environment the sync consumes —
- * the baked `__CADET_CONFIG__.handoffUrl` and the config's
- * `allowNavigation` have to agree, or the handoff opens the system browser.
  */
 export function buildAndSyncAndroid(env: NodeJS.ProcessEnv): void {
   run(process.execPath, ["run", "build:capacitor"], env, appRoot);

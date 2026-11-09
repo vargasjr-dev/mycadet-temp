@@ -49,14 +49,11 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       tailwindcss(),
       react(),
-      // The boot bundle's config comes from the `build:capacitor` stamp, not
-      // the local-mode shim — a second injected `__CADET_CONFIG__` here would
-      // race the stamp on read order.
       ...(library
         ? [appPackage()]
         : target === "capacitor"
           ? []
-          : [localModePlugin(env)]),
+          : [localModePlugin()]),
     ],
     // The app owns its public assets (favicon, the signup media) — the
     // standalone bundle must be self-contained so a published @mycadet/app

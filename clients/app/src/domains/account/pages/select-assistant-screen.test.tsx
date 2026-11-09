@@ -23,10 +23,6 @@ const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
   headers: { "content-type": "text/html" },
 });
-const originalConfig = Object.getOwnPropertyDescriptor(
-  window,
-  "__CADET_CONFIG__",
-);
 const routers: ReturnType<typeof createMemoryRouter>[] = [];
 // The retire mutation's csrf bootstrap reads this cookie; seed it so no
 // test fetch is spent (or delayed) on a session probe.
@@ -46,7 +42,6 @@ function setup(
     | { pathname: string; state: unknown } = "/account/select-assistant",
   useAccountRoute = false,
   respond?: (url: RequestInfo | URL) => Promise<Response>,
-  injectedConfig: Record<string, unknown> = host,
 ) {
   // The shell resolves assistants same-origin now, so the mounted iframe's
   // own document is fetched from the test origin; answer it quietly.
@@ -55,10 +50,6 @@ function setup(
       preconnect: fetch.preconnect,
     }),
   );
-  Object.defineProperty(window, "__CADET_CONFIG__", {
-    configurable: true,
-    value: injectedConfig,
-  });
   const router = createMemoryRouter(
     [
       useAccountRoute
@@ -81,11 +72,6 @@ afterEach(() => {
     router.dispose();
   }
   request.mockReset();
-  if (originalConfig) {
-    Object.defineProperty(window, "__CADET_CONFIG__", originalConfig);
-  } else {
-    Reflect.deleteProperty(window, "__CADET_CONFIG__");
-  }
 });
 afterAll(() => request.mockRestore());
 afterEach(() => {
@@ -120,9 +106,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("radio", { name: /^New Assistant/ }));
   const frame = await screen.findByTitle("Assistant");
-  expect(frame.getAttribute("src")).toBe(
-    "http://localhost:3001/assistant/",
-  );
+  expect(frame.getAttribute("src")).toBe("http://localhost:3001/assistant/");
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
@@ -174,7 +158,7 @@ test("rows on a cloud build render the cloud-hosted subtitle with a relative cre
   // The build's stamp (`remote`) is only the FALLBACK: these rows carry no
   // per-assistant remote (a server predating the stamp), so they inherit the
   // build's own — a cloud build lists the cloud's assistants.
-  setup(undefined, false, undefined, { ...host, remote: "cloud" });
+  setup(undefined, false, undefined);
   request.mockResolvedValueOnce(
     Response.json({
       status: "selection",
@@ -218,7 +202,7 @@ test("each row labels itself with its own remote", async () => {
   // self-hosted build's list can hold a cloud assistant (and vice versa) —
   // and a hostile row value falls back to the build's remote, never fails
   // the list.
-  setup(undefined, false, undefined, { ...host, remote: "local" });
+  setup(undefined, false, undefined);
   request.mockResolvedValueOnce(
     Response.json({
       status: "selection",
@@ -284,9 +268,7 @@ test("Enter selects the focused card", async () => {
   const one = await screen.findByRole("radio", { name: /^One/ });
   fireEvent.keyDown(one, { key: "Enter" });
   const frame = await screen.findByTitle("Assistant");
-  expect(frame.getAttribute("src")).toBe(
-    "http://localhost:3001/assistant/",
-  );
+  expect(frame.getAttribute("src")).toBe("http://localhost:3001/assistant/");
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-1"),
   );

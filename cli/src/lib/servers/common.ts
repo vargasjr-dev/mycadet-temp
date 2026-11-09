@@ -25,25 +25,15 @@ import { z } from "zod";
 
 import { resolveVersion } from "@mycadet/shared/version";
 
-import {
-  readRootProcesses,
-  resolveTargetAssistant,
-  stampRootProcess,
-} from "../assistant-config.js";
+import { readRootProcesses, stampRootProcess } from "../assistant-config.js";
 import {
   clearAppProcessRecord,
-  getAssistantDisplayName,
-  lookupAssistantByIdentifier,
   probePort,
   resolveConfigDir,
   resolveDataDir,
   resolveLogDir,
   waitForDaemonReady,
 } from "@mycadet/local-mode";
-import {
-  getGatewayUrl,
-  type InjectedConfig,
-} from "@mycadet/local-mode/contract";
 import { resolveClientDists } from "../web-dist.js";
 
 export const DEFAULT_APP_SERVER_PORT = 7840;
@@ -184,57 +174,24 @@ export function isAppServerRunning(): boolean {
   return getAppServerPid() !== null;
 }
 
-export interface AppServerState {
-  listenPort: number;
-  /**
-   * Gateway URL the app server proxies to — `getGatewayUrl` of the entry it
-   * fronts. Undefined in state records that predate the field; callers treat
-   * an unknown upstream as unverified and restart the app server so the
-   * running config provably targets the requested gateway and the state is
-   * stamped for future comparisons.
-   */
-  gatewayUrl?: string;
-  /**
-   * Fingerprint of the injected SPA config and its source bundle. Undefined
-   * for records that predate the field; an app server without a recorded
-   * fingerprint is treated as drifted and restarted so the served index
-   * provably carries the requested config.
-   */
-  remoteWebConfigHash?: string;
-  /**
-   * The serve spec the spawned server child reads at boot: the upstream, the
-   * dist roots, and the injected documents. Written by the starting parent;
-   * the child is stateless beyond it.
-   */
-  serve?: {
-    gatewayUrl: string;
-    webDistDir: string;
-    appDistDir: string;
-    indexHtmlPath: string;
-    appIndexHtmlPath: string;
-    config: Record<string, unknown>;
-  };
-}
-
 export function appServerStatePath(): string {
   return join(getAppServerPaths().dir, "state.json");
 }
 
 const AppServerStateSchema = z.object({
   listenPort: z.number(),
-  gatewayUrl: z.string().optional(),
   remoteWebConfigHash: z.string().optional(),
   serve: z
     .object({
-      gatewayUrl: z.string(),
       webDistDir: z.string(),
       appDistDir: z.string(),
       indexHtmlPath: z.string(),
       appIndexHtmlPath: z.string(),
-      config: z.record(z.string(), z.unknown()),
     })
     .optional(),
 });
+
+type AppServerState = z.infer<typeof AppServerStateSchema>;
 
 export function readAppServerState(): AppServerState | null {
   let raw: unknown;
@@ -321,7 +278,6 @@ export async function stopAppServer(): Promise<boolean> {
  * that matters reaches the running server through the config, dist, or
  * version inputs hashed here. */
 function remoteWebConfigFingerprint(
-  config: Record<string, unknown>,
   webDistDir: string,
   version: string | undefined,
   appDistDir: string,
@@ -329,7 +285,6 @@ function remoteWebConfigFingerprint(
   return createHash("sha256")
     .update(
       JSON.stringify({
-        config,
         webDistDir,
         version,
         appDistDir,
@@ -428,20 +383,6 @@ export async function findAvailableServerPort(
   return null;
 }
 
-const AssistantHostConfigSchema = z.object({
-  assistantId: z.string().min(1).optional(),
-  assistantName: z.string().optional(),
-  version: z.string().min(1).optional(),
-});
-
-function assistantHostConfig(config: Record<string, unknown>) {
-  const result = AssistantHostConfigSchema.safeParse(config);
-  if (!result.success) {
-    throw new Error("Invalid assistant host configuration.");
-  }
-  return result.data;
-}
-
 /**
  * The Capacitor mobile shells' own webview origins: the iOS WKWebView serves
  * the bundled app from `capacitor://localhost`, and the Android WebView from
@@ -457,9 +398,7 @@ const CAPACITOR_APP_ORIGINS = [
   "http://localhost",
 ];
 
-export function appOrigins(config: Record<string, unknown>): string[] {
-  // Validation only — the fixed shell origins are the whole allowlist.
-  assistantHostConfig(config);
+export function appOrigins(): string[] {
   const origins = [...CAPACITOR_APP_ORIGINS];
   return [...new Set(origins)].map((origin) => {
     // The Capacitor shells' origins are fixed platform values, not parsed:
@@ -492,12 +431,10 @@ export function appOrigins(config: Record<string, unknown>): string[] {
  * the child is stateless beyond it.
  */
 export interface AppServerSpec {
-  gatewayUrl: string;
   webDistDir: string;
   appDistDir: string;
   indexHtmlPath: string;
   appIndexHtmlPath: string;
-  config: Record<string, unknown>;
 }
 
 /**
@@ -542,14 +479,6 @@ export interface AppServerAlreadyRunningResult {
   status: "already-running";
   /** Recorded listen port of the running server (requested port when no state is recorded). */
   listenPort: number;
-  /** Recorded gateway upstream; undefined when the record predates the field. */
-  gatewayUrl?: string;
-  /**
-   * Set when the surviving server matches the requested gateway upstream but
-   * serves a different injected SPA config than requested (a restart was
-   * attempted and failed), so the served index is stale.
-   */
-  staleRemoteWebConfig?: true;
   /**
    * The surviving server's own build stamp, when its lockfile record has one —
    * carried so `stampAppProcessEntry` re-stamps the record without losing it.
@@ -586,36 +515,9 @@ export type StartAppServerResult =
   | AppServerPortConflictResult;
 
 /**
- * Write the serve spec and start the app server child, probe /healthz
- * through it to prove the server → gateway path is live, and confirm via
- * the recorded pid file that the spawned child owns the listen port (the
- * child writes the pidfile only after a successful bind, so ownership is
- * inherent). A spawned but unreachable child is rolled back so a failed
- * attempt leaves no half-up server behind.
- *
- * A server already running against the requested gateway upstream and
- * serving the requested injected SPA config short-circuits as
- * `already-running`; one against a different gateway upstream, or serving a
- * drifted SPA config (e.g. a renamed assistant or an updated hub URL), is
- * stopped and restarted with the requested config. The server is
- * assistant-agnostic: it carries no assistant identity in its options —
- * `getGatewayUrl` of the entry it fronts is the routing decision, resolved
- * from the lockfile by the caller.
- *
- * Pure mechanism: it performs no console output and never exits the process, so
- * every caller (`cadet tunnel`, `cadet app up`, the wake restore path)
- * can share one implementation and map the returned result to its own UX.
+ * Start the assistant agnostic application server
  */
-export async function startAppServer(opts: {
-  /** Where the app server proxies gateway traffic — `getGatewayUrl` of the fronted entry. */
-  gatewayUrl: string;
-  /**
-   * Serving assistant's id, stamped into the served remote-web config
-   * (`__CADET_CONFIG__.assistantId`) so a caller probing this origin can
-   * confirm which assistant the app server fronts.
-   */
-  assistantId: string;
-}): Promise<StartAppServerResult> {
+export async function startAppServer(): Promise<StartAppServerResult> {
   let listenPort = DEFAULT_APP_SERVER_PORT;
 
   const running = isAppServerRunning();
@@ -636,23 +538,7 @@ export async function startAppServer(opts: {
   // stamp's timestamp is the HEAD commit's), so the fingerprint below never
   // drifts between processes.
   const version = resolveVersion(join(import.meta.dir, "../../.."));
-  // The caller resolved this assistant from the lockfile moments ago, so
-  // the entry is there: a miss means the lockfile changed under us, which
-  // is a bug to stop on, not a config to guess through.
-  const assistant = lookupAssistantByIdentifier(opts.assistantId);
-  if (assistant.status !== "found") {
-    throw new Error(
-      `The assistant ${opts.assistantId} is not in the lockfile, but the app server was asked to serve its UI.`,
-    );
-  }
-  const config: InjectedConfig = {
-    remote: assistant.entry.cloud,
-    assistantName: getAssistantDisplayName(assistant.entry),
-    assistantId: opts.assistantId,
-    version,
-  };
   const fingerprint = remoteWebConfigFingerprint(
-    config,
     webDistDir,
     version,
     appDistDir,
@@ -667,24 +553,10 @@ export async function startAppServer(opts: {
   const alreadyRunning = (): AppServerAlreadyRunningResult => ({
     status: "already-running",
     listenPort: recorded?.listenPort ?? listenPort,
-    ...(recorded?.gatewayUrl !== undefined
-      ? { gatewayUrl: recorded.gatewayUrl }
-      : {}),
-    ...(recorded?.gatewayUrl === opts.gatewayUrl && !configMatches
-      ? { staleRemoteWebConfig: true as const }
-      : {}),
     ...(survivingBuiltSha ? { builtSha: survivingBuiltSha } : {}),
   });
   // An unknown recorded gateway upstream is unverified (see AppServerState).
-  if (running && recorded?.gatewayUrl === opts.gatewayUrl && configMatches) {
-    return alreadyRunning();
-  }
-
-  // The running server targets a different gateway upstream or injects a
-  // stale SPA config; restart it with the requested config. A false stop can
-  // mean the old server exited on its own after the check above, so recheck
-  // liveness and only bail when it is still serving.
-  if (running && !(await stopAppServer()) && isAppServerRunning()) {
+  if (running && configMatches) {
     return alreadyRunning();
   }
 
@@ -708,25 +580,19 @@ export async function startAppServer(opts: {
   const indexHtmlPath = join(paths.dir, "assistant-index.html");
   const appIndexHtmlPath = join(paths.dir, "app-index.html");
   const rawIndexHtml = readFileSync(join(webDistDir, "index.html"), "utf-8");
-  writeFileSync(indexHtmlPath, buildRemoteWebIndexHtml(rawIndexHtml, config));
+  writeFileSync(indexHtmlPath, stripExcessModulePreloads(rawIndexHtml));
   // The app shell gets its own injected document: the same injected config,
   // written beside the web one.
   const rawAppIndexHtml = readFileSync(join(appDistDir, "index.html"), "utf-8");
-  writeFileSync(
-    appIndexHtmlPath,
-    buildRemoteWebIndexHtml(rawAppIndexHtml, config),
-  );
+  writeFileSync(appIndexHtmlPath, stripExcessModulePreloads(rawAppIndexHtml));
   saveAppServerState({
     listenPort,
-    gatewayUrl: opts.gatewayUrl,
     remoteWebConfigHash: fingerprint,
     serve: {
-      gatewayUrl: opts.gatewayUrl,
       webDistDir,
       appDistDir,
       indexHtmlPath,
       appIndexHtmlPath,
-      config,
     },
   });
   const fd = openSync(paths.logPath, "a");
@@ -828,32 +694,10 @@ export interface AppServer {
 }
 
 /**
- * Recovery text for a drifted server that outlived the automatic restart.
- * `startAppServer` already escalated SIGTERM to SIGKILL before
- * reporting `already-running`, so the only thing left is the wedged process
- * itself: name its PID and log so the user can clear it by hand.
- */
-function stuckAppServerRecoveryHint(): string {
-  const { logPath } = getAppServerPaths();
-  const pid = getAppServerPid();
-  const target = pid !== null ? `the app server process (PID ${pid})` : "it";
-  return (
-    `Cadet could not stop ${target}, even with SIGKILL. ` +
-    `Stop it by hand and retry, or run \`cadet sleep\` to shut the ` +
-    `assistant down entirely. Check the log: ${logPath}`
-  );
-}
-
-/**
  * Bring up the app server fronting all assistants for remote clients
  */
 export async function ensureAppServer(): Promise<AppServer> {
-  const entry = resolveTargetAssistant();
-  const gatewayUrl = getGatewayUrl(entry);
-  const result = await startAppServer({
-    gatewayUrl,
-    assistantId: entry.assistantId,
-  });
+  const result = await startAppServer();
 
   switch (result.status) {
     case "started":
@@ -863,22 +707,6 @@ export async function ensureAppServer(): Promise<AppServer> {
         started: true,
       };
     case "already-running": {
-      // `already-running` also covers a drifted server whose restart failed,
-      // so trust the recorded state it carries over the requested config.
-      if (result.gatewayUrl !== gatewayUrl) {
-        throw new Error(
-          `The app server is still proxying ${result.gatewayUrl ?? "an unknown gateway upstream"} ` +
-            `and could not be restarted against ${gatewayUrl}. ` +
-            stuckAppServerRecoveryHint(),
-        );
-      }
-      if (result.staleRemoteWebConfig) {
-        throw new Error(
-          "The app server is still serving an outdated remote web config " +
-            "and could not be restarted with the updated one. " +
-            stuckAppServerRecoveryHint(),
-        );
-      }
       stampAppProcessEntry(result);
       return {
         port: result.listenPort,

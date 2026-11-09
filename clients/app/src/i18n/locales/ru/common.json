@@ -231,13 +231,6 @@
     "title": "Приложение {appName}",
     "titleGeneric": "Приложение Cadet"
   },
-  "notFound": {
-    "badge": "Ошибка 404",
-    "title": "Страница не найдена",
-    "body": "Этой страницы нет или её могли перенести.",
-    "backToAssistant": "Вернуться к ассистенту",
-    "goBack": "Назад"
-  },
   "resourcePressureBanner": {
     "title": "Ассистенту нужно больше мощности",
     "titleNamed": "{assistantName} нуждается в большей мощности",

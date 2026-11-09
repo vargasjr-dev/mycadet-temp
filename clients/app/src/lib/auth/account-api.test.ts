@@ -7,10 +7,6 @@ import {
 } from "@app/lib/auth/provider-signup-client";
 
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
-const originalConfig = Object.getOwnPropertyDescriptor(
-  window,
-  "__CADET_CONFIG__",
-);
 const fetchSpy = spyOn(globalThis, "fetch");
 afterAll(() => fetchSpy.mockRestore());
 afterEach(() => {
@@ -18,7 +14,6 @@ afterEach(() => {
   document.cookie = "csrftoken=; max-age=0; path=/";
   for (const [key, descriptor] of [
     ["cadet", originalBridge],
-    ["__CADET_CONFIG__", originalConfig],
   ] as const) {
     if (descriptor) Object.defineProperty(window, key, descriptor);
     else Reflect.deleteProperty(window, key);
@@ -92,10 +87,6 @@ test("Electron mutations carry native token and renderer origin without CSRF", a
       platform: "electron",
       auth: { getSessionToken: () => "session123" },
     },
-  });
-  Object.defineProperty(window, "__CADET_CONFIG__", {
-    configurable: true,
-    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockResolvedValueOnce(new Response('{"data":{"user":{}}}'));
   await submitProviderSignup({ email: "a@example.com", username: "ada" });

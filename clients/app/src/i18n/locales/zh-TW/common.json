@@ -496,13 +496,6 @@
     "title": "取得 {appName} 應用程式",
     "titleGeneric": "取得 Cadet 應用程式"
   },
-  "notFound": {
-    "backToAssistant": "返回您的助理",
-    "badge": "錯誤 404",
-    "body": "您要尋找的頁面不存在或可能已移動。",
-    "goBack": "返回",
-    "title": "找不到頁面"
-  },
   "nudgeChatBanner": {
     "dismissAria": "關閉"
   },

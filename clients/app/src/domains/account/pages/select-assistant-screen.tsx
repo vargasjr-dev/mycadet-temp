@@ -1,7 +1,6 @@
 import { CloudOff, Globe, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
-import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
 import { OriginCardMenu } from "@app/components/account/origin-card-menu";
@@ -11,7 +10,6 @@ import { AccountHeading } from "@app/components/account/account-form";
 import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
 import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
-import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
   useRememberedOriginsStore,
@@ -25,17 +23,6 @@ import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
 import { formatRelativeDate } from "@app/utils/format-date";
 
-/**
- * The chooser's rows come from the origin's own list endpoint, so each row
- * labels itself: the row's own `remote` field — where that assistant lives
- * (the values `cadet hatch --remote` records), stamped by the serving
- * control plane. Rows from servers predating the stamp fall back to the
- * build's injected `remote`. The serving origin alone can't answer this for
- * the mobile shells: the capacitor bundle's origin is the webview's
- * (`capacitor://localhost`), not the assistant's. Web's other branches
- * (paired, local lockfile entries) arrive with their own transports
- * (chooser roadmap steps 4-5).
- */
 function assistantSubtitle(
   hostingLabel: string,
   created: string | null | undefined,
@@ -47,8 +34,7 @@ function assistantSubtitle(
 }
 
 /**
- * What an origin card renders from. The label is the remembered name when one
- * arrived via a pairing artifact, the hostname standing in until then.
+ * What an origin card renders from
  */
 function originLabel(origin: Pick<RememberedOrigin, "name" | "url">): string {
   return origin.name ?? new URL(origin.url).hostname;
@@ -87,9 +73,6 @@ function DashedActionButton({
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
-  // Each row labels itself with its own `remote`; servers predating the
-  // stamp fall back to the build's own (`readInjectedConfig()?.remote`).
-  const buildRemote = readInjectedConfig()?.remote;
   const [retireTarget, setRetireTarget] = useState<{
     id: string;
     name: string;
@@ -164,7 +147,7 @@ export function SelectAssistantScreen() {
               }
               title={assistant.name}
               subtitle={assistantSubtitle(
-                (assistant.remote ?? buildRemote) === "cloud"
+                assistant.remote === "cloud"
                   ? t("selectAssistantScreen.cloudHosted")
                   : t("selectAssistantScreen.selfHosted"),
                 assistant.created,

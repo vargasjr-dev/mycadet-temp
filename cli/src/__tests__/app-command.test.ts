@@ -104,7 +104,6 @@ describe("cadet app", () => {
     isAppServerRunningMock.mockReturnValue(true);
     readAppServerStateMock.mockReturnValue({
       listenPort: 7841,
-      gatewayUrl: "http://127.0.0.1:7830",
     });
     process.argv = ["bun", "cadet", "app", "stop"];
 

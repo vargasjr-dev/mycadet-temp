@@ -13,6 +13,7 @@ import Foundation
 /// `nil` when the stamp is absent or unreadable.
 enum StampedHandoffURL {
     static func parse(_ html: String) -> URL? {
+        // TODO: do we remove CADET_CONFIG removed from clients/ios too?
         guard
             let marker = html.range(of: "window.__CADET_CONFIG__="),
             let end = html[marker.upperBound...].range(of: "</script>")

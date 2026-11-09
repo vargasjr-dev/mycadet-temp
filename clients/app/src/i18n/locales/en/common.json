@@ -496,13 +496,6 @@
     "title": "Get the {appName} app",
     "titleGeneric": "Get the Cadet app"
   },
-  "notFound": {
-    "backToAssistant": "Back to your assistant",
-    "badge": "Error 404",
-    "body": "The page you're looking for doesn't exist or may have moved.",
-    "goBack": "Go back",
-    "title": "Page not found"
-  },
   "nudgeChatBanner": {
     "dismissAria": "Dismiss"
   },

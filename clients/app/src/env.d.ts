@@ -7,9 +7,6 @@
  * app does NOT inherit web's fuller Window augmentation.
  */
 interface Window {
-  /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
-  /** Raw host-injected config; `readInjectedConfig` is the parse boundary. */
-  __CADET_CONFIG__?: unknown;
   /** Feature flag overrides injected by Electron preload or CLI script. */
   /** The Electron preload bridge — the shared `@mycadet/ipc-contract` shape. */
   cadet?: import("@mycadet/ipc-contract").CadetBridge;

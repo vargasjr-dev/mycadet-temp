@@ -25,9 +25,8 @@ Cadet screens render from local assets in the IPA with zero network — then
 hands off to the deployed assistant entry (e.g.
 `https://mycadet.ai/assistant`), which carries the login/session UI.
 
-**How:** `bun run build:capacitor` (run by every sync flow, `setup`
-included) builds the bundle and stamps `__CADET_CONFIG__.handoffUrl` into it
-from the environment. `cap sync ios` copies the bundle into the Xcode
+**How:** `bun run build:capacitor` builds the bundle. 
+`cap sync ios` copies the bundle into the Xcode
 project as the `webDir`. At launch, `WKWebView` renders the boot bundle's
 splash and navigates to the handoff URL. Each environment (production,
 staging, dev) has its own origin — set `CADET_ENVIRONMENT` before the build

@@ -4,7 +4,6 @@ const fetchSpy = spyOn(globalThis, "fetch");
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 beforeEach(() => {
   fetchSpy.mockReset();
-  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   Reflect.deleteProperty(window, "cadet");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
@@ -12,7 +11,6 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
-  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
     new StorageEvent("storage", { key: "device:onboarded_assistants" }),
@@ -121,10 +119,6 @@ test("same-tab completion notifications survive unavailable storage and cross-ta
 });
 
 test("a completed serving assistant identifies a mobile returning user without a cloud session", async () => {
-  Reflect.set(window, "__CADET_CONFIG__", {
-    remote: "custom",
-    assistantId: "assistant-1",
-  });
   localStorage.setItem(
     "device:onboarded_assistants",
     JSON.stringify({ "assistant-1": "2026-10-01" }),
@@ -133,10 +127,6 @@ test("a completed serving assistant identifies a mobile returning user without a
   expect(fetchSpy).not.toHaveBeenCalled();
 });
 test("an injected id without a completion stamp does not bypass first-run signup", async () => {
-  Reflect.set(window, "__CADET_CONFIG__", {
-    remote: "custom",
-    assistantId: "assistant-1",
-  });
   fetchSpy.mockResolvedValueOnce(
     response({ detail: "Authentication required" }),
   );

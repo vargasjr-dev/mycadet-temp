@@ -403,6 +403,7 @@ public final class SelfHostedServer {
         if (bundleHtml == null) {
             return null;
         }
+        // TODO: does it now make sense to remove CADET_CONFIG from android?
         Matcher matcher =
             Pattern.compile("window\\.__CADET_CONFIG__=(\\{.*?\\})</script>")
                 .matcher(bundleHtml);

@@ -15,13 +15,11 @@ mock.module("@app/runtime/native-platform", () => ({
 // Registered after the mock above — bun's mock.module is not retroactive for
 // already-evaluated modules.
 const { AssistantPage } = await import("@app/shell/assistant-page");
-type ConfigWindow = Window & { __CADET_CONFIG__?: unknown };
 
 afterEach(() => {
   cleanup();
   fetchSpy.mockReset();
   isNative = false;
-  delete (window as ConfigWindow).__CADET_CONFIG__;
 });
 
 function renderAssistantPage() {
@@ -32,16 +30,11 @@ function renderAssistantPage() {
   return render(<RouterProvider router={router} />);
 }
 
-function stamp(config: unknown) {
-  (window as ConfigWindow).__CADET_CONFIG__ = config;
-}
-
 test("the boot bundle resolves assistants against the stamped control plane", async () => {
   // A 500 keeps the shell in its error body — the only state that doesn't
   // redirect — while the request URL still proves where resolution went.
   fetchSpy.mockResolvedValue(new Response("nope", { status: 500 }));
   isNative = true;
-  stamp({ remote: "local", baseUrl: "http://localhost:8000" });
   renderAssistantPage();
   await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
   // Other shell surfaces (consent probe, i18n) may fetch first — find the

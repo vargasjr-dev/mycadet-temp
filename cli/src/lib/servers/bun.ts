@@ -7,7 +7,11 @@ import { join } from "node:path";
 
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
-import { matchOperatorRequest } from "@mycadet/local-mode";
+import {
+  matchOperatorRequest,
+  servedConfigFromLockfile,
+  readLockfile,
+} from "@mycadet/local-mode";
 
 import {
   appOrigins,
@@ -39,6 +43,7 @@ async function staticResponse(
   request: Request,
   body: { text: string; type: string } | { file: string },
   cacheControl: string,
+  transform?: (content: string) => string,
 ): Promise<Response> {
   const headers = new Headers({ "Cache-Control": cacheControl });
   if ("text" in body) {
@@ -55,7 +60,8 @@ async function staticResponse(
     if (noneMatch && noneMatch === headers.get("ETag")) {
       return new Response(null, { status: 304, headers });
     }
-    return new Response(body.text, { headers });
+    const text = transform ? transform(body.text) : body.text;
+    return new Response(text, { headers });
   }
   const file = Bun.file(body.file);
   if (!(await file.exists())) {
@@ -83,7 +89,8 @@ async function staticResponse(
         .pipeThrough(new CompressionStream("gzip"));
       return new Response(stream, { headers });
     }
-    return new Response(text, { headers });
+    const transformedText = transform ? transform(text) : text;
+    return new Response(transformedText, { headers });
   }
   return new Response(file, { headers });
 }
@@ -164,7 +171,6 @@ async function serveStatic(
   spec: AppServerSpec,
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
-  const configJson = JSON.stringify(spec.config);
 
   // The web SPA's iframe mount: exact rewrites to the injected document,
   // the inline config, then the dist's own files with the document as the
@@ -175,10 +181,24 @@ async function serveStatic(
     pathname === "/web/assistant/" ||
     pathname === "/web/assistant/index.html"
   ) {
-    if (pathname === "/web/assistant") return redirect("/web/assistant/");
-    return staticResponse(request, { file: spec.indexHtmlPath }, "no-cache");
+    const configJson = JSON.stringify(
+      servedConfigFromLockfile(readLockfile()),
+    ).replace(/</g, "\\u003c");
+    return staticResponse(
+      request,
+      { file: spec.indexHtmlPath },
+      "no-cache",
+      (html) =>
+        html.replace(
+          "</head>",
+          `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
+        ),
+    );
   }
   if (pathname === "/web/assistant/__config") {
+    const configJson = JSON.stringify(
+      servedConfigFromLockfile(readLockfile()),
+    ).replace(/</g, "\\u003c");
     return staticResponse(
       request,
       { text: configJson, type: "application/json" },
@@ -273,7 +293,7 @@ type AppServerHandle = {
 export function createAppServerHandler(
   spec: AppServerSpec,
 ): (request: Request, server?: AppServerHandle) => Promise<Response> {
-  const allowedOrigins = appOrigins(spec.config);
+  const allowedOrigins = appOrigins();
   return async function fetch(request, server) {
     const pathname = new URL(request.url).pathname;
 
@@ -285,7 +305,7 @@ export function createAppServerHandler(
     );
 
     if ((request.headers.get("upgrade") ?? "") !== "" && server) {
-      return upgradeToGateway(request, server, spec);
+      return upgradeToGateway(request, server);
     }
 
     if (request.method === "OPTIONS") {
@@ -366,13 +386,9 @@ type RelayData = {
  * tunnel-lost code the gateway's own bridge uses, so the client reads the
  * difference between "closed" and "lost".
  */
-function upgradeToGateway(
-  request: Request,
-  server: AppServerHandle,
-  spec: AppServerSpec,
-): Response {
+function upgradeToGateway(request: Request, server: AppServerHandle): Response {
   const url = new URL(request.url);
-  const target = new URL(`${url.pathname}${url.search}`, spec.gatewayUrl);
+  const target = new URL(`${url.pathname}${url.search}`, url.host);
   target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => {
