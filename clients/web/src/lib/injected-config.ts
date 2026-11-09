@@ -13,7 +13,7 @@ import z from "zod";
  * environment seed (see startLoopbackAuth), keeping this config to the
  * origins a served bundle can't infer.
  */
-const InjectedConfigSchema = z.object({
+export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
   remote: RemoteSchema.catch("local"),
   /** Device id stamped by the Electron host (device management). */

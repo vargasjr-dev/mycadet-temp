@@ -1,6 +1,6 @@
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { Button } from "@mycadet/design-library/components/button";
 
@@ -25,7 +25,6 @@ const rise: Variants = {
 
 export function NotFound() {
   const navigate = useNavigate();
-  const location = useLocation();
   const reduceMotion = useReducedMotion();
   const { t } = useTranslation();
 

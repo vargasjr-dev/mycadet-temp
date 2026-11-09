@@ -13,17 +13,14 @@ afterEach(() => {
 // The isolated file owns the fetch spy and restores it after its last test.
 afterAll(() => requests.mockRestore());
 
-test("plain and remote browser hosts never receive a session token", async () => {
-  Reflect.deleteProperty(window, "cadet");
-  for (const config of [
-    undefined,
-    { remote: "cloud" },
-    { remote: "docker" },
-    { remote: "custom" },
-  ]) {
-    expect(await registerLocalCloudSession("session123")).toBe(false);
-  }
-  expect(requests).not.toHaveBeenCalled();
+test("session registration posts same-origin — the serving host is the only target", async () => {
+  // The stamped config is gone: there is no remote signal left to guard
+  // on. The shell posts to the origin that served it — a locally served
+  // shell exchanges with the local host, a cloud-served one with the cloud
+  // that issued the token — and the exchange result settles the answer.
+  requests.mockResolvedValueOnce(new Response('{"ok":true}'));
+  expect(await registerLocalCloudSession("session123")).toBe(true);
+  expect(requests.mock.calls[0]?.[0]).toBe("/v1/session");
 });
 
 test("local browser hosts receive the same cloud-session POST", async () => {
