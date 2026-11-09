@@ -13,7 +13,9 @@
  * Usage:
  *   cd assistant && bun run scripts/generate-openapi.ts
  *   cd assistant && bun run generate:openapi            # via npm script
- *   cd assistant && bun run generate:openapi -- --check  # CI: fail if stale
+ *   cd assistant && bun run generate:openapi -- --check  # local drift check
+ *
+ * The spec is not checked in — the web codegen pipeline regenerates it.
  */
 
 import { readFileSync } from "node:fs";

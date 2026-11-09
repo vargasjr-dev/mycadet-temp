@@ -11,6 +11,8 @@
  *
  * Usage: bun run scripts/transform-daemon-spec.ts
  * Output: openapi-schemas/daemon.json (gitignored, consumed by openapi-ts)
+ * Source: assistant/openapi.yaml — itself generated on the fly by the
+ * `openapi-ts` script (nothing spec-shaped is checked in).
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";

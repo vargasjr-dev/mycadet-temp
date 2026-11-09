@@ -10,7 +10,9 @@
  * Usage:
  *   cd gateway && bun run scripts/generate-openapi.ts
  *   cd gateway && bun run generate:openapi
- *   cd gateway && bun run generate:openapi -- --check   # CI: fail if stale
+ *   cd gateway && bun run generate:openapi -- --check   # local drift check
+ *
+ * The spec is not checked in — the web codegen pipeline regenerates it.
  */
 
 import { readFileSync } from "node:fs";

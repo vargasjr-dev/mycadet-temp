@@ -186,15 +186,11 @@ export function compilePath(template: string): RegExp {
  * the flat route, its dispatch-only method aliases, and — when `scoped` —
  * the assistant-scoped mirror whose first capture (the assistant id) is
  * discarded before the handler sees the params. Same `RouteDefinition` type
- * in and out; the expansion only compiles the path template and unfolds
- * variants.
+ * in and out; the expansion only unfolds variants — template compilation
+ * happens at dispatch.
  */
 export function expandRoute(route: RouteDefinition): RouteDefinition[] {
-  const pattern =
-    typeof route.path === "string" && route.path.includes("{")
-      ? compilePath(route.path)
-      : undefined;
-  const flat: RouteDefinition = { ...route, pattern };
+  const flat: RouteDefinition = { ...route };
   const expanded: RouteDefinition[] = [flat];
   for (const alias of route.aliases ?? []) {
     expanded.push({ ...flat, method: alias });
@@ -206,12 +202,10 @@ export function expandRoute(route: RouteDefinition): RouteDefinition[] {
       );
     }
     const scopedPath = `/assistants/{assistant_id}${route.path}`;
-    const scopedPattern = compilePath(scopedPath);
     for (const variant of [...expanded]) {
       expanded.push({
         ...variant,
         path: scopedPath,
-        pattern: scopedPattern,
         handler: (req, params, getClientIp, getRawPeerIp) =>
           variant.handler(req, params.slice(1), getClientIp, getRawPeerIp),
       });
@@ -224,6 +218,23 @@ interface MatchResult {
   params: RouteParams;
 }
 
+/**
+ * Templates already compiled for dispatch, keyed by the declared spelling.
+ * The declaration stays a string; the router owns the one derived regex per
+ * template, compiled once on first match — no second field on the route.
+ */
+const compiledPatterns = new Map<string, RegExp>();
+
+function dispatchPattern(route: RouteDefinition): RegExp | null {
+  if (typeof route.path !== "string" || !route.path.includes("{")) return null;
+  let pattern = compiledPatterns.get(route.path);
+  if (!pattern) {
+    pattern = compilePath(route.path);
+    compiledPatterns.set(route.path, pattern);
+  }
+  return pattern;
+}
+
 function matchRoute(
   route: RouteDefinition,
   pathname: string,
@@ -233,8 +244,9 @@ function matchRoute(
   // (webhook receivers).
   if (route.method && route.method.toUpperCase() !== method) return null;
 
-  if (route.pattern) {
-    const match = pathname.match(route.pattern);
+  const pattern = dispatchPattern(route);
+  if (pattern) {
+    const match = pathname.match(pattern);
     return match ? { params: match.slice(1) } : null;
   }
 

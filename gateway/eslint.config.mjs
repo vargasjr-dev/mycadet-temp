@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // Lone blocks pretend to scope — they hide nothing and read like a bug.
+      "no-lone-blocks": "error",
     },
   },
   {
@@ -29,7 +31,10 @@ const eslintConfig = defineConfig([
         rules: { "no-re-exports": noReExports, "imports-first": importsFirst },
       },
     },
-    rules: { "@mycadet/no-re-exports": "error", "@mycadet/imports-first": "error" },
+    rules: {
+      "@mycadet/no-re-exports": "error",
+      "@mycadet/imports-first": "error",
+    },
   },
 ]);
 
