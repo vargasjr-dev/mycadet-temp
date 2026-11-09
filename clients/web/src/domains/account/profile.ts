@@ -1,19 +1,4 @@
-/**
- * The user's account profile, served through the assistant's gateway.
- *
- * The gateway proxies the platform's user-account surface with the
- * assistant's credentials (see `user-profile-proxy.ts` on the gateway), so
- * the web bundle dials the assistant API it already talks to instead of the
- * platform directly — the assistant tracks the user's profile for them.
- * Upstream DRF field-error bodies pass through the proxy verbatim, so the
- * 409-taken / 400-invalid handling below is unchanged.
- */
-import {
-  assistantUserMeGet,
-  assistantUserMePartialUpdate,
-  assistantUserUsernameAvailableGet,
-} from "@/generated/gateway/sdk.gen";
-import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
+import { client } from "@/generated/api/client.gen";
 import {
   ApiError,
   assertHasResponse,
@@ -62,8 +47,8 @@ export const USERNAME_ERROR_COPY: Record<UsernameErrorCode, string> = {
 };
 
 export async function fetchMe(): Promise<UserMe> {
-  const { data, error, response } = await assistantUserMeGet({
-    path: { assistant_id: getActiveAssistantId() },
+  const { data, error, response } = await client.get<UserMe, unknown>({
+    url: "/v1/user/me/",
     throwOnError: false,
   });
   assertHasResponse(response, error, "Failed to load profile.");
@@ -89,8 +74,8 @@ export type UpdateMeResult =
 const DEFAULT_USERNAME_ERROR = "Please choose a different handle.";
 
 export async function updateMe(patch: UpdateMePatch): Promise<UpdateMeResult> {
-  const { data, error, response } = await assistantUserMePartialUpdate({
-    path: { assistant_id: getActiveAssistantId() },
+  const { data, error, response } = await client.patch<UserMe, unknown>({
+    url: "/v1/user/me/",
     body: patch,
     throwOnError: false,
   });
@@ -136,8 +121,11 @@ export async function checkUsernameAvailable(
   username: string,
   signal?: AbortSignal,
 ): Promise<UsernameAvailability> {
-  const { data, error, response } = await assistantUserUsernameAvailableGet({
-    path: { assistant_id: getActiveAssistantId() },
+  const { data, error, response } = await client.get<
+    UsernameAvailability,
+    unknown
+  >({
+    url: "/v1/user/username-available/",
     query: { username },
     signal,
     throwOnError: false,

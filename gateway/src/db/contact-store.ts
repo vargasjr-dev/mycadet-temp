@@ -168,6 +168,13 @@ export class ContactStore {
         displayName: contacts.displayName,
         role: contacts.role,
         principalId: contacts.principalId,
+        // The profile columns ride the guardian's row (the operator
+        // profile operation writes them host-side); projections that
+        // don't need them read as null.
+        username: contacts.username,
+        email: contacts.email,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
         autoApproveThreshold: contacts.autoApproveThreshold,
         createdAt: contacts.createdAt,
         updatedAt: contacts.updatedAt,

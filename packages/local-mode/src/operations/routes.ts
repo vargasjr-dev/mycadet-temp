@@ -13,6 +13,7 @@ import { servedConfigFromLockfile } from "../served-config";
 import { runListRoute } from "./list";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
+import { runProfileGetRoute, runProfilePatchRoute, runUsernameAvailableRoute } from "./profile";
 import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
@@ -612,6 +613,21 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     method: "GET",
     pattern: v1Friendly(/^\/assistants\/$/),
     run: runListRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^user\/me\/?$/),
+    run: runProfileGetRoute,
+  },
+  {
+    method: "PATCH",
+    pattern: scopedAssistant(/^user\/me\/?$/),
+    run: runProfilePatchRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^user\/username-available\/?$/),
+    run: runUsernameAvailableRoute,
   },
   {
     method: "POST",
