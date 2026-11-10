@@ -2,7 +2,16 @@ import { AlertCircle, Check, Clock, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 
-import type { DomainVerificationStatusStatusEnum } from "@/generated/api/types.gen";
+/**
+ * The platform's domain-verification states, answered verbatim through the
+ * gateway's domains arm.
+ */
+export type DomainVerificationStatusStatusEnum =
+  | "verified"
+  | "pending"
+  | "not_started"
+  | "failed"
+  | "unknown";
 
 interface DomainVerificationChipProps {
   status: DomainVerificationStatusStatusEnum | undefined;

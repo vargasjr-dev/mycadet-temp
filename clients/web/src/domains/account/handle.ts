@@ -10,10 +10,9 @@
  */
 
 import {
-  assistantsHandleAvailableRetrieve,
-  assistantsPartialUpdate,
-} from "@/generated/api/sdk.gen";
-import type { Assistant } from "@/generated/api/types.gen";
+  assistantHandleAvailableRetrieve,
+  assistantHandlePartialUpdate,
+} from "@/generated/gateway/sdk.gen";
 import {
   ApiError,
   assertHasResponse,
@@ -36,6 +35,13 @@ export type HandleErrorCode = UsernameErrorCode;
 /** Friendly client-side copy keyed by error code (shared with user handle). */
 export const HANDLE_ERROR_COPY: Record<HandleErrorCode, string> =
   USERNAME_ERROR_COPY;
+
+/**
+ * The platform's Assistant record, proxied through the gateway arm
+ * verbatim. The handle is the field this surface edits; the platform's
+ * remaining fields ride as passthrough.
+ */
+export type Assistant = { handle: string } & { [key: string]: unknown };
 
 export interface HandleAvailability {
   available: boolean;
@@ -78,8 +84,8 @@ export async function updateAssistantHandle(
   assistantId: string,
   handle: string,
 ): Promise<UpdateAssistantHandleResult> {
-  const { data, error, response } = await assistantsPartialUpdate({
-    path: { id: assistantId },
+  const { data, error, response } = await assistantHandlePartialUpdate({
+    path: { assistant_id: assistantId },
     body: { handle },
     throwOnError: false,
   });
@@ -133,7 +139,7 @@ export async function checkAssistantHandleAvailable(
   handle: string,
   signal?: AbortSignal,
 ): Promise<HandleAvailability> {
-  const { data, error, response } = await assistantsHandleAvailableRetrieve({
+  const { data, error, response } = await assistantHandleAvailableRetrieve({
     path: { assistant_id: assistantId },
     query: { handle },
     signal,

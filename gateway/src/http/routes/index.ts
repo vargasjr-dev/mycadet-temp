@@ -28,6 +28,7 @@ import { ROUTES as integrationsStatusRoutes } from "./integrations-status.js";
 import { ROUTES as autoApproveThresholdRoutes } from "./auto-approve-thresholds.js";
 import { ROUTES as logExportRoutes } from "./log-export.js";
 import { ROUTES as logTailRoutes } from "./log-tail.js";
+import { ROUTES as assistantHandleRoutes } from "./assistant-handle.js";
 import { ROUTES as userProfileRoutes } from "./user-profile.js";
 import { ROUTES as upgradePolicyRoutes } from "./upgrade-policy.js";
 import { ROUTES as trustRuleRoutes } from "./trust-rules.js";
@@ -73,6 +74,7 @@ export const ROUTES: readonly RouteDefinition[] = [
   ...autoApproveThresholdRoutes,
   ...logExportRoutes,
   ...logTailRoutes,
+  ...assistantHandleRoutes,
   ...userProfileRoutes,
   ...upgradePolicyRoutes,
   ...trustRuleRoutes,

@@ -8,6 +8,8 @@ mock.module("@/generated/gateway/@tanstack/react-query.gen", () => ({
     queryKey: ["assistant-upgrade-policy"],
   }),
   assistantUpgradePolicyGetQueryKey: () => ["assistant-upgrade-policy"],
+  assistantDomainsListOptions: () => ({ queryKey: ["assistant-domains"] }),
+  assistantDomainsListQueryKey: () => ["assistant-domains"],
 }));
 
 const originalWarn = console.warn;
