@@ -9,8 +9,8 @@
 
 import { useCallback, useRef } from "react";
 
-import type { DoctorPanelContext } from "@/domains/settings/components/panels/doctor-panel-store";
-import { useDoctorPanelStore } from "@/domains/settings/components/panels/doctor-panel-store";
+import type { DoctorPanelContext } from "./doctor-panel-store";
+import { useDoctorPanelStore } from "./doctor-panel-store";
 import {
   type DoctorMessage,
   hasPendingApproval,
@@ -20,11 +20,11 @@ import {
   mapPersistedMessagesToEntries,
   mapPersistedStatusToPanelStatus,
   replayableDoctorSourceEventIds,
-} from "@/domains/settings/components/panels/doctor-history";
+} from "./doctor-history";
 import {
   type DoctorEvent,
   parseDoctorEvent,
-} from "@/domains/settings/components/panels/doctor-event-schema";
+} from "./doctor-event-schema";
 import {
   handleApprovalRequired,
   handleBackupPrompt,
@@ -36,14 +36,18 @@ import {
   handleStatus,
   handleToolCall,
   handleToolResult,
-} from "@/domains/settings/components/panels/doctor-event-handlers";
-import { shouldResetDoctorSseReconnectBudget } from "@/domains/settings/components/panels/doctor-sse-reconnect";
-import { client } from "@/generated/gateway/client.gen";
-import { doctorHistoryRetrieve } from "./doctor-api";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { createStreamWatchdog } from "@/lib/streaming/stream-watchdog";
-import { getClientRegistrationHeaders } from "@/lib/client-identity";
-import { toError } from "@/utils/to-error";
+} from "./doctor-event-handlers";
+import { shouldResetDoctorSseReconnectBudget } from "./doctor-sse-reconnect";
+import {
+  doctorHistoryRetrieve,
+} from "./doctor-api";
+import {
+  OperatorSseError,
+  streamOperatorSse,
+} from "./operator-sse";
+import { captureError } from "@app/lib/error-reporting/capture-error";
+import { createStreamWatchdog } from "@app/lib/streaming/stream-watchdog";
+import { toError } from "@app/utils/to-error";
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -129,11 +133,10 @@ function seedDoctorPanelFromPersistedMessages(
 }
 
 async function refreshPersistedDoctorSession(
-  assistantId: string,
   sessionId: string,
 ): Promise<"active" | "terminal" | null> {
   const result = await doctorHistoryRetrieve({
-    path: { assistant_id: assistantId, doctor_session_id: sessionId },
+    path: { doctor_session_id: sessionId },
   });
 
   if (!result.response?.ok || !result.data) {
@@ -156,7 +159,7 @@ async function refreshPersistedDoctorSession(
 export function useDoctorSSE() {
   const controllerRef = useRef<AbortController | null>(null);
 
-  const connectSSE = useCallback((assistantId: string, sessionId: string) => {
+  const connectSSE = useCallback((sessionId: string) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -264,7 +267,7 @@ export function useDoctorSSE() {
 
         const watchdog = createStreamWatchdog({
           idleTimeoutMs: DOCTOR_SSE_IDLE_TIMEOUT_MS,
-          assistantId,
+          assistantId: "",
         });
         watchdog.resetCounters();
 
@@ -279,79 +282,60 @@ export function useDoctorSSE() {
           const latestReplayableSourceEventId =
             useDoctorPanelStore.getState().latestReplayableSourceEventId;
 
-          const headers: Record<string, string> = {
-            Accept: "text/event-stream, application/json",
-            ...getClientRegistrationHeaders(),
-          };
+          const headers: Record<string, string> = {};
           if (latestReplayableSourceEventId) {
             headers["Last-Event-ID"] = latestReplayableSourceEventId;
           }
 
-          const { stream } = await client.sse.get<string>({
-            url: "/v1/assistants/{assistant_id}/doctor/sessions/{session_id}/events/",
-            path: { assistant_id: assistantId, session_id: sessionId },
+          await streamOperatorSse({
+            path: `/v1/assistant/doctor/sessions/${encodeURIComponent(sessionId)}/events/`,
             headers,
             signal: attemptController.signal,
-            sseMaxRetryAttempts: 0,
-            fetch: (async (input: RequestInfo | URL, init?: RequestInit) => {
-              const response = await globalThis.fetch(input, init);
-              if (!response.ok) {
-                failedStatus = response.status;
-                if (SESSION_EXPIRED_STATUSES.has(response.status)) {
-                  sessionExpired = true;
-                }
-                if (await readDoctorReplayGap(response)) {
-                  replayGap = true;
-                }
-              }
-              return response;
-            }) as typeof globalThis.fetch,
             onSseEvent: (event) => {
-              const isData =
-                typeof (event as { data?: unknown }).data !== "undefined";
+              const isData = typeof event.data !== "undefined";
               if (isData) {
                 receivedDataFrame = true;
+                reconnectAttempt = 0;
                 pendingSseEventId = getSseEventId(event);
               }
               watchdog.recordTraffic(isData);
               if (!controller.signal.aborted && isCurrentStream()) {
                 watchdog.arm(attemptController, reconnectAttempt);
               }
+              if (!isCurrentStream()) {
+                return;
+              }
+              const sseEventId = pendingSseEventId;
+              pendingSseEventId = null;
+              const data = event.data;
+              if (!isData || data === undefined) {
+                return;
+              }
+              const parsed = parseDoctorEvent(data);
+              if (parsed) {
+                const eventWithSource =
+                  parsed.source_event_id || !sseEventId
+                    ? parsed
+                    : { ...parsed, source_event_id: sseEventId };
+                dispatchEvent(eventWithSource);
+              }
             },
             onSseError: (error) => {
               if (sessionExpired || replayGap) {
                 return;
               }
+              if (error instanceof OperatorSseError) {
+                failedStatus = error.status;
+                if (SESSION_EXPIRED_STATUSES.has(error.status)) {
+                  sessionExpired = true;
+                }
+                if (error.status === 409 && error.code === DOCTOR_REPLAY_GAP_CODE) {
+                  replayGap = true;
+                }
+              }
               streamError = toError(error, "Doctor stream disconnected");
             },
           });
-
-          if (!isCurrentStream()) {
-            return;
-          }
-
-          watchdog.arm(attemptController, reconnectAttempt);
-
-          for await (const payload of stream) {
-            if (!isCurrentStream()) {
-              return;
-            }
-
-            receivedDataFrame = true;
-            reconnectAttempt = 0;
-            watchdog.arm(attemptController, reconnectAttempt);
-
-            const sseEventId = pendingSseEventId;
-            pendingSseEventId = null;
-            const event = parseDoctorEvent(payload);
-            if (event) {
-              const eventWithSource =
-                event.source_event_id || !sseEventId
-                  ? event
-                  : { ...event, source_event_id: sseEventId };
-              dispatchEvent(eventWithSource);
-            }
-          }
         } catch (err) {
           if (controller.signal.aborted) {
             return;
@@ -385,10 +369,7 @@ export function useDoctorSSE() {
           replayGapRefreshes += 1;
           let refreshed: "active" | "terminal" | null = null;
           try {
-            refreshed = await refreshPersistedDoctorSession(
-              assistantId,
-              sessionId,
-            );
+            refreshed = await refreshPersistedDoctorSession(sessionId);
           } catch (err) {
             captureError(err, { context: "doctor_replay_gap_refresh" });
           }

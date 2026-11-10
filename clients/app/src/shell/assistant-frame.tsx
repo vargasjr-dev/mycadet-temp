@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AssistantNavigationSchema } from "../assistant/resolution-contract";
+import {
+  AssistantNavigationSchema,
+  HostNavigationSchema,
+} from "../assistant/resolution-contract";
 
 export interface AssistantFrameProps {
   onNavigate(path: string, options: { replace: boolean }): void;
@@ -55,6 +58,32 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
       currentPath.current = path;
       const target = path.slice(mount.length) || "/";
       onNavigate(target, { replace: message.data.nav === "replace" });
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, [frameOrigin, onNavigate]);
+
+  // The frame's HOST-navigation requests: surfaces that live outside the
+  // frame's url space (the account area — e.g. the Doctor page) but that
+  // the assistant bundle must be able to open. Only /account/* paths are
+  // honored, so a compromised frame still cannot steer the host chrome.
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      if (
+        event.source !== ref.current?.contentWindow ||
+        event.origin !== frameOrigin
+      ) {
+        return;
+      }
+      const message = HostNavigationSchema.safeParse(event.data);
+      if (!message.success) {
+        return;
+      }
+      const path = message.data.path;
+      if (!path.startsWith("/account/") || path.includes("\\")) {
+        return;
+      }
+      onNavigate(path, { replace: false });
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);

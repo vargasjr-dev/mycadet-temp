@@ -46,9 +46,10 @@ function NewConversationRoute() {
 
 /**
  * Forwards legacy `/assistant/settings/advanced` deep links to Settings → Debug,
- * which hosts the General, Terminal, Doctor, and Archive tabs. The query string
- * is preserved so `?tab=terminal` and `?tab=doctor` land on the matching in-page
- * tab.
+ * which hosts the General, Terminal, and Archive tabs. The query string is
+ * preserved so `?tab=terminal` lands on the matching in-page tab; a stale
+ * `?tab=doctor` falls back to General (the Doctor moved to the account
+ * area's `/account/doctor`).
  */
 function AdvancedSettingsRedirect() {
   const [searchParams] = useSearchParams();

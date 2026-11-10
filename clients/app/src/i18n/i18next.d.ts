@@ -1,4 +1,5 @@
 import type account from "@app/i18n/locales/en/account.json";
+import type doctor from "@app/i18n/locales/en/doctor.json";
 import type onboarding from "@app/i18n/locales/en/onboarding.json";
 import type common from "@app/i18n/locales/en/common.json";
 import type consent from "@app/i18n/locales/en/consent.json";
@@ -14,5 +15,6 @@ declare module "i18next" {
     account: typeof account;
     consent: typeof consent;
     onboarding: typeof onboarding;
+    doctor: typeof doctor;
   }
 }

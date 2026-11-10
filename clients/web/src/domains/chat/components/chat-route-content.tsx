@@ -115,7 +115,7 @@ import {
   WEB_FOLDER_DROP_ERROR,
 } from "@/domains/chat/components/chat-attachments/handle-folder-drop";
 import { Button } from "@mycadet/design-library";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import {
   isCloudCredentialChatError,
   shouldShowGenericChatErrorNotice,
@@ -163,7 +163,7 @@ import { shouldMintNewChatDraft } from "@/domains/chat/utils/conversation-select
 import { isNativeMobile } from "@/runtime/platform-detection";
 import { useConversationStore } from "@/stores/conversation-store";
 import { paneState } from "@/stores/pane-state";
-import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
+import { requestDoctorPage } from "@/lib/doctor-handoff-writer";
 
 // ---------------------------------------------------------------------------
 // Props — only values that cannot be owned locally
@@ -721,10 +721,12 @@ export function ChatMainPanel({
   // The Doctor can re-issue a key for any assistant — cloud or self-hosted —
   // so the recovery banner always offers it.
   const doctorAction = (
-    <Button asChild variant="outlined" size="compact">
-      <Link to={`${routes.settings.debug}?tab=doctor`}>
-        {t("chatRouteContent.goToDoctor")}
-      </Link>
+    <Button
+      variant="outlined"
+      size="compact"
+      onClick={() => requestDoctorPage()}
+    >
+      {t("chatRouteContent.goToDoctor")}
     </Button>
   );
 
@@ -736,17 +738,14 @@ export function ChatMainPanel({
   const buildReprovisionAssistantKeyAction = () => (
     // The Doctor re-issues the key for any assistant — cloud or self-hosted —
     // so the banner always hands over to it.
-    <Button asChild variant="outlined" size="compact">
-      <Link
-        to={`${routes.settings.debug}?tab=doctor`}
-        onClick={() =>
-          useDoctorHandoffStore
-            .getState()
-            .setPendingPrompt("Help me re-provision my assistant's API key")
-        }
-      >
-        {t("chatRouteContent.askTheDoctor")}
-      </Link>
+    <Button
+      variant="outlined"
+      size="compact"
+      onClick={() =>
+        requestDoctorPage("Help me re-provision my assistant's API key")
+      }
+    >
+      {t("chatRouteContent.askTheDoctor")}
     </Button>
   );
 

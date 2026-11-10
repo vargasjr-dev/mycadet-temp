@@ -11,8 +11,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import { DoctorSessionMenu } from "@/domains/settings/components/panels/doctor-session-menu";
-import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
+import { DoctorSessionMenu } from "./doctor-session-menu";
+import { viewportAxesStub } from "@app/hooks/viewport-axes.test-helper";
 
 const MENU_NAME = "Session options";
 

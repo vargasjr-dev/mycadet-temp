@@ -56,6 +56,58 @@ export async function deleteCloud(
   return requestCloud(path, z.null(), options, undefined, "DELETE");
 }
 
+/**
+ * Multipart POST through the browser/native host's cloud proxy — the
+ * same header assembly as {@link postCloud} minus the JSON serialization
+ * (the body IS the form). Used by the feedback submission, whose
+ * attachments and log files only travel as multipart parts.
+ */
+export async function postCloudForm(
+  path: string,
+  form: FormData,
+  options: { signal?: AbortSignal } = {},
+): Promise<CloudResult<null>> {
+  try {
+    const headers = new Headers({
+      Accept: "application/json",
+      "Accept-Language": currentLocale(),
+    });
+    const token = getElectronSessionToken();
+    if (token) {
+      headers.set("X-Session-Token", token);
+    }
+    await addCloudMutationHeaders(headers);
+    // Leave Content-Type unset so the browser sets the multipart boundary.
+    const response = await fetch(path, {
+      method: "POST",
+      body: form,
+      headers,
+      credentials: "same-origin",
+      signal: options.signal,
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const error = ErrorSchema.safeParse(payload);
+      return {
+        ok: false,
+        status: response.status,
+        error: {
+          detail: error.success
+            ? error.data.detail
+            : `Cloud request failed (HTTP ${response.status}).`,
+        },
+      };
+    }
+    return { ok: true, status: response.status, data: null };
+  } catch {
+    return {
+      ok: false,
+      status: 0,
+      error: { detail: "Cloud request unavailable." },
+    };
+  }
+}
+
 async function requestCloud<T>(
   path: string,
   schema: z.ZodType<T>,

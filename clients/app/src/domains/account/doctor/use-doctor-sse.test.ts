@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { ChatEntry } from "@/domains/settings/components/panels/doctor-history";
+import type { ChatEntry } from "./doctor-history";
 import {
   handleApprovalRequired,
   handleBackupPrompt,
@@ -12,13 +12,13 @@ import {
   handleToolCall,
   handleToolResult,
   handleUserOutcomePrompt,
-} from "@/domains/settings/components/panels/doctor-event-handlers";
-import { parseDoctorEvent } from "@/domains/settings/components/panels/doctor-event-schema";
+} from "./doctor-event-handlers";
+import { parseDoctorEvent } from "./doctor-event-schema";
 import {
   type DoctorPanelContext,
   useDoctorPanelStore,
-} from "@/domains/settings/components/panels/doctor-panel-store";
-import { shouldResetDoctorSseReconnectBudget } from "@/domains/settings/components/panels/doctor-sse-reconnect";
+} from "./doctor-panel-store";
+import { shouldResetDoctorSseReconnectBudget } from "./doctor-sse-reconnect";
 
 // ---------------------------------------------------------------------------
 // Test helpers
