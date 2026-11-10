@@ -1,4 +1,6 @@
 import type { InboxStatus } from "@/domains/assistant-inbox/resolve-inbox-status";
+import type { Remote } from "@mycadet/local-mode/contract";
+
 import { predatesFeatureIntro } from "@/hooks/use-feature-intro-seen";
 
 export interface AssistantEmailIntroInputs {
@@ -30,6 +32,26 @@ export interface AssistantEmailIntroInputs {
  * user has it; and nothing shows to an assistant made after the launch,
  * since to them email was always there.
  */
+/**
+ * Whether the surface can plausibly be owed the email intro, decided from
+ * the resolved assistant's boot record alone — no request. The gate's reads
+ * are the cloud platform's own endpoints; off the platform they cannot be
+ * answered at all (locally they 503/404), so an off-platform assistant is
+ * never owed the intro. On the platform the creation instant decides: an
+ * assistant that doesn't predate the intro — one with no known instant
+ * included, the same ruling the resolver makes — meets email as part of
+ * the app and is not pitched.
+ */
+export function shouldOfferAssistantEmailIntro(
+  cloud: Remote,
+  hatchedAt: string | null | undefined,
+): boolean {
+  if (cloud !== "cloud") {
+    return false;
+  }
+  return predatesFeatureIntro(hatchedAt, "assistant-email");
+}
+
 export function resolveAssistantEmailIntro(
   inputs: AssistantEmailIntroInputs,
 ): "open" | null {

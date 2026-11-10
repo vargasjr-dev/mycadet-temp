@@ -4,6 +4,7 @@ import { FEATURE_INTRO_LAUNCHED_AT } from "@/hooks/use-feature-intro-seen";
 
 import {
   resolveAssistantEmailIntro,
+  shouldOfferAssistantEmailIntro,
   type AssistantEmailIntroInputs,
 } from "./resolve-assistant-email-intro";
 
@@ -74,5 +75,38 @@ describe("resolveAssistantEmailIntro", () => {
     expect(
       resolveAssistantEmailIntro({ ...READY, assistantCreatedAt: null }),
     ).toBeNull();
+  });
+});
+
+describe("shouldOfferAssistantEmailIntro", () => {
+  test("an off-platform assistant is never owed the intro", () => {
+    for (const cloud of [
+      "local",
+      "docker",
+      "apple-container",
+      "baseten",
+      "custom",
+    ] as const) {
+      expect(
+        shouldOfferAssistantEmailIntro(cloud, "2020-01-01T00:00:00.000Z"),
+      ).toBe(false);
+    }
+  });
+
+  test("a platform assistant predating the intro is owed it", () => {
+    expect(
+      shouldOfferAssistantEmailIntro("cloud", "2020-01-01T00:00:00.000Z"),
+    ).toBe(true);
+  });
+
+  test("a platform assistant newer than the intro is not", () => {
+    expect(
+      shouldOfferAssistantEmailIntro("cloud", "2099-01-01T00:00:00.000Z"),
+    ).toBe(false);
+  });
+
+  test("an unknown creation instant is not owed one — the resolver's own ruling", () => {
+    expect(shouldOfferAssistantEmailIntro("cloud", null)).toBe(false);
+    expect(shouldOfferAssistantEmailIntro("cloud", undefined)).toBe(false);
   });
 });

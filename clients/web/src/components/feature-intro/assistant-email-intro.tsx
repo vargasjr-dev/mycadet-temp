@@ -5,10 +5,17 @@ import { useAssistantInboxState } from "@/domains/assistant-inbox/hooks/use-assi
 import { useFeatureIntroSeen } from "@/hooks/use-feature-intro-seen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
+import {
+  UNRESOLVED_ASSISTANT,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 import { routes } from "@/utils/routes";
 
 import { AssistantEmailIntroModal } from "./assistant-email-intro-modal";
-import { resolveAssistantEmailIntro } from "./resolve-assistant-email-intro";
+import {
+  resolveAssistantEmailIntro,
+  shouldOfferAssistantEmailIntro,
+} from "./resolve-assistant-email-intro";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 interface GateProps {
@@ -75,7 +82,17 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
 export function AssistantEmailIntro() {
   const { seen, markSeen } = useFeatureIntroSeen("assistant-email");
   const assistantId = useActiveAssistantId();
-  if (seen || !assistantId) {
+  const entry = useResolvedAssistantStore.use.assistant();
+  // The boot record's epoch sentinel means "not settled yet" — the same
+  // ruling the resolver makes for an unknown instant: not owed (yet). The
+  // projection re-stamps the record, and this mount decision re-runs.
+  const hatchedAt =
+    entry.hatchedAt === UNRESOLVED_ASSISTANT.hatchedAt ? null : entry.hatchedAt;
+  if (
+    seen ||
+    !assistantId ||
+    !shouldOfferAssistantEmailIntro(entry.cloud, hatchedAt)
+  ) {
     return null;
   }
   return (
