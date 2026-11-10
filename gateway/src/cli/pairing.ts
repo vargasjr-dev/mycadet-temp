@@ -73,7 +73,7 @@ function printUsage(): void {
   console.log(
     "  approve <id> Approve a pending pairing request minted elsewhere",
   );
-  console.log("               (e.g. the public /assistant/pair page).");
+  console.log("               (e.g. the public /account/pair page).");
   console.log("  deny <id>    Deny (delete) a pending pairing request by id.");
   console.log("");
   console.log("Options:");

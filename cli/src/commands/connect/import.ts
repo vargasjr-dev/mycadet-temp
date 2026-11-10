@@ -54,7 +54,7 @@ OPTIONS:
                     re-importing the same host updates its entry.
 
 EXAMPLES:
-    cadet connect import "https://your-assistant.ts.net/assistant/pair#device_code=abc123"
+    cadet connect import "https://your-assistant.ts.net/account/pair#device_code=abc123"
     cadet connect import https://your-assistant.ts.net
     cadet connect import https://your-assistant.ts.net --name desk
 `);

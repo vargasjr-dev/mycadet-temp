@@ -3,10 +3,7 @@ import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
 import { randomBytes } from "node:crypto";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 import { getAuthRateLimiter } from "./auth-rate-limiter.js";
-import {
-  loadOrCreateSigningKey,
-  initSigningKey,
-} from "./auth/token-service.js";
+import { initSigningKey } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { getConfigFileCache } from "./config-file-cache.js";
@@ -324,8 +321,7 @@ async function main() {
 
   // Initialize the JWT signing key shared with the daemon.
   // This must happen before any request handling.
-  const signingKey = loadOrCreateSigningKey();
-  initSigningKey(signingKey);
+  initSigningKey();
   log.info("JWT signing key initialized");
 
   await initGatewayDb();

@@ -6,17 +6,17 @@ import { normalizePairingBaseUrl } from "@mycadet/service-contracts/remote-web-p
 import { resolvePublicBaseUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 describe("normalizePairingBaseUrl", () => {
-  test("strips query, hash, and the assistant path segment", () => {
+  test("strips query, hash, and the pair page's account segment", () => {
     expect(
       normalizePairingBaseUrl(
-        "https://foo.ts.net/assistant/pair?x=1#device_code=abc",
+        "https://foo.ts.net/account/pair?x=1#device_code=abc",
       ),
     ).toBe("https://foo.ts.net");
   });
 
-  test("preserves a deployment path prefix before /assistant", () => {
+  test("preserves a deployment path prefix before /account", () => {
     expect(
-      normalizePairingBaseUrl("https://foo.example.com/cadet/assistant/"),
+      normalizePairingBaseUrl("https://foo.example.com/cadet/account/pair"),
     ).toBe("https://foo.example.com/cadet");
   });
 
@@ -45,7 +45,7 @@ describe("isLoopbackUrl", () => {
 
 describe("resolvePublicBaseUrl", () => {
   test("accepts a public https URL and returns the normalized origin", () => {
-    expect(resolvePublicBaseUrl("https://foo.ts.net/assistant#x")).toEqual({
+    expect(resolvePublicBaseUrl("https://foo.ts.net/account#x")).toEqual({
       ok: true,
       url: "https://foo.ts.net",
     });

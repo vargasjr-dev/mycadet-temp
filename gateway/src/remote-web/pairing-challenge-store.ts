@@ -224,7 +224,7 @@ export function createRemoteWebPairingChallenge(
     userCodeHash = hashSecret(normalizeUserCode(userCode));
   }
 
-  const verificationUri = `${publicBaseUrl}/assistant/pair`;
+  const verificationUri = `${publicBaseUrl}/account/pair`;
   const createdAtMs = nowMs();
   const expiresAtMs = createdAtMs + CODE_TTL_MS;
   const challenge: PendingRemoteWebPairingChallenge = {

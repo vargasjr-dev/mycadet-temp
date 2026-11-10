@@ -65,7 +65,7 @@ describe("remote web pairing challenge", () => {
     };
     expect(body.deviceCode).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(body.userCode).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
-    expect(body.verificationUri).toBe(`${PUBLIC_BASE_URL}/assistant/pair`);
+    expect(body.verificationUri).toBe(`${PUBLIC_BASE_URL}/account/pair`);
     expect(body.expiresAt).toBe("1970-01-01T00:10:01.000Z");
     expect(body.expiresInSeconds).toBe(600);
     expect(body.intervalSeconds).toBe(5);
@@ -86,7 +86,7 @@ describe("remote web pairing challenge", () => {
       userCode: string;
     };
     expect(body.verificationUri).toBe(
-      "https://tunnel.example.test/assistant-123/assistant/pair",
+      "https://tunnel.example.test/assistant-123/account/pair",
     );
 
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
@@ -227,7 +227,7 @@ describe("remote web pairing challenge", () => {
       publicBaseUrl: string;
     };
     expect(body.verificationUri).toBe(
-      "https://saved.example.test/assistant/pair",
+      "https://saved.example.test/account/pair",
     );
     expect(body.publicBaseUrl).toBe("https://saved.example.test");
   });
@@ -242,7 +242,7 @@ describe("remote web pairing challenge", () => {
 
     expect(res.status).toBe(200);
     const body = (await res.json()) as { verificationUri: string };
-    expect(body.verificationUri).toBe("http://127.0.0.1:7830/assistant/pair");
+    expect(body.verificationUri).toBe("http://127.0.0.1:7830/account/pair");
   });
 
   test("rejects oversized challenge request bodies", async () => {
@@ -317,7 +317,7 @@ describe("remote web pairing request list/approve/deny", () => {
 
     expect(result).toEqual({
       status: "approved",
-      verificationUri: `${PUBLIC_BASE_URL}/assistant/pair`,
+      verificationUri: `${PUBLIC_BASE_URL}/account/pair`,
       expiresAt: new Date(1_000 + 600_000).toISOString(),
     });
     expect(

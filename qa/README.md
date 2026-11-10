@@ -44,7 +44,7 @@ automatically and everything just gets fast.
 
 ```sh
 bun qa/index.ts image push                        # once per toolchain change
-bun qa/index.ts create --name qa-desktop-1108     # image + memory are pinned here
+bun qa/index.ts create --name qa-desktop-1108     # publishes the volume, then creates
 bun qa/index.ts exec --name qa-desktop-1108 -- <command>...
 bun qa/index.ts delete --name qa-desktop-1108
 ```
@@ -52,6 +52,16 @@ bun qa/index.ts delete --name qa-desktop-1108
 The Baseten CLI authenticates from `BASETEN_API_KEY` (vaulted as
 `baseten:api_key` — pass it in the environment, never bake it into the
 image).
+
+**The volume:** the sandbox's overlay filesystem is **memory-backed** —
+everything a session writes shares the same 4 GB the processes need, and a
+full install plus a Vite build wedges it. So `create` first publishes the
+`cadet-qa` volume (default-branch clone → full install → both client dists
+prebuilt → the `.qa-state` boot seed that stamps the dists fresh) and mounts
+it at `/qa` over the image's bare clone. Publishes are content-deduplicated;
+the namespace defaults to `vargas-jr` (override with
+`BASETEN_VOLUME_NAMESPACE`). Sessions should never run `bun run build` for
+the web/app bundles — the volume IS the build.
 
 ## Session cheatsheet
 

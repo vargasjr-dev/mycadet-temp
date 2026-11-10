@@ -1,46 +1,20 @@
 /**
- * The pairing address, shared by every surface that produces or refuses one:
- * the settings "Pair a device" card, the chooser's connect dialog, the
- * hostless "Add a remote assistant" dialog, and the `connect` deep link.
+ * The copy shared by the surfaces that refuse a pairing address: the settings
+ * "Pair a device" card and the dialogs built on it.
  *
  * `@mycadet/service-contracts/remote-web-pairing` owns the link format and
- * the rejection reasons. This module adds the two app-level pieces those
- * surfaces would otherwise each rebuild: the pair route a public base has to
- * carry to become a link, and the catalog copy for a base that cannot be one.
+ * the rejection reasons. This module adds the piece those surfaces would
+ * otherwise each rebuild: the catalog copy for a base that cannot be one.
+ * (The links themselves are the gateway's — the web bundle renders no pair
+ * route and builds none since the pairing page moved to the app shell.)
  */
 
 import {
-  buildRemoteWebPairingUrl,
-  normalizePairingBaseUrl,
   tunnelProviderWebsiteName,
   type PublicBaseUrlRejection,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { routes } from "@/utils/routes";
-
-/**
- * The pairing link for an assistant's public base: its pair page with the
- * device code in the fragment, which is what the pair page reads on load and
- * what `parsePairingAddress` reads back off a paste. The base is canonicalized
- * first, so a trailing slash or an already-appended app route cannot produce a
- * doubled path. `null` when the base does not parse as a URL at all.
- */
-export function pairingLinkForBase(
-  base: string,
-  deviceCode: string,
-): string | null {
-  let normalized: string;
-  try {
-    normalized = normalizePairingBaseUrl(base);
-  } catch {
-    return null;
-  }
-  return buildRemoteWebPairingUrl({
-    verificationUri: `${normalized}${routes.remotePair}`,
-    deviceCode,
-  });
-}
 
 /**
  * The reasons {@link publicBaseUrlRejectionMessage} has copy for. A `Record`

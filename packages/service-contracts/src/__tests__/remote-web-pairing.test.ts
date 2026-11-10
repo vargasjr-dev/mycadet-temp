@@ -48,7 +48,7 @@ describe("parseRemoteWebPairingParams", () => {
 describe("parsePairingAddress", () => {
   test("splits a pairing link into its base and device code", () => {
     const link = buildRemoteWebPairingUrl({
-      verificationUri: "https://assistant.example.com/assistant/pair",
+      verificationUri: "https://assistant.example.com/account/pair",
       deviceCode: "device-1",
     });
 
@@ -62,7 +62,7 @@ describe("parsePairingAddress", () => {
   test("accepts the device code in the query string", () => {
     expect(
       parsePairingAddress(
-        "https://assistant.example.com/assistant/pair?deviceCode=device-2",
+        "https://assistant.example.com/account/pair?deviceCode=device-2",
       ),
     ).toEqual({
       ok: true,
@@ -71,25 +71,28 @@ describe("parsePairingAddress", () => {
     });
   });
 
-  test("preserves a path prefix while dropping the app-route suffix", () => {
+  test("splits an app-shell pairing link (the pair page lives at /account/pair)", () => {
+    const link = buildRemoteWebPairingUrl({
+      verificationUri: "https://assistant.example.com/account/pair",
+      deviceCode: "device-4",
+    });
+
+    expect(parsePairingAddress(link)).toEqual({
+      ok: true,
+      publicBaseUrl: "https://assistant.example.com",
+      deviceCode: "device-4",
+    });
+  });
+
+  test("preserves a path prefix on an app-shell pairing link", () => {
     expect(
       parsePairingAddress(
-        "https://host.example.com/assistant-123/assistant/pair#device_code=device-3",
+        "https://host.example.com/assistant-123/account/pair#device_code=device-5",
       ),
     ).toEqual({
       ok: true,
       publicBaseUrl: "https://host.example.com/assistant-123",
-      deviceCode: "device-3",
-    });
-  });
-
-  test("drops a trailing app-route suffix from a bare address", () => {
-    expect(
-      parsePairingAddress("https://assistant.example.com/assistant/pair"),
-    ).toEqual({
-      ok: true,
-      publicBaseUrl: "https://assistant.example.com",
-      deviceCode: null,
+      deviceCode: "device-5",
     });
   });
 

@@ -481,18 +481,18 @@ export function isPrivateNetworkPublicUrl(url: string): boolean {
 
 /**
  * Normalize an address to the public base a scanning device opens:
- * query/hash stripped, the `assistant` path segment (and everything after it)
- * removed so a pasted pair-page URL collapses to its base, and trailing
- * slashes trimmed. Throws if the value is not a parseable URL.
+ * query/hash stripped, the pair page's `account` path segment (and everything
+ * after it) removed so a pasted pair-page URL collapses to its base, and
+ * trailing slashes trimmed. Throws if the value is not a parseable URL.
  */
 export function normalizePairingBaseUrl(value: string): string {
   const url = new URL(value);
   url.search = "";
   url.hash = "";
   const parts = url.pathname.split("/").filter(Boolean);
-  const assistantIndex = parts.indexOf("assistant");
-  if (assistantIndex >= 0) {
-    parts.splice(assistantIndex);
+  const cutIndex = parts.indexOf("account");
+  if (cutIndex >= 0) {
+    parts.splice(cutIndex);
   }
   url.pathname = parts.length ? `/${parts.join("/")}` : "/";
   return url.toString().replace(/\/+$/, "");

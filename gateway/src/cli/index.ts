@@ -10,6 +10,8 @@
 import { runContactsCommand } from "./contacts.js";
 import { runDevicesCommand } from "../http/routes/devices.js";
 import { runPairingCommand } from "./pairing.js";
+import { initGatewayDb } from "../db/connection.js";
+import { initSigningKey } from "../auth/token-service.js";
 
 function printUsage(): void {
   console.log("Usage: gateway <command>");
@@ -33,6 +35,11 @@ if (command === "--help" || command === "-h" || !command) {
   printUsage();
   process.exit(0);
 }
+
+// Prepare DB for commands that depend on it below
+await initGatewayDb({ migrate: false });
+
+initSigningKey();
 
 if (command === "contacts") {
   const code = await runContactsCommand(opts);

@@ -59,6 +59,33 @@ function sandboxGatewayEnvs() {
 }
 
 /**
+ * The state volume every Baseten-hatched assistant keeps its state on, and
+ * where it mounts. The volume must exist — the hatch's REST arm creates it
+ * on demand; `baseten volume push <dir> bdn:<ns>/<name>` also creates one.
+ * Without a volume the sandbox's state lives on the platform's in-memory
+ * filesystem, where every file the running assistant writes (instance dir,
+ * lockfile, tokens, logs) counts against the sandbox's RAM until the sandbox
+ * dies with it.
+ */
+export const BASETEN_STATE_VOLUME_NAME = "cadet-state";
+export const BASETEN_STATE_VOLUME_MOUNT_PATH = "/data";
+
+/**
+ * The state paths a mounted volume takes over: XDG overrides are the one
+ * seam every local-mode path resolves through, so pointing both homes into
+ * the volume moves the assistant's instance dir, lockfile, tokens, and logs
+ * onto it wholesale. Plain envs: they are configuration, not credentials.
+ */
+export function sandboxStateVolumeEnvs(
+  mountPath: string,
+): Array<{ name: string; value: string; secret: boolean }> {
+  return [
+    { name: "XDG_DATA_HOME", value: `${mountPath}/xdg-data`, secret: false },
+    { name: "XDG_CONFIG_HOME", value: `${mountPath}/xdg-config`, secret: false },
+  ];
+}
+
+/**
  * Record the sandbox in the lockfile and persist its access token so the
  * desktop proxy can route to it: the entry carries the sandbox server URL
  * (the gateway is `{url}/port/{port}`), the token file beside the lockfile
@@ -172,7 +199,12 @@ export async function hatchBaseten(
       const sandbox = await createBasetenSandbox({
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
-        envs: [...sandboxGatewayEnvs(), ...collectProviderEnvs()],
+        envs: [
+          ...sandboxGatewayEnvs(),
+          ...sandboxStateVolumeEnvs(BASETEN_STATE_VOLUME_MOUNT_PATH),
+          ...collectProviderEnvs(),
+        ],
+        volume: `${BASETEN_STATE_VOLUME_NAME}:${BASETEN_STATE_VOLUME_MOUNT_PATH}`,
         ports: [{ name: "gateway", protocol: "HTTP", target: GATEWAY_PORT }],
       });
 
