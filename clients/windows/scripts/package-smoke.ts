@@ -201,11 +201,13 @@ const main = async (): Promise<void> => {
   console.log(`Uninstalling via ${uninstaller}`);
   runVerbatim(uninstaller, "/S");
 
-  for (let waited = 0; waited < 30_000; waited += 1_000) {
+  // Deleting the source runtime (tens of thousands of files) under hosted
+  // runner real-time scanning outlasts a 30-second poll — give it 5 minutes.
+  for (let waited = 0; waited < 300_000; waited += 2_000) {
     if (!existsSync(appExe) && !existsSync(resources)) {
       break;
     }
-    await sleep(1_000);
+    await sleep(2_000);
   }
   if (existsSync(appExe) || existsSync(resources)) {
     fail("Uninstall left the application binaries behind");
