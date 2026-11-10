@@ -31,6 +31,8 @@ const runVerbatim = (executable: string, argLine: string): void => {
   // NSIS `/D=` and `_?=` consume the rest of the raw command line, so the
   // arguments must not be re-quoted even when the path contains spaces.
   // cmd /s /c keeps the executable quoted while leaving the args verbatim.
+  // The source runtime is tens of thousands of small files, and hosted
+  // runners scan each on extraction — give the silent install 30 minutes.
   const result = spawnSync(
     "cmd.exe",
     [`/d /s /c ""${executable}" ${argLine}"`],
@@ -38,7 +40,7 @@ const runVerbatim = (executable: string, argLine: string): void => {
       stdio: "inherit",
       windowsVerbatimArguments: true,
       windowsHide: true,
-      timeout: 10 * 60 * 1000,
+      timeout: 30 * 60 * 1000,
     },
   );
   if (result.status !== 0) {
@@ -65,13 +67,16 @@ const sleep = (ms: number): Promise<void> =>
 
 const waitForVersionCommand = async (
   executable: string,
+  args: string[],
   label: string,
+  cwd?: string,
 ): Promise<void> => {
   let diagnostics = "not started";
   for (let waited = 0; waited < 60_000; waited += 2_000) {
-    const result = spawnSync(executable, ["--version"], {
+    const result = spawnSync(executable, args, {
       encoding: "utf8",
       windowsHide: true,
+      cwd,
     });
     const output = result.stdout.trim();
     if (result.status === 0 && output) {
@@ -141,9 +146,18 @@ const main = async (): Promise<void> => {
     assertExists(path.join(resources, relative), label);
   }
   const packagedBun = path.join(resources, "cli-runtime", "bun.exe");
-  await waitForVersionCommand(packagedBun, `Packaged Bun runtime for ${arch}`);
-  const packagedCli = path.join(resources, "cli-runtime", "cadet.exe");
-  await waitForVersionCommand(packagedCli, `Packaged CLI for ${arch}`);
+  await waitForVersionCommand(
+    packagedBun,
+    ["--version"],
+    `Packaged Bun runtime for ${arch}`,
+  );
+  const runtimeDir = path.join(resources, "cli-runtime");
+  await waitForVersionCommand(
+    packagedBun,
+    ["cli/src/index.ts", "--version"],
+    `Packaged CLI for ${arch}`,
+    runtimeDir,
+  );
   assertRegistered("HKCU\\Software\\Classes\\.cadet");
 
   console.log(`Launching ${appExe}`);
@@ -157,8 +171,11 @@ const main = async (): Promise<void> => {
   ]);
   const protocolKey = `HKCU\\Software\\Classes\\${scheme}`;
   let logFile: string | undefined;
-  for (let waited = 0; waited < 120_000; waited += 2_000) {
-    await sleep(2_000);
+  // First launch provisions the CLI runtime into userData — tens of
+  // thousands of files copied under hosted-runner real-time scanning — so
+  // the log file and protocol registration can lag app-ready by minutes.
+  for (let waited = 0; waited < 600_000; waited += 5_000) {
+    await sleep(5_000);
     logFile ??= logCandidates.find((candidate) => existsSync(candidate));
     if (child.exitCode !== null) {
       fail(`App exited early with code ${child.exitCode}`);
@@ -184,11 +201,13 @@ const main = async (): Promise<void> => {
   console.log(`Uninstalling via ${uninstaller}`);
   runVerbatim(uninstaller, "/S");
 
-  for (let waited = 0; waited < 30_000; waited += 1_000) {
+  // Deleting the source runtime (tens of thousands of files) under hosted
+  // runner real-time scanning outlasts a 30-second poll — give it 5 minutes.
+  for (let waited = 0; waited < 300_000; waited += 2_000) {
     if (!existsSync(appExe) && !existsSync(resources)) {
       break;
     }
-    await sleep(1_000);
+    await sleep(2_000);
   }
   if (existsSync(appExe) || existsSync(resources)) {
     fail("Uninstall left the application binaries behind");

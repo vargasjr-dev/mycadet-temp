@@ -89,6 +89,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path smoke-logs | Out-Null
           Get-ChildItem "$env:APPDATA" -File -Recurse -Filter 'cadet.log' -ErrorAction SilentlyContinue |
             ForEach-Object { Copy-Item -Force -ErrorAction SilentlyContinue $_.FullName "smoke-logs\$($_.Directory.Name)-cadet.log" }
+          Copy-Item "$env:TEMP\cadet-uninstall-cli.log" smoke-logs\ -Force -ErrorAction SilentlyContinue
+          Copy-Item "$env:TEMP\cadet-uninstall-trace.log" smoke-logs\ -Force -ErrorAction SilentlyContinue
+          Get-ChildItem "$env:LOCALAPPDATA\Programs" -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like '*Smoke*' } |
+            ForEach-Object { Get-ChildItem $_.FullName -Recurse -ErrorAction SilentlyContinue |
+              Select-Object -First 200 -ExpandProperty FullName |
+              Set-Content "smoke-logs\residue-$($_.Name).txt" -ErrorAction SilentlyContinue }
 
       - name: Upload failure logs
         if: failure()

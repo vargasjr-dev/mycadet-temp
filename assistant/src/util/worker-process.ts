@@ -16,7 +16,7 @@ import {
   readFileSync,
   unlinkSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getCurrentLogFilePath, getLogger } from "./logger.js";
@@ -175,33 +175,19 @@ function defaultWorkerCommandRuntime(): WorkerCommandRuntime {
   };
 }
 
-/**
- * How a packaged Windows runtime spawns this worker, or null when the worker
- * runs from source. Only packaged Windows runtimes ship the executable.
- */
-function packagedWorkerSpawn(
-  packagedEntry: PackagedWorkerEntry | undefined,
-  runtime: WorkerCommandRuntime,
-): { executable: string; entry: PackagedWorkerEntry } | null {
-  if (runtime.platform === "win32" && packagedEntry) {
-    const executable = join(dirname(runtime.execPath), "cadet-worker.exe");
-    if (runtime.executableExists(executable)) {
-      return { executable, entry: packagedEntry };
-    }
-  }
-  return null;
-}
-
 export function resolveWorkerCommand(
   entry: URL,
-  packagedEntry: PackagedWorkerEntry | undefined,
+  _packagedEntry: PackagedWorkerEntry | undefined,
   runtime: WorkerCommandRuntime = defaultWorkerCommandRuntime(),
 ): string[] {
-  const packaged = packagedWorkerSpawn(packagedEntry, runtime);
-  if (packaged) {
-    return [packaged.executable, packaged.entry];
-  }
-  return ["bun", "--smol", "run", fileURLToPath(entry)];
+  // Workers always run from source through bun. In packaged runtimes the
+  // daemon itself runs under the bundled bun (bun.exe at the runtime root),
+  // so prefer that executable over a bare "bun" that would depend on PATH
+  // resolution; dev checkouts fall back to PATH lookup.
+  const bun = /(^|[/\\])bun(-[^/\\]*)?(\.exe)?$/i.test(runtime.execPath)
+    ? runtime.execPath
+    : "bun";
+  return [bun, "--smol", "run", fileURLToPath(entry)];
 }
 
 type WorkerReadyOutcome = "ready" | "exited" | "timeout";
@@ -276,16 +262,11 @@ function matchesSignature(
  */
 export function workerKindSignature(
   entry: URL,
-  packagedEntry: PackagedWorkerEntry | undefined,
-  runtime: WorkerCommandRuntime = defaultWorkerCommandRuntime(),
+  _packagedEntry: PackagedWorkerEntry | undefined,
+  _runtime: WorkerCommandRuntime = defaultWorkerCommandRuntime(),
 ): readonly string[] {
-  const packaged = packagedWorkerSpawn(packagedEntry, runtime);
-  if (packaged) {
-    // Matched as separate fragments rather than one adjacent string: a Windows
-    // command line may quote the executable path, so the two are not reliably
-    // neighbours.
-    return ["cadet-worker", packaged.entry];
-  }
+  // The worker kind is carried by the entry path itself
+  // (…/<kind>/worker.ts); the packaged-exe argv form is gone.
   return [
     normalizeSeparators(fileURLToPath(entry))
       .split("/")

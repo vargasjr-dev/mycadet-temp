@@ -53,7 +53,7 @@ export type AssistantCommandTarget =
 
 /** Whether `execPath` is a bun runtime rather than a compiled product binary. */
 function isBunRuntime(execPath: string): boolean {
-  const base = basename(execPath);
+  const base = basename(execPath).replace(/\.exe$/i, "");
   return base === "bun" || base === "bunx" || base.startsWith("bun-");
 }
 

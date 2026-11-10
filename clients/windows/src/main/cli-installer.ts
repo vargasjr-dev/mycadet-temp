@@ -33,17 +33,16 @@ type CliRuntimeOwnership = {
 
 const STATE = "install-state.json";
 export const CLI_RUNTIME_OWNERSHIP_MARKER = ".cadet-runtime.json";
-export const CLI_RUNTIME_EXECUTABLES = [
-  "cadet.exe",
-  "bun.exe",
-  "assistant.exe",
-  "cadet-daemon.exe",
-  "cadet-gateway.exe",
-  "cadet-worker.exe",
-  "credential-executor.exe",
-  "cli-launcher.exe",
-] as const;
+export const CLI_RUNTIME_EXECUTABLES = ["bun.exe"] as const;
 export const CLI_RUNTIME_ASSETS = [
+  "cadet.cmd",
+  "assistant.cmd",
+  "cli",
+  "assistant",
+  "gateway",
+  "credential-executor",
+  "packages",
+  "scripts",
   "templates",
   "bundled-skills",
   "brain-graph",
@@ -51,7 +50,6 @@ export const CLI_RUNTIME_ASSETS = [
   "first-party-skills",
   "web-dist",
   "node_modules",
-  "feature-flag-registry.json",
   "web-tree-sitter.wasm",
   "tree-sitter-bash.wasm",
 ] as const;

@@ -2,28 +2,20 @@ import { createHash } from "node:crypto";
 import {
   copyFileSync,
   cpSync,
+  existsSync,
   lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   readlinkSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { withRuntimeNodePath } from "../src/shared/runtime-environment";
 import { resolveBuildCommitSha } from "./build-metadata";
 import { installPinnedBun } from "./bun-release";
-import { findPackageDir } from "./package-runtime-packages";
-
-interface RuntimeTarget {
-  readonly name: string;
-  readonly entry: string;
-  readonly externals?: readonly string[];
-  readonly defines?: Readonly<Record<string, string>>;
-  readonly hideConsole?: boolean;
-}
 
 const windowsDir = path.resolve(import.meta.dir, "..");
 const repoRoot = path.resolve(windowsDir, "..", "..");
@@ -36,7 +28,7 @@ if (targetArch !== "x64" && targetArch !== "arm64") {
 if (targetArch !== process.arch) {
   throw new Error(`${targetArch} runtime packaging requires a native runner.`);
 }
-const compileTarget = `bun-windows-${targetArch}`;
+
 const calculateRuntimeBuildId = (runtimeDir: string): string => {
   const hash = createHash("sha256");
   const visit = (dir: string): void => {
@@ -81,7 +73,6 @@ const readPackageVersion = async (packageDir: string): Promise<string> => {
 const appVersion = await readPackageVersion("clients/windows");
 const cliVersion = await readPackageVersion("cli");
 const assistantVersion = await readPackageVersion("assistant");
-const gatewayVersion = await readPackageVersion("gateway");
 const commitSha = resolveBuildCommitSha();
 const bunVersion = (
   await Bun.file(path.join(repoRoot, ".tool-versions")).text()
@@ -103,183 +94,7 @@ if (currentBun.status !== 0 || currentBun.stdout.trim() !== bunVersion) {
 
 rmSync(outputDir, { recursive: true, force: true });
 mkdirSync(outputDir, { recursive: true });
-const assistantDefines = {
-  "process.env.APP_VERSION": JSON.stringify(assistantVersion),
-  "process.env.COMMIT_SHA": JSON.stringify(commitSha),
-};
-const assistantExternals = [
-  "chromium-bidi/*",
-  "sharp",
-  "@img/*",
-  "detect-libc",
-  "semver",
-] as const;
-const targets: readonly RuntimeTarget[] = [
-  {
-    name: "cadet.exe",
-    entry: "cli/src/index.ts",
-  },
-  {
-    name: "assistant.exe",
-    entry: "assistant/src/windows-compiled-entry.ts",
-    externals: assistantExternals,
-    defines: assistantDefines,
-  },
-  {
-    name: "cadet-daemon.exe",
-    entry: "assistant/src/daemon/windows-compiled-entry.ts",
-    externals: assistantExternals,
-    defines: assistantDefines,
-    hideConsole: true,
-  },
-  {
-    name: "cadet-gateway.exe",
-    entry: "gateway/src/index.ts",
-    externals: ["drizzle-kit", "drizzle-kit/*"],
-    defines: {
-      "process.env.APP_VERSION": JSON.stringify(gatewayVersion),
-    },
-    hideConsole: true,
-  },
-  {
-    name: "cadet-worker.exe",
-    entry: "assistant/src/windows-compiled-worker-entry.ts",
-    externals: assistantExternals,
-    defines: assistantDefines,
-    hideConsole: true,
-  },
-  {
-    name: "credential-executor.exe",
-    entry: "credential-executor/src/main.ts",
-    hideConsole: true,
-  },
-  {
-    name: "cli-launcher.exe",
-    entry: "clients/windows/scripts/launch-cli.ts",
-  },
-  {
-    name: "cli-uninstaller.exe",
-    entry: "clients/windows/scripts/uninstall-cli.ts",
-  },
-];
-for (const { name, entry, externals, defines, hideConsole } of targets) {
-  const args = ["build", "--compile", `--target=${compileTarget}`];
-  if (hideConsole) {
-    args.push("--windows-hide-console");
-  }
-  for (const external of externals ?? []) {
-    args.push("--external", external);
-  }
-  for (const [key, value] of Object.entries(defines ?? {})) {
-    args.push("--define", `${key}=${value}`);
-  }
-  args.push(
-    path.join(repoRoot, entry),
-    "--outfile",
-    path.join(outputDir, name),
-  );
-  const build = spawnSync(process.execPath, args, {
-    cwd: repoRoot,
-    stdio: "inherit",
-    windowsHide: true,
-  });
-  if (build.status !== 0) {
-    throw new Error(`Failed to compile ${name} (exit ${build.status}).`);
-  }
-}
 
-const nativeSharpPackage = `@img/sharp-win32-${targetArch}`;
-const assistantPackageDir = path.join(repoRoot, "assistant");
-const gatewayPackageDir = path.join(repoRoot, "gateway");
-const sharpPackageDir = findPackageDir("sharp", assistantPackageDir);
-const runtimePackages = [
-  {
-    packageName: "sharp",
-    resolveSpecifier: "sharp",
-    basedir: assistantPackageDir,
-  },
-  {
-    packageName: "@img/colour",
-    resolveSpecifier: "@img/colour",
-    basedir: sharpPackageDir,
-  },
-  {
-    packageName: nativeSharpPackage,
-    resolveSpecifier: `${nativeSharpPackage}/sharp.node`,
-    basedir: sharpPackageDir,
-  },
-  {
-    packageName: "detect-libc",
-    resolveSpecifier: "detect-libc",
-    basedir: sharpPackageDir,
-  },
-  {
-    packageName: "semver",
-    resolveSpecifier: "semver",
-    basedir: sharpPackageDir,
-  },
-  {
-    packageName: "drizzle-kit",
-    resolveSpecifier: "drizzle-kit/api",
-    basedir: gatewayPackageDir,
-  },
-  {
-    packageName: "drizzle-orm",
-    resolveSpecifier: "drizzle-orm",
-    basedir: gatewayPackageDir,
-  },
-] as const;
-const runtimeNodeModules = path.join(outputDir, "node_modules");
-mkdirSync(runtimeNodeModules, { recursive: true });
-for (const { packageName, resolveSpecifier, basedir } of runtimePackages) {
-  cpSync(
-    findPackageDir(resolveSpecifier, basedir),
-    path.join(runtimeNodeModules, ...packageName.split("/")),
-    { recursive: true },
-  );
-}
-const packagedAssistant = path.join(outputDir, "assistant.exe");
-const versionCheck = spawnSync(packagedAssistant, ["--version"], {
-  encoding: "utf8",
-  env: withRuntimeNodePath(packagedAssistant),
-  windowsHide: true,
-});
-const versionOutput = versionCheck.stdout?.trim() ?? "";
-const versionErrorOutput = versionCheck.stderr?.trim() ?? "";
-if (versionCheck.status !== 0 || versionOutput !== assistantVersion) {
-  const diagnostics = [
-    `exit ${versionCheck.status ?? "not started"}`,
-    versionCheck.error ? `spawn error: ${versionCheck.error.message}` : null,
-    versionErrorOutput ? `stderr: ${versionErrorOutput}` : null,
-  ]
-    .filter((detail): detail is string => detail !== null)
-    .join("; ");
-  throw new Error(
-    `Packaged assistant version check failed: expected ${assistantVersion}, got ${versionOutput || "no output"} (${diagnostics}).`,
-  );
-}
-const packagedCli = path.join(outputDir, "cadet.exe");
-const cliVersionCheck = spawnSync(packagedCli, ["--version"], {
-  encoding: "utf8",
-  windowsHide: true,
-});
-const expectedCliVersion = `@mycadet/cli v${cliVersion}`;
-const cliVersionOutput = cliVersionCheck.stdout?.trim() ?? "";
-const cliVersionErrorOutput = cliVersionCheck.stderr?.trim() ?? "";
-if (cliVersionCheck.status !== 0 || cliVersionOutput !== expectedCliVersion) {
-  const diagnostics = [
-    `exit ${cliVersionCheck.status ?? "not started"}`,
-    cliVersionCheck.error
-      ? `spawn error: ${cliVersionCheck.error.message}`
-      : null,
-    cliVersionErrorOutput ? `stderr: ${cliVersionErrorOutput}` : null,
-  ]
-    .filter((detail): detail is string => detail !== null)
-    .join("; ");
-  throw new Error(
-    `Packaged CLI version check failed: expected ${expectedCliVersion}, got ${cliVersionOutput || "no output"} (${diagnostics}).`,
-  );
-}
 // Copies only git-tracked files so gitignored residue (skill node_modules
 // can run to hundreds of MB on a dev checkout) never ships in the runtime.
 const copyTrackedFiles = (source: string, destination: string): void => {
@@ -303,7 +118,73 @@ const copyTrackedFiles = (source: string, destination: string): void => {
     copyFileSync(path.join(repoRoot, file), target);
   }
 };
-copyTrackedFiles("skills", path.join(outputDir, "first-party-skills"));
+
+// The runtime ships SOURCE, not compiled binaries: bun.exe (pinned below)
+// executes the tracked TypeScript of every product package directly. Running
+// from source makes module resolution file-relative — imports resolve from
+// the source tree's own node_modules chain regardless of the launch CWD —
+// and keeps bun's lazy imports lazy (the same tradeoff the mac app made when
+// it dropped bun compilation). Workspace imports (@mycadet/*) resolve via the
+// install below linking the copied workspace packages into node_modules.
+const runtimeWorkspaces = [
+  "assistant",
+  "assistant/src/api",
+  "cli",
+  "credential-executor",
+  "gateway",
+  "packages/*",
+] as const;
+writeFileSync(
+  path.join(outputDir, "package.json"),
+  `${JSON.stringify(
+    {
+      name: "cadet-runtime",
+      private: true,
+      type: "module",
+      workspaces: runtimeWorkspaces,
+    },
+    null,
+    2,
+  )}\n`,
+);
+const runtimeSourceDirs = [
+  "assistant",
+  "cli",
+  "credential-executor",
+  "gateway",
+  "packages",
+] as const;
+for (const dir of runtimeSourceDirs) {
+  copyTrackedFiles(dir, path.join(outputDir, dir));
+}
+if (existsSync(path.join(repoRoot, "bunfig.toml"))) {
+  copyFileSync(
+    path.join(repoRoot, "bunfig.toml"),
+    path.join(outputDir, "bunfig.toml"),
+  );
+}
+
+const runtimeInstall = spawnSync(
+  process.execPath,
+  ["install", "--production", "--ignore-scripts"],
+  { cwd: outputDir, stdio: "inherit", windowsHide: true },
+);
+if (runtimeInstall.status !== 0) {
+  throw new Error(
+    `Failed to install the runtime dependency graph (exit ${runtimeInstall.status}).`,
+  );
+}
+
+// Entry-point shims. Everything the runtime launches goes through bun.exe:
+// spawn sites either reference these paths directly or derive them from the
+// running bun (dirname(process.execPath) is the runtime root).
+const bunEntry = (entry: string): string =>
+  `@echo off\r\n"%~dp0bun.exe" "%~dp0${entry.replaceAll("/", "\\")}" %*\r\n`;
+writeFileSync(
+  path.join(outputDir, "assistant.cmd"),
+  bunEntry("assistant/src/windows-compiled-entry.ts"),
+);
+
 for (const [source, name] of [
   ["assistant/src/prompts/templates", "templates"],
   ["assistant/src/config/bundled-skills", "bundled-skills"],
@@ -324,10 +205,7 @@ for (const [specifier, name] of [
     path.join(outputDir, name),
   );
 }
-copyFileSync(
-  path.join(repoRoot, "meta", "feature-flags", "feature-flag-registry.json"),
-  path.join(outputDir, "feature-flag-registry.json"),
-);
+copyTrackedFiles("skills", path.join(outputDir, "first-party-skills"));
 const pluginApiShim = spawnSync(
   process.execPath,
   [
@@ -345,6 +223,13 @@ if (pluginApiShim.status !== 0) {
     `Failed to package the plugin API shim (exit ${pluginApiShim.status}).`,
   );
 }
+mkdirSync(path.join(outputDir, "scripts"), { recursive: true });
+copyFileSync(
+  path.join(repoRoot, "clients", "windows", "scripts", "uninstall-cli.ts"),
+  path.join(outputDir, "scripts", "uninstall-cli.ts"),
+);
+writeFileSync(path.join(outputDir, "cadet.cmd"), bunEntry("cli/src/index.ts"));
+
 const bunSource = await installPinnedBun({
   arch: targetArch,
   cacheDir: path.join(windowsDir, "out", "bun-cache"),
@@ -353,8 +238,65 @@ const bunSource = await installPinnedBun({
   version: bunVersion,
 });
 console.log(`Bundled Bun ${bunVersion} (${targetArch}) from ${bunSource}.`);
+
+// Smoke the shipped source through the shipped bun before declaring victory.
+const assistantVersionCheck = spawnSync(
+  path.join(outputDir, "bun.exe"),
+  ["assistant/src/windows-compiled-entry.ts", "--version"],
+  {
+    cwd: outputDir,
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: 120_000,
+  },
+);
+if (
+  assistantVersionCheck.status !== 0 ||
+  assistantVersionCheck.stdout.trim() !== assistantVersion
+) {
+  const diagnostics = [
+    `exit ${assistantVersionCheck.status ?? "not started"}`,
+    assistantVersionCheck.error
+      ? `spawn error: ${assistantVersionCheck.error.message}`
+      : null,
+    assistantVersionCheck.stderr.trim()
+      ? `stderr: ${assistantVersionCheck.stderr.trim()}`
+      : null,
+  ]
+    .filter((detail): detail is string => detail !== null)
+    .join("; ");
+  throw new Error(
+    `Packaged assistant version check failed: expected ${assistantVersion}, got ${assistantVersionCheck.stdout.trim() || "no output"} (${diagnostics}).`,
+  );
+}
+const cliVersionCheck = spawnSync(
+  path.join(outputDir, "bun.exe"),
+  ["cli/src/index.ts", "--version"],
+  { cwd: outputDir, encoding: "utf8", windowsHide: true, timeout: 120_000 },
+);
+const cliOutput = cliVersionCheck.stdout.trim();
+// The CLI decorates its base version with the release channel and commit
+// (e.g. "@mycadet/cli v0.13.0-local.20261110…d4742cc"), so match the prefix.
+const expectedCliVersion = `@mycadet/cli v${cliVersion}`;
+if (cliVersionCheck.status !== 0 || !cliOutput.startsWith(expectedCliVersion)) {
+  const diagnostics = [
+    `exit ${cliVersionCheck.status ?? "not started"}`,
+    cliVersionCheck.error
+      ? `spawn error: ${cliVersionCheck.error.message}`
+      : null,
+    cliVersionCheck.stderr.trim()
+      ? `stderr: ${cliVersionCheck.stderr.trim()}`
+      : null,
+  ]
+    .filter((detail): detail is string => detail !== null)
+    .join("; ");
+  throw new Error(
+    `Packaged CLI version check failed: expected a version starting with ${expectedCliVersion}, got ${cliOutput || "no output"} (${diagnostics}).`,
+  );
+}
+
 const runtimeBuildId = calculateRuntimeBuildId(outputDir);
 await Bun.write(
   path.join(outputDir, "runtime.json"),
-  `${JSON.stringify({ version: appVersion, bunVersion, runtimeBuildId, releaseChannel, architecture: targetArch })}\n`,
+  `${JSON.stringify({ version: appVersion, bunVersion, runtimeBuildId, releaseChannel, architecture: targetArch, commitSha })}\n`,
 );

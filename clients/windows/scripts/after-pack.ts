@@ -21,25 +21,17 @@ import { argValue } from "./cli-args";
 const windowsDir = path.resolve(import.meta.dir, "..");
 const SIGNABLE_EXTENSIONS = new Set([".exe", ".dll", ".node"]);
 
-// The native helper is packed under native-helper/<arch> so the app can
-// resolve the binary matching its own architecture.
+// Only bun.exe is a signable binary in the runtime — everything else ships
+// as source executed by bun. The native helper and preview handler stay
+// compiled: they are Windows-native components, not product TS.
 export const requiredPackageBinaries = (arch: string): string[] => [
-  "resources/cli-runtime/assistant.exe",
   "resources/cli-runtime/bun.exe",
-  "resources/cli-runtime/cli-launcher.exe",
-  "resources/cli-runtime/cli-uninstaller.exe",
-  "resources/cli-runtime/credential-executor.exe",
-  "resources/cli-runtime/cadet-daemon.exe",
-  "resources/cli-runtime/cadet-gateway.exe",
-  "resources/cli-runtime/cadet-worker.exe",
-  "resources/cli-runtime/cadet.exe",
   `resources/native-helper/${arch}/Cadet.WindowsHelper.exe`,
   "resources/preview-handler/Cadet.PreviewHandler.dll",
 ];
 
 export const requiredPackageEntries = (arch: string): string[] => [
   ...CLI_RUNTIME_ENTRIES.map((entry) => `resources/cli-runtime/${entry}`),
-  "resources/cli-runtime/cli-uninstaller.exe",
   `resources/native-helper/${arch}/Cadet.WindowsHelper.exe`,
   "resources/preview-handler/Cadet.PreviewHandler.dll",
 ];

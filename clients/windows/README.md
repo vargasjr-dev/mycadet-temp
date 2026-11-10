@@ -63,8 +63,17 @@ Packaged Windows startup installs the bundled CLI runtime for the current user:
   web ingress.
 - The launcher directory is added to `HKCU\Environment\Path`. The app broadcasts
   the environment change to the Windows shell after a successful write.
-- Machine PATH entries are evaluated before user entries. If another
-  `cadet.exe` wins resolution, startup records the launcher as shadowed.
+- Machine PATH entries are evaluated before user entries. If another `cadet`
+  command (`cadet.exe` or `cadet.cmd`) wins resolution, startup records the
+  launcher as shadowed.
+
+The CLI runtime ships SOURCE, not compiled binaries: the packaged `bun.exe`
+executes the tracked TypeScript of the CLI, assistant, gateway, and
+credential-executor directly (the same model the mac app uses). Module
+resolution is file-relative from the source tree's `node_modules`, so imports
+resolve regardless of the launch working directory, and bun's lazy imports
+stay lazy. Only `bun.exe` remains a compiled binary in the runtime; the PATH
+launcher is a generated `cadet.cmd` shim pointing at the versioned install.
 
 `cadet retire` stages assistant data before archiving it. On Windows the
 background archive uses PowerShell and the built-in `tar.exe`; other platforms

@@ -11,27 +11,22 @@ import {
 const entry = new URL("file:///source/monitoring/worker.ts");
 
 describe("resolveWorkerCommand", () => {
-  test("uses the packaged Windows worker executable when present", () => {
+  test("runs workers from source through the bundled bun", () => {
     expect(
       resolveWorkerCommand(entry, "monitoring", {
         platform: "win32",
-        execPath: "/runtime/cadet-daemon.exe",
-        executableExists: () => true,
+        execPath: "/runtime/bun.exe",
+        executableExists: () => false,
       }),
-    ).toEqual(["/runtime/cadet-worker.exe", "monitoring"]);
+    ).toEqual([
+      "/runtime/bun.exe",
+      "--smol",
+      "run",
+      "/source/monitoring/worker.ts",
+    ]);
   });
 
-  test("routes integrity checks through the packaged worker", () => {
-    expect(
-      resolveWorkerCommand(entry, "db-integrity", {
-        platform: "win32",
-        execPath: "/runtime/cadet-worker.exe",
-        executableExists: () => true,
-      }),
-    ).toEqual(["/runtime/cadet-worker.exe", "db-integrity"]);
-  });
-
-  test("falls back to the source entry outside a packaged runtime", () => {
+  test("falls back to PATH lookup outside a bundled runtime", () => {
     expect(
       resolveWorkerCommand(entry, "monitoring", {
         platform: "win32",
@@ -96,30 +91,22 @@ describe("workerKindSignature", () => {
     ).toBe(true);
   });
 
-  const packaged = {
-    platform: "win32" as const,
-    execPath: "/runtime/cadet-daemon.exe",
-    executableExists: () => true,
-  };
-
-  // Every packaged worker runs one executable and is told apart by the
-  // subcommand, so the executable alone must not identify a worker: one
-  // worker's slot would otherwise reclaim another's process.
+  // Workers run from source now, so the kind is carried by the entry path
+  // itself — one worker's slot must never reclaim another's process.
   test("distinguishes packaged worker kinds sharing one executable", () => {
-    const scheduleSig = workerKindSignature(schedule, "schedule", packaged);
-    expect(matches('"C:/App/cadet-worker.exe" schedule', scheduleSig)).toBe(
-      true,
-    );
-    expect(matches('"C:/App/cadet-worker.exe" monitoring', scheduleSig)).toBe(
-      false,
-    );
-  });
-
-  test("matches a packaged worker from a previous install", () => {
-    const scheduleSig = workerKindSignature(schedule, "schedule", packaged);
-    expect(matches('"C:/Prev/cadet-worker.exe" schedule', scheduleSig)).toBe(
-      true,
-    );
+    const scheduleSig = workerKindSignature(schedule, "schedule", source);
+    expect(
+      matches(
+        "bun --smol run /app/runtime/0.10.11/src/schedule/worker.ts",
+        scheduleSig,
+      ),
+    ).toBe(true);
+    expect(
+      matches(
+        "bun --smol run /app/runtime/0.10.11/src/monitoring/worker.ts",
+        scheduleSig,
+      ),
+    ).toBe(false);
   });
 });
 
