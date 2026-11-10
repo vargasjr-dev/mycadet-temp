@@ -7,35 +7,25 @@ import { readAppBuiltSha, stampAppBuiltSha } from "./assistant-config.js";
 
 const loadModule = createRequire(import.meta.url);
 
-interface WebDistOptions {
-  execPath?: string;
-  platform?: NodeJS.Platform;
-  resolvePackage?: () => string;
-  startDir?: string;
-}
-
 /** Locate the pre-built web SPA for installed, packaged, or source CLIs. */
-export function findWebDistDir(options: WebDistOptions = {}): string | null {
+export function findWebDistDir(): string | null {
   try {
-    const packageJson = (
-      options.resolvePackage ??
-      (() => loadModule.resolve("@mycadet/web/package.json"))
-    )();
+    const packageJson = loadModule.resolve("@mycadet/web/package.json");
     const distDir = join(dirname(packageJson), "dist");
     if (existsSync(join(distDir, "index.html"))) {
       return distDir;
     }
   } catch {}
 
-  if ((options.platform ?? process.platform) === "win32") {
-    const runtimeDir = dirname(options.execPath ?? process.execPath);
+  if (process.platform === "win32") {
+    const runtimeDir = dirname(process.execPath);
     const packagedDist = join(runtimeDir, "web-dist");
     if (existsSync(join(packagedDist, "index.html"))) {
       return packagedDist;
     }
   }
 
-  let dir = options.startDir ?? import.meta.dir;
+  let dir = import.meta.dir;
   for (let depth = 0; depth < 8; depth++) {
     const candidate = join(dir, "clients", "web", "dist", "index.html");
     if (existsSync(candidate)) {
@@ -50,41 +40,28 @@ export function findWebDistDir(options: WebDistOptions = {}): string | null {
   return null;
 }
 
-interface AppDistOptions {
-  execPath?: string;
-  platform?: NodeJS.Platform;
-  resolvePackage?: () => string;
-  startDir?: string;
-}
-
 /**
  * Locate the pre-built standalone app shell bundle for installed, packaged,
- * or source CLIs. Resolution mirrors {@link findWebDistDir}: the published
- * `@mycadet/app` package carries `dist/standalone`, packaged Windows CLIs
- * ship it beside the binary, and source checkouts fall back to the build
- * output in the repo tree.
+ * or source CLIs.
  */
-export function findAppDistDir(options: AppDistOptions = {}): string | null {
+function findAppDistDir(): string | null {
   try {
-    const packageJson = (
-      options.resolvePackage ??
-      (() => loadModule.resolve("@mycadet/app/package.json"))
-    )();
+    const packageJson = loadModule.resolve("@mycadet/app/package.json");
     const distDir = join(dirname(packageJson), "dist", "standalone");
     if (existsSync(join(distDir, "index.html"))) {
       return distDir;
     }
   } catch {}
 
-  if ((options.platform ?? process.platform) === "win32") {
-    const runtimeDir = dirname(options.execPath ?? process.execPath);
+  if (process.platform === "win32") {
+    const runtimeDir = dirname(process.execPath);
     const packagedDist = join(runtimeDir, "app-dist");
     if (existsSync(join(packagedDist, "index.html"))) {
       return packagedDist;
     }
   }
 
-  let dir = options.startDir ?? import.meta.dir;
+  let dir = import.meta.dir;
   for (let depth = 0; depth < 8; depth++) {
     const candidate = join(
       dir,
@@ -121,11 +98,8 @@ export interface DistBuildOptions {
 }
 
 /** Locate the `clients/<kind>` package of the checkout this CLI runs from. */
-function findSourcePackageDir(
-  kind: "web" | "app",
-  startDir?: string,
-): string | null {
-  let dir = startDir ?? import.meta.dir;
+function findSourcePackageDir(kind: "web" | "app"): string | null {
+  let dir = import.meta.dir;
   for (let depth = 0; depth < 8; depth++) {
     const packageJson = join(dir, "clients", kind, "package.json");
     if (existsSync(packageJson)) {
@@ -214,7 +188,7 @@ function gitHeadSha(sourceDir: string): Promise<string> {
 async function buildDistFromSource(
   kind: "web" | "app",
   sourceDir: string,
-): Promise<void> {
+): Promise<string> {
   try {
     await spawnDistBuild({
       command: "bun",
@@ -227,6 +201,7 @@ async function buildDistFromSource(
 ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+  return join(sourceDir, "dist");
 }
 
 /** One kind's resolution arm, feeding the shared stamp decision. */
@@ -239,13 +214,9 @@ interface DistArm {
   sourceBuilt: boolean;
 }
 
-async function resolveDistArm(
-  kind: "web" | "app",
-  options: DistBuildOptions,
-): Promise<DistArm> {
-  const existing =
-    kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
-  const sourceDir = findSourcePackageDir(kind, options.startDir);
+async function resolveDistArm(kind: "web" | "app"): Promise<DistArm> {
+  const existing = kind === "web" ? findWebDistDir() : findAppDistDir();
+  const sourceDir = findSourcePackageDir(kind);
   if (!sourceDir) {
     throw new Error(`Failed to find source for ${kind}`);
   }
@@ -284,42 +255,41 @@ function isStale(
 /**
  * Build both client bundles
  */
-export async function resolveClientDists(
-  options: DistBuildOptions = {},
-): Promise<{
-  webDistDir: string | null;
-  appDistDir: string | null;
-  /**
-   * The checkout HEAD the dists were (re)built at — the empty string when the
-   * checkout has no git anchor (the stamp then stays inert, as before).
-   */
+export async function resolveClientDists(): Promise<{
+  webDistDir: string;
+  appDistDir: string;
   builtSha: string;
 }> {
   const arms = {
-    web: await resolveDistArm("web", options),
-    app: await resolveDistArm("app", options),
+    web: await resolveDistArm("web"),
+    app: await resolveDistArm("app"),
   };
   const anchor = arms.app.sourceDir;
   const headSha = await gitHeadSha(anchor);
   const recordedSha = readAppBuiltSha();
 
-  for (const kind of ["web", "app"] as const) {
+  async function buildClientDist(kind: "web" | "app"): Promise<string> {
     console.log(`Building ${kind} client...`);
+
     const arm = arms[kind];
     const sourceDir = arm.sourceDir;
-    // An existing dist that isn't stale (installed/packaged arm, git-less
-    // tree, or the recorded sha still matching HEAD) serves as-is.
-    if (arm.distDir !== null && !isStale(arm, headSha, recordedSha)) continue;
-    await buildDistFromSource(kind, sourceDir);
+    if (arm.distDir !== null && !isStale(arm, headSha, recordedSha))
+      return arm.distDir;
+
+    const dist = await buildDistFromSource(kind, sourceDir);
     console.log(`${kind} client built.`);
+    return dist;
   }
+
+  const appDistDir = await buildClientDist("app");
+  const webDistDir = await buildClientDist("web");
 
   stampAppBuiltSha(headSha);
   console.log("Saved", headSha);
 
   return {
-    webDistDir: arms.web.distDir,
-    appDistDir: arms.app.distDir,
+    webDistDir: arms.web.distDir ?? webDistDir,
+    appDistDir: arms.app.distDir ?? appDistDir,
     builtSha: headSha,
   };
 }

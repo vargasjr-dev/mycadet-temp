@@ -1067,10 +1067,6 @@ jobs:
             bun install --filter=@mycadet/app
           fi
 
-      # Builds both publish outputs in one pass: dist/package (the portable
-      # library its exports map serves) and dist/standalone (the outer-shell
-      # bundle the CLI's nginx edge serves in app mode — findAppDistDir
-      # resolves it from this package in installed releases).
       - name: Build
         working-directory: clients/app
         run: bun run build
