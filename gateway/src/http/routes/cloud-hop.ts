@@ -5,8 +5,9 @@
  * The bound cloud assistant UUID is used on the upstream path, not the
  * URL id (which may be `"self"` or a client-resolved slug). The cloud
  * authenticates the hop with the stored assistant API key. Arms built on
- * this helper: the push-token proxy and the assistant's public-identity
- * surface (handle claim, handle availability, domains).
+ * this helper: the push-token proxy, the assistant's public-identity
+ * surface (handle claim, handle availability, domains), and the
+ * assistant's cloud-only session surfaces (terminal, doctor).
  */
 
 import { getCredentials } from "../../credential-cache.js";
@@ -55,10 +56,17 @@ export async function resolveCloudTarget(): Promise<
  * status and body verbatim. `resourcePath` includes its leading slash and
  * trailing slash as the upstream route spells it (e.g. `/handle-available/`,
  * `/` for the assistant record itself).
+ *
+ * `streaming` marks a long-lived response (an SSE event stream): the hop
+ * drops its fixed timeout and binds the upstream fetch to the caller's own
+ * signal instead, so a client disconnect tears the stream down. Replay
+ * cursors ride through too — a `Last-Event-ID` header is forwarded
+ * verbatim.
  */
 export async function forwardToCloud(
   req: Request,
   resourcePath: string,
+  opts?: { streaming?: boolean },
 ): Promise<Response> {
   const target = await resolveCloudTarget();
   if (target instanceof Response) {
@@ -73,6 +81,10 @@ export async function forwardToCloud(
   const contentType = req.headers.get("content-type");
   if (contentType) {
     headers.set("Content-Type", contentType);
+  }
+  const lastEventId = req.headers.get("last-event-id");
+  if (lastEventId) {
+    headers.set("Last-Event-ID", lastEventId);
   }
 
   let body: ArrayBuffer | undefined;
@@ -89,7 +101,9 @@ export async function forwardToCloud(
       method: req.method,
       headers,
       body,
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      signal: opts?.streaming
+        ? req.signal
+        : AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!res.ok) {

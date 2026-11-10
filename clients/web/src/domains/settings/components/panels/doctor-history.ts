@@ -1,8 +1,38 @@
-import type {
-  DoctorMessage,
-  DoctorSessionStatusEnum,
-} from "@/generated/api/types.gen";
 import type { FeedbackReason } from "@/components/share-feedback-types";
+
+// ---------------------------------------------------------------------------
+// The cloud's persisted doctor types, declared locally: the gateway's
+// doctor arms proxy the cloud verbatim, so the panel owns the shapes it
+// reads (the gateway spec answers them loosely).
+// ---------------------------------------------------------------------------
+
+export type DoctorMessageKindEnum =
+  | "user"
+  | "assistant"
+  | "tool_call"
+  | "tool_result"
+  | "approval"
+  | "status"
+  | "error";
+
+export type DoctorSessionStatusEnum = "active" | "completed" | "error";
+
+/** A persisted doctor session event, as the cloud's history serves it. */
+export type DoctorMessage = {
+  readonly id: string;
+  /** What kind of UI event this entry represents. */
+  readonly kind: DoctorMessageKindEnum;
+  /** Human-readable content (may be empty for status/tool events). */
+  readonly content: string;
+  /** Structured payload describing the event (e.g. tool args). */
+  readonly metadata: unknown;
+  /** Monotonic per-session ordering, allocated atomically on write. */
+  readonly sequence: number;
+  /** Optional upstream Doctor event ID used for idempotent replay. */
+  readonly source_event_id: string | null;
+  /** When the event actually occurred (caller-supplied). */
+  readonly occurred_at: string;
+};
 
 // ---------------------------------------------------------------------------
 // ChatEntry — discriminated union by `kind`

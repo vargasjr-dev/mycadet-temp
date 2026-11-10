@@ -80,8 +80,11 @@ function buildSpec(version: string) {
     if (parameters.length > 0) operation.parameters = parameters;
 
     if (route.requestBody) {
+      // A body that parses `undefined` (`.optional()`) is documented as
+      // optional — mirrors the upstream specs these routes declare.
+      const bodyOptional = route.requestBody.safeParse(undefined).success;
       operation.requestBody = {
-        required: true,
+        required: !bodyOptional,
         content: {
           "application/json": { schema: route.requestBody },
         },

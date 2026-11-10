@@ -15,11 +15,11 @@ import {
 } from "react";
 
 import {
-  assistantsTerminalSessionsCreate,
-  assistantsTerminalSessionsDestroy,
-  assistantsTerminalSessionsInputCreate,
-  assistantsTerminalSessionsResizeCreate,
-} from "@/generated/api/sdk.gen";
+  assistantTerminalSessionsCreate,
+  assistantTerminalSessionsDestroy,
+  assistantTerminalSessionsInputCreate,
+  assistantTerminalSessionsResizeCreate,
+} from "@/generated/gateway/sdk.gen";
 import {
   subscribeTerminalEvents,
   type TerminalOutputStream,
@@ -127,7 +127,7 @@ export function useTerminalSession({
           return;
         }
         inputBufferRef.current = "";
-        assistantsTerminalSessionsInputCreate({
+        assistantTerminalSessionsInputCreate({
           path: { assistant_id: assistantId, session_id: sessionId },
           body: { data: buffered },
           throwOnError: false,
@@ -163,7 +163,7 @@ export function useTerminalSession({
       let sessionId: string;
       try {
         const { data, error, response } =
-          await assistantsTerminalSessionsCreate({
+          await assistantTerminalSessionsCreate({
             path: { assistant_id: assistantId },
             body: apiOptions,
             throwOnError: false,
@@ -212,7 +212,7 @@ export function useTerminalSession({
 
       const expected = isReconnect ? "reconnecting" : "connecting";
       if (useTerminalStore.getState().status !== expected) {
-        assistantsTerminalSessionsDestroy({
+        assistantTerminalSessionsDestroy({
           path: { assistant_id: assistantId, session_id: sessionId },
           throwOnError: false,
         }).catch(() => {});
@@ -255,7 +255,7 @@ export function useTerminalSession({
 
       const dims = lastDimensionsRef.current;
       if (dims && assistantId) {
-        assistantsTerminalSessionsResizeCreate({
+        assistantTerminalSessionsResizeCreate({
           path: { assistant_id: assistantId, session_id: sessionId },
           body: { cols: dims.cols, rows: dims.rows },
           throwOnError: false,
@@ -297,7 +297,7 @@ export function useTerminalSession({
       const prevSessionId = lastSessionIdRef.current;
       if (prevSessionId && assistantId) {
         lastSessionIdRef.current = null;
-        assistantsTerminalSessionsDestroy({
+        assistantTerminalSessionsDestroy({
           path: { assistant_id: assistantId, session_id: prevSessionId },
           throwOnError: false,
         }).catch(() => {});
@@ -345,7 +345,7 @@ export function useTerminalSession({
     pendingResizeRef.current = null;
 
     if (sessionId && assistantId) {
-      assistantsTerminalSessionsDestroy({
+      assistantTerminalSessionsDestroy({
         path: { assistant_id: assistantId, session_id: sessionId },
         throwOnError: false,
       }).catch(() => {});
@@ -375,7 +375,7 @@ export function useTerminalSession({
     }
 
     if (sessionId && assistantId) {
-      assistantsTerminalSessionsDestroy({
+      assistantTerminalSessionsDestroy({
         path: { assistant_id: assistantId, session_id: sessionId },
         throwOnError: false,
       }).catch(() => {});
@@ -415,7 +415,7 @@ export function useTerminalSession({
           return;
         }
         pendingResizeRef.current = null;
-        assistantsTerminalSessionsResizeCreate({
+        assistantTerminalSessionsResizeCreate({
           path: { assistant_id: assistantId, session_id: current.sessionId },
           body: { cols: pending.cols, rows: pending.rows },
           throwOnError: false,
@@ -453,7 +453,7 @@ export function useTerminalSession({
 
       const { sessionId } = useTerminalStore.getState();
       if (sessionId && assistantId) {
-        assistantsTerminalSessionsDestroy({
+        assistantTerminalSessionsDestroy({
           path: { assistant_id: assistantId, session_id: sessionId },
           throwOnError: false,
         }).catch(() => {});

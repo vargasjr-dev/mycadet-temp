@@ -44,16 +44,16 @@ import {
 import { useDoctorSSE } from "@/domains/settings/components/panels/use-doctor-sse";
 import { useDoctorAutoScroll } from "@/domains/settings/components/panels/use-doctor-auto-scroll";
 import {
-  assistantsDoctorHistoryListOptions,
-  assistantsDoctorHistoryRetrieveOptions,
-  useAssistantsDoctorSessionsMessagesCreateMutation,
-} from "@/generated/api/@tanstack/react-query.gen";
+  assistantDoctorHistoryListOptions,
+  assistantDoctorHistoryRetrieveOptions,
+  useAssistantDoctorSessionsMessagesCreateMutation,
+} from "@/generated/gateway/@tanstack/react-query.gen";
 import {
   type Options,
-  assistantsDoctorSessionsCreate,
-  assistantsDoctorSessionsUserOutcomeCreate,
-} from "@/generated/api/sdk.gen";
-import type { AssistantsDoctorSessionsCreateData } from "@/generated/api/types.gen";
+  assistantDoctorSessionsCreate,
+  assistantDoctorSessionsUserOutcomeCreate,
+} from "@/generated/gateway/sdk.gen";
+import type { AssistantDoctorSessionsCreateData } from "@/generated/gateway/types.gen";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ApiError, extractErrorMessage } from "@/utils/api-errors";
@@ -134,9 +134,9 @@ export function DoctorPanel() {
     storeEntries.length === 0;
 
   const historyListQuery = useQuery({
-    ...assistantsDoctorHistoryListOptions({
+    ...assistantDoctorHistoryListOptions({
       path: { assistant_id: assistantId || "placeholder" },
-      query: { limit: 1 },
+      query: { limit: "1" },
     }),
     enabled: historyListEnabled,
   });
@@ -147,7 +147,7 @@ export function DoctorPanel() {
   const latestHistorySessionId = latestHistorySession?.id ?? null;
 
   const historyDetailQuery = useQuery({
-    ...assistantsDoctorHistoryRetrieveOptions({
+    ...assistantDoctorHistoryRetrieveOptions({
       path: {
         assistant_id: assistantId || "placeholder",
         doctor_session_id: latestHistorySessionId ?? "",
@@ -248,8 +248,8 @@ export function DoctorPanel() {
   // handling. The generated useAssistantsDoctorSessionsCreateMutation hook
   // uses throwOnError which discards the HTTP status from the thrown error.
   const startMutation = useMutation({
-    async mutationFn(options: Options<AssistantsDoctorSessionsCreateData>) {
-      const { data, error, response } = await assistantsDoctorSessionsCreate({
+    async mutationFn(options: Options<AssistantDoctorSessionsCreateData>) {
+      const { data, error, response } = await assistantDoctorSessionsCreate({
         ...options,
         throwOnError: false,
       });
@@ -299,7 +299,7 @@ export function DoctorPanel() {
     },
   });
 
-  const sendMutation = useAssistantsDoctorSessionsMessagesCreateMutation({
+  const sendMutation = useAssistantDoctorSessionsMessagesCreateMutation({
     onMutate(variables) {
       const content = variables.body.content;
       const store = useDoctorPanelStore.getState();
@@ -389,7 +389,7 @@ export function DoctorPanel() {
         );
       };
       setAnswer(optimisticAnswer);
-      assistantsDoctorSessionsUserOutcomeCreate({
+      assistantDoctorSessionsUserOutcomeCreate({
         path: { assistant_id: assistantId, session_id: targetSessionId },
         body: { resolved },
         throwOnError: false,

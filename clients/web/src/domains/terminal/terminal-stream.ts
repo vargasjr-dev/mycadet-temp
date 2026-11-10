@@ -1,12 +1,15 @@
 /**
  * SSE transport for terminal PTY output.
  *
- * The terminal events endpoint is not in the cloud OpenAPI spec (it's a
- * raw SSE stream), so there is no generated SDK function for it. This module
- * provides the subscription primitive that {@link useTerminalSession} drives.
+ * The terminal events endpoint is not in the gateway's published spec (like
+ * the daemon's event stream, it's a raw SSE stream), so there is no
+ * generated SDK function for it: the dial goes through the gateway
+ * client's raw `sse` helper, and the gateway's arm proxies the stream on
+ * the assistant's own credentials. This module provides the subscription
+ * primitive that {@link useTerminalSession} drives.
  */
 
-import { client as cloudClient } from "@/generated/api/client.gen";
+import { client } from "@/generated/gateway/client.gen";
 import {
   normalizeSSEPayload,
   unwrapMessageEnvelope,
@@ -64,7 +67,7 @@ export function subscribeTerminalEvents(
 
     let streamError: Error | null = null;
     try {
-      const { stream } = await cloudClient.sse.get<
+      const { stream } = await client.sse.get<
         Record<string, unknown> | string
       >({
         url: "/v1/assistants/{assistant_id}/terminal/sessions/{session_id}/events/",
