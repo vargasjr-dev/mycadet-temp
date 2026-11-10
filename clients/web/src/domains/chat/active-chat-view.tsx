@@ -300,7 +300,6 @@ export function ActiveChatView() {
     handleSteerMessage,
     handleEditQueueTail,
   } = useSendMessage({
-    assistantId,
     activeConversationId,
     diskPressureChatBlockReason,
     uiContextRef,

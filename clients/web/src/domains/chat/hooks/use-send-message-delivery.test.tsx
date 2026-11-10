@@ -93,7 +93,6 @@ function renderSend(startReconciliationLoop: () => void) {
   return renderHook(
     () =>
       useSendMessage({
-        assistantId: "asst-1",
         activeConversationId: "conv-A",
         diskPressureChatBlockReason: null,
         uiContextRef: { current: null },

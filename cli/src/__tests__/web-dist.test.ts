@@ -60,25 +60,31 @@ afterEach(() => {
   spawnMock.mockReset();
   spawnMock.mockImplementation(realChildProcess.spawn);
   fixtureHeadSha = null;
+  rmSync(webDistDir(), { recursive: true, force: true });
+  rmSync(appDistDir(), { recursive: true, force: true });
 });
 
-const roots: string[] = [];
-
-function makeRoot(): string {
-  const dir = mkdtempSync(join(tmpdir(), "web-dist-"));
-  roots.push(dir);
-  return dir;
-}
-
 afterAll(() => {
-  for (const dir of [...roots.splice(0), ...lockfileDirs.splice(0)]) {
+  for (const dir of lockfileDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-/** Defeats the npm package arm so fixtures are the only resolution source. */
-function resolvePackageThrows(): string {
-  throw new Error("no npm package in this fixture");
+/**
+ * The dist resolution has no injected start dir anymore — the source arm
+ * walks up from the CLI module's own directory, so the fixtures are the real
+ * checkout's (gitignored) build outputs, written and wiped per test.
+ */
+const worktreeRoot = join(import.meta.dir, "..", "..", "..");
+const webPackageDir = join(worktreeRoot, "clients", "web");
+const appPackageDir = join(worktreeRoot, "clients", "app");
+
+function webDistDir(): string {
+  return join(webPackageDir, "dist");
+}
+
+function appDistDir(): string {
+  return join(appPackageDir, "dist", "standalone");
 }
 
 /** A git child that answers rev-parse with the fixture HEAD, or fails. */
@@ -129,88 +135,42 @@ function fakeSpawn(
   }) as unknown as typeof childProcess.spawn;
 }
 
-/** A build spawn that must never fire: a build here is a bug. */
-function unexpectedSpawn(): typeof childProcess.spawn {
-  return (() => {
-    throw new Error("unexpected spawn");
-  }) as unknown as typeof childProcess.spawn;
-}
-
 function bunCalls(): Array<Parameters<typeof childProcess.spawn>> {
   return spawnMock.mock.calls.filter(([command]) => command === "bun") as Array<
     Parameters<typeof childProcess.spawn>
   >;
 }
 
-function seedWebDist(packageDir: string): string {
-  const distDir = join(packageDir, "dist");
-  mkdirSync(distDir, { recursive: true });
-  writeFileSync(join(distDir, "index.html"), "<html></html>");
-  return distDir;
+function seedWebDist(): string {
+  mkdirSync(webDistDir(), { recursive: true });
+  writeFileSync(join(webDistDir(), "index.html"), "<html></html>");
+  return webDistDir();
 }
 
-function seedAppDist(packageDir: string): string {
-  const distDir = join(packageDir, "dist", "standalone");
-  mkdirSync(distDir, { recursive: true });
-  writeFileSync(join(distDir, "index.html"), "<html></html>");
-  return distDir;
-}
-
-/** A fixture checkout with both client packages declared. */
-function seedCheckout(): { root: string; web: string; app: string } {
-  const root = makeRoot();
-  const web = join(root, "clients", "web");
-  const app = join(root, "clients", "app");
-  mkdirSync(web, { recursive: true });
-  mkdirSync(app, { recursive: true });
-  writeFileSync(join(web, "package.json"), "{}");
-  writeFileSync(join(app, "package.json"), "{}");
-  return { root, web, app };
+function seedAppDist(): string {
+  mkdirSync(appDistDir(), { recursive: true });
+  writeFileSync(join(appDistDir(), "index.html"), "<html></html>");
+  return appDistDir();
 }
 
 describe("resolveClientDists", () => {
-  test("returns both source-checkout dists without building when present", async () => {
-    const { root, web, app } = seedCheckout();
-    const webDist = seedWebDist(web);
-    const appDist = seedAppDist(app);
-    // git-less tree: staleness detection is inert, the dists serve as-is.
-    fixtureHeadSha = null;
-    spawnMock.mockImplementation(fakeSpawn());
-
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
-
-    expect(resolved).toEqual({
-      webDistDir: webDist,
-      appDistDir: appDist,
-      builtSha: fixtureHeadSha ?? "",
-    });
-    expect(bunCalls()).toHaveLength(0);
-  });
-
   test("builds both missing bundles once and stamps the lockfile's app record", async () => {
-    const { root, web, app } = seedCheckout();
     fixtureHeadSha = "a".repeat(40);
     // The stamp rides the edge's own record; a running edge is what's there.
     stampRootProcess("app", { pid: 4321, port: 7840 });
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(
       fakeSpawn(() => {
-        seedWebDist(web);
-        seedAppDist(app);
+        seedWebDist();
+        seedAppDist();
       }),
     );
 
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
+    const resolved = await resolveClientDists();
 
     expect(resolved).toEqual({
-      webDistDir: join(web, "dist"),
-      appDistDir: join(app, "dist", "standalone"),
+      webDistDir: webDistDir(),
+      appDistDir: appDistDir(),
       builtSha: fixtureHeadSha ?? "",
     });
     const builds = bunCalls();
@@ -232,19 +192,13 @@ describe("resolveClientDists", () => {
     logSpy.mockRestore();
 
     // The second resolve finds a fresh stamp and does not rebuild.
-    expect(
-      await resolveClientDists({
-        startDir: root,
-        resolvePackage: resolvePackageThrows,
-      }),
-    ).toEqual(resolved);
+    expect(await resolveClientDists()).toEqual(resolved);
     expect(bunCalls()).toHaveLength(2);
   });
 
   test("rebuilds both bundles when the checkout moved past the stamp", async () => {
-    const { root, web, app } = seedCheckout();
-    seedWebDist(web);
-    seedAppDist(app);
+    seedWebDist();
+    seedAppDist();
     stampRootProcess("app", { pid: 4321, port: 7840 });
     stampAppBuiltSha("b".repeat(40));
     // The pull moved HEAD past the stamped build.
@@ -252,23 +206,20 @@ describe("resolveClientDists", () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
+    const resolved = await resolveClientDists();
 
-    expect(resolved.webDistDir).toBe(join(web, "dist"));
+    expect(resolved.webDistDir).toBe(webDistDir());
     expect(bunCalls()).toHaveLength(2);
     // The rebuild is silent apart from the two bookend lines — the build
     // output itself is captured (surfacing only on failure).
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("Building client..."),
+        call.join(" ").includes("Building app client..."),
       ),
     ).toBe(true);
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("Clients built."),
+        call.join(" ").includes("web client built."),
       ),
     ).toBe(true);
     logSpy.mockRestore();
@@ -276,18 +227,14 @@ describe("resolveClientDists", () => {
   });
 
   test("serves fresh bundles without rebuilding", async () => {
-    const { root, web, app } = seedCheckout();
-    const webDist = seedWebDist(web);
-    const appDist = seedAppDist(app);
+    const webDist = seedWebDist();
+    const appDist = seedAppDist();
     fixtureHeadSha = "d".repeat(40);
     stampRootProcess("app", { pid: 4321, port: 7840 });
     stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
+    const resolved = await resolveClientDists();
 
     expect(resolved).toEqual({
       webDistDir: webDist,
@@ -298,70 +245,44 @@ describe("resolveClientDists", () => {
   });
 
   test("rebuilds bundles that predate the stamp once", async () => {
-    const { root, web, app } = seedCheckout();
-    seedWebDist(web);
-    seedAppDist(app);
+    seedWebDist();
+    seedAppDist();
     fixtureHeadSha = "e".repeat(40);
     // The post-build stamp lands only on an existing edge record.
     stampRootProcess("app", { pid: 4321, port: 7840 });
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
+    const resolved = await resolveClientDists();
 
-    expect(resolved.webDistDir).toBe(join(web, "dist"));
+    expect(resolved.webDistDir).toBe(webDistDir());
     expect(bunCalls()).toHaveLength(2);
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("Building client..."),
+        call.join(" ").includes("Building app client..."),
       ),
     ).toBe(true);
     expect(
       logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("Clients built."),
+        call.join(" ").includes("web client built."),
       ),
     ).toBe(true);
     logSpy.mockRestore();
     expect(readAppBuiltSha()).toBe(fixtureHeadSha);
   });
 
-  test("returns null dists when there is no dist and no source package", async () => {
-    const root = makeRoot();
-    spawnMock.mockImplementation(unexpectedSpawn());
-
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
-
-    expect(resolved).toEqual({
-      webDistDir: null,
-      appDistDir: null,
-      builtSha: "",
-    });
-    expect(spawnMock.mock.calls).toHaveLength(0);
-  });
-
-  test("reports a failed source build with the manual recipe", async () => {
-    const { root } = seedCheckout();
+  test("reports a failed source build with the captured output", async () => {
     fixtureHeadSha = "f".repeat(40);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn(undefined, 1));
 
-    await expect(
-      resolveClientDists({
-        startDir: root,
-        resolvePackage: resolvePackageThrows,
-      }),
-    ).rejects.toThrow("cd clients/web && bun run build");
+    await expect(resolveClientDists()).rejects.toThrow(
+      "the app bundle failed to build",
+    );
     logSpy.mockRestore();
   });
 
   test("records the stamp only after both builds succeed", async () => {
-    const { root, web } = seedCheckout();
     fixtureHeadSha = "1".repeat(40);
     let builds = 0;
     spawnMock.mockImplementation(((command: string) => {
@@ -374,10 +295,10 @@ describe("resolveClientDists", () => {
       const stderr = new PassThrough();
       Object.defineProperty(child, "stdout", { value: stdout });
       Object.defineProperty(child, "stderr", { value: stderr });
-      // The web build lands; the app build fails — a half-stamped state must
-      // never pretend the second bundle is fresh.
+      // The app build lands; the web build fails — a half-stamped state
+      // must never pretend the second bundle is fresh.
       if (builds === 1) {
-        seedWebDist(web);
+        seedAppDist();
         setTimeout(() => {
           stdout.end();
           stderr.end();
@@ -393,47 +314,10 @@ describe("resolveClientDists", () => {
       return child;
     }) as unknown as typeof childProcess.spawn);
 
-    await expect(
-      resolveClientDists({
-        startDir: root,
-        resolvePackage: resolvePackageThrows,
-      }),
-    ).rejects.toThrow("Building the app bundle from source failed");
+    await expect(resolveClientDists()).rejects.toThrow(
+      "the web bundle failed to build",
+    );
 
     expect(readAppBuiltSha()).toBeUndefined();
-  });
-
-  test("leaves installed-package dists alone even with a stale source checkout", async () => {
-    const { root, web, app } = seedCheckout();
-    // The npm arm resolves first and owns the web dist; the source checkout
-    // may be as stale as it likes.
-    const npmWebDir = join(root, "npm", "@mycadet", "web");
-    seedWebDist(npmWebDir);
-    const appDist = seedAppDist(app);
-    seedWebDist(web);
-    fixtureHeadSha = "2".repeat(40);
-    // The source-built app arm is fresh at HEAD, so nothing rebuilds.
-    stampRootProcess("app", { pid: 4321, port: 7840 });
-    stampAppBuiltSha(fixtureHeadSha);
-    spawnMock.mockImplementation(((command: string) => {
-      // git HEAD is a legitimate probe (the app arm is source-built); a
-      // BUILD spawn here is a bug.
-      if (command === "git") {
-        return fakeGitChild();
-      }
-      throw new Error("unexpected spawn");
-    }) as unknown as typeof childProcess.spawn);
-
-    const resolved = await resolveClientDists({
-      startDir: root,
-      resolvePackage: () => join(npmWebDir, "package.json"),
-    });
-
-    expect(resolved).toEqual({
-      webDistDir: join(npmWebDir, "dist"),
-      appDistDir: appDist,
-      builtSha: fixtureHeadSha ?? "",
-    });
-    expect(bunCalls()).toHaveLength(0);
   });
 });

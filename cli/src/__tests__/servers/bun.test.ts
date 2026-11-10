@@ -482,13 +482,14 @@ describe("the app server's routes", () => {
     );
     expect(appIndex.status).toBe(404);
     // A direct hit on a made-up name inside the /web/assistant mount falls
-    // through to the mount's SPA fallback — the web dist's own document,
-    // still uninjected (only the mount's exact paths get the config).
+    // through to the mount's SPA fallback — the web bundle boots from
+    // wherever this document serves, so it carries the config stamp like
+    // the mount's exact paths.
     const remoteIndex = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__remote-index.html"),
     );
     expect(remoteIndex.status).toBe(200);
-    expect(await readBody(remoteIndex)).toBe(FAKE_WEB_INDEX_HTML);
+    expect(await readBody(remoteIndex)).toContain("__CADET_CONFIG__");
   });
 
   test("iframes the web UI from the distinct /web/assistant namespace", async () => {
@@ -578,7 +579,8 @@ describe("the app server's routes", () => {
       new Request("http://127.0.0.1:7840/web/assistant/channels/inbox"),
     );
     expect(fallback.status).toBe(200);
-    expect(await readBody(fallback)).toBe(FAKE_WEB_INDEX_HTML);
+    // The fallback boots the same bundle — the config stamp rides along.
+    expect(await readBody(fallback)).toContain("__CADET_CONFIG__");
   });
 
   test("the web bundle's baked /assistant/ base serves its files; the shell owns the fallback", async () => {
@@ -813,12 +815,8 @@ function mockDistsPresent(fixture: HandlerFixture): void {
   });
 }
 
-function mockDistsMissing(which: "web" | "app"): void {
-  resolveClientDistsMock.mockResolvedValue({
-    webDistDir: which === "web" ? null : "/tmp/unused-web",
-    appDistDir: which === "app" ? null : "/tmp/unused-app",
-    builtSha: "",
-  });
+function mockDistsFails(message: string): void {
+  resolveClientDistsMock.mockRejectedValue(new Error(message));
 }
 
 /**
@@ -940,25 +938,14 @@ describe("startAppServer", () => {
     expect(appIndex).not.toContain("hubUrl");
   });
 
-  test("requires the web dist", async () => {
+  test("surfaces a failed dist resolve", async () => {
     makeWorkspace();
     seedAssistant();
-    mockDistsMissing("web");
+    mockDistsFails("the bundle resolve exploded");
 
-    const result = await startAppServer();
-
-    expect(result).toEqual({ status: "web-dist-missing" });
-    expect(spawnMock).not.toHaveBeenCalled();
-  });
-
-  test("requires the app dist", async () => {
-    makeWorkspace();
-    seedAssistant();
-    mockDistsMissing("app");
-
-    const result = await startAppServer();
-
-    expect(result).toEqual({ status: "app-dist-missing" });
+    await expect(startAppServer()).rejects.toThrow(
+      "the bundle resolve exploded",
+    );
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
@@ -1127,12 +1114,12 @@ describe("ensureAppServer", () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  test("missing web dist throws build guidance", async () => {
+  test("a failed dist resolve throws through ensureAppServer", async () => {
     makeWorkspace();
-    mockDistsMissing("web");
+    mockDistsFails("the bundle resolve exploded");
 
     await expect(ensureAppServer()).rejects.toThrow(
-      /Unable to locate built web assets.*VITE_CLOUD_MODE=false bun run build/s,
+      "the bundle resolve exploded",
     );
   });
 

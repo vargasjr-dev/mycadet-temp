@@ -156,7 +156,6 @@ function Wrapper({ children }: { children: ReactNode }) {
 function renderSendFor(conversationId: string) {
   const cancelReconciliation = mock(() => {});
   const props = {
-    assistantId: "assistant-1",
     activeConversationId: conversationId,
     diskPressureChatBlockReason: null,
     uiContextRef: { current: null },

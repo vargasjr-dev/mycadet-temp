@@ -30,6 +30,7 @@ import {
 } from "@/domains/chat/components/chat-composer/slash-command-catalog";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
 import type { ContextWindowUsage } from "@/domains/chat/components/context-window-indicator";
 
@@ -160,7 +161,6 @@ export interface SendChatMessageOptions {
 
 interface UseSendMessageParams {
   // Identity
-  assistantId: string | null;
   activeConversationId: string | null;
   diskPressureChatBlockReason: DiskPressureChatBlockReason | null;
   uiContextRef: MutableRefObject<UIContext | null>;
@@ -180,7 +180,6 @@ interface UseSendMessageParams {
 // ---------------------------------------------------------------------------
 
 export function useSendMessage({
-  assistantId,
   activeConversationId,
   diskPressureChatBlockReason,
   uiContextRef,
@@ -192,6 +191,10 @@ export function useSendMessage({
 }: UseSendMessageParams) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // The active assistant is the store's fact, not a caller's param: the
+  // serving shell stamps it before the first render, so it is always a
+  // string here (use-active-assistant-id's contract).
+  const assistantId = useActiveAssistantId();
   // The Doctor is cloud-hosted only; when the active assistant is
   // self-hosted the Doctor tab doesn't exist, so `/doctor` must fall through
   // to a normal send rather than navigating to a doomed, empty tab.
@@ -257,9 +260,6 @@ export function useSendMessage({
 
   const surfaceConversationAfterUserSend = useCallback(
     async (conversationId: string) => {
-      if (!assistantId) {
-        return;
-      }
       if (surfacingConversationIdsRef.current.has(conversationId)) {
         return;
       }
@@ -326,13 +326,12 @@ export function useSendMessage({
       // applies its own default for an omitted field.
       scripted?: boolean,
     ): Promise<SendStreamResult> => {
-      if (!activeConversationId || !assistantId) {
+      if (!activeConversationId) {
         return {
           status: "failed",
           error: { message: "No active conversation. Please try again." },
         };
       }
-      const requestAssistantId = assistantId;
       const requestConversationId = activeConversationId;
       const composerSessionGeneration =
         useComposerStore.getState().sessionGeneration;
@@ -343,7 +342,7 @@ export function useSendMessage({
           currentAssistantId: getActiveAssistantId(),
           currentConversationId:
             useConversationStore.getState().activeConversationId,
-          requestAssistantId,
+          requestAssistantId: assistantId,
           requestConversationId,
           resolvedConversationId,
         });
@@ -371,7 +370,7 @@ export function useSendMessage({
       const failedSend = (error: ChatError): SendStreamResult => {
         if (!isCurrentSendScope()) {
           recordDiagnostic("send_error_ignored_inactive_conversation", {
-            assistantId: requestAssistantId,
+            assistantId: assistantId,
             conversationId: requestConversationId,
             activeAssistantId: getActiveAssistantId(),
             activeConversationId:
@@ -386,7 +385,7 @@ export function useSendMessage({
             useComposerStore
               .getState()
               .restoreFailedDraft(
-                requestAssistantId,
+                assistantId,
                 requestConversationId,
                 content,
                 composerSessionGeneration,
@@ -404,7 +403,7 @@ export function useSendMessage({
         try {
           await resolveDraftComposerConfiguration(
             queryClient,
-            requestAssistantId,
+            assistantId,
             requestConversationId,
           );
         } catch (error) {
@@ -432,7 +431,7 @@ export function useSendMessage({
           return { status: "ignored" };
         }
         postResult = await postChatMessage(
-          requestAssistantId,
+          assistantId,
           useServerMint ? null : requestConversationId,
           content,
           {
@@ -742,7 +741,6 @@ export function useSendMessage({
       const composerSessionGeneration =
         useComposerStore.getState().sessionGeneration;
       const sendScopeIsCurrent = () =>
-        assistantId !== null &&
         activeConversationId !== null &&
         composerSessionGeneration ===
           useComposerStore.getState().sessionGeneration &&
@@ -793,7 +791,7 @@ export function useSendMessage({
       // Explicit user override from the composer secret guard's "Send
       // anyway" confirmation — forwarded on this send's POST only.
       const bypassSecretCheck = opts.bypassSecretCheck === true;
-      if (!activeConversationId || !assistantId) {
+      if (!activeConversationId) {
         setError({ message: "No active conversation. Please try again." });
         return;
       }
@@ -1194,7 +1192,7 @@ export function useSendMessage({
   // handleStopGenerating — cancel the active generation
   // -------------------------------------------------------------------------
   const handleStopGenerating = useCallback(async () => {
-    if (!assistantId || !activeConversationId) {
+    if (!activeConversationId) {
       return;
     }
     useStreamStore.getState().bumpEpoch();

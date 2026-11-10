@@ -201,7 +201,7 @@ async function buildDistFromSource(
 ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  return join(sourceDir, "dist");
+  return sourceDistDir(kind, sourceDir);
 }
 
 /** One kind's resolution arm, feeding the shared stamp decision. */
