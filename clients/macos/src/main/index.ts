@@ -24,7 +24,7 @@ import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { handle, on } from "./ipc";
 import { hasPendingDeepLinks, installDeepLinks } from "./deep-links.client";
-import { handleBundleFile, installMacBundleWorkflow } from "./bundles";
+import { installMacBundleWorkflow } from "./bundles";
 import {
   handleFileOpenArgv,
   hasPendingFiles,
@@ -103,6 +103,7 @@ import {
 import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
 import { installWebContentsSecurity } from "./windows";
+import { handleBundleFile } from "@mycadet/electron-desktop/bundle-flow";
 
 // Dev-only: override the workspace `name` (`@mycadet/macos`) so the
 // menu bar's first submenu reads "Cadet Electron", and — more
