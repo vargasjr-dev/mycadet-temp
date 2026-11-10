@@ -171,8 +171,11 @@ const main = async (): Promise<void> => {
   ]);
   const protocolKey = `HKCU\\Software\\Classes\\${scheme}`;
   let logFile: string | undefined;
-  for (let waited = 0; waited < 120_000; waited += 2_000) {
-    await sleep(2_000);
+  // First launch provisions the CLI runtime into userData — tens of
+  // thousands of files copied under hosted-runner real-time scanning — so
+  // the log file and protocol registration can lag app-ready by minutes.
+  for (let waited = 0; waited < 600_000; waited += 5_000) {
+    await sleep(5_000);
     logFile ??= logCandidates.find((candidate) => existsSync(candidate));
     if (child.exitCode !== null) {
       fail(`App exited early with code ${child.exitCode}`);
