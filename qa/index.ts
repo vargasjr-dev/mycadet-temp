@@ -166,8 +166,9 @@ async function assembleQaVolumeTree(options: {
   // The whole assembly runs CI-mode: the postinstall keeps the electron
   // packaging armada (its prune is what leaves dangling .bin symlinks the
   // volume pusher's tree scan rejects), and so does the nested install the
-  // app build script runs.
-  process.env.CI = "true";
+  // app build script runs. Passed explicitly on every spawn — bun's
+  // spawnSync does not reliably inherit process.env mutations.
+  const ciEnv = { ...process.env, CI: "true" };
   const repoUrl = options.repoUrl ?? "https://github.com/vargasjr-dev/mycadet-temp.git";
   const tmpRoot = await fsMkdtemp(join(tmpdir(), "qa-volume-"));
   const tree = join(tmpRoot, "qa");
@@ -175,6 +176,7 @@ async function assembleQaVolumeTree(options: {
     console.log(`[qa volume] ${label}...`);
     const result = Bun.spawnSync(command, {
       cwd,
+      env: ciEnv,
       stdout: "inherit",
       stderr: "inherit",
     });
@@ -185,6 +187,7 @@ async function assembleQaVolumeTree(options: {
   runChecked(["git", "clone", "--depth", "1", repoUrl, tree], tmpRoot, "clone");
   const headSha = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
     cwd: tree,
+    env: ciEnv,
   }).stdout.toString().trim();
   if (!headSha) throw new Error("could not read the clone's HEAD sha");
   runChecked(["bun", "install"], tree, "install");
