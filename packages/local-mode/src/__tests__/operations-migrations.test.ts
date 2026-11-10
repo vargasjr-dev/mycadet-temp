@@ -156,7 +156,7 @@ describe("the migrations operator row", () => {
   test("an unreachable cloud answers 502 with the body shape the web reads", async () => {
     globalThis.fetch = (async () => {
       throw new Error("boom");
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     const res = await dial(
       "POST",
