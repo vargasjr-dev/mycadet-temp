@@ -128,10 +128,12 @@ afterAll(() => {
   mock.module("../exec", () => realExecModule);
 });
 
-// Import the subject only after the mocks are registered — a static import is
-// hoisted above them and binds the router to real legs when a sibling file
-// evaluated this graph first (the CI-only failures).
-const { wakeAssistant } = await import("../operations/wake");
+// The subject resolves per test: a static (or one-time dynamic) import binds
+// the router to whatever the module registry held at evaluation time, and a
+// sibling file's afterAll can replace that record after the fact (bun's
+// mock.module is process-global and last-writer-wins). Resolving here means
+// a clobber fails loudly instead of feeding these tests a stale binding.
+let wakeAssistant: typeof import("../operations/wake").wakeAssistant;
 
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
@@ -141,7 +143,8 @@ import { matchOperatorRequest } from "../operations/routes";
 let tmpDir: string;
 let lockfilePath: string;
 
-beforeEach(() => {
+beforeEach(async () => {
+  ({ wakeAssistant } = await import("../operations/wake"));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-wake-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

@@ -88,11 +88,8 @@ afterAll(() => {
   mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
-// Import the subject only after the mocks are registered: a static import is
-// hoisted above them, and sleep.ts then binds to whatever the module registry
-// held at its evaluation time — real legs when another file evaluated this
-// graph first (the CI-only failures). Dynamic import pins the order.
-const { sleepAssistant } = await import("../operations/sleep");
+// The subject resolves per test — see operations-wake.test.ts for why.
+let sleepAssistant: typeof import("../operations/sleep").sleepAssistant;
 
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
@@ -102,7 +99,8 @@ import { matchOperatorRequest } from "../operations/routes";
 let tmpDir: string;
 let lockfilePath: string;
 
-beforeEach(() => {
+beforeEach(async () => {
+  ({ sleepAssistant } = await import("../operations/sleep"));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-sleep-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
