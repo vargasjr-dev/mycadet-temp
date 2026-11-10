@@ -137,7 +137,12 @@ const runtimeWorkspaces = [
 writeFileSync(
   path.join(outputDir, "package.json"),
   `${JSON.stringify(
-    { name: "cadet-runtime", private: true, type: "module", workspaces: runtimeWorkspaces },
+    {
+      name: "cadet-runtime",
+      private: true,
+      type: "module",
+      workspaces: runtimeWorkspaces,
+    },
     null,
     2,
   )}\n`,
@@ -227,10 +232,7 @@ copyFileSync(
   path.join(repoRoot, "clients", "windows", "scripts", "uninstall-cli.ts"),
   path.join(outputDir, "scripts", "uninstall-cli.ts"),
 );
-writeFileSync(
-  path.join(outputDir, "cadet.cmd"),
-  bunEntry("cli/src/index.ts"),
-);
+writeFileSync(path.join(outputDir, "cadet.cmd"), bunEntry("cli/src/index.ts"));
 
 const bunSource = await installPinnedBun({
   arch: targetArch,
@@ -283,8 +285,12 @@ if (
 ) {
   const diagnostics = [
     `exit ${cliVersionCheck.status ?? "not started"}`,
-    cliVersionCheck.error ? `spawn error: ${cliVersionCheck.error.message}` : null,
-    cliVersionCheck.stderr.trim() ? `stderr: ${cliVersionCheck.stderr.trim()}` : null,
+    cliVersionCheck.error
+      ? `spawn error: ${cliVersionCheck.error.message}`
+      : null,
+    cliVersionCheck.stderr.trim()
+      ? `stderr: ${cliVersionCheck.stderr.trim()}`
+      : null,
   ]
     .filter((detail): detail is string => detail !== null)
     .join("; ");

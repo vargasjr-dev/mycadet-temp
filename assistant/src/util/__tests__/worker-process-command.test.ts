@@ -18,7 +18,12 @@ describe("resolveWorkerCommand", () => {
         execPath: "/runtime/bun.exe",
         executableExists: () => false,
       }),
-    ).toEqual(["/runtime/bun.exe", "--smol", "run", "/source/monitoring/worker.ts"]);
+    ).toEqual([
+      "/runtime/bun.exe",
+      "--smol",
+      "run",
+      "/source/monitoring/worker.ts",
+    ]);
   });
 
   test("falls back to PATH lookup outside a bundled runtime", () => {
@@ -91,10 +96,16 @@ describe("workerKindSignature", () => {
   test("distinguishes packaged worker kinds sharing one executable", () => {
     const scheduleSig = workerKindSignature(schedule, "schedule", source);
     expect(
-      matches("bun --smol run /app/runtime/0.10.11/src/schedule/worker.ts", scheduleSig),
+      matches(
+        "bun --smol run /app/runtime/0.10.11/src/schedule/worker.ts",
+        scheduleSig,
+      ),
     ).toBe(true);
     expect(
-      matches("bun --smol run /app/runtime/0.10.11/src/monitoring/worker.ts", scheduleSig),
+      matches(
+        "bun --smol run /app/runtime/0.10.11/src/monitoring/worker.ts",
+        scheduleSig,
+      ),
     ).toBe(false);
   });
 });

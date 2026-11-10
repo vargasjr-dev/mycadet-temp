@@ -144,7 +144,11 @@ const main = async (): Promise<void> => {
     assertExists(path.join(resources, relative), label);
   }
   const packagedBun = path.join(resources, "cli-runtime", "bun.exe");
-  await waitForVersionCommand(packagedBun, ["--version"], `Packaged Bun runtime for ${arch}`);
+  await waitForVersionCommand(
+    packagedBun,
+    ["--version"],
+    `Packaged Bun runtime for ${arch}`,
+  );
   const runtimeDir = path.join(resources, "cli-runtime");
   await waitForVersionCommand(
     packagedBun,

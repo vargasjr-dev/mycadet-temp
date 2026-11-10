@@ -171,9 +171,7 @@ export function getCliLauncherState(
           existsSync(
             path.join(normalizeWindowsPathEntry(entry), "cadet.exe"),
           ) ||
-          existsSync(
-            path.join(normalizeWindowsPathEntry(entry), "cadet.cmd"),
-          ),
+          existsSync(path.join(normalizeWindowsPathEntry(entry), "cadet.cmd")),
       )
     ) {
       return "shadowed";
