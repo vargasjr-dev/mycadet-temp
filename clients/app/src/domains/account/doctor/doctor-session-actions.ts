@@ -7,7 +7,7 @@
  */
 
 import { doctorSessionsDestroy } from "./doctor-api";
-import { captureError } from "@app/lib/error-reporting/capture-error";
+import { captureError } from "@design/utils/capture-error";
 
 // ---------------------------------------------------------------------------
 // Constants

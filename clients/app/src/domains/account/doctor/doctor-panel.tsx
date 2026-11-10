@@ -51,7 +51,7 @@ import {
   doctorSessionsUserOutcomeCreate,
 } from "./doctor-api";
 import { copyToClipboard } from "@app/lib/copy-to-clipboard";
-import { captureError } from "@app/lib/error-reporting/capture-error";
+import { captureError } from "@design/utils/capture-error";
 import { ApiError, extractErrorMessage } from "@app/utils/api-errors";
 import { useTranslation } from "@app/i18n";
 import { isPointerCoarse } from "@app/utils/pointer";

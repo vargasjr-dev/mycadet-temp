@@ -15,30 +15,17 @@
  * header.
  */
 
-import { authHeadersForKnownOrganization } from "../cloud-auth";
 import { loopbackSafeFetch } from "../loopback-fetch";
 import type { LockfileAssistant } from "../lockfile-contract";
-import { readCloudToken, resolveCloudUrl } from "../cloud-auth";
 import { findAssistantByName } from "./lookup";
 import type { OperatorRequest } from "./routes";
-
-const UPSTREAM_TIMEOUT_MS = 10_000;
-
-/** The env token, else the on-disk cloud token (the retire leg's order). */
-function readOperatorCloudToken(): string | null {
-  const envToken = (
-    process.env.CADET_CLOUD_TOKEN ?? process.env.CADET_PLATFORM_TOKEN
-  )?.trim();
-  return envToken || readCloudToken();
-}
-
-/** The cloud's error body shape the bundles' error parsing already reads. */
-function doctorError(detail: string, status: number): Response {
-  return new Response(JSON.stringify({ detail }), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
+import {
+  UPSTREAM_TIMEOUT_MS,
+  cloudOrigin,
+  operatorCloudHeaders,
+  operatorError as doctorError,
+  readOperatorCloudToken,
+} from "./cloud-proxy";
 
 /**
  * The cloud assistant id a doctor dial addresses: the entry's cloud
@@ -80,9 +67,7 @@ async function proxyToCloud(
     );
   }
 
-  const headers: Record<string, string> = entry.cloudOrganizationId?.trim()
-    ? authHeadersForKnownOrganization(token, entry.cloudOrganizationId.trim())
-    : { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = operatorCloudHeaders(entry, token);
   const callerHeaders = new Headers(
     request.headers as HeadersInit | undefined,
   );
@@ -97,7 +82,7 @@ async function proxyToCloud(
 
   try {
     return await loopbackSafeFetch(
-      `${resolveCloudUrl().replace(/\/+$/, "")}/v1/assistants/${encodeURIComponent(cloudAssistantId)}${tailPath}`,
+      `${cloudOrigin()}/v1/assistants/${encodeURIComponent(cloudAssistantId)}${tailPath}`,
       {
         method: request.method ?? "GET",
         headers,

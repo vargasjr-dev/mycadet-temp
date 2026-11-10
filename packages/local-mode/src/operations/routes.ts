@@ -23,6 +23,7 @@ import {
   runDoctorSessionsMessagesRoute,
   runDoctorSessionsUserOutcomeRoute,
 } from "./doctor";
+import { runMigrationsSignedUrlRoute } from "./migrations";
 import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
@@ -672,6 +673,14 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     method: "POST",
     pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/user-outcome\/?$/),
     run: runDoctorSessionsUserOutcomeRoute,
+  },
+  // The teleport signed-url row — host-served so the web bundle's backup
+  // export hops to the cloud on the operator's own credentials instead of
+  // needing a cloud session in the browser.
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^migrations\/signed-url\/?$/),
+    run: runMigrationsSignedUrlRoute,
   },
   {
     method: "POST",

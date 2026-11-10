@@ -1,6 +1,6 @@
 import { toast } from "@design/components/toast";
 
-import { captureError } from "@app/lib/error-reporting/capture-error";
+import { captureError } from "@design/utils/capture-error";
 
 interface CopyToClipboardOptions {
   /**

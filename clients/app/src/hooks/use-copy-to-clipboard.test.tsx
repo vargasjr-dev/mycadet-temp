@@ -29,7 +29,7 @@ mock.module("@mycadet/design-library/components/toast", () => ({
     error: () => {},
   },
 }));
-mock.module("@app/lib/error-reporting/capture-error", () => ({
+mock.module("@design/utils/capture-error", () => ({
   captureError: () => {},
 }));
 
