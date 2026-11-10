@@ -13,7 +13,8 @@ import { and, eq } from "drizzle-orm";
 import { initSigningKey } from "../auth/token-service.js";
 import { mintPairingPayload } from "../http/routes/pair.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 // The pair guardian-lookup reads the gateway DB; the assistant DB proxy is
 // mocked so any incidental assistant access stays inert in tests.

@@ -214,7 +214,8 @@ mock.module("../../risk/trust-verdict-resolver.js", () => ({
 
 // The HTTP proxy mints a service token for the daemon on every request.
 const { initSigningKey } = await import("../../auth/token-service.js");
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 // ---------------------------------------------------------------------------
 // Import modules under test (after all mocks are registered)

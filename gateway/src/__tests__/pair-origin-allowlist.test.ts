@@ -7,7 +7,8 @@ import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { initSigningKey } from "../auth/token-service.js";
 
 // Must init signing key before any module that mints tokens is imported.
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 // Mock DB — pair.ts calls resolveLocalGuardianPrincipalId() which queries the DB.
 const mockQuery = mock();

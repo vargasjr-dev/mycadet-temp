@@ -37,7 +37,8 @@ import {
 import { actorTokenRecords, contacts, contactChannels } from "../db/schema.js";
 import { resolveTrustVerdict } from "../risk/trust-verdict-resolver.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const PRINCIPAL = "cadet-principal-0aafaf2";
 

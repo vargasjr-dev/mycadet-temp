@@ -16,7 +16,8 @@ export const GUARDIAN_PRINCIPAL = "test-user";
 /** The bound guardian's platform user id, for the tunnel-attested path. */
 export const TUNNEL_USER_ID = "11111111-1111-1111-1111-111111111111";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 /** Mint a valid actor edge JWT. */
 export function mintEdgeToken(

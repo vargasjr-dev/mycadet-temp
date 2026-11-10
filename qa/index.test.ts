@@ -4,7 +4,6 @@ import {
   buildCreateArgs,
   buildExecArgs,
   buildImagePushArgs,
-  buildQaLockfileSeed,
   buildVolumePushArgs,
   resolveVolumeRef,
 } from "./index";
@@ -62,15 +61,6 @@ describe("the volume", () => {
     expect(
       buildVolumePushArgs({ dir: "/tmp/qa-volume-x/qa", ref: "bdn:vargas-jr/cadet-qa:qa" }),
     ).toEqual(["volume", "push", "/tmp/qa-volume-x/qa", "bdn:vargas-jr/cadet-qa:qa"]);
-  });
-
-  test("the lockfile seed stamps the prebuilt dists at the app server's port", () => {
-    const seed = JSON.parse(buildQaLockfileSeed("abc123"));
-    expect(seed).toEqual({
-      assistants: [],
-      activeAssistant: null,
-      app: { port: 7840, builtSha: "abc123" },
-    });
   });
 });
 

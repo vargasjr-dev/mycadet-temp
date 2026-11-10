@@ -72,7 +72,8 @@ type PluginWebhookHandlerDeps = Parameters<
 // The handler mints a real service token for the upstream hop. Initialising
 // the key beats mocking token-exchange, which is process-wide in bun and
 // would leak into every other suite in the run.
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 // Inbound delivery claims each message against redelivery, and that claim is
 // a real row. Standing up the gateway DB beats stubbing the store: the thing

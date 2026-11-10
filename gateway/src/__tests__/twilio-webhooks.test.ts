@@ -12,8 +12,8 @@ import {
 } from "../risk/admission-policy-cache.js";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 
-const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
-initSigningKey(TEST_SIGNING_KEY);
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 type FetchFn = (
   input: string | URL | Request,

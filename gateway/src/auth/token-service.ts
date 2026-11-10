@@ -141,12 +141,12 @@ function persistSigningKey(keyPath: string, key: Buffer): void {
 
 /**
  * Initialize (or reinitialize) the signing key. Called at gateway startup —
- * with no argument it loads or creates the on-disk key via
- * `loadOrCreateSigningKey()`, the one path every real entrypoint shares.
- * Tests pass their own buffer.
+ * loads or creates the on-disk key via `loadOrCreateSigningKey()`, the one
+ * path every real entrypoint shares. Tests that need a deterministic key set
+ * ACTOR_TOKEN_SIGNING_KEY (its first resolution path) before calling.
  */
-export function initSigningKey(key?: Buffer): void {
-  signingKey = key ?? loadOrCreateSigningKey();
+export function initSigningKey(): void {
+  signingKey = loadOrCreateSigningKey();
 }
 
 function getSigningKey(): Buffer {

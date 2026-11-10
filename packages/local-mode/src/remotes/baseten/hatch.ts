@@ -76,12 +76,10 @@ export const BASETEN_STATE_VOLUME_MOUNT_PATH = "/data";
  * the volume moves the assistant's instance dir, lockfile, tokens, and logs
  * onto it wholesale. Plain envs: they are configuration, not credentials.
  */
-export function sandboxStateVolumeEnvs(
-  mountPath: string,
-): Array<{ name: string; value: string; secret: boolean }> {
+function sandboxStateVolumeEnvs(): Array<{ name: string; value: string; secret: boolean }> {
   return [
-    { name: "XDG_DATA_HOME", value: `${mountPath}/xdg-data`, secret: false },
-    { name: "XDG_CONFIG_HOME", value: `${mountPath}/xdg-config`, secret: false },
+    { name: "XDG_DATA_HOME", value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-data`, secret: false },
+    { name: "XDG_CONFIG_HOME", value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-config`, secret: false },
   ];
 }
 
@@ -201,7 +199,7 @@ export async function hatchBaseten(
         image: basetenImageRef(BASETEN_IMAGE_NAME),
         envs: [
           ...sandboxGatewayEnvs(),
-          ...sandboxStateVolumeEnvs(BASETEN_STATE_VOLUME_MOUNT_PATH),
+          ...sandboxStateVolumeEnvs(),
           ...collectProviderEnvs(),
         ],
         volume: `${BASETEN_STATE_VOLUME_NAME}:${BASETEN_STATE_VOLUME_MOUNT_PATH}`,
