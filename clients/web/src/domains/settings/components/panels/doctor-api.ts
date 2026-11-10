@@ -56,7 +56,6 @@ export type DoctorHistoryListResult = z.infer<typeof DoctorHistoryListSchema>;
 export type DoctorHistorySessionResult = z.infer<
   typeof DoctorHistorySessionSchema
 >;
-export type DoctorMessageResult = z.infer<typeof DoctorMessageSchema>;
 
 // ---------------------------------------------------------------------------
 // Dial helpers — hey-api-shaped results so the panel's call sites barely move
