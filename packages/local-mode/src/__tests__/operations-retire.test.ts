@@ -113,7 +113,6 @@ beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-retire-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
-  delete process.env.CADET_PLATFORM_TOKEN;
   delete process.env.CADET_CLOUD_TOKEN;
   for (const m of [
     loopbackSafeFetchMock,
@@ -147,7 +146,6 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.XDG_CONFIG_HOME;
-  delete process.env.CADET_PLATFORM_TOKEN;
   delete process.env.CADET_CLOUD_TOKEN;
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });

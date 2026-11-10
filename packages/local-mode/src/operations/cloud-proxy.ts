@@ -15,9 +15,7 @@ export const UPSTREAM_TIMEOUT_MS = 10_000;
 
 /** The env token, else the on-disk cloud token (the retire leg's order). */
 export function readOperatorCloudToken(): string | null {
-  const envToken = (
-    process.env.CADET_CLOUD_TOKEN ?? process.env.CADET_PLATFORM_TOKEN
-  )?.trim();
+  const envToken = process.env.CADET_CLOUD_TOKEN?.trim();
   return envToken || readCloudToken();
 }
 

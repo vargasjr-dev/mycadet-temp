@@ -270,14 +270,14 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     resolveCloudUrlMock.mockReset();
     resolveCloudUrlMock.mockReturnValue("https://platform.example.test");
     delete process.env.CADET_CLOUD_TOKEN;
-    delete process.env.CADET_PLATFORM_TOKEN;
+    delete process.env.CADET_CLOUD_TOKEN;
 
     rmSync(join(unregisterDir, "retired"), { recursive: true, force: true });
   });
 
   afterAll(() => {
     delete process.env.CADET_CLOUD_TOKEN;
-    delete process.env.CADET_PLATFORM_TOKEN;
+    delete process.env.CADET_CLOUD_TOKEN;
     if (originalConfigHome === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {
@@ -361,7 +361,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
       cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });
-    process.env.CADET_PLATFORM_TOKEN = "host-session-token";
+    process.env.CADET_CLOUD_TOKEN = "host-session-token";
     readCloudTokenMock.mockReturnValue(null);
     const entry = readLocalEntry("test-assistant");
 

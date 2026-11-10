@@ -57,7 +57,7 @@ beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-resolution-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
-  delete process.env.CADET_PLATFORM_TOKEN;
+  delete process.env.CADET_CLOUD_TOKEN;
   delete process.env.CADET_CLOUD_TOKEN;
   for (const m of [loopbackSafeFetchMock, checkHealthMock]) {
     m.mockReset();
