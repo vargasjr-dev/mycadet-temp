@@ -20,12 +20,13 @@ import {
 import { t } from "@app/i18n";
 
 /**
- * The remote deployment's pair page — a web-bundle route the app never
- * renders itself, only navigates to. Mirrors web's `routes.remotePair`;
- * exported so `switchToOrigin` can derive the route-relative form the native
- * shells address.
+ * The pairing page's route. It lives in the app shell (#731 moved it out of
+ * the web bundle): a deployment's app server serves the shell's standalone
+ * bundle at its root, so a pairing link opens /account/pair there — the page
+ * whose pairing session client exchanges the device code in the fragment.
+ * Exported so `switchToOrigin` can derive the form the native shells address.
  */
-export const REMOTE_PAIR_PATH = "/assistant/pair";
+export const REMOTE_PAIR_PATH = "/account/pair";
 
 /**
  * The pairing link for an assistant's public base: its pair page with the

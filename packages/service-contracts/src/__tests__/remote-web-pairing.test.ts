@@ -93,6 +93,31 @@ describe("parsePairingAddress", () => {
     });
   });
 
+  test("splits an app-shell pairing link (the page moved to /account/pair)", () => {
+    const link = buildRemoteWebPairingUrl({
+      verificationUri: "https://assistant.example.com/account/pair",
+      deviceCode: "device-4",
+    });
+
+    expect(parsePairingAddress(link)).toEqual({
+      ok: true,
+      publicBaseUrl: "https://assistant.example.com",
+      deviceCode: "device-4",
+    });
+  });
+
+  test("preserves a path prefix on an app-shell pairing link", () => {
+    expect(
+      parsePairingAddress(
+        "https://host.example.com/assistant-123/account/pair#device_code=device-5",
+      ),
+    ).toEqual({
+      ok: true,
+      publicBaseUrl: "https://host.example.com/assistant-123",
+      deviceCode: "device-5",
+    });
+  });
+
   test("accepts a bare address with no device code", () => {
     expect(parsePairingAddress("https://assistant.example.com")).toEqual({
       ok: true,

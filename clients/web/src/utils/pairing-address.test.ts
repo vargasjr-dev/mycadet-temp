@@ -9,7 +9,7 @@ import {
 describe("pairingLinkForBase", () => {
   test("puts the pair route on the base and the code in the fragment", () => {
     expect(pairingLinkForBase("https://foo.ts.net", "DEV-123")).toBe(
-      "https://foo.ts.net/assistant/pair#device_code=DEV-123",
+      "https://foo.ts.net/account/pair#device_code=DEV-123",
     );
   });
 
@@ -17,16 +17,16 @@ describe("pairingLinkForBase", () => {
     expect(
       pairingLinkForBase("https://host.example/assistant-1", "DEV-123"),
     ).toBe(
-      "https://host.example/assistant-1/assistant/pair#device_code=DEV-123",
+      "https://host.example/assistant-1/account/pair#device_code=DEV-123",
     );
   });
 
   test("canonicalizes a base that already carries a slash or an app route", () => {
     expect(pairingLinkForBase("https://foo.ts.net/", "DEV-123")).toBe(
-      "https://foo.ts.net/assistant/pair#device_code=DEV-123",
+      "https://foo.ts.net/account/pair#device_code=DEV-123",
     );
     expect(pairingLinkForBase("https://foo.ts.net/assistant/pair", "D")).toBe(
-      "https://foo.ts.net/assistant/pair#device_code=D",
+      "https://foo.ts.net/account/pair#device_code=D",
     );
   });
 

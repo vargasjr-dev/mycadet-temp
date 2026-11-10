@@ -490,9 +490,15 @@ export function normalizePairingBaseUrl(value: string): string {
   url.search = "";
   url.hash = "";
   const parts = url.pathname.split("/").filter(Boolean);
-  const assistantIndex = parts.indexOf("assistant");
-  if (assistantIndex >= 0) {
-    parts.splice(assistantIndex);
+  // A pasted pairing link carries the pair page's path: /assistant/pair on
+  // the legacy web bundle, /account/pair since the page moved to the app
+  // shell (#731). Cut at the first segment of either so the base survives
+  // deployment basenames (/assistant-123/assistant/pair keeps /assistant-123).
+  const cutIndex = parts.findIndex(
+    (segment) => segment === "assistant" || segment === "account",
+  );
+  if (cutIndex >= 0) {
+    parts.splice(cutIndex);
   }
   url.pathname = parts.length ? `/${parts.join("/")}` : "/";
   return url.toString().replace(/\/+$/, "");

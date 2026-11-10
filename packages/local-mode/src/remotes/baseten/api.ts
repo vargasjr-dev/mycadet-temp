@@ -230,11 +230,19 @@ export async function pushBasetenImage(options: {
  * and URL straight off the create output — with no requested name the
  * server picks one, and the URL only appears there (or on `describe`,
  * which needs the name first).
+ *
+ * `volume` mounts one of Baseten's persistent volumes (`name` must already
+ * exist, be in the sandbox's region, and be unmounted elsewhere — the
+ * platform allows at most one per sandbox). Volumes exist because the
+ * sandbox's filesystem is held in memory: files a session writes count
+ * against the sandbox's RAM, so a long-lived assistant's state (instance
+ * dir, lockfile, tokens, logs) rides the volume instead.
  */
 export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
+  volume?: { name: string; mountPath: string };
   /** Ports to expose at creation — the `/port/<PORT>/` route only serves
    * ports declared here (previews open theirs dynamically). The CLI arm
    * has no ports flag, so only the API arm can declare them. */
@@ -245,6 +253,9 @@ export async function createBasetenSandbox(options: {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
     if (team) args.push("--team", team);
+    if (options.volume) {
+      args.push("--volume", `${options.volume.name}:${options.volume.mountPath}`);
+    }
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
       // `--plain-env` stays readable — configuration like a gateway port is
@@ -265,6 +276,15 @@ export async function createBasetenSandbox(options: {
     return { name: options.name };
   }
 
+  if (options.volume) {
+    throw new Error(
+      `Sandbox volume '${options.volume.name}' was requested but the ` +
+        `Baseten CLI is not installed — volume mounts ride the CLI arm ` +
+        `(\`baseten volume push\` creates the volume, \`sandbox create ` +
+        `--volume NAME:MOUNT_PATH\` mounts it). Install the CLI or drop ` +
+        `the volume.`,
+    );
+  }
   const token = await resolveBasetenToken();
   return basetenFetch(token, "/v1/sandboxes/instances", SandboxCreated, {
     method: "POST",

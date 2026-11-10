@@ -57,11 +57,17 @@ export const routes = {
    * dedicated BrowserWindow.
    */
   bundleConfirm: r("/assistant/bundle/confirm"),
-  remotePair: r("/assistant/pair"),
+  // The pairing page lives in the app shell, not in this bundle (#731 moved
+  // it): a pairing link opens the deployment's /account/pair, which the app
+  // server serves as part of the standalone shell at its root. Declared here
+  // so the web surfaces that advertise pairing links (the pair-device card)
+  // name the same page the gateway's challenges do — the web bundle itself
+  // renders no pair route.
+  remotePair: r("/account/pair"),
   /**
    * Public one-time credential entry page, opened from a single-use
    * credential-request link (`?token=` carries the secret-request token).
-   * Same standalone pattern as `remotePair`: lives under `/assistant/*` for
+   * Same standalone pattern as `bundleConfirm`: lives under `/assistant/*` for
    * the Vite SPA fallback but is declared OUTSIDE the auth-protected tree in
    * `routes.tsx` — the person opening the link may have no Cadet session.
    */

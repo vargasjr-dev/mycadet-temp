@@ -170,6 +170,12 @@ async function gatewayPost(
 async function mintPairingChallengeOrExit(
   entry: LockfileAssistant,
 ): Promise<RemoteWebPairingChallengeResponse> {
+  // The mint runs the gateway's own CLI as a subprocess — a cold bun start
+  // can sit for seconds with nothing on screen. stderr keeps it out of the
+  // --json stream.
+  console.error(
+    `Minting a pairing challenge on ${assistantDisplayName(entry)}'s gateway...`,
+  );
   let stdout: string;
   try {
     if (isLocalEntry(entry)) {

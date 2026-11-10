@@ -59,6 +59,44 @@ function sandboxGatewayEnvs() {
 }
 
 /**
+ * The optional state volume: `BASETEN_SANDBOX_VOLUME=NAME[:MOUNT_PATH]`
+ * mounts one of Baseten's persistent volumes (at most one per sandbox; the
+ * volume must already exist — `baseten volume push <dir> bdn:<ns>/<name>`
+ * creates it) and points the assistant's state paths at it. Without it the
+ * sandbox's state lives on the platform's in-memory filesystem, where every
+ * file the running assistant writes (instance dir, lockfile, tokens, logs)
+ * counts against the sandbox's RAM until the sandbox dies with it.
+ */
+export function sandboxStateVolume(): { name: string; mountPath: string } | undefined {
+  const raw = process.env.BASETEN_SANDBOX_VOLUME?.trim();
+  if (!raw) return undefined;
+  const separator = raw.indexOf(":");
+  const name = separator < 0 ? raw : raw.slice(0, separator);
+  const mountPath = separator < 0 ? "/data" : raw.slice(separator + 1);
+  if (!name || !mountPath.startsWith("/")) {
+    throw new Error(
+      `BASETEN_SANDBOX_VOLUME must be NAME or NAME:MOUNT_PATH (absolute), got '${raw}'.`,
+    );
+  }
+  return { name, mountPath };
+}
+
+/**
+ * The state paths a mounted volume takes over: XDG overrides are the one
+ * seam every local-mode path resolves through, so pointing both homes into
+ * the volume moves the assistant's instance dir, lockfile, tokens, and logs
+ * onto it wholesale. Plain envs: they are configuration, not credentials.
+ */
+export function sandboxStateVolumeEnvs(
+  mountPath: string,
+): Array<{ name: string; value: string; secret: boolean }> {
+  return [
+    { name: "XDG_DATA_HOME", value: `${mountPath}/xdg-data`, secret: false },
+    { name: "XDG_CONFIG_HOME", value: `${mountPath}/xdg-config`, secret: false },
+  ];
+}
+
+/**
  * Record the sandbox in the lockfile and persist its access token so the
  * desktop proxy can route to it: the entry carries the sandbox server URL
  * (the gateway is `{url}/port/{port}`), the token file beside the lockfile
@@ -169,10 +207,16 @@ export async function hatchBaseten(
       log("   Image built.");
 
       log("🥚 Creating the sandbox...");
+      const stateVolume = sandboxStateVolume();
       const sandbox = await createBasetenSandbox({
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
-        envs: [...sandboxGatewayEnvs(), ...collectProviderEnvs()],
+        envs: [
+          ...sandboxGatewayEnvs(),
+          ...(stateVolume ? sandboxStateVolumeEnvs(stateVolume.mountPath) : []),
+          ...collectProviderEnvs(),
+        ],
+        ...(stateVolume ? { volume: stateVolume } : {}),
         ports: [{ name: "gateway", protocol: "HTTP", target: GATEWAY_PORT }],
       });
 

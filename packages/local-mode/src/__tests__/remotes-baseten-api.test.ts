@@ -351,6 +351,42 @@ describe("createBasetenSandbox", () => {
     capture.mockRestore();
   });
 
+  test("a requested state volume rides --volume on the CLI arm", async () => {
+    const [cli, run] = cliArm();
+
+    await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+      volume: { name: "cadet-assistant-state", mountPath: "/data" },
+    });
+
+    const argv = run.mock.calls[0]![0] as string[];
+    expect(argv).toContain("--volume");
+    expect(argv).toContain("cadet-assistant-state:/data");
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
+  test("a requested state volume without the CLI refuses honestly", async () => {
+    const [cli, run] = httpArm();
+
+    let error: string | undefined;
+    try {
+      await createBasetenSandbox({
+        name: "my-cadet",
+        image: basetenImageRef("cadet"),
+        volume: { name: "cadet-assistant-state", mountPath: "/data" },
+      });
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    }
+    expect(error).toMatch(/cadet-assistant-state/);
+    expect(error).toMatch(/Baseten CLI is not installed/);
+    expect(request).not.toHaveBeenCalled();
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
   test("over HTTP it posts the image ref with provider envs marked secret", async () => {
     const [cli, run] = httpArm();
     request.mockResolvedValueOnce(
