@@ -124,9 +124,13 @@ function getDbPath(): string {
 }
 
 /**
- * Initialize the gateway database: open connection, push schema, seed
- * trust rules. Must be called (and awaited) once at startup before any
- * code calls getGatewayDb().
+ * Initialize the gateway database: open connection, and — unless
+ * `migrate: false` — push schema and seed trust rules. Must be called (and
+ * awaited) once at startup before any code calls getGatewayDb().
+ *
+ * The HTTP server migrates; entrypoints that only read or mint existing
+ * state (the operator CLI) pass `migrate: false`, so an operator command
+ * never takes a schema push onto a possibly-live database.
  *
  * Data migrations run separately in the post-assistant-ready lifecycle
  * (see post-assistant-ready.ts) because some migrations depend on the
@@ -136,7 +140,9 @@ function getDbPath(): string {
  * live database and apply any missing tables/columns/indexes. No
  * migration files needed — schema.ts is the single source of truth.
  */
-export async function initGatewayDb(): Promise<void> {
+export async function initGatewayDb(
+  options: { migrate?: boolean } = {},
+): Promise<void> {
   if (db) return;
 
   const raw = new Database(getDbPath());
@@ -182,6 +188,8 @@ export async function initGatewayDb(): Promise<void> {
   }
 
   db = drizzle(raw, { schema });
+
+  if (options.migrate === false) return;
 
   const { statementsToExecute, apply } = await pushSchemaNoPrompt(schema, db);
   if (statementsToExecute.length > 0) {

@@ -169,13 +169,16 @@ async function gatewayPost(
  */
 async function mintPairingChallengeOrExit(
   entry: LockfileAssistant,
+  jsonOutput: boolean,
 ): Promise<RemoteWebPairingChallengeResponse> {
   // The mint runs the gateway's own CLI as a subprocess — a cold bun start
-  // can sit for seconds with nothing on screen. stderr keeps it out of the
-  // --json stream.
-  console.error(
-    `Minting a pairing challenge on ${assistantDisplayName(entry)}'s gateway...`,
-  );
+  // can sit for seconds with nothing on screen. Skipped under --json, where
+  // stdout must stay pure machine output.
+  if (!jsonOutput) {
+    console.log(
+      `Minting a pairing challenge on ${assistantDisplayName(entry)}'s gateway...`,
+    );
+  }
   let stdout: string;
   try {
     if (isLocalEntry(entry)) {
@@ -366,7 +369,7 @@ export const pair = Object.assign(
     // The gateway owns the advertised address: it self-sources the public URL
     // the tunnel recorded (and refuses honestly when none is), so this command
     // never reads the workspace's ingress state.
-    const challenge = await mintPairingChallengeOrExit(entry);
+    const challenge = await mintPairingChallengeOrExit(entry, jsonOutput);
     const pairUrl = buildRemoteWebPairingUrl(challenge);
     const displayName = assistantDisplayName(entry);
     const appUrl = appVariant

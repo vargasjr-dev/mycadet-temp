@@ -44,8 +44,7 @@ automatically and everything just gets fast.
 
 ```sh
 bun qa/index.ts image push                        # once per toolchain change
-bun qa/index.ts volume push                       # once per default-branch change
-bun qa/index.ts create --name qa-desktop-1108     # image + memory are pinned here
+bun qa/index.ts create --name qa-desktop-1108     # publishes the volume, then creates
 bun qa/index.ts exec --name qa-desktop-1108 -- <command>...
 bun qa/index.ts delete --name qa-desktop-1108
 ```
@@ -54,40 +53,15 @@ The Baseten CLI authenticates from `BASETEN_API_KEY` (vaulted as
 `baseten:api_key` — pass it in the environment, never bake it into the
 image).
 
-## The volume: the QA tree rides outside the sandbox's disk
-
-The sandbox's overlay filesystem is **memory-backed** — everything a session
-writes (installs, builds, dists) shares the same 4 GB the processes need. A
-full install plus a Vite build wedges the sandbox: `MemAvailable` collapses
-while node_modules sit permanently in RAM, and every build gets OOM-killed.
-The `cadet-qa` **volume** moves the heavy tree off that disk: it mounts at
-`/qa` over the image's bare clone, so a session boots warm.
-
-```sh
-# assemble + publish (default-branch clone → install → both client builds
-# → .qa-state boot seed); runs HERE, where memory isn't the ceiling.
-# Namespaces are caller-chosen labels — the default is vargas-jr; override
-# with --ref bdn:<namespace>/cadet-qa:qa or BASETEN_VOLUME_NAMESPACE.
-bun qa/index.ts volume push
-
-# pushes are content-deduplicated: a tree that mostly matches the current
-# version uploads only what changed.
-```
-
-What the volume carries:
-
-- the repo at its default branch (switch refs in-session as before),
-- a full `bun install` — generated openapi client, Playwright's Chromium
-  (the root `@playwright/browser-chromium` postinstall) — everything
-  `--ignore-scripts` sessions previously had to fake,
-- both client dists prebuilt, stamped fresh by the entrypoint's boot seed
-  (`.qa-state/seed-state.ts` → the CLI's own `stampRootProcess`), so
-  `cadet app start` serves the dists instead of building them.
-
-The push flow is the ONLY supported way to get a build now: sessions should
-not run `bun run build` for the web/app bundles (that is the wedge). A
-no-volume session from the bare image still works for light work — it just
-starts cold and must not build.
+**The volume:** the sandbox's overlay filesystem is **memory-backed** —
+everything a session writes shares the same 4 GB the processes need, and a
+full install plus a Vite build wedges it. So `create` first publishes the
+`cadet-qa` volume (default-branch clone → full install → both client dists
+prebuilt → the `.qa-state` boot seed that stamps the dists fresh) and mounts
+it at `/qa` over the image's bare clone. Publishes are content-deduplicated;
+the namespace defaults to `vargas-jr` (override with
+`BASETEN_VOLUME_NAMESPACE`). Sessions should never run `bun run build` for
+the web/app bundles — the volume IS the build.
 
 ## Session cheatsheet
 

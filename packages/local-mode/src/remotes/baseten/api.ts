@@ -224,37 +224,39 @@ export async function pushBasetenImage(options: {
 }
 
 /**
- * Create a sandbox from an image. Creation waits until the sandbox is ready
- * and returns it; `envs` is the credential-injection path (marked secret so
- * Baseten masks the values). The CLI arm parses the created sandbox's name
- * and URL straight off the create output — with no requested name the
- * server picks one, and the URL only appears there (or on `describe`,
- * which needs the name first).
- *
- * `volume` mounts one of Baseten's persistent volumes (`name` must already
- * exist, be in the sandbox's region, and be unmounted elsewhere — the
- * platform allows at most one per sandbox). Volumes exist because the
- * sandbox's filesystem is held in memory: files a session writes count
- * against the sandbox's RAM, so a long-lived assistant's state (instance
- * dir, lockfile, tokens, logs) rides the volume instead.
+ * Create a sandbox from an image and volume on Baseten
  */
 export async function createBasetenSandbox(options: {
   name?: string;
   image: string;
   envs?: BasetenEnvs;
-  volume?: { name: string; mountPath: string };
+  /**
+   * The volume to mount, `"<name>:<mountPath>"` with an absolute mount path.
+   * The REST create arm ensures the volume exists first (the volumes API:
+   * list by name, create at the default sandbox region when missing); the
+   * CLI arm passes the mount to the CLI. Either way the volume must be
+   * unmounted elsewhere when the sandbox starts — the platform allows at
+   * most one mount per volume and one volume per sandbox. Volumes exist
+   * because the sandbox's filesystem is held in memory: files a session
+   * writes count against the sandbox's RAM, so a long-lived assistant's
+   * state (instance dir, lockfile, tokens, logs) rides the volume instead.
+   */
+  volume?: string;
   /** Ports to expose at creation — the `/port/<PORT>/` route only serves
    * ports declared here (previews open theirs dynamically). The CLI arm
    * has no ports flag, so only the API arm can declare them. */
   ports?: Array<{ name?: string; protocol?: "HTTP" | "TCP" | "UDP" | "TLS"; target: number }>;
 }): Promise<BasetenSandboxCreated> {
+  // Parsed before either arm so a malformed spec is refused with the same
+  // error no matter which one runs.
+  const attachment = options.volume ? parseVolumeSpec(options.volume) : undefined;
   const team = basetenTeamId();
   if (await resolveBasetenCli()) {
     const args = ["sandbox", "create", "--image", options.image];
     if (options.name) args.push("--name", options.name);
     if (team) args.push("--team", team);
     if (options.volume) {
-      args.push("--volume", `${options.volume.name}:${options.volume.mountPath}`);
+      args.push("--volume", options.volume);
     }
     for (const env of options.envs ?? []) {
       // `--env` marks the value secret (masked in configuration responses);
@@ -276,19 +278,67 @@ export async function createBasetenSandbox(options: {
     return { name: options.name };
   }
 
-  if (options.volume) {
-    throw new Error(
-      `Sandbox volume '${options.volume.name}' was requested but the ` +
-        `Baseten CLI is not installed — volume mounts ride the CLI arm ` +
-        `(\`baseten volume push\` creates the volume, \`sandbox create ` +
-        `--volume NAME:MOUNT_PATH\` mounts it). Install the CLI or drop ` +
-        `the volume.`,
-    );
-  }
   const token = await resolveBasetenToken();
+  const { volume, ...body } = options;
+  if (attachment) {
+    await ensureBasetenVolume(token, attachment.name);
+  }
   return basetenFetch(token, "/v1/sandboxes/instances", SandboxCreated, {
     method: "POST",
-    body: JSON.stringify(options),
+    body: JSON.stringify({
+      ...body,
+      ...(attachment ? { volumes: [attachment] } : {}),
+    }),
+  });
+}
+
+/**
+ * Split a `"<name>:<mountPath>"` volume spec into the attachment the sandbox
+ * create API takes. The mount path must be absolute — Baseten rejects
+ * relative paths at create time, and a relative one would silently mount
+ * under the process's cwd.
+ */
+function parseVolumeSpec(spec: string): { name: string; mount_path: string } {
+  const separator = spec.indexOf(":");
+  const name = separator < 0 ? "" : spec.slice(0, separator);
+  const mountPath = separator < 0 ? "" : spec.slice(separator + 1);
+  if (!name || !mountPath.startsWith("/")) {
+    throw new Error(
+      `A sandbox volume must be NAME:MOUNT_PATH with an absolute mount path, got '${spec}'.`,
+    );
+  }
+  return { name, mount_path: mountPath };
+}
+
+/** The page of volumes the list endpoint returns; only names matter here. */
+const VolumeList = z.object({
+  items: z.array(z.object({ name: z.string() })),
+});
+
+/** A volume create is only refused for a name clash — the signal the
+ * ensure path treats as "already there". */
+const VolumeCreated = z.object({ name: z.string() });
+
+/**
+ * Ensure the named volume exists: list the account's volumes filtered by
+ * name, and create a default-sized one when the name is free. Runs on the
+ * REST arm's token (already in hand there); the CLI arm passes the mount
+ * straight to the CLI, whose own auth owns the error when the volume is
+ * missing.
+ */
+async function ensureBasetenVolume(
+  token: string,
+  name: string,
+): Promise<void> {
+  const listed = await basetenFetch(
+    token,
+    `/v1/sandboxes/volumes?q=${encodeURIComponent(name)}`,
+    VolumeList,
+  );
+  if (listed.items?.some((volume) => volume.name === name)) return;
+  await basetenFetch(token, "/v1/sandboxes/volumes", VolumeCreated, {
+    method: "POST",
+    body: JSON.stringify({ name, size: "10Gi" }),
   });
 }
 

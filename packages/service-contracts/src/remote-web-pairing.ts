@@ -481,22 +481,16 @@ export function isPrivateNetworkPublicUrl(url: string): boolean {
 
 /**
  * Normalize an address to the public base a scanning device opens:
- * query/hash stripped, the `assistant` path segment (and everything after it)
- * removed so a pasted pair-page URL collapses to its base, and trailing
- * slashes trimmed. Throws if the value is not a parseable URL.
+ * query/hash stripped, the pair page's `account` path segment (and everything
+ * after it) removed so a pasted pair-page URL collapses to its base, and
+ * trailing slashes trimmed. Throws if the value is not a parseable URL.
  */
 export function normalizePairingBaseUrl(value: string): string {
   const url = new URL(value);
   url.search = "";
   url.hash = "";
   const parts = url.pathname.split("/").filter(Boolean);
-  // A pasted pairing link carries the pair page's path: /assistant/pair on
-  // the legacy web bundle, /account/pair since the page moved to the app
-  // shell (#731). Cut at the first segment of either so the base survives
-  // deployment basenames (/assistant-123/assistant/pair keeps /assistant-123).
-  const cutIndex = parts.findIndex(
-    (segment) => segment === "assistant" || segment === "account",
-  );
+  const cutIndex = parts.indexOf("account");
   if (cutIndex >= 0) {
     parts.splice(cutIndex);
   }

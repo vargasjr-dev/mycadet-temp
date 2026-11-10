@@ -11,10 +11,7 @@ import { runContactsCommand } from "./contacts.js";
 import { runDevicesCommand } from "../http/routes/devices.js";
 import { runPairingCommand } from "./pairing.js";
 import { initGatewayDb } from "../db/connection.js";
-import {
-  loadOrCreateSigningKey,
-  initSigningKey,
-} from "../auth/token-service.js";
+import { initSigningKey } from "../auth/token-service.js";
 
 function printUsage(): void {
   console.log("Usage: gateway <command>");
@@ -39,19 +36,10 @@ if (command === "--help" || command === "-h" || !command) {
   process.exit(0);
 }
 
-// Every served command reads or mints gateway-owned state through
-// getGatewayDb(), whose singleton only exists after initGatewayDb(). The
-// HTTP server's main() awaits this same call before its listener binds —
-// the CLI is the second entry into the same module graph, and without it
-// every invocation died on "Gateway DB not initialized" (the hatch's
-// guardian-token lease, which runs `gateway pairing mint` as its
-// local-presence proof, burned all three of its retries on this).
-await initGatewayDb();
+// Prepare DB for commands that depend on it below
+await initGatewayDb({ migrate: false });
 
-// Minted credentials are signed with the same key the server loads at
-// startup — a mint that skipped it died one error later on "Auth signing
-// key not initialized".
-initSigningKey(loadOrCreateSigningKey());
+initSigningKey();
 
 if (command === "contacts") {
   const code = await runContactsCommand(opts);

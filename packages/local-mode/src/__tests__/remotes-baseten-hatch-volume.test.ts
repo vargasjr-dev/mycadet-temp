@@ -1,41 +1,15 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import {
-  sandboxStateVolume,
+  BASETEN_STATE_VOLUME_MOUNT_PATH,
+  BASETEN_STATE_VOLUME_NAME,
   sandboxStateVolumeEnvs,
 } from "../remotes/baseten/hatch";
 
-const ENV = "BASETEN_SANDBOX_VOLUME";
-
-afterEach(() => {
-  delete process.env[ENV];
-});
-
-describe("sandboxStateVolume", () => {
-  test("is unset without the env", () => {
-    delete process.env[ENV];
-    expect(sandboxStateVolume()).toBeUndefined();
-  });
-
-  test("a bare name mounts at /data", () => {
-    process.env[ENV] = "cadet-assistant-state";
-    expect(sandboxStateVolume()).toEqual({
-      name: "cadet-assistant-state",
-      mountPath: "/data",
-    });
-  });
-
-  test("a NAME:PATH pair mounts at the given absolute path", () => {
-    process.env[ENV] = "state:/mnt/volume";
-    expect(sandboxStateVolume()).toEqual({
-      name: "state",
-      mountPath: "/mnt/volume",
-    });
-  });
-
-  test("a relative mount path is refused", () => {
-    process.env[ENV] = "state:mnt/volume";
-    expect(() => sandboxStateVolume()).toThrow(/NAME:MOUNT_PATH/);
+describe("the state volume constants", () => {
+  test("the hatch's own volume name and mount", () => {
+    expect(BASETEN_STATE_VOLUME_NAME).toBe("cadet-state");
+    expect(BASETEN_STATE_VOLUME_MOUNT_PATH).toBe("/data");
   });
 });
 

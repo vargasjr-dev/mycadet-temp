@@ -357,7 +357,7 @@ describe("createBasetenSandbox", () => {
     await createBasetenSandbox({
       name: "my-cadet",
       image: basetenImageRef("cadet"),
-      volume: { name: "cadet-assistant-state", mountPath: "/data" },
+      volume: "cadet-assistant-state:/data",
     });
 
     const argv = run.mock.calls[0]![0] as string[];
@@ -367,22 +367,80 @@ describe("createBasetenSandbox", () => {
     run.mockRestore();
   });
 
-  test("a requested state volume without the CLI refuses honestly", async () => {
+  test("over REST a requested volume is ensured and mounted in the create body", async () => {
     const [cli, run] = httpArm();
+    // The ensure lists the account's volumes (the name is free), so a
+    // volume create follows, then the sandbox create carries the attachment.
+    request.mockResolvedValueOnce(Response.json({ items: [] }, { status: 200 }));
+    request.mockResolvedValueOnce(
+      Response.json({ name: "cadet-assistant-state" }, { status: 201 }),
+    );
+    request.mockResolvedValueOnce(
+      Response.json({ name: "my-cadet", status: "DEPLOYED" }, { status: 201 }),
+    );
+
+    await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+      volume: "cadet-assistant-state:/data",
+    });
+
+    // calls()[0] is the token exchange httpArm queued.
+    expect(calls()[1]![0]).toContain(
+      "/v1/sandboxes/volumes?q=cadet-assistant-state",
+    );
+    const [, volumeCreateInit] = calls()[2]!;
+    expect(JSON.parse(volumeCreateInit.body as string)).toEqual({
+      name: "cadet-assistant-state",
+      size: "10Gi",
+    });
+    const [, sandboxCreateInit] = calls()[3]!;
+    expect(JSON.parse(sandboxCreateInit.body as string)).toEqual({
+      name: "my-cadet",
+      image: "sandbox/cadet:latest",
+      volumes: [{ name: "cadet-assistant-state", mount_path: "/data" }],
+    });
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
+  test("an existing volume is mounted without a create", async () => {
+    const [cli, run] = httpArm();
+    request.mockResolvedValueOnce(
+      Response.json(
+        { items: [{ name: "cadet-assistant-state" }] },
+        { status: 200 },
+      ),
+    );
+    request.mockResolvedValueOnce(
+      Response.json({ name: "my-cadet", status: "DEPLOYED" }, { status: 201 }),
+    );
+
+    await createBasetenSandbox({
+      name: "my-cadet",
+      image: basetenImageRef("cadet"),
+      volume: "cadet-assistant-state:/data",
+    });
+
+    expect(calls()).toHaveLength(3); // token, list, sandbox create
+    cli.mockRestore();
+    run.mockRestore();
+  });
+
+  test("a relative mount path is refused", async () => {
+    const [cli, run] = cliArm();
 
     let error: string | undefined;
     try {
       await createBasetenSandbox({
         name: "my-cadet",
         image: basetenImageRef("cadet"),
-        volume: { name: "cadet-assistant-state", mountPath: "/data" },
+        volume: "cadet-assistant-state:data",
       });
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
-    expect(error).toMatch(/cadet-assistant-state/);
-    expect(error).toMatch(/Baseten CLI is not installed/);
-    expect(request).not.toHaveBeenCalled();
+    expect(error).toMatch(/NAME:MOUNT_PATH/);
     cli.mockRestore();
     run.mockRestore();
   });

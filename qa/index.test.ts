@@ -45,7 +45,7 @@ describe("buildCreateArgs", () => {
   });
 });
 
-describe("volume push", () => {
+describe("the volume", () => {
   test("defaults to the cadet namespace, overridable by env or arg", () => {
     delete process.env.BASETEN_VOLUME_NAMESPACE;
     expect(resolveVolumeRef()).toBe("bdn:vargas-jr/cadet-qa:qa");

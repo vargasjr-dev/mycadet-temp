@@ -59,27 +59,16 @@ function sandboxGatewayEnvs() {
 }
 
 /**
- * The optional state volume: `BASETEN_SANDBOX_VOLUME=NAME[:MOUNT_PATH]`
- * mounts one of Baseten's persistent volumes (at most one per sandbox; the
- * volume must already exist — `baseten volume push <dir> bdn:<ns>/<name>`
- * creates it) and points the assistant's state paths at it. Without it the
- * sandbox's state lives on the platform's in-memory filesystem, where every
- * file the running assistant writes (instance dir, lockfile, tokens, logs)
- * counts against the sandbox's RAM until the sandbox dies with it.
+ * The state volume every Baseten-hatched assistant keeps its state on, and
+ * where it mounts. The volume must exist — the hatch's REST arm creates it
+ * on demand; `baseten volume push <dir> bdn:<ns>/<name>` also creates one.
+ * Without a volume the sandbox's state lives on the platform's in-memory
+ * filesystem, where every file the running assistant writes (instance dir,
+ * lockfile, tokens, logs) counts against the sandbox's RAM until the sandbox
+ * dies with it.
  */
-export function sandboxStateVolume(): { name: string; mountPath: string } | undefined {
-  const raw = process.env.BASETEN_SANDBOX_VOLUME?.trim();
-  if (!raw) return undefined;
-  const separator = raw.indexOf(":");
-  const name = separator < 0 ? raw : raw.slice(0, separator);
-  const mountPath = separator < 0 ? "/data" : raw.slice(separator + 1);
-  if (!name || !mountPath.startsWith("/")) {
-    throw new Error(
-      `BASETEN_SANDBOX_VOLUME must be NAME or NAME:MOUNT_PATH (absolute), got '${raw}'.`,
-    );
-  }
-  return { name, mountPath };
-}
+export const BASETEN_STATE_VOLUME_NAME = "cadet-state";
+export const BASETEN_STATE_VOLUME_MOUNT_PATH = "/data";
 
 /**
  * The state paths a mounted volume takes over: XDG overrides are the one
@@ -207,16 +196,15 @@ export async function hatchBaseten(
       log("   Image built.");
 
       log("🥚 Creating the sandbox...");
-      const stateVolume = sandboxStateVolume();
       const sandbox = await createBasetenSandbox({
         name,
         image: basetenImageRef(BASETEN_IMAGE_NAME),
         envs: [
           ...sandboxGatewayEnvs(),
-          ...(stateVolume ? sandboxStateVolumeEnvs(stateVolume.mountPath) : []),
+          ...sandboxStateVolumeEnvs(BASETEN_STATE_VOLUME_MOUNT_PATH),
           ...collectProviderEnvs(),
         ],
-        ...(stateVolume ? { volume: stateVolume } : {}),
+        volume: `${BASETEN_STATE_VOLUME_NAME}:${BASETEN_STATE_VOLUME_MOUNT_PATH}`,
         ports: [{ name: "gateway", protocol: "HTTP", target: GATEWAY_PORT }],
       });
 

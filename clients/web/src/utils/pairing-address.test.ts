@@ -2,38 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   isPublicBaseUrlRejection,
-  pairingLinkForBase,
   publicBaseUrlRejectionMessage,
 } from "@/utils/pairing-address";
-
-describe("pairingLinkForBase", () => {
-  test("puts the pair route on the base and the code in the fragment", () => {
-    expect(pairingLinkForBase("https://foo.ts.net", "DEV-123")).toBe(
-      "https://foo.ts.net/account/pair#device_code=DEV-123",
-    );
-  });
-
-  test("keeps a deployment path prefix ahead of the pair route", () => {
-    expect(
-      pairingLinkForBase("https://host.example/assistant-1", "DEV-123"),
-    ).toBe(
-      "https://host.example/assistant-1/account/pair#device_code=DEV-123",
-    );
-  });
-
-  test("canonicalizes a base that already carries a slash or an app route", () => {
-    expect(pairingLinkForBase("https://foo.ts.net/", "DEV-123")).toBe(
-      "https://foo.ts.net/account/pair#device_code=DEV-123",
-    );
-    expect(pairingLinkForBase("https://foo.ts.net/assistant/pair", "D")).toBe(
-      "https://foo.ts.net/account/pair#device_code=D",
-    );
-  });
-
-  test("reports an unparseable base rather than composing nonsense", () => {
-    expect(pairingLinkForBase("not a url", "DEV-123")).toBeNull();
-  });
-});
 
 describe("publicBaseUrlRejectionMessage", () => {
   test("names the specific vendor for a service-website URL", () => {

@@ -224,10 +224,6 @@ export function createRemoteWebPairingChallenge(
     userCodeHash = hashSecret(normalizeUserCode(userCode));
   }
 
-  // The pairing page lives in the app shell (#731 moved it out of the web
-  // bundle): the app server serves the shell's standalone bundle at its root,
-  // so the advertised link opens /account/pair, whose page reads the
-  // device_code fragment on load.
   const verificationUri = `${publicBaseUrl}/account/pair`;
   const createdAtMs = nowMs();
   const expiresAtMs = createdAtMs + CODE_TTL_MS;
