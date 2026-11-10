@@ -4,55 +4,83 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   test,
 } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-// Snapshot the real modules before mocking so the module-scoped `afterAll`
-// below can restore them — bun runs every test file in one process with a
-// shared loader, and `mock.restore()` does not undo `mock.module()`.
-const realCloudAuth = { ...(await import("../cloud-auth")) };
-const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
-const realLookup = { ...(await import("../operations/lookup")) };
-
-const fetchMock = mock<
-  (url: string | URL | Request, init?: RequestInit) => Promise<Response>
->(async () => new Response());
-
-mock.module("../loopback-fetch", () => ({
-  ...realLoopbackFetch,
-  loopbackSafeFetch: (...args: Parameters<typeof fetch>) => fetchMock(...args),
-}));
-
-let credentialState: {
-  token: string | null;
-  cloudUrl: string;
-} = { token: null, cloudUrl: "https://test-cloud.mycadet.ai" };
-
-mock.module("../cloud-auth", () => ({
-  ...realCloudAuth,
-  readCloudToken: () => credentialState.token,
-  resolveCloudUrl: () => credentialState.cloudUrl,
-  authHeadersForKnownOrganization: (token: string, organizationId: string) => ({
-    "X-Session-Token": token,
-    "Cadet-Organization-Id": organizationId,
-  }),
-}));
+// Self-contained by design: no module-level mocks. The suite's other files
+// mock shared modules (cloud-auth, loopback-fetch, the lookup) through bun's
+// process-wide registry, and that registry is order-sensitive enough that
+// one more mock.module-ing file here broke unrelated wake/sleep suites in
+// CI. Everything this row needs is drivable through the real modules: a
+// seeded lockfile resolves the entry, the env token authenticates the
+// operator, the env cloud URL points the hop, and the HTTP boundary is the
+// one thing faked — the global fetch, restored after every test.
+const { matchOperatorRequest } = await import("../operations/routes");
 
 const ENTRY = {
   assistantId: "test-assistant",
   cloud: "local",
-  cloudAssistantId: "33333333-3333-4333-8333-333333333333",
   cloudOrganizationId: "org-123",
 };
 
-mock.module("../operations/lookup", () => ({
-  ...realLookup,
-  findAssistantByName: (name: string) =>
-    name === ENTRY.assistantId ? ENTRY : null,
-}));
+const CLOUD_URL = "https://test-cloud.mycadet.ai";
 
-const { matchOperatorRequest } = await import("../operations/routes");
+let tmpDir: string;
+let realFetch: typeof fetch;
+let realXdg: string | undefined;
+let fetchCalls: Array<{ url: string; init: RequestInit }> = [];
+
+beforeEach(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-migrations-op-"));
+  realXdg = process.env.XDG_CONFIG_HOME;
+  process.env.XDG_CONFIG_HOME = tmpDir;
+  fs.mkdirSync(path.join(tmpDir, "cadet"), { recursive: true });
+  fs.writeFileSync(
+    path.join(tmpDir, "cadet", "lockfile.json"),
+    JSON.stringify({
+      assistants: [ENTRY],
+      activeAssistant: ENTRY.assistantId,
+    }),
+  );
+  process.env.CADET_CLOUD_TOKEN = "operator-token";
+  process.env.CADET_CLOUD_URL = CLOUD_URL;
+
+  realFetch = globalThis.fetch;
+  fetchCalls = [];
+  globalThis.fetch = (async (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ) => {
+    fetchCalls.push({
+      url: String(input),
+      init: (init ?? {}) as RequestInit,
+    });
+    return new Response(
+      JSON.stringify({
+        url: "https://storage.example/download",
+        bundle_key: "bundle-1",
+        expires_at: "2026-11-10T18:00:00Z",
+      }),
+      { status: 201 },
+    );
+  }) as typeof fetch;
+});
+
+afterEach(() => {
+  globalThis.fetch = realFetch;
+  delete process.env.CADET_CLOUD_TOKEN;
+  delete process.env.CADET_CLOUD_URL;
+  if (realXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+  else process.env.XDG_CONFIG_HOME = realXdg;
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+afterAll(() => {
+  globalThis.fetch = realFetch;
+});
 
 async function dial(
   method: string,
@@ -71,65 +99,36 @@ async function dial(
 }
 
 describe("the migrations operator row", () => {
-  beforeEach(() => {
-    credentialState = {
-      token: "operator-token",
-      cloudUrl: "https://test-cloud.mycadet.ai",
-    };
-  });
-
-  afterAll(() => {
-    mock.module("../cloud-auth", () => realCloudAuth);
-    mock.module("../loopback-fetch", () => realLoopbackFetch);
-    mock.module("../operations/lookup", () => realLookup);
-  });
-
-  afterEach(() => {
-    fetchMock.mockReset();
-  });
-
   test("the signed-url dial hops to the cloud on the operator's credentials", async () => {
-    fetchMock.mockImplementation(
-      async () =>
-        new Response(
-          JSON.stringify({
-            url: "https://storage.example/download",
-            bundle_key: "bundle-1",
-            expires_at: "2026-11-10T18:00:00Z",
-          }),
-          { status: 201 },
-        ),
-    );
-
     const res = await dial(
       "POST",
       `/v1/assistants/${ENTRY.assistantId}/migrations/signed-url/`,
-      { body: JSON.stringify({ operation: "download", bundle_key: "bundle-1" }) },
+      {
+        body: JSON.stringify({
+          operation: "download",
+          bundle_key: "bundle-1",
+        }),
+      },
     );
     expect(res?.status).toBe(201);
+    await res?.json();
 
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
+    expect(fetchCalls.length).toBe(1);
     // The cloud's dial is not assistant-addressed — the entry only
     // contributes the organization header.
-    expect(url).toBe("https://test-cloud.mycadet.ai/v1/migrations/signed-url/");
-    expect((init.headers as Record<string, string>)["X-Session-Token"]).toBe(
-      "operator-token",
-    );
-    expect(
-      (init.headers as Record<string, string>)["Cadet-Organization-Id"],
-    ).toBe("org-123");
-    expect(init.body).toBe(
+    expect(fetchCalls[0].url).toBe(`${CLOUD_URL}/v1/migrations/signed-url/`);
+    const headers = fetchCalls[0].init.headers as Record<string, string>;
+    expect(headers["X-Session-Token"]).toBe("operator-token");
+    expect(headers["Cadet-Organization-Id"]).toBe("org-123");
+    expect(fetchCalls[0].init.body).toBe(
       JSON.stringify({ operation: "download", bundle_key: "bundle-1" }),
     );
     // The non-streaming rows ride the fixed upstream timeout.
-    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(fetchCalls[0].init.signal).toBeInstanceOf(AbortSignal);
   });
 
   test("an operator with no cloud token answers 401", async () => {
-    credentialState = { ...credentialState, token: null };
+    delete process.env.CADET_CLOUD_TOKEN;
 
     const res = await dial(
       "POST",
@@ -137,20 +136,27 @@ describe("the migrations operator row", () => {
       { body: "{}" },
     );
     expect(res?.status).toBe(401);
-    expect(fetchMock.mock.calls.length).toBe(0);
+    expect(fetchCalls.length).toBe(0);
   });
 
   test("an unknown assistant leaves the row unmatched", async () => {
-    const res = await dial("POST", "/v1/assistants/who-is-this/migrations/signed-url/", {
-      body: "{}",
-    });
+    fs.writeFileSync(
+      path.join(tmpDir, "cadet", "lockfile.json"),
+      JSON.stringify({ assistants: [], activeAssistant: null }),
+    );
+
+    const res = await dial(
+      "POST",
+      "/v1/assistants/who-is-this/migrations/signed-url/",
+      { body: "{}" },
+    );
     expect(res).toBeNull();
   });
 
   test("an unreachable cloud answers 502 with the body shape the web reads", async () => {
-    fetchMock.mockImplementation(async () => {
+    globalThis.fetch = (async () => {
       throw new Error("boom");
-    });
+    }) as typeof fetch;
 
     const res = await dial(
       "POST",
