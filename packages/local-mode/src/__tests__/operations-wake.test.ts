@@ -140,6 +140,25 @@ beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-wake-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
+  // Re-register the mocks every test: another file's afterAll restore (or a
+  // leaking partial mock) can clobber the registry between files, and the
+  // router must never reach the real legs from here.
+  mock.module("../remotes/local/wake", () => ({
+    ...realLocalWake,
+    wakeLocal: wakeLocalMock,
+  }));
+  mock.module("../remotes/docker/wake", () => ({
+    ...realDockerWake,
+    wakeDocker: wakeDockerMock,
+  }));
+  mock.module("../remotes/baseten/lifecycle", () => ({
+    ...realBasetenLifecycle,
+    wakeBaseten: wakeBasetenMock,
+  }));
+  mock.module("../exec", () => ({
+    ...realExecModule,
+    exec: execModuleMock,
+  }));
   wakeLocalMock.mockReset();
   wakeLocalMock.mockResolvedValue({ ok: true });
   wakeDockerMock.mockReset();
