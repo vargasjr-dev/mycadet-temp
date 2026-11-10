@@ -182,7 +182,15 @@ async function assembleQaVolumeTree(options: {
     cwd: tree,
   }).stdout.toString().trim();
   if (!headSha) throw new Error("could not read the clone's HEAD sha");
-  runChecked(["bun", "install"], tree, "install");
+  // Hoisted (npm-style) layout, not bun's default isolated store: the
+  // store's cross-package symlinks dangle the volume pusher's tree scan
+  // (targets it resolves outside the pushed root), and the tree gains
+  // nothing from the isolation — sessions consume it read-mostly.
+  runChecked(
+    ["bun", "install", "--linker", "hoisted"],
+    tree,
+    "install (hoisted)",
+  );
   runChecked(["bun", "run", "build"], join(tree, "clients/web"), "build web");
   runChecked(["bun", "run", "build"], join(tree, "clients/app"), "build app");
   // The boot seed: the entrypoint runs this in the sandbox before any exec,
