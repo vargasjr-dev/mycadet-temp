@@ -4,10 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { DetailPanelStopButton } from "@/components/detail-panel-stop-button";
-import { ShareFeedbackModal } from "@/components/share-feedback-modal";
-import type { FeedbackReason } from "@/components/share-feedback-types";
-import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
+import { DetailPanelStopButton } from "@app/components/detail-panel-stop-button";
+import { DoctorFeedbackModal } from "@app/components/doctor-feedback-modal";
+import { requestHostNavigation } from "@app/lib/host-navigation";
+import type { FeedbackReason } from "@app/components/doctor-feedback-types";
 import {
   ApprovalBlock,
   AssistantMessage,
@@ -18,8 +18,8 @@ import {
   StatusMessage,
   ToolCallBlock,
   UserMessage,
-} from "@/domains/settings/components/panels/doctor-chat-blocks";
-import { DoctorAvatar } from "@/domains/settings/components/panels/doctor-avatar";
+} from "./doctor-chat-blocks";
+import { DoctorAvatar } from "./doctor-avatar";
 import {
   type DoctorUserOutcomeAnswer,
   type UserOutcomePromptChatEntry,
@@ -33,16 +33,16 @@ import {
   replayableDoctorSourceEventIds,
   selectLatestHistorySession,
   serializeSessionToText,
-} from "@/domains/settings/components/panels/doctor-history";
-import { useDoctorPanelStore } from "@/domains/settings/components/panels/doctor-panel-store";
-import { DoctorSessionMenu } from "@/domains/settings/components/panels/doctor-session-menu";
+} from "./doctor-history";
+import { useDoctorPanelStore } from "./doctor-panel-store";
+import { DoctorSessionMenu } from "./doctor-session-menu";
 import {
   APPROVAL_RESPONSES,
   DOCTOR_GREETING,
   cleanupServerSession,
-} from "@/domains/settings/components/panels/doctor-session-actions";
-import { useDoctorSSE } from "@/domains/settings/components/panels/use-doctor-sse";
-import { useDoctorAutoScroll } from "@/domains/settings/components/panels/use-doctor-auto-scroll";
+} from "./doctor-session-actions";
+import { useDoctorSSE } from "./use-doctor-sse";
+import { useDoctorAutoScroll } from "./use-doctor-auto-scroll";
 import {
   doctorHistoryList,
   doctorHistoryRetrieve,
@@ -50,14 +50,15 @@ import {
   doctorSessionsMessagesCreate,
   doctorSessionsUserOutcomeCreate,
 } from "./doctor-api";
-import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { ApiError, extractErrorMessage } from "@/utils/api-errors";
-import { useTranslation } from "@/i18n";
-import { isPointerCoarse } from "@/utils/pointer";
-import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-
+import { copyToClipboard } from "@app/lib/copy-to-clipboard";
+import { captureError } from "@app/lib/error-reporting/capture-error";
+import { ApiError, extractErrorMessage } from "@app/utils/api-errors";
+import { useTranslation } from "@app/i18n";
+import { isPointerCoarse } from "@app/utils/pointer";
+import {
+  consumePendingDoctorPrompt,
+  peekPendingDoctorPrompt,
+} from "./doctor-handoff";
 // ---------------------------------------------------------------------------
 // UserOutcomePromptEntry
 // ---------------------------------------------------------------------------
@@ -85,8 +86,7 @@ function UserOutcomePromptEntry({
 // ---------------------------------------------------------------------------
 
 export function DoctorPanel() {
-  const { t } = useTranslation("settings");
-  const assistantId = useActiveAssistantId();
+  const { t } = useTranslation("doctor");
 
   // Store state — client-owned values only
   const storeEntries = useDoctorPanelStore.use.entries();
@@ -124,18 +124,11 @@ export function DoctorPanel() {
   // ---------------------------------------------------------------------------
 
   const historyListEnabled =
-    !!assistantId &&
-    sessionId === null &&
-    !historyDismissed &&
-    storeEntries.length === 0;
+    sessionId === null && !historyDismissed && storeEntries.length === 0;
 
   const historyListQuery = useQuery({
-    queryKey: ["doctor-history", assistantId],
-    queryFn: () =>
-      doctorHistoryList({
-        path: { assistant_id: assistantId || "placeholder" },
-        query: { limit: "1" },
-      }),
+    queryKey: ["doctor-history"],
+    queryFn: () => doctorHistoryList({ query: { limit: "1" } }),
     enabled: historyListEnabled,
   });
 
@@ -145,16 +138,12 @@ export function DoctorPanel() {
   const latestHistorySessionId = latestHistorySession?.id ?? null;
 
   const historyDetailQuery = useQuery({
-    queryKey: ["doctor-history-detail", assistantId, latestHistorySessionId],
+    queryKey: ["doctor-history-detail", latestHistorySessionId],
     queryFn: () =>
       doctorHistoryRetrieve({
-        path: {
-          assistant_id: assistantId || "placeholder",
-          doctor_session_id: latestHistorySessionId ?? "",
-        },
+        path: { doctor_session_id: latestHistorySessionId ?? "" },
       }),
     enabled:
-      !!assistantId &&
       !!latestHistorySessionId &&
       !historyDismissed &&
       sessionId === null &&
@@ -214,7 +203,7 @@ export function DoctorPanel() {
     );
     store.setSessionId(latestHistorySessionId);
     store.setSessionStatus("active");
-    connectSSE(assistantId, latestHistorySessionId);
+    connectSSE(latestHistorySessionId);
   }, [
     historyDismissed,
     sessionId,
@@ -222,7 +211,6 @@ export function DoctorPanel() {
     historyDetail,
     historyStatus,
     latestHistorySessionId,
-    assistantId,
     connectSSE,
   ]);
 
@@ -250,9 +238,7 @@ export function DoctorPanel() {
   // uses throwOnError which discards the HTTP status from the thrown error.
   const startMutation = useMutation({
     async mutationFn() {
-      const { data, error, response } = await doctorSessionsCreate({
-        path: { assistant_id: assistantId || "placeholder" },
-      });
+      const { data, error, response } = await doctorSessionsCreate();
       if (error) {
         if (response?.status === 429) {
           throw new ApiError(
@@ -277,7 +263,7 @@ export function DoctorPanel() {
           timestamp: Date.now(),
         },
       ]);
-      connectSSE(assistantId, data.session_id);
+      connectSSE(data.session_id);
     },
     onError(error) {
       if (!(error instanceof ApiError && error.status === 429)) {
@@ -301,7 +287,7 @@ export function DoctorPanel() {
 
   const sendMutation = useMutation({
     mutationFn: (variables: {
-      path: { assistant_id: string; session_id: string };
+      path: { session_id: string };
       body: { content: string };
     }) => doctorSessionsMessagesCreate(variables),
     onMutate(variables) {
@@ -348,7 +334,7 @@ export function DoctorPanel() {
     // earlier content before sending.
     scrollToLatest();
     sendMutation.mutate({
-      path: { assistant_id: assistantId, session_id: sessionId },
+      path: { session_id: sessionId },
       body: { content: text },
     });
   };
@@ -373,7 +359,7 @@ export function DoctorPanel() {
       const store = useDoctorPanelStore.getState();
       const isHistoryView = store.sessionId === null;
       const targetSessionId = store.sessionId ?? latestHistorySessionId;
-      if (!assistantId || !targetSessionId) {
+      if (!targetSessionId) {
         return;
       }
       // Optimistic answer for the live-session view (store-backed entries).
@@ -394,7 +380,7 @@ export function DoctorPanel() {
       };
       setAnswer(optimisticAnswer);
       doctorSessionsUserOutcomeCreate({
-        path: { assistant_id: assistantId, session_id: targetSessionId },
+        path: { session_id: targetSessionId },
         body: { resolved },
       }).then(({ error }) => {
         if (error) {
@@ -428,19 +414,14 @@ export function DoctorPanel() {
         });
       }
     },
-    [
-      assistantId,
-      latestHistorySessionId,
-      handleOpenFeedback,
-      refetchHistoryDetail,
-    ],
+    [latestHistorySessionId, handleOpenFeedback, refetchHistoryDetail],
   );
 
   const handleEndSession = () => {
     abort();
     const store = useDoctorPanelStore.getState();
-    if (store.sessionId && assistantId) {
-      cleanupServerSession(assistantId, store.sessionId);
+    if (store.sessionId) {
+      cleanupServerSession(store.sessionId);
     }
     store.teardown();
   };
@@ -448,8 +429,8 @@ export function DoctorPanel() {
   const handleNewSession = () => {
     abort();
     const store = useDoctorPanelStore.getState();
-    if (store.sessionId && assistantId) {
-      cleanupServerSession(assistantId, store.sessionId);
+    if (store.sessionId) {
+      cleanupServerSession(store.sessionId);
     }
     store.resetForNewSession();
   };
@@ -552,42 +533,37 @@ export function DoctorPanel() {
   useEffect(() => {
     // A pending /doctor slash command auto-starts a fresh session below; skip
     // the resume/rediscover path so it doesn't race that start.
-    if (useDoctorHandoffStore.getState().pendingPrompt !== null) {
+    if (peekPendingDoctorPrompt() !== null) {
       return;
     }
     const store = useDoctorPanelStore.getState();
-    if (
-      store.lastAssistantId === assistantId &&
-      store.sessionStatus === "active" &&
-      store.sessionId
-    ) {
-      connectSSE(assistantId, store.sessionId);
+    if (store.sessionStatus === "active" && store.sessionId) {
+      connectSSE(store.sessionId);
     }
     // Clear historyDismissed on remount so history queries re-discover new
     // sessions that may have completed while the panel was unmounted.
     if (store.historyDismissed && !store.sessionId) {
       useDoctorPanelStore.setState({ historyDismissed: false });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: assistantId is stable at mount time
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: the module store outlives the mount
   }, []);
 
-  // Reset all doctor state when active assistant changes.
+  // Reset any session this page's previous mount left parked in the
+  // module-level store: the account Doctor is single-active by
+  // construction (one machine, one active assistant), so a remount
+  // resumes rather than resets — the reset above only guards a stale
+  // terminal session's cleanup.
   useEffect(() => {
     const store = useDoctorPanelStore.getState();
-    if (store.lastAssistantId === assistantId) {
+    if (store.sessionStatus !== "active") {
       return;
     }
-    const oldAssistantId = store.lastAssistantId;
-    const oldSessionId = store.sessionId;
-
+    if (store.sessionId) {
+      cleanupServerSession(store.sessionId);
+    }
     abort();
     store.reset();
-    useDoctorPanelStore.setState({ lastAssistantId: assistantId });
-
-    if (oldSessionId && oldAssistantId) {
-      cleanupServerSession(oldAssistantId, oldSessionId);
-    }
-  }, [assistantId, abort]);
+  }, [abort]);
 
   // Cleanup SSE on unmount
   useEffect(() => {
@@ -606,10 +582,7 @@ export function DoctorPanel() {
     if (autoStartHandledRef.current) {
       return;
     }
-    if (!assistantId) {
-      return;
-    }
-    const prompt = useDoctorHandoffStore.getState().consumePendingPrompt();
+    const prompt = consumePendingDoctorPrompt();
     if (prompt === null) {
       return;
     }
@@ -618,12 +591,12 @@ export function DoctorPanel() {
     const store = useDoctorPanelStore.getState();
     abort();
     if (store.sessionId) {
-      cleanupServerSession(assistantId, store.sessionId);
+      cleanupServerSession(store.sessionId);
     }
     store.resetForNewSession();
     pendingInitialMessageRef.current = prompt.length > 0 ? prompt : null;
     startMutation.mutate();
-  }, [assistantId, abort, startMutation]);
+  }, [abort, startMutation]);
 
   // ---------------------------------------------------------------------------
   // Derived state
@@ -655,10 +628,10 @@ export function DoctorPanel() {
     pendingInitialMessageRef.current = null;
     scrollToLatest();
     sendMutation.mutate({
-      path: { assistant_id: assistantId, session_id: sessionId },
+      path: { session_id: sessionId },
       body: { content: message },
     });
-  }, [isSessionActive, sessionId, assistantId, scrollToLatest, sendMutation]);
+  }, [isSessionActive, sessionId, scrollToLatest, sendMutation]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -693,13 +666,6 @@ export function DoctorPanel() {
         <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />
           {t("doctorPanel.loading")}
-        </div>
-      ) : !assistantId ? (
-        <div className="rounded-lg border border-[var(--border-base)] bg-[var(--surface-base)] px-4 py-3 text-body-medium-lighter text-[var(--content-tertiary)]">
-          <div className="flex items-center gap-2">
-            <DoctorAvatar className="h-6 w-6 shrink-0" />
-            <span>{t("doctorPanel.noAssistant")}</span>
-          </div>
         </div>
       ) : sessionStatus === "idle" ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
@@ -745,14 +711,21 @@ export function DoctorPanel() {
                         <div key={entry.id} className="flex justify-start">
                           <div className="w-full">
                             <ToolCallBlock entry={entry} />
-                            {entry.id === backupsPanel?.entryId &&
-                              assistantId && (
-                                <div className="mt-2 rounded-lg border border-[var(--border-base)] bg-[var(--surface-lift)] p-4">
-                                  <AssistantBackups
-                                    key={backupsPanel.refreshKey}
-                                  />
-                                </div>
-                              )}
+                            {entry.id === backupsPanel?.entryId && (
+                              <div className="mt-2 rounded-lg border border-[var(--border-base)] bg-[var(--surface-lift)] p-4">
+                                <button
+                                  type="button"
+                                  className="text-body-medium text-[var(--content-link)] underline-offset-2 hover:underline"
+                                  onClick={() =>
+                                    requestHostNavigation(
+                                      "/assistant/settings/debug",
+                                    )
+                                  }
+                                >
+                                  {t("doctorPanel.openBackups")}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -945,12 +918,11 @@ export function DoctorPanel() {
           )}
         </>
       )}
-      <ShareFeedbackModal
+      <DoctorFeedbackModal
         open={feedbackOpen}
         onClose={handleCloseFeedback}
         initialReason={feedbackDraft?.reason}
         initialMessage={feedbackDraft?.message}
-        assistantId={assistantId}
         doctorSessionId={visibleDoctorSessionId}
         doctorSessionLog={doctorSessionLog}
       />

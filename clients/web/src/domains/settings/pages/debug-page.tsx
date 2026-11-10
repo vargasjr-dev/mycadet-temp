@@ -7,7 +7,6 @@ import { AllConversationsView } from "@/domains/settings/components/all-conversa
 import { AssistantTerminalPanel } from "@/domains/settings/components/panels/assistant-terminal-panel";
 import { DatabaseDebugPanel } from "@/domains/settings/components/panels/database-debug-panel";
 import { DebugControlsPanel } from "@/domains/settings/components/panels/debug-controls-panel";
-import { DoctorPanel } from "@/domains/settings/components/panels/doctor-panel";
 import { ToneLabPanel } from "@/domains/settings/components/tone-lab/tone-lab-panel";
 import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helpers";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
@@ -26,7 +25,6 @@ const ALL_TABS = [
     labelKey: "debugPage.tabs.terminal",
     defaultLabel: "Terminal",
   },
-  { id: "doctor", labelKey: "debugPage.tabs.doctor", defaultLabel: "Doctor" },
   {
     id: "database",
     labelKey: "debugPage.tabs.database",
@@ -56,23 +54,20 @@ export function DebugPage() {
     },
     [navigate],
   );
-  // Terminal and Doctor are platform-routed and must be hidden when the active
+  // The terminal is platform-routed and must be hidden when the active
   // assistant is self-hosted — `cloudHostedOnly: true` is the correct
   // variant. The standard gate still resolves to "full" on a cloud-mode app
-  // pointed at a self-hosted assistant, leaving the tabs visible and letting the
-  // user land on a doomed terminal/doctor connection.
+  // pointed at a self-hosted assistant, leaving the tab visible and letting
+  // the user land on a doomed terminal connection.
   const isSelfHosted = useActiveAssistantIsSelfHosted();
 
   const tabs = useMemo(
     () =>
-      ALL_TABS.filter(
-        (tab) =>
-          !(isSelfHosted && (tab.id === "terminal" || tab.id === "doctor")),
-      ),
+      ALL_TABS.filter((tab) => !(isSelfHosted && tab.id === "terminal")),
     [isSelfHosted],
   );
 
-  // A gated deep-link (e.g. ?tab=doctor on a self-hosted assistant) has no
+  // A gated deep-link (e.g. ?tab=terminal on a self-hosted assistant) has no
   // matching visible tab, so fall back to General rather than rendering a
   // panel with no trigger.
   const { tabId, conversationsFilter } = resolveDebugTabParam(
@@ -121,14 +116,6 @@ export function DebugPage() {
             className="flex min-h-0 flex-1 flex-col pt-4"
           >
             <AssistantTerminalPanel />
-          </Tabs.Panel>
-        )}
-        {tabs.some((tab) => tab.id === "doctor") && (
-          <Tabs.Panel
-            value="doctor"
-            className="flex min-h-0 flex-1 flex-col pt-4"
-          >
-            <DoctorPanel />
           </Tabs.Panel>
         )}
         <Tabs.Panel value="database" className="pt-4">

@@ -21,22 +21,22 @@ import type { MarkdownLinkComponent } from "@mycadet/design-library";
 import { MarkdownMessage } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { ExternalAnchor } from "@/components/external-anchor";
+import { ExternalAnchor } from "@app/components/external-anchor";
 import type {
   ApprovalMeta,
   BackupPromptMeta,
   ChatEntry,
   ToolCallMeta,
-} from "@/domains/settings/components/panels/doctor-history";
-import { Trans, useTranslation } from "@/i18n";
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+} from "./doctor-history";
+import { Trans, useTranslation } from "@app/i18n";
+import { useCopyToClipboard } from "@app/hooks/use-copy-to-clipboard";
 
 // ---------------------------------------------------------------------------
 // MessageCopyButton
 // ---------------------------------------------------------------------------
 
 export function MessageCopyButton({ text }: { text: string }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
   const { copy, copied } = useCopyToClipboard({
     errorMessage: t("doctorChatBlocks.copyError"),
   });
@@ -88,7 +88,7 @@ export function ToolCallBlock({
 }: {
   entry: ChatEntry & { kind: "tool_call"; meta: ToolCallMeta };
 }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
   const [expanded, setExpanded] = useState(false);
   const { toolName, input, result, isError, status } = entry.meta;
   const isRunning = status === "running";
@@ -224,7 +224,7 @@ export function ApprovalBlock({
   onRespond: (response: string) => void;
   disabled: boolean;
 }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
   const { toolName, description, input } = entry.meta;
   const [showDetails, setShowDetails] = useState(false);
 
@@ -327,7 +327,7 @@ export function BackupPromptBlock({
   onRespond: (response: string) => void;
   disabled: boolean;
 }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
   const { toolName } = entry.meta;
 
   return (
@@ -341,7 +341,7 @@ export function BackupPromptBlock({
             </span>
             <span className="text-body-small-default text-[var(--content-tertiary)]">
               <Trans
-                ns="settings"
+                ns="doctor"
                 i18nKey="doctorChatBlocks.backupPromptBody"
                 values={{ toolName }}
                 components={{
@@ -380,7 +380,7 @@ export function FeedbackPromptBlock({
 }: {
   onOpenFeedback: () => void;
 }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
 
   return (
     <div className="rounded-lg border border-[var(--border-base)] bg-[var(--surface-lift)] p-4">
@@ -422,7 +422,7 @@ export function UserOutcomePromptBlock({
   onRespond: (resolved: boolean) => void;
   disabled?: boolean;
 }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
 
   return (
     <div className="rounded-lg border border-[var(--border-base)] bg-[var(--surface-lift)] p-4">

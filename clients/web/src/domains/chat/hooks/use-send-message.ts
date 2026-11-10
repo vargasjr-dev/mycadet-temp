@@ -28,7 +28,7 @@ import {
   isLocalMetaCommand,
   parseDoctorCommand,
 } from "@/domains/chat/components/chat-composer/slash-command-catalog";
-import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
+import { requestDoctorPage } from "@/lib/doctor-handoff-writer";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
@@ -781,11 +781,8 @@ export function useSendMessage({
           toast.info(t("chat:useSendMessage.doctorUnavailable"));
           return;
         }
-        if (doctorPrompt) {
-          useDoctorHandoffStore.getState().setPendingPrompt(doctorPrompt);
-        }
         useComposerStore.getState().setInput("");
-        navigate(`${routes.settings.debug}?tab=doctor`);
+        requestDoctorPage(doctorPrompt ?? undefined);
         return;
       }
       // Explicit user override from the composer secret guard's "Send

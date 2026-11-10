@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import { FeedbackPromptBlock } from "@/domains/settings/components/panels/doctor-chat-blocks";
+import { FeedbackPromptBlock } from "./doctor-chat-blocks";
 
 afterEach(() => {
   cleanup();

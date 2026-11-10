@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import type { DoctorMessage } from "@/generated/api/types.gen";
+import { z } from "zod";
+
+import type { DoctorMessageSchema } from "./doctor-api";
+
+type DoctorMessage = z.infer<typeof DoctorMessageSchema>;
 
 import {
   USER_OUTCOME_PROMPT_QUESTION,
@@ -15,11 +19,11 @@ import {
   replayableDoctorSourceEventIds,
   selectLatestHistorySession,
   serializeSessionToText,
-} from "@/domains/settings/components/panels/doctor-history";
+} from "./doctor-history";
 import type {
   ChatEntry,
   UserOutcomePromptChatEntry,
-} from "@/domains/settings/components/panels/doctor-history";
+} from "./doctor-history";
 
 function msg(
   overrides: Partial<DoctorMessage> & Pick<DoctorMessage, "kind">,

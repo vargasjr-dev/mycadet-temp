@@ -17,8 +17,8 @@ import { create } from "zustand";
 import type {
   ChatEntry,
   NewChatEntry,
-} from "@/domains/settings/components/panels/doctor-history";
-import { createSelectors } from "@/utils/create-selectors";
+} from "./doctor-history";
+import { createSelectors } from "@app/utils/create-selectors";
 
 // ---------------------------------------------------------------------------
 // Types

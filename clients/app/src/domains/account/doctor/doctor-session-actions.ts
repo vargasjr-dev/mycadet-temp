@@ -7,7 +7,7 @@
  */
 
 import { doctorSessionsDestroy } from "./doctor-api";
-import { captureError } from "@/lib/error-reporting/capture-error";
+import { captureError } from "@app/lib/error-reporting/capture-error";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,11 +29,8 @@ export const APPROVAL_RESPONSES = new Set([
 // ---------------------------------------------------------------------------
 
 /** Fire-and-forget server-side cleanup for a doctor session. */
-export function cleanupServerSession(
-  assistantId: string,
-  sessionId: string,
-): void {
+export function cleanupServerSession(sessionId: string): void {
   doctorSessionsDestroy({
-    path: { assistant_id: assistantId, session_id: sessionId },
+    path: { session_id: sessionId },
   }).catch((err) => captureError(err, { context: "doctor_cleanup_destroy" }));
 }

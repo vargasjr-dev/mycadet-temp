@@ -95,3 +95,14 @@ export const AssistantNavigationSchema = z.object({
   nav: z.enum(["push", "replace", "pop"]),
   path: z.string(),
 });
+
+/**
+ * The frame's HOST-navigation request: the assistant bundle opening a
+ * surface outside its own url space (the account area — the Doctor page).
+ * The frame listener allowlists `/account/*`; the schema only fixes the
+ * message's shape.
+ */
+export const HostNavigationSchema = z.object({
+  source: z.literal("mycadet-web-host-nav"),
+  path: z.string(),
+});

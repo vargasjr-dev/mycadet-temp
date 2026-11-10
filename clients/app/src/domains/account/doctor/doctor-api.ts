@@ -1,9 +1,13 @@
 /**
  * The doctor panel's operator-api client: the panel dials the OPERATOR
- * surface (`/v1/assistants/{id}/doctor/...`) which the serving host mounts
- * in-process — so the doctor keeps working when the entry's gateway is
- * completely offline, its main use case. The operator rows proxy verbatim
- * to the cloud on the operator's own credentials.
+ * surface's UNSCOPED spelling (`/v1/assistant/doctor/...`) — the host
+ * resolves the active assistant from its lockfile, because the Doctor is
+ * an ACCOUNT surface: it doctors what is on this machine, independent of
+ * any assistant selection riding a router state. The serving host mounts
+ * the operator rows in-process, so the panel keeps working when the
+ * entry's gateway is completely offline — the doctor's main use case.
+ * The operator rows proxy verbatim to the cloud on the operator's own
+ * credentials.
  *
  * Responses are validated with the panel's own schemas at this boundary —
  * the operator api has no generated spec to type them.
@@ -87,17 +91,15 @@ async function dial(
   return { data, error: detail === null ? null : { detail }, response };
 }
 
-/** The operator api's paginated doctor history. */
+/** The operator api's paginated doctor history for the active assistant. */
 export async function doctorHistoryList(args: {
-  path: { assistant_id: string };
+  path?: Record<string, never>;
   query?: { limit?: string };
 }): Promise<OperatorResult<DoctorHistoryListResult>> {
   const search = args.query?.limit
     ? `?limit=${encodeURIComponent(args.query.limit)}`
     : "";
-  const result = await dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/history/${search}`,
-  );
+  const result = await dial(`/v1/assistant/doctor/history/${search}`);
   const parsed = DoctorHistoryListSchema.safeParse(result.data);
   return {
     ...result,
@@ -107,10 +109,10 @@ export async function doctorHistoryList(args: {
 
 /** One persisted doctor session with its messages. */
 export async function doctorHistoryRetrieve(args: {
-  path: { assistant_id: string; doctor_session_id: string };
+  path: { doctor_session_id: string };
 }): Promise<OperatorResult<DoctorHistorySessionResult>> {
   const result = await dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/history/${encodeURIComponent(args.path.doctor_session_id)}/`,
+    `/v1/assistant/doctor/history/${encodeURIComponent(args.path.doctor_session_id)}/`,
   );
   const parsed = DoctorHistorySessionSchema.safeParse(result.data);
   return {
@@ -120,13 +122,12 @@ export async function doctorHistoryRetrieve(args: {
 }
 
 /** Start a doctor session; answers the session record. */
-export async function doctorSessionsCreate(args: {
-  path: { assistant_id: string };
+export async function doctorSessionsCreate(args?: {
+  path?: Record<string, never>;
 }): Promise<OperatorResult<z.infer<typeof DoctorSessionSchema>>> {
-  const result = await dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/sessions/`,
-    { method: "POST" },
-  );
+  const result = await dial("/v1/assistant/doctor/sessions/", {
+    method: "POST",
+  });
   const parsed = DoctorSessionSchema.safeParse(result.data);
   return {
     ...result,
@@ -136,10 +137,10 @@ export async function doctorSessionsCreate(args: {
 
 /** End a doctor session. */
 export async function doctorSessionsDestroy(args: {
-  path: { assistant_id: string; session_id: string };
+  path: { session_id: string };
 }): Promise<OperatorResult<null>> {
   const result = await dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/sessions/${encodeURIComponent(args.path.session_id)}/`,
+    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/`,
     { method: "DELETE" },
   );
   return { ...result, data: null };
@@ -147,22 +148,22 @@ export async function doctorSessionsDestroy(args: {
 
 /** Post the guardian's message into the session. */
 export async function doctorSessionsMessagesCreate(args: {
-  path: { assistant_id: string; session_id: string };
+  path: { session_id: string };
   body: { content: string; source_event_id?: string | null };
 }): Promise<OperatorResult<unknown>> {
   return dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/sessions/${encodeURIComponent(args.path.session_id)}/messages/`,
+    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/messages/`,
     { method: "POST", body: JSON.stringify(args.body) },
   );
 }
 
 /** Record the guardian's outcome answer. */
 export async function doctorSessionsUserOutcomeCreate(args: {
-  path: { assistant_id: string; session_id: string };
+  path: { session_id: string };
   body: { resolved: boolean };
 }): Promise<OperatorResult<unknown>> {
   return dial(
-    `/v1/assistants/${encodeURIComponent(args.path.assistant_id)}/doctor/sessions/${encodeURIComponent(args.path.session_id)}/user-outcome/`,
+    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/user-outcome/`,
     { method: "POST", body: JSON.stringify(args.body) },
   );
 }

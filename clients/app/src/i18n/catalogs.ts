@@ -34,6 +34,7 @@
  * Reference: https://vite.dev/guide/features#dynamic-import
  */
 import enAccount from "@app/i18n/locales/en/account.json";
+import enDoctor from "@app/i18n/locales/en/doctor.json";
 import enCommon from "@app/i18n/locales/en/common.json";
 import enConsent from "@app/i18n/locales/en/consent.json";
 import enOnboarding from "@app/i18n/locales/en/onboarding.json";
@@ -64,6 +65,7 @@ export const FALLBACK_CATALOGS: LocaleCatalogs = {
   account: enAccount,
   consent: enConsent,
   onboarding: enOnboarding,
+  doctor: enDoctor,
 };
 
 /** Loaders for the locales that are not bundled into the entry chunk. */
@@ -76,24 +78,28 @@ const CATALOG_LOADERS: Record<
     account: () => import("@app/i18n/locales/es/account.json"),
     consent: () => import("@app/i18n/locales/es/consent.json"),
     onboarding: () => import("@app/i18n/locales/es/onboarding.json"),
+    doctor: () => import("@app/i18n/locales/es/doctor.json"),
   },
   ru: {
     common: () => import("@app/i18n/locales/ru/common.json"),
     account: () => import("@app/i18n/locales/ru/account.json"),
     consent: () => import("@app/i18n/locales/ru/consent.json"),
     onboarding: () => import("@app/i18n/locales/ru/onboarding.json"),
+    doctor: () => import("@app/i18n/locales/ru/doctor.json"),
   },
   zh: {
     common: () => import("@app/i18n/locales/zh/common.json"),
     account: () => import("@app/i18n/locales/zh/account.json"),
     consent: () => import("@app/i18n/locales/zh/consent.json"),
     onboarding: () => import("@app/i18n/locales/zh/onboarding.json"),
+    doctor: () => import("@app/i18n/locales/zh/doctor.json"),
   },
   "zh-TW": {
     common: () => import("@app/i18n/locales/zh-TW/common.json"),
     account: () => import("@app/i18n/locales/zh-TW/account.json"),
     consent: () => import("@app/i18n/locales/zh-TW/consent.json"),
     onboarding: () => import("@app/i18n/locales/zh-TW/onboarding.json"),
+    doctor: () => import("@app/i18n/locales/zh-TW/doctor.json"),
   },
 };
 

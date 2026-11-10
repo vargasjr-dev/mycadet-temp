@@ -8,12 +8,12 @@
  * independently testable without React rendering.
  */
 
-import type { DoctorPanelContext } from "@/domains/settings/components/panels/doctor-panel-store";
+import type { DoctorPanelContext } from "./doctor-panel-store";
 import {
   USER_OUTCOME_PROMPT_QUESTION,
   hasDoctorFeedbackPromptSinceLastUser,
-} from "@/domains/settings/components/panels/doctor-history";
-import type { FeedbackReason } from "@/components/share-feedback-types";
+} from "./doctor-history";
+import type { FeedbackReason } from "@app/components/doctor-feedback-types";
 
 // ---------------------------------------------------------------------------
 // Handlers

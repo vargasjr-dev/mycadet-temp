@@ -7,7 +7,7 @@ import {
 import { ActionMenu } from "@mycadet/design-library/components/action-menu";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { useTranslation } from "@/i18n";
+import { useTranslation } from "@app/i18n";
 
 export interface DoctorSessionMenuProps {
   /**
@@ -39,7 +39,7 @@ export function DoctorSessionMenu({
   onCopySession,
   defaultOpen,
 }: DoctorSessionMenuProps) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("doctor");
   const title = t("doctorPanel.sessionMenu");
 
   if (!onShareFeedback && !onCopySession) {

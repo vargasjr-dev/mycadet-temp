@@ -4,6 +4,7 @@ export const NAMESPACES = [
   "account",
   "consent",
   "onboarding",
+  "doctor",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 export const DEFAULT_NAMESPACE = "common";

@@ -17,6 +17,7 @@ export const routes = {
       apiKey: "/account/onboarding/api-key",
     },
     login: "/account/login",
+    doctor: "/account/doctor",
     selectAssistant: "/account/select-assistant",
     signup: "/account/signup",
     pair: "/account/pair",

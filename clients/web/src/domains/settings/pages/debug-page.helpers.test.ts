@@ -20,8 +20,8 @@ describe("resolveDebugTabParam", () => {
   });
 
   test("passes other tabs through untouched", () => {
-    expect(resolveDebugTabParam("doctor")).toEqual({
-      tabId: "doctor",
+    expect(resolveDebugTabParam("usage")).toEqual({
+      tabId: "usage",
       conversationsFilter: "all",
     });
     expect(resolveDebugTabParam("database")).toEqual({

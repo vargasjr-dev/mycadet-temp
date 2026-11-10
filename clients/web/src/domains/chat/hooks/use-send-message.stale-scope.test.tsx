@@ -28,7 +28,7 @@ import { useEffect, type ReactNode } from "react";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useComposerStore } from "@/domains/chat/composer-store";
-import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
+
 import { useSendMessage } from "@/domains/chat/hooks/use-send-message";
 import {
   INITIAL_TURN_STATE,
@@ -38,6 +38,20 @@ import {
 import type { EphemeralMetaResult } from "@/domains/chat/types/types";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+
+// The `/doctor` hand-off crosses bundles now (the writer posts the host
+// navigation); mocked here so the suite asserts the command's own
+// contract — that it parks the prompt and hands off, or drops both.
+mock.module("@/lib/doctor-handoff-writer", () => ({
+  DOCTOR_PAGE_PATH: "/account/doctor",
+  requestDoctorPage: (prompt?: string) => {
+    lastDoctorHandoff = prompt ?? null;
+  },
+}));
+let lastDoctorHandoff: string | null | undefined;
+function resetDoctorHandoff(): void {
+  lastDoctorHandoff = undefined;
+}
 
 /** The thread the send was written in. */
 const SEND_CONVERSATION = "conv-written-in";
@@ -75,7 +89,7 @@ const ACCEPTED_QUEUED = {
  */
 function draftFor(key: string): string {
   useComposerStore.setState({ input: "" });
-  useDoctorHandoffStore.setState({ pendingPrompt: null });
+  resetDoctorHandoff();
   currentLocation = START_LOCATION;
   useComposerStore.getState().restoreDraftIfEmpty(key);
   return useComposerStore.getState().input;
@@ -915,10 +929,10 @@ describe("useSendMessage: a late /doctor", () => {
     });
 
     expect(currentLocation).toBe(START_LOCATION);
-    // Nothing half-ran: a parked prompt with no navigation would surface on
-    // the user's next manual visit to the Doctor, and the clear both branches
-    // do would wipe a composer that is no longer this send's.
-    expect(useDoctorHandoffStore.getState().pendingPrompt).toBeNull();
+    // Nothing half-ran: a parked prompt with no navigation behind it would
+    // surface on the user's next manual visit to the Doctor, and the clear
+    // both branches do would wipe a composer that is no longer this send's.
+    expect(lastDoctorHandoff).toBeUndefined();
     expect(useComposerStore.getState().input).toBe("half a thought");
   });
 
@@ -943,11 +957,10 @@ describe("useSendMessage: a late /doctor", () => {
       await result.current.sendMessage("/doctor fix my profiles");
     });
 
-    expect(currentLocation).not.toBe(START_LOCATION);
-    expect(currentLocation).toContain("tab=doctor");
-    expect(useDoctorHandoffStore.getState().pendingPrompt).toBe(
-      "fix my profiles",
-    );
+    // The web bundle's router does not move: the host shell opens the
+    // Doctor page, carrying the prompt through the same hand-off the
+    // `/doctor <message>` command parks.
+    expect(lastDoctorHandoff).toBe("fix my profiles");
   });
 
   test("the send never reaches the daemon either way", async () => {

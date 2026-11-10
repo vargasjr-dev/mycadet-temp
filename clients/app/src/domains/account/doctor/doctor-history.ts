@@ -1,4 +1,4 @@
-import type { FeedbackReason } from "@/components/share-feedback-types";
+import type { FeedbackReason } from "@app/components/doctor-feedback-types";
 
 // ---------------------------------------------------------------------------
 // The cloud's persisted doctor types, declared locally: the gateway's

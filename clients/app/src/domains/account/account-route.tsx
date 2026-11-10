@@ -49,6 +49,17 @@ export const accountRoute = {
               },
             },
             {
+              // The Doctor as an account surface: reachable (and functional)
+              // with the assistant's gateway completely offline.
+              path: "doctor",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/account/pages/doctor-page").then(
+                    (m) => m.DoctorPage,
+                  ),
+              },
+            },
+            {
               path: "login",
               lazy: {
                 Component: () =>

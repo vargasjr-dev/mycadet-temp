@@ -1,0 +1,153 @@
+/**
+ * Idle watchdog for SSE stream connections.
+ *
+ * Detects silently stalled connections — notably on iOS WKWebView
+ * (Capacitor), where the fetch promise can hold a streaming connection
+ * open at the network layer with no bytes flowing and no error surfaced
+ * to JavaScript. The daemon emits a heartbeat comment every ~7 s; this
+ * watchdog aborts the active fetch when no SSE traffic (events OR
+ * heartbeat comments) arrives within a configurable window.
+ *
+ * Telemetry is recorded to the durable lifecycle diagnostics ring
+ * (via {@link recordLifecycleDiagnostic}).
+ */
+
+import { recordDiagnostic } from "@app/lib/diagnostics";
+import type { StreamReconnectCause } from "./stream-watchdog-types";
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+export interface StreamWatchdogConfig {
+  /** Milliseconds of silence before the watchdog fires. */
+  idleTimeoutMs: number;
+  assistantId: string;
+  /**
+   * Snapshot whether the caller-owned turn state machine is currently
+   * sending. Recorded as the `wasTurnSending` diagnostic field so
+   * user-harming stalls (during an in-flight turn) can be distinguished
+   * from benign ones (idle stream after a turn completed).
+   */
+  getActiveTurnSending?: () => boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+export interface StreamWatchdog {
+  /**
+   * Reset (or arm) the idle timer for the given controller. Called
+   * immediately before the for-await loop and on every parsed SSE
+   * chunk — including heartbeat comments. If no traffic arrives
+   * within `idleTimeoutMs`, the controller is aborted.
+   */
+  arm(controller: AbortController, attempt: number): void;
+  /** Cancel any pending timer. */
+  clear(): void;
+  /** Reset per-attempt liveness counters (call on each new connect). */
+  resetCounters(): void;
+  /**
+   * Record an SSE traffic event. `isData` distinguishes data frames
+   * (yielded through the iterator) from heartbeat comment frames
+   * (surfaced via `onSseEvent` with `data === undefined`).
+   */
+  recordTraffic(isData: boolean): void;
+  /**
+   * Return and clear the cause set by the most recent watchdog fire.
+   * Returns `null` if the watchdog has not fired since the last
+   * consume (or ever).
+   */
+  consumeLastAbortCause(): StreamReconnectCause | null;
+}
+
+/**
+ * Create a watchdog instance that monitors SSE stream liveness.
+ *
+ * The returned handle encapsulates the timer, liveness counters, and
+ * liveness diagnostics. The transport calls {@link StreamWatchdog.arm}
+ * on every SSE chunk and {@link StreamWatchdog.clear} when the
+ * read loop exits.
+ */
+export function createStreamWatchdog(
+  config: StreamWatchdogConfig,
+): StreamWatchdog {
+  const { idleTimeoutMs, assistantId, getActiveTurnSending } = config;
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastSseAtMs: number | null = null;
+  let keepalivesReceivedSinceConnect = 0;
+  let dataFramesReceivedSinceConnect = 0;
+  let lastAbortCause: StreamReconnectCause | null = null;
+
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  const arm = (controller: AbortController, attempt: number) => {
+    clear();
+    timer = setTimeout(() => {
+      timer = null;
+      lastAbortCause = "watchdog";
+
+      // Snapshot turn-sending state at the moment the watchdog fires.
+      // This is the single most useful stall-aggregation dimension:
+      // it separates user-harming stalls (in-flight turn) from benign
+      // ones (idle stream after turn complete). Defensively wrapped
+      // because the caller-supplied snapshot is opaque.
+      let wasTurnSending: boolean | null = null;
+      try {
+        wasTurnSending = getActiveTurnSending?.() ?? null;
+      } catch {
+        // Diagnostics are best-effort and must never block recovery.
+      }
+
+      // Distinguish "server never started responding" (null) from
+      // "some traffic arrived then stopped" (positive age).
+      const lastByteAgeMs =
+        lastSseAtMs === null ? null : Date.now() - lastSseAtMs;
+
+      recordDiagnostic("sse_watchdog_fired", {
+        assistantId,
+        attempt,
+        idleTimeoutMs,
+        wasTurnSending,
+        lastByteAgeMs,
+        keepalivesReceivedSinceConnect,
+        dataFramesReceivedSinceConnect,
+      });
+
+      // Watchdog fires are expected on iOS (background/foreground cycle);
+      // fleet-wide stall frequency belongs in an analytics pipeline, not
+      // per-fire error reports. The durable diagnostic above is the record.
+      controller.abort();
+    }, idleTimeoutMs);
+  };
+
+  const resetCounters = () => {
+    lastSseAtMs = null;
+    keepalivesReceivedSinceConnect = 0;
+    dataFramesReceivedSinceConnect = 0;
+  };
+
+  const recordTraffic = (isData: boolean) => {
+    if (isData) {
+      dataFramesReceivedSinceConnect++;
+    } else {
+      keepalivesReceivedSinceConnect++;
+    }
+    lastSseAtMs = Date.now();
+  };
+
+  const consumeLastAbortCause = (): StreamReconnectCause | null => {
+    const cause = lastAbortCause;
+    lastAbortCause = null;
+    return cause;
+  };
+
+  return { arm, clear, resetCounters, recordTraffic, consumeLastAbortCause };
+}
