@@ -205,10 +205,6 @@ for (const [specifier, name] of [
     path.join(outputDir, name),
   );
 }
-copyFileSync(
-  path.join(repoRoot, "meta", "feature-flags", "feature-flag-registry.json"),
-  path.join(outputDir, "feature-flag-registry.json"),
-);
 copyTrackedFiles("skills", path.join(outputDir, "first-party-skills"));
 const pluginApiShim = spawnSync(
   process.execPath,
