@@ -1,5 +1,7 @@
 import path from "node:path";
 
+import { appendFileSync } from "node:fs";
+
 import { readRuntimeManifest } from "../src/main/cli-installer";
 import {
   resolveCliLauncherPaths,
@@ -27,16 +29,28 @@ export function uninstallPackagedCli(
 }
 
 if (import.meta.main) {
+  const trace = (line: string): void => {
+    try {
+      if (process.env.TEMP) {
+        appendFileSync(
+          path.join(process.env.TEMP, "cadet-uninstall-cli.log"),
+          `[${new Date().toISOString()}] ${line}\n`,
+        );
+      }
+    } catch {}
+  };
+  trace(`start; execPath=${process.execPath}`);
   try {
     const localAppData = process.env.LOCALAPPDATA;
     if (!localAppData) {
-      throw new Error(
-        "LOCALAPPDATA is unavailable. Retry uninstalling Cadet.",
-      );
+      throw new Error("LOCALAPPDATA is unavailable. Retry uninstalling Cadet.");
     }
     uninstallPackagedCli(process.execPath, localAppData);
+    trace("ok");
   } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    trace(`failed: ${message}`);
+    console.error(message);
     process.exitCode = 1;
   }
 }
