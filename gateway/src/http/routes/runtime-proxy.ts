@@ -322,8 +322,9 @@ export async function handleRuntimeProxy(
 export const ROUTES: RouteDefinition[] = [
   {
     // Runtime proxy catch-all — must be LAST so specific routes win first.
+    // No method: every verb falls through here (daemon traffic is mostly
+    // POST — sends, steering, deletes — and this row is their only route).
     path: /^\//,
-    method: "get",
     auth: "track-failures",
     handler: (req, _params, getClientIp) =>
       handleRuntimeProxy(req, getClientIp()),
