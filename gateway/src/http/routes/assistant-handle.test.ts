@@ -1,6 +1,5 @@
 import {
   afterEach,
-  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -23,7 +22,7 @@ type FetchFn = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-let fetchMock: ReturnType<typeof mock<FetchFn>> = mock(
+const fetchMock: ReturnType<typeof mock<FetchFn>> = mock(
   async () => new Response(),
 );
 
@@ -42,7 +41,6 @@ mock.module("../../credential-cache.js", () => ({
 const { applyCloudIdentityIds, _resetCloudIdentityForTests } = await import(
   "../../cloud-identity.js"
 );
-const { getCloudBaseUrl } = await import("../../cloud-url.js");
 
 const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
 const ASSISTANT_API_KEY = "assistant-api-key-123";
