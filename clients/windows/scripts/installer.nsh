@@ -5,9 +5,8 @@
     FileOpen $1 "$TEMP\cadet-uninstall-trace.log" a
     FileWrite $1 "nsexec=$0$\r$\n"
     FileClose $1
-    ${if} $0 != 0
-      MessageBox MB_ICONSTOP|MB_OK "Cadet could not remove its command launcher. Close active cadet commands, then retry uninstalling."
-      Abort
-    ${endIf}
+    DetailPrint "cadet command cleanup exit: $0"
+    # Never Abort here: a failed launcher cleanup must not orphan the whole
+    # uninstall — NSIS's own $INSTDIR deletion still runs below.
   ${endIf}
 !macroend
