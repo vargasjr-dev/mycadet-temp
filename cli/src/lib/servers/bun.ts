@@ -163,6 +163,31 @@ function edgeClientIp(request: Request, peer: string | null): string {
 }
 
 /**
+ * The serve-time config stamp, read from the LIVE lockfile per request:
+ * renaming or re-pointing the served assistant reaches every document the
+ * edge hands out, with no restart. Every web-bundle document carries it —
+ * the exact mount, the mount's SPA fallback, and the bundle's own index
+ * under its baked base — so wherever the bundle boots from, its resolved
+ * assistant is already stamped. (The app shell document deliberately stays
+ * bare: the shell reads its origin instead.)
+ */
+/** The live-lockfile config as JSON, `<` escaped for inline script use. */
+function servedConfigJson(): string {
+  return JSON.stringify(servedConfigFromLockfile(readLockfile())).replace(
+    /</g,
+    "\\u003c",
+  );
+}
+
+function configScriptTag(): string {
+  return `<script>window.__CADET_CONFIG__=${servedConfigJson()}</script>`;
+}
+
+function injectConfig(html: string): string {
+  return html.replace("</head>", `${configScriptTag()}</head>`);
+}
+
+/**
  * The static SPA surface, ported from the nginx location map: the web
  * bundle's iframe mount at /web/assistant/ (injected index, inline config,
  * SPA fallback), the web bundle's own files under its baked /assistant/
@@ -187,27 +212,17 @@ async function serveStatic(
     pathname === "/web/assistant/" ||
     pathname === "/web/assistant/index.html"
   ) {
-    const configJson = JSON.stringify(
-      servedConfigFromLockfile(readLockfile()),
-    ).replace(/</g, "\\u003c");
     return staticResponse(
       request,
       { file: spec.indexHtmlPath },
       "no-cache",
-      (html) =>
-        html.replace(
-          "</head>",
-          `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
-        ),
+      injectConfig,
     );
   }
   if (pathname === "/web/assistant/__config") {
-    const configJson = JSON.stringify(
-      servedConfigFromLockfile(readLockfile()),
-    ).replace(/</g, "\\u003c");
     return staticResponse(
       request,
-      { text: configJson, type: "application/json" },
+      { text: servedConfigJson(), type: "application/json" },
       "no-store",
     );
   }
@@ -219,7 +234,9 @@ async function serveStatic(
     if (await Bun.file(file).exists()) {
       return staticResponse(request, { file }, "no-cache");
     }
-    return staticResponse(request, { file: spec.indexHtmlPath }, "no-cache");
+    // A deep route (or a reload of one) boots the bundle from the fallback
+    // document — it gets the config stamp like the exact mount paths.
+    return staticResponse(request, { file: spec.indexHtmlPath }, "no-cache", injectConfig);
   }
 
   // The web bundle's baked base at the origin root: /assistant/ serves the
@@ -245,6 +262,11 @@ async function serveStatic(
   if (pathname.startsWith("/assistant/")) {
     const file = join(spec.webDistDir, pathname.slice("/assistant/".length));
     if (await Bun.file(file).exists()) {
+      // The web bundle's own index under its baked base boots the bundle
+      // too — it carries the same config stamp as the mount's documents.
+      if (pathname === "/assistant/index.html") {
+        return staticResponse(request, { file }, "no-cache", injectConfig);
+      }
       return staticResponse(request, { file }, "no-cache");
     }
     return staticResponse(request, { file: spec.appIndexHtmlPath }, "no-cache");
