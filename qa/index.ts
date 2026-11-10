@@ -163,6 +163,11 @@ function pushImage(options: { wait?: boolean } = {}): void {
 async function assembleQaVolumeTree(options: {
   repoUrl?: string;
 }): Promise<string> {
+  // The whole assembly runs CI-mode: the postinstall keeps the electron
+  // packaging armada (its prune is what leaves dangling .bin symlinks the
+  // volume pusher's tree scan rejects), and so does the nested install the
+  // app build script runs.
+  process.env.CI = "true";
   const repoUrl = options.repoUrl ?? "https://github.com/vargasjr-dev/mycadet-temp.git";
   const tmpRoot = await fsMkdtemp(join(tmpdir(), "qa-volume-"));
   const tree = join(tmpRoot, "qa");
@@ -182,12 +187,7 @@ async function assembleQaVolumeTree(options: {
     cwd: tree,
   }).stdout.toString().trim();
   if (!headSha) throw new Error("could not read the clone's HEAD sha");
-  // CI=true keeps the electron packaging armada the postinstall otherwise
-  // prunes from bun's store — the prune is what leaves dangling .bin
-  // symlinks that the volume pusher's tree scan rejects. The isolated
-  // store's links all resolve in a complete install, and the QA tree has
-  // no reason to relink: sessions consume it read-mostly.
-  runChecked(["env", "CI=true", "bun", "install"], tree, "install");
+  runChecked(["bun", "install"], tree, "install");
   runChecked(["bun", "run", "build"], join(tree, "clients/web"), "build web");
   runChecked(["bun", "run", "build"], join(tree, "clients/app"), "build app");
   // The boot seed: the entrypoint runs this in the sandbox before any exec,
