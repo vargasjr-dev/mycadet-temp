@@ -274,11 +274,11 @@ const cliVersionCheck = spawnSync(
   ["cli/src/index.ts", "--version"],
   { cwd: outputDir, encoding: "utf8", windowsHide: true, timeout: 120_000 },
 );
+const cliOutput = cliVersionCheck.stdout.trim();
+// The CLI decorates its base version with the release channel and commit
+// (e.g. "@mycadet/cli v0.13.0-local.20261110…d4742cc"), so match the prefix.
 const expectedCliVersion = `@mycadet/cli v${cliVersion}`;
-if (
-  cliVersionCheck.status !== 0 ||
-  cliVersionCheck.stdout.trim() !== expectedCliVersion
-) {
+if (cliVersionCheck.status !== 0 || !cliOutput.startsWith(expectedCliVersion)) {
   const diagnostics = [
     `exit ${cliVersionCheck.status ?? "not started"}`,
     cliVersionCheck.error
@@ -291,7 +291,7 @@ if (
     .filter((detail): detail is string => detail !== null)
     .join("; ");
   throw new Error(
-    `Packaged CLI version check failed: expected ${expectedCliVersion}, got ${cliVersionCheck.stdout.trim() || "no output"} (${diagnostics}).`,
+    `Packaged CLI version check failed: expected a version starting with ${expectedCliVersion}, got ${cliOutput || "no output"} (${diagnostics}).`,
   );
 }
 
