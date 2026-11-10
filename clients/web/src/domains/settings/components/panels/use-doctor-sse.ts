@@ -12,6 +12,7 @@ import { useCallback, useRef } from "react";
 import type { DoctorPanelContext } from "@/domains/settings/components/panels/doctor-panel-store";
 import { useDoctorPanelStore } from "@/domains/settings/components/panels/doctor-panel-store";
 import {
+  type DoctorMessage,
   hasPendingApproval,
   hasPendingBackup,
   isReplayableDoctorSourceEventId,
@@ -37,11 +38,8 @@ import {
   handleToolResult,
 } from "@/domains/settings/components/panels/doctor-event-handlers";
 import { shouldResetDoctorSseReconnectBudget } from "@/domains/settings/components/panels/doctor-sse-reconnect";
-import {
-  assistantsDoctorHistoryRetrieve,
-  assistantsDoctorSessionsEventsRetrieve,
-} from "@/generated/api";
-import type { DoctorMessage } from "@/generated/api/types.gen";
+import { client } from "@/generated/gateway/client.gen";
+import { doctorHistoryRetrieve } from "./doctor-api";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { createStreamWatchdog } from "@/lib/streaming/stream-watchdog";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
@@ -134,9 +132,8 @@ async function refreshPersistedDoctorSession(
   assistantId: string,
   sessionId: string,
 ): Promise<"active" | "terminal" | null> {
-  const result = await assistantsDoctorHistoryRetrieve({
+  const result = await doctorHistoryRetrieve({
     path: { assistant_id: assistantId, doctor_session_id: sessionId },
-    throwOnError: false,
   });
 
   if (!result.response?.ok || !result.data) {
@@ -290,7 +287,8 @@ export function useDoctorSSE() {
             headers["Last-Event-ID"] = latestReplayableSourceEventId;
           }
 
-          const { stream } = await assistantsDoctorSessionsEventsRetrieve({
+          const { stream } = await client.sse.get<string>({
+            url: "/v1/assistants/{assistant_id}/doctor/sessions/{session_id}/events/",
             path: { assistant_id: assistantId, session_id: sessionId },
             headers,
             signal: attemptController.signal,

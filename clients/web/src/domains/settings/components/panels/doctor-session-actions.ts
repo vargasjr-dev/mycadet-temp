@@ -6,7 +6,7 @@
  * constants that multiple consumers reference.
  */
 
-import { assistantsDoctorSessionsDestroy } from "@/generated/api/sdk.gen";
+import { doctorSessionsDestroy } from "./doctor-api";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
 // ---------------------------------------------------------------------------
@@ -33,8 +33,7 @@ export function cleanupServerSession(
   assistantId: string,
   sessionId: string,
 ): void {
-  assistantsDoctorSessionsDestroy({
+  doctorSessionsDestroy({
     path: { assistant_id: assistantId, session_id: sessionId },
-    throwOnError: false,
   }).catch((err) => captureError(err, { context: "doctor_cleanup_destroy" }));
 }

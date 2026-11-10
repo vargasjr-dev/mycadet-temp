@@ -10,6 +10,19 @@ mock.module("@/generated/gateway/@tanstack/react-query.gen", () => ({
   assistantUpgradePolicyGetQueryKey: () => ["assistant-upgrade-policy"],
   assistantDomainsListOptions: () => ({ queryKey: ["assistant-domains"] }),
   assistantDomainsListQueryKey: () => ["assistant-domains"],
+  assistantDoctorHistoryListOptions: () => ({
+    queryKey: ["assistant-doctor-history"],
+  }),
+  assistantDoctorHistoryListQueryKey: () => ["assistant-doctor-history"],
+  assistantDoctorHistoryRetrieveOptions: () => ({
+    queryKey: ["assistant-doctor-history-detail"],
+  }),
+  assistantDoctorHistoryRetrieveQueryKey: () => [
+    "assistant-doctor-history-detail",
+  ],
+  useAssistantDoctorSessionsMessagesCreateMutation: () => ({
+    mutate: () => {},
+  }),
 }));
 
 const originalWarn = console.warn;

@@ -1,12 +1,14 @@
 /**
- * The shared platform hop: the gateway's assistant-plane arms forward a
- * request to the platform on the assistant's own credentials.
+ * The shared cloud hop: the gateway's assistant-plane arms forward a
+ * request to the cloud on the assistant's own credentials.
  *
- * The bound platform assistant UUID is used on the upstream path, not the
- * URL id (which may be `"self"` or a client-resolved slug). The platform
+ * The bound cloud assistant UUID is used on the upstream path, not the
+ * URL id (which may be `"self"` or a client-resolved slug). The cloud
  * authenticates the hop with the stored assistant API key. Arms built on
- * this helper: the push-token proxy and the assistant's public-identity
- * surface (handle claim, handle availability, domains).
+ * this helper: the push-token proxy, the assistant's public-identity
+ * surface (handle claim, handle availability, domains), and the
+ * assistant's cloud-only terminal sessions (the doctor lives on the
+ * operator api — its use case is a gateway that is completely offline).
  */
 
 import { getCredentials } from "../../credential-cache.js";
@@ -21,14 +23,14 @@ const log = getLogger("cloud-hop");
 
 const UPSTREAM_TIMEOUT_MS = 10_000;
 
-export interface PlatformTarget {
+export interface CloudTarget {
   cloudBaseUrl: string;
   assistantApiKey: string;
   assistantId: string;
 }
 
-export async function resolvePlatformTarget(): Promise<
-  PlatformTarget | Response
+export async function resolveCloudTarget(): Promise<
+  CloudTarget | Response
 > {
   const [assistantApiKeyRaw, assistantId] = await Promise.all([
     getCredentials().get(credentialKey("cadet", "assistant_api_key")),
@@ -50,17 +52,24 @@ export async function resolvePlatformTarget(): Promise<
 }
 
 /**
- * Forward the caller's request to the platform under
- * `/v1/assistants/{boundId}{resourcePath}`, answering the platform's
+ * Forward the caller's request to the cloud under
+ * `/v1/assistants/{boundId}{resourcePath}`, answering the cloud's
  * status and body verbatim. `resourcePath` includes its leading slash and
  * trailing slash as the upstream route spells it (e.g. `/handle-available/`,
  * `/` for the assistant record itself).
+ *
+ * `streaming` marks a long-lived response (an SSE event stream): the hop
+ * drops its fixed timeout and binds the upstream fetch to the caller's own
+ * signal instead, so a client disconnect tears the stream down. Replay
+ * cursors ride through too — a `Last-Event-ID` header is forwarded
+ * verbatim.
  */
-export async function forwardToPlatform(
+export async function forwardToCloud(
   req: Request,
   resourcePath: string,
+  opts?: { streaming?: boolean },
 ): Promise<Response> {
-  const target = await resolvePlatformTarget();
+  const target = await resolveCloudTarget();
   if (target instanceof Response) {
     return target;
   }
@@ -73,6 +82,10 @@ export async function forwardToPlatform(
   const contentType = req.headers.get("content-type");
   if (contentType) {
     headers.set("Content-Type", contentType);
+  }
+  const lastEventId = req.headers.get("last-event-id");
+  if (lastEventId) {
+    headers.set("Last-Event-ID", lastEventId);
   }
 
   let body: ArrayBuffer | undefined;
@@ -89,13 +102,15 @@ export async function forwardToPlatform(
       method: req.method,
       headers,
       body,
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      signal: opts?.streaming
+        ? req.signal
+        : AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!res.ok) {
       log.warn(
         { status: res.status, path: resourcePath },
-        "Non-OK response from platform endpoint",
+        "Non-OK response from cloud endpoint",
       );
     }
 
@@ -112,7 +127,7 @@ export async function forwardToPlatform(
   } catch (err) {
     log.warn(
       { err, path: resourcePath },
-      "Failed to reach platform endpoint",
+      "Failed to reach cloud endpoint",
     );
     return errorResponse(
       "PLATFORM_UNAVAILABLE",
