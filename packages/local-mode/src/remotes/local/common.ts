@@ -1079,12 +1079,6 @@ export async function startCes(
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(bootstrapDir, { recursive: true });
 
-  // The CES health server binds the shared default (8090) unless told
-  // otherwise. Anything can already own that port — another local
-  // assistant, the QA sandbox's control plane, a stray dev service — so
-  // scan upward from the default for a free one. Local and pod-local
-  // callers reach the CES over its Unix socket; this only gives the
-  // health/HTTP surface somewhere to bind.
   const cesHealthPort = await findAvailablePort(getDefaultPorts().ces);
 
   const cesEnv: Record<string, string | undefined> = {

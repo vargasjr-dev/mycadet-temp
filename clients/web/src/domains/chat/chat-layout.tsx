@@ -679,7 +679,6 @@ export function ChatLayout({
 
   return (
     <>
-      {}
       {!isPopout && isMobile ? <VoiceSessionPillHost variant="row" /> : null}
 
       {!isPopout && !documentHeaderVisible && (
@@ -756,7 +755,6 @@ export function ChatLayout({
               aria-label={t("chatLayout.navigationAria")}
               data-state={drawerOpen ? "open" : "closed"}
             >
-              {}
               <aside
                 id="chat-side-menu"
                 className="relative flex h-full w-full flex-col shadow-xl"
@@ -780,12 +778,7 @@ export function ChatLayout({
         }
       />
 
-      {}
-      {}
       {isMobile ? <VoiceRoom variant="sheet" /> : null}
-      {}
-      {}
-      {}
       <OnboardingAvatarApplier />
 
       <RenameDialogFromStore assistantId={assistantId} />

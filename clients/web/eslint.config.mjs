@@ -7,6 +7,7 @@ import tseslint from "typescript-eslint";
 
 import { noCrossDomainImports } from "./eslint-rules/no-cross-domain-imports.mjs";
 import { noEmDash } from "./eslint-rules/no-em-dash.mjs";
+import { noEmptyJsxExpression } from "./eslint-rules/no-empty-jsx-expression.mjs";
 import { noUntranslatedStrings } from "./eslint-rules/no-untranslated-strings.mjs";
 import { preferDesignLibraryControls } from "./eslint-rules/prefer-design-library-controls.mjs";
 import { noReExports } from "@mycadet/shared/eslint/no-re-exports";
@@ -389,6 +390,7 @@ const eslintConfig = defineConfig([
         rules: {
           "no-cross-domain-imports": noCrossDomainImports,
           "no-em-dash": noEmDash,
+          "no-empty-jsx-expression": noEmptyJsxExpression,
           "prefer-design-library-controls": preferDesignLibraryControls,
           "no-untranslated-strings": noUntranslatedStrings,
         },
@@ -398,6 +400,7 @@ const eslintConfig = defineConfig([
       // Require braces on every control-statement body (if/else/for/
       // while/do). A braceless body is a maintenance hazard: a second
       // line added under the condition reads as guarded but always runs.
+      "local/no-empty-jsx-expression": "error",
       curly: ["error", "all"],
       "@typescript-eslint/no-unused-vars": [
         "error",

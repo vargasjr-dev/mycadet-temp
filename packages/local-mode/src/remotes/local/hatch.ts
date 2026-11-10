@@ -120,10 +120,6 @@ export async function hatchLocal(params: {
         ...(await allocateLocalPlacement(instanceName)),
       };
 
-      // The picked provider IS the fresh daemon's default — the docker leg
-      // injects it through buildHatchConfigValues, and this leg must too,
-      // or the daemon boots on the schema's anthropic fallback and sends
-      // 422 for a connection the user never picked.
       const defaultWorkspaceConfigPath = writeInitialConfig(
         buildHatchConfigValues(configValues, provider),
       );

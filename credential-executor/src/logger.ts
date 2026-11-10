@@ -74,10 +74,6 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
   const filePath = logFilePathForDate(config.dir, new Date());
   const fileStream = pino.destination({
     dest: filePath,
-    // Sync open + writes: the CES logs are tiny, and an async-open
-    // destination has fd -1 for the first moments of boot — a fatal in
-    // that window was silently dropped while the exit hook crashed with
-    // "sonic boom is not ready yet", masking the real error.
     sync: true,
     mkdir: true,
     mode: 0o600,
