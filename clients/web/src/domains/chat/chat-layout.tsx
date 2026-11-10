@@ -76,7 +76,6 @@ import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu
 import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useCommandPaletteOrchestrator } from "@/domains/chat/hooks/use-command-palette-orchestrator";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { AssistantEmailIntro } from "@/components/feature-intro/assistant-email-intro";
 import { OnboardingAvatarApplier } from "@/components/onboarding-avatar-applier";
 import { VoiceSessionPillHost } from "@/domains/chat/components/voice-session-pill-host";
 import { AssistantDesktopPreview } from "@/domains/chat/desktop/assistant-desktop-preview";
@@ -680,7 +679,6 @@ export function ChatLayout({
 
   return (
     <>
-      {}
       {!isPopout && isMobile ? <VoiceSessionPillHost variant="row" /> : null}
 
       {!isPopout && !documentHeaderVisible && (
@@ -757,7 +755,6 @@ export function ChatLayout({
               aria-label={t("chatLayout.navigationAria")}
               data-state={drawerOpen ? "open" : "closed"}
             >
-              {}
               <aside
                 id="chat-side-menu"
                 className="relative flex h-full w-full flex-col shadow-xl"
@@ -781,13 +778,7 @@ export function ChatLayout({
         }
       />
 
-      {}
-      {}
       {isMobile ? <VoiceRoom variant="sheet" /> : null}
-      {}
-      {}
-      <AssistantEmailIntro />
-      {}
       <OnboardingAvatarApplier />
 
       <RenameDialogFromStore assistantId={assistantId} />

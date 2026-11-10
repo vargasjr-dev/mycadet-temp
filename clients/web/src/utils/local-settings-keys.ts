@@ -32,15 +32,6 @@ export const LS_ASSISTANT_INBOX_READ_EMAILS_PREFIX =
  */
 export const LS_ASSISTANT_INBOX_PINNED_PREFIX =
   "cadet:ui:assistantInboxPinned:";
-/**
-/**
- * Prefix, completed with a feature intro id (`FeatureIntroId` in
- * `hooks/use-feature-intro-seen.ts`): "1" once the one-time intro modal for
- * that feature has been dismissed on this device. Never cleared by the app;
- * an intro is seen once.
- */
-export const LS_FEATURE_INTRO_SEEN_PREFIX = "cadet:ui:featureIntroSeen:";
-
 export const LS_TTS_PROVIDER = "cadet:voice:ttsProvider";
 export const LS_TTS_API_KEY_PREFIX = "cadet:voice:ttsApiKey:";
 export const LS_TTS_VOICE_ID_PREFIX = "cadet:voice:ttsVoiceId:";

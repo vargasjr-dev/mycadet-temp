@@ -242,75 +242,88 @@ function startHealthServer(
   port: number,
   signal: AbortSignal,
   credentialDeps: CredentialRouteDeps | null,
-): ReturnType<typeof Bun.serve> {
+): ReturnType<typeof Bun.serve> | null {
   // Listen on every interface so kubelet httpGet probes can hit the pod IP.
   // Credential CRUD, metadata, and log export stay loopback-only: assistant
   // and gateway in this pod call http://localhost:<CES_HEALTH_PORT>.
-  const server = Bun.serve({
-    port,
-    async fetch(req, httpServer) {
-      const url = new URL(req.url);
-      if (url.pathname === "/healthz") {
-        return new Response(JSON.stringify({ status: "ok" }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      if (url.pathname === "/readyz") {
-        // Always return 200: pod readiness must not depend on whether the
-        // assistant has connected.  When the CES feature flag is off the
-        // assistant never connects, and a 503 here would block pod
-        // scheduling during dark-launch.  The sidecar can't do useful work
-        // without a connection anyway, so readiness is purely about the
-        // process being up and able to accept a future connection.
-        return new Response(
-          JSON.stringify({
-            status: "ok",
-            connections: connectionCount,
-            rpcConnected: connectionCount > 0,
-          }),
-          {
-            status: 200,
+  let server: ReturnType<typeof Bun.serve>;
+  try {
+    server = Bun.serve({
+      port,
+      async fetch(req, httpServer) {
+        const url = new URL(req.url);
+        if (url.pathname === "/healthz") {
+          return new Response(JSON.stringify({ status: "ok" }), {
             headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-
-      const peer = httpServer.requestIP(req)?.address;
-      if (!peer || !isLoopbackAddress(peer)) {
-        return new Response("Not Found", { status: 404 });
-      }
-
-      return withCesHttpErrorLogging(
-        req,
-        async () => {
-          // Credential CRUD routes (only if service token is configured)
-          if (credentialDeps) {
-            const metadataResponse = await handleMetadataRoute(req);
-            if (metadataResponse) {
-              return metadataResponse;
-            }
-            const credentialResponse = await handleCredentialRoute(
-              req,
-              credentialDeps,
-            );
-            if (credentialResponse) {
-              return credentialResponse;
-            }
-          }
-
-          // Log export route
-          const logExportResponse = await handleLogExportRoute(
-            req,
-            getCesLogDir(),
+          });
+        }
+        if (url.pathname === "/readyz") {
+          // Always return 200: pod readiness must not depend on whether the
+          // assistant has connected.  When the CES feature flag is off the
+          // assistant never connects, and a 503 here would block pod
+          // scheduling during dark-launch.  The sidecar can't do useful work
+          // without a connection anyway, so readiness is purely about the
+          // process being up and able to accept a future connection.
+          return new Response(
+            JSON.stringify({
+              status: "ok",
+              connections: connectionCount,
+              rpcConnected: connectionCount > 0,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
           );
-          if (logExportResponse) return logExportResponse;
+        }
 
+        const peer = httpServer.requestIP(req)?.address;
+        if (!peer || !isLoopbackAddress(peer)) {
           return new Response("Not Found", { status: 404 });
-        },
-        log,
-      );
-    },
+        }
+
+        return withCesHttpErrorLogging(
+          req,
+          async () => {
+            // Credential CRUD routes (only if service token is configured)
+            if (credentialDeps) {
+              const metadataResponse = await handleMetadataRoute(req);
+              if (metadataResponse) {
+                return metadataResponse;
+              }
+              const credentialResponse = await handleCredentialRoute(
+                req,
+                credentialDeps,
+              );
+              if (credentialResponse) {
+                return credentialResponse;
+              }
+            }
+
+            // Log export route
+            const logExportResponse = await handleLogExportRoute(
+              req,
+              getCesLogDir(),
+            );
+            if (logExportResponse) return logExportResponse;
+
+            return new Response("Not Found", { status: 404 });
+          },
+          log,
+        );
+      },
   });
+  } catch (err) {
+    // A health-port collision must never take the credential store down:
+    // local callers reach the CES over the Unix socket, so a failed HTTP
+    // surface degrades to socket-only service. An EADDRINUSE here used to
+    // kill the CES milliseconds into boot — with the async log
+    // destination swallowing the fatal — which surfaced downstream as
+    // "credential-executor socket not ready" and a 502 for every
+    // credential read during hatch.
+    log.error({ err, port }, "CES health server failed to bind — continuing socket-only");
+    return null;
+  }
 
   signal.addEventListener(
     "abort",

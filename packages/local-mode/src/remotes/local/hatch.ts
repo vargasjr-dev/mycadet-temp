@@ -120,7 +120,9 @@ export async function hatchLocal(params: {
         ...(await allocateLocalPlacement(instanceName)),
       };
 
-      const defaultWorkspaceConfigPath = writeInitialConfig(configValues);
+      const defaultWorkspaceConfigPath = writeInitialConfig(
+        buildHatchConfigValues(configValues, provider),
+      );
 
       try {
         // The wake leg owns starting — the hatch only threads the fresh

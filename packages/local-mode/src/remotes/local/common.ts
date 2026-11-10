@@ -1079,12 +1079,15 @@ export async function startCes(
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(bootstrapDir, { recursive: true });
 
+  const cesHealthPort = await findAvailablePort(getDefaultPorts().ces);
+
   const cesEnv: Record<string, string | undefined> = {
     ...process.env,
     CREDENTIAL_SECURITY_DIR: securityDir,
     CES_DATA_DIR: dataDir,
     CADET_WORKSPACE_DIR: workspaceDir,
     CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
+    CES_HEALTH_PORT: String(cesHealthPort),
   };
 
   let ces;
