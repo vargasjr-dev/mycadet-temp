@@ -7,11 +7,10 @@ import {
   machineSetKey,
   planMachine,
   sleepAssistant,
+  wakeAssistant,
   type MachineMutationResult,
   type MachinePlanChange,
 } from "@mycadet/local-mode";
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
-import { wakeAssistant } from "./wake.js";
 
 /**
  * `cadet machine` — the policy surface for host-independent machine settings.
@@ -197,7 +196,15 @@ export const machine = Object.assign(
     }
 
     if (subcommand === "plan") {
-      const entry = resolveTargetAssistant(nameArg);
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
       const result = await planMachine(entry);
       if (!result.ok) {
         console.error(`Error: ${result.error}`);
@@ -242,17 +249,22 @@ export const machine = Object.assign(
     }
 
     if (subcommand === "apply") {
-      const entry = resolveTargetAssistant(nameArg);
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
       const stopped = await sleepAssistant(entry);
       if (!stopped.ok) {
         console.error(`Error: ${stopped.error}`);
         process.exit(1);
       }
       console.log("Assistant slept — restarting with the stored policy...");
-      const woken = await wakeAssistant(entry, {
-        watch: false,
-        foreground: false,
-      });
+      const woken = await wakeAssistant(entry);
       if (!woken.ok) {
         console.error(`Error: ${woken.error}`);
         process.exit(1);

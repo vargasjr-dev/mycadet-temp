@@ -4,7 +4,7 @@ import type {
 } from "../../lockfile-contract";
 import { cliCommand } from "../../environment";
 import { execOutput } from "../../exec";
-import { dockerResourceNames } from "./retire";
+import { dockerResourceNames } from "./common";
 import type {
   AppliedMemoryState,
   MachinePlanChange,
@@ -24,10 +24,9 @@ import type {
 
 /** Read the assistant container's live memory HostConfig; undefined when
  * the container doesn't exist (never created, or removed by a sleep). */
-async function inspectAppliedMemory(
+export async function inspectAppliedMemory(
   containerName: string,
-): Promise<AppliedMemoryState | undefined> {
-  let raw: string;
+): Promise<AppliedMemoryState | undefined> {  let raw: string;
   try {
     raw = await execOutput("docker", [
       "inspect",

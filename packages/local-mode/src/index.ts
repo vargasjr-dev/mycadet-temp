@@ -92,10 +92,7 @@ export type {
 } from "./lockfile-contract";
 export { configureCliPaths, resolveCliInvocation } from "./cli-invocation";
 export { machinePolicyPaths } from "./lockfile-contract";
-export {
-  matchOperatorRequest,
-  forwardOperatorRequest,
-} from "./operations/routes";
+export { forwardOperatorRequest } from "./operations/routes";
 export type { CookieJar } from "./operations/cookie-jar";
 
 export { retireAssistant } from "./operations/retire";
