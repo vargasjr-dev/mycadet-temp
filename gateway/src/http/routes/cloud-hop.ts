@@ -1,9 +1,9 @@
 /**
- * The shared platform hop: the gateway's assistant-plane arms forward a
- * request to the platform on the assistant's own credentials.
+ * The shared cloud hop: the gateway's assistant-plane arms forward a
+ * request to the cloud on the assistant's own credentials.
  *
- * The bound platform assistant UUID is used on the upstream path, not the
- * URL id (which may be `"self"` or a client-resolved slug). The platform
+ * The bound cloud assistant UUID is used on the upstream path, not the
+ * URL id (which may be `"self"` or a client-resolved slug). The cloud
  * authenticates the hop with the stored assistant API key. Arms built on
  * this helper: the push-token proxy and the assistant's public-identity
  * surface (handle claim, handle availability, domains).
@@ -21,14 +21,14 @@ const log = getLogger("cloud-hop");
 
 const UPSTREAM_TIMEOUT_MS = 10_000;
 
-export interface PlatformTarget {
+export interface CloudTarget {
   cloudBaseUrl: string;
   assistantApiKey: string;
   assistantId: string;
 }
 
-export async function resolvePlatformTarget(): Promise<
-  PlatformTarget | Response
+export async function resolveCloudTarget(): Promise<
+  CloudTarget | Response
 > {
   const [assistantApiKeyRaw, assistantId] = await Promise.all([
     getCredentials().get(credentialKey("cadet", "assistant_api_key")),
@@ -50,17 +50,17 @@ export async function resolvePlatformTarget(): Promise<
 }
 
 /**
- * Forward the caller's request to the platform under
- * `/v1/assistants/{boundId}{resourcePath}`, answering the platform's
+ * Forward the caller's request to the cloud under
+ * `/v1/assistants/{boundId}{resourcePath}`, answering the cloud's
  * status and body verbatim. `resourcePath` includes its leading slash and
  * trailing slash as the upstream route spells it (e.g. `/handle-available/`,
  * `/` for the assistant record itself).
  */
-export async function forwardToPlatform(
+export async function forwardToCloud(
   req: Request,
   resourcePath: string,
 ): Promise<Response> {
-  const target = await resolvePlatformTarget();
+  const target = await resolveCloudTarget();
   if (target instanceof Response) {
     return target;
   }
@@ -95,7 +95,7 @@ export async function forwardToPlatform(
     if (!res.ok) {
       log.warn(
         { status: res.status, path: resourcePath },
-        "Non-OK response from platform endpoint",
+        "Non-OK response from cloud endpoint",
       );
     }
 
@@ -112,7 +112,7 @@ export async function forwardToPlatform(
   } catch (err) {
     log.warn(
       { err, path: resourcePath },
-      "Failed to reach platform endpoint",
+      "Failed to reach cloud endpoint",
     );
     return errorResponse(
       "PLATFORM_UNAVAILABLE",

@@ -7,37 +7,37 @@
  * routes. Without this handler they fall through to the runtime-proxy
  * catch-all and 404.
  *
- * The hop itself is the shared platform forward ({@link forwardToPlatform}):
- * the bound platform assistant UUID rides the upstream path, and the cloud
+ * The hop itself is the shared cloud forward ({@link forwardToCloud}):
+ * the bound cloud assistant UUID rides the upstream path, and the cloud
  * authenticates it with the stored assistant API key.
  */
 
-import { forwardToPlatform } from "./cloud-hop.js";
+import { forwardToCloud } from "./cloud-hop.js";
 import type { RouteDefinition } from "./types.js";
 
 // Cloud-owned registration. Remote-gateway clients hit these
 // same-origin; without a dedicated route they fall through to the
 // runtime-proxy catch-all and 404.
 export function handleUpsertPushToken(req: Request): Promise<Response> {
-  return forwardToPlatform(req, "/push-tokens/");
+  return forwardToCloud(req, "/push-tokens/");
 }
 
 export function handleDeletePushToken(
   req: Request,
   token: string,
 ): Promise<Response> {
-  return forwardToPlatform(req, `/push-tokens/${encodeURIComponent(token)}/`);
+  return forwardToCloud(req, `/push-tokens/${encodeURIComponent(token)}/`);
 }
 
 export function handleUpsertLiveActivityToken(req: Request): Promise<Response> {
-  return forwardToPlatform(req, "/live-activity/tokens/");
+  return forwardToCloud(req, "/live-activity/tokens/");
 }
 
 export function handleDeleteLiveActivityToken(
   req: Request,
   token: string,
 ): Promise<Response> {
-  return forwardToPlatform(req, `/live-activity/tokens/${encodeURIComponent(token)}/`);
+  return forwardToCloud(req, `/live-activity/tokens/${encodeURIComponent(token)}/`);
 }
 
 export const ROUTES: RouteDefinition[] = [
