@@ -32,12 +32,13 @@ mock.module("@/domains/settings/teleport/cloud-export", () => ({
 
 mock.module("@/domains/settings/teleport/cloud-migration-client", () => ({
   requestSignedDownloadUrl: async (
+    assistantId: string,
     bundleKey: string,
     targetRuntimeVersion: string | undefined,
     downloadFilename?: string,
   ) => {
     calls.push(
-      `download-url:${bundleKey}:${targetRuntimeVersion}:${downloadFilename}`,
+      `download-url:${assistantId}:${bundleKey}:${targetRuntimeVersion}:${downloadFilename}`,
     );
     return "https://storage.example.com/download";
   },
@@ -101,7 +102,7 @@ describe("AssistantBackups export", () => {
     await waitFor(() =>
       expect(calls).toEqual([
         "export:ast-1",
-        "download-url:uploads/org-abc/bundle.tar.gz:1.2.3:ast-1-2026-10-02.tar.gz",
+        "download-url:ast-1:uploads/org-abc/bundle.tar.gz:1.2.3:ast-1-2026-10-02.tar.gz",
         "save:https://storage.example.com/download:ast-1-2026-10-02.tar.gz",
       ]),
     );

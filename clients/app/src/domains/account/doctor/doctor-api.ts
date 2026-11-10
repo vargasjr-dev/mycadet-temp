@@ -93,7 +93,6 @@ async function dial(
 
 /** The operator api's paginated doctor history for the active assistant. */
 export async function doctorHistoryList(args: {
-  path?: Record<string, never>;
   query?: { limit?: string };
 }): Promise<OperatorResult<DoctorHistoryListResult>> {
   const search = args.query?.limit

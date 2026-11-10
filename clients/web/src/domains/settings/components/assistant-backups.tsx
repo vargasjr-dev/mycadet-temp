@@ -205,6 +205,7 @@ export function AssistantBackups() {
       setExportStep("downloading");
       const filename = exportBundleFilename(assistantId, new Date());
       const url = await requestSignedDownloadUrl(
+        assistantId,
         bundleKey,
         runtimeVersion,
         filename,

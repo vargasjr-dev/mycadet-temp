@@ -45,7 +45,7 @@ import {
   OperatorSseError,
   streamOperatorSse,
 } from "./operator-sse";
-import { captureError } from "@app/lib/error-reporting/capture-error";
+import { captureError } from "@design/utils/capture-error";
 import { createStreamWatchdog } from "@app/lib/streaming/stream-watchdog";
 import { toError } from "@app/utils/to-error";
 

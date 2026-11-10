@@ -9,8 +9,8 @@ import { getGatewayUrl } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
 
 /**
- * The cloud remote's retire leg: DELETE the assistant's platform record and
- * the platform registration a self-hosted entry holds. Credentials are
+ * The cloud remote's retire leg: DELETE the assistant's cloud record and
+ * the cloud registration a self-hosted entry holds. Credentials are
  * resolved HERE (env token → the on-disk cloud token) — callers never pass a
  * token in; the operation is headless about where the session lives.
  */
@@ -20,14 +20,12 @@ export interface CloudRetireToken {
 }
 
 /**
- * The platform credential for unregistration: the host's injected session
- * token env (`CADET_CLOUD_TOKEN`, or its legacy `CADET_PLATFORM_TOKEN`
- * spelling) wins, else the CLI's persisted cloud token.
+ * The cloud credential for unregistration: the host's injected session
+ * token env (`CADET_CLOUD_TOKEN`) wins, else the CLI's persisted cloud
+ * token.
  */
-export function readPlatformRetireToken(): string | null {
-  const envToken = (
-    process.env.CADET_CLOUD_TOKEN ?? process.env.CADET_PLATFORM_TOKEN
-  )?.trim();
+export function readCloudRetireToken(): string | null {
+  const envToken = process.env.CADET_CLOUD_TOKEN?.trim();
   if (envToken) return envToken;
   return readCloudToken();
 }
@@ -72,14 +70,14 @@ export async function deleteCloudAssistant(
 }
 
 /**
- * Unregister the platform record a SELF-HOSTED entry (local/docker/
+ * Unregister the cloud record a SELF-HOSTED entry (local/docker/
  * apple-container) holds: the entry's registration trio names the cloud
  * assistant; a 404 means it is already gone.
  */
 export async function unregisterSelfHostedLocalPlatformRecord(
   entry: LockfileAssistant,
 ): Promise<void> {
-  const token = readPlatformRetireToken();
+  const token = readCloudRetireToken();
   if (!token) return;
 
   const cloudAssistantId =
@@ -103,8 +101,8 @@ export async function unregisterSelfHostedLocalPlatformRecord(
 }
 
 /**
- * Retire a platform-hosted (cloud) entry: the same DELETE, addressed at the
- * entry's own gateway URL. Throws when no platform credential resolves — the
+ * Retire a cloud-hosted entry: the same DELETE, addressed at the
+ * entry's own gateway URL. Throws when no cloud credential resolves — the
  * CLI surfaces it as its not-logged-in error.
  */
 export async function retireCloudEntry(
@@ -112,7 +110,7 @@ export async function retireCloudEntry(
 ): Promise<void> {
   console.log("\u{1F5D1}\ufe0f  Retiring Cadet Cloud-hosted instance...\n");
 
-  const token = readPlatformRetireToken();
+  const token = readCloudRetireToken();
   if (!token) {
     throw new Error("Not logged in. Run `cadet login --token <token>` first.");
   }
