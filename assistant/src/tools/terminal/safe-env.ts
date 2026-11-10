@@ -384,17 +384,7 @@ function isBunRuntime(execPath: string): boolean {
 }
 
 /**
- * Puts the directory holding the `assistant` command on the bash tool's PATH:
- * tool-spawned children invoke `assistant …` directly, and the sanitized env
- * above already carries the instance env the command needs.
- *
- *   - Compiled era: assistant.exe shipped beside the daemon binary, so the
- *     binary's dir was prepended.
- *   - Source runtimes (the only packaged layout now): assistant.cmd sits in
- *     the runtime root beside the bundled bun, so dirname(execPath) is the
- *     dir to prepend.
- *   - Dev/npm installs reach `assistant` through the PATH command the daemon
- *     installs at startup — nothing to prepend.
+ * Puts the directory holding the `assistant` command on the bash tool's PATH
  */
 function prependAssistantDir(
   env: Record<string, string>,

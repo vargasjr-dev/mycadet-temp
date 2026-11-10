@@ -48,11 +48,7 @@ export function setScheduleWorkerAdministrativelyStopped(value: boolean): void {
  * that is not this worker) is cleaned up and reported as not_running.
  */
 export function probeScheduleWorker(): WorkerProcessStatus {
-  return probeWorkerPidFile(
-    getScheduleWorkerPidPath(),
-    SCHEDULE_WORKER_ENTRY,
-    "schedule",
-  );
+  return probeWorkerPidFile(getScheduleWorkerPidPath(), SCHEDULE_WORKER_ENTRY);
 }
 
 export class ScheduleWorkerSpawnError extends WorkerProcessSpawnError {}
@@ -102,7 +98,6 @@ async function spawnScheduleWorkerProcessUncoalesced(
     return await spawnWorkerProcess({
       pidPath: getScheduleWorkerPidPath(),
       entry: SCHEDULE_WORKER_ENTRY,
-      packagedEntry: "schedule",
       workerLabel: "Schedule worker",
       options: opts,
     });
@@ -120,11 +115,7 @@ async function spawnScheduleWorkerProcessUncoalesced(
  * `process.kill` itself fails (e.g. EPERM) — a not-running worker is a no-op.
  */
 export function stopScheduleWorkerProcess(): WorkerProcessStatus {
-  return stopWorkerProcess(
-    getScheduleWorkerPidPath(),
-    SCHEDULE_WORKER_ENTRY,
-    "schedule",
-  );
+  return stopWorkerProcess(getScheduleWorkerPidPath(), SCHEDULE_WORKER_ENTRY);
 }
 
 /**

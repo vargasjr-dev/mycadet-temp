@@ -38,7 +38,7 @@ const makeTempDir = (): string => {
   return dir;
 };
 
-const writeRuntimeEntries = (dir: string, _version: string): void => {
+const writeRuntimeEntries = (dir: string): void => {
   mkdirSync(dir, { recursive: true });
   for (const name of CLI_RUNTIME_EXECUTABLES) {
     writeFileSync(path.join(dir, name), name, "utf8");
@@ -63,7 +63,7 @@ const writeRuntime = (
   version: string,
   runtimeBuildId = `build-${version}`,
 ): string => {
-  writeRuntimeEntries(dir, version);
+  writeRuntimeEntries(dir);
   writeFileSync(
     path.join(dir, "runtime.json"),
     JSON.stringify({ version, bunVersion: "1.3.11", runtimeBuildId }),
@@ -344,7 +344,7 @@ test("repairs stale ownership and updates the user PATH", () => {
   expect(getCliLauncherState(paths, source)).toBe("missing");
 });
 
-test("requires every packaged entry but puts only the launcher on PATH", () => {
+test("requires every packaged entry", () => {
   const root = makeTempDir();
   const runtimeDir = path.join(root, "runtime");
   const source = writeRuntime(runtimeDir, "1.0.0");
@@ -357,7 +357,7 @@ test("requires every packaged entry but puts only the launcher on PATH", () => {
     writeRuntime(runtimeDir, "1.0.0");
   }
 
-  writeRuntimeEntries(paths.binDir, "legacy");
+  mkdirSync(paths.binDir, { recursive: true });
   writeFileSync(
     paths.ownership,
     JSON.stringify({ sourcePath: source, version: "0.9.0" }),
@@ -366,11 +366,6 @@ test("requires every packaged entry but puts only the launcher on PATH", () => {
   installCliLauncher(source, "1.0.0", paths, userRegistry.run);
   expect(readFileSync(paths.executable, "utf8")).toContain("@echo off");
   expect(readLauncherSource(paths.ownership)).toBe(source);
-  expect(
-    CLI_RUNTIME_ENTRIES.filter((name) => name !== "cadet.cmd").every(
-      (name) => !existsSync(path.join(paths.binDir, name)),
-    ),
-  ).toBeTrue();
   expect(uninstallCliLauncher(paths, userRegistry.run)).toBe("removed");
   expect(existsSync(paths.executable)).toBeFalse();
 });
