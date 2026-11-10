@@ -22,12 +22,9 @@ import {
 } from "@mycadet/ipc-server-utils";
 
 import { resolveDataDir, resolveLogDir } from "../../config";
-import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
 import { GATEWAY_PORT, type LocalAssistant } from "../../lockfile-contract";
 import {
   httpHealthCheck,
-  probeDaemonReadiness,
-  probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
   type DaemonReadiness,
@@ -121,26 +118,15 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   );
 }
 
-function compiledSibling(name: string): string {
-  return join(dirname(process.execPath), executableName(name, platform()));
-}
-
-function envWithCompiledRuntimeNodePath(
-  env: Record<string, string>,
-): Record<string, string> {
-  return {
-    ...env,
-    NODE_PATH: join(dirname(process.execPath), "node_modules"),
-  };
-}
-
 function resolveBunExecutable(): string {
   const envBun = process.env.CADET_BUN;
   if (envBun && existsSync(envBun)) return envBun;
 
   const bunName = executableName("bun", platform());
-  const siblingBun = compiledSibling("bun");
-  if (existsSync(siblingBun)) return siblingBun;
+  // Packaged runtimes bundle bun at the runtime root, beside the product
+  // source the CLI executes.
+  const bundledSiblingBun = join(dirname(process.execPath), bunName);
+  if (existsSync(bundledSiblingBun)) return bundledSiblingBun;
 
   const bundledBun = join(
     dirname(process.execPath),
@@ -1102,36 +1088,23 @@ export async function startCes(
   };
 
   let ces;
-  const runtimeCesDir = !watch ? localRuntimeCesDir(entry) : undefined;
-  const cesBinary = compiledSibling("credential-executor");
-  if (!runtimeCesDir && existsSync(cesBinary) && !watch) {
-    // Compiled binary alongside the CLI.
-    const cesLogFd = openLogFile("hatch.log");
-    ces = spawn(cesBinary, [], {
-      cwd: spawnStateRoot(),
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-      env: cesEnv,
-    });
-    pipeToLogFile(ces, cesLogFd, "credential-executor");
-  } else {
-    // Source tree / bunx: run the CES entry point via bun.
-    const cesDir = runtimeCesDir ?? resolveCesDir(entry);
-    const cesEntry = join(cesDir, "src/main.ts");
-    const bunArgs = watch ? ["--watch", "run", cesEntry] : ["run", cesEntry];
-    const cesLogFd = openLogFile("hatch.log");
-    ces = spawn(resolveBunExecutable(), bunArgs, {
-      cwd: spawnStateRoot(),
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-      env: envWithBunPath(cesEnv),
-    });
-    pipeToLogFile(ces, cesLogFd, "credential-executor");
-    if (watch) {
-      startupLog("   credential-executor started in watch mode (bun --watch)");
-    }
+  // credential-executor always runs from source through bun: the packaged
+  // runtime ships its source beside the bundled bun, and dev/bunx installs
+  // resolve it from the source tree or node_modules.
+  const cesDir = localRuntimeCesDir(entry) ?? resolveCesDir(entry);
+  const cesEntry = join(cesDir, "src/main.ts");
+  const bunArgs = watch ? ["--watch", "run", cesEntry] : ["run", cesEntry];
+  const cesLogFd = openLogFile("hatch.log");
+  ces = spawn(resolveBunExecutable(), bunArgs, {
+    cwd: spawnStateRoot(),
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+    env: envWithBunPath(cesEnv),
+  });
+  pipeToLogFile(ces, cesLogFd, "credential-executor");
+  if (watch) {
+    startupLog("   credential-executor started in watch mode (bun --watch)");
   }
 
   ces.unref();
@@ -1422,273 +1395,29 @@ export async function startLocalDaemon(
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
 
-  const runtimeAssistantIndex = !watch
-    ? localRuntimeAssistantIndex(entry)
-    : undefined;
-  if (runtimeAssistantIndex) {
-    startupLog("🔨 Starting local assistant runtime...");
-    // Wait for readiness only after an actual spawn — an attach to an
-    // already-running daemon was classified and logged inside
-    // startDaemonFromSource, and re-waiting would just block on a migration
-    // the user was already told about.
-    // Spawn and return — readiness is the gateway's responsibility: its
-    // process gates its own traffic on the daemon's migrations.
-    await startDaemonFromSource(
-      runtimeAssistantIndex,
-      entry,
-      daemonPort,
-      options,
+  // The assistant daemon always runs from source through bun: the packaged
+  // runtime ships assistant source beside the bundled bun, and dev/bunx
+  // installs resolve it from the source tree or node_modules.
+  const assistantIndex =
+    localRuntimeAssistantIndex(entry) ?? resolveAssistantIndexPath(entry);
+  if (!assistantIndex) {
+    throw new Error(
+      "Assistant source not found.\n" +
+        "  Ensure the runtime ships assistant source, or run from the source tree.",
     );
-    return;
   }
-
-  // Check for a compiled daemon binary adjacent to the CLI executable
-  // (the compiled CLI run directly from the terminal).
-  const daemonBinary = compiledSibling("cadet-daemon");
-  if (existsSync(daemonBinary) && !watch) {
-    // In watch mode, skip the bundled binary and use source (bun --watch
-    // only works with source files, not compiled binaries).
-
-    const pidFile = getDaemonPidPath(entry);
-
-    // --- Lifecycle guard: prevent split-brain daemon state ---
-    if (await awaitStartingSentinel(pidFile, daemonPort)) {
-      ensureBunInstalled();
-      return;
-    }
-
-    const daemonState = await resolveProcessState(
-      pidFile,
-      daemonPort,
-      "Assistant",
-      60_000,
-      "readyz",
-    );
-    const daemonAlive = daemonState.status !== "needs_start";
-    if (daemonAlive) {
-      logAssistantAlreadyRunning(daemonState.pid, daemonState.status);
-    }
-    let daemonSpawn: DaemonSpawn | null = null;
-
-    if (!daemonAlive) {
-      if (await checkOrphanedDaemon(pidFile, daemonPort)) {
-        ensureBunInstalled();
-        // The orphan already answers health checks — a readiness probe
-        // classifies it without blocking on an in-flight migration.
-        logDaemonReadiness(
-          await probeDaemonReadinessWithRetry(daemonPort),
-          options?.requireReady,
-        );
-        return;
-      }
-
-      console.log("🔨 Starting assistant...");
-
-      // Ensure bun is available for runtime features (browser, skills install)
-      ensureBunInstalled();
-
-      // Ensure the directory containing PID files exists
-      mkdirSync(dirname(pidFile), { recursive: true });
-
-      // Build a minimal environment for the daemon. When launched from the
-      // macOS app the CLI inherits a huge environment (XPC_SERVICE_NAME,
-      // __CFBundleIdentifier, etc.) that can cause
-      // the daemon to take 50+ seconds to start instead of ~1s.
-      const home = homedir();
-      const bunBinDir = join(home, ".bun", "bin");
-      const localBinDir = join(home, ".local", "bin");
-      const basePath = process.env.PATH || DEFAULT_EXECUTABLE_PATH;
-      // The compiled `assistant` ships beside the daemon binary, so its
-      // directory is what puts `assistant …` on PATH for agent-run commands.
-      const daemonBinaryDir = dirname(daemonBinary);
-      const assistantBinaryDir = existsSync(
-        join(daemonBinaryDir, executableName("assistant", platform())),
-      )
-        ? [daemonBinaryDir]
-        : [];
-      const extraDirs = [...assistantBinaryDir, bunBinDir, localBinDir].filter(
-        (d) => !basePath.split(PATH_DELIMITER).includes(d),
-      );
-      const daemonEnv: Record<string, string> = {
-        HOME: process.env.HOME || home,
-        PATH: [...extraDirs, basePath].filter(Boolean).join(PATH_DELIMITER),
-      };
-      if (platform() === "win32") {
-        for (const key of [
-          "APPDATA",
-          "COMSPEC",
-          "LOCALAPPDATA",
-          "PATHEXT",
-          "SystemDrive",
-          "SystemRoot",
-          "TEMP",
-          "TMP",
-          "USERPROFILE",
-        ]) {
-          if (process.env[key]) {
-            daemonEnv[key] = process.env[key];
-          }
-        }
-      }
-      // Forward optional config env vars the daemon may need.
-      // `CADET_ENVIRONMENT` must be forwarded so the daemon resolves
-      // env-scoped paths (device ID, platform/guardian tokens, XDG
-      // config dir) to the same location as the CLI that spawned it.
-      for (const key of [
-        "ANTHROPIC_API_KEY",
-        "APP_VERSION",
-        "CADET_ENVIRONMENT",
-        "CADET_CLOUD_URL",
-        "QDRANT_HTTP_PORT",
-        "QDRANT_URL",
-        "RUNTIME_HTTP_PORT",
-        "TMPDIR",
-        "USER",
-        "LANG",
-        "CADET_DEBUG",
-        "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
-        "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
-        "CADET_WORKSPACE_DIR",
-      ]) {
-        if (process.env[key]) {
-          daemonEnv[key] = process.env[key]!;
-        }
-      }
-      applyDaemonEnvOverrides(daemonEnv, entry, options);
-      const daemonSpawnEnv = envWithCompiledRuntimeNodePath(daemonEnv);
-
-      // Write a sentinel PID file before spawning so concurrent hatch() calls
-      // see the file and fall through to the httpHealthCheck() port check
-      // instead of racing to spawn a duplicate daemon.
-      writeFileSync(pidFile, "starting", "utf-8");
-
-      const daemonLogFd = openRuntimeLogFile(
-        getLocalInstanceDir(entry),
-        "assistant",
-      );
-      const child = spawn(daemonBinary, [], {
-        cwd: spawnStateRoot(),
-        detached: true,
-        stdio: ["ignore", "pipe", "pipe"],
-        windowsHide: true,
-        env: daemonSpawnEnv,
-      });
-      pipeToLogFile(child, daemonLogFd, "daemon");
-      child.unref();
-      const daemonPid = child.pid;
-
-      // Overwrite sentinel with real PID, or clean up on spawn failure.
-      if (daemonPid) {
-        writeFileSync(pidFile, String(daemonPid), "utf-8");
-        daemonSpawn = trackDaemonSpawn(child);
-      } else {
-        try {
-          unlinkSync(pidFile);
-        } catch {}
-      }
-    }
-
-    // Ensure bun is available for runtime features (browser, skills install)
-    // Runs after daemon-reuse checks so the fast attach path is not blocked
-    // by a potentially slow bun install when the daemon is already alive.
-    if (daemonAlive) {
-      ensureBunInstalled();
-    }
-
-    // Wait for daemon to respond on HTTP (up to 60s — fresh installs
-    // may need 30-60s for Qdrant download, migrations, and first-time init).
-    // "migrating" and "failed" both mean the daemon is up and answering, so
-    // they don't trigger the source fallback (a restart against the same DB
-    // would reproduce the same migration state).
-    //
-    // Runs only after a fresh spawn: an attached daemon was already
-    // classified and logged by resolveProcessState above, and re-waiting on
-    // its in-flight migration would just double the reported diagnosis.
-    if (!daemonAlive) {
-      let readiness = await waitForDaemonMigrationsReady(
+  startupLog("🔨 Starting local assistant...");
+  const sourceSpawn = watch
+    ? await startDaemonWatchFromSource(
+        assistantIndex,
+        entry,
         daemonPort,
-        Date.now() + 60000,
-      );
-      const daemonHealthy =
-        readiness !== "unreachable" || (await httpHealthCheck(daemonPort));
-
-      // Dev fallback: if the bundled daemon did not become healthy in time,
-      // fall back to source daemon startup so local source runs still work.
-      if (!daemonHealthy) {
-        const assistantIndex = resolveAssistantIndexPath(entry);
-        if (assistantIndex) {
-          console.log(
-            "   Bundled assistant not healthy after 60s, falling back to source assistant...",
-          );
-          // Kill the bundled daemon to avoid two processes competing for the
-          // same port. It gets the full stop budget like any other daemon:
-          // failing the health probe does not mean it has nothing to flush, and
-          // a daemon still working through a long DB migration is exactly the
-          // one whose WAL checkpoint must not be interrupted.
-          await stopProcessByPidFile(
-            pidFile,
-            "bundled daemon",
-            undefined,
-            DAEMON_STOP_TIMEOUT_MS,
-          );
-          daemonSpawn = watch
-            ? await startDaemonWatchFromSource(
-                assistantIndex,
-                entry,
-                daemonPort,
-                options,
-              )
-            : await startDaemonFromSource(
-                assistantIndex,
-                entry,
-                daemonPort,
-                options,
-              );
-          readiness = await waitForDaemonMigrationsReady(
-            daemonPort,
-            Date.now() + 60000,
-          );
-        }
-      } else if (readiness === "unreachable") {
-        // The health check just passed, so the readyz probes were the flaky
-        // part — re-probe once so the log reports the daemon's real state
-        // instead of "did not become ready".
-        readiness = await probeDaemonReadiness(daemonPort);
-      }
-
-      if (daemonSpawn) {
-        await reportFreshSpawnReadiness(
-          daemonSpawn,
-          pidFile,
-          daemonPort,
-          readiness,
-          options?.requireReady,
-        );
-      } else {
-        logDaemonReadiness(readiness, options?.requireReady);
-      }
-    }
-  } else {
-    startupLog("🔨 Starting local assistant...");
-
-    const assistantIndex = resolveAssistantIndexPath(entry);
-    if (!assistantIndex) {
-      throw new Error(
-        "cadet-daemon binary not found and assistant source not available.\n" +
-          "  Ensure the daemon binary is bundled alongside the CLI, or run from the source tree.",
-      );
-    }
-    const sourceSpawn = watch
-      ? await startDaemonWatchFromSource(
-          assistantIndex,
-          entry,
-          daemonPort,
-          options,
-        )
-      : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
-    // Spawn and return — readiness is the gateway's responsibility: its
-    // process gates its own traffic on the daemon's migrations.
-  }
+        options,
+      )
+    : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
+  void sourceSpawn;
+  // Spawn and return — readiness is the gateway's responsibility: its
+  // process gates its own traffic on the daemon's migrations.
 }
 
 export async function startGateway(
@@ -1748,45 +1477,25 @@ export async function startGateway(
 
   applyIpcSocketDirOverride(gatewayEnv);
 
-  let gateway;
-
-  const runtimeGatewayDir = !watch ? localRuntimeGatewayDir(entry) : undefined;
-  const gatewayBinary = compiledSibling("cadet-gateway");
-  if (!runtimeGatewayDir && existsSync(gatewayBinary) && !watch) {
-    // Use the compiled gateway binary when available. In watch mode, skip
-    // the bundled binary and use source (bun --watch only works with source
-    // files).
-    const gatewayLogFd = openRuntimeLogFile(
-      getLocalInstanceDir(entry),
-      "gateway",
-    );
-    gateway = spawn(gatewayBinary, [], {
-      cwd: spawnStateRoot(),
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-      env: envWithCompiledRuntimeNodePath(gatewayEnv),
-    });
-    pipeToLogFile(gateway, gatewayLogFd, "gateway");
-  } else {
-    // Source tree / bunx: resolve the gateway source directory and run via bun.
-    const gatewayDir = runtimeGatewayDir ?? resolveGatewayDir(entry);
-    const gatewayEntry = join(gatewayDir, "src/index.ts");
-    const bunArgs = watch
-      ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
-      : ["run", gatewayEntry, "--cadet-gateway"];
-    const gwLogFd = openRuntimeLogFile(getLocalInstanceDir(entry), "gateway");
-    gateway = spawn(resolveBunExecutable(), bunArgs, {
-      cwd: spawnStateRoot(),
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-      env: envWithBunPath(gatewayEnv),
-    });
-    pipeToLogFile(gateway, gwLogFd, "gateway");
-    if (watch) {
-      startupLog("   Gateway started in watch mode (bun --watch)");
-    }
+  // The gateway always runs from source through bun: the packaged runtime
+  // ships gateway source beside the bundled bun, and dev/bunx installs
+  // resolve it from the source tree or node_modules.
+  const gatewayDir = localRuntimeGatewayDir(entry) ?? resolveGatewayDir(entry);
+  const gatewayEntry = join(gatewayDir, "src/index.ts");
+  const bunArgs = watch
+    ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
+    : ["run", gatewayEntry, "--cadet-gateway"];
+  const gwLogFd = openRuntimeLogFile(getLocalInstanceDir(entry), "gateway");
+  const gateway = spawn(resolveBunExecutable(), bunArgs, {
+    cwd: spawnStateRoot(),
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+    env: envWithBunPath(gatewayEnv),
+  });
+  pipeToLogFile(gateway, gwLogFd, "gateway");
+  if (watch) {
+    startupLog("   Gateway started in watch mode (bun --watch)");
   }
 
   gateway.unref();

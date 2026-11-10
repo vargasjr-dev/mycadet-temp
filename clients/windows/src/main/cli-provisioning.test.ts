@@ -38,15 +38,18 @@ const makeTempDir = (): string => {
   return dir;
 };
 
-const writeRuntimeEntries = (dir: string, version: string): void => {
+const writeRuntimeEntries = (dir: string, _version: string): void => {
   mkdirSync(dir, { recursive: true });
   for (const name of CLI_RUNTIME_EXECUTABLES) {
-    const contents = name === "cadet.exe" ? `cadet-${version}` : name;
-    writeFileSync(path.join(dir, name), contents, "utf8");
+    writeFileSync(path.join(dir, name), name, "utf8");
   }
   for (const name of CLI_RUNTIME_ASSETS) {
     const target = path.join(dir, name);
-    if (name.endsWith(".wasm") || name.endsWith(".json")) {
+    if (
+      name.endsWith(".wasm") ||
+      name.endsWith(".json") ||
+      name.endsWith(".cmd")
+    ) {
       writeFileSync(target, name, "utf8");
     } else {
       mkdirSync(target, { recursive: true });
@@ -71,7 +74,7 @@ const writeRuntime = (
     JSON.stringify({ owner: "mycadet", version }),
     "utf8",
   );
-  return path.join(dir, "cadet.exe");
+  return path.join(dir, "cadet.cmd");
 };
 
 const runtimePaths = (root: string, version: string): CliRuntimePaths => ({
@@ -120,8 +123,8 @@ test("installs, upgrades, and falls back from paths with spaces", () => {
   const first = runtimePaths(root, "1.0.0");
   writeRuntime(first.sourceDir, first.version);
   const v1 = provisionCliRuntime(first);
-  expect(readFileSync(path.join(v1.installDir, "cadet.exe"), "utf8")).toBe(
-    "cadet-1.0.0",
+  expect(readFileSync(path.join(v1.installDir, "bun.exe"), "utf8")).toBe(
+    "bun.exe",
   );
 
   rmSync(first.sourceDir, { recursive: true });
@@ -131,7 +134,7 @@ test("installs, upgrades, and falls back from paths with spaces", () => {
   expect(v2.previousInstallDir).toBe(v1.installDir);
   expect(v2.reused).toBeFalse();
   rmSync(second.sourceDir, { recursive: true });
-  rmSync(path.join(v2.installDir, "cadet.exe"));
+  rmSync(path.join(v2.installDir, "bun.exe"));
   const fallback = provisionCliRuntime(runtimePaths(root, "3.0.0"));
   expect(fallback.installDir).toBe(v1.installDir);
   expect(fallback.reused).toBeTrue();
@@ -205,7 +208,7 @@ test("preserves the newer runtime when reusing an older version", () => {
   expect(rollback.previousInstallDir).toBe(v2.installDir);
 
   rmSync(second.sourceDir, { recursive: true });
-  rmSync(path.join(v1.installDir, "cadet.exe"));
+  rmSync(path.join(v1.installDir, "bun.exe"));
   const fallback = provisionCliRuntime(runtimePaths(root, "3.0.0"));
   expect(fallback.installDir).toBe(v2.installDir);
 });
@@ -275,7 +278,7 @@ test("reuses an unchanged launcher without replacing its executables", () => {
   ).toBe("installed");
   expect(repairedRegistry.broadcasts()).toBe(1);
   expect(repairedRegistry.value().split(";")).toContain(paths.binDir);
-  expect(readFileSync(paths.executable, "utf8")).toBe("cli-launcher.exe");
+  expect(readFileSync(paths.executable, "utf8")).toContain("@echo off");
   expect(readLauncherSource(paths.ownership)).toBe(source);
 });
 
@@ -361,10 +364,10 @@ test("requires every packaged entry but puts only the launcher on PATH", () => {
     "utf8",
   );
   installCliLauncher(source, "1.0.0", paths, userRegistry.run);
-  expect(readFileSync(paths.executable, "utf8")).toBe("cli-launcher.exe");
+  expect(readFileSync(paths.executable, "utf8")).toContain("@echo off");
   expect(readLauncherSource(paths.ownership)).toBe(source);
   expect(
-    CLI_RUNTIME_ENTRIES.filter((name) => name !== "cadet.exe").every(
+    CLI_RUNTIME_ENTRIES.filter((name) => name !== "cadet.cmd").every(
       (name) => !existsSync(path.join(paths.binDir, name)),
     ),
   ).toBeTrue();
@@ -542,7 +545,7 @@ test("retries cleanup of a staged launcher", () => {
   const source = writeRuntime(path.join(root, "runtime"), "1.0.0");
   const userRegistry = registry();
   installCliLauncher(source, "1.0.0", paths, userRegistry.run);
-  const stagedLauncher = path.join(paths.binDir, ".cadet.exe.uninstalling");
+  const stagedLauncher = path.join(paths.binDir, ".cadet.cmd.uninstalling");
   renameSync(paths.executable, stagedLauncher);
   const retryRegistry = registry();
 
@@ -648,7 +651,7 @@ test("keeps installed launchers when backup cleanup is blocked", () => {
       removeBackupFile: removeUnlockedBackup,
     }),
   ).toBe("installed");
-  expect(readFileSync(paths.executable, "utf8")).toBe("cli-launcher.exe");
+  expect(readFileSync(paths.executable, "utf8")).toContain("@echo off");
   expect(readLauncherSource(paths.ownership)).toBe(second);
   expect(getCliLauncherState(paths, second)).toBe("installed");
 });

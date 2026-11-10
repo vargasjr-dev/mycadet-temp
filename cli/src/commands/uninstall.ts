@@ -85,11 +85,13 @@ interface SelfDeleteTarget {
 
 /**
  * Where this CLI is running from, when that is an INSTALL we can remove:
- * the compiled `cadet` binary (process.execPath IS the install) or a global
- * package install (bun install -g mycadet / npm install -g mycadet). Under
- * a source checkout or a bare runtime (bun/node), null — the runtime binary
- * must never be a deletion target. The uninstall prompt lists the same
- * target it later deletes, so both share this resolver.
+ * the desktop source runtime (bun.exe + runtime.json marker at the runtime
+ * root — the install is the whole runtime dir), the compiled `cadet` binary
+ * (process.execPath IS the install), or a global package install (bun
+ * install -g mycadet / npm install -g mycadet). Under a source checkout or a
+ * bare runtime (bun/node), null — the runtime binary must never be a
+ * deletion target. The uninstall prompt lists the same target it later
+ * deletes, so both share this resolver.
  */
 function resolveSelfDeleteTarget(): SelfDeleteTarget | null {
   const execPath = process.execPath;
@@ -98,6 +100,18 @@ function resolveSelfDeleteTarget(): SelfDeleteTarget | null {
     return { path: execPath, description: "the Cadet executable" };
   }
   const runningFile = fileURLToPath(import.meta.url);
+  // Desktop source runtime: the CLI runs under the install's bundled bun
+  // beside the runtime.json marker, so the whole runtime dir is the install.
+  for (let dir = dirname(runningFile); ; dir = dirname(dir)) {
+    if (
+      existsSync(join(dir, "runtime.json")) &&
+      existsSync(join(dir, "bun.exe"))
+    ) {
+      return { path: dir, description: "the Cadet runtime install" };
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+  }
   const pkgRoot = findInstalledPackageRoot(dirname(runningFile));
   if (pkgRoot) {
     return { path: pkgRoot, description: "the installed Cadet CLI package" };
@@ -147,7 +161,18 @@ function selfDelete(): void {
     return;
   }
   try {
-    rmSync(target.path, { recursive: true, force: true });
+    if (process.platform === "win32") {
+      // Windows refuses to delete a tree containing the running interpreter —
+      // rename the directory (allowed while bun.exe runs from it) and clear
+      // what remains; a still-locked binary drops on reboot.
+      const stale = `${target.path}.uninstalled`;
+      try {
+        renameSync(target.path, stale);
+      } catch {}
+      rmSync(stale, { force: true, recursive: true });
+    } else {
+      rmSync(target.path, { recursive: true, force: true });
+    }
     console.log(`Removed ${target.path}.`);
     console.log(
       "The `cadet` command on your PATH is now stale — remove it if your package manager didn't (`bun remove -g mycadet` or `npm uninstall -g mycadet`).",

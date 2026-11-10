@@ -45,7 +45,7 @@ export function provisionCliForCurrentUser(options: CliPathFlowOptions) {
   const runtime = provisionCliRuntime(
     resolveCliRuntimePaths(userDataDir, resourcesDir, version),
   );
-  const sourcePath = path.join(runtime.installDir, "cadet.exe");
+  const sourcePath = path.join(runtime.installDir, "cadet.cmd");
   const paths = resolveCliLauncherPaths(localAppData, releaseChannel);
   const launcherState = installCliLauncher(
     sourcePath,

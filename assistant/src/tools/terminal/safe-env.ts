@@ -379,29 +379,43 @@ export function buildSanitizedEnv(
 
 /** Whether `execPath` is a bun runtime rather than a compiled product binary. */
 function isBunRuntime(execPath: string): boolean {
-  const base = basename(execPath);
+  const base = basename(execPath).replace(/\.exe$/i, "");
   return base === "bun" || base === "bunx" || base.startsWith("bun-");
 }
 
 /**
- * When a compiled `assistant` ships beside this daemon binary (the app
- * bundle's layout), put that directory on the bash tool's PATH: tool-spawned
- * children invoke `assistant …` directly, and the sanitized env above already
- * carries the instance env the binary needs. A bun runtime has no sibling
- * product binary — dev and npm-style installs reach `assistant` through the
- * PATH command the daemon installs at startup.
+ * Puts the directory holding the `assistant` command on the bash tool's PATH:
+ * tool-spawned children invoke `assistant …` directly, and the sanitized env
+ * above already carries the instance env the command needs.
+ *
+ *   - Compiled era: assistant.exe shipped beside the daemon binary, so the
+ *     binary's dir was prepended.
+ *   - Source runtimes (the only packaged layout now): assistant.cmd sits in
+ *     the runtime root beside the bundled bun, so dirname(execPath) is the
+ *     dir to prepend.
+ *   - Dev/npm installs reach `assistant` through the PATH command the daemon
+ *     installs at startup — nothing to prepend.
  */
 function prependAssistantDir(
   env: Record<string, string>,
   hostPlatform: NodeJS.Platform,
   execPath: string,
 ): void {
+  const execDir = dirname(execPath);
   if (isBunRuntime(execPath)) {
+    const shim = hostPlatform === "win32" ? "assistant.cmd" : "assistant";
+    try {
+      if (!statSync(join(execDir, shim)).isFile()) {
+        return;
+      }
+    } catch {
+      return;
+    }
+    env.PATH = prependUniquePathEntries(env.PATH, [execDir], hostPlatform);
     return;
   }
   const siblingBinary =
     hostPlatform === "win32" ? "assistant.exe" : "assistant";
-  const execDir = dirname(execPath);
   try {
     if (!statSync(join(execDir, siblingBinary)).isFile()) {
       return;

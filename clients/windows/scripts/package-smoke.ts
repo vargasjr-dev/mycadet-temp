@@ -65,13 +65,16 @@ const sleep = (ms: number): Promise<void> =>
 
 const waitForVersionCommand = async (
   executable: string,
+  args: string[],
   label: string,
+  cwd?: string,
 ): Promise<void> => {
   let diagnostics = "not started";
   for (let waited = 0; waited < 60_000; waited += 2_000) {
-    const result = spawnSync(executable, ["--version"], {
+    const result = spawnSync(executable, args, {
       encoding: "utf8",
       windowsHide: true,
+      cwd,
     });
     const output = result.stdout.trim();
     if (result.status === 0 && output) {
@@ -141,9 +144,14 @@ const main = async (): Promise<void> => {
     assertExists(path.join(resources, relative), label);
   }
   const packagedBun = path.join(resources, "cli-runtime", "bun.exe");
-  await waitForVersionCommand(packagedBun, `Packaged Bun runtime for ${arch}`);
-  const packagedCli = path.join(resources, "cli-runtime", "cadet.exe");
-  await waitForVersionCommand(packagedCli, `Packaged CLI for ${arch}`);
+  await waitForVersionCommand(packagedBun, ["--version"], `Packaged Bun runtime for ${arch}`);
+  const runtimeDir = path.join(resources, "cli-runtime");
+  await waitForVersionCommand(
+    packagedBun,
+    ["cli/src/index.ts", "--version"],
+    `Packaged CLI for ${arch}`,
+    runtimeDir,
+  );
   assertRegistered("HKCU\\Software\\Classes\\.cadet");
 
   console.log(`Launching ${appExe}`);

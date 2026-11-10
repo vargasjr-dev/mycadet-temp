@@ -51,6 +51,19 @@ export interface CliLauncherInstallOptions extends CliLauncherFileOperations {
 const LAUNCHER_VERSION = 1;
 const LEGACY_LAUNCHER_ENTRIES = ["cadet.exe", "bun.exe"] as const;
 
+/**
+ * The cmd shim installed onto PATH: launches the CLI source through the
+ * runtime's bundled bun. Generated with absolute paths because the bin dir
+ * lives apart from the versioned runtime install it points at.
+ */
+function cadetLauncherScript(installDir: string): string {
+  return [
+    "@echo off",
+    `"${path.join(installDir, "bun.exe")}" "${path.join(installDir, "cli", "src", "index.ts")}" %*`,
+    "",
+  ].join("\r\n");
+}
+
 export type RegistryRunner = (
   command: string,
   args: string[],
@@ -85,7 +98,7 @@ export function resolveCliLauncherPaths(
   const binDir = path.join(localAppData, installName, "bin");
   return {
     binDir,
-    executable: path.join(binDir, "cadet.exe"),
+    executable: path.join(binDir, "cadet.cmd"),
     ownership: path.join(binDir, ".cadet-owned.json"),
   };
 }
@@ -153,8 +166,14 @@ export function getCliLauncherState(
       ownIndex < 0 ? entries.length : ownIndex,
     );
     if (
-      earlierEntries.some((entry) =>
-        existsSync(path.join(normalizeWindowsPathEntry(entry), "cadet.exe")),
+      earlierEntries.some(
+        (entry) =>
+          existsSync(
+            path.join(normalizeWindowsPathEntry(entry), "cadet.exe"),
+          ) ||
+          existsSync(
+            path.join(normalizeWindowsPathEntry(entry), "cadet.cmd"),
+          ),
       )
     ) {
       return "shadowed";
@@ -267,8 +286,22 @@ function ensureLauncherPath(
 }
 
 function removeLegacyRuntimeEntries(paths: CliLauncherPaths): void {
-  for (const name of CLI_RUNTIME_ENTRIES) {
-    if (name === "cadet.exe") {
+  // The compiled-runtime era shipped product exes (and a copy of bun.exe)
+  // into the bin dir; the source runtime needs none of them here.
+  const currentExecutable = path.basename(paths.executable);
+  const legacyNames = [
+    ...CLI_RUNTIME_ENTRIES,
+    "cadet.exe",
+    "assistant.exe",
+    "cadet-daemon.exe",
+    "cadet-gateway.exe",
+    "cadet-worker.exe",
+    "credential-executor.exe",
+    "cli-launcher.exe",
+    "cli-uninstaller.exe",
+  ];
+  for (const name of legacyNames) {
+    if (name === currentExecutable) {
       continue;
     }
     try {
@@ -312,7 +345,7 @@ export function installCliLauncher(
   ];
   if (!reusesLauncher) {
     files.unshift({
-      source: path.join(path.dirname(sourcePath), "cli-launcher.exe"),
+      contents: cadetLauncherScript(path.dirname(sourcePath)),
       target: paths.executable,
     });
   }
@@ -401,7 +434,12 @@ export function uninstallCliLauncher(
     throw new Error("Unable to read the Windows user PATH.");
   }
   const ownedTargets = isLegacyOwnership(ownership)
-    ? LEGACY_LAUNCHER_ENTRIES.map((name) => path.join(paths.binDir, name))
+    ? // Compiled-era installs owned cadet.exe/bun.exe by name; a source-era
+      // cadet.cmd from a newer install must go too.
+      [
+        ...LEGACY_LAUNCHER_ENTRIES.map((name) => path.join(paths.binDir, name)),
+        paths.executable,
+      ]
     : [paths.executable];
   const pending = ownedTargets
     .map((target) => ({
