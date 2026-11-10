@@ -7,7 +7,8 @@
  * authenticates the hop with the stored assistant API key. Arms built on
  * this helper: the push-token proxy, the assistant's public-identity
  * surface (handle claim, handle availability, domains), and the
- * assistant's cloud-only session surfaces (terminal, doctor).
+ * assistant's cloud-only terminal sessions (the doctor lives on the
+ * operator api — its use case is a gateway that is completely offline).
  */
 
 import { getCredentials } from "../../credential-cache.js";

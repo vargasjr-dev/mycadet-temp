@@ -8,7 +8,7 @@ import {
 } from "bun:test";
 
 import { credentialKey } from "../../credential-key.js";
-import { ROUTES } from "./assistant-terminal.js";
+import { ROUTES } from "./terminal.js";
 
 // The arms' handlers ignore the request path (the hop carries the bound
 // cloud id) — dispatch straight off the route table.
@@ -49,7 +49,7 @@ const CLOUD_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
 const ASSISTANT_API_KEY = "assistant-api-key-123";
 const SESSION_ID = "sess-abc-123";
 
-describe("the terminal-session arms", () => {
+describe("the terminal arms", () => {
   beforeEach(() => {
     applyCloudIdentityIds({
       assistantId: CLOUD_ASSISTANT_ID,

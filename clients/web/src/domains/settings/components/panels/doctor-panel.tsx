@@ -44,16 +44,12 @@ import {
 import { useDoctorSSE } from "@/domains/settings/components/panels/use-doctor-sse";
 import { useDoctorAutoScroll } from "@/domains/settings/components/panels/use-doctor-auto-scroll";
 import {
-  assistantDoctorHistoryListOptions,
-  assistantDoctorHistoryRetrieveOptions,
-  useAssistantDoctorSessionsMessagesCreateMutation,
-} from "@/generated/gateway/@tanstack/react-query.gen";
-import {
-  type Options,
-  assistantDoctorSessionsCreate,
-  assistantDoctorSessionsUserOutcomeCreate,
-} from "@/generated/gateway/sdk.gen";
-import type { AssistantDoctorSessionsCreateData } from "@/generated/gateway/types.gen";
+  doctorHistoryList,
+  doctorHistoryRetrieve,
+  doctorSessionsCreate,
+  doctorSessionsMessagesCreate,
+  doctorSessionsUserOutcomeCreate,
+} from "./doctor-api";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ApiError, extractErrorMessage } from "@/utils/api-errors";
@@ -134,25 +130,29 @@ export function DoctorPanel() {
     storeEntries.length === 0;
 
   const historyListQuery = useQuery({
-    ...assistantDoctorHistoryListOptions({
-      path: { assistant_id: assistantId || "placeholder" },
-      query: { limit: "1" },
-    }),
+    queryKey: ["doctor-history", assistantId],
+    queryFn: () =>
+      doctorHistoryList({
+        path: { assistant_id: assistantId || "placeholder" },
+        query: { limit: "1" },
+      }),
     enabled: historyListEnabled,
   });
 
-  const latestHistorySession = historyListQuery.data
-    ? selectLatestHistorySession(historyListQuery.data.results ?? [])
+  const latestHistorySession = historyListQuery.data?.data
+    ? selectLatestHistorySession(historyListQuery.data.data.results ?? [])
     : null;
   const latestHistorySessionId = latestHistorySession?.id ?? null;
 
   const historyDetailQuery = useQuery({
-    ...assistantDoctorHistoryRetrieveOptions({
-      path: {
-        assistant_id: assistantId || "placeholder",
-        doctor_session_id: latestHistorySessionId ?? "",
-      },
-    }),
+    queryKey: ["doctor-history-detail", assistantId, latestHistorySessionId],
+    queryFn: () =>
+      doctorHistoryRetrieve({
+        path: {
+          assistant_id: assistantId || "placeholder",
+          doctor_session_id: latestHistorySessionId ?? "",
+        },
+      }),
     enabled:
       !!assistantId &&
       !!latestHistorySessionId &&
@@ -164,18 +164,19 @@ export function DoctorPanel() {
   // Derive history entries from query cache (no store copy for completed sessions).
   // When historyDismissed is true, treat cache as empty so the UI shows idle state.
   const historyDetail = historyDismissed ? undefined : historyDetailQuery.data;
-  const historyStatus = historyDetail
-    ? mapPersistedStatusToPanelStatus(historyDetail.status)
+  const historyDetailData = historyDetail?.data ?? null;
+  const historyStatus = historyDetailData
+    ? mapPersistedStatusToPanelStatus(historyDetailData.status)
     : null;
   const historyEntries = useMemo(
     () =>
-      historyDetail
+      historyDetailData
         ? applySessionUserOutcome(
-            mapPersistedMessagesToEntries(historyDetail.messages ?? []),
-            historyDetail.user_outcome,
+            mapPersistedMessagesToEntries(historyDetailData.messages ?? []),
+            historyDetailData.user_outcome,
           )
         : [],
-    [historyDetail],
+    [historyDetailData],
   );
 
   // Resume active session from history — one-time mode transition into active mode.
@@ -199,10 +200,10 @@ export function DoctorPanel() {
     }
 
     const store = useDoctorPanelStore.getState();
-    const messages = historyDetail.messages ?? [];
+    const messages = historyDetail.data?.messages ?? [];
     const resumedEntries = applySessionUserOutcome(
       mapPersistedMessagesToEntries(messages),
-      historyDetail.user_outcome,
+      historyDetail.data?.user_outcome ?? null,
     );
     store.setEntries(resumedEntries);
     store.setPendingApproval(hasPendingApproval(resumedEntries));
@@ -248,10 +249,9 @@ export function DoctorPanel() {
   // handling. The generated useAssistantsDoctorSessionsCreateMutation hook
   // uses throwOnError which discards the HTTP status from the thrown error.
   const startMutation = useMutation({
-    async mutationFn(options: Options<AssistantDoctorSessionsCreateData>) {
-      const { data, error, response } = await assistantDoctorSessionsCreate({
-        ...options,
-        throwOnError: false,
+    async mutationFn() {
+      const { data, error, response } = await doctorSessionsCreate({
+        path: { assistant_id: assistantId || "placeholder" },
       });
       if (error) {
         if (response?.status === 429) {
@@ -299,7 +299,11 @@ export function DoctorPanel() {
     },
   });
 
-  const sendMutation = useAssistantDoctorSessionsMessagesCreateMutation({
+  const sendMutation = useMutation({
+    mutationFn: (variables: {
+      path: { assistant_id: string; session_id: string };
+      body: { content: string };
+    }) => doctorSessionsMessagesCreate(variables),
     onMutate(variables) {
       const content = variables.body.content;
       const store = useDoctorPanelStore.getState();
@@ -389,10 +393,9 @@ export function DoctorPanel() {
         );
       };
       setAnswer(optimisticAnswer);
-      assistantDoctorSessionsUserOutcomeCreate({
+      doctorSessionsUserOutcomeCreate({
         path: { assistant_id: assistantId, session_id: targetSessionId },
         body: { resolved },
-        throwOnError: false,
       }).then(({ error }) => {
         if (error) {
           // Roll back so the prompt stays retryable — the answer wasn't
@@ -619,7 +622,7 @@ export function DoctorPanel() {
     }
     store.resetForNewSession();
     pendingInitialMessageRef.current = prompt.length > 0 ? prompt : null;
-    startMutation.mutate({ path: { assistant_id: assistantId } });
+    startMutation.mutate();
   }, [assistantId, abort, startMutation]);
 
   // ---------------------------------------------------------------------------
@@ -712,7 +715,7 @@ export function DoctorPanel() {
           <button
             type="button"
             onClick={() =>
-              startMutation.mutate({ path: { assistant_id: assistantId } })
+              startMutation.mutate()
             }
             disabled={starting}
             className="flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--primary-base)] px-5 py-2.5 text-body-medium-default text-[var(--content-inset)] transition-colors hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"

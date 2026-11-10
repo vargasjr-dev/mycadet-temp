@@ -14,6 +14,15 @@ import { runListRoute } from "./list";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { runUsernameAvailableRoute } from "./profile";
+import {
+  runDoctorHistoryListRoute,
+  runDoctorHistoryRetrieveRoute,
+  runDoctorSessionsCreateRoute,
+  runDoctorSessionsDestroyRoute,
+  runDoctorSessionsEventsRoute,
+  runDoctorSessionsMessagesRoute,
+  runDoctorSessionsUserOutcomeRoute,
+} from "./doctor";
 import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
@@ -49,8 +58,8 @@ export interface OperatorRequest {
   method?: string;
   /**
    * The caller's pathname + search, carried for the proxy row, which
-   * forwards it verbatim to the entry's gateway. Absent (direct `run` calls
-   * in tests) reads as the gateway root.
+   * forwards it verbatim to the entry's gateway. Absent (direct `run`
+   * calls in tests) reads as the gateway root.
    */
   path?: string;
   /**
@@ -73,6 +82,12 @@ export interface OperatorRequest {
    * direct `run` calls in tests) reads as no body.
    */
   body?: ReadableStream | null;
+  /**
+   * The caller's abort signal, carried for the streaming rows (the
+   * doctor's event stream) so a client disconnect tears the upstream dial
+   * down. Absent (direct `run` calls in tests) reads as no signal.
+   */
+  signal?: AbortSignal | null;
 }
 
 export interface OperatorRoute {
@@ -619,6 +634,45 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^user\/username-available\/?$/),
     run: runUsernameAvailableRoute,
   },
+  // The doctor's whole session surface — host-side so the panel keeps
+  // working when the entry's gateway is completely offline (the doctor's
+  // main use case). Every row proxies verbatim to the cloud on the
+  // operator's own credentials; the event stream is the one streaming row.
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^doctor\/history\/?$/),
+    run: runDoctorHistoryListRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^doctor\/history\/[^\/?#]+\/?$/),
+    run: runDoctorHistoryRetrieveRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^doctor\/sessions\/?$/),
+    run: runDoctorSessionsCreateRoute,
+  },
+  {
+    method: "DELETE",
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/?$/),
+    run: runDoctorSessionsDestroyRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/events\/?$/),
+    run: runDoctorSessionsEventsRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/messages\/?$/),
+    run: runDoctorSessionsMessagesRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/user-outcome\/?$/),
+    run: runDoctorSessionsUserOutcomeRoute,
+  },
   {
     method: "POST",
     pattern: v1Friendly(/^\/assistants\/hatch\/?$/),
@@ -757,5 +811,6 @@ export async function forwardOperatorRequest(
     path: url.pathname + url.search,
     headers: request.headers,
     body: request.body,
+    signal: request.signal,
   });
 }

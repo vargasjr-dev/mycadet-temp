@@ -38,8 +38,8 @@ import {
   handleToolResult,
 } from "@/domains/settings/components/panels/doctor-event-handlers";
 import { shouldResetDoctorSseReconnectBudget } from "@/domains/settings/components/panels/doctor-sse-reconnect";
-import { assistantDoctorHistoryRetrieve } from "@/generated/gateway/sdk.gen";
-import { client as gatewayClient } from "@/generated/gateway/client.gen";
+import { client } from "@/generated/gateway/client.gen";
+import { doctorHistoryRetrieve } from "./doctor-api";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { createStreamWatchdog } from "@/lib/streaming/stream-watchdog";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
@@ -132,9 +132,8 @@ async function refreshPersistedDoctorSession(
   assistantId: string,
   sessionId: string,
 ): Promise<"active" | "terminal" | null> {
-  const result = await assistantDoctorHistoryRetrieve({
+  const result = await doctorHistoryRetrieve({
     path: { assistant_id: assistantId, doctor_session_id: sessionId },
-    throwOnError: false,
   });
 
   if (!result.response?.ok || !result.data) {
@@ -288,7 +287,7 @@ export function useDoctorSSE() {
             headers["Last-Event-ID"] = latestReplayableSourceEventId;
           }
 
-          const { stream } = await gatewayClient.sse.get<string>({
+          const { stream } = await client.sse.get<string>({
             url: "/v1/assistants/{assistant_id}/doctor/sessions/{session_id}/events/",
             path: { assistant_id: assistantId, session_id: sessionId },
             headers,
