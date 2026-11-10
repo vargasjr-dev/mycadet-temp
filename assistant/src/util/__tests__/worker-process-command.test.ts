@@ -13,7 +13,7 @@ const entry = new URL("file:///source/monitoring/worker.ts");
 describe("resolveWorkerCommand", () => {
   test("runs workers from source through the bundled bun", () => {
     expect(
-      resolveWorkerCommand(entry, "monitoring", {
+      resolveWorkerCommand(entry, {
         platform: "win32",
         execPath: "/runtime/bun.exe",
         executableExists: () => false,
@@ -28,7 +28,7 @@ describe("resolveWorkerCommand", () => {
 
   test("falls back to PATH lookup outside a bundled runtime", () => {
     expect(
-      resolveWorkerCommand(entry, "monitoring", {
+      resolveWorkerCommand(entry, {
         platform: "win32",
         execPath: "/runtime/cadet-daemon.exe",
         executableExists: () => false,
@@ -41,18 +41,13 @@ describe("workerKindSignature", () => {
   const schedule = new URL(
     "file:////app/runtime/0.11.7/src/schedule/worker.ts",
   );
-  const source = {
-    platform: "darwin" as const,
-    execPath: "/runtime/bun",
-    executableExists: () => false,
-  };
 
   test("is the same for a worker of this kind from any install", () => {
     const previous = new URL(
       "file:////app/runtime/0.10.11/src/schedule/worker.ts",
     );
-    expect(workerKindSignature(schedule, "schedule", source)).toEqual(
-      workerKindSignature(previous, "schedule", source),
+    expect(workerKindSignature(schedule)).toEqual(
+      workerKindSignature(previous),
     );
   });
 
@@ -60,8 +55,8 @@ describe("workerKindSignature", () => {
     const monitoring = new URL(
       "file:////app/runtime/0.11.7/src/monitoring/worker.ts",
     );
-    expect(workerKindSignature(schedule, "schedule", source)).not.toEqual(
-      workerKindSignature(monitoring, "monitoring", source),
+    expect(workerKindSignature(schedule)).not.toEqual(
+      workerKindSignature(monitoring),
     );
   });
 
@@ -72,7 +67,7 @@ describe("workerKindSignature", () => {
     signature.every((part) => command.includes(part));
 
   test("does not match an unrelated program running some other worker.ts", () => {
-    const signature = workerKindSignature(schedule, "schedule", source);
+    const signature = workerKindSignature(schedule);
     expect(matches("bun run /home/dev/side-project/worker.ts", signature)).toBe(
       false,
     );
@@ -82,7 +77,7 @@ describe("workerKindSignature", () => {
   });
 
   test("matches the same worker from a previous install", () => {
-    const signature = workerKindSignature(schedule, "schedule", source);
+    const signature = workerKindSignature(schedule);
     expect(
       matches(
         "bun --smol run /app/runtime/0.10.11/src/schedule/worker.ts",
@@ -91,10 +86,8 @@ describe("workerKindSignature", () => {
     ).toBe(true);
   });
 
-  // Workers run from source now, so the kind is carried by the entry path
-  // itself — one worker's slot must never reclaim another's process.
-  test("distinguishes packaged worker kinds sharing one executable", () => {
-    const scheduleSig = workerKindSignature(schedule, "schedule", source);
+  test("distinguishes worker kinds by entry path", () => {
+    const scheduleSig = workerKindSignature(schedule);
     expect(
       matches(
         "bun --smol run /app/runtime/0.10.11/src/schedule/worker.ts",

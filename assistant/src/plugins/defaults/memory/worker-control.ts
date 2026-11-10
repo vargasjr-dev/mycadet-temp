@@ -26,11 +26,7 @@ const MEMORY_WORKER_ENTRY = new URL("./worker.ts", import.meta.url);
  * is not this worker) is cleaned up and reported as not_running.
  */
 export function probeMemoryWorker(): WorkerProcessStatus {
-  return probeWorkerPidFile(
-    getMemoryWorkerPidPath(),
-    MEMORY_WORKER_ENTRY,
-    "memory",
-  );
+  return probeWorkerPidFile(getMemoryWorkerPidPath(), MEMORY_WORKER_ENTRY);
 }
 
 export class MemoryWorkerSpawnError extends WorkerProcessSpawnError {}
@@ -57,7 +53,6 @@ export async function spawnMemoryWorkerProcess(
     return await spawnWorkerProcess({
       pidPath: getMemoryWorkerPidPath(),
       entry: MEMORY_WORKER_ENTRY,
-      packagedEntry: "memory",
       workerLabel: "Memory worker",
       options: opts,
     });
@@ -77,9 +72,5 @@ export async function spawnMemoryWorkerProcess(
  * (e.g. EPERM) — a not-running worker is a no-op.
  */
 export function stopMemoryWorkerProcess(): WorkerProcessStatus {
-  return stopWorkerProcess(
-    getMemoryWorkerPidPath(),
-    MEMORY_WORKER_ENTRY,
-    "memory",
-  );
+  return stopWorkerProcess(getMemoryWorkerPidPath(), MEMORY_WORKER_ENTRY);
 }

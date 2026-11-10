@@ -30,11 +30,7 @@ const log = getLogger("monitoring-control");
  * is not this worker, is cleaned up and reported as not_running.
  */
 export function probeMonitoringWorker(): WorkerProcessStatus {
-  return probeWorkerPidFile(
-    getMonitoringPidPath(),
-    MONITORING_WORKER_ENTRY,
-    "monitoring",
-  );
+  return probeWorkerPidFile(getMonitoringPidPath(), MONITORING_WORKER_ENTRY);
 }
 
 export class MonitoringWorkerSpawnError extends WorkerProcessSpawnError {}
@@ -52,7 +48,6 @@ export async function spawnMonitoringWorkerProcess(
     return await spawnWorkerProcess({
       pidPath: getMonitoringPidPath(),
       entry: MONITORING_WORKER_ENTRY,
-      packagedEntry: "monitoring",
       workerLabel: "Resource monitor",
       options: { ...opts, oomScoreAdj: MONITOR_OOM_SCORE_ADJ },
     });
@@ -70,11 +65,7 @@ export async function spawnMonitoringWorkerProcess(
  * (e.g. EPERM) — a not-running monitor is a no-op.
  */
 export function stopMonitoringWorkerProcess(): WorkerProcessStatus {
-  return stopWorkerProcess(
-    getMonitoringPidPath(),
-    MONITORING_WORKER_ENTRY,
-    "monitoring",
-  );
+  return stopWorkerProcess(getMonitoringPidPath(), MONITORING_WORKER_ENTRY);
 }
 
 /**

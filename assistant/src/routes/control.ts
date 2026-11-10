@@ -52,7 +52,7 @@ const ROUTE_HOST_ENTRY = new URL("./worker.ts", import.meta.url);
  * is not this worker, is cleaned up and reported as not_running.
  */
 export function probeRouteHostWorker(): WorkerProcessStatus {
-  return probeWorkerPidFile(routeHostPidPath(), ROUTE_HOST_ENTRY, "routes");
+  return probeWorkerPidFile(routeHostPidPath(), ROUTE_HOST_ENTRY);
 }
 
 export class RouteHostSpawnError extends WorkerProcessSpawnError {}
@@ -70,7 +70,6 @@ export async function spawnRouteHostWorkerProcess(
     return await spawnWorkerProcess({
       pidPath: routeHostPidPath(),
       entry: ROUTE_HOST_ENTRY,
-      packagedEntry: "routes",
       workerLabel: "Route host",
       options: opts,
     });
@@ -88,7 +87,7 @@ export async function spawnRouteHostWorkerProcess(
  * (e.g. EPERM) — a not-running host is a no-op.
  */
 export function stopRouteHostWorkerProcess(): WorkerProcessStatus {
-  return stopWorkerProcess(routeHostPidPath(), ROUTE_HOST_ENTRY, "routes");
+  return stopWorkerProcess(routeHostPidPath(), ROUTE_HOST_ENTRY);
 }
 
 /**

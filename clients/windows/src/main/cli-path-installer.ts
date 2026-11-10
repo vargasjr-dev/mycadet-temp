@@ -283,31 +283,6 @@ function ensureLauncherPath(
   }
 }
 
-function removeLegacyRuntimeEntries(paths: CliLauncherPaths): void {
-  // The compiled-runtime era shipped product exes (and a copy of bun.exe)
-  // into the bin dir; the source runtime needs none of them here.
-  const currentExecutable = path.basename(paths.executable);
-  const legacyNames = [
-    ...CLI_RUNTIME_ENTRIES,
-    "cadet.exe",
-    "assistant.exe",
-    "cadet-daemon.exe",
-    "cadet-gateway.exe",
-    "cadet-worker.exe",
-    "credential-executor.exe",
-    "cli-launcher.exe",
-    "cli-uninstaller.exe",
-  ];
-  for (const name of legacyNames) {
-    if (name === currentExecutable) {
-      continue;
-    }
-    try {
-      rmSync(path.join(paths.binDir, name), { recursive: true, force: true });
-    } catch {}
-  }
-}
-
 export function installCliLauncher(
   sourcePath: string,
   version: string,
@@ -330,9 +305,7 @@ export function installCliLauncher(
     reusesLauncher &&
     isOwnedByExpectedInstaller(ownership, options.ownerId)
   ) {
-    const launcherState = ensureLauncherPath(paths, sourcePath, run);
-    removeLegacyRuntimeEntries(paths);
-    return launcherState;
+    return ensureLauncherPath(paths, sourcePath, run);
   }
   mkdirSync(paths.binDir, { recursive: true });
   const files: Array<{ source?: string; contents?: string; target: string }> = [
@@ -394,7 +367,6 @@ export function installCliLauncher(
         removeBackupFile(file.backup, { recursive: true, force: true });
       } catch {}
     }
-    removeLegacyRuntimeEntries(paths);
     return launcherState;
   } catch (error) {
     for (const { file, hadBackup } of replaced.reverse()) {

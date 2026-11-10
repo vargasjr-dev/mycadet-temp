@@ -21,7 +21,6 @@ export async function renderCurrentDesktopWallpaper(
   try {
     const [executable, ...args] = resolveWorkerCommand(
       new URL("./desktop-wallpaper-worker.ts", import.meta.url),
-      undefined,
     );
     await runFile(
       executable!,

@@ -97,7 +97,7 @@ function probePidFile(
 /**
  * Read a PID file and report whether this worker is actually running there.
  *
- * Identity comes from the same `entry` / `packagedEntry` spawn uses. A missing
+ * Identity comes from the same `entry` spawn uses. A missing
  * or malformed file reports not_running. A file pointing at a dead process, or
  * at a live process whose command line is not this worker (a recycled PID
  * after a container restart), is cleaned up and reported as not_running. A
@@ -108,9 +108,8 @@ function probePidFile(
 export function probeWorkerPidFile(
   pidPath: string,
   entry: URL,
-  packagedEntry?: PackagedWorkerEntry,
 ): WorkerProcessStatus {
-  return probePidFile(pidPath, workerKindSignature(entry, packagedEntry));
+  return probePidFile(pidPath, workerKindSignature(entry));
 }
 
 /** Thrown when a worker process fails to come up within the wait window. */
@@ -154,13 +153,6 @@ export interface SpawnWorkerProcessOptions {
   terminateOnTimeout?: boolean;
 }
 
-export type PackagedWorkerEntry =
-  | "monitoring"
-  | "schedule"
-  | "memory"
-  | "routes"
-  | "db-integrity";
-
 interface WorkerCommandRuntime {
   platform: NodeJS.Platform;
   execPath: string;
@@ -177,7 +169,6 @@ function defaultWorkerCommandRuntime(): WorkerCommandRuntime {
 
 export function resolveWorkerCommand(
   entry: URL,
-  _packagedEntry: PackagedWorkerEntry | undefined,
   runtime: WorkerCommandRuntime = defaultWorkerCommandRuntime(),
 ): string[] {
   // Workers always run from source through bun. In packaged runtimes the
@@ -255,16 +246,9 @@ function matchesSignature(
  * parentage; this only keeps us from signalling a process that happens to hold
  * a recycled PID. Three trailing path segments are specific enough
  * (`src/schedule/worker.ts`, `defaults/memory/worker.ts`) that an unrelated
- * program running some other `worker.ts` does not match. Packaged workers all
- * run one executable and are told apart by the subcommand, so the signature
- * carries both: matching on the executable alone would let one packaged
- * worker's slot reclaim another's process.
+ * program running some other `worker.ts` does not match.
  */
-export function workerKindSignature(
-  entry: URL,
-  _packagedEntry: PackagedWorkerEntry | undefined,
-  _runtime: WorkerCommandRuntime = defaultWorkerCommandRuntime(),
-): readonly string[] {
+export function workerKindSignature(entry: URL): readonly string[] {
   // The worker kind is carried by the entry path itself
   // (…/<kind>/worker.ts); the packaged-exe argv form is gone.
   return [
@@ -553,8 +537,6 @@ export async function spawnWorkerProcess(args: {
   pidPath: string;
   /** Worker entry script, e.g. `new URL("./worker.ts", import.meta.url)`. */
   entry: URL;
-  /** Entry bundled into cadet-worker.exe for packaged Windows runtimes. */
-  packagedEntry?: PackagedWorkerEntry;
   /** Human-readable name used in spawn-failure messages, e.g. "Memory worker". */
   workerLabel: string;
   options?: SpawnWorkerProcessOptions;
@@ -563,7 +545,7 @@ export async function spawnWorkerProcess(args: {
   const pidWaitTimeoutMs = opts.pidWaitTimeoutMs ?? PID_FILE_WAIT_TIMEOUT_MS;
   const pidPollIntervalMs = opts.pidPollIntervalMs ?? PID_FILE_POLL_INTERVAL_MS;
 
-  const signature = workerKindSignature(args.entry, args.packagedEntry);
+  const signature = workerKindSignature(args.entry);
   const decision = inspectWorkerSlot(args.pidPath, signature);
   if (decision.action === "adopt") {
     return { pid: decision.pid, alreadyRunning: true };
@@ -596,15 +578,15 @@ export async function spawnWorkerProcess(args: {
     // output is at least visible to the spawning process.
   }
 
-  // Source workers use bun's small-heap mode. Packaged Windows workers use the
-  // compiled worker executable. Both receive the RAM hint from worker-memory.
+  // Source workers use bun's small-heap mode, and receive the RAM hint from
+  // worker-memory.
   //
   // `fileURLToPath`, not `.pathname`: a URL's pathname is percent-encoded, so
   // an install path containing a space (every macOS desktop install lives
   // under "Application Support") would reach bun as "Application%20Support"
   // and the entry would not be found.
   const child = Bun.spawn({
-    cmd: resolveWorkerCommand(args.entry, args.packagedEntry),
+    cmd: resolveWorkerCommand(args.entry),
     env: workerMemoryEnv(),
     stdio: ["ignore", "ignore", stderrFd],
     // Every worker is a direct child of the daemon. That parentage is the
@@ -669,9 +651,8 @@ export async function spawnWorkerProcess(args: {
 export function stopWorkerProcess(
   pidPath: string,
   entry: URL,
-  packagedEntry?: PackagedWorkerEntry,
 ): WorkerProcessStatus {
-  const current = probeWorkerPidFile(pidPath, entry, packagedEntry);
+  const current = probeWorkerPidFile(pidPath, entry);
   if (current.status === "running" && current.pid != null) {
     process.kill(current.pid, "SIGTERM");
   }
