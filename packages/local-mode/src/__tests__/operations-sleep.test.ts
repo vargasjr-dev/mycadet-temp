@@ -88,9 +88,15 @@ afterAll(() => {
   mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
+// Import the subject only after the mocks are registered: a static import is
+// hoisted above them, and sleep.ts then binds to whatever the module registry
+// held at its evaluation time — real legs when another file evaluated this
+// graph first (the CI-only failures). Dynamic import pins the order.
+const { sleepAssistant } = await import("../operations/sleep");
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
-import { sleepAssistant, type SleepResult } from "../operations/sleep";
+import type { SleepResult } from "../operations/sleep";
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;

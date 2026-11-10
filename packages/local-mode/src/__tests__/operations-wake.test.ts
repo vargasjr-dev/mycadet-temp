@@ -128,9 +128,14 @@ afterAll(() => {
   mock.module("../exec", () => realExecModule);
 });
 
+// Import the subject only after the mocks are registered — a static import is
+// hoisted above them and binds the router to real legs when a sibling file
+// evaluated this graph first (the CI-only failures).
+const { wakeAssistant } = await import("../operations/wake");
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
-import { wakeAssistant } from "../operations/wake";
+
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
