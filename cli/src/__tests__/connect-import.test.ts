@@ -28,7 +28,7 @@ import { z } from "zod";
 import { withPreconnect } from "./helpers/http.js";
 
 const HOST = "https://host.example.ts.net";
-const PAIRING_LINK = `${HOST}/assistant/pair#device_code=dev-code`;
+const PAIRING_LINK = `${HOST}/account/pair#device_code=dev-code`;
 const CHALLENGE_URL = `${HOST}/v1/remote-web/pairing-challenge`;
 const TOKEN_URL = `${HOST}/v1/remote-web/pairing-token`;
 
@@ -48,7 +48,7 @@ function challengeBody(overrides: Record<string, unknown> = {}) {
   return {
     deviceCode: "dev-code",
     userCode: "ABCD-EFGH",
-    verificationUri: `${HOST}/assistant/pair`,
+    verificationUri: `${HOST}/account/pair`,
     publicBaseUrl: HOST,
     expiresAt: new Date(Date.now() + 600_000).toISOString(),
     expiresInSeconds: 600,

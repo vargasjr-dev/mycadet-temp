@@ -156,7 +156,7 @@ const challengeBody = (
   deviceCode: "device-code-abc",
   userCode: "ABCD-EFGH",
   publicBaseUrl: "https://gw.example.com",
-  verificationUri: "https://gw.example.com/assistant/pair",
+  verificationUri: "https://gw.example.com/account/pair",
   expiresAt: new Date(Date.now() + 600_000).toISOString(),
   expiresInSeconds: 600,
   intervalSeconds: 3,
@@ -729,7 +729,7 @@ describe("checkPairedAssistantName", () => {
 describe("pairingStart", () => {
   test("a pairing link opens a session without a request or an approval code", async () => {
     const started = await pairingStart(
-      "https://gw.example.com/assistant/pair#device_code=device-code-abc",
+      "https://gw.example.com/account/pair#device_code=device-code-abc",
     );
 
     expect(started.ok).toBe(true);
@@ -1018,7 +1018,7 @@ describe("loopback refusals agree across the pairing path", () => {
 
 describe("pairingPoll", () => {
   const startFromLink = async (
-    address = "https://gw.example.com/assistant/pair#device_code=device-code-abc",
+    address = "https://gw.example.com/account/pair#device_code=device-code-abc",
   ): Promise<string> => {
     const started = await pairingStart(address);
     if (!started.ok) {
@@ -1112,7 +1112,7 @@ describe("pairingPoll", () => {
 
   test("a 202 may shorten the deadline but never extend it", async () => {
     const started = await pairingStart(
-      "https://gw.example.com/assistant/pair#device_code=device-code-abc",
+      "https://gw.example.com/account/pair#device_code=device-code-abc",
     );
     expect(started.ok).toBe(true);
     if (!started.ok) {
@@ -1552,7 +1552,7 @@ describe("pairingPoll", () => {
 describe("pairingCancel", () => {
   test("drops a live session so it can no longer be polled", async () => {
     const started = await pairingStart(
-      "https://gw.example.com/assistant/pair#device_code=device-code-abc",
+      "https://gw.example.com/account/pair#device_code=device-code-abc",
     );
     expect(started.ok).toBe(true);
     if (!started.ok) {
@@ -1592,7 +1592,7 @@ describe("pairingCancel", () => {
 
   const startLinkSession = async (): Promise<string> => {
     const started = await pairingStart(
-      "https://gw.example.com/assistant/pair#device_code=device-code-abc",
+      "https://gw.example.com/account/pair#device_code=device-code-abc",
     );
     if (!started.ok) {
       throw new Error(`unexpected start failure: ${started.error}`);

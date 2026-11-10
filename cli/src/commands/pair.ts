@@ -92,7 +92,7 @@ OPTIONS:
     --web-approve <code>
                     Approve a pairing code another device is showing, in
                     ABCD-EFGH form, e.g. from 'cadet connect import <url>' or
-                    the /assistant/pair page. Mints no link of its own.
+                    the /account/pair page. Mints no link of its own.
     --json          Print JSON instead of the QR code:
                     {pairUrl, deviceCode, expiresAt, expiresInSeconds}, plus
                     appUrl with --app. With --web-approve, the approval
