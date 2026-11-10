@@ -11,7 +11,8 @@ import { join } from "node:path";
 
 import { initSigningKey } from "../auth/token-service.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const { initGatewayDb, resetGatewayDb, getGatewayDb } =
   await import("../db/connection.js");

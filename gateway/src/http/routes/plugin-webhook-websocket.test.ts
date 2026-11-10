@@ -15,7 +15,8 @@ import {
 } from "./plugin-webhook-websocket.js";
 import { IngressRoute } from "../../channels/plugin-ingress.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const CONFIG = {
   assistantRuntimeBaseUrl: "http://runtime.test:7821",

@@ -625,7 +625,8 @@ const { contacts } = await import("../db/schema.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 describe("handleCreateToken: derived actor-token identity carry-forward", () => {
   const GUARDIAN_PRINCIPAL = "guardian-derived-001";

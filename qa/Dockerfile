@@ -2,8 +2,9 @@
 #
 # A QA toolbox, not a cadet image: nothing hatches, nothing wakes. The image
 # carries the shared toolchain, the desktop/browser runtime, the Android SDK,
-# bun, and the open-source repo pulled into /qa at build time. A session
-# created from it can QA desktop, Android, or web — or just work in the tree.
+# and bun; the create mounts the cadet-qa volume (the repo tree) at /qa. A
+# session created from it can QA desktop, Android, or web — or just work in
+# the tree.
 #
 # Build & push from the repo root:
 #   bun qa/index.ts image push
@@ -20,7 +21,7 @@
 FROM debian:trixie-slim@sha256:4ffb3a1511099754cddc70eb1b12e50ffdb67619aa0ab6c13fcd800a78ef7c7a
 
 # Shared plumbing: curl fetches the bun installer; unzip unpacks archives;
-# git moves the pulled repo between refs; jq/openssl are conveniences the
+# git is there for sessions (clone, checkout, diffs); jq/openssl are conveniences the
 # assistant and its skills expect; ripgrep/procps/iproute2/lsof/less are
 # what a QA session reaches for when a run misbehaves and someone needs to
 # look around inside the sandbox.
@@ -99,14 +100,10 @@ ENV PATH="/usr/local/bin:${PATH}"
 COPY --from=ghcr.io/blaxel-ai/sandbox@sha256:8ebb596be14ed4c48f6fe4352e9d3de45dc31634dbca2194293187f54aba8647 \
   /sandbox-api /usr/local/bin/sandbox-api
 
-# The open-source repo, pulled at build time into the QA workspace — sessions
-# build the client under test from this tree. This is also what makes the
-# sandbox a place you can work rather than just run: a session exec's into
-# /qa with no local clone involved anywhere. The clone tracks the default
-# branch; switching refs is an ordinary `git -C /qa checkout <ref>` inside
-# the session.
-# https://github.com/vargasjr-dev/mycadet-temp.git
-RUN git clone https://github.com/vargasjr-dev/mycadet-temp.git /qa
+# The QA workspace itself is NOT in the image: every create mounts the
+# cadet-qa volume (the assembled repo tree) at /qa, which shadows anything a
+# build-time clone would leave here. /qa just has to exist for WORKDIR.
+RUN mkdir -p /qa
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

@@ -12,8 +12,8 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { testWorkspaceDir } from "./test-preload.js";
 
-const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
-initSigningKey(TEST_SIGNING_KEY);
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 type FetchFn = (
   input: string | URL | Request,

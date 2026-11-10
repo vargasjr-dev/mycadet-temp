@@ -85,7 +85,8 @@ await import("./test-preload.js");
 
 const { initSigningKey, verifyToken } =
   await import("../auth/token-service.js");
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const { initGatewayDb, getGatewayDb, resetGatewayDb } =
   await import("../db/connection.js");

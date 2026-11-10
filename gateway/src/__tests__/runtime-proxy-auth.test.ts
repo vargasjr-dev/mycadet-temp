@@ -23,8 +23,8 @@ mock.module("../config.js", () => ({
 
 const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 
-const TEST_SIGNING_KEY = Buffer.from("test-signing-key-at-least-32-bytes-long");
-initSigningKey(TEST_SIGNING_KEY);
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 /** Mint a valid edge JWT (aud=cadet-gateway) for test requests. */
 function mintEdgeToken(): string {

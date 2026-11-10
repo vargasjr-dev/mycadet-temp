@@ -24,7 +24,8 @@ import {
 
 import { initSigningKey } from "../auth/token-service.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 // ---------------------------------------------------------------------------
 // Mock IPC so mirror ops + resolve_contact_prompt don't dial a real socket.

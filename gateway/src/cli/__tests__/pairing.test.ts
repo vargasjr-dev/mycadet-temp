@@ -60,7 +60,8 @@ mock.module("../../db/assistant-db-proxy.js", () => ({
 }));
 
 // Initialize signing key before any module that mints tokens is imported.
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const { parsePairingArgs, parsePairingMintArgs, runPairingCommand } =
   await import("../pairing.js");
@@ -150,7 +151,7 @@ describe("gateway pairing mint", () => {
     expect(code).toBe(0);
     const challenge = PrintedChallengeSchema.parse(lastLoggedPayload());
     expect(challenge.verificationUri).toBe(
-      "https://my-assistant.ts.net/assistant/pair",
+      "https://my-assistant.ts.net/account/pair",
     );
     expect(challenge.intervalSeconds).toBe(5);
 
@@ -401,6 +402,6 @@ describe("gateway pairing list", () => {
     expect(output).toContain("active");
     expect(output).toContain("minted ");
     expect(output).toContain("expires ");
-    expect(output).toContain("https://shown.example.com/assistant/pair");
+    expect(output).toContain("https://shown.example.com/account/pair");
   });
 });

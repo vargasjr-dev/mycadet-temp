@@ -13,7 +13,8 @@ import {
   TEST_REQUESTER,
 } from "./helpers/remote-web-pairing-fixtures.js";
 
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long-xx"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 const mockQuery = mock();
 const mockRun = mock();

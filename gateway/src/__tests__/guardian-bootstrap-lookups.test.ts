@@ -84,7 +84,8 @@ mock.module("../db/assistant-db-proxy.js", () => ({
 }));
 
 // Initialize signing key so bootstrapGuardian's JWT minting works.
-initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+initSigningKey();
 
 /** Minimal in-memory assistant DB mirroring the contacts/contact_channels schema. */
 function makeAssistantBackend(): AssistantBackend {

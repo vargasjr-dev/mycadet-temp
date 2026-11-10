@@ -57,11 +57,11 @@ image).
 everything a session writes shares the same 4 GB the processes need, and a
 full install plus a Vite build wedges it. So `create` first publishes the
 `cadet-qa` volume (default-branch clone → full install → both client dists
-prebuilt → the `.qa-state` boot seed that stamps the dists fresh) and mounts
-it at `/qa` over the image's bare clone. Publishes are content-deduplicated;
-the namespace defaults to `vargas-jr` (override with
-`BASETEN_VOLUME_NAMESPACE`). Sessions should never run `bun run build` for
-the web/app bundles — the volume IS the build.
+prebuilt) and mounts it at `/qa`. Publishes are content-deduplicated; the
+namespace defaults to `vargas-jr` (override with `BASETEN_VOLUME_NAMESPACE`).
+With node_modules and the dists on the volume, session-time builds and
+`cadet app start` write into the volume instead of the RAM disk — nothing in
+the sandbox runs ahead of the QA session itself.
 
 ## Session cheatsheet
 
