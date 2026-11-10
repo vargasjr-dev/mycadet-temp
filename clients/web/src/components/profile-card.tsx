@@ -420,6 +420,7 @@ interface UserHandleSectionProps {
 
 function UserHandleSection({ initial, onSaved }: UserHandleSectionProps) {
   const { t } = useTranslation();
+  const assistantId = useActiveAssistantId();
 
   // Legacy handles derived from email local-parts at WorkOS signup ("user42",
   // etc.) get a friendlier nudge — surfaces the editor's purpose to users
@@ -430,14 +431,16 @@ function UserHandleSection({ initial, onSaved }: UserHandleSectionProps) {
 
   const save = useCallback(
     async (value: string): Promise<SaveResult<UserMe>> => {
-      const result: UpdateMeResult = await updateMe({ username: value });
+      const result: UpdateMeResult = await updateMe(assistantId, {
+        username: value,
+      });
       // ``UpdateMeResult`` is structurally identical to ``SaveResult<UserMe>``
       // except it types ``code`` as ``UsernameErrorCode`` while ``SaveResult``
       // accepts the alias ``HandleErrorCode``. They're the same union, so the
       // cast is purely a type-system bridge.
       return result as SaveResult<UserMe>;
     },
-    [],
+    [assistantId],
   );
 
   const checkAvailable = useCallback(
@@ -661,13 +664,14 @@ export function ProfileCard({ children }: ProfileCardProps = {}) {
 }
 
 function ProfileHandles() {
+  const assistantId = useActiveAssistantId();
   const [me, setMe] = useState<UserMe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
-    void fetchMe()
+    void fetchMe(assistantId)
       .then((data) => {
         if (!cancelled) {
           setMe(data);
@@ -683,7 +687,7 @@ function ProfileHandles() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [assistantId]);
 
   if (error) {
     return (

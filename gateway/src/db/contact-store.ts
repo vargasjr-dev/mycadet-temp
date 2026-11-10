@@ -158,6 +158,88 @@ export class ContactStore {
       .map((r) => r.id);
   }
 
+  /**
+   * The user's account profile, projected off the guardian's existing
+   * rows — no profile columns of its own: the handle rides the guardian's
+   * `cadet` channel address, the email rides their `email` channel
+   * address, and the name is the contact's displayName. Null when no
+   * guardian is bound.
+   */
+  getGuardianProfile(): {
+    id: string;
+    displayName: string;
+    username: string | null;
+    email: string | null;
+  } | null {
+    const db = this.db;
+    const guardian = db
+      .select({ id: contacts.id, displayName: contacts.displayName })
+      .from(contacts)
+      .where(eq(contacts.role, "guardian"))
+      .orderBy(contacts.createdAt)
+      .limit(1)
+      .get();
+    if (!guardian) return null;
+    const channelAddress = (type: string): string | null =>
+      db
+        .select({ address: contactChannels.address })
+        .from(contactChannels)
+        .where(
+          and(
+            eq(contactChannels.contactId, guardian.id),
+            eq(contactChannels.type, type),
+          ),
+        )
+        .orderBy(desc(contactChannels.status), desc(contactChannels.createdAt))
+        .limit(1)
+        .get()?.address ?? null;
+    return {
+      id: guardian.id,
+      displayName: guardian.displayName,
+      username: channelAddress("cadet"),
+      email: channelAddress("email"),
+    };
+  }
+
+  /**
+   * Point the guardian's `cadet` channel at a new handle — the username's
+   * home is that row, not the contact row. Returns false (a no-op) when no
+   * guardian cadet channel exists yet.
+   */
+  setGuardianCadetAddress(username: string): boolean {
+    const guardian = this.db
+      .select({ id: contacts.id })
+      .from(contacts)
+      .where(eq(contacts.role, "guardian"))
+      .orderBy(contacts.createdAt)
+      .limit(1)
+      .get();
+    if (!guardian) return false;
+    const before = this.db
+      .select({ address: contactChannels.address })
+      .from(contactChannels)
+      .where(
+        and(
+          eq(contactChannels.contactId, guardian.id),
+          eq(contactChannels.type, "cadet"),
+        ),
+      )
+      .limit(1)
+      .get();
+    if (!before) return false;
+    this.db
+      .update(contactChannels)
+      .set({ address: username, updatedAt: Date.now() })
+      .where(
+        and(
+          eq(contactChannels.contactId, guardian.id),
+          eq(contactChannels.type, "cadet"),
+        ),
+      )
+      .run();
+    return true;
+  }
+
   getContactByChannel(
     channelType: string,
     address: string,

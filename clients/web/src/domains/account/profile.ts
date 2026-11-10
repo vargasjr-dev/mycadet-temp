@@ -1,4 +1,7 @@
-import { client } from "@/generated/api/client.gen";
+import {
+  assistantUserMeGet,
+  assistantUserMePartialUpdate,
+} from "@/generated/gateway/sdk.gen";
 import {
   ApiError,
   assertHasResponse,
@@ -46,9 +49,9 @@ export const USERNAME_ERROR_COPY: Record<UsernameErrorCode, string> = {
   taken: "This handle is already taken.",
 };
 
-export async function fetchMe(): Promise<UserMe> {
-  const { data, error, response } = await client.get<UserMe, unknown>({
-    url: "/v1/user/me/",
+export async function fetchMe(assistantId: string): Promise<UserMe> {
+  const { data, error, response } = await assistantUserMeGet({
+    path: { assistant_id: assistantId },
     throwOnError: false,
   });
   assertHasResponse(response, error, "Failed to load profile.");
@@ -73,9 +76,12 @@ export type UpdateMeResult =
 
 const DEFAULT_USERNAME_ERROR = "Please choose a different handle.";
 
-export async function updateMe(patch: UpdateMePatch): Promise<UpdateMeResult> {
-  const { data, error, response } = await client.patch<UserMe, unknown>({
-    url: "/v1/user/me/",
+export async function updateMe(
+  assistantId: string,
+  patch: UpdateMePatch,
+): Promise<UpdateMeResult> {
+  const { data, error, response } = await assistantUserMePartialUpdate({
+    path: { assistant_id: assistantId },
     body: patch,
     throwOnError: false,
   });
@@ -119,30 +125,42 @@ export async function updateMe(patch: UpdateMePatch): Promise<UpdateMeResult> {
 
 export async function checkUsernameAvailable(
   username: string,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ): Promise<UsernameAvailability> {
-  const { data, error, response } = await client.get<
-    UsernameAvailability,
-    unknown
-  >({
-    url: "/v1/user/username-available/",
-    query: { username },
-    signal,
-    throwOnError: false,
-  });
-
-  assertHasResponse(response, error, "Failed to check handle availability.");
-  if (!response.ok || !data) {
-    throw new ApiError(
-      response.status,
-      response.status === 429
-        ? "Too many checks — try again in a moment."
-        : extractErrorMessage(
-            error,
-            response,
-            "Failed to check handle availability.",
-          ),
-    );
+  // Availability is an operator api (single-user assumption: mostly true).
+  // The web card checks the format locally against the same canonical
+  // codes; the gateway's profile patch enforces them again on save.
+  const code = checkUsernameFormat(username);
+  if (!code) {
+    return { available: true, code: null, message: null };
   }
-  return data;
+  return { available: false, code, message: USERNAME_ERROR_COPY[code] };
+}
+
+function checkUsernameFormat(username: string): UsernameErrorCode | null {
+  if (username.length < 3) {
+    return "too_short";
+  }
+  if (username.length > 30) {
+    return "too_long";
+  }
+  if (/[^a-z0-9_-]/.test(username)) {
+    return "invalid_chars";
+  }
+  if (username.startsWith("_")) {
+    return "leading_underscore";
+  }
+  if (username.endsWith("_")) {
+    return "trailing_underscore";
+  }
+  if (username.startsWith("-")) {
+    return "leading_hyphen";
+  }
+  if (username.endsWith("-")) {
+    return "trailing_hyphen";
+  }
+  if (/^[0-9]+$/.test(username)) {
+    return "all_digits";
+  }
+  return null;
 }
