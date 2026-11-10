@@ -31,6 +31,8 @@ const runVerbatim = (executable: string, argLine: string): void => {
   // NSIS `/D=` and `_?=` consume the rest of the raw command line, so the
   // arguments must not be re-quoted even when the path contains spaces.
   // cmd /s /c keeps the executable quoted while leaving the args verbatim.
+  // The source runtime is tens of thousands of small files, and hosted
+  // runners scan each on extraction — give the silent install 30 minutes.
   const result = spawnSync(
     "cmd.exe",
     [`/d /s /c ""${executable}" ${argLine}"`],
@@ -38,7 +40,7 @@ const runVerbatim = (executable: string, argLine: string): void => {
       stdio: "inherit",
       windowsVerbatimArguments: true,
       windowsHide: true,
-      timeout: 10 * 60 * 1000,
+      timeout: 30 * 60 * 1000,
     },
   );
   if (result.status !== 0) {
