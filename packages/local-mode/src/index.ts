@@ -23,10 +23,7 @@ export {
 export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export { execBasetenSandbox } from "./remotes/baseten/exec";
 export { localExecDirForService } from "./remotes/local/exec";
-export {
-  resolveLocalCommandInvocation,
-  type LocalCommandResolution,
-} from "./remotes/local/common";
+export { ensureLocalBinShims } from "./remotes/local/exec";
 export { createBackup, formatSize } from "./backup-ops";
 
 export { type ManagedProcessEntry } from "./daemon-readiness";

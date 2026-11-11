@@ -118,7 +118,7 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   );
 }
 
-function resolveBunExecutable(): string {
+export function resolveBunExecutable(): string {
   const envBun = process.env.CADET_BUN;
   if (envBun && existsSync(envBun)) return envBun;
 
@@ -971,60 +971,42 @@ export function gatewayCliInvocation(entry?: LocalAssistant): {
 }
 
 /**
- * How `cadet exec -- <command>` runs a command for a local assistant.
- * Cadet's own binaries (`assistant`, `gateway`, `ces`,
- * `credential-executor`) run FROM SOURCE through bun — the same resolution
- * the daemon stack uses in `startLocalDaemon` / `startGateway` /
- * `startCes` — so a globally installed published build on the host's PATH
- * can never shadow the local source (a stray `npm i -g mycadet` ships host
- * `assistant`/`gateway` shims that otherwise win exactly here). The entry
- * points match each package's own bin: assistant -> `src/index.ts`,
- * gateway -> `src/cli/index.ts` (the CLI, not the server entry
- * startGateway spawns), ces -> `src/cli.ts`, credential-executor ->
- * `src/main.ts`. Any other command runs from the host PATH unchanged, and
- * a cadet command whose source cannot be resolved reports `unresolved`
- * rather than silently running a foreign build.
+ * The source entry point a cadet command name runs, matching each package's
+ * own bin: assistant -> `src/index.ts`, gateway -> `src/cli/index.ts` (the
+ * CLI, not the server entry startGateway spawns), ces -> `src/cli.ts`,
+ * credential-executor -> `src/main.ts`. Undefined when the name is not a
+ * cadet command or its source cannot be resolved — callers decide what
+ * fallback (host PATH) or error that means. The same resolution the daemon
+ * stack uses in `startLocalDaemon` / `startGateway` / `startCes`, so a
+ * command exec'd against a local assistant runs the build the daemons run.
  */
-export type LocalCommandResolution =
-  | { kind: "source"; command: string; args: string[] }
-  | { kind: "path" }
-  | { kind: "unresolved" };
-
-export function resolveLocalCommandInvocation(
+export function localSourceCommandEntry(
   name: string,
   entry?: LocalAssistant,
-): LocalCommandResolution {
-  const bun = resolveBunExecutable();
-  const fromSource = (entryPath: string): LocalCommandResolution => ({
-    kind: "source",
-    command: bun,
-    args: ["run", entryPath],
-  });
+): string | undefined {
   switch (name) {
-    case "assistant": {
-      const index = resolveAssistantIndexPath(entry);
-      return index ? fromSource(index) : { kind: "unresolved" };
-    }
+    case "assistant":
+      return resolveAssistantIndexPath(entry);
     case "gateway":
       try {
-        return fromSource(join(resolveGatewayDir(entry), "src/cli/index.ts"));
+        return join(resolveGatewayDir(entry), "src/cli/index.ts");
       } catch {
-        return { kind: "unresolved" };
+        return undefined;
       }
     case "ces":
       try {
-        return fromSource(join(resolveCesDir(entry), "src/cli.ts"));
+        return join(resolveCesDir(entry), "src/cli.ts");
       } catch {
-        return { kind: "unresolved" };
+        return undefined;
       }
     case "credential-executor":
       try {
-        return fromSource(join(resolveCesDir(entry), "src/main.ts"));
+        return join(resolveCesDir(entry), "src/main.ts");
       } catch {
-        return { kind: "unresolved" };
+        return undefined;
       }
     default:
-      return { kind: "path" };
+      return undefined;
   }
 }
 
