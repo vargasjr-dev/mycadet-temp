@@ -1,11 +1,1 @@
-{
-  "pairingPage": {
-    "openInApp": "在 Cadet 应用中打开",
-    "continueInBrowser": "在此浏览器中继续",
-    "pairingCode": "配对码",
-    "pair": "配对",
-    "expiresAt": "{time} 过期。",
-    "cancel": "取消",
-    "enterNewCode": "输入新配对码"
-  }
-}
+{}

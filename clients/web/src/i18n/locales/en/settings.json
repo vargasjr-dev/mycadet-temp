@@ -654,14 +654,6 @@
   "paymentMethodRow": {
     "savedCard": "Saved card"
   },
-  "pendingPairingRequests": {
-    "approveButton": "Approve",
-    "denyButton": "Deny",
-    "instruction": "A device is asking to use this assistant. Approve a request only after confirming its code matches the one shown on the requesting device.",
-    "requestedMeta": "Requested {when} from {ip}",
-    "requestedMetaHost": "Requested {when} from this computer",
-    "title": "Pairing requests"
-  },
   "preferencesModal": {
     "composerTitle": "Composer",
     "description": "Customize shortcuts and how Cadet behaves on this device.",

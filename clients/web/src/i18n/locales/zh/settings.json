@@ -585,14 +585,6 @@
   "paymentMethodRow": {
     "savedCard": "已保存卡片"
   },
-  "pendingPairingRequests": {
-    "approveButton": "批准",
-    "denyButton": "拒绝",
-    "instruction": "有设备请求使用此助手。请在确认其代码与请求设备上显示的代码一致后，再批准请求。",
-    "requestedMeta": "{when} 从 {ip} 请求",
-    "requestedMetaHost": "{when} 从本机请求",
-    "title": "配对请求"
-  },
   "preferencesModal": {
     "composerTitle": "撰写器",
     "description": "自定义快捷方式以及 Cadet 在此设备上的行为。",

@@ -51,9 +51,7 @@
   "appViewerContainer": {
     "exitFullscreen": "Salir de pantalla completa"
   },
-  "assistantEmailIntroModal": {
-    "setUp": "Configurar el correo"
-  },
+  "assistantEmailIntroModal": {},
   "avatarManagementModal": {
     "accent": "Acento",
     "accentAutomatic": "Automático",
@@ -411,9 +409,7 @@
     "save": "Guardar",
     "saving": "Guardando…"
   },
-  "featureIntroModal": {
-    "close": "Cerrar"
-  },
+  "featureIntroModal": {},
   "fileViewMode": {
     "formatted": "Con formato",
     "modeAria": "Cómo mostrar este archivo",
