@@ -58,8 +58,10 @@ export type {
   AppleContainerAssistant,
   CloudAssistant,
   LockfileWriteResult,
+  MachinePolicy,
+  MachineMemoryPolicy,
 } from "./lockfile-contract";
-export { configureCliPaths, resolveCliInvocation } from "./cli-invocation";
+export { machinePolicyPaths } from "./lockfile-contract";
 export {
   matchOperatorRequest,
   forwardOperatorRequest,
@@ -131,6 +133,13 @@ export {
   machineSetKey,
   type MachineMutationResult,
 } from "./operations/machine";
+export { planMachine } from "./operations/machine-plan";
+export type {
+  MachinePlanResult,
+  MachinePlanChange,
+  AppliedMemoryState,
+} from "./operations/machine-plan";
+export { machineMemoryRunArgs } from "./remotes/docker/memory";
 export { parseWaitDuration } from "./remotes/local/drain";
 export {
   loadAllAssistants,

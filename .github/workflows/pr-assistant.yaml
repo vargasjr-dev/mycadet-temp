@@ -30,7 +30,7 @@ concurrency:
 jobs:
   checks:
     name: Lint, Type Check & Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       NODE_OPTIONS: --max-old-space-size=8192

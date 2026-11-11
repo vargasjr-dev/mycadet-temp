@@ -355,7 +355,7 @@ describe("cadet ps <built-in process name> details", () => {
 
     await ps();
 
-    expect(stdout.join(NL)).toContain("not recorded");
+    expect(stdout.join(NL)).toContain("not running");
   });
 
   test("`ps ngrok` details the tunnel agent with its public URL", async () => {
