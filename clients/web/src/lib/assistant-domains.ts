@@ -16,8 +16,7 @@ const AssistantDomainSchema = z.object({
   created: z.string(),
   modified: z.string(),
 });
-export type AssistantDomain = z.infer<typeof AssistantDomainSchema>;
-
+type AssistantDomain = z.infer<typeof AssistantDomainSchema>;
 const DOMAIN_VERIFICATION_STATUSES = [
   "verified",
   "pending",
