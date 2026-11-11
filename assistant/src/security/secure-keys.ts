@@ -701,55 +701,6 @@ export async function deleteSecureKeyAsync(
   }, "error");
 }
 
-/**
- * Bulk-set multiple credentials in a single operation.
- *
- * Uses the backend's native `bulkSet` when available (CES RPC / HTTP),
- * otherwise falls back to individual `set` calls.
- */
-export async function bulkSetSecureKeysAsync(
-  credentials: Array<{ account: string; value: string }>,
-): Promise<Array<{ account: string; ok: boolean }>> {
-  const results = await withCredentialTimeout(
-    async () => {
-      const backend = await resolveBackendAsync({ forceReconnect: true });
-      let results: Array<{ account: string; ok: boolean }>;
-      if (backend.bulkSet) {
-        results = await backend.bulkSet(credentials);
-        const anyFailed = results.some((r) => !r.ok);
-        updateCesHttpReachability(backend, anyFailed);
-      } else {
-        // Fallback: loop individual sets
-        results = [];
-        let anyFailed = false;
-        for (const { account, value } of credentials) {
-          const ok = await backend.set(account, value);
-          if (!ok) {
-            anyFailed = true;
-          }
-          results.push({ account, ok });
-        }
-        updateCesHttpReachability(backend, anyFailed);
-      }
-      const succeeded = results.filter((r) => r.ok).length;
-      const failed = results.filter((r) => !r.ok).length;
-      if (succeeded > 0 || failed > 0) {
-        const level = succeeded > 0 ? "info" : "warn";
-        log[level](
-          { succeeded, failed, backend: backend.name },
-          "Bulk credential store completed",
-        );
-      }
-      return results;
-    },
-    credentials.map((c) => ({ account: c.account, ok: false })),
-  );
-  // Same as the single-write path: detached, so a bundle's notifications
-  // neither decide nor delay its result.
-  void onCredentialsWritten(results.filter((r) => r.ok).map((r) => r.account));
-  return results;
-}
-
 // ---------------------------------------------------------------------------
 // Provider API key lookup — secure store + env var fallback
 // ---------------------------------------------------------------------------
@@ -779,29 +730,6 @@ export async function getProviderKeyAsync(
   }
   const envVar = getAnyProviderEnvVar(provider);
   return envVar ? process.env[envVar] : undefined;
-}
-
-// ---------------------------------------------------------------------------
-// Masked provider key — for safe display in client UIs
-// ---------------------------------------------------------------------------
-
-/**
- * Retrieve a provider API key and return a masked version suitable for
- * display. Shows the first 10 characters and last 4, with `...` in between,
- * always hiding at least 3 characters. Returns `null` if no key is stored.
- */
-export async function getMaskedProviderKey(
-  provider: string,
-): Promise<string | null> {
-  const key = await getProviderKeyAsync(provider);
-  if (!key || key.length === 0) {
-    return null;
-  }
-  const minHidden = 3;
-  const maxVisible = Math.max(1, key.length - minHidden);
-  const prefixLen = Math.min(10, maxVisible);
-  const suffixLen = Math.min(4, Math.max(0, maxVisible - prefixLen));
-  return `${key.slice(0, prefixLen)}...${suffixLen > 0 ? key.slice(-suffixLen) : ""}`;
 }
 
 // ---------------------------------------------------------------------------

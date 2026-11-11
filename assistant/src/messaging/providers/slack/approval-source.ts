@@ -20,7 +20,7 @@ import { getBindingByConversation } from "../../../persistence/external-conversa
 import type {
   ApprovalSourceHint,
   ApprovalSourceReference,
-} from "../../../runtime/approval-source-link.js";
+} from "../../../runtime/approval-source-types.js";
 import { buildSlackPermalink } from "./deep-link.js";
 import { isSlackTs } from "./message-metadata.js";
 

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_ACP_AGENT_PROFILES,
   DEFAULT_AGENT_NPM_PACKAGES,
-} from "./acp-defaults.js";
+} from "./acp-schema.js";
 
 describe("DEFAULT_ACP_AGENT_PROFILES", () => {
   test("ships exactly the expected agent ids", () => {

@@ -5,29 +5,7 @@
  * cloud proxy when cloud proxy prerequisites are satisfied.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { credentialKey } from "../security/credential-key.js";
-import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
-
-// The REAL secure-keys module pinned to a live memory backend.
-const secureKeys = useMemorySecureKeyMap();
-
-// ---------------------------------------------------------------------------
-// Mocks — must be before importing the module under test
-// ---------------------------------------------------------------------------
-
-// Mutable state for cloud proxy context
-let mockCloudBaseUrl = "";
-// Managed + provider keys live in the real backend's store now.
-const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
-
-mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
-  getOllamaBaseUrlEnv: () => "",
-}));
-
-// Feature flag mock — always returns true (flag is GA'ed)
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { AssistantConfig } from "../config/schema.js";
 import {
@@ -35,21 +13,31 @@ import {
   selectEmbeddingBackend,
 } from "../persistence/embeddings/embedding-backend.js";
 import { GeminiEmbeddingBackend } from "../persistence/embeddings/embedding-gemini.js";
+import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+import { setConfig } from "./helpers/set-config.js";
+
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+// Managed + provider keys live in the real backend's store now.
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Real-config seams — the old `mock.module("../config/env.js")` stub is gone:
+// the cloud base URL rides the workspace config, and Ollama's base URL rides
+// its env var (kept unset here, which the stub's "" also encoded).
 // ---------------------------------------------------------------------------
 
 const PLATFORM_BASE = "https://test-cloud.mycadet.ai";
 const MANAGED_API_KEY = "ast-managed-key-123";
 
 function enableCloudProxy() {
-  mockCloudBaseUrl = PLATFORM_BASE;
+  setConfig("cloud", { baseUrl: PLATFORM_BASE });
   secureKeys.set(ASSISTANT_API_KEY, MANAGED_API_KEY);
 }
 
 function disableCloudProxy() {
-  mockCloudBaseUrl = "";
+  setConfig("cloud", { baseUrl: "" });
   secureKeys.delete(ASSISTANT_API_KEY);
 }
 
@@ -86,6 +74,7 @@ function makeConfig(
 
 beforeEach(() => {
   disableCloudProxy();
+  delete process.env.OLLAMA_BASE_URL; // the stub pinned this unset; keep it so
   secureKeys.clear(); // wipe provider keys; disableCloudProxy already cleared the assistant key
   clearEmbeddingBackendCache();
 });

@@ -54,10 +54,10 @@ import {
   parseInteractiveApprovalPayload,
   resolveGuardianInstructionModeFromPayload,
   resolveGuardianQuestionInstructionMode,
-  type ToolApprovalSourceView,
 } from "./guardian-question-mode.js";
 import { nonEmpty, readPayloadString } from "./notification-utils.js";
 import type { NotificationSignal } from "./signal.js";
+import type { ToolApprovalSourceView } from "./tool-approval-source-view.js";
 import type {
   ChannelAdapter,
   ChannelDeliveryObserver,

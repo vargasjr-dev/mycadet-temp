@@ -1,18 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { credentialKey } from "../security/credential-key.js";
-import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
-
-// The REAL secure-keys module pinned to a live memory backend.
-const secureKeys = useMemorySecureKeyMap();
-const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
-
-// Mutable state for env stubs
-let mockCloudBaseUrl = "";
-
-mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
-}));
+import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
   buildCloudBaseUrl,
@@ -20,24 +6,44 @@ import {
   managedFallbackEnabledFor,
   resolveCloudProxyContext,
 } from "../providers/cloud-proxy/context.js";
+import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+import { setConfig } from "./helpers/set-config.js";
+
+// The REAL secure-keys module pinned to a live memory backend.
+const secureKeys = useMemorySecureKeyMap();
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
+
+const TEST_CLOUD_BASE_URL = "https://platform.example.com";
+
+/**
+ * The real `getCloudBaseUrl()` never returns an empty string — unset config
+ * falls through `CADET_CLOUD_URL` to the `CADET_ENVIRONMENT` default — so
+ * the "no platform URL" cases below assert the real fallback shape (a
+ * nonempty default URL) instead of the empty string the old
+ * `mock.module("../config/env.js")` stub produced. Disabling the proxy for
+ * real means the assistant API key is missing.
+ */
+function setCloudBaseUrl(url: string | undefined): void {
+  setConfig("cloud", { baseUrl: url ?? "" });
+}
 
 describe("resolveCloudProxyContext", () => {
   beforeEach(() => {
-    mockCloudBaseUrl = "";
+    setCloudBaseUrl(undefined);
     secureKeys.delete(ASSISTANT_API_KEY);
   });
 
-  test("returns disabled when platform URL is empty", async () => {
-    mockCloudBaseUrl = "";
+  test("falls back to the environment default URL when config is unset", async () => {
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveCloudProxyContext();
-    expect(ctx.enabled).toBe(false);
-    expect(ctx.cloudBaseUrl).toBe("");
+    expect(ctx.enabled).toBe(true);
+    expect(ctx.cloudBaseUrl.length).toBeGreaterThan(0);
   });
 
   test("returns disabled when assistant API key is missing", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    setCloudBaseUrl(TEST_CLOUD_BASE_URL);
     secureKeys.delete(ASSISTANT_API_KEY);
 
     const ctx = await resolveCloudProxyContext();
@@ -51,27 +57,27 @@ describe("resolveCloudProxyContext", () => {
   });
 
   test("returns enabled when both platform URL and API key are present", async () => {
-    mockCloudBaseUrl = "https://platform.example.com/";
+    setCloudBaseUrl(`${TEST_CLOUD_BASE_URL}/`);
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveCloudProxyContext();
     expect(ctx.enabled).toBe(true);
-    expect(ctx.cloudBaseUrl).toBe("https://platform.example.com");
+    expect(ctx.cloudBaseUrl).toBe(TEST_CLOUD_BASE_URL);
     expect(ctx.assistantApiKey).toBe("sk-test-key");
   });
 
   test("strips trailing slashes from platform URL", async () => {
-    mockCloudBaseUrl = "https://platform.example.com///";
+    setCloudBaseUrl(`${TEST_CLOUD_BASE_URL}///`);
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveCloudProxyContext();
-    expect(ctx.cloudBaseUrl).toBe("https://platform.example.com");
+    expect(ctx.cloudBaseUrl).toBe(TEST_CLOUD_BASE_URL);
   });
 });
 
 describe("hasCloudProxyPrereqs", () => {
   beforeEach(() => {
-    mockCloudBaseUrl = "";
+    setCloudBaseUrl(undefined);
     secureKeys.delete(ASSISTANT_API_KEY);
   });
 
@@ -80,7 +86,7 @@ describe("hasCloudProxyPrereqs", () => {
   });
 
   test("returns true when prerequisites are satisfied", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    setCloudBaseUrl(TEST_CLOUD_BASE_URL);
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     expect(await hasCloudProxyPrereqs()).toBe(true);
   });
@@ -88,25 +94,25 @@ describe("hasCloudProxyPrereqs", () => {
 
 describe("buildCloudBaseUrl", () => {
   beforeEach(() => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    setCloudBaseUrl(TEST_CLOUD_BASE_URL);
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
   test("builds correct URL for cloud providers", async () => {
     expect(await buildCloudBaseUrl("anthropic")).toBe(
-      "https://platform.example.com/v1/runtime-proxy/anthropic",
+      `${TEST_CLOUD_BASE_URL}/v1/runtime-proxy/anthropic`,
     );
     expect(await buildCloudBaseUrl("gemini")).toBe(
-      "https://platform.example.com/v1/runtime-proxy/gemini",
+      `${TEST_CLOUD_BASE_URL}/v1/runtime-proxy/gemini`,
     );
     expect(await buildCloudBaseUrl("openai")).toBe(
-      "https://platform.example.com/v1/runtime-proxy/openai",
+      `${TEST_CLOUD_BASE_URL}/v1/runtime-proxy/openai`,
     );
   });
 
   test("returns managed URL for fireworks", async () => {
     expect(await buildCloudBaseUrl("fireworks")).toBe(
-      "https://platform.example.com/v1/runtime-proxy/fireworks",
+      `${TEST_CLOUD_BASE_URL}/v1/runtime-proxy/fireworks`,
     );
   });
 
@@ -120,7 +126,6 @@ describe("buildCloudBaseUrl", () => {
   });
 
   test("returns undefined when prerequisites are missing", async () => {
-    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
     expect(await buildCloudBaseUrl("anthropic")).toBeUndefined();
     expect(await buildCloudBaseUrl("gemini")).toBeUndefined();
@@ -130,7 +135,7 @@ describe("buildCloudBaseUrl", () => {
 
 describe("managedFallbackEnabledFor", () => {
   beforeEach(() => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    setCloudBaseUrl(TEST_CLOUD_BASE_URL);
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
@@ -149,7 +154,6 @@ describe("managedFallbackEnabledFor", () => {
   });
 
   test("returns false when prerequisites are missing", async () => {
-    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
     expect(await managedFallbackEnabledFor("anthropic")).toBe(false);
     expect(await managedFallbackEnabledFor("gemini")).toBe(false);

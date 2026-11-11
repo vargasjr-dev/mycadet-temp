@@ -17,6 +17,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { z } from "zod";
 
 const dmgPath = process.argv[2];
 if (!dmgPath) {
@@ -63,6 +64,11 @@ function runNotary(args: string[]): { code: number | null; output: string } {
  */
 const TERMINAL_STATUSES = ["Accepted", "Invalid", "Rejected"];
 
+const SubmissionInfo = z.object({
+  status: z.string().nullish(),
+  Status: z.string().nullish(),
+});
+
 /**
  * The submission's status, read off `notarytool info`. The JSON format is
  * the stable contract (`.status`), but run #122 showed Apple's text output
@@ -72,9 +78,11 @@ const TERMINAL_STATUSES = ["Accepted", "Invalid", "Rejected"];
  */
 function notarizationStatus(output: string): string {
   try {
-    const parsed: { status?: unknown; Status?: unknown } = JSON.parse(output);
-    const status = parsed.status ?? parsed.Status;
-    if (typeof status === "string") return status.trim();
+    const parsed = SubmissionInfo.safeParse(JSON.parse(output));
+    if (parsed.success) {
+      const status = parsed.data.status ?? parsed.data.Status;
+      if (typeof status === "string") return status.trim();
+    }
   } catch {
     // not plain JSON — fall through to the text scan
   }
