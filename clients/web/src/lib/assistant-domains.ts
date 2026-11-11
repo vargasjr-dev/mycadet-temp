@@ -16,7 +16,6 @@ const AssistantDomainSchema = z.object({
   created: z.string(),
   modified: z.string(),
 });
-type AssistantDomain = z.infer<typeof AssistantDomainSchema>;
 const DOMAIN_VERIFICATION_STATUSES = [
   "verified",
   "pending",
