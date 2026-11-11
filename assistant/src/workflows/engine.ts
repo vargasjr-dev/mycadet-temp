@@ -228,7 +228,7 @@ export class WorkflowNotFoundError extends Error {
  * fails the run), matching the tool-denial model: be loud, never silently
  * downgrade to anonymous.
  */
-export class WorkflowPersonaNotDeclaredError extends Error {
+class WorkflowPersonaNotDeclaredError extends Error {
   readonly code = "persona_not_declared" as const;
   constructor() {
     super(
@@ -243,7 +243,7 @@ export class WorkflowPersonaNotDeclaredError extends Error {
  * workflow. Nesting is limited to ONE level: a top-level script may call
  * `workflow()`, but a child workflow may not.
  */
-export class WorkflowNestingDepthError extends Error {
+class WorkflowNestingDepthError extends Error {
   readonly code = "workflow_nesting_too_deep" as const;
   constructor() {
     super("workflow() may only be called from a top-level workflow (depth 1).");

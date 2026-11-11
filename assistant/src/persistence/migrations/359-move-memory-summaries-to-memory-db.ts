@@ -43,7 +43,7 @@ export const MEMORY_SUMMARIES_RELOCATION: RelocationSpec = {
  * exactly as they did on main, plus the scope/scope_id/scope_updated lookup
  * indexes (migrations 018, 104, 348).
  */
-export function ensureMemorySummariesSchema(memoryRaw: Database): void {
+function ensureMemorySummariesSchema(memoryRaw: Database): void {
   memoryRaw.exec(/*sql*/ `
     CREATE TABLE IF NOT EXISTS memory_summaries (
       id             TEXT PRIMARY KEY,

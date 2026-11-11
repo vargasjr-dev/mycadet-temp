@@ -10,8 +10,8 @@ import {
 import type { PermissionsService } from "./permissions-service";
 import type { PermissionGuideState } from "@mycadet/ipc-contract";
 
-const handles = new Map<string, Function>();
-const listeners = new Map<string, Function>();
+const handles = new Map<string, (...args: any[]) => any>();
+const listeners = new Map<string, (...args: any[]) => any>();
 const intervals: (() => void)[] = [];
 const intervalSpy = spyOn(globalThis, "setInterval").mockImplementation(
   Object.assign((callback: () => void) => {
@@ -138,11 +138,15 @@ mock.module("@mycadet/electron-desktop/floating-window", () => ({
   },
 }));
 mock.module("./ipc", () => ({
-  handle: (channel: string, schema: { parse: Function }, fn: Function) =>
+  handle: (
+    channel: string,
+    schema: { parse: (...args: any[]) => any },
+    fn: (...args: any[]) => any,
+  ) =>
     handles.set(channel, (args: unknown[], event: unknown) =>
       fn(schema.parse(args), event),
     ),
-  on: (channel: string, _schema: unknown, fn: Function) =>
+  on: (channel: string, _schema: unknown, fn: (...args: any[]) => any) =>
     listeners.set(channel, fn),
 }));
 mock.module("./companion-capture-sources", () => ({
@@ -166,7 +170,9 @@ mock.module("./permissions-service", () => ({
     }
   },
 }));
-mock.module("./logger", () => ({ default: { warn: () => undefined } }));
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  default: { warn: () => undefined },
+}));
 const { installCompanionPermissionGuide } =
   await import("./companion-permission-guide");
 const state = () =>

@@ -77,7 +77,7 @@ export interface HostProxyAttachmentDecision {
  *    event hub for chrome-extension and its skill projection is governed by
  *    a different code path (`host-browser-proxy.ts`).
  */
-export const HOST_PROXY_SKILL_PREACTIVATIONS: ReadonlyArray<{
+const HOST_PROXY_SKILL_PREACTIVATIONS: ReadonlyArray<{
   capability: HostProxyCapability;
   skillId: string;
 }> = [

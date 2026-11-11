@@ -139,7 +139,7 @@ const workflowJournalSchema = z.object({
 export type WorkflowRunWire = z.infer<typeof workflowRunSchema>;
 
 /** Project a stored run into the wire shape (drops bulky source/args/result). */
-export function toWireRun(run: WorkflowRun): WorkflowRunWire {
+function toWireRun(run: WorkflowRun): WorkflowRunWire {
   return {
     id: run.id,
     name: run.name,
@@ -183,7 +183,7 @@ function summarize(value: unknown, max = 200): string | undefined {
  * raw `request`/`result` payloads in favor of short summaries. The `request`
  * and `result` columns are `unknown`, so read their fields defensively.
  */
-export function toWireLeaf(
+function toWireLeaf(
   entry: WorkflowJournalEntry,
 ): z.infer<typeof workflowLeafSchema> {
   const request =

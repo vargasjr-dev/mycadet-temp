@@ -102,9 +102,7 @@ export function accessRequestCardSubtitle(admitted: boolean): string {
  * Build a list of human-readable warning strings for an access request.
  * Used by both the Slack Block Kit card and the plain-text contract.
  */
-export function buildAccessRequestWarnings(
-  p: ParsedAccessRequestPayload,
-): string[] {
+function buildAccessRequestWarnings(p: ParsedAccessRequestPayload): string[] {
   const warnings: string[] = [];
   if (p.previousMemberStatus === "revoked") {
     warnings.push("This user was previously revoked.");
@@ -142,9 +140,7 @@ export function buildIntroductionActionsForPayload(
 }
 
 /** Whether the verification handshake is offered for this requester. */
-export function isHandshakeOfferedForPayload(
-  p: ParsedAccessRequestPayload,
-): boolean {
+function isHandshakeOfferedForPayload(p: ParsedAccessRequestPayload): boolean {
   return isHandshakeOffered(p.sourceChannel, {
     isBot: p.isBot,
     isStranger: p.isStranger,

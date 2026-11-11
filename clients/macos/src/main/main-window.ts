@@ -14,7 +14,7 @@ import { decideNavigation } from "./auth-nav";
 import { type CadetCommand } from "@mycadet/electron-desktop/commands";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 import { handle } from "./ipc";
-import { createWindow } from "./windows";
+import { createWindow } from "@mycadet/electron-desktop/windows";
 
 // Default state for the main window once onboarding is done: maximized — a
 // normal window filling the display's work area, deliberately NOT native

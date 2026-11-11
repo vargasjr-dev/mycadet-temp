@@ -25,36 +25,3 @@ export function extractThreadTsFromCallbackUrl(
     return null;
   }
 }
-
-/**
- * Extract the messageTs from a Slack reply callback URL, if present.
- * The gateway encodes messageTs for non-threaded DMs so the runtime
- * can target the original message for emoji-based indicators.
- */
-export function extractMessageTsFromCallbackUrl(
-  callbackUrl: string | undefined,
-): string | null {
-  if (!callbackUrl) {
-    return null;
-  }
-  try {
-    const url = new URL(callbackUrl);
-    return url.searchParams.get("messageTs");
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Whether a reply callback URL targets the Slack delivery endpoint.
- */
-export function isSlackDeliveryCallbackUrl(callbackUrl?: string): boolean {
-  if (!callbackUrl) {
-    return false;
-  }
-  try {
-    return new URL(callbackUrl).pathname.endsWith("/deliver/slack");
-  } catch {
-    return callbackUrl.endsWith("/deliver/slack");
-  }
-}

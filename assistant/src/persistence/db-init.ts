@@ -37,7 +37,7 @@ import { migrationSteps } from "./steps.js";
  * case on a clean boot and in tests, whose seeded fixture DB is checkpointed and
  * WAL-free.
  */
-export async function checkpointWalBeforeOpen(): Promise<void> {
+async function checkpointWalBeforeOpen(): Promise<void> {
   if (!existsSync(`${getDbPath()}-wal`)) {
     return;
   }

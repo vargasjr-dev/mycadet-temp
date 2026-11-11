@@ -37,7 +37,7 @@ import {
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
 import { handle, on } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   GUIDE_HEIGHT,
   GUIDE_WIDTH,

@@ -4,7 +4,7 @@ import { z } from "zod";
  * Edge-lane tuning for the link-graph expansion that folds a turn's lexical and
  * dense seeds outward to their first-class neighbours.
  */
-export const MemoryV3EdgeSchema = z
+const MemoryV3EdgeSchema = z
   .object({
     hubDegree: z
       .number({ error: "memory.v3.edge.hubDegree must be a number" })
@@ -43,7 +43,7 @@ export const MemoryV3EdgeSchema = z
  * Hot-set lane tuning: the top-K pages by exponentially-decayed selection
  * frequency (frecency) folded into the candidate pool as a stable lane.
  */
-export const MemoryV3HotSetSchema = z
+const MemoryV3HotSetSchema = z
   .object({
     k: z
       .number({ error: "memory.v3.hotSet.k must be a number" })
@@ -70,7 +70,7 @@ export const MemoryV3HotSetSchema = z
  * the other lanes can reach a just-written page (no selection history for
  * the hot set; nothing lexical for the finders on summary-shaped messages).
  */
-export const MemoryV3FreshSetSchema = z
+const MemoryV3FreshSetSchema = z
   .object({
     k: z
       .number({ error: "memory.v3.freshSet.k must be a number" })
@@ -89,7 +89,7 @@ export const MemoryV3FreshSetSchema = z
  * reach association-relevant pages no lexical, semantic, or authored-link
  * lane can surface.
  */
-export const MemoryV3LearnedEdgesSchema = z
+const MemoryV3LearnedEdgesSchema = z
   .object({
     halfLifeDays: z
       .number({ error: "memory.v3.learnedEdges.halfLifeDays must be a number" })
@@ -155,7 +155,7 @@ export const MemoryV3LearnedEdgesSchema = z
  * on the widest observed conversation — 384KB max / 256KB target make the
  * valve insurance for growth beyond that, not routine behavior.
  */
-export const MemoryV3PruneSchema = z
+const MemoryV3PruneSchema = z
   .object({
     maxResidentBytes: z
       .number({ error: "memory.v3.prune.maxResidentBytes must be a number" })
@@ -191,7 +191,7 @@ export const MemoryV3PruneSchema = z
  * buries under a long message's bulk theme is retrieved on the exact-name
  * signal instead.
  */
-export const MemoryV3EntitySchema = z
+const MemoryV3EntitySchema = z
   .object({
     enabled: z
       .boolean({ error: "memory.v3.entity.enabled must be a boolean" })
@@ -229,7 +229,7 @@ export const MemoryV3EntitySchema = z
  * is corpus-relative: `maxDf` is the absolute df ceiling and `maxDfFraction`
  * lowers it on a smaller corpus (the rule is on that field).
  */
-export const MemoryV3RareTermSchema = z
+const MemoryV3RareTermSchema = z
   .object({
     enabled: z
       .boolean({ error: "memory.v3.rareTerm.enabled must be a boolean" })

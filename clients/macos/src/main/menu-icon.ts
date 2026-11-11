@@ -14,10 +14,9 @@ import { type MenuIconPair } from "./assets/menu-icons";
  * image resolves crisply on both standard and Retina displays.
  */
 export const menuIcon = (pair: MenuIconPair): NativeImage => {
-  const img = nativeImage.createFromBuffer(
-    Buffer.from(pair.png1x, "base64"),
-    { scaleFactor: 1 },
-  );
+  const img = nativeImage.createFromBuffer(Buffer.from(pair.png1x, "base64"), {
+    scaleFactor: 1,
+  });
   img.addRepresentation({
     scaleFactor: 2,
     buffer: Buffer.from(pair.png2x, "base64"),

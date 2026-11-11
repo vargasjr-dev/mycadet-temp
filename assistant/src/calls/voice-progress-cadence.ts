@@ -58,7 +58,7 @@ export interface ProgressToolResult {
  * Newest incomplete op, optionally restricted to a tool name (the
  * tool_result fallback match when no toolUseId correlates).
  */
-export function findLastIncompleteOp(
+function findLastIncompleteOp(
   ops: readonly TurnProgressOp[],
   toolName?: string,
 ): TurnProgressOp | undefined {

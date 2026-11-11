@@ -6,7 +6,7 @@ import {
 } from "@mycadet/electron-desktop/auto-update";
 
 import { handle } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 
 declare const __CADET_ENVIRONMENT__: string;
 
@@ -22,10 +22,3 @@ configureAutoUpdate({
   environment: ENVIRONMENT,
   feedUrl: resolveUpdateFeedUrl(ENVIRONMENT, "mac-electron", process.arch),
 });
-
-export {
-  checkForUpdates,
-  installAutoUpdate,
-  type UpdateState,
-  type UpdateStatus,
-} from "@mycadet/electron-desktop/auto-update";

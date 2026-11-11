@@ -147,8 +147,3 @@ export function getLocalCategorySlugs(): Set<string> {
   // path, so normalization still works once that cache is warm.
   return new Set(getCachedCategoriesSync().map((c) => c.slug));
 }
-
-export function invalidateCategoriesCache(): void {
-  cachedCategories = null;
-  cacheTimestamp = 0;
-}

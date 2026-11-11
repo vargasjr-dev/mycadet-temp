@@ -110,18 +110,17 @@ const sourceReferenceFields = {
   sourceLink: externalSourceLinkSchema.optional(),
 };
 
-export const ToolApprovalPayloadSchema =
-  GuardianQuestionPayloadBaseSchema.extend({
-    requestKind: z.literal("tool_approval"),
-    toolName: z.string().min(1),
-    /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
-    riskLevel: z.string().optional(),
-    /** Secret-redacted summary of the tool invocation arguments. */
-    commandPreview: z.string().optional(),
-    ...sourceReferenceFields,
-  });
+const ToolApprovalPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
+  requestKind: z.literal("tool_approval"),
+  toolName: z.string().min(1),
+  /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
+  riskLevel: z.string().optional(),
+  /** Secret-redacted summary of the tool invocation arguments. */
+  commandPreview: z.string().optional(),
+  ...sourceReferenceFields,
+});
 
-export const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
+const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
   requestKind: z.literal("tool_grant_request"),
   toolName: z.string().min(1),
   /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
@@ -131,7 +130,7 @@ export const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
   ...sourceReferenceFields,
 });
 
-export const AccessRequestGuardianPayloadSchema =
+const AccessRequestGuardianPayloadSchema =
   GuardianQuestionPayloadBaseSchema.extend({
     requestKind: z.literal("access_request"),
   });
@@ -283,7 +282,7 @@ export function buildToolApprovalSourceView(
 export const QUESTION_SKIP_ACTION_ID = "answer_skip";
 
 /** Action id for the option at `index` on a question card. */
-export function buildQuestionOptionActionId(index: number): string {
+function buildQuestionOptionActionId(index: number): string {
   return `answer_${index}`;
 }
 

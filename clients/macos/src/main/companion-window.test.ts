@@ -708,7 +708,7 @@ mock.module("@mycadet/electron-desktop/avatar", () => ({
  * whole point of reading them from settings is that they land after launch and
  * can move again while the app runs.
  */
-let flags: Record<string, boolean> = { "companion-surface": true };
+const flags: Record<string, boolean> = { "companion-surface": true };
 
 /** Main's `featureFlags` listeners, so a case can fire a targeting change. */
 const flagListeners: (() => void)[] = [];
@@ -874,7 +874,6 @@ beforeEach(() => {
   surface.visible = true;
   setName("Example Assistant");
 });
-
 
 /**
  * Let a press reach the renderer it was handed to. The hand-off answers on a

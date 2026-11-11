@@ -27,20 +27,20 @@
  * the hook actually recovers.
  */
 
-export const IMAGE_DIMENSIONS_TOO_LARGE_PATTERNS: readonly RegExp[] = [
+const IMAGE_DIMENSIONS_TOO_LARGE_PATTERNS: readonly RegExp[] = [
   /image dimensions? exceeds? max allowed size/i,
   /image exceeds \d+\s*MB maximum/i,
 ];
 
-export const IMAGE_UNPROCESSABLE_PATTERNS: readonly RegExp[] = [
+const IMAGE_UNPROCESSABLE_PATTERNS: readonly RegExp[] = [
   /could not process image/i,
 ];
 
-export const IMAGE_MEDIA_TYPE_MISMATCH_PATTERNS: readonly RegExp[] = [
+const IMAGE_MEDIA_TYPE_MISMATCH_PATTERNS: readonly RegExp[] = [
   /image does not match the provided media type/i,
 ];
 
-export const IMAGE_UNSUPPORTED_FORMAT_PATTERNS: readonly RegExp[] = [
+const IMAGE_UNSUPPORTED_FORMAT_PATTERNS: readonly RegExp[] = [
   /does not represent a valid image/i,
   /supported image formats?:/i,
 ];

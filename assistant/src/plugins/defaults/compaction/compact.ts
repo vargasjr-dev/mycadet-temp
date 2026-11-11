@@ -24,7 +24,7 @@ import type {
  * Name under which the default compaction plugin registers. Exposed so call
  * sites can attribute compaction failures to the default plugin.
  */
-export const DEFAULT_COMPACTION_PLUGIN_NAME = "default-compaction";
+const DEFAULT_COMPACTION_PLUGIN_NAME = "default-compaction";
 
 /**
  * Self-describing compaction request handed to {@link defaultCompact}. Carries

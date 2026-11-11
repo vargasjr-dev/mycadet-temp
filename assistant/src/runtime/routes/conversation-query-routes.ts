@@ -570,7 +570,7 @@ const CallSiteOverrideDraftSchema = nullablePartial(
  */
 export type ConfigPatchRequest = z.infer<typeof ConfigPatchRequestSchema>;
 
-export const ConfigPatchRequestSchema = z
+const ConfigPatchRequestSchema = z
   .object({
     ...ChatSettingsPatchSchema.shape,
     llm: z

@@ -171,7 +171,7 @@ let sharedManager: WatchSessionManager | null = null;
  * interleave unrelated timelines. Lazily created so importing this module
  * costs nothing until a socket arrives.
  */
-export function getWatchSessionManager(): WatchSessionManager {
+function getWatchSessionManager(): WatchSessionManager {
   sharedManager ??= new WatchSessionManager();
   return sharedManager;
 }

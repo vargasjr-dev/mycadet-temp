@@ -20,7 +20,7 @@ import { writeTraitsAndRenderAvatar } from "./traits-png-sync.js";
 const log = getLogger("ensure-raster");
 
 /** Largest raster any reader serves; a bigger file is treated as unreadable. */
-export const AVATAR_RASTER_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_RASTER_MAX_BYTES = 5 * 1024 * 1024;
 
 function isWithin(dir: string, filePath: string): boolean {
   const rel = relative(dir, filePath);

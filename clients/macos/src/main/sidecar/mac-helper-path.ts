@@ -17,7 +17,7 @@
  */
 
 import { app } from "electron";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const SIDECAR_NAME = ".cadet-mac-helper.bundle-name";
@@ -47,7 +47,7 @@ const resolveHelperBundleNameFromExecutable = (
 ): string | null => {
   let entries: import("node:fs").Dirent[];
   try {
-    entries = require("node:fs").readdirSync(binDir, { withFileTypes: true });
+    entries = readdirSync(binDir, { withFileTypes: true });
   } catch {
     return null;
   }

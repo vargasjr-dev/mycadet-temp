@@ -39,8 +39,7 @@ import { bridgeEmojiAppIcon } from "@mycadet/app-icons";
 import { resolveConversationLineage } from "../daemon/conversation-lineage.js";
 import { rawAll } from "../persistence/raw-query.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
-import type { EditEngineResult } from "../tools/shared/filesystem/edit-engine.js";
-import { applyEdit } from "../tools/shared/filesystem/edit-engine.js";
+import type {} from "../tools/shared/filesystem/edit-engine.js";
 import { getDataDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
@@ -364,38 +363,6 @@ export function resolveAppIdByDirName(dirName: string): string | null {
   }
 
   return null;
-}
-
-/**
- * Extract app ID from an absolute file path if it falls within the apps
- * directory and targets a source file (not records/ or dist/).
- */
-export function resolveAppIdFromPath(filePath: string): string | null {
-  let appsDir: string;
-  try {
-    appsDir = getAppsDir();
-  } catch {
-    return null;
-  }
-  if (!filePath.startsWith(appsDir + "/")) {
-    return null;
-  }
-
-  const relPath = filePath.slice(appsDir.length + 1);
-  const slashIdx = relPath.indexOf("/");
-  if (slashIdx === -1) {
-    return null;
-  } // file directly in apps/ (e.g. the .json definition)
-
-  const dirName = relPath.slice(0, slashIdx);
-  const innerPath = relPath.slice(slashIdx + 1);
-
-  // Skip non-source directories
-  if (innerPath.startsWith("records/") || innerPath.startsWith("dist/")) {
-    return null;
-  }
-
-  return resolveAppIdByDirName(dirName);
 }
 
 /** Invalidate the id->dirName cache for a specific app or all apps. */
@@ -1190,19 +1157,6 @@ export function appFileExists(appId: string, path: string): boolean {
 }
 
 /**
- * Read a file from the app directory.
- * Path is validated to prevent traversal.
- */
-export function readAppFile(appId: string, path: string): string {
-  validateId(appId);
-  const resolved = validateFilePath(appId, path);
-  if (!existsSync(resolved)) {
-    throw new Error(`File not found: ${path}`);
-  }
-  return readFileSync(resolved, "utf-8");
-}
-
-/**
  * Read a file from the app directory as raw bytes.
  * Path is validated to prevent traversal. Use for binary assets (images,
  * audio, video, fonts) where {@link readAppFile}'s utf-8 decoding corrupts
@@ -1248,30 +1202,6 @@ export function writeAppFile(
   const dir = join(resolved, "..");
   mkdirSync(dir, { recursive: true });
   writeFileSync(resolved, content, "utf-8");
-}
-
-/**
- * Edit a file in the app directory using the edit engine (match/replace).
- * Returns the EditEngineResult from applyEdit.
- */
-export function editAppFile(
-  appId: string,
-  path: string,
-  oldString: string,
-  newString: string,
-  replaceAll?: boolean,
-): EditEngineResult {
-  validateId(appId);
-  const resolved = validateFilePath(appId, path);
-  if (!existsSync(resolved)) {
-    throw new Error(`File not found: ${path}`);
-  }
-  const content = readFileSync(resolved, "utf-8");
-  const result = applyEdit(content, oldString, newString, replaceAll ?? false);
-  if (result.ok) {
-    writeFileSync(resolved, result.updatedContent, "utf-8");
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------

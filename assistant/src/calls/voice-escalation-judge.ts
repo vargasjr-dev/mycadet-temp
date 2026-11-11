@@ -36,7 +36,7 @@ export const ESCALATION_JUDGE_THRESHOLD = 0.7;
  * budget the verdict is almost always in hand before the first answer word
  * would have been spoken; past it the front door's decision stands.
  */
-export const ESCALATION_JUDGE_TIMEOUT_MS = 800;
+const ESCALATION_JUDGE_TIMEOUT_MS = 800;
 
 /** Recent turns shown to the judge, oldest first. */
 const HISTORY_TURNS = 6;

@@ -60,7 +60,7 @@ function logsDb(): DrizzleDb {
  * path; defaults to "enabled" if config resolution throws so a config hiccup
  * never silently drops logs.
  */
-export function llmRequestLoggingEnabled(): boolean {
+function llmRequestLoggingEnabled(): boolean {
   try {
     return getConfigReadOnly().llmRequestLogs?.enabled !== false;
   } catch {

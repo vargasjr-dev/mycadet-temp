@@ -55,7 +55,7 @@ import {
  * work — so a batch this size still holds the lock only briefly while
  * amortizing the per-batch subprocess spawn cost.
  */
-export const DEFAULT_DELETE_BATCH_SIZE = 200;
+const DEFAULT_DELETE_BATCH_SIZE = 200;
 
 /**
  * Pause inserted between batch subprocess calls. Without it the delete releases
@@ -66,7 +66,7 @@ export const DEFAULT_DELETE_BATCH_SIZE = 200;
  * nothing waits on a background GC — so we trade delete speed for foreground
  * fairness.
  */
-export const DEFAULT_DELETE_INTER_BATCH_DELAY_MS = 25;
+const DEFAULT_DELETE_INTER_BATCH_DELAY_MS = 25;
 
 export interface DeleteConversationRowsOptions {
   /** The conversation whose rows should be deleted. */

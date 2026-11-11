@@ -69,7 +69,7 @@ function isExcludedFromRetrospectiveAccounting(row: {
 }
 
 /** True when a message row's metadata carries the skill-card kind. */
-export function isSkillCardMessage(row: { metadata: string | null }): boolean {
+function isSkillCardMessage(row: { metadata: string | null }): boolean {
   if (!row.metadata) {
     return false;
   }

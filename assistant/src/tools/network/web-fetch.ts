@@ -1252,7 +1252,7 @@ function hostedScrapeErrorResult(
  * Exported for direct unit testing; the registered tool dispatches here via
  * {@link getWebFetchProvider}.
  */
-export async function executeFirecrawlCompatScrape(
+async function executeFirecrawlCompatScrape(
   input: Record<string, unknown>,
   options: {
     apiKey: string;

@@ -42,7 +42,7 @@ export const MEMORY_EMBEDDINGS_RELOCATION: RelocationSpec = {
  * and the equivalent named index so `ON CONFLICT` upserts resolve exactly as
  * they did on main, plus the `content_hash` lookup index (migration 102).
  */
-export function ensureMemoryEmbeddingsSchema(memoryRaw: Database): void {
+function ensureMemoryEmbeddingsSchema(memoryRaw: Database): void {
   memoryRaw.exec(/*sql*/ `
     CREATE TABLE IF NOT EXISTS memory_embeddings (
       id           TEXT PRIMARY KEY,

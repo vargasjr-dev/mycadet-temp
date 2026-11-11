@@ -37,7 +37,7 @@ import type {
 } from "@mycadet/ipc-contract";
 
 import { runAppleScript } from "./appleScriptExecutor";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import type { HelperShareTarget } from "./share-targets";
 import { getSharedCuHelper } from "./sidecar/shared-cu-helper";
 
@@ -468,7 +468,7 @@ export function chromeWindowFor(
  * computer-use actions, and a pick left waiting that long would read as a
  * dead button.
  */
-export const RAISE_WAIT_MS = 5_000;
+const RAISE_WAIT_MS = 5_000;
 
 /**
  * Bring a picked window to the front, and carry on either way.
@@ -800,7 +800,7 @@ const locatedElementSchema = z.discriminatedUnion("found", [
   }),
 ]);
 
-export type LocatedElement = z.infer<typeof locatedElementSchema>;
+type LocatedElement = z.infer<typeof locatedElementSchema>;
 
 /**
  * Ask the helper which control on `target` `query` names.
@@ -850,7 +850,7 @@ const targetElementsSchema = z.discriminatedUnion("found", [
 ]);
 
 /** Every named control the helper can see on a shared surface. */
-export interface TargetElements {
+interface TargetElements {
   elements: HelperShareTarget[];
   /** How many there were, which can be more than `elements` carries. */
   candidateCount: number;

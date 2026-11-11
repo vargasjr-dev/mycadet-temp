@@ -33,7 +33,7 @@ interface GeminiBatchEmbedResponse {
 }
 
 /** Texts per `batchEmbedContents` call, the API's documented maximum. */
-export const GEMINI_EMBED_BATCH_SIZE = 100;
+const GEMINI_EMBED_BATCH_SIZE = 100;
 
 /**
  * Response statuses that say the batch route itself is unavailable (a proxy

@@ -17,7 +17,7 @@ import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /** Fixed icon filename in the plugin root — no author path, no traversal. */
-export const ICON_FILENAME = "icon.png";
+const ICON_FILENAME = "icon.png";
 /** Byte cap: reject anything larger (also bounds what we read into memory). */
 export const MAX_ICON_BYTES = 32 * 1024;
 /** Dimension cap (px) enforced against the IHDR width/height. */

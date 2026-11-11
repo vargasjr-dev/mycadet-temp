@@ -1,4 +1,7 @@
-import { type AllowedOrigin, isAllowedOrigin } from "./app-origin";
+import {
+  type AllowedOrigin,
+  isAllowedOrigin,
+} from "@mycadet/electron-desktop/app-origin";
 
 /**
  * Navigation-guard decision logic for the main window, extracted so it can be
@@ -8,7 +11,7 @@ import { type AllowedOrigin, isAllowedOrigin } from "./app-origin";
  * http(s) navigations are ejected to the system browser, and non-http schemes
  * are blocked outright.
  */
-export type NavigationDecision =
+type NavigationDecision =
   | { kind: "allow" } // proceed in-window
   | { kind: "external"; url: string } // eject to the system browser
   | { kind: "block" }; // preventDefault, no fallback

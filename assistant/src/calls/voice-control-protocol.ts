@@ -57,7 +57,7 @@ export const MUTE_MARKER = "[MUTE]";
 const MUTE_MARKER_PREFIX = "[MUTE:";
 
 /** Longest timed mute a marker can ask for; longer asks mute until unmuted. */
-export const MAX_TIMED_MUTE_SECONDS = 3600;
+const MAX_TIMED_MUTE_SECONDS = 3600;
 
 /**
  * Progress-update cadence for the rest of a live-voice session:

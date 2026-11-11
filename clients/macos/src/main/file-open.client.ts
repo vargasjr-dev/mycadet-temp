@@ -1,14 +1,6 @@
-import {
-  configureFileOpen,
-  handleFileOpenArgv,
-  hasPendingFiles,
-  installFileOpen,
-  onFileOpen,
-} from "@mycadet/electron-desktop/file-open";
+import { configureFileOpen } from "@mycadet/electron-desktop/file-open";
 
 import { handle, on } from "./ipc";
 import { ensureVisible } from "./main-window";
 
 configureFileOpen({ ensureMainWindowVisible: ensureVisible, handle, on });
-
-export { handleFileOpenArgv, hasPendingFiles, installFileOpen, onFileOpen };

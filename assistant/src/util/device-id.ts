@@ -34,7 +34,7 @@ let cached: string | undefined;
  * of the workspace directory. The device ID is a per-workspace identity;
  * machine-wide identity is the CLI's concern (it injects CADET_DEVICE_ID).
  */
-export function resolveDeviceIdPaths(): { dir: string; file: string } {
+function resolveDeviceIdPaths(): { dir: string; file: string } {
   const dir = getWorkspaceDir();
   return { dir, file: join(dir, "device.json") };
 }

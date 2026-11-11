@@ -131,7 +131,7 @@ const EXCLUDED_SOURCES: string[] = [
  * still backs up legacy/desktop guardian conversations (whose provenance is
  * `undefined`), which `resolveCapabilities(undefined)` would wrongly exclude.
  */
-export function isMemoryTrustedConversation(conversationId: string): boolean {
+function isMemoryTrustedConversation(conversationId: string): boolean {
   const trustClass = getConversationRecentProvenanceTrustClass(conversationId);
   return trustClass === "guardian" || trustClass === undefined;
 }

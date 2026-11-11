@@ -55,13 +55,6 @@ export class TooManyRequestsError extends RouteError {
   }
 }
 
-export class PaymentRequiredError extends RouteError {
-  constructor(message: string, details?: unknown) {
-    super(message, "PAYMENT_REQUIRED", 402, details);
-    this.name = "PaymentRequiredError";
-  }
-}
-
 export class ForbiddenError extends RouteError {
   constructor(message: string) {
     super(message, "FORBIDDEN", 403);
@@ -73,13 +66,6 @@ export class NotFoundError extends RouteError {
   constructor(message: string) {
     super(message, "NOT_FOUND", 404);
     this.name = "NotFoundError";
-  }
-}
-
-export class MethodNotAllowedError extends RouteError {
-  constructor(message: string, details?: unknown) {
-    super(message, "METHOD_NOT_ALLOWED", 405, details);
-    this.name = "MethodNotAllowedError";
   }
 }
 

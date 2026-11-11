@@ -38,7 +38,7 @@ import { getLogger } from "../util/logger.js";
 const log = getLogger("prompted-credential");
 
 /** Slack channel credentials connect the channel rather than just storing a value. */
-export function isSlackChannelCredential(
+function isSlackChannelCredential(
   service: string,
   field: string,
 ): field is "bot_token" | "app_token" | "user_token" {
@@ -48,7 +48,7 @@ export function isSlackChannelCredential(
   );
 }
 
-export async function storeSlackChannelCredential(
+async function storeSlackChannelCredential(
   field: "bot_token" | "app_token" | "user_token",
   value: string,
 ): Promise<SlackChannelConfigResult> {

@@ -1,5 +1,4 @@
 import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
-import { z } from "zod";
 
 import { companionVisibilityItem } from "@mycadet/electron-desktop/companion-menu";
 import { onSettingChange } from "@mycadet/electron-desktop/settings";
@@ -10,7 +9,7 @@ import {
 } from "@mycadet/electron-desktop/window-state";
 
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
-import { checkForUpdates } from "./auto-update.client";
+import { checkForUpdates } from "@mycadet/electron-desktop/auto-update";
 import {
   isCliPathFlowInFlight,
   runInstallCliCommandFlow,
@@ -24,14 +23,14 @@ import {
   acceleratorOption,
   dispatchToFocused,
   type CadetCommand,
-} from "./commands.client";
+} from "@mycadet/electron-desktop/commands";
 import {
   closeCommandPaletteWindow,
   isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
-} from "./command-palette.client";
+} from "@mycadet/electron-desktop/command-palette-window";
 import { setCompanionSurfaceVisible } from "./companion-window";
-import { areChromeDevToolsEnabled } from "./devtools";
+import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import { dispatchToMain } from "./main-window";
 
 interface MenuState {
@@ -302,8 +301,6 @@ let installed = false;
 export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
-
-
 
   // Rebuild the menu when hotkey settings change so accelerators update
   // immediately without requiring an app restart.

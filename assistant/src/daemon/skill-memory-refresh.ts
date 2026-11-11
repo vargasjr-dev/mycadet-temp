@@ -14,7 +14,7 @@ import { getLogger } from "../util/logger.js";
 const log = getLogger("skill-memory-refresh");
 
 /** Poll interval for workspace `SKILL.md` mtimes. Stats only, no tree walk. */
-export const SKILL_MD_MTIME_POLL_MS = 1_500;
+const SKILL_MD_MTIME_POLL_MS = 1_500;
 
 let lastSignature: string | undefined;
 let pollTimer: ReturnType<typeof setInterval> | undefined;

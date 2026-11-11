@@ -18,7 +18,7 @@
  * or read-write as needed) rather than sharing a handle through the context.
  */
 
-import type { Database } from "bun:sqlite";
+import type {} from "bun:sqlite";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -147,20 +147,4 @@ export function formatDurationMs(ms: number): string {
     return `${Math.round(ms)}ms`;
   }
   return `${(ms / 1000).toFixed(1)}s`;
-}
-
-/**
- * Open a connection inside a step, ensuring the handle is closed even when
- * the step's body throws. The callback may return any `StepResult`.
- */
-export async function withDb<T>(
-  open: () => Database,
-  fn: (db: Database) => Promise<T> | T,
-): Promise<T> {
-  const db = open();
-  try {
-    return await fn(db);
-  } finally {
-    db.close();
-  }
 }

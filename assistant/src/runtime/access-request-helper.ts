@@ -102,7 +102,7 @@ export type AccessRequestResult =
  * carry these ids, so the shape is fixed even though the daemon scopes all its
  * storage to the one assistant (`DAEMON_INTERNAL_ASSISTANT_ID`).
  */
-export function accessRequestConversationId(
+function accessRequestConversationId(
   sourceChannel: string,
   actorExternalId: string,
 ): string {

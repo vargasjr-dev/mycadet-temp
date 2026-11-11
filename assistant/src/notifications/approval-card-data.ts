@@ -484,7 +484,7 @@ function resolveToolApprovalCard(
  * renderable approval card. Single entry point so each consumer (copy
  * composition, decision engine) shapes the payload identically.
  */
-export function resolveApprovalCardData(
+function resolveApprovalCardData(
   sourceEventName: string,
   contextPayload: Record<string, unknown> | undefined,
 ): ApprovalCardData | null {
@@ -516,9 +516,7 @@ export function resolveApprovalCardData(
 }
 
 /** Render resolved approval card data into Surface `[ui_surface, text]` blocks. */
-export function renderApprovalCardData(
-  data: ApprovalCardData,
-): ApprovalCardBlock[] {
+function renderApprovalCardData(data: ApprovalCardData): ApprovalCardBlock[] {
   return buildApprovalCardBlocks(data.card);
 }
 

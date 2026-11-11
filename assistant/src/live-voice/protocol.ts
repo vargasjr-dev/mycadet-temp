@@ -215,7 +215,7 @@ export type LiveVoiceSessionControl =
  * A start frame's `sessionControls`, reduced to the known values with
  * duplicates removed; empty when the field is absent or not an array.
  */
-export function parseLiveVoiceSessionControls(
+function parseLiveVoiceSessionControls(
   value: unknown,
 ): LiveVoiceSessionControl[] {
   if (!Array.isArray(value)) {
@@ -236,7 +236,7 @@ export function parseLiveVoiceSessionControls(
 const LIVE_VOICE_ENTRY_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
 
 /** Parse a start frame's `entry`. Returns `null` for anything off-shape. */
-export function parseLiveVoiceEntry(value: unknown): string | null {
+function parseLiveVoiceEntry(value: unknown): string | null {
   return typeof value === "string" && LIVE_VOICE_ENTRY_PATTERN.test(value)
     ? value
     : null;

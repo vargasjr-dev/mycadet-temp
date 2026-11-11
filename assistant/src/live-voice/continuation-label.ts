@@ -54,7 +54,7 @@ export type LiveVoiceContinuationLabeler = (args: {
 // background work whose result arrives seconds to minutes later, so a bounded
 // wait is invisible to the user, and past the bound the transcript is a good
 // enough name.
-export const CONTINUATION_LABEL_TIMEOUT_MS = 3_000;
+const CONTINUATION_LABEL_TIMEOUT_MS = 3_000;
 
 const CONTINUATION_LABEL_TOOL: ShortLabelTool = {
   name: "record_task_label",

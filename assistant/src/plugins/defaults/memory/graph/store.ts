@@ -2,7 +2,7 @@
 // Memory Graph — Data access layer
 // ---------------------------------------------------------------------------
 
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 import {
@@ -947,28 +947,6 @@ export function recordNodeEdit(opts: {
       created: Date.now(),
     })
     .run();
-}
-
-/** Retrieve the edit history for a memory node, newest first. */
-export function getNodeEditHistory(
-  nodeId: string,
-  limit = 20,
-): Array<{
-  id: string;
-  previousContent: string;
-  newContent: string;
-  source: string;
-  conversationId: string | null;
-  created: number;
-}> {
-  const db = memoryDb();
-  return db
-    .select()
-    .from(memoryGraphNodeEdits)
-    .where(eq(memoryGraphNodeEdits.nodeId, nodeId))
-    .orderBy(desc(memoryGraphNodeEdits.created))
-    .limit(limit)
-    .all();
 }
 
 // ---------------------------------------------------------------------------

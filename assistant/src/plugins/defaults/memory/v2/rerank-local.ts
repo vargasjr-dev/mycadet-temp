@@ -389,15 +389,3 @@ export function getOrCreateRerankBackend(
   _backend = new LocalRerankBackend(model, dtype);
   return _backend;
 }
-
-/** @internal Test-only: reset the cached backend. */
-export function _resetRerankBackendForTests(): void {
-  if (_backend) {
-    try {
-      _backend.dispose();
-    } catch {
-      /* best effort */
-    }
-  }
-  _backend = null;
-}

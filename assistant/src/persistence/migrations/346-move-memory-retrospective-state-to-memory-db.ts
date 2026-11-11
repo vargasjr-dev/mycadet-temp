@@ -35,9 +35,7 @@ export const MEMORY_RETROSPECTIVE_STATE_RELOCATION: RelocationSpec = {
  * (`IF NOT EXISTS`); exported so tests can stand up the memory-side schema
  * without running the full drain.
  */
-export function ensureMemoryRetrospectiveStateSchema(
-  memoryRaw: Database,
-): void {
+function ensureMemoryRetrospectiveStateSchema(memoryRaw: Database): void {
   memoryRaw.exec(/*sql*/ `
     CREATE TABLE IF NOT EXISTS memory_retrospective_state (
       conversation_id TEXT PRIMARY KEY,

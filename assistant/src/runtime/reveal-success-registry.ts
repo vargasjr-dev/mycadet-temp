@@ -222,19 +222,6 @@ export function recordRevealSuccess(
 }
 
 /**
- * Whether the reveal route succeeded for `service`/`field` after
- * `watermark` was captured.
- */
-export function hasRevealSuccessSince(
-  watermark: number,
-  service: string,
-  field: string,
-  nonce: string,
-): boolean {
-  return revealedValueSince(watermark, service, field, nonce) !== undefined;
-}
-
-/**
  * The most recent plaintext the reveal route served for `service`/`field`
  * after `watermark`, or `undefined` if no matching success was recorded.
  */

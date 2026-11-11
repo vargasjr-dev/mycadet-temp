@@ -53,7 +53,7 @@ export function isToolResultMessage(message: Message): boolean {
 }
 
 /** An assistant turn whose entire content is exactly the refusal fallback line. */
-export function isRefusalFallbackMessage(message: Message): boolean {
+function isRefusalFallbackMessage(message: Message): boolean {
   if (message.role !== "assistant") {
     return false;
   }

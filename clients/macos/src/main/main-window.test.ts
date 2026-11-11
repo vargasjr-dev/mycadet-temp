@@ -839,7 +839,7 @@ describe("current", () => {
 describe("close button", () => {
   // Emits `close` the way Electron does, with a cancellable event, and
   // reports whether a listener cancelled it.
-  const pressClose = (stub: StubWindow): boolean => {
+  const pressClose = (_stub: StubWindow): boolean => {
     const event = { preventDefault: mock(() => undefined) };
     for (const h of listeners.get("close") ?? []) {
       (h as (e: typeof event) => void)(event);

@@ -30,7 +30,7 @@ export const VOICE_CONTINUATION_JUDGE_CALL_SITE = "voiceContinuationJudge";
  */
 export const CONTINUATION_JUDGE_KEEP_THRESHOLD = 0.4;
 
-export const CONTINUATION_JUDGE_TIMEOUT_MS = 1_500;
+const CONTINUATION_JUDGE_TIMEOUT_MS = 1_500;
 
 const KEEP_QUESTION =
   "The voice assistant was working on the caller's earlier request when the caller interrupted it. Should the assistant still finish that earlier request in the background, exactly as originally asked? Answer yes if the caller's new words are unrelated to it (a separate question, request, or remark), an acknowledgement, or a question about its progress. Answer no if the new words cancel it, change the caller's mind about it, correct or change what should be done, ask for it differently, or simply repeat it.";

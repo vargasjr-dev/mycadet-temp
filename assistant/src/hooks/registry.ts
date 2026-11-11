@@ -131,7 +131,7 @@ function collectInProcessHookEntries<TCtx = unknown>(
  * excludes them). Standalone workspace hooks always run. `null`/omitted
  * means no per-chat restriction.
  */
-export async function getUserHookEntriesFor<TCtx = unknown>(
+async function getUserHookEntriesFor<TCtx = unknown>(
   hookName: string,
   effectiveEnabledPlugins?: Set<string> | null,
 ): Promise<HookEntry<TCtx>[]> {

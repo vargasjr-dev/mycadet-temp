@@ -379,7 +379,7 @@ export const PROFILE_IMPLS: Record<
  * (`supportsText: false` on the `typesafe` catalog entry). Its budget is
  * TypeSafe's published request limit rather than the default context window.
  */
-export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
+const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "jev-latest",
   provider: "cadet",
   label: "Jev",

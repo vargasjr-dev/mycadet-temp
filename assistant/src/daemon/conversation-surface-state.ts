@@ -10,7 +10,6 @@ import {
   safeParseSurfaceData,
   type SurfaceDataByType,
   type SurfaceType,
-  SurfaceTypeSchema,
 } from "../api/surfaces.js";
 import { isPlainObject } from "../util/object.js";
 
@@ -69,23 +68,6 @@ export type CurrentTurnSurface = {
     completionSummary?: string;
   };
 }[SurfaceType];
-
-/**
- * Recover a correlated show pair from an untyped (`surfaceType`, `data`)
- * pairing — a persisted history block, or a loosely-typed tool message.
- * Returns `undefined` when `surfaceType` isn't a known surface type; the
- * data parses tolerantly through the type's canonical schema.
- */
-export function parseSurfaceShowPair(
-  surfaceType: unknown,
-  data: unknown,
-): SurfaceShowPair | undefined {
-  const parsedType = SurfaceTypeSchema.safeParse(surfaceType);
-  if (!parsedType.success) {
-    return undefined;
-  }
-  return buildSurfaceShowPair(parsedType.data, data);
-}
 
 /** Correlated-pair constructor for a known surface type. */
 export function buildSurfaceShowPair<K extends SurfaceType>(

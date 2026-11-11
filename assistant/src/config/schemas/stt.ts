@@ -99,7 +99,7 @@ export type SttProviders = z.infer<typeof SttProvidersSchema>;
  * here rather than at dial time. Accepting it and falling back at resolve
  * time is the silent substitution this config exists to make visible.
  */
-export const SttRolesSchema = z
+const SttRolesSchema = z
   .partialRecord(
     z.enum(STT_ROLES),
     z.object({

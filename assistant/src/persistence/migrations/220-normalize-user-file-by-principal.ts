@@ -42,7 +42,7 @@ export function downNormalizeUserFileByPrincipal(_database: DrizzleDb): void {
 const DATE_LIKE_SUFFIX = /-(19|20|21)\d{2}((-\d{2}){1,2})?\.md$/;
 const INTEGER_SUFFIX = /-\d+\.md$/;
 
-export function isAutoIncrementedUserFile(
+function isAutoIncrementedUserFile(
   userFile: string,
   displayName?: string,
 ): boolean {

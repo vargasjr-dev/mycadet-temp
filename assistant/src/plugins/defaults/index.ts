@@ -119,7 +119,7 @@ import workspacePkg from "./workspace/package.json" with { type: "json" };
  * and restarts; `conversation-deleted` removes the deleted conversation's
  * cache rows.
  */
-export const defaultImageFallbackPlugin: Plugin = {
+const defaultImageFallbackPlugin: Plugin = {
   manifest: {
     name: imageFallbackPkg.name,
     version: imageFallbackPkg.version,
@@ -143,7 +143,7 @@ export const defaultImageFallbackPlugin: Plugin = {
  * while we decide how plugins should surface compaction; it contributes no
  * hooks today.
  */
-export const defaultCompactionPlugin: Plugin = {
+const defaultCompactionPlugin: Plugin = {
   manifest: {
     name: compactionPkg.name,
     version: compactionPkg.version,
@@ -191,7 +191,7 @@ export const defaultEmptyResponsePlugin: Plugin = {
  * default plugins so later `user-prompt-submit` hooks (history repair, title)
  * see the fully memory-injected history.
  */
-export const defaultMemoryPlugin: Plugin = {
+const defaultMemoryPlugin: Plugin = {
   manifest: {
     name: memoryPkg.name,
     version: memoryPkg.version,
@@ -213,7 +213,7 @@ export const defaultMemoryPlugin: Plugin = {
  * (temporal, actor, channel, and interface grounding). Injector-only; it
  * contributes no hooks.
  */
-export const defaultTurnContextPlugin: Plugin = {
+const defaultTurnContextPlugin: Plugin = {
   manifest: {
     name: turnContextPkg.name,
     version: turnContextPkg.version,
@@ -226,7 +226,7 @@ export const defaultTurnContextPlugin: Plugin = {
  * (disk-pressure warning, `<workspace>` top-level context, config-quarantine
  * notice, NOW.md scratchpad). Injector-only; it contributes no hooks.
  */
-export const defaultWorkspacePlugin: Plugin = {
+const defaultWorkspacePlugin: Plugin = {
   manifest: {
     name: workspacePkg.name,
     version: workspacePkg.version,
@@ -239,7 +239,7 @@ export const defaultWorkspacePlugin: Plugin = {
  * (`<active_documents>` and `<document_comments>`). Injector-only; it
  * contributes no hooks.
  */
-export const defaultDocumentsPlugin: Plugin = {
+const defaultDocumentsPlugin: Plugin = {
   manifest: {
     name: documentsPkg.name,
     version: documentsPkg.version,
@@ -252,7 +252,7 @@ export const defaultDocumentsPlugin: Plugin = {
  * transcript replacement and `<active_thread>` focus). Injector-only; it
  * contributes no hooks.
  */
-export const defaultChannelPlugin: Plugin = {
+const defaultChannelPlugin: Plugin = {
   manifest: {
     name: channelPkg.name,
     version: channelPkg.version,
@@ -265,7 +265,7 @@ export const defaultChannelPlugin: Plugin = {
  * (`<background_turn>` framing and `<active_subagents>` status).
  * Injector-only; it contributes no hooks.
  */
-export const defaultSessionPlugin: Plugin = {
+const defaultSessionPlugin: Plugin = {
   manifest: {
     name: sessionPkg.name,
     version: sessionPkg.version,
@@ -279,7 +279,7 @@ export const defaultSessionPlugin: Plugin = {
  * the route source is served once the assistant dispatches default-plugin
  * routes.
  */
-export const defaultCloudHostedPlugin: Plugin = {
+const defaultCloudHostedPlugin: Plugin = {
   manifest: {
     name: cloudHostedPkg.name,
     version: cloudHostedPkg.version,
@@ -313,7 +313,7 @@ export const defaultImageRecoveryPlugin: Plugin = {
  * generations can finish without the user clicking the continuation card.
  * Bounded per run; the `stop` hook clears the budget on a terminal stop.
  */
-export const defaultMaxTokensContinuePlugin: Plugin = {
+const defaultMaxTokensContinuePlugin: Plugin = {
   manifest: {
     name: maxTokensContinuePkg.name,
     version: maxTokensContinuePkg.version,
@@ -383,7 +383,7 @@ export const defaultExplorationDriftPlugin: Plugin = {
  * still runs after the user-prompt hook chain. The snapshot is small enough
  * to re-apply in minimal injection mode.
  */
-export const defaultTaskProgressPlugin: Plugin = {
+const defaultTaskProgressPlugin: Plugin = {
   manifest: {
     name: taskProgressPkg.name,
     version: taskProgressPkg.version,
@@ -400,7 +400,7 @@ export const defaultTaskProgressPlugin: Plugin = {
  * tool-call rounds without one. Best-effort and once-per-turn; capable models
  * that already show a card are never nudged.
  */
-export const defaultTaskProgressNudgePlugin: Plugin = {
+const defaultTaskProgressNudgePlugin: Plugin = {
   manifest: {
     name: taskProgressNudgePkg.name,
     version: taskProgressNudgePkg.version,
@@ -418,7 +418,7 @@ export const defaultTaskProgressNudgePlugin: Plugin = {
  * `stop` hook clears the one-shot bound on a terminal stop so the next run
  * nudges afresh.
  */
-export const defaultSurfaceCompletionNudgePlugin: Plugin = {
+const defaultSurfaceCompletionNudgePlugin: Plugin = {
   manifest: {
     name: surfaceCompletionNudgePkg.name,
     version: surfaceCompletionNudgePkg.version,

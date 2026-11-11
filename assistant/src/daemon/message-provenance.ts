@@ -22,7 +22,7 @@ import { type TrustClass, TrustClassSchema } from "@mycadet/gateway-client";
 import type { MessageRow } from "../persistence/conversation-crud.js";
 import type { TrustContext } from "./trust-context-types.js";
 
-export function parseProvenanceTrustClass(
+function parseProvenanceTrustClass(
   metadata: string | null,
 ): TrustClass | undefined {
   if (!metadata) {

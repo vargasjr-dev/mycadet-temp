@@ -258,7 +258,7 @@ export function isSuppressedQueuedMessage(
  * cannot stand in, because an in-app live-voice turn persists as
  * `cadet`/`macos`, indistinguishable from a typed desktop send.
  */
-export function isVoiceSessionUserMessage(
+function isVoiceSessionUserMessage(
   metadata: Record<string, unknown> | undefined,
 ): boolean {
   return metadata?.voiceSessionTurn === true;

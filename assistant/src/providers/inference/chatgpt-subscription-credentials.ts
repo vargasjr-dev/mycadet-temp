@@ -32,9 +32,9 @@ export const OPENAI_OAUTH_CONFIG: OAuth2Config = {
 };
 
 /** Credential-store prefix holding the subscription's access/refresh tokens. */
-export const CHATGPT_CREDENTIAL_PREFIX = "credential/chatgpt";
+const CHATGPT_CREDENTIAL_PREFIX = "credential/chatgpt";
 
-export const CHATGPT_ACCESS_TOKEN_CREDENTIAL = `${CHATGPT_CREDENTIAL_PREFIX}/access_token`;
+const CHATGPT_ACCESS_TOKEN_CREDENTIAL = `${CHATGPT_CREDENTIAL_PREFIX}/access_token`;
 
 /** Auth block stamped on the `chatgpt-subscription` provider connection. */
 export const CHATGPT_SUBSCRIPTION_AUTH_INPUT = {

@@ -49,7 +49,7 @@ mock.module("@mycadet/electron-desktop/avatar", () => ({
 // registered listeners so tests can simulate token changes.
 let mockToken: string | null = null;
 const tokenChangeListeners = new Set<() => void>();
-mock.module("./session-token-store.client", () => ({
+mock.module("@mycadet/electron-desktop/session-token-store", () => ({
   getSessionToken: () => mockToken,
   onSessionTokenChange: (listener: () => void) => {
     tokenChangeListeners.add(listener);
@@ -409,4 +409,3 @@ describe("session-token-driven signed-in state", () => {
     expect(setBadgeMock).not.toHaveBeenCalled();
   });
 });
-

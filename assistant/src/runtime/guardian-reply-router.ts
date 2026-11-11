@@ -928,7 +928,7 @@ const EXPLICIT_INTRODUCTION_PHRASES: ReadonlyMap<string, ApprovalAction> =
  *
  * Exported for tests.
  */
-export function inferDecisionActionFromFreeText(
+function inferDecisionActionFromFreeText(
   text: string,
   requestKind?: string,
 ): ApprovalAction | null {

@@ -51,7 +51,7 @@ const PALETTE_PROPERTIES: readonly string[] = [
  * Mirrors `WIDGET_TOKEN_PROPERTIES` in
  * `clients/web/src/utils/widget-tokens.ts` — the two must change together.
  */
-export const WIDGET_TOKEN_PROPERTIES: readonly string[] = [
+const WIDGET_TOKEN_PROPERTIES: readonly string[] = [
   // Surfaces
   "--surface-base",
   "--surface-lift",

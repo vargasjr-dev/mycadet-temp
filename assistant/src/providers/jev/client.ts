@@ -15,8 +15,8 @@ import type {
 
 const log = getLogger("jev-client");
 
-export const JEV_PROVIDER_ID = "typesafe";
-export const DEFAULT_JEV_BASE_URL = "https://api.typesafe.ai";
+const JEV_PROVIDER_ID = "typesafe";
+const DEFAULT_JEV_BASE_URL = "https://api.typesafe.ai";
 export const DEFAULT_JEV_MODEL = "jev-latest";
 
 const SYSTEM_ONE_PATH = "/v1/systemone";

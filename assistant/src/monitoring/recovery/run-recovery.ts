@@ -49,7 +49,7 @@ const RECOVERY_STEPS: RecoveryStep[] = [
  * (most often because the schema is still migrating) is logged and skipped so
  * one bad step cannot block the rest.
  */
-export function runRecovery(): void {
+function runRecovery(): void {
   for (const step of RECOVERY_STEPS) {
     log.info({ step: step.name }, "Running recovery step");
     try {

@@ -108,7 +108,7 @@ export const MEMORY_GRAPH_NODE_EDITS_RELOCATION: RelocationSpec = {
  * cascade keeps working on the memory connection exactly as it did on main.
  * Nodes are created first so those references resolve at creation time.
  */
-export function ensureMemoryGraphSchema(memoryRaw: Database): void {
+function ensureMemoryGraphSchema(memoryRaw: Database): void {
   memoryRaw.exec(/*sql*/ `
     CREATE TABLE IF NOT EXISTS memory_graph_nodes (
       id                    TEXT PRIMARY KEY,

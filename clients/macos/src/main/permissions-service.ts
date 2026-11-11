@@ -28,7 +28,7 @@ import {
   type MacHelperPermissionKind,
 } from "./hotkey-helper";
 import { handle } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   getNotifier,
   isNotifierSupported,
@@ -37,7 +37,7 @@ import {
 } from "./notifier";
 import { readScreenRecordingPermission } from "./screen-recording-permission";
 
-export const PERMISSION_KINDS = [
+const PERMISSION_KINDS = [
   "accessibility",
   "screen",
   "microphone",
@@ -47,9 +47,9 @@ export const PERMISSION_KINDS = [
   "notifications",
 ] as const;
 
-export type PermissionKind = (typeof PERMISSION_KINDS)[number];
+type PermissionKind = (typeof PERMISSION_KINDS)[number];
 
-export const PERMISSION_STATUSES = [
+const PERMISSION_STATUSES = [
   "unknown",
   "restricted",
   "denied",
@@ -57,9 +57,9 @@ export const PERMISSION_STATUSES = [
   "granted",
 ] as const;
 
-export type PermissionStatus = (typeof PERMISSION_STATUSES)[number];
+type PermissionStatus = (typeof PERMISSION_STATUSES)[number];
 
-export interface PermissionStateItem {
+interface PermissionStateItem {
   kind: PermissionKind;
   status: PermissionStatus;
   canRequest: boolean;
@@ -68,7 +68,7 @@ export interface PermissionStateItem {
   error?: string;
 }
 
-export type PermissionsState = Record<PermissionKind, PermissionStateItem>;
+type PermissionsState = Record<PermissionKind, PermissionStateItem>;
 
 const permissionKindSchema = z.enum(PERMISSION_KINDS);
 
