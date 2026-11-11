@@ -27,6 +27,14 @@ info "Building the app-shell boot bundle"
 
 # — Sync the Capacitor shell: copies the built boot bundle into the Xcode
 #   project and bakes the resolved Capacitor config into the native build —
+# The local stack's URL is looked up from the CLI lockfile first (tunnel
+# URL for devices, the app server edge's loopback port for the simulator)
+# and handed to the sync as CADET_LOCAL_SERVER_URL —
+resolved_origin="$(bun "${IOS_DIR}/../app/scripts/resolve-sync-origin.ts" 2>/dev/null || true)"
+if [ -n "${resolved_origin}" ]; then
+  export CADET_LOCAL_SERVER_URL="${resolved_origin}"
+  info "Local stack resolved: ${resolved_origin}"
+fi
 info "Syncing Capacitor iOS project"
 (cd "${IOS_DIR}" && bunx --bun cap sync ios)
 

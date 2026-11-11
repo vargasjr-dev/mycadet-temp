@@ -6,7 +6,7 @@
  *     insensitivity, and rejection of invalid values.
  *   - resolveBuildDefaultEnvironment: fallback to 'production' when the
  *     bundler-defined env var is missing or invalid.
- *   - cloudUrlsForEnvironment: full URL mapping table for every
+ *   - cloudBaseUrlForEnvironment: the single-origin mapping for every
  *     supported environment.
  */
 
@@ -15,7 +15,7 @@ import { describe, test, expect, afterEach } from 'bun:test';
 import {
   parseExtensionEnvironment,
   resolveBuildDefaultEnvironment,
-  cloudUrlsForEnvironment,
+  cloudBaseUrlForEnvironment,
   createFirstAssistantUrl,
   CREATE_ASSISTANT_WEB_PATH,
   type ExtensionEnvironment,
@@ -111,67 +111,35 @@ describe('resolveBuildDefaultEnvironment', () => {
   });
 });
 
-// ── cloudUrlsForEnvironment ─────────────────────────────────────────
+// ── cloudBaseUrlForEnvironment ──────────────────────────────────────
 
-describe('cloudUrlsForEnvironment', () => {
-  const cases: Array<{
-    env: ExtensionEnvironment;
-    expectedApiBaseUrl: string;
-    expectedWebBaseUrl: string;
-  }> = [
-    {
-      env: 'production',
-      expectedApiBaseUrl: 'https://cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://mycadet.ai',
-    },
-    {
-      env: 'staging',
-      expectedApiBaseUrl: 'https://staging-cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://staging.mycadet.ai',
-    },
-    {
-      env: 'dev',
-      expectedApiBaseUrl: 'https://dev-cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://dev.mycadet.ai',
-    },
-    {
-      env: 'local',
-      expectedApiBaseUrl: 'http://localhost:8000',
-      expectedWebBaseUrl: 'http://localhost:3000',
-    },
+describe('cloudBaseUrlForEnvironment', () => {
+  const cases: Array<{ env: ExtensionEnvironment; expectedBaseUrl: string }> = [
+    { env: 'production', expectedBaseUrl: 'https://mycadet.ai' },
+    { env: 'staging', expectedBaseUrl: 'https://staging.mycadet.ai' },
+    { env: 'dev', expectedBaseUrl: 'https://dev.mycadet.ai' },
+    { env: 'local', expectedBaseUrl: 'http://localhost:7840' },
   ];
 
-  for (const { env, expectedApiBaseUrl, expectedWebBaseUrl } of cases) {
-    test(`${env}: apiBaseUrl is ${expectedApiBaseUrl}`, () => {
-      const urls = cloudUrlsForEnvironment(env);
-      expect(urls.apiBaseUrl).toBe(expectedApiBaseUrl);
-    });
-
-    test(`${env}: webBaseUrl is ${expectedWebBaseUrl}`, () => {
-      const urls = cloudUrlsForEnvironment(env);
-      expect(urls.webBaseUrl).toBe(expectedWebBaseUrl);
+  for (const { env, expectedBaseUrl } of cases) {
+    test(`${env}: baseUrl is ${expectedBaseUrl}`, () => {
+      expect(cloudBaseUrlForEnvironment(env)).toBe(expectedBaseUrl);
     });
   }
-
-  test('production parity: "prod" alias and "production" resolve to same URLs', () => {
-    const fromProd = cloudUrlsForEnvironment('production');
-    expect(fromProd.apiBaseUrl).toBe('https://cloud.mycadet.ai');
-    expect(fromProd.webBaseUrl).toBe('https://mycadet.ai');
-  });
 });
 
 describe('createFirstAssistantUrl', () => {
-  const cases: Array<{ env: ExtensionEnvironment; webBaseUrl: string }> = [
-    { env: 'production', webBaseUrl: 'https://mycadet.ai' },
-    { env: 'staging', webBaseUrl: 'https://staging.mycadet.ai' },
-    { env: 'dev', webBaseUrl: 'https://dev.mycadet.ai' },
-    { env: 'local', webBaseUrl: 'http://localhost:3000' },
+  const cases: Array<{ env: ExtensionEnvironment; baseUrl: string }> = [
+    { env: 'production', baseUrl: 'https://mycadet.ai' },
+    { env: 'staging', baseUrl: 'https://staging.mycadet.ai' },
+    { env: 'dev', baseUrl: 'https://dev.mycadet.ai' },
+    { env: 'local', baseUrl: 'http://localhost:7840' },
   ];
 
-  for (const { env, webBaseUrl } of cases) {
-    test(`${env} opens the hatching entry on ${webBaseUrl}`, () => {
+  for (const { env, baseUrl } of cases) {
+    test(`${env} opens the hatching entry on ${baseUrl}`, () => {
       expect(createFirstAssistantUrl(env)).toBe(
-        `${webBaseUrl}${CREATE_ASSISTANT_WEB_PATH}`,
+        `${baseUrl}${CREATE_ASSISTANT_WEB_PATH}`,
       );
     });
   }

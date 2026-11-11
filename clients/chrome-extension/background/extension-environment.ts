@@ -91,45 +91,24 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
   return parseExtensionEnvironment(raw) ?? 'production';
 }
 
-// ── Cloud URL mapping ───────────────────────────────────────────────
-
-export interface CloudUrls {
-  /** Gateway / API base URL (e.g. `https://cloud.mycadet.ai`). */
-  apiBaseUrl: string;
-  /** Web app base URL for browser-facing pages (e.g. `https://mycadet.ai`). */
-  webBaseUrl: string;
-}
+// ── Cloud origin mapping ────────────────────────────────────────────
 
 /**
- * Return the cloud API and web base URLs for the given environment.
- *
- * Production uses the canonical Cadet production hosts. Non-production
- * environments use environment-prefixed subdomains following the
- * convention `<env>-cloud.mycadet.ai` (API) / `<env>.mycadet.ai` (web), with
- * `local` using `localhost` origins for both.
+ * Return the environment's single cloud origin — API, auth, and the
+ * web app all live on it (mirrors the seed table in
+ * `packages/local-mode/src/environment-seeds.ts`, kept inline because the
+ * extension bundles standalone).
  */
-export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
+export function cloudBaseUrlForEnvironment(env: ExtensionEnvironment): string {
   switch (env) {
     case 'production':
-      return {
-        apiBaseUrl: 'https://cloud.mycadet.ai',
-        webBaseUrl: 'https://mycadet.ai',
-      };
+      return 'https://mycadet.ai';
     case 'staging':
-      return {
-        apiBaseUrl: 'https://staging-cloud.mycadet.ai',
-        webBaseUrl: 'https://staging.mycadet.ai',
-      };
+      return 'https://staging.mycadet.ai';
     case 'dev':
-      return {
-        apiBaseUrl: 'https://dev-cloud.mycadet.ai',
-        webBaseUrl: 'https://dev.mycadet.ai',
-      };
+      return 'https://dev.mycadet.ai';
     case 'local':
-      return {
-        apiBaseUrl: 'http://localhost:8000',
-        webBaseUrl: 'http://localhost:3000',
-      };
+      return 'http://localhost:7840';
   }
 }
 
@@ -140,7 +119,6 @@ export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
  */
 export const CREATE_ASSISTANT_WEB_PATH = '/assistant/onboarding/hatching';
 
-/** Environment-specific URL that opens the web app's hatching entry. */
 export function createFirstAssistantUrl(env: ExtensionEnvironment): string {
-  return `${cloudUrlsForEnvironment(env).webBaseUrl}${CREATE_ASSISTANT_WEB_PATH}`;
+  return `${cloudBaseUrlForEnvironment(env)}${CREATE_ASSISTANT_WEB_PATH}`;
 }

@@ -27,6 +27,7 @@ import { resolveVersion } from "@mycadet/shared/version";
 
 import { readRootProcesses, stampRootProcess } from "../assistant-config.js";
 import {
+  DEFAULT_APP_SERVER_PORT,
   clearAppProcessRecord,
   probePort,
   resolveConfigDir,
@@ -36,7 +37,12 @@ import {
 } from "@mycadet/local-mode";
 import { resolveClientDists } from "../web-dist.js";
 
-export const DEFAULT_APP_SERVER_PORT = 7840;
+/**
+ * The app server edge's default listen port — defined by the environment
+ * seeds (the local base URL points at it) and re-exported here for the
+ * server's own bind.
+ */
+export { DEFAULT_APP_SERVER_PORT };
 
 /**
  * The machine-level state: the pidfile, the serve spec, and the injected

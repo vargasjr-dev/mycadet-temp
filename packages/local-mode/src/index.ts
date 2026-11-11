@@ -34,7 +34,15 @@ export {
 } from "./cloud-releases";
 
 export { fetchGatewayPs } from "./daemon-readiness";
-export { cliCommand, resolveEnvironmentName } from "./environment";
+export {
+  environmentBaseUrl,
+  type EnvironmentDefinition,
+  type PortMap,
+  SEEDS,
+  DEFAULT_APP_SERVER_PORT,
+  cliCommand,
+  resolveEnvironmentName,
+} from "./environment";
 
 export { readLockfile, saveLockfileAssistant } from "./lockfile";
 export {

@@ -8,6 +8,11 @@ import {
 
 import { joinLocalPath, resolveConfigHome } from "./paths";
 
+// The environment seeds (single-origin deployment definitions) live in their
+// own cap-loader-safe file; this module re-exports them alongside the
+// environment-name resolution they pair with.
+export * from "./environment-seeds";
+
 // The package's own version. Workspace checkouts read 0.0.1; the release
 // pipeline stamps every bundled package with the release version when it
 // packs the CLI tarball, so an installed copy carries the same channel stamp

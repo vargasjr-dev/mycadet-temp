@@ -23,7 +23,7 @@
  * shape.
  */
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { SEEDS } from "@mycadet/environments";
+import { SEEDS } from "./environment-seeds";
 import { z } from "zod";
 
 import { resolveEnvironmentName } from "./environment";
@@ -154,15 +154,15 @@ export const GATEWAY_PORT = process.env.GATEWAY_PORT
 /**
  * The cloud URL stack: the lockfile's platform base url (what the active
  * assistant was last hatched/waked against), else the `CADET_CLOUD_URL`
- * override, else the resolved environment's cloud url.
+ * override, else the resolved environment's base url.
  */
 function getCloudUrl(): string {
   const lockfileUrl = readLockfile().cloudBaseUrl;
   return (
     (typeof lockfileUrl === "string" && lockfileUrl.trim()) ||
     process.env.CADET_CLOUD_URL?.trim() ||
-    SEEDS[resolveEnvironmentName()]?.cloudUrl ||
-    SEEDS.production!.cloudUrl
+    SEEDS[resolveEnvironmentName()]?.baseUrl ||
+    SEEDS.production!.baseUrl
   );
 }
 

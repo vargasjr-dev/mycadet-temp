@@ -1,18 +1,16 @@
 import type { CapacitorConfig } from "@capacitor/cli";
-// The `/seeds` subpath is deliberate: cap's TS config loader transpiles one
-// file at a time and cannot resolve the environments index's `.js`-suffixed
-// runtime re-exports.
-import {
-  SEEDS,
-  cloudAssistantHubUrl,
-  cloudWebUrl,
-} from "@mycadet/environments/seeds";
+// The `/environment-seeds` subpath is deliberate: cap's TS config loader
+// transpiles one file at a time — only the self-contained seeds file is
+// safe to import here. The local stack's lockfile resolution happens in
+// the sync entrypoints (plain bun scripts), which hand the resolved URL
+// over as `CADET_LOCAL_SERVER_URL`.
+import { SEEDS } from "@mycadet/local-mode/environment-seeds";
 
 // Resolves the environment and app server url
 function resolveServerUrl(): string {
   // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
   process.env.CADET_ENVIRONMENT ??= "local";
-  return cloudAssistantHubUrl();
+  return SEEDS[process.env.CADET_ENVIRONMENT]?.baseUrl ?? SEEDS.dev.baseUrl;
 }
 
 // The baked cloud origin the mobile shells' native half dials: the iOS
@@ -26,9 +24,13 @@ function resolveServerUrl(): string {
 // follow-up (the stamp's own fallback, unchanged).
 function resolveBakedCloudUrl(): string {
   if ((process.env.CADET_ENVIRONMENT ??= "local") === "local") {
-    return SEEDS.local.cloudUrl;
+    // The sync entrypoints look the local stack up from the lockfile
+    // before syncing (tunnel URL for devices, the app server edge's
+    // loopback port for the simulator); the seed's default port is the
+    // fallback when no stack is up.
+    return process.env.CADET_LOCAL_SERVER_URL || SEEDS.local.baseUrl;
   }
-  return cloudWebUrl();
+  return SEEDS[process.env.CADET_ENVIRONMENT!]?.baseUrl ?? SEEDS.dev.baseUrl;
 }
 
 // The Capacitor config shared by all mobile shells

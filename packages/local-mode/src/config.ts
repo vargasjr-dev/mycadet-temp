@@ -1,4 +1,4 @@
-import { SEEDS } from "@mycadet/environments";
+import { SEEDS } from "./environment-seeds";
 
 import { resolveEnvironmentName } from "./environment";
 import {
@@ -27,7 +27,7 @@ export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
   return {
     lockfilePath: resolveLockfilePath(),
     configDir: resolveConfigDir(),
-    cloudUrl: process.env.CADET_CLOUD_URL || seed.cloudUrl,
+    cloudUrl: process.env.CADET_CLOUD_URL || seed.baseUrl,
   };
 }
 

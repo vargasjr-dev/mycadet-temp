@@ -961,7 +961,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
       return;
     }
     const env = await getEffectiveEnvironment();
-    const { apiBaseUrl } = cloudUrlsForEnvironment(env);
+    const apiBaseUrl = cloudBaseUrlForEnvironment(env);
     if (!shouldConnect) return;
     sseConnection = createSseConnection({
       kind: "cadet-cloud",
@@ -1593,7 +1593,7 @@ async function resolveEnvContext(): Promise<{
   apiBaseUrl: string;
 }> {
   const environment = await getEffectiveEnvironment();
-  const { apiBaseUrl } = cloudUrlsForEnvironment(environment);
+  const apiBaseUrl = cloudBaseUrlForEnvironment(environment);
   return { environment, apiBaseUrl };
 }
 

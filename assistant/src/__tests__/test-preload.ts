@@ -33,7 +33,7 @@ const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "cadet-test-")));
 const testDir = join(tmpRoot, "workspace");
 mkdirSync(testDir);
 process.env.CADET_WORKSPACE_DIR = testDir;
-process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
+process.env.CADET_CLOUD_URL = "https://test.mycadet.ai";
 // Cap libvips threads so image conversions don't stampede the shared
 // CI cores when many worker processes run sharp at once.
 process.env.VIPS_CONCURRENCY = "1";

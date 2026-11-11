@@ -165,7 +165,7 @@ export async function clearSelectedAssistant(): Promise<void> {
 export async function startCloudLogin(
   environment: ExtensionEnvironment,
 ): Promise<CloudSession> {
-  const { apiBaseUrl } = cloudUrlsForEnvironment(environment);
+  const apiBaseUrl = cloudBaseUrlForEnvironment(environment);
 
   // The redirect URI Chrome intercepts when WorkOS redirects back. This exact
   // URL must be registered on the WorkOS UM app for `environment` — see README.

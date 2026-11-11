@@ -29,7 +29,7 @@ export async function cloudApiFetch(
   path: string,
   init?: RequestInit & { skipOrgHeader?: boolean },
 ): Promise<Response> {
-  const { apiBaseUrl } = cloudUrlsForEnvironment(environment);
+  const apiBaseUrl = cloudBaseUrlForEnvironment(environment);
 
   const headers: Record<string, string> = {
     Accept: "application/json",
