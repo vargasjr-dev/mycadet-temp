@@ -78,4 +78,3 @@ export function findSqlite3(): string | undefined {
   cachedSqlite3Path = null;
   return undefined;
 }
-

@@ -105,7 +105,6 @@ export function getAvatarImagePath(): string {
   return join(getAvatarDir(), AVATAR_IMAGE_FILENAME);
 }
 
-
 export function getPidPath(): string {
   return join(getWorkspaceDir(), "cadet.pid");
 }
@@ -375,7 +374,6 @@ export function getWorkspaceRoutesDir(): string {
 export function getWorkspaceWorkflowsDir(): string {
   return join(getWorkspaceDir(), "workflows");
 }
-
 
 /** Returns $CADET_WORKSPACE_DIR/conversations */
 export function getConversationsDir(): string {

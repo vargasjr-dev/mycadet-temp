@@ -602,7 +602,6 @@ export function getCompactionLogStore(): ClickHouseCompactionLogStore | null {
   return cachedStore.store;
 }
 
-
 /**
  * Record a compaction start event. Fire-and-forget: resolves immediately
  * when logging is disabled and never throws.

@@ -221,7 +221,6 @@ export function recordRevealSuccess(
   schedulePrune(nowMs);
 }
 
-
 /**
  * The most recent plaintext the reveal route served for `service`/`field`
  * after `watermark`, or `undefined` if no matching success was recorded.

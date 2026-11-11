@@ -11,11 +11,7 @@
     "src/api/index.ts!",
     "src/config/bundled-skills/**/tools/**/*.ts!"
   ],
-  "project": [
-    "src/**/*.ts!",
-    "src/**/*.tsx!",
-    "scripts/**/*.ts"
-  ],
+  "project": ["src/**/*.ts!", "src/**/*.tsx!", "scripts/**/*.ts"],
   "ignore": [],
   "ignoreDependencies": [
     "@microsoft/api-extractor",

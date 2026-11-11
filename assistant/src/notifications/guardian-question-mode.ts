@@ -110,16 +110,15 @@ const sourceReferenceFields = {
   sourceLink: externalSourceLinkSchema.optional(),
 };
 
-const ToolApprovalPayloadSchema =
-  GuardianQuestionPayloadBaseSchema.extend({
-    requestKind: z.literal("tool_approval"),
-    toolName: z.string().min(1),
-    /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
-    riskLevel: z.string().optional(),
-    /** Secret-redacted summary of the tool invocation arguments. */
-    commandPreview: z.string().optional(),
-    ...sourceReferenceFields,
-  });
+const ToolApprovalPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
+  requestKind: z.literal("tool_approval"),
+  toolName: z.string().min(1),
+  /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
+  riskLevel: z.string().optional(),
+  /** Secret-redacted summary of the tool invocation arguments. */
+  commandPreview: z.string().optional(),
+  ...sourceReferenceFields,
+});
 
 const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
   requestKind: z.literal("tool_grant_request"),

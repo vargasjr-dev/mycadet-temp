@@ -12,8 +12,7 @@ const log = getLogger("memory-v2-injection-events");
  */
 export const INJECTION_SCORE_HALF_LIFE_MS = 3 * 24 * 60 * 60 * 1000;
 
-const INJECTION_SCORE_LAMBDA =
-  Math.log(2) / INJECTION_SCORE_HALF_LIFE_MS;
+const INJECTION_SCORE_LAMBDA = Math.log(2) / INJECTION_SCORE_HALF_LIFE_MS;
 
 // Events past 6 half-lives contribute <1.6% each. Reads bound the scan to
 // this window so per-slug score computation stays cheap as history grows.

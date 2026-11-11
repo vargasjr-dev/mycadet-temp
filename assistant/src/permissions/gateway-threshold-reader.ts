@@ -177,8 +177,6 @@ export function _resetFailureCoalesceForTesting(): void {
   failureWarnIntervalMs = DEFAULT_FAILURE_WARN_INTERVAL_MS;
 }
 
-
-
 /**
  * Clear the global threshold cache. Exported for testing.
  */

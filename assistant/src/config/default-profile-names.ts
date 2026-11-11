@@ -63,7 +63,6 @@ export function isDefaultProfileKey(value: string): value is DefaultProfileKey {
   return (DEFAULT_PROFILE_KEYS as readonly string[]).includes(value);
 }
 
-
 /**
  * Cloud profile for the TypeSafe decision model (Jev). Deliberately NOT
  * part of `DEFAULT_PROFILE_KEYS`: it has no BYOK column, because the

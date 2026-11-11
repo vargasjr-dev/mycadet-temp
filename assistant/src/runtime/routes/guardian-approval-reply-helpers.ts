@@ -194,4 +194,3 @@ export interface DeliverIdentityMismatchReplyParams {
   /** Restricts the reply to one reader. Absent means the room. */
   audience?: MessageAudience;
 }
-

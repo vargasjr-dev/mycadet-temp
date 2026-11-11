@@ -33,7 +33,6 @@ export function setSurfaceImportTimeout(ms: number): void {
   importTimeoutMs = ms;
 }
 
-
 /**
  * Get the mtimeMs of a file, or 0 if the file doesn't exist or can't be
  * stat'd. Callers treat 0 as "absent" (cache-evict / skip).
@@ -45,7 +44,6 @@ export function getMtime(filePath: string): number {
     return 0;
   }
 }
-
 
 /**
  * Evict `filePath` from the runtime module registry so the next dynamic

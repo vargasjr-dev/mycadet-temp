@@ -13,7 +13,6 @@ export const SUPPORTED_LOCALES = ["en", "es", "ru", "zh", "zh-TW"] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
-
 /**
  * Pick the best shipped locale for an ordered list of preferred BCP 47 tags.
  *

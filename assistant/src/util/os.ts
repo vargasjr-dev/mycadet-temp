@@ -14,7 +14,6 @@ function isMacOS(): boolean {
   return process.platform === "darwin";
 }
 
-
 export function isWindows(): boolean {
   return process.platform === "win32";
 }
@@ -74,4 +73,3 @@ export function addToPathEnv(
       ? [...missing, ...entries].join(delimiter)
       : [...entries, ...missing].join(delimiter);
 }
-

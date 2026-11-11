@@ -55,7 +55,6 @@ export class TooManyRequestsError extends RouteError {
   }
 }
 
-
 export class ForbiddenError extends RouteError {
   constructor(message: string) {
     super(message, "FORBIDDEN", 403);
@@ -69,7 +68,6 @@ export class NotFoundError extends RouteError {
     this.name = "NotFoundError";
   }
 }
-
 
 export class UnprocessableEntityError extends RouteError {
   constructor(message: string, details?: unknown) {

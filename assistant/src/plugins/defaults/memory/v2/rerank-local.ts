@@ -389,4 +389,3 @@ export function getOrCreateRerankBackend(
   _backend = new LocalRerankBackend(model, dtype);
   return _backend;
 }
-

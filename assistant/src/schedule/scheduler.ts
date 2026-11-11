@@ -572,7 +572,6 @@ export function stopScheduler(): void {
   stopScheduleWorker();
 }
 
-
 export async function runScheduleOnce(): Promise<number> {
   const result = await runScheduleDueWorkOnce();
   return result.completed + result.failed + result.skipped;

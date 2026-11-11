@@ -10,7 +10,6 @@ export const ServiceModeSchema = z
   .enum(["managed", "your-own"])
   .meta({ id: "ServiceMode" });
 
-
 // `cadet` generates through the cloud runtime proxy; the backend
 // (gemini/openai) derives from the selected model's prefix at request time.
 const VALID_IMAGE_GEN_PROVIDERS = [
@@ -245,4 +244,3 @@ export const ServicesSchema = z.object({
   ),
 });
 export type Services = z.infer<typeof ServicesSchema>;
-

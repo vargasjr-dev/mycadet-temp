@@ -105,5 +105,3 @@ export const FETCH_PROVIDER_IDS: readonly string[] = FETCH_PROVIDER_CATALOG.map(
 /** Catalog entries that require a user-supplied API key. */
 export const BYOK_FETCH_PROVIDERS: readonly FetchProviderCatalogEntry[] =
   FETCH_PROVIDER_CATALOG.filter((p) => p.kind === "byok");
-
-

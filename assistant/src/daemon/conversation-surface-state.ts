@@ -69,7 +69,6 @@ export type CurrentTurnSurface = {
   };
 }[SurfaceType];
 
-
 /** Correlated-pair constructor for a known surface type. */
 export function buildSurfaceShowPair<K extends SurfaceType>(
   surfaceType: K,

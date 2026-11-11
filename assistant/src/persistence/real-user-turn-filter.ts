@@ -1,6 +1,3 @@
-
-
-
 /**
  * Raw-string form of {@link realUserTurnContentFilter}, for queries built as
  * plain SQL template strings (`rawAll` sites). Same fragment, one source.

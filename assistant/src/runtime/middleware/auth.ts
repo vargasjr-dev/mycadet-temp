@@ -18,7 +18,6 @@ function unwrapV4Mapped(addr: string): string {
   return v4Mapped ? v4Mapped[1] : addr;
 }
 
-
 /**
  * @internal Exported for testing.
  *

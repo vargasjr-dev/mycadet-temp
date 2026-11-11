@@ -618,7 +618,6 @@ export function recordInbound(
   };
 }
 
-
 /**
  * Link an inbound event to the user message it created, so edits can
  * later find the correct message by source_message_id -> message_id.

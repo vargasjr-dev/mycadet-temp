@@ -1,5 +1,3 @@
-
-
 import {
   type SyncChangedEvent,
   SyncChangedEventSchema,
@@ -38,7 +36,6 @@ export type SyncInvalidationTag =
   | KnownSyncInvalidationTag
   | ConversationSyncInvalidationTag
   | (string & {});
-
 
 export function conversationMessagesSyncTag(
   conversationId: string,

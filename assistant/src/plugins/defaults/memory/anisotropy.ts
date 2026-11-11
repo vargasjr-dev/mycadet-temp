@@ -36,7 +36,7 @@
 // input before applying the correction, regardless of source.
 
 import { existsSync } from "node:fs";
-import {readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { EmbeddingProviderName } from "../../../persistence/embeddings/embedding-types.js";
@@ -324,8 +324,6 @@ export async function loadCalibration(
     return null;
   }
 }
-
-
 
 // ── Power iteration internals ────────────────────────────────────────────────
 

@@ -76,7 +76,6 @@ export function isFirstPartyDefaultPlugin(name: string): boolean {
   return cachedNameSet !== null && cachedNameSet.has(name);
 }
 
-
 /**
  * Absolute path to a default plugin's `routes/` directory in the source tree,
  * or `null` when `<name>` is not a default plugin's route namespace.

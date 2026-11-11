@@ -187,9 +187,7 @@ export function parseAppSourceFingerprint(
     : { algorithm: "sha256", files, compiledAt };
 }
 
-function readAppSourceFingerprint(
-  appDir: string,
-): AppSourceFingerprint | null {
+function readAppSourceFingerprint(appDir: string): AppSourceFingerprint | null {
   const path = join(appDir, "dist", SOURCE_FINGERPRINT_FILENAME);
   if (!existsSync(path)) {
     return null;

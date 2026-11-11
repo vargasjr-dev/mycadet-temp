@@ -365,7 +365,6 @@ export function resolveAppIdByDirName(dirName: string): string | null {
   return null;
 }
 
-
 /** Invalidate the id->dirName cache for a specific app or all apps. */
 function invalidateDirNameCache(appId?: string): void {
   if (appId) {
@@ -1157,7 +1156,6 @@ export function appFileExists(appId: string, path: string): boolean {
   return existsSync(resolved);
 }
 
-
 /**
  * Read a file from the app directory as raw bytes.
  * Path is validated to prevent traversal. Use for binary assets (images,
@@ -1205,7 +1203,6 @@ export function writeAppFile(
   mkdirSync(dir, { recursive: true });
   writeFileSync(resolved, content, "utf-8");
 }
-
 
 // ---------------------------------------------------------------------------
 // Conversation association helpers

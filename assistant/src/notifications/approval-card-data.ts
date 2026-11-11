@@ -516,9 +516,7 @@ function resolveApprovalCardData(
 }
 
 /** Render resolved approval card data into Surface `[ui_surface, text]` blocks. */
-function renderApprovalCardData(
-  data: ApprovalCardData,
-): ApprovalCardBlock[] {
+function renderApprovalCardData(data: ApprovalCardData): ApprovalCardBlock[] {
   return buildApprovalCardBlocks(data.card);
 }
 

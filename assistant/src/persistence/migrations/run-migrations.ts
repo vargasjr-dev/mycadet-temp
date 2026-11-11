@@ -95,7 +95,6 @@ export function getMaxRollbackVersion(steps: MigrationStep[]): number {
   return max;
 }
 
-
 export interface FailedMigrationDetail {
   name: string;
   error?: string;

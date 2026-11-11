@@ -1120,10 +1120,7 @@ export function isSyntheticCompactionMessage(
  * lifecycle code can rehydrate it with the existing `contextSummary` text
  * column without needing a parallel `keyState` column.
  */
-function buildSummaryMemoryText(
-  summary: string,
-  keyState: string,
-): string {
+function buildSummaryMemoryText(summary: string, keyState: string): string {
   const trimmedSummary = summary.trim();
   const trimmedKey = keyState.trim();
   if (trimmedKey.length === 0) {

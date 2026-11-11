@@ -1376,10 +1376,7 @@ export function saveRawConfig(config: Record<string, unknown>): void {
   cachedFileSignature = null;
 }
 
-function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string,
-): unknown {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {

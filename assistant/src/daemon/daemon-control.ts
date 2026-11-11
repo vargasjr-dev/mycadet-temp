@@ -202,7 +202,6 @@ export function cleanupPidFileIfOwner(ownerPid: number): void {
   }
 }
 
-
 async function getDaemonStatus(): Promise<{
   running: boolean;
   pid?: number;

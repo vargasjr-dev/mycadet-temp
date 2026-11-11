@@ -2,7 +2,7 @@
 // Memory Graph — Data access layer
 // ---------------------------------------------------------------------------
 
-import { and,eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 import {
@@ -948,7 +948,6 @@ export function recordNodeEdit(opts: {
     })
     .run();
 }
-
 
 // ---------------------------------------------------------------------------
 // Graph stats
