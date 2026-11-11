@@ -6,6 +6,7 @@ import {
   getCloudUrl,
   localExecDirForService,
   readCloudToken,
+  resolveLocalCommandInvocation,
 } from "@mycadet/local-mode";
 import { join } from "path";
 
@@ -210,7 +211,23 @@ export const exec = Object.assign(
         process.exit(1);
       }
 
-      const child = spawn(command[0], command.slice(1), {
+      // Cadet's own binaries run from the local assistant's source — the
+      // same resolution the daemon stack uses — so a globally installed
+      // published build on the host's PATH can never shadow the source.
+      const resolution = resolveLocalCommandInvocation(command[0], entry);
+      if (resolution.kind === "unresolved") {
+        console.error(
+          red(
+            `Error: could not resolve '${command[0]}' from the local assistant's source; refusing to run a foreign build from PATH. Bring the runtime up (it ships the sources) or run from the source tree.`,
+          ),
+        );
+        process.exit(1);
+      }
+      const [runCommand, runArgs] =
+        resolution.kind === "source"
+          ? [resolution.command, [...resolution.args, ...command.slice(1)]]
+          : [command[0], command.slice(1)];
+      const child = spawn(runCommand, runArgs, {
         stdio: "inherit",
         windowsHide: true,
         cwd: serviceDir,

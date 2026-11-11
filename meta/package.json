@@ -6,9 +6,7 @@
   "description": "Install the full Cadet stack locally",
   "bin": {
     "cadet": "./bin/cadet.js",
-    "mycadet": "./bin/cadet.js",
-    "assistant": "./bin/assistant.js",
-    "gateway": "./bin/gateway.js"
+    "mycadet": "./bin/cadet.js"
   },
   "scripts": {
     "test": "bun test"
