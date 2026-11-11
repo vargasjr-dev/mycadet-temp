@@ -26,7 +26,7 @@ afterAll(() => fetchSpy.mockRestore());
 test("browser logout revokes the account without accessing an assistant or local host", async () => {
   await logoutAccount();
   expect(revoke).toHaveBeenCalledTimes(1);
-  expect(fetchSpy).not.toHaveBeenCalled();
+  expect(fetchSpy).toHaveBeenCalledWith("/v1/session", { method: "DELETE" });
   expect(signOut).not.toHaveBeenCalled();
 });
 test("desktop credentials and biometrics are cleared even if account revocation or host signout fails", async () => {

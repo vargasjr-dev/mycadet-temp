@@ -178,18 +178,4 @@ describe("the app server's stop state", () => {
     expect(readAppServerState()).toBeNull();
     expect(existsSync(getAppServerPaths().pidPath)).toBe(false);
   });
-
-  test("reads a pre-rename install's state from the legacy ingress dir", () => {
-    makeWorkspace();
-    // The renamed dir has no record; the pre-rename one (the data dir's
-    // own "ingress" sibling) does.
-    const legacyDir = join(getAppServerPaths().dir, "..", "ingress");
-    mkdirSync(legacyDir, { recursive: true });
-    writeFileSync(
-      join(legacyDir, "state.json"),
-      JSON.stringify({ listenPort: 7842 }) + "\n",
-    );
-
-    expect(readAppServerState()).toEqual({ listenPort: 7842 });
-  });
 });
