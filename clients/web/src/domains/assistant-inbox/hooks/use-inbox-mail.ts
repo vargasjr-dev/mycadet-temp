@@ -3,9 +3,9 @@ import { useCallback, useMemo } from "react";
 import { z } from "zod";
 
 import {
-  useMailEmailAddressStatus,
-  useMailEmails,
-} from "@/lib/mail-api";
+  useEmailAddressStatus,
+  useEmails,
+} from "@/lib/email-api";
 import {
   emailAttachmentlistGet,
   emailDownloadGet,
@@ -66,15 +66,15 @@ export interface InboxMail {
  */
 export function useInboxMail(addressId: string): InboxMail {
   const assistantId = useActiveAssistantId();
-  const receivedQuery = useMailEmails(assistantId, {
+  const receivedQuery = useEmails(assistantId, {
     direction: "inbound",
     limit: PAGE_SIZE,
   });
-  const sentQuery = useMailEmails(assistantId, {
+  const sentQuery = useEmails(assistantId, {
     direction: "outbound",
     limit: PAGE_SIZE,
   });
-  const usageQuery = useMailEmailAddressStatus(assistantId, addressId);
+  const usageQuery = useEmailAddressStatus(assistantId, addressId);
 
   const received = useMemo(
     () => (receivedQuery.data ?? []).map(mapEmailMessage),

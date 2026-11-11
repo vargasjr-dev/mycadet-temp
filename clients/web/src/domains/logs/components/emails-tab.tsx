@@ -5,12 +5,12 @@ import { Link } from "react-router";
 import { Tag, TextLink } from "@mycadet/design-library";
 
 import {
-  useMailEmailAddressStatus,
-  useMailEmailAddresses,
-  useMailEmails,
-  type MailAddressStatus,
-  type MailMessage,
-} from "@/lib/mail-api";
+  useEmailAddressStatus,
+  useEmailAddresses,
+  useEmails,
+  type EmailAddressStatus,
+  type EmailMessage,
+} from "@/lib/email-api";
 import { routes } from "@/utils/routes";
 
 import { useTranslation } from "@/i18n";
@@ -140,7 +140,7 @@ function StatTile({ label, value, sub }: StatTileProps) {
   );
 }
 
-function EmailRow({ email }: { email: MailMessage }) {
+function EmailRow({ email }: { email: EmailMessage }) {
   const { t } = useTranslation("logs");
   const isInbound = email.direction === "inbound";
   return (
@@ -194,24 +194,24 @@ interface EmailsTabProps {
 export function EmailsTab({ assistantId, isCloudHosted }: EmailsTabProps) {
   const { t } = useTranslation("logs");
 
-  const addressesQuery = useMailEmailAddresses(assistantId, {
+  const addressesQuery = useEmailAddresses(assistantId, {
     enabled: isCloudHosted,
   });
   const address = addressesQuery.data?.[0];
 
-  const statusQuery = useMailEmailAddressStatus(
+  const statusQuery = useEmailAddressStatus(
     assistantId,
     address?.id,
     { enabled: isCloudHosted },
   );
 
-  const emailsQuery = useMailEmails(assistantId, {
+  const emailsQuery = useEmails(assistantId, {
     limit: 10,
     enabled: isCloudHosted,
   });
 
-  const usage: MailAddressStatus["usage"] | undefined = statusQuery.data?.usage;
-  const emails: MailMessage[] = emailsQuery.data ?? [];
+  const usage: EmailAddressStatus["usage"] | undefined = statusQuery.data?.usage;
+  const emails: EmailMessage[] = emailsQuery.data ?? [];
 
   if (addressesQuery.isLoading) {
     return (

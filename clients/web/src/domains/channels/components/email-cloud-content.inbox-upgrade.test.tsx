@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router";
 
-import { assistantsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
-import { mailKeys } from "@/lib/mail-api";
+import { emailKeys } from "@/lib/email-api";
+import { domainKeys } from "@/lib/assistant-domains";
 
 const ASSISTANT_ID = "assistant-123";
 
@@ -37,11 +37,12 @@ function renderEntitled({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   client.setQueryData(
-    mailKeys.domains(ASSISTANT_ID),
+    domainKeys.domains(ASSISTANT_ID),
     domain ? [domain] : [],
   );
-  client.setQueryData(mailKeys.emailAddresses(ASSISTANT_ID), []);
-  client.setQueryData(assistantsListQueryKey(), {
+  client.setQueryData(emailKeys.emailAddresses(ASSISTANT_ID), []);
+  // Seeded under the generated cache's key shape without importing the sdk.
+  client.setQueryData([{ _id: "assistantsList" }], {
     results: [{ id: ASSISTANT_ID, handle: "ada" }],
   });
   return render(

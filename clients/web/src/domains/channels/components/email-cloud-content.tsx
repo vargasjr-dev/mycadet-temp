@@ -6,18 +6,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { assistantsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
+import { useDestroyEmailAddress, useEmailAddressStatus, useEmailAddresses, emailKeys } from "@/lib/email-api";
 import {
-  useMailDestroyDomain,
-  useMailDestroyEmailAddress,
-  useMailDomains,
-  useMailDomainVerificationStatus,
-  useMailEmailAddressStatus,
-  useMailEmailAddresses,
-  mailKeys,
-  useMailProvisionDomain,
-  type MailDomainVerificationStatus,
-} from "@/lib/mail-api";
+  useDestroyDomain,
+  useDomains,
+  useDomainVerificationStatus,
+  useProvisionDomain,
+  domainKeys,
+  type DomainVerificationStatus,
+} from "@/lib/assistant-domains";
 import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,
@@ -46,7 +43,7 @@ export const DOMAIN_VERIFICATION_POLL_MS = 10_000;
  * user runs Complete domain setup.
  */
 export function domainVerificationRefetchInterval(
-  status: MailDomainVerificationStatus | undefined,
+  status: DomainVerificationStatus | undefined,
 ): number | false {
   if (
     status === "verified" ||
@@ -80,18 +77,18 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
   });
 
   // -- Domain & address state ------------------------------------------------
-  const domainsQuery = useMailDomains(assistantId);
-  const addressesQuery = useMailEmailAddresses(assistantId);
+  const domainsQuery = useDomains(assistantId);
+  const addressesQuery = useEmailAddresses(assistantId);
 
   const domain = domainsQuery.data?.[0];
   const address = addressesQuery.data?.[0];
   const fullDomain = domain ? `${domain.subdomain}.${emailRootDomain}` : null;
 
-  const statusQuery = useMailEmailAddressStatus(assistantId, address?.id, {
+  const statusQuery = useEmailAddressStatus(assistantId, address?.id, {
     refetchOnWindowFocus: false,
   });
 
-  const verificationQuery = useMailDomainVerificationStatus(
+  const verificationQuery = useDomainVerificationStatus(
     assistantId,
     domain?.id,
     {
@@ -117,27 +114,28 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
   }, [address, domain, searchParams, setSearchParams]);
 
   // -- Mutations -------------------------------------------------------------
-  const deleteDomain = useMailDestroyDomain(assistantId);
-  const provisionDomain = useMailProvisionDomain(assistantId);
-  const deleteAddress = useMailDestroyEmailAddress(assistantId);
+  const deleteDomain = useDestroyDomain(assistantId);
+  const provisionDomain = useProvisionDomain(assistantId);
+  const deleteAddress = useDestroyEmailAddress(assistantId);
   const refreshReadiness = useMutation(channelsReadinessRefreshPostMutation());
 
   const invalidateEmailQueries = useCallback(() => {
     void queryClient.invalidateQueries({
-      queryKey: mailKeys.domains(assistantId),
+      queryKey: domainKeys.domains(assistantId),
     });
     void queryClient.invalidateQueries({
-      queryKey: mailKeys.emailAddresses(assistantId),
+      queryKey: emailKeys.emailAddresses(assistantId),
     });
     if (address?.id) {
       void queryClient.invalidateQueries({
-        queryKey: mailKeys.emailAddressStatus(assistantId, address.id),
+        queryKey: emailKeys.emailAddressStatus(assistantId, address.id),
       });
     }
     // Domain registration can change the assistant's handle; invalidate the
-    // assistant list so the cached handle stays fresh.
+    // assistant list so the cached handle stays fresh. Matched by the
+    // generated cache's id field — the sdk's key helper is not imported.
     void queryClient.invalidateQueries({
-      queryKey: assistantsListQueryKey(),
+      queryKey: [{ _id: "assistantsList" }],
     });
   }, [address?.id, assistantId, queryClient]);
 
@@ -200,11 +198,11 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
       const result = await provisionDomain.mutateAsync(domain.id);
       setRepairConfirmOpen(false);
       queryClient.setQueryData(
-        mailKeys.domainVerificationStatus(assistantId, domain.id),
+        domainKeys.domainVerificationStatus(assistantId, domain.id),
         result,
       );
       void queryClient.invalidateQueries({
-        queryKey: mailKeys.domainVerificationStatus(assistantId, domain.id),
+        queryKey: domainKeys.domainVerificationStatus(assistantId, domain.id),
       });
       toast.success(t("emailCloudContent.repairStartedToast"));
     } catch (err) {

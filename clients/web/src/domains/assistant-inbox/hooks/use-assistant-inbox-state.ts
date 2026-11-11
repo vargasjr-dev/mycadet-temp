@@ -1,11 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import {
-  useMailDomains,
-  useMailEmailAddresses,
-  mailKeys,
-} from "@/lib/mail-api";
+import { useEmailAddresses, emailKeys } from "@/lib/email-api";
+import { useDomains, domainKeys } from "@/lib/assistant-domains";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
@@ -54,8 +51,8 @@ export function useAssistantInboxState(
   const assistant = getResolvedAssistant();
   const assistantId = assistant.assistantId;
 
-  const addressesQuery = useMailEmailAddresses(assistantId);
-  const domainsQuery = useMailDomains(assistantId);
+  const addressesQuery = useEmailAddresses(assistantId);
+  const domainsQuery = useDomains(assistantId);
 
   const addresses = addressesQuery.data;
   const domain = domainsQuery.data?.[0];
@@ -63,10 +60,10 @@ export function useAssistantInboxState(
   const refreshAddresses = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({
-        queryKey: mailKeys.emailAddresses(assistantId),
+        queryKey: emailKeys.emailAddresses(assistantId),
       }),
       queryClient.invalidateQueries({
-        queryKey: mailKeys.domains(assistantId),
+        queryKey: domainKeys.domains(assistantId),
       }),
     ]);
   }, [queryClient, assistantId]);

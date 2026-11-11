@@ -21,7 +21,8 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 
-import { mailKeys } from "@/lib/mail-api";
+import { emailKeys } from "@/lib/email-api";
+import { domainKeys } from "@/lib/assistant-domains";
 
 const ASSISTANT_ID = "assistant-123";
 const DOMAIN_ID = "domain-123";
@@ -186,14 +187,14 @@ function makeVerification(status: VerificationStatus) {
 }
 
 function seedClient(client: QueryClient, status: VerificationStatus): void {
-  client.setQueryData(mailKeys.domains(ASSISTANT_ID), [makeDomain()]);
-  client.setQueryData(mailKeys.emailAddresses(ASSISTANT_ID), [makeAddress()]);
+  client.setQueryData(domainKeys.domains(ASSISTANT_ID), [makeDomain()]);
+  client.setQueryData(emailKeys.emailAddresses(ASSISTANT_ID), [makeAddress()]);
   client.setQueryData(
-    mailKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
+    domainKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
     makeVerification(status),
   );
   client.setQueryData(
-    mailKeys.emailAddressStatus(ASSISTANT_ID, ADDRESS_ID),
+    emailKeys.emailAddressStatus(ASSISTANT_ID, ADDRESS_ID),
     makeAddressStatus(),
   );
 }
@@ -227,7 +228,7 @@ function verificationRefetchInterval(
     }) => number | false)
   | undefined {
   const query = client.getQueryCache().find({
-    queryKey: mailKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
+    queryKey: domainKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
   });
   return query?.observers[0]?.options.refetchInterval as
     | number
@@ -372,7 +373,7 @@ describe("EmailCloudContent domain setup repair", () => {
     ]);
 
     const cached = client.getQueryData(
-      mailKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
+      domainKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
     ) as { status?: VerificationStatus } | undefined;
     expect(cached?.status).toBe("pending");
 
