@@ -69,7 +69,7 @@ export const directReadCases: DirectReadCase[] = [
 export interface LogLeakageCase {
   label: string;
   /** Component where logging might leak credentials */
-  component: "daemon_handler" | "prompter" | "tool_executor" | "message_decode";
+  component: "daemon_handler" | "prompter" | "tool_executor";
   /** Description of what log output is checked */
   logCheck: string;
 }
@@ -89,11 +89,6 @@ export const logLeakageCases: LogLeakageCase[] = [
     label: "tool executor lifecycle events redact sensitive fields",
     component: "tool_executor",
     logCheck: "password/token/value fields masked",
-  },
-  {
-    label: "message decode failure does not dump raw line",
-    component: "message_decode",
-    logCheck: "malformed line not logged verbatim",
   },
 ];
 

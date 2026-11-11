@@ -58,7 +58,6 @@ import { contrastForeground } from "@/utils/avatar-tone";
 import { formatCompactLocalDate } from "@/utils/format-date";
 
 import { applyRename } from "./identity-actions/apply-rename";
-import {} from "./memory-graph/get-memory-stats";
 import {
   assistantIdentityDetailsQueryKey,
   useAssistantIdentityDetails,

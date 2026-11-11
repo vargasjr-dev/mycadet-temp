@@ -7,7 +7,12 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import type { PermissionsService } from "./permissions-service";
+import type {
+  PermissionKind,
+  PermissionStateItem,
+  PermissionsState,
+  PermissionStatus,
+} from "./permissions-service";
 import type { PermissionGuideState } from "@mycadet/ipc-contract";
 
 const handles = new Map<string, (...args: any[]) => any>();
@@ -175,17 +180,31 @@ mock.module("@mycadet/electron-desktop/app-logger", () => ({
 }));
 const { installCompanionPermissionGuide } =
   await import("./companion-permission-guide");
-const state = () =>
-  Object.fromEntries(
-    ["screen", "inputMonitoring"].map((kind) => [
-      kind,
-      { status: restricted ? "restricted" : granted ? "granted" : "denied" },
-    ]),
-  );
+// The full state surface, with the kinds under test riding the toggle.
+const state = (): PermissionsState => {
+  const status = (): PermissionStatus =>
+    restricted ? "restricted" : granted ? "granted" : "denied";
+  const item = (kind: PermissionKind): PermissionStateItem => ({
+    kind,
+    status: status(),
+    canRequest: true,
+    canOpenSettings: true,
+    requiresRestart: false,
+  });
+  return {
+    accessibility: item("accessibility"),
+    screen: item("screen"),
+    microphone: item("microphone"),
+    speechRecognition: item("speechRecognition"),
+    inputMonitoring: item("inputMonitoring"),
+    automation: item("automation"),
+    notifications: item("notifications"),
+  };
+};
 installCompanionPermissionGuide({
   state: async () => state(),
   refresh: async () => state(),
-} as unknown as PermissionsService);
+});
 const get = (): PermissionGuideState | null =>
   handles.get("cadet:permissions:guide:get")!([]);
 const begin = (

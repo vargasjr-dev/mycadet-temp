@@ -72,7 +72,7 @@ const TERMINAL_STATUSES = ["Accepted", "Invalid", "Rejected"];
  */
 function notarizationStatus(output: string): string {
   try {
-    const parsed = JSON.parse(output) as { status?: string; Status?: string };
+    const parsed: { status?: unknown; Status?: unknown } = JSON.parse(output);
     const status = parsed.status ?? parsed.Status;
     if (typeof status === "string") return status.trim();
   } catch {

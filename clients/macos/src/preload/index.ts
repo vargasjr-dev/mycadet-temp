@@ -135,42 +135,46 @@ const subscribeDictationEvent =
 
 const fileOpenBridge = createFileOpenPreloadBridge({ ipcRenderer, webUtils });
 
+// The one seam where the renderer trusts the main process: `invoke` resolves
+// to whatever the channel's handler returned. Each bridge method names the
+// payload contract it expects (`invoke<T>`); the contracts themselves live
+// in @mycadet/ipc-contract, shared with the handlers that produce them.
+const invoke = async <T>(channel: string, ...args: unknown[]): Promise<T> => {
+  const result: T = await ipcRenderer.invoke(channel, ...args);
+  return result;
+};
+
 const bridge: CadetBridge = {
   platform: "electron",
   hostOS: "macos",
   app: {
     versionInfo: (): Promise<AppVersionInfo> =>
-      ipcRenderer.invoke("cadet:app:versionInfo") as Promise<AppVersionInfo>,
-    openWebsite: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:app:openWebsite") as Promise<void>,
+      invoke<AppVersionInfo>("cadet:app:versionInfo"),
+    openWebsite: (): Promise<void> => invoke<void>("cadet:app:openWebsite"),
   },
   text: {
     insertIntoFrontApp: (text: string): Promise<TextInsertionResult> =>
-      ipcRenderer.invoke(
-        "cadet:text:insertIntoFrontApp",
-        text,
-      ) as Promise<TextInsertionResult>,
+      invoke<TextInsertionResult>("cadet:text:insertIntoFrontApp", text),
     openAutomationSettings: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:text:openAutomationSettings") as Promise<void>,
+      invoke<void>("cadet:text:openAutomationSettings"),
     undoInFrontApp: (): Promise<TextInsertionResult> =>
-      ipcRenderer.invoke(
-        "cadet:text:undoInFrontApp",
-      ) as Promise<TextInsertionResult>,
+      invoke<TextInsertionResult>("cadet:text:undoInFrontApp"),
   },
   auth: {
     startOAuth: (options: {
       loginHint?: string;
       intent?: string;
     }): Promise<{ sessionToken: string }> =>
-      ipcRenderer.invoke("cadet:auth:startOAuth", options) as Promise<{
-        sessionToken: string;
-      }>,
-    cancelOAuth: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:auth:cancelOAuth") as Promise<void>,
+      invoke<{ sessionToken: string }>("cadet:auth:startOAuth", options),
+    cancelOAuth: (): Promise<void> => invoke<void>("cadet:auth:cancelOAuth"),
     getSessionToken: (): string | null =>
-      ipcRenderer.sendSync("cadet:auth:getSessionToken") as string | null,
-    signOut: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:auth:signOut") as Promise<void>,
+      ((): string | null => {
+        const token: string | null = ipcRenderer.sendSync(
+          "cadet:auth:getSessionToken",
+        );
+        return token;
+      })(),
+    signOut: (): Promise<void> => invoke<void>("cadet:auth:signOut"),
   },
   hotkeys: createHotkeysBridge(ipcRenderer),
   launchAtLogin: createLaunchAtLoginBridge(ipcRenderer),
@@ -180,13 +184,9 @@ const bridge: CadetBridge = {
     },
   },
   helper: {
-    ping: () => ipcRenderer.invoke("cadet:helper:ping") as Promise<"pong">,
-    getState: () =>
-      ipcRenderer.invoke("cadet:helper:state:get") as Promise<HelperState>,
-    restart: () =>
-      ipcRenderer.invoke(
-        "cadet:helper:restart",
-      ) as Promise<HelperRestartResult>,
+    ping: () => invoke<"pong">("cadet:helper:ping"),
+    getState: () => invoke<HelperState>("cadet:helper:state:get"),
+    restart: () => invoke<HelperRestartResult>("cadet:helper:restart"),
     onState: (callback) => {
       const handler = (_event: IpcRendererEvent, payload: HelperState) => {
         callback(payload);
@@ -200,19 +200,14 @@ const bridge: CadetBridge = {
       setModifierHold: (
         hold: ModifierHold,
       ): Promise<ModifierHoldRegistrationResult> =>
-        ipcRenderer.invoke(
+        invoke<ModifierHoldRegistrationResult>(
           HELPER_HOTKEY_SET_MODIFIER_HOLD,
           hold,
-        ) as Promise<ModifierHoldRegistrationResult>,
+        ),
       setChords: (binding: ChordBinding): Promise<ChordRegistrationResult> =>
-        ipcRenderer.invoke(
-          HELPER_HOTKEY_SET_CHORDS,
-          binding,
-        ) as Promise<ChordRegistrationResult>,
+        invoke<ChordRegistrationResult>(HELPER_HOTKEY_SET_CHORDS, binding),
       readFrontSelection: (): Promise<HotkeySelectionResult> =>
-        ipcRenderer.invoke(
-          HELPER_HOTKEY_READ_FRONT_SELECTION,
-        ) as Promise<HotkeySelectionResult>,
+        invoke<HotkeySelectionResult>(HELPER_HOTKEY_READ_FRONT_SELECTION),
       onEvent: (callback) => {
         const handler = (_event: IpcRendererEvent, payload: HotkeyEvent) => {
           callback(payload);
@@ -225,20 +220,15 @@ const bridge: CadetBridge = {
     },
     apps: {
       running: (bundleIds: readonly string[]): Promise<string[]> =>
-        ipcRenderer.invoke(HELPER_APPS_RUNNING, [...bundleIds]) as Promise<
-          string[]
-        >,
+        invoke<string[]>(HELPER_APPS_RUNNING, [...bundleIds]),
       quit: (bundleId: string): Promise<boolean> =>
-        ipcRenderer.invoke(HELPER_APPS_QUIT, bundleId) as Promise<boolean>,
+        invoke<boolean>(HELPER_APPS_QUIT, bundleId),
       frontmost: (): Promise<string | null> =>
-        ipcRenderer.invoke(HELPER_APPS_FRONTMOST) as Promise<string | null>,
+        invoke<string | null>(HELPER_APPS_FRONTMOST),
     },
     input: {
       setActivityWatch: (enable: boolean): Promise<boolean> =>
-        ipcRenderer.invoke(
-          HELPER_INPUT_SET_ACTIVITY_WATCH,
-          enable,
-        ) as Promise<boolean>,
+        invoke<boolean>(HELPER_INPUT_SET_ACTIVITY_WATCH, enable),
       onActivity: (callback: () => void): (() => void) => {
         const handler = () => {
           callback();
@@ -255,22 +245,19 @@ const bridge: CadetBridge = {
         deviceName?: string,
         pushAudio?: boolean,
       ): Promise<DictationPartialsResult> =>
-        ipcRenderer.invoke(
+        invoke<DictationPartialsResult>(
           HELPER_DICTATION_SET_PARTIALS,
           enable,
           deviceName,
           pushAudio,
-        ) as Promise<DictationPartialsResult>,
+        ),
       pushAudioChunk: (chunk: ArrayBuffer): void => {
         ipcRenderer.send("cadet:helper:dictation:audio", chunk);
       },
       onPartial: subscribeDictationEvent(HELPER_DICTATION_PARTIAL_EVENT),
       onFinalized: subscribeDictationEvent(HELPER_DICTATION_FINALIZED_EVENT),
       transcribe: (audio: ArrayBuffer): Promise<DictationTranscribeResult> =>
-        ipcRenderer.invoke(
-          HELPER_DICTATION_TRANSCRIBE,
-          audio,
-        ) as Promise<DictationTranscribeResult>,
+        invoke<DictationTranscribeResult>(HELPER_DICTATION_TRANSCRIBE, audio),
       onTranscribed: subscribeDictationEvent(
         HELPER_DICTATION_TRANSCRIBED_EVENT,
       ),
@@ -279,28 +266,24 @@ const bridge: CadetBridge = {
   permissions: {
     setup: createPermissionSetupBridge(ipcRenderer),
     getState: (): Promise<SystemPermissionsState> =>
-      ipcRenderer.invoke(
-        "cadet:permissions:getState",
-      ) as Promise<SystemPermissionsState>,
+      invoke<SystemPermissionsState>("cadet:permissions:getState"),
     request: (
       kind: SystemPermissionKind,
       presentation?: Parameters<CadetBridge["permissions"]["request"]>[1],
     ): Promise<SystemPermissionStateItem> =>
-      (presentation
-        ? ipcRenderer.invoke("cadet:permissions:request", kind, presentation)
-        : ipcRenderer.invoke(
+      presentation
+        ? invoke<SystemPermissionStateItem>(
             "cadet:permissions:request",
             kind,
-          )) as Promise<SystemPermissionStateItem>,
+            presentation,
+          )
+        : invoke<SystemPermissionStateItem>("cadet:permissions:request", kind),
     openSettings: (
       kind: SystemPermissionKind,
     ): Promise<SystemPermissionStateItem> =>
-      ipcRenderer.invoke(
-        "cadet:permissions:openSettings",
-        kind,
-      ) as Promise<SystemPermissionStateItem>,
+      invoke<SystemPermissionStateItem>("cadet:permissions:openSettings", kind),
     quitAndReopen: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:permissions:quitAndReopen") as Promise<void>,
+      invoke<void>("cadet:permissions:quitAndReopen"),
     onState: (callback) => {
       const handler = (
         _event: IpcRendererEvent,
@@ -355,14 +338,11 @@ const bridge: CadetBridge = {
   downloads: createDownloadsBridge(ipcRenderer),
   mainWindow: {
     ensureVisible: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:mainWindow:ensureVisible") as Promise<void>,
+      invoke<void>("cadet:mainWindow:ensureVisible"),
     setOnboarding: (active: boolean): Promise<void> =>
-      ipcRenderer.invoke(
-        "cadet:mainWindow:setOnboarding",
-        active,
-      ) as Promise<void>,
+      invoke<void>("cadet:mainWindow:setOnboarding", active),
     navigateTo: (url: string): Promise<void> =>
-      ipcRenderer.invoke("cadet:mainWindow:navigateTo", url) as Promise<void>,
+      invoke<void>("cadet:mainWindow:navigateTo", url),
   },
   power: {
     onEvent: (callback) => {
@@ -379,11 +359,8 @@ const bridge: CadetBridge = {
   fileOpen: fileOpenBridge.fileOpen,
   paths: fileOpenBridge.paths,
   feedback: {
-    diagnostics: () =>
-      ipcRenderer.invoke(FEEDBACK_DIAGNOSTICS) as Promise<
-        Record<string, unknown>
-      >,
-    logs: () => ipcRenderer.invoke(FEEDBACK_LOGS) as Promise<string>,
+    diagnostics: () => invoke<Record<string, unknown>>(FEEDBACK_DIAGNOSTICS),
+    logs: () => invoke<string>(FEEDBACK_LOGS),
   },
   connectivity: {
     onState: (callback) => {
@@ -393,45 +370,29 @@ const bridge: CadetBridge = {
       ipcRenderer.on("cadet:connectivity:state", handler);
       // Emit the current state so late subscribers (window loaded after
       // the first probe) don't wait for the next state transition.
-      void (
-        ipcRenderer.invoke(
-          "cadet:connectivity:get",
-        ) as Promise<ConnectivityState>
-      ).then(callback);
+      void invoke<ConnectivityState>("cadet:connectivity:get").then(callback);
       return () => {
         ipcRenderer.off("cadet:connectivity:state", handler);
       };
     },
-    get: () =>
-      ipcRenderer.invoke(
-        "cadet:connectivity:get",
-      ) as Promise<ConnectivityState>,
+    get: () => invoke<ConnectivityState>("cadet:connectivity:get"),
     setDevice: (online: boolean): void => {
       ipcRenderer.send("cadet:connectivity:device", online);
     },
-    retry: () =>
-      ipcRenderer.invoke(
-        "cadet:connectivity:retry",
-      ) as Promise<ConnectivityState>,
+    retry: () => invoke<ConnectivityState>("cadet:connectivity:retry"),
   },
   notifications: createNotificationsBridge(ipcRenderer),
   bundleConfirm: createBundleConfirmBridge(ipcRenderer),
   quickInput: {
     submit: (message: string): Promise<void> =>
-      ipcRenderer.invoke("cadet:quickInput:submit", message) as Promise<void>,
-    dismiss: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:quickInput:dismiss") as Promise<void>,
+      invoke<void>("cadet:quickInput:submit", message),
+    dismiss: (): Promise<void> => invoke<void>("cadet:quickInput:dismiss"),
   },
   commandPalette: {
-    open: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:commandPalette:open") as Promise<void>,
-    dismiss: (): Promise<void> =>
-      ipcRenderer.invoke("cadet:commandPalette:dismiss") as Promise<void>,
+    open: (): Promise<void> => invoke<void>("cadet:commandPalette:open"),
+    dismiss: (): Promise<void> => invoke<void>("cadet:commandPalette:dismiss"),
     select: (command: CadetCommand): Promise<void> =>
-      ipcRenderer.invoke(
-        "cadet:commandPalette:select",
-        command,
-      ) as Promise<void>,
+      invoke<void>("cadet:commandPalette:select", command),
   },
   dictationOverlay: {
     setState: (state: DictationOverlayMessage): void => {
@@ -450,9 +411,7 @@ const bridge: CadetBridge = {
       };
     },
     getState: (): Promise<DictationOverlayState | null> =>
-      ipcRenderer.invoke(
-        "cadet:dictationOverlay:getState",
-      ) as Promise<DictationOverlayState | null>,
+      invoke<DictationOverlayState | null>("cadet:dictationOverlay:getState"),
     requestStop: (): void => {
       ipcRenderer.send("cadet:dictationOverlay:requestStop");
     },
@@ -500,9 +459,7 @@ const bridge: CadetBridge = {
   },
   companion: {
     getState: (): Promise<CompanionSurfaceState | null> =>
-      ipcRenderer.invoke(
-        "cadet:companion:getState",
-      ) as Promise<CompanionSurfaceState | null>,
+      invoke<CompanionSurfaceState | null>("cadet:companion:getState"),
     onState: (callback) => {
       const handler = (
         _event: IpcRendererEvent,
@@ -516,9 +473,7 @@ const bridge: CadetBridge = {
       };
     },
     getIntroAnnouncement: (): Promise<boolean> =>
-      ipcRenderer.invoke(
-        "cadet:companion:getIntroAnnouncement",
-      ) as Promise<boolean>,
+      invoke<boolean>("cadet:companion:getIntroAnnouncement"),
     answerIntroAnnouncement: (
       action: CompanionIntroAnnouncementAction,
     ): void => {
@@ -534,7 +489,7 @@ const bridge: CadetBridge = {
       };
     },
     getIntroStage: (): Promise<boolean> =>
-      ipcRenderer.invoke("cadet:companion:getIntroStage") as Promise<boolean>,
+      invoke<boolean>("cadet:companion:getIntroStage"),
     onIntroStage: (callback) => {
       const handler = (_event: IpcRendererEvent, staged: boolean) => {
         callback(staged);
@@ -545,9 +500,7 @@ const bridge: CadetBridge = {
       };
     },
     getIntroChord: (): Promise<CompanionIntroCallControl | null> =>
-      ipcRenderer.invoke(
-        "cadet:companion:getIntroChord",
-      ) as Promise<CompanionIntroCallControl | null>,
+      invoke<CompanionIntroCallControl | null>("cadet:companion:getIntroChord"),
     onIntroChord: (callback) => {
       const handler = (
         _event: IpcRendererEvent,
@@ -576,9 +529,7 @@ const bridge: CadetBridge = {
     // is how the run's own ending survives an app the user had closed. Taken,
     // not read: a second reader would report the same rows again.
     takeIntroReports: (): Promise<CompanionIntroReport[]> =>
-      ipcRenderer.invoke("cadet:companion:takeIntroReports") as Promise<
-        CompanionIntroReport[]
-      >,
+      invoke<CompanionIntroReport[]>("cadet:companion:takeIntroReports"),
     setInteractive: (interactive: boolean): void => {
       ipcRenderer.send("cadet:companion:setInteractive", interactive);
     },
@@ -601,9 +552,7 @@ const bridge: CadetBridge = {
       ipcRenderer.send("cadet:companion:toggleWatch", pick);
     },
     listCaptureSources: (): Promise<CompanionCaptureSources> =>
-      ipcRenderer.invoke(
-        "cadet:companion:listCaptureSources",
-      ) as Promise<CompanionCaptureSources>,
+      invoke<CompanionCaptureSources>("cadet:companion:listCaptureSources"),
     setScreenShare: (pick?: CompanionCapturePick): void => {
       // Two shapes rather than an optional element, the way `toggleWatch` is
       // sent: a stop carries nothing at all.
@@ -644,24 +593,21 @@ const bridge: CadetBridge = {
     captureScreen: (
       target: WatchCaptureTarget,
     ): Promise<ScreenCaptureFrame | null> =>
-      ipcRenderer.invoke(
+      invoke<ScreenCaptureFrame | null>(
         "cadet:companion:captureScreen",
         target,
-      ) as Promise<ScreenCaptureFrame | null>,
+      ),
     shareTargets: (
       target: WatchCaptureTarget,
     ): Promise<ShareTargetSnapshot | null> =>
-      ipcRenderer.invoke(
+      invoke<ShareTargetSnapshot | null>(
         "cadet:companion:shareTargets",
         target,
-      ) as Promise<ShareTargetSnapshot | null>,
+      ),
     captureSourceThumbnail: (
       target: WatchCaptureTarget,
     ): Promise<string | null> =>
-      ipcRenderer.invoke(
-        "cadet:companion:captureSourceThumbnail",
-        target,
-      ) as Promise<string | null>,
+      invoke<string | null>("cadet:companion:captureSourceThumbnail", target),
     answerWatchRetro: (open: boolean): void => {
       ipcRenderer.send("cadet:companion:answerWatchRetro", open);
     },
@@ -707,7 +653,7 @@ const bridge: CadetBridge = {
       ipcRenderer.send("cadet:companion:openLink", url);
     },
     takesPrompts: (): Promise<boolean> =>
-      ipcRenderer.invoke("cadet:companion:takesPrompts") as Promise<boolean>,
+      invoke<boolean>("cadet:companion:takesPrompts"),
     activate: (): void => {
       ipcRenderer.send("cadet:companion:activate");
     },
@@ -723,7 +669,7 @@ const bridge: CadetBridge = {
   },
   popout: {
     open: (conversationId: string): Promise<void> =>
-      ipcRenderer.invoke("cadet:popout:open", conversationId) as Promise<void>,
+      invoke<void>("cadet:popout:open", conversationId),
   },
   update: createUpdateBridge(ipcRenderer),
 };

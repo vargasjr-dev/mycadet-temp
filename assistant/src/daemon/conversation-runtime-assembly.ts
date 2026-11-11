@@ -105,7 +105,6 @@ import {
 } from "./conversation-sight-frames.js";
 import { SurfaceShowPair } from "./conversation-surface-state.js";
 import { canonicalizeTimeZone, formatTurnTimestamp } from "./date-context.js";
-import type {} from "./message-protocol.js";
 import { filterMessagesForUntrustedActor } from "./message-provenance.js";
 import type { TrustContext } from "./trust-context-types.js";
 import { timeLatencySubSpan } from "./turn-latency-sub-spans.js";

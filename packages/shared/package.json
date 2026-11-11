@@ -10,7 +10,8 @@
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
     "./version": "./version.ts",
     "./eslint/no-re-exports": "./eslint/no-re-exports.mjs",
-    "./eslint/imports-first": "./eslint/imports-first.mjs"
+    "./eslint/imports-first": "./eslint/imports-first.mjs",
+    "./eslint/no-empty-imports": "./eslint/no-empty-imports.mjs"
   },
   "devDependencies": {
     "eslint": "10.1.0",

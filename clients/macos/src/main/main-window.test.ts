@@ -60,7 +60,9 @@ let onboardingActive = false;
 const writeOnboardingActiveMock = mock((active: boolean) => {
   onboardingActive = active;
 });
-let listeners: Map<string, Array<() => void>>;
+// Handlers may read the event object Electron passes (the close handler
+// calls preventDefault), so the recorded shape keeps the event optional.
+let listeners: Map<string, Array<(event?: unknown) => void>>;
 
 const makeWindow = (opts: Record<string, unknown> = {}): StubWindow => {
   const state: WindowState = {
@@ -157,6 +159,13 @@ const makeWindow = (opts: Record<string, unknown> = {}): StubWindow => {
 };
 
 const ipcHandlers = new Map<string, (...args: unknown[]) => unknown>();
+
+/** Fires the recorded handler for `channel` against the fake invoke event. */
+const callHandler = (channel: string, ...args: unknown[]): Promise<unknown> => {
+  const handler = ipcHandlers.get(channel);
+  if (!handler) throw new Error(`no handler recorded for ${channel}`);
+  return Promise.resolve(handler(allowedEvent, ...args));
+};
 const ipcHandleMock = mock(
   (channel: string, handler: (...args: unknown[]) => unknown) => {
     ipcHandlers.set(channel, handler);
@@ -502,19 +511,17 @@ describe("installMainWindow", () => {
 
     // The recorded handler is the raw `ipcMain.handle` callback: the event
     // rides first, then the channel's args variadic.
-    const handler = ipcHandlers.get("cadet:mainWindow:navigateTo") as (
-      event: unknown,
-      ...args: [string]
-    ) => Promise<void>;
-    await handler(allowedEvent, "https://assistant.example/assistant");
+    const navigate = (...args: unknown[]): Promise<unknown> =>
+      callHandler("cadet:mainWindow:navigateTo", ...args);
+    await navigate("https://assistant.example/assistant");
     expect(win.stub.loadURL.mock.calls.length).toBe(loadsBefore + 1);
     expect(win.stub.loadURL.mock.lastCall?.[0]).toBe(
       "https://assistant.example/assistant",
     );
 
     // A non-https (or unparseable) target is refused outright.
-    await handler(allowedEvent, "http://assistant.example/assistant");
-    await handler(allowedEvent, "not a url");
+    await navigate("http://assistant.example/assistant");
+    await navigate("not a url");
     expect(win.stub.loadURL.mock.calls.length).toBe(loadsBefore + 1);
   });
 
@@ -530,10 +537,7 @@ describe("installMainWindow", () => {
     const showsBefore = win.stub.show.mock.calls.length;
     const focusBefore = win.stub.focus.mock.calls.length;
 
-    const handler = ipcHandlers.get("cadet:mainWindow:ensureVisible");
-    const promise = (handler as (event: unknown) => Promise<void>)(
-      allowedEvent,
-    );
+    const promise = callHandler("cadet:mainWindow:ensureVisible");
     // ensureVisible on the existing-but-not-focused window returns
     // immediately (ALREADY_READY for the already-loaded window).
     await promise;
@@ -647,11 +651,7 @@ describe("onboarding window sizing", () => {
     const win = constructed[0];
     if (!win) throw new Error("expected a window");
 
-    const handler = ipcHandlers.get("cadet:mainWindow:setOnboarding");
-    await (handler as (event: unknown, active: boolean) => Promise<void>)(
-      allowedEvent,
-      true,
-    );
+    await callHandler("cadet:mainWindow:setOnboarding", true);
 
     expect(writeOnboardingActiveMock).toHaveBeenCalledWith(true);
     // Mode change repositions the traffic lights; sizing is untouched.
@@ -839,10 +839,10 @@ describe("current", () => {
 describe("close button", () => {
   // Emits `close` the way Electron does, with a cancellable event, and
   // reports whether a listener cancelled it.
-  const pressClose = (_stub: StubWindow): boolean => {
+  const pressClose = (): boolean => {
     const event = { preventDefault: mock(() => undefined) };
     for (const h of listeners.get("close") ?? []) {
-      (h as (e: typeof event) => void)(event);
+      h(event);
     }
     return event.preventDefault.mock.calls.length > 0;
   };
@@ -852,7 +852,7 @@ describe("close button", () => {
     const { stub } = constructed[0]!;
     stub.emit("ready-to-show");
 
-    expect(pressClose(stub)).toBe(true);
+    expect(pressClose()).toBe(true);
     expect(stub.hide).toHaveBeenCalledTimes(1);
     expect(stub.isDestroyed()).toBe(false);
     expect(current()).not.toBeNull();
@@ -862,7 +862,7 @@ describe("close button", () => {
     installMainWindow();
     const { stub } = constructed[0]!;
     stub.emit("ready-to-show");
-    pressClose(stub);
+    pressClose();
 
     void ensureVisible();
 
@@ -873,7 +873,7 @@ describe("close button", () => {
   test("dispatchToMain still reaches the hidden window", () => {
     installMainWindow();
     const { stub } = constructed[0]!;
-    pressClose(stub);
+    pressClose();
 
     dispatchToMain({ kind: "startVoice" });
 
@@ -887,7 +887,7 @@ describe("close button", () => {
     installMainWindow();
     const { stub } = constructed[0]!;
 
-    expect(pressClose(stub)).toBe(true);
+    expect(pressClose()).toBe(true);
     expect(stub.setFullScreen).toHaveBeenCalledWith(false);
     expect(stub.hide).not.toHaveBeenCalled();
 
@@ -900,7 +900,7 @@ describe("close button", () => {
     installMainWindow();
     const { stub } = constructed[0]!;
     stub.emit("ready-to-show");
-    pressClose(stub);
+    pressClose();
 
     void ensureVisible();
     stub.emit("leave-full-screen");
@@ -915,7 +915,7 @@ describe("close button", () => {
 
     announce(appListeners, "before-quit");
 
-    expect(pressClose(stub)).toBe(false);
+    expect(pressClose()).toBe(false);
     expect(stub.hide).not.toHaveBeenCalled();
   });
 
@@ -925,7 +925,7 @@ describe("close button", () => {
 
     announce(updaterListeners, "before-quit-for-update");
 
-    expect(pressClose(stub)).toBe(false);
+    expect(pressClose()).toBe(false);
     expect(stub.hide).not.toHaveBeenCalled();
   });
 });

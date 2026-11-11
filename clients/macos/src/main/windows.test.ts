@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // `webContents` listener/handler registrations the navigation policy installs.
 interface CapturedWindow {
   options: Record<string, unknown>;
-  navigationListeners: Array<(event: { preventDefault: () => void }) => void>;
+  webPreferences: Record<string, unknown>;
+  navigationListeners: Array<(event: unknown) => void>;
   windowOpenHandler: (() => { action: "deny" | "allow" }) | null;
 }
 
@@ -21,17 +22,18 @@ mock.module("electron", () => ({
   app: appState,
   BrowserWindow: class {
     constructor(options: Record<string, unknown>) {
+      const webPreferences: Record<string, unknown> = {};
+      Object.assign(webPreferences, options.webPreferences);
       const captured: CapturedWindow = {
         options,
+        webPreferences,
         navigationListeners: [],
         windowOpenHandler: null,
       };
       const webContents = {
         on: (event: string, listener: (...args: unknown[]) => void) => {
           if (event === "will-navigate") {
-            captured.navigationListeners.push(
-              listener as CapturedWindow["navigationListeners"][number],
-            );
+            captured.navigationListeners.push(listener);
           }
           return webContents;
         },
@@ -51,7 +53,7 @@ const { createWindow, hardenedWebPreferences } =
 beforeEach(() => {
   constructed = [];
   appState.isPackaged = false;
-  delete (globalThis as Record<string, unknown>)[DEBUG_DEVTOOLS_DEFINE];
+  Reflect.deleteProperty(globalThis, DEBUG_DEVTOOLS_DEFINE);
 });
 
 describe("hardenedWebPreferences", () => {
@@ -79,7 +81,7 @@ describe("hardenedWebPreferences", () => {
 
   test("enables devTools in a packaged debug build", () => {
     appState.isPackaged = true;
-    (globalThis as Record<string, unknown>)[DEBUG_DEVTOOLS_DEFINE] = true;
+    Reflect.set(globalThis, DEBUG_DEVTOOLS_DEFINE, true);
     expect(hardenedWebPreferences().devTools).toBe(true);
   });
 });
@@ -89,10 +91,7 @@ describe("createWindow", () => {
     createWindow({ browserWindow: { width: 100 }, navigation: "deny-all" });
 
     expect(constructed).toHaveLength(1);
-    const webPreferences = constructed[0]?.options.webPreferences as Record<
-      string,
-      unknown
-    >;
+    const webPreferences = constructed[0]?.webPreferences;
     expect(webPreferences).toMatchObject({
       contextIsolation: true,
       nodeIntegration: false,
@@ -110,10 +109,7 @@ describe("createWindow", () => {
   test("disables devTools on the window in a packaged build", () => {
     appState.isPackaged = true;
     createWindow({ browserWindow: {}, navigation: "deny-all" });
-    const webPreferences = constructed[0]?.options.webPreferences as Record<
-      string,
-      unknown
-    >;
+    const webPreferences = constructed[0]?.webPreferences;
     expect(webPreferences.devTools).toBe(false);
   });
 

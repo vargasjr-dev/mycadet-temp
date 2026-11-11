@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
-
 import { RENDERER_BASE_PROD } from "./app-config";
 
 type Listener = () => void;
@@ -12,99 +10,102 @@ type StubWebContents = {
   emit: (event: string) => void;
 };
 
-type StubWindow = {
-  webContents: StubWebContents;
-  isDestroyed: () => boolean;
-  on: (event: string, listener: Listener) => StubWindow;
-  emit: (event: string) => void;
-  setPosition: ReturnType<typeof mock>;
-  setAlwaysOnTop: ReturnType<typeof mock>;
-  setVisibleOnAllWorkspaces: ReturnType<typeof mock>;
-  setIgnoreMouseEvents: ReturnType<typeof mock>;
-  show: ReturnType<typeof mock>;
-  focus: ReturnType<typeof mock>;
-  showInactive: ReturnType<typeof mock>;
-  loadURL: ReturnType<typeof mock>;
-};
-
 type CreateWindowOptions = {
   browserWindow: Record<string, unknown>;
   navigation: unknown;
 };
 
 const appState = { isPackaged: false };
-const created: Array<{ opts: CreateWindowOptions; win: StubWindow }> = [];
+const created: Array<{ opts: CreateWindowOptions; win: StubBrowserWindow }> =
+  [];
 
-const makeWindow = (): StubWindow => {
-  const windowListeners = new Map<string, Listener[]>();
-  const webContentsListeners = new Map<string, Listener[]>();
-  let destroyed = false;
-  let webContentsDestroyed = false;
-  const calls: string[] = [];
+// The full options the floating-window module hands its createWindow dep,
+// staged so the stubbed BrowserWindow constructor can record them next to
+// the window it builds.
+let stagedOpts: CreateWindowOptions | undefined;
 
-  const webContents: StubWebContents = {
-    on: (event, listener) => {
-      const listeners = webContentsListeners.get(event) ?? [];
+/**
+ * The mocked `electron.BrowserWindow`: constructed wherever the module under
+ * test asks Electron for a window, carrying the observable surface the
+ * floating-window package drives (listeners, show variants, loadURL) plus
+ * the `calls` trace the click-through assertions read.
+ */
+class StubBrowserWindow {
+  static getFocusedWindow() {
+    return null;
+  }
+
+  opts: CreateWindowOptions;
+
+  calls: string[] = [];
+  private windowListeners = new Map<string, Listener[]>();
+  private webContentsListeners = new Map<string, Listener[]>();
+  private windowDestroyed = false;
+  private webContentsDestroyed = false;
+
+  webContents = {
+    on: (event: string, listener: Listener): StubWebContents => {
+      const listeners = this.webContentsListeners.get(event) ?? [];
       listeners.push(listener);
-      webContentsListeners.set(event, listeners);
-      return webContents;
+      this.webContentsListeners.set(event, listeners);
+      return this.webContents;
     },
-    isDestroyed: () => webContentsDestroyed,
-    emit: (event) => {
-      if (event === "destroyed") webContentsDestroyed = true;
-      for (const listener of webContentsListeners.get(event) ?? []) listener();
+    isDestroyed: (): boolean => this.webContentsDestroyed,
+    emit: (event: string): void => {
+      if (event === "destroyed") this.webContentsDestroyed = true;
+      for (const listener of this.webContentsListeners.get(event) ?? []) {
+        listener();
+      }
     },
   };
 
-  const win: StubWindow = {
-    webContents,
-    isDestroyed: () => destroyed,
-    on: (event, listener) => {
-      const listeners = windowListeners.get(event) ?? [];
-      listeners.push(listener);
-      windowListeners.set(event, listeners);
-      return win;
-    },
-    emit: (event) => {
-      if (event === "closed") destroyed = true;
-      for (const listener of windowListeners.get(event) ?? []) listener();
-    },
-    setPosition: mock((_x: number, _y: number) => undefined),
-    setAlwaysOnTop: mock((_flag: boolean, _level: string) => undefined),
-    setIgnoreMouseEvents: mock(
-      (_ignore: boolean, _options?: { forward?: boolean }) => {
-        calls.push("setIgnoreMouseEvents");
-      },
-    ),
-    setVisibleOnAllWorkspaces: mock(
-      (_visible: boolean, _opts: Record<string, boolean>) => undefined,
-    ),
-    show: mock(() => {
-      calls.push("show");
-    }),
-    focus: mock(() => undefined),
-    showInactive: mock(() => {
-      calls.push("showInactive");
-    }),
-    loadURL: mock((_url: string) => Promise.resolve()),
-  };
-  Object.defineProperty(win, "__calls", { value: calls });
-  return win;
-};
+  isDestroyed = (): boolean => this.windowDestroyed;
 
-const createWindowMock = mock((opts: CreateWindowOptions): StubWindow => {
-  const win = makeWindow();
-  created.push({ opts, win });
-  return win;
-});
+  on = (event: string, listener: Listener): StubBrowserWindow => {
+    const listeners = this.windowListeners.get(event) ?? [];
+    listeners.push(listener);
+    this.windowListeners.set(event, listeners);
+    return this;
+  };
+
+  emit = (event: string): void => {
+    if (event === "closed") this.windowDestroyed = true;
+    for (const listener of this.windowListeners.get(event) ?? []) listener();
+  };
+
+  setPosition = mock((_x: number, _y: number) => undefined);
+  setAlwaysOnTop = mock((_flag: boolean, _level: string) => undefined);
+  setIgnoreMouseEvents = mock(
+    (_ignore: boolean, _options?: { forward?: boolean }) => {
+      this.calls.push("setIgnoreMouseEvents");
+    },
+  );
+  setVisibleOnAllWorkspaces = mock(
+    (_visible: boolean, _opts: Record<string, boolean>) => undefined,
+  );
+  show = mock(() => {
+    this.calls.push("show");
+  });
+  focus = mock(() => undefined);
+  showInactive = mock(() => {
+    this.calls.push("showInactive");
+  });
+  loadURL = mock((_url: string) => Promise.resolve());
+
+  constructor(options: Record<string, unknown>) {
+    // The floating-window module stages the full createWindow options before
+    // constructing; the browserWindow subset is what Electron itself receives.
+    this.opts = stagedOpts ?? {
+      browserWindow: options,
+      navigation: undefined,
+    };
+    created.push({ opts: this.opts, win: this });
+  }
+}
 
 mock.module("electron", () => ({
   app: appState,
-  BrowserWindow: class {
-    static getFocusedWindow() {
-      return null;
-    }
-  },
+  BrowserWindow: StubBrowserWindow,
   ipcMain: {
     handle: mock(() => undefined),
     on: mock(() => undefined),
@@ -117,6 +118,7 @@ mock.module("electron", () => ({
   },
 }));
 
+const { BrowserWindow } = await import("electron");
 const {
   configureFloatingWindows,
   createFloatingWindow,
@@ -125,8 +127,10 @@ const {
 } = await import("@mycadet/electron-desktop/floating-window");
 
 configureFloatingWindows({
-  createWindow:
-    createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
+  createWindow: (opts) => {
+    stagedOpts = opts;
+    return new BrowserWindow(opts.browserWindow);
+  },
   platform: "darwin",
   resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
@@ -136,7 +140,7 @@ const kind = (name: string): string => `${name}-${nextKind++}`;
 
 beforeEach(() => {
   created.length = 0;
-  createWindowMock.mockClear();
+  stagedOpts = undefined;
   appState.isPackaged = false;
 });
 
@@ -146,16 +150,24 @@ afterEach(() => {
   }
 });
 
+/** The window the latest createFloatingWindow call built. */
+const lastWindow = (): StubBrowserWindow => {
+  const entry = created.at(-1);
+  if (!entry) throw new Error("expected a created window");
+  return entry.win;
+};
+
 describe("createFloatingWindow", () => {
   test("creates floating panels with the shared defaults and deny-all navigation", () => {
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("defaults"),
       route: "dictation-overlay",
       width: 480,
       height: 160,
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
 
-    expect(createWindowMock).toHaveBeenCalledTimes(1);
+    expect(created).toHaveLength(1);
     expect(created[0]?.opts.navigation).toBe("deny-all");
     expect(created[0]?.opts.browserWindow).toMatchObject({
       type: "panel",
@@ -186,12 +198,13 @@ describe("createFloatingWindow", () => {
   test("resolves packaged renderer routes under the assistant base", () => {
     appState.isPackaged = true;
 
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("packaged-url"),
       route: "/command-palette",
       width: 320,
       height: 200,
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
 
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
       "app://mycadet.ai/assistant/command-palette",
@@ -199,37 +212,40 @@ describe("createFloatingWindow", () => {
   });
 
   test("uses showInactive unless focus is explicitly requested", () => {
-    const passive = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("passive"),
       route: "/passive",
       width: 100,
       height: 100,
       focusOnShow: false,
-    }) as unknown as StubWindow;
+    });
+    const passive = lastWindow();
     expect(passive.showInactive).toHaveBeenCalledTimes(1);
     expect(passive.show).not.toHaveBeenCalled();
     expect(passive.focus).not.toHaveBeenCalled();
 
-    const focused = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("focused"),
       route: "/focused",
       width: 100,
       height: 100,
       focusOnShow: true,
-    }) as unknown as StubWindow;
+    });
+    const focused = lastWindow();
     expect(focused.showInactive).not.toHaveBeenCalled();
     expect(focused.show).toHaveBeenCalledTimes(1);
     expect(focused.focus).toHaveBeenCalledTimes(1);
   });
 
   test("leaves a new window hidden when the caller shows it", () => {
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("caller-shows"),
       route: "/caller-shows",
       width: 100,
       height: 100,
       callerShows: true,
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
     expect(win.showInactive).not.toHaveBeenCalled();
     expect(win.show).not.toHaveBeenCalled();
 
@@ -243,27 +259,29 @@ describe("createFloatingWindow", () => {
     const singletonKind = kind("singleton");
     const position = () => ({ x, y: x + 1 });
 
-    const first = createFloatingWindow({
+    createFloatingWindow({
       kind: singletonKind,
       route: "/singleton",
       width: 100,
       height: 100,
       focusOnShow: true,
       position,
-    }) as unknown as StubWindow;
+    });
+    const first = lastWindow();
 
     x = 20;
-    const second = createFloatingWindow({
+    createFloatingWindow({
       kind: singletonKind,
       route: "/singleton",
       width: 100,
       height: 100,
       focusOnShow: true,
       position,
-    }) as unknown as StubWindow;
+    });
+    const second = lastWindow();
 
     expect(second).toBe(first);
-    expect(createWindowMock).toHaveBeenCalledTimes(1);
+    expect(created).toHaveLength(1);
     expect(first.setPosition.mock.calls).toEqual([
       [10, 11],
       [20, 21],
@@ -274,40 +292,43 @@ describe("createFloatingWindow", () => {
   });
 
   test("allows callers to opt out of Spaces visibility and customize the top level", () => {
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("spaces-opt-out"),
       route: "/overlay",
       width: 100,
       height: 100,
       visibleOnAllWorkspaces: false,
       alwaysOnTopLevel: "pop-up-menu",
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
 
     expect(win.setAlwaysOnTop.mock.calls).toEqual([[true, "pop-up-menu"]]);
     expect(win.setVisibleOnAllWorkspaces).not.toHaveBeenCalled();
   });
 
   test("applies click-through behavior before showing the window", () => {
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("click-through"),
       route: "/overlay",
       width: 100,
       height: 100,
       ignoreMouseEvents: true,
-    }) as unknown as StubWindow & { __calls: string[] };
+    });
+    const win = lastWindow();
 
     expect(win.setIgnoreMouseEvents.mock.calls).toEqual([[true]]);
-    expect(win.__calls).toEqual(["setIgnoreMouseEvents", "showInactive"]);
+    expect(win.calls).toEqual(["setIgnoreMouseEvents", "showInactive"]);
   });
 
   test("can forward mouse movement while click-through", () => {
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: kind("click-through-forward"),
       route: "/overlay",
       width: 100,
       height: 100,
       ignoreMouseEvents: { forward: true },
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
 
     expect(win.setIgnoreMouseEvents.mock.calls).toEqual([
       [true, { forward: true }],
@@ -317,13 +338,14 @@ describe("createFloatingWindow", () => {
   test("reapplies click-through behavior when reusing an existing window", () => {
     const singletonKind = kind("click-through-reuse");
 
-    const win = createFloatingWindow({
+    createFloatingWindow({
       kind: singletonKind,
       route: "/overlay",
       width: 100,
       height: 100,
       ignoreMouseEvents: { forward: true },
-    }) as unknown as StubWindow;
+    });
+    const win = lastWindow();
     win.setIgnoreMouseEvents.mockClear();
 
     createFloatingWindow({
@@ -341,45 +363,49 @@ describe("createFloatingWindow", () => {
 
   test("drops the singleton reference when the window closes", () => {
     const cleanupKind = kind("closed");
-    const first = createFloatingWindow({
+    createFloatingWindow({
       kind: cleanupKind,
       route: "/cleanup",
       width: 100,
       height: 100,
-    }) as unknown as StubWindow;
+    });
+    const first = lastWindow();
 
     first.emit("closed");
 
     expect(getFloatingWindow(cleanupKind)).toBeNull();
-    const second = createFloatingWindow({
+    createFloatingWindow({
       kind: cleanupKind,
       route: "/cleanup",
       width: 100,
       height: 100,
     });
+    const second = lastWindow();
     expect(second).not.toBe(first);
-    expect(createWindowMock).toHaveBeenCalledTimes(2);
+    expect(created).toHaveLength(2);
   });
 
   test("drops the singleton reference when webContents is destroyed", () => {
     const cleanupKind = kind("webcontents-destroyed");
-    const first = createFloatingWindow({
-      kind: cleanupKind,
-      route: "/cleanup",
-      width: 100,
-      height: 100,
-    }) as unknown as StubWindow;
-
-    first.webContents.emit("destroyed");
-
-    expect(getFloatingWindow(cleanupKind)).toBeNull();
-    const second = createFloatingWindow({
+    createFloatingWindow({
       kind: cleanupKind,
       route: "/cleanup",
       width: 100,
       height: 100,
     });
+    const first = lastWindow();
+
+    first.webContents.emit("destroyed");
+
+    expect(getFloatingWindow(cleanupKind)).toBeNull();
+    createFloatingWindow({
+      kind: cleanupKind,
+      route: "/cleanup",
+      width: 100,
+      height: 100,
+    });
+    const second = lastWindow();
     expect(second).not.toBe(first);
-    expect(createWindowMock).toHaveBeenCalledTimes(2);
+    expect(created).toHaveLength(2);
   });
 });

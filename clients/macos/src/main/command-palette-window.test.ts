@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { CommandPaletteWindowDependencies } from "@mycadet/electron-desktop/command-palette-window";
-import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
+import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
 
 import { RENDERER_BASE_PROD } from "./app-config";
 
@@ -12,25 +11,6 @@ type StubWebContents = {
   isDestroyed: () => boolean;
   emit: (event: string, ...args: unknown[]) => void;
   send: ReturnType<typeof mock>;
-};
-
-type StubWindow = {
-  webContents: StubWebContents;
-  isDestroyed: () => boolean;
-  isVisible: () => boolean;
-  isMinimized: () => boolean;
-  getBounds: () => Electron.Rectangle;
-  on: (event: string, listener: Listener) => StubWindow;
-  emit: (event: string, ...args: unknown[]) => void;
-  close: ReturnType<typeof mock>;
-  setPosition: ReturnType<typeof mock>;
-  setAlwaysOnTop: ReturnType<typeof mock>;
-  setVisibleOnAllWorkspaces: ReturnType<typeof mock>;
-  setIgnoreMouseEvents: ReturnType<typeof mock>;
-  show: ReturnType<typeof mock>;
-  focus: ReturnType<typeof mock>;
-  showInactive: ReturnType<typeof mock>;
-  loadURL: ReturnType<typeof mock>;
 };
 
 type FocusedSource = {
@@ -45,10 +25,24 @@ type CreateWindowOptions = {
 };
 
 const appState = { isPackaged: false, name: "Cadet" };
-const created: Array<{ opts: CreateWindowOptions; win: StubWindow }> = [];
-const ipcHandlers = new Map<string, (...args: unknown[]) => unknown>();
+const created: Array<{ opts: CreateWindowOptions; win: StubBrowserWindow }> =
+  [];
+const ipcHandlers = new Map<
+  string,
+  (args: unknown, event?: unknown) => unknown
+>();
 
-let focusedWindow: StubWindow | FocusedSource | null = null;
+// The full options the floating-window module hands its createWindow dep,
+// staged so the stubbed BrowserWindow constructor can record them.
+let stagedOpts: CreateWindowOptions | undefined;
+
+let focusedWindow: StubBrowserWindow | FocusedSource | null = null;
+
+const setFocusedWindow = (
+  win: StubBrowserWindow | FocusedSource | null,
+): void => {
+  focusedWindow = win;
+};
 let activeWorkArea: Electron.Rectangle = {
   x: 1440,
   y: 100,
@@ -61,90 +55,104 @@ let currentMainWindow: {
   isMinimized: () => boolean;
 } | null = null;
 
-const makeWindow = (): StubWindow => {
-  const windowListeners = new Map<string, Listener[]>();
-  const webContentsListeners = new Map<string, Listener[]>();
-  let destroyed = false;
-  let webContentsDestroyed = false;
-  let visible = false;
-  let minimized = false;
-  const bounds: Electron.Rectangle = {
-    x: 0,
-    y: 0,
-    width: 584,
-    height: 444,
-  };
+/**
+ * The mocked `electron.BrowserWindow`: constructed wherever the palette asks
+ * Electron for a window, carrying the observable surface the modules under
+ * test drive (listeners, visibility state, close/show variants, loadURL).
+ */
+class StubBrowserWindow {
+  static getFocusedWindow() {
+    return focusedWindow;
+  }
 
-  const webContents: StubWebContents = {
-    on: (event, listener) => {
-      const listeners = webContentsListeners.get(event) ?? [];
+  static getAllWindows() {
+    return focusedWindow ? [focusedWindow] : [];
+  }
+
+  opts: CreateWindowOptions;
+
+  private windowListeners = new Map<string, Listener[]>();
+  private webContentsListeners = new Map<string, Listener[]>();
+  private windowDestroyed = false;
+  private webContentsDestroyed = false;
+  private visible = false;
+  private minimized = false;
+  private bounds: Electron.Rectangle = { x: 0, y: 0, width: 584, height: 444 };
+
+  webContents = {
+    on: (event: string, listener: Listener): StubWebContents => {
+      const listeners = this.webContentsListeners.get(event) ?? [];
       listeners.push(listener);
-      webContentsListeners.set(event, listeners);
-      return webContents;
+      this.webContentsListeners.set(event, listeners);
+      return this.webContents;
     },
-    isDestroyed: () => webContentsDestroyed,
-    emit: (event, ...args) => {
-      if (event === "destroyed") webContentsDestroyed = true;
-      for (const listener of webContentsListeners.get(event) ?? []) {
+    isDestroyed: (): boolean => this.webContentsDestroyed,
+    emit: (event: string, ...args: unknown[]): void => {
+      if (event === "destroyed") this.webContentsDestroyed = true;
+      for (const listener of this.webContentsListeners.get(event) ?? []) {
         listener(...args);
       }
     },
     send: mock(() => undefined),
   };
 
-  const win: StubWindow = {
-    webContents,
-    isDestroyed: () => destroyed,
-    isVisible: () => visible,
-    isMinimized: () => minimized,
-    getBounds: () => ({ ...bounds }),
-    on: (event, listener) => {
-      const listeners = windowListeners.get(event) ?? [];
-      listeners.push(listener);
-      windowListeners.set(event, listeners);
-      return win;
-    },
-    emit: (event, ...args) => {
-      if (event === "closed") {
-        destroyed = true;
-        visible = false;
-      }
-      if (event === "hide") visible = false;
-      if (event === "show") visible = true;
-      for (const listener of windowListeners.get(event) ?? []) {
-        listener(...args);
-      }
-    },
-    close: mock(() => {
-      win.emit("closed");
-    }),
-    setPosition: mock((x: number, y: number) => {
-      bounds.x = x;
-      bounds.y = y;
-    }),
-    setAlwaysOnTop: mock((_flag: boolean, _level: string) => undefined),
-    setIgnoreMouseEvents: mock((_ignore: boolean) => undefined),
-    setVisibleOnAllWorkspaces: mock(
-      (_visible: boolean, _opts: Record<string, boolean>) => undefined,
-    ),
-    show: mock(() => {
-      visible = true;
-    }),
-    focus: mock(() => {
-      focusedWindow = win;
-    }),
-    showInactive: mock(() => {
-      visible = true;
-    }),
-    loadURL: mock((_url: string) => Promise.resolve()),
+  isDestroyed = (): boolean => this.windowDestroyed;
+  isVisible = (): boolean => this.visible;
+  isMinimized = (): boolean => this.minimized;
+  getBounds = (): Electron.Rectangle => ({ ...this.bounds });
+
+  on = (event: string, listener: Listener): StubBrowserWindow => {
+    const listeners = this.windowListeners.get(event) ?? [];
+    listeners.push(listener);
+    this.windowListeners.set(event, listeners);
+    return this;
   };
-  Object.defineProperty(win, "__setMinimized", {
-    value: (value: boolean) => {
-      minimized = value;
-    },
+
+  emit = (event: string, ...args: unknown[]): void => {
+    if (event === "closed") {
+      this.windowDestroyed = true;
+      this.visible = false;
+    }
+    if (event === "hide") this.visible = false;
+    if (event === "show") this.visible = true;
+    for (const listener of this.windowListeners.get(event) ?? []) {
+      listener(...args);
+    }
+  };
+
+  close = mock((): void => {
+    this.emit("closed");
   });
-  return win;
-};
+  setPosition = mock((x: number, y: number): void => {
+    this.bounds.x = x;
+    this.bounds.y = y;
+  });
+  setAlwaysOnTop = mock((_flag: boolean, _level: string): void => undefined);
+  setIgnoreMouseEvents = mock((_ignore: boolean): void => undefined);
+  setVisibleOnAllWorkspaces = mock(
+    (_visible: boolean, _opts: Record<string, boolean>): void => undefined,
+  );
+  show = mock((): void => {
+    this.visible = true;
+  });
+  focus = mock((): void => {
+    setFocusedWindow(this);
+  });
+  showInactive = mock((): void => {
+    this.visible = true;
+  });
+  loadURL = mock((_url: string): Promise<void> => Promise.resolve());
+
+  constructor(options: Record<string, unknown>) {
+    // The floating-window module stages the full createWindow options before
+    // constructing; the browserWindow subset is what Electron itself receives.
+    this.opts = stagedOpts ?? {
+      browserWindow: options,
+      navigation: undefined,
+    };
+    created.push({ opts: this.opts, win: this });
+  }
+}
 
 const makeFocusedSource = (
   bounds: Electron.Rectangle = { x: 1500, y: 200, width: 900, height: 700 },
@@ -168,32 +176,9 @@ const makeMainWindow = ({
   isMinimized: () => minimized,
 });
 
-const createWindowMock = mock((opts: CreateWindowOptions): StubWindow => {
-  const win = makeWindow();
-  created.push({ opts, win });
-  return win;
-});
-
-const handleMock = mock(
-  (channel: string, _schema: unknown, fn: (...args: unknown[]) => unknown) => {
-    ipcHandlers.set(channel, fn);
-  },
-);
-
-const ensureVisibleMock = mock(async () => undefined);
-const dispatchToMainMock = mock((_command: unknown) => undefined);
-
 mock.module("electron", () => ({
   app: appState,
-  BrowserWindow: class {
-    static getFocusedWindow() {
-      return focusedWindow;
-    }
-
-    static getAllWindows() {
-      return focusedWindow ? [focusedWindow] : [];
-    }
-  },
+  BrowserWindow: StubBrowserWindow,
   Menu: {
     buildFromTemplate: mock((template: unknown) => template),
     setApplicationMenu: mock((_menu: unknown) => undefined),
@@ -213,6 +198,29 @@ mock.module("electron", () => ({
     openExternal: mock(() => Promise.resolve()),
   },
 }));
+
+const { BrowserWindow } = await import("electron");
+
+const createWindowMock = mock(
+  (opts: CreateWindowOptions): Electron.BrowserWindow => {
+    stagedOpts = opts;
+    return new BrowserWindow(opts.browserWindow);
+  },
+);
+
+// A plain IpcHandle implementation rather than a bun mock: the generic
+// registration signature can't round-trip through Mock's own generics.
+const handleCalls: Array<[string, unknown]> = [];
+const handleMock: IpcHandle = (channel, schema, fn) => {
+  handleCalls.push([channel, fn]);
+  void schema;
+  ipcHandlers.set(channel, (args, event) =>
+    Reflect.apply(fn, undefined, [args, event]),
+  );
+};
+
+const ensureVisibleMock = mock(async () => undefined);
+const dispatchToMainMock = mock((_command: unknown) => undefined);
 
 mock.module("./windows", () => ({
   createWindow: createWindowMock,
@@ -291,17 +299,15 @@ const { configureFloatingWindows, createWindowRouteResolver } =
   await import("@mycadet/electron-desktop/floating-window");
 
 configureFloatingWindows({
-  createWindow:
-    createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
+  createWindow: createWindowMock,
   platform: "darwin",
   resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
 configureCommandPaletteWindow({
-  currentMainWindow: (() =>
-    currentMainWindow) as unknown as CommandPaletteWindowDependencies["currentMainWindow"],
+  currentMainWindow: () => currentMainWindow,
   dispatchToMain: dispatchToMainMock,
   ensureMainWindowVisible: ensureVisibleMock,
-  handle: handleMock as unknown as CommandPaletteWindowDependencies["handle"],
+  handle: handleMock,
 });
 const { dispatchMenuCommand } = await import("./menu");
 
@@ -312,7 +318,7 @@ beforeEach(() => {
   created.length = 0;
   ipcHandlers.clear();
   createWindowMock.mockClear();
-  handleMock.mockClear();
+  handleCalls.length = 0;
   ensureVisibleMock.mockClear();
   dispatchToMainMock.mockClear();
   appState.isPackaged = false;
@@ -400,7 +406,7 @@ describe("installCommandPaletteWindow", () => {
   test("registers open, dismiss, and select IPC handlers", async () => {
     installCommandPaletteWindow();
 
-    expect(handleMock.mock.calls.map((call) => call[0])).toEqual([
+    expect(handleCalls.map(([channel]) => channel)).toEqual([
       "cadet:commandPalette:open",
       "cadet:commandPalette:dismiss",
       "cadet:commandPalette:select",

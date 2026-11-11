@@ -47,7 +47,7 @@ const PERMISSION_KINDS = [
   "notifications",
 ] as const;
 
-type PermissionKind = (typeof PERMISSION_KINDS)[number];
+export type PermissionKind = (typeof PERMISSION_KINDS)[number];
 
 const PERMISSION_STATUSES = [
   "unknown",
@@ -57,9 +57,9 @@ const PERMISSION_STATUSES = [
   "granted",
 ] as const;
 
-type PermissionStatus = (typeof PERMISSION_STATUSES)[number];
+export type PermissionStatus = (typeof PERMISSION_STATUSES)[number];
 
-interface PermissionStateItem {
+export interface PermissionStateItem {
   kind: PermissionKind;
   status: PermissionStatus;
   canRequest: boolean;
@@ -68,7 +68,7 @@ interface PermissionStateItem {
   error?: string;
 }
 
-type PermissionsState = Record<PermissionKind, PermissionStateItem>;
+export type PermissionsState = Record<PermissionKind, PermissionStateItem>;
 
 const permissionKindSchema = z.enum(PERMISSION_KINDS);
 
@@ -98,10 +98,7 @@ interface NotificationPermissionPresentation {
 const permissionNotificationPresentationSchema = z
   .unknown()
   .transform((value): NotificationPermissionPresentation | undefined => {
-    const fields =
-      typeof value === "object" && value !== null
-        ? (value as Record<string, unknown>)
-        : {};
+    const fields = typeof value === "object" && value !== null ? value : {};
     const parsed = showNotificationPayloadSchema.safeParse({
       ...fields,
       category: "notificationIntent",
@@ -148,10 +145,11 @@ const isMacHelperPermissionKind = (
   kind: PermissionKind,
 ): kind is MacHelperPermissionKind => HELPER_PERMISSION_KINDS.has(kind);
 
+const isPermissionStatus = (status: string): status is PermissionStatus =>
+  PERMISSION_STATUSES.some((candidate) => candidate === status);
+
 const mapMediaStatus = (status: string): PermissionStatus =>
-  PERMISSION_STATUSES.includes(status as PermissionStatus)
-    ? (status as PermissionStatus)
-    : "unknown";
+  isPermissionStatus(status) ? status : "unknown";
 
 const describeError = (err: unknown): string =>
   err instanceof Error ? err.message : String(err);
@@ -308,12 +306,30 @@ export class PermissionsService {
   private notificationStatus: PermissionStatus = initialNotificationStatus();
 
   async state(sender?: WebContents): Promise<PermissionsState> {
-    const entries = await Promise.all(
-      PERMISSION_KINDS.map(
-        async (kind) => [kind, await this.item(kind, sender)] as const,
-      ),
-    );
-    return Object.fromEntries(entries) as PermissionsState;
+    // One ask per kind, by name: the literal keys are checked against
+    // PermissionKind and the returned object against PermissionsState, so a
+    // kind added to PERMISSION_KINDS surfaces here as a missing key.
+    const [accessibility, screen, microphone, speechRecognition] =
+      await Promise.all([
+        this.item("accessibility", sender),
+        this.item("screen", sender),
+        this.item("microphone", sender),
+        this.item("speechRecognition", sender),
+      ]);
+    const [inputMonitoring, automation, notifications] = await Promise.all([
+      this.item("inputMonitoring", sender),
+      this.item("automation", sender),
+      this.item("notifications", sender),
+    ]);
+    return {
+      accessibility,
+      screen,
+      microphone,
+      speechRecognition,
+      inputMonitoring,
+      automation,
+      notifications,
+    };
   }
 
   async refresh(sender?: WebContents): Promise<PermissionsState> {

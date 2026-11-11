@@ -70,7 +70,7 @@ const createHarness = ({
 
   return {
     deps: {
-      getFocusedWindow: () => (focused ? ({} as never) : null),
+      getFocusedWindow: () => (focused ? {} : null),
       readFrontAppFocus: () => Promise.resolve({ takesText, helperAnswered }),
       readClipboardSnapshot: () => clipboardSnapshot,
       restoreClipboardSnapshot: (snapshot: ClipboardSnapshot) => {

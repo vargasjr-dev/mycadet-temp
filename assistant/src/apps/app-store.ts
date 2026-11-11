@@ -39,7 +39,6 @@ import { bridgeEmojiAppIcon } from "@mycadet/app-icons";
 import { resolveConversationLineage } from "../daemon/conversation-lineage.js";
 import { rawAll } from "../persistence/raw-query.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
-import type {} from "../tools/shared/filesystem/edit-engine.js";
 import { getDataDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";

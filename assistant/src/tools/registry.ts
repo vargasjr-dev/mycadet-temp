@@ -1093,7 +1093,8 @@ async function runToolInitialization(): Promise<void> {
   //
   // Imported dynamically because the loader imports back from this module
   // (registerWorkspaceTools / removeCoreToolViaWorkspace); a static import
-  // here would create a registry ↔ loader cycle that `lint:circular` flags.
+  // here would create a registry ↔ loader cycle that the circular-deps
+  // gate (scripts/check-circular-deps.ts, run by `bun run lint`) flags.
   const { loadWorkspaceTools } = await import("./workspace-tools/loader.js");
   await loadWorkspaceTools();
 

@@ -65,17 +65,35 @@ import type {
   CoachmarkRequest,
   CoachmarkResult,
 } from "@mycadet/ipc-contract";
-import type { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
+import {
+  HostProxyPoster,
+  type HostCuResultPayload,
+} from "@mycadet/electron-desktop/host-proxy/poster";
 import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+/**
+ * A real poster over a captured fetch: the payloads the executor posts are
+ * read back off the wire, so the test also sees the JSON round-trip.
+ */
 function makePoster() {
-  const postCuResult = mock(async (_payload: unknown) => true);
-  return {
-    poster: { postCuResult } as unknown as HostProxyPoster,
-    postCuResult,
-  };
+  const posted: HostCuResultPayload[] = [];
+  const poster = new HostProxyPoster({
+    endpointBase: "http://poster.test",
+    authHeaders: () => ({}),
+    fetch: Object.assign(
+      async (_url: unknown, init?: RequestInit) => {
+        const body: HostCuResultPayload = JSON.parse(
+          String(init?.body ?? "{}"),
+        );
+        posted.push(body);
+        return new Response("{}", { status: 200 });
+      },
+      { preconnect: () => undefined },
+    ),
+  });
+  return { poster, posted };
 }
 
 function request(
@@ -121,7 +139,7 @@ describe("hostCuExecutor", () => {
       executionResult: "clicked",
     });
     const executor = createHostCuExecutor({ helper });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
     await tick();
@@ -134,8 +152,8 @@ describe("hostCuExecutor", () => {
       stepNumber: 2,
       reasoning: "click it",
     });
-    expect(postCuResult).toHaveBeenCalledTimes(1);
-    expect(postCuResult.mock.calls[0]?.[0]).toMatchObject({
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toMatchObject({
       requestId: "req-1",
       axTree: "Window: x",
       screenshot: "BASE64",
@@ -147,13 +165,13 @@ describe("hostCuExecutor", () => {
   test("posts an error when toolName is missing", async () => {
     const helper = helperReturning({});
     const executor = createHostCuExecutor({ helper });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(request({ toolName: undefined }), poster);
     await tick();
 
     expect(helper.call).not.toHaveBeenCalled();
-    expect(postCuResult.mock.calls[0]?.[0]).toMatchObject({
+    expect(posted[0]).toMatchObject({
       requestId: "req-1",
       executionError: "Missing toolName",
     });
@@ -166,12 +184,12 @@ describe("hostCuExecutor", () => {
       }),
     };
     const executor = createHostCuExecutor({ helper });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
     await tick();
 
-    expect(postCuResult.mock.calls[0]?.[0]).toMatchObject({
+    expect(posted[0]).toMatchObject({
       requestId: "req-1",
       executionError: "helper exploded",
     });
@@ -180,13 +198,13 @@ describe("hostCuExecutor", () => {
   test("drops the result when the request was cancelled", async () => {
     const helper = helperReturning({ executionResult: "done" });
     const executor = createHostCuExecutor({ helper });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
     executor.handleCancel(request(), poster);
     await tick();
 
-    expect(postCuResult).not.toHaveBeenCalled();
+    expect(posted).toHaveLength(0);
   });
 });
 
@@ -198,7 +216,7 @@ describe("pointing at the shared surface", () => {
   const marks = [{ x: 0.1, y: 0.2, width: 0.3, height: 0.1, caption: "Press" }];
 
   const pointAt = (input: unknown = { marks }) =>
-    request({ toolName: POINT_AT_TOOL, input: input as never });
+    request({ toolName: POINT_AT_TOOL, input });
 
   // Its own, since the helper is what this path must not reach: a call on it
   // is the failure these cases are looking for.
@@ -214,7 +232,7 @@ describe("pointing at the shared surface", () => {
   test("draws the marks without going to the helper", async () => {
     const helper = helperReturning({});
     const executor = createHostCuExecutor({ helper, showCoachmarks });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
     await tick();
@@ -223,7 +241,7 @@ describe("pointing at the shared surface", () => {
     expect(showCoachmarks).toHaveBeenCalledTimes(1);
     expect(showCoachmarks.mock.calls[0]?.[0]).toEqual(marks);
     expect(showCoachmarks.mock.calls[0]?.[1]).toBe("conv-1");
-    expect(postCuResult.mock.calls[0]?.[0]).toMatchObject({
+    expect(posted[0]).toMatchObject({
       requestId: "req-1",
       executionResult:
         "Drew 1 mark on the shared surface: a ring over 10%,20% to 40%,30%. Coordinates are fractions of the surface.",
@@ -235,12 +253,12 @@ describe("pointing at the shared surface", () => {
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt({ marks: [] }), poster);
     await tick();
 
-    expect(postCuResult.mock.calls[0]?.[0]).toMatchObject({
+    expect(posted[0]).toMatchObject({
       executionResult: "Marks cleared.",
     });
   });
@@ -252,17 +270,13 @@ describe("pointing at the shared surface", () => {
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
     await tick();
 
-    const posted = postCuResult.mock.calls[0]?.[0] as {
-      executionError?: string;
-      executionResult?: string;
-    };
-    expect(posted.executionResult).toBeUndefined();
-    return posted.executionError ?? "";
+    expect(posted[0]?.executionResult).toBeUndefined();
+    return posted[0]?.executionError ?? "";
   };
 
   /**
@@ -342,14 +356,14 @@ describe("pointing at the shared surface", () => {
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
     executor.handleCancel(pointAt(), poster);
     letGo();
     await tick();
 
-    expect(postCuResult).not.toHaveBeenCalled();
+    expect(posted).toHaveLength(0);
   });
 
   /**
@@ -380,14 +394,14 @@ describe("pointing at the shared surface", () => {
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
     await tick();
     executor.handleCancel(pointAt(), poster);
     await tick();
 
-    expect(postCuResult).toHaveBeenCalledTimes(1);
+    expect(posted).toHaveLength(1);
     expect(showCoachmarks).toHaveBeenCalledTimes(1);
   });
 
@@ -397,23 +411,20 @@ describe("pointing at the shared surface", () => {
    * tell the assistant a page of 300 controls has 24 of them.
    */
   test("counts the names it is not showing off the surface, not off the list", async () => {
-    showCoachmarks.mockImplementationOnce(
-      async () =>
-        ({
-          kind: "unresolved",
-          unresolved: {
-            target: "white balance",
-            reason: "no-match",
-            candidates: Array.from({ length: 30 }, (_, i) => `Control ${i}`),
-            candidateCount: 312,
-          },
-        }) as CoachmarkResult,
-    );
+    showCoachmarks.mockImplementationOnce(async () => ({
+      kind: "unresolved",
+      unresolved: {
+        target: "white balance",
+        reason: "no-match",
+        candidates: Array.from({ length: 30 }, (_, i) => `Control ${i}`),
+        candidateCount: 312,
+      },
+    }));
     const executor = createHostCuExecutor({
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(
       pointAt({ marks: [{ target: "white balance" }] }),
@@ -421,9 +432,7 @@ describe("pointing at the shared surface", () => {
     );
     await tick();
 
-    const told = (
-      postCuResult.mock.calls[0]?.[0] as { executionError?: string }
-    ).executionError;
+    const told = posted[0]?.executionError;
     expect(told).toContain("(and 288 more)");
     expect(told).toContain("Control 23");
     expect(told).not.toContain("Control 24");
@@ -431,22 +440,19 @@ describe("pointing at the shared surface", () => {
 
   /** A host that sends no count is read off the names it did send. */
   test("counts off the list when the host sent no total", async () => {
-    showCoachmarks.mockImplementationOnce(
-      async () =>
-        ({
-          kind: "unresolved",
-          unresolved: {
-            target: "white balance",
-            reason: "no-match",
-            candidates: Array.from({ length: 30 }, (_, i) => `Control ${i}`),
-          },
-        }) as CoachmarkResult,
-    );
+    showCoachmarks.mockImplementationOnce(async () => ({
+      kind: "unresolved",
+      unresolved: {
+        target: "white balance",
+        reason: "no-match",
+        candidates: Array.from({ length: 30 }, (_, i) => `Control ${i}`),
+      },
+    }));
     const executor = createHostCuExecutor({
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(
       pointAt({ marks: [{ target: "white balance" }] }),
@@ -454,10 +460,7 @@ describe("pointing at the shared surface", () => {
     );
     await tick();
 
-    expect(
-      (postCuResult.mock.calls[0]?.[0] as { executionError?: string })
-        .executionError,
-    ).toContain("(and 6 more)");
+    expect(posted[0]?.executionError).toContain("(and 6 more)");
   });
 
   test("refuses coordinates measured against some other surface", async () => {
@@ -465,7 +468,7 @@ describe("pointing at the shared surface", () => {
       helper: helperReturning({}),
       showCoachmarks,
     });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(
       pointAt({ marks: [{ x: 4, y: 0.2, width: 0.3, height: 0.1 }] }),
@@ -474,10 +477,7 @@ describe("pointing at the shared surface", () => {
     await tick();
 
     expect(showCoachmarks).not.toHaveBeenCalled();
-    expect(
-      (postCuResult.mock.calls[0]?.[0] as { executionError?: string })
-        .executionError,
-    ).toContain("Invalid marks");
+    expect(posted[0]?.executionError).toContain("Invalid marks");
   });
 
   /**
@@ -487,15 +487,12 @@ describe("pointing at the shared surface", () => {
    */
   test("answers that it cannot draw when nothing is wired to", async () => {
     const executor = createHostCuExecutor({ helper: helperReturning({}) });
-    const { poster, postCuResult } = makePoster();
+    const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
     await tick();
 
-    expect(
-      (postCuResult.mock.calls[0]?.[0] as { executionError?: string })
-        .executionError,
-    ).toContain("cannot draw on the screen");
+    expect(posted[0]?.executionError).toContain("cannot draw on the screen");
   });
 
   test("still forwards every other tool to the helper", async () => {
