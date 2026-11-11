@@ -76,7 +76,7 @@ export type HostCaptureTarget =
  * keys and nothing else, so an absent target is an empty input rather than a
  * key set to nothing.
  */
-export function captureTargetInput(
+function captureTargetInput(
   target: HostCaptureTarget | undefined,
 ): Record<string, number> {
   if (target === undefined) {

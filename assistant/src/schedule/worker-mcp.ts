@@ -33,7 +33,7 @@ const log = getLogger("schedule-worker-mcp");
  * this deadline those ticks start. Tool-backed schedules stay deferred
  * until {@link markScheduleToolSurfaceReady}.
  */
-export const MCP_STARTUP_GRACE_MS = 20_000;
+const MCP_STARTUP_GRACE_MS = 20_000;
 
 export async function bootstrapScheduleWorkerMcp(options?: {
   start?: () => Promise<McpStartupSnapshot>;

@@ -345,7 +345,7 @@ export function sanitizeNotificationTitle(value: string): string {
  * Tidy copy after a sentence was cut out of it: trailing spaces before a
  * line break go, runs of blank lines collapse to one, and the ends trim.
  */
-export function normalizeStrippedText(value: string): string {
+function normalizeStrippedText(value: string): string {
   return value
     .replace(/(?<=\S)[ \t]{2,}(?=\S)/g, " ")
     .replace(/[ \t]+\n/g, "\n")

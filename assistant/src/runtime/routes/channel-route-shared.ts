@@ -71,10 +71,6 @@ export function buildGuardianDenyContext(
   return `Permission denied for "${toolName}": guardian approval was required, but no guardian is configured for this channel. In your next assistant reply, explain this and offer guardian setup. Mention that setup provides a verification code that the user replies with in the channel.`;
 }
 
-export function stripVerificationFailurePrefix(reason: string): string {
-  const trimmed = reason.trim();
-  return trimmed.replace(/^verification failed\.?\s*/i, "").trim() || trimmed;
-}
 let _testPollMaxWaitOverride: number | null = null;
 
 /** @internal — test-only: set an override for the poll max-wait. */

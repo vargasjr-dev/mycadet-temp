@@ -41,7 +41,7 @@ export interface SttRoleRequirements {
   readonly label: string;
 }
 
-export const STT_ROLE_REQUIREMENTS: Record<SttRole, SttRoleRequirements> = {
+const STT_ROLE_REQUIREMENTS: Record<SttRole, SttRoleRequirements> = {
   /**
    * The live-voice transport arms a streaming transcriber per utterance and
    * has no batch fallback, so streaming alone is the whole requirement.

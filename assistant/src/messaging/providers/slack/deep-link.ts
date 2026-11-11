@@ -3,11 +3,11 @@ export interface SlackMessageDeepLinks {
   webUrl?: string;
 }
 
-export function formatSlackPermalinkTimestamp(ts: string): string {
+function formatSlackPermalinkTimestamp(ts: string): string {
   return ts.replace(".", "");
 }
 
-export function buildSlackAppMessageUrl(params: {
+function buildSlackAppMessageUrl(params: {
   teamId?: string | null;
   channelId: string;
   messageTs: string;
@@ -62,7 +62,7 @@ function buildArchivesMessageUrl(
   return `${baseUrl}?${search.toString()}`;
 }
 
-export function buildSlackWebMessageUrl(params: {
+function buildSlackWebMessageUrl(params: {
   teamUrl?: string | null;
   channelId: string;
   messageTs: string;

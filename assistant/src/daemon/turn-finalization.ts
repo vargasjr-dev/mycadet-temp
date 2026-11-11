@@ -23,9 +23,6 @@ const pendingFinalizations = new Map<
   { promise: Promise<void>; settle: () => void }
 >();
 
-export function hasPendingTurnFinalization(conversationId: string): boolean {
-  return pendingFinalizations.has(conversationId);
-}
 
 /**
  * Open the barrier for a turn that is starting. Returns the closer, which the

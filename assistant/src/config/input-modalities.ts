@@ -18,7 +18,7 @@ export type InputModality = (typeof INPUT_MODALITIES)[number];
  * - `supported`: whether the model accepts the modality, overriding the catalog
  *   when set.
  */
-export const ModalityOverrideSchema = z
+const ModalityOverrideSchema = z
   .object({
     enabled: z.boolean().optional(),
     supported: z.boolean().optional(),

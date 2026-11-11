@@ -35,7 +35,7 @@ export function parseCpuStat(raw: string): ContainerCpuStat {
 }
 
 /** Raw cgroup v2 `cpu.stat` content, or null on cgroups v1 / unreadable. */
-export function readCpuStatRaw(): string | null {
+function readCpuStatRaw(): string | null {
   try {
     return readFileSync("/sys/fs/cgroup/cpu.stat", "utf-8");
   } catch {
@@ -52,7 +52,7 @@ export function getContainerCpuStat(): ContainerCpuStat | null {
  * Parse a Kubernetes-style CPU string (e.g. "2000m", "1", "500m") into
  * fractional cores. Returns null if the value is not a recognized format.
  */
-export function parseK8sCpuCores(value: string): number | null {
+function parseK8sCpuCores(value: string): number | null {
   const trimmed = value.trim();
   const milliMatch = trimmed.match(/^(\d+)m$/);
   if (milliMatch) {

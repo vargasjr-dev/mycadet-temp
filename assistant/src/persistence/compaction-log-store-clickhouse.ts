@@ -602,10 +602,6 @@ export function getCompactionLogStore(): ClickHouseCompactionLogStore | null {
   return cachedStore.store;
 }
 
-/** Test hook: drop the memoized store so config/dep changes are picked up. */
-export function resetCompactionLogStoreForTests(): void {
-  cachedStore = null;
-}
 
 /**
  * Record a compaction start event. Fire-and-forget: resolves immediately

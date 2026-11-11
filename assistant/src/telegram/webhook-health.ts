@@ -65,7 +65,7 @@ const log = getLogger("telegram-webhook-health");
 const REQUEST_TIMEOUT_MS = 10_000;
 
 /** How often the sweep polls Telegram. */
-export const HEALTH_CHECK_INTERVAL_MS = 5 * 60_000;
+const HEALTH_CHECK_INTERVAL_MS = 5 * 60_000;
 
 /**
  * How recent a delivery error must be to count as an ongoing outage.

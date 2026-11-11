@@ -17,7 +17,7 @@
  * Distinct from exploration-drift's narrower `LOOP_PRONE_MODEL_PATTERN`, which
  * targets specific loop-prone versions rather than the whole capability class.
  */
-export const WEAK_OPEN_MODEL_PATTERN = /kimi-k2|deepseek|minimax|glm/i;
+const WEAK_OPEN_MODEL_PATTERN = /kimi-k2|deepseek|minimax|glm/i;
 
 /** True when `model` is a weak open model (see {@link WEAK_OPEN_MODEL_PATTERN}). */
 export function isWeakOpenModel(model: string | null | undefined): boolean {

@@ -31,7 +31,7 @@ import type { NotificationChannel } from "./types.js";
 const log = getLogger("edit-notification");
 
 /** Prefix used by `home-feed-side-effect` when minting feed item ids. */
-export const FEED_ITEM_ID_PREFIX = "notif:";
+const FEED_ITEM_ID_PREFIX = "notif:";
 
 export interface EditNotificationParams {
   /** Feed item id (`notif:<uuid>`) or bare signal uuid. */

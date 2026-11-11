@@ -120,7 +120,7 @@ export function withOpenRouterBodyExtras(
  * chat-completions path performs in `OpenRouterProvider.buildExtraCreateParams`.
  * Exported for tests.
  */
-export class OpenRouterResponsesProvider extends OpenAIResponsesProvider {
+class OpenRouterResponsesProvider extends OpenAIResponsesProvider {
   protected override buildExtraCreateParams(
     options?: SendMessageOptions,
   ): Record<string, unknown> {

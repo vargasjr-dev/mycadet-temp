@@ -13,8 +13,8 @@ import { join } from "node:path";
 import { z } from "zod";
 
 export const LEGACY_PLUGIN_MANIFEST = "package.json";
-export const STANDARD_PLUGIN_MANIFEST = "plugin.json";
-export const AGENT_PLUGINS_MANIFEST_SCHEMA_URL =
+const STANDARD_PLUGIN_MANIFEST = "plugin.json";
+const AGENT_PLUGINS_MANIFEST_SCHEMA_URL =
   "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json";
 
 const PluginNameSchema = z

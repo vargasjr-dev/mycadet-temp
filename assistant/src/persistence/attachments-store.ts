@@ -772,7 +772,7 @@ export function getFilePathForAttachment(attachmentId: string): string | null {
  * Returns a Map of attachment ID → source_path for attachments that have a non-null source_path.
  * Uses raw SQL since source_path is added via runtime migration and is not in the Drizzle schema.
  */
-export function getSourcePathsForAttachments(
+function getSourcePathsForAttachments(
   attachmentIds: string[],
 ): Map<string, string> {
   if (attachmentIds.length === 0) {

@@ -128,7 +128,7 @@ const RESERVED_COMPANION_NAMES = new Set([
  * and scripts, not data assets — a source past this size is almost certainly
  * the wrong file.
  */
-export const MAX_COMPANION_SOURCE_BYTES = 1024 * 1024;
+const MAX_COMPANION_SOURCE_BYTES = 1024 * 1024;
 
 /**
  * Validate a `copy_from` companion source and return its contents.
@@ -144,7 +144,7 @@ export const MAX_COMPANION_SOURCE_BYTES = 1024 * 1024;
  * Contents are read here, at validation time, so the caller's write loop stays
  * a single all-or-nothing pass over pre-resolved content.
  */
-export function validateCompanionSource(sourcePath: string): {
+function validateCompanionSource(sourcePath: string): {
   content?: string;
   error?: string;
 } {

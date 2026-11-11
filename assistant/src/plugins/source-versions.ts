@@ -30,7 +30,7 @@ import { getMonitoringDataDir } from "../util/layout.js";
  * workspace git-service ignore rules — the document carries absolute
  * host-specific paths that must never be committed into workspace history.
  */
-export const SOURCE_VERSIONS_FILENAME = "plugin-source-versions.json";
+const SOURCE_VERSIONS_FILENAME = "plugin-source-versions.json";
 
 /** Document format version; readers ignore documents from a different format. */
 export const SOURCE_VERSIONS_FORMAT = 1;

@@ -36,7 +36,7 @@
 // input before applying the correction, regardless of source.
 
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { EmbeddingProviderName } from "../../../persistence/embeddings/embedding-types.js";
@@ -325,24 +325,7 @@ export async function loadCalibration(
   }
 }
 
-/**
- * Persist a calibration to disk and refresh the in-process cache so the
- * next `loadCalibration` returns the new fit without a file read.
- */
-export async function saveCalibration(
-  calib: AnisotropyCalibration,
-): Promise<string> {
-  const path = calibrationPath(calib.provider, calib.model, calib.dim);
-  await mkdir(join(getDataDir(), "anisotropy"), { recursive: true });
-  await writeFile(path, JSON.stringify(calib), "utf8");
-  cache.set(calibrationKey(calib.provider, calib.model, calib.dim), calib);
-  return path;
-}
 
-/** @internal Test-only: drop the in-process calibration cache. */
-export function clearAnisotropyCacheForTests(): void {
-  cache.clear();
-}
 
 // ── Power iteration internals ────────────────────────────────────────────────
 

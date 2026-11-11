@@ -14,7 +14,6 @@ import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 import {
   AVATAR_IMAGE_FILENAME,
-  AVATAR_MANIFEST_FILENAME,
   resolveAvatarDir,
 } from "@mycadet/avatar-manifest";
 import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/environments/test-path-guard";
@@ -106,10 +105,6 @@ export function getAvatarImagePath(): string {
   return join(getAvatarDir(), AVATAR_IMAGE_FILENAME);
 }
 
-/** Returns the canonical avatar manifest path ($CADET_WORKSPACE_DIR/data/avatar/avatar.json). */
-export function getAvatarManifestPath(): string {
-  return join(getAvatarDir(), AVATAR_MANIFEST_FILENAME);
-}
 
 export function getPidPath(): string {
   return join(getWorkspaceDir(), "cadet.pid");
@@ -207,12 +202,12 @@ export function getMonitoringPidPath(): string {
  * PID file, and per-process scratch under `procs/<name>/`, so `ls procs` is a
  * census of managed subprocesses and cleanup is one `rm -rf` of the subdir.
  */
-export function getProcsDir(): string {
+function getProcsDir(): string {
   return join(getWorkspaceDir(), "procs");
 }
 
 /** The runtime directory for one managed subprocess: `procs/<name>/`. */
-export function getProcDir(name: string): string {
+function getProcDir(name: string): string {
   return join(getProcsDir(), name);
 }
 
@@ -381,10 +376,6 @@ export function getWorkspaceWorkflowsDir(): string {
   return join(getWorkspaceDir(), "workflows");
 }
 
-/** Returns $CADET_WORKSPACE_DIR/deprecated — transitional files slated for removal. */
-export function getDeprecatedDir(): string {
-  return join(getWorkspaceDir(), "deprecated");
-}
 
 /** Returns $CADET_WORKSPACE_DIR/conversations */
 export function getConversationsDir(): string {

@@ -39,11 +39,11 @@ const log = getLogger("auth-middleware");
 // ---------------------------------------------------------------------------
 
 /** The subject header the gateway sets from the verified token's `sub`. */
-export const SUBJECT_HEADER = "x-cadet-subject";
+const SUBJECT_HEADER = "x-cadet-subject";
 /** The principal-type header the gateway sets from the verified subject. */
-export const PRINCIPAL_TYPE_HEADER = "x-cadet-principal-type";
+const PRINCIPAL_TYPE_HEADER = "x-cadet-principal-type";
 /** The scope-profile header the gateway sets from the verified token. */
-export const SCOPE_PROFILE_HEADER = "x-cadet-scope-profile";
+const SCOPE_PROFILE_HEADER = "x-cadet-scope-profile";
 
 // ---------------------------------------------------------------------------
 // Result type

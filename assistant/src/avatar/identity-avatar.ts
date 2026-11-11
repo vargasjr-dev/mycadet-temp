@@ -17,7 +17,7 @@ export const NO_AVATAR_IDENTITY_NOTE =
  * Longest note written to IDENTITY.md. The note rides in every system prompt,
  * and an AI prompt can run to paragraphs.
  */
-export const AVATAR_IDENTITY_NOTE_MAX_CHARS = 240;
+const AVATAR_IDENTITY_NOTE_MAX_CHARS = 240;
 
 /**
  * One line, at most {@link AVATAR_IDENTITY_NOTE_MAX_CHARS} long. A line break

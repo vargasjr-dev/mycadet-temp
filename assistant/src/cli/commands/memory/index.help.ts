@@ -6,7 +6,7 @@ import type { CliCommandHelp } from "../../lib/cli-command-help.js";
  * Memory kinds accepted by the daemon's memory-item routes. Mirrored here
  * for help text only — the route validates and rejects unknown kinds.
  */
-export const MEMORY_KINDS =
+const MEMORY_KINDS =
   "episodic, semantic, procedural, emotional, prospective, behavioral, narrative, shared";
 
 export const memoryHelp: CliCommandHelp = {

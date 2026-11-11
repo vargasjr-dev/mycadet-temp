@@ -48,10 +48,10 @@ import { validateCloudSkillId } from "./cloud-store.js";
 const log = getLogger("skill-history");
 
 /** How many revisions to return when the caller does not specify. */
-export const DEFAULT_SKILL_HISTORY_LIMIT = 20;
+const DEFAULT_SKILL_HISTORY_LIMIT = 20;
 
 /** Hard ceiling, so one request cannot walk an entire repository. */
-export const MAX_SKILL_HISTORY_LIMIT = 100;
+const MAX_SKILL_HISTORY_LIMIT = 100;
 
 /** One update to a skill: a commit, diffed to that skill's directory. */
 export interface SkillRevision {

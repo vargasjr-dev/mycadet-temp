@@ -28,9 +28,9 @@ export const DISK_PRESSURE_WARNING_CLEAR_THRESHOLD_PERCENT = 77;
 // available, where locking is pointless. Small volumes (where a high percentage
 // genuinely means near-full) drop below the floor and remain protected.
 export const DISK_PRESSURE_MIN_FREE_FLOOR_MB = 2048;
-export const DISK_PRESSURE_CHECK_INTERVAL_MS = 60_000;
+const DISK_PRESSURE_CHECK_INTERVAL_MS = 60_000;
 export const DISK_PRESSURE_OVERRIDE_CONFIRMATION = "I understand the risks";
-export const DISK_PRESSURE_BLOCKED_CAPABILITIES = [
+const DISK_PRESSURE_BLOCKED_CAPABILITIES = [
   "agent-turns",
   "background-work",
   "remote-ingress",

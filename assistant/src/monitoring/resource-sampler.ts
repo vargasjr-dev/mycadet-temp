@@ -99,7 +99,7 @@ export function computeSampleDeltas(
  * Take a single point-in-time sample of memory + disk. When `prev` is given,
  * the sample carries counter deltas relative to it.
  */
-export async function takeSample(
+async function takeSample(
   now: number,
   prev: ResourceSample | null = null,
   processUsage: ProcessUsageTracker | null = null,
@@ -159,7 +159,7 @@ export async function takeSample(
  * healthy capture to diff a spike against — threshold-only snapshots record
  * the system once already over the cliff. Each kind prunes independently.
  */
-export async function writeSnapshot(
+async function writeSnapshot(
   dataDir: string,
   sample: ResourceSample,
   kind: SnapshotKind,

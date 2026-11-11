@@ -1,7 +1,7 @@
 import { OpenAIChatCompletionsProvider } from "../openai/chat-completions-provider.js";
 
 /** LiteLLM proxy's documented default address. */
-export const DEFAULT_LITELLM_BASE_URL = "http://localhost:4000";
+const DEFAULT_LITELLM_BASE_URL = "http://localhost:4000";
 
 export interface LiteLLMProviderOptions {
   baseURL?: string;

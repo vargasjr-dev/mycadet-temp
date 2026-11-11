@@ -177,21 +177,7 @@ export function _resetFailureCoalesceForTesting(): void {
   failureWarnIntervalMs = DEFAULT_FAILURE_WARN_INTERVAL_MS;
 }
 
-/**
- * Test-only: read a snapshot of the failure-coalescing state for a given
- * op. Returns `undefined` when no streak is in progress.
- */
-export function _getFailureStateForTesting(
-  op: string,
-): Readonly<FailureState> | undefined {
-  const state = failureStateByOp.get(op);
-  return state ? { ...state } : undefined;
-}
 
-/** Test-only: override the WARN cadence. Pass {@link DEFAULT_FAILURE_WARN_INTERVAL_MS} to reset. */
-export function _setFailureWarnIntervalForTesting(intervalMs: number): void {
-  failureWarnIntervalMs = intervalMs;
-}
 
 /**
  * Clear the global threshold cache. Exported for testing.

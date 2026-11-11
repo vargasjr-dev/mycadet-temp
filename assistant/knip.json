@@ -11,8 +11,12 @@
     "src/api/index.ts!",
     "src/config/bundled-skills/**/tools/**/*.ts!"
   ],
-  "project": ["src/**/*.ts!", "src/**/*.tsx!", "scripts/**/*.ts"],
-  "ignore": ["src/config/preloaded-apps/**"],
+  "project": [
+    "src/**/*.ts!",
+    "src/**/*.tsx!",
+    "scripts/**/*.ts"
+  ],
+  "ignore": [],
   "ignoreDependencies": [
     "@microsoft/api-extractor",
     "@mycadet/app-icons",
@@ -28,8 +32,6 @@
     "@mycadet/shared",
     "@mycadet/slack-text",
     "@mycadet/twilio-client",
-    "@resvg/resvg-js-darwin-arm64",
-    "@resvg/resvg-js-darwin-x64",
     "ajv",
     "madge"
   ]

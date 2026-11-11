@@ -79,7 +79,3 @@ export function findSqlite3(): string | undefined {
   return undefined;
 }
 
-/** Reset the cached lookup. Test-only. */
-export function _resetSqlite3Cache(): void {
-  cachedSqlite3Path = undefined;
-}

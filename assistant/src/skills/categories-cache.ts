@@ -148,7 +148,3 @@ export function getLocalCategorySlugs(): Set<string> {
   return new Set(getCachedCategoriesSync().map((c) => c.slug));
 }
 
-export function invalidateCategoriesCache(): void {
-  cachedCategories = null;
-  cacheTimestamp = 0;
-}

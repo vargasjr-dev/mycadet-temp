@@ -181,22 +181,6 @@ export const ConversationActionSchema = z.discriminatedUnion("action", [
 ]);
 export type ConversationAction = z.infer<typeof ConversationActionSchema>;
 
-// -- Decision engine output ---------------------------------------------------
-
-export const NotificationDecisionSchema = z.object({
-  shouldNotify: z.boolean(),
-  selectedChannels: z.array(z.string()),
-  reasoningSummary: z.string(),
-  renderedCopy: z.record(z.string(), RenderedChannelCopySchema),
-  conversationActions: z
-    .record(z.string(), ConversationActionSchema)
-    .optional(),
-  deepLinkTarget: z.record(z.string(), z.unknown()).optional(),
-  dedupeKey: z.string(),
-  confidence: z.number(),
-  fallbackUsed: z.boolean(),
-  persistedDecisionId: z.string().optional(),
-});
 
 /**
  * Decision engine output. `selectedChannels` and `renderedCopy` are keyed

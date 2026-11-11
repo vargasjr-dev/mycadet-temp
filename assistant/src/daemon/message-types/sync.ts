@@ -1,4 +1,4 @@
-import { z } from "zod";
+
 
 import {
   type SyncChangedEvent,
@@ -39,7 +39,6 @@ export type SyncInvalidationTag =
   | ConversationSyncInvalidationTag
   | (string & {});
 
-export const SyncInvalidationTagSchema = z.string().min(1);
 
 export function conversationMessagesSyncTag(
   conversationId: string,

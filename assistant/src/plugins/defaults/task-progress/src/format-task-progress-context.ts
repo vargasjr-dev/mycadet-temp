@@ -1,8 +1,8 @@
 import type { ConversationSurfaceSnapshot } from "../../../../daemon/conversation-surface-snapshots.js";
 import { getTaskProgressDataFromSurfaceData } from "../../../../runtime/task-progress.js";
 
-export const ACTIVE_TASK_PROGRESS_OPEN = "<active_task_progress>";
-export const ACTIVE_TASK_PROGRESS_CLOSE = "</active_task_progress>";
+const ACTIVE_TASK_PROGRESS_OPEN = "<active_task_progress>";
+const ACTIVE_TASK_PROGRESS_CLOSE = "</active_task_progress>";
 
 export const ACTIVE_TASK_PROGRESS_BLOCK =
   /<active_task_progress\b[\s\S]*?<\/active_task_progress>/gi;

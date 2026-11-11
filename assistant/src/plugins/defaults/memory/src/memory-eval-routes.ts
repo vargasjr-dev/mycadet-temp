@@ -70,7 +70,7 @@ export type MemoryEvalRunResult = z.infer<typeof MemoryEvalRunResultSchema>;
  * Build the eval packets. `config` is injectable for tests; production resolves
  * the live config (and through it the embedding backend + DB).
  */
-export async function handleMemoryEvalRun(
+async function handleMemoryEvalRun(
   body: unknown,
   config: AssistantConfig = getConfig(),
 ): Promise<MemoryEvalRunResult> {
@@ -136,7 +136,7 @@ export type MemoryEvalTallyResult = z.infer<typeof MemoryEvalTallyResultSchema>;
  * Pure: join the judge verdicts to the unblinding key and return the noise-aware
  * gate verdict. The CLI reads the verdicts/key files and passes the arrays.
  */
-export function handleMemoryEvalTally(body: unknown): MemoryEvalTallyResult {
+function handleMemoryEvalTally(body: unknown): MemoryEvalTallyResult {
   const params = MemoryEvalTallyParamsSchema.parse(body ?? {});
   return tallyVerdicts(
     params.verdicts,

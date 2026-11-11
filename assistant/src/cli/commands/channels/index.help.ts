@@ -12,7 +12,7 @@ import type { CliCommandHelp } from "../../lib/cli-command-help.js";
  * channel with no built-in probe reports as unsupported rather than being
  * refused, so the list is the contract's, not a copy kept here.
  */
-export const KNOWN_CHANNELS: readonly string[] = CHANNEL_IDS;
+const KNOWN_CHANNELS: readonly string[] = CHANNEL_IDS;
 
 /** The channels whose bot the assistant can act as. */
 const BOT_CHANNELS = Object.keys(CHANNEL_BOT_PROVIDER).join(", ");

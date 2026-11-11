@@ -27,7 +27,7 @@ export interface ShortLabelTool {
   argumentDescription: string;
 }
 
-export function buildShortLabelTool(tool: ShortLabelTool): ToolDefinition {
+function buildShortLabelTool(tool: ShortLabelTool): ToolDefinition {
   return {
     name: tool.name,
     description: tool.description,

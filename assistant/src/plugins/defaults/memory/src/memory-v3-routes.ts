@@ -47,7 +47,7 @@ export type MemoryV3RebuildIndexResult = z.infer<
  * process's cached lanes immediately; the bumped lanes-version token also
  * reaches every other process's memo on its next `getLanes`.
  */
-export async function handleMemoryV3RebuildIndex(): Promise<MemoryV3RebuildIndexResult> {
+async function handleMemoryV3RebuildIndex(): Promise<MemoryV3RebuildIndexResult> {
   invalidateLanes();
   log.info("memory-v3 lanes invalidated (rebuild-index)");
   return { ok: true };
@@ -79,7 +79,7 @@ export type MemoryV3BackfillSectionsResult = z.infer<
  *
  * `config` is injectable for tests; production resolves the live config.
  */
-export async function handleMemoryV3BackfillSections(
+async function handleMemoryV3BackfillSections(
   config: AssistantConfig = getConfig(),
 ): Promise<MemoryV3BackfillSectionsResult> {
   const outcome = await backfillAllSections(config);

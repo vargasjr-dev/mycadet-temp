@@ -37,7 +37,7 @@ export function declareDaemonActivityField<T extends object>(schema: T): T {
 }
 
 /** Whether `schema` declares the daemon's own `activity` field. */
-export function definesDaemonActivityField(schema: unknown): boolean {
+function definesDaemonActivityField(schema: unknown): boolean {
   return (
     typeof schema === "object" &&
     schema !== null &&

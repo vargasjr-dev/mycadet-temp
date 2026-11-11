@@ -26,7 +26,7 @@ import type { SlackApiResponse } from "./types.js";
 
 const log = getLogger("slack-web-api");
 
-export const SLACK_API_BASE = "https://slack.com/api";
+const SLACK_API_BASE = "https://slack.com/api";
 const MAX_RATE_LIMIT_RETRIES = 3;
 const DEFAULT_RETRY_AFTER_S = 1;
 

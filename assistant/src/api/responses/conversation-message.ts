@@ -324,7 +324,7 @@ export type ConversationSubagentNotification = z.infer<
 // ---------------------------------------------------------------------------
 
 /** Daemon-injected ACP-run lifecycle notification attached to a history row. */
-export const ConversationAcpNotificationSchema = z.object({
+const ConversationAcpNotificationSchema = z.object({
   acpSessionId: z.string(),
   agent: z.string().optional(),
 });

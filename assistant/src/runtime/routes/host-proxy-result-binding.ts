@@ -18,7 +18,7 @@ import {
 import { resolveActorPrincipalIdForLocalGuardian } from "../local-actor-identity.js";
 import { BadRequestError, ForbiddenError } from "./errors.js";
 
-export function assertHostProxyConnectionBinding(args: {
+function assertHostProxyConnectionBinding(args: {
   targetClientId?: string;
   targetConnectionId?: string;
 }): void {

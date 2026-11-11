@@ -102,7 +102,7 @@ export function accessRequestCardSubtitle(admitted: boolean): string {
  * Build a list of human-readable warning strings for an access request.
  * Used by both the Slack Block Kit card and the plain-text contract.
  */
-export function buildAccessRequestWarnings(
+function buildAccessRequestWarnings(
   p: ParsedAccessRequestPayload,
 ): string[] {
   const warnings: string[] = [];
@@ -142,7 +142,7 @@ export function buildIntroductionActionsForPayload(
 }
 
 /** Whether the verification handshake is offered for this requester. */
-export function isHandshakeOfferedForPayload(
+function isHandshakeOfferedForPayload(
   p: ParsedAccessRequestPayload,
 ): boolean {
   return isHandshakeOffered(p.sourceChannel, {

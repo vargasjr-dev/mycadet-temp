@@ -8,7 +8,7 @@
  * serve a given model during auto-resolution of an "Any active OpenAI
  * connection" profile.
  */
-export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
+const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-6-astra",
   "gpt-6-sol",
   "gpt-6-luna",

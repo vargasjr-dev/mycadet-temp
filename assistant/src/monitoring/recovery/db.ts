@@ -17,7 +17,7 @@ import { readDaemonBootTime } from "../daemon-boot-time.js";
 const log = getLogger("recovery-db");
 
 /** Max time a recovery write waits on the daemon's writer lock before erroring. */
-export const RECOVERY_BUSY_TIMEOUT_MS = 5_000;
+const RECOVERY_BUSY_TIMEOUT_MS = 5_000;
 
 /**
  * Open a read/write handle on the daemon's SQLite database. Returns null when

@@ -18,7 +18,7 @@ import { API_KEY_PROVIDERS } from "./provider-secret-catalog.js";
  * (secure storage or env var) or via the cloud proxy fallback.
  * Ollama is always considered available because it does not require an API key.
  */
-export async function isProviderAvailable(provider: string): Promise<boolean> {
+async function isProviderAvailable(provider: string): Promise<boolean> {
   if (provider === "ollama") {
     return true;
   }

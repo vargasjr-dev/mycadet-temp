@@ -44,7 +44,7 @@ export interface ActorPrincipalHealHub {
  * that is slow to come up, without holding a timer for the life of a long-lived
  * stream. Total span is about 44s.
  */
-export const ACTOR_PRINCIPAL_HEAL_DELAYS_MS: readonly number[] = [
+const ACTOR_PRINCIPAL_HEAL_DELAYS_MS: readonly number[] = [
   0, 1_000, 3_000, 10_000, 30_000,
 ];
 

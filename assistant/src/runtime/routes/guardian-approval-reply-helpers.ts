@@ -195,21 +195,3 @@ export interface DeliverIdentityMismatchReplyParams {
   audience?: MessageAudience;
 }
 
-/**
- * Deliver a guardian identity mismatch notice. The scenario is always
- * `guardian_identity_mismatch`.
- */
-export async function deliverIdentityMismatchReply(
-  params: DeliverIdentityMismatchReplyParams,
-): Promise<void> {
-  const { sourceChannel, audience, ...rest } = params;
-
-  await deliverApprovalReply({
-    ...rest,
-    audience,
-    context: {
-      scenario: "guardian_identity_mismatch",
-      channel: sourceChannel,
-    },
-  });
-}

@@ -23,7 +23,7 @@ import {
  * staged rows resurrected on the next boot. The staging table and
  * `conversations` both live in `main`, so the predicate resolves there.
  */
-export const SKILL_LOADED_EVENTS_RELOCATION: RelocationSpec = {
+const SKILL_LOADED_EVENTS_RELOCATION: RelocationSpec = {
   table: "skill_loaded_events",
   targetDbPath: getTelemetryDbPath,
   copyWhere:

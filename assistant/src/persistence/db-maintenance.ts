@@ -22,7 +22,7 @@ const DB_PASSIVE_CHECKPOINT_KEY = "db_maintenance:last_passive_checkpoint";
  * autocheckpoints every writer runs stay cheap), infrequent enough that the
  * subprocess spawn is noise.
  */
-export const PASSIVE_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000;
+const PASSIVE_CHECKPOINT_INTERVAL_MS = 15 * 60 * 1000;
 
 interface DbStats {
   pageSize: number;

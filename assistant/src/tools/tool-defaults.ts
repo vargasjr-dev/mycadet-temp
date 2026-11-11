@@ -40,7 +40,7 @@ import type { Tool, ToolDefinition, ToolExecutionResult } from "./types.js";
  * close over the tool's name to produce a useful error message; see
  * `finalizeTool` below.
  */
-export const TOOL_DEFAULTS = Object.freeze({
+const TOOL_DEFAULTS = Object.freeze({
   description: "",
   defaultRiskLevel: "medium" as RiskLevel,
   input_schema: Object.freeze({

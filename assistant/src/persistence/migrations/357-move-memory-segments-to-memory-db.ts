@@ -49,7 +49,7 @@ export const MEMORY_SEGMENTS_RELOCATION: RelocationSpec = {
  * their values but drop the cross-file `REFERENCES`; the indexes mirror
  * migrations 016 and 102.
  */
-export function ensureMemorySegmentsSchema(memoryRaw: Database): void {
+function ensureMemorySegmentsSchema(memoryRaw: Database): void {
   memoryRaw.exec(/*sql*/ `
     CREATE TABLE IF NOT EXISTS memory_segments (
       id              TEXT PRIMARY KEY,

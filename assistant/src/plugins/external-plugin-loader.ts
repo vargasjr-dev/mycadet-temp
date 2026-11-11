@@ -135,7 +135,7 @@ export interface LoadExternalPluginOptions {
   readonly importTimeoutMs?: number;
 }
 
-export function toToolNameSegment(value: string): string {
+function toToolNameSegment(value: string): string {
   return value.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "tool";
 }
 
@@ -350,7 +350,7 @@ async function buildPluginFromDir(pluginDir: string): Promise<Plugin> {
  * Returns `undefined` on timeout, build failure, or abandoned surface
  * import. Never throws — failures are logged with directory attribution.
  */
-export async function buildExternalPlugin(
+async function buildExternalPlugin(
   pluginDir: string,
   opts: LoadExternalPluginOptions = {},
 ): Promise<Plugin | undefined> {

@@ -24,7 +24,7 @@ import { z } from "zod";
 /** `owner/repo`, kebab/underscore/dot segments — matches GitHub's slug rules. */
 const REPO_SLUG_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 /** Install name: a single kebab-case path segment (same rule as the CLI). */
-export const PLUGIN_NAME_RE = /^[a-z0-9][a-z0-9_-]*$/;
+const PLUGIN_NAME_RE = /^[a-z0-9][a-z0-9_-]*$/;
 /**
  * Full Git commit SHA — 40 hex chars (SHA-1) or 64 (SHA-256). External
  * catalog refs must be a complete object name so the install is pinned to
@@ -63,7 +63,7 @@ export const githubSourceSchema = z.object({
     ),
 });
 
-export const marketplaceSourceSchema = githubSourceSchema;
+const marketplaceSourceSchema = githubSourceSchema;
 
 export const mcpIntegrationSchema = z.object({
   kind: z.literal("mcp"),

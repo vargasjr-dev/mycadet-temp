@@ -153,7 +153,7 @@ let installed = false;
  * errors. Outside a scope the wrapper delegates untouched, and error bodies
  * are read from a `clone()` so the SDK's own read is unaffected.
  */
-export function installOutboundHttpDiagnostics(): void {
+function installOutboundHttpDiagnostics(): void {
   if (installed) {
     return;
   }

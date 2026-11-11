@@ -171,7 +171,7 @@ const RESULT_TAG_CLOSE = "</compaction_result>";
  * `config.json` go through the same interpolation, so override authors can
  * place the placeholder wherever they want.
  */
-export const DEFAULT_COMPACTION_PROMPT = `<compaction_instructions>
+const DEFAULT_COMPACTION_PROMPT = `<compaction_instructions>
 This conversation is getting long. It's time to run a compaction pass.
 
 You have the full conversation in your context right now. Your job is to
@@ -607,7 +607,7 @@ export function collectImageManifest(
   return entries;
 }
 
-export function renderImageManifest(entries: ManifestEntry[]): string {
+function renderImageManifest(entries: ManifestEntry[]): string {
   if (entries.length === 0) {
     return "(no images in this conversation)";
   }
@@ -1038,7 +1038,7 @@ function guessMimeFromFilename(filename: string): string {
 // Instruction message
 // ---------------------------------------------------------------------------
 
-export function buildInstructionMessage(
+function buildInstructionMessage(
   customPrompt: string | null | undefined,
   imageManifest: string,
   tailBudgetTokens?: number,
@@ -1120,7 +1120,7 @@ export function isSyntheticCompactionMessage(
  * lifecycle code can rehydrate it with the existing `contextSummary` text
  * column without needing a parallel `keyState` column.
  */
-export function buildSummaryMemoryText(
+function buildSummaryMemoryText(
   summary: string,
   keyState: string,
 ): string {

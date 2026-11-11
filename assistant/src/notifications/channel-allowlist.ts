@@ -24,9 +24,6 @@ export function readChannelAllowlist(payload: unknown): string[] | undefined {
   return channels.length > 0 ? channels : undefined;
 }
 
-export function hasExclusiveChannelAllowlist(payload: unknown): boolean {
-  return readChannelAllowlist(payload) !== undefined;
-}
 
 export function intersectChannelAllowlist(
   allowlist: readonly string[],

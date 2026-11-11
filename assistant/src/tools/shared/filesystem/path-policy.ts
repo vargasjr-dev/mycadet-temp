@@ -49,7 +49,7 @@ const PROC_ENVIRON_PATTERN = /^\/proc\/(?:\d+|self|thread-self)\/environ$/;
  * the `SAFE_ENV_VARS` allowlist, so denying them here keeps the file tools
  * from becoming the looser path to the same secrets.
  */
-export function isProcessEnvironPath(path: string): boolean {
+function isProcessEnvironPath(path: string): boolean {
   return PROC_ENVIRON_PATTERN.test(path);
 }
 

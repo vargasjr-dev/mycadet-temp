@@ -95,7 +95,7 @@ export interface TypesafeAskArgs {
  * than trust in the provider honoring the abort, because callers hold user
  * audio or a turn's first token on the answer.
  */
-export async function askTypesafe(
+async function askTypesafe(
   args: TypesafeAskArgs,
 ): Promise<TypesafeAskResult> {
   const startedAt = Date.now();
