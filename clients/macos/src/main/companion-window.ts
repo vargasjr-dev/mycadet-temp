@@ -3457,9 +3457,7 @@ const syncFrontmost = (): void => {
  * does next is only true of a press a renderer actually has (see the
  * `advanceIntro` handler).
  */
-const dispatchWithoutRaising = (
-  command: CadetCommand,
-): Promise<boolean> => {
+const dispatchWithoutRaising = (command: CadetCommand): Promise<boolean> => {
   if (currentMainWindow() !== null) {
     dispatchToMain(command);
     return Promise.resolve(true);

@@ -875,7 +875,6 @@ beforeEach(() => {
   setName("Example Assistant");
 });
 
-
 /**
  * Let a press reach the renderer it was handed to. The hand-off answers on a
  * microtask even when a window is already there, and the introduction's last

@@ -203,7 +203,6 @@ beforeEach(async () => {
 // Tests
 // ---------------------------------------------------------------------------
 
-
 describe("CLI path menu items", () => {
   test("shows Install while detection state is unknown (null)", async () => {
     // Detection failure leaves the state null, the same shape the menu has

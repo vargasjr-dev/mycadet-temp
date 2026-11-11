@@ -16,9 +16,7 @@ const productName =
     : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 const appId =
-  env === "production"
-    ? "ai.mycadet.electron"
-    : `ai.mycadet.electron-${env}`;
+  env === "production" ? "ai.mycadet.electron" : `ai.mycadet.electron-${env}`;
 
 // Mirror build-mac-helper.sh's env→helper-bundle-name mapping so the packaged
 // app's `bin/` directory has the same folder name as the helper the build
@@ -53,10 +51,7 @@ const entitlements = provisioningProfile
   ? deriveCommunicationEntitlements()
   : "./scripts/entitlements/app.plist";
 
-const schemes =
-  env === "production"
-    ? ["cadet"]
-    : [`cadet-${env}`];
+const schemes = env === "production" ? ["cadet"] : [`cadet-${env}`];
 
 /** @type {import("electron-builder").Configuration} */
 module.exports = {

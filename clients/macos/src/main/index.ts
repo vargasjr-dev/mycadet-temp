@@ -31,7 +31,10 @@ import "./deep-links.client";
 import "./file-open.client";
 import "./native-auth.client";
 import { installNativeAuth } from "@mycadet/electron-desktop/native-auth";
-import { hasPendingDeepLinks, installDeepLinks } from "@mycadet/electron-desktop/deep-links";
+import {
+  hasPendingDeepLinks,
+  installDeepLinks,
+} from "@mycadet/electron-desktop/deep-links";
 import { installMacBundleWorkflow } from "./bundles";
 import { handleBundleFile } from "@mycadet/electron-desktop/bundle-flow";
 import {

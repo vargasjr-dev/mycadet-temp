@@ -12,9 +12,9 @@ describe("decideNavigation", () => {
   });
 
   test("ejects cross-origin http(s) to the system browser", () => {
-    expect(
-      decideNavigation("https://accounts.google.com/signin", APP),
-    ).toEqual({ kind: "external", url: "https://accounts.google.com/signin" });
+    expect(decideNavigation("https://accounts.google.com/signin", APP)).toEqual(
+      { kind: "external", url: "https://accounts.google.com/signin" },
+    );
   });
 
   test("blocks non-http schemes", () => {
@@ -32,10 +32,7 @@ describe("decideNavigation", () => {
 
   test("allows the app origin", () => {
     expect(
-      decideNavigation(
-        "http://localhost:3000/account/provider/callback",
-        APP,
-      ),
+      decideNavigation("http://localhost:3000/account/provider/callback", APP),
     ).toEqual({ kind: "allow" });
   });
 });

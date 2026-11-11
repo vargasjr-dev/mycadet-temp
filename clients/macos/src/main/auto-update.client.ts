@@ -22,4 +22,3 @@ configureAutoUpdate({
   environment: ENVIRONMENT,
   feedUrl: resolveUpdateFeedUrl(ENVIRONMENT, "mac-electron", process.arch),
 });
-

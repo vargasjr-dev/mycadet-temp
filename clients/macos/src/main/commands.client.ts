@@ -18,4 +18,3 @@ const provider: HotkeySettingsProvider = {
 };
 
 configureHotkeySettings(provider);
-

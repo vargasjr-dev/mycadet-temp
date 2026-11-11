@@ -1,4 +1,7 @@
-import { type AllowedOrigin, isAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
+import {
+  type AllowedOrigin,
+  isAllowedOrigin,
+} from "@mycadet/electron-desktop/app-origin";
 
 /**
  * Navigation-guard decision logic for the main window, extracted so it can be

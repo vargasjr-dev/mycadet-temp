@@ -16,9 +16,7 @@ test("Electron exposes the initiating frame for custom-protocol gateway requests
     import.meta.dir,
     "fixtures/gateway-request-guard",
   );
-  const tempDir = mkdtempSync(
-    path.join(os.tmpdir(), "gateway-request-guard-"),
-  );
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), "gateway-request-guard-"));
   const resultPath = path.join(tempDir, "result.json");
   try {
     const processHandle = Bun.spawn([electron, fixture], {

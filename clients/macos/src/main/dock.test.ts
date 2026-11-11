@@ -409,4 +409,3 @@ describe("session-token-driven signed-in state", () => {
     expect(setBadgeMock).not.toHaveBeenCalled();
   });
 });
-

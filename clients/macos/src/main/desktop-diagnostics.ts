@@ -35,4 +35,3 @@ export const installDiagnosticsIpc = (): void => {
     writeSharedSetting("shareDiagnostics", enabled),
   );
 };
-

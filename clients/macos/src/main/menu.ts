@@ -302,8 +302,6 @@ export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
 
-
-
   // Rebuild the menu when hotkey settings change so accelerators update
   // immediately without requiring an app restart.
   onSettingChange("hotkeys", () => {

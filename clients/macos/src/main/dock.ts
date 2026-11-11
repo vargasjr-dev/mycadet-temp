@@ -337,4 +337,3 @@ export const __resetForTesting = (): void => {
   dockIconApplied = false;
   bundleIconCache = undefined;
 };
-

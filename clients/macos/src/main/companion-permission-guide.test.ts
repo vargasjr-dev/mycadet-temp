@@ -170,7 +170,9 @@ mock.module("./permissions-service", () => ({
     }
   },
 }));
-mock.module("@mycadet/electron-desktop/app-logger", () => ({ default: { warn: () => undefined } }));
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  default: { warn: () => undefined },
+}));
 const { installCompanionPermissionGuide } =
   await import("./companion-permission-guide");
 const state = () =>

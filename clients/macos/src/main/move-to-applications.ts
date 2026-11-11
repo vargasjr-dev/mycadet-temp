@@ -269,5 +269,3 @@ export async function promptToRelocateIfStranded(): Promise<void> {
       }
     });
 }
-
-

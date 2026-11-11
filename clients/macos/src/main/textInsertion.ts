@@ -29,7 +29,6 @@ const FILE_CLIPBOARD_FORMATS = [
   "text/uri-list",
 ];
 
-
 export type ClipboardSnapshot =
   | { kind: "structured"; data: Data }
   | { kind: "raw"; format: string; buffer: Buffer }
