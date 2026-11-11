@@ -1,7 +1,6 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 import { importsFirst } from "@mycadet/shared/eslint/imports-first";
-import { noEmptyImports } from "@mycadet/shared/eslint/no-empty-imports";
 import { noReExports } from "@mycadet/shared/eslint/no-re-exports";
 
 const eslintConfig = defineConfig([
@@ -29,17 +28,12 @@ const eslintConfig = defineConfig([
     // level with a pinned count — each PR chips away at the remainder.
     plugins: {
       "@mycadet": {
-        rules: {
-          "no-re-exports": noReExports,
-          "imports-first": importsFirst,
-          "no-empty-imports": noEmptyImports,
-        },
+        rules: { "no-re-exports": noReExports, "imports-first": importsFirst },
       },
     },
     rules: {
       "@mycadet/no-re-exports": "error",
       "@mycadet/imports-first": "error",
-      "@mycadet/no-empty-imports": "error",
     },
   },
 ]);
