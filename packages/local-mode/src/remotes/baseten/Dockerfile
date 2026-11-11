@@ -39,9 +39,11 @@ ENV PATH="/root/.bun/bin:${PATH}"
 COPY --from=ghcr.io/blaxel-ai/sandbox@sha256:8ebb596be14ed4c48f6fe4352e9d3de45dc31634dbca2194293187f54aba8647 \
   /sandbox-api /usr/local/bin/sandbox-api
 
-# The published stack: `cadet`/`gateway`/`assistant` bins on PATH plus every
-# runtime package (@mycadet/cli, web, gateway, assistant, credential-executor).
-# Stamped from cli/package.json.
+# The published stack: the `cadet` bin on PATH plus every runtime package
+# (@mycadet/cli, web, gateway, assistant, credential-executor). Stamped from
+# cli/package.json. The meta package stopped shipping assistant/gateway bins —
+# on a HOST they shadow the local source; here the shims below replace them
+# with the sandbox's own version-correct resolution.
 ARG MYCADET_VERSION
 RUN bun add -g "mycadet@${MYCADET_VERSION}"
 
@@ -56,6 +58,14 @@ RUN printf '{"private":true,"dependencies":{"mycadet":"%s"}}\n' "${MYCADET_VERSI
   && ln -s node_modules/@mycadet/assistant assistant \
   && ln -s node_modules/@mycadet/gateway gateway \
   && ln -s node_modules/@mycadet/credential-executor credential-executor
+
+# Cadet command shims resolve from the sandbox's OWN install (never a host
+# PATH): each entry point matches the corresponding package's bin, so
+# `sandbox exec assistant ...` runs the same build the daemon stack runs.
+RUN printf '#!/bin/sh\nexec bun run /app/assistant/src/index.ts "$@"\n' > /usr/local/bin/assistant \
+  && printf '#!/bin/sh\nexec bun run /app/gateway/src/cli/index.ts "$@"\n' > /usr/local/bin/gateway \
+  && printf '#!/bin/sh\nexec bun run /app/credential-executor/src/cli.ts "$@"\n' > /usr/local/bin/ces \
+  && chmod +x /usr/local/bin/assistant /usr/local/bin/gateway /usr/local/bin/ces
 
 # Hatch the golden assistant: lockfile entry, workspace, signing identity and
 # first-boot migrations bake into the image. Every sandbox from this image

@@ -2,12 +2,13 @@ import { existsSync } from "fs";
 import {
   cliCommand,
   dockerResourceNames,
+  ensureLocalBinShims,
   execBasetenSandbox,
   getCloudUrl,
   localExecDirForService,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { join } from "path";
+import { delimiter, join } from "path";
 
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { spawn } from "child_process";
@@ -210,6 +211,19 @@ export const exec = Object.assign(
         process.exit(1);
       }
 
+      // Cadet's own binaries resolve from the local assistant's source via
+      // shim executables in the instance's bin/ dir, prepended to PATH —
+      // so compound commands, pipes, and scripts that invoke them run the
+      // build the daemons run, never a globally installed published build.
+      const shims = ensureLocalBinShims(entry);
+      if (shims.unresolved.includes(command[0])) {
+        console.error(
+          red(
+            `Error: could not resolve '${command[0]}'. Make sure the Cadet is awake.`,
+          ),
+        );
+        process.exit(1);
+      }
       const child = spawn(command[0], command.slice(1), {
         stdio: "inherit",
         windowsHide: true,
@@ -217,6 +231,7 @@ export const exec = Object.assign(
         env: {
           ...process.env,
           CADET_WORKSPACE_DIR: workspaceDir,
+          PATH: [shims.dir, process.env.PATH].filter(Boolean).join(delimiter),
         },
       });
       await new Promise<void>((resolve) => {

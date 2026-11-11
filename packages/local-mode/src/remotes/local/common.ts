@@ -118,7 +118,7 @@ function hasLocalRuntimeComponents(installDir: string): boolean {
   );
 }
 
-function resolveBunExecutable(): string {
+export function resolveBunExecutable(): string {
   const envBun = process.env.CADET_BUN;
   if (envBun && existsSync(envBun)) return envBun;
 
@@ -968,6 +968,46 @@ export function gatewayCliInvocation(entry?: LocalAssistant): {
         : {}),
     },
   };
+}
+
+/**
+ * The source entry point a cadet command name runs, matching each package's
+ * own bin: assistant -> `src/index.ts`, gateway -> `src/cli/index.ts` (the
+ * CLI, not the server entry startGateway spawns), ces -> `src/cli.ts`,
+ * credential-executor -> `src/main.ts`. Undefined when the name is not a
+ * cadet command or its source cannot be resolved — callers decide what
+ * fallback (host PATH) or error that means. The same resolution the daemon
+ * stack uses in `startLocalDaemon` / `startGateway` / `startCes`, so a
+ * command exec'd against a local assistant runs the build the daemons run.
+ */
+export function localSourceCommandEntry(
+  name: string,
+  entry?: LocalAssistant,
+): string | undefined {
+  switch (name) {
+    case "assistant":
+      return resolveAssistantIndexPath(entry);
+    case "gateway":
+      try {
+        return join(resolveGatewayDir(entry), "src/cli/index.ts");
+      } catch {
+        return undefined;
+      }
+    case "ces":
+      try {
+        return join(resolveCesDir(entry), "src/cli.ts");
+      } catch {
+        return undefined;
+      }
+    case "credential-executor":
+      try {
+        return join(resolveCesDir(entry), "src/main.ts");
+      } catch {
+        return undefined;
+      }
+    default:
+      return undefined;
+  }
 }
 
 function resolveCesDir(entry?: LocalAssistant): string {
