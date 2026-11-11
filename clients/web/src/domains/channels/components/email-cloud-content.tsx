@@ -2,26 +2,22 @@ import { Check, Copy, Mail, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { assistantsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
 import {
-  assistantsDomainsDestroyMutation,
-  assistantsDomainsListOptions,
-  assistantsDomainsListQueryKey,
-  assistantsDomainsVerificationStatusRetrieveOptions,
-  assistantsDomainsVerificationStatusRetrieveQueryKey,
-  assistantsDomainsVerificationStatusRetrieveSetQueryData,
-  assistantsEmailAddressesDestroyMutation,
-  assistantsEmailAddressesListOptions,
-  assistantsEmailAddressesListQueryKey,
-  assistantsEmailAddressesStatusRetrieveOptions,
-  assistantsEmailAddressesStatusRetrieveQueryKey,
-  assistantsListQueryKey,
-  useAssistantsDomainsProvisionCreateMutation,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { DomainVerificationStatusStatusEnum } from "@/generated/api/types.gen";
+  useMailDestroyDomain,
+  useMailDestroyEmailAddress,
+  useMailDomains,
+  useMailDomainVerificationStatus,
+  useMailEmailAddressStatus,
+  useMailEmailAddresses,
+  mailKeys,
+  useMailProvisionDomain,
+  type MailDomainVerificationStatus,
+} from "@/lib/mail-api";
 import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,
@@ -50,7 +46,7 @@ export const DOMAIN_VERIFICATION_POLL_MS = 10_000;
  * user runs Complete domain setup.
  */
 export function domainVerificationRefetchInterval(
-  status: DomainVerificationStatusStatusEnum | undefined,
+  status: MailDomainVerificationStatus | undefined,
 ): number | false {
   if (
     status === "verified" ||
@@ -84,40 +80,26 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
   });
 
   // -- Domain & address state ------------------------------------------------
-  const domainsQuery = useQuery({
-    ...assistantsDomainsListOptions({
-      path: { assistant_id: assistantId },
-    }),
-    enabled: true,
-  });
-  const addressesQuery = useQuery({
-    ...assistantsEmailAddressesListOptions({
-      path: { assistant_id: assistantId },
-    }),
-    enabled: true,
-  });
+  const domainsQuery = useMailDomains(assistantId);
+  const addressesQuery = useMailEmailAddresses(assistantId);
 
-  const domain = domainsQuery.data?.results?.[0];
-  const address = addressesQuery.data?.results?.[0];
+  const domain = domainsQuery.data?.[0];
+  const address = addressesQuery.data?.[0];
   const fullDomain = domain ? `${domain.subdomain}.${emailRootDomain}` : null;
 
-  const statusQuery = useQuery({
-    ...assistantsEmailAddressesStatusRetrieveOptions({
-      path: { assistant_id: assistantId, id: address?.id ?? "" },
-    }),
-    enabled: !!address?.id,
+  const statusQuery = useMailEmailAddressStatus(assistantId, address?.id, {
     refetchOnWindowFocus: false,
   });
 
-  const verificationQuery = useQuery({
-    ...assistantsDomainsVerificationStatusRetrieveOptions({
-      path: { assistant_id: assistantId, id: domain?.id ?? "" },
-    }),
-    enabled: !!domain?.id,
-    refetchInterval: (query) =>
-      domainVerificationRefetchInterval(query.state.data?.status),
-    refetchOnWindowFocus: true,
-  });
+  const verificationQuery = useMailDomainVerificationStatus(
+    assistantId,
+    domain?.id,
+    {
+      refetchInterval: (query) =>
+        domainVerificationRefetchInterval(query.state.data?.status),
+      refetchOnWindowFocus: true,
+    },
+  );
 
   useEffect(() => {
     if (searchParams.get("release") !== "1" || !domain || address) {
@@ -135,24 +117,21 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
   }, [address, domain, searchParams, setSearchParams]);
 
   // -- Mutations -------------------------------------------------------------
-  const deleteDomain = useMutation(assistantsDomainsDestroyMutation());
-  const provisionDomain = useAssistantsDomainsProvisionCreateMutation();
-  const deleteAddress = useMutation(assistantsEmailAddressesDestroyMutation());
+  const deleteDomain = useMailDestroyDomain(assistantId);
+  const provisionDomain = useMailProvisionDomain(assistantId);
+  const deleteAddress = useMailDestroyEmailAddress(assistantId);
   const refreshReadiness = useMutation(channelsReadinessRefreshPostMutation());
 
   const invalidateEmailQueries = useCallback(() => {
-    const path = { assistant_id: assistantId };
     void queryClient.invalidateQueries({
-      queryKey: assistantsDomainsListQueryKey({ path }),
+      queryKey: mailKeys.domains(assistantId),
     });
     void queryClient.invalidateQueries({
-      queryKey: assistantsEmailAddressesListQueryKey({ path }),
+      queryKey: mailKeys.emailAddresses(assistantId),
     });
     if (address?.id) {
       void queryClient.invalidateQueries({
-        queryKey: assistantsEmailAddressesStatusRetrieveQueryKey({
-          path: { ...path, id: address.id },
-        }),
+        queryKey: mailKeys.emailAddressStatus(assistantId, address.id),
       });
     }
     // Domain registration can change the assistant's handle; invalidate the
@@ -196,9 +175,7 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
     }
     setRemoveAddressConfirmOpen(false);
     try {
-      await deleteAddress.mutateAsync({
-        path: { assistant_id: assistantId, id: address.id },
-      });
+      await deleteAddress.mutateAsync(address.id);
       invalidateEmailQueries();
       refreshChannelReadiness();
       toast.success(t("emailCloudContent.emailRemovedToast"));
@@ -208,7 +185,6 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
     }
   }, [
     address?.id,
-    assistantId,
     deleteAddress,
     invalidateEmailQueries,
     refreshChannelReadiness,
@@ -221,19 +197,14 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
     }
     setRepairError(null);
     try {
-      const result = await provisionDomain.mutateAsync({
-        path: { assistant_id: assistantId, id: domain.id },
-      });
+      const result = await provisionDomain.mutateAsync(domain.id);
       setRepairConfirmOpen(false);
-      assistantsDomainsVerificationStatusRetrieveSetQueryData(
-        queryClient,
-        { path: { assistant_id: assistantId, id: domain.id } },
+      queryClient.setQueryData(
+        mailKeys.domainVerificationStatus(assistantId, domain.id),
         result,
       );
       void queryClient.invalidateQueries({
-        queryKey: assistantsDomainsVerificationStatusRetrieveQueryKey({
-          path: { assistant_id: assistantId, id: domain.id },
-        }),
+        queryKey: mailKeys.domainVerificationStatus(assistantId, domain.id),
       });
       toast.success(t("emailCloudContent.repairStartedToast"));
     } catch (err) {
@@ -258,9 +229,7 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
     }
     setReleaseConfirmOpen(false);
     try {
-      await deleteDomain.mutateAsync({
-        path: { assistant_id: assistantId, id: domain.id },
-      });
+      await deleteDomain.mutateAsync(domain.id);
       invalidateEmailQueries();
       toast.success(t("emailCloudContent.domainReleasedToast"));
     } catch (err) {
@@ -269,7 +238,6 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
     }
   }, [
     address,
-    assistantId,
     deleteDomain,
     domain?.id,
     invalidateEmailQueries,

@@ -3,12 +3,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, useLocation } from "react-router";
 
-import {
-  assistantsDomainsListOptions,
-  assistantsEmailAddressesListOptions,
-  assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { AssistantDomain } from "@/generated/api/types.gen";
+import { assistantsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
+import { mailKeys } from "@/lib/mail-api";
 
 const ASSISTANT_ID = "assistant-123";
 
@@ -32,23 +28,19 @@ function LocationProbe() {
 }
 
 /** Entitled, with the domain and address lists answered from the cache. */
-function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
+function renderEntitled({
+  domain,
+}: {
+  domain: { id: string; subdomain: string; created: string; modified: string } | null;
+}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  const path = { path: { assistant_id: ASSISTANT_ID } };
-  client.setQueryData(assistantsDomainsListOptions(path).queryKey, {
-    count: domain ? 1 : 0,
-    next: null,
-    previous: null,
-    results: domain ? [domain] : [],
-  });
-  client.setQueryData(assistantsEmailAddressesListOptions(path).queryKey, {
-    count: 0,
-    next: null,
-    previous: null,
-    results: [],
-  });
+  client.setQueryData(
+    mailKeys.domains(ASSISTANT_ID),
+    domain ? [domain] : [],
+  );
+  client.setQueryData(mailKeys.emailAddresses(ASSISTANT_ID), []);
   client.setQueryData(assistantsListQueryKey(), {
     results: [{ id: ASSISTANT_ID, handle: "ada" }],
   });
@@ -85,7 +77,7 @@ describe("EmailCloudContent · entitled, no address", () => {
       domain: {
         domain: "example.com",
         subdomain: "ada",
-      } as unknown as AssistantDomain,
+      } as unknown as { id: string; subdomain: string; created: string; modified: string },
     });
 
     // The domain row, with its release action, is still this page's.

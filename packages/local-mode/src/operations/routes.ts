@@ -24,6 +24,18 @@ import {
   runDoctorSessionsUserOutcomeRoute,
 } from "./doctor";
 import { runMigrationsSignedUrlRoute } from "./migrations";
+import {
+  runDomainsCreateRoute,
+  runDomainsDestroyRoute,
+  runDomainsListRoute,
+  runDomainsProvisionRoute,
+  runDomainsVerificationStatusRoute,
+  runEmailAddressesCreateRoute,
+  runEmailAddressesDestroyRoute,
+  runEmailAddressesListRoute,
+  runEmailAddressesStatusRoute,
+  runEmailsListRoute,
+} from "./email";
 import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
@@ -681,6 +693,60 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     method: "POST",
     pattern: scopedAssistant(/^migrations\/signed-url\/?$/),
     run: runMigrationsSignedUrlRoute,
+  },
+  // The mail surface — the message list, the email addresses, and the
+  // sending domains — host-served so the web bundle's inbox and the logs
+  // tab hop to the cloud on the operator's own credentials instead of
+  // needing a cloud session in the browser.
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^emails\/?$/),
+    run: runEmailsListRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^email-addresses\/?$/),
+    run: runEmailAddressesListRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^email-addresses\/?$/),
+    run: runEmailAddressesCreateRoute,
+  },
+  {
+    method: "DELETE",
+    pattern: scopedAssistant(/^email-addresses\/[^\/?#]+\/?$/),
+    run: runEmailAddressesDestroyRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^email-addresses\/[^\/?#]+\/status\/?$/),
+    run: runEmailAddressesStatusRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^domains\/?$/),
+    run: runDomainsListRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^domains\/?$/),
+    run: runDomainsCreateRoute,
+  },
+  {
+    method: "DELETE",
+    pattern: scopedAssistant(/^domains\/[^\/?#]+\/?$/),
+    run: runDomainsDestroyRoute,
+  },
+  {
+    method: "GET",
+    pattern: scopedAssistant(/^domains\/[^\/?#]+\/verification-status\/?$/),
+    run: runDomainsVerificationStatusRoute,
+  },
+  {
+    method: "POST",
+    pattern: scopedAssistant(/^domains\/[^\/?#]+\/provision\/?$/),
+    run: runDomainsProvisionRoute,
   },
   {
     method: "POST",
