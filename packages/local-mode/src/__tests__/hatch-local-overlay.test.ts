@@ -7,13 +7,25 @@
  * key stored") while the fireworks key they did store sat unused.
  */
 
-import { afterEach, beforeEach, describe, expect, test, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  mock,
+} from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 let capturedOverlayPath: string | undefined;
 
+// Spread the actual module under the override — mocking without the spread
+// replaces the whole module record for every file that runs later in the
+// same bun test process.
+const actualLocalWake = await import("../remotes/local/wake");
 const wakeMock = mock<
   (entry: unknown, opts?: { defaultWorkspaceConfigPath?: string }) => Promise<{
     ok: true;
@@ -23,6 +35,7 @@ const wakeMock = mock<
   return { ok: true };
 });
 mock.module("../remotes/local/wake", () => ({
+  ...actualLocalWake,
   wakeLocal: wakeMock,
 }));
 
@@ -59,6 +72,13 @@ mock.module("../../cloud-auth", () => ({
 }));
 
 const { hatchLocal } = await import("../remotes/local/hatch");
+
+afterAll(() => {
+  mock.module("../remotes/local/wake", () => actualLocalWake);
+  mock.module("../guardian-token", () => actualGuardianToken);
+  mock.module("../../provider-credentials", () => actualProviderCredentials);
+  mock.module("../../cloud-auth", () => actualCloudAuth);
+});
 
 let home: string;
 const ENV_KEYS = ["XDG_CONFIG_HOME", "XDG_DATA_HOME"] as const;

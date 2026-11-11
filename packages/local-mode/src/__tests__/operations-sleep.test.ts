@@ -88,15 +88,19 @@ afterAll(() => {
   mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
+// The subject resolves per test — see operations-wake.test.ts for why.
+let sleepAssistant: typeof import("../operations/sleep").sleepAssistant;
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
-import { sleepAssistant, type SleepResult } from "../operations/sleep";
+import type { SleepResult } from "../operations/sleep";
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
 let lockfilePath: string;
 
-beforeEach(() => {
+beforeEach(async () => {
+  ({ sleepAssistant } = await import("../operations/sleep"));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-sleep-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;

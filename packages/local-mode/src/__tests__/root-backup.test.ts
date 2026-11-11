@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
+import { afterAll, afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import {
   chmod,
@@ -46,6 +46,10 @@ mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   wakeAssistant: wakeMock,
 }));
+
+afterAll(() => {
+  mock.module("@mycadet/local-mode", () => localMode);
+});
 
 let running: boolean | undefined;
 let onCapture: ((path: string) => void) | undefined;

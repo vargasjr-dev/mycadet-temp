@@ -128,18 +128,45 @@ afterAll(() => {
   mock.module("../exec", () => realExecModule);
 });
 
+// The subject resolves per test: a static (or one-time dynamic) import binds
+// the router to whatever the module registry held at evaluation time, and a
+// sibling file's afterAll can replace that record after the fact (bun's
+// mock.module is process-global and last-writer-wins). Resolving here means
+// a clobber fails loudly instead of feeding these tests a stale binding.
+let wakeAssistant: typeof import("../operations/wake").wakeAssistant;
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
-import { wakeAssistant } from "../operations/wake";
+
 import { matchOperatorRequest } from "../operations/routes";
 
 let tmpDir: string;
 let lockfilePath: string;
 
-beforeEach(() => {
+beforeEach(async () => {
+  ({ wakeAssistant } = await import("../operations/wake"));
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-wake-op-"));
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
+  // Re-register the mocks every test: another file's afterAll restore (or a
+  // leaking partial mock) can clobber the registry between files, and the
+  // router must never reach the real legs from here.
+  mock.module("../remotes/local/wake", () => ({
+    ...realLocalWake,
+    wakeLocal: wakeLocalMock,
+  }));
+  mock.module("../remotes/docker/wake", () => ({
+    ...realDockerWake,
+    wakeDocker: wakeDockerMock,
+  }));
+  mock.module("../remotes/baseten/lifecycle", () => ({
+    ...realBasetenLifecycle,
+    wakeBaseten: wakeBasetenMock,
+  }));
+  mock.module("../exec", () => ({
+    ...realExecModule,
+    exec: execModuleMock,
+  }));
   wakeLocalMock.mockReset();
   wakeLocalMock.mockResolvedValue({ ok: true });
   wakeDockerMock.mockReset();

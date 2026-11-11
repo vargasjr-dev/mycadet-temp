@@ -240,8 +240,6 @@ afterAll(() => {
   mock.module("../backup-ops", () => realBackups);
   mock.module("../guardian-token", () => realGuardian);
   mock.module("../remotes/local/common", () => realCommon);
-  mock.module("../operations/sleep", () => realSleep);
-  mock.module("../operations/wake", () => realWake);
   mock.module("../loopback-fetch", () => realLoopback);
   mock.module("../upgrade-lifecycle", () => realLifecycle);
 });

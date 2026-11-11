@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -30,7 +30,11 @@ const hatchDockerMock = mock<
   },
   ready: true,
 }));
+const realDockerHatch = { ...(await import("../remotes/docker/hatch")) };
+const realBasetenHatch = { ...(await import("../remotes/baseten/hatch")) };
+
 mock.module("../remotes/docker/hatch", () => ({
+  ...realDockerHatch,
   hatchDocker: hatchDockerMock,
 }));
 
@@ -48,8 +52,14 @@ const basetenMock = mock<
   ready: false,
 }));
 mock.module("../remotes/baseten/hatch", () => ({
+  ...realBasetenHatch,
   hatchBaseten: basetenMock,
 }));
+
+afterAll(() => {
+  mock.module("../remotes/docker/hatch", () => realDockerHatch);
+  mock.module("../remotes/baseten/hatch", () => realBasetenHatch);
+});
 
 let home: string;
 const ENV_KEYS = ["XDG_CONFIG_HOME", "XDG_DATA_HOME"] as const;
