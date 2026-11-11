@@ -252,20 +252,36 @@ describe("flattenContentBlocks", () => {
     expect(result.toolResults).toEqual([]);
   });
 
-  test("extracts tool_use blocks", () => {
+  test("extracts tool_use blocks with their tool call id", () => {
     const blocks = JSON.stringify([
-      { type: "tool_use", name: "image_resize", input: { width: 800 } },
+      {
+        type: "tool_use",
+        id: "chatcmpl-tool-abc",
+        name: "image_resize",
+        input: { width: 800 },
+      },
     ]);
     const result = flattenContentBlocks(blocks);
     expect(result.toolCalls).toEqual([
-      { name: "image_resize", input: { width: 800 } },
+      { id: "chatcmpl-tool-abc", name: "image_resize", input: { width: 800 } },
     ]);
   });
 
-  test("extracts tool_result blocks", () => {
-    const blocks = JSON.stringify([{ type: "tool_result", content: "Done!" }]);
+  test("extracts tool_result blocks with tool_use_id and error flag", () => {
+    const blocks = JSON.stringify([
+      { type: "tool_result", tool_use_id: "t-1", content: "Done!" },
+      {
+        type: "tool_result",
+        tool_use_id: "t-2",
+        is_error: true,
+        content: "boom",
+      },
+    ]);
     const result = flattenContentBlocks(blocks);
-    expect(result.toolResults).toEqual([{ content: "Done!" }]);
+    expect(result.toolResults).toEqual([
+      { toolUseId: "t-1", content: "Done!" },
+      { toolUseId: "t-2", isError: true, content: "boom" },
+    ]);
   });
 
   test("skips image and file blocks", () => {
@@ -397,7 +413,12 @@ describe("syncMessageToDisk", () => {
 
     const content = JSON.stringify([
       { type: "text", text: "Resizing image..." },
-      { type: "tool_use", name: "image_resize", input: { width: 800 } },
+      {
+        type: "tool_use",
+        id: "chatcmpl-tool-xyz",
+        name: "image_resize",
+        input: { width: 800 },
+      },
     ]);
 
     const msg = await addMessage(conv.id, "assistant", content, {
@@ -413,7 +434,77 @@ describe("syncMessageToDisk", () => {
     const record = JSON.parse(lines[0]);
     expect(record.content).toBe("Resizing image...");
     expect(record.toolCalls).toEqual([
-      { name: "image_resize", input: { width: 800 } },
+      { id: "chatcmpl-tool-xyz", name: "image_resize", input: { width: 800 } },
+    ]);
+
+    rmSync(dirPath, { recursive: true, force: true });
+  });
+
+  test("upserts a re-synced message and carries messageId", async () => {
+    const conv = createConversation("Upsert Test");
+    initConversationDir({
+      id: conv.id,
+      title: conv.title,
+      createdAt: conv.createdAt,
+      conversationType: conv.conversationType,
+      originChannel: null,
+    });
+
+    // First sync: the on-arrival tool-result row (partial batch).
+    const content = JSON.stringify([
+      { type: "tool_result", tool_use_id: "call-1", content: "partial" },
+    ]);
+    const msg = await addMessage(conv.id, "user", content, {
+      skipIndexing: true,
+    });
+    syncMessageToDisk(conv.id, msg.id, conv.createdAt);
+
+    // Re-sync the SAME row with the full batch (turn/loop boundary behavior):
+    // the line must be replaced, not appended.
+    const fuller = JSON.stringify([
+      { type: "tool_result", tool_use_id: "call-1", content: "partial" },
+      {
+        type: "tool_result",
+        tool_use_id: "call-2",
+        is_error: true,
+        content: "boom",
+      },
+    ]);
+    await updateMessageContent(msg.id, fuller);
+    syncMessageToDisk(conv.id, msg.id, conv.createdAt);
+
+    const dirPath = getConversationDirPath(conv.id, conv.createdAt);
+    const jsonlPath = join(dirPath, "messages.jsonl");
+    let lines = readFileSync(jsonlPath, "utf-8").trim().split("\n");
+    expect(lines).toHaveLength(1);
+    const record = JSON.parse(lines[0]);
+    expect(record.messageId).toBe(msg.id);
+    expect(record.toolResults).toEqual([
+      { toolUseId: "call-1", content: "partial" },
+      { toolUseId: "call-2", isError: true, content: "boom" },
+    ]);
+
+    // A different message appends a new line.
+    const msg2 = await addMessage(
+      conv.id,
+      "assistant",
+      JSON.stringify([
+        {
+          type: "tool_use",
+          id: "tu-1",
+          name: "bash",
+          input: { command: "ls" },
+        },
+      ]),
+      { skipIndexing: true },
+    );
+    syncMessageToDisk(conv.id, msg2.id, conv.createdAt);
+    lines = readFileSync(jsonlPath, "utf-8").trim().split("\n");
+    expect(lines).toHaveLength(2);
+    const record2 = JSON.parse(lines[1]);
+    expect(record2.messageId).toBe(msg2.id);
+    expect(record2.toolCalls).toEqual([
+      { id: "tu-1", name: "bash", input: { command: "ls" } },
     ]);
 
     rmSync(dirPath, { recursive: true, force: true });
@@ -640,7 +731,9 @@ describe("rebuildConversationDiskViewFromDbState", () => {
     expect(rebuiltUser.role).toBe("user");
     expect(rebuiltAssistant.role).toBe("assistant");
     expect(rebuiltAssistant.content).toBe("Searching...\nFound it.");
-    expect(rebuiltAssistant.toolResults).toEqual([{ content: "done" }]);
+    expect(rebuiltAssistant.toolResults).toEqual([
+      { toolUseId: "tool-1", content: "done" },
+    ]);
     expect(rebuiltAssistant.attachments).toHaveLength(1);
     expect(
       existsSync(join(dirPath, "attachments", rebuiltAssistant.attachments[0])),

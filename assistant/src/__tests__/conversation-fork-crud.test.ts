@@ -877,7 +877,7 @@ describe("forkConversation", () => {
       "utf-8",
     );
     expect(forkJsonl).toContain(
-      '"toolResults":[{"content":"Clicked"}],"attachments":["computer-use-click.png"]',
+      '"toolResults":[{"toolUseId":"computer-use-call","content":"Clicked"}],"attachments":["computer-use-click.png"]',
     );
 
     const forkMarkerIds = computerUseScreenshotAttachmentIdsFromMetadata(
