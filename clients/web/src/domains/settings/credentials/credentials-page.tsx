@@ -21,7 +21,6 @@ import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { Input } from "@mycadet/design-library/components/input";
 import { Modal } from "@mycadet/design-library/components/modal";
-import {} from "@mycadet/design-library/components/segment-control";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import {

@@ -251,7 +251,8 @@ class PointAtExecutor implements HostProxyExecutor {
       this.helper.handleRequest(message, poster);
       return;
     }
-    const requestId = message.requestId as string | undefined;
+    const requestId =
+      typeof message.requestId === "string" ? message.requestId : undefined;
     if (!requestId) {
       log.warn("[host-cu-executor] point_at message missing requestId");
       return;
@@ -330,7 +331,8 @@ class PointAtExecutor implements HostProxyExecutor {
    * on the next request, and when the share moves or ends.
    */
   handleCancel(message: HostProxySseMessage, poster: HostProxyPoster): void {
-    const requestId = message.requestId as string | undefined;
+    const requestId =
+      typeof message.requestId === "string" ? message.requestId : undefined;
     if (requestId !== undefined && this.resolving.has(requestId)) {
       this.cancelled.add(requestId);
     }

@@ -7,13 +7,18 @@ interface MoveOptions {
   conflictHandler: ConflictHandler;
 }
 
-const appState = {
+const appState: {
+  isPackaged: boolean;
+  inApplicationsFolder: boolean;
+  /** What `moveToApplicationsFolder` does: move, refuse, or throw. */
+  move: "succeeds" | "declines" | "throws";
+  /** Conflict fed to the handler before the move resolves, if any. */
+  conflict: ConflictType | null;
+} = {
   isPackaged: true,
   inApplicationsFolder: false,
-  /** What `moveToApplicationsFolder` does: move, refuse, or throw. */
-  move: "succeeds" as "succeeds" | "declines" | "throws",
-  /** Conflict fed to the handler before the move resolves, if any. */
-  conflict: null as ConflictType | null,
+  move: "succeeds",
+  conflict: null,
 };
 
 /** Queued `showMessageBox` answers, consumed in order. */

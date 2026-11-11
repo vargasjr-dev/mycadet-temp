@@ -35,7 +35,9 @@ export type ClipboardSnapshot =
   | { kind: "empty" };
 
 export type TextInsertionDeps = {
-  getFocusedWindow: () => BrowserWindow | null;
+  // Read for presence only — a focused window exists or it does not —
+  // so the dep stays honest about what this module consumes.
+  getFocusedWindow: () => unknown;
   readClipboardSnapshot: () => ClipboardSnapshot;
   restoreClipboardSnapshot: (snapshot: ClipboardSnapshot) => void;
   readClipboardText: () => string;
@@ -164,7 +166,7 @@ const defaultDeps: TextInsertionDeps = {
 
 const describeError = (err: unknown): string =>
   err instanceof Error
-    ? `${err.message}\n${String((err as { stderr?: unknown }).stderr ?? "")}`
+    ? `${err.message}\n${String("stderr" in err ? err.stderr : "")}`
     : String(err);
 
 const isAutomationDeniedError = (err: unknown): boolean => {

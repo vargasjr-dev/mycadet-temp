@@ -18,8 +18,6 @@
  * or read-write as needed) rather than sharing a handle through the context.
  */
 
-import type {} from "bun:sqlite";
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

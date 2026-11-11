@@ -79,6 +79,11 @@ const helperListSchema = z.object({
   windows: z.array(helperWindowSchema),
 });
 
+/** The activation script reports "minimized, left, top, right, bottom". */
+const placementEdgesSchema = z
+  .tuple([z.number(), z.number(), z.number(), z.number()])
+  .refine((edges) => edges.every((edge) => Number.isFinite(edge)));
+
 /**
  * The helper's answer, checked at the boundary. A malformed entry drops the
  * whole answer rather than one row: the helper and this shell ship together,
@@ -191,21 +196,21 @@ export interface ChromeWindowPlacement {
 export function parseChromeWindowPlacement(
   stdout: string,
 ): ChromeWindowPlacement | null {
-  const [minimizedRaw, ...edges] = stdout.trim().split(FIELD_SEPARATOR);
-  const [left, top, right, bottom] = edges.map((edge) => Number(edge));
-  if (
-    edges.length !== 4 ||
-    [left, top, right, bottom].some((edge) => !Number.isFinite(edge))
-  ) {
+  const [minimizedRaw, ...edgeRaws] = stdout.trim().split(FIELD_SEPARATOR);
+  const edges = placementEdgesSchema.safeParse(
+    edgeRaws.map((raw) => Number(raw)),
+  );
+  if (!edges.success) {
     return null;
   }
+  const [left, top, right, bottom] = edges.data;
   return {
     minimized: minimizedRaw === "true",
     bounds: {
-      x: left as number,
-      y: top as number,
-      width: (right as number) - (left as number),
-      height: (bottom as number) - (top as number),
+      x: left,
+      y: top,
+      width: right - left,
+      height: bottom - top,
     },
   };
 }
@@ -302,10 +307,10 @@ export const defaultCaptureSourceDeps: CaptureSourceDeps = {
     const answer = await getSharedCuHelper().call("captureSources.raise", {
       windowId,
     });
-    const { raised, reason } =
-      typeof answer === "object" && answer !== null
-        ? (answer as { raised?: unknown; reason?: unknown })
-        : {};
+    const answerRecord =
+      typeof answer === "object" && answer !== null ? answer : {};
+    const raised = "raised" in answerRecord ? answerRecord.raised : undefined;
+    const reason = "reason" in answerRecord ? answerRecord.reason : undefined;
     // The helper says why it left the window where it was, and this is the
     // log someone reads first: the pick was made from here.
     if (raised !== true && typeof reason === "string") {
@@ -339,7 +344,7 @@ export async function listCaptureSources(
   const [windows, displays] = await Promise.all([
     deps.listWindows().catch((err: unknown) => {
       log.warn("[companion] could not list windows for the picker:", err);
-      return [] as HelperWindow[];
+      return [];
     }),
     Promise.resolve(deps.listDisplays()),
   ]);

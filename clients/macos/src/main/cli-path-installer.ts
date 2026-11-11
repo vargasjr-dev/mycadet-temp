@@ -75,7 +75,7 @@ export function readWrapperOwnership(): WrapperOwnership {
   try {
     lstatSync(wrapperPath);
   } catch (err) {
-    return (err as NodeJS.ErrnoException).code === "ENOENT"
+    return err instanceof Error && "code" in err && err.code === "ENOENT"
       ? "absent"
       : "foreign";
   }

@@ -131,25 +131,24 @@ describe("notifier addon loading", () => {
 
 describe("notifier addon path in a packaged app", () => {
   const resourcesPath = path.join(appPath, "packaged-resources");
-  const processWithResources = process as unknown as {
-    resourcesPath?: string;
-  };
-  const originalResourcesPath = processWithResources.resourcesPath;
+  const originalResourcesPath = process.resourcesPath;
 
   beforeEach(() => {
     __resetNotifierForTesting();
     infos.length = 0;
     electronApp.isPackaged = true;
-    processWithResources.resourcesPath = resourcesPath;
+    Object.defineProperty(process, "resourcesPath", {
+      value: resourcesPath,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     electronApp.isPackaged = false;
-    if (originalResourcesPath === undefined) {
-      delete processWithResources.resourcesPath;
-    } else {
-      processWithResources.resourcesPath = originalResourcesPath;
-    }
+    Object.defineProperty(process, "resourcesPath", {
+      value: originalResourcesPath,
+      configurable: true,
+    });
   });
 
   // electron-builder.config.cjs packs resources/notifier to `bin/notifier`, so

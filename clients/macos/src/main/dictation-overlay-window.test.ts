@@ -19,7 +19,7 @@ type Harness = {
 };
 
 const createHarness = (): Harness => {
-  const timers = new Map<number, { callback: () => void; ms: number }>();
+  const timers = new Map<unknown, { callback: () => void; ms: number }>();
   let nextTimerId = 1;
   const showOverlay = mock(() => undefined);
   const hideOverlay = mock(() => undefined);
@@ -37,7 +37,7 @@ const createHarness = (): Harness => {
       return id;
     },
     clearTimeout: (handle) => {
-      timers.delete(handle as number);
+      timers.delete(handle);
     },
   });
 

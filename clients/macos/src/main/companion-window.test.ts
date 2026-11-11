@@ -91,7 +91,7 @@ let companionOpen = true;
 let companionHidden = false;
 
 /** Every channel main has sent the app's window, most recent last. */
-const mainSends: { channel: string; payload: unknown }[] = [];
+const mainSends: { channel: string; payload: any }[] = [];
 
 /**
  * The app's window, as far as this module reads it: whether it exists and
@@ -187,7 +187,10 @@ const surface = {
   },
 };
 
-type Invoker = (args: unknown[], sender?: unknown) => unknown;
+// `any` at the erased ipc seams (test files relax no-explicit-any): the
+// invoker hands schema-parsed args to handlers registered with their own
+// narrow types, and callers read a channel's reply at the shape they own.
+type Invoker = (args: unknown[], sender?: any) => any;
 
 /**
  * The renderer behind IPC sends, including the lifecycle a running call owns
@@ -213,9 +216,10 @@ const register =
     fn: (args: never, event: { sender: EventEmitter }) => unknown,
   ): void => {
     into.set(channel, (args, sender) =>
-      fn(schema.parse(args) as never, {
-        sender: (sender ?? mainRenderer) as EventEmitter,
-      }),
+      Reflect.apply(fn, undefined, [
+        schema.parse(args),
+        { sender: sender ?? mainRenderer },
+      ]),
     );
   };
 
@@ -944,7 +948,7 @@ const takeReports = (): CompanionIntroReport[] => {
       "No handler registered for cadet:companion:takeIntroReports",
     );
   }
-  return pull([]) as CompanionIntroReport[];
+  return pull([]);
 };
 
 /** The state a renderer mounting on the surface would pull. */
@@ -953,7 +957,7 @@ const state = (): CompanionSurfaceState => {
   if (!pull) {
     throw new Error("No handler registered for cadet:companion:getState");
   }
-  return pull([]) as CompanionSurfaceState;
+  return pull([]);
 };
 
 /**
@@ -965,7 +969,7 @@ const introStage = (): boolean => {
   if (!pull) {
     throw new Error("No handler registered for cadet:companion:getIntroStage");
   }
-  return pull([]) as boolean;
+  return pull([]);
 };
 
 /** Whether the app should announce the due introduction before it begins. */
@@ -976,7 +980,7 @@ const introAnnouncement = (): boolean => {
       "No handler registered for cadet:companion:getIntroAnnouncement",
     );
   }
-  return pull([]) as boolean;
+  return pull([]);
 };
 
 /** Accept the app announcement and begin the surface's introduction. */
@@ -3252,11 +3256,12 @@ describe("geometryFor with the two axes apart", () => {
  * `companion-menu.test.ts`.
  */
 describe("companionContextMenuTemplate", () => {
-  /** Only what a menu item is read for here. */
-  type MenuItem = {
-    label?: string;
-    type?: string;
-    click?: () => void;
+  /** A press on a menu item, with Electron's own call shape elided. */
+  const press = (item: { click?: unknown }): void => {
+    const click = item.click;
+    if (typeof click === "function") {
+      Reflect.apply(click, undefined, []);
+    }
   };
 
   const build = (
@@ -3279,7 +3284,7 @@ describe("companionContextMenuTemplate", () => {
       hide: () => {
         hidden = true;
       },
-    }) as MenuItem[];
+    });
     return {
       items,
       wasHidden: () => hidden,
@@ -3298,7 +3303,7 @@ describe("companionContextMenuTemplate", () => {
       "Open Cadet",
       "separator",
     ]);
-    items[0]?.click?.();
+    press(items[0]);
     expect(wasOpened()).toBe(true);
   });
 
@@ -3317,7 +3322,7 @@ describe("companionContextMenuTemplate", () => {
   test("offers the surface's place back, right after the headings", () => {
     const { items, wasReset } = build();
     expect(items[4]?.label).toBe("Reset Position");
-    items[4]?.click?.();
+    press(items[4]);
     expect(wasReset()).toBe(true);
   });
 
@@ -3335,7 +3340,7 @@ describe("companionContextMenuTemplate", () => {
 
   test("the last item takes the surface away", () => {
     const menu = build();
-    menu.items[6]?.click?.();
+    press(menu.items[6]);
     expect(menu.wasHidden()).toBe(true);
   });
 });
@@ -3865,14 +3870,9 @@ describe("the popover beside the surface", () => {
   const popoverWindow = (): GlowWindow | null =>
     others.get("companion-popover") ?? null;
 
-  const show = (popover: object, width = 300, height = 60): void => {
+  const show = (popover: { id: string }, width = 300, height = 60): void => {
     send("cadet:companion:setContext", context({ popover }));
-    send(
-      "cadet:companion:setPopoverSize",
-      (popover as { id: string }).id,
-      width,
-      height,
-    );
+    send("cadet:companion:setPopoverSize", popover.id, width, height);
   };
 
   beforeEach(() => {
@@ -6336,7 +6336,7 @@ describe("the chord the introduction asks for", () => {
   const asked = (): (string | null)[] =>
     mainSends
       .filter((sent) => sent.channel === "cadet:companion:introChord")
-      .map((sent) => sent.payload as string | null);
+      .map((sent) => sent.payload);
 
   /** What a window mounting mid-run pulls, which is the beat rather than the push. */
   const introChord = (): string | null => {
@@ -6346,7 +6346,7 @@ describe("the chord the introduction asks for", () => {
         "No handler registered for cadet:companion:getIntroChord",
       );
     }
-    return pull([]) as string | null;
+    return pull([]);
   };
 
   /** An install owed a run, with the surface reaching the screen. */
@@ -6453,7 +6453,7 @@ describe("the introduction's reports", () => {
   const reports = (): CompanionIntroReport[] =>
     mainSends
       .filter((sent) => sent.channel === "cadet:companion:introReport")
-      .map((sent) => sent.payload as CompanionIntroReport);
+      .map((sent) => sent.payload);
 
   /**
    * An install owed a run, with the surface reaching the screen. The surface is

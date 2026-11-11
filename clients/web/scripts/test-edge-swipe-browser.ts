@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium, webkit, type Page } from "playwright";
 
-import type {} from "./fixtures/edge-swipe";
-
 // Real layout and CSS overflow coercion are required for these regressions.
 const build = await Bun.build({
   entrypoints: [
