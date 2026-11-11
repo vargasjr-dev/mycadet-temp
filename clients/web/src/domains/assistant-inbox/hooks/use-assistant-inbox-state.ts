@@ -1,12 +1,8 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import {
-  assistantsDomainsListOptions,
-  assistantsDomainsListQueryKey,
-  assistantsEmailAddressesListOptions,
-  assistantsEmailAddressesListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
+import { useEmailAddresses, emailKeys } from "@/lib/email-api";
+import { useDomains, domainKeys } from "@/lib/assistant-domains";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
@@ -55,30 +51,21 @@ export function useAssistantInboxState(
   const assistant = getResolvedAssistant();
   const assistantId = assistant.assistantId;
 
-  const addressPath = { path: { assistant_id: assistantId } };
+  const addressesQuery = useEmailAddresses(assistantId);
+  const domainsQuery = useDomains(assistantId);
 
-  const addressesQuery = useQuery({
-    ...assistantsEmailAddressesListOptions(addressPath),
-  });
-  const domainsQuery = useQuery({
-    ...assistantsDomainsListOptions(addressPath),
-  });
-
-  const addresses = addressesQuery.data?.results;
-  const domain = domainsQuery.data?.results?.[0];
+  const addresses = addressesQuery.data;
+  const domain = domainsQuery.data?.[0];
 
   const refreshAddresses = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({
-        queryKey: assistantsEmailAddressesListQueryKey(addressPath),
+        queryKey: emailKeys.emailAddresses(assistantId),
       }),
       queryClient.invalidateQueries({
-        queryKey: assistantsDomainsListQueryKey(addressPath),
+        queryKey: domainKeys.domains(assistantId),
       }),
     ]);
-    // The query key above is built from the id, so a change of assistant
-    // rebuilds it; the callback only needs the id itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryClient, assistantId]);
 
   return {

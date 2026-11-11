@@ -33,12 +33,11 @@ import {
   readDomainEmailError,
 } from "@/domains/assistant-inbox/setup-error-message";
 import {
-  assistantsDomainsCreateMutation,
-  assistantsEmailAddressesCreateMutation,
-  assistantsEmailAddressesListQueryKey,
-  assistantsListQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import type { PaginatedAssistantEmailAddressList } from "@/generated/api/types.gen";
+  useCreateEmailAddress,
+  emailKeys,
+  type EmailAddress,
+} from "@/lib/email-api";
+import { useCreateDomain } from "@/lib/assistant-domains";
 import {
   channelsReadinessGetQueryKey,
   channelsReadinessRefreshPostMutation,
@@ -232,8 +231,8 @@ export function AssistantInboxPageRoute() {
     }
   }, [navigate]);
 
-  const createDomain = useMutation(assistantsDomainsCreateMutation());
-  const createAddress = useMutation(assistantsEmailAddressesCreateMutation());
+  const createDomain = useCreateDomain(state.assistantId);
+  const createAddress = useCreateEmailAddress(state.assistantId);
   const refreshReadiness = useMutation(channelsReadinessRefreshPostMutation());
 
   /* The daemon caches whether email is connected for up to its remote-check
@@ -283,27 +282,25 @@ export function AssistantInboxPageRoute() {
 
   const confirmSetup = useCallback(
     async ({ prefix, handle }: { prefix: string; handle: string }) => {
-      const path = { assistant_id: state.assistantId };
       setSettling(true);
       setSetupError(null);
       try {
         let partialFailure: string | null = null;
         if (state.hasDomain) {
-          await createAddress.mutateAsync({
-            path,
-            body: { username: prefix },
-          });
+          await createAddress.mutateAsync({ username: prefix });
         } else {
           // One call registers the subdomain and the address on it, and the
           // subdomain becomes the assistant's public handle, which is why
           // the card lets the user choose it here.
           const created = await createDomain.mutateAsync({
-            path,
-            body: { subdomain: handle, email_username: prefix },
+            subdomain: handle,
+            email_username: prefix,
           });
           // The handle changed with it; the listing that carries it is stale.
+          // Matched by the generated cache's id field — the sdk's key
+          // helper is not imported here.
           void queryClient.invalidateQueries({
-            queryKey: assistantsListQueryKey(),
+            queryKey: [{ _id: "assistantsList" }],
           });
           // The subdomain is claimed even when the address on it could not
           // be made: the cloud reports that as a field on the success,
@@ -317,11 +314,10 @@ export function AssistantInboxPageRoute() {
         await state.refreshAddresses();
         refreshChannelReadiness();
         // "Ready" is what the refreshed list says, not what the call said.
-        const listed =
-          queryClient.getQueryData<PaginatedAssistantEmailAddressList>(
-            assistantsEmailAddressesListQueryKey({ path }),
-          );
-        const registered = listed?.results?.[0]?.address ?? null;
+        const listed = queryClient.getQueryData<EmailAddress[]>(
+          emailKeys.emailAddresses(state.assistantId),
+        );
+        const registered = listed?.[0]?.address ?? null;
         if (partialFailure !== null || registered === null) {
           const reason =
             partialFailure ?? t("assistantInboxRoute.setupIncomplete");
