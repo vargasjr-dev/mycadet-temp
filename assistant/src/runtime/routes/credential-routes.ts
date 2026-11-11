@@ -538,7 +538,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List all credentials with metadata",
     description:
-      "Return credentials from the live credential vault, with OAuth connection info and cloud credentials. Fails if the vault is unreachable.",
+      "Return credentials from the live credential vault, with OAuth connection info. Fails if the vault is unreachable.",
     tags: ["credentials"],
     requestBody: z.object({
       search: z.string().optional().describe("Filter by substring match"),

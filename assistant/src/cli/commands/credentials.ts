@@ -59,30 +59,12 @@ function printCredentialHuman(output: Record<string, unknown>): void {
   }
 }
 
-function printCloudCredentialHuman(output: Record<string, unknown>): void {
-  log.info(`  [cloud-managed] ${output.provider}`);
-  log.info(`    Handle:      ${output.handle}`);
-  log.info(`    Status:      ${output.status}`);
-  if (output.accountInfo) {
-    log.info(`    Account:     ${output.accountInfo}`);
-  }
-  if (
-    Array.isArray(output.grantedScopes) &&
-    (output.grantedScopes as string[]).length > 0
-  ) {
-    log.info(
-      `    Scopes:      ${(output.grantedScopes as string[]).join(", ")}`,
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Response types for IPC calls
 // ---------------------------------------------------------------------------
 
 interface CredentialsListResponse {
   credentials: Record<string, unknown>[];
-  cloudCredentials: Record<string, unknown>[];
 }
 
 interface CredentialsStatusResponse {
@@ -120,33 +102,20 @@ export function registerCredentialsCommand(program: Command): void {
             );
           }
 
-          const { credentials, cloudCredentials } = r.result!;
+          const { credentials } = r.result!;
 
           if (shouldOutputJson(cmd)) {
             writeOutput(cmd, {
               ok: true,
               credentials,
-              cloudCredentials,
             });
+          } else if (credentials.length === 0) {
+            log.info("No credentials found");
           } else {
-            const totalCount = credentials.length + cloudCredentials.length;
-            if (totalCount === 0) {
-              log.info("No credentials found");
-            } else {
-              if (credentials.length > 0) {
-                log.info(`${credentials.length} local credential(s):\n`);
-                for (const cred of credentials) {
-                  printCredentialHuman(cred);
-                  log.info("");
-                }
-              }
-              if (cloudCredentials.length > 0) {
-                log.info(`${cloudCredentials.length} cloud credential(s):\n`);
-                for (const managed of cloudCredentials) {
-                  printCloudCredentialHuman(managed);
-                  log.info("");
-                }
-              }
+            log.info(`${credentials.length} credential(s):\n`);
+            for (const cred of credentials) {
+              printCredentialHuman(cred);
+              log.info("");
             }
           }
         },

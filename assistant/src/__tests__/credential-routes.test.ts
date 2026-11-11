@@ -166,7 +166,6 @@ type ListResponse = {
     scrubbedValue: string;
     hasSecret: boolean;
   }>;
-  cloudCredentials: unknown[];
 };
 type DeleteResponse = {
   service: string;
