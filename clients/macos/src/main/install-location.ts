@@ -18,7 +18,7 @@ import { app } from "electron";
  * This is a leaf: it holds the value and touches only `app`, so the telemetry
  * path can read it without pulling in window or installer code.
  */
-export type InstallLocation =
+type InstallLocation =
   | "unpackaged"
   | "applications"
   | "relocating"

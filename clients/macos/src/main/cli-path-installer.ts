@@ -60,7 +60,7 @@ export function buildWrapperScript(): string {
   ].join("\n");
 }
 
-export type WrapperOwnership = "ours" | "foreign" | "absent";
+type WrapperOwnership = "ours" | "foreign" | "absent";
 
 /**
  * Classify what sits at the wrapper path. Anything present that can't be

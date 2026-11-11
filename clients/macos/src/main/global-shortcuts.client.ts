@@ -2,7 +2,7 @@ import { installGlobalShortcuts as installSharedGlobalShortcuts } from "@mycadet
 import { toggleQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 
 import "./commands.client";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import { ensureVisible } from "./main-window";
 
 export const installGlobalShortcuts = (): void => {

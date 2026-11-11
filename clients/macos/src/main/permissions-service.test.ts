@@ -94,7 +94,7 @@ mock.module("./ipc", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => undefined, warn: () => undefined },
 }));
 

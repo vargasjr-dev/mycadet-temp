@@ -3,18 +3,12 @@ import fs from "node:fs/promises";
 import os from "node:os";
 
 import { installDiagnosticsIpc as installSharedDiagnosticsIpc } from "@mycadet/electron-desktop/diagnostics";
-import {
-  configureFeedback,
-  installFeedbackIpc,
-} from "@mycadet/electron-desktop/feedback";
+import { configureFeedback } from "@mycadet/electron-desktop/feedback";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
-import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
-
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
-import { getInstallLocation } from "./install-location";
 import { handle, on } from "./ipc";
-import { getLogFilePaths } from "./logger";
-import { getSessionToken } from "./session-token-store.client";
+import { getLogFilePaths } from "@mycadet/electron-desktop/app-logger";
+import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 
 declare const __CADET_ENVIRONMENT__: string;
 
@@ -42,4 +36,3 @@ export const installDiagnosticsIpc = (): void => {
   );
 };
 
-export { installFeedbackIpc };

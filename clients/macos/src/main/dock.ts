@@ -19,7 +19,7 @@ import {
 import {
   getSessionToken,
   onSessionTokenChange,
-} from "./session-token-store.client";
+} from "@mycadet/electron-desktop/session-token-store";
 
 /**
  * Dock integration: avatar icon + unread-count badge + visibility state

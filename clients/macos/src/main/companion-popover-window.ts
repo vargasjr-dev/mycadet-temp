@@ -151,7 +151,7 @@ export const popoverBoundsFor = (
  * The size a page reported, bounded: at least a row of buttons, at most the
  * popover's ceilings, whole points.
  */
-export const popoverSizeFor = (reported: {
+const popoverSizeFor = (reported: {
   width: number;
   height: number;
 }): { width: number; height: number } => ({

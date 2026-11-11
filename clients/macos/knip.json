@@ -1,0 +1,23 @@
+{
+  "entry": [
+    "electron.vite.config.ts",
+    "electron-builder.config.cjs",
+    "scripts/afterSign.js",
+    "scripts/afterPack.js",
+    "src/preload/index.ts",
+    "src/**/*.test.ts",
+    "scripts/**/*.ts"
+  ],
+  "project": ["src/**/*.ts", "scripts/**/*.ts", "*.cjs", "scripts/*.js"],
+  "ignoreDependencies": [
+    "@mycadet/electron-desktop",
+    "@mycadet/ipc-contract",
+    "@mycadet/local-mode",
+    "@mycadet/native-sidecar",
+    "@mycadet/shared",
+    "electron-log",
+    "electron-store",
+    "node-addon-api",
+    "node-gyp"
+  ]
+}

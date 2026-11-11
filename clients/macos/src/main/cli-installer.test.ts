@@ -34,7 +34,7 @@ mock.module("electron", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 

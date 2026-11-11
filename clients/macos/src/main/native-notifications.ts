@@ -31,7 +31,7 @@ import {
   type NotificationLike,
 } from "@mycadet/electron-desktop/notifications";
 
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   ensureNotifierDelegate,
   getNotifier,

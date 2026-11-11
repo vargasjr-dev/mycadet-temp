@@ -1,4 +1,4 @@
-import { BrowserWindow, app, clipboard, shell, type Data } from "electron";
+import { BrowserWindow, clipboard, shell, type Data } from "electron";
 import { z } from "zod";
 
 import type { TextInsertionResult } from "@mycadet/ipc-contract";
@@ -11,7 +11,7 @@ import {
   type ShortcutOutcome,
 } from "./hotkey-helper";
 import { handle } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 
 const CLIPBOARD_RESTORE_DELAY_MS = 500;
 const PASTE_SHORTCUT_SCRIPT =
@@ -29,7 +29,6 @@ const FILE_CLIPBOARD_FORMATS = [
   "text/uri-list",
 ];
 
-export type { TextInsertionResult };
 
 export type ClipboardSnapshot =
   | { kind: "structured"; data: Data }
@@ -280,7 +279,7 @@ export const typeIntoFrontAppWithDeps = async (
   return result;
 };
 
-export const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
+const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
   typeIntoFrontAppWithDeps(text, defaultDeps);
 
 /**
@@ -304,10 +303,10 @@ export const undoInFrontAppWithDeps = async (
   return sendShortcut(deps, "z", UNDO_SHORTCUT_SCRIPT, "undo");
 };
 
-export const undoInFrontApp = (): Promise<TextInsertionResult> =>
+const undoInFrontApp = (): Promise<TextInsertionResult> =>
   undoInFrontAppWithDeps(defaultDeps);
 
-export const openAutomationSettings = (): Promise<void> =>
+const openAutomationSettings = (): Promise<void> =>
   shell.openExternal(AUTOMATION_SETTINGS_URL);
 
 export const installTextInsertionIpc = (): void => {

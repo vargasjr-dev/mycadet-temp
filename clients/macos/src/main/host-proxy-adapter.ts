@@ -13,7 +13,7 @@ import { RENDERER_BASE_PROD } from "./app-config";
 import { showCompanionCoachmarks } from "./companion-window";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 
 export const installHostProxyBridge = (): (() => void) => {

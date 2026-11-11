@@ -15,8 +15,8 @@
  * who never invoke computer use pay nothing.
  */
 
-import log from "../logger";
-import { MacHelperClient } from "./mac-helper.client";
+import log from "@mycadet/electron-desktop/app-logger";
+import { NativeSidecarClient as MacHelperClient } from "@mycadet/native-sidecar/supervisor";
 import { getMacHelperPath } from "./mac-helper-path";
 
 // Computer-use / app-control actions run an accessibility-tree walk, a settle
@@ -27,7 +27,7 @@ import { getMacHelperPath } from "./mac-helper-path";
 // authoritative and the client never reports "did not respond" for an action
 // the daemon would still accept; the client timeout only catches a genuinely
 // hung helper.
-export const CU_HELPER_TIMEOUT_MS = 65_000;
+const CU_HELPER_TIMEOUT_MS = 65_000;
 
 let client: MacHelperClient | null = null;
 

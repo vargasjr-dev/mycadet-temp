@@ -28,7 +28,7 @@ mock.module("electron", () => ({ app: electronApp }));
 
 const warnings: unknown[][] = [];
 const infos: unknown[][] = [];
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: {
     info: (...args: unknown[]) => infos.push(args),
     warn: (...args: unknown[]) => warnings.push(args),

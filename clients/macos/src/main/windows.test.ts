@@ -45,7 +45,7 @@ mock.module("electron", () => ({
   },
 }));
 
-const { createWindow, hardenedWebPreferences } = await import("./windows");
+const { createWindow, hardenedWebPreferences } = await import("@mycadet/electron-desktop/windows");
 
 beforeEach(() => {
   constructed = [];

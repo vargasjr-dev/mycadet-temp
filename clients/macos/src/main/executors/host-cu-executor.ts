@@ -24,7 +24,7 @@ import {
 } from "@mycadet/ipc-contract";
 import { z } from "zod";
 
-import log from "../logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
 /** The one tool answered here rather than by the helper. */
@@ -192,7 +192,7 @@ const REFUSALS: Record<CoachmarkRefusal, string> = {
  * Asynchronous because a mark that names a control is resolved against the
  * surface's accessibility tree, which is a round trip to the helper.
  */
-export type CoachmarkPainter = (
+type CoachmarkPainter = (
   requests: readonly CoachmarkRequest[],
   conversationId?: string,
 ) => Promise<CoachmarkResult>;
@@ -338,7 +338,7 @@ class PointAtExecutor implements HostProxyExecutor {
   }
 }
 
-export interface HostCuExecutorDeps {
+interface HostCuExecutorDeps {
   helper?: CuHelperClient;
   /** What draws the marks. Absent means this client answers that it cannot. */
   showCoachmarks?: CoachmarkPainter;

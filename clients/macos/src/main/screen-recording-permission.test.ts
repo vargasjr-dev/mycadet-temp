@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { JsonRpcHelperError } from "./sidecar/mac-helper.client";
+import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 
 let helperStatus = "denied";
 let helperReads = 0;
@@ -20,7 +20,7 @@ mock.module("./sidecar/shared-cu-helper", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => undefined, warn: () => undefined },
 }));
 

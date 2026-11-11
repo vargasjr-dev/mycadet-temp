@@ -19,4 +19,3 @@ const provider: HotkeySettingsProvider = {
 
 configureHotkeySettings(provider);
 
-export * from "@mycadet/electron-desktop/commands";

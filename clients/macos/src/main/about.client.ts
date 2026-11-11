@@ -1,10 +1,6 @@
-import { app } from "electron";
-
 import {
   configureAboutRuntime,
-  getVersionInfo,
   installAbout as installSharedAbout,
-  openAboutWindow,
 } from "@mycadet/electron-desktop/about";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 

@@ -9,5 +9,3 @@ configureDeepLinks({
   initialArgv: [],
   on,
 });
-
-export * from "@mycadet/electron-desktop/deep-links";

@@ -7,7 +7,7 @@ import {
   isStrandedOutsideApplications,
   recordInstallLocation,
 } from "./install-location";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 
 // Build-time define (see electron.vite.config.ts) — the same CADET_ENVIRONMENT
 // that electron-builder.config.cjs derives `productName` from.
@@ -270,8 +270,4 @@ export async function promptToRelocateIfStranded(): Promise<void> {
     });
 }
 
-// Test seam, exported only for unit-test setup. Production code never
-// resets the recorded location.
-export const __resetForTesting = (): void => {
-  recordInstallLocation("unpackaged");
-};
+

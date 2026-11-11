@@ -75,10 +75,7 @@ import {
   type WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
 import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
-import {
-  onSettingChange,
-  readSetting,
-} from "@mycadet/electron-desktop/settings";
+
 import {
   clearCompanionIntroSeen,
   readCompanionCallDock,
@@ -131,7 +128,7 @@ import {
 } from "./companion-popover-window";
 import { unwatchFrameScroll, watchFrameScroll } from "./frame-scroll-watch";
 import { handle, on } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
 import {
   getPermissionsService,
@@ -200,7 +197,7 @@ const COMPANION_ROUTE = "/floating/companion";
  * rules explicitly rather than read off the module, so they stay pure functions
  * of their inputs and every size is a case a test can state.
  */
-export interface CompanionGeometry {
+interface CompanionGeometry {
   /** The creature's box, which is the whole of its own scale. */
   avatarBox: number;
   /**
@@ -1601,7 +1598,7 @@ const pushState = (): void => {
  * its own request id, so a press on one row of a list still lands after
  * another request joins it; everything else names the whole popover.
  */
-export const answersThePopover = (
+const answersThePopover = (
   popover: CompanionPopover | undefined,
   popoverId: string,
   answer: { kind: string; itemId?: string },
@@ -1680,7 +1677,7 @@ const popoverAnchor = (): CompanionPopoverAnchor | null => {
  * gone, which is long enough to press again. A prompt still standing when
  * the hold runs out is one whose submission did not land, so it shows again.
  */
-export const COMPANION_POPOVER_ANSWER_HOLD_MS = 10_000;
+const COMPANION_POPOVER_ANSWER_HOLD_MS = 10_000;
 
 /** Answered prompts held off the popover, by approval or popover id. */
 const answered = new Map<string, ReturnType<typeof setTimeout>>();
@@ -3460,7 +3457,7 @@ const syncFrontmost = (): void => {
  * does next is only true of a press a renderer actually has (see the
  * `advanceIntro` handler).
  */
-export const dispatchWithoutRaising = (
+const dispatchWithoutRaising = (
   command: CadetCommand,
 ): Promise<boolean> => {
   if (currentMainWindow() !== null) {

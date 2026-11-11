@@ -84,6 +84,11 @@ let helperExecutableName = "cadet-mac-helper";
 let helperBundleName = "cadet-mac-helper";
 mock.module("node:fs", () => ({
   existsSync: () => exists,
+  // The bundle-name sidecar above answers first, so the discovery walk is
+  // never reached in these tests; keep it inert rather than reading real dirs.
+  readdirSync: () => {
+    throw new Error("directory walks are not exercised here");
+  },
   readFileSync: (target: unknown) => {
     const targetPath = String(target);
     if (targetPath.endsWith(".cadet-mac-helper.bundle-name")) {
@@ -103,14 +108,14 @@ mock.module("node:child_process", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: {
     info: mock(() => undefined),
     warn: mock(() => undefined),
   },
 }));
 
-mock.module("./app-origin", () => ({
+mock.module("@mycadet/electron-desktop/app-origin", () => ({
   isAllowedOrigin: () => true,
   resolveAllowedOrigin: () => ({ protocol: "app:", host: "mycadet.ai" }),
 }));
