@@ -63,15 +63,7 @@
     "handleLabel": "Handle (public)",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {
-    "title": "Give {name} an inbox",
-    "subtitle": "An email address people can write to, and one place to read everything that arrives.",
-    "perkAddress": "A real address on {rootDomain}",
-    "perkReads": "{name} reads, sorts, and replies for you",
-    "perkHistory": "Every message kept here, inbox and sent",
-    "titleNoName": "Give your assistant an inbox",
-    "perkReadsNoName": "Your assistant reads, sorts, and replies for you"
-  },
+  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "Alright, let’s get you set up.",
     "fieldLabel": "Select an email handle:",

@@ -585,14 +585,7 @@
   "paymentMethodRow": {
     "savedCard": "Tarjeta guardada"
   },
-  "pendingPairingRequests": {
-    "approveButton": "Aprobar",
-    "denyButton": "Denegar",
-    "instruction": "Un dispositivo está pidiendo usar este asistente. Aprueba una solicitud solo después de confirmar que su código coincide con el que muestra el dispositivo solicitante.",
-    "requestedMeta": "Solicitado {when} desde {ip}",
-    "requestedMetaHost": "Solicitado {when} desde este equipo",
-    "title": "Solicitudes de vinculación"
-  },
+  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "Compositor",
     "description": "Personaliza los atajos y el comportamiento de Cadet en este dispositivo.",

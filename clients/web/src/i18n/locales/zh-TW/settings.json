@@ -585,14 +585,7 @@
   "paymentMethodRow": {
     "savedCard": "已儲存卡片"
   },
-  "pendingPairingRequests": {
-    "approveButton": "核准",
-    "denyButton": "拒絕",
-    "instruction": "有裝置正在請求使用此助理。請在確認其代碼與請求裝置上顯示的代碼相符後，再核准請求。",
-    "requestedMeta": "於 {when} 從 {ip} 請求",
-    "requestedMetaHost": "於 {when} 從本機請求",
-    "title": "配對請求"
-  },
+  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "撰寫器",
     "description": "自訂快捷鍵以及 Cadet 在此裝置上的行為。",
@@ -1068,11 +1061,6 @@
   },
   "usePairDevice": {
     "mintErrorFallback": "產生代碼時發生問題。"
-  },
-  "usePendingPairingRequests": {
-    "actionErrorFallback": "發生問題。請再試一次。",
-    "denyAlreadyApproved": "此請求已在其他地方核准，因此拒絕操作未生效，裝置現已配對。",
-    "pollErrorFallback": "檢查配對請求時發生問題。"
   },
   "useProfileSave": {
     "createdToast": "已建立設定檔「{name}」"

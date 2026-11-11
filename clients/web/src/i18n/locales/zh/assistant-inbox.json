@@ -63,15 +63,7 @@
     "handleLabel": "用户名（公开）",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {
-    "title": "给 {name} 一个收件箱",
-    "subtitle": "一个别人可以写信的邮箱地址，以及一个阅读所有来信的地方。",
-    "perkAddress": "在 {rootDomain} 上的真实地址",
-    "perkReads": "{name} 为你阅读、整理并回复",
-    "perkHistory": "每封邮件都保存在这里，包括收件和已发送",
-    "titleNoName": "给你的助手一个收件箱",
-    "perkReadsNoName": "你的助手为你阅读、整理并回复"
-  },
+  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "好，我们来设置一下。",
     "fieldLabel": "选择一个邮件 handle：",

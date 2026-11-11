@@ -49,12 +49,7 @@ describe("ensureLocalBinShims", () => {
     const { dir, unresolved } = ensureLocalBinShims(entry());
     expect(unresolved).toEqual([]);
     expect(dir).toBe(join(instanceDir, "bin"));
-    for (const name of [
-      "assistant",
-      "gateway",
-      "ces",
-      "credential-executor",
-    ]) {
+    for (const name of ["assistant", "gateway", "ces"]) {
       const mode = statSync(join(dir, name)).mode & 0o111;
       expect(mode).not.toBe(0);
     }
@@ -83,13 +78,6 @@ describe("ensureLocalBinShims", () => {
     );
   });
 
-  test("credential-executor shim runs its main entry", () => {
-    ensureLocalBinShims(entry());
-    expect(shimBody("credential-executor")).toContain(
-      join(repoRoot, "credential-executor", "src", "main.ts"),
-    );
-  });
-
   test("a runtime install outranks the source tree", () => {
     // The instance's newest self-managed runtime install is what the daemon
     // stack runs — the shims must bake THAT path, not the checkout's.
@@ -113,12 +101,7 @@ describe("ensureLocalBinShims", () => {
 
   test("shims exec through bun with run", () => {
     ensureLocalBinShims(entry());
-    for (const name of [
-      "assistant",
-      "gateway",
-      "ces",
-      "credential-executor",
-    ]) {
+    for (const name of ["assistant", "gateway", "ces"]) {
       const body = shimBody(name);
       expect(body.startsWith("#!/bin/sh")).toBe(true);
       expect(body).toContain(" run ");

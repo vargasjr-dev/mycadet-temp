@@ -1,17 +1,11 @@
-import { existsSync } from "fs";
 import {
   cliCommand,
-  dockerResourceNames,
-  ensureLocalBinShims,
-  execBasetenSandbox,
+  execCommand,
   getCloudUrl,
-  localExecDirForService,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { delimiter, join } from "path";
 
 import { isCloudEntry } from "@mycadet/local-mode/contract";
-import { spawn } from "child_process";
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
@@ -49,21 +43,6 @@ function normalizeService(raw: string): ServiceName {
     process.exit(1);
   }
   return normalized;
-}
-
-function resolveDockerContainer(
-  instanceName: string,
-  service: ServiceName,
-): string {
-  const res = dockerResourceNames(instanceName);
-  switch (service) {
-    case "assistant":
-      return res.assistantContainer;
-    case "gateway":
-      return res.gatewayContainer;
-    case "credential-executor":
-      return res.cesContainer;
-  }
 }
 
 export const exec = Object.assign(
@@ -181,127 +160,13 @@ export const exec = Object.assign(
       process.exit(1);
     }
 
-    const cloud = entry.cloud;
-
-    if (cloud === "local") {
-      const instanceDir = entry.instanceDir;
-      if (!instanceDir) {
-        console.error(
-          red(
-            `Error: assistant '${entry.assistantId}' has no local instance directory recorded.`,
-          ),
-        );
-        process.exit(1);
-      }
-
-      const workspaceDir = join(instanceDir, "workspace");
-      const serviceDir = localExecDirForService(instanceDir, service);
-      const socketPath = join(workspaceDir, "assistant.sock");
-      if (!existsSync(socketPath)) {
-        console.error(
-          red(
-            `Error: the assistant runtime is not reachable (no socket at ${socketPath}).`,
-          ),
-        );
-        console.error(
-          red(
-            "Start it with `cadet wake`, or check `cadet ps` for its status.",
-          ),
-        );
-        process.exit(1);
-      }
-
-      // Cadet's own binaries resolve from the local assistant's source via
-      // shim executables in the instance's bin/ dir, prepended to PATH —
-      // so compound commands, pipes, and scripts that invoke them run the
-      // build the daemons run, never a globally installed published build.
-      const shims = ensureLocalBinShims(entry);
-      if (shims.unresolved.includes(command[0])) {
-        console.error(
-          red(
-            `Error: could not resolve '${command[0]}'. Make sure the Cadet is awake.`,
-          ),
-        );
-        process.exit(1);
-      }
-      const child = spawn(command[0], command.slice(1), {
-        stdio: "inherit",
-        windowsHide: true,
-        cwd: serviceDir,
-        env: {
-          ...process.env,
-          CADET_WORKSPACE_DIR: workspaceDir,
-          PATH: [shims.dir, process.env.PATH].filter(Boolean).join(delimiter),
-        },
-      });
-      await new Promise<void>((resolve) => {
-        child.on("close", (code) => {
-          process.exitCode = code ?? 0;
-          resolve();
-        });
-        child.on("error", (err) => {
-          console.error(red(`Error: ${err.message}`));
-          process.exitCode = 1;
-          resolve();
-        });
-      });
-      return;
-    }
-
-    if (cloud === "apple-container") {
+    if (entry.cloud === "apple-container") {
       const fullServiceName = `cadet-${service}`;
       if (interactive) {
         await sshAppleContainer(entry, command, fullServiceName);
       } else {
         await execAppleContainer(entry, command, fullServiceName);
       }
-      return;
-    }
-
-    if (cloud === "docker") {
-      const container = resolveDockerContainer(entry.assistantId, service);
-      const dockerArgs = interactive
-        ? ["exec", "-it", container, ...command]
-        : ["exec", container, ...command];
-
-      const child = spawn("docker", dockerArgs, {
-        stdio: "inherit",
-        windowsHide: true,
-      });
-      await new Promise<void>((resolve, reject) => {
-        child.on("close", (code) => {
-          if (code === 0) resolve();
-          else {
-            process.exitCode = code ?? 1;
-            resolve();
-          }
-        });
-        child.on("error", reject);
-      });
-      return;
-    }
-
-    if (cloud === "baseten") {
-      if (!entry.name || !entry.sandboxUrl) {
-        console.error(
-          red(
-            `Error: assistant '${entry.assistantId}' has no sandbox name/URL recorded — re-hatch with \`cadet hatch --remote baseten\` to fix.`,
-          ),
-        );
-        process.exit(1);
-      }
-      const { code } = await execBasetenSandbox({
-        assistantId: entry.assistantId,
-        sandboxUrl: entry.sandboxUrl,
-        name: entry.name,
-        command,
-        service,
-        interactive,
-        ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
-          ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
-          : {}),
-      });
-      process.exitCode = code;
       return;
     }
 
@@ -343,12 +208,23 @@ export const exec = Object.assign(
       return;
     }
 
-    console.error(
-      red(
-        `Error: 'cadet exec' is not supported for ${cloud} assistants — supported: local, docker, apple-container, cloud, baseten.`,
-      ),
-    );
-    process.exit(1);
+    // Local, docker, and baseten ride the exec operation's remote legs —
+    // the command itself only owns the remote transports that live in the
+    // CLI (apple-container's ssh, cloud's terminal session).
+    const result = await execCommand(entry, {
+      command,
+      service,
+      interactive,
+      ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
+        ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
+        : {}),
+    });
+    if ("error" in result) {
+      console.error(red(`Error: ${result.error}`));
+      process.exitCode = result.status;
+    } else {
+      process.exitCode = result.code;
+    }
   },
   { description: "Execute a command inside an assistant's container" },
 );

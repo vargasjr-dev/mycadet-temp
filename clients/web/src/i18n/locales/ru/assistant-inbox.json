@@ -63,15 +63,7 @@
     "handleLabel": "Имя (публичное)",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {
-    "title": "Дайте {name} почтовый ящик",
-    "subtitle": "Адрес, на который могут писать люди, и одно место, где можно прочитать всё, что приходит.",
-    "perkAddress": "Настоящий адрес на {rootDomain}",
-    "perkReads": "{name} читает, сортирует и отвечает за вас",
-    "perkHistory": "Каждое письмо хранится здесь: входящие и отправленные",
-    "titleNoName": "Дайте ассистенту почтовый ящик",
-    "perkReadsNoName": "Ассистент читает, сортирует и отвечает за вас"
-  },
+  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "Отлично, давайте всё настроим.",
     "fieldLabel": "Выберите почтовый handle:",
