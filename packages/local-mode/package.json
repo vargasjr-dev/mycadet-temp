@@ -11,7 +11,7 @@
   },
   "scripts": {
     "typecheck": "bunx tsc --noEmit",
-    "test": "bun test --isolate src/"
+    "test": "bun scripts/run-tests.ts"
   },
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",
