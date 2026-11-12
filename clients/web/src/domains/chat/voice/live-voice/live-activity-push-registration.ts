@@ -34,9 +34,9 @@
  */
 
 import {
-  assistantsLiveActivityTokensDelete,
-  assistantsLiveActivityTokensUpsert,
-} from "@/generated/api/sdk.gen";
+  deleteLiveActivityToken,
+  upsertLiveActivityToken,
+} from "@/lib/push-api";
 import {
   isLiveVoiceSessionActive,
   LIVE_VOICE_STATE_KEYS,
@@ -218,18 +218,14 @@ async function upsertToken({
     // See `runtime/apns-environment.ts` for the shared-resolver rationale.
     const apnsEnvironment = await resolveSignedApnsEnvironment(bundleId);
 
-    const result = await assistantsLiveActivityTokensUpsert({
-      path: { assistant_id: assistantId },
-      body: {
-        token,
-        bundle_id: bundleId,
-        apns_environment: apnsEnvironment,
-        conversation_id: conversationId,
-        labels: phaseLabels(muted),
-        accent_hex: accentHex,
-        muted,
-      },
-      throwOnError: false,
+    const result = await upsertLiveActivityToken(assistantId, {
+      token,
+      bundle_id: bundleId,
+      apns_environment: apnsEnvironment,
+      conversation_id: conversationId,
+      labels: phaseLabels(muted),
+      accent_hex: accentHex,
+      muted,
     });
 
     if (result.error) {
@@ -276,10 +272,7 @@ export async function unregisterLiveActivityPushToken(): Promise<void> {
   registered = null;
   persistedRegistration.remove();
   try {
-    await assistantsLiveActivityTokensDelete({
-      path: { assistant_id: current.assistantId, token: current.token },
-      throwOnError: false,
-    });
+    await deleteLiveActivityToken(current.assistantId, current.token);
   } catch (err) {
     captureError(err, {
       context: "live_activity_push_unregistration",

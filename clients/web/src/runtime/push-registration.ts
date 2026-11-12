@@ -42,11 +42,6 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import type { PushNotificationSchema } from "@capacitor/push-notifications";
 
-import {
-  assistantsPushTokensDelete,
-  assistantsPushTokensUpsert,
-} from "@/generated/api/sdk.gen";
-import type { AssistantsPushTokensUpsertData } from "@/generated/api/types.gen";
 import { publish } from "@/lib/event-bus";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureAndroidAlertsChannel } from "@/runtime/android-notification-channels";
@@ -59,6 +54,11 @@ import {
 } from "@/runtime/android-sender-notification";
 import { resolveSignedApnsEnvironment } from "@/runtime/apns-environment";
 import { isNativePlatform } from "@/runtime/native-platform";
+import {
+  deleteDevicePushToken,
+  upsertDevicePushToken,
+  type DevicePushTokenUpsert,
+} from "@/lib/push-api";
 import {
   dispatchNotificationTap,
   type NotificationTapPayload,
@@ -205,12 +205,6 @@ async function readAndroidCapabilities(): Promise<string[]> {
   }
 }
 
-/** The Android arm of the generated upsert body. */
-type AndroidUpsertBody = Extract<
-  AssistantsPushTokensUpsertData["body"],
-  { platform: "android" }
->;
-
 /**
  * Upsert a freshly-minted native token to the cloud for the given assistant.
  * Best-effort: a non-2xx response or thrown error is reported and swallowed.
@@ -221,17 +215,14 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
     const { App } = await import("@capacitor/app");
     const { id: bundleId } = await App.getInfo();
     const platform = Capacitor.getPlatform();
-    // Annotated so a change to the generated contract is a compile error here.
-    // The generated Android body has no `capabilities` field, so the assertion
-    // is what admits that one field without loosening the rest of the row.
-    const body: AssistantsPushTokensUpsertData["body"] =
+    const body: DevicePushTokenUpsert =
       platform === "android"
-        ? ({
+        ? {
             token,
             platform: "android",
             bundle_id: bundleId,
             capabilities: await readAndroidCapabilities(),
-          } as AndroidUpsertBody)
+          }
         : {
             token,
             platform: "ios",
@@ -239,11 +230,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
             apns_environment: await resolveSignedApnsEnvironment(bundleId),
           };
 
-    const result = await assistantsPushTokensUpsert({
-      path: { assistant_id: assistantId },
-      body,
-      throwOnError: false,
-    });
+    const result = await upsertDevicePushToken(assistantId, body);
 
     if (result.error) {
       captureError(result.error, {
@@ -375,11 +362,11 @@ export function extractScopedPushTapPayload(
 async function deleteRegisteredToken(
   registered: RegisteredToken,
 ): Promise<void> {
-  const result = await assistantsPushTokensDelete({
-    path: { assistant_id: registered.assistantId, token: registered.token },
-    query: { bundle_id: registered.bundleId },
-    throwOnError: false,
-  });
+  const result = await deleteDevicePushToken(
+    registered.assistantId,
+    registered.token,
+    registered.bundleId,
+  );
   if (result.error) {
     captureError(result.error, {
       context: "push_registration_delete",
