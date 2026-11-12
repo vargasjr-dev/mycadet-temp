@@ -22,11 +22,10 @@
  * on disk; see `lockfile.ts`); the validated value carries only the modeled
  * shape.
  */
+import { environmentBaseUrl } from "@mycadet/environments/seeds";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { SEEDS } from "./environment-seeds";
 import { z } from "zod";
 
-import { resolveEnvironmentName } from "./environment";
 import { readLockfile } from "./lockfile";
 
 /**
@@ -152,26 +151,11 @@ export const GATEWAY_PORT = process.env.GATEWAY_PORT
   : 7830;
 
 /**
- * The cloud URL stack: the lockfile's platform base url (what the active
- * assistant was last hatched/waked against), else the `CADET_CLOUD_URL`
- * override, else the resolved environment's base url.
- */
-function getCloudUrl(): string {
-  const lockfileUrl = readLockfile().cloudBaseUrl;
-  return (
-    (typeof lockfileUrl === "string" && lockfileUrl.trim()) ||
-    process.env.CADET_CLOUD_URL?.trim() ||
-    SEEDS[resolveEnvironmentName()]?.baseUrl ||
-    SEEDS.production!.baseUrl
-  );
-}
-
-/**
  * The URL to dial an entry's gateway on, derived from the entry's canonical
  * fields — the one seam every consumer addresses a gateway through:
  *
  * - `custom` remotes: their recorded host and port.
- * - cloud-managed: the cloud URL stack.
+ * - cloud-managed: the environment's base url (`environmentBaseUrl()`).
  * - loopback topologies (`local`, `docker`, `apple-container`): the
  *   recorded loopback gateway port, else the default gateway port.
  */
@@ -194,7 +178,7 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
     return `https://${entry.ipAddress}${elided ? "" : `:${entry.port}`}`;
   }
   if (isCloudEntry(entry)) {
-    return getCloudUrl().replace(/\/+$/, "");
+    return environmentBaseUrl().replace(/\/+$/, "");
   }
   return `http://127.0.0.1:${entry.port}`;
 }
@@ -283,8 +267,6 @@ const BaseAssistantSchema = z.object({
   assistantId: z.string(),
   /** Platform assistant UUID for this assistant's registration. */
   cloudAssistantId: z.string().optional(),
-  /** Platform base URL this assistant was registered against. */
-  cloudBaseUrl: z.string().optional(),
   /** Platform organization the entry belongs to. */
   cloudOrganizationId: z.string().optional(),
   name: z.string().optional(),
@@ -535,7 +517,7 @@ export const LockfileSchema = z.looseObject({
 /**
  * A validated, normalized lockfile — this schema's own output. Loose at the
  * root so the CLI's read-modify-write round-trip preserves the root keys it
- * owns (`cloudBaseUrl`) and anything a newer writer added; readers key on the
+ * owns and anything a newer writer added; readers key on the
  * modeled fields.
  */
 export type Lockfile = z.infer<typeof LockfileSchema>;

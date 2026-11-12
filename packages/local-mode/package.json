@@ -7,8 +7,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./contract": "./src/lockfile-contract.ts",
-    "./environment": "./src/environment.ts",
-    "./environment-seeds": "./src/environment-seeds.ts",
     "./teleport-backup-policy": "./src/teleport-backup-policy.ts"
   },
   "scripts": {
@@ -17,6 +15,7 @@
   },
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",
+    "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-server-utils": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "@mycadet/shared": "workspace:*",

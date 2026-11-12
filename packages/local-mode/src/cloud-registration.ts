@@ -571,7 +571,6 @@ export async function registerLocalAssistantWithCloud(
   saveLockfileAssistant({
     ...entry,
     cloudAssistantId: registration.assistant.id,
-    cloudBaseUrl: cloudUrl,
     cloudOrganizationId: orgId,
   });
   log(

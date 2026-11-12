@@ -13,7 +13,7 @@
  * imported from platform/logger without circular imports.
  */
 
-import { SEEDS } from "@mycadet/local-mode/environment-seeds";
+import { environmentBaseUrl } from "@mycadet/environments";
 
 import { getLogger } from "../util/logger.js";
 import { checkUnrecognizedEnvVars, getIsCloud } from "./env-registry.js";
@@ -146,15 +146,11 @@ export function getCloudBaseUrl(): string {
   } catch {
     // Config not yet available (early bootstrap) — fall through
   }
-  // Resolve the default cloud URL from CADET_ENVIRONMENT.
-  // `production`, `staging`, and `test` map to their respective hosted
-  // platforms, `local` points at a developer's locally running cloud,
-  // and everything else (including unset) falls back to dev-platform. The
-  // defaults come from the environment seeds — the same single-origin table
-  // every other surface reads.
-  const env = str("CADET_ENVIRONMENT")?.trim();
-  const seed = (env && SEEDS[env]) || SEEDS.dev;
-  return configUrl || str("CADET_CLOUD_URL") || seed.baseUrl;
+  // The default comes from the shared environment seeds via
+  // `environmentBaseUrl()` — the explicit `CADET_CLOUD_URL` override and
+  // the environment's single origin, the same resolution every other
+  // surface reads.
+  return configUrl || environmentBaseUrl();
 }
 
 /**

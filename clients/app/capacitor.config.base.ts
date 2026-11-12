@@ -1,36 +1,21 @@
 import type { CapacitorConfig } from "@capacitor/cli";
-// The `/environment-seeds` subpath is deliberate: cap's TS config loader
-// transpiles one file at a time — only the self-contained seeds file is
-// safe to import here. The local stack's lockfile resolution happens in
-// the sync entrypoints (plain bun scripts), which hand the resolved URL
-// over as `CADET_LOCAL_SERVER_URL`.
-import { SEEDS } from "@mycadet/local-mode/environment-seeds";
+// The `/seeds` subpath is deliberate: cap's TS config loader transpiles one
+// file at a time and cannot resolve the environments index's `.js`-suffixed
+// runtime re-exports.
+import { SEEDS } from "@mycadet/environments/seeds";
 
-// Resolves the environment and app server url
+// Resolves the environment's single origin the same way every other surface
+// does (`SEEDS` via `CADET_ENVIRONMENT`; unset means the local cadet). It is
+// both the baked cloud origin the mobile shells' native half dials — the iOS
+// scheme handler forwards the boot bundle's same-origin `/v1` fetches at it,
+// and it is the baked-default fallback behind the chooser escape and the
+// widget identity — and the navigation escape hatch. A lockfile-dialed
+// tunnel/loopback origin for a device build is the mobile iteration's
+// follow-up.
 function resolveServerUrl(): string {
   // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
   process.env.CADET_ENVIRONMENT ??= "local";
   return SEEDS[process.env.CADET_ENVIRONMENT]?.baseUrl ?? SEEDS.dev.baseUrl;
-}
-
-// The baked cloud origin the mobile shells' native half dials: the iOS
-// scheme handler forwards the boot bundle's same-origin `/v1` fetches at
-// it, and it is the baked-default fallback behind the chooser escape and
-// the widget identity. Resolved at sync time from `CADET_ENVIRONMENT` —
-// the same input the removed `__CADET_CONFIG__` stamp consumed, carried
-// natively now that the served-bundle config schema transports no URLs.
-// Local resolves to the control-plane default; a lockfile-dialed
-// tunnel/loopback stack for a device build is the mobile iteration's
-// follow-up (the stamp's own fallback, unchanged).
-function resolveBakedCloudUrl(): string {
-  if ((process.env.CADET_ENVIRONMENT ??= "local") === "local") {
-    // The sync entrypoints look the local stack up from the lockfile
-    // before syncing (tunnel URL for devices, the app server edge's
-    // loopback port for the simulator); the seed's default port is the
-    // fallback when no stack is up.
-    return process.env.CADET_LOCAL_SERVER_URL || SEEDS.local.baseUrl;
-  }
-  return SEEDS[process.env.CADET_ENVIRONMENT!]?.baseUrl ?? SEEDS.dev.baseUrl;
 }
 
 // The Capacitor config shared by all mobile shells
@@ -44,7 +29,7 @@ const baseConfig: Omit<CapacitorConfig, "appId"> = {
     // Inert to Capacitor itself — the mobile shells' native half reads the
     // baked origin out of the synced config (SelfHostedServer on iOS).
     CadetCloud: {
-      cloudUrl: resolveBakedCloudUrl(),
+      cloudUrl: resolveServerUrl(),
     },
   },
   server: {

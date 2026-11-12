@@ -96,7 +96,7 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
 /**
  * Return the environment's single cloud origin — API, auth, and the
  * web app all live on it (mirrors the seed table in
- * `packages/local-mode/src/environment-seeds.ts`, kept inline because the
+ * `packages/environments/src/seeds.ts`, kept inline because the
  * extension bundles standalone).
  */
 export function cloudBaseUrlForEnvironment(env: ExtensionEnvironment): string {

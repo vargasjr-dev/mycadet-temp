@@ -1,4 +1,4 @@
-import { SEEDS } from "./environment-seeds";
+import { environmentBaseUrl } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
 import {
@@ -8,8 +8,6 @@ import {
   resolveConfigHome,
   resolveDataHome,
 } from "./paths";
-
-const PRODUCTION_ENVIRONMENT_NAME = "production";
 
 export interface LocalEndpointConfig {
   lockfilePath: string;
@@ -21,13 +19,10 @@ export interface LocalEndpointConfig {
  * Resolve the local endpoint config from the process environment.
  */
 export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
-  const cadetEnv = resolveEnvironmentName();
-  const seed = SEEDS[cadetEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
-
   return {
     lockfilePath: resolveLockfilePath(),
     configDir: resolveConfigDir(),
-    cloudUrl: process.env.CADET_CLOUD_URL || seed.baseUrl,
+    cloudUrl: environmentBaseUrl(),
   };
 }
 

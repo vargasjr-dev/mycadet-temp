@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -116,17 +109,12 @@ describe("cloud-client token path is env-scoped", () => {
 });
 
 describe("getCloudUrl resolution order", () => {
-  let tempLockDir: string;
-  let savedConfigHome: string | undefined;
   let savedEnv: string | undefined;
   let savedCloudUrl: string | undefined;
 
   beforeEach(() => {
     savedEnv = process.env.CADET_ENVIRONMENT;
     savedCloudUrl = process.env.CADET_CLOUD_URL;
-    savedConfigHome = process.env.XDG_CONFIG_HOME;
-    tempLockDir = mkdtempSync(join(tmpdir(), "cli-cloud-url-test-"));
-    process.env.XDG_CONFIG_HOME = tempLockDir;
     delete process.env.CADET_ENVIRONMENT;
     delete process.env.CADET_CLOUD_URL;
   });
@@ -142,59 +130,28 @@ describe("getCloudUrl resolution order", () => {
     } else {
       process.env.CADET_CLOUD_URL = savedCloudUrl;
     }
-    if (savedConfigHome === undefined) {
-      delete process.env.XDG_CONFIG_HOME;
-    } else {
-      process.env.XDG_CONFIG_HOME = savedConfigHome;
-    }
-    rmSync(tempLockDir, { recursive: true, force: true });
   });
 
-  function writeLockfile(data: Record<string, unknown>): void {
-    // CADET_ENVIRONMENT is unset → production env → config-dir lockfile.json.
-    mkdirSync(join(tempLockDir, "cadet"), { recursive: true });
-    writeFileSync(
-      join(tempLockDir, "cadet", "lockfile.json"),
-      JSON.stringify(data, null, 2),
-    );
-  }
-
-  test("returns lockfile cloudBaseUrl when set", () => {
-    writeLockfile({ cloudBaseUrl: "https://staging.mycadet.ai" });
-    expect(getCloudUrl()).toBe("https://staging.mycadet.ai");
-  });
-
-  test("lockfile cloudBaseUrl takes priority over CADET_CLOUD_URL", () => {
-    writeLockfile({ cloudBaseUrl: "https://lockfile.mycadet.ai" });
-    process.env.CADET_CLOUD_URL = "https://env.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://lockfile.mycadet.ai");
-  });
-
-  test("falls back to CADET_CLOUD_URL when lockfile is missing", () => {
+  test("returns CADET_CLOUD_URL when set", () => {
     process.env.CADET_CLOUD_URL = "https://env-only.mycadet.ai";
     expect(getCloudUrl()).toBe("https://env-only.mycadet.ai");
   });
 
-  test("falls back to CADET_CLOUD_URL when lockfile has no cloudBaseUrl", () => {
-    writeLockfile({ assistants: [] });
-    process.env.CADET_CLOUD_URL = "https://env-fallback.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-fallback.mycadet.ai");
-  });
-
-  test("falls back to CADET_CLOUD_URL when lockfile cloudBaseUrl is blank", () => {
-    writeLockfile({ cloudBaseUrl: "   " });
-    process.env.CADET_CLOUD_URL = "https://env-after-blank.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-after-blank.mycadet.ai");
-  });
-
-  test("falls back to prod env seed URL when lockfile and CADET_CLOUD_URL are unset (prod env)", () => {
-    // CADET_ENVIRONMENT is unset → production → prod seed URL.
-    expect(getCloudUrl()).toBe("https://cloud.mycadet.ai");
-  });
-
-  test("falls back to dev env seed URL when CADET_ENVIRONMENT=dev", () => {
+  test("CADET_CLOUD_URL takes priority over the environment seed", () => {
+    process.env.CADET_CLOUD_URL = "https://env.mycadet.ai";
     process.env.CADET_ENVIRONMENT = "dev";
-    expect(getCloudUrl()).toBe("https://dev-cloud.mycadet.ai");
+    expect(getCloudUrl()).toBe("https://env.mycadet.ai");
+  });
+
+  test("falls back to the dev seed when no environment is set", () => {
+    // CADET_ENVIRONMENT is unset → the dev seed (the env-only reader's
+    // fallback — browser bundles have no channel file to consult).
+    expect(getCloudUrl()).toBe("https://dev.mycadet.ai");
+  });
+
+  test("falls back to the dev seed URL when CADET_ENVIRONMENT=dev", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
+    expect(getCloudUrl()).toBe("https://dev.mycadet.ai");
   });
 
   test("trims whitespace from CADET_CLOUD_URL", () => {

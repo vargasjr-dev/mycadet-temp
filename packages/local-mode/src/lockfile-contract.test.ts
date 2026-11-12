@@ -27,7 +27,6 @@ describe("parseLockfile", () => {
           cloud: "cloud",
           hatchedAt: "2026-01-01T00:00:00.000Z",
           cloudAssistantId: "platform-assistant-1",
-          cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
         },
         {

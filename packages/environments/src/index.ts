@@ -1,14 +1,12 @@
 /**
  * @mycadet/environments: install layout for a Cadet checkout or installed
  * package, plus the shell/path-guard helpers the CLI, assistant, and desktop
- * clients share.
- *
- * The environment seeds (names, the single base URL per deployment, port
- * blocks) used to live here — they moved to `@mycadet/local-mode`'s
- * `environment-seeds.ts` as this package is thinned out toward deletion.
- * What remains is consumed by the CLI, the assistant daemon, and the OS
- * clients; new code should not add surface here.
+ * clients share — and the environment seeds (names, the single base URL per
+ * deployment, port blocks) every surface reads. The seeds file is
+ * standalone so the Capacitor config loader can consume it through the
+ * `./seeds` subpath; everything else rides the index barrel.
  */
 export * from "./install-layout.js";
+export * from "./seeds.js";
 export * from "./shell.js";
 export * from "./test-path-guard.js";

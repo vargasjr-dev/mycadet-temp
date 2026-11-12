@@ -1,7 +1,8 @@
-// Loaded standalone by Capacitor's single-file TS config loader — keep
-// imports type-only (this file has none) and keep this file free of the
-// import-meta meta-property: the loader transpiles this file to CJS, where
-// that syntax is illegal and makes Node misroute the result as ESM.
+// Loaded standalone by Capacitor's single-file TS config loader (via the
+// `./seeds` subpath) — keep imports type-only (this file has none) and keep
+// this file free of the import-meta meta-property: the loader transpiles this
+// file to CJS, where that syntax is illegal and makes Node misroute the
+// result as ESM.
 
 /**
  * Per-service default port set. Phase 5 (per-environment port offsets) is
@@ -87,7 +88,12 @@ function portBlock(base: number): PortMap {
   };
 }
 
-/** The single origin for the current environment (CADET_ENVIRONMENT or VITE_ENVIRONMENT; unknown falls back to dev). */
+/**
+ * The single origin for the current environment. The explicit
+ * `CADET_CLOUD_URL` override wins, else the environment's seed —
+ * `CADET_ENVIRONMENT` or `VITE_ENVIRONMENT` picks it; unknown falls back
+ * to dev.
+ */
 export function environmentBaseUrl(): string {
   // globalThis.process reads the same env under bun/node while staying
   // crash-free in browser bundles (no bare `process` reference) — and free
@@ -97,9 +103,10 @@ export function environmentBaseUrl(): string {
       process?: { env?: Record<string, string | undefined> };
     }
   ).process?.env;
+  const explicit = env?.CADET_CLOUD_URL?.trim();
+  if (explicit) return explicit;
   const envName = env?.CADET_ENVIRONMENT ?? env?.VITE_ENVIRONMENT;
-  const seed = (envName && SEEDS[envName]) || SEEDS.dev;
-  return seed.baseUrl;
+  return ((envName && SEEDS[envName]) || SEEDS.dev).baseUrl;
 }
 
 /**

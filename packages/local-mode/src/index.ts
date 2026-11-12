@@ -35,11 +35,6 @@ export {
 
 export { fetchGatewayPs } from "./daemon-readiness";
 export {
-  environmentBaseUrl,
-  type EnvironmentDefinition,
-  type PortMap,
-  SEEDS,
-  DEFAULT_APP_SERVER_PORT,
   cliCommand,
   resolveEnvironmentName,
 } from "./environment";

@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { resolveConfigDir, resolveLocalConfigFromEnv } from "./config";
+import { environmentBaseUrl } from "@mycadet/environments/seeds";
+
+import { resolveConfigDir } from "./config";
 import { cliCommand } from "./environment";
-import { readLockfile } from "./lockfile";
 import { loopbackSafeFetch } from "./loopback-fetch";
 
 /**
@@ -34,20 +35,12 @@ export function readCloudToken(): string | null {
 }
 
 /**
- * Resolve the cloud API base URL. Resolution order:
- *   1. `cloudBaseUrl` persisted on the lockfile when the active assistant
- *      was last hatched/waked — the source of truth for "what URL does the
- *      currently-active assistant target".
- *   2. `CADET_CLOUD_URL` env var (explicit override, e.g. in CI).
- *   3. The current environment's seed URL (e.g. `https://dev-cloud.mycadet.ai`
- *      for `CADET_ENVIRONMENT=dev`, `https://cloud.mycadet.ai` for prod).
+ * Resolve the cloud API base URL: the explicit `CADET_CLOUD_URL` override,
+ * else the current environment's single origin (the seed table's
+ * `baseUrl` — e.g. `https://dev.mycadet.ai` for `CADET_ENVIRONMENT=dev`).
  */
 export function resolveCloudUrl(): string {
-  const url = readLockfile().cloudBaseUrl;
-  const lockfileUrl = typeof url === "string" ? url.trim() : undefined;
-  return (
-    (lockfileUrl && lockfileUrl) || resolveLocalConfigFromEnv().cloudUrl.trim()
-  );
+  return environmentBaseUrl();
 }
 
 const VAK_PREFIX = "vak_";

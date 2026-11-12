@@ -1,8 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { basename, resolve } from "node:path";
 
-import { resolveLocalServerUrl } from "@mycadet/local-mode/contract";
-
 // The headless Capacitor build (`bun run build`): builds the boot bundle
 // from the sibling @mycadet/app package and syncs it into the Gradle
 // project. This is what the release workflows call before their Gradle
@@ -31,14 +29,6 @@ function run(
  * Builds the boot bundle with `env` and syncs it into the native project.
  */
 export function buildAndSyncAndroid(env: NodeJS.ProcessEnv): void {
-  if ((env.CADET_ENVIRONMENT ??= "local") === "local") {
-    const resolved = resolveLocalServerUrl();
-    if (resolved) {
-      env.CADET_LOCAL_SERVER_URL = resolved;
-    } else {
-      delete env.CADET_LOCAL_SERVER_URL;
-    }
-  }
   run(process.execPath, ["run", "build:capacitor"], env, appRoot);
   run(
     process.execPath,

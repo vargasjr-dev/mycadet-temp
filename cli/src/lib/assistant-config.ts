@@ -16,10 +16,7 @@ import {
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
 
-import {
-  resolveConfigDir,
-  resolveLockfilePath,
-} from "@mycadet/local-mode";
+import { resolveConfigDir, resolveLockfilePath } from "@mycadet/local-mode";
 
 /** Either lockfile-root process record, keyed by `RootProcessKind`. */
 export type RootProcessRecord = TunnelProcessRecord | AppProcessRecord;
@@ -257,17 +254,4 @@ function conversationKeyPath(assistantId: string): string {
     assistantId,
     "conversation-key",
   );
-}
-
-/**
- * Return `cloudBaseUrl` from the lockfile, if set. This is the value
- * persisted by {@link syncConfigToLockfile} the last time the active
- * assistant was hatched/waked, and is the source of truth for "which
- * platform does the currently-active assistant target".
- */
-export function getLockfilePlatformBaseUrl(): string | undefined {
-  const lockfile = readLockfile();
-  const url = lockfile.cloudBaseUrl;
-  if (typeof url === "string" && url.trim()) return url.trim();
-  return undefined;
 }
