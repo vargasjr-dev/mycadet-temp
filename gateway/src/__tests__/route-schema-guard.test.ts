@@ -153,6 +153,10 @@ const EXCLUDED_FROM_SCHEMA = new Set(
   [
     // Runtime proxy catch-all — documented as /{path} in the schema
     "catch-all",
+    // Terminal session event stream — the one SSE surface: the web bundle
+    // dials it through the client's raw `sse` helper, so it stays off the
+    // published spec (same convention as the daemon's event stream).
+    "/v1/terminal/sessions/{session_id}/events",
     // Loopback-only remote web pairing challenge — not part of the public gateway API
     "/v1/remote-web/pairing-challenge",
     // Remote web pairing verification bootstrap — not part of the public gateway API

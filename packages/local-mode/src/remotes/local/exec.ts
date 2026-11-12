@@ -9,8 +9,9 @@
  * inside the sandbox) and the local spawn cannot drift.
  */
 
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { delimiter, join } from "node:path";
+import { spawn } from "node:child_process";
 
 import type { ServiceName } from "../docker/statefulset";
 import type { LocalAssistant } from "../../lockfile-contract";
@@ -33,15 +34,9 @@ export function localExecDirForService(
 /**
  * The cadet binaries a local assistant's exec surface resolves from source,
  * as shim executables in the instance's own `bin/` dir: `assistant`,
- * `gateway`, `ces`, plus `credential-executor` (the CES binary's spelled-out
- * name). Everything else keeps the host PATH.
+ * `gateway`, `ces`. Everything else keeps the host PATH.
  */
-const SHIMMED_COMMANDS = [
-  "assistant",
-  "gateway",
-  "ces",
-  "credential-executor",
-] as const;
+const SHIMMED_COMMANDS = ["assistant", "gateway", "ces"] as const;
 
 /**
  * Materialize the instance's XDG `bin/` folder: one executable shim per
@@ -77,4 +72,78 @@ export function ensureLocalBinShims(entry: LocalAssistant): {
     chmodSync(shim, 0o755);
   }
   return { dir, unresolved };
+}
+
+/** Options the exec operation passes to a remote's exec leg. */
+export interface ExecLegOptions {
+  /** The full argv after `--` — the command to run inside the service. */
+  command: string[];
+  /** Which service's directory/state the command runs against. */
+  service: ServiceName;
+  /** Interactive mode with TTY (like docker exec -it). */
+  interactive?: boolean;
+}
+
+/**
+ * A remote exec leg's outcome: the command either ran (its own exit code —
+ * its output already went to the caller's stdio) or was refused before any
+ * spawn (status + the diagnostic the CLI prints).
+ */
+export type ExecLegResult =
+  | { ok: true; code: number }
+  | { ok: false; code: number }
+  | { ok: false; status: number; error: string };
+
+/**
+ * The local topology's exec leg: run the command on the host, in the
+ * service's directory, with the instance's `bin/` shims prepended to PATH.
+ * The shims are what make EVERY invocation shape — argv, compound commands,
+ * pipes, shell scripts — resolve the cadet binaries to the source build the
+ * daemons run instead of a globally installed published build. They are
+ * best-effort here: a cadet binary that cannot resolve simply stays off the
+ * PATH, and bash's own command-not-found reports it — exec never needs to
+ * guess which argv element was meant to be a cadet binary.
+ */
+export async function execLocal(
+  entry: LocalAssistant,
+  opts: ExecLegOptions,
+): Promise<ExecLegResult> {
+  const instanceDir = getLocalInstanceDir(entry);
+  const serviceDir = localExecDirForService(instanceDir, opts.service);
+  const workspaceDir = join(instanceDir, "workspace");
+  const socketPath = join(workspaceDir, "assistant.sock");
+  if (!existsSync(socketPath)) {
+    return {
+      ok: false,
+      status: 400,
+      error:
+        `the assistant runtime is not reachable (no socket at ${socketPath}). ` +
+        "Start it with `cadet wake`, or check `cadet ps` for its status.",
+    };
+  }
+
+  let shimDir: string | undefined;
+  try {
+    shimDir = ensureLocalBinShims(entry).dir;
+  } catch {
+    // shim materialization never blocks an exec
+  }
+
+  const child = spawn(opts.command[0], opts.command.slice(1), {
+    stdio: "inherit",
+    windowsHide: true,
+    cwd: serviceDir,
+    env: {
+      ...process.env,
+      CADET_WORKSPACE_DIR: workspaceDir,
+      ...(shimDir
+        ? { PATH: [shimDir, process.env.PATH].filter(Boolean).join(delimiter) }
+        : {}),
+    },
+  });
+  const code = await new Promise<number>((resolve) => {
+    child.on("close", (c) => resolve(c ?? 1));
+    child.on("error", () => resolve(127));
+  });
+  return code === 0 ? { ok: true, code } : { ok: false, code };
 }

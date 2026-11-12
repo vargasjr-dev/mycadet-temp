@@ -570,14 +570,7 @@
   "paymentMethodRow": {
     "savedCard": "Сохранённая карта"
   },
-  "pendingPairingRequests": {
-    "approveButton": "Одобрить",
-    "denyButton": "Отклонить",
-    "instruction": "Устройство просит доступ к этому ассистенту. Одобрение запроса только после сверки его кода с кодом на запрашивающем устройстве.",
-    "requestedMeta": "Запрос {when} с {ip}",
-    "requestedMetaHost": "Запрос {when} с этого компьютера",
-    "title": "Запросы на привязку"
-  },
+  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "Поле ввода",
     "description": "Настройка сочетаний клавиш и поведения Cadet на этом устройстве.",

@@ -59,14 +59,6 @@ RUN printf '{"private":true,"dependencies":{"mycadet":"%s"}}\n' "${MYCADET_VERSI
   && ln -s node_modules/@mycadet/gateway gateway \
   && ln -s node_modules/@mycadet/credential-executor credential-executor
 
-# Cadet command shims resolve from the sandbox's OWN install (never a host
-# PATH): each entry point matches the corresponding package's bin, so
-# `sandbox exec assistant ...` runs the same build the daemon stack runs.
-RUN printf '#!/bin/sh\nexec bun run /app/assistant/src/index.ts "$@"\n' > /usr/local/bin/assistant \
-  && printf '#!/bin/sh\nexec bun run /app/gateway/src/cli/index.ts "$@"\n' > /usr/local/bin/gateway \
-  && printf '#!/bin/sh\nexec bun run /app/credential-executor/src/cli.ts "$@"\n' > /usr/local/bin/ces \
-  && chmod +x /usr/local/bin/assistant /usr/local/bin/gateway /usr/local/bin/ces
-
 # Hatch the golden assistant: lockfile entry, workspace, signing identity and
 # first-boot migrations bake into the image. Every sandbox from this image
 # starts from this state; API keys and other secrets inject at create time.

@@ -168,6 +168,325 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
       },
+      "/v1/handle-available": {
+        get: {
+          summary: "Check assistant handle availability",
+          description:
+            "Cloud-namespace check proxied on the assistant's own credentials. The candidate handle is lowercased before the check.",
+          operationId: "handleAvailableRetrieve",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "handle",
+              in: "query",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Availability verdict",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      available: { type: "boolean" },
+                      code: { type: ["string", "null"] },
+                      message: { type: ["string", "null"] },
+                    },
+                    required: ["available", "code", "message"],
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/handle": {
+        patch: {
+          summary: "Claim the assistant's public handle",
+          description:
+            "Cloud write proxied on the assistant's own credentials — the assistant's public handle is a cloud identity (one global namespace). Failures come back as DRF field errors ({handle: [{code, string}]}).",
+          operationId: "handlePartialUpdate",
+          security: [{ BearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { handle: { type: "string" } },
+                  required: ["handle"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The cloud's assistant record, answered verbatim",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { handle: { type: "string" } },
+                    additionalProperties: true,
+                  },
+                },
+              },
+            },
+            "400": { description: "Invalid handle (DRF field errors)" },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "409": { description: "Handle already claimed" },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/domains": {
+        get: {
+          summary: "List the assistant's domains",
+          description:
+            "The cloud's domain registrations for this assistant, proxied on its own credentials — the registered subdomain holds the handle.",
+          operationId: "domainsList",
+          security: [{ BearerAuth: [] }],
+          responses: {
+            "200": {
+              description: "Paginated domain list",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      results: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            subdomain: { type: "string" },
+                            status: { type: "string" },
+                          },
+                          required: ["subdomain", "status"],
+                          additionalProperties: true,
+                        },
+                      },
+                    },
+                    required: ["results"],
+                    additionalProperties: true,
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/user/me": {
+        get: {
+          summary: "Get the user's account profile",
+          description:
+            "The assistant tracks the user's profile for them: the handle rides the guardian's cadet channel address, the email their email channel, and the name their contact displayName.",
+          operationId: "userMeGet",
+          security: [{ BearerAuth: [] }],
+          responses: {
+            "200": {
+              description: "The user's profile",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/UserProfile",
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "404": { description: "No guardian profile is bound yet" },
+          },
+        },
+        patch: {
+          summary: "Update the user's account profile",
+          description:
+            "Writes the guardian's cadet channel address. Handle rules are enforced locally and failures come back as DRF field errors ({username: [{code, string}]}).",
+          operationId: "userMePartialUpdate",
+          security: [{ BearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: { username: { type: "string", minLength: 1 } },
+                  additionalProperties: false,
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The updated profile",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/UserProfile",
+                  },
+                },
+              },
+            },
+            "400": { description: "Invalid username (DRF field errors)" },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+          },
+        },
+      },
+      "/v1/terminal/sessions": {
+        post: {
+          summary: "Create a terminal session",
+          description:
+            "Cloud write proxied on the assistant's own credentials. The cloud spawns the PTY and answers its session record.",
+          operationId: "terminalSessionsCreate",
+          security: [{ BearerAuth: [] }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The cloud's session record",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { session_id: { type: "string" } },
+                    required: ["session_id"],
+                    additionalProperties: true,
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/terminal/sessions/{session_id}": {
+        delete: {
+          summary: "Destroy a terminal session",
+          description:
+            "Cloud write proxied on the assistant's own credentials — the session id rides the upstream path.",
+          operationId: "terminalSessionsDestroy",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "session_id",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            "200": { description: "Session destroyed" },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/terminal/sessions/{session_id}/input": {
+        post: {
+          summary: "Write to a terminal session",
+          description:
+            "Cloud write proxied on the assistant's own credentials — PTY input bytes batched by the web's terminal session hook.",
+          operationId: "terminalSessionsInputCreate",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "session_id",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Input accepted" },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
+      "/v1/terminal/sessions/{session_id}/resize": {
+        post: {
+          summary: "Resize a terminal session",
+          description:
+            "Cloud write proxied on the assistant's own credentials — the web's debounced PTY resize.",
+          operationId: "terminalSessionsResizeCreate",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "session_id",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Resize accepted" },
+            "401": {
+              description: "Unauthorized — missing or invalid bearer token",
+            },
+            "502": { description: "Failed to reach the cloud" },
+            "503": { description: "Assistant credentials not provisioned" },
+            "504": { description: "Cloud request timed out" },
+          },
+        },
+      },
       "/v1/ps": {
         get: {
           summary: "Process status",
@@ -4554,6 +4873,17 @@ export function buildSchema(): Record<string, unknown> {
     },
     components: {
       schemas: {
+      UserProfile: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          username: { type: "string" },
+          email: { type: "string" },
+          first_name: { type: "string" },
+          last_name: { type: "string" },
+        },
+        required: ["id", "username", "email", "first_name", "last_name"],
+      },
         BackupSnapshot: {
           type: "object",
           required: [
