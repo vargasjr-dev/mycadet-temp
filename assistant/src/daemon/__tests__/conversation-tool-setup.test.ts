@@ -12,7 +12,7 @@ import {
   setHubClientsForTesting,
 } from "../../runtime/assistant-event-hub.js";
 import type { Conversation } from "../conversation.js";
-import type { ChannelCapabilities } from "../conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../conversation-assembly-types.js";
 
 // ── Module-level mocks ─────────────────────────────────────────────
 

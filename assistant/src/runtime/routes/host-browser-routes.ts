@@ -62,7 +62,7 @@ export type HostBrowserResultResolution =
  * already authenticated the caller (the HTTP route uses
  * `requireBoundGuardian`).
  */
-export async function resolveHostBrowserResultByRequestId(
+async function resolveHostBrowserResultByRequestId(
   frame: {
     requestId?: unknown;
     content?: unknown;

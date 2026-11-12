@@ -108,14 +108,12 @@ import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { REFUSAL_FALLBACK_TEXT } from "../context/refusal-quarantine.js";
 import { stripInjectionsForCompaction } from "../context/strip-injections.js";
+import type { ChannelCapabilities } from "../daemon/conversation-assembly-types.js";
 import {
   clearConversations,
   setConversation,
 } from "../daemon/conversation-registry.js";
-import type {
-  ChannelCapabilities,
-  SlackTranscriptInputRow,
-} from "../daemon/conversation-runtime-assembly.js";
+import type { SlackTranscriptInputRow } from "../daemon/conversation-runtime-assembly.js";
 import {
   applyRuntimeInjections,
   assembleSlackActiveThreadFocusBlock,

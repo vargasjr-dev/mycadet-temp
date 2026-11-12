@@ -34,12 +34,12 @@ import {
   estimatePromptTokens,
 } from "../../../context/token-estimator.js";
 import { truncateToolResultsAcrossHistory } from "../../../context/tool-result-truncation.js";
+import type { InjectionMode } from "../../../daemon/conversation-assembly-types.js";
 import {
   countMediaBlocks,
   estimateUnconditionalStubTokens,
   stripMediaPayloadsForRetry,
 } from "../../../daemon/conversation-media-retry.js";
-import type { InjectionMode } from "../../../daemon/conversation-runtime-assembly.js";
 import { getLogger } from "../../../util/logger.js";
 import { defaultCompact, defaultEmergencyCompact } from "./compact.js";
 import type {

@@ -84,10 +84,3 @@ export function localeFromAcceptLanguage(
     .map((entry) => entry.tag);
   return negotiateLocale(tags);
 }
-
-export function isSupportedLocale(value: unknown): value is SupportedLocale {
-  return (
-    typeof value === "string" &&
-    (SUPPORTED_LOCALES as readonly string[]).includes(value)
-  );
-}

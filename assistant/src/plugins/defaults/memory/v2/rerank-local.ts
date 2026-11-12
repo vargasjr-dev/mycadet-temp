@@ -17,7 +17,7 @@ interface WorkerResponse {
   error?: string;
 }
 
-export class LocalRerankBackend {
+class LocalRerankBackend {
   readonly model: string;
   readonly dtype: RerankDtype;
 

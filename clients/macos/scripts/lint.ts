@@ -23,9 +23,10 @@ const steps: Step[] = [
   {
     name: "knip",
     command: [
-      "bash",
-      "-c",
-      "bunx knip --include files,dependencies,unlisted && bunx knip --production --include exports",
+      "bunx",
+      "knip",
+      "--include",
+      "files,dependencies,unlisted,exports",
     ],
   },
 ];

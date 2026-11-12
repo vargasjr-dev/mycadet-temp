@@ -708,7 +708,7 @@ function reasonToClassification(
 }
 
 /** Check whether an error message indicates a context-too-large failure. */
-export function isContextTooLarge(message: string): boolean {
+function isContextTooLarge(message: string): boolean {
   return CONTEXT_TOO_LARGE_PATTERNS.some((p) => p.test(message));
 }
 

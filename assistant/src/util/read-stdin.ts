@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 
 /** Standard input file descriptor. */
-export const STDIN_FD = 0;
+const STDIN_FD = 0;
 
 /**
  * Read all data currently available on stdin as a string.

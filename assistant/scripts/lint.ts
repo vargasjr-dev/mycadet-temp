@@ -7,8 +7,7 @@
  *
  * The eslint `--max-warnings` pin is a countdown, not a license: it holds
  * the current count of `mock.module` uses (see eslint.config.mjs) and each
- * PR is expected to chip away at it — never to raise it. The knip
- * production-exports pin (`--max-unused`) counts down the same way.
+ * PR is expected to chip away at it — never to raise it.
  */
 
 import { resolve } from "node:path";
@@ -34,11 +33,12 @@ const steps: Step[] = [
   },
   {
     name: "knip",
-    command: ["bunx", "knip", "--include", "files,dependencies,unlisted"],
-  },
-  {
-    name: "knip (production exports)",
-    command: ["bun", "scripts/check-unused-production-exports.ts"],
+    command: [
+      "bunx",
+      "knip",
+      "--include",
+      "files,dependencies,unlisted,exports",
+    ],
   },
   {
     name: "circular dependencies",
@@ -47,7 +47,7 @@ const steps: Step[] = [
       "scripts/check-circular-deps.ts",
       "--",
       "--max-cycles",
-      "199",
+      "167",
     ],
   },
 ];

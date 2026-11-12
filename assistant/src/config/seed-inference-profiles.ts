@@ -236,12 +236,6 @@ export function seedInferenceProfiles(
   saveRawConfig(raw);
 }
 
-export function readObject(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
 function resolveHatchDefaultProvider(
   isCloud: boolean,
   selectedManagedConnection: boolean,

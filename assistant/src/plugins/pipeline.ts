@@ -267,7 +267,7 @@ function findHookOutputIssues<TInput extends object>(
  * carry non-cloneable capabilities like `logger`/`broadcast`) does not
  * currently allow.
  */
-export const HOOK_TIMEOUT_MS = 30_000;
+const HOOK_TIMEOUT_MS = 30_000;
 
 export async function callWithTimeout<T>(
   run: () => Promise<T> | T,

@@ -8,7 +8,7 @@
  * the runtime-assembly layer.
  */
 
-import type { InboundActorContext } from "../../../daemon/conversation-runtime-assembly.js";
+import type { InboundActorContext } from "../../../daemon/conversation-assembly-types.js";
 import { resolveCapabilities } from "../../../runtime/capabilities.js";
 
 /**

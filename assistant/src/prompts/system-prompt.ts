@@ -9,7 +9,7 @@ import {
 import { join } from "node:path";
 
 import { getIsContainerized } from "../config/env-registry.js";
-import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../daemon/conversation-assembly-types.js";
 import { resolveTrustClass } from "../daemon/trust-context.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { derivePersonaTrustFlags } from "../runtime/trust-class.js";

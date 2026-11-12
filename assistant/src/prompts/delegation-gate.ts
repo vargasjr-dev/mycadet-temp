@@ -1,4 +1,4 @@
-import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../daemon/conversation-assembly-types.js";
 
 /**
  * Whether this turn arrived on an external messaging surface (Slack, Telegram,

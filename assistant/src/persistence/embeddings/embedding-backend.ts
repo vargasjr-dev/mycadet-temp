@@ -398,7 +398,7 @@ function getCached(
  * provider. Part of the in-memory vector-cache identity here, and reused by the
  * v3 section dense store so its persistent cache shares the same identity.
  */
-export function geminiCacheExtras(config: AssistantConfig): string[] {
+function geminiCacheExtras(config: AssistantConfig): string[] {
   const extras: string[] = [];
   if (config.memory.embeddings.geminiTaskType) {
     extras.push(`task=${config.memory.embeddings.geminiTaskType}`);
@@ -415,7 +415,7 @@ export function geminiCacheExtras(config: AssistantConfig): string[] {
  * given model returns, so they belong in backend, in-memory, and durable
  * cache identity.
  */
-export function customCacheExtras(config: AssistantConfig): string[] {
+function customCacheExtras(config: AssistantConfig): string[] {
   const extras: string[] = [];
   const baseUrl = resolveOpenAICompatibleBaseUrl(
     config.memory.embeddings.baseUrl,
@@ -1215,15 +1215,6 @@ async function isOllamaConfigured(config: AssistantConfig): Promise<boolean> {
 // Tokenization primitives (`tokenize`, `tokenHash`, `SPARSE_VOCAB_SIZE`) live
 // in `./sparse-tokenize.ts` so the BM25 encoder can share them without
 // transitively depending on this module.
-
-/**
- * Bump this version whenever the sparse embedding algorithm changes
- * (e.g. hash function fix, tokenizer change). Now inert metadata — the v1
- * Qdrant sentinel was decoupled from this constant, so a bump no longer
- * forces an automatic rebuild. Operators must explicitly run
- * `assistant memory v2 reembed` to rematerialize the v2 sparse index.
- */
-export const SPARSE_EMBEDDING_VERSION = 4;
 
 /**
  * Generate a TF-IDF-based sparse embedding for the given text.

@@ -5,14 +5,14 @@
  * Usage:
  *   bun run scripts/check-circular-deps.ts            # human output
  *   bun run scripts/check-circular-deps.ts -- --json  # machine-readable output
- *   bun run scripts/check-circular-deps.ts -- --max-cycles 199
+ *   bun run scripts/check-circular-deps.ts -- --max-cycles N
  *
  * Also runs as the circular-deps step of `bun run lint` (scripts/lint.ts).
  *
  * `--max-cycles N` is a countdown, not a license: the daemon's import graph
- * carries a long-standing cycle backlog (199 chains at the time this pin
- * was last lowered), and the lint script holds the pin so each PR is expected to
- * chip away at it — never to raise it.
+ * carries a long-standing cycle backlog, and the lint script holds the pin
+ * so each PR is expected to chip away at it — never to raise it. The count
+ * lives only there, enforced, not here in prose.
  */
 
 import { execSync } from "node:child_process";

@@ -93,10 +93,8 @@ import {
   saveRawConfig,
   setNestedValue,
 } from "../config/loader.js";
-import {
-  type ChannelCapabilities,
-  loadSlackChronologicalContext,
-} from "../daemon/conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../daemon/conversation-assembly-types.js";
+import { loadSlackChronologicalContext } from "../daemon/conversation-runtime-assembly.js";
 import type { Message as MessagingMessage } from "../messaging/provider-types.js";
 import * as slackBackfill from "../messaging/providers/slack/backfill.js";
 import {

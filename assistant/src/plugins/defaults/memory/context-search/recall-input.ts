@@ -5,7 +5,6 @@ import {
   RecallDepthSchema,
   RecallSourceSchema,
 } from "../../../../api/events/tool-result.js";
-import { MAX_RECALL_MAX_RESULTS, MIN_RECALL_MAX_RESULTS } from "./limits.js";
 
 /**
  * The `recall` tool's input: parsed at the top of its `execute`, and the
@@ -15,6 +14,9 @@ import { MAX_RECALL_MAX_RESULTS, MIN_RECALL_MAX_RESULTS } from "./limits.js";
  * reads anything else as absent; an explicit `null` on an optional field means
  * omitted. An unknown source or depth is rejected.
  */
+export const MIN_RECALL_MAX_RESULTS = 1;
+export const MAX_RECALL_MAX_RESULTS = 20;
+
 export const RecallInputSchema = z.looseObject({
   query: z
     .string()

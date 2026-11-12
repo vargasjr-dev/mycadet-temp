@@ -4,11 +4,13 @@ import {
   type RecallSource,
   RecallSourceSchema,
 } from "../../../../api/events/tool-result.js";
-import type { RecallInput } from "./recall-input.js";
+import {
+  MAX_RECALL_MAX_RESULTS,
+  MIN_RECALL_MAX_RESULTS,
+  type RecallInput,
+} from "./recall-input.js";
 
 export const DEFAULT_RECALL_MAX_RESULTS = 8;
-export const MIN_RECALL_MAX_RESULTS = 1;
-export const MAX_RECALL_MAX_RESULTS = 20;
 
 const DEFAULT_RECALL_DEPTH: RecallDepth = "standard";
 

@@ -7,8 +7,7 @@ import { PROVIDER_CATALOG } from "../providers/model-catalog.js";
  * Cataloged models keep today's flags; free-text / empty-catalog models use
  * these overrides to say what the serving surface actually accepts.
  */
-export const INPUT_MODALITIES = ["text", "image", "audio", "video"] as const;
-export type InputModality = (typeof INPUT_MODALITIES)[number];
+export type InputModality = "text" | "image" | "audio" | "video";
 
 /**
  * Per-modality policy + capability. Absent fields inherit catalog defaults

@@ -16,7 +16,7 @@
  */
 
 import type { Conversation } from "../../daemon/conversation.js";
-import type { ChannelCapabilities } from "../../daemon/conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../../daemon/conversation-assembly-types.js";
 
 /** Build a coordinator double representing a turn with no mode owner. */
 export function mockUnownedModeSessions(): Conversation["modeSessions"] {

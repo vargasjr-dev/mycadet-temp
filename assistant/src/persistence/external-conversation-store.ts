@@ -286,7 +286,7 @@ export function getBindingByChannelChatThread(
  * Remove an external binding by channel + external chat ID.
  * Used when disconnecting a synced conversation by its channel identifiers.
  */
-export function deleteBindingByChannelChat(
+function deleteBindingByChannelChat(
   sourceChannel: string,
   externalChatId: string,
 ): void {

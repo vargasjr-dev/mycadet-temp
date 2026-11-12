@@ -8,6 +8,7 @@ import {
 } from "../daemon/disk-pressure-background-gate.js";
 import { processMessage } from "../daemon/process-message.js";
 import { INTERNAL_GUARDIAN_TRUST_CONTEXT } from "../daemon/trust-context.js";
+import type { BackgroundJobErrorKind } from "../notifications/background-failure-signal.js";
 import { emitBackgroundFailureSignal } from "../notifications/background-failure-signal.js";
 import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import { emitScheduleResultNotification } from "../notifications/schedule-result-producer.js";
@@ -19,10 +20,7 @@ import { dispatchProviderResolvable } from "../providers/provider-resolvability.
 import { wakeAgentForOpportunity } from "../runtime/agent-wake.js";
 import { hasPendingAgentWake } from "../runtime/agent-wake-queue.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
-import {
-  type BackgroundJobErrorKind,
-  runBackgroundJob,
-} from "../runtime/background-job-runner.js";
+import { runBackgroundJob } from "../runtime/background-job-runner.js";
 import { publishConversationListChanged } from "../runtime/sync/resource-sync-events.js";
 import { runSequencesOnce } from "../sequence/engine.js";
 import { getSubagentManager } from "../subagent/index.js";

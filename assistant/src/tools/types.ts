@@ -24,7 +24,7 @@ import type {
 } from "./tool-types.js";
 import { RiskLevel } from "./tool-types.js";
 
-export const DISK_PRESSURE_CLEANUP_TOOL_NAMES: ReadonlySet<string> = new Set([
+const DISK_PRESSURE_CLEANUP_TOOL_NAMES: ReadonlySet<string> = new Set([
   "bash",
   "host_bash",
   "file_read",
