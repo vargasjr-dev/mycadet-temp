@@ -41,7 +41,6 @@ import enHome from "@/i18n/locales/en/home.json";
 import enLibrary from "@/i18n/locales/en/library.json";
 import enLogs from "@/i18n/locales/en/logs.json";
 import enIntelligence from "@/i18n/locales/en/intelligence.json";
-import enRemoteWeb from "@/i18n/locales/en/remote-web.json";
 import enTerminal from "@/i18n/locales/en/terminal.json";
 import enWorkspace from "@/i18n/locales/en/workspace.json";
 import enChat from "@/i18n/locales/en/chat.json";
@@ -75,7 +74,6 @@ export const FALLBACK_CATALOGS: LocaleCatalogs = {
   settings: enSettings,
   workspace: enWorkspace,
   terminal: enTerminal,
-  "remote-web": enRemoteWeb,
   "credential-requests": enCredentialRequests,
   logs: enLogs,
   library: enLibrary,
@@ -98,7 +96,6 @@ const CATALOG_LOADERS: Record<
     settings: () => import("@/i18n/locales/es/settings.json"),
     workspace: () => import("@/i18n/locales/es/workspace.json"),
     terminal: () => import("@/i18n/locales/es/terminal.json"),
-    "remote-web": () => import("@/i18n/locales/es/remote-web.json"),
     "credential-requests": () =>
       import("@/i18n/locales/es/credential-requests.json"),
     logs: () => import("@/i18n/locales/es/logs.json"),
@@ -116,7 +113,6 @@ const CATALOG_LOADERS: Record<
     settings: () => import("@/i18n/locales/ru/settings.json"),
     workspace: () => import("@/i18n/locales/ru/workspace.json"),
     terminal: () => import("@/i18n/locales/ru/terminal.json"),
-    "remote-web": () => import("@/i18n/locales/ru/remote-web.json"),
     "credential-requests": () =>
       import("@/i18n/locales/ru/credential-requests.json"),
     logs: () => import("@/i18n/locales/ru/logs.json"),
@@ -134,7 +130,6 @@ const CATALOG_LOADERS: Record<
     settings: () => import("@/i18n/locales/zh/settings.json"),
     workspace: () => import("@/i18n/locales/zh/workspace.json"),
     terminal: () => import("@/i18n/locales/zh/terminal.json"),
-    "remote-web": () => import("@/i18n/locales/zh/remote-web.json"),
     "credential-requests": () =>
       import("@/i18n/locales/zh/credential-requests.json"),
     logs: () => import("@/i18n/locales/zh/logs.json"),
@@ -152,7 +147,6 @@ const CATALOG_LOADERS: Record<
     settings: () => import("@/i18n/locales/zh-TW/settings.json"),
     workspace: () => import("@/i18n/locales/zh-TW/workspace.json"),
     terminal: () => import("@/i18n/locales/zh-TW/terminal.json"),
-    "remote-web": () => import("@/i18n/locales/zh-TW/remote-web.json"),
     "credential-requests": () =>
       import("@/i18n/locales/zh-TW/credential-requests.json"),
     logs: () => import("@/i18n/locales/zh-TW/logs.json"),

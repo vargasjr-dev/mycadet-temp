@@ -4,7 +4,7 @@
  * `cadet exec` drives for these topologies.
  */
 import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
-import { execViaTerminalSession } from "../terminal-session.js";
+import { execViaTerminalSession } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 /**

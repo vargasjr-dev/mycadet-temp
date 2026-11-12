@@ -1,11 +1,19 @@
-import { readCloudToken } from "../cloud-auth";
+import { readCloudToken, resolveCloudUrl } from "../cloud-auth";
 import { cliCommand } from "../environment";
 import type { LockfileAssistant } from "../lockfile-contract";
-import { isCloudEntry } from "../lockfile-contract";
 import { execBasetenSandbox } from "../remotes/baseten/exec";
+import {
+  execAppleContainer,
+  sshAppleContainer,
+} from "../remotes/apple-container/exec";
 import { execDocker } from "../remotes/docker/exec";
 import { execLocal } from "../remotes/local/exec";
 import type { ServiceName } from "../remotes/docker/statefulset";
+import {
+  interactiveSession,
+  nonInteractiveExec,
+  shellEscapeArgs,
+} from "../remotes/cloud/exec";
 
 /** The exec timeout a caller implies by passing nothing (`--timeout` omitted). */
 export const DEFAULT_EXEC_TIMEOUT = 30_000;
@@ -36,38 +44,16 @@ export type ExecCommandResult =
   | { ok: false; status: number; error: string };
 
 /**
- * The transports only the CLI owns — the operator dispatches every cloud to
- * the right leg, and the host provides the two remote transports that live
- * outside this package (apple-container's ssh, cloud's terminal session).
- * Absent transports mean the topology is refused with a diagnostic.
- */
-export interface ExecCommandHost {
-  appleContainer?(
-    entry: Extract<LockfileAssistant, { cloud: "apple-container" }>,
-    opts: ExecCommandOptions,
-    /** The sandbox-VM service name, e.g. `cadet-gateway`. */
-    fullServiceName: string,
-  ): Promise<void>;
-  cloud?(
-    entry: Extract<LockfileAssistant, { cloud: "cloud" }>,
-    opts: ExecCommandOptions,
-    /** The verified cloud token — the operator resolved it. */
-    token: string,
-  ): Promise<void>;
-}
-
-/**
  * The exec operation: run a command inside an assistant's service — the
  * remote -> method router, like sleep/wake. Local runs the command on the
  * host with the instance's bin/ shims on PATH; docker dials the service
- * container; baseten rides the sandbox's execution API (its name/URL are
- * contract-required on the entry); apple-container and cloud ride the
- * host-provided transports.
+ * container; baseten rides the sandbox's execution API; apple-container
+ * dials the management socket and cloud opens a terminal session — every
+ * leg lives here, like wake.
  */
 export async function execCommand(
   entry: LockfileAssistant,
   opts: ExecCommandOptions,
-  host: ExecCommandHost = {},
 ): Promise<ExecCommandResult> {
   switch (entry.cloud) {
     case "local":
@@ -75,24 +61,15 @@ export async function execCommand(
     case "docker":
       return await execDocker(entry, opts);
     case "apple-container": {
-      if (!host.appleContainer) {
-        return {
-          ok: false,
-          status: 400,
-          error: `'${cliCommand()} exec' for apple-container assistants needs the CLI host transport.`,
-        };
+      const fullServiceName = `cadet-${opts.service}`;
+      if (opts.interactive) {
+        await sshAppleContainer(entry, opts.command, fullServiceName);
+      } else {
+        await execAppleContainer(entry, opts.command, fullServiceName);
       }
-      await host.appleContainer(entry, opts, `cadet-${opts.service}`);
       return { ok: true, code: 0 };
     }
     case "cloud": {
-      if (!host.cloud || !isCloudEntry(entry)) {
-        return {
-          ok: false,
-          status: 400,
-          error: `'${cliCommand()} exec' for cloud assistants needs the CLI host transport.`,
-        };
-      }
       const token = readCloudToken();
       if (!token) {
         return {
@@ -102,10 +79,40 @@ export async function execCommand(
             "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
         };
       }
-      await host.cloud(entry, opts, token);
+      const assistant = {
+        assistantId: entry.assistantId,
+        token,
+        cloudUrl: resolveCloudUrl(),
+      };
+      const serviceParam =
+        opts.service === "assistant" ? undefined : opts.service;
+      if (opts.interactive) {
+        await interactiveSession(
+          assistant,
+          shellEscapeArgs(opts.command),
+          serviceParam,
+        );
+        return { ok: true, code: 0 };
+      }
+      // Non-interactive: sentinel-based output capture; exits with the
+      // command's own exit code.
+      await nonInteractiveExec(assistant, opts.command, {
+        verbose: opts.verbose,
+        timeoutMs: opts.timeoutMs ?? DEFAULT_EXEC_TIMEOUT,
+        service: serviceParam,
+      });
       return { ok: true, code: 0 };
     }
     case "baseten": {
+      if (!entry.name) {
+        return {
+          ok: false,
+          status: 400,
+          error:
+            `assistant '${entry.assistantId}' has no sandbox name ` +
+            "recorded — re-hatch with `cadet hatch --remote baseten` to fix.",
+        };
+      }
       const { code } = await execBasetenSandbox({
         assistantId: entry.assistantId,
         sandboxUrl: entry.sandboxUrl,

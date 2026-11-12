@@ -121,7 +121,6 @@ test("the router refuses the topologies that run on their own host", async () =>
   const entry: LockfileAssistant = {
     assistantId: "baseten-test",
     cloud: "baseten",
-    name: "baseten-test",
     sandboxUrl: "https://sandbox.example.test",
     port: 7830,
   };

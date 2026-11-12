@@ -28,8 +28,30 @@ export {
   DEFAULT_EXEC_TIMEOUT,
   execCommand,
 } from "./operations/exec";
+export {
+  appleContainerPair,
+  execAppleContainer,
+  sshAppleContainer,
+} from "./remotes/apple-container/exec";
+export {
+  closeTerminalSession,
+  createTerminalSession,
+  execViaTerminalSession,
+  parseSentinelOutput,
+  stripAnsi,
+  interactiveSession,
+  nonInteractiveExec,
+  resizeTerminalSession,
+  sendTerminalInput,
+  shellEscapeArgs,
+  subscribeTerminalEvents,
+} from "./remotes/cloud/exec";
 export type {
-  ExecCommandHost,
+  NonInteractiveExecOptions,
+  ResolvedManagedAssistant,
+} from "./remotes/cloud/exec";
+export { RemoteExecTimeoutError } from "./remotes/cloud/exec";
+export type {
   ExecCommandOptions,
   ExecCommandResult,
 } from "./operations/exec";

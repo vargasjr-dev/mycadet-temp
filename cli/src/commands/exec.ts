@@ -2,23 +2,12 @@ import {
   cliCommand,
   DEFAULT_EXEC_TIMEOUT,
   execCommand,
-  getCloudUrl,
   type ServiceName,
 } from "@mycadet/local-mode";
 
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
-
-import {
-  execAppleContainer,
-  sshAppleContainer,
-} from "../lib/remotes/apple-container.js";
-import {
-  interactiveSession,
-  nonInteractiveExec,
-  shellEscapeArgs,
-} from "../lib/terminal-session";
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -157,46 +146,15 @@ export const exec = Object.assign(
       process.exit(1);
     }
 
-    // Every cloud routes inside the exec operation; the CLI only supplies
-    // the two transports that live here (apple-container's ssh, cloud's
-    // terminal session).
-    const result = await execCommand(
-      entry,
-      { command, service, interactive, verbose, timeoutMs },
-      {
-        appleContainer: async (entry, opts, fullServiceName) => {
-          if (opts.interactive) {
-            await sshAppleContainer(entry, opts.command, fullServiceName);
-          } else {
-            await execAppleContainer(entry, opts.command, fullServiceName);
-          }
-        },
-        cloud: async (entry, opts, token) => {
-          const assistant = {
-            assistantId: entry.assistantId,
-            token,
-            cloudUrl: getCloudUrl(),
-          };
-          const serviceParam =
-            opts.service === "assistant" ? undefined : opts.service;
-          if (opts.interactive) {
-            await interactiveSession(
-              assistant,
-              shellEscapeArgs(opts.command),
-              serviceParam,
-            );
-            return;
-          }
-          // Non-interactive: sentinel-based output capture; exits with the
-          // command's own exit code.
-          await nonInteractiveExec(assistant, opts.command, {
-            verbose: opts.verbose,
-            timeoutMs: opts.timeoutMs ?? DEFAULT_EXEC_TIMEOUT,
-            service: serviceParam,
-          });
-        },
-      },
-    );
+    // Every cloud routes inside the exec operation — the command is args,
+    // resolution, and exit-code mapping, like every other command.
+    const result = await execCommand(entry, {
+      command,
+      service,
+      interactive,
+      verbose,
+      timeoutMs,
+    });
     if ("error" in result) {
       console.error(red(`Error: ${result.error}`));
       process.exitCode = result.status;

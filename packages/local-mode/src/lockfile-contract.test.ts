@@ -397,7 +397,6 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        name: "sbx-name-abc123",
         sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
         port: 7830,
       }),
@@ -409,17 +408,15 @@ describe("getGatewayUrl", () => {
       getGatewayUrl({
         assistantId: "asst_bx",
         cloud: "baseten",
-        name: "sbx-name-abc123",
         sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co/",
         port: 7830,
       }),
     ).toBe("https://sbx-name-abc123.us-pdx-1.b10.co/port/7830");
   });
 
-  test("a baseten entry without a sandbox URL or name is dropped by the parse", () => {
-    // The union makes the name, URL, and port un-omittable: a record that
-    // lost them (a describe miss) cannot survive as a half-addressable
-    // baseten entry.
+  test("a baseten entry without a sandbox URL is dropped by the parse", () => {
+    // The union makes the URL and port un-omittable: a record that lost them
+    // (a describe miss) cannot survive as a half-addressable baseten entry.
     const parsed = parseLockfile({
       assistants: [{ assistantId: "asst_bx", cloud: "baseten", port: 7830 }],
     });
