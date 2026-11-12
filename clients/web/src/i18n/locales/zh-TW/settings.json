@@ -585,7 +585,6 @@
   "paymentMethodRow": {
     "savedCard": "已儲存卡片"
   },
-  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "撰寫器",
     "description": "自訂快捷鍵以及 Cadet 在此裝置上的行為。",

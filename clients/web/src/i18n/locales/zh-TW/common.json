@@ -51,7 +51,6 @@
   "appViewerContainer": {
     "exitFullscreen": "結束全螢幕"
   },
-  "assistantEmailIntroModal": {},
   "avatarManagementModal": {
     "accent": "強調色",
     "accentAutomatic": "自動",
@@ -411,7 +410,6 @@
     "save": "儲存",
     "saving": "正在儲存…"
   },
-  "featureIntroModal": {},
   "fileViewMode": {
     "formatted": "格式化",
     "modeAria": "如何顯示此檔案",

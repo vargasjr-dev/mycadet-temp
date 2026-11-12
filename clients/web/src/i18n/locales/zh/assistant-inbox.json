@@ -63,7 +63,6 @@
     "handleLabel": "用户名（公开）",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "好，我们来设置一下。",
     "fieldLabel": "选择一个邮件 handle：",

@@ -63,7 +63,6 @@
     "handleLabel": "Handle (public)",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "Alright, let’s get you set up.",
     "fieldLabel": "Select an email handle:",

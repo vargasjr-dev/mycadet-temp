@@ -63,7 +63,6 @@
     "handleLabel": "使用者名稱（公開）",
     "handlePlaceholder": "my-assistant"
   },
-  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "好，我們來設定一下。",
     "fieldLabel": "選擇一個郵件 handle：",

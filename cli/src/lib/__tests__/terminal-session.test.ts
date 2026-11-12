@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseSentinelOutput, stripAnsi } from "../terminal-session.js";
+import { parseSentinelOutput, stripAnsi } from "@mycadet/local-mode";
 
 const START = "__CADET_EXEC_START_1234__";
 const END = "__CADET_EXEC_END_1234__";

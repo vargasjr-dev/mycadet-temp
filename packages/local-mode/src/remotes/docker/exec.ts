@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
 
+import type { ExecCommandOptions, ExecCommandResult } from "../../operations/exec";
 import type { DockerAssistant } from "../../lockfile-contract";
 import { dockerResourceNames } from "./retire";
-import type { ExecLegOptions, ExecLegResult } from "../local/exec";
 
 /**
  * The docker topology's exec leg: `docker exec` into the service's container
@@ -11,8 +11,8 @@ import type { ExecLegOptions, ExecLegResult } from "../local/exec";
  */
 export async function execDocker(
   entry: DockerAssistant,
-  opts: ExecLegOptions,
-): Promise<ExecLegResult> {
+  opts: ExecCommandOptions,
+): Promise<ExecCommandResult> {
   const names = dockerResourceNames(entry.assistantId);
   const container =
     opts.service === "gateway"

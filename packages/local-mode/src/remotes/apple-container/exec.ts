@@ -6,11 +6,9 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import {
-  type AppleContainerAssistant,
-  isAppleContainerEntry,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
+import type { AppleContainerAssistant } from "../../lockfile-contract";
+import { isAppleContainerEntry } from "../../lockfile-contract";
+import type { LockfileAssistant } from "../../lockfile-contract";
 
 /**
  * Execute a command inside an Apple Container assistant via the management

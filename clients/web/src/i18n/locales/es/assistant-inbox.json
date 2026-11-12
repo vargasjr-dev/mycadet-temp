@@ -63,7 +63,6 @@
     "handleLabel": "Identificador (público)",
     "handlePlaceholder": "mi-asistente"
   },
-  "assistantInboxUpgradeState": {},
   "assistantInboxSetupCard": {
     "headline": "Bien, vamos a prepararlo.",
     "fieldLabel": "Elige un handle de correo:",

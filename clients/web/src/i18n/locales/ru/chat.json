@@ -649,7 +649,6 @@
   "sidebarSectionViewAll": {
     "label": "Все чаты"
   },
-  "freeTierDailyLimitBanner": {},
   "emailReferenceChip": {
     "noSubject": "(без темы)",
     "captionReceived": "Получено · От {name} · {date}",
