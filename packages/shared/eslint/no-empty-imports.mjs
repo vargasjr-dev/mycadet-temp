@@ -28,13 +28,7 @@
  * `ns`, and an unused namespace is `no-unused-vars`' territory.
  */
 
-/**
- * Whether the import declaration's source text declares an empty named
- * list. The AST gives `import {} from "y"` and `import "y"` the same shape
- * (zero specifiers), so the braces only exist in the text.
- * @param {import("eslint").SourceCode} sourceCode
- * @param {import("estree").ImportDeclaration} node
- */
+/** True for an empty named import list: the AST gives `import {} from "y"` and `import "y"` the same shape, so the braces only exist in the text. */
 function hasEmptyNamedList(sourceCode, node) {
   const text = sourceCode.getText(node);
   return /^import\s*(?:type\s*)?\{/.test(text);

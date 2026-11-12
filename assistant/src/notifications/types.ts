@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import type { DeliverableChannelId } from "../channels/config.js";
 import { AccessRequestPayloadSchema } from "./access-request-copy.js";
-import { ToolApprovalSourceViewSchema } from "./guardian-question-mode.js";
+import { ToolApprovalSourceViewSchema } from "./tool-approval-source-view.js";
 import { UrgencySchema } from "./urgency.js";
 
 /**

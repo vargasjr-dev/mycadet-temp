@@ -28,8 +28,8 @@ import {
   buildAccessRequestCardView,
   buildAccessRequestInviteDirective,
 } from "../access-request-copy.js";
-import type { ToolApprovalSourceView } from "../guardian-question-mode.js";
 import { truncate } from "../notification-utils.js";
+import type { ToolApprovalSourceView } from "../tool-approval-source-view.js";
 import type {
   ChannelAdapter,
   ChannelDeliveryPayload,

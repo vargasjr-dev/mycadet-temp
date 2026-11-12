@@ -44,9 +44,9 @@ import {
   LenientToolApprovalPayloadSchema,
   resolveGuardianInstructionModeFromFields,
   resolveGuardianQuestionInstructionMode,
-  type ToolApprovalSourceView,
 } from "./guardian-question-mode.js";
 import { readPayloadString } from "./notification-utils.js";
+import type { ToolApprovalSourceView } from "./tool-approval-source-view.js";
 
 const log = getLogger("guardian-feed-projection");
 

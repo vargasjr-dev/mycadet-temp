@@ -21,12 +21,12 @@ const steps: Step[] = [
     command: ["bunx", "eslint", ".", "--max-warnings", "0"],
   },
   {
-    name: "knip (files, dependencies, unlisted)",
-    command: ["bunx", "knip", "--include", "files,dependencies,unlisted"],
-  },
-  {
-    name: "knip (production exports)",
-    command: ["bunx", "knip", "--production", "--include", "exports"],
+    name: "knip",
+    command: [
+      "bash",
+      "-c",
+      "bunx knip --include files,dependencies,unlisted && bunx knip --production --include exports",
+    ],
   },
 ];
 

@@ -61,7 +61,6 @@ jobs:
         run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/gateway
 
       - name: Lint
-        # One pass: skill specs, eslint, knip (both), circular deps.
         run: bun run lint
 
       - name: Format check
