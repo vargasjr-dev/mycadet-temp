@@ -1,6 +1,8 @@
 /**
- * The assistant's connected integration accounts, read through the
- * operator api's oauth row. The generated cloud sdk used to own the
+ * The assistant's connected integration accounts, read at the bundle's
+ * scoped assistant path — the gateway is the plane that eventually hits
+ * the assistant, which will configure its own connections provider the
+ * way it configures inference. The generated cloud sdk used to own the
  * transport and the type; both live here now, parsed at the boundary.
  */
 

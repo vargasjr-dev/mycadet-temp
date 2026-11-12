@@ -56,17 +56,24 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
   assistantsListQueryKey: () => ["assistants", "email-test-listing"],
+}));
 
-  // The unscoped cloud-voices hook reads the catalog straight from the cloud
-  // API — the daemon's managed-voices proxy is deleted. As with the daemon
-  // mocks, initialData makes the fetched state synchronous; without it the
-  // card renders the static fallback (the state the other tests exercise).
-  managedSpeechTtsVoicesRetrieveOptions: () => ({
-    queryKey: ["managed-speech-tts-voices-test"],
-    queryFn: () =>
-      Promise.resolve(managedVoicesData ?? { voices: [], defaultModel: null }),
-    ...(managedVoicesData ? { initialData: managedVoicesData } : {}),
-  }),
+// The card reads the unscoped cloud catalog through use-cloud-voices now.
+// The voices mock module replaces the catalog read outright: when no catalog
+// is seeded the hook reports the static-fallback state the other tests
+// exercise (fetched with nothing offered). Seeding globalThis.fetch would
+// race the happy-dom window fetch (see test-setup.ts), so the hook module
+// is the seam.
+mock.module("@/lib/tts/use-cloud-voices", () => ({
+  useUnscopedCloudVoices: () =>
+    managedVoicesData
+      ? {
+          voices: managedVoicesData.voices,
+          defaultModel: managedVoicesData.defaultModel,
+          fetched: true,
+          loading: false,
+        }
+      : { voices: [], defaultModel: null, fetched: false, loading: false },
 }));
 
 interface SdkCall {
