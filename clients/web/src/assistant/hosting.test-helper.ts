@@ -32,6 +32,7 @@ function servedEntry(cloud: Remote, assistantId: string): LockfileAssistant {
       return {
         cloud,
         assistantId,
+        name: "sandbox",
         sandboxUrl: "https://sandbox.example",
         port: 0,
       };
