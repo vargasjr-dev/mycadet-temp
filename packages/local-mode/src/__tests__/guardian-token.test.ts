@@ -217,6 +217,7 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
     saveLockfileAssistant({
       assistantId: "asst_bx",
       cloud: "baseten",
+      name: "sbx-name-abc123",
       sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
       port: 7830,
     });
@@ -232,6 +233,7 @@ describe("getPairedGuardianAccessToken — baseten sandboxes", () => {
     saveLockfileAssistant({
       assistantId: "asst_bx",
       cloud: "baseten",
+      name: "sbx-name-abc123",
       sandboxUrl: "https://sbx-name-abc123.us-pdx-1.b10.co",
       port: 7830,
     });

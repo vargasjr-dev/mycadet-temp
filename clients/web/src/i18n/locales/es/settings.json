@@ -585,7 +585,6 @@
   "paymentMethodRow": {
     "savedCard": "Tarjeta guardada"
   },
-  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "Compositor",
     "description": "Personaliza los atajos y el comportamiento de Cadet en este dispositivo.",

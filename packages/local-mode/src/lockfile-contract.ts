@@ -369,6 +369,9 @@ const CustomAssistantSchema = BaseAssistantSchema.extend({
  */
 const BasetenAssistantSchema = BaseAssistantSchema.extend({
   cloud: z.literal("baseten"),
+  /** The sandbox's name (recorded in the lockfile at hatch) — required:
+   * every baseten exec/hatch dial targets it. */
+  name: z.string(),
   /** The Baseten sandbox server URL; the port route rides on it. */
   sandboxUrl: z.string(),
   /** The sandbox-internal gateway port, piped in as `GATEWAY_PORT` at creation. */

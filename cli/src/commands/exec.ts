@@ -1,16 +1,15 @@
 import {
   cliCommand,
+  DEFAULT_EXEC_TIMEOUT,
   execCommand,
   getCloudUrl,
-  readCloudToken,
+  type ServiceName,
 } from "@mycadet/local-mode";
 
-import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
 
-import type { ServiceName } from "@mycadet/local-mode";
 import {
   execAppleContainer,
   sshAppleContainer,
@@ -20,8 +19,6 @@ import {
   nonInteractiveExec,
   shellEscapeArgs,
 } from "../lib/terminal-session";
-
-const DEFAULT_EXEC_TIMEOUT = 30_000;
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -160,65 +157,46 @@ export const exec = Object.assign(
       process.exit(1);
     }
 
-    if (entry.cloud === "apple-container") {
-      const fullServiceName = `cadet-${service}`;
-      if (interactive) {
-        await sshAppleContainer(entry, command, fullServiceName);
-      } else {
-        await execAppleContainer(entry, command, fullServiceName);
-      }
-      return;
-    }
-
-    if (isCloudEntry(entry)) {
-      const token = readCloudToken();
-      if (!token) {
-        console.error(
-          red(
-            "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
-          ),
-        );
-        process.exit(1);
-      }
-
-      const assistant = {
-        assistantId: entry.assistantId,
-        token,
-        cloudUrl: getCloudUrl(),
-      };
-
-      const serviceParam = service === "assistant" ? undefined : service;
-
-      if (interactive) {
-        // Interactive mode: shell-escape argv and delegate to full terminal
-        await interactiveSession(
-          assistant,
-          shellEscapeArgs(command),
-          serviceParam,
-        );
-        return;
-      }
-
-      // Non-interactive: sentinel-based output capture with exit code
-      await nonInteractiveExec(assistant, command, {
-        verbose,
-        timeoutMs,
-        service: serviceParam,
-      });
-      return;
-    }
-
-    // Local, docker, and baseten ride the exec operation's remote legs —
-    // the command itself only owns the remote transports that live in the
-    // CLI (apple-container's ssh, cloud's terminal session).
-    const result = await execCommand(entry, {
-      command,
-      service,
-      interactive,
-      ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
-        ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
-        : {}),
-    });
+    // Every cloud routes inside the exec operation; the CLI only supplies
+    // the two transports that live here (apple-container's ssh, cloud's
+    // terminal session).
+    const result = await execCommand(
+      entry,
+      { command, service, interactive, verbose, timeoutMs },
+      {
+        appleContainer: async (entry, opts, fullServiceName) => {
+          if (opts.interactive) {
+            await sshAppleContainer(entry, opts.command, fullServiceName);
+          } else {
+            await execAppleContainer(entry, opts.command, fullServiceName);
+          }
+        },
+        cloud: async (entry, opts, token) => {
+          const assistant = {
+            assistantId: entry.assistantId,
+            token,
+            cloudUrl: getCloudUrl(),
+          };
+          const serviceParam =
+            opts.service === "assistant" ? undefined : opts.service;
+          if (opts.interactive) {
+            await interactiveSession(
+              assistant,
+              shellEscapeArgs(opts.command),
+              serviceParam,
+            );
+            return;
+          }
+          // Non-interactive: sentinel-based output capture; exits with the
+          // command's own exit code.
+          await nonInteractiveExec(assistant, opts.command, {
+            verbose: opts.verbose,
+            timeoutMs: opts.timeoutMs ?? DEFAULT_EXEC_TIMEOUT,
+            service: serviceParam,
+          });
+        },
+      },
+    );
     if ("error" in result) {
       console.error(red(`Error: ${result.error}`));
       process.exitCode = result.status;

@@ -136,6 +136,7 @@ describe("healConflictedLocalPorts", () => {
   test("a non-local entry passes through untouched", async () => {
     makeEntry({
       cloud: "baseten",
+      name: "sb",
       sandboxUrl: "https://sb.example.com",
       port: 7831,
     });

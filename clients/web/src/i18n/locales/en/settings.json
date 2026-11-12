@@ -654,7 +654,6 @@
   "paymentMethodRow": {
     "savedCard": "Saved card"
   },
-  "pendingPairingRequests": {},
   "preferencesModal": {
     "composerTitle": "Composer",
     "description": "Customize shortcuts and how Cadet behaves on this device.",

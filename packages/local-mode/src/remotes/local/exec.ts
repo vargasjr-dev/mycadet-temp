@@ -14,6 +14,7 @@ import { delimiter, join } from "node:path";
 import { spawn } from "node:child_process";
 
 import type { ServiceName } from "../docker/statefulset";
+import type { ExecCommandOptions, ExecCommandResult } from "../../operations/exec";
 import type { LocalAssistant } from "../../lockfile-contract";
 import { localSourceCommandEntry, resolveBunExecutable } from "./common";
 import { getLocalInstanceDir } from "./instance";
@@ -74,26 +75,6 @@ export function ensureLocalBinShims(entry: LocalAssistant): {
   return { dir, unresolved };
 }
 
-/** Options the exec operation passes to a remote's exec leg. */
-export interface ExecLegOptions {
-  /** The full argv after `--` — the command to run inside the service. */
-  command: string[];
-  /** Which service's directory/state the command runs against. */
-  service: ServiceName;
-  /** Interactive mode with TTY (like docker exec -it). */
-  interactive?: boolean;
-}
-
-/**
- * A remote exec leg's outcome: the command either ran (its own exit code —
- * its output already went to the caller's stdio) or was refused before any
- * spawn (status + the diagnostic the CLI prints).
- */
-export type ExecLegResult =
-  | { ok: true; code: number }
-  | { ok: false; code: number }
-  | { ok: false; status: number; error: string };
-
 /**
  * The local topology's exec leg: run the command on the host, in the
  * service's directory, with the instance's `bin/` shims prepended to PATH.
@@ -106,8 +87,8 @@ export type ExecLegResult =
  */
 export async function execLocal(
   entry: LocalAssistant,
-  opts: ExecLegOptions,
-): Promise<ExecLegResult> {
+  opts: ExecCommandOptions,
+): Promise<ExecCommandResult> {
   const instanceDir = getLocalInstanceDir(entry);
   const serviceDir = localExecDirForService(instanceDir, opts.service);
   const workspaceDir = join(instanceDir, "workspace");
