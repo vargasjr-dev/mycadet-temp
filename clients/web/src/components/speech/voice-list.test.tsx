@@ -81,14 +81,18 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
   assistantsListQueryKey: () => ["assistants", "email-test-listing"],
+}));
 
-  // The voice catalog is read straight from the cloud API now — the daemon's
-  // managed-voices route is deleted. initialData keeps the fetched state
-  // synchronous (same trick the daemon mocks use).
-  managedSpeechTtsVoicesRetrieveOptions: () => ({
-    queryKey: ["managed-speech-tts-voices-test"],
-    queryFn: () => Promise.resolve(managedVoicesData),
-    initialData: managedVoicesData,
+// The voice catalog is read straight from the cloud API now — the daemon's
+// managed-voices route is deleted. The voices mock module replaces the
+// catalog read outright; seeding globalThis.fetch would race the happy-dom
+// window fetch (see test-setup.ts), so the hook module is the seam.
+mock.module("@/lib/tts/use-cloud-voices", () => ({
+  useUnscopedCloudVoices: () => ({
+    voices: managedVoicesData.voices,
+    defaultModel: managedVoicesData.defaultModel,
+    fetched: true,
+    loading: false,
   }),
 }));
 
