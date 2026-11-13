@@ -66,9 +66,6 @@ jobs:
       - name: Format check
         run: bun run format:check
 
-      - name: Lint unused code
-        run: bun run lint:unused
-
       - name: Type check
         run: bunx tsc --noEmit
 

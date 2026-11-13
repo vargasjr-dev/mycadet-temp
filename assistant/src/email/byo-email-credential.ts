@@ -18,12 +18,12 @@ import { getLogger } from "../util/logger.js";
 
 const log = getLogger("byo-email-credential");
 
-export const BYO_EMAIL_CREDENTIAL_SERVICES = ["resend", "mailgun"] as const;
+const BYO_EMAIL_CREDENTIAL_SERVICES = ["resend", "mailgun"] as const;
 
 export type ByoEmailCredentialService =
   (typeof BYO_EMAIL_CREDENTIAL_SERVICES)[number];
 
-export function isByoEmailCredentialService(
+function isByoEmailCredentialService(
   service: string,
 ): service is ByoEmailCredentialService {
   return BYO_EMAIL_CREDENTIAL_SERVICES.some((s) => s === service);

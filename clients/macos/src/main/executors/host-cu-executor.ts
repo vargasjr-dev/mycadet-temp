@@ -24,7 +24,7 @@ import {
 } from "@mycadet/ipc-contract";
 import { z } from "zod";
 
-import log from "../logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
 /** The one tool answered here rather than by the helper. */
@@ -192,7 +192,7 @@ const REFUSALS: Record<CoachmarkRefusal, string> = {
  * Asynchronous because a mark that names a control is resolved against the
  * surface's accessibility tree, which is a round trip to the helper.
  */
-export type CoachmarkPainter = (
+type CoachmarkPainter = (
   requests: readonly CoachmarkRequest[],
   conversationId?: string,
 ) => Promise<CoachmarkResult>;
@@ -251,7 +251,8 @@ class PointAtExecutor implements HostProxyExecutor {
       this.helper.handleRequest(message, poster);
       return;
     }
-    const requestId = message.requestId as string | undefined;
+    const requestId =
+      typeof message.requestId === "string" ? message.requestId : undefined;
     if (!requestId) {
       log.warn("[host-cu-executor] point_at message missing requestId");
       return;
@@ -330,7 +331,8 @@ class PointAtExecutor implements HostProxyExecutor {
    * on the next request, and when the share moves or ends.
    */
   handleCancel(message: HostProxySseMessage, poster: HostProxyPoster): void {
-    const requestId = message.requestId as string | undefined;
+    const requestId =
+      typeof message.requestId === "string" ? message.requestId : undefined;
     if (requestId !== undefined && this.resolving.has(requestId)) {
       this.cancelled.add(requestId);
     }
@@ -338,7 +340,7 @@ class PointAtExecutor implements HostProxyExecutor {
   }
 }
 
-export interface HostCuExecutorDeps {
+interface HostCuExecutorDeps {
   helper?: CuHelperClient;
   /** What draws the marks. Absent means this client answers that it cannot. */
   showCoachmarks?: CoachmarkPainter;

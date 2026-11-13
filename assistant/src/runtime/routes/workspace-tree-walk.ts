@@ -21,10 +21,10 @@ import type { WorkspaceEntry } from "./workspace-utils.js";
  * reports `truncated`. The root's own listing is always whole, so the
  * answer is never worse than a non-recursive one.
  */
-export const MAX_RECURSIVE_ENTRIES = 20_000;
+const MAX_RECURSIVE_ENTRIES = 20_000;
 
 /** Wall-clock budget for one recursive walk. */
-export const MAX_RECURSIVE_WALK_MS = 3_000;
+const MAX_RECURSIVE_WALK_MS = 3_000;
 
 /**
  * Directories the recursive walk lists but does not enter: whatever the

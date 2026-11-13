@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const MigrationsWorkerConfigSchema = z
+const MigrationsWorkerConfigSchema = z
   .object({
     enabled: z
       .boolean({ error: "migrations.worker.enabled must be a boolean" })

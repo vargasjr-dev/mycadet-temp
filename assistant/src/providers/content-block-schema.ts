@@ -43,7 +43,7 @@ const workspaceRefMediaSourceSchema = z
   })
   .passthrough();
 
-export const mediaSourceSchema = z.discriminatedUnion("type", [
+const mediaSourceSchema = z.discriminatedUnion("type", [
   base64MediaSourceSchema,
   workspaceRefMediaSourceSchema,
 ]);

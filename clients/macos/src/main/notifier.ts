@@ -12,7 +12,7 @@ import { app } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 
 const ADDON_FILENAME = "cadet-notifier.node";
 
@@ -103,13 +103,17 @@ const isNotifier = (value: unknown): value is Notifier => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
-  const candidate = value as Partial<Notifier>;
   return (
-    typeof candidate.isSupported === "function" &&
-    typeof candidate.requestAuthorization === "function" &&
-    typeof candidate.registerCategories === "function" &&
-    typeof candidate.restoreDelegate === "function" &&
-    typeof candidate.show === "function"
+    "isSupported" in value &&
+    typeof value.isSupported === "function" &&
+    "requestAuthorization" in value &&
+    typeof value.requestAuthorization === "function" &&
+    "registerCategories" in value &&
+    typeof value.registerCategories === "function" &&
+    "restoreDelegate" in value &&
+    typeof value.restoreDelegate === "function" &&
+    "show" in value &&
+    typeof value.show === "function"
   );
 };
 
@@ -133,7 +137,7 @@ const loadNotifier = (): Notifier | null => {
     return cached;
   }
   try {
-    const addon = { exports: {} as unknown };
+    const addon: { exports: unknown } = { exports: {} };
     process.dlopen(addon, addonPath);
     if (isNotifier(addon.exports)) {
       cached = addon.exports;

@@ -202,21 +202,6 @@ export function cleanupPidFileIfOwner(ownerPid: number): void {
   }
 }
 
-export function isDaemonRunning(): boolean {
-  if (getIsContainerized()) {
-    return true;
-  } // Container orchestrator manages lifecycle
-  const pid = readPid();
-  if (pid == null) {
-    return false;
-  }
-  if (!isProcessRunning(pid)) {
-    cleanupPidFile();
-    return false;
-  }
-  return true;
-}
-
 async function getDaemonStatus(): Promise<{
   running: boolean;
   pid?: number;

@@ -54,7 +54,7 @@ const log = getLogger("recovery-inflight-content");
  * fold and the orphan GC both leave them alone. Startup residue from a crashed
  * process is always older than this, so recovery is not delayed in practice.
  */
-export const DEFAULT_INFLIGHT_MIN_AGE_MS = 60_000;
+const DEFAULT_INFLIGHT_MIN_AGE_MS = 60_000;
 
 export interface InflightRecoveryResult {
   /** `finalized = 0` rows folded inline and flipped to `finalized = 1`. */

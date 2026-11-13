@@ -20,7 +20,7 @@ import { getWorkspaceDir } from "../../util/layout.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import { buildSanitizedEnv } from "./safe-env.js";
 
-export const DEFAULT_SANITIZED_BASH_TIMEOUT_MS = 30_000;
+const DEFAULT_SANITIZED_BASH_TIMEOUT_MS = 30_000;
 
 export interface SanitizedBashResult {
   stdout: string;

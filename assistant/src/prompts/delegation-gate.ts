@@ -10,7 +10,7 @@ import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembl
  * app and everything else is a channel the gateway delivers to over a reply
  * callback.
  */
-export function isExternalChannelTurn(
+function isExternalChannelTurn(
   capabilities: ChannelCapabilities | undefined,
 ): boolean {
   const channel = capabilities?.channel;

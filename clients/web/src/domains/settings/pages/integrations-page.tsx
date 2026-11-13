@@ -21,8 +21,8 @@ import {
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
-import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
+import { useOauthConnectionsQuery } from "@/domains/settings/oauth-connections";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
@@ -180,11 +180,7 @@ function IntegrationsPanelInner() {
     }),
     select: (data) => data.providers,
   });
-  const connections = useQuery(
-    assistantsOauthConnectionsListOptions({
-      path: { assistant_id: assistantId },
-    }),
-  );
+  const connections = useOauthConnectionsQuery(assistantId);
 
   useEffect(() => {
     const oauthStatus = searchParams.get("oauth_status");

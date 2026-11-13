@@ -9,16 +9,10 @@
     "copied": "Скопировано",
     "copyFailed": "Не удалось скопировать в буфер обмена."
   },
-  "featureIntroModal": {
-    "close": "Закрыть"
-  },
   "fileViewMode": {
     "formatted": "Форматированный",
     "modeAria": "Как показывать этот файл",
     "source": "Исходный код"
-  },
-  "assistantEmailIntroModal": {
-    "setUp": "Настроить почту"
   },
   "channelSetupCompleteNotice": {
     "verifyTitle": "Последний шаг: подтвердите, что это вы",

@@ -47,7 +47,7 @@ import { InputModalitiesSchema } from "../input-modalities.js";
  * carries it. The generic config routes follow this open-string schema;
  * dedicated profile routes apply their own provider selection rules.
  */
-export const KNOWN_LLM_PROVIDERS = [
+const KNOWN_LLM_PROVIDERS = [
   "anthropic",
   "openai",
   "gemini",
@@ -245,7 +245,7 @@ const KNOWN_CALL_SITE_IDS = new Set<string>(LLMCallSiteEnum.options);
  * and `saveRawConfig` read the raw file, so the dropped keys stay on disk for
  * a version that recognizes them.
  */
-export function dropUnknownCallSiteKeys(value: unknown): unknown {
+function dropUnknownCallSiteKeys(value: unknown): unknown {
   if (value == null || typeof value !== "object" || Array.isArray(value)) {
     return value;
   }
@@ -619,7 +619,7 @@ export const RawDefaultSelectionSchema = z
   })
   .catch({});
 
-export const ProfileStatusSchema = z
+const ProfileStatusSchema = z
   .enum(["active", "disabled"])
   .meta({ id: "ProfileStatus" });
 export type ProfileStatus = z.infer<typeof ProfileStatusSchema>;
@@ -852,7 +852,7 @@ function referenceableProfileKeys(
  * decides whether the cloud backups are valid targets, since they resolve
  * on the cloud column alone.
  */
-export function collectFallbackProfileIssues(
+function collectFallbackProfileIssues(
   profiles: Record<string, unknown> | undefined,
   llmDefault?: unknown,
 ): { profileName: string; message: string }[] {

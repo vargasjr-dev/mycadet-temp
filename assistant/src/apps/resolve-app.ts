@@ -59,7 +59,7 @@ export function resolveAppQuery(query: string): ResolveAppQueryResult {
   return { ok: false, reason: "not_found", query: trimmed };
 }
 
-export function formatAppMatch(app: EnumeratedApp): string {
+function formatAppMatch(app: EnumeratedApp): string {
   const origin =
     app.origin.kind === "plugin"
       ? `plugin ${app.origin.pluginName}`

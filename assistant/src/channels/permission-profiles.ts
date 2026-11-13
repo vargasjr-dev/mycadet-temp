@@ -48,7 +48,7 @@ function getChannelPermissions(): ChannelPermissionMap {
  * Get the permission profile for a specific channel.
  * Returns null if no profile is configured for the channel.
  */
-export function getChannelPermissionProfile(
+function getChannelPermissionProfile(
   channelId: string,
 ): ChannelPermissionProfile | null {
   const perms = getChannelPermissions();

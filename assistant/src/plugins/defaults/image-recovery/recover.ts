@@ -52,7 +52,7 @@ const PROVIDER_MAX_IMAGE_PAYLOAD_BYTES = 5 * 1024 * 1024;
  * with the in-memory recovery path so the persisted history matches what the
  * model saw on the turn the image was rejected.
  */
-export const UNSENDABLE_IMAGE_NOTE =
+const UNSENDABLE_IMAGE_NOTE =
   "(An image was attached but could not be sent — it does not meet the provider's image size limits and automatic resizing was not available. Please resize the image and try again.)";
 
 /**

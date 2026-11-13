@@ -10,12 +10,8 @@
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 
-export function isMacOS(): boolean {
+function isMacOS(): boolean {
   return process.platform === "darwin";
-}
-
-export function isLinux(): boolean {
-  return process.platform === "linux";
 }
 
 export function isWindows(): boolean {
@@ -76,13 +72,4 @@ export function addToPathEnv(
     position === "front"
       ? [...missing, ...entries].join(delimiter)
       : [...entries, ...missing].join(delimiter);
-}
-
-/**
- * Returns the raw platform string from Node.js (e.g. 'darwin', 'linux', 'win32').
- * Prefer this over accessing process.platform directly so all platform
- * detection is routed through this module.
- */
-export function getPlatformName(): string {
-  return process.platform;
 }

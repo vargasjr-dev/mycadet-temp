@@ -198,7 +198,7 @@ function routingLegRuleFor(
  * handling relies on this turn failing with a recognizable error — keep the
  * value byte-identical across every throw site.
  */
-export const TURN_ABORTED_WAITING_MESSAGE =
+const TURN_ABORTED_WAITING_MESSAGE =
   "Turn aborted while waiting for conversation";
 
 /**

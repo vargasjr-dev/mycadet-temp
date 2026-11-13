@@ -95,19 +95,6 @@ export function getMaxRollbackVersion(steps: MigrationStep[]): number {
   return max;
 }
 
-/**
- * Collect all step names that appear in the steps array (both bare-function
- * and object-form). Used by {@link validateMigrationState} to detect
- * checkpoints from a newer daemon version.
- */
-export function getKnownStepNames(steps: MigrationStep[]): Set<string> {
-  const names = new Set<string>();
-  for (const step of steps) {
-    names.add(getStepName(step));
-  }
-  return names;
-}
-
 export interface FailedMigrationDetail {
   name: string;
   error?: string;

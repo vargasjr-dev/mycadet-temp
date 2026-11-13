@@ -6,7 +6,7 @@ import { FakeChild } from "./test-helpers";
 
 class FakeHotkeyChild extends FakeChild {
   stdin = {
-    writes: [] as string[],
+    writes: new Array<string>(),
     ended: false,
     write: mock((data: string, callback?: (err?: Error) => void) => {
       this.stdin.writes.push(data);
@@ -25,23 +25,32 @@ const handlers: Record<
   string,
   (event: unknown, ...args: unknown[]) => unknown
 > = {};
+
+/** The recorded handle callback for `channel`, fired against the fake event.
+ * Zero-payload channels are fired bare — an explicit `undefined` would fail
+ * the tuple schema that guards the channel's arity. */
+const invoke = (
+  channel: string,
+  args?: unknown,
+  sender: FakeWebContents = defaultSender,
+): unknown =>
+  args === undefined
+    ? handlers[channel]({ sender })
+    : handlers[channel]({ sender }, args);
 const appListeners = new Map<string, () => void>();
 
-type FakeWebContents = EventEmitter & {
-  id: number;
-  isDestroyed: () => boolean;
-  ownerWindow: EventEmitter;
-  send: ReturnType<typeof mock>;
-};
+class FakeWebContents extends EventEmitter {
+  id = 0;
+  isDestroyed = (): boolean => false;
+  ownerWindow: EventEmitter = new EventEmitter();
+  send: ReturnType<typeof mock> = mock(() => undefined);
+}
 
 let nextWebContentsId = 1;
 
 const makeWebContents = (): FakeWebContents => {
-  const webContents = new EventEmitter() as FakeWebContents;
+  const webContents = new FakeWebContents();
   webContents.id = nextWebContentsId++;
-  webContents.isDestroyed = () => false;
-  webContents.ownerWindow = new EventEmitter();
-  webContents.send = mock(() => undefined);
   return webContents;
 };
 
@@ -84,6 +93,11 @@ let helperExecutableName = "cadet-mac-helper";
 let helperBundleName = "cadet-mac-helper";
 mock.module("node:fs", () => ({
   existsSync: () => exists,
+  // The bundle-name sidecar above answers first, so the discovery walk is
+  // never reached in these tests; keep it inert rather than reading real dirs.
+  readdirSync: () => {
+    throw new Error("directory walks are not exercised here");
+  },
   readFileSync: (target: unknown) => {
     const targetPath = String(target);
     if (targetPath.endsWith(".cadet-mac-helper.bundle-name")) {
@@ -103,14 +117,14 @@ mock.module("node:child_process", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: {
     info: mock(() => undefined),
     warn: mock(() => undefined),
   },
 }));
 
-mock.module("./app-origin", () => ({
+mock.module("@mycadet/electron-desktop/app-origin", () => ({
   isAllowedOrigin: () => true,
   resolveAllowedOrigin: () => ({ protocol: "app:", host: "mycadet.ai" }),
 }));
@@ -150,10 +164,7 @@ const { getMacHelperAppPath, getMacHelperPath } =
 const CTRL_OPTION = { kind: "modifierOnly", modifiers: ["control", "option"] };
 
 const invokeSetModifierHoldFrom = (hold: unknown, sender: FakeWebContents) =>
-  handlers["cadet:helper:hotkey:setModifierHold"](
-    { sender },
-    hold,
-  ) as Promise<unknown>;
+  invoke("cadet:helper:hotkey:setModifierHold", hold, sender);
 
 const invokeSetModifierHold = (hold: unknown = CTRL_OPTION) =>
   invokeSetModifierHoldFrom(hold, defaultSender);
@@ -169,7 +180,8 @@ const registerHold = async (
   const pending = invokeSetModifierHoldFrom(CTRL_OPTION, sender);
   await wait(5);
   const request = lastChild?.stdin.writes.at(-1) ?? "";
-  const answered = id ?? (JSON.parse(request) as { id: number }).id;
+  const parsed: { id?: number } = JSON.parse(request);
+  const answered = id ?? parsed.id;
   lastChild?.stdout.emit(
     "data",
     Buffer.from(
@@ -186,10 +198,7 @@ const OPTION_CHORDS = {
 };
 
 const invokeSetChords = (binding: unknown, sender: FakeWebContents) =>
-  handlers["cadet:helper:hotkey:setChords"](
-    { sender },
-    binding,
-  ) as Promise<unknown>;
+  invoke("cadet:helper:hotkey:setChords", binding, sender);
 
 /**
  * Arm the chords from `sender` and answer the helper's reply.
@@ -201,7 +210,8 @@ const registerChords = async (sender: FakeWebContents): Promise<unknown> => {
   const pending = invokeSetChords(OPTION_CHORDS, sender);
   await wait(5);
   const request = lastChild?.stdin.writes.at(-1) ?? "";
-  const id = (JSON.parse(request) as { id: number }).id;
+  const parsed: { id?: number } = JSON.parse(request);
+  const id = parsed.id;
   lastChild?.stdout.emit(
     "data",
     Buffer.from(`{"jsonrpc":"2.0","id":${id},"result":{"enabled":true}}\n`),
@@ -219,18 +229,13 @@ const emitChord = (key: string): void => {
 };
 
 const invokeReadFrontSelection = () =>
-  handlers["cadet:helper:hotkey:readFrontSelection"]({
-    sender: defaultSender,
-  }) as Promise<unknown>;
+  invoke("cadet:helper:hotkey:readFrontSelection");
 
-const invokePing = () =>
-  handlers["cadet:helper:ping"]({ sender: defaultSender }) as Promise<unknown>;
+const invokePing = () => invoke("cadet:helper:ping");
 
-const invokeGetState = () =>
-  handlers["cadet:helper:state:get"]({ sender: defaultSender }) as unknown;
+const invokeGetState = () => invoke("cadet:helper:state:get");
 
-const invokeRestart = () =>
-  handlers["cadet:helper:restart"]({ sender: defaultSender }) as unknown;
+const invokeRestart = () => invoke("cadet:helper:restart");
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -876,10 +881,10 @@ describe("installHotkeyHelper", () => {
   test("asks the helper which of the named apps are running", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["cadet:helper:apps:running"](
-      { sender: defaultSender },
-      ["com.electron.wispr-flow", "com.example.other"],
-    ) as Promise<unknown>;
+    const pending = invoke("cadet:helper:apps:running", [
+      "com.electron.wispr-flow",
+      "com.example.other",
+    ]);
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.running"');
     expect(lastChild?.stdin.writes[0]).toContain('"com.electron.wispr-flow"');
     // Only the claimant is asked about; the renderer does not enumerate the
@@ -898,10 +903,9 @@ describe("installHotkeyHelper", () => {
   test("reads a helper that cannot say as no apps running", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["cadet:helper:apps:running"](
-      { sender: defaultSender },
-      ["com.electron.wispr-flow"],
-    ) as Promise<unknown>;
+    const pending = invoke("cadet:helper:apps:running", [
+      "com.electron.wispr-flow",
+    ]);
     lastChild?.stdout.emit(
       "data",
       Buffer.from(
@@ -915,17 +919,12 @@ describe("installHotkeyHelper", () => {
   test("asks nothing of the helper for an app outside the voice key's claimants", async () => {
     installHotkeyHelper();
 
-    expect(
-      await (handlers["cadet:helper:apps:quit"](
-        { sender: defaultSender },
-        "com.example.editor",
-      ) as Promise<unknown>),
-    ).toBe(false);
+    expect(await invoke("cadet:helper:apps:quit", "com.example.editor")).toBe(
+      false,
+    );
     expect(lastChild).toBeNull();
     expect(
-      await (handlers["cadet:helper:apps:running"]({ sender: defaultSender }, [
-        "com.example.editor",
-      ]) as Promise<unknown>),
+      await invoke("cadet:helper:apps:running", ["com.example.editor"]),
     ).toEqual([]);
     expect(lastChild).toBeNull();
   });
@@ -933,9 +932,7 @@ describe("installHotkeyHelper", () => {
   test("reads the application in front from the helper", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["cadet:helper:apps:frontmost"]({
-      sender: defaultSender,
-    }) as Promise<unknown>;
+    const pending = invoke("cadet:helper:apps:frontmost");
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.frontmost"');
     lastChild?.stdout.emit(
       "data",
@@ -983,10 +980,7 @@ describe("installHotkeyHelper", () => {
     installHotkeyHelper();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const watch = handlers["cadet:helper:input:setActivityWatch"](
-      { sender: defaultSender },
-      true,
-    ) as Promise<unknown>;
+    const watch = invoke("cadet:helper:input:setActivityWatch", true);
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","id":2,"result":{"enabled":true}}\n'),
@@ -1093,10 +1087,7 @@ describe("installHotkeyHelper", () => {
     installHotkeyHelper();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const pending = handlers["cadet:helper:input:setActivityWatch"](
-      { sender: defaultSender },
-      true,
-    ) as Promise<unknown>;
+    const pending = invoke("cadet:helper:input:setActivityWatch", true);
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","id":2,"result":{"enabled":true}}\n'),
@@ -1115,10 +1106,7 @@ describe("installHotkeyHelper", () => {
   test("asks the helper to quit an app and reports whether it was asked", async () => {
     installHotkeyHelper();
 
-    const pending = handlers["cadet:helper:apps:quit"](
-      { sender: defaultSender },
-      "com.electron.wispr-flow",
-    ) as Promise<unknown>;
+    const pending = invoke("cadet:helper:apps:quit", "com.electron.wispr-flow");
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.quit"');
     lastChild?.stdout.emit(
       "data",

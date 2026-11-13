@@ -309,9 +309,7 @@ export async function installPluginDependencies(
  * so `ensureBun()` locates (or downloads) a standalone bun the same way every
  * other subsystem that spawns bun does.
  */
-export const defaultDependencyInstaller: DependencyInstaller = async ({
-  cwd,
-}) => {
+const defaultDependencyInstaller: DependencyInstaller = async ({ cwd }) => {
   const bun = await ensureBun();
   await execFileAsync(bun, [...DEPENDENCY_INSTALL_ARGS], {
     cwd,

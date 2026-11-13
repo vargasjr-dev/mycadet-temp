@@ -19,7 +19,7 @@
  * (the values we emit on the wire). Our upload allowlist stores mp3 as
  * `audio/mpeg`; {@link normalizeGeminiAudioMime} maps that onto `audio/mp3`.
  */
-export const GEMINI_INLINE_AUDIO_MIME_TYPES = new Set([
+const GEMINI_INLINE_AUDIO_MIME_TYPES = new Set([
   "audio/wav",
   "audio/mp3",
   "audio/aiff",

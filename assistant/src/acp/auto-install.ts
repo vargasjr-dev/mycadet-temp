@@ -32,7 +32,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DEFAULT_AGENT_NPM_PACKAGES } from "../config/acp-defaults.js";
+import { DEFAULT_AGENT_NPM_PACKAGES } from "../config/acp-schema.js";
 import { getLogger } from "../util/logger.js";
 import {
   resolveAcpAgent,

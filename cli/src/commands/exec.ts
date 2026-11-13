@@ -1,32 +1,13 @@
-import { existsSync } from "fs";
 import {
   cliCommand,
-  dockerResourceNames,
-  execBasetenSandbox,
-  localExecDirForService,
-  readCloudToken,
+  DEFAULT_EXEC_TIMEOUT,
+  execCommand,
+  type ServiceName,
 } from "@mycadet/local-mode";
-import { join } from "path";
 
-import { isCloudEntry } from "@mycadet/local-mode/contract";
-import { spawn } from "child_process";
 import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
-
-import type { ServiceName } from "@mycadet/local-mode";
-import { getCloudBaseUrl } from "@mycadet/shared";
-import {
-  execAppleContainer,
-  sshAppleContainer,
-} from "../lib/remotes/apple-container.js";
-import {
-  interactiveSession,
-  nonInteractiveExec,
-  shellEscapeArgs,
-} from "../lib/terminal-session";
-
-const DEFAULT_EXEC_TIMEOUT = 30_000;
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -48,21 +29,6 @@ function normalizeService(raw: string): ServiceName {
     process.exit(1);
   }
   return normalized;
-}
-
-function resolveDockerContainer(
-  instanceName: string,
-  service: ServiceName,
-): string {
-  const res = dockerResourceNames(instanceName);
-  switch (service) {
-    case "assistant":
-      return res.assistantContainer;
-    case "gateway":
-      return res.gatewayContainer;
-    case "credential-executor":
-      return res.cesContainer;
-  }
 }
 
 export const exec = Object.assign(
@@ -180,160 +146,21 @@ export const exec = Object.assign(
       process.exit(1);
     }
 
-    const cloud = entry.cloud;
-
-    if (cloud === "local") {
-      const instanceDir = entry.instanceDir;
-      if (!instanceDir) {
-        console.error(
-          red(
-            `Error: assistant '${entry.assistantId}' has no local instance directory recorded.`,
-          ),
-        );
-        process.exit(1);
-      }
-
-      const workspaceDir = join(instanceDir, "workspace");
-      const serviceDir = localExecDirForService(instanceDir, service);
-      const socketPath = join(workspaceDir, "assistant.sock");
-      if (!existsSync(socketPath)) {
-        console.error(
-          red(
-            `Error: the assistant runtime is not reachable (no socket at ${socketPath}).`,
-          ),
-        );
-        console.error(
-          red(
-            "Start it with `cadet wake`, or check `cadet ps` for its status.",
-          ),
-        );
-        process.exit(1);
-      }
-
-      const child = spawn(command[0], command.slice(1), {
-        stdio: "inherit",
-        windowsHide: true,
-        cwd: serviceDir,
-        env: {
-          ...process.env,
-          CADET_WORKSPACE_DIR: workspaceDir,
-        },
-      });
-      await new Promise<void>((resolve) => {
-        child.on("close", (code) => {
-          process.exitCode = code ?? 0;
-          resolve();
-        });
-        child.on("error", (err) => {
-          console.error(red(`Error: ${err.message}`));
-          process.exitCode = 1;
-          resolve();
-        });
-      });
-      return;
+    // Every cloud routes inside the exec operation — the command is args,
+    // resolution, and exit-code mapping, like every other command.
+    const result = await execCommand(entry, {
+      command,
+      service,
+      interactive,
+      verbose,
+      timeoutMs,
+    });
+    if ("error" in result) {
+      console.error(red(`Error: ${result.error}`));
+      process.exitCode = result.status;
+    } else {
+      process.exitCode = result.code;
     }
-
-    if (cloud === "apple-container") {
-      const fullServiceName = `cadet-${service}`;
-      if (interactive) {
-        await sshAppleContainer(entry, command, fullServiceName);
-      } else {
-        await execAppleContainer(entry, command, fullServiceName);
-      }
-      return;
-    }
-
-    if (cloud === "docker") {
-      const container = resolveDockerContainer(entry.assistantId, service);
-      const dockerArgs = interactive
-        ? ["exec", "-it", container, ...command]
-        : ["exec", container, ...command];
-
-      const child = spawn("docker", dockerArgs, {
-        stdio: "inherit",
-        windowsHide: true,
-      });
-      await new Promise<void>((resolve, reject) => {
-        child.on("close", (code) => {
-          if (code === 0) resolve();
-          else {
-            process.exitCode = code ?? 1;
-            resolve();
-          }
-        });
-        child.on("error", reject);
-      });
-      return;
-    }
-
-    if (cloud === "baseten") {
-      if (!entry.name || !entry.sandboxUrl) {
-        console.error(
-          red(
-            `Error: assistant '${entry.assistantId}' has no sandbox name/URL recorded — re-hatch with \`cadet hatch --remote baseten\` to fix.`,
-          ),
-        );
-        process.exit(1);
-      }
-      const { code } = await execBasetenSandbox({
-        assistantId: entry.assistantId,
-        sandboxUrl: entry.sandboxUrl,
-        name: entry.name,
-        command,
-        service,
-        interactive,
-        ...(timeoutMs !== DEFAULT_EXEC_TIMEOUT
-          ? { timeoutSeconds: Math.round(timeoutMs / 1000) }
-          : {}),
-      });
-      process.exitCode = code;
-      return;
-    }
-
-    if (isCloudEntry(entry)) {
-      const token = readCloudToken();
-      if (!token) {
-        console.error(
-          red(
-            "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
-          ),
-        );
-        process.exit(1);
-      }
-
-      const assistant = {
-        assistantId: entry.assistantId,
-        token,
-        cloudUrl: getCloudBaseUrl(),
-      };
-
-      const serviceParam = service === "assistant" ? undefined : service;
-
-      if (interactive) {
-        // Interactive mode: shell-escape argv and delegate to full terminal
-        await interactiveSession(
-          assistant,
-          shellEscapeArgs(command),
-          serviceParam,
-        );
-        return;
-      }
-
-      // Non-interactive: sentinel-based output capture with exit code
-      await nonInteractiveExec(assistant, command, {
-        verbose,
-        timeoutMs,
-        service: serviceParam,
-      });
-      return;
-    }
-
-    console.error(
-      red(
-        `Error: 'cadet exec' is not supported for ${cloud} assistants — supported: local, docker, apple-container, cloud, baseten.`,
-      ),
-    );
-    process.exit(1);
   },
   { description: "Execute a command inside an assistant's container" },
 );

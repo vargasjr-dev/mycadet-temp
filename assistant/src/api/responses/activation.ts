@@ -33,7 +33,7 @@ export const ACTIVATION_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
  */
 export const ACTIVATION_CONVERSATION_ID_MAX_LENGTH = 128;
 
-export const ActivationIdSchema = z
+const ActivationIdSchema = z
   .string()
   .regex(ACTIVATION_ID_PATTERN)
   .describe("Opaque lowercase-kebab identifier, 1-64 characters");

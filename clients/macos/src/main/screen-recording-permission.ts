@@ -13,8 +13,8 @@ import {
   queryFreshMacHelperPermission,
   type MacHelperPermissionStatus,
 } from "./hotkey-helper";
-import log from "./logger";
-import { JsonRpcHelperError } from "./sidecar/mac-helper.client";
+import log from "@mycadet/electron-desktop/app-logger";
+import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 
 /**
@@ -28,7 +28,7 @@ export const JSON_RPC_PERMISSION_DENIED = -32001;
  * again. A share asks for frames on a cadence, and Settings jumping forward
  * on every one of them would be a window the user cannot get away from.
  */
-export const ASK_COOLDOWN_MS = 30_000;
+const ASK_COOLDOWN_MS = 30_000;
 
 let lastStatus: MacHelperPermissionStatus | null = null;
 let answering = false;

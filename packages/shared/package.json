@@ -5,6 +5,7 @@
   "exports": {
     ".": "./index.ts",
     "./eslint/imports-first": "./eslint/imports-first.mjs",
+    "./eslint/no-empty-imports": "./eslint/no-empty-imports.mjs",
     "./eslint/no-re-exports": "./eslint/no-re-exports.mjs",
     "./fetch": "./fetch.ts",
     "./github-repository": "./github-repository.ts",

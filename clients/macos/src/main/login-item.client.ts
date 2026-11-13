@@ -3,7 +3,6 @@ import { app } from "electron";
 import {
   configureLoginItem,
   installLoginItem as installPackagedLoginItem,
-  installLoginItemIpc,
 } from "@mycadet/electron-desktop/login-item";
 import {
   onSettingChange,
@@ -37,5 +36,3 @@ export const installLoginItem = (): void => {
   }
   installPackagedLoginItem();
 };
-
-export { installLoginItemIpc };

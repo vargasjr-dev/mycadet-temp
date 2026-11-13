@@ -146,7 +146,7 @@ function readAnthropicMessage(
  * and the 403 branch disambiguates a model/plan restriction from generic auth.
  * Context-overflow is handled separately (see {@link detectAnthropicContextOverflow}).
  */
-export function deriveAnthropicReason(
+function deriveAnthropicReason(
   error: InstanceType<typeof Anthropic.APIError>,
 ): ProviderErrorReason {
   const apiType = readAnthropicErrorType(error);

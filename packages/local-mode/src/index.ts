@@ -23,6 +23,38 @@ export {
 export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export { execBasetenSandbox } from "./remotes/baseten/exec";
 export { localExecDirForService } from "./remotes/local/exec";
+export { ensureLocalBinShims } from "./remotes/local/exec";
+export {
+  DEFAULT_EXEC_TIMEOUT,
+  execCommand,
+} from "./operations/exec";
+export {
+  appleContainerPair,
+  execAppleContainer,
+  sshAppleContainer,
+} from "./remotes/apple-container/exec";
+export {
+  closeTerminalSession,
+  createTerminalSession,
+  execViaTerminalSession,
+  parseSentinelOutput,
+  stripAnsi,
+  interactiveSession,
+  nonInteractiveExec,
+  resizeTerminalSession,
+  sendTerminalInput,
+  shellEscapeArgs,
+  subscribeTerminalEvents,
+} from "./remotes/cloud/exec";
+export type {
+  NonInteractiveExecOptions,
+  ResolvedManagedAssistant,
+} from "./remotes/cloud/exec";
+export { RemoteExecTimeoutError } from "./remotes/cloud/exec";
+export type {
+  ExecCommandOptions,
+  ExecCommandResult,
+} from "./operations/exec";
 export { createBackup, formatSize } from "./backup-ops";
 
 export { type ManagedProcessEntry } from "./daemon-readiness";

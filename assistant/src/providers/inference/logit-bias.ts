@@ -23,7 +23,7 @@ import { KIMI_CJK_SINGLE_CHAR_TOKEN_IDS } from "./kimi-cjk-token-ids.js";
  * Chinese (dominant-probability tokens) intact. Not a hard ban (-100 would
  * clip legitimate CJK); tunable if slips persist in real usage.
  */
-export const SUPPRESS_CJK_BIAS = -4;
+const SUPPRESS_CJK_BIAS = -4;
 
 let suppressCjkMap: Readonly<Record<string, number>> | undefined;
 

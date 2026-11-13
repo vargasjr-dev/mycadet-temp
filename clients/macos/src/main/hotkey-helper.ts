@@ -34,9 +34,7 @@ import type {
   DictationPartialEvent,
   DictationPartialsResult,
   HelperRestartResult,
-  HelperState,
   HotkeyEvent,
-  HotkeyEventState,
   HotkeySelectionResult,
   ModifierHold,
   ModifierHoldRegistrationResult,
@@ -55,30 +53,17 @@ import {
   provideFrameScrollWatch,
 } from "./frame-scroll-watch";
 import { handle } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   JsonRpcHelperError,
-  MacHelperClient,
-  type MacHelperClientOptions,
-  type MacHelperState,
-} from "./sidecar/mac-helper.client";
+  NativeSidecarClient as MacHelperClient,
+  type NativeSidecarClientOptions as MacHelperClientOptions,
+  type NativeSidecarState as MacHelperState,
+} from "@mycadet/native-sidecar/supervisor";
 import {
   getMacHelperAppPath,
   getMacHelperPath,
 } from "./sidecar/mac-helper-path";
-
-export type {
-  ChordBinding,
-  ChordRegistrationResult,
-  DictationPartialEvent,
-  DictationPartialsResult,
-  HelperRestartResult,
-  HelperState,
-  HotkeyEvent,
-  HotkeyEventState,
-  ModifierHold,
-  ModifierHoldRegistrationResult,
-};
 
 export type MacHelperPermissionKind =
   | "speechRecognition"

@@ -43,7 +43,7 @@ const REMEMBER_CONTENT_DESCRIPTION =
  * instruction to interpret or strip the markup, so it would persist as
  * literal buffer text there.
  */
-export const REMEMBER_PAGE_HINT_GUIDANCE =
+const REMEMBER_PAGE_HINT_GUIDANCE =
   "When a fact relates to memory pages already in your context, reference the most specific ones inline as [[slug]] wikilinks — consolidation reads hinted pages first when filing the fact, which matters most for corrections (the hint names the page carrying the outdated fact). Hint only pages you have actually seen, and prefer specific pages over broad hubs.";
 
 /**

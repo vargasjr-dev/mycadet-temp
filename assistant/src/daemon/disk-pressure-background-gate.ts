@@ -64,8 +64,3 @@ export function diskPressureBackgroundSkipLogFields(
     path: decision.status.path,
   };
 }
-
-/** @internal */
-export function __resetDiskPressureBackgroundGateForTests(): void {
-  lastSkipLogAtByKey.clear();
-}

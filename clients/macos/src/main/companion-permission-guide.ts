@@ -37,7 +37,7 @@ import {
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
 import { handle, on } from "./ipc";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   GUIDE_HEIGHT,
   GUIDE_WIDTH,
@@ -119,6 +119,9 @@ function dismissGuide(returnToOwner = false): void {
   }
 }
 
+/** The rectangle fields a nudge is allowed to move. */
+const rectangleKeys: (keyof Rectangle)[] = ["x", "y", "width", "height"];
+
 function guideSender(id: number, sender: WebContents): GuideSession | null {
   return guide?.state.id === id && guide.window.webContents === sender
     ? guide
@@ -154,11 +157,7 @@ async function followSettings(session: GuideSession): Promise<void> {
     session.height,
   );
   const current = session.window.getBounds();
-  if (
-    Object.keys(next).some(
-      (key) => next[key as keyof Rectangle] !== current[key as keyof Rectangle],
-    )
-  ) {
+  if (rectangleKeys.some((key) => next[key] !== current[key])) {
     session.window.setBounds(
       next,
       !systemPreferences.getAnimationSettings().prefersReducedMotion,
@@ -178,7 +177,7 @@ function yieldToSettings(session: GuideSession): void {
  * the guide closes itself when the grant lands.
  */
 export async function beginPermissionGuide(
-  service: PermissionsService,
+  service: Pick<PermissionsService, "state" | "refresh">,
   kind: DraggablePermissionKind,
   sender?: WebContents,
   source?: PermissionSourceRect,
@@ -318,7 +317,7 @@ export async function beginPermissionGuide(
 }
 
 export function installCompanionPermissionGuide(
-  service: PermissionsService,
+  service: Pick<PermissionsService, "state" | "refresh">,
 ): void {
   onAvatarChange(() => {
     if (guide) {

@@ -23,7 +23,7 @@ export const TOOL_DISPLAY_NAMES: Record<string, string> = {
  * Map of known prior-assistant IDs (from the client onboarding UI) to display names.
  * Unknown IDs pass through with first-letter capitalization via `normalizePriorAssistants`.
  */
-export const PRIOR_ASSISTANT_DISPLAY_NAMES: Record<string, string> = {
+const PRIOR_ASSISTANT_DISPLAY_NAMES: Record<string, string> = {
   chatgpt: "ChatGPT",
   claude: "Claude",
   openclaw: "OpenClaw",
@@ -76,7 +76,7 @@ export function normalizeTasks(tasks: string[]): string[] {
  * Maps each prior-assistant ID through `PRIOR_ASSISTANT_DISPLAY_NAMES`,
  * falling back to first-letter capitalization for unknown IDs.
  */
-export function normalizePriorAssistants(assistants: string[]): string[] {
+function normalizePriorAssistants(assistants: string[]): string[] {
   return assistants.map(
     (id) => PRIOR_ASSISTANT_DISPLAY_NAMES[id] ?? capitalizeFirst(id),
   );
@@ -109,7 +109,7 @@ const SCOPE_SERVICE_MAP: Record<string, string> = {
   drive: "Drive",
 };
 
-export function deriveGoogleServices(scopes?: string[]): string[] {
+function deriveGoogleServices(scopes?: string[]): string[] {
   if (!scopes?.length) {
     return ["Gmail", "Calendar", "Drive"];
   }

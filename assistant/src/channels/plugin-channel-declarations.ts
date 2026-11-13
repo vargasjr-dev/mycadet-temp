@@ -34,7 +34,7 @@ import { type AvailableChannel } from "./types.js";
  * The declaration that makes a plugin a channel. Owned by the gateway, which
  * parses it; named here only to test for it.
  */
-export const PLUGIN_INGRESS_MANIFEST_RELPATH = "channels/ingress.json";
+const PLUGIN_INGRESS_MANIFEST_RELPATH = "channels/ingress.json";
 
 /** Icon for a plugin naming none. The generic "a message arrives here" glyph. */
 const FALLBACK_ICON = "message-square";

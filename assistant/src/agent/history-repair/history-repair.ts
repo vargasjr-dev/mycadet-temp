@@ -422,7 +422,7 @@ export const WEB_SEARCH_ORDERING_PATTERNS: readonly RegExp[] = [
 ];
 
 /** Provider rejections for APIs that require the last history turn to be a user or function turn. */
-export const USER_TERMINAL_HISTORY_PATTERNS: readonly RegExp[] = [
+const USER_TERMINAL_HISTORY_PATTERNS: readonly RegExp[] = [
   /ending with a model turn/i,
   /must end with a user (turn|message)/i,
 ];

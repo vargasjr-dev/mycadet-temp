@@ -101,18 +101,3 @@ export const FETCH_PROVIDER_CATALOG: readonly FetchProviderCatalogEntry[] = [
 export const FETCH_PROVIDER_IDS: readonly string[] = FETCH_PROVIDER_CATALOG.map(
   (p) => p.id,
 );
-
-/** Catalog entries that require a user-supplied API key. */
-export const BYOK_FETCH_PROVIDERS: readonly FetchProviderCatalogEntry[] =
-  FETCH_PROVIDER_CATALOG.filter((p) => p.kind === "byok");
-
-/** BYOK fetch-provider ids. */
-export const BYOK_FETCH_PROVIDER_IDS: readonly string[] =
-  BYOK_FETCH_PROVIDERS.map((p) => p.id);
-
-/** Look up a single catalog entry by id. Returns `undefined` if unknown. */
-export function getFetchProvider(
-  id: string,
-): FetchProviderCatalogEntry | undefined {
-  return FETCH_PROVIDER_CATALOG.find((p) => p.id === id);
-}

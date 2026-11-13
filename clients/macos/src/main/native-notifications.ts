@@ -31,7 +31,7 @@ import {
   type NotificationLike,
 } from "@mycadet/electron-desktop/notifications";
 
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 import {
   ensureNotifierDelegate,
   getNotifier,
@@ -41,12 +41,19 @@ import {
   type NotifierRequest,
 } from "./notifier";
 
-type Listeners = {
-  click?: () => void;
-  action?: (event: unknown, index: number) => void;
-  show?: () => void;
-  failed?: (event: unknown, error: string) => void;
+type NotificationEvent = "click" | "action" | "show" | "failed";
+
+/** The handler each event delivers, matching NotificationLike's contract. */
+type NotificationListenerMap = {
+  click: () => void;
+  action: (event: unknown, index: number) => void;
+  show: () => void;
+  failed: (event: unknown, error: string) => void;
 };
+
+// Keyed by event, so a stored handler keeps the exact signature its event
+// promises — a click handler is not an action handler with fewer opinions.
+type Listeners = { [E in NotificationEvent]?: NotificationListenerMap[E] };
 
 /**
  * The addon registers one `UNNotificationCategory` per identifier and hands the
@@ -103,7 +110,12 @@ export const createNativeNotificationFactory = (): {
     if (!sender) {
       const notification = createElectronNotification(options);
       return {
-        on: notification.on.bind(notification) as NotificationLike["on"],
+        on: <E extends NotificationEvent>(
+          event: E,
+          listener: NotificationListenerMap[E],
+        ): void => {
+          Reflect.apply(notification.on, notification, [event, listener]);
+        },
         show: () => {
           notification.show();
           // Electron's presenter takes the notification center's delegate when
@@ -115,9 +127,12 @@ export const createNativeNotificationFactory = (): {
     }
 
     const listeners: Listeners = {};
-    const on = ((event: string, listener: unknown): void => {
-      Object.assign(listeners, { [event]: listener });
-    }) as NotificationLike["on"];
+    const on = <E extends NotificationEvent>(
+      event: E,
+      listener: NotificationListenerMap[E],
+    ): void => {
+      listeners[event] = listener;
+    };
 
     const resolveSender = (): NotifierRequest["sender"] => {
       // The addon reads the avatar from disk: Intents takes image data, not a

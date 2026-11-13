@@ -394,7 +394,7 @@ export const oauthProviderSummarySchema = z.object({
  * than a closed schema. `oauth_callback_url` is the ingress callback URL the
  * web UI consumes (null when ingress is not configured).
  */
-export const oauthProviderDetailSchema = z.object({
+const oauthProviderDetailSchema = z.object({
   provider: z.record(z.string(), z.unknown()),
   oauth_callback_url: z.string().nullable(),
 });

@@ -30,7 +30,7 @@ export function isVisionNotSupportedError(message: string): boolean {
 // vLLM/Jinja-style template engines behind OpenAI-compatible endpoints, e.g.
 // Together serving MiniMax M3: "Failed to apply chat template: invalid
 // operation: object is not callable (in chat:22)".
-export const CHAT_TEMPLATE_FAILURE_PATTERNS = [
+const CHAT_TEMPLATE_FAILURE_PATTERNS = [
   /appl\w* (?:the )?chat[ _-]?template/i,
   /chat[ _-]?template (?:error|render)/i,
   // Fireworks surfaces the renderer's raw Python str.join TypeError without

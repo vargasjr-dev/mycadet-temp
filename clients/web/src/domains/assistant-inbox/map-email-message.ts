@@ -1,4 +1,4 @@
-import type { EmailMessage } from "@/generated/api/types.gen";
+import type { EmailMessage } from "@/lib/email-api";
 
 import type { EmailAttachment, EmailDetailData, InboxEmail } from "./types";
 

@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { chromium, webkit } from "playwright";
 
-import type {} from "./fixtures/browser-notification-delivery";
-
 const build = await Bun.build({
   entrypoints: [
     fileURLToPath(

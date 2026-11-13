@@ -9,16 +9,6 @@ import { TtsServiceSchema } from "./tts.js";
 export const ServiceModeSchema = z
   .enum(["managed", "your-own"])
   .meta({ id: "ServiceMode" });
-type ServiceMode = z.infer<typeof ServiceModeSchema>;
-
-export const VALID_INFERENCE_PROVIDERS = [
-  "anthropic",
-  "openai",
-  "gemini",
-  "ollama",
-  "fireworks",
-  "openrouter",
-] as const;
 
 // `cadet` generates through the cloud runtime proxy; the backend
 // (gemini/openai) derives from the selected model's prefix at request time.
@@ -254,22 +244,3 @@ export const ServicesSchema = z.object({
   ),
 });
 export type Services = z.infer<typeof ServicesSchema>;
-
-/**
- * Safely read the `mode` of a `services.*` entry.
- *
- * Most service entries (OAuth providers, inference, etc.) extend
- * `BaseServiceSchema` and therefore carry a `mode: "managed" | "your-own"`
- * field.
- *
- * Returns `undefined` when the requested service entry has no `mode` field,
- * so callers can treat those entries as implicitly "your-own" without the
- * compiler tripping on a union widened by non-BaseService members.
- */
-export function getServiceMode(
-  services: Services,
-  key: keyof Services,
-): ServiceMode | undefined {
-  const entry = services[key] as { mode?: ServiceMode };
-  return entry.mode;
-}

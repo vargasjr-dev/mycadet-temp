@@ -131,7 +131,9 @@ describe("resolveShellPath", () => {
     const promise = resolveShellPath();
     lastChild.stdout.emit(
       "data",
-      Buffer.from(`Welcome to my shell!\nnvm warning\n${wrap("/usr/local/bin:/usr/bin")}`),
+      Buffer.from(
+        `Welcome to my shell!\nnvm warning\n${wrap("/usr/local/bin:/usr/bin")}`,
+      ),
     );
     lastChild.emit("close", 0);
 
@@ -362,9 +364,7 @@ describe("findExecutablesInPath", () => {
   test("skips empty and duplicate PATH entries", () => {
     executablePaths.add("/a/cadet");
 
-    expect(findExecutablesInPath("cadet", ":/a::/a:/a:")).toEqual([
-      "/a/cadet",
-    ]);
+    expect(findExecutablesInPath("cadet", ":/a::/a:/a:")).toEqual(["/a/cadet"]);
   });
 
   test("normalizes trailing-slash entries to the same hit", () => {

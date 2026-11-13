@@ -27,12 +27,12 @@
 
 import { basename } from "node:path";
 
+import type { AcpAgentConfig as ConfiguredAcpAgent } from "../config/acp-schema.js";
 import {
   type AcpAgentProfile,
   DEFAULT_ACP_AGENT_PROFILES,
   DEFAULT_AGENT_NPM_PACKAGES,
-} from "../config/acp-defaults.js";
-import type { AcpAgentConfig as ConfiguredAcpAgent } from "../config/acp-schema.js";
+} from "../config/acp-schema.js";
 import { getConfig } from "../config/loader.js";
 import type { AcpAgentConfig } from "./types.js";
 

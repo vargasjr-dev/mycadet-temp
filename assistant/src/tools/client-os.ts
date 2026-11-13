@@ -28,7 +28,7 @@ export function desktopClientName(
     : "macOS";
 }
 
-export function supportsClientOs(
+function supportsClientOs(
   supportedClientOs: readonly ClientOs[] | undefined,
   clientOs: ClientOs | undefined,
 ): boolean {
@@ -39,7 +39,7 @@ export function supportsClientOs(
   );
 }
 
-export function getSkillToolHostCapability(
+function getSkillToolHostCapability(
   toolName: string,
 ): HostProxyCapability | undefined {
   if (toolName.startsWith("computer_use_")) {
@@ -48,7 +48,7 @@ export function getSkillToolHostCapability(
   return undefined;
 }
 
-export function getEligibleHostClientOs(
+function getEligibleHostClientOs(
   capability: HostProxyCapability,
   context: HostClientContext,
 ): Set<ClientOs> {

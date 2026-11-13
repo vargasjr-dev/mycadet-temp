@@ -19,7 +19,7 @@ export function baseLanguageSubtag(language?: string): string | undefined {
  * fallback is English text can label the result as English (e.g. for a TTS
  * language hint) instead of the requested language.
  */
-export function hasLocalizedEntry(
+function hasLocalizedEntry(
   table: Readonly<Record<string, unknown>>,
   language: string | undefined,
 ): boolean {

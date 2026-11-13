@@ -11,7 +11,7 @@
 import { indexOfTag, partialTagSuffix } from "../util/think-tag-stream.js";
 
 /** Openers a streaming scanner holds back so XML tool calls are not shown as text. */
-export const XML_TOOL_CALL_OPEN_TAGS = [
+const XML_TOOL_CALL_OPEN_TAGS = [
   "<invoke",
   "<function_calls",
   "<minimax:tool_call",

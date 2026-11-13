@@ -11,6 +11,7 @@ import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
 import { getDaemonPidPath } from "./instance";
 import { startCes, startGateway, startLocalDaemon } from "./common";
+import { ensureLocalBinShims } from "./exec";
 import type { WakeResult } from "../../operations/wake";
 
 export async function wakeLocal(
@@ -76,6 +77,16 @@ async function wakeLocalSteps(
   },
 ): Promise<WakeResult> {
   const { watch, defaultWorkspaceConfigPath } = opts;
+
+  // Refresh the instance's bin/ shims first: they bake the source entries
+  // this wake is about to run, and an upgrade that just installed a new
+  // runtime must never leave exec resolving the previous one. Best-effort —
+  // a shim that cannot resolve just stays absent (exec reports it).
+  try {
+    ensureLocalBinShims(entry);
+  } catch {
+    // shim materialization never blocks a wake
+  }
 
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);

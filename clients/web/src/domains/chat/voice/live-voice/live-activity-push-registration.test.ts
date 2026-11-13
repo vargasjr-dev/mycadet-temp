@@ -26,31 +26,31 @@ mock.module("@capacitor/app", () => ({
   App: { getInfo: getInfoMock },
 }));
 
-// ── generated platform SDK ───────────────────────────────────────────────────
+// ── the push dial seam ───────────────────────────────────────────────────────
 
-interface UpsertArg {
-  path: { assistant_id: string };
-  body: {
-    token: string;
-    bundle_id: string;
-    apns_environment: string;
-    conversation_id: string;
-    labels: Record<string, string>;
-    accent_hex: string;
-    muted: boolean;
-  };
-  throwOnError: boolean;
+interface UpsertBody {
+  token: string;
+  bundle_id: string;
+  apns_environment: string;
+  conversation_id: string;
+  labels: Record<string, string>;
+  accent_hex: string;
+  muted: boolean;
 }
 
-let lastUpsertArg: UpsertArg | null = null;
-const upsertMock = mock(async (arg: UpsertArg) => {
-  lastUpsertArg = arg;
-  return { data: {}, error: undefined };
+let lastUpsert: { assistantId: string; body: UpsertBody } | null = null;
+const upsertMock = mock(async (assistantId: string, body: UpsertBody) => {
+  lastUpsert = { assistantId, body };
+  return { error: null };
 });
-const deleteMock = mock(async () => ({ data: undefined, error: undefined }));
-mock.module("@/generated/api/sdk.gen", () => ({
-  assistantsLiveActivityTokensUpsert: upsertMock,
-  assistantsLiveActivityTokensDelete: deleteMock,
+const deleteMock = mock(async () => ({ error: null }));
+// The whole function surface: sibling suites in a shared process mock this
+// module too, and a partial re-registration would hide exports from them.
+mock.module("@/lib/push-api", () => ({
+  upsertLiveActivityToken: upsertMock,
+  deleteLiveActivityToken: deleteMock,
+  upsertDevicePushToken: upsertMock,
+  deleteDevicePushToken: deleteMock,
 }));
 
 // ── capture-error ─────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ const { registerLiveActivityPushToken } =
 const { changeLocale } = await import("@/i18n");
 
 beforeEach(() => {
-  lastUpsertArg = null;
+  lastUpsert = null;
   resolveSignedApnsEnvironmentMock.mockClear();
   getInfoMock.mockClear();
   upsertMock.mockClear();
@@ -88,11 +88,11 @@ describe("registerLiveActivityPushToken APNs environment", () => {
 
     expect(resolveSignedApnsEnvironmentMock).toHaveBeenCalledWith(bundleId);
     expect(upsertMock).toHaveBeenCalledTimes(1);
-    expect(lastUpsertArg?.path).toEqual({ assistant_id: "assistant-1" });
-    expect(lastUpsertArg?.body.token).toBe("activity-token");
-    expect(lastUpsertArg?.body.bundle_id).toBe(bundleId);
-    expect(lastUpsertArg?.body.conversation_id).toBe("conv-1");
-    expect(lastUpsertArg?.body.apns_environment).toBe("production");
+    expect(lastUpsert?.assistantId).toBe("assistant-1");
+    expect(lastUpsert?.body.token).toBe("activity-token");
+    expect(lastUpsert?.body.bundle_id).toBe(bundleId);
+    expect(lastUpsert?.body.conversation_id).toBe("conv-1");
+    expect(lastUpsert?.body.apns_environment).toBe("production");
   });
 });
 
@@ -106,8 +106,8 @@ describe("registerLiveActivityPushToken content state", () => {
       muted: true,
     });
 
-    expect(lastUpsertArg?.body.accent_hex).toBe("#22CC99");
-    expect(lastUpsertArg?.body.muted).toBe(true);
+    expect(lastUpsert?.body.accent_hex).toBe("#22CC99");
+    expect(lastUpsert?.body.muted).toBe(true);
   });
 
   /**
@@ -119,15 +119,15 @@ describe("registerLiveActivityPushToken content state", () => {
   test("bakes the mute state into the pushed label table", async () => {
     await registerLiveActivityPushToken({ ...REGISTRATION, muted: true });
 
-    expect(lastUpsertArg?.body.labels.listening).toBe("Muted");
+    expect(lastUpsert?.body.labels.listening).toBe("Muted");
     // The assistant's own phases are unaffected by a muted mic.
-    expect(lastUpsertArg?.body.labels.thinking).toBe("Thinking…");
+    expect(lastUpsert?.body.labels.thinking).toBe("Thinking…");
   });
 
   test("pushes the listening label unmuted when the mic is live", async () => {
     await registerLiveActivityPushToken({ ...REGISTRATION, muted: false });
 
-    expect(lastUpsertArg?.body.labels.listening).toBe("Listening…");
+    expect(lastUpsert?.body.labels.listening).toBe("Listening…");
   });
 
   /**
@@ -140,8 +140,8 @@ describe("registerLiveActivityPushToken content state", () => {
     try {
       await registerLiveActivityPushToken(REGISTRATION);
 
-      expect(lastUpsertArg?.body.labels.listening).toBe("Escuchando…");
-      expect(lastUpsertArg?.body.labels.thinking).toBe("Pensando…");
+      expect(lastUpsert?.body.labels.listening).toBe("Escuchando…");
+      expect(lastUpsert?.body.labels.thinking).toBe("Pensando…");
     } finally {
       // Process-global, so leaving it set would fail every later assertion.
       await changeLocale("en");
@@ -158,16 +158,16 @@ describe("registerLiveActivityPushToken content state", () => {
       releaseFirst = resolve;
     });
     let calls = 0;
-    upsertMock.mockImplementation(async (arg: UpsertArg) => {
-      lastUpsertArg = arg;
+    upsertMock.mockImplementation(async (assistantId: string, body: UpsertBody) => {
+      lastUpsert = { assistantId, body };
       calls += 1;
       // Hold the first request open past the point the second is issued, so
       // an unserialized implementation would let the second overtake it.
       if (calls === 1) {
         await firstInFlight;
       }
-      arrived.push(arg.body.muted);
-      return { data: {}, error: undefined };
+      arrived.push(body.muted);
+      return { error: null };
     });
 
     const first = registerLiveActivityPushToken({
@@ -183,6 +183,6 @@ describe("registerLiveActivityPushToken content state", () => {
     await Promise.all([first, second]);
 
     expect(arrived).toEqual([true, false]);
-    expect(lastUpsertArg?.body.muted).toBe(false);
+    expect(lastUpsert?.body.muted).toBe(false);
   });
 });

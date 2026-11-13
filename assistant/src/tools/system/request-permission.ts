@@ -53,7 +53,7 @@ const WINDOWS_SETTINGS_URLS: Partial<Record<PermissionType, string>> = {
   microphone: "ms-settings:privacy-microphone",
 };
 
-export const resolveSystemPermissionSettingsUrl = (
+const resolveSystemPermissionSettingsUrl = (
   permType: PermissionType,
   clientOs: string | undefined,
 ): string | undefined =>

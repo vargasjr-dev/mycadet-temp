@@ -27,7 +27,7 @@ export interface HelperShareTarget {
 }
 
 /** The rectangle the shared surface occupies, in the same screen points. */
-export interface SurfaceRect {
+interface SurfaceRect {
   x: number;
   y: number;
   width: number;
@@ -47,7 +47,7 @@ export const SHARE_TARGETS_MAX = 40;
  * a target, so every name offered is one the tool accepts. Past it the text
  * is content being read rather than a control's name.
  */
-export const SHARE_TARGET_LABEL_MAX = 120;
+const SHARE_TARGET_LABEL_MAX = 120;
 
 /**
  * The smallest side, in points, a control is offered with.
@@ -55,7 +55,7 @@ export const SHARE_TARGET_LABEL_MAX = 120;
  * Chromium reports collapsed rows and hidden buttons as 1pt tall, stacked at
  * one y, and an arrow aimed at one lands on whatever visible row is above.
  */
-export const SHARE_TARGET_MIN_SIDE = 2;
+const SHARE_TARGET_MIN_SIDE = 2;
 
 /**
  * Roles a person presses, types into or picks. Offered ahead of static text

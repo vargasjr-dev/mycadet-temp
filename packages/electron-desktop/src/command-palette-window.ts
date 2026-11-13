@@ -23,7 +23,12 @@ const PANEL_WIDTH = 584;
 const PANEL_HEIGHT = 444;
 
 export interface CommandPaletteWindowDependencies {
-  currentMainWindow: () => BrowserWindow | null;
+  // Narrowed to the visibility trio the palette reads: callers hand the
+  // window they have, and only presence-and-state matters here.
+  currentMainWindow: () => Pick<
+    BrowserWindow,
+    "isDestroyed" | "isVisible" | "isMinimized"
+  > | null;
   dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
   handle: IpcHandle;

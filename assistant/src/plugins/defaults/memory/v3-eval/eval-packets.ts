@@ -75,7 +75,7 @@ export interface Corpus {
 }
 
 /** Read every `.md` page under `dir` into a {@link Corpus}. */
-export function loadCorpus(dir: string): Corpus {
+function loadCorpus(dir: string): Corpus {
   if (!existsSync(dir)) {
     throw new Error(`corpus directory does not exist: ${dir}`);
   }
@@ -417,7 +417,7 @@ function sortForPairing(rows: RawMsgRow[]): RawMsgRow[] {
  * prior run — the eval is only reproducible if the turns are held fixed while
  * the staged corpus changes.
  */
-export function mineTurns(
+function mineTurns(
   db: DrizzleDb,
   opts: {
     limit: number;

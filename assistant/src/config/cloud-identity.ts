@@ -43,7 +43,7 @@ function asNonEmptyString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function applyCloudIdentityIds(ids: CloudIdentityIds): void {
+function applyCloudIdentityIds(ids: CloudIdentityIds): void {
   if (ids.assistantId) {
     setCloudAssistantId(ids.assistantId);
   }

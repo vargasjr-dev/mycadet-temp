@@ -319,7 +319,7 @@ function extractRepoUrl(pkg: ParsedPackageJson): string | undefined {
 /**
  * POST the publish payload to the Cadet Cloud API.
  */
-export async function postPublishRequest(
+async function postPublishRequest(
   payload: PublishPayload,
   deps: PublishDeps,
 ): Promise<PublishResult> {
@@ -346,7 +346,7 @@ export async function postPublishRequest(
  * `CadetCloudClient` into its static import graph; resolving it lazily
  * keeps that daemon code out of the CLI process until the command needs it.
  */
-export async function resolvePlatformDeps(): Promise<PublishDeps | null> {
+async function resolvePlatformDeps(): Promise<PublishDeps | null> {
   const { CadetCloudClient } = await import("../../cloud/client.js");
   const client = await CadetCloudClient.create();
   if (!client) {

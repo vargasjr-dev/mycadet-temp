@@ -103,7 +103,7 @@ const createConversationTypeSchema = z.enum([
 ] as const satisfies readonly NonScheduledConversationType[]);
 
 /** The conversation an id or key names, or a 404 naming what the caller asked for. */
-export function resolveOrThrow(rawId: string): string {
+function resolveOrThrow(rawId: string): string {
   const id = resolveConversationId(rawId);
   if (!id) {
     throw new NotFoundError(`Conversation ${rawId} not found`);

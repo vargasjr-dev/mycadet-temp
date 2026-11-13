@@ -1,12 +1,11 @@
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
 
 import {
-  assistantsEmailAddressesStatusRetrieveOptions,
-  assistantsEmailsListOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+  useEmailAddressStatus,
+  useEmails,
+} from "@/lib/email-api";
 import {
   emailAttachmentlistGet,
   emailDownloadGet,
@@ -67,32 +66,22 @@ export interface InboxMail {
  */
 export function useInboxMail(addressId: string): InboxMail {
   const assistantId = useActiveAssistantId();
-  const path = { assistant_id: assistantId };
-
-  const receivedQuery = useQuery(
-    assistantsEmailsListOptions({
-      path,
-      query: { direction: "inbound", limit: PAGE_SIZE },
-    }),
-  );
-  const sentQuery = useQuery(
-    assistantsEmailsListOptions({
-      path,
-      query: { direction: "outbound", limit: PAGE_SIZE },
-    }),
-  );
-  const usageQuery = useQuery(
-    assistantsEmailAddressesStatusRetrieveOptions({
-      path: { ...path, id: addressId },
-    }),
-  );
+  const receivedQuery = useEmails(assistantId, {
+    direction: "inbound",
+    limit: PAGE_SIZE,
+  });
+  const sentQuery = useEmails(assistantId, {
+    direction: "outbound",
+    limit: PAGE_SIZE,
+  });
+  const usageQuery = useEmailAddressStatus(assistantId, addressId);
 
   const received = useMemo(
-    () => (receivedQuery.data?.results ?? []).map(mapEmailMessage),
+    () => (receivedQuery.data ?? []).map(mapEmailMessage),
     [receivedQuery.data],
   );
   const sent = useMemo(
-    () => (sentQuery.data?.results ?? []).map(mapEmailMessage),
+    () => (sentQuery.data ?? []).map(mapEmailMessage),
     [sentQuery.data],
   );
   const usage = useMemo<InboxUsage | undefined>(() => {

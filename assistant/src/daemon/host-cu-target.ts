@@ -43,7 +43,7 @@ export type HostCuTargetResolution =
  * Exported so both doors name the same rule rather than each testing the tool
  * for themselves.
  */
-export function hostCuCapabilityFor(toolName: string): HostCuRoutingCapability {
+function hostCuCapabilityFor(toolName: string): HostCuRoutingCapability {
   return toolName === POINT_AT_PROXY_TOOL ? "host_cu_annotate" : "host_cu";
 }
 

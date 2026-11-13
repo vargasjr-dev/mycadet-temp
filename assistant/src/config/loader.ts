@@ -135,7 +135,7 @@ function cloneDefaultConfig(): AssistantConfig {
  * assistant deployments. Local, Docker, and bare-metal assistants are
  * unaffected.
  */
-export function getDeploymentContextDefaults(): Record<string, unknown> {
+function getDeploymentContextDefaults(): Record<string, unknown> {
   if (process.env.IS_CLOUD !== "true" && process.env.IS_CLOUD !== "1") {
     return {};
   }
@@ -197,7 +197,7 @@ export function getDeploymentContextDefaults(): Record<string, unknown> {
  * `target`. The defensive whole-subtree assignment in the `!targetChild`
  * branch only fires for malformed inputs.
  */
-export function fillContextDefaultsForMissingKeys(
+function fillContextDefaultsForMissingKeys(
   target: Record<string, unknown>,
   fileConfig: Record<string, unknown>,
   contextDefaults: Record<string, unknown>,
@@ -1376,10 +1376,7 @@ export function saveRawConfig(config: Record<string, unknown>): void {
   cachedFileSignature = null;
 }
 
-export function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string,
-): unknown {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {

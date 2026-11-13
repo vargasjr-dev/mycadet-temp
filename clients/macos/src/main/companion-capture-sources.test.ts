@@ -13,7 +13,7 @@ mock.module("electron", () => ({
   app: { getFileIcon: async () => ({ isEmpty: () => true }) },
   screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
 }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },
 }));
 mock.module("./appleScriptExecutor", () => ({

@@ -60,7 +60,7 @@ export function buildWrapperScript(): string {
   ].join("\n");
 }
 
-export type WrapperOwnership = "ours" | "foreign" | "absent";
+type WrapperOwnership = "ours" | "foreign" | "absent";
 
 /**
  * Classify what sits at the wrapper path. Anything present that can't be
@@ -75,7 +75,7 @@ export function readWrapperOwnership(): WrapperOwnership {
   try {
     lstatSync(wrapperPath);
   } catch (err) {
-    return (err as NodeJS.ErrnoException).code === "ENOENT"
+    return err instanceof Error && "code" in err && err.code === "ENOENT"
       ? "absent"
       : "foreign";
   }

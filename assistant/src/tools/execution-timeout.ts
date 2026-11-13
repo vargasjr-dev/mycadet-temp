@@ -61,7 +61,7 @@ export interface SettlementTracker<T> {
  * this to tell a call whose work actually finished from one they walked away
  * from while it was still running.
  */
-export function trackSettlement<T>(promise: Promise<T>): SettlementTracker<T> {
+function trackSettlement<T>(promise: Promise<T>): SettlementTracker<T> {
   let settled = false;
   let value: T | undefined;
   const tracked = promise.then(

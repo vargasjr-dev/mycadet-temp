@@ -1,5 +1,3 @@
-import { app } from "electron";
-
 import { configureCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
 import { configureDictationOverlayWindow } from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
@@ -16,7 +14,7 @@ import {
 import { RENDERER_BASE_PROD } from "./app-config";
 import { handle, on } from "./ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
-import { createWindow } from "./windows";
+import { createWindow } from "@mycadet/electron-desktop/windows";
 
 const resolveRoute = createWindowRouteResolver(() => RENDERER_BASE_PROD);
 

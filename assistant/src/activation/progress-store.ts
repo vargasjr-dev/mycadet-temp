@@ -89,7 +89,7 @@ export const ACTIVATION_PROGRESS_FILENAME = "activation-progress.json";
  * both the disk write and the broadcast coalesce into one per window with
  * a trailing flush that persists the final count.
  */
-export const ACTIVATION_STEP_BUMP_THROTTLE_MS = 2_000;
+const ACTIVATION_STEP_BUMP_THROTTLE_MS = 2_000;
 
 /** Live throttle window. Only {@link resetActivationStepThrottleForTesting} moves it. */
 let stepThrottleMs: number = ACTIVATION_STEP_BUMP_THROTTLE_MS;

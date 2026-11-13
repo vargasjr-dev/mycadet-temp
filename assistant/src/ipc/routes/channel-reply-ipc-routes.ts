@@ -40,9 +40,7 @@ import type { RouteHandlerArgs } from "../../runtime/routes/types.js";
  * `channels/send` answers it: only a `RouteError` carries a status over IPC,
  * and the gateway reads an error without one as a daemon that never answered.
  */
-export async function handleDeliverGatewayReply({
-  body = {},
-}: RouteHandlerArgs) {
+async function handleDeliverGatewayReply({ body = {} }: RouteHandlerArgs) {
   const { callbackUrl, chatId, text, assistantId } = parseBody(
     GatewayReplyRequestSchema,
     body,

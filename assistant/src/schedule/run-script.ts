@@ -12,15 +12,15 @@ const log = getLogger("run-script");
 /** Maximum combined stdout + stderr captured (bytes). */
 const MAX_OUTPUT_BYTES = 10_000;
 /** Default timeout for script execution (ms) when a schedule sets no override. */
-export const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 60_000;
 /** Smallest script timeout override a caller may set (ms). */
-export const MIN_SCRIPT_TIMEOUT_MS = 1_000;
+const MIN_SCRIPT_TIMEOUT_MS = 1_000;
 /**
  * Largest script timeout override a caller may set (ms). Capped so a wedged
  * script cannot block the scheduler tick indefinitely; mirrors the talk-mode
  * budget in scheduler.ts.
  */
-export const MAX_SCRIPT_TIMEOUT_MS = 30 * 60 * 1000;
+const MAX_SCRIPT_TIMEOUT_MS = 30 * 60 * 1000;
 /**
  * How long to wait for the output pipes to drain after the process group is
  * killed before giving up (ms). A pipe only reaches EOF once every process

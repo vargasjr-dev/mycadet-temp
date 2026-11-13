@@ -16,9 +16,7 @@ test("Electron exposes the initiating frame for custom-protocol gateway requests
     import.meta.dir,
     "fixtures/gateway-request-guard",
   );
-  const tempDir = mkdtempSync(
-    path.join(os.tmpdir(), "gateway-request-guard-"),
-  );
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), "gateway-request-guard-"));
   const resultPath = path.join(tempDir, "result.json");
   try {
     const processHandle = Bun.spawn([electron, fixture], {
@@ -33,7 +31,7 @@ test("Electron exposes the initiating frame for custom-protocol gateway requests
     const exitCode = await processHandle.exited;
     expect(exitCode).toBe(0);
 
-    const result = JSON.parse(readFileSync(resultPath, "utf8")) as {
+    const result: {
       trustedStatus: number;
       foreignStatus: number;
       gatewayHandlerCalls: number;
@@ -43,7 +41,7 @@ test("Electron exposes the initiating frame for custom-protocol gateway requests
         secFetchSite: string | null;
       };
       observations: Array<{ frameOrigin: string | null }>;
-    };
+    } = JSON.parse(readFileSync(resultPath, "utf8"));
     expect(result).toEqual({
       trustedStatus: 200,
       foreignStatus: 0,

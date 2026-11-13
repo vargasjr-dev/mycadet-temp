@@ -142,7 +142,7 @@ export function loadWorkspaceMcpConfig(): McpConfig {
  * Refuse a write when `mcp.json` exists but is not a usable document, so a
  * later add/remove cannot clobber a hand-edit the user still means to fix.
  */
-export function assertWorkspaceMcpWritable(): void {
+function assertWorkspaceMcpWritable(): void {
   const result = readWorkspaceMcpFile();
   if (result.fileState === "invalid") {
     throw new Error(result.issues[0] ?? "mcp.json is not a valid document");

@@ -556,7 +556,7 @@ export async function readAcpClaudeRefreshToken(): Promise<string | null> {
 }
 
 /** Whether renewal material is on hand, without revealing it. */
-export async function hasAcpClaudeRefreshToken(): Promise<boolean> {
+async function hasAcpClaudeRefreshToken(): Promise<boolean> {
   return (await readAcpClaudeRefreshToken()) != null;
 }
 

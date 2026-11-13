@@ -59,7 +59,7 @@ export const INTRODUCTION_ACTION_SET: ReadonlySet<string> = new Set([
 ]);
 
 /** Completed-card label shown for a parked (leave-unverified) decision. */
-export const PARK_STATUS_LABEL = "Left unverified";
+const PARK_STATUS_LABEL = "Left unverified";
 
 /** Outcome word per terminal guardian-request status on a resolved card. */
 const DECISION_STATUS_WORDS: Record<string, string> = {

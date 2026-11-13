@@ -19,6 +19,7 @@ import {
   stripReplyMechanicsFromCopy,
   stripRequestCodeDirectives,
 } from "./notification-utils.js";
+import type { ToolApprovalSourceView } from "./tool-approval-source-view.js";
 import type { RenderedChannelCopy } from "./types.js";
 
 // ── Schema primitives ──────────────────────────────────────────────────
@@ -110,18 +111,17 @@ const sourceReferenceFields = {
   sourceLink: externalSourceLinkSchema.optional(),
 };
 
-export const ToolApprovalPayloadSchema =
-  GuardianQuestionPayloadBaseSchema.extend({
-    requestKind: z.literal("tool_approval"),
-    toolName: z.string().min(1),
-    /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
-    riskLevel: z.string().optional(),
-    /** Secret-redacted summary of the tool invocation arguments. */
-    commandPreview: z.string().optional(),
-    ...sourceReferenceFields,
-  });
+const ToolApprovalPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
+  requestKind: z.literal("tool_approval"),
+  toolName: z.string().min(1),
+  /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
+  riskLevel: z.string().optional(),
+  /** Secret-redacted summary of the tool invocation arguments. */
+  commandPreview: z.string().optional(),
+  ...sourceReferenceFields,
+});
 
-export const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
+const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
   requestKind: z.literal("tool_grant_request"),
   toolName: z.string().min(1),
   /** Risk classification from the permission checker (e.g. "low", "medium", "high"). */
@@ -131,7 +131,7 @@ export const ToolGrantPayloadSchema = GuardianQuestionPayloadBaseSchema.extend({
   ...sourceReferenceFields,
 });
 
-export const AccessRequestGuardianPayloadSchema =
+const AccessRequestGuardianPayloadSchema =
   GuardianQuestionPayloadBaseSchema.extend({
     requestKind: z.literal("access_request"),
   });
@@ -178,37 +178,6 @@ export type LenientToolApprovalPayload = z.infer<
 >;
 
 // ── Source reference projection ─────────────────────────────────────────
-
-/**
- * Display-ready source reference for a tool-approval card, shared by every
- * renderer (the Cadet Surface card and the channel adapters) so the
- * chat-id/permalink derivation lives in exactly one place. Declared as a
- * Zod schema because the broadcaster carries the projected view on
- * `ChannelDeliveryPayload` (computed once per broadcast, never re-derived
- * per channel).
- *
- * Core fields (`channel`, `chatId`, `permalink`) are channel-neutral.
- * Channel-scoped display facts are named for their channel (`isSlackDm`)
- * and gated on `channel` — renderers branch on them for richer labels but
- * must degrade to the neutral fields for every other channel, so a new
- * channel renders correctly with no projection changes.
- */
-export const ToolApprovalSourceViewSchema = z.object({
-  /** Channel the request originated from (e.g. `"slack"`). */
-  channel: z.string(),
-  /** Channel-native chat id, when the payload carries one. */
-  chatId: z.string().optional(),
-  /** Display name of the originating chat, when ingress captured one. */
-  chatName: z.string().optional(),
-  /** Whether the source chat is a Slack direct message (`false` for other channels). */
-  isSlackDm: z.boolean(),
-  /** Link to the originating message/thread, when derivable. */
-  permalink: z.string().optional(),
-});
-
-export type ToolApprovalSourceView = z.infer<
-  typeof ToolApprovalSourceViewSchema
->;
 
 /**
  * Project a tool-approval payload's source reference into display-ready
@@ -283,7 +252,7 @@ export function buildToolApprovalSourceView(
 export const QUESTION_SKIP_ACTION_ID = "answer_skip";
 
 /** Action id for the option at `index` on a question card. */
-export function buildQuestionOptionActionId(index: number): string {
+function buildQuestionOptionActionId(index: number): string {
   return `answer_${index}`;
 }
 

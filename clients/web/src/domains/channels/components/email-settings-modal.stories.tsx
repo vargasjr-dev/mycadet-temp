@@ -8,12 +8,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
 import { EmailSettingsModal } from "@/domains/channels/components/email-settings-modal";
-import {
-  assistantsDomainsListOptions,
-  assistantsDomainsVerificationStatusRetrieveOptions,
-  assistantsEmailAddressesListOptions,
-  assistantsEmailAddressesStatusRetrieveOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+import { domainKeys } from "@/lib/assistant-domains";
+import { emailKeys } from "@/lib/email-api";
 import { assistantChannelAdmissionPolicyListQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -31,51 +27,33 @@ const ADDRESS = `hi@${SUBDOMAIN}.${ROOT_DOMAIN}`;
 const TRUST_FLOORS_VERSION = "0.10.0";
 
 const withEmailQueryCache = withQueryCache((client) => {
-  const path = { assistant_id: ASSISTANT_ID };
-  client.setQueryData(assistantsDomainsListOptions({ path }).queryKey, {
-    count: 1,
-    next: null,
-    previous: null,
-    results: [
-      {
-        id: DOMAIN_ID,
-        subdomain: SUBDOMAIN,
-        created: "2026-09-01T00:00:00Z",
-        modified: "2026-09-01T00:00:00Z",
-      },
-    ],
-  });
-  client.setQueryData(assistantsEmailAddressesListOptions({ path }).queryKey, {
-    count: 1,
-    next: null,
-    previous: null,
-    results: [
-      { id: ADDRESS_ID, address: ADDRESS, created_at: "2026-09-01T00:00:00Z" },
-    ],
-  });
+  client.setQueryData(domainKeys.domains(ASSISTANT_ID), [
+    {
+      id: DOMAIN_ID,
+      subdomain: SUBDOMAIN,
+      created: "2026-09-01T00:00:00Z",
+      modified: "2026-09-01T00:00:00Z",
+    },
+  ]);
+  client.setQueryData(emailKeys.emailAddresses(ASSISTANT_ID), [
+    { id: ADDRESS_ID, address: ADDRESS, created_at: "2026-09-01T00:00:00Z" },
+  ]);
   client.setQueryData(
-    assistantsDomainsVerificationStatusRetrieveOptions({
-      path: { ...path, id: DOMAIN_ID },
-    }).queryKey,
+    domainKeys.domainVerificationStatus(ASSISTANT_ID, DOMAIN_ID),
     { domain: `${SUBDOMAIN}.${ROOT_DOMAIN}`, status: "verified", message: "" },
   );
-  client.setQueryData(
-    assistantsEmailAddressesStatusRetrieveOptions({
-      path: { ...path, id: ADDRESS_ID },
-    }).queryKey,
-    {
-      address: ADDRESS,
-      status: "active",
-      usage: {
-        sent_today: 3,
-        daily_limit: 100,
-        received_today: 5,
-        sent_this_month: 41,
-        received_this_month: 67,
-      },
-      created_at: "2026-09-01T00:00:00Z",
+  client.setQueryData(emailKeys.emailAddressStatus(ASSISTANT_ID, ADDRESS_ID), {
+    address: ADDRESS,
+    status: "active",
+    usage: {
+      sent_today: 3,
+      daily_limit: 100,
+      received_today: 5,
+      sent_this_month: 41,
+      received_this_month: 67,
     },
-  );
+    created_at: "2026-09-01T00:00:00Z",
+  });
   client.setQueryData(
     assistantChannelAdmissionPolicyListQueryKey({
       path: { assistant_id: LOCAL_ASSISTANT_ID },

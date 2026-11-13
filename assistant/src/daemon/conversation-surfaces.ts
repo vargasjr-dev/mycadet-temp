@@ -383,7 +383,7 @@ export function flushSurfaceDataPersist(surfaceId: string): void {
  * Called on dismissal so an in-flight `ui_update` snapshot cannot land after
  * the surface block has been removed.
  */
-export function cancelSurfaceDataPersist(surfaceId: string): void {
+function cancelSurfaceDataPersist(surfaceId: string): void {
   const pending = pendingSurfacePersists.get(surfaceId);
   if (!pending) {
     return;
@@ -627,7 +627,7 @@ export function completeSurfaceAndNotify(
  * pending debounced data persist first so a late `ui_update` snapshot cannot
  * re-add the block, then strips the block from in-memory messages and the DB.
  */
-export function removeSurfaceBlock(
+function removeSurfaceBlock(
   ctx: { conversationId: string; messages?: Array<{ content: unknown }> },
   surfaceId: string,
 ): void {
@@ -2900,7 +2900,7 @@ function ensureHostCuProxy(ctx: Conversation): HostCuProxy | undefined {
  * `ui_surface` block. The single writer behind the model's `ui_update` tool
  * and the daemon's own surface mutations.
  */
-export function applySurfaceUpdate(
+function applySurfaceUpdate(
   ctx: Conversation,
   surfaceId: string,
   patch: Record<string, unknown>,

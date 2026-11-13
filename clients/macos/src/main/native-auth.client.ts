@@ -1,9 +1,6 @@
 import { app, session, shell } from "electron";
 
-import {
-  configureNativeAuth,
-  installNativeAuth,
-} from "@mycadet/electron-desktop/native-auth";
+import { configureNativeAuth } from "@mycadet/electron-desktop/native-auth";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { handle, handleSync } from "./ipc";
@@ -12,7 +9,7 @@ import {
   clearSessionToken,
   getSessionToken,
   saveSessionToken,
-} from "./session-token-store.client";
+} from "@mycadet/electron-desktop/session-token-store";
 
 configureNativeAuth({
   activateWindow: () => {
@@ -29,5 +26,3 @@ configureNativeAuth({
     save: saveSessionToken,
   },
 });
-
-export { installNativeAuth };

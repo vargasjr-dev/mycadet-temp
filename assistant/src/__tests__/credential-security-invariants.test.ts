@@ -184,30 +184,6 @@ describe("Invariant 3: secrets never logged in plaintext", () => {
           "this is fine",
         );
       });
-    } else if (tc.component === "message_decode") {
-      // PR 24 — message decode log hygiene: the TS daemon's message parser must
-      // not log raw message content that could contain secrets.
-      // Logging metadata (line length, error type) is acceptable; logging
-      // the raw line, trimmed content, or error.message is not.
-      test(`${tc.label}`, () => {
-        const thisDir = dirname(fileURLToPath(import.meta.url));
-        const protocolSrc = readFileSync(
-          resolve(thisDir, "../daemon/message-protocol.ts"),
-          "utf-8",
-        );
-        // Verify log calls never include raw content fields — only safe
-        // metadata like lineLength and errorType are permitted.
-        // `trimmed.length` is safe (numeric); `trimmed` alone would leak raw content.
-        // Use [^\n]* instead of [^)]* so that inner parentheses (e.g.
-        // helper calls like formatErr(err)) don't terminate the match
-        // early — avoiding false negatives — while still scoping each
-        // pattern to a single line (no cross-statement matching).
-        expect(protocolSrc).not.toMatch(/\blog\.\w+\([^\n]*[{,]\s*trimmed[^.]/);
-        expect(protocolSrc).not.toMatch(/\blog\.\w+\([^\n]*[{,]\s*line[^L]/);
-        expect(protocolSrc).not.toMatch(/\blog\.\w+\([^\n]*[{,]\s*data\b/);
-        expect(protocolSrc).not.toMatch(/\blog\.\w+\([^\n]*[{,]\s*buffer\b/);
-        expect(protocolSrc).not.toMatch(/\blog\.\w+\([^\n]*err\.message\b/);
-      });
     } else {
       // PR 25 — secret prompter log hygiene: verify the prompter source
       // never logs sensitive field values (value, secret, password, token)

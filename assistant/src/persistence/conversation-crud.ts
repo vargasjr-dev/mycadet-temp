@@ -4054,17 +4054,6 @@ export function resolveDurableProfile(
   return resolveOverrideProfile(fields);
 }
 
-/**
- * Resolve a conversation's durable inference-profile pin by id. Convenience
- * wrapper over {@link resolveDurableProfile} for callers that don't already
- * hold the row.
- */
-export function getConversationDurableProfile(
-  conversationId: string,
-): string | undefined {
-  return resolveDurableProfile(getConversation(conversationId));
-}
-
 export function setLastNotifiedInferenceProfile(
   conversationId: string,
   profileKey: string | null,

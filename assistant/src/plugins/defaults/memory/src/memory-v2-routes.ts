@@ -606,7 +606,7 @@ export async function handleSimulateRouter({
 
 // ── Router prompt template (bundled default) ────────────────────────────
 
-export const MemoryV2RouterPromptTemplateResultSchema = z.object({
+const MemoryV2RouterPromptTemplateResultSchema = z.object({
   /** The bundled router prompt body, placeholders intact. */
   template: z.string(),
 });
@@ -622,7 +622,7 @@ async function handleGetRouterPromptTemplate(): Promise<MemoryV2RouterPromptTemp
 
 // ── Current `<now>` body (default value) ────────────────────────────────
 
-export const MemoryV2NowTextResultSchema = z.object({
+const MemoryV2NowTextResultSchema = z.object({
   /** The current rendered NOW.md body (autoloaded essentials/threads/recent). */
   nowText: z.string(),
 });
@@ -655,7 +655,7 @@ const MemoryV2CompareRetrieversParams = z
 const DEFAULT_COMPARE_LIMIT = 20;
 const DEFAULT_COMPARE_KS = [5, 10, 25, 50];
 
-export async function handleCompareRetrievers({
+async function handleCompareRetrievers({
   body = {},
   abortSignal,
 }: RouteHandlerArgs): Promise<ComparisonReport> {

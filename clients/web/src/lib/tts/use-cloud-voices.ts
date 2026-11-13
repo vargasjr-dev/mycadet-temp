@@ -13,8 +13,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { managedSpeechTtsVoicesRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
-
 /**
  * A cloud voice as offered to the UI. `source` is a plain `string` so
  * voices the cloud serves before this client learns their source still
@@ -64,16 +62,32 @@ function toResult(
  * The catalog read straight from the cloud. The only transport left: the
  * daemon's managed-voices proxy was deleted along with managed (Cadet) speech,
  * so every voice surface reads the cloud directly and callers without a
- * platform session get an empty catalog.
+ * platform session get an empty catalog. The dial is the cloud's own
+ * unscoped spelling on whichever plane serves the bundle, so a
+ * cloud-hosted bundle hits the real route and a self-hosted one 404s
+ * into the empty catalog it has always shown.
  */
 export function useUnscopedCloudVoices(
   options: { enabled?: boolean } = {},
 ): UseCloudVoices {
   const { data, isLoading } = useQuery({
-    ...managedSpeechTtsVoicesRetrieveOptions(),
+    queryKey: ["cloud-speech", "tts", "voices"],
     enabled: options.enabled ?? true,
     staleTime: 60_000,
     retry: false,
+    queryFn: async (): Promise<VoiceCatalogResponse> => {
+      // The catalog read is a deliberate same-origin swap of the generated
+      // cloud dial: the cloud serves the route on cloud-hosted bundles and
+      // a self-hosted host 404s into the empty catalog it has always
+      // shown. The generated client's device/registration headers are
+      // identity hints the catalog read does not need.
+      // eslint-disable-next-line no-restricted-syntax -- the catalog read is host-plane; see above
+      const response = await fetch("/v1/cloud-speech/tts/voices/");
+      if (!response.ok) {
+        throw new Error(`The voice catalog dial failed (${response.status})`);
+      }
+      return (await response.json()) as VoiceCatalogResponse;
+    },
   });
 
   return toResult(data, isLoading);

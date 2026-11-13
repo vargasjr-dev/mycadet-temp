@@ -147,19 +147,11 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
     isError: false,
   }),
 }));
-const apiReactQueryActual =
-  await import("@/generated/api/@tanstack/react-query.gen");
-mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
-  ...apiReactQueryActual,
-  assistantsOauthConnectionsListOptions: () => ({
-    queryKey: ["oauth-connections"],
-    queryFn: async () => seededConnections,
-  }),
-  useAssistantsOauthDisconnectByConnectionCreateMutation: () => ({
-    mutate: (variables: { path: { connection_id: string } }) => {
-      disconnectedConnectionIds.push(variables.path.connection_id);
-    },
-    isPending: false,
+mock.module("@/domains/settings/oauth-connections", () => ({
+  useOauthConnectionsQuery: () => ({
+    data: seededConnections,
+    isLoading: false,
+    isError: false,
   }),
 }));
 mock.module("@/assistant/hosting", () => ({

@@ -29,7 +29,7 @@ export const DEFAULT_TURN_COMMIT_MAX_WAIT_MS = 4_000;
  * Slack on top of the commit budget, covering the rest of a turn's
  * post-release finalization (the reaction-record drain, the barrier close).
  */
-export const TURN_FINALIZATION_MARGIN_MS = 1_000;
+const TURN_FINALIZATION_MARGIN_MS = 1_000;
 
 /**
  * How long to wait for a finished turn's turn-boundary commit to complete.

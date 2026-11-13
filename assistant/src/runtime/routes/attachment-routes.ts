@@ -158,7 +158,7 @@ export const attachmentMetadataSchema = z.object({
  * One row of the conversation attachment listing: the shared metadata plus
  * where it hangs in the transcript and whether live vision captured it.
  */
-export const conversationAttachmentSchema = attachmentMetadataSchema.extend({
+const conversationAttachmentSchema = attachmentMetadataSchema.extend({
   messageId: z.string(),
   createdAt: z
     .number()

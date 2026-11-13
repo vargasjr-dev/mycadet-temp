@@ -203,7 +203,7 @@ export function callerFromStack(
 }
 
 /** Log a slow statement execution at WARN with its SQL and duration. */
-export function reportSlowQuery(event: SlowQueryEvent): void {
+function reportSlowQuery(event: SlowQueryEvent): void {
   log.warn(event, "Slow SQLite query blocked the event loop");
 }
 

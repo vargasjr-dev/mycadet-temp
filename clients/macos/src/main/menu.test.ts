@@ -47,22 +47,25 @@ mock.module("@mycadet/electron-desktop/about", () => ({
   openAboutWindow: () => undefined,
 }));
 
-mock.module("./auto-update.client", () => ({
+mock.module("@mycadet/electron-desktop/auto-update", () => ({
   checkForUpdates: () => undefined,
+  configureAutoUpdate: () => undefined,
+  resolveUpdateFeedUrl: () => "",
 }));
 
-mock.module("./commands.client", () => ({
+mock.module("@mycadet/electron-desktop/commands", () => ({
   acceleratorOption: () => ({}),
   dispatchToFocused: () => undefined,
+  configureHotkeySettings: () => undefined,
 }));
 
-mock.module("./command-palette.client", () => ({
+mock.module("@mycadet/electron-desktop/command-palette-window", () => ({
   closeCommandPaletteWindow: () => undefined,
   isCommandPaletteWindowFocused: () => false,
   openCommandPaletteWindow: () => undefined,
 }));
 
-mock.module("./devtools", () => ({
+mock.module("@mycadet/electron-desktop/devtools", () => ({
   areChromeDevToolsEnabled: () => false,
 }));
 
@@ -199,7 +202,6 @@ beforeEach(async () => {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-
 
 describe("CLI path menu items", () => {
   test("shows Install while detection state is unknown (null)", async () => {

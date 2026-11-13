@@ -7,8 +7,10 @@
  */
 
 import { z } from "zod";
-import { cloudAuthHeaders, loopbackSafeFetch } from "@mycadet/local-mode";
 import { getCloudBaseUrl } from "@mycadet/shared";
+
+import { cloudAuthHeaders } from "../../cloud-auth";
+import { loopbackSafeFetch } from "../../loopback-fetch";
 
 const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
 

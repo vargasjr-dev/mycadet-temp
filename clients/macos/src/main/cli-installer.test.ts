@@ -14,7 +14,7 @@ const mockAppVersion = "1.2.3";
 // Baked from .tool-versions by electron.vite.config.ts in a real build; set here
 // (before the module import below reads it) so the packageManager stamp is live.
 const mockBunVersion = "1.3.11";
-(globalThis as Record<string, unknown>).__CADET_BUN_VERSION__ = mockBunVersion;
+Reflect.set(globalThis, "__CADET_BUN_VERSION__", mockBunVersion);
 
 // `process.resourcesPath` is only defined inside a packaged Electron app.
 // Set a known value so `path.join(process.resourcesPath, "bun")` works.
@@ -34,7 +34,7 @@ mock.module("electron", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 
@@ -100,10 +100,17 @@ mock.module("node:fs", () => ({
 }));
 
 let lastChild: FakeChild;
-const spawnCalls: Array<[string, string[], object]> = [];
+interface SpawnOptions {
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  stdio?: unknown;
+  [key: string]: unknown;
+}
+
+const spawnCalls: Array<[string, string[], SpawnOptions]> = [];
 
 mock.module("node:child_process", () => ({
-  spawn: (cmd: string, args: string[], opts: object) => {
+  spawn: (cmd: string, args: string[], opts: SpawnOptions) => {
     spawnCalls.push([cmd, args, opts]);
     lastChild = new FakeChild();
     return lastChild;
@@ -497,8 +504,8 @@ describe("ensureCliInstalled", () => {
     const [cmd, args, opts] = spawnCalls[0];
     expect(cmd).toBe(`${mockResourcesPath}/bun`);
     expect(args).toEqual(["add", "@mycadet/cli@latest", "--ignore-scripts"]);
-    expect((opts as { cwd: string }).cwd).toBe(latestInstallDir);
-    const env = (opts as { env: NodeJS.ProcessEnv }).env;
+    expect(opts.cwd).toBe(latestInstallDir);
+    const env = opts.env;
     expect(env).toBeDefined();
     expect(env!.PATH).toContain("/opt/homebrew/bin");
     expect(env!.PATH).toContain("/usr/local/bin");
@@ -888,8 +895,12 @@ describe("cleanupOldVersions", () => {
   });
 
   test("tolerates a missing cli directory (ENOENT)", () => {
-    const enoent = new Error("ENOENT: no such file or directory");
-    (enoent as NodeJS.ErrnoException).code = "ENOENT";
+    const enoent = Object.assign(
+      new Error("ENOENT: no such file or directory"),
+      {
+        code: "ENOENT",
+      },
+    );
     readdirSyncError = enoent;
 
     // Should not throw.

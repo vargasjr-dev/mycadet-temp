@@ -25,7 +25,7 @@ mock.module("electron", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 
@@ -50,11 +50,10 @@ const chmodSyncCalls: Array<[string, number]> = [];
 const renameSyncCalls: Array<[string, string]> = [];
 const rmSyncCalls: Array<[string, object]> = [];
 
-const enoent = () => {
-  const err = new Error("ENOENT: no such file or directory");
-  (err as NodeJS.ErrnoException).code = "ENOENT";
-  return err;
-};
+const enoent = () =>
+  Object.assign(new Error("ENOENT: no such file or directory"), {
+    code: "ENOENT",
+  });
 
 mock.module("node:fs", () => ({
   // Used by the cli-installer and shell-path modules evaluated as deps.
@@ -223,8 +222,9 @@ describe("readWrapperOwnership", () => {
   });
 
   test("returns foreign when the file exists but is unreadable", () => {
-    const eacces = new Error("EACCES: permission denied");
-    (eacces as NodeJS.ErrnoException).code = "EACCES";
+    const eacces = Object.assign(new Error("EACCES: permission denied"), {
+      code: "EACCES",
+    });
     readFileSyncResult = eacces;
     expect(readWrapperOwnership()).toBe("foreign");
   });

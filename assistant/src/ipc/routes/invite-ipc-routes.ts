@@ -54,7 +54,7 @@ const ComposeInvitePresentationParamsSchema = z.object({
  * in-process. The invite row and its secrets stay gateway-owned; this only
  * derives display fields from the one-time create payload.
  */
-export async function handleComposeInvitePresentation({
+async function handleComposeInvitePresentation({
   body = {},
 }: RouteHandlerArgs) {
   const params = ComposeInvitePresentationParamsSchema.parse(body);

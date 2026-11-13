@@ -14,7 +14,7 @@ import {
 import { homedir } from "node:os";
 import path from "node:path";
 
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
 
 // Empty by default: the happy path floats to the environment's dist-tag.
 // Set by hand to pin the bundled CLI to an exact version.
@@ -66,7 +66,7 @@ const BUNDLED_BUN_VERSION =
  * (cli/node_modules is a standalone install, not hoisted). Otherwise local
  * builds fall back to the pinned install path.
  */
-export function getLocalCliEntry(): string | null {
+function getLocalCliEntry(): string | null {
   if (LOCAL_CLI_ENTRY === "" || !existsSync(LOCAL_CLI_ENTRY)) return null;
   const cliRoot = path.resolve(path.dirname(LOCAL_CLI_ENTRY), "..");
   return existsSync(path.join(cliRoot, "node_modules"))
@@ -75,7 +75,7 @@ export function getLocalCliEntry(): string | null {
 }
 
 /** Root directory holding every CLI install: `<userData>/cli`. */
-export function getCliRootDir(): string {
+function getCliRootDir(): string {
   return path.join(app.getPath("userData"), "cli");
 }
 
@@ -101,7 +101,7 @@ function compareVersions(a: string, b: string): number {
  * `cli/latest`, otherwise the highest semver-named dir (including an old
  * pinned dir like `cli/0.9.0`). Returns `null` when nothing is installed.
  */
-export function findExistingInstallDir(): string | null {
+function findExistingInstallDir(): string | null {
   const cliRoot = getCliRootDir();
 
   let entries: Array<{ name: string; isDirectory: () => boolean }>;

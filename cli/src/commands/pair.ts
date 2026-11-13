@@ -44,7 +44,7 @@ import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "../lib/assistant-config.js";
 
-import { appleContainerPair } from "../lib/remotes/apple-container.js";
+import { appleContainerPair } from "@mycadet/local-mode";
 
 import { cloudPair } from "../lib/remotes/cloud.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";

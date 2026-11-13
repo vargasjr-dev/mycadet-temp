@@ -4,7 +4,7 @@ import { z } from "zod";
  * Risk level workspace MCP tools start at. Not a config field: origin
  * decides, and a tool's own MCP annotations then move it one step.
  */
-export const WORKSPACE_MCP_RISK_LEVEL = "medium" as const;
+const WORKSPACE_MCP_RISK_LEVEL = "medium" as const;
 
 /**
  * Risk level plugin-declared MCP tools start at. `mcp.json` has no risk
@@ -12,7 +12,7 @@ export const WORKSPACE_MCP_RISK_LEVEL = "medium" as const;
  * review, so these tools run without prompting under the default
  * auto-approve threshold.
  */
-export const PLUGIN_MCP_RISK_LEVEL = "low" as const;
+const PLUGIN_MCP_RISK_LEVEL = "low" as const;
 
 /** Per-server cap on tools registered from one MCP server. */
 export const MCP_MAX_TOOLS_PER_SERVER = 20;

@@ -169,45 +169,46 @@ mock.module("@capacitor/app", () => ({
 // assertions stay type-safe (the mock's parameter type drives the captured
 // shape).
 
-interface UpsertArg {
-  path: { assistant_id: string };
-  body: {
-    token: string;
-    platform: string;
-    bundle_id: string;
-    apns_environment?: string;
-    capabilities?: string[];
-  };
-  throwOnError: boolean;
-}
-interface DeleteArg {
-  path: { assistant_id: string; token: string };
-  query: { bundle_id: string };
-  throwOnError: boolean;
+interface UpsertBody {
+  token: string;
+  platform: string;
+  bundle_id: string;
+  apns_environment?: string;
+  capabilities?: string[];
 }
 
-let lastUpsertArg: UpsertArg | null = null;
-let lastDeleteArg: DeleteArg | null = null;
-let upsertError: unknown = undefined;
-let deleteError: unknown = undefined;
+let lastUpsert: { assistantId: string; body: UpsertBody } | null = null;
+let lastDelete: {
+  assistantId: string;
+  token: string;
+  bundleId: string;
+} | null = null;
+let upsertError: Error | null = null;
+let deleteError: Error | null = null;
 // When set, the upsert blocks on this gate so a test can interleave logout
 // with an in-flight upsert.
 let upsertGate: Promise<void> | null = null;
 
-const upsertMock = mock(async (arg: UpsertArg) => {
+const upsertMock = mock(async (assistantId: string, body: UpsertBody) => {
   if (upsertGate) {
     await upsertGate;
   }
-  lastUpsertArg = arg;
-  return { data: {}, error: upsertError };
+  lastUpsert = { assistantId, body };
+  return { error: upsertError };
 });
-const deleteMock = mock(async (arg: DeleteArg) => {
-  lastDeleteArg = arg;
-  return { data: undefined, error: deleteError };
-});
-mock.module("@/generated/api/sdk.gen", () => ({
-  assistantsPushTokensUpsert: upsertMock,
-  assistantsPushTokensDelete: deleteMock,
+const deleteMock = mock(
+  async (assistantId: string, token: string, bundleId: string) => {
+    lastDelete = { assistantId, token, bundleId };
+    return { error: deleteError };
+  },
+);
+// The whole function surface: sibling suites in a shared process mock this
+// module too, and a partial re-registration would hide exports from them.
+mock.module("@/lib/push-api", () => ({
+  upsertDevicePushToken: upsertMock,
+  deleteDevicePushToken: deleteMock,
+  upsertLiveActivityToken: upsertMock,
+  deleteLiveActivityToken: deleteMock,
 }));
 
 // ── error reporting ─────────────────────────────────────────────────────
@@ -266,10 +267,10 @@ beforeEach(() => {
   registrationErrorHandler = null;
   actionPerformedHandler = null;
   receivedHandler = null;
-  lastUpsertArg = null;
-  lastDeleteArg = null;
-  upsertError = undefined;
-  deleteError = undefined;
+  lastUpsert = null;
+  lastDelete = null;
+  upsertError = null;
+  deleteError = null;
   upsertGate = null;
   addListenerMock.mockClear();
   requestPermissionsMock.mockClear();
@@ -333,15 +334,14 @@ describe("registerForRemotePush", () => {
     await flushMicrotasks();
 
     expect(upsertMock).toHaveBeenCalledTimes(1);
-    expect(lastUpsertArg).toEqual({
-      path: { assistant_id: "11111111-1111-4111-8111-111111111111" },
+    expect(lastUpsert).toEqual({
+      assistantId: "11111111-1111-4111-8111-111111111111",
       body: {
         token: "apns-token-abc",
         platform: "ios",
         bundle_id: "ai.vocify-inc.mycadet-ios",
         apns_environment: "production",
       },
-      throwOnError: false,
     });
     expect(androidGetCapabilitiesMock).not.toHaveBeenCalled();
   });
@@ -360,7 +360,7 @@ describe("registerForRemotePush", () => {
 
     expect(callOrder).toEqual(["channel", "register"]);
     expect(registerMock).not.toHaveBeenCalled();
-    expect(lastUpsertArg?.body).toEqual({
+    expect(lastUpsert?.body).toEqual({
       token: "fcm-token-abc",
       platform: "android",
       bundle_id: "ai.mycadet.android.dev",
@@ -381,7 +381,7 @@ describe("registerForRemotePush", () => {
     registrationHandler?.({ value: "fcm-token-abc" });
     await flushMicrotasks();
 
-    expect(lastUpsertArg?.body.capabilities).toEqual([]);
+    expect(lastUpsert?.body.capabilities).toEqual([]);
     expect(captureErrorMock).not.toHaveBeenCalled();
   });
 
@@ -393,7 +393,7 @@ describe("registerForRemotePush", () => {
     registrationHandler?.({ value: "fcm-token-abc" });
     await flushMicrotasks();
 
-    expect(lastUpsertArg?.body.capabilities).toEqual([]);
+    expect(lastUpsert?.body.capabilities).toEqual([]);
   });
 
   test("installs listeners but skips registration on Android shells without the guarded plugin", async () => {
@@ -431,7 +431,7 @@ describe("registerForRemotePush", () => {
   });
 
   test("reports an upsert error instead of throwing", async () => {
-    upsertError = { detail: "boom" };
+    upsertError = new Error("boom");
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "apns-token-abc" });
     await flushMicrotasks();
@@ -458,7 +458,7 @@ describe("APNs environment wiring", () => {
     await flushMicrotasks();
 
     expect(resolveSignedApnsEnvironmentMock).toHaveBeenCalledWith(bundleId);
-    expect(lastUpsertArg?.body.apns_environment).toBe("development");
+    expect(lastUpsert?.body.apns_environment).toBe("development");
   });
 });
 
@@ -709,13 +709,10 @@ describe("unregisterFromRemotePush", () => {
     await unregisterFromRemotePush();
 
     expect(deleteMock).toHaveBeenCalledTimes(1);
-    expect(lastDeleteArg).toEqual({
-      path: {
-        assistant_id: "11111111-1111-4111-8111-111111111111",
-        token: "apns-token-abc",
-      },
-      query: { bundle_id: "ai.vocify-inc.mycadet-ios" },
-      throwOnError: false,
+    expect(lastDelete).toEqual({
+      assistantId: "11111111-1111-4111-8111-111111111111",
+      token: "apns-token-abc",
+      bundleId: "ai.vocify-inc.mycadet-ios",
     });
   });
 
@@ -728,9 +725,9 @@ describe("unregisterFromRemotePush", () => {
     registrationHandler?.({ value: "fcm-new" });
     await flushMicrotasks();
 
-    expect(lastDeleteArg?.path.token).toBe("fcm-old");
+    expect(lastDelete?.token).toBe("fcm-old");
     await unregisterFromRemotePush();
-    expect(lastDeleteArg?.path.token).toBe("fcm-new");
+    expect(lastDelete?.token).toBe("fcm-new");
     expect(androidUnregisterMock).toHaveBeenCalledTimes(1);
     expect(unregisterMock).not.toHaveBeenCalled();
   });
@@ -761,10 +758,10 @@ describe("unregisterFromRemotePush", () => {
     await unregisterFromRemotePush();
 
     expect(deleteMock).toHaveBeenCalledTimes(1);
-    expect(lastDeleteArg).toEqual({
-      path: { assistant_id: "assistant-9", token: "persisted-token" },
-      query: { bundle_id: "ai.vocify-inc.mycadet-ios" },
-      throwOnError: false,
+    expect(lastDelete).toEqual({
+      assistantId: "assistant-9",
+      token: "persisted-token",
+      bundleId: "ai.vocify-inc.mycadet-ios",
     });
   });
 
@@ -787,7 +784,7 @@ describe("unregisterFromRemotePush", () => {
     await unregisterPromise;
 
     expect(deleteMock).toHaveBeenCalledTimes(1);
-    expect(lastDeleteArg?.path.token).toBe("race-token");
+    expect(lastDelete?.token).toBe("race-token");
   });
 
   test("awaits ALL concurrent in-flight upserts before deleting, not just the latest", async () => {
@@ -813,7 +810,7 @@ describe("unregisterFromRemotePush", () => {
   });
 
   test("reports a failed delete instead of silently dropping it", async () => {
-    deleteError = { detail: "server error" };
+    deleteError = new Error("server error");
     await registerForRemotePush("11111111-1111-4111-8111-111111111111");
     registrationHandler?.({ value: "apns-token-abc" });
     await flushMicrotasks();

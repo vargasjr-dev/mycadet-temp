@@ -572,11 +572,6 @@ export function stopScheduler(): void {
   stopScheduleWorker();
 }
 
-/** The running scheduler, or null if one was never started. */
-export function getScheduler(): SchedulerHandle | null {
-  return instance;
-}
-
 export async function runScheduleOnce(): Promise<number> {
   const result = await runScheduleDueWorkOnce();
   return result.completed + result.failed + result.skipped;

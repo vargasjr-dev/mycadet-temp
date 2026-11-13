@@ -24,18 +24,16 @@ import { spawn } from "child_process";
 
 import { resolveAssistant } from "../lib/assistant-config";
 
-import { sshAppleContainer } from "../lib/remotes/apple-container.js";
 import {
   closeTerminalSession,
   createTerminalSession,
-  sendTerminalInput,
-  subscribeTerminalEvents,
-} from "../lib/terminal-client.js";
-import {
   interactiveSession,
-  resolveManagedAssistant,
-} from "../lib/terminal-session.js";
-import type { ResolvedManagedAssistant } from "../lib/terminal-session.js";
+  sendTerminalInput,
+  sshAppleContainer,
+  subscribeTerminalEvents,
+  type ResolvedManagedAssistant,
+} from "@mycadet/local-mode";
+import { resolveManagedAssistant } from "../lib/terminal-session.js";
 import type { ChildProcess } from "child_process";
 
 const SSH_OPTS = [

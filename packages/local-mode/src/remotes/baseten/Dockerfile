@@ -39,9 +39,11 @@ ENV PATH="/root/.bun/bin:${PATH}"
 COPY --from=ghcr.io/blaxel-ai/sandbox@sha256:8ebb596be14ed4c48f6fe4352e9d3de45dc31634dbca2194293187f54aba8647 \
   /sandbox-api /usr/local/bin/sandbox-api
 
-# The published stack: `cadet`/`gateway`/`assistant` bins on PATH plus every
-# runtime package (@mycadet/cli, web, gateway, assistant, credential-executor).
-# Stamped from cli/package.json.
+# The published stack: the `cadet` bin on PATH plus every runtime package
+# (@mycadet/cli, web, gateway, assistant, credential-executor). Stamped from
+# cli/package.json. The meta package stopped shipping assistant/gateway bins —
+# on a HOST they shadow the local source; here the shims below replace them
+# with the sandbox's own version-correct resolution.
 ARG MYCADET_VERSION
 RUN bun add -g "mycadet@${MYCADET_VERSION}"
 

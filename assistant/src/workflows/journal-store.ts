@@ -387,20 +387,6 @@ export function getJournal(runId: string): WorkflowJournalEntry[] {
   return rows.map(rowToJournalEntry);
 }
 
-/** Fetch a single journal entry by its `(run_id, seq)` key, or null. */
-export function getJournalEntry(
-  runId: string,
-  seq: number,
-): WorkflowJournalEntry | null {
-  const row = rawGet<WorkflowJournalRow>(
-    "journal:getJournalEntry",
-    `SELECT * FROM workflow_journal WHERE run_id = ? AND seq = ?`,
-    runId,
-    seq,
-  );
-  return row ? rowToJournalEntry(row) : null;
-}
-
 export interface ListRunsOptions {
   limit: number;
   status?: WorkflowRunStatus;
@@ -499,4 +485,18 @@ export function pruneRuns(retentionDays: number): number {
     `,
     cutoff,
   );
+}
+
+/** Fetch a single journal entry by its `(run_id, seq)` key, or null. */
+export function getJournalEntry(
+  runId: string,
+  seq: number,
+): WorkflowJournalEntry | null {
+  const row = rawGet<WorkflowJournalRow>(
+    "journal:getJournalEntry",
+    `SELECT * FROM workflow_journal WHERE run_id = ? AND seq = ?`,
+    runId,
+    seq,
+  );
+  return row ? rowToJournalEntry(row) : null;
 }

@@ -24,7 +24,7 @@ export interface LogRetentionSweeperHandle {
 }
 
 /** How often the background retention sweep runs. */
-export const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+const LOG_RETENTION_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
  * Start the recurring log-retention sweep. No-ops when no dir is configured

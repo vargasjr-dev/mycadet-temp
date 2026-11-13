@@ -12,7 +12,7 @@ import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window"
 import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { installAbout } from "./about.client";
-import { installAutoUpdate } from "./auto-update.client";
+import { installAutoUpdate } from "@mycadet/electron-desktop/auto-update";
 import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
@@ -23,14 +23,26 @@ import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { handle, on } from "./ipc";
-import { hasPendingDeepLinks, installDeepLinks } from "./deep-links.client";
-import { handleBundleFile, installMacBundleWorkflow } from "./bundles";
+// Composition roots: these modules configure the shared desktop packages
+// with this client's seams at import time. Their surfaces are imported
+// directly from the packages below.
+import "./auto-update.client";
+import "./deep-links.client";
+import "./file-open.client";
+import "./native-auth.client";
+import { installNativeAuth } from "@mycadet/electron-desktop/native-auth";
+import {
+  hasPendingDeepLinks,
+  installDeepLinks,
+} from "@mycadet/electron-desktop/deep-links";
+import { installMacBundleWorkflow } from "./bundles";
+import { handleBundleFile } from "@mycadet/electron-desktop/bundle-flow";
 import {
   handleFileOpenArgv,
   hasPendingFiles,
   installFileOpen,
   onFileOpen,
-} from "./file-open.client";
+} from "@mycadet/electron-desktop/file-open";
 import { installAvatarIpc } from "@mycadet/electron-desktop/avatar";
 import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
 import { installDownloads } from "@mycadet/electron-desktop/downloads";
@@ -50,21 +62,22 @@ import { installDock } from "./dock";
 import { installShare } from "./share";
 import { installWindowAttentionFeature } from "./window-attention";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import {
-  installDiagnosticsIpc,
-  installFeedbackIpc,
-} from "./desktop-diagnostics";
+import { installDiagnosticsIpc } from "./desktop-diagnostics";
+import { installFeedbackIpc } from "@mycadet/electron-desktop/feedback";
 import { installGlobalShortcuts } from "./global-shortcuts.client";
 import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
-import { resolveCliInvocation } from "@mycadet/local-mode";
-import { installLoginItem, installLoginItemIpc } from "./login-item.client";
+import { installLoginItem } from "./login-item.client";
+import { installLoginItemIpc } from "@mycadet/electron-desktop/login-item";
 import { installLockfileWatcher } from "@mycadet/electron-desktop/lockfile-watcher";
 import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import { installHostProxyBridge } from "./host-proxy-adapter";
-import log from "./logger";
+import log from "@mycadet/electron-desktop/app-logger";
+
+// Session tokens log through the same app logger (was session-token-store.client).
+setSessionTokenLogger(log);
 import {
   ensureVisible as ensureMainWindowVisible,
   installMainWindow,
@@ -78,13 +91,13 @@ import {
 import {
   getSessionToken,
   onSessionTokenChange,
-} from "./session-token-store.client";
+  setSessionTokenLogger,
+} from "@mycadet/electron-desktop/session-token-store";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
 } from "./move-to-applications";
 import { markRelocationSkipped } from "./install-location";
-import { installNativeAuth } from "./native-auth.client";
 import {
   createNativeNotificationFactory,
   registerNativeNotificationCategories,
@@ -102,7 +115,7 @@ import {
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
-import { installWebContentsSecurity } from "./windows";
+import { installWebContentsSecurity } from "@mycadet/electron-desktop/windows";
 
 // Dev-only: override the workspace `name` (`@mycadet/macos`) so the
 // menu bar's first submenu reads "Cadet Electron", and — more

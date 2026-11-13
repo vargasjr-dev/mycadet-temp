@@ -271,7 +271,7 @@ function hasEmptyMessage(error: ApiError): boolean {
  * actionable message pointing at network/proxy interception instead of the
  * generic "Gemini API error (404): " which reads as "model not found."
  */
-export function formatGeminiErrorMessage(error: ApiError): string {
+function formatGeminiErrorMessage(error: ApiError): string {
   if (hasEmptyMessage(error)) {
     return (
       `Gemini API returned ${error.status} with no response body — ` +
@@ -296,7 +296,7 @@ export function formatGeminiErrorMessage(error: ApiError): string {
  * that case we return `"network_error"` for 404/403 status codes rather than
  * `"model_not_found"` / `"invalid_credentials"`, which would mislead users.
  */
-export function deriveGeminiReason(error: ApiError): ProviderErrorReason {
+function deriveGeminiReason(error: ApiError): ProviderErrorReason {
   const status = error.status;
   const message = error.message ?? "";
   const upper = message.toUpperCase();

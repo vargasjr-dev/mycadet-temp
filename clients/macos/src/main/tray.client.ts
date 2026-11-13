@@ -3,7 +3,6 @@ import { shell, type NativeImage } from "electron";
 import {
   configureTrayModel,
   installTray as installSharedTray,
-  __resetForTesting,
   type TrayHandlers,
   type TrayMenuIcon,
 } from "@mycadet/electron-desktop/tray-model";
@@ -22,7 +21,7 @@ import {
   MENU_ICON_REFRESHCW,
   MENU_ICON_SETTINGS,
 } from "./assets/menu-icons";
-import { acceleratorOption } from "./commands.client";
+import { acceleratorOption } from "@mycadet/electron-desktop/commands";
 import {
   replayCompanionIntro,
   setCompanionSurfaceSize,
@@ -30,7 +29,6 @@ import {
 } from "./companion-window";
 import { dispatchToMain } from "./main-window";
 import { menuIcon } from "./menu-icon";
-import { readSetting } from "@mycadet/electron-desktop/settings";
 
 const ICONS: Record<TrayMenuIcon, NativeImage> = {
   check: menuIcon(MENU_ICON_CIRCLECHECK),
@@ -41,9 +39,6 @@ const ICONS: Record<TrayMenuIcon, NativeImage> = {
   refresh: menuIcon(MENU_ICON_REFRESHCW),
   settings: menuIcon(MENU_ICON_SETTINGS),
 };
-
-export type { TrayHandlers };
-export { __resetForTesting };
 
 export const installTray = (handlers: TrayHandlers): void => {
   configureTrayModel({

@@ -23,7 +23,7 @@
 
 import { registerPlugin } from "@capacitor/core";
 
-import type { ApnsEnvironmentEnum } from "@/generated/api/types.gen";
+import type { PushApnsEnvironment } from "@/lib/push-api";
 
 interface ApnsEnvironmentPlugin {
   get(): Promise<{ environment?: string }>;
@@ -37,7 +37,7 @@ const ApnsEnvironment =
 const DEV_BUNDLE_SUFFIX = ".dev";
 
 /** Suffix-heuristic fallback for absent or `"unknown"` plugin results. */
-function resolveApnsEnvironment(bundleId: string): ApnsEnvironmentEnum {
+function resolveApnsEnvironment(bundleId: string): PushApnsEnvironment {
   return bundleId.endsWith(DEV_BUNDLE_SUFFIX) ? "development" : "production";
 }
 
@@ -47,7 +47,7 @@ function resolveApnsEnvironment(bundleId: string): ApnsEnvironmentEnum {
  */
 export async function resolveSignedApnsEnvironment(
   bundleId: string,
-): Promise<ApnsEnvironmentEnum> {
+): Promise<PushApnsEnvironment> {
   try {
     // Only the result crosses this `async` boundary, never the plugin Proxy
     // itself (see CAPACITOR.md).

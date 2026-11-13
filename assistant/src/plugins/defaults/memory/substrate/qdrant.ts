@@ -840,24 +840,6 @@ export async function recreateConceptPageCollection(): Promise<void> {
 }
 
 /**
- * Probe whether the v2 concept-page collection currently exists in Qdrant
- * **without** triggering creation. Read-only diagnostics use this to avoid
- * the side effect of bootstrapping storage just by inspecting it.
- */
-export async function conceptPageCollectionExists(): Promise<boolean> {
-  const client = getClient();
-  try {
-    const result = await client.collectionExists(MEMORY_V2_COLLECTION);
-    return result.exists;
-  } catch (err) {
-    if (isCollectionMissing(err)) {
-      return false;
-    }
-    throw err;
-  }
-}
-
-/**
  * Best-effort delete of the legacy `memory_v2_skills` Qdrant collection. Skill
  * embeddings now live alongside concept pages in `memory_v2_concept_pages`
  * under the `skills/<id>` slug prefix, so the dedicated collection is dead
