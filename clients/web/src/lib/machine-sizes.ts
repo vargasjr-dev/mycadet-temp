@@ -1,4 +1,5 @@
-import type { MachineSizeEnum } from "@/generated/api/types.gen";
+/** Machine sizes the resize dial accepts, carried locally off the sdk. */
+export type MachineSizeEnum = "small" | "medium" | "large" | "extra_large";
 /**
  * Pro tier ceilings → machine sizes the org may run at within that tier.
  * Keys mirror `BillingAccount.max_machine_tier` ("medium" | "large" | "xl");
