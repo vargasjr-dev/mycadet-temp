@@ -30,6 +30,7 @@ import { registerGatewayCommand } from "./commands/gateway.js";
 import { registerImageGenerationCommand } from "./commands/image-generation.js";
 import { registerInferenceCommand } from "./commands/inference.js";
 import { registerKeysCommand } from "./commands/keys.js";
+import { registerLogsCommand } from "./commands/logs.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerMemoryCommand } from "./commands/memory/index.js";
 import { registerMonitoringCommand } from "./commands/monitoring.js";
@@ -100,6 +101,7 @@ Examples:
   registerClientsCommand(program);
   registerCompletionsCommand(program);
   registerConfigCommand(program);
+  registerLogsCommand(program);
   registerContactsCommand(program);
   registerConversationsCommand(program);
   registerCredentialsCommand(program);

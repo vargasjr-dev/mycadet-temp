@@ -15,6 +15,7 @@ import {
   getDebugStdoutLogs,
   getIsContainerized,
 } from "../config/env-registry.js";
+import { LOG_LEVELS } from "../config/schemas/logging.js";
 import { getLogsDir } from "./layout.js";
 import { logSerializers } from "./log-redact.js";
 
@@ -120,6 +121,43 @@ export function pruneOldLogFiles(dir: string, retentionDays: number): number {
 let rootLogger: Logger | null = null;
 let activeLogDate: string | null = null;
 let activeLogFileConfig: LogFileConfig | null = null;
+
+/** Severity names accepted by `logFile.levels` — shared with the config schema. */
+type ModuleLogLevel = (typeof LOG_LEVELS)[number];
+
+const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set(LOG_LEVELS);
+
+/**
+ * Per-module ("kind") level overrides from `logFile.levels` config, applied
+ * without a restart: the daemon re-applies them whenever workspace
+ * config.json changes (daemon/config-watcher.ts and the config_set route)
+ * and at boot. Defaults are empty — every module runs at the root level
+ * (info). `assistant logs set --kind http --level silent` quiets a kind;
+ * set it back to info to restore.
+ */
+const moduleLevels = new Map<string, ModuleLogLevel>();
+let moduleLevelsVersion = 0;
+
+/**
+ * Replace the module-level override map from the config's `logFile.levels`.
+ * Bumps the version so cached child loggers rebuild with the new levels on
+ * their next call.
+ */
+export function applyModuleLogLevels(
+  levels: Record<string, string> | undefined,
+): void {
+  moduleLevels.clear();
+  for (const [name, level] of Object.entries(levels ?? {})) {
+    if (MODULE_LOG_LEVELS.has(level)) {
+      moduleLevels.set(name, level as ModuleLogLevel);
+    } else {
+      console.warn(
+        `[logger] ignoring logFile.levels.${name}: "${level}" is not a log level`,
+      );
+    }
+  }
+  moduleLevelsVersion++;
+}
 
 function resolveLogDir(config: LogFileConfig): string | undefined {
   if (!config.dir) {
@@ -322,13 +360,18 @@ export function truncateForLog(value: string, maxLen = 500): string {
  */
 export function getLogger(name: string): Logger {
   let cachedRoot: Logger | null = null;
+  let cachedVersion = -1;
   let child: Logger | null = null;
   const handler: ProxyHandler<Logger> = {
     get(_target, prop, receiver) {
       const root = getRootLogger();
-      if (root !== cachedRoot) {
+      if (root !== cachedRoot || cachedVersion !== moduleLevelsVersion) {
         cachedRoot = root;
-        child = root.child({ module: name });
+        cachedVersion = moduleLevelsVersion;
+        const level = moduleLevels.get(name);
+        child = level
+          ? root.child({ module: name }, { level })
+          : root.child({ module: name });
       }
       const val = Reflect.get(child!, prop, receiver);
       if (typeof val === "function") {

@@ -49,7 +49,7 @@ import {
   getDotEnvPath,
   getWorkspaceDir,
 } from "../util/layout.js";
-import { getLogger, initLogger } from "../util/logger.js";
+import { applyModuleLogLevels, getLogger, initLogger } from "../util/logger.js";
 import { DAEMON_OOM_SCORE_ADJ, setOomScoreAdj } from "../util/oom-priority.js";
 import { APP_VERSION } from "../version.js";
 import { drainOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";
@@ -580,6 +580,10 @@ export async function runDaemon(): Promise<void> {
       retentionDays: config.logFile.retentionDays,
     });
   }
+
+  // Log-level overrides from config apply at boot and hot-apply on change
+  // (config-watcher). The http-request default lives in the logger itself.
+  applyModuleLogLevels(config.logFile?.levels);
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
   // Blocks up to a 20s timeout so credential reads route through CES before

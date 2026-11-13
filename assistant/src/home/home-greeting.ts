@@ -85,7 +85,16 @@ export async function refreshPersonalizedGreeting(): Promise<boolean> {
       return setCachedHomeGreeting(text);
     }
   } catch (err) {
-    log.warn({ err }, "Failed to generate personalized home greeting");
+    // The err object alone would drag the provider payload dump (rawRequest
+    // carries the full side-chain payload) into the log via the serializer;
+    // the message + status is the actionable part.
+    log.warn(
+      {
+        message: err instanceof Error ? err.message : String(err),
+        statusCode: (err as { statusCode?: number } | null)?.statusCode,
+      },
+      "Failed to generate personalized home greeting",
+    );
   }
   return false;
 }
