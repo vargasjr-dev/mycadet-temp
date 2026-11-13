@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { client } from "@/generated/api/client.gen";
 
 import type {
   LiveVoiceAudioCaptureOptions,
@@ -142,24 +141,32 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("resolveDictationStreamWsUrl", () => {
-  type CapturedPostOptions = { url: string; body?: Record<string, unknown> };
-  const originalPost = client.post;
-  let captured: CapturedPostOptions | null = null;
+  interface CapturedMintRequest {
+    url: string;
+    init: RequestInit;
+  }
+  const originalFetch = globalThis.fetch;
+  let captured: CapturedMintRequest | null = null;
 
   beforeEach(() => {
     captured = null;
-    client.post = mock(async (options: CapturedPostOptions) => {
-      captured = options;
-      return {
-        data: { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
-        error: null,
-        response: new Response(null, { status: 200 }),
+    const storyFetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      captured = {
+        url: input instanceof Request ? input.url : String(input),
+        init: init ?? {},
       };
-    }) as typeof client.post;
+      return Response.json(
+        { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+        { status: 200 },
+      );
+    });
+    globalThis.fetch = Object.assign(storyFetch, {
+      preconnect: () => {},
+    }) as typeof globalThis.fetch;
   });
 
   afterEach(() => {
-    client.post = originalPost;
+    globalThis.fetch = originalFetch;
   });
 
   test("dials the id-prefixed STT path with the minted token and the audio-format params", async () => {
@@ -169,7 +176,9 @@ describe("resolveDictationStreamWsUrl", () => {
     // allowlist matches against.
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
-    expect(captured?.body).toEqual({ assistantId: "stt-1" });
+    expect(JSON.parse(captured!.init.body as string)).toEqual({
+      assistantId: "stt-1",
+    });
     expect(url.protocol).toBe("wss:");
     expect(url.pathname).toBe("/stt-1/v1/stt/stream");
     expect(url.searchParams.get("token")).toBe("tok-abc");
@@ -180,7 +189,9 @@ describe("resolveDictationStreamWsUrl", () => {
   test("cloud: mints a tunnel token and dials tunnel with the audio-format params", async () => {
     const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
 
-    expect(captured?.body).toEqual({ assistantId: "stt-1" });
+    expect(JSON.parse(captured!.init.body as string)).toEqual({
+      assistantId: "stt-1",
+    });
     expect(url.protocol).toBe("wss:");
     expect(url.host).toBe("tunnel.mycadet.ai");
     // The `/<assistantId>` prefix selects the tunnel; tunnel strips it to

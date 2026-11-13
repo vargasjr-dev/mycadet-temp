@@ -2,10 +2,9 @@
  * Tests for the live-voice WS connection + token-exchange client.
  *
  * Two surfaces under test:
- *   - `mintTunnelWsToken` — must POST `/v1/auth/live-voice-token/` through
- *     the credentialed platform `client` (which attaches session cookie +
- *     CSRF + org header via the interceptor). We spy on `client.post` rather
- *     than `mock.module`-ing the whole SDK, matching the pattern in
+ *   - `mintTunnelWsToken` — must POST `/v1/auth/live-voice-token/` same-origin
+ *     with the session credentials. We stub `fetch` and capture the request
+ *     rather than `mock.module`-ing anything, matching the pattern in
  *     `domains/chat/inspector/compaction-trail-fetch.test.ts`.
  *   - `buildTunnelWsUrl` / `buildGatewayWsUrl` and the resolvers on top of
  *     them: the cloud tunnel URL carries the `assistantId` in the path, a
@@ -14,8 +13,6 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import { client } from "@/generated/api/client.gen";
 
 import {
   buildGatewayWsUrl,
@@ -32,30 +29,35 @@ import {
 // mintTunnelWsToken
 // ---------------------------------------------------------------------------
 
-type CapturedPostOptions = {
+interface CapturedMintRequest {
   url: string;
-  body?: Record<string, unknown>;
-};
+  init: RequestInit;
+}
 
-let captured: CapturedPostOptions | null = null;
-let nextPostResult: { data: unknown; error: unknown; response: Response };
-const originalPost = client.post;
+let captured: CapturedMintRequest | null = null;
+let nextMintResponse: Response;
+const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   captured = null;
-  nextPostResult = {
-    data: { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
-    error: null,
-    response: new Response(null, { status: 200 }),
-  };
-  client.post = mock(async (options: CapturedPostOptions) => {
-    captured = options;
-    return nextPostResult;
-  }) as typeof client.post;
+  nextMintResponse = Response.json(
+    { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+    { status: 200 },
+  );
+  const storyFetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+    captured = {
+      url: input instanceof Request ? input.url : String(input),
+      init: init ?? {},
+    };
+    return nextMintResponse;
+  });
+  globalThis.fetch = Object.assign(storyFetch, {
+    preconnect: () => {},
+  }) as typeof globalThis.fetch;
 });
 
 afterEach(() => {
-  client.post = originalPost;
+  globalThis.fetch = originalFetch;
   window.__CADET_CONFIG__ = undefined;
 });
 
@@ -65,7 +67,10 @@ describe("mintTunnelWsToken", () => {
 
     expect(captured).not.toBeNull();
     expect(captured!.url).toBe("/v1/auth/live-voice-token/");
-    expect(captured!.body).toEqual({ assistantId: "assistant-1" });
+    expect(captured!.init.method).toBe("POST");
+    expect(JSON.parse(captured!.init.body as string)).toEqual({
+      assistantId: "assistant-1",
+    });
   });
 
   test("returns { token, expiresAt } from the response", async () => {
@@ -77,11 +82,7 @@ describe("mintTunnelWsToken", () => {
   });
 
   test("throws TunnelWsTokenError with the HTTP status on non-OK", async () => {
-    nextPostResult = {
-      data: null,
-      error: { detail: "forbidden" },
-      response: new Response(null, { status: 403 }),
-    };
+    nextMintResponse = Response.json({ detail: "forbidden" }, { status: 403 });
 
     try {
       await mintTunnelWsToken("assistant-1");
@@ -93,11 +94,10 @@ describe("mintTunnelWsToken", () => {
   });
 
   test("throws TunnelWsTokenError(0) when the body is malformed", async () => {
-    nextPostResult = {
-      data: { token: "tok-abc" }, // missing expiresAt
-      error: null,
-      response: new Response(null, { status: 200 }),
-    };
+    nextMintResponse = Response.json(
+      { token: "tok-abc" }, // missing expiresAt
+      { status: 200 },
+    );
 
     try {
       await mintTunnelWsToken("assistant-1");
@@ -241,7 +241,9 @@ describe("resolveGatewayWsUrl", () => {
       await resolveGatewayWsUrl({ ...args, params: { sampleRate: "16000" } }),
     );
 
-    expect(captured?.body).toEqual({ assistantId: "asst-1" });
+    expect(JSON.parse(captured!.init.body as string)).toEqual({
+      assistantId: "asst-1",
+    });
     expect(url.protocol).toBe("wss:");
     expect(url.host).toBe("tunnel.mycadet.ai");
     // The `/<assistantId>` prefix selects the tunnel; tunnel strips it to
