@@ -20,7 +20,6 @@ import {
   getLocalInstanceDir,
   resolveLogDir,
   execOutput,
-  type LocalAssistant,
 } from "@mycadet/local-mode";
 
 // ── Arg parsing ─────────────────────────────────────────────────
@@ -65,6 +64,13 @@ function printHelp(): void {
     "    module: a logger tag, e.g. http-request, workspace-migrations, tool-registry",
   );
   console.log("    level: trace, debug, info, warn, error, silent");
+}
+
+/** Narrow parsed JSON to a plain record without `as` assertions. */
+function recordOf(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? { ...value }
+    : {};
 }
 
 const KIND_ALIASES: Record<string, string> = {
@@ -550,21 +556,21 @@ async function setLogLevel(opts: LogsArgs): Promise<void> {
   }
   const kind = KIND_ALIASES[opts.kind] ?? opts.kind;
   const configPath = join(
-    getLocalInstanceDir(entry as LocalAssistant),
+    getLocalInstanceDir(entry),
     "workspace",
     "config.json",
   );
   let config: Record<string, unknown> = {};
   if (existsSync(configPath)) {
     try {
-      config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
+      config = recordOf(JSON.parse(readFileSync(configPath, "utf8")));
     } catch {
       console.error(`Error: ${configPath} is not valid JSON; fix it first.`);
       process.exit(1);
     }
   }
-  const logs = (config.logs ?? {}) as Record<string, unknown>;
-  const moduleLevels = (logs.moduleLevels ?? {}) as Record<string, string>;
+  const logs = recordOf(config.logs);
+  const moduleLevels = recordOf(logs.moduleLevels);
   moduleLevels[kind] = opts.level;
   logs.moduleLevels = moduleLevels;
   config.logs = logs;
