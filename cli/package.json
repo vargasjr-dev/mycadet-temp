@@ -28,7 +28,6 @@
   "dependencies": {
     "@mycadet/assistant-api": "workspace:*",
     "@mycadet/avatar-manifest": "workspace:*",
-    "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-server-utils": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
     "@mycadet/shared": "workspace:*",
@@ -44,7 +43,6 @@
   "bundledDependencies": [
     "@mycadet/assistant-api",
     "@mycadet/avatar-manifest",
-    "@mycadet/environments",
     "@mycadet/ipc-server-utils",
     "@mycadet/local-mode",
     "@mycadet/shared",

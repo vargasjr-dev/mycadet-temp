@@ -6,11 +6,8 @@
  */
 
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  readCloudToken,
-  resolveCloudUrl,
-} from "../../cloud-auth";
+import { cloudAuthHeaders, readCloudToken } from "../../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LockfileAssistant } from "../../lockfile-contract";
@@ -47,7 +44,7 @@ export async function hatchCloud(): Promise<HatchCloudResult> {
       error: "Not logged in. Run `cadet login --token <token>` first.",
     };
   }
-  const cloudUrl = resolveCloudUrl();
+  const cloudUrl = getCloudBaseUrl();
   const url = `${cloudUrl}/v1/assistants/hatch/`;
 
   try {

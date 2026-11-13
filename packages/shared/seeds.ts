@@ -2,7 +2,8 @@
 // `./seeds` subpath) — keep imports type-only (this file has none) and keep
 // this file free of the import-meta meta-property: the loader transpiles this
 // file to CJS, where that syntax is illegal and makes Node misroute the
-// result as ESM.
+// result as ESM. Browser bundles (chrome extension, web renderer) import it
+// for the same reason.
 
 /**
  * Per-service default port set. Phase 5 (per-environment port offsets) is
@@ -89,12 +90,14 @@ function portBlock(base: number): PortMap {
 }
 
 /**
- * The single origin for the current environment. The explicit
- * `CADET_CLOUD_URL` override wins, else the environment's seed —
+ * The base URL of Cadet Cloud — the hosted deployment the local surfaces
+ * pair with (API, auth, web, and the assistant mount all live on it). The
+ * explicit `CADET_CLOUD_URL` override wins, else the environment's seed —
  * `CADET_ENVIRONMENT` or `VITE_ENVIRONMENT` picks it; unknown falls back
- * to dev.
+ * to dev. This says "cloud" because the URL always points at a Cadet Cloud
+ * deployment, never at something that represents this surface itself.
  */
-export function environmentBaseUrl(): string {
+export function getCloudBaseUrl(): string {
   // globalThis.process reads the same env under bun/node while staying
   // crash-free in browser bundles (no bare `process` reference) — and free
   // of import-meta syntax, which the Capacitor config loader can't transpile.

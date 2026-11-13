@@ -16,9 +16,9 @@ import {
   cliCommand,
   dockerResourceNames,
   extractHostFromEntry,
-  getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { spawn } from "child_process";
 
@@ -324,7 +324,7 @@ export const terminal = Object.assign(
       await interactiveSession({
         assistantId: entry.assistantId,
         token,
-        cloudUrl: getCloudUrl(),
+        cloudUrl: getCloudBaseUrl(),
       });
       return;
     }

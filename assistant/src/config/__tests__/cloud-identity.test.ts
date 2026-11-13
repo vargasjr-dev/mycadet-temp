@@ -4,7 +4,7 @@ import { useFaultableSecureKeyMap } from "../../__tests__/helpers/secure-keys.js
 import { credentialKey } from "../../security/credential-key.js";
 import {
   getCloudAssistantId,
-  getCloudBaseUrl,
+  resolveCloudBaseUrl,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
@@ -187,7 +187,7 @@ describe("resolveCloudAssistantId", () => {
     await expect(resolveCloudAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0]?.url).toBe(
-      `${getCloudBaseUrl().replace(/\/+$/, "")}${CLOUD_IDENTITY_VALIDATE_PATH}`,
+      `${resolveCloudBaseUrl().replace(/\/+$/, "")}${CLOUD_IDENTITY_VALIDATE_PATH}`,
     );
   });
 

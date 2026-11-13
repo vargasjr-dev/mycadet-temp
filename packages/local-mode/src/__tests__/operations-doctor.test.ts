@@ -14,6 +14,7 @@ import {
 const realCloudAuth = { ...(await import("../cloud-auth")) };
 const realLoopbackFetch = { ...(await import("../loopback-fetch")) };
 const realLookup = { ...(await import("../operations/lookup")) };
+const realShared = { ...(await import("@mycadet/shared")) };
 
 const fetchMock = mock<
   (url: string | URL | Request, init?: RequestInit) => Promise<Response>
@@ -30,10 +31,13 @@ let credentialState: {
   organizationId?: string;
 } = { token: null, cloudUrl: "https://test-cloud.mycadet.ai" };
 
+mock.module("@mycadet/shared", () => ({
+  ...realShared,
+  getCloudBaseUrl: () => credentialState.cloudUrl,
+}));
 mock.module("../cloud-auth", () => ({
   ...realCloudAuth,
   readCloudToken: () => credentialState.token,
-  resolveCloudUrl: () => credentialState.cloudUrl,
   authHeadersForKnownOrganization: (token: string, organizationId: string) => ({
     "X-Session-Token": token,
     "Cadet-Organization-Id": organizationId,
@@ -141,9 +145,13 @@ describe("the doctor operator rows", () => {
       async () => new Response("event: status\ndata: {}\n\n"),
     );
 
-    const res = await dial("GET", `/v1/assistants/${ENTRY.assistantId}/doctor/sessions/${SESSION_ID}/events/`, {
-      headers: { "Last-Event-ID": "evt-9" },
-    });
+    const res = await dial(
+      "GET",
+      `/v1/assistants/${ENTRY.assistantId}/doctor/sessions/${SESSION_ID}/events/`,
+      {
+        headers: { "Last-Event-ID": "evt-9" },
+      },
+    );
     expect(res?.status).toBe(200);
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [
@@ -169,8 +177,10 @@ describe("the doctor operator rows", () => {
       `/v1/assistants/${ENTRY.assistantId}/doctor/sessions/${SESSION_ID}/messages/`,
       { body: JSON.stringify({ content: "hi" }) },
     );
-    const [messagesUrl, messagesInit] = fetchMock.mock
-      .calls[0] as unknown as [string, RequestInit];
+    const [messagesUrl, messagesInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
     expect(messagesUrl).toBe(
       `https://test-cloud.mycadet.ai/v1/assistants/${CLOUD_ASSISTANT_ID}/doctor/sessions/${SESSION_ID}/messages/`,
     );

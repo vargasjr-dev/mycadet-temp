@@ -3,7 +3,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
+import { readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { mock } from "bun:test";
 
 import {
@@ -108,7 +109,7 @@ describe("cloud-client token path is env-scoped", () => {
   });
 });
 
-describe("getCloudUrl resolution order", () => {
+describe("getCloudBaseUrl resolution order", () => {
   let savedEnv: string | undefined;
   let savedCloudUrl: string | undefined;
 
@@ -134,29 +135,29 @@ describe("getCloudUrl resolution order", () => {
 
   test("returns CADET_CLOUD_URL when set", () => {
     process.env.CADET_CLOUD_URL = "https://env-only.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-only.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://env-only.mycadet.ai");
   });
 
   test("CADET_CLOUD_URL takes priority over the environment seed", () => {
     process.env.CADET_CLOUD_URL = "https://env.mycadet.ai";
     process.env.CADET_ENVIRONMENT = "dev";
-    expect(getCloudUrl()).toBe("https://env.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://env.mycadet.ai");
   });
 
   test("falls back to the dev seed when no environment is set", () => {
     // CADET_ENVIRONMENT is unset → the dev seed (the env-only reader's
     // fallback — browser bundles have no channel file to consult).
-    expect(getCloudUrl()).toBe("https://dev.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://dev.mycadet.ai");
   });
 
   test("falls back to the dev seed URL when CADET_ENVIRONMENT=dev", () => {
     process.env.CADET_ENVIRONMENT = "dev";
-    expect(getCloudUrl()).toBe("https://dev.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://dev.mycadet.ai");
   });
 
   test("trims whitespace from CADET_CLOUD_URL", () => {
     process.env.CADET_CLOUD_URL = "  https://trimmed.mycadet.ai  ";
-    expect(getCloudUrl()).toBe("https://trimmed.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://trimmed.mycadet.ai");
   });
 });
 

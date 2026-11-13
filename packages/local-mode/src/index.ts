@@ -34,10 +34,7 @@ export {
 } from "./cloud-releases";
 
 export { fetchGatewayPs } from "./daemon-readiness";
-export {
-  cliCommand,
-  resolveEnvironmentName,
-} from "./environment";
+export { cliCommand, resolveEnvironmentName } from "./environment";
 
 export { readLockfile, saveLockfileAssistant } from "./lockfile";
 export {
@@ -179,7 +176,6 @@ export { pairDocker } from "./remotes/docker/pair";
 export {
   cloudTokenPath,
   readCloudToken,
-  resolveCloudUrl as getCloudUrl,
   authHeadersForKnownOrganization,
   cloudAuthHeaders,
   invalidateOrgIdCache,

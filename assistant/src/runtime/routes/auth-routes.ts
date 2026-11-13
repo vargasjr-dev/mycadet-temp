@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import {
   getCloudAssistantId,
-  getCloudBaseUrl,
+  resolveCloudBaseUrl,
   getCloudOrganizationId,
   getCloudUserId,
 } from "../../config/env.js";
@@ -30,7 +30,7 @@ async function handleAuthInfo(
 ): Promise<AuthInfoResult> {
   const ctx = await resolveCloudProxyContext();
 
-  const cloudUrl = getCloudBaseUrl();
+  const cloudUrl = resolveCloudBaseUrl();
   const assistantId = getCloudAssistantId();
   const organizationId = getCloudOrganizationId();
   const userId = getCloudUserId();

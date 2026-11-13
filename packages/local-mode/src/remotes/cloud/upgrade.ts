@@ -6,7 +6,6 @@
  * the command layer to map onto the CLI's error taxonomy.
  */
 import { cloudAuthHeaders, loopbackSafeFetch, readCloudToken } from "../..";
-import { resolveCloudUrl } from "../../cloud-auth";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import { getGatewayUrl } from "../../lockfile-contract";
 import {
@@ -22,6 +21,7 @@ import {
 } from "../../upgrade-preflight";
 import { fetchReleases } from "../../cloud-releases";
 import { z } from "zod";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
@@ -51,7 +51,7 @@ export async function fetchAssistantDetail(
   assistantId: string,
   cloudUrl?: string,
 ): Promise<CloudAssistantDetail | null> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/`;
 
   try {
@@ -85,7 +85,7 @@ export async function fetchUpgradeInProgress(
   assistantId: string,
   cloudUrl?: string,
 ): Promise<boolean | null> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/upgrade-status/`;
 
   try {
@@ -294,7 +294,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
 
   const headers = await cloudAuthHeaders(token, gatewayUrl);
 
-  const url = `${gatewayUrl || resolveCloudUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
+  const url = `${gatewayUrl || getCloudBaseUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
   const body: { version?: string } = {};
   if (version) {
     body.version = version;

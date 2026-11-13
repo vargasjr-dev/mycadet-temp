@@ -13,6 +13,8 @@
 
 // ── Environment type ────────────────────────────────────────────────
 
+import { SEEDS } from "@mycadet/shared";
+
 /**
  * The four deployment environments the extension can target.
  *
@@ -21,18 +23,18 @@
  * - `staging`    — QA against staging platform before production rollout
  * - `production` — full production behavior
  */
-export type ExtensionEnvironment = 'local' | 'dev' | 'staging' | 'production';
+export type ExtensionEnvironment = "local" | "dev" | "staging" | "production";
 
 const VALID_ENVIRONMENTS: ReadonlySet<string> = new Set<ExtensionEnvironment>([
-  'local',
-  'dev',
-  'staging',
-  'production',
+  "local",
+  "dev",
+  "staging",
+  "production",
 ]);
 
 /** Aliases that map to a canonical {@link ExtensionEnvironment}. */
 const ENVIRONMENT_ALIASES: Readonly<Record<string, ExtensionEnvironment>> = {
-  prod: 'production',
+  prod: "production",
 };
 
 // ── Parsing ─────────────────────────────────────────────────────────
@@ -44,7 +46,9 @@ const ENVIRONMENT_ALIASES: Readonly<Record<string, ExtensionEnvironment>> = {
  * - Accepts `"prod"` as an alias for `"production"`.
  * - Returns `null` for `undefined`, empty, or unrecognized values.
  */
-export function parseExtensionEnvironment(raw: string | undefined): ExtensionEnvironment | null {
+export function parseExtensionEnvironment(
+  raw: string | undefined,
+): ExtensionEnvironment | null {
   if (raw === undefined) return null;
   const normalized = raw.trim().toLowerCase();
   if (normalized.length === 0) return null;
@@ -88,37 +92,18 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
   // ensures released extensions always target the correct environment even if
   // the build pipeline omits the variable. Local dev builds inject 'local' via
   // build.sh, and dev/staging releases inject their respective environments.
-  return parseExtensionEnvironment(raw) ?? 'production';
+  return parseExtensionEnvironment(raw) ?? "production";
 }
 
 // ── Cloud origin mapping ────────────────────────────────────────────
-
-/**
- * Return the environment's single cloud origin — API, auth, and the
- * web app all live on it (mirrors the seed table in
- * `packages/environments/src/seeds.ts`, kept inline because the
- * extension bundles standalone).
- */
-export function cloudBaseUrlForEnvironment(env: ExtensionEnvironment): string {
-  switch (env) {
-    case 'production':
-      return 'https://mycadet.ai';
-    case 'staging':
-      return 'https://staging.mycadet.ai';
-    case 'dev':
-      return 'https://dev.mycadet.ai';
-    case 'local':
-      return 'http://localhost:7840';
-  }
-}
 
 /**
  * Web-app path for creating the first cloud assistant. Platform users hatch
  * here. The hatching route gate sends unconsented users through privacy first.
  * The chooser is not used: its create action is local-client only.
  */
-export const CREATE_ASSISTANT_WEB_PATH = '/assistant/onboarding/hatching';
+export const CREATE_ASSISTANT_WEB_PATH = "/assistant/onboarding/hatching";
 
 export function createFirstAssistantUrl(env: ExtensionEnvironment): string {
-  return `${cloudBaseUrlForEnvironment(env)}${CREATE_ASSISTANT_WEB_PATH}`;
+  return `${SEEDS[env].baseUrl}${CREATE_ASSISTANT_WEB_PATH}`;
 }

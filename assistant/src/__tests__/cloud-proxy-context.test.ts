@@ -11,7 +11,7 @@ const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 let mockCloudBaseUrl = "";
 
 mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
+  resolveCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 
 import {

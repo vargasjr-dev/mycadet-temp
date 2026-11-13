@@ -7,9 +7,9 @@
  * fetch with the fixed timeout the non-streaming rows use.
  */
 
-import { authHeadersForKnownOrganization } from "../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
+import { authHeadersForKnownOrganization, readCloudToken } from "../cloud-auth";
 import type { LockfileAssistant } from "../lockfile-contract";
-import { readCloudToken, resolveCloudUrl } from "../cloud-auth";
 
 export const UPSTREAM_TIMEOUT_MS = 10_000;
 
@@ -42,5 +42,5 @@ export function operatorCloudHeaders(
 
 /** The cloud root the proxies dial, without a trailing slash. */
 export function cloudOrigin(): string {
-  return resolveCloudUrl().replace(/\/+$/, "");
+  return getCloudBaseUrl().replace(/\/+$/, "");
 }

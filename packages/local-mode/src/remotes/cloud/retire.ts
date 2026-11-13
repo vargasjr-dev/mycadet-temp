@@ -2,8 +2,8 @@ import {
   authHeadersForKnownOrganization,
   cloudAuthHeaders,
   readCloudToken,
-  resolveCloudUrl,
 } from "../../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { getGatewayUrl } from "../../lockfile-contract";
 import type { LockfileAssistant } from "../../lockfile-contract";
@@ -46,7 +46,7 @@ export async function deleteCloudAssistant(
     alreadyGoneMessage: string;
   },
 ): Promise<void> {
-  const cloudUrl = options.cloudUrl || resolveCloudUrl();
+  const cloudUrl = options.cloudUrl || getCloudBaseUrl();
   const url = `${cloudUrl}/v1/assistants/${encodeURIComponent(assistantId)}/retire/`;
   const headers = options.organizationId
     ? authHeadersForKnownOrganization(options.token, options.organizationId)
@@ -88,7 +88,7 @@ export async function unregisterSelfHostedLocalPlatformRecord(
 
   await deleteCloudAssistant(cloudAssistantId, {
     token,
-    cloudUrl: resolveCloudUrl(),
+    cloudUrl: getCloudBaseUrl(),
     organizationId:
       entry.cloud === "custom" || entry.cloud === "baseten"
         ? undefined

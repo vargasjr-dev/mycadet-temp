@@ -8,11 +8,8 @@
  */
 
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  invalidateOrgIdCache,
-  resolveCloudUrl,
-} from "../../cloud-auth";
+import { cloudAuthHeaders, invalidateOrgIdCache } from "../../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 
 const PassthroughBodySchema = z.record(z.string(), z.unknown()).catch({});
@@ -77,7 +74,7 @@ export async function cloudImportPreflightFromGcs(
   token: string,
   cloudUrl?: string,
 ): Promise<{ statusCode: number; body: Record<string, unknown> }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/import-preflight-from-gcs/`,
     {
@@ -99,7 +96,7 @@ export async function cloudImportBundleFromGcs(
   token: string,
   cloudUrl?: string,
 ): Promise<{ statusCode: number; body: Record<string, unknown> }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/import-from-gcs/`,
     {
@@ -264,7 +261,7 @@ export async function cloudRequestSignedUrl(
   expiresAt: string;
   maxContentLength?: number;
 }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const body: Record<string, unknown> = { operation: params.operation };
   if (params.bundleKey !== undefined) body.bundle_key = params.bundleKey;
   if (params.contentType !== undefined) body.content_type = params.contentType;
@@ -348,7 +345,7 @@ export async function cloudPollJobStatus(
   token: string,
   cloudUrl?: string,
 ): Promise<UnifiedJobStatus> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/jobs/${jobId}/`,
     {

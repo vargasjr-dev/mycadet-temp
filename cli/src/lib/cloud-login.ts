@@ -7,11 +7,8 @@
  */
 
 import { pollingCloudLogin } from "./cloud-login-poll.js";
-import {
-  fetchCurrentUser,
-  getCloudUrl,
-  readCloudToken,
-} from "@mycadet/local-mode";
+import { fetchCurrentUser, readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
@@ -305,7 +302,7 @@ export async function ensureCloudLoginInteractive(): Promise<CloudLoginSession> 
     }
   }
 
-  const token = await workosPkceLogin(getCloudUrl());
+  const token = await workosPkceLogin(getCloudBaseUrl());
   const user = await fetchCurrentUser(token);
   saveCloudToken(token);
   return { token, user };
@@ -323,7 +320,7 @@ export function describeLoginError(error: unknown): string {
   if (!tlsish) return raw;
   return (
     `Cadet Cloud is unreachable (${raw}). This usually means ` +
-    `${getCloudUrl()}'s TLS certificate is missing or still provisioning. ` +
+    `${getCloudBaseUrl()}'s TLS certificate is missing or still provisioning. ` +
     "Retry in a few minutes, or point CADET_CLOUD_URL at a reachable host."
   );
 }

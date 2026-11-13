@@ -15,13 +15,13 @@
 
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import {
-  getCloudUrl,
   loadAllAssistants,
   removeLockfileAssistant,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import { fetchCloudAssistants } from "./cloud-client.js";
 import { fetchCurrentUser } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 export type SyncLogger = (message: string) => void;
 
@@ -60,7 +60,7 @@ export async function syncCloudAssistants(
     );
   }
   const log = options?.log;
-  const cloudUrl = getCloudUrl();
+  const cloudUrl = getCloudBaseUrl();
   log?.(`Platform URL: ${cloudUrl}`);
   log?.(`Token found (${token.length} chars, prefix: ${token.slice(0, 6)}…)`);
 

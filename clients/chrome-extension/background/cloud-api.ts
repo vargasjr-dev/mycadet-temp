@@ -11,9 +11,10 @@
  * the desktop app's `defaultHeaders` on the migration transport.
  */
 
+import { SEEDS } from "@mycadet/shared";
+
 import { getStoredSession } from "./cloud-auth.js";
 import type { ExtensionEnvironment } from "./extension-environment.js";
-import { cloudUrlsForEnvironment } from "./extension-environment.js";
 
 // ── Fetch helper ────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ export async function cloudApiFetch(
   path: string,
   init?: RequestInit & { skipOrgHeader?: boolean },
 ): Promise<Response> {
-  const apiBaseUrl = cloudBaseUrlForEnvironment(environment);
+  const apiBaseUrl = SEEDS[environment].baseUrl;
 
   const headers: Record<string, string> = {
     Accept: "application/json",

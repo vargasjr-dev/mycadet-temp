@@ -6,7 +6,8 @@
  * cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
+import { readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
 import {
@@ -79,7 +80,7 @@ export function resolveManagedAssistant(
   return {
     assistantId: entry.assistantId,
     token,
-    cloudUrl: getCloudUrl(),
+    cloudUrl: getCloudBaseUrl(),
   };
 }
 

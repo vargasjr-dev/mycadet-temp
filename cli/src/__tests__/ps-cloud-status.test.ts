@@ -11,6 +11,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import * as shared from "@mycadet/shared";
+
 // ---------------------------------------------------------------------------
 // Temp directory for lockfile isolation
 // ---------------------------------------------------------------------------
@@ -39,7 +41,7 @@ const getActiveAssistantMock = spyOn(
   localMode,
   "getActiveAssistant",
 ).mockReturnValue(null);
-const getCloudUrlMock = spyOn(localMode, "getCloudUrl").mockReturnValue(
+const getCloudUrlMock = spyOn(shared, "getCloudBaseUrl").mockReturnValue(
   "http://platform.test",
 );
 

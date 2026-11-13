@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
-import { DEFAULT_APP_SERVER_PORT } from "@mycadet/environments";
+import { DEFAULT_APP_SERVER_PORT } from "@mycadet/shared";
 import { resolveVersion } from "@mycadet/shared/version";
 
 import { readRootProcesses, stampRootProcess } from "../assistant-config.js";

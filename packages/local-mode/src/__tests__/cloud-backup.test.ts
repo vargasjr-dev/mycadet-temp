@@ -9,6 +9,8 @@ import {
   test,
 } from "bun:test";
 
+import * as shared from "@mycadet/shared";
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import * as cloudAuth from "../cloud-auth";
 import { createCloudBackup, listCloudBackups } from "../remotes/cloud/backup";
@@ -22,7 +24,7 @@ const invalidateOrgIdCacheSpy = spyOn(
   cloudAuth,
   "invalidateOrgIdCache",
 ).mockImplementation(() => {});
-const getCloudUrlSpy = spyOn(cloudAuth, "resolveCloudUrl").mockReturnValue(
+const getCloudUrlSpy = spyOn(shared, "getCloudBaseUrl").mockReturnValue(
   "https://cloud.mycadet.ai",
 );
 

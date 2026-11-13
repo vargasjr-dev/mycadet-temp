@@ -3,7 +3,6 @@ import {
   cliCommand,
   dockerResourceNames,
   execBasetenSandbox,
-  getCloudUrl,
   localExecDirForService,
   readCloudToken,
 } from "@mycadet/local-mode";
@@ -16,6 +15,7 @@ import { red } from "../lib/color";
 import { resolveAssistant } from "../lib/assistant-config";
 
 import type { ServiceName } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import {
   execAppleContainer,
   sshAppleContainer,
@@ -304,7 +304,7 @@ export const exec = Object.assign(
       const assistant = {
         assistantId: entry.assistantId,
         token,
-        cloudUrl: getCloudUrl(),
+        cloudUrl: getCloudBaseUrl(),
       };
 
       const serviceParam = service === "assistant" ? undefined : service;

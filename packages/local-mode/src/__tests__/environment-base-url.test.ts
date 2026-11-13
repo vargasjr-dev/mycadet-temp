@@ -7,9 +7,9 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { environmentBaseUrl, SEEDS } from "../index.js";
+import { getCloudBaseUrl, SEEDS } from "@mycadet/shared";
 
-describe("environmentBaseUrl", () => {
+describe("getCloudBaseUrl", () => {
   const original = {
     vite: process.env.VITE_ENVIRONMENT,
     env: process.env.CADET_ENVIRONMENT,
@@ -31,7 +31,7 @@ describe("environmentBaseUrl", () => {
     for (const name of ["production", "staging", "dev", "test", "local"]) {
       process.env.VITE_ENVIRONMENT = name;
       delete process.env.CADET_ENVIRONMENT;
-      expect(environmentBaseUrl()).toBe(SEEDS[name].baseUrl);
+      expect(getCloudBaseUrl()).toBe(SEEDS[name].baseUrl);
     }
   });
 
@@ -39,29 +39,29 @@ describe("environmentBaseUrl", () => {
     for (const name of ["production", "staging", "dev", "test", "local"]) {
       process.env.CADET_ENVIRONMENT = name;
       delete process.env.VITE_ENVIRONMENT;
-      expect(environmentBaseUrl()).toBe(SEEDS[name].baseUrl);
+      expect(getCloudBaseUrl()).toBe(SEEDS[name].baseUrl);
     }
   });
 
   test("an unknown environment falls back to dev", () => {
     process.env.CADET_ENVIRONMENT = "not-a-seed";
-    expect(environmentBaseUrl()).toBe(SEEDS.dev.baseUrl);
+    expect(getCloudBaseUrl()).toBe(SEEDS.dev.baseUrl);
   });
 
   test("the explicit CADET_CLOUD_URL override wins", () => {
     process.env.CADET_CLOUD_URL = "https://override.example";
     process.env.CADET_ENVIRONMENT = "dev";
-    expect(environmentBaseUrl()).toBe("https://override.example");
+    expect(getCloudBaseUrl()).toBe("https://override.example");
   });
 
   test("trims whitespace from CADET_CLOUD_URL", () => {
     process.env.CADET_CLOUD_URL = "  https://trimmed.example  ";
-    expect(environmentBaseUrl()).toBe("https://trimmed.example");
+    expect(getCloudBaseUrl()).toBe("https://trimmed.example");
   });
 
   test("an unset environment falls back to dev", () => {
     delete process.env.CADET_ENVIRONMENT;
     delete process.env.VITE_ENVIRONMENT;
-    expect(environmentBaseUrl()).toBe(SEEDS.dev.baseUrl);
+    expect(getCloudBaseUrl()).toBe(SEEDS.dev.baseUrl);
   });
 });

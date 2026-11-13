@@ -335,7 +335,7 @@ describe("setup command", () => {
 
   test("derives the cloud address from the lockfile's platform base", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The cloud address rides `environmentBaseUrl()` since the lockfile no
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
     // longer carries a platform base — the explicit override pins the host.
     process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({
@@ -364,7 +364,7 @@ describe("setup command", () => {
 
   test("refreshes an expired guardian token before the setup request", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The cloud address rides `environmentBaseUrl()` since the lockfile no
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
     // longer carries a platform base — the explicit override pins the host.
     process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({
@@ -404,7 +404,7 @@ describe("setup command", () => {
 
   test("uses a refreshed guardian token before lockfile fallback", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The cloud address rides `environmentBaseUrl()` since the lockfile no
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
     // longer carries a platform base — the explicit override pins the host.
     process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({

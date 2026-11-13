@@ -74,7 +74,7 @@ beforeEach(() => {
   originalFetch = globalThis.fetch;
   originalExit = process.exit;
   originalCloudUrl = process.env.CADET_CLOUD_URL;
-  // The cloud address rides `environmentBaseUrl()` since the lockfile no
+  // The cloud address rides `getCloudBaseUrl()` since the lockfile no
   // longer carries a platform base — the override pins this suite's host.
   process.env.CADET_CLOUD_URL = "https://cloud.mycadet.ai";
   process.exit = mock((code?: number | string | undefined): never => {

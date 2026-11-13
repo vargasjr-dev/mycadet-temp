@@ -2,8 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { environmentBaseUrl } from "@mycadet/environments/seeds";
-
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { resolveConfigDir } from "./config";
 import { cliCommand } from "./environment";
 import { loopbackSafeFetch } from "./loopback-fetch";
@@ -32,15 +31,6 @@ export function readCloudToken(): string | null {
   } catch {
     return null;
   }
-}
-
-/**
- * Resolve the cloud API base URL: the explicit `CADET_CLOUD_URL` override,
- * else the current environment's single origin (the seed table's
- * `baseUrl` — e.g. `https://dev.mycadet.ai` for `CADET_ENVIRONMENT=dev`).
- */
-export function resolveCloudUrl(): string {
-  return environmentBaseUrl();
 }
 
 const VAK_PREFIX = "vak_";
@@ -96,7 +86,7 @@ export async function fetchOrganizationId(
   token: string,
   cloudUrl?: string,
 ): Promise<string> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/organizations/`;
 
   const controller = new AbortController();

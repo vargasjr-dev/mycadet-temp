@@ -30,7 +30,7 @@ import {
   resolveCloudUserId,
 } from "../../config/cloud-identity.js";
 import {
-  getCloudBaseUrl,
+  resolveCloudBaseUrl,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
@@ -188,7 +188,7 @@ async function handleCloudConnect(
     if (verified !== "rejected") {
       return {
         alreadyConnected: true,
-        baseUrl: getCloudBaseUrl(),
+        baseUrl: resolveCloudBaseUrl(),
       };
     }
     credentialRejected = true;

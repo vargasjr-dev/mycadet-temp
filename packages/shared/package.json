@@ -3,14 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
-    ".": "./github-repository.ts",
+    ".": "./index.ts",
+    "./eslint/imports-first": "./eslint/imports-first.mjs",
+    "./eslint/no-re-exports": "./eslint/no-re-exports.mjs",
     "./fetch": "./fetch.ts",
     "./github-repository": "./github-repository.ts",
     "./providers/baseten": "./providers/baseten.ts",
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
-    "./version": "./version.ts",
-    "./eslint/no-re-exports": "./eslint/no-re-exports.mjs",
-    "./eslint/imports-first": "./eslint/imports-first.mjs"
+    "./seeds": "./seeds.ts",
+    "./version": "./version.ts"
   },
   "devDependencies": {
     "eslint": "10.1.0",

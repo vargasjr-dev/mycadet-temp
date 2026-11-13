@@ -7,11 +7,8 @@
  */
 
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  getCloudUrl,
-  loopbackSafeFetch,
-} from "@mycadet/local-mode";
+import { cloudAuthHeaders, loopbackSafeFetch } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
 
@@ -35,7 +32,7 @@ export async function createTerminalSession(
   cloudUrl?: string,
   service?: string,
 ): Promise<{ session_id: string }> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = cloudUrl || getCloudBaseUrl();
   const body: Record<string, unknown> = { cols, rows };
   if (service) {
     body.service = service;
@@ -67,7 +64,7 @@ export async function closeTerminalSession(
   sessionId: string,
   cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/`,
     {
@@ -94,7 +91,7 @@ export async function sendTerminalInput(
   data: string,
   cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/input/`,
     {
@@ -118,7 +115,7 @@ export async function resizeTerminalSession(
   rows: number,
   cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/resize/`,
     {
@@ -149,7 +146,7 @@ export async function* subscribeTerminalEvents(
   cloudUrl?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<TerminalOutputEvent> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/events/`,
     {

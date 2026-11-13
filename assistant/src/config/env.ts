@@ -13,7 +13,7 @@
  * imported from platform/logger without circular imports.
  */
 
-import { environmentBaseUrl } from "@mycadet/environments";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 import { getLogger } from "../util/logger.js";
 import { checkUnrecognizedEnvVars, getIsCloud } from "./env-registry.js";
@@ -136,7 +136,7 @@ export function getOllamaBaseUrlEnv(): string | undefined {
 
 // ── Platform ─────────────────────────────────────────────────────────────────
 
-export function getCloudBaseUrl(): string {
+export function resolveCloudBaseUrl(): string {
   let configUrl: string | undefined;
   try {
     const val = getConfig().cloud.baseUrl;
@@ -147,10 +147,9 @@ export function getCloudBaseUrl(): string {
     // Config not yet available (early bootstrap) — fall through
   }
   // The default comes from the shared environment seeds via
-  // `environmentBaseUrl()` — the explicit `CADET_CLOUD_URL` override and
-  // the environment's single origin, the same resolution every other
-  // surface reads.
-  return configUrl || environmentBaseUrl();
+  // `getCloudBaseUrl()` — the explicit `CADET_CLOUD_URL` override and the
+  // Cadet Cloud origin, the same resolution every other surface reads.
+  return configUrl || getCloudBaseUrl();
 }
 
 /**
@@ -160,7 +159,7 @@ export function getCloudBaseUrl(): string {
  */
 export function getApexDomain(): string {
   try {
-    const url = getCloudBaseUrl();
+    const url = resolveCloudBaseUrl();
     const host = new URL(url).hostname;
 
     if (host === "mycadet.ai" || host.endsWith(".mycadet.ai")) {

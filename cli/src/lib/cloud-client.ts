@@ -10,9 +10,9 @@ import { dirname } from "path";
 import {
   cloudAuthHeaders,
   cloudTokenPath,
-  getCloudUrl,
   loopbackSafeFetch,
 } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { z } from "zod";
 
 const InProgressResponseSchema = z.object({
@@ -78,7 +78,7 @@ export async function checkExistingCloudAssistant(
   token: string,
   cloudUrl?: string,
 ): Promise<HatchedAssistant | null> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/`;
 
   const controller = new AbortController();
@@ -114,7 +114,7 @@ export async function fetchCloudAssistants(
   token: string,
   cloudUrl?: string,
 ): Promise<HatchedAssistant[]> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/`;
 
   const controller = new AbortController();
@@ -154,7 +154,7 @@ export async function fetchAssistantDetail(
   assistantId: string,
   cloudUrl?: string,
 ): Promise<CloudAssistantDetail | null> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/`;
 
   try {
@@ -188,7 +188,7 @@ export async function fetchUpgradeInProgress(
   assistantId: string,
   cloudUrl?: string,
 ): Promise<boolean | null> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/upgrade-status/`;
 
   try {
@@ -214,7 +214,7 @@ export async function rollbackCloudAssistant(
   version?: string,
   cloudUrl?: string,
 ): Promise<{ detail: string; version: string | null }> {
-  const resolvedUrl = cloudUrl || getCloudUrl();
+  const resolvedUrl = cloudUrl || getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/rollback/`,
     {

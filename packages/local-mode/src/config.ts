@@ -1,4 +1,4 @@
-import { environmentBaseUrl } from "@mycadet/environments";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 import { resolveEnvironmentName } from "./environment";
 import {
@@ -22,7 +22,7 @@ export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
   return {
     lockfilePath: resolveLockfilePath(),
     configDir: resolveConfigDir(),
-    cloudUrl: environmentBaseUrl(),
+    cloudUrl: getCloudBaseUrl(),
   };
 }
 

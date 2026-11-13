@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { environmentBaseUrl } from "@mycadet/environments";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   authHeadersForKnownOrganization,
@@ -88,7 +88,7 @@ export const debug = Object.assign(
       );
       process.exit(1);
     }
-    const cloudUrl = environmentBaseUrl();
+    const cloudUrl = getCloudBaseUrl();
     const organizationId = entry.cloudOrganizationId?.trim();
 
     const accessToken = await daemonAccessToken(entry, reference, false);

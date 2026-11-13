@@ -22,7 +22,7 @@
  * on disk; see `lockfile.ts`); the validated value carries only the modeled
  * shape.
  */
-import { environmentBaseUrl } from "@mycadet/environments/seeds";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
@@ -155,7 +155,7 @@ export const GATEWAY_PORT = process.env.GATEWAY_PORT
  * fields — the one seam every consumer addresses a gateway through:
  *
  * - `custom` remotes: their recorded host and port.
- * - cloud-managed: the environment's base url (`environmentBaseUrl()`).
+ * - cloud-managed: the environment's base url (`getCloudBaseUrl()`).
  * - loopback topologies (`local`, `docker`, `apple-container`): the
  *   recorded loopback gateway port, else the default gateway port.
  */
@@ -178,7 +178,7 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
     return `https://${entry.ipAddress}${elided ? "" : `:${entry.port}`}`;
   }
   if (isCloudEntry(entry)) {
-    return environmentBaseUrl().replace(/\/+$/, "");
+    return getCloudBaseUrl().replace(/\/+$/, "");
   }
   return `http://127.0.0.1:${entry.port}`;
 }

@@ -1,8 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 // The `/seeds` subpath is deliberate: cap's TS config loader transpiles one
-// file at a time and cannot resolve the environments index's `.js`-suffixed
-// runtime re-exports.
-import { SEEDS } from "@mycadet/environments/seeds";
+// file at a time and cannot resolve a re-export barrel.
+import { getCloudBaseUrl } from "@mycadet/shared/seeds";
 
 // Resolves the environment's single origin the same way every other surface
 // does (`SEEDS` via `CADET_ENVIRONMENT`; unset means the local cadet). It is
@@ -15,7 +14,7 @@ import { SEEDS } from "@mycadet/environments/seeds";
 function resolveServerUrl(): string {
   // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
   process.env.CADET_ENVIRONMENT ??= "local";
-  return SEEDS[process.env.CADET_ENVIRONMENT]?.baseUrl ?? SEEDS.dev.baseUrl;
+  return getCloudBaseUrl();
 }
 
 // The Capacitor config shared by all mobile shells
