@@ -24,9 +24,10 @@ export const LOG_LEVELS = [
 /**
  * The logger module tags that can be leveled from config — an allowlist, so
  * a typo'd kind fails config validation instead of silently doing nothing.
- * Extend alongside new getLogger() tags.
+ * Exported for the `assistant logs` CLI's kind validation. Extend alongside
+ * new getLogger() tags.
  */
-const LOG_MODULES = [
+export const LOG_MODULES = [
   "http-request",
   "tool-registry",
   "graph-capability-seed",

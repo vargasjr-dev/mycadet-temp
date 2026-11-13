@@ -1,15 +1,21 @@
 /**
  * `assistant logs` CLI namespace.
  *
- * Subcommand: set — a thin wrapper over the daemon's config_set IPC route,
- * writing a `logFile.levels.<kind>` entry. The daemon hot-applies the new
- * level (config-watcher + the config route both call applyModuleLogLevels),
- * so the change lands without a restart.
+ * Subcommands:
+ *   info — print the current logging setup: log dir, today's log file,
+ *          retention, and the per-module level overrides.
+ *   set  — write a `logFile.levels.<kind>` entry directly to the workspace
+ *          config.json (no IPC proxy). The running daemon's config watcher
+ *          hot-applies the new level on the file change; with no daemon
+ *          running, the level simply applies at next boot.
  */
+
+import { basename, join } from "node:path";
 
 import type { Command } from "commander";
 
-import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { getLogsDir } from "../../util/layout.js";
+import { getCurrentLogFilePath } from "../../util/logger.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -30,24 +36,60 @@ function resolveKind(input: string): string {
 export function registerLogsCommand(program: Command): void {
   registerCommand(program, {
     name: logsHelp.name,
-    transport: "ipc",
+    transport: "local",
     description: logsHelp.description,
     build: (logs) => {
       applyCommandHelp(logs, logsHelp);
 
+      subcommand(logs, "info")
+        .description("Show the assistant's current logging setup")
+        .action(async () => {
+          // The config loader and schema are daemon-internal — keep them out
+          // of the CLI's static graph (see the eslint cli/no-daemon-internals
+          // rule) by importing lazily.
+          const loader = await import("../../config/loader.js");
+          const logging = await import("../../config/schemas/logging.js");
+          let logFile: {
+            dir?: string;
+            retentionDays: number;
+            levels: Record<string, string>;
+          };
+          try {
+            logFile = logging.LogFileConfigSchema.parse(
+              loader.loadRawConfig().logFile ?? {},
+            );
+          } catch (err) {
+            log.error(
+              `config.json has an invalid logFile section: ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+            );
+            process.exitCode = 1;
+            return;
+          }
+          const dir = logFile.dir ?? getLogsDir();
+          const levels = Object.entries(logFile.levels);
+          log.info(`log dir:      ${dir}`);
+          log.info(
+            `current file: ${join(dir, basename(getCurrentLogFilePath()))}`,
+          );
+          log.info(`retention:    ${logFile.retentionDays} days`);
+          if (levels.length > 0) {
+            log.info(
+              `levels:       ${levels.map(([k, v]) => `${k}=${v}`).join(", ")}`,
+            );
+          } else {
+            log.info("levels:       (none overridden — modules log at info)");
+          }
+        });
+
       subcommand(logs, "set")
         .description("Set a module's log level, applied live")
-        .requiredOption(
-          "--kind <kind>",
-          'logger module tag (e.g. "http-request"; "http" works too)',
-        )
-        .requiredOption(
-          "--level <level>",
-          "one of: trace, debug, info, warn, error, silent",
-        )
         .action(async (opts: { kind: string; level: string }) => {
-          // The config schema is daemon-internal — keep it out of the CLI's
-          // static graph (see src/cli/AGENTS.md) by importing lazily.
+          // The config schema and loader are daemon-internal — keep them out
+          // of the CLI's static graph (see the eslint cli/no-daemon-internals
+          // rule) by importing lazily.
+          const loader = await import("../../config/loader.js");
           const logging = await import("../../config/schemas/logging.js");
           const kind = resolveKind(opts.kind);
           const level = opts.level as (typeof logging.LOG_LEVELS)[number];
@@ -58,20 +100,24 @@ export function registerLogsCommand(program: Command): void {
             process.exitCode = 1;
             return;
           }
-
-          const result = await cliIpcCall<{ ok: boolean; warning?: string }>(
-            "config_set",
-            { body: { path: `logFile.levels.${kind}`, value: level } },
-          );
-          if (!result.ok) {
-            exitFromIpcResult(result, logs);
+          if (
+            !logging.LOG_MODULES.includes(
+              kind as (typeof logging.LOG_MODULES)[number],
+            )
+          ) {
+            log.error(
+              `Unknown kind '${opts.kind}'. Use one of: ${logging.LOG_MODULES.join(", ")}`,
+            );
+            process.exitCode = 1;
             return;
           }
-          log.info(`${kind} log level set to ${level} — applied live.`);
-          const warning = result.result?.warning;
-          if (warning) {
-            log.warn(`Warning: ${warning}`);
-          }
+
+          const raw = loader.loadRawConfig();
+          loader.setNestedValue(raw, `logFile.levels.${kind}`, level);
+          loader.saveRawConfig(raw);
+          log.info(
+            `${kind} log level set to ${level} in config.json — the running assistant hot-applies it within a second.`,
+          );
         });
     },
   });
