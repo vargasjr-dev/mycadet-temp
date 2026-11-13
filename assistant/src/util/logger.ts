@@ -123,7 +123,7 @@ let activeLogDate: string | null = null;
 let activeLogFileConfig: LogFileConfig | null = null;
 
 /** Severity names accepted by `logFile.levels` — shared with the config schema. */
-export type ModuleLogLevel = (typeof LOG_LEVELS)[number];
+type ModuleLogLevel = (typeof LOG_LEVELS)[number];
 
 const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set(LOG_LEVELS);
 

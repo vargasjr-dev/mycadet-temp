@@ -10,7 +10,6 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
-import { LOG_LEVELS, type LogLevel } from "../../config/schemas/logging.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -42,13 +41,19 @@ export function registerLogsCommand(program: Command): void {
           "--kind <kind>",
           'logger module tag (e.g. "http-request"; "http" works too)',
         )
-        .requiredOption("--level <level>", `one of: ${LOG_LEVELS.join(", ")}`)
+        .requiredOption(
+          "--level <level>",
+          "one of: trace, debug, info, warn, error, silent",
+        )
         .action(async (opts: { kind: string; level: string }) => {
+          // The config schema is daemon-internal — keep it out of the CLI's
+          // static graph (see src/cli/AGENTS.md) by importing lazily.
+          const logging = await import("../../config/schemas/logging.js");
           const kind = resolveKind(opts.kind);
-          const level = opts.level as LogLevel;
-          if (!LOG_LEVELS.includes(level)) {
+          const level = opts.level as (typeof logging.LOG_LEVELS)[number];
+          if (!logging.LOG_LEVELS.includes(level)) {
             log.error(
-              `Unknown level '${opts.level}'. Use one of: ${LOG_LEVELS.join(", ")}`,
+              `Unknown level '${opts.level}'. Use one of: ${logging.LOG_LEVELS.join(", ")}`,
             );
             process.exitCode = 1;
             return;

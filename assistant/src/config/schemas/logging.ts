@@ -26,7 +26,7 @@ export const LOG_LEVELS = [
  * a typo'd kind fails config validation instead of silently doing nothing.
  * Extend alongside new getLogger() tags.
  */
-export const LOG_MODULES = [
+const LOG_MODULES = [
   "http-request",
   "tool-registry",
   "graph-capability-seed",
@@ -37,7 +37,7 @@ export const LOG_MODULES = [
 ] as const;
 
 /** Partial map of module tag → level (unset modules run at the root level). */
-export const LogLevelsConfigSchema = z.partialRecord(
+const LogLevelsConfigSchema = z.partialRecord(
   z.enum(LOG_MODULES),
   z.enum(LOG_LEVELS),
 );
@@ -60,10 +60,6 @@ export const LogFileConfigSchema = z
     ),
   })
   .describe("Log file storage, retention, and runtime log-level settings");
-
-export type LogLevel = (typeof LOG_LEVELS)[number];
-export type LogModule = (typeof LOG_MODULES)[number];
-export type LogLevelsConfig = Partial<{ [K in LogModule]: LogLevel }>;
 
 export type AuditLogConfig = z.infer<typeof AuditLogConfigSchema>;
 export type LogFileConfig = z.infer<typeof LogFileConfigSchema>;

@@ -61,7 +61,6 @@ import {
   findSubstrateShadowing,
 } from "../../config/substrate-twin-shadowing.js";
 import { getConfigWatcher } from "../../daemon/config-watcher.js";
-import { applyModuleLogLevels } from "../../util/logger.js";
 import {
   getEmbeddingConfigInfo,
   setEmbeddingConfig,
@@ -116,6 +115,7 @@ import {
 import { initializeProviders } from "../../providers/registry.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { validateAllowlistFile } from "../../security/secret-allowlist.js";
+import { applyModuleLogLevels } from "../../util/logger.js";
 import {
   resolvePricingForUsage,
   usesAnthropicPricingRules,
