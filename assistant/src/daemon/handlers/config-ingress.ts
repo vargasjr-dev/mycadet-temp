@@ -12,8 +12,8 @@ import {
 import { updatePhoneNumberWebhooks } from "../../calls/twilio-rest.js";
 import {
   getCloudAssistantId,
-  resolveCloudBaseUrl,
   getGatewayInternalBaseUrl,
+  resolveCloudBaseUrl,
 } from "../../config/env.js";
 import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig } from "../../config/loader.js";

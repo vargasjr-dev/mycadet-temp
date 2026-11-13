@@ -14,9 +14,9 @@ import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import {
   getCloudAssistantId,
-  resolveCloudBaseUrl,
   getCloudOrganizationId,
   getCloudUserId,
+  resolveCloudBaseUrl,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
