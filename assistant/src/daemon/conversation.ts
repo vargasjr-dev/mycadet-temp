@@ -898,6 +898,13 @@ export class Conversation {
    * @internal
    */
   private onboardingContext?: OnboardingContext;
+  /**
+   * Messages injected by {@link injectInheritedContext} are not persisted —
+   * they exist only in memory, and the compaction store's manager tracks how
+   * many of them still lead the history. Recorded here so a manager rebuilt
+   * after an eviction race can re-apply the seed.
+   */
+  private injectedContextPrefixCount: number | undefined;
   /** @internal */ currentTurnChannelContext: TurnChannelContext | null = null;
   /** @internal */ currentTurnInterfaceContext: TurnInterfaceContext | null =
     null;
@@ -1018,14 +1025,6 @@ export class Conversation {
     this.modelOverride = modelOverride;
 
     const resolvedSpeed = speedOverride ?? resolvedMainAgent.speed;
-    const initialContextWindow = resolveEffectiveContextWindow({
-      llm: config.llm,
-      callSite: "mainAgent",
-    });
-    const initialContextWindowConfig = contextWindowConfigFromEffective(
-      resolvedMainAgent.contextWindow,
-      initialContextWindow,
-    );
 
     const agentLoopConfig: Partial<AgentLoopConfig> = {
       thinking: resolvedMainAgent.thinking,
@@ -1068,33 +1067,76 @@ export class Conversation {
       transformCompactedHistory: (messages) =>
         applySightFrameRetention(messages, this.conversationId),
     });
-    createContextWindowManager({
-      provider,
-      config: initialContextWindowConfig,
+    this.registerContextWindowManager();
+  }
+
+  /**
+   * Build the conversation's {@link ContextWindowManager} and register it in
+   * the compaction module's per-conversation store. The constructor runs this
+   * once; the {@link contextWindowManager} accessor runs it again as recovery
+   * when the store entry was released while the conversation is still live.
+   * Re-applies the injected inherited-context prefix seed so a recovered
+   * manager keeps the compactor's non-persisted-prefix bookkeeping.
+   */
+  private registerContextWindowManager(): void {
+    const config = getConfig();
+    const resolvedMainAgent = resolveCallSiteConfig("mainAgent", config.llm);
+    const initialContextWindow = resolveEffectiveContextWindow({
+      llm: config.llm,
+      callSite: "mainAgent",
+    });
+    const resolveTools = createResolveToolsCallback(
+      getAllToolDefinitions(),
+      this,
+    );
+    const manager = createContextWindowManager({
+      provider: this.provider,
+      config: contextWindowConfigFromEffective(
+        resolvedMainAgent.contextWindow,
+        initialContextWindow,
+      ),
       toolTokenBudget: this.agentLoop.getToolTokenBudget(),
       conversationId: this.conversationId,
       resolveTools: resolveTools
         ? () => resolveTools(this.messages)
         : undefined,
     });
+    if (this.injectedContextPrefixCount != null) {
+      manager.seedNonPersistedPrefix(this.injectedContextPrefixCount);
+    }
   }
 
   /**
    * The conversation's {@link ContextWindowManager}, owned by the compaction
    * module's per-conversation store. The constructor builds and registers it
    * there; this accessor resolves it on demand so the conversation holds no
-   * separate handle. Present for the conversation's whole in-memory lifetime
-   * (registered at construction, released on teardown), so a live conversation
-   * always resolves an instance.
+   * separate handle.
+   *
+   * The store entry can be released while work still addresses this instance:
+   * a message accepted but not yet running reports no in-flight work, so the
+   * memory-pressure eviction sweep can dispose the conversation between
+   * acceptance and the turn's first manager touch. The run path rehydrates
+   * history from the DB after such a teardown, so the manager is the one
+   * piece the turn cannot recover on its own — rebuild and re-register it
+   * here rather than fail the turn.
    */
   /** @internal */ get contextWindowManager(): ContextWindowManager {
     const manager = getContextWindowManager(this.conversationId);
-    if (manager == null) {
+    if (manager != null) {
+      return manager;
+    }
+    log.warn(
+      { conversationId: this.conversationId },
+      "ContextWindowManager missing for a live conversation — rebuilding it (the compaction store entry was released while the conversation is still live)",
+    );
+    this.registerContextWindowManager();
+    const rebuilt = getContextWindowManager(this.conversationId);
+    if (rebuilt == null) {
       throw new Error(
-        `ContextWindowManager missing for conversation ${this.conversationId} — the compaction store entry was released while the conversation is still live`,
+        `ContextWindowManager rebuild failed for conversation ${this.conversationId} — the compaction store did not register one`,
       );
     }
-    return manager;
+    return rebuilt;
   }
 
   // ── Onboarding context ───────────────────────────────────────────
@@ -2155,6 +2197,7 @@ export class Conversation {
       );
     }
     this.messages = [...messages];
+    this.injectedContextPrefixCount = messages.length;
     this.contextWindowManager.seedNonPersistedPrefix(messages.length);
   }
 
