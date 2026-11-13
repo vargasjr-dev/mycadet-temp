@@ -122,7 +122,13 @@ let activeLogDate: string | null = null;
 let activeLogFileConfig: LogFileConfig | null = null;
 
 /** Severity names accepted by `logs.moduleLevels` config. */
-export type ModuleLogLevel = "trace" | "debug" | "info" | "warn" | "error" | "silent";
+export type ModuleLogLevel =
+  | "trace"
+  | "debug"
+  | "info"
+  | "warn"
+  | "error"
+  | "silent";
 
 const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set([
   "trace",

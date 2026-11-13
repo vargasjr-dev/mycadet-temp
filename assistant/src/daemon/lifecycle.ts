@@ -49,11 +49,7 @@ import {
   getDotEnvPath,
   getWorkspaceDir,
 } from "../util/layout.js";
-import {
-  applyModuleLogLevels,
-  getLogger,
-  initLogger,
-} from "../util/logger.js";
+import { applyModuleLogLevels, getLogger, initLogger } from "../util/logger.js";
 import { DAEMON_OOM_SCORE_ADJ, setOomScoreAdj } from "../util/oom-priority.js";
 import { APP_VERSION } from "../version.js";
 import { drainOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";

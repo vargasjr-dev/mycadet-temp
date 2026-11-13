@@ -173,10 +173,7 @@ export function seedSkillGraphNodes(): void {
     // One summary line replaces the former per-node "Created capability graph
     // node" INFO lines (146 lines / 30 KB of a single day's log). Per-node
     // detail remains at debug.
-    log.info(
-      { skills: enabled.length },
-      "Skill capability graph seeded",
-    );
+    log.info({ skills: enabled.length }, "Skill capability graph seeded");
   } catch (err) {
     log.warn({ err }, "Failed to seed skill graph nodes");
   }

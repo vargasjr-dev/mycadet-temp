@@ -34,10 +34,10 @@ export const LogsConfigSchema = z
       .record(z.string(), z.enum(MODULE_LOG_LEVELS as [string, ...string[]]))
       .default({})
       .describe(
-        "Per-module log-level overrides applied live (no restart): keys are "
-          + "logger module tags (e.g. \"http-request\", \"workspace-migrations\"), "
-          + "values are levels. `assistant logs set --kind <module> --level "
-          + "<level>` writes here.",
+        "Per-module log-level overrides applied live (no restart): keys are " +
+          'logger module tags (e.g. "http-request", "workspace-migrations"), ' +
+          "values are levels. `assistant logs set --kind <module> --level " +
+          "<level>` writes here.",
       ),
   })
   .describe("Runtime log-level configuration");
