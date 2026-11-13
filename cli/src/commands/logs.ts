@@ -1,5 +1,11 @@
 import { spawn } from "child_process";
-import { createReadStream, existsSync, statSync } from "fs";
+import {
+  createReadStream,
+  existsSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "fs";
 import { createInterface } from "readline";
 import { watch } from "fs";
 import { join } from "path";
@@ -11,8 +17,10 @@ import {
   cliCommand,
   dockerResourceNames,
   extractHostFromEntry,
+  getLocalInstanceDir,
   resolveLogDir,
   execOutput,
+  type LocalAssistant,
 } from "@mycadet/local-mode";
 
 // ── Arg parsing ─────────────────────────────────────────────────
@@ -25,6 +33,9 @@ interface LogsArgs {
   since?: string;
   until?: string;
   service?: string;
+  set: boolean;
+  kind?: string;
+  level?: string;
 }
 
 function printHelp(): void {
@@ -47,13 +58,30 @@ function printHelp(): void {
   console.log("  --until <time>        Show logs until timestamp or relative");
   console.log("  -s, --service <name>  Filter to a specific service");
   console.log("  -h, --help            Show this help");
+  console.log("");
+  console.log("Log levels (applies live, no restart):");
+  console.log(`  ${cliCommand()} logs set [--name <name>] --kind <module> --level <level>`);
+  console.log(
+    "    module: a logger tag, e.g. http-request, workspace-migrations, tool-registry",
+  );
+  console.log("    level: trace, debug, info, warn, error, silent");
 }
+
+const KIND_ALIASES: Record<string, string> = {
+  http: "http-request",
+  migrations: "workspace-migrations",
+  graph: "graph-capability-seed",
+  registry: "tool-registry",
+};
+
+const LEVELS = ["trace", "debug", "info", "warn", "error", "silent"];
 
 function parseArgs(): LogsArgs {
   const args = process.argv.slice(3);
   const result: LogsArgs = {
     follow: false,
     timestamps: false,
+    set: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -93,6 +121,24 @@ function parseArgs(): LogsArgs {
         process.exit(1);
       }
       result.until = next;
+      i++;
+    } else if (arg === "set") {
+      result.set = true;
+    } else if (arg === "--kind") {
+      const next = args[i + 1];
+      if (!next) {
+        console.error("Error: --kind requires a module name (e.g. http-request)");
+        process.exit(1);
+      }
+      result.kind = next;
+      i++;
+    } else if (arg === "--level" || arg === "--severity") {
+      const next = args[i + 1];
+      if (!next) {
+        console.error("Error: --level requires a level (trace|debug|info|warn|error|silent)");
+        process.exit(1);
+      }
+      result.level = next;
       i++;
     } else if (arg === "-s" || arg === "--service") {
       const next = args[i + 1];
@@ -482,9 +528,60 @@ async function showCustomLogs(
 
 // ── Entry point ─────────────────────────────────────────────────
 
+async function setLogLevel(opts: LogsArgs): Promise<void> {
+  if (!opts.kind || !opts.level) {
+    console.error("Error: `logs set` needs --kind <module> and --level <level>");
+    process.exit(1);
+  }
+  if (!LEVELS.includes(opts.level)) {
+    console.error(
+      `Error: unknown level '${opts.level}'. Use one of: ${LEVELS.join(", ")}`,
+    );
+    process.exit(1);
+  }
+  const entry = resolveAssistant(opts.name);
+  if (!entry) {
+    console.error("No assistant found. Run `cadet hatch` first.");
+    process.exit(1);
+  }
+  if (entry.cloud !== "local") {
+    console.error("`logs set` currently supports local assistants only.");
+    process.exit(1);
+  }
+  const kind = KIND_ALIASES[opts.kind] ?? opts.kind;
+  const configPath = join(
+    getLocalInstanceDir(entry as LocalAssistant),
+    "workspace",
+    "config.json",
+  );
+  let config: Record<string, unknown> = {};
+  if (existsSync(configPath)) {
+    try {
+      config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
+    } catch {
+      console.error(`Error: ${configPath} is not valid JSON; fix it first.`);
+      process.exit(1);
+    }
+  }
+  const logs = (config.logs ?? {}) as Record<string, unknown>;
+  const moduleLevels = (logs.moduleLevels ?? {}) as Record<string, string>;
+  moduleLevels[kind] = opts.level;
+  logs.moduleLevels = moduleLevels;
+  config.logs = logs;
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  console.log(
+    `${kind} log level set to ${opts.level} — applied live, no restart needed.`,
+  );
+}
+
 export const logs = Object.assign(
   async function logs(): Promise<void> {
     const opts = parseArgs();
+
+    if (opts.set) {
+      await setLogLevel(opts);
+      return;
+    }
 
     const entry = resolveAssistant(opts.name);
 

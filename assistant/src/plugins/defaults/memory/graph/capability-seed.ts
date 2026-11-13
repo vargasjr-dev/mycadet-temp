@@ -170,6 +170,13 @@ export function seedSkillGraphNodes(): void {
     // stop appearing as duplicates. Idempotent — once cleaned, subsequent
     // runs find nothing.
     cleanupOldFormatCapabilityNodes();
+    // One summary line replaces the former per-node "Created capability graph
+    // node" INFO lines (146 lines / 30 KB of a single day's log). Per-node
+    // detail remains at debug.
+    log.info(
+      { skills: enabled.length },
+      "Skill capability graph seeded",
+    );
   } catch (err) {
     log.warn({ err }, "Failed to seed skill graph nodes");
   }
@@ -334,7 +341,7 @@ function upsertCapabilityNode(sourceKey: string, content: string): void {
   if (isMemoryV1Active(getConfig())) {
     upsertEmbedGraphNodeJob({ nodeId: node.id });
   }
-  log.info({ sourceKey, nodeId: node.id }, "Created capability graph node");
+  log.debug({ sourceKey, nodeId: node.id }, "Created capability graph node");
 }
 
 /**

@@ -44,7 +44,7 @@ import {
   getWorkspacePromptPath,
   WORKSPACE_MCP_FILENAME,
 } from "../util/layout.js";
-import { getLogger } from "../util/logger.js";
+import { applyModuleLogLevels, getLogger } from "../util/logger.js";
 import { evictConversationsForReload } from "./conversation-store.js";
 import { parseIdentityFields } from "./handlers/identity.js";
 import { reloadMcpServers } from "./mcp-reload-service.js";
@@ -195,6 +195,8 @@ export class ConfigWatcher {
           if (changed) {
             evictConversationsForReload();
             publishConfigChanged();
+            // Log levels hot-apply — no restart needed.
+            applyModuleLogLevels(getConfig().logs?.moduleLevels);
             const nextMcpGlobalMax = getConfig().tools.mcpGlobalMaxTools;
             if (prevMcpGlobalMax !== nextMcpGlobalMax) {
               reloadMcpServers().catch((err: unknown) => {

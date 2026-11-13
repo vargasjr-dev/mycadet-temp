@@ -26,5 +26,22 @@ export const LogFileConfigSchema = z
   })
   .describe("Log file storage and retention settings");
 
+const MODULE_LOG_LEVELS = ["trace", "debug", "info", "warn", "error", "silent"];
+
+export const LogsConfigSchema = z
+  .object({
+    moduleLevels: z
+      .record(z.string(), z.enum(MODULE_LOG_LEVELS as [string, ...string[]]))
+      .default({})
+      .describe(
+        "Per-module log-level overrides applied live (no restart): keys are "
+          + "logger module tags (e.g. \"http-request\", \"workspace-migrations\"), "
+          + "values are levels. `assistant logs set --kind <module> --level "
+          + "<level>` writes here.",
+      ),
+  })
+  .describe("Runtime log-level configuration");
+
+export type LogsConfig = z.infer<typeof LogsConfigSchema>;
 export type AuditLogConfig = z.infer<typeof AuditLogConfigSchema>;
 export type LogFileConfig = z.infer<typeof LogFileConfigSchema>;
