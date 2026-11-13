@@ -9,7 +9,10 @@ import { basename, join } from "node:path";
 import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
-import { resolveCloudBaseUrl, setIngressPublicBaseUrl } from "../../config/env.js";
+import {
+  resolveCloudBaseUrl,
+  setIngressPublicBaseUrl,
+} from "../../config/env.js";
 import {
   getConfig,
   loadRawConfig,
