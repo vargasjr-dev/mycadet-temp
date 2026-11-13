@@ -111,11 +111,12 @@ try {
     process.exit(1);
   }
 
-  // Apple's queue is normally a few minutes; poll with timestamps so the
-  // wait is visible and bounded (25 polls ~= 19 minutes) instead of a
-  // silent black box.
+  // Apple's queue is normally a few minutes, but run #127 sat "In Progress"
+  // past the old 25-poll window (~19 minutes) — Apple accepted the same
+  // class of submission eventually, the poll just gave up first. 48 polls
+  // ~= 36 minutes of headroom, still timestamped so the wait is visible.
   let status = "";
-  for (let poll = 0; poll < 25; poll++) {
+  for (let poll = 0; poll < 48; poll++) {
     await new Promise((resolve) => setTimeout(resolve, 45_000));
     const info = runNotary([
       "info",

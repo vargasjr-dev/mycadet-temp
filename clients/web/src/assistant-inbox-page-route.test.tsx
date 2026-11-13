@@ -1,9 +1,10 @@
 /**
  * The inbox route as the wizard lands on it after an upgrade: entitled, with
  * no address and no domain, it is the setup card with the handle open; once
- * Confirm registers the address, it is the mailbox. The cloud is
- * mocked at the generated SDK, the hooks that reach the session and the
- * daemon at their module boundaries.
+ * Confirm registers the address, it is the mailbox. Since #774 the email and
+ * domain surfaces are plain `fetch` at scoped assistant paths — no generated
+ * sdk to mock — so the data seam is a fetch router below; the daemon legs
+ * stay mocked at their generated module boundary.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -17,7 +18,6 @@ import {
 import { MemoryRouter } from "react-router";
 
 import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
-import * as apiSdk from "@/generated/api/sdk.gen";
 import type {
   AssistantDomain,
   AssistantEmailAddress,
@@ -29,8 +29,6 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const ASSISTANT_ID = "assistant-1";
-const PLATFORM_ASSISTANT_ID = "platform-1";
-
 mock.module("@/assistant/use-active-assistant-id", () => ({
   ...activeAssistantIdModule,
   useActiveAssistantId: () => ASSISTANT_ID,
@@ -80,45 +78,41 @@ const domainCreateBodies: unknown[] = [];
 /** When set, the domain is claimed but the address on it is not made. */
 let domainEmailError: { detail: string; code: string } | null = null;
 
-function page<T>(results: T[]) {
-  return {
-    data: { count: results.length, next: null, previous: null, results },
-    response: { ok: true },
-  };
-}
+/**
+ * The operator surface the route reads is plain fetch at scoped assistant
+ * paths (lib/email-api, lib/assistant-domains), so this router is the data
+ * seam: fixtures ride the real hooks, cache keys, and zod parsing. Unrouted
+ * calls answer 404 loudly instead of leaking to the network.
+ */
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
 
-mock.module("@/generated/api/sdk.gen", () => ({
-  ...apiSdk,
-  assistantsList: () =>
-    Promise.resolve(
-      page([
-        {
-          id: PLATFORM_ASSISTANT_ID,
-          name: "Ziggy",
-          handle: "bright-vole-02a64h",
-        },
-      ]),
-    ),
-  assistantsEmailAddressesList: () => Promise.resolve(page(addresses)),
-  assistantsDomainsList: () => Promise.resolve(page(domains)),
-  assistantsDomainsCreate: (options: { body: unknown }) => {
-    domainCreateBodies.push(options.body);
-    // One call registers the subdomain and, as a best effort, the address
-    // on it; a failed address comes back as a field on the success.
-    domains = [
-      {
-        id: "domain-1",
-        subdomain: "bright-vole-02a64h",
-        created: "2026-09-22T00:00:00Z",
-        modified: "2026-09-22T00:00:00Z",
-      },
-    ];
-    if (domainEmailError) {
-      return Promise.resolve({
-        data: { ...domains[0], email_error: domainEmailError },
-        response: { ok: true },
-      });
-    }
+// The operator paths key on the RESOLVED assistant's id (the handle, from
+// the store), not the active-assistant id — match on the tail after the id.
+const routes = new Map<string, (init?: RequestInit) => Promise<Response>>();
+
+routes.set(`GET email-addresses/`, () =>
+  Promise.resolve(json({ results: addresses })),
+);
+routes.set(`GET domains/`, () => Promise.resolve(json({ results: domains })));
+// The mailbox's message list mounts with the inbox open.
+routes.set(`GET emails/`, () => Promise.resolve(json({ results: [] })));
+routes.set(`POST domains/`, async (init) => {
+  domainCreateBodies.push(JSON.parse(init?.body as string));
+  // One call registers the subdomain and, as a best effort, the address
+  // on it; a failed address comes back as a field on the success.
+  const domain = {
+    id: "domain-1",
+    subdomain: "bright-vole-02a64h",
+    created: "2026-09-22T00:00:00Z",
+    modified: "2026-09-22T00:00:00Z",
+    ...(domainEmailError ? { email_error: domainEmailError } : {}),
+  };
+  domains = [domain];
+  if (!domainEmailError) {
     addresses = [
       {
         id: "address-1",
@@ -126,26 +120,25 @@ mock.module("@/generated/api/sdk.gen", () => ({
         created_at: "2026-09-22T00:00:00Z",
       },
     ];
-    return Promise.resolve({ data: domains[0], response: { ok: true } });
-  },
-  assistantsEmailsList: () => Promise.resolve(page([])),
-  assistantsEmailAddressesStatusRetrieve: () =>
-    Promise.resolve({
-      data: {
-        address: "hi@bright-vole-02a64h.cadet.me",
-        status: "active",
-        usage: {
-          sent_today: 0,
-          daily_limit: 100,
-          received_today: 0,
-          sent_this_month: 0,
-          received_this_month: 0,
-        },
-        created_at: "2026-09-22T00:00:00Z",
-      },
-      response: { ok: true },
-    }),
-}));
+  }
+  return json(domain);
+});
+
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const path = String(input).split("?")[0];
+  // .../v1/assistants/{id}/{tail} — the tail carries the surface.
+  const tail = path.split("/assistants/")[1]?.split("/").slice(1).join("/");
+  const handler = routes.get(
+    `${(init?.method ?? "GET").toUpperCase()} ${tail ?? ""}`,
+  );
+  if (!handler) {
+    return json(
+      { detail: `test fetch router has no route for ${String(input)}` },
+      404,
+    );
+  }
+  return handler(init);
+}) as typeof fetch;
 
 mock.module("@/generated/daemon/sdk.gen", () => ({
   ...daemonSdk,
