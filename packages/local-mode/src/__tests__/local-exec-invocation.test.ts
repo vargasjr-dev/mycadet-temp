@@ -1,8 +1,15 @@
-import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { ensureLocalBinShims } from "../remotes/local/exec";
+import { ensureLocalBinShims } from "../remotes/local/common";
 
 // The bin/ folder is the contract: exec prepends it to the child's PATH, so
 // EVERY invocation shape — argv, compound commands, pipes, shell scripts —
@@ -90,9 +97,12 @@ describe("ensureLocalBinShims", () => {
       "src",
       "index.ts",
     );
-    mkdirSync(join(runtimeDir, "node_modules", "@mycadet", "assistant", "src"), {
-      recursive: true,
-    });
+    mkdirSync(
+      join(runtimeDir, "node_modules", "@mycadet", "assistant", "src"),
+      {
+        recursive: true,
+      },
+    );
     writeFileSync(fakeIndex, "export {};\n");
     chmodSync(fakeIndex, 0o644);
     ensureLocalBinShims(entry());
