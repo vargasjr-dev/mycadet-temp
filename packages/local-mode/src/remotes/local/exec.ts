@@ -16,7 +16,11 @@ import { spawn } from "node:child_process";
 import type { ServiceName } from "../docker/statefulset";
 import type { ExecCommandOptions, ExecCommandResult } from "../../operations/exec";
 import type { LocalAssistant } from "../../lockfile-contract";
-import { localSourceCommandEntry, resolveBunExecutable } from "./common";
+import {
+  applyDaemonEnvOverrides,
+  localSourceCommandEntry,
+  resolveBunExecutable,
+} from "./common";
 import { getLocalInstanceDir } from "./instance";
 
 export function localExecDirForService(
@@ -114,13 +118,19 @@ export async function execLocal(
     stdio: "inherit",
     windowsHide: true,
     cwd: serviceDir,
-    env: {
-      ...process.env,
-      CADET_WORKSPACE_DIR: workspaceDir,
-      ...(shimDir
-        ? { PATH: [shimDir, process.env.PATH].filter(Boolean).join(delimiter) }
-        : {}),
-    },
+    env: (() => {
+      const env: Record<string, string | undefined> = { ...process.env };
+      // The daemon env, not just the workspace dir: without the security
+      // dirs and CES socket bootstrap, exec'd cadet binaries resolve their
+      // DEFAULT data dirs and see a different (empty) instance — e.g.
+      // `assistant credentials list` reporting "No credentials found" for a
+      // vault the daemon holds credentials for.
+      applyDaemonEnvOverrides(env, entry);
+      if (shimDir) {
+        env.PATH = [shimDir, env.PATH].filter(Boolean).join(delimiter);
+      }
+      return env;
+    })(),
   });
   const code = await new Promise<number>((resolve) => {
     child.on("close", (c) => resolve(c ?? 1));

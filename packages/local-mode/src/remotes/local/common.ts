@@ -551,9 +551,15 @@ function resolveCesBootstrapSocketDir(
 /**
  * Apply per-instance resource overrides and shared daemon options to an
  * environment object. Called from all daemon spawn paths (source, watch,
- * bundled binary) to eliminate drift between the three.
+ * bundled binary) — and the exec leg — to eliminate drift between them.
+ *
+ * The environment a local assistant's processes share: workspace/security
+ * dirs, CES socket bootstrap, ports. Daemon starts, wakes, hatches — and the
+ * exec leg — all build their env through this one function, so an exec'd
+ * `assistant credentials list` reads the SAME credential store the daemon
+ * runs with instead of falling back to a default (empty) data dir.
  */
-function applyDaemonEnvOverrides(
+export function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
   entry: LocalAssistant,
   options?: DaemonStartOptions,
