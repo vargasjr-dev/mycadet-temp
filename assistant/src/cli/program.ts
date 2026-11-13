@@ -19,6 +19,7 @@ import { registerClientsCommand } from "./commands/clients.js";
 import { registerCloudCommand } from "./commands/cloud/index.js";
 import { registerCompletionsCommand } from "./commands/completions.js";
 import { registerConfigCommand } from "./commands/config.js";
+import { registerLogsCommand } from "./commands/logs.js";
 import { registerContactsCommand } from "./commands/contacts.js";
 import { registerConversationsCommand } from "./commands/conversations.js";
 import { registerCredentialsCommand } from "./commands/credentials.js";
@@ -100,6 +101,7 @@ Examples:
   registerClientsCommand(program);
   registerCompletionsCommand(program);
   registerConfigCommand(program);
+  registerLogsCommand(program);
   registerContactsCommand(program);
   registerConversationsCommand(program);
   registerCredentialsCommand(program);

@@ -15,6 +15,7 @@ import {
   getDebugStdoutLogs,
   getIsContainerized,
 } from "../config/env-registry.js";
+import { LOG_LEVELS } from "../config/schemas/logging.js";
 import { getLogsDir } from "./layout.js";
 import { logSerializers } from "./log-redact.js";
 
@@ -121,55 +122,37 @@ let rootLogger: Logger | null = null;
 let activeLogDate: string | null = null;
 let activeLogFileConfig: LogFileConfig | null = null;
 
-/** Severity names accepted by `logs.moduleLevels` config. */
-export type ModuleLogLevel =
-  | "trace"
-  | "debug"
-  | "info"
-  | "warn"
-  | "error"
-  | "silent";
+/** Severity names accepted by `logFile.levels` — shared with the config schema. */
+export type ModuleLogLevel = (typeof LOG_LEVELS)[number];
 
-const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set([
-  "trace",
-  "debug",
-  "info",
-  "warn",
-  "error",
-  "silent",
-]);
+const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set(LOG_LEVELS);
 
 /**
- * Per-module ("kind") level overrides, applied without a restart: the daemon
- * re-applies them whenever workspace config.json changes (see
- * daemon/config-watcher.ts) and at boot. Shipped default: the http-request
- * kind sits at "warn" so per-request success lines stay out of the INFO log;
- * `assistant logs set --kind http-request --level info` promotes them live
- * (4xx/5xx lines always show).
+ * Per-module ("kind") level overrides from `logFile.levels` config, applied
+ * without a restart: the daemon re-applies them whenever workspace
+ * config.json changes (daemon/config-watcher.ts and the config_set route)
+ * and at boot. Defaults are empty — every module runs at the root level
+ * (info). `assistant logs set --kind http --level silent` quiets a kind;
+ * set it back to info to restore.
  */
-const moduleLevels = new Map<string, ModuleLogLevel>(
-  Object.entries({
-    "http-request": "warn" as ModuleLogLevel,
-  }),
-);
+const moduleLevels = new Map<string, ModuleLogLevel>();
 let moduleLevelsVersion = 0;
 
 /**
- * Replace the module-level override map (defaults merged with the config's
- * `logs.moduleLevels`). Bumps the version so cached child loggers rebuild
- * with the new levels on their next call.
+ * Replace the module-level override map from the config's `logFile.levels`.
+ * Bumps the version so cached child loggers rebuild with the new levels on
+ * their next call.
  */
 export function applyModuleLogLevels(
   levels: Record<string, string> | undefined,
 ): void {
   moduleLevels.clear();
-  moduleLevels.set("http-request", "warn");
   for (const [name, level] of Object.entries(levels ?? {})) {
     if (MODULE_LOG_LEVELS.has(level)) {
       moduleLevels.set(name, level as ModuleLogLevel);
     } else {
       console.warn(
-        `[logger] ignoring logs.moduleLevels.${name}: "${level}" is not a log level`,
+        `[logger] ignoring logFile.levels.${name}: "${level}" is not a log level`,
       );
     }
   }

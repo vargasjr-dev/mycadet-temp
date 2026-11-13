@@ -196,7 +196,7 @@ export class ConfigWatcher {
             evictConversationsForReload();
             publishConfigChanged();
             // Log levels hot-apply — no restart needed.
-            applyModuleLogLevels(getConfig().logs?.moduleLevels);
+            applyModuleLogLevels(getConfig().logFile?.levels);
             const nextMcpGlobalMax = getConfig().tools.mcpGlobalMaxTools;
             if (prevMcpGlobalMax !== nextMcpGlobalMax) {
               reloadMcpServers().catch((err: unknown) => {

@@ -583,7 +583,7 @@ export async function runDaemon(): Promise<void> {
 
   // Log-level overrides from config apply at boot and hot-apply on change
   // (config-watcher). The http-request default lives in the logger itself.
-  applyModuleLogLevels(config.logs?.moduleLevels);
+  applyModuleLogLevels(config.logFile?.levels);
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
   // Blocks up to a 20s timeout so credential reads route through CES before

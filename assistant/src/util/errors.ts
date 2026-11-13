@@ -157,14 +157,14 @@ export class ProviderError extends AssistantError {
    * we sent. The inspector's Raw tab uses it when a 4xx/5xx body carries
    * detail the extracted `apiError*` fields drop.
    */
-  public readonly rawBody?: string;
+  private _rawBody?: string;
   /**
    * Inspectable SDK/wire request payload for the call that failed. This is
    * the outbound request, not the error response (`rawBody`). Provider
    * `sendMessage` throws attach it so inspector rows show the same request
    * shape as a successful `usage` row.
    */
-  public readonly rawRequest?: unknown;
+  private _rawRequest?: unknown;
   /**
    * Tagged daemon-owned abort reason carried over from the AbortSignal that
    * triggered this error. Untyped here to avoid a daemon→util import cycle;
@@ -201,10 +201,31 @@ export class ProviderError extends AssistantError {
     this.apiErrorType = options?.apiErrorType;
     this.apiErrorParam = options?.apiErrorParam;
     this.requestId = options?.requestId;
-    this.rawBody = options?.rawBody;
-    this.rawRequest = options?.rawRequest;
+    this._rawBody = options?.rawBody;
+    this._rawRequest = options?.rawRequest;
     this.abortReason = options?.abortReason;
     this.reason = options?.reason;
+  }
+
+  /**
+   * Verbatim upstream non-2xx response body (possibly truncated). This is
+   * what the provider returned after rejecting the call, not the request
+   * we sent. The inspector's Raw tab uses it when a 4xx/5xx body carries
+   * detail the extracted `apiError*` fields drop.
+   *
+   * A prototype getter, not an own property, on purpose: the payload can be
+   * tens of KB (a full outbound request — system prompt, tool schemas,
+   * message history — rides in `rawRequest`), and pino's err serializer
+   * walks own enumerable props. Getters keep the payloads out of log lines
+   * while the request-log DB persist, which reads these directly, still
+   * sees them.
+   */
+  get rawBody(): string | undefined {
+    return this._rawBody;
+  }
+  /** See `rawBody` for why this is a getter. */
+  get rawRequest(): unknown {
+    return this._rawRequest;
   }
 
   attachRouteAttribution(attribution: ProviderRouteAttribution): void {

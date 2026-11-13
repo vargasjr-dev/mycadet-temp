@@ -61,6 +61,7 @@ import {
   findSubstrateShadowing,
 } from "../../config/substrate-twin-shadowing.js";
 import { getConfigWatcher } from "../../daemon/config-watcher.js";
+import { applyModuleLogLevels } from "../../util/logger.js";
 import {
   getEmbeddingConfigInfo,
   setEmbeddingConfig,
@@ -723,6 +724,10 @@ export async function commitConfigWrite(
 
   clearEmbeddingBackendCache();
   invalidateConfigCache();
+  // Log levels hot-apply on this path too: the file watcher is suppressed
+  // for the debounce window above, so a config_set write must apply them
+  // itself (boot and file-change paths both do the same).
+  applyModuleLogLevels(getConfig().logFile?.levels);
   rescheduleHeartbeatIfTimezoneChanged(preWrite, raw);
   // Reinitialize providers so the live registry reflects the new config.
   // Suppress disk writes inside getConfig() — we just wrote the raw config

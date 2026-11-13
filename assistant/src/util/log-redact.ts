@@ -152,19 +152,7 @@ function serializeError(err: unknown, depth: number): unknown {
  * secrets from the result.
  */
 function errSerializer(err: unknown): unknown {
-  const out = redactValue(serializeError(err, 0), 0);
-  // Provider payload dumps dominate error lines at INFO: a single
-  // ProviderError's `rawRequest` carries the entire outbound payload —
-  // system prompt, tool schemas, full message history — and `rawBody` the
-  // raw response, ~17 KB per line (measured: 23 such lines ≈ 400 KB of one
-  // log's 1.1 MB). The actionable fields (message, statusCode, model) stay;
-  // the bytes live in the request-log DB the inspector reads.
-  if (out && typeof out === "object" && !Array.isArray(out)) {
-    const record = out as Record<string, unknown>;
-    delete record.rawRequest;
-    delete record.rawBody;
-  }
-  return out;
+  return redactValue(serializeError(err, 0), 0);
 }
 
 /**

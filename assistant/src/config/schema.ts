@@ -31,7 +31,6 @@ import { LlmRequestLogsConfigSchema } from "./schemas/llm-request-logs.js";
 import {
   AuditLogConfigSchema,
   LogFileConfigSchema,
-  LogsConfigSchema,
 } from "./schemas/logging.js";
 import { MemoryConfigSchema } from "./schemas/memory.js";
 import { MigrationsConfigSchema } from "./schemas/migrations.js";
@@ -71,7 +70,6 @@ export const AssistantConfigSchema = z.object({
   logFile: LogFileConfigSchema.default(
     LogFileConfigSchema.parse({ dir: getDataDir() + "/logs" }),
   ),
-  logs: LogsConfigSchema.default(LogsConfigSchema.parse({})),
   // Unified LLM configuration block. The unique source of truth for
   // provider/model/maxTokens/effort/speed/temperature/thinking/contextWindow
   // and pricing overrides for every call site in the assistant.
