@@ -17,7 +17,7 @@ import type { ServiceName } from "../docker/statefulset";
 import type { ExecCommandOptions, ExecCommandResult } from "../../operations/exec";
 import type { LocalAssistant } from "../../lockfile-contract";
 import {
-  applyDaemonEnvOverrides,
+  applyAssistantEnvironment,
   localSourceCommandEntry,
   resolveBunExecutable,
 } from "./common";

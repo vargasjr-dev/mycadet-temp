@@ -13,7 +13,7 @@ import {
 import { createRequire } from "node:module";
 import { Socket } from "node:net";
 import { homedir, platform, tmpdir } from "node:os";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 
 import {
   isNamedPipePath,
