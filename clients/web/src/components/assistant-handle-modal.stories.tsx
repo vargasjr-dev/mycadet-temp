@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 
-import { assistantsDomainsListQueryKey } from "@/generated/api/@tanstack/react-query.gen";
-import type { Assistant } from "@/generated/api/types.gen";
+import { assistantDomainsListQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
 
 import { AssistantHandleModal } from "./assistant-handle-modal";
@@ -11,13 +10,13 @@ const ASSISTANT = {
   id: "00000000-0000-4000-8000-000000000001",
   name: "Velly",
   handle: "velly",
-} as unknown as Assistant;
+};
 
 /** Seeds the domain list, so the story decides whether the handle is held. */
 function withDomains(subdomain: string | null) {
   return withQueryCache((client) => {
     client.setQueryData(
-      assistantsDomainsListQueryKey({ path: { assistant_id: ASSISTANT.id } }),
+      assistantDomainsListQueryKey({ path: { assistant_id: ASSISTANT.id } }),
       { results: subdomain ? [{ id: "domain-1", subdomain }] : [] },
     );
   });

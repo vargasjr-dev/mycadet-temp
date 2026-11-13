@@ -14,8 +14,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { AssistantBackup } from "@/assistant/api";
 import { setHosting } from "@/assistant/hosting.test-helper";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
-import { client as cloudClient } from "@/generated/api/client.gen";
-import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
+import { fixtureNotFound } from "@/lib/stub-client-fetch";
 /**
  * The hosting answer lives on the lockfile entry's remote field: a local
  * stamp synthesizes a self-hosted entry for the story assistant's id; the
@@ -102,9 +101,13 @@ const meta = {
     },
   },
   beforeEach: () => {
-    const restorePlatform = stubClientFetch(cloudClient, platformFetch);
+    const realFetch = window.fetch;
+    window.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+      Promise.resolve(
+        platformFetch(input instanceof Request ? input : new Request(input, init)),
+      )) as typeof window.fetch;
     return () => {
-      restorePlatform();
+      window.fetch = realFetch;
     };
   },
   decorators: [
