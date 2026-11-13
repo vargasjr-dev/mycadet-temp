@@ -10,7 +10,7 @@
  */
 
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { delimiter, join } from "node:path";
+import { join } from "node:path";
 import { spawn } from "node:child_process";
 
 import type { ServiceName } from "../docker/statefulset";
@@ -118,19 +118,7 @@ export async function execLocal(
     stdio: "inherit",
     windowsHide: true,
     cwd: serviceDir,
-    env: (() => {
-      const env: Record<string, string | undefined> = { ...process.env };
-      // The daemon env, not just the workspace dir: without the security
-      // dirs and CES socket bootstrap, exec'd cadet binaries resolve their
-      // DEFAULT data dirs and see a different (empty) instance — e.g.
-      // `assistant credentials list` reporting "No credentials found" for a
-      // vault the daemon holds credentials for.
-      applyDaemonEnvOverrides(env, entry);
-      if (shimDir) {
-        env.PATH = [shimDir, env.PATH].filter(Boolean).join(delimiter);
-      }
-      return env;
-    })(),
+    env: applyAssistantEnvironment(entry, { shimDir }),
   });
   const code = await new Promise<number>((resolve) => {
     child.on("close", (c) => resolve(c ?? 1));

@@ -118,11 +118,15 @@ async function wakeLocalSteps(
   // responsibility: its process gates its own traffic on the daemon's
   // migrations, so an early start just means it holds the gate a little
   // longer.
+  if (defaultWorkspaceConfigPath) {
+    // The daemon env builder reads process.env directly — a hatch's
+    // first-boot config seed lands here instead of threading through
+    // DaemonStartOptions.
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = defaultWorkspaceConfigPath;
+  }
   await Promise.all([
     startCes(watch, entry),
-    startLocalDaemon(watch, entry, {
-      defaultWorkspaceConfigPath,
-    }),
+    startLocalDaemon(watch, entry),
     startGateway(watch, entry),
   ]);
 

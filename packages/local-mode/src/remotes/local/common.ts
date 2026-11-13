@@ -525,7 +525,6 @@ function resolveDaemonMainPath(assistantIndex: string): string {
  * signing key end-to-end; the CLI never touches it.
  */
 type DaemonStartOptions = {
-  defaultWorkspaceConfigPath?: string;
   requireReady?: boolean;
 };
 
@@ -549,46 +548,43 @@ function resolveCesBootstrapSocketDir(
 }
 
 /**
- * Apply per-instance resource overrides and shared daemon options to an
- * environment object. Called from all daemon spawn paths (source, watch,
- * bundled binary) — and the exec leg — to eliminate drift between them.
- *
- * The environment a local assistant's processes share: workspace/security
- * dirs, CES socket bootstrap, ports. Daemon starts, wakes, hatches — and the
- * exec leg — all build their env through this one function, so an exec'd
- * `assistant credentials list` reads the SAME credential store the daemon
- * runs with instead of falling back to a default (empty) data dir.
+ * The one shared instance env for daemon starts, wakes, hatches, and exec
+ * legs: applies the instance's workspace/security dirs, ports, and CES/IPC
+ * sockets onto process.env, then returns a spawn-ready copy (with the
+ * optional exec shim dir on PATH).
  */
-export function applyDaemonEnvOverrides(
-  env: Record<string, string | undefined>,
+export function applyAssistantEnvironment(
   entry: LocalAssistant,
-  options?: DaemonStartOptions,
-): void {
-  {
-    env.CADET_WORKSPACE_DIR = join(getLocalInstanceDir(entry), "workspace");
-    env.GATEWAY_SECURITY_DIR = join(
-      getLocalInstanceDir(entry),
-      "gateway-security",
-    );
-    env.CREDENTIAL_SECURITY_DIR = join(
-      getLocalInstanceDir(entry),
-      "ces-security",
-    );
-    env.CES_DATA_DIR = join(getLocalInstanceDir(entry), "ces-data");
-    if (entry.daemonPort !== undefined)
-      env.RUNTIME_HTTP_PORT = String(entry.daemonPort);
-    if (entry.port !== undefined) env.GATEWAY_PORT = String(entry.port);
-    delete env.QDRANT_URL;
+  options?: { shimDir?: string },
+): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  env.RUNTIME_HTTP_PORT = env.RUNTIME_HTTP_PORT || "7821";
+  env.CADET_CLOUD = "local";
+  env.CADET_ENVIRONMENT = env.CADET_ENVIRONMENT || "local";
+  env.CADET_WORKSPACE_DIR = join(getLocalInstanceDir(entry), "workspace");
+  env.GATEWAY_SECURITY_DIR = join(getLocalInstanceDir(entry), "gateway-security");
+  env.CREDENTIAL_SECURITY_DIR = join(getLocalInstanceDir(entry), "ces-security");
+  env.CES_DATA_DIR = join(getLocalInstanceDir(entry), "ces-data");
+  if (entry.daemonPort !== undefined) {
+    env.RUNTIME_HTTP_PORT = String(entry.daemonPort);
   }
-  if (options?.defaultWorkspaceConfigPath) {
-    env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
-      options.defaultWorkspaceConfigPath;
-  }
+  if (entry.port !== undefined) env.GATEWAY_PORT = String(entry.port);
+  delete env.QDRANT_URL;
   // CES and the assistant resolve the socket from CES_BOOTSTRAP_SOCKET_DIR.
   const bootstrapDir = resolveCesBootstrapSocketDir(entry, env);
   env.CES_BOOTSTRAP_SOCKET_DIR = bootstrapDir;
   mkdirSync(bootstrapDir, { recursive: true });
   applyIpcSocketDirOverride(env);
+  if (options?.shimDir) {
+    env.PATH = [options.shimDir, env.PATH].filter(Boolean).join(delimiter);
+  }
+  // Apply onto process.env too: unrelated children spawned later by this
+  // process inherit the same instance env instead of the caller's defaults.
+  for (const [key, value] of Object.entries(env)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+  return env;
 }
 
 let startupLogging = true;
@@ -778,13 +774,7 @@ async function startDaemonFromSource(
     return null;
   }
 
-  const env: Record<string, string | undefined> = {
-    ...process.env,
-    RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    CADET_CLOUD: "local",
-    CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
-  };
-  applyDaemonEnvOverrides(env, entry, options);
+  const env = applyAssistantEnvironment(entry);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
   // detect the in-progress spawn and wait instead of racing.
@@ -855,12 +845,7 @@ async function startDaemonWatchFromSource(
     return null;
   }
 
-  const env: Record<string, string | undefined> = {
-    ...process.env,
-    RUNTIME_HTTP_PORT: process.env.RUNTIME_HTTP_PORT || "7821",
-    CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
-  };
-  applyDaemonEnvOverrides(env, entry, options);
+  const env = applyAssistantEnvironment(entry);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
   // detect the in-progress spawn and wait instead of racing.
