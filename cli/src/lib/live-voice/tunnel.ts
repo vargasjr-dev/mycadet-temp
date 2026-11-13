@@ -144,7 +144,7 @@ export async function mintTunnelWsToken(args: {
   // `cloudAuthHeaders` resolves `Cadet-Organization-Id`, which the endpoint needs
   // to scope the token, and which is cached per token so a session does not
   // pay for an extra round trip.
-  const headers = await cloudAuthHeaders(args.sessionToken, args.cloudUrl);
+  const headers = await cloudAuthHeaders(args.sessionToken);
 
   let response: Response;
   try {

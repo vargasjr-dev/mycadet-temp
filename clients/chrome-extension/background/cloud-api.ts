@@ -11,10 +11,9 @@
  * the desktop app's `defaultHeaders` on the migration transport.
  */
 
-import { SEEDS } from "@mycadet/shared";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 import { getStoredSession } from "./cloud-auth.js";
-import type { ExtensionEnvironment } from "./extension-environment.js";
 
 // ── Fetch helper ────────────────────────────────────────────────────
 
@@ -26,11 +25,10 @@ import type { ExtensionEnvironment } from "./extension-environment.js";
  * can override it or supply additional headers via `init.headers`.
  */
 export async function cloudApiFetch(
-  environment: ExtensionEnvironment,
   path: string,
   init?: RequestInit & { skipOrgHeader?: boolean },
 ): Promise<Response> {
-  const apiBaseUrl = SEEDS[environment].baseUrl;
+  const apiBaseUrl = getCloudBaseUrl();
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -84,11 +82,9 @@ export interface CloudAssistant {
  * Fetch the user's organizations and return the first org ID.
  * This is a bootstrap call — no org header needed.
  */
-export async function fetchOrganizationId(
-  environment: ExtensionEnvironment,
-): Promise<string | null> {
+export async function fetchOrganizationId(): Promise<string | null> {
   try {
-    const response = await cloudApiFetch(environment, "/v1/organizations/", {
+    const response = await cloudApiFetch("/v1/organizations/", {
       skipOrgHeader: true,
     });
     if (!response.ok) return null;
@@ -108,10 +104,8 @@ export async function fetchOrganizationId(
 /**
  * Fetch the current user's assistants from the cloud API.
  */
-export async function fetchAssistants(
-  environment: ExtensionEnvironment,
-): Promise<CloudAssistant[]> {
-  const response = await cloudApiFetch(environment, "/v1/assistants/");
+export async function fetchAssistants(): Promise<CloudAssistant[]> {
+  const response = await cloudApiFetch("/v1/assistants/");
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");

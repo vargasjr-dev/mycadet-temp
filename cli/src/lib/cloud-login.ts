@@ -244,8 +244,9 @@ export function startLoopbackListener(
   });
 }
 
-/** App-held WorkOS PKCE login */
-export async function workosPkceLogin(cloudUrl: string): Promise<string> {
+/** App-held WorkOS PKCE login — dials Cadet Cloud's current origin. */
+export async function workosPkceLogin(): Promise<string> {
+  const cloudUrl = getCloudBaseUrl();
   if (!process.stdin.isTTY) return pollingCloudLogin(cloudUrl);
   const clientId = await fetchWorkosClientId(cloudUrl);
   const { verifier, challenge } = generatePkcePair();
@@ -302,7 +303,7 @@ export async function ensureCloudLoginInteractive(): Promise<CloudLoginSession> 
     }
   }
 
-  const token = await workosPkceLogin(getCloudBaseUrl());
+  const token = await workosPkceLogin();
   const user = await fetchCurrentUser(token);
   saveCloudToken(token);
   return { token, user };

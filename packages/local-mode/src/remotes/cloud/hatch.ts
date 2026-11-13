@@ -50,7 +50,7 @@ export async function hatchCloud(): Promise<HatchCloudResult> {
   try {
     const response = await loopbackSafeFetch(url, {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify({}),
       signal: AbortSignal.timeout(300_000),
     });

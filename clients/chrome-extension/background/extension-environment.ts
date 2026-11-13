@@ -13,7 +13,7 @@
 
 // ── Environment type ────────────────────────────────────────────────
 
-import { SEEDS } from "@mycadet/shared";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 /**
  * The four deployment environments the extension can target.
@@ -104,6 +104,6 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
  */
 export const CREATE_ASSISTANT_WEB_PATH = "/assistant/onboarding/hatching";
 
-export function createFirstAssistantUrl(env: ExtensionEnvironment): string {
-  return `${SEEDS[env].baseUrl}${CREATE_ASSISTANT_WEB_PATH}`;
+export function createFirstAssistantUrl(): string {
+  return `${getCloudBaseUrl()}${CREATE_ASSISTANT_WEB_PATH}`;
 }

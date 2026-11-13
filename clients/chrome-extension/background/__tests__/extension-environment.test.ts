@@ -13,7 +13,7 @@
 
 import { describe, test, expect, afterEach } from "bun:test";
 
-import { SEEDS } from "@mycadet/shared";
+import { getCloudBaseUrl, SEEDS } from "@mycadet/shared";
 
 import {
   parseExtensionEnvironment,
@@ -131,20 +131,11 @@ describe("the single-origin mapping (shared SEEDS)", () => {
 });
 
 describe("createFirstAssistantUrl", () => {
-  const cases: Array<{ env: ExtensionEnvironment; baseUrl: string }> = [
-    { env: "production", baseUrl: "https://mycadet.ai" },
-    { env: "staging", baseUrl: "https://staging.mycadet.ai" },
-    { env: "dev", baseUrl: "https://dev.mycadet.ai" },
-    { env: "local", baseUrl: "http://localhost:7840" },
-  ];
-
-  for (const { env, baseUrl } of cases) {
-    test(`${env} opens the hatching entry on ${baseUrl}`, () => {
-      expect(createFirstAssistantUrl(env)).toBe(
-        `${baseUrl}${CREATE_ASSISTANT_WEB_PATH}`,
-      );
-    });
-  }
+  test("opens the hatching entry on the derived cloud origin", () => {
+    expect(createFirstAssistantUrl()).toBe(
+      `${getCloudBaseUrl()}${CREATE_ASSISTANT_WEB_PATH}`,
+    );
+  });
 
   test("points at the cloud hatching route, not the local-only chooser create action", () => {
     expect(CREATE_ASSISTANT_WEB_PATH).toBe("/assistant/onboarding/hatching");

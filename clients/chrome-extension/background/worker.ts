@@ -23,7 +23,7 @@
  *   - Every other payload is logged and discarded.
  */
 
-import { SEEDS } from "@mycadet/shared";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 import {
   type ExtensionEnvironment,
@@ -815,8 +815,7 @@ async function handleAssistantGone(): Promise<void> {
 
   let assistants: Array<{ id: string; name: string }> = [];
   try {
-    const env = await getEffectiveEnvironment();
-    assistants = await fetchAssistants(env);
+    assistants = await fetchAssistants();
   } catch (err) {
     console.error(
       "[cadet-sse] Failed to fetch assistants during 404 recovery",
@@ -981,8 +980,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
       });
       return;
     }
-    const env = await getEffectiveEnvironment();
-    const apiBaseUrl = SEEDS[env].baseUrl;
+    const apiBaseUrl = getCloudBaseUrl();
     if (!shouldConnect) return;
     sseConnection = createSseConnection({
       kind: "cadet-cloud",
@@ -1448,7 +1446,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponseFn) => {
       let assistants: Array<{ id: string; name: string }> = [];
       let assistantsError: string | undefined;
       try {
-        assistants = await fetchAssistants(env);
+        assistants = await fetchAssistants();
       } catch (err) {
         assistantsError = err instanceof Error ? err.message : String(err);
       }
@@ -1505,8 +1503,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponseFn) => {
 
   if (message.type === "list-assistants") {
     (async () => {
-      const env = await getEffectiveEnvironment();
-      const assistants = await fetchAssistants(env);
+      const assistants = await fetchAssistants();
       sendResponseFn({ ok: true, assistants });
     })().catch((err) =>
       sendResponseFn({
@@ -1519,8 +1516,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponseFn) => {
 
   if (message.type === "open-create-assistant") {
     (async () => {
-      const env = await getEffectiveEnvironment();
-      await chrome.tabs.create({ url: createFirstAssistantUrl(env) });
+      await chrome.tabs.create({ url: createFirstAssistantUrl() });
       sendResponseFn({ ok: true });
     })().catch((err) =>
       sendResponseFn({
@@ -1614,7 +1610,7 @@ async function resolveEnvContext(): Promise<{
   apiBaseUrl: string;
 }> {
   const environment = await getEffectiveEnvironment();
-  const apiBaseUrl = SEEDS[environment].baseUrl;
+  const apiBaseUrl = getCloudBaseUrl();
   return { environment, apiBaseUrl };
 }
 

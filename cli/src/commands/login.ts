@@ -14,7 +14,6 @@ import {
   saveCloudToken,
 } from "../lib/cloud-client";
 import { fetchCurrentUser } from "@mycadet/local-mode";
-import { getCloudBaseUrl } from "@mycadet/shared";
 import { describeLoginError, workosPkceLogin } from "../lib/cloud-login.js";
 import { registerLocalAssistantWithCloud } from "@mycadet/local-mode";
 import { syncCloudAssistants } from "../lib/sync-cloud-assistants";
@@ -82,7 +81,7 @@ export const login = Object.assign(
     // If no --token flag, use app-held WorkOS PKCE login.
     if (!token) {
       try {
-        token = await workosPkceLogin(getCloudBaseUrl());
+        token = await workosPkceLogin();
       } catch (error) {
         console.error(`❌ ${describeLoginError(error)}`);
         process.exit(1);

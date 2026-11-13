@@ -24,7 +24,7 @@
  * versions.
  */
 
-import { SEEDS } from "@mycadet/shared";
+import { getCloudBaseUrl } from "@mycadet/shared";
 
 import { fetchOrganizationId } from "./cloud-api.js";
 import type { ExtensionEnvironment } from "./extension-environment.js";
@@ -168,7 +168,7 @@ export async function clearSelectedAssistant(): Promise<void> {
 export async function startCloudLogin(
   environment: ExtensionEnvironment,
 ): Promise<CloudSession> {
-  const apiBaseUrl = SEEDS[environment].baseUrl;
+  const apiBaseUrl = getCloudBaseUrl();
 
   // The redirect URI Chrome intercepts when WorkOS redirects back. This exact
   // URL must be registered on the WorkOS UM app for `environment` — see README.
@@ -265,7 +265,7 @@ export async function startCloudLogin(
   await storeSession(partialSession);
 
   // Resolve the user's organization ID for subsequent API calls.
-  const organizationId = await fetchOrganizationId(environment);
+  const organizationId = await fetchOrganizationId();
 
   const session: CloudSession = { ...partialSession, organizationId };
   await storeSession(session);

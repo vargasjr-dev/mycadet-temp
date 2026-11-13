@@ -133,7 +133,6 @@ async function listTmuxSessions(
         assistant.token,
         assistant.assistantId,
         sessionId,
-        assistant.cloudUrl,
         abortController.signal,
       )) {
         const text = Buffer.from(event.data, "base64").toString("utf-8");
@@ -153,7 +152,6 @@ async function listTmuxSessions(
               assistant.assistantId,
               sessionId,
               'tmux list-sessions 2>/dev/null || echo "No tmux sessions found"; exit\r',
-              assistant.cloudUrl,
             );
           }
         }
@@ -170,7 +168,6 @@ async function listTmuxSessions(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.cloudUrl,
     ).catch(() => {});
   }
 

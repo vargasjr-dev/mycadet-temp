@@ -49,15 +49,14 @@ export interface CloudAssistantDetail {
 export async function fetchAssistantDetail(
   token: string,
   assistantId: string,
-  cloudUrl?: string,
 ): Promise<CloudAssistantDetail | null> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/`;
 
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) return null;
@@ -83,15 +82,14 @@ export async function fetchAssistantDetail(
 export async function fetchUpgradeInProgress(
   token: string,
   assistantId: string,
-  cloudUrl?: string,
 ): Promise<boolean | null> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/upgrade-status/`;
 
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) return null;
@@ -168,10 +166,10 @@ async function waitForCloudUpgrade(
     // The in-progress lock is only needed when we don't know the target
     // version (server resolved "latest" without reporting it).
     const [detail, inProgress] = await Promise.all([
-      fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
+      fetchAssistantDetail(token, entry.assistantId),
       pollTarget
         ? Promise.resolve(null)
-        : fetchUpgradeInProgress(token, entry.assistantId, gatewayUrl),
+        : fetchUpgradeInProgress(token, entry.assistantId),
     ]);
     if (detail) observedVersion = detail.currentReleaseVersion;
     if (inProgress === true) sawInProgress = true;
@@ -237,7 +235,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
   // cloud doesn't know about): resolve the target, detect no-ops and
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
-    fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
+    fetchAssistantDetail(token, entry.assistantId),
     checkHealth(entry),
   ]);
   // Health probe first, DB-backed field as the sleeping-assistant fallback.
@@ -279,11 +277,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
     );
   }
 
-  const inProgress = await fetchUpgradeInProgress(
-    token,
-    entry.assistantId,
-    gatewayUrl,
-  );
+  const inProgress = await fetchUpgradeInProgress(token, entry.assistantId);
   if (inProgress === true) {
     throw new UpgradeError("CLOUD_API_ERROR", UPGRADE_IN_PROGRESS_MSG);
   }
@@ -292,7 +286,7 @@ export async function upgradeCloud(params: UpgradeCloudParams): Promise<void> {
     log(`   ${currentVersion} → ${resolution.target}\n`);
   }
 
-  const headers = await cloudAuthHeaders(token, gatewayUrl);
+  const headers = await cloudAuthHeaders(token);
 
   const url = `${gatewayUrl || getCloudBaseUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
   const body: { version?: string } = {};

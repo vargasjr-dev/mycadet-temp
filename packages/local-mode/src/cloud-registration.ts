@@ -68,10 +68,9 @@ export async function ensureSelfHostedLocalRegistration(
   runtimeAssistantId: string,
   clientPlatform: string,
   assistantVersion?: string,
-  cloudUrl?: string,
   publicBaseUrl?: string,
 ): Promise<EnsureRegistrationResponse> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const body: Record<string, string> = {
     client_installation_id: clientInstallationId,
     runtime_assistant_id: runtimeAssistantId,
@@ -133,9 +132,8 @@ export async function reprovisionAssistantApiKey(
   clientInstallationId: string,
   runtimeAssistantId: string,
   clientPlatform: string,
-  cloudUrl?: string,
 ): Promise<ReprovisionApiKeyResponse> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const body: Record<string, string> = {
     client_installation_id: clientInstallationId,
     runtime_assistant_id: runtimeAssistantId,
@@ -487,11 +485,8 @@ const AllauthSessionResponseSchema = z.object({
 
 const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
 
-export async function fetchCurrentUser(
-  token: string,
-  cloudUrl?: string,
-): Promise<PlatformUser> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+export async function fetchCurrentUser(token: string): Promise<PlatformUser> {
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/_allauth/app/v1/auth/session`;
 
   const controller = new AbortController();
@@ -554,7 +549,6 @@ export async function registerLocalAssistantWithCloud(
     (await checkHealth(entry)).version,
     fetchAssistantIngressUrl(gatewayUrl, guardianBearer(entry.assistantId)),
   ]);
-  const cloudUrl = getCloudBaseUrl();
   const registration = await ensureSelfHostedLocalRegistration(
     token,
     orgId,
@@ -562,7 +556,6 @@ export async function registerLocalAssistantWithCloud(
     entry.assistantId,
     "cli",
     assistantVersion,
-    cloudUrl,
     ingressUrl,
   );
   saveLockfileAssistant({

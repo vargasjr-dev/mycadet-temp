@@ -7,6 +7,8 @@ import {
 } from "@mycadet/local-mode";
 
 const PLATFORM_URL = "https://platform.example.test";
+let savedCloudUrl: string | undefined;
+let savedEnv: string | undefined;
 const VAK_TOKEN = "vak_test_1234567890"; // API-key path skips org-ID fetch.
 const SESSION_TOKEN = "session_test_1234567890"; // non-vak_ triggers org-ID lookup.
 
@@ -63,9 +65,24 @@ function captureFetch(
 let originalFetch: typeof globalThis.fetch;
 beforeEach(() => {
   originalFetch = globalThis.fetch;
+  // The cloud stack derives the origin from the shared helper — pin it.
+  savedCloudUrl = process.env.CADET_CLOUD_URL;
+  savedEnv = process.env.CADET_ENVIRONMENT;
+  process.env.CADET_CLOUD_URL = PLATFORM_URL;
+  delete process.env.CADET_ENVIRONMENT;
 });
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  if (savedCloudUrl === undefined) {
+    delete process.env.CADET_CLOUD_URL;
+  } else {
+    process.env.CADET_CLOUD_URL = savedCloudUrl;
+  }
+  if (savedEnv === undefined) {
+    delete process.env.CADET_ENVIRONMENT;
+  } else {
+    process.env.CADET_ENVIRONMENT = savedEnv;
+  }
 });
 
 describe("cloudRequestSignedUrl", () => {
@@ -85,7 +102,6 @@ describe("cloudRequestSignedUrl", () => {
     const result = await cloudRequestSignedUrl(
       { operation: "upload" },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(result).toEqual({
@@ -123,7 +139,6 @@ describe("cloudRequestSignedUrl", () => {
         contentLength: 12345,
       },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(result.maxContentLength).toBe(10_000_000);
@@ -150,7 +165,6 @@ describe("cloudRequestSignedUrl", () => {
     const result = await cloudRequestSignedUrl(
       { operation: "download", bundleKey: "bundles/xyz.tar.gz" },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(result.url).toBe("https://storage.example/signed/dl-xyz");
@@ -184,7 +198,6 @@ describe("cloudRequestSignedUrl", () => {
     const result = await cloudRequestSignedUrl(
       { operation: "upload" },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(result.url).toBe("https://storage.example/signed/after-retry");
@@ -265,7 +278,6 @@ describe("cloudRequestSignedUrl", () => {
     const result = await cloudRequestSignedUrl(
       { operation: "upload" },
       SESSION_TOKEN,
-      PLATFORM_URL,
     );
 
     // Both signed-url attempts were made and the retry succeeded.
@@ -311,7 +323,6 @@ describe("cloudRequestSignedUrl", () => {
         maxRuntimeVersion: null,
       },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(calls[0]!.body).toEqual({
@@ -341,7 +352,6 @@ describe("cloudRequestSignedUrl", () => {
         targetRuntimeVersion: "2.0.0",
       },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(calls[0]!.body).toEqual({
@@ -376,7 +386,6 @@ describe("cloudRequestSignedUrl", () => {
           targetRuntimeVersion: "1.9.0",
         },
         VAK_TOKEN,
-        PLATFORM_URL,
       );
     } catch (err) {
       caught = err;
@@ -420,7 +429,6 @@ describe("cloudRequestSignedUrl", () => {
           targetRuntimeVersion: "2.9.0",
         },
         VAK_TOKEN,
-        PLATFORM_URL,
       );
     } catch (err) {
       caught = err;
@@ -446,7 +454,6 @@ describe("cloudRequestSignedUrl", () => {
       await cloudRequestSignedUrl(
         { operation: "download", bundleKey: "bundles/foo.tar.gz" },
         VAK_TOKEN,
-        PLATFORM_URL,
       );
     } catch (err) {
       caught = err;
@@ -489,7 +496,6 @@ describe("cloudRequestSignedUrl", () => {
           targetRuntimeVersion: "1.9.0",
         },
         VAK_TOKEN,
-        PLATFORM_URL,
       );
     } catch (err) {
       caught = err;
@@ -515,7 +521,6 @@ describe("cloudRequestSignedUrl", () => {
     const result = await cloudRequestSignedUrl(
       { operation: "download", bundleKey: "bundles/xyz.tar.gz" },
       VAK_TOKEN,
-      PLATFORM_URL,
     );
 
     expect(result.url).toBe("https://storage.example/signed/dl-xyz");
@@ -534,7 +539,7 @@ describe("cloudRequestSignedUrl", () => {
     globalThis.fetch = fetchMock;
 
     await expect(
-      cloudRequestSignedUrl({ operation: "upload" }, VAK_TOKEN, PLATFORM_URL),
+      cloudRequestSignedUrl({ operation: "upload" }, VAK_TOKEN),
     ).rejects.toThrow(/temporarily down/);
   });
 });
@@ -553,7 +558,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus("job-1", VAK_TOKEN, PLATFORM_URL);
+    const status = await cloudPollJobStatus("job-1", VAK_TOKEN);
 
     expect(status).toEqual({
       jobId: "job-1",
@@ -579,7 +584,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus("job-2", VAK_TOKEN, PLATFORM_URL);
+    const status = await cloudPollJobStatus("job-2", VAK_TOKEN);
 
     expect(status.status).toBe("complete");
     if (status.status === "complete") {
@@ -602,7 +607,7 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await cloudPollJobStatus("job-3", VAK_TOKEN, PLATFORM_URL);
+    const status = await cloudPollJobStatus("job-3", VAK_TOKEN);
 
     expect(status.status).toBe("failed");
     if (status.status === "failed") {
@@ -616,8 +621,8 @@ describe("cloudPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    await expect(
-      cloudPollJobStatus("missing", VAK_TOKEN, PLATFORM_URL),
-    ).rejects.toThrow(/Migration job not found/);
+    await expect(cloudPollJobStatus("missing", VAK_TOKEN)).rejects.toThrow(
+      /Migration job not found/,
+    );
   });
 });

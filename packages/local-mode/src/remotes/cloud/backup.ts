@@ -61,13 +61,13 @@ async function cloudBackupRequest(
     loopbackSafeFetch(cloudBackupsUrl(entry), {
       method,
       headers: {
-        ...(await cloudAuthHeaders(token, getCloudBaseUrl())),
+        ...(await cloudAuthHeaders(token)),
         Accept: "application/json",
       },
     });
   let response = await doRequest();
   if (response.status === 401) {
-    invalidateOrgIdCache(token, getCloudBaseUrl());
+    invalidateOrgIdCache(token);
     response = await doRequest();
   }
   return response;

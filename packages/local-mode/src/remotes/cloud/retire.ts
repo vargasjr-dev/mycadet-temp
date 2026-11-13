@@ -39,18 +39,17 @@ export async function deleteCloudAssistant(
   assistantId: string,
   options: {
     token: string;
-    cloudUrl?: string;
     organizationId?: string;
     label: string;
     successMessage: string;
     alreadyGoneMessage: string;
   },
 ): Promise<void> {
-  const cloudUrl = options.cloudUrl || getCloudBaseUrl();
+  const cloudUrl = getCloudBaseUrl();
   const url = `${cloudUrl}/v1/assistants/${encodeURIComponent(assistantId)}/retire/`;
   const headers = options.organizationId
     ? authHeadersForKnownOrganization(options.token, options.organizationId)
-    : await cloudAuthHeaders(options.token, cloudUrl);
+    : await cloudAuthHeaders(options.token);
 
   const response = await loopbackSafeFetch(url, {
     method: "DELETE",
@@ -88,7 +87,6 @@ export async function unregisterSelfHostedLocalPlatformRecord(
 
   await deleteCloudAssistant(cloudAssistantId, {
     token,
-    cloudUrl: getCloudBaseUrl(),
     organizationId:
       entry.cloud === "custom" || entry.cloud === "baseten"
         ? undefined
@@ -117,7 +115,6 @@ export async function retireCloudEntry(
 
   await deleteCloudAssistant(entry.assistantId, {
     token,
-    cloudUrl: getGatewayUrl(entry),
     label: "Platform retire",
     successMessage: "\u2705 Platform-hosted instance retired.",
     alreadyGoneMessage:

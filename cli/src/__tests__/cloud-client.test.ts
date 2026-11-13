@@ -167,6 +167,29 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
   const TOKEN = "vak_test_token";
   const ASSISTANT_ID = "11111111-2222-3333-4444-555555555555";
   const PLATFORM_URL = "https://platform.test";
+  let savedCloudUrl: string | undefined;
+  let savedEnv: string | undefined;
+
+  beforeEach(() => {
+    // The ops derive the origin from the shared helper now — pin it.
+    savedCloudUrl = process.env.CADET_CLOUD_URL;
+    savedEnv = process.env.CADET_ENVIRONMENT;
+    process.env.CADET_CLOUD_URL = PLATFORM_URL;
+    delete process.env.CADET_ENVIRONMENT;
+  });
+
+  afterEach(() => {
+    if (savedCloudUrl === undefined) {
+      delete process.env.CADET_CLOUD_URL;
+    } else {
+      process.env.CADET_CLOUD_URL = savedCloudUrl;
+    }
+    if (savedEnv === undefined) {
+      delete process.env.CADET_ENVIRONMENT;
+    } else {
+      process.env.CADET_ENVIRONMENT = savedEnv;
+    }
+  });
 
   const originalFetch = globalThis.fetch;
 
@@ -193,11 +216,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
     const fetchMock = mockFetchJson({
       current_release_version: "0.7.0",
     });
-    const detail = await fetchAssistantDetail(
-      TOKEN,
-      ASSISTANT_ID,
-      PLATFORM_URL,
-    );
+    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
     expect(detail).toEqual({
       currentReleaseVersion: "0.7.0",
     });
@@ -207,11 +226,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
 
   test("fetchAssistantDetail defaults missing fields", async () => {
     mockFetchJson({});
-    const detail = await fetchAssistantDetail(
-      TOKEN,
-      ASSISTANT_ID,
-      PLATFORM_URL,
-    );
+    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
     expect(detail).toEqual({
       currentReleaseVersion: null,
     });
@@ -219,52 +234,38 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
 
   test("fetchAssistantDetail returns null on non-OK", async () => {
     mockFetchJson({ detail: "not found" }, 404);
-    expect(
-      await fetchAssistantDetail(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchAssistantDetail returns null on network error", async () => {
     mockFetchNetworkError();
-    expect(
-      await fetchAssistantDetail(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns the boolean", async () => {
     const fetchMock = mockFetchJson({ in_progress: true });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBe(true);
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(true);
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toBe(
       `${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/upgrade-status/`,
     );
 
     mockFetchJson({ in_progress: false });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBe(false);
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(false);
   });
 
   test("fetchUpgradeInProgress returns null on 404 (older platform)", async () => {
     mockFetchJson({ detail: "not found" }, 404);
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns null on network error", async () => {
     mockFetchNetworkError();
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns null on a malformed body", async () => {
     mockFetchJson({ something_else: 1 });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 });

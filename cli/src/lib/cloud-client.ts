@@ -76,9 +76,8 @@ const CLOUD_FETCH_TIMEOUT_MS = 10_000;
  */
 export async function checkExistingCloudAssistant(
   token: string,
-  cloudUrl?: string,
 ): Promise<HatchedAssistant | null> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/`;
 
   const controller = new AbortController();
@@ -90,7 +89,7 @@ export async function checkExistingCloudAssistant(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) {
@@ -112,9 +111,8 @@ export async function checkExistingCloudAssistant(
  */
 export async function fetchCloudAssistants(
   token: string,
-  cloudUrl?: string,
 ): Promise<HatchedAssistant[]> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/`;
 
   const controller = new AbortController();
@@ -126,7 +124,7 @@ export async function fetchCloudAssistants(
   try {
     const response = await loopbackSafeFetch(url, {
       signal: controller.signal,
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) return [];
@@ -152,15 +150,14 @@ export interface CloudAssistantDetail {
 export async function fetchAssistantDetail(
   token: string,
   assistantId: string,
-  cloudUrl?: string,
 ): Promise<CloudAssistantDetail | null> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/`;
 
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) return null;
@@ -186,15 +183,14 @@ export async function fetchAssistantDetail(
 export async function fetchUpgradeInProgress(
   token: string,
   assistantId: string,
-  cloudUrl?: string,
 ): Promise<boolean | null> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/upgrade-status/`;
 
   try {
     const response = await loopbackSafeFetch(url, {
       signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     });
 
     if (!response.ok) return null;
@@ -212,14 +208,13 @@ export async function rollbackCloudAssistant(
   token: string,
   assistantId: string,
   version?: string,
-  cloudUrl?: string,
 ): Promise<{ detail: string; version: string | null }> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/assistants/${encodeURIComponent(assistantId)}/rollback/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify(version ? { version } : {}),
     },
   );

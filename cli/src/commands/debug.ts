@@ -94,7 +94,7 @@ export const debug = Object.assign(
     const accessToken = await daemonAccessToken(entry, reference, false);
     const headers = organizationId
       ? authHeadersForKnownOrganization(cloudToken, organizationId)
-      : await cloudAuthHeaders(cloudToken, cloudUrl);
+      : await cloudAuthHeaders(cloudToken);
     const urlResponse = await loopbackSafeFetch(
       `${cloudUrl}/v1/assistants/${encodeURIComponent(cloudAssistantId)}/debug-bundle-upload-url/`,
       { method: "POST", headers },

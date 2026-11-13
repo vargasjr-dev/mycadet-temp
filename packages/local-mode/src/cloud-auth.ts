@@ -74,19 +74,16 @@ const ORG_ID_CACHE_TTL_MS = 60_000; // 60 seconds
  * orgs in another tab). Clearing the entry forces the next auth-headers
  * call to refetch the org ID from the cloud.
  */
-export function invalidateOrgIdCache(token: string, cloudUrl?: string): void {
-  orgIdCache.delete(`${token}::${cloudUrl ?? ""}`);
+export function invalidateOrgIdCache(token: string): void {
+  orgIdCache.delete(`${token}::`);
 }
 
 const OrganizationListResponseSchema = z.object({
   results: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
 });
 
-export async function fetchOrganizationId(
-  token: string,
-  cloudUrl?: string,
-): Promise<string> {
-  const resolvedUrl = cloudUrl || getCloudBaseUrl();
+export async function fetchOrganizationId(token: string): Promise<string> {
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/v1/organizations/`;
 
   const controller = new AbortController();
@@ -133,10 +130,9 @@ export async function fetchOrganizationId(
  */
 export async function cloudAuthHeaders(
   token: string,
-  cloudUrl?: string,
 ): Promise<Record<string, string>> {
   try {
-    return await resolveAuthHeaders(token, cloudUrl);
+    return await resolveAuthHeaders(token);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("401") || msg.includes("403")) {
@@ -150,7 +146,6 @@ export async function cloudAuthHeaders(
 
 async function resolveAuthHeaders(
   token: string,
-  cloudUrl?: string,
 ): Promise<Record<string, string>> {
   const base: Record<string, string> = {
     "Content-Type": "application/json",
@@ -162,13 +157,13 @@ async function resolveAuthHeaders(
     return base;
   }
 
-  const cacheKey = `${token}::${cloudUrl ?? ""}`;
+  const cacheKey = `${token}::`;
   const cached = orgIdCache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
     return { ...base, "Cadet-Organization-Id": cached.orgId };
   }
 
-  const orgId = await fetchOrganizationId(token, cloudUrl);
+  const orgId = await fetchOrganizationId(token);
   orgIdCache.set(cacheKey, {
     orgId,
     expiresAt: Date.now() + ORG_ID_CACHE_TTL_MS,

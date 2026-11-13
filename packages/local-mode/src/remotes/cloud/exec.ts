@@ -47,7 +47,6 @@ export async function interactiveSession(
     assistant.assistantId,
     cols,
     rows,
-    assistant.cloudUrl,
     service,
   );
 
@@ -83,7 +82,6 @@ export async function interactiveSession(
         assistant.token,
         assistant.assistantId,
         sessionId,
-        assistant.cloudUrl,
       );
     } catch {
       // Best-effort cleanup
@@ -110,7 +108,6 @@ export async function interactiveSession(
       sessionId,
       newCols,
       newRows,
-      assistant.cloudUrl,
     ).catch(() => {
       // Resize failures are non-fatal
     });
@@ -131,7 +128,6 @@ export async function interactiveSession(
       assistant.assistantId,
       sessionId,
       data,
-      assistant.cloudUrl,
     ).catch((err) => {
       if (!exiting) {
         console.error(`\r\nInput error: ${err.message}\r\n`);
@@ -155,7 +151,6 @@ export async function interactiveSession(
       assistant.assistantId,
       sessionId,
       initialCommand + "\r",
-      assistant.cloudUrl,
     );
   }
 
@@ -165,7 +160,6 @@ export async function interactiveSession(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.cloudUrl,
       abortController.signal,
     )) {
       if (exiting) break;
@@ -259,7 +253,6 @@ export async function execViaTerminalSession(
     assistant.assistantId,
     120,
     24,
-    assistant.cloudUrl,
     options?.service,
   );
 
@@ -292,7 +285,6 @@ export async function execViaTerminalSession(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.cloudUrl,
       abortController.signal,
     )) {
       eventCount++;
@@ -328,7 +320,6 @@ export async function execViaTerminalSession(
             assistant.assistantId,
             sessionId,
             fullCmd,
-            assistant.cloudUrl,
           );
         }
       }
@@ -362,7 +353,6 @@ export async function execViaTerminalSession(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.cloudUrl,
     ).catch(() => {});
   }
 
