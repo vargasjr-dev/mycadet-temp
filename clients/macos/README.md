@@ -101,10 +101,10 @@ The environment defaults to `local` (matching the native Swift app):
 `scripts/dev.ts` exports `CADET_ENVIRONMENT=local` unless one is already
 set.
 
-The app shows up as **Cadet Electron** in the menu bar and Dock
+The app shows up as **Cadet** in the menu bar and Dock
 (via `app.setName`, gated to `!app.isPackaged` in `src/main/index.ts`),
 and writes preferences / electron-store data under
-`~/Library/Application Support/Cadet Electron/`. That keeps it cleanly
+`~/Library/Application Support/Cadet/`. That keeps it cleanly
 separate from the Swift `Cadet.app`, `Cadet Local.app`, and
 `Cadet Dev.app` installs — running this locally won't clobber
 whichever Swift channel you have around.

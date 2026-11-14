@@ -7,15 +7,12 @@ import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
-import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
-import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
-import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import {
   APP_HOST,
@@ -27,26 +24,9 @@ import { resolveAllowedOrigin } from "./app-origin.client";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { installMainFeatures } from "./features";
-import { handleSync } from "./ipc.client";
 import log from "./logger";
 import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
-
-/**
- * Linux shell for the Cadet Assistant: a hardened BrowserWindow loading
- * the clients/web renderer (Vite dev server in dev, `app://` static serving
- * of `resources/web-dist` in packaged builds). Every desktop capability is a
- * module under `./features/`, composed through the capability registry once
- * the app is ready.
- */
-
-// Dev-only: override the package `name` (`@mycadet/linux`) so
-// `app.getPath("userData")` resolves to its own directory, cleanly separate
-// from other Cadet installs. Packaged builds get a real `productName` from
-// electron-builder. Must run before `userData` is first read.
-if (!app.isPackaged) {
-  app.setName("Cadet Electron Linux");
-}
 
 // Packaged builds all share the same package.json `name`, so Electron
 // resolves `app.getPath("userData")` to the same directory for every

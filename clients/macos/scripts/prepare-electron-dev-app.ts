@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { getAppName } from "@mycadet/electron-desktop/app-lifecycle";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -39,15 +40,7 @@ const DEV_BUNDLE_ID =
     ? "ai.mycadet.electron"
     : `ai.mycadet.electron.${CADET_ENVIRONMENT}`;
 
-// Same env→name scheme as electron-builder.config.cjs's productName, so the
-// dev menu bar / Dock label reads "Cadet Local" (etc.) the way a packaged
-// build of the same environment does. `app.setName` in src/main/index.ts
-// stays "Cadet Electron" on purpose: the dev userData dir keeps its
-// separation from packaged installs of every environment.
-const DEV_APP_NAME =
-  CADET_ENVIRONMENT === "production"
-    ? "Cadet"
-    : `Cadet ${CADET_ENVIRONMENT.charAt(0).toUpperCase()}${CADET_ENVIRONMENT.slice(1)}`;
+const DEV_APP_NAME = getAppName();
 
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
   CFBundleDisplayName: DEV_APP_NAME,
@@ -151,14 +144,7 @@ if (changed || !isValidSignature()) {
   }
 }
 
-// The Dock and Cmd-Tab read a bundle's label from `CFBundleName`, cached by
-// macOS keyed to the bundle path. The `lsregister -f` above re-registers the
-// bundle but does NOT evict the running Dock's in-memory label, so a bundle
-// first seen as the stock "Electron" keeps showing "Electron" even after its
-// plist is stamped to "Cadet Electron". Restarting the Dock forces it to
-// re-read the name. Done once per patched bundle (tracked by the marker, and
-// again whenever the plist actually changes) so routine `bun run dev` restarts
-// don't blink the Dock on every launch. Best-effort — never block the dev flow.
+// The Dock and Cmd-Tab read a bundle's label from `CFBundleName`
 if (DOCK_BUST_MARKER && (changed || !existsSync(DOCK_BUST_MARKER))) {
   try {
     execFileSync("killall", ["Dock"], { stdio: "ignore" });

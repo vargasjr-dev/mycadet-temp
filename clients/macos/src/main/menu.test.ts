@@ -28,7 +28,7 @@ const setApplicationMenuMock = mock((_menu: unknown) => undefined);
 // Mutable so tests can flip packaged/dev; the CLI path items only exist in
 // packaged builds, so packaged is the default here.
 const electronApp = {
-  name: "Cadet Electron",
+  name: "Cadet Test",
   isPackaged: true,
 };
 
