@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { waitFor } from "../__tests__/helpers/wait-for.js";
 import {
-  createCesProcessManager,
   type CesProcessManagerConfig,
+  createCesProcessManager,
 } from "./process-manager.js";
 
 const untilClosed = (predicate: () => boolean) =>
