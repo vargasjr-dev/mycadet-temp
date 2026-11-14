@@ -1,16 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
+import { readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { mock } from "bun:test";
 
 import {
@@ -115,18 +109,13 @@ describe("cloud-client token path is env-scoped", () => {
   });
 });
 
-describe("getCloudUrl resolution order", () => {
-  let tempLockDir: string;
-  let savedConfigHome: string | undefined;
+describe("getCloudBaseUrl resolution order", () => {
   let savedEnv: string | undefined;
   let savedCloudUrl: string | undefined;
 
   beforeEach(() => {
     savedEnv = process.env.CADET_ENVIRONMENT;
     savedCloudUrl = process.env.CADET_CLOUD_URL;
-    savedConfigHome = process.env.XDG_CONFIG_HOME;
-    tempLockDir = mkdtempSync(join(tmpdir(), "cli-cloud-url-test-"));
-    process.env.XDG_CONFIG_HOME = tempLockDir;
     delete process.env.CADET_ENVIRONMENT;
     delete process.env.CADET_CLOUD_URL;
   });
@@ -142,64 +131,33 @@ describe("getCloudUrl resolution order", () => {
     } else {
       process.env.CADET_CLOUD_URL = savedCloudUrl;
     }
-    if (savedConfigHome === undefined) {
-      delete process.env.XDG_CONFIG_HOME;
-    } else {
-      process.env.XDG_CONFIG_HOME = savedConfigHome;
-    }
-    rmSync(tempLockDir, { recursive: true, force: true });
   });
 
-  function writeLockfile(data: Record<string, unknown>): void {
-    // CADET_ENVIRONMENT is unset → production env → config-dir lockfile.json.
-    mkdirSync(join(tempLockDir, "cadet"), { recursive: true });
-    writeFileSync(
-      join(tempLockDir, "cadet", "lockfile.json"),
-      JSON.stringify(data, null, 2),
-    );
-  }
-
-  test("returns lockfile cloudBaseUrl when set", () => {
-    writeLockfile({ cloudBaseUrl: "https://staging.mycadet.ai" });
-    expect(getCloudUrl()).toBe("https://staging.mycadet.ai");
-  });
-
-  test("lockfile cloudBaseUrl takes priority over CADET_CLOUD_URL", () => {
-    writeLockfile({ cloudBaseUrl: "https://lockfile.mycadet.ai" });
-    process.env.CADET_CLOUD_URL = "https://env.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://lockfile.mycadet.ai");
-  });
-
-  test("falls back to CADET_CLOUD_URL when lockfile is missing", () => {
+  test("returns CADET_CLOUD_URL when set", () => {
     process.env.CADET_CLOUD_URL = "https://env-only.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-only.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://env-only.mycadet.ai");
   });
 
-  test("falls back to CADET_CLOUD_URL when lockfile has no cloudBaseUrl", () => {
-    writeLockfile({ assistants: [] });
-    process.env.CADET_CLOUD_URL = "https://env-fallback.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-fallback.mycadet.ai");
-  });
-
-  test("falls back to CADET_CLOUD_URL when lockfile cloudBaseUrl is blank", () => {
-    writeLockfile({ cloudBaseUrl: "   " });
-    process.env.CADET_CLOUD_URL = "https://env-after-blank.mycadet.ai";
-    expect(getCloudUrl()).toBe("https://env-after-blank.mycadet.ai");
-  });
-
-  test("falls back to prod env seed URL when lockfile and CADET_CLOUD_URL are unset (prod env)", () => {
-    // CADET_ENVIRONMENT is unset → production → prod seed URL.
-    expect(getCloudUrl()).toBe("https://cloud.mycadet.ai");
-  });
-
-  test("falls back to dev env seed URL when CADET_ENVIRONMENT=dev", () => {
+  test("CADET_CLOUD_URL takes priority over the environment seed", () => {
+    process.env.CADET_CLOUD_URL = "https://env.mycadet.ai";
     process.env.CADET_ENVIRONMENT = "dev";
-    expect(getCloudUrl()).toBe("https://dev-cloud.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://env.mycadet.ai");
+  });
+
+  test("falls back to the dev seed when no environment is set", () => {
+    // CADET_ENVIRONMENT is unset → the dev seed (the env-only reader's
+    // fallback — browser bundles have no channel file to consult).
+    expect(getCloudBaseUrl()).toBe("https://dev.mycadet.ai");
+  });
+
+  test("falls back to the dev seed URL when CADET_ENVIRONMENT=dev", () => {
+    process.env.CADET_ENVIRONMENT = "dev";
+    expect(getCloudBaseUrl()).toBe("https://dev.mycadet.ai");
   });
 
   test("trims whitespace from CADET_CLOUD_URL", () => {
     process.env.CADET_CLOUD_URL = "  https://trimmed.mycadet.ai  ";
-    expect(getCloudUrl()).toBe("https://trimmed.mycadet.ai");
+    expect(getCloudBaseUrl()).toBe("https://trimmed.mycadet.ai");
   });
 });
 
@@ -209,6 +167,29 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
   const TOKEN = "vak_test_token";
   const ASSISTANT_ID = "11111111-2222-3333-4444-555555555555";
   const PLATFORM_URL = "https://platform.test";
+  let savedCloudUrl: string | undefined;
+  let savedEnv: string | undefined;
+
+  beforeEach(() => {
+    // The ops derive the origin from the shared helper now — pin it.
+    savedCloudUrl = process.env.CADET_CLOUD_URL;
+    savedEnv = process.env.CADET_ENVIRONMENT;
+    process.env.CADET_CLOUD_URL = PLATFORM_URL;
+    delete process.env.CADET_ENVIRONMENT;
+  });
+
+  afterEach(() => {
+    if (savedCloudUrl === undefined) {
+      delete process.env.CADET_CLOUD_URL;
+    } else {
+      process.env.CADET_CLOUD_URL = savedCloudUrl;
+    }
+    if (savedEnv === undefined) {
+      delete process.env.CADET_ENVIRONMENT;
+    } else {
+      process.env.CADET_ENVIRONMENT = savedEnv;
+    }
+  });
 
   const originalFetch = globalThis.fetch;
 
@@ -235,11 +216,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
     const fetchMock = mockFetchJson({
       current_release_version: "0.7.0",
     });
-    const detail = await fetchAssistantDetail(
-      TOKEN,
-      ASSISTANT_ID,
-      PLATFORM_URL,
-    );
+    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
     expect(detail).toEqual({
       currentReleaseVersion: "0.7.0",
     });
@@ -249,11 +226,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
 
   test("fetchAssistantDetail defaults missing fields", async () => {
     mockFetchJson({});
-    const detail = await fetchAssistantDetail(
-      TOKEN,
-      ASSISTANT_ID,
-      PLATFORM_URL,
-    );
+    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
     expect(detail).toEqual({
       currentReleaseVersion: null,
     });
@@ -261,52 +234,38 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
 
   test("fetchAssistantDetail returns null on non-OK", async () => {
     mockFetchJson({ detail: "not found" }, 404);
-    expect(
-      await fetchAssistantDetail(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchAssistantDetail returns null on network error", async () => {
     mockFetchNetworkError();
-    expect(
-      await fetchAssistantDetail(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns the boolean", async () => {
     const fetchMock = mockFetchJson({ in_progress: true });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBe(true);
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(true);
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toBe(
       `${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/upgrade-status/`,
     );
 
     mockFetchJson({ in_progress: false });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBe(false);
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(false);
   });
 
   test("fetchUpgradeInProgress returns null on 404 (older platform)", async () => {
     mockFetchJson({ detail: "not found" }, 404);
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns null on network error", async () => {
     mockFetchNetworkError();
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 
   test("fetchUpgradeInProgress returns null on a malformed body", async () => {
     mockFetchJson({ something_else: 1 });
-    expect(
-      await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID, PLATFORM_URL),
-    ).toBeNull();
+    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
   });
 });

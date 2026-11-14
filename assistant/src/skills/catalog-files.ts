@@ -24,7 +24,7 @@ import {
 } from "node:fs";
 import { basename, join, posix, sep } from "node:path";
 
-import { getCloudBaseUrl } from "../config/env.js";
+import { resolveCloudBaseUrl } from "../config/env.js";
 import type { SlimSkillResponse } from "../daemon/message-types/skills.js";
 import {
   isTextMimeType as isTextMime,
@@ -249,7 +249,7 @@ async function fetchPlatformJson<T>(
   path: string,
   query?: Record<string, string>,
 ): Promise<T | null> {
-  const base = getCloudBaseUrl();
+  const base = resolveCloudBaseUrl();
   const url = new URL(`${base}${path}`);
   if (query) {
     const params = new URLSearchParams(query);

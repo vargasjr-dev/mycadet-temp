@@ -2,9 +2,7 @@ import { z } from "zod";
 import type { IncomingHttpHeaders } from "node:http";
 
 import { cloudAuthHeaders, readCloudToken } from "./cloud-auth";
-import {
-  readBasetenPreviewToken,
-} from "./guardian-token";
+import { readBasetenPreviewToken } from "./guardian-token";
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { getGatewayUrl, isCloudEntry } from "./lockfile-contract";
 import type { LockfileAssistant } from "./lockfile-contract";
@@ -286,7 +284,7 @@ async function gatewayAuthHeaders(
   const token = readCloudToken();
   if (!token) return {};
   try {
-    return await cloudAuthHeaders(token, getGatewayUrl(entry));
+    return await cloudAuthHeaders(token);
   } catch {
     return {};
   }
@@ -417,7 +415,7 @@ export async function fetchCloudPs(
 
   let headers: Record<string, string>;
   try {
-    headers = await cloudAuthHeaders(token, runtimeUrl);
+    headers = await cloudAuthHeaders(token);
   } catch {
     return null;
   }

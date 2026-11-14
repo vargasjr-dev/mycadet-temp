@@ -25,7 +25,7 @@ import sharp from "sharp";
 mock.module("../config/env.js", () => ({
   isHttpAuthDisabled: () => true,
   hasUngatedHttpAuthDisabled: () => false,
-  getCloudBaseUrl: () => "https://test-cloud.mycadet.ai",
+  resolveCloudBaseUrl: () => "https://test-cloud.mycadet.ai",
   getGatewayInternalBaseUrl: () => "http://localhost:8080",
   getIngressPublicBaseUrl: () => undefined,
   setIngressPublicBaseUrl: () => {},

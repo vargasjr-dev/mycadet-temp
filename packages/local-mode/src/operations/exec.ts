@@ -1,4 +1,5 @@
-import { readCloudToken, resolveCloudUrl } from "../cloud-auth";
+import { readCloudToken } from "../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { cliCommand } from "../environment";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { execBasetenSandbox } from "../remotes/baseten/exec";
@@ -82,7 +83,7 @@ export async function execCommand(
       const assistant = {
         assistantId: entry.assistantId,
         token,
-        cloudUrl: resolveCloudUrl(),
+        cloudUrl: getCloudBaseUrl(),
       };
       const serviceParam =
         opts.service === "assistant" ? undefined : opts.service;

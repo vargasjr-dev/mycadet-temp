@@ -101,7 +101,7 @@ const defaultWebSearchService: Services["web-search"] = {
 };
 
 mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
+  resolveCloudBaseUrl: () => mockCloudBaseUrl,
   getCloudAssistantId: () => mockCloudAssistantId,
 }));
 

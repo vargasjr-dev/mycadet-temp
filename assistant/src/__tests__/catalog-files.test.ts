@@ -46,10 +46,10 @@ mock.module("../skills/catalog-install.js", () => ({
 
 let mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
 mock.module("../config/env.ts", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
+  resolveCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => mockCloudBaseUrl,
+  resolveCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 
 // ---------------------------------------------------------------------------

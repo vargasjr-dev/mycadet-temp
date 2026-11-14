@@ -26,7 +26,8 @@ info "Building the app-shell boot bundle"
 (cd "${IOS_DIR}/../app" && bun run build:capacitor)
 
 # — Sync the Capacitor shell: copies the built boot bundle into the Xcode
-#   project and bakes the resolved Capacitor config into the native build —
+#   project and bakes the resolved Capacitor config (the environment's
+#   single origin, from `CADET_ENVIRONMENT`) into the native build —
 info "Syncing Capacitor iOS project"
 (cd "${IOS_DIR}" && bunx --bun cap sync ios)
 

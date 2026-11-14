@@ -40,7 +40,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { setConfig } from "./helpers/set-config.js";
 import { mockHttp } from "./requests-mock.js";
 
-// Real env: the real getCloudBaseUrl() reads config.cloud.baseUrl — point it
+// Real env: the real resolveCloudBaseUrl() reads config.cloud.baseUrl — point it
 // at a host mockHttp matches by path substring, so the cloud-facing
 // provider fetches flow through the real env → URL → fetch chain.
 setConfig("cloud", { baseUrl: "https://test-cloud.mycadet.ai" });

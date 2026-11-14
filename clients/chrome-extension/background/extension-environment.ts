@@ -13,6 +13,8 @@
 
 // ── Environment type ────────────────────────────────────────────────
 
+import { getCloudBaseUrl } from "@mycadet/shared";
+
 /**
  * The four deployment environments the extension can target.
  *
@@ -21,18 +23,18 @@
  * - `staging`    — QA against staging platform before production rollout
  * - `production` — full production behavior
  */
-export type ExtensionEnvironment = 'local' | 'dev' | 'staging' | 'production';
+export type ExtensionEnvironment = "local" | "dev" | "staging" | "production";
 
 const VALID_ENVIRONMENTS: ReadonlySet<string> = new Set<ExtensionEnvironment>([
-  'local',
-  'dev',
-  'staging',
-  'production',
+  "local",
+  "dev",
+  "staging",
+  "production",
 ]);
 
 /** Aliases that map to a canonical {@link ExtensionEnvironment}. */
 const ENVIRONMENT_ALIASES: Readonly<Record<string, ExtensionEnvironment>> = {
-  prod: 'production',
+  prod: "production",
 };
 
 // ── Parsing ─────────────────────────────────────────────────────────
@@ -44,7 +46,9 @@ const ENVIRONMENT_ALIASES: Readonly<Record<string, ExtensionEnvironment>> = {
  * - Accepts `"prod"` as an alias for `"production"`.
  * - Returns `null` for `undefined`, empty, or unrecognized values.
  */
-export function parseExtensionEnvironment(raw: string | undefined): ExtensionEnvironment | null {
+export function parseExtensionEnvironment(
+  raw: string | undefined,
+): ExtensionEnvironment | null {
   if (raw === undefined) return null;
   const normalized = raw.trim().toLowerCase();
   if (normalized.length === 0) return null;
@@ -88,59 +92,18 @@ export function resolveBuildDefaultEnvironment(): ExtensionEnvironment {
   // ensures released extensions always target the correct environment even if
   // the build pipeline omits the variable. Local dev builds inject 'local' via
   // build.sh, and dev/staging releases inject their respective environments.
-  return parseExtensionEnvironment(raw) ?? 'production';
+  return parseExtensionEnvironment(raw) ?? "production";
 }
 
-// ── Cloud URL mapping ───────────────────────────────────────────────
-
-export interface CloudUrls {
-  /** Gateway / API base URL (e.g. `https://cloud.mycadet.ai`). */
-  apiBaseUrl: string;
-  /** Web app base URL for browser-facing pages (e.g. `https://mycadet.ai`). */
-  webBaseUrl: string;
-}
-
-/**
- * Return the cloud API and web base URLs for the given environment.
- *
- * Production uses the canonical Cadet production hosts. Non-production
- * environments use environment-prefixed subdomains following the
- * convention `<env>-cloud.mycadet.ai` (API) / `<env>.mycadet.ai` (web), with
- * `local` using `localhost` origins for both.
- */
-export function cloudUrlsForEnvironment(env: ExtensionEnvironment): CloudUrls {
-  switch (env) {
-    case 'production':
-      return {
-        apiBaseUrl: 'https://cloud.mycadet.ai',
-        webBaseUrl: 'https://mycadet.ai',
-      };
-    case 'staging':
-      return {
-        apiBaseUrl: 'https://staging-cloud.mycadet.ai',
-        webBaseUrl: 'https://staging.mycadet.ai',
-      };
-    case 'dev':
-      return {
-        apiBaseUrl: 'https://dev-cloud.mycadet.ai',
-        webBaseUrl: 'https://dev.mycadet.ai',
-      };
-    case 'local':
-      return {
-        apiBaseUrl: 'http://localhost:8000',
-        webBaseUrl: 'http://localhost:3000',
-      };
-  }
-}
+// ── Cloud origin mapping ────────────────────────────────────────────
 
 /**
  * Web-app path for creating the first cloud assistant. Platform users hatch
  * here. The hatching route gate sends unconsented users through privacy first.
  * The chooser is not used: its create action is local-client only.
  */
-export const CREATE_ASSISTANT_WEB_PATH = '/assistant/onboarding/hatching';
+export const CREATE_ASSISTANT_WEB_PATH = "/assistant/onboarding/hatching";
 
-/** Environment-specific URL that opens the web app's hatching entry. */
-export function createFirstAssistantUrl(env: ExtensionEnvironment): string {
-  return `${cloudUrlsForEnvironment(env).webBaseUrl}${CREATE_ASSISTANT_WEB_PATH}`;
+export function createFirstAssistantUrl(): string {
+  return `${getCloudBaseUrl()}${CREATE_ASSISTANT_WEB_PATH}`;
 }

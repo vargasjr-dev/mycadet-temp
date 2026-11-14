@@ -1,11 +1,11 @@
 import { z } from "zod";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   authHeadersForKnownOrganization,
   cliCommand,
   cloudAuthHeaders,
   getAssistantDisplayName,
-  getCloudUrl,
   loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
@@ -88,13 +88,13 @@ export const debug = Object.assign(
       );
       process.exit(1);
     }
-    const cloudUrl = entry.cloudBaseUrl?.trim() || getCloudUrl();
+    const cloudUrl = getCloudBaseUrl();
     const organizationId = entry.cloudOrganizationId?.trim();
 
     const accessToken = await daemonAccessToken(entry, reference, false);
     const headers = organizationId
       ? authHeadersForKnownOrganization(cloudToken, organizationId)
-      : await cloudAuthHeaders(cloudToken, cloudUrl);
+      : await cloudAuthHeaders(cloudToken);
     const urlResponse = await loopbackSafeFetch(
       `${cloudUrl}/v1/assistants/${encodeURIComponent(cloudAssistantId)}/debug-bundle-upload-url/`,
       { method: "POST", headers },

@@ -17,7 +17,7 @@ const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 const TEST_CLOUD_BASE_URL = "https://platform.example.com";
 
 /**
- * The real `getCloudBaseUrl()` never returns an empty string — unset config
+ * The real `resolveCloudBaseUrl()` never returns an empty string — unset config
  * falls through `CADET_CLOUD_URL` to the `CADET_ENVIRONMENT` default — so
  * the "no platform URL" cases below assert the real fallback shape (a
  * nonempty default URL) instead of the empty string the old

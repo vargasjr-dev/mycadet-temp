@@ -36,6 +36,7 @@ import { gatewayHelp } from "./commands/gateway.help.js";
 import { imageGenerationHelp } from "./commands/image-generation.help.js";
 import { inferenceHelp, llmHelp } from "./commands/inference.help.js";
 import { keysHelp } from "./commands/keys.help.js";
+import { logsHelp } from "./commands/logs.help.js";
 import { mcpHelp } from "./commands/mcp.help.js";
 import { memoryHelp } from "./commands/memory/index.help.js";
 import { monitoringHelp } from "./commands/monitoring.help.js";
@@ -85,6 +86,7 @@ export const CLI_COMMAND_HELP: readonly CliCommandHelp[] = [
   inferenceHelp,
   keysHelp,
   llmHelp,
+  logsHelp,
   mcpHelp,
   memoryHelp,
   notificationsHelp,

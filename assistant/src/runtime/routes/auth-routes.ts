@@ -8,9 +8,9 @@ import { z } from "zod";
 
 import {
   getCloudAssistantId,
-  getCloudBaseUrl,
   getCloudOrganizationId,
   getCloudUserId,
+  resolveCloudBaseUrl,
 } from "../../config/env.js";
 import { resolveCloudProxyContext } from "../../providers/cloud-proxy/context.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -30,7 +30,7 @@ async function handleAuthInfo(
 ): Promise<AuthInfoResult> {
   const ctx = await resolveCloudProxyContext();
 
-  const cloudUrl = getCloudBaseUrl();
+  const cloudUrl = resolveCloudBaseUrl();
   const assistantId = getCloudAssistantId();
   const organizationId = getCloudOrganizationId();
   const userId = getCloudUserId();

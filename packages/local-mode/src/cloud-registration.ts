@@ -12,11 +12,8 @@ import {
 } from "@mycadet/service-contracts/cloud-credential";
 import { z } from "zod";
 
-import {
-  fetchOrganizationId,
-  readCloudToken,
-  resolveCloudUrl,
-} from "./cloud-auth";
+import { fetchOrganizationId, readCloudToken } from "./cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { computeDeviceId, loadGuardianToken } from "./guardian-token";
 import { saveLockfileAssistant } from "./lockfile";
 import { getGatewayUrl, type LockfileAssistant } from "./lockfile-contract";
@@ -71,10 +68,9 @@ export async function ensureSelfHostedLocalRegistration(
   runtimeAssistantId: string,
   clientPlatform: string,
   assistantVersion?: string,
-  cloudUrl?: string,
   publicBaseUrl?: string,
 ): Promise<EnsureRegistrationResponse> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const body: Record<string, string> = {
     client_installation_id: clientInstallationId,
     runtime_assistant_id: runtimeAssistantId,
@@ -136,9 +132,8 @@ export async function reprovisionAssistantApiKey(
   clientInstallationId: string,
   runtimeAssistantId: string,
   clientPlatform: string,
-  cloudUrl?: string,
 ): Promise<ReprovisionApiKeyResponse> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const body: Record<string, string> = {
     client_installation_id: clientInstallationId,
     runtime_assistant_id: runtimeAssistantId,
@@ -490,11 +485,8 @@ const AllauthSessionResponseSchema = z.object({
 
 const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
 
-export async function fetchCurrentUser(
-  token: string,
-  cloudUrl?: string,
-): Promise<PlatformUser> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+export async function fetchCurrentUser(token: string): Promise<PlatformUser> {
+  const resolvedUrl = getCloudBaseUrl();
   const url = `${resolvedUrl}/_allauth/app/v1/auth/session`;
 
   const controller = new AbortController();
@@ -557,7 +549,6 @@ export async function registerLocalAssistantWithCloud(
     (await checkHealth(entry)).version,
     fetchAssistantIngressUrl(gatewayUrl, guardianBearer(entry.assistantId)),
   ]);
-  const cloudUrl = resolveCloudUrl();
   const registration = await ensureSelfHostedLocalRegistration(
     token,
     orgId,
@@ -565,13 +556,11 @@ export async function registerLocalAssistantWithCloud(
     entry.assistantId,
     "cli",
     assistantVersion,
-    cloudUrl,
     ingressUrl,
   );
   saveLockfileAssistant({
     ...entry,
     cloudAssistantId: registration.assistant.id,
-    cloudBaseUrl: cloudUrl,
     cloudOrganizationId: orgId,
   });
   log(

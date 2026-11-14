@@ -12,8 +12,8 @@ import {
 import { updatePhoneNumberWebhooks } from "../../calls/twilio-rest.js";
 import {
   getCloudAssistantId,
-  getCloudBaseUrl,
   getGatewayInternalBaseUrl,
+  resolveCloudBaseUrl,
 } from "../../config/env.js";
 import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig } from "../../config/loader.js";
@@ -147,7 +147,7 @@ export function getIngressConfigResult(): {
   // platform callback URL and flag managedCallbacks so consumers (including
   // the assistant LLM) don't mistakenly try to set up ngrok or a tunnel.
   if (getIsCloud()) {
-    const cloudBase = getCloudBaseUrl().replace(/\/+$/, "");
+    const cloudBase = resolveCloudBaseUrl().replace(/\/+$/, "");
     const assistantId = getCloudAssistantId();
     if (assistantId) {
       return {

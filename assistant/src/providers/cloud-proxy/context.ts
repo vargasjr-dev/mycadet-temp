@@ -9,7 +9,7 @@
  * base URL instead of calling the upstream provider directly.
  */
 
-import { getCloudBaseUrl } from "../../config/env.js";
+import { resolveCloudBaseUrl } from "../../config/env.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { PLATFORM_PROVIDER_META } from "./constants.js";
@@ -44,7 +44,7 @@ let _managedProxyEnabled = false;
  * the assistant API key are present. Otherwise returns a disabled context.
  */
 export async function resolveCloudProxyContext(): Promise<CloudProxyContext> {
-  const cloudBaseUrl = getCloudBaseUrl().replace(/\/+$/, "");
+  const cloudBaseUrl = resolveCloudBaseUrl().replace(/\/+$/, "");
   const assistantApiKey =
     (await getSecureKeyAsync(ASSISTANT_API_KEY_STORAGE_KEY)) ?? "";
   const enabled = !!cloudBaseUrl && !!assistantApiKey;

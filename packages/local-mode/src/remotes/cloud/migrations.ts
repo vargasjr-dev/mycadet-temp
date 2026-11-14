@@ -8,11 +8,8 @@
  */
 
 import { z } from "zod";
-import {
-  cloudAuthHeaders,
-  invalidateOrgIdCache,
-  resolveCloudUrl,
-} from "../../cloud-auth";
+import { cloudAuthHeaders, invalidateOrgIdCache } from "../../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 
 const PassthroughBodySchema = z.record(z.string(), z.unknown()).catch({});
@@ -75,14 +72,13 @@ export async function cloudUploadToSignedUrl(
 export async function cloudImportPreflightFromGcs(
   bundleKey: string,
   token: string,
-  cloudUrl?: string,
 ): Promise<{ statusCode: number; body: Record<string, unknown> }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/import-preflight-from-gcs/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       signal: AbortSignal.timeout(30 * 60_000),
       body: JSON.stringify({ bundle_key: bundleKey }),
     },
@@ -97,14 +93,13 @@ export async function cloudImportPreflightFromGcs(
 export async function cloudImportBundleFromGcs(
   bundleKey: string,
   token: string,
-  cloudUrl?: string,
 ): Promise<{ statusCode: number; body: Record<string, unknown> }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/import-from-gcs/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify({ bundle_key: bundleKey }),
       signal: AbortSignal.timeout(30 * 60_000),
     },
@@ -257,14 +252,13 @@ export async function cloudRequestSignedUrl(
     consumer?: "client" | "runtime";
   },
   token: string,
-  cloudUrl?: string,
 ): Promise<{
   url: string;
   bundleKey: string;
   expiresAt: string;
   maxContentLength?: number;
 }> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const body: Record<string, unknown> = { operation: params.operation };
   if (params.bundleKey !== undefined) body.bundle_key = params.bundleKey;
   if (params.contentType !== undefined) body.content_type = params.contentType;
@@ -289,7 +283,7 @@ export async function cloudRequestSignedUrl(
   const doRequest = async (): Promise<Response> =>
     loopbackSafeFetch(`${resolvedUrl}/v1/migrations/signed-url/`, {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify(body),
     });
 
@@ -300,7 +294,7 @@ export async function cloudRequestSignedUrl(
     // lookup. For session-token callers, a 401 frequently means the
     // cached org ID is stale — calling doRequest() again without clearing
     // the cache would just send the same stale header and fail again.
-    invalidateOrgIdCache(token, cloudUrl);
+    invalidateOrgIdCache(token);
     response = await doRequest();
   }
 
@@ -346,13 +340,12 @@ export async function cloudRequestSignedUrl(
 export async function cloudPollJobStatus(
   jobId: string,
   token: string,
-  cloudUrl?: string,
 ): Promise<UnifiedJobStatus> {
-  const resolvedUrl = cloudUrl || resolveCloudUrl();
+  const resolvedUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${resolvedUrl}/v1/migrations/jobs/${jobId}/`,
     {
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     },
   );
 

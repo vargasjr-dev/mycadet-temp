@@ -10,6 +10,7 @@
     "cli",
     "clients/android",
     "clients/app",
+    "clients/chrome-extension",
     "clients/docs",
     "clients/ios",
     "clients/linux",
@@ -44,6 +45,7 @@
     "@playwright/browser-chromium"
   ],
   "overrides": {
+    "@types/node": "26.1.0",
     "@tiptap/core": "3.23.5",
     "@tiptap/extension-blockquote": "3.23.5",
     "@tiptap/extension-bold": "3.23.5",
@@ -70,8 +72,7 @@
     "@tiptap/extensions": "3.23.5",
     "@tiptap/pm": "3.23.5",
     "@tiptap/react": "3.23.5",
-    "@tiptap/starter-kit": "3.23.5",
-    "@types/node": "26.1.0"
+    "@tiptap/starter-kit": "3.23.5"
   },
   "patchedDependencies": {
     "app-builder-lib@26.8.1": "patches/app-builder-lib@26.8.1.patch",

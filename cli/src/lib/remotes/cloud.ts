@@ -3,8 +3,8 @@
  * commands ride the platform's terminal-session exec API — the same seam
  * `cadet exec` drives for these topologies.
  */
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
-import { execViaTerminalSession } from "@mycadet/local-mode";
+import { execViaTerminalSession, readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 /**
@@ -25,7 +25,7 @@ export async function cloudPair(entry: LockfileAssistant): Promise<string> {
   const assistant = {
     assistantId: entry.assistantId,
     token,
-    cloudUrl: getCloudUrl(),
+    cloudUrl: getCloudBaseUrl(),
   };
   const { output } = await execViaTerminalSession(
     assistant,

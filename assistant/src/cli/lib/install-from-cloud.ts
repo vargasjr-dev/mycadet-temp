@@ -33,7 +33,7 @@ import {
   MALFORMED_USTAR_SIZE,
   parseUstarSizeField,
 } from "../../archive/ustar-size.js";
-import { getCloudBaseUrl } from "../../config/env.js";
+import { resolveCloudBaseUrl } from "../../config/env.js";
 import { getExistingDeviceId } from "../../util/device-id.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { getPluginManifestInstallAction } from "../../util/plugin-manifest.js";
@@ -253,7 +253,7 @@ export async function installPluginViaPlatform(
   opts: { name: string; force?: boolean; conversationId?: string },
   deps: { fetch: FetchLike; confirmStaged?: ConfirmStagedInstall },
 ): Promise<InstallPluginResult> {
-  const cloudBaseUrl = getCloudBaseUrl();
+  const cloudBaseUrl = resolveCloudBaseUrl();
   const apiKey = await resolveAssistantApiKey();
   const installationId = getExistingDeviceId() ?? undefined;
 

@@ -11,6 +11,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import * as shared from "@mycadet/shared";
+
 // ---------------------------------------------------------------------------
 // Temp directory for lockfile isolation
 // ---------------------------------------------------------------------------
@@ -39,7 +41,7 @@ const getActiveAssistantMock = spyOn(
   localMode,
   "getActiveAssistant",
 ).mockReturnValue(null);
-const getCloudUrlMock = spyOn(localMode, "getCloudUrl").mockReturnValue(
+const getCloudUrlMock = spyOn(shared, "getCloudBaseUrl").mockReturnValue(
   "http://platform.test",
 );
 
@@ -288,8 +290,9 @@ describe("cadet ps — platform status line", () => {
     expect(output).toContain("* Alice");
     expect(output).toContain("remote: cloud");
     // The row shows the DERIVED cloud url — the cloud-url stack's answer in
-    // this environment, not a per-entry record.
-    expect(output).toContain("https://cloud.mycadet.ai");
+    // this environment (here the spied `getCloudBaseUrl`), not a per-entry
+    // record. The lockfile no longer carries a cloud base url.
+    expect(output).toContain("http://platform.test");
     expect(output).not.toContain("* assistant-123");
   });
 

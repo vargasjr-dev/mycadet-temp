@@ -1,34 +1,20 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 // The `/seeds` subpath is deliberate: cap's TS config loader transpiles one
-// file at a time and cannot resolve the environments index's `.js`-suffixed
-// runtime re-exports.
-import {
-  SEEDS,
-  cloudAssistantHubUrl,
-  cloudWebUrl,
-} from "@mycadet/environments/seeds";
+// file at a time and cannot resolve a re-export barrel.
+import { getCloudBaseUrl } from "@mycadet/shared/seeds";
 
-// Resolves the environment and app server url
+// Resolves the environment's single origin the same way every other surface
+// does (`SEEDS` via `CADET_ENVIRONMENT`; unset means the local cadet). It is
+// both the baked cloud origin the mobile shells' native half dials — the iOS
+// scheme handler forwards the boot bundle's same-origin `/v1` fetches at it,
+// and it is the baked-default fallback behind the chooser escape and the
+// widget identity — and the navigation escape hatch. A lockfile-dialed
+// tunnel/loopback origin for a device build is the mobile iteration's
+// follow-up.
 function resolveServerUrl(): string {
   // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
   process.env.CADET_ENVIRONMENT ??= "local";
-  return cloudAssistantHubUrl();
-}
-
-// The baked cloud origin the mobile shells' native half dials: the iOS
-// scheme handler forwards the boot bundle's same-origin `/v1` fetches at
-// it, and it is the baked-default fallback behind the chooser escape and
-// the widget identity. Resolved at sync time from `CADET_ENVIRONMENT` —
-// the same input the removed `__CADET_CONFIG__` stamp consumed, carried
-// natively now that the served-bundle config schema transports no URLs.
-// Local resolves to the control-plane default; a lockfile-dialed
-// tunnel/loopback stack for a device build is the mobile iteration's
-// follow-up (the stamp's own fallback, unchanged).
-function resolveBakedCloudUrl(): string {
-  if ((process.env.CADET_ENVIRONMENT ??= "local") === "local") {
-    return SEEDS.local.cloudUrl;
-  }
-  return cloudWebUrl();
+  return getCloudBaseUrl();
 }
 
 // The Capacitor config shared by all mobile shells
@@ -42,7 +28,7 @@ const baseConfig: Omit<CapacitorConfig, "appId"> = {
     // Inert to Capacitor itself — the mobile shells' native half reads the
     // baked origin out of the synced config (SelfHostedServer on iOS).
     CadetCloud: {
-      cloudUrl: resolveBakedCloudUrl(),
+      cloudUrl: resolveServerUrl(),
     },
   },
   server: {

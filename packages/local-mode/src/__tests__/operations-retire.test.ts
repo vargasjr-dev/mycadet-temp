@@ -41,7 +41,6 @@ const cloudAuthHeadersMock = mock(async () => ({
   "Content-Type": "application/json",
   "X-Session-Token": "session-token",
 }));
-const resolveCloudUrlMock = mock(() => "https://platform.example.test");
 const retireLocalMock = mock(
   async (
     assistantId: string,
@@ -65,7 +64,6 @@ mock.module("../cloud-auth", () => ({
   readCloudToken: readCloudTokenMock,
   authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
   cloudAuthHeaders: cloudAuthHeadersMock,
-  resolveCloudUrl: resolveCloudUrlMock,
 }));
 mock.module("../exec", () => ({
   ...realExec,
@@ -114,12 +112,13 @@ beforeEach(() => {
   lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   process.env.XDG_CONFIG_HOME = tmpDir;
   delete process.env.CADET_CLOUD_TOKEN;
+  // The cloud URL rides the shared seeds' CADET_CLOUD_URL override.
+  process.env.CADET_CLOUD_URL = "https://platform.example.test";
   for (const m of [
     loopbackSafeFetchMock,
     readCloudTokenMock,
     authHeadersForKnownOrganizationMock,
     cloudAuthHeadersMock,
-    resolveCloudUrlMock,
     retireLocalMock,
     retireDockerMock,
     retireAppleContainerMock,
@@ -130,7 +129,6 @@ beforeEach(() => {
   loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status: 204 }));
   execMock.mockResolvedValue("");
   readCloudTokenMock.mockReturnValue(null);
-  resolveCloudUrlMock.mockReturnValue("https://platform.example.test");
   authHeadersForKnownOrganizationMock.mockImplementation(
     (token: string, organizationId: string) => ({
       "Content-Type": "application/json",
@@ -145,6 +143,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete process.env.CADET_CLOUD_URL;
   delete process.env.XDG_CONFIG_HOME;
   delete process.env.CADET_CLOUD_TOKEN;
   fs.rmSync(tmpDir, { recursive: true, force: true });

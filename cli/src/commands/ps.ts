@@ -317,7 +317,9 @@ export async function printRootProcessDetail(
   if (name === "app" || name === "bun") {
     console.log("App server:");
     if (!app?.pid) {
-      console.log(`  not running`);
+      // No record at all — distinct from a record whose process died
+      // ("not running"): this machine has never started the app server.
+      console.log(`  not recorded — start it with \`cadet app start\``);
       return true;
     }
     const alive = isLocalProcessAlive(app.pid);
