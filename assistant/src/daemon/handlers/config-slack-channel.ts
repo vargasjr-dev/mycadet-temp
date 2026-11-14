@@ -61,8 +61,8 @@ const SLACK_INJECTION_TEMPLATES = [
 ];
 
 /** Ensure the bot token credential has injection templates for the proxy. */
-function ensureBotTokenInjectionTemplates(): void {
-  upsertCredentialMetadata("slack_channel", "bot_token", {
+async function ensureBotTokenInjectionTemplates(): Promise<void> {
+  await upsertCredentialMetadata("slack_channel", "bot_token", {
     allowedTools: ["bash"],
     allowedDomains: ["slack.com"],
     injectionTemplates: SLACK_INJECTION_TEMPLATES,
@@ -70,8 +70,8 @@ function ensureBotTokenInjectionTemplates(): void {
 }
 
 /** Ensure the user token credential has injection templates for the proxy. */
-function ensureUserTokenInjectionTemplates(): void {
-  upsertCredentialMetadata("slack_channel", "user_token", {
+async function ensureUserTokenInjectionTemplates(): Promise<void> {
+  await upsertCredentialMetadata("slack_channel", "user_token", {
     allowedTools: ["bash"],
     allowedDomains: ["slack.com"],
     injectionTemplates: SLACK_INJECTION_TEMPLATES,
@@ -82,20 +82,20 @@ function ensureUserTokenInjectionTemplates(): void {
  * Backfill injection templates on the Slack credentials.
  * Called on daemon startup so existing credentials get proxy support.
  */
-export function backfillSlackInjectionTemplates(): void {
+export async function backfillSlackInjectionTemplates(): Promise<void> {
   const botMeta = getCredentialMetadata("slack_channel", "bot_token");
   if (
     botMeta &&
     (!botMeta.injectionTemplates || botMeta.injectionTemplates.length === 0)
   ) {
-    ensureBotTokenInjectionTemplates();
+    await ensureBotTokenInjectionTemplates();
   }
   const userMeta = getCredentialMetadata("slack_channel", "user_token");
   if (
     userMeta &&
     (!userMeta.injectionTemplates || userMeta.injectionTemplates.length === 0)
   ) {
-    ensureUserTokenInjectionTemplates();
+    await ensureUserTokenInjectionTemplates();
   }
 }
 
@@ -125,10 +125,10 @@ export async function getSlackChannelConfig(): Promise<SlackChannelConfigResult>
   // Backfill injection templates for existing credentials that were stored
   // before proxy support was added. Safe to call repeatedly (upsert merges).
   if (hasBotToken) {
-    ensureBotTokenInjectionTemplates();
+    await ensureBotTokenInjectionTemplates();
   }
   if (hasUserToken) {
-    ensureUserTokenInjectionTemplates();
+    await ensureUserTokenInjectionTemplates();
   }
 
   const { threadMode } = getConfig().slack;
@@ -234,7 +234,7 @@ export async function setSlackChannelConfig(
       );
     }
 
-    ensureBotTokenInjectionTemplates();
+    await ensureBotTokenInjectionTemplates();
 
     const raw = loadRawConfig();
     setNestedValue(raw, "slack.teamId", metadata.teamId ?? "");
@@ -339,7 +339,7 @@ export async function setSlackChannelConfig(
       );
     }
 
-    upsertCredentialMetadata("slack_channel", "app_token", {});
+    await upsertCredentialMetadata("slack_channel", "app_token", {});
   }
 
   // Validate and store user token (optional — grants read access to channels
@@ -393,7 +393,7 @@ export async function setSlackChannelConfig(
       );
     }
 
-    ensureUserTokenInjectionTemplates();
+    await ensureUserTokenInjectionTemplates();
   }
 
   const hasBotToken = !!(await getSecureKeyAsync(
@@ -419,7 +419,7 @@ export async function setSlackChannelConfig(
   // Sync oauth_connection record so getConnectionByProvider("slack_channel")
   // reflects the current credential state.
   if (hasBotToken && hasAppToken) {
-    ensureBotTokenInjectionTemplates();
+    await ensureBotTokenInjectionTemplates();
     const accountInfo = metadata.teamName
       ? `${metadata.teamName}${metadata.botUsername ? ` (@${metadata.botUsername})` : ""}`
       : undefined;
@@ -481,7 +481,7 @@ export async function clearSlackUserToken(): Promise<SlackChannelConfigResult> {
     };
   }
 
-  deleteCredentialMetadata("slack_channel", "user_token");
+  await deleteCredentialMetadata("slack_channel", "user_token");
 
   const hasBotToken = !!(await getSecureKeyAsync(
     credentialKey("slack_channel", "bot_token"),
@@ -544,9 +544,9 @@ export async function clearSlackChannelConfig(): Promise<SlackChannelConfigResul
     };
   }
 
-  deleteCredentialMetadata("slack_channel", "bot_token");
-  deleteCredentialMetadata("slack_channel", "app_token");
-  deleteCredentialMetadata("slack_channel", "user_token");
+  await deleteCredentialMetadata("slack_channel", "bot_token");
+  await deleteCredentialMetadata("slack_channel", "app_token");
+  await deleteCredentialMetadata("slack_channel", "user_token");
 
   // Remove the oauth_connection row so getConnectionByProvider returns undefined.
   removeManualTokenConnection("slack_channel");

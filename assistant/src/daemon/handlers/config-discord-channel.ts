@@ -241,7 +241,7 @@ export async function setDiscordChannelConfig(
   if (!stored) {
     return failure("Failed to store the bot token in secure storage");
   }
-  upsertCredentialMetadata(DISCORD_PROVIDER, "bot_token", {});
+  await upsertCredentialMetadata(DISCORD_PROVIDER, "bot_token", {});
 
   const raw = loadRawConfig();
   setNestedValue(raw, "discord.botUserId", botUserId ?? "");
@@ -285,7 +285,7 @@ export async function clearDiscordChannelConfig(): Promise<DiscordChannelConfigR
     // success here would report a disconnect that did not happen.
     return failure("Failed to delete the bot token from secure storage");
   }
-  deleteCredentialMetadata(DISCORD_PROVIDER, "bot_token");
+  await deleteCredentialMetadata(DISCORD_PROVIDER, "bot_token");
   await removeManualTokenConnection(DISCORD_PROVIDER);
 
   const raw = loadRawConfig();

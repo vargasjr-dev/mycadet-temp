@@ -137,7 +137,7 @@ export async function storeCredentialValue(
     await scrubStoredCredentialFromTranscripts(value, { service, field });
   }
 
-  const metadata = upsertCredentialMetadata(service, field, {
+  const metadata = await upsertCredentialMetadata(service, field, {
     alias: input.alias,
     usageDescription: input.usageDescription,
     allowedTools: input.allowedTools,

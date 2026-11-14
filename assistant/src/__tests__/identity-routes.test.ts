@@ -490,24 +490,39 @@ describe("identity routes — /readyz readiness gate", () => {
     ).toEqual([{ name: "flakyStep", error: "transient failure" }]);
   });
 
-  test("returns 200 even if CES is down", async () => {
+  test("stays not-ready with a ces-connecting body while CES is down", async () => {
     resetReadinessForTest();
     setDbReady(true);
     await cesRecordBackend.close();
 
     const res = handleReadyz();
+    // Status stays 200 (the k8s keep-the-pod contract); the body tells the
+    // CLI's readiness wait the truth: credential setting needs CES.
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
-    expect(body.ready).toBe(true);
+    expect(body).toEqual({
+      status: "ces-connecting",
+      ready: false,
+      ces: { connected: false },
+    });
   });
 
-  test("returns 200 with the ok body when fully ready", async () => {
+  test("returns 200 with the ok body once CES is connected and migrations are done", async () => {
     resetReadinessForTest();
     setDbReady(true);
+    if (!cesServer.listening) {
+      await cesServer.start();
+    }
+    await cesRecordBackend.ensureClient();
+
     const res = handleReadyz();
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
-    expect(body).toEqual({ status: "ok", ready: true });
+    expect(body).toEqual({
+      status: "ok",
+      ready: true,
+      ces: { connected: true },
+    });
   });
 });
 

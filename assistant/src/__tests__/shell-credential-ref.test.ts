@@ -2,7 +2,18 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
+
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // Mock registry
 mock.module("../tools/registry.js", () => ({
@@ -74,9 +85,22 @@ afterAll(() => {
   mock.restore();
 });
 
+// The awaited catalog write needs a live CES record backend: serve one over a
+// real socket so seeded credentials persist through the production path.
+const cesSession = startTestCesRecordServer();
+
+afterEach(async () => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
+  if (!cesSession.listening) {
+    await cesSession.start();
+  }
+  await cesRecordBackend.close();
+});
+
 describe("shell tool credential ref resolution", () => {
   test("service/field ref resolves to UUID and reaches session creation", async () => {
-    const meta = upsertCredentialMetadata("fal", "api_key", {
+    const meta = await upsertCredentialMetadata("fal", "api_key", {
       allowedTools: ["bash"],
       injectionTemplates: [
         {
@@ -105,7 +129,7 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("UUID ref remains supported", async () => {
-    const meta = upsertCredentialMetadata("github", "token", {
+    const meta = await upsertCredentialMetadata("github", "token", {
       allowedTools: ["bash"],
     });
 
@@ -143,7 +167,7 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("mixed known+unknown refs fails fast (no partial execution)", async () => {
-    upsertCredentialMetadata("fal", "api_key", {
+    await upsertCredentialMetadata("fal", "api_key", {
       allowedTools: ["bash"],
     });
 
@@ -164,7 +188,7 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("duplicate refs are deduped", async () => {
-    const meta = upsertCredentialMetadata("fal", "api_key", {
+    const meta = await upsertCredentialMetadata("fal", "api_key", {
       allowedTools: ["bash"],
     });
 
@@ -202,7 +226,7 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("credential with allowedTools excluding bash is denied for proxied shell", async () => {
-    upsertCredentialMetadata("vercel", "api_token", {
+    await upsertCredentialMetadata("vercel", "api_token", {
       allowedTools: ["publish_page"],
       injectionTemplates: [
         {
@@ -232,7 +256,7 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("credential with allowedTools including bash starts proxied session", async () => {
-    const meta = upsertCredentialMetadata("deploy_svc", "api_key", {
+    const meta = await upsertCredentialMetadata("deploy_svc", "api_key", {
       allowedTools: ["bash"],
       injectionTemplates: [
         {
@@ -261,10 +285,10 @@ describe("shell tool credential ref resolution", () => {
   });
 
   test("mixed allowed and denied credentials fail the whole command before session creation", async () => {
-    upsertCredentialMetadata("allowed_svc", "token", {
+    await upsertCredentialMetadata("allowed_svc", "token", {
       allowedTools: ["bash"],
     });
-    upsertCredentialMetadata("denied_svc", "token", {
+    await upsertCredentialMetadata("denied_svc", "token", {
       allowedTools: ["publish_page"],
     });
 

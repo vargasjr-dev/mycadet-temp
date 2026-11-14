@@ -387,14 +387,12 @@ export async function runDaemon(): Promise<void> {
 
     // Backfill injection templates on Slack bot token credentials so the
     // credential proxy can inject Authorization headers. Safe on every startup.
-    try {
-      backfillSlackInjectionTemplates();
-    } catch (err) {
+    void backfillSlackInjectionTemplates().catch((err) =>
       log.warn(
         { err },
         "Slack injection template backfill failed — continuing startup",
-      );
-    }
+      ),
+    );
 
     // Expire interaction-bound guardian requests (tool_approval,
     // pending_question) left over from before this process started: their

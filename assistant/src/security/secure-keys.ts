@@ -76,10 +76,10 @@ export function getCesClient(): CesClient | undefined {
 /**
  * Resolve the primary credential backend for this process (async).
  *
- * The CES record backend owns this process's CES session: it opens one
- * lazily on first use and reopens it (cooldown-gated) whenever the transport
- * dies, so resolution either lands on the live CES RPC client or reports the
- * store unreachable (presence indeterminate — callers retry). A dead cached
+ * The CES record backend owns this process's CES connection: it opens one
+ * lazily on first use and reopens it whenever the transport dies, so
+ * resolution either lands on the live CES RPC client or reports the store
+ * unreachable (presence indeterminate — callers retry). A dead cached
  * backend is dropped and re-resolved on the next call; there is no local
  * file fallback.
  *
@@ -92,8 +92,8 @@ async function resolveBackendAsync(): Promise<CredentialBackend> {
   if (_resolvedBackend?.isAvailable()) {
     return _resolvedBackend;
   }
-  // Dead or absent — re-resolve. `ensureClient`'s cooldown gates how often
-  // the session reopen is attempted, so back-to-back ops don't hammer CES.
+  // Dead or absent — re-resolve. Reopening is single-flight, so back-to-back
+  // ops share one connection attempt instead of hammering CES.
   _resolvedBackend = undefined;
   _resolvePromise = undefined;
   if (!_resolvePromise) {
@@ -112,7 +112,16 @@ async function resolveBackendAsync(): Promise<CredentialBackend> {
 }
 
 async function doResolveBackend(): Promise<CredentialBackend> {
-  const client = await cesRecordBackend.ensureClient();
+  let client: CesClient | undefined;
+  try {
+    client = await cesRecordBackend.ensureClient();
+  } catch (err) {
+    log.info(
+      { err },
+      "CES is unreachable; reporting credentials as unreachable (indeterminate).",
+    );
+    return createUnavailableBackend();
+  }
   if (client) {
     const cesRpc = new CesRpcCredentialBackend(client);
     if (cesRpc.isAvailable()) {

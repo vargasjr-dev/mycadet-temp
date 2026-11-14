@@ -47,6 +47,7 @@ import {
 } from "../../security/secure-keys.js";
 import {
   assertMetadataWritable,
+  CredentialCatalogUnavailableError,
   deleteCredentialMetadata,
   upsertCredentialMetadata,
 } from "../../tools/credentials/metadata-store.js";
@@ -62,6 +63,7 @@ import {
   InternalError,
   NotFoundError,
   RouteError,
+  ServiceUnavailableError,
 } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
@@ -94,7 +96,7 @@ async function persistCredential(
     );
   }
   await scrubStoredCredentialFromTranscripts(value, { service, field });
-  upsertCredentialMetadata(service, field, {});
+  await upsertCredentialMetadata(service, field, {});
   await syncManualTokenConnection(service);
 }
 
@@ -383,6 +385,11 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
     ) {
       throw err;
     }
+    if (err instanceof CredentialCatalogUnavailableError) {
+      // The catalog (CES) is down: a 5xx the CLI can distinguish from a
+      // rejection, so a retrying caller knows the secret may be stored.
+      throw new ServiceUnavailableError(err.message);
+    }
     const message = err instanceof Error ? err.message : String(err);
     log.error({ err, type, name }, "Failed to add secret via HTTP");
     throw new InternalError(message);
@@ -572,7 +579,7 @@ async function handleDeleteSecret({ body }: RouteHandlerArgs) {
           `Failed to delete credential from secure storage: ${name}`,
         );
       }
-      deleteCredentialMetadata(service, field);
+      await deleteCredentialMetadata(service, field);
       invalidateConnectionsAfterCredentialDelete(affectedConnections);
       log.info({ service, field }, "Credential deleted via HTTP");
       return { success: true, type, name };
@@ -587,6 +594,9 @@ async function handleDeleteSecret({ body }: RouteHandlerArgs) {
     // and details from the caller.
     if (err instanceof RouteError) {
       throw err;
+    }
+    if (err instanceof CredentialCatalogUnavailableError) {
+      throw new ServiceUnavailableError(err.message);
     }
     const message = err instanceof Error ? err.message : String(err);
     log.error({ err, type, name }, "Failed to delete secret via HTTP");

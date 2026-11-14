@@ -174,7 +174,7 @@ export async function handleSetTwilioCredentials({
     setupStarted: true,
   });
 
-  upsertCredentialMetadata("twilio", "account_sid", {
+  await upsertCredentialMetadata("twilio", "account_sid", {
     allowedTools: ["bash"],
     injectionTemplates: [
       {
@@ -203,7 +203,7 @@ export async function handleSetTwilioCredentials({
       },
     ],
   });
-  upsertCredentialMetadata("twilio", "auth_token", {});
+  await upsertCredentialMetadata("twilio", "auth_token", {});
 
   return { success: true, hasCredentials: true };
 }
@@ -220,8 +220,8 @@ export async function handleClearTwilioCredentials() {
 
   setConfigSection("twilio", { ...getConfig().twilio, accountSid: "" });
 
-  deleteCredentialMetadata("twilio", "account_sid");
-  deleteCredentialMetadata("twilio", "auth_token");
+  await deleteCredentialMetadata("twilio", "account_sid");
+  await deleteCredentialMetadata("twilio", "auth_token");
 
   return { success: true, hasCredentials: false };
 }

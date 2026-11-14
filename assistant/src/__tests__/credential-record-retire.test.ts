@@ -229,9 +229,13 @@ describe("CES credential record cache", () => {
     await cesRecordBackend.ensureClient();
     expect(existsSync(leftoverPath())).toBe(true);
 
-    const created = upsertCredentialMetadata("slack_channel", "bot_token", {
-      allowedTools: ["bash"],
-    });
+    const created = await upsertCredentialMetadata(
+      "slack_channel",
+      "bot_token",
+      {
+        allowedTools: ["bash"],
+      },
+    );
     await cesRecordBackend.ensureClient();
     await new Promise((resolve) => setTimeout(resolve, 20));
 

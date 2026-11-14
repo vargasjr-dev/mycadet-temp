@@ -13,6 +13,7 @@ import { parseIdentityFields } from "../../daemon/handlers/identity.js";
 import { getProfilerRuntimeStatus } from "../../daemon/profiler-run-store.js";
 import { getMaxRollbackVersion } from "../../persistence/migrations/run-migrations.js";
 import { migrationSteps } from "../../persistence/steps.js";
+import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
 import { getCesClient } from "../../security/secure-keys.js";
 import { getContainerCpuCores } from "../../util/cgroup-cpu.js";
 import {
@@ -216,7 +217,26 @@ export function handleReadyz(): Response {
     );
   }
 
-  return Response.json({ status: "ok", ready: true });
+  // Credential setting must not race CES startup: the hatch flow waits for
+  // this probe before provisioning credentials, so "ready" only lands once
+  // CES is connected and handshaked. The probe nudges the record backend's
+  // single-flight connect when it has not opened yet (idempotent, non-
+  // blocking — this handler stays synchronous); a CES outage keeps the
+  // assistant not-ready, which is the truth: credential ops would fail.
+  const cesConnected = getCesClient()?.isReady() ?? false;
+  if (!cesConnected) {
+    void cesRecordBackend.ensureClient().catch(() => {});
+    return Response.json(
+      {
+        status: "ces-connecting",
+        ready: false,
+        ces: { connected: false },
+      },
+      { status: 200 },
+    );
+  }
+
+  return Response.json({ status: "ok", ready: true, ces: { connected: true } });
 }
 
 function getIdentity() {

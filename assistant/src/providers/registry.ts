@@ -98,7 +98,6 @@ export function getProviderRoutingSource(
 
 export interface ProvidersConfig {
   services: {
-    inference: Record<string, never>;
     "image-generation": {
       provider: string;
       model: string;

@@ -17,6 +17,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
+import { startTestCesRecordServer } from "../../__tests__/helpers/test-ces-record-server.js";
+import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
+
 // ---------------------------------------------------------------------------
 // Mocks — wired BEFORE importing the module via dynamic import.
 // ---------------------------------------------------------------------------
@@ -105,13 +108,26 @@ beforeEach(() => {
   deleteSecureKeyAsync.mockClear();
 });
 
-afterEach(() => {
+afterEach(async () => {
   rmSync(TEST_DIR, { recursive: true, force: true });
 });
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
+
+// The awaited catalog write needs a live CES record backend: serve one over a
+// real socket so seeded credentials persist through the production path.
+const cesSession = startTestCesRecordServer();
+
+afterEach(async () => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
+  if (!cesSession.listening) {
+    await cesSession.start();
+  }
+  await cesRecordBackend.close();
+});
 
 describe("CLAUDE_OAUTH_CONFIG", () => {
   test("matches the verified endpoints, client id, and scope", () => {

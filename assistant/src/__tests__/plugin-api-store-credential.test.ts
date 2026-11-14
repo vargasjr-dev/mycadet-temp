@@ -22,6 +22,11 @@ import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { providerConnections } from "../persistence/schema/inference.js";
 import { resolveCredential } from "../plugin-api/resolve-credential.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
+
+// The awaited catalog write needs a live CES record backend.
+const cesSession = startTestCesRecordServer();
 import {
   CredentialStoreError,
   storeCredential,
@@ -111,6 +116,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
   setSpy.mockRestore();
   getSpy.mockRestore();
   scrubSpy.mockRestore();

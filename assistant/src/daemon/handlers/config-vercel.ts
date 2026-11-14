@@ -58,7 +58,7 @@ export async function setVercelConfig(
     };
   }
 
-  upsertCredentialMetadata("vercel", "api_token", {
+  await upsertCredentialMetadata("vercel", "api_token", {
     allowedTools: ["publish_page", "unpublish_page"],
     allowedDomains: [],
     injectionTemplates: null,
@@ -87,7 +87,7 @@ export async function deleteVercelConfig(): Promise<VercelConfigResult> {
     };
   }
 
-  deleteCredentialMetadata("vercel", "api_token");
+  await deleteCredentialMetadata("vercel", "api_token");
 
   log.info("Vercel API token deleted");
   return { hasToken: false, success: true };

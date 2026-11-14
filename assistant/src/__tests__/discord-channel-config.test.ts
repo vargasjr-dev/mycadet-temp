@@ -34,10 +34,15 @@ import {
   setDiscordChannelConfig,
 } from "../daemon/handlers/config-discord-channel.js";
 import { credentialKey } from "../security/credential-key.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import * as secureKeys from "../security/secure-keys.js";
 import { _resetBackend, getSecureKeyAsync } from "../security/secure-keys.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 import { setConfig } from "./helpers/set-config.js";
+
+// The awaited catalog write needs a live CES record backend.
+const cesSession = startTestCesRecordServer();
 
 const BOT_TOKEN_KEY = credentialKey("discord_channel", "bot_token");
 
@@ -71,9 +76,10 @@ function installDiscordApi(fake: FakeDiscord) {
   }) as typeof fetch;
 }
 
-afterAll(() => {
+afterAll(async () => {
   globalThis.fetch = originalFetch;
   _resetBackend();
+  await cesRecordBackend.close();
 });
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;
@@ -91,6 +97,8 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  cesSession.records.clear();
+  cesSession.failSet = false;
 });
 
 describe("connecting a Discord bot", () => {

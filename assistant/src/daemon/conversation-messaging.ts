@@ -1767,7 +1767,7 @@ export function redirectToSecurePrompt(
           result.value,
         );
         try {
-          upsertCredentialMetadata(target.service, target.field, {});
+          await upsertCredentialMetadata(target.service, target.field, {});
         } catch (e) {
           log.debug(
             { err: e, service: target.service, field: target.field },
@@ -1790,7 +1790,7 @@ export function redirectToSecurePrompt(
         const stored = await setSecureKeyAsync(key, result.value);
         if (stored) {
           try {
-            upsertCredentialMetadata(target.service, target.field, {});
+            await upsertCredentialMetadata(target.service, target.field, {});
           } catch (e) {
             log.debug(
               { err: e, service: target.service, field: target.field },

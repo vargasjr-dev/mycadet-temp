@@ -38,12 +38,6 @@ const BaseServiceSchema = z.object({
 });
 
 /**
- * Inference carries no fields: routing is governed entirely by
- * `provider_connections` rows. The namespace is kept so callers that walk
- * `config.services.inference` do not need updating.
- */
-
-/**
  * Image generation carries no `mode`: `provider` is the only axis. `"cadet"`
  * generates through the cloud runtime proxy for the model-appropriate
  * backend, billed to Cadet credits; `"gemini"`/`"openai"`/`"openrouter"`
@@ -169,7 +163,6 @@ const CalendlyOAuthServiceSchema = BaseServiceSchema.extend({
 });
 
 export const ServicesSchema = z.object({
-  inference: z.object({}).default({}),
   "image-generation": ImageGenerationServiceSchema.default(
     ImageGenerationServiceSchema.parse({}),
   ),

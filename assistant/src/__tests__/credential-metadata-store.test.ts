@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
   _resetCredentialMetadataCacheForTests,
   assertMetadataWritable,
@@ -9,18 +10,30 @@ import {
   listCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
+
+const session = startTestCesRecordServer();
 import type { CredentialInjectionTemplate } from "../tools/credentials/policy-types.js";
 
 beforeEach(() => {
   _resetCredentialMetadataCacheForTests();
 });
 
+afterEach(async () => {
+  session.records.clear();
+  session.failSet = false;
+  if (!session.listening) {
+    await session.start();
+  }
+  await cesRecordBackend.close();
+});
+
 describe("credential metadata store", () => {
   // ── Create ──────────────────────────────────────────────────────────
 
   describe("upsertCredentialMetadata", () => {
-    test("creates new record with generated ID", () => {
-      const record = upsertCredentialMetadata("github", "token", {
+    test("creates new record with generated ID", async () => {
+      const record = await upsertCredentialMetadata("github", "token", {
         allowedTools: ["browser_fill_credential"],
         allowedDomains: ["github.com"],
         usageDescription: "GitHub login",
@@ -36,19 +49,19 @@ describe("credential metadata store", () => {
       expect(record.updatedAt).toBe(record.createdAt);
     });
 
-    test("defaults policy arrays to empty", () => {
-      const record = upsertCredentialMetadata("gmail", "password");
+    test("defaults policy arrays to empty", async () => {
+      const record = await upsertCredentialMetadata("gmail", "password");
       expect(record.allowedTools).toEqual([]);
       expect(record.allowedDomains).toEqual([]);
       expect(record.usageDescription).toBeUndefined();
     });
 
-    test("updates existing record by service+field", () => {
-      const created = upsertCredentialMetadata("github", "token", {
+    test("updates existing record by service+field", async () => {
+      const created = await upsertCredentialMetadata("github", "token", {
         allowedTools: ["browser_fill_credential"],
       });
 
-      const updated = upsertCredentialMetadata("github", "token", {
+      const updated = await upsertCredentialMetadata("github", "token", {
         allowedDomains: ["github.com"],
         usageDescription: "Updated purpose",
       });
@@ -64,27 +77,27 @@ describe("credential metadata store", () => {
   // ── Read ────────────────────────────────────────────────────────────
 
   describe("getCredentialMetadata", () => {
-    test("returns metadata by service+field", () => {
-      upsertCredentialMetadata("github", "token");
+    test("returns metadata by service+field", async () => {
+      await upsertCredentialMetadata("github", "token");
       const result = getCredentialMetadata("github", "token");
       expect(result).toBeDefined();
       expect(result!.service).toBe("github");
     });
 
-    test("returns undefined for non-existent credential", () => {
+    test("returns undefined for non-existent credential", async () => {
       expect(getCredentialMetadata("nonexistent", "field")).toBeUndefined();
     });
   });
 
   describe("getCredentialMetadataById", () => {
-    test("returns metadata by credentialId", () => {
-      const created = upsertCredentialMetadata("github", "token");
+    test("returns metadata by credentialId", async () => {
+      const created = await upsertCredentialMetadata("github", "token");
       const result = getCredentialMetadataById(created.credentialId);
       expect(result).toBeDefined();
       expect(result!.service).toBe("github");
     });
 
-    test("returns undefined for non-existent ID", () => {
+    test("returns undefined for non-existent ID", async () => {
       expect(getCredentialMetadataById("non-existent-id")).toBeUndefined();
     });
   });
@@ -92,14 +105,14 @@ describe("credential metadata store", () => {
   // ── List ────────────────────────────────────────────────────────────
 
   describe("listCredentialMetadata", () => {
-    test("returns all credentials", () => {
-      upsertCredentialMetadata("github", "token");
-      upsertCredentialMetadata("gmail", "password");
+    test("returns all credentials", async () => {
+      await upsertCredentialMetadata("github", "token");
+      await upsertCredentialMetadata("gmail", "password");
       const list = listCredentialMetadata();
       expect(list).toHaveLength(2);
     });
 
-    test("returns empty array when no credentials exist", () => {
+    test("returns empty array when no credentials exist", async () => {
       expect(listCredentialMetadata()).toEqual([]);
     });
   });
@@ -107,22 +120,24 @@ describe("credential metadata store", () => {
   // ── Delete ──────────────────────────────────────────────────────────
 
   describe("deleteCredentialMetadata", () => {
-    test("deletes existing metadata", () => {
-      upsertCredentialMetadata("github", "token");
-      expect(deleteCredentialMetadata("github", "token")).toBe(true);
+    test("deletes existing metadata", async () => {
+      await upsertCredentialMetadata("github", "token");
+      expect(await deleteCredentialMetadata("github", "token")).toBe(true);
       expect(getCredentialMetadata("github", "token")).toBeUndefined();
     });
 
-    test("returns false for non-existent credential", () => {
-      expect(deleteCredentialMetadata("nonexistent", "field")).toBe(false);
+    test("returns false for non-existent credential", async () => {
+      expect(await deleteCredentialMetadata("nonexistent", "field")).toBe(
+        false,
+      );
     });
   });
 
   // ── Persistence ─────────────────────────────────────────────────────
 
   describe("persistence", () => {
-    test("metadata survives across calls (in-process cache)", () => {
-      upsertCredentialMetadata("github", "token", {
+    test("metadata survives across calls (in-process cache)", async () => {
+      await upsertCredentialMetadata("github", "token", {
         allowedTools: ["browser_fill_credential"],
       });
 
@@ -137,8 +152,8 @@ describe("credential metadata store", () => {
   // ── No secret values ───────────────────────────────────────────────
 
   describe("security", () => {
-    test("metadata records never contain secret values", () => {
-      const record = upsertCredentialMetadata("github", "token", {
+    test("metadata records never contain secret values", async () => {
+      const record = await upsertCredentialMetadata("github", "token", {
         allowedTools: ["browser_fill_credential"],
       });
 
@@ -165,23 +180,23 @@ describe("credential metadata store", () => {
       queryParamName: "key",
     };
 
-    test("creates record with alias", () => {
-      const record = upsertCredentialMetadata("fal-ai", "api_key", {
+    test("creates record with alias", async () => {
+      const record = await upsertCredentialMetadata("fal-ai", "api_key", {
         alias: "fal-primary",
         allowedTools: ["api_request"],
       });
       expect(record.alias).toBe("fal-primary");
     });
 
-    test("creates record with injectionTemplates", () => {
-      const record = upsertCredentialMetadata("fal-ai", "api_key", {
+    test("creates record with injectionTemplates", async () => {
+      const record = await upsertCredentialMetadata("fal-ai", "api_key", {
         injectionTemplates: [falInjection],
       });
       expect(record.injectionTemplates).toEqual([falInjection]);
     });
 
-    test("creates record with multiple injection templates", () => {
-      const record = upsertCredentialMetadata("multi", "key", {
+    test("creates record with multiple injection templates", async () => {
+      const record = await upsertCredentialMetadata("multi", "key", {
         injectionTemplates: [falInjection, queryInjection],
       });
       expect(record.injectionTemplates).toHaveLength(2);
@@ -189,8 +204,8 @@ describe("credential metadata store", () => {
       expect(record.injectionTemplates![1].injectionType).toBe("query");
     });
 
-    test("creates record with alias and injectionTemplates together", () => {
-      const record = upsertCredentialMetadata("fal-ai", "api_key", {
+    test("creates record with alias and injectionTemplates together", async () => {
+      const record = await upsertCredentialMetadata("fal-ai", "api_key", {
         alias: "fal-primary",
         allowedDomains: ["fal.ai"],
         injectionTemplates: [falInjection],
@@ -200,50 +215,52 @@ describe("credential metadata store", () => {
       expect(record.allowedDomains).toEqual(["fal.ai"]);
     });
 
-    test("defaults alias and injectionTemplates to undefined when not provided", () => {
-      const record = upsertCredentialMetadata("basic", "token");
+    test("defaults alias and injectionTemplates to undefined when not provided", async () => {
+      const record = await upsertCredentialMetadata("basic", "token");
       expect(record.alias).toBeUndefined();
       expect(record.injectionTemplates).toBeUndefined();
     });
 
-    test("updates alias on existing record", () => {
-      upsertCredentialMetadata("fal-ai", "api_key", { alias: "fal-old" });
-      const updated = upsertCredentialMetadata("fal-ai", "api_key", {
+    test("updates alias on existing record", async () => {
+      await upsertCredentialMetadata("fal-ai", "api_key", { alias: "fal-old" });
+      const updated = await upsertCredentialMetadata("fal-ai", "api_key", {
         alias: "fal-new",
       });
       expect(updated.alias).toBe("fal-new");
     });
 
-    test("clears alias with null", () => {
-      upsertCredentialMetadata("fal-ai", "api_key", { alias: "fal-primary" });
-      const updated = upsertCredentialMetadata("fal-ai", "api_key", {
+    test("clears alias with null", async () => {
+      await upsertCredentialMetadata("fal-ai", "api_key", {
+        alias: "fal-primary",
+      });
+      const updated = await upsertCredentialMetadata("fal-ai", "api_key", {
         alias: null,
       });
       expect(updated.alias).toBeUndefined();
     });
 
-    test("updates injectionTemplates on existing record", () => {
-      upsertCredentialMetadata("fal-ai", "api_key", {
+    test("updates injectionTemplates on existing record", async () => {
+      await upsertCredentialMetadata("fal-ai", "api_key", {
         injectionTemplates: [falInjection],
       });
-      const updated = upsertCredentialMetadata("fal-ai", "api_key", {
+      const updated = await upsertCredentialMetadata("fal-ai", "api_key", {
         injectionTemplates: [queryInjection],
       });
       expect(updated.injectionTemplates).toEqual([queryInjection]);
     });
 
-    test("clears injectionTemplates with null", () => {
-      upsertCredentialMetadata("fal-ai", "api_key", {
+    test("clears injectionTemplates with null", async () => {
+      await upsertCredentialMetadata("fal-ai", "api_key", {
         injectionTemplates: [falInjection],
       });
-      const updated = upsertCredentialMetadata("fal-ai", "api_key", {
+      const updated = await upsertCredentialMetadata("fal-ai", "api_key", {
         injectionTemplates: null,
       });
       expect(updated.injectionTemplates).toBeUndefined();
     });
 
-    test("round-trip: alias and templates survive serialization", () => {
-      upsertCredentialMetadata("fal-ai", "api_key", {
+    test("round-trip: alias and templates survive serialization", async () => {
+      await upsertCredentialMetadata("fal-ai", "api_key", {
         alias: "fal-primary",
         allowedTools: ["api_request"],
         allowedDomains: ["fal.ai"],
@@ -262,31 +279,31 @@ describe("credential metadata store", () => {
   // ── v5 Schema: OAuth fields removed ─────────────────────────────────
 
   describe("v5 schema — OAuth fields removed from CredentialMetadata", () => {
-    test("CredentialMetadata does not include hasRefreshToken", () => {
-      const record = upsertCredentialMetadata("github", "access_token", {
+    test("CredentialMetadata does not include hasRefreshToken", async () => {
+      const record = await upsertCredentialMetadata("github", "access_token", {
         allowedTools: ["api_request"],
       });
       // hasRefreshToken was removed in v5 — field should not exist
       expect("hasRefreshToken" in record).toBe(false);
     });
 
-    test("CredentialMetadata does not include oauth2TokenUrl", () => {
-      const record = upsertCredentialMetadata("github", "access_token");
+    test("CredentialMetadata does not include oauth2TokenUrl", async () => {
+      const record = await upsertCredentialMetadata("github", "access_token");
       expect("oauth2TokenUrl" in record).toBe(false);
     });
 
-    test("CredentialMetadata does not include oauth2ClientId", () => {
-      const record = upsertCredentialMetadata("github", "access_token");
+    test("CredentialMetadata does not include oauth2ClientId", async () => {
+      const record = await upsertCredentialMetadata("github", "access_token");
       expect("oauth2ClientId" in record).toBe(false);
     });
 
-    test("CredentialMetadata does not include expiresAt", () => {
-      const record = upsertCredentialMetadata("github", "access_token");
+    test("CredentialMetadata does not include expiresAt", async () => {
+      const record = await upsertCredentialMetadata("github", "access_token");
       expect("expiresAt" in record).toBe(false);
     });
 
-    test("CredentialMetadata does not include grantedScopes", () => {
-      const record = upsertCredentialMetadata("github", "access_token");
+    test("CredentialMetadata does not include grantedScopes", async () => {
+      const record = await upsertCredentialMetadata("github", "access_token");
       expect("grantedScopes" in record).toBe(false);
     });
   });
@@ -294,19 +311,21 @@ describe("credential metadata store", () => {
   // ── Empty credential lists ────────────────────────────────────────
 
   describe("empty credential lists", () => {
-    test("assertMetadataWritable succeeds for empty store", () => {
+    test("assertMetadataWritable succeeds for empty store", async () => {
       expect(() => assertMetadataWritable()).not.toThrow();
     });
 
-    test("delete on empty store returns false", () => {
-      expect(deleteCredentialMetadata("nonexistent", "field")).toBe(false);
+    test("delete on empty store returns false", async () => {
+      expect(await deleteCredentialMetadata("nonexistent", "field")).toBe(
+        false,
+      );
     });
 
-    test("getCredentialMetadata on empty store returns undefined", () => {
+    test("getCredentialMetadata on empty store returns undefined", async () => {
       expect(getCredentialMetadata("nonexistent", "field")).toBeUndefined();
     });
 
-    test("getCredentialMetadataById on empty store returns undefined", () => {
+    test("getCredentialMetadataById on empty store returns undefined", async () => {
       expect(getCredentialMetadataById("nonexistent-id")).toBeUndefined();
     });
   });

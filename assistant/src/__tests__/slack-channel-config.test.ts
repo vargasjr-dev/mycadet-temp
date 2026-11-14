@@ -2,6 +2,7 @@ import { rmSync } from "node:fs";
 import { join } from "node:path";
 import {
   afterAll,
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -98,12 +99,23 @@ import {
   listCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
+
+// The awaited catalog write needs a live CES record backend.
+const cesSession = startTestCesRecordServer();
 import { setConfig } from "./helpers/set-config.js";
 
-afterAll(() => {
+afterAll(async () => {
   globalThis.fetch = originalFetch;
   _resetBackend();
+  await cesRecordBackend.close();
+});
+
+afterEach(() => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
 });
 
 describe("Slack channel config handler", () => {

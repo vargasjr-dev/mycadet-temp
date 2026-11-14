@@ -27,6 +27,16 @@ const log = getLogger("ces-connect");
 
 export interface CesRpcSession {
   client: CesClient;
+  /**
+   * Tear the connection down. Present so consumers treat the session as a
+   * plain IPC connection — the transport lifecycle underneath is an
+   * implementation detail of this module.
+   */
+  close(): Promise<void>;
+  /**
+   * The transport lifecycle owner. Only boot-level consumers that run a
+   * proactive reconnect loop need this; everyone else should use `close()`.
+   */
   processManager: CesProcessManager;
 }
 
@@ -86,7 +96,11 @@ export async function openCesRpcSession(
       return fail();
     }
 
-    return { client, processManager: pm };
+    return {
+      client,
+      close: () => pm.stop(),
+      processManager: pm,
+    };
   } catch (err) {
     if (err instanceof CesUnavailableError) {
       log.info({ reason: err.message }, "CES is not available");
