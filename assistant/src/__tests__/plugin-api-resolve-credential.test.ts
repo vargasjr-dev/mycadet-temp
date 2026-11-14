@@ -22,7 +22,7 @@ import {
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   type CredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
@@ -37,7 +37,6 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-plugin-resolvecred-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 let secureStore: Map<string, string>;
 let unreachable: boolean;
@@ -50,11 +49,11 @@ function seedCredential(service: string, field: string, value: string): string {
 }
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
 
   secureStore = new Map();
   unreachable = false;
@@ -72,7 +71,6 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

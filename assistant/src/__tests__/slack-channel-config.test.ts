@@ -93,7 +93,7 @@ import {
   setSecureKeyAsync,
 } from "../security/secure-keys.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   getCredentialMetadata,
   listCredentialMetadata,
   upsertCredentialMetadata,
@@ -103,12 +103,12 @@ import { setConfig } from "./helpers/set-config.js";
 
 afterAll(() => {
   globalThis.fetch = originalFetch;
-  _setMetadataPath(null);
   _resetBackend();
 });
 
 describe("Slack channel config handler", () => {
   beforeEach(() => {
+    _resetCredentialMetadataCacheForTests();
     oauthConnectionStore = {};
     setConfig("slack", {});
     globalThis.fetch = originalFetch;
@@ -116,7 +116,6 @@ describe("Slack channel config handler", () => {
     rmSync(secureStorePath, { force: true });
     rmSync(metadataPath, { force: true });
     _resetBackend();
-    _setMetadataPath(metadataPath);
   });
 
   test("GET returns correct shape when not configured", async () => {

@@ -249,7 +249,7 @@ export async function fetchCatalog(): Promise<CatalogSkill[]> {
 
   if (!response.ok) {
     throw new Error(
-      `Platform API error ${response.status}: ${response.statusText}`,
+      `Cloud API error ${response.status}: ${response.statusText}`,
     );
   }
 

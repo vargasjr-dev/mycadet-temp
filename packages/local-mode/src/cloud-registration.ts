@@ -510,7 +510,7 @@ export async function fetchCurrentUser(token: string): Promise<PlatformUser> {
         throw new Error("Invalid or expired token. Please login again.");
       }
       throw new Error(
-        `Platform API error: ${response.status} ${response.statusText}`,
+        `Cloud API error: ${response.status} ${response.statusText}`,
       );
     }
 

@@ -29,7 +29,7 @@ import {
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   getCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { storeCredentialValue } from "../tools/credentials/store.js";
@@ -44,7 +44,6 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-plugin-storecred-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 /** The plugin every scoped case runs as: it owns the `acme` service. */
 const PLUGIN = "acme";
@@ -65,11 +64,11 @@ let evictSpy: ReturnType<typeof spyOn>;
 await initializeDb();
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
   // Belt-and-suspenders vs the module spies: if a spy ever fails to
   // intercept, seeded credentials land in a memory backend, not the vault.
   useMemorySecureKeys();
@@ -120,7 +119,6 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

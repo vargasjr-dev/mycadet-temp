@@ -117,7 +117,6 @@ export async function ensurePluginApiShim(opts?: {
   log.info(
     {
       shimDir,
-      exports: PLUGIN_API_EXPORTS,
       version: assistantPkg.version,
     },
     "plugin-api shim materialized",

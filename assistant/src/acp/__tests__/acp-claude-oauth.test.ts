@@ -36,8 +36,11 @@ const deleteSecureKeyAsync = spyOn(secureKeysModule, "deleteSecureKeyAsync");
 import { useFaultableSecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 import * as secureKeysModule from "../../security/secure-keys.js";
 
-const { _setMetadataPath, getCredentialMetadata, upsertCredentialMetadata } =
-  await import("../../tools/credentials/metadata-store.js");
+const {
+  getCredentialMetadata,
+  upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
+} = await import("../../tools/credentials/metadata-store.js");
 
 const { acpSpawnCredentialDenialReason } =
   await import("../prepare-agent-env.js");
@@ -93,8 +96,8 @@ function oauthMetadata() {
 }
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(join(TEST_DIR, "metadata.json"));
   setWritesFail(false);
   vault.clear();
   setSecureKeyAsync.mockClear();
@@ -103,7 +106,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  _setMetadataPath(null);
   rmSync(TEST_DIR, { recursive: true, force: true });
 });
 

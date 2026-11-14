@@ -55,7 +55,6 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
   deleteCredentialMetadata: (service: string, field: string) => {
     metadataByKey.delete(`${service}:${field}`);
   },
-  _setMetadataPath: () => {},
 }));
 
 describe("session-messaging secret redirect", () => {

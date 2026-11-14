@@ -99,7 +99,7 @@ export async function hatchCloud(): Promise<HatchCloudResult> {
       status: response.status,
       error:
         errorBody.detail ??
-        `Platform API error: ${response.status} ${response.statusText}`,
+        `Cloud API error: ${response.status} ${response.statusText}`,
     };
   } catch (error) {
     return {

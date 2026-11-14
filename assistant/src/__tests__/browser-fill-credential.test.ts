@@ -120,7 +120,6 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
   getCredentialMetadataById: () => undefined,
   upsertCredentialMetadata: () => {},
   deleteCredentialMetadata: () => {},
-  _setMetadataPath: () => {},
 }));
 
 import { credentialKey } from "../security/credential-key.js";
