@@ -24,11 +24,7 @@ import {
   type RpcEnvelope,
 } from "@mycadet/service-contracts/credential-rpc";
 
-import {
-  getCesDataRoot,
-  getBootstrapSocketPath,
-  getHealthPort,
-} from "../paths.js";
+import { getCesDataRoot, getCesSocketPath, getHealthPort } from "../paths.js";
 import { CesRpcServer, type RpcHandlerRegistry } from "../server.js";
 
 // ---------------------------------------------------------------------------
@@ -380,11 +376,11 @@ describe("CES data paths", () => {
     }
   });
 
-  test("getBootstrapSocketPath defaults to /run/ces-ipc", () => {
+  test("getCesSocketPath defaults to /run/ces-ipc", () => {
     const savedDir = process.env["CES_SOCKET_DIR"];
     delete process.env["CES_SOCKET_DIR"];
     try {
-      expect(getBootstrapSocketPath()).toBe(
+      expect(getCesSocketPath()).toBe(
         resolveIpcEndpoint("ces", {
           workspaceDir: "/run/ces-ipc",
         }).path,
@@ -398,18 +394,18 @@ describe("CES data paths", () => {
     }
   });
 
-  test("getBootstrapSocketPath uses CES_SOCKET_DIR via resolveIpcEndpoint", () => {
+  test("getCesSocketPath uses CES_SOCKET_DIR via resolveIpcEndpoint", () => {
     const savedDir = process.env["CES_SOCKET_DIR"];
     const savedWorkspace = process.env["CADET_WORKSPACE_DIR"];
     process.env["CES_SOCKET_DIR"] = "/tmp/ces-ipc";
     process.env["CADET_WORKSPACE_DIR"] = "/tmp/ces-ws";
     try {
-      expect(getBootstrapSocketPath()).toBe(
+      expect(getCesSocketPath()).toBe(
         resolveIpcEndpoint("ces", {
           workspaceDir: "/tmp/ces-ipc",
         }).path,
       );
-      expect(getBootstrapSocketPath()).not.toBe(
+      expect(getCesSocketPath()).not.toBe(
         resolveIpcEndpoint("ces", { workspaceDir: "/tmp/ces-ws" }).path,
       );
     } finally {

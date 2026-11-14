@@ -8,7 +8,7 @@
  * - Forwards startTime/endTime as query params to CES export
  * - Returns partial export when daemon is unreachable
  * - Returns partial export when CES is unreachable
- * - Skips CES collection when CES_CREDENTIAL_URL is not set
+ * - Skips CES collection when not in managed mode (no CES sibling)
  * - Returns 401 without valid edge JWT (tested via router integration)
  */
 
@@ -69,21 +69,22 @@ mock.module("../../logger.js", () => {
 });
 
 /**
- * Mock the shared CES log export client. The `fetchCesLogExport` function
- * is intercepted so tests can control CES export responses without
- * needing to mock global `fetch`.
+ * Mock the shared CES log export client. The `exportCesLogs` function is
+ * intercepted so tests can control CES export responses without needing a
+ * live CES socket.
  */
-const fetchCesLogExportMock = mock(
-  async (
-    _config: { baseUrl: string; serviceToken: string },
-    _options?: { startTime?: number; endTime?: number; timeoutMs?: number },
-  ): Promise<
+const exportCesLogsMock = mock(
+  async (_options?: {
+    startTime?: number;
+    endTime?: number;
+    timeoutMs?: number;
+  }): Promise<
     { ok: true; data: ArrayBuffer } | { ok: false; error: string }
   > => ({ ok: false, error: "mock: not configured" }),
 );
 
-mock.module("@mycadet/ces-client/http-log-export", () => ({
-  fetchCesLogExport: fetchCesLogExportMock,
+mock.module("@mycadet/ces-client/log-export", () => ({
+  exportCesLogs: exportCesLogsMock,
 }));
 
 // The handler reads the process-wide config; the tests point it at a
@@ -196,14 +197,13 @@ function makeRequest(body: Record<string, unknown> = {}): Request {
 beforeEach(() => {
   tmpLogDir = mkdtempSync(join(tmpdir(), "gw-log-export-test-"));
   fetchMock.mockClear();
-  fetchCesLogExportMock.mockClear();
+  exportCesLogsMock.mockClear();
   mintServiceTokenMock.mockClear();
 });
 
 afterEach(() => {
   rmSync(tmpLogDir, { recursive: true, force: true });
-  delete process.env["CES_CREDENTIAL_URL"];
-  delete process.env["CES_SERVICE_TOKEN"];
+  delete process.env["IS_CONTAINERIZED"];
 });
 
 // ---------------------------------------------------------------------------
@@ -216,9 +216,8 @@ describe("gateway log export handler", () => {
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.log"), "gw log 1\n");
     writeFileSync(join(tmpLogDir, "gateway-2025-01-16.log"), "gw log 2\n");
 
-    // Set up CES env vars
-    process.env["CES_CREDENTIAL_URL"] = "http://localhost:9090";
-    process.env["CES_SERVICE_TOKEN"] = "test-ces-token";
+    // Managed mode: the CES sibling collects its own logs over IPC
+    process.env["IS_CONTAINERIZED"] = "true";
 
     // Mock daemon response via fetchImpl
     const daemonTarGz = createMiniTarGz("daemon-data.json", '{"daemon":true}');
@@ -244,7 +243,7 @@ describe("gateway log export handler", () => {
     });
 
     // Mock CES log export via the shared package mock
-    fetchCesLogExportMock.mockResolvedValue({
+    exportCesLogsMock.mockResolvedValue({
       ok: true as const,
       data: toArrayBuffer(cesTarGz),
     });
@@ -302,7 +301,7 @@ describe("gateway log export handler", () => {
 
   it("forwards request body to daemon export", async () => {
     // No CES
-    delete process.env["CES_CREDENTIAL_URL"];
+    delete process.env["IS_CONTAINERIZED"];
 
     const daemonTarGz = createMiniTarGz("data.json", "{}");
     let capturedBody: string | undefined;
@@ -348,8 +347,7 @@ describe("gateway log export handler", () => {
   });
 
   it("forwards startTime/endTime as options to CES log export client", async () => {
-    process.env["CES_CREDENTIAL_URL"] = "http://localhost:9090";
-    process.env["CES_SERVICE_TOKEN"] = "test-token";
+    process.env["IS_CONTAINERIZED"] = "true";
 
     const tarGz = createMiniTarGz("data.json", "{}");
 
@@ -364,7 +362,7 @@ describe("gateway log export handler", () => {
     );
 
     // CES log export mock
-    fetchCesLogExportMock.mockResolvedValue({
+    exportCesLogsMock.mockResolvedValue({
       ok: true as const,
       data: toArrayBuffer(tarGz),
     });
@@ -373,13 +371,9 @@ describe("gateway log export handler", () => {
     logConfig = config;
     await handleLogExport(makeRequest({ startTime: 1000, endTime: 2000 }));
 
-    // Verify the shared CES log export client was called with the right config/options
-    expect(fetchCesLogExportMock).toHaveBeenCalledTimes(1);
-    const [config_, options_] = fetchCesLogExportMock.mock.calls[0];
-    expect(config_).toEqual({
-      baseUrl: "http://localhost:9090",
-      serviceToken: "test-token",
-    });
+    // Verify the shared CES log export client was called with the right options
+    expect(exportCesLogsMock).toHaveBeenCalledTimes(1);
+    const [options_] = exportCesLogsMock.mock.calls[0];
     expect(options_?.startTime).toBe(1000);
     expect(options_?.endTime).toBe(2000);
   });
@@ -388,7 +382,7 @@ describe("gateway log export handler", () => {
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.log"), "gw log\n");
 
     // No CES configured
-    delete process.env["CES_CREDENTIAL_URL"];
+    delete process.env["IS_CONTAINERIZED"];
 
     fetchMock.mockImplementation(() =>
       Promise.reject(new Error("ECONNREFUSED")),
@@ -412,8 +406,7 @@ describe("gateway log export handler", () => {
   it("returns partial export when CES is unreachable", async () => {
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.log"), "gw log\n");
 
-    process.env["CES_CREDENTIAL_URL"] = "http://localhost:9090";
-    process.env["CES_SERVICE_TOKEN"] = "test-token";
+    process.env["IS_CONTAINERIZED"] = "true";
 
     const daemonTarGz = createMiniTarGz("data.json", "{}");
 
@@ -437,7 +430,7 @@ describe("gateway log export handler", () => {
     });
 
     // CES log export fails via the shared package mock
-    fetchCesLogExportMock.mockResolvedValue({
+    exportCesLogsMock.mockResolvedValue({
       ok: false as const,
       error: "CES log export connection failed: ECONNREFUSED",
     });
@@ -455,9 +448,8 @@ describe("gateway log export handler", () => {
     expect(entries).toContain("export-manifest.json");
   });
 
-  it("skips CES collection when CES_CREDENTIAL_URL is not set", async () => {
-    delete process.env["CES_CREDENTIAL_URL"];
-    delete process.env["CES_SERVICE_TOKEN"];
+  it("skips CES collection when not in managed mode", async () => {
+    delete process.env["IS_CONTAINERIZED"];
 
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.log"), "gw log\n");
 
@@ -486,7 +478,7 @@ describe("gateway log export handler", () => {
     expect(entries).not.toContain("ces-export-error.log");
 
     // Verify the CES log export client was not called
-    expect(fetchCesLogExportMock).not.toHaveBeenCalled();
+    expect(exportCesLogsMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 without valid edge JWT via router auth", async () => {
@@ -504,7 +496,7 @@ describe("gateway log export handler", () => {
     // processes a well-formed request correctly (which we already do above).
     // This test confirms that without any body, the handler still returns 200.
 
-    delete process.env["CES_CREDENTIAL_URL"];
+    delete process.env["IS_CONTAINERIZED"];
     fetchMock.mockImplementation(() =>
       Promise.reject(new Error("not reachable")),
     );
@@ -527,7 +519,7 @@ describe("gateway log export handler", () => {
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.log"), sixMB);
     writeFileSync(join(tmpLogDir, "gateway-2025-01-15.jsonl"), sixMB);
 
-    delete process.env["CES_CREDENTIAL_URL"];
+    delete process.env["IS_CONTAINERIZED"];
     fetchMock.mockImplementation(() =>
       Promise.reject(new Error("not reachable")),
     );

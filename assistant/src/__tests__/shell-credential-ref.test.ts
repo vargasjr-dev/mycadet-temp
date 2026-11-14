@@ -12,8 +12,9 @@ import {
   test,
 } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // Mock registry
 mock.module("../tools/registry.js", () => ({

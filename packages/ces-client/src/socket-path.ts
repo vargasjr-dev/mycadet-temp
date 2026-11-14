@@ -29,6 +29,6 @@ export function getCesSocketDir(): string {
  * gateway dial the same path CES binds. Resolved through `resolveIpcEndpoint`
  * so macOS AF_UNIX limits and Windows named pipes stay consistent.
  */
-export function getBootstrapSocketPath(): string {
+export function getCesSocketPath(): string {
   return resolveIpcEndpoint("ces", { workspaceDir: getCesSocketDir() }).path;
 }

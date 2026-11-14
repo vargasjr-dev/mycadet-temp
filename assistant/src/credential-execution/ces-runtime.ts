@@ -6,75 +6,68 @@ import type { AssistantConfig } from "../config/schema.js";
 import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { getLogger } from "../util/logger.js";
-import { openCesRpcSession, reconnectCesRpcSession } from "./ces-connect.js";
-import {
-  type CesProcessManager,
-  createCesProcessManager,
-} from "./process-manager.js";
+import { openCesRpcSession } from "./ces-connect.js";
+import type { CesSessionClient } from "./client.js";
 
 const log = getLogger("ces-runtime");
 
 /**
  * Process-level singleton owning the daemon's live CES (Credential Execution
- * Service) connection. `startCes()` performs the full handshake + reconnect
- * wiring at daemon startup; `getCesClient()` exposes the live client to routes;
+ * Service) connection. `initializeCesClient()` connects and handshakes at
+ * daemon startup; `getCesClient()` exposes the live client to routes;
  * `stopCes()` tears it down at shutdown.
  */
 
-let processManager: CesProcessManager | undefined;
 let clientPromise: Promise<CesClient | undefined> | undefined;
 let initAbortController: AbortController | undefined;
-let clientRef: CesClient | undefined;
+let clientRef: CesSessionClient | undefined;
 /** Monotonically increasing counter to detect stale client updates. */
 let clientGeneration = 0;
-/** Boot-session reconnect, set by startCesProcess and used by the proactive loop. */
+/** Boot-session reconnect, set by initializeCesClient and used by the proactive loop. */
 let reconnectBootSession: (() => Promise<CesClient | undefined>) | undefined;
 
-interface CesStartupResult {
-  client: CesClient | undefined;
-  processManager: CesProcessManager | undefined;
-  clientPromise: Promise<CesClient | undefined> | undefined;
-  abortController: AbortController | undefined;
-}
-
 /**
- * Open the assistant's CES RPC client and perform the handshake. Returns
- * immediately with handles to the in-flight initialization: callers don't
- * need to await this for startup to continue.
- *
- * Claims reconnect ownership before any credential read so boot identity
- * loading cannot open a second, identity-less session through the child
- * entry point. CES serves a multi-connection Unix socket, so child
- * processes in other address spaces still open their own connections.
+ * Initialize the assistant's CES RPC client: discover the socket, connect,
+ * and handshake (blocking up to a 20s timeout so the boot session — the one
+ * that hands CES the assistant API key — is established before provider
+ * init). Boot does not await this: readyz owns CES readiness, credential
+ * reads route through the record backend's own lazily opened session, and
+ * `clientRef` is updated once the handshake resolves.
  */
-function startCesProcess(config: AssistantConfig): CesStartupResult {
-  const pm = createCesProcessManager({ assistantConfig: config });
+export async function initializeCesClient(
+  _config: AssistantConfig,
+): Promise<void> {
   const abortController = new AbortController();
-  let currentClient: CesClient | undefined;
+  initAbortController = abortController;
   let handshake: CesClientHandshakeOptions = {};
+  const generation = ++clientGeneration;
 
-  // Reconnect the boot session in-process: the fresh client updates
-  // `currentClient`/`clientRef` directly (the record backend reconnects its
-  // own session independently).
   reconnectBootSession = async (): Promise<CesClient | undefined> => {
-    const client = await reconnectCesRpcSession(pm, handshake);
+    // Reset the dead session's transport, then open a fresh one — the
+    // replacement re-registers its own transport-close hook.
+    await clientRef?.stop().catch(() => {});
+    const client = await openCesRpcSession({
+      handshake,
+      onTransportClose: () => startProactiveReconnectLoop(),
+    });
     if (client) {
       log.info("CES reconnection handshake accepted");
-      currentClient = client;
       clientGeneration++;
       clientRef = client;
     }
     return client;
   };
 
-  const handshakePromise = (async (): Promise<CesClient | undefined> => {
+  // Reconnect ownership is claimed above, before the identity read.
+  // Snapshotting the API key inside this promise (not before it) avoids a
+  // second resolveCloudProxyContext() after the handshake, which would read
+  // the key through CES while reconnecting.
+  clientPromise = (async (): Promise<CesClient | undefined> => {
     try {
       // Resolve the assistant API key so CES can use it for platform
       // credential materialisation. In managed mode the key is provisioned
       // after hatch and stored in the credential store. CES can't read
-      // the env var, so we pass it via the handshake. Reconnect ownership
-      // is already claimed, so this read uses HTTP or the encrypted store,
-      // not a second RPC session.
+      // the env var, so we pass it via the handshake.
       const proxyCtx = await resolveCloudProxyContext();
       if (abortController.signal.aborted) {
         return undefined;
@@ -86,94 +79,29 @@ function startCesProcess(config: AssistantConfig): CesStartupResult {
           : {}),
         ...(assistantId ? { assistantId } : {}),
       };
-      const session = await openCesRpcSession({
-        processManager: pm,
+      const client = await openCesRpcSession({
         signal: abortController.signal,
         handshake,
+        onTransportClose: () => startProactiveReconnectLoop(),
       });
-      currentClient = session?.client;
-      if (session) {
+      if (client && clientGeneration === generation) {
+        clientRef = client;
         log.info(
           "CES client initialized and handshake accepted (server-level)",
         );
       }
-      return session?.client;
+      return client;
     } catch (err) {
       log.warn(
         { error: err instanceof Error ? err.message : String(err) },
         "Failed to initialize CES client",
       );
-      currentClient = undefined;
-      await pm.stop().catch(() => {});
+      if (clientGeneration === generation) {
+        clientRef = undefined;
+      }
       return undefined;
     }
   })();
-
-  return {
-    get client() {
-      return currentClient;
-    },
-    processManager: pm,
-    clientPromise: handshakePromise,
-    abortController,
-  };
-}
-
-/** Store the startup handles so getCesClient()/stopCes() can reach them. */
-function applyCesResult(result: CesStartupResult): void {
-  clientRef = result.client;
-  processManager = result.processManager;
-  initAbortController = result.abortController;
-
-  // Wrap the handshake promise so clientRef stays in sync once it resolves.
-  // Use a generation snapshot so a late-resolving promise doesn't overwrite a
-  // newer client set by a reconnection.
-  if (result.clientPromise) {
-    const gen = clientGeneration;
-    clientPromise = result.clientPromise.then((client) => {
-      if (clientGeneration === gen) {
-        clientRef = client;
-      }
-      return client;
-    });
-  }
-}
-
-/**
- * Open the assistant's CES RPC client: handshake (blocking up to a 20s
- * timeout so the boot session — the one that hands CES the assistant API
- * key — is established before provider init) and keep the live client
- * reference in sync. Non-fatal on failure: credential reads route through
- * the record backend's own lazily opened session regardless.
- */
-export async function startCes(config: AssistantConfig): Promise<void> {
-  const cesResult = startCesProcess(config);
-
-  // Non-blocking by design: the assistant's overall health check (readyz)
-  // owns CES readiness — it reports the live handshake state and nudges the
-  // single-flight connect, so boot never waits on CES here. The boot session
-  // (which hands CES the assistant API key) establishes in the background via
-  // clientPromise; applyCesResult keeps clientRef in sync once it resolves.
-
-  // Reconnect ownership is claimed inside startCesProcess before the
-  // identity read. Snapshotting the API key there (not here) avoids a
-  // second resolveCloudProxyContext() after the handshake, which would
-  // read the key through CES while reconnecting.
-  if (cesResult.processManager) {
-    const pm = cesResult.processManager;
-
-    // Proactive reconnect: when the transport dies (socket close, process
-    // exit), start a retry-with-backoff loop immediately instead of waiting
-    // for the next credential operation to trigger the lazy reconnect path.
-    // The loop calls attemptCesReconnection(), which shares the same dedup +
-    // cooldown machinery as the lazy path, so concurrent credential ops and
-    // the proactive loop never race on pm.stop()/pm.start().
-    pm.onTransportClose(() => {
-      startProactiveReconnectLoop(pm);
-    });
-  }
-
-  applyCesResult(cesResult);
 }
 
 /**
@@ -198,15 +126,13 @@ export async function stopCes(): Promise<void> {
     initAbortController.abort();
     initAbortController = undefined;
   }
-  // Force-stop the CES process immediately — forceStop() works even if
+  // Force-stop the live session's transport — forceStop() works even if
   // start() hasn't finished (unlike stop() which is a no-op when !running).
-  if (processManager) {
-    await processManager.forceStop().catch(() => {});
-  }
-  // Cancel in-flight handshake/RPC timers by closing the client directly.
-  // Without this, the handshake setTimeout (~10s) keeps the init promise
-  // pending even after the transport is killed.
   if (clientRef) {
+    await clientRef.forceStop().catch(() => {});
+    // Cancel in-flight handshake/RPC timers by closing the client directly.
+    // Without this, the handshake setTimeout (~10s) keeps the init promise
+    // pending even after the transport is killed.
     clientRef.close();
     clientRef = undefined;
   }
@@ -216,7 +142,6 @@ export async function stopCes(): Promise<void> {
     await clientPromise.catch(() => undefined);
     clientPromise = undefined;
   }
-  processManager = undefined;
   reconnectBootSession = undefined;
   proactiveReconnectInFlight = false;
 }
@@ -251,7 +176,7 @@ let shuttingDown = false;
  * `clientRef`). The record backend reconnects its own session independently,
  * cooldown-gated, on the next credential/record operation.
  */
-function startProactiveReconnectLoop(_pm: CesProcessManager): void {
+function startProactiveReconnectLoop(): void {
   if (shuttingDown) {
     log.debug("CES shutting down — not starting proactive reconnect loop");
     return;
@@ -271,9 +196,9 @@ function startProactiveReconnectLoop(_pm: CesProcessManager): void {
         await sleep(delay);
       }
 
-      // Stop if the daemon is shutting down (processManager cleared).
-      if (!processManager) {
-        log.info("Proactive reconnect loop stopped — process manager gone");
+      // Stop if the daemon is shutting down.
+      if (shuttingDown) {
+        log.info("Proactive reconnect loop stopped — shutdown in progress");
         break;
       }
 

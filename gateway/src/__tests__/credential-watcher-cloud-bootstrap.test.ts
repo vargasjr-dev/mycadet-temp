@@ -7,10 +7,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { startFakeAssistantIpc } from "./fake-assistant-ipc.js";
-
-const TEST_SERVICE_TOKEN = "test-ces-service-token";
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
 
 const testDir = join(tmpdir(), `gw-managed-${Date.now()}-${Math.random()}`);
+const cesSocketDir = join(testDir, "ces-ipc");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const gatewayRoot = join(__dirname, "..", "..");
@@ -18,8 +18,7 @@ const gatewayEntry = join(gatewayRoot, "src", "index.ts");
 
 let gatewayProc: ChildProcess | null = null;
 let gatewayPort = 0;
-let cesPort = 0;
-let cesServer: ReturnType<typeof Bun.serve> | null = null;
+let fakeCes: ReturnType<typeof startTestCesRecordServer> | null = null;
 let fakeAssistantIpc: Server | null = null;
 
 /** Ask the OS for a free port by briefly binding to port 0. */
@@ -56,10 +55,6 @@ function waitForExit(proc: ChildProcess, timeoutMs = 5_000): Promise<void> {
 }
 
 async function startGateway(): Promise<void> {
-  if (cesPort === 0)
-    throw new Error(
-      "CES port not assigned — call startFakeCes or reserveCesPort first",
-    );
   gatewayPort = await getFreePort();
 
   const workspaceDir = join(testDir, ".cadet", "workspace");
@@ -71,8 +66,8 @@ async function startGateway(): Promise<void> {
       GATEWAY_SECURITY_DIR: join(testDir, ".cadet", "protected"),
       CADET_WORKSPACE_DIR: workspaceDir,
       GATEWAY_PORT: String(gatewayPort),
-      CES_CREDENTIAL_URL: `http://127.0.0.1:${cesPort}`,
-      CES_SERVICE_TOKEN: TEST_SERVICE_TOKEN,
+      IS_CONTAINERIZED: "true",
+      CES_SOCKET_DIR: cesSocketDir,
       TELEGRAM_BOT_TOKEN: "",
       TELEGRAM_WEBHOOK_SECRET: "",
     },
@@ -114,6 +109,25 @@ async function startGateway(): Promise<void> {
   );
 }
 
+/** Seed the fake CES sidecar with the two telegram credentials. */
+function seedTelegramCredentials(): void {
+  if (!fakeCes) {
+    throw new Error("fake CES not started");
+  }
+  const records = [
+    recordForAccount("credential/telegram/bot_token"),
+    recordForAccount("credential/telegram/webhook_secret"),
+  ];
+  for (const { account, record } of records) {
+    fakeCes.records.set(account, record);
+  }
+  fakeCes.secrets.set("credential/telegram/bot_token", "fake-bot-token:ABC123");
+  fakeCes.secrets.set(
+    "credential/telegram/webhook_secret",
+    "fake-webhook-secret",
+  );
+}
+
 function recordForAccount(account: string) {
   const parts = account.split("/");
   const service = parts[1] ?? "unknown";
@@ -132,77 +146,22 @@ function recordForAccount(account: string) {
   };
 }
 
-function startFakeCes(opts: {
-  accounts?: string[];
-  credentials?: Record<string, string>;
-  resolveValue?: (account: string) => string | undefined;
-}): void {
-  const accounts = opts.accounts ?? Object.keys(opts.credentials ?? {});
-  const credentials = opts.credentials ?? {};
-  const records = accounts.map(recordForAccount);
-  cesServer = Bun.serve({
-    // If cesPort was pre-reserved (for tests that start the gateway before
-    // the CES), bind to that port. Otherwise let the OS pick a free one.
-    port: cesPort || 0,
-    fetch(req) {
-      const authHeader = req.headers.get("authorization");
-      if (authHeader !== `Bearer ${TEST_SERVICE_TOKEN}`) {
-        return Response.json(
-          { error: "Invalid service token" },
-          { status: 403 },
-        );
-      }
-
-      const url = new URL(req.url);
-      if (req.method === "GET" && url.pathname === "/v1/credentials") {
-        return Response.json({ accounts });
-      }
-
-      if (req.method === "GET" && url.pathname.startsWith("/v1/credentials/")) {
-        const account = decodeURIComponent(
-          url.pathname.slice("/v1/credentials/".length),
-        );
-        const value = opts.resolveValue?.(account) ?? credentials[account];
-        if (!value) {
-          return Response.json(
-            { error: "Credential not found", account },
-            { status: 404 },
-          );
-        }
-        return Response.json({ account, value });
-      }
-
-      if (req.method === "GET" && url.pathname === "/v1/metadata") {
-        return Response.json({ records });
-      }
-
-      if (req.method === "GET" && url.pathname.startsWith("/v1/metadata/")) {
-        const account = decodeURIComponent(
-          url.pathname.slice("/v1/metadata/".length),
-        );
-        const entry = records.find((item) => item.account === account);
-        if (!entry) {
-          return Response.json(
-            { error: "Record not found", account },
-            { status: 404 },
-          );
-        }
-        return Response.json({ account, record: entry.record });
-      }
-
-      return new Response("Not Found", { status: 404 });
-    },
-  });
-  cesPort = cesServer.port!;
+/**
+ * Bind the fake CES sidecar on the socket dir the gateway child already
+ * dials. Accounts are listed from the record catalog; credential values are
+ * read from the secret store, so seeding them later simulates "CES is up but
+ * the configured reads are not ready yet".
+ */
+function startFakeCes(): void {
+  fakeCes = startTestCesRecordServer({ socketDir: cesSocketDir });
 }
 
 afterEach(async () => {
   fakeAssistantIpc?.close();
   fakeAssistantIpc = null;
-  cesServer?.stop(true);
-  cesServer = null;
+  await fakeCes?.stop();
+  fakeCes = null;
   gatewayPort = 0;
-  cesPort = 0;
 
   if (gatewayProc) {
     const proc = gatewayProc;
@@ -220,23 +179,16 @@ describe("gateway cloud credential bootstrap retry", () => {
   test("reloads Telegram after CES becomes reachable without a metadata rewrite", async () => {
     mkdirSync(testDir, { recursive: true });
 
-    // Reserve the CES port before starting the gateway so the gateway
-    // knows where CES will eventually appear. CES isn't running yet —
-    // the gateway's managed bootstrap will get ECONNREFUSED until we
-    // start the fake CES below.
-    cesPort = await getFreePort();
+    // The gateway starts while CES is still absent — the managed bootstrap
+    // keeps polling the socket dir until the fake sidecar appears below.
     await startGateway();
 
     const base = `http://localhost:${gatewayPort}`;
     const before = await fetch(`${base}/webhooks/telegram`, { method: "POST" });
     expect(before.status).toBe(503);
 
-    startFakeCes({
-      credentials: {
-        "credential/telegram/bot_token": "fake-bot-token:ABC123",
-        "credential/telegram/webhook_secret": "fake-webhook-secret",
-      },
-    });
+    startFakeCes();
+    seedTelegramCredentials();
 
     const deadline = Date.now() + 5_000;
     let status = before.status;
@@ -255,23 +207,16 @@ describe("gateway cloud credential bootstrap retry", () => {
   test("keeps retrying until configured credential reads succeed after CES list is already available", async () => {
     mkdirSync(testDir, { recursive: true });
 
-    let readsReady = false;
-    startFakeCes({
-      accounts: [
-        "credential/telegram/bot_token",
-        "credential/telegram/webhook_secret",
-      ],
-      resolveValue(account) {
-        if (!readsReady) return undefined;
-        if (account === "credential/telegram/bot_token") {
-          return "fake-bot-token:ABC123";
-        }
-        if (account === "credential/telegram/webhook_secret") {
-          return "fake-webhook-secret";
-        }
-        return undefined;
-      },
-    });
+    // CES is up from the start and lists the configured services, but the
+    // credential reads are not ready — only the record catalog is seeded.
+    startFakeCes();
+    for (const account of [
+      "credential/telegram/bot_token",
+      "credential/telegram/webhook_secret",
+    ]) {
+      const { account: name, record } = recordForAccount(account);
+      fakeCes!.records.set(name, record);
+    }
 
     await startGateway();
 
@@ -279,7 +224,15 @@ describe("gateway cloud credential bootstrap retry", () => {
     const before = await fetch(`${base}/webhooks/telegram`, { method: "POST" });
     expect(before.status).toBe(503);
 
-    readsReady = true;
+    // The reads succeed: the secrets land and telegram becomes healthy.
+    fakeCes!.secrets.set(
+      "credential/telegram/bot_token",
+      "fake-bot-token:ABC123",
+    );
+    fakeCes!.secrets.set(
+      "credential/telegram/webhook_secret",
+      "fake-webhook-secret",
+    );
 
     const deadline = Date.now() + 5_000;
     let status = before.status;

@@ -79,6 +79,8 @@ mock.module("../oauth/manual-token-connection.js", () => ({
 // Mock fetch for Slack API validation
 const originalFetch = globalThis.fetch;
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { loadRawConfig } from "../config/loader.js";
 import {
   clearSlackChannelConfig,
@@ -101,7 +103,6 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // The awaited catalog write needs a live CES record backend.
 const cesSession = startTestCesRecordServer();

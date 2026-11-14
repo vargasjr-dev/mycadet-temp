@@ -36,7 +36,7 @@ import {
   pruneOldLogFiles,
 } from "./logger.js";
 import {
-  getBootstrapSocketPath,
+  getCesSocketPath,
   getCesDataRoot,
   getCesLogDir,
   getHealthPort,
@@ -45,8 +45,12 @@ import {
 import { CesRpcServer, type RpcHandlerRegistry } from "./server.js";
 import { CES_MIGRATIONS } from "./migrations/registry.js";
 import { runCesMigrations } from "./migrations/runner.js";
+import { collectCesLogArchive } from "./log-export.js";
 import { buildRecordHandlers } from "./records/handlers.js";
-import { initMetadataStore } from "./records/metadata-store.js";
+import {
+  getMetadataStore,
+  initMetadataStore,
+} from "./records/metadata-store.js";
 
 // ---------------------------------------------------------------------------
 // Logging (module-level for early bootstrap + structured logging post-init)
@@ -90,6 +94,20 @@ export function buildCrudHandlers(
     const ok = await secureKeyBackend.set(req.account, req.value);
     // Audit the mutation: account name and outcome only, never the value.
     audit.info({ account: req.account, ok }, "CES credential set");
+    if (!ok) {
+      return { ok };
+    }
+    // The store-side invariant: a secret in keys.enc must always have a
+    // metadata entry in ces-data, or the catalog cannot see the credential.
+    // A bare secret write (hatch provisioning, bulk import) lands here.
+    const metadataOk = getMetadataStore().ensureForAccount(req.account);
+    if (!metadataOk) {
+      audit.info(
+        { account: req.account },
+        "CES credential set: metadata entry missing after write",
+      );
+      return { ok: false };
+    }
     return { ok };
   }) as (typeof handlers)[string];
 
@@ -112,8 +130,13 @@ export function buildCrudHandlers(
     const results = [];
     for (const { account, value } of req.credentials) {
       const ok = await secureKeyBackend.set(account, value);
-      audit.info({ account, ok }, "CES credential set (bulk)");
-      results.push({ account, ok });
+      // Same invariant as set_credential: the metadata entry must exist.
+      const metadataOk = ok
+        ? getMetadataStore().ensureForAccount(account)
+        : false;
+      const settled = ok && metadataOk;
+      audit.info({ account, ok: settled }, "CES credential set (bulk)");
+      results.push({ account, ok: settled });
     }
     return { results };
   }) as (typeof handlers)[string];
@@ -357,17 +380,25 @@ async function main(): Promise<void> {
     ...buildCrudHandlers(secureKeyBackend),
     ...buildRecordHandlers(),
   };
+  // Diagnostic log export (tar.gz, base64) — the gateway pulls CES logs
+  // through the same socket as everything else.
+  handlers[CesRpcMethod.ExportLogs] = (async (req: {
+    startTime?: number;
+    endTime?: number;
+  }) =>
+    await collectCesLogArchive(
+      req.startTime,
+      req.endTime,
+    )) as (typeof handlers)[string];
 
   // -- Health server ----------------------------------------------------------
-  // Liveness/readiness probes only. Credential invocation is IPC-only:
-  // every caller (assistant, gateway, CLI) dials the shared Unix socket, so
-  // there are no HTTP routes to protect and no CES_SERVICE_TOKEN to manage.
+  // Liveness/readiness probes only. Credential invocation is IPC-only.
   const healthPort = getHealthPort();
   startHealthServer(healthPort, controller.signal);
   log.info(`Health server listening on port ${healthPort}`);
 
   // -- Socket server ---------------------------------------------------------
-  const socketPath = getBootstrapSocketPath();
+  const socketPath = getCesSocketPath();
 
   const rpcLog = getLogger("rpc");
   const rpcLogger = {

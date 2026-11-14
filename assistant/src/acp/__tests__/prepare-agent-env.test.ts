@@ -23,9 +23,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { createMockLoggerModule } from "../../__tests__/helpers/mock-logger.js";
 import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
-import { startTestCesRecordServer } from "../../__tests__/helpers/test-ces-record-server.js";
 import { FailedDependencyError } from "../../runtime/routes/errors.js";
 import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
 import { credentialKey } from "../../security/credential-key.js";

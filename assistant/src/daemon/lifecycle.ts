@@ -10,7 +10,7 @@ import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
 import { getConfig } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
-import { startCes } from "../credential-execution/ces-runtime.js";
+import { initializeCesClient } from "../credential-execution/ces-runtime.js";
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { backfillRelationshipStateIfMissing } from "../home/relationship-state-writer.js";
 import { startCliIpcServer } from "../ipc/assistant-server.js";
@@ -549,9 +549,9 @@ export async function runDaemon(): Promise<void> {
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
   // Blocks up to a 20s timeout so credential reads route through CES before
   // provider init; non-fatal, falls back to the direct credential store on
-  // failure. CES serves a multi-connection bootstrap socket, so child
+  // failure. CES serves a multi-connection IPC socket, so child
   // processes can open the same `openCesRpcSession` path independently.
-  await startCes(config);
+  await initializeCesClient(config);
 
   // Bring up the plugin layer: install the runtime bridge, register the
   // first-party defaults, load user plugins, and run every plugin's

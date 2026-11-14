@@ -4,66 +4,32 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { openCesRpcSession, reconnectCesRpcSession } from "./ces-connect.js";
-import { createCesProcessManager } from "./process-manager.js";
+import { openCesRpcSession } from "./ces-connect.js";
 
 describe("openCesRpcSession", () => {
   test("returns undefined when discovery fails without polling", async () => {
     const start = Date.now();
-    const pm = createCesProcessManager({
+    const client = await openCesRpcSession({
       discover: async () => ({
         mode: "unavailable",
         reason: "missing test socket",
       }),
     });
 
-    const session = await openCesRpcSession({ processManager: pm });
-
-    expect(session).toBeUndefined();
-    expect(pm.isRunning()).toBe(false);
+    expect(client).toBeUndefined();
     expect(Date.now() - start).toBeLessThan(1_000);
   });
 
   test("returns undefined when the abort signal is already fired", async () => {
     const abort = new AbortController();
     abort.abort();
-    const pm = createCesProcessManager({
+    const client = await openCesRpcSession({
       discover: async () => {
         throw new Error("discover should not run after abort");
       },
-    });
-
-    const session = await openCesRpcSession({
-      processManager: pm,
       signal: abort.signal,
     });
 
-    expect(session).toBeUndefined();
-    expect(pm.isRunning()).toBe(false);
-  });
-
-  test("creates a process manager when none is provided", async () => {
-    const session = await openCesRpcSession({
-      discover: async () => ({
-        mode: "unavailable",
-        reason: "missing test socket",
-      }),
-    });
-
-    expect(session).toBeUndefined();
-  });
-
-  test("reconnectCesRpcSession stops the manager and returns undefined when discovery fails", async () => {
-    const pm = createCesProcessManager({
-      discover: async () => ({
-        mode: "unavailable",
-        reason: "missing test socket",
-      }),
-    });
-
-    const client = await reconnectCesRpcSession(pm);
-
     expect(client).toBeUndefined();
-    expect(pm.isRunning()).toBe(false);
   });
 });

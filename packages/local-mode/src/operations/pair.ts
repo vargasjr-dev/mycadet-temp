@@ -30,10 +30,17 @@ export function pairCliStdoutToResult(stdout: string): PairOperationResult {
   try {
     return { ok: true, response: JSON.parse(lastLine) };
   } catch {
+    // The output is the only diagnostic for a failed lease — surface a
+    // bounded tail of it (the payload line never parsed, so it is not a
+    // live credential; earlier lines may still carry secrets, so keep the
+    // tail, not the whole stdout).
+    const tail = stdout.trimEnd().slice(-300);
     return {
       ok: false,
       status: 0,
-      error: "could not parse the gateway's pair output",
+      error: `could not parse the gateway's pair output${
+        tail ? ` (stdout tail: ${tail})` : " (stdout was empty)"
+      }`,
     };
   }
 }

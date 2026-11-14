@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
   _resetCredentialMetadataCacheForTests,
@@ -10,7 +12,6 @@ import {
   listCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 const session = startTestCesRecordServer();
 import type { CredentialInjectionTemplate } from "../tools/credentials/policy-types.js";

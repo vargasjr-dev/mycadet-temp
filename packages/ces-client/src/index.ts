@@ -48,5 +48,5 @@ export {
 export {
   CES_SOCKET_DIR_DEFAULT,
   getCesSocketDir,
-  getBootstrapSocketPath,
+  getCesSocketPath,
 } from "./socket-path.js";

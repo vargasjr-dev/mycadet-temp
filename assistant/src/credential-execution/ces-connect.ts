@@ -1,23 +1,18 @@
 /**
- * Open a CES RPC client over the shared bootstrap socket.
+ * Open a CES RPC client over the shared IPC socket.
  *
  * Assistant boot and child-process credential reads use this helper. Both
- * are CES API clients: discover `ces.sock`, connect, handshake, reconnect.
- *
- * They stay two entry points because boot must load handshake identity
- * without talking to CES, then hand that identity to CES. Children open a
- * session only when this process has not already claimed one (no live
- * client and no reconnect owner).
+ * are CES API clients: discover `ces.sock`, connect, handshake. Each opened
+ * session owns its transport lifecycle through the returned client
+ * (`client.stop()` / `client.forceStop()`); reconnect opens a fresh session.
  */
 
-import type { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
-import type { CesRpcHandshakeOptions as CesClientHandshakeOptions } from "@mycadet/ces-client/rpc-client";
+import type { CesRpcHandshakeOptions } from "@mycadet/ces-client/rpc-client";
 
 import type { AssistantConfig } from "../config/schema.js";
 import { getLogger } from "../util/logger.js";
-import { createCesClient } from "./client.js";
+import { type CesSessionClient, createCesClient } from "./client.js";
 import {
-  type CesProcessManager,
   type CesProcessManagerConfig,
   CesUnavailableError,
   createCesProcessManager,
@@ -25,44 +20,32 @@ import {
 
 const log = getLogger("ces-connect");
 
-export interface CesRpcSession {
-  client: CesClient;
-  /**
-   * Tear the connection down. Present so consumers treat the session as a
-   * plain IPC connection — the transport lifecycle underneath is an
-   * implementation detail of this module.
-   */
-  close(): Promise<void>;
-}
-
 export interface OpenCesRpcSessionOptions {
-  /**
-   * Reuse an existing process manager (reconnect after `stop()`). When
-   * omitted, a new manager is created.
-   */
-  processManager?: CesProcessManager;
-  handshake?: CesClientHandshakeOptions;
+  handshake?: CesRpcHandshakeOptions;
   signal?: AbortSignal;
   assistantConfig?: AssistantConfig;
   discover?: CesProcessManagerConfig["discover"];
+  /** Fired when the session's transport dies (the reconnect trigger). */
+  onTransportClose?: () => void;
 }
 
 /**
  * Discover the CES socket, connect, and complete the RPC handshake.
  *
  * Returns undefined when CES is missing, the handshake is rejected, the
- * abort signal fires, or the transport fails. The process manager is
- * stopped on those paths so a later reconnect can call `start()` again.
+ * abort signal fires, or the transport fails. The session's transport is
+ * stopped on those paths so a later call can open a fresh session.
  */
 export async function openCesRpcSession(
   options: OpenCesRpcSessionOptions = {},
-): Promise<CesRpcSession | undefined> {
-  const pm =
-    options.processManager ??
-    createCesProcessManager({
-      assistantConfig: options.assistantConfig,
-      discover: options.discover,
-    });
+): Promise<CesSessionClient | undefined> {
+  const pm = createCesProcessManager({
+    assistantConfig: options.assistantConfig,
+    discover: options.discover,
+  });
+  if (options.onTransportClose) {
+    pm.onTransportClose(options.onTransportClose);
+  }
 
   const fail = async (): Promise<undefined> => {
     await pm.stop().catch(() => {});
@@ -79,7 +62,11 @@ export async function openCesRpcSession(
       return fail();
     }
 
-    const client = createCesClient(transport);
+    const client = createCesClient(transport, undefined, {
+      stop: () => pm.stop(),
+      forceStop: () => pm.forceStop(),
+    });
+
     const { accepted, reason } = await client.handshake(options.handshake);
     if (options.signal?.aborted) {
       client.close();
@@ -91,10 +78,7 @@ export async function openCesRpcSession(
       return fail();
     }
 
-    return {
-      client,
-      close: () => pm.stop(),
-    };
+    return client;
   } catch (err) {
     if (err instanceof CesUnavailableError) {
       log.info({ reason: err.message }, "CES is not available");
@@ -106,17 +90,4 @@ export async function openCesRpcSession(
     }
     return fail();
   }
-}
-
-/**
- * Stop the current transport and open a new session on the same process
- * manager. Used by assistant boot and child-process reconnect callbacks.
- */
-export async function reconnectCesRpcSession(
-  processManager: CesProcessManager,
-  handshake?: CesClientHandshakeOptions,
-): Promise<CesClient | undefined> {
-  await processManager.stop();
-  const session = await openCesRpcSession({ processManager, handshake });
-  return session?.client;
 }

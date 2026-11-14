@@ -128,6 +128,43 @@ export class CesMetadataStore {
     return "deleted";
   }
 
+  /**
+   * Guarantee a metadata entry exists for `account`, minting a default record
+   * when absent.
+   *
+   * This is the store-side half of the set-credential invariant: a secret in
+   * `keys.enc` with no `metadata.json` entry is unreadable through the
+   * catalog (list/get-record), so a bare secret write must never leave the
+   * vault in that state. Existing records are left untouched — policy
+   * updates go through `set_credential_record`.
+   */
+  ensureForAccount(account: string): boolean {
+    const parsed = parseCredentialAccount(account);
+    if (!parsed) {
+      return false;
+    }
+    const data = this.load();
+    const exists = data.credentials.some(
+      (entry) =>
+        entry.service === parsed.service && entry.field === parsed.field,
+    );
+    if (exists) {
+      return true;
+    }
+    const now = Date.now();
+    data.credentials.push({
+      credentialId: randomUUID(),
+      service: parsed.service,
+      field: parsed.field,
+      allowedTools: [],
+      allowedDomains: [],
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.save(data);
+    return true;
+  }
+
   list(): Array<{ account: string; record: CredentialRecord }> {
     return this.load().credentials.map((record) => ({
       account: accountForRecord(record),

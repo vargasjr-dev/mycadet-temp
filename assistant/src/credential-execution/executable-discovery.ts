@@ -1,15 +1,15 @@
 /**
- * CES socket discovery and transport bootstrap.
+ * CES socket discovery and transport lifecycle.
  *
  * Local siblings and managed sidecars share one resolver: `ces.sock` under
- * `CES_SOCKET_DIR` (default `/run/ces-ipc`) — `getBootstrapSocketPath()` from
+ * `CES_SOCKET_DIR` (default `/run/ces-ipc`) — `getCesSocketPath()` from
  * `@mycadet/ces-client/socket-path`, the same resolver CES binds with.
  * Discovery fails closed if the socket cannot be found.
  */
 
 import { existsSync } from "node:fs";
 
-import { getBootstrapSocketPath } from "@mycadet/ces-client/socket-path";
+import { getCesSocketPath } from "@mycadet/ces-client/socket-path";
 import { isNamedPipePath } from "@mycadet/ipc-server-utils";
 
 import { getLogger } from "../util/logger.js";
@@ -28,16 +28,16 @@ export interface DiscoveryFailure {
 export type DiscoveryResult = ManagedDiscoverySuccess | DiscoveryFailure;
 
 /**
- * Discover CES via the shared bootstrap Unix socket.
+ * Discover CES via the shared IPC socket.
  *
  * Checks that the well-known socket exists. Does not open a connection.
  * CES serves a multi-connection listener, so the assistant and its child
  * processes can each connect. The actual connection is made later by
- * `CesProcessManager.start()`, which dials `getBootstrapSocketPath()`
+ * `CesProcessManager.start()`, which dials `getCesSocketPath()`
  * directly.
  */
 export function discoverCes(): DiscoveryResult {
-  const socketPath = getBootstrapSocketPath();
+  const socketPath = getCesSocketPath();
 
   if (!isNamedPipePath(socketPath) && !existsSync(socketPath)) {
     const reason = `CES socket not found at ${socketPath}`;

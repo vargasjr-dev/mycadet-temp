@@ -28,6 +28,8 @@ mock.module("../oauth/manual-token-connection.js", () => ({
 
 const originalFetch = globalThis.fetch;
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import {
   clearDiscordChannelConfig,
   getDiscordChannelConfig,
@@ -39,7 +41,6 @@ import * as secureKeys from "../security/secure-keys.js";
 import { _resetBackend, getSecureKeyAsync } from "../security/secure-keys.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // The awaited catalog write needs a live CES record backend.
 const cesSession = startTestCesRecordServer();

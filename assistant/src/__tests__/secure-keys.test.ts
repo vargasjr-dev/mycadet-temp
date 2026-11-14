@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
   _resetBackend,
@@ -12,7 +14,6 @@ import {
   setSecureKeyBackendForTesting,
 } from "../security/secure-keys.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // The test server IS the CES sibling. Tests whose premise is "no CES
 // reachable" stop it; tests that need a live backend restart it.

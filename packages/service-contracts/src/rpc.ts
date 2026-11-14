@@ -55,6 +55,8 @@ export const CesRpcMethod = {
   ListCredentialRecords: "list_credential_records",
   /** Bulk-import credential records. */
   BulkSetCredentialRecords: "bulk_set_credential_records",
+  /** Collect CES's own log files for a diagnostic export (tar.gz, base64). */
+  ExportLogs: "export_logs",
 } as const;
 
 export type CesRpcMethod = (typeof CesRpcMethod)[keyof typeof CesRpcMethod];
@@ -72,9 +74,7 @@ export const UpdateCloudCredentialSchema = z.object({
    */
   assistantId: z.string().optional(),
 });
-export type UpdateCloudCredential = z.infer<
-  typeof UpdateCloudCredentialSchema
->;
+export type UpdateCloudCredential = z.infer<typeof UpdateCloudCredentialSchema>;
 
 export const UpdateCloudCredentialResponseSchema = z.object({
   /** Whether the cloud credential was successfully updated. */
@@ -303,6 +303,28 @@ export type BulkSetCredentialRecordsResponse = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
+// export_logs
+// ---------------------------------------------------------------------------
+
+export const ExportLogsSchema = z.object({
+  /** Inclusive range start (epoch ms); log files entirely before it are skipped. */
+  startTime: z.number().optional(),
+  /** Inclusive range end (epoch ms); log files entirely after it are skipped. */
+  endTime: z.number().optional(),
+});
+export type ExportLogs = z.infer<typeof ExportLogsSchema>;
+
+export const ExportLogsResponseSchema = z.object({
+  /** tar.gz of the collected log files plus a manifest, base64-encoded. */
+  archiveBase64: z.string(),
+  /** Number of log files included in the archive. */
+  filesCollected: z.number(),
+  /** Cumulative size of the collected log files, before archiving. */
+  totalBytes: z.number(),
+});
+export type ExportLogsResponse = z.infer<typeof ExportLogsResponseSchema>;
+
+// ---------------------------------------------------------------------------
 // Full RPC contract type map
 // ---------------------------------------------------------------------------
 
@@ -355,6 +377,10 @@ export interface CesRpcContract {
     request: BulkSetCredentialRecords;
     response: BulkSetCredentialRecordsResponse;
   };
+  [CesRpcMethod.ExportLogs]: {
+    request: ExportLogs;
+    response: ExportLogsResponse;
+  };
 }
 
 /**
@@ -404,5 +430,9 @@ export const CesRpcSchemas = {
   [CesRpcMethod.BulkSetCredentialRecords]: {
     request: BulkSetCredentialRecordsSchema,
     response: BulkSetCredentialRecordsResponseSchema,
+  },
+  [CesRpcMethod.ExportLogs]: {
+    request: ExportLogsSchema,
+    response: ExportLogsResponseSchema,
   },
 } as const;

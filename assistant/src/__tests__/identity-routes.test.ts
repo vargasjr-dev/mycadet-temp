@@ -14,6 +14,8 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import {
   resetReadinessForTest,
   setDbMigrating,
@@ -34,7 +36,6 @@ import {
   resolveHatchedAtReadOnly,
   selectHatchedAtFromStats,
 } from "../workspace/hatched-date.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // The real in-process CES socket server: the readiness tests exercise the
 // production client against it.

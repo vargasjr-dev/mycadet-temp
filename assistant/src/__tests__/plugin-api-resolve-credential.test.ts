@@ -12,6 +12,7 @@ import {
   test,
 } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
 import { credentialKey } from "@mycadet/credential-storage";
 
 import { PLUGIN_NAME_ENV } from "../plugin-api/plugin-name-env.js";
@@ -28,7 +29,6 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import * as metadataStore from "../tools/credentials/metadata-store.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // Real metadata store backed by a temp file (no module mocking — a mock.module
 // on metadata-store / secure-keys would replace the whole module namespace and
