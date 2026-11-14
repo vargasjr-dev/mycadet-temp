@@ -34,13 +34,13 @@ import {
   resolveHatchedAtReadOnly,
   selectHatchedAtFromStats,
 } from "../workspace/hatched-date.js";
-import { installMockCesRecordSession } from "./helpers/mock-ces-record-session.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // ── Env helpers ─────────────────────────────────────────────────────────
 
 let savedEnv: Record<string, string | undefined>;
 
-const session = installMockCesRecordSession();
+const session = startTestCesRecordServer();
 
 const PROFILER_ENV_KEYS = [  "CADET_PROFILER_RUN_ID",
   "CADET_PROFILER_MODE",
@@ -234,8 +234,7 @@ describe("identity routes — health endpoint", () => {
     });
 
     test("/v1/health reports ces.connected=false when CES is not ready", async () => {
-      session.setClientReady(false);
-      await cesRecordBackend.ensureClient();
+      await cesRecordBackend.close();
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
 

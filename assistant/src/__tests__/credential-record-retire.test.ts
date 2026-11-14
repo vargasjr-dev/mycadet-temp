@@ -20,9 +20,9 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { getDataDir } from "../util/layout.js";
-import { installMockCesRecordSession } from "./helpers/mock-ces-record-session.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
-const session = installMockCesRecordSession();
+const session = startTestCesRecordServer();
 
 function leftoverPath(): string {
   return join(getDataDir(), "credentials", "metadata.json");
@@ -55,7 +55,7 @@ function seedStore(record: Partial<CredentialRecord>): CredentialRecord {
     updatedAt: 2,
     ...record,
   };
-  session.store.set(credentialKey(full.service, full.field), full);
+  session.records.set(credentialKey(full.service, full.field), full);
   return full;
 }
 
@@ -71,11 +71,12 @@ describe("CES credential record cache", () => {
   afterEach(async () => {
     await cesRecordBackend.close();
     _resetCredentialMetadataCacheForTests();
-    session.store.clear();
+    session.records.clear();
     session.failList = false;
     session.failSet = false;
-    session.failSession = false;
-    session.setClientReady(true);
+    if (!session.listening) {
+      await session.start();
+    }
     const leftover = leftoverPath();
     if (existsSync(leftover)) {
       rmSync(leftover, { force: true });
@@ -168,7 +169,7 @@ describe("CES credential record cache", () => {
     await _ensureCesRecordsLoaded();
 
     expect(existsSync(leftoverPath())).toBe(true);
-    expect(session.store.size).toBe(0);
+    expect(session.records.size).toBe(0);
     expect(getCredentialMetadata("github", "token")).toBeUndefined();
   });
 
@@ -191,7 +192,9 @@ describe("CES credential record cache", () => {
   });
 
   test("live catalog list reports unreachable when the session cannot open", async () => {
-    session.failSession = true;
+    await session.stop();
+    await cesRecordBackend.close();
+    _resetCredentialMetadataCacheForTests();
 
     const live = await listCredentialRecordsLive();
     expect(live.unreachable).toBe(true);
@@ -220,17 +223,19 @@ describe("CES credential record cache", () => {
     seedStore({});
     getCredentialMetadata("github", "token");
     await _ensureCesRecordsLoaded();
+    await cesRecordBackend.ensureClient();
     expect(existsSync(leftoverPath())).toBe(true);
 
     const created = upsertCredentialMetadata("slack_channel", "bot_token", {
       allowedTools: ["bash"],
     });
+    await cesRecordBackend.ensureClient();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(existsSync(leftoverPath())).toBe(true);
     expect(leftoverContents()).toBe(leftoverBefore);
     expect(
-      session.store.get(credentialKey("slack_channel", "bot_token"))
+      session.records.get(credentialKey("slack_channel", "bot_token"))
         ?.credentialId,
     ).toBe(created.credentialId);
     expect(

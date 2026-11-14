@@ -1,11 +1,5 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-// ---------------------------------------------------------------------------
-// Mock logger (no-op — compatible with other test files' identical mock)
-// ---------------------------------------------------------------------------
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
   _resetBackend,
@@ -17,28 +11,15 @@ import {
   setSecureKeyAsync,
   setSecureKeyBackendForTesting,
 } from "../security/secure-keys.js";
-import { installMockCesRecordSession } from "./helpers/mock-ces-record-session.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
-// Hermetic by default: openCesRpcSession fails, so "no CES reachable" tests
-// never see a session. Tests that need a live backend flip failSession off.
-const session = installMockCesRecordSession();
-session.failSession = true;
+// The test server IS the CES sibling. Tests whose premise is "no CES
+// reachable" stop it; tests that need a live backend restart it.
+const session = startTestCesRecordServer();
 
 describe("secure-keys", () => {
   let memoryKeys: Record<string, string>;
-  const socketDirs: string[] = [];
-
-  /**
-   * Point CES discovery at an empty temp dir so tests whose premise is "no
-   * CES sibling is reachable" never find this machine's live bootstrap
-   * socket (/run/ces-bootstrap).
-   */
-  function useEmptyCesSocketDir(): void {
-    const dir = mkdtempSync(join(tmpdir(), "no-ces-socket-"));
-    process.env.CES_BOOTSTRAP_SOCKET_DIR = dir;
-    socketDirs.push(dir);
-  }
 
   beforeEach(() => {
     _resetBackend();
@@ -46,18 +27,18 @@ describe("secure-keys", () => {
 
   afterEach(async () => {
     await cesRecordBackend.close().catch(() => {});
-    session.store.clear();
-    session.failSession = true;
-    session.setClientReady(true);
+    session.secrets.clear();
+    session.records.clear();
+    session.failSet = false;
+    session.failList = false;
+    if (!session.listening) {
+      await session.start();
+    }
     _resetBackend();
     // Clear any memory-backend pin a describe installed.
     setSecureKeyBackendForTesting(undefined);
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CES_CREDENTIAL_URL;
-    delete process.env.CES_BOOTSTRAP_SOCKET_DIR;
-    while (socketDirs.length) {
-      rmSync(socketDirs.pop()!, { recursive: true, force: true });
-    }
   });
 
   // -----------------------------------------------------------------------
@@ -92,8 +73,8 @@ describe("secure-keys", () => {
   // No CES backend ready → unreachable, never absent
   // -----------------------------------------------------------------------
   describe("no CES backend ready", () => {
-    beforeEach(() => {
-      useEmptyCesSocketDir();
+    beforeEach(async () => {
+      await session.stop();
     });
 
     test("reads report unreachable (indeterminate)", async () => {
@@ -107,12 +88,14 @@ describe("secure-keys", () => {
       expect(getActiveBackendName()).toBe("none");
     });
 
-    test("does not poll for a CES socket when none is present", async () => {
+    test("fails bounded when no CES socket is present", async () => {
       _resetBackend();
 
       const start = Date.now();
       await getSecureKeyAsync("openai");
-      expect(Date.now() - start).toBeLessThan(1_000);
+      // The record backend's discovery polls ~3s to absorb a CES restart,
+      // so the failure is bounded, not instant.
+      expect(Date.now() - start).toBeLessThan(5_000);
       expect(getActiveBackendName()).toBe("none");
     });
 
@@ -142,7 +125,8 @@ describe("secure-keys", () => {
       _resetBackend();
       expect((await getSecureKeyResultAsync("openai")).unreachable).toBe(true);
 
-      session.failSession = false;
+      await session.start();
+      await cesRecordBackend.close(); // fresh start: clear the failure cooldown
       await cesRecordBackend.ensureClient();
 
       const afterAttach = await getSecureKeyResultAsync("openai");
@@ -209,8 +193,8 @@ describe("secure-keys", () => {
   // is never reported as "no key". The unreachable result must not pin
   // forever: once a CES client arrives, the next read routes through it.
   describe("containerized pod with no ready CES backend", () => {
-    beforeEach(() => {
-      useEmptyCesSocketDir();
+    beforeEach(async () => {
+      await session.stop();
     });
 
     test("reads report unreachable (indeterminate), never absent", async () => {
@@ -232,7 +216,8 @@ describe("secure-keys", () => {
       expect((await getSecureKeyResultAsync("openai")).unreachable).toBe(true);
 
       // The record backend's session comes up (cooldown elapsed).
-      session.failSession = false;
+      await session.start();
+      await cesRecordBackend.close(); // fresh start: clear the failure cooldown
       await cesRecordBackend.ensureClient();
 
       const afterAttach = await getSecureKeyResultAsync("openai");

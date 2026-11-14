@@ -3,15 +3,19 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { credentialKey } from "@mycadet/credential-storage";
 
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
-import { upsertCredentialMetadata } from "../tools/credentials/metadata-store.js";
-import { installMockCesRecordSession } from "./helpers/mock-ces-record-session.js";
 
-const session = installMockCesRecordSession();
+const session = startTestCesRecordServer();
+import { upsertCredentialMetadata } from "../tools/credentials/metadata-store.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 describe("CES credential record write-through", () => {
   afterEach(async () => {
-    session.store.clear();
+    session.secrets.clear();
+    session.records.clear();
     session.failSet = false;
+    if (!session.listening) {
+      await session.start();
+    }
     await cesRecordBackend.close();
   });
 
@@ -21,7 +25,7 @@ describe("CES credential record write-through", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    const stored = session.store.get(
+    const stored = session.records.get(
       credentialKey("slack_channel", "bot_token"),
     );
     expect(stored?.allowedTools).toEqual(["bash"]);
@@ -33,9 +37,8 @@ describe("CES credential record write-through", () => {
     upsertCredentialMetadata("slack_channel", "bot_token", {
       allowedTools: ["bash"],
     });
-    await cesRecordBackend.close();
     await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(session.store.size).toBe(0);
+    expect(session.records.size).toBe(0);
 
     session.failSet = false;
     upsertCredentialMetadata("slack_channel", "bot_token", {
@@ -44,7 +47,7 @@ describe("CES credential record write-through", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(
-      session.store.get(credentialKey("slack_channel", "bot_token"))
+      session.records.get(credentialKey("slack_channel", "bot_token"))
         ?.allowedTools,
     ).toEqual(["bash"]);
   });

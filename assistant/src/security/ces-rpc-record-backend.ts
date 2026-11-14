@@ -25,7 +25,7 @@ class CesRpcRecordBackend {
 
   /** Memoized in-flight session attempt. */
   private sessionAttempt: Promise<CesClient | undefined> | undefined;
-  private lastSessionAttemptAt = 0;
+  private lastFailedAttemptAt = 0;
 
   /** Sync snapshot of the live client; `undefined` until the first operation. */
   getClient(): CesClient | undefined {
@@ -35,23 +35,25 @@ class CesRpcRecordBackend {
   /**
    * Resolve the client to use, opening (and keeping) our own CES session on
    * first use. A failed attempt is retried at most once per cooldown window
-   * so a missing CES degrades quickly instead of wedging.
+   * so a missing CES degrades quickly instead of wedging; a session that
+   * later dies reopens on the next operation (no cooldown — the failure
+   * cooldown only gates attempts that never produced a client).
    */
   async ensureClient(): Promise<CesClient | undefined> {
     if (this.client?.isReady()) {
       return this.client;
     }
-    if (
-      this.sessionAttempt &&
-      Date.now() - this.lastSessionAttemptAt < LAZY_SESSION_COOLDOWN_MS
-    ) {
+    // Stale client from a dead transport — drop it and re-open below.
+    this.client = undefined;
+    if (this.sessionAttempt) {
       return this.sessionAttempt;
     }
-    this.lastSessionAttemptAt = Date.now();
-    this.sessionAttempt = openCesRpcSession()
+    if (Date.now() - this.lastFailedAttemptAt < LAZY_SESSION_COOLDOWN_MS) {
+      return undefined;
+    }
+    const attempt = openCesRpcSession()
       .then((session) => {
         if (!session) {
-          this.sessionAttempt = undefined;
           return undefined;
         }
         this.client = session.client;
@@ -60,10 +62,19 @@ class CesRpcRecordBackend {
       })
       .catch((err) => {
         log.warn({ err }, "CES RPC lazy session open failed");
-        this.sessionAttempt = undefined;
         return undefined;
+      })
+      .finally(() => {
+        if (this.sessionAttempt === attempt) {
+          this.sessionAttempt = undefined;
+        }
       });
-    return this.sessionAttempt;
+    this.sessionAttempt = attempt;
+    const client = await attempt;
+    if (!client) {
+      this.lastFailedAttemptAt = Date.now();
+    }
+    return client;
   }
 
   /** Close the backend's session (one-shot CLI processes call this on exit). */
@@ -73,6 +84,8 @@ class CesRpcRecordBackend {
     this.client = undefined;
     this.sessionAttempt = undefined;
     this.sessionProcessManager = undefined;
+    // A deliberate close is a fresh start: clear any open-failure cooldown.
+    this.lastFailedAttemptAt = 0;
     client?.close();
     await pm?.stop().catch(() => {});
   }
