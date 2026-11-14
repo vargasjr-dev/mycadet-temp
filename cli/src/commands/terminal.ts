@@ -16,9 +16,9 @@ import {
   cliCommand,
   dockerResourceNames,
   extractHostFromEntry,
-  getCloudUrl,
   readCloudToken,
 } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { spawn } from "child_process";
 
@@ -133,7 +133,6 @@ async function listTmuxSessions(
         assistant.token,
         assistant.assistantId,
         sessionId,
-        assistant.cloudUrl,
         abortController.signal,
       )) {
         const text = Buffer.from(event.data, "base64").toString("utf-8");
@@ -153,7 +152,6 @@ async function listTmuxSessions(
               assistant.assistantId,
               sessionId,
               'tmux list-sessions 2>/dev/null || echo "No tmux sessions found"; exit\r',
-              assistant.cloudUrl,
             );
           }
         }
@@ -170,7 +168,6 @@ async function listTmuxSessions(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.cloudUrl,
     ).catch(() => {});
   }
 
@@ -322,7 +319,7 @@ export const terminal = Object.assign(
       await interactiveSession({
         assistantId: entry.assistantId,
         token,
-        cloudUrl: getCloudUrl(),
+        cloudUrl: getCloudBaseUrl(),
       });
       return;
     }

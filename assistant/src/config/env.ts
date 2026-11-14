@@ -13,6 +13,8 @@
  * imported from platform/logger without circular imports.
  */
 
+import { getCloudBaseUrl } from "@mycadet/shared";
+
 import { getLogger } from "../util/logger.js";
 import { checkUnrecognizedEnvVars, getIsCloud } from "./env-registry.js";
 import { getConfig } from "./loader.js";
@@ -134,7 +136,7 @@ export function getOllamaBaseUrlEnv(): string | undefined {
 
 // ── Platform ─────────────────────────────────────────────────────────────────
 
-export function getCloudBaseUrl(): string {
+export function resolveCloudBaseUrl(): string {
   let configUrl: string | undefined;
   try {
     const val = getConfig().cloud.baseUrl;
@@ -144,24 +146,10 @@ export function getCloudBaseUrl(): string {
   } catch {
     // Config not yet available (early bootstrap) — fall through
   }
-  // Resolve the default cloud URL from CADET_ENVIRONMENT.
-  // `production`, `staging`, and `test` map to their respective hosted
-  // platforms, `local` points at a developer's locally running cloud,
-  // and everything else (including unset) falls back to dev-platform.
-  const env = str("CADET_ENVIRONMENT")?.trim();
-  let defaultUrl: string;
-  if (env === "production") {
-    defaultUrl = "https://cloud.mycadet.ai";
-  } else if (env === "staging") {
-    defaultUrl = "https://staging-cloud.mycadet.ai";
-  } else if (env === "test") {
-    defaultUrl = "https://test-cloud.mycadet.ai";
-  } else if (env === "local") {
-    defaultUrl = "http://localhost:8000";
-  } else {
-    defaultUrl = "https://dev-cloud.mycadet.ai";
-  }
-  return configUrl || str("CADET_CLOUD_URL") || defaultUrl;
+  // The default comes from the shared environment seeds via
+  // `getCloudBaseUrl()` — the explicit `CADET_CLOUD_URL` override and the
+  // Cadet Cloud origin, the same resolution every other surface reads.
+  return configUrl || getCloudBaseUrl();
 }
 
 /**
@@ -171,11 +159,11 @@ export function getCloudBaseUrl(): string {
  */
 export function getApexDomain(): string {
   try {
-    const url = getCloudBaseUrl();
+    const url = resolveCloudBaseUrl();
     const host = new URL(url).hostname;
 
-    if (host.endsWith("cloud.mycadet.ai")) {
-      const prefix = host.replace(/[-.]?cloud\.mycadet\.ai$/, "");
+    if (host === "mycadet.ai" || host.endsWith(".mycadet.ai")) {
+      const prefix = host.replace(/\.?mycadet\.ai$/, "");
       if (prefix) {
         return `${prefix}.mycadet.bot`;
       }

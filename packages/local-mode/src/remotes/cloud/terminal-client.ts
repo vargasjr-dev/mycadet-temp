@@ -7,7 +7,9 @@
  */
 
 import { z } from "zod";
-import { cloudAuthHeaders, resolveCloudUrl as getCloudUrl } from "../../cloud-auth";
+import { getCloudBaseUrl } from "@mycadet/shared";
+
+import { cloudAuthHeaders } from "../../cloud-auth";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 
 const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
@@ -29,10 +31,9 @@ export async function createTerminalSession(
   assistantId: string,
   cols: number,
   rows: number,
-  cloudUrl?: string,
   service?: string,
 ): Promise<{ session_id: string }> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = getCloudBaseUrl();
   const body: Record<string, unknown> = { cols, rows };
   if (service) {
     body.service = service;
@@ -41,7 +42,7 @@ export async function createTerminalSession(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify(body),
     },
   );
@@ -62,14 +63,13 @@ export async function closeTerminalSession(
   token: string,
   assistantId: string,
   sessionId: string,
-  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/`,
     {
       method: "DELETE",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
     },
   );
   // 404 = already closed, treat as success
@@ -89,14 +89,13 @@ export async function sendTerminalInput(
   assistantId: string,
   sessionId: string,
   data: string,
-  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/input/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify({ data }),
     },
   );
@@ -113,14 +112,13 @@ export async function resizeTerminalSession(
   sessionId: string,
   cols: number,
   rows: number,
-  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/resize/`,
     {
       method: "POST",
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       body: JSON.stringify({ cols, rows }),
     },
   );
@@ -143,14 +141,13 @@ export async function* subscribeTerminalEvents(
   token: string,
   assistantId: string,
   sessionId: string,
-  cloudUrl?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<TerminalOutputEvent> {
-  const baseUrl = cloudUrl || getCloudUrl();
+  const baseUrl = getCloudBaseUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/events/`,
     {
-      headers: await cloudAuthHeaders(token, cloudUrl),
+      headers: await cloudAuthHeaders(token),
       signal,
     },
   );

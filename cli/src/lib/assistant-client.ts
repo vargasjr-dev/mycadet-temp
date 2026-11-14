@@ -145,7 +145,7 @@ export class AssistantClient {
 
     if (!this.platformHeaders) {
       this.token = this.requirePlatformToken();
-      this.platformHeaders = cloudAuthHeaders(this.token, this.runtimeUrl)
+      this.platformHeaders = cloudAuthHeaders(this.token)
         .then((resolved) => {
           // request() owns Content-Type (bodyless requests must not carry one).
           const headers = { ...resolved };
@@ -292,7 +292,7 @@ export class AssistantClient {
     // platform path (e.g. the user switched orgs elsewhere). Drop it and retry
     // once.
     if (response.status === 401 && this.authMode === "platform" && this.token) {
-      invalidateOrgIdCache(this.token, this.runtimeUrl);
+      invalidateOrgIdCache(this.token);
       this.platformHeaders = undefined;
       return doFetch();
     }

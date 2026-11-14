@@ -255,7 +255,7 @@ beforeAll(async () => {
     },
   });
   // The production fallback resolver re-resolves auth through
-  // `getCloudBaseUrl()`, which reads the `cloud` config section (and then
+  // `resolveCloudBaseUrl()`, which reads the `cloud` config section (and then
   // `CADET_CLOUD_URL`, which the test preload pins to the hosted test
   // cloud). Seed the mock server under the key the schema actually defines,
   // so the backup adapter points at the mock instead of the real platform.

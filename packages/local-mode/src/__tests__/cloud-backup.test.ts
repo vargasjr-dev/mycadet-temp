@@ -9,6 +9,8 @@ import {
   test,
 } from "bun:test";
 
+import * as shared from "@mycadet/shared";
+
 import type { LockfileAssistant } from "../lockfile-contract";
 import * as cloudAuth from "../cloud-auth";
 import { createCloudBackup, listCloudBackups } from "../remotes/cloud/backup";
@@ -22,7 +24,7 @@ const invalidateOrgIdCacheSpy = spyOn(
   cloudAuth,
   "invalidateOrgIdCache",
 ).mockImplementation(() => {});
-const getCloudUrlSpy = spyOn(cloudAuth, "resolveCloudUrl").mockReturnValue(
+const getCloudUrlSpy = spyOn(shared, "getCloudBaseUrl").mockReturnValue(
   "https://cloud.mycadet.ai",
 );
 
@@ -89,10 +91,7 @@ describe("listCloudBackups", () => {
 
     expect(result).toEqual(["2026-09-15T11:00:00Z", "2026-09-15T10:00:00Z"]);
     expect(fetchCalls[0]).toEqual({ url: BACKUPS_URL, method: "GET" });
-    expect(authHeadersSpy).toHaveBeenCalledWith(
-      "test-cloud-token",
-      "https://cloud.mycadet.ai",
-    );
+    expect(authHeadersSpy).toHaveBeenCalledWith("test-cloud-token");
   });
 
   test("refreshes the org id cache and retries once on 401", async () => {
@@ -103,10 +102,7 @@ describe("listCloudBackups", () => {
 
     expect(result).toEqual([]);
     expect(fetchCalls).toHaveLength(2);
-    expect(invalidateOrgIdCacheSpy).toHaveBeenCalledWith(
-      "test-cloud-token",
-      "https://cloud.mycadet.ai",
-    );
+    expect(invalidateOrgIdCacheSpy).toHaveBeenCalledWith("test-cloud-token");
   });
 
   test("throws on a persistent error", async () => {

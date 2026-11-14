@@ -6,75 +6,77 @@
  *     insensitivity, and rejection of invalid values.
  *   - resolveBuildDefaultEnvironment: fallback to 'production' when the
  *     bundler-defined env var is missing or invalid.
- *   - cloudUrlsForEnvironment: full URL mapping table for every
- *     supported environment.
+ *   - the single-origin mapping: every supported extension environment has
+ *     a seed in `@mycadet/shared` (the source of truth the background
+ *     workers read through).
  */
 
-import { describe, test, expect, afterEach } from 'bun:test';
+import { describe, test, expect, afterEach } from "bun:test";
+
+import { getCloudBaseUrl, SEEDS } from "@mycadet/shared";
 
 import {
   parseExtensionEnvironment,
   resolveBuildDefaultEnvironment,
-  cloudUrlsForEnvironment,
   createFirstAssistantUrl,
   CREATE_ASSISTANT_WEB_PATH,
   type ExtensionEnvironment,
-} from '../extension-environment.js';
+} from "../extension-environment.js";
 
 // ── parseExtensionEnvironment ───────────────────────────────────────
 
-describe('parseExtensionEnvironment', () => {
-  test('parses each canonical environment value', () => {
-    expect(parseExtensionEnvironment('local')).toBe('local');
-    expect(parseExtensionEnvironment('dev')).toBe('dev');
-    expect(parseExtensionEnvironment('staging')).toBe('staging');
-    expect(parseExtensionEnvironment('production')).toBe('production');
+describe("parseExtensionEnvironment", () => {
+  test("parses each canonical environment value", () => {
+    expect(parseExtensionEnvironment("local")).toBe("local");
+    expect(parseExtensionEnvironment("dev")).toBe("dev");
+    expect(parseExtensionEnvironment("staging")).toBe("staging");
+    expect(parseExtensionEnvironment("production")).toBe("production");
   });
 
   test('"prod" is an alias for "production"', () => {
-    expect(parseExtensionEnvironment('prod')).toBe('production');
+    expect(parseExtensionEnvironment("prod")).toBe("production");
   });
 
-  test('is case-insensitive', () => {
-    expect(parseExtensionEnvironment('LOCAL')).toBe('local');
-    expect(parseExtensionEnvironment('Dev')).toBe('dev');
-    expect(parseExtensionEnvironment('STAGING')).toBe('staging');
-    expect(parseExtensionEnvironment('PRODUCTION')).toBe('production');
-    expect(parseExtensionEnvironment('Prod')).toBe('production');
-    expect(parseExtensionEnvironment('PROD')).toBe('production');
+  test("is case-insensitive", () => {
+    expect(parseExtensionEnvironment("LOCAL")).toBe("local");
+    expect(parseExtensionEnvironment("Dev")).toBe("dev");
+    expect(parseExtensionEnvironment("STAGING")).toBe("staging");
+    expect(parseExtensionEnvironment("PRODUCTION")).toBe("production");
+    expect(parseExtensionEnvironment("Prod")).toBe("production");
+    expect(parseExtensionEnvironment("PROD")).toBe("production");
   });
 
-  test('trims whitespace', () => {
-    expect(parseExtensionEnvironment('  dev  ')).toBe('dev');
-    expect(parseExtensionEnvironment('\tproduction\n')).toBe('production');
-    expect(parseExtensionEnvironment(' prod ')).toBe('production');
+  test("trims whitespace", () => {
+    expect(parseExtensionEnvironment("  dev  ")).toBe("dev");
+    expect(parseExtensionEnvironment("\tproduction\n")).toBe("production");
+    expect(parseExtensionEnvironment(" prod ")).toBe("production");
   });
 
-  test('returns null for undefined', () => {
+  test("returns null for undefined", () => {
     expect(parseExtensionEnvironment(undefined)).toBeNull();
   });
 
-  test('returns null for empty string', () => {
-    expect(parseExtensionEnvironment('')).toBeNull();
+  test("returns null for empty string", () => {
+    expect(parseExtensionEnvironment("")).toBeNull();
   });
 
-  test('returns null for whitespace-only string', () => {
-    expect(parseExtensionEnvironment('   ')).toBeNull();
-    expect(parseExtensionEnvironment('\t')).toBeNull();
+  test("returns null for whitespace-only string", () => {
+    expect(parseExtensionEnvironment("   ")).toBeNull();
+    expect(parseExtensionEnvironment("\t")).toBeNull();
   });
 
-  test('returns null for unrecognized values', () => {
-    expect(parseExtensionEnvironment('test')).toBeNull();
-    expect(parseExtensionEnvironment('unknown')).toBeNull();
-    expect(parseExtensionEnvironment('release')).toBeNull();
-    expect(parseExtensionEnvironment('development')).toBeNull();
-    expect(parseExtensionEnvironment('prod-us')).toBeNull();
+  test("returns null for unrecognized values", () => {
+    expect(parseExtensionEnvironment("test")).toBeNull();
+    expect(parseExtensionEnvironment("unknown")).toBeNull();
+    expect(parseExtensionEnvironment("release")).toBeNull();
+    expect(parseExtensionEnvironment("development")).toBeNull();
+    expect(parseExtensionEnvironment("prod-us")).toBeNull();
   });
 });
 
 // ── resolveBuildDefaultEnvironment ──────────────────────────────────
 
-describe('resolveBuildDefaultEnvironment', () => {
+describe("resolveBuildDefaultEnvironment", () => {
   const savedEnv = process.env.CADET_ENVIRONMENT;
 
   afterEach(() => {
@@ -85,98 +87,57 @@ describe('resolveBuildDefaultEnvironment', () => {
     }
   });
 
-  test('returns the environment when CADET_ENVIRONMENT is a valid value', () => {
-    process.env.CADET_ENVIRONMENT = 'staging';
-    expect(resolveBuildDefaultEnvironment()).toBe('staging');
+  test("returns the environment when CADET_ENVIRONMENT is a valid value", () => {
+    process.env.CADET_ENVIRONMENT = "staging";
+    expect(resolveBuildDefaultEnvironment()).toBe("staging");
   });
 
   test('resolves "prod" alias via build env', () => {
-    process.env.CADET_ENVIRONMENT = 'prod';
-    expect(resolveBuildDefaultEnvironment()).toBe('production');
+    process.env.CADET_ENVIRONMENT = "prod";
+    expect(resolveBuildDefaultEnvironment()).toBe("production");
   });
 
   test('falls back to "production" when CADET_ENVIRONMENT is unset', () => {
     delete process.env.CADET_ENVIRONMENT;
-    expect(resolveBuildDefaultEnvironment()).toBe('production');
+    expect(resolveBuildDefaultEnvironment()).toBe("production");
   });
 
   test('falls back to "production" when CADET_ENVIRONMENT is empty', () => {
-    process.env.CADET_ENVIRONMENT = '';
-    expect(resolveBuildDefaultEnvironment()).toBe('production');
+    process.env.CADET_ENVIRONMENT = "";
+    expect(resolveBuildDefaultEnvironment()).toBe("production");
   });
 
   test('falls back to "production" when CADET_ENVIRONMENT is invalid', () => {
-    process.env.CADET_ENVIRONMENT = 'bogus';
-    expect(resolveBuildDefaultEnvironment()).toBe('production');
+    process.env.CADET_ENVIRONMENT = "bogus";
+    expect(resolveBuildDefaultEnvironment()).toBe("production");
   });
 });
 
-// ── cloudUrlsForEnvironment ─────────────────────────────────────────
+// ── the single-origin mapping (shared SEEDS) ────────────────────────
 
-describe('cloudUrlsForEnvironment', () => {
-  const cases: Array<{
-    env: ExtensionEnvironment;
-    expectedApiBaseUrl: string;
-    expectedWebBaseUrl: string;
-  }> = [
-    {
-      env: 'production',
-      expectedApiBaseUrl: 'https://cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://mycadet.ai',
-    },
-    {
-      env: 'staging',
-      expectedApiBaseUrl: 'https://staging-cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://staging.mycadet.ai',
-    },
-    {
-      env: 'dev',
-      expectedApiBaseUrl: 'https://dev-cloud.mycadet.ai',
-      expectedWebBaseUrl: 'https://dev.mycadet.ai',
-    },
-    {
-      env: 'local',
-      expectedApiBaseUrl: 'http://localhost:8000',
-      expectedWebBaseUrl: 'http://localhost:3000',
-    },
+describe("the single-origin mapping (shared SEEDS)", () => {
+  const cases: Array<{ env: ExtensionEnvironment; expectedBaseUrl: string }> = [
+    { env: "production", expectedBaseUrl: "https://mycadet.ai" },
+    { env: "staging", expectedBaseUrl: "https://staging.mycadet.ai" },
+    { env: "dev", expectedBaseUrl: "https://dev.mycadet.ai" },
+    { env: "local", expectedBaseUrl: "http://localhost:7840" },
   ];
 
-  for (const { env, expectedApiBaseUrl, expectedWebBaseUrl } of cases) {
-    test(`${env}: apiBaseUrl is ${expectedApiBaseUrl}`, () => {
-      const urls = cloudUrlsForEnvironment(env);
-      expect(urls.apiBaseUrl).toBe(expectedApiBaseUrl);
-    });
-
-    test(`${env}: webBaseUrl is ${expectedWebBaseUrl}`, () => {
-      const urls = cloudUrlsForEnvironment(env);
-      expect(urls.webBaseUrl).toBe(expectedWebBaseUrl);
+  for (const { env, expectedBaseUrl } of cases) {
+    test(`${env}: baseUrl is ${expectedBaseUrl}`, () => {
+      expect(SEEDS[env].baseUrl).toBe(expectedBaseUrl);
     });
   }
-
-  test('production parity: "prod" alias and "production" resolve to same URLs', () => {
-    const fromProd = cloudUrlsForEnvironment('production');
-    expect(fromProd.apiBaseUrl).toBe('https://cloud.mycadet.ai');
-    expect(fromProd.webBaseUrl).toBe('https://mycadet.ai');
-  });
 });
 
-describe('createFirstAssistantUrl', () => {
-  const cases: Array<{ env: ExtensionEnvironment; webBaseUrl: string }> = [
-    { env: 'production', webBaseUrl: 'https://mycadet.ai' },
-    { env: 'staging', webBaseUrl: 'https://staging.mycadet.ai' },
-    { env: 'dev', webBaseUrl: 'https://dev.mycadet.ai' },
-    { env: 'local', webBaseUrl: 'http://localhost:3000' },
-  ];
+describe("createFirstAssistantUrl", () => {
+  test("opens the hatching entry on the derived cloud origin", () => {
+    expect(createFirstAssistantUrl()).toBe(
+      `${getCloudBaseUrl()}${CREATE_ASSISTANT_WEB_PATH}`,
+    );
+  });
 
-  for (const { env, webBaseUrl } of cases) {
-    test(`${env} opens the hatching entry on ${webBaseUrl}`, () => {
-      expect(createFirstAssistantUrl(env)).toBe(
-        `${webBaseUrl}${CREATE_ASSISTANT_WEB_PATH}`,
-      );
-    });
-  }
-
-  test('points at the cloud hatching route, not the local-only chooser create action', () => {
-    expect(CREATE_ASSISTANT_WEB_PATH).toBe('/assistant/onboarding/hatching');
+  test("points at the cloud hatching route, not the local-only chooser create action", () => {
+    expect(CREATE_ASSISTANT_WEB_PATH).toBe("/assistant/onboarding/hatching");
   });
 });

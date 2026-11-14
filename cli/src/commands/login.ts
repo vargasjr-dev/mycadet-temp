@@ -1,7 +1,6 @@
 import {
   cliCommand,
   getActiveAssistant,
-  getCloudUrl,
   loadAllAssistants,
   readCloudToken,
   removeLockfileAssistant,
@@ -82,7 +81,7 @@ export const login = Object.assign(
     // If no --token flag, use app-held WorkOS PKCE login.
     if (!token) {
       try {
-        token = await workosPkceLogin(getCloudUrl());
+        token = await workosPkceLogin();
       } catch (error) {
         console.error(`❌ ${describeLoginError(error)}`);
         process.exit(1);

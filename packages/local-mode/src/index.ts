@@ -202,7 +202,6 @@ export { pairDocker } from "./remotes/docker/pair";
 export {
   cloudTokenPath,
   readCloudToken,
-  resolveCloudUrl as getCloudUrl,
   authHeadersForKnownOrganization,
   cloudAuthHeaders,
   invalidateOrgIdCache,

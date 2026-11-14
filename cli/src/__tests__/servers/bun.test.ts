@@ -95,8 +95,8 @@ afterAll(() => {
 });
 
 import { createAppServerHandler } from "../../lib/servers/bun.js";
+import { DEFAULT_APP_SERVER_PORT } from "@mycadet/shared";
 import {
-  DEFAULT_APP_SERVER_PORT,
   appServerStatePath,
   ensureAppServer,
   findAvailableServerPort,

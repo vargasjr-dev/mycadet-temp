@@ -51,16 +51,6 @@ const mockMint = (entry: { assistantId: string }): Promise<string> => {
     }),
   );
 };
-mock.module("@mycadet/local-mode", () => ({
-  ...actualLocalMode,
-  pairLocal: mockMint,
-  pairDocker: mockMint,
-}));
-
-// The cloud-home arms (cloud/custom/baseten) mint through the platform's
-// terminal-session exec API instead of a local subprocess; answer it
-// in-process so the custom-pairing test never touches the network.
-const actualTerminalSession = await import("../lib/terminal-session.js");
 const execViaTerminalSessionMock = mock(
   async (
     _assistant: unknown,
@@ -70,10 +60,19 @@ const execViaTerminalSessionMock = mock(
     exitCode: 0,
   }),
 );
-mock.module("../lib/terminal-session.js", () => ({
-  ...actualTerminalSession,
+mock.module("@mycadet/local-mode", () => ({
+  ...actualLocalMode,
+  pairLocal: mockMint,
+  pairDocker: mockMint,
+  // The cloud-home arms (cloud/custom/baseten) mint through the platform's
+  // terminal-session exec API, which lives in local-mode now — answer it
+  // in-process so the custom-pairing test never touches the network.
   execViaTerminalSession: execViaTerminalSessionMock,
 }));
+
+// The cloud-home arms (cloud/custom/baseten) mint through the platform's
+// terminal-session exec API instead of a local subprocess; answer it
+// in-process so the custom-pairing test never touches the network.
 
 const { buildAppConnectUrl, pair } = await import("../commands/pair.js");
 

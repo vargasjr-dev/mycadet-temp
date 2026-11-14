@@ -28,7 +28,6 @@ export type EntryOverrides = {
   mgmtSocket?: string;
   bearerToken?: string;
   cloudAssistantId?: string;
-  cloudBaseUrl?: string;
   cloudOrganizationId?: string;
   ipAddress?: string;
   port?: number;

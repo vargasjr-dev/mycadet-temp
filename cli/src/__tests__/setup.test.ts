@@ -13,7 +13,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { loadGuardianToken, saveGuardianToken, type GuardianTokenData } from "@mycadet/local-mode";
+import {
+  loadGuardianToken,
+  saveGuardianToken,
+  type GuardianTokenData,
+} from "@mycadet/local-mode";
 import { setup } from "../commands/setup.js";
 import type {
   PairDeviceIdentity,
@@ -50,6 +54,7 @@ const originalEnv = {
   xdgConfigHome: process.env.XDG_CONFIG_HOME,
   xdgDataHome: process.env.XDG_DATA_HOME,
   cadetEnvironment: process.env.CADET_ENVIRONMENT,
+  cadetCloudUrl: process.env.CADET_CLOUD_URL,
 };
 
 let testDir = "";
@@ -185,6 +190,7 @@ describe("setup command", () => {
     setOptionalEnv("XDG_CONFIG_HOME", originalEnv.xdgConfigHome);
     setOptionalEnv("XDG_DATA_HOME", originalEnv.xdgDataHome);
     setOptionalEnv("CADET_ENVIRONMENT", originalEnv.cadetEnvironment);
+    setOptionalEnv("CADET_CLOUD_URL", originalEnv.cadetCloudUrl);
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     rmSync(testDir, { recursive: true, force: true });
@@ -329,10 +335,10 @@ describe("setup command", () => {
 
   test("derives the cloud address from the lockfile's platform base", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The platform base lives at the lockfile ROOT (not the entry) — the
-    // cloud address derives from it.
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
+    // longer carries a platform base — the explicit override pins the host.
+    process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({
-      cloudBaseUrl: "https://assistant.example",
       assistants: [
         {
           assistantId: "assistant-123",
@@ -358,10 +364,10 @@ describe("setup command", () => {
 
   test("refreshes an expired guardian token before the setup request", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The platform base lives at the lockfile ROOT (not the entry) — the
-    // cloud address derives from it.
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
+    // longer carries a platform base — the explicit override pins the host.
+    process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({
-      cloudBaseUrl: "https://assistant.example",
       assistants: [
         {
           assistantId: "assistant-123",
@@ -398,10 +404,10 @@ describe("setup command", () => {
 
   test("uses a refreshed guardian token before lockfile fallback", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The platform base lives at the lockfile ROOT (not the entry) — the
-    // cloud address derives from it.
+    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
+    // longer carries a platform base — the explicit override pins the host.
+    process.env.CADET_CLOUD_URL = "https://assistant.example";
     writeFullLockfile({
-      cloudBaseUrl: "https://assistant.example",
       assistants: [
         {
           assistantId: "assistant-123",

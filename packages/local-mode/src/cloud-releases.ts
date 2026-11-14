@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
+import { CADET_GITHUB_REPOSITORY, getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "./loopback-fetch";
-import { resolveCloudUrl as getCloudUrl } from "./cloud-auth";
 
 const ReleaseListItemSchema = z.object({
   version: z.string().min(1),
@@ -57,7 +56,7 @@ const RELEASES_FETCH_LIMIT = 100;
  */
 export async function fetchReleases(): Promise<ReleaseListItem[] | null> {
   try {
-    const cloudUrl = getCloudUrl();
+    const cloudUrl = getCloudBaseUrl();
     const response = await loopbackSafeFetch(
       `${cloudUrl}/v1/releases/?stable=true&limit=${RELEASES_FETCH_LIMIT}`,
       { signal: AbortSignal.timeout(10_000) },

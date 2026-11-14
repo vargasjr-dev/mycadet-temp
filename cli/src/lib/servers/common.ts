@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
+import { DEFAULT_APP_SERVER_PORT } from "@mycadet/shared";
 import { resolveVersion } from "@mycadet/shared/version";
 
 import { readRootProcesses, stampRootProcess } from "../assistant-config.js";
@@ -35,8 +36,6 @@ import {
   waitForDaemonReady,
 } from "@mycadet/local-mode";
 import { resolveClientDists } from "../web-dist.js";
-
-export const DEFAULT_APP_SERVER_PORT = 7840;
 
 /**
  * The machine-level state: the pidfile, the serve spec, and the injected

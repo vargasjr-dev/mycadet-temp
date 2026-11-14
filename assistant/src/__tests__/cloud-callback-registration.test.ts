@@ -42,7 +42,7 @@ mock.module("../config/env-registry.js", () => ({
 const actualEnv = await import("../config/env.js");
 mock.module("../config/env.js", () => ({
   ...actualEnv,
-  getCloudBaseUrl: () => mockCloudBaseUrl,
+  resolveCloudBaseUrl: () => mockCloudBaseUrl,
   getCloudAssistantId: () => mockCloudAssistantId,
 }));
 

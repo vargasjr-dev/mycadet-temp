@@ -463,18 +463,18 @@ re-runs `cap sync ios` (regenerating
 
 ### Point at a different server
 
-The boot bundle's control-plane base is resolved at sync time
+The boot bundle's control-plane origin is resolved at sync time
 (`cap sync ios` → `clients/app/capacitor.config.base.ts`) from
-`CADET_ENVIRONMENT`: cloud environments bake their cloud web origin, and
-`local` bakes the control-plane seed default (`http://localhost:8000`).
-A lockfile-dialed stack — the running tunnel's public URL for device
-builds, the app server edge's loopback port for the simulator — is the
-mobile iteration's follow-up; until then:
+`CADET_ENVIRONMENT`. Every environment — cloud and local — bakes its
+single seed origin; for `local` that's the app server edge's default
+port (`http://localhost:7840`). A lockfile-dialed tunnel/loopback
+origin for a device build is the mobile iteration's follow-up:
 
-- **Simulator:** the seed default dials the local control plane on the
-  host's loopback.
+- **Simulator:** the loopback origin dials the host's app server edge —
+  have the local stack up (`cadet-local app start`) when the simulator
+  boots.
 - **A cloud environment:** `CADET_ENVIRONMENT=dev bun run build:capacitor
-  && bun run sync` bakes the dev cloud origin instead of the local cadet.
+  && bun run sync` bakes the dev origin instead of the local cadet.
 
 Re-run `cap sync ios` after changing `CADET_ENVIRONMENT` so the baked
 config picks the origin up, then rebuild in Xcode.

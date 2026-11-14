@@ -14,6 +14,7 @@ const config: CapacitorConfig = {
     path: ".",
   },
   plugins: {
+    ...baseConfig.plugins,
     // Android-only keys: `smallIcon` names a drawable in this package's
     // res/, `iconColor` tints it. iOS ignores both.
     LocalNotifications: {

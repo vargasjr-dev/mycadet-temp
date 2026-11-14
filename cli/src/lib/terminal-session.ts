@@ -5,7 +5,8 @@
  * @mycadet/local-mode (remotes/cloud/exec.ts).
  */
 
-import { getCloudUrl, readCloudToken } from "@mycadet/local-mode";
+import { readCloudToken } from "@mycadet/local-mode";
+import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import type { ResolvedManagedAssistant } from "@mycadet/local-mode";
 import { resolveAssistant } from "./assistant-config.js";
@@ -62,7 +63,7 @@ export function resolveManagedAssistant(
   return {
     assistantId: entry.assistantId,
     token,
-    cloudUrl: getCloudUrl(),
+    cloudUrl: getCloudBaseUrl(),
   };
 }
 

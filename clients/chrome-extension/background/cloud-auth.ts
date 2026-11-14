@@ -24,9 +24,10 @@
  * versions.
  */
 
-import { fetchOrganizationId } from './cloud-api.js';
-import type { ExtensionEnvironment } from './extension-environment.js';
-import { cloudUrlsForEnvironment } from './extension-environment.js';
+import { getCloudBaseUrl } from "@mycadet/shared";
+
+import { fetchOrganizationId } from "./cloud-api.js";
+import type { ExtensionEnvironment } from "./extension-environment.js";
 import {
   buildAuthorizeUrl,
   exchangeAccessTokenForSession,
@@ -35,7 +36,7 @@ import {
   generatePkcePair,
   generateState,
   parseRedirectUrl,
-} from './workos-pkce.js';
+} from "./workos-pkce.js";
 
 /**
  * Path component of the `chromiumapp.org` redirect URI.
@@ -44,7 +45,7 @@ import {
  * URL MUST be registered as a redirect on the WorkOS User Management app per
  * environment — see this package's README "WorkOS redirect URIs" section.
  */
-const REDIRECT_PATH = 'cloud-auth';
+const REDIRECT_PATH = "cloud-auth";
 
 /**
  * Thrown when the user dismisses the auth window. `launchWebAuthFlow`'s
@@ -53,8 +54,8 @@ const REDIRECT_PATH = 'cloud-auth';
  */
 export class CloudLoginCancelledError extends Error {
   constructor() {
-    super('Login cancelled.');
-    this.name = 'CloudLoginCancelledError';
+    super("Login cancelled.");
+    this.name = "CloudLoginCancelledError";
   }
 }
 
@@ -63,7 +64,7 @@ const CANCEL_PATTERN = /did not approve|cancell?ed|closed the window/i;
 
 // ── Storage keys ────────────────────────────────────────────────────
 
-const SESSION_STORAGE_KEY = 'cadet.cloudSession';
+const SESSION_STORAGE_KEY = "cadet.cloudSession";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -94,9 +95,9 @@ export async function getStoredSession(): Promise<CloudSession | null> {
     const stored = result[SESSION_STORAGE_KEY];
     if (
       stored &&
-      typeof stored === 'object' &&
-      typeof (stored as Record<string, unknown>).email === 'string' &&
-      typeof (stored as Record<string, unknown>).environment === 'string'
+      typeof stored === "object" &&
+      typeof (stored as Record<string, unknown>).email === "string" &&
+      typeof (stored as Record<string, unknown>).environment === "string"
     ) {
       return stored as CloudSession;
     }
@@ -116,7 +117,7 @@ export async function clearSession(): Promise<void> {
 
 // ── Selected assistant persistence ──────────────────────────────────
 
-const SELECTED_ASSISTANT_KEY = 'cadet.selectedAssistant';
+const SELECTED_ASSISTANT_KEY = "cadet.selectedAssistant";
 
 export interface SelectedAssistant {
   id: string;
@@ -129,9 +130,9 @@ export async function getSelectedAssistant(): Promise<SelectedAssistant | null> 
     const stored = result[SELECTED_ASSISTANT_KEY];
     if (
       stored &&
-      typeof stored === 'object' &&
-      typeof (stored as Record<string, unknown>).id === 'string' &&
-      typeof (stored as Record<string, unknown>).name === 'string'
+      typeof stored === "object" &&
+      typeof (stored as Record<string, unknown>).id === "string" &&
+      typeof (stored as Record<string, unknown>).name === "string"
     ) {
       return stored as SelectedAssistant;
     }
@@ -141,7 +142,9 @@ export async function getSelectedAssistant(): Promise<SelectedAssistant | null> 
   return null;
 }
 
-export async function storeSelectedAssistant(assistant: SelectedAssistant): Promise<void> {
+export async function storeSelectedAssistant(
+  assistant: SelectedAssistant,
+): Promise<void> {
   await chrome.storage.local.set({ [SELECTED_ASSISTANT_KEY]: assistant });
 }
 
@@ -165,7 +168,7 @@ export async function clearSelectedAssistant(): Promise<void> {
 export async function startCloudLogin(
   environment: ExtensionEnvironment,
 ): Promise<CloudSession> {
-  const { apiBaseUrl } = cloudUrlsForEnvironment(environment);
+  const apiBaseUrl = getCloudBaseUrl();
 
   // The redirect URI Chrome intercepts when WorkOS redirects back. This exact
   // URL must be registered on the WorkOS UM app for `environment` — see README.
@@ -213,23 +216,27 @@ export async function startCloudLogin(
   const { code } = parseRedirectUrl(resultUrl, state);
 
   // 5. Exchange the code at WorkOS as a public client → access token.
-  const accessToken = await exchangeCodeWithWorkos({ clientId, code, verifier });
+  const accessToken = await exchangeCodeWithWorkos({
+    clientId,
+    code,
+    verifier,
+  });
 
   // 6. Swap the WorkOS access token for a cloud session token.
   const { sessionToken, email: exchangedEmail } =
     await exchangeAccessTokenForSession(apiBaseUrl, clientId, accessToken);
 
-  let email = exchangedEmail ?? 'signed in';
+  let email = exchangedEmail ?? "signed in";
 
   // Fall back to the allauth session API if the token exchange didn't include
   // an email (e.g. against older platform deployments).
-  if (email === 'signed in') {
+  if (email === "signed in") {
     try {
       const sessionResponse = await fetch(
         `${apiBaseUrl}/_allauth/browser/v1/auth/session`,
         {
-          credentials: 'include',
-          headers: { Accept: 'application/json' },
+          credentials: "include",
+          headers: { Accept: "application/json" },
         },
       );
       if (sessionResponse.ok) {
@@ -258,11 +265,9 @@ export async function startCloudLogin(
   await storeSession(partialSession);
 
   // Resolve the user's organization ID for subsequent API calls.
-  const organizationId = await fetchOrganizationId(environment);
+  const organizationId = await fetchOrganizationId();
 
   const session: CloudSession = { ...partialSession, organizationId };
   await storeSession(session);
   return session;
 }
-
-

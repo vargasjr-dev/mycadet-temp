@@ -179,7 +179,6 @@ export async function restoreCloud(
         contentLength: bundleData.length,
       },
       token,
-      gatewayUrl,
     );
     bundleKey = key;
     await cloudUploadToSignedUrl(url, new Uint8Array(bundleData));
@@ -198,11 +197,7 @@ export async function restoreCloud(
       body: Record<string, unknown>;
     };
     try {
-      preflightResult = await cloudImportPreflightFromGcs(
-        bundleKey,
-        token,
-        gatewayUrl,
-      );
+      preflightResult = await cloudImportPreflightFromGcs(bundleKey, token);
     } catch (err) {
       if (isTimeout(err)) {
         return {
@@ -261,7 +256,7 @@ export async function restoreCloud(
   // Data import — may be async (202 + job id), in which case poll.
   let importResult: { statusCode: number; body: Record<string, unknown> };
   try {
-    importResult = await cloudImportBundleFromGcs(bundleKey, token, gatewayUrl);
+    importResult = await cloudImportBundleFromGcs(bundleKey, token);
   } catch (err) {
     if (isTimeout(err)) {
       return {
@@ -305,7 +300,7 @@ export async function restoreCloud(
 
       let status: Awaited<ReturnType<typeof cloudPollJobStatus>>;
       try {
-        status = await cloudPollJobStatus(jobId, token, gatewayUrl);
+        status = await cloudPollJobStatus(jobId, token);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         // Terminal: missing job, auth failures, any 4xx. Transient

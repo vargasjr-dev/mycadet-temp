@@ -26,7 +26,6 @@ export type EntryOverrides = {
   containerInfo?: Record<string, unknown>;
   mgmtSocket?: string;
   cloudAssistantId?: string;
-  cloudBaseUrl?: string;
   cloudOrganizationId?: string;
   ipAddress?: string;
   port?: number;

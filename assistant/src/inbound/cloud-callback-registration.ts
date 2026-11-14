@@ -19,7 +19,7 @@
  */
 
 import { resolveCloudAssistantId } from "../config/cloud-identity.js";
-import { getCloudBaseUrl } from "../config/env.js";
+import { resolveCloudBaseUrl } from "../config/env.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
 import { ipcRegisterWebhookRoute } from "../ipc/gateway-client.js";
@@ -56,7 +56,7 @@ export async function resolveCloudCallbackRegistrationContext(): Promise<CloudCa
     resolveCloudAssistantId(),
   ]);
 
-  const cloudBaseUrl = getCloudBaseUrl().replace(/\/+$/, "");
+  const cloudBaseUrl = resolveCloudBaseUrl().replace(/\/+$/, "");
   const envAssistantCredential = process.env.ASSISTANT_API_KEY?.trim();
   const assistantCredential =
     storedAssistantApiKey.value?.trim() || envAssistantCredential || undefined;

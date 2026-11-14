@@ -60,7 +60,7 @@ mock.module("@google/genai", () => ({
 }));
 
 mock.module("../config/env.js", () => ({
-  getCloudBaseUrl: () => CLOUD_BASE_URL,
+  resolveCloudBaseUrl: () => CLOUD_BASE_URL,
   getCloudAssistantId: () => cloudAssistantIdOverride,
   setCloudAssistantId: (value: string | undefined) => {
     cloudAssistantIdOverride = value;

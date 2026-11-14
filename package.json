@@ -10,6 +10,7 @@
     "cli",
     "clients/android",
     "clients/app",
+    "clients/chrome-extension",
     "clients/docs",
     "clients/ios",
     "clients/linux",

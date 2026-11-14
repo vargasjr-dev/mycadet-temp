@@ -9,7 +9,10 @@ import { basename, join } from "node:path";
 import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
-import { getCloudBaseUrl, setIngressPublicBaseUrl } from "../../config/env.js";
+import {
+  resolveCloudBaseUrl,
+  setIngressPublicBaseUrl,
+} from "../../config/env.js";
 import {
   getConfig,
   loadRawConfig,
@@ -796,7 +799,7 @@ function handleEnvVars() {
 // ---------------------------------------------------------------------------
 
 function handleGetCloudConfig() {
-  const baseUrl = getConfig().cloud.baseUrl || getCloudBaseUrl();
+  const baseUrl = getConfig().cloud.baseUrl || resolveCloudBaseUrl();
   return { baseUrl, success: true };
 }
 

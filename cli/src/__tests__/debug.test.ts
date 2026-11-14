@@ -60,12 +60,12 @@ const LOCAL_ENTRY = {
   daemonPort: 7821,
   hatchedAt: new Date().toISOString(),
   cloudAssistantId: "11111111-2222-3333-4444-555555555555",
-  cloudBaseUrl: "https://cloud.mycadet.ai",
   cloudOrganizationId: "org-1",
 } satisfies LockfileAssistant;
 
 let originalFetch: typeof globalThis.fetch;
 let originalExit: typeof process.exit;
+let originalCloudUrl: string | undefined;
 let fetchCalls: { url: string; init?: RequestInit }[] = [];
 let uploadUrlStatus = 201;
 
@@ -73,6 +73,10 @@ beforeEach(() => {
   process.argv = ["bun", "cadet", "debug"];
   originalFetch = globalThis.fetch;
   originalExit = process.exit;
+  originalCloudUrl = process.env.CADET_CLOUD_URL;
+  // The cloud address rides `getCloudBaseUrl()` since the lockfile no
+  // longer carries a platform base — the override pins this suite's host.
+  process.env.CADET_CLOUD_URL = "https://cloud.mycadet.ai";
   process.exit = mock((code?: number | string | undefined): never => {
     throw new Error(`process.exit:${code}`);
   });
@@ -100,6 +104,8 @@ beforeEach(() => {
 afterEach(() => {
   globalThis.fetch = originalFetch;
   process.exit = originalExit;
+  if (originalCloudUrl === undefined) delete process.env.CADET_CLOUD_URL;
+  else process.env.CADET_CLOUD_URL = originalCloudUrl;
 });
 
 afterAll(() => {

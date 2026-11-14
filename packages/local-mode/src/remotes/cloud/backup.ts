@@ -12,13 +12,13 @@ import {
   type ManagedBackupEntry,
 } from "../../teleport-backup-policy";
 
+import { getCloudBaseUrl } from "@mycadet/shared";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import { z } from "zod";
 import {
   cloudAuthHeaders,
   invalidateOrgIdCache,
   readCloudToken,
-  resolveCloudUrl,
 } from "../../cloud-auth";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { cliCommand } from "../../environment";
@@ -39,7 +39,7 @@ const CreatedBackupResponseSchema = z.object({
 });
 
 function cloudBackupsUrl(entry: LockfileAssistant): string {
-  return `${resolveCloudUrl()}/v1/assistants/${entry.assistantId}/backups/`;
+  return `${getCloudBaseUrl()}/v1/assistants/${entry.assistantId}/backups/`;
 }
 
 async function errorSuffix(response: Response): Promise<string> {
@@ -61,13 +61,13 @@ async function cloudBackupRequest(
     loopbackSafeFetch(cloudBackupsUrl(entry), {
       method,
       headers: {
-        ...(await cloudAuthHeaders(token, resolveCloudUrl())),
+        ...(await cloudAuthHeaders(token)),
         Accept: "application/json",
       },
     });
   let response = await doRequest();
   if (response.status === 401) {
-    invalidateOrgIdCache(token, resolveCloudUrl());
+    invalidateOrgIdCache(token);
     response = await doRequest();
   }
   return response;

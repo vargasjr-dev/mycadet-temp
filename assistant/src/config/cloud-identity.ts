@@ -14,9 +14,9 @@ import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import {
   getCloudAssistantId,
-  getCloudBaseUrl,
   getCloudOrganizationId,
   getCloudUserId,
+  resolveCloudBaseUrl,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
@@ -152,7 +152,7 @@ export async function ensureCloudIdentityIds(): Promise<void> {
     ensureInFlight = (async () => {
       try {
         const apiKey = await readAssistantApiKey();
-        const baseUrl = (getCloudBaseUrl() ?? "").replace(/\/+$/, "");
+        const baseUrl = (resolveCloudBaseUrl() ?? "").replace(/\/+$/, "");
         if (!apiKey || !baseUrl) {
           return;
         }

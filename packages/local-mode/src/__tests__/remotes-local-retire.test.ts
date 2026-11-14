@@ -69,7 +69,6 @@ const cloudAuthHeadersMock = mock(async () => ({
   "Content-Type": "application/json",
   "X-Session-Token": "session-token",
 }));
-const resolveCloudUrlMock = mock(() => "https://platform.example.test");
 
 mock.module("../loopback-fetch", () => ({
   ...realLoopbackFetch,
@@ -80,7 +79,6 @@ mock.module("../cloud-auth", () => ({
   readCloudToken: readCloudTokenMock,
   authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
   cloudAuthHeaders: cloudAuthHeadersMock,
-  resolveCloudUrl: resolveCloudUrlMock,
 }));
 
 // Restore the real modules once this file finishes so the mocks above do not
@@ -267,17 +265,16 @@ describe("retireLocal — the self-hosted platform unregister", () => {
         "Cadet-Organization-Id": organizationId,
       }),
     );
-    resolveCloudUrlMock.mockReset();
-    resolveCloudUrlMock.mockReturnValue("https://platform.example.test");
     delete process.env.CADET_CLOUD_TOKEN;
-    delete process.env.CADET_CLOUD_TOKEN;
+    // The cloud URL rides the shared seeds' CADET_CLOUD_URL override.
+    process.env.CADET_CLOUD_URL = "https://platform.example.test";
 
     rmSync(join(unregisterDir, "retired"), { recursive: true, force: true });
   });
 
   afterAll(() => {
     delete process.env.CADET_CLOUD_TOKEN;
-    delete process.env.CADET_CLOUD_TOKEN;
+    delete process.env.CADET_CLOUD_URL;
     if (originalConfigHome === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {
@@ -324,10 +321,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
 
     await retireLocal("test-assistant", entry, silentReporter);
 
-    expect(cloudAuthHeadersMock).toHaveBeenCalledWith(
-      "session-token",
-      "https://platform.example.test",
-    );
+    expect(cloudAuthHeadersMock).toHaveBeenCalledWith("session-token");
     expect(authHeadersForKnownOrganizationMock).not.toHaveBeenCalled();
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
       "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",

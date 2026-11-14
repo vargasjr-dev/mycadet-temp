@@ -1,21 +1,10 @@
 /**
- * @mycadet/environments: the single source of truth for how a Cadet install
- * is laid out and which deployment environment it belongs to.
- *
- * Two things live here:
- *
- *   - The known deployment environments (names, platform/web URLs, per-service
- *     port blocks). The Swift client mirrors the same set in
- *     `CadetEnvironment.swift`.
- *   - Install layout: whether a runtime is a repo checkout or an installed
- *     package, and where the `assistant` command it ships lives.
- *
- * Consumed by the CLI, the assistant daemon, and the local-mode host library
- * so each answer is defined exactly once on the TS side.
- *
- * This is the lowest layer of the shared-packages hierarchy and stays a leaf:
- * types, constants, and small helpers over node builtins, with no runtime
- * dependencies of its own. See `__tests__/package-boundary.test.ts`.
+ * @mycadet/environments: install layout for a Cadet checkout or installed
+ * package, plus the shell/path-guard helpers the CLI, assistant, and desktop
+ * clients share. The environment seeds (names, the single base URL per
+ * deployment, port blocks) live in `@mycadet/shared` — standalone so the
+ * Capacitor config loader can consume them through its `./seeds` subpath.
  */
-export * from "./types.js";
-export * from "./seeds.js";
+export * from "./install-layout.js";
+export * from "./shell.js";
+export * from "./test-path-guard.js";
