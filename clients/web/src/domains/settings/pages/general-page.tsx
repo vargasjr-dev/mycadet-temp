@@ -11,7 +11,6 @@ import {
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
-import { AssistantUpgrades } from "@/domains/settings/components/assistant-upgrades";
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
@@ -30,8 +29,7 @@ import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
   const { t } = useTranslation("settings");
-  const { assistant, healthz, healthzLoading, refetch } =
-    useAssistantWithHealthz();
+  const { assistant, healthz, healthzLoading } = useAssistantWithHealthz();
   const navigate = useNavigate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor();
@@ -57,7 +55,6 @@ export function GeneralPage() {
   // when it does not show we must render a standalone version line to avoid
   // dropping both the version display and the only unlock affordance (e.g.
   // logged out of the cloud, or a self-hosted/remote-gateway runtime).
-  const showsUpgradePanel = isCloudHosted && !!assistant;
 
   useEffect(() => {
     if (!assistant || window.location.hash !== "#storage-resources") {
@@ -117,17 +114,7 @@ export function GeneralPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          {isCloudHosted && assistant && (
-            <>
-              <AssistantUpgrades
-                currentVersion={versionValue}
-                onUpgradeComplete={() => {
-                  void refetch();
-                }}
-              />
-            </>
-          )}
-          {!showsUpgradePanel && assistant && (
+          {assistant && (
             <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
               <span className="text-body-medium-default text-[var(--content-tertiary)]">
                 {t("generalPage.current")}

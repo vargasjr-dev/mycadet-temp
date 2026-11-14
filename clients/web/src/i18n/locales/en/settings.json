@@ -57,41 +57,6 @@
     "reset": "Reset to default",
     "title": "App icon"
   },
-  "assistantBackups": {
-    "columnCreated": "Created",
-    "columnReady": "Ready",
-    "columnSnapshotName": "Snapshot Name",
-    "columnType": "Type",
-    "copyFailed": "Couldn't copy the snapshot name.",
-    "copySnapshotName": "Copy snapshot name",
-    "createBackup": "Create Backup",
-    "createFailedToast": "Failed to create backup.",
-    "createSuccessToast": "Backup started. It will appear in the list shortly.",
-    "creating": "Creating…",
-    "empty": "No backups found for this assistant.",
-    "export": "Export",
-    "exportDownloading": "Downloading…",
-    "exportExporting": "Exporting…",
-    "exportFailedToast": "Failed to export the assistant.",
-    "exportMessage": "Download a .tar.gz archive of the whole installation, including encrypted credentials and the keys needed to read them. Keep this archive private.",
-    "exportPreparing": "Preparing…",
-    "exportTitle": "Export Assistant",
-    "loadFailed": "Failed to load backups.",
-    "loading": "Loading backups...",
-    "notReady": "Backup is not ready to use",
-    "oldestRemovedNotice": "Creating a new backup will remove the oldest one.",
-    "pending": "Pending",
-    "ready": "Ready",
-    "restore": "Restore",
-    "restoreFailedToast": "Failed to restore backup.",
-    "restoreMessage": "Restore from backup \"{name}\"?\n\nThe assistant will be temporarily unavailable during the restore.",
-    "restoreSuccessToast": "Backup restored successfully.",
-    "restoreTitle": "Restore Backup",
-    "typeDoctor": "Doctor",
-    "typePointInTime": "Point-in-time",
-    "typePreview": "Preview",
-    "typeScheduled": "Scheduled"
-  },
   "assistantStatusPanel": {
     "loadHealthzFailed": "Failed to load assistant info"
   },
@@ -99,25 +64,6 @@
     "subtitle": "Interactive shell session on your assistant machine",
     "targetContainer": "Target container",
     "title": "Terminal"
-  },
-  "assistantUpgrades": {
-    "alreadyOnVersion": "You are already on this version.",
-    "confirmUpdateMessage": "Update to version {version}? The assistant will be briefly unavailable during the update.",
-    "confirmUpdateTitle": "Update assistant",
-    "current": "Current",
-    "currentSuffix": "(current)",
-    "latest": "latest",
-    "latestSuffix": "(latest)",
-    "loading": "Loading...",
-    "noReleases": "No releases available",
-    "selected": "Selected",
-    "successUpdated": "Successfully updated to version {version}.",
-    "toastUpdateComplete": "Update complete. Your assistant is healthy.",
-    "toastUpdateFailed": "Failed to trigger update. Please try again.",
-    "toastUpdateInitiated": "Update to {version} initiated.",
-    "update": "Update",
-    "updateTo": "Update to",
-    "updating": "Updating..."
   },
   "autoTopUpPaymentMethodModal": {
     "loadingLabel": "Loading payment fields"
@@ -283,11 +229,6 @@
     "searchPlaceholder": "Search credentials",
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
-  },
-  "debugControlsPanel": {
-    "backups": "Backups",
-    "subtitle": "Manage your assistant backups.",
-    "title": "General"
   },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
@@ -1326,7 +1267,6 @@
   },
   "debugPage": {
     "tabs": {
-      "general": "General",
       "terminal": "Terminal",
       "database": "Database",
       "conversations": "Conversations",

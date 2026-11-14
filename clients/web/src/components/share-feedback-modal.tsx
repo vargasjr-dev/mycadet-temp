@@ -34,12 +34,16 @@ import { createPortal } from "react-dom";
 import { ExternalAnchor } from "@/components/external-anchor";
 import type { ChatDebugEventsApi } from "@/domains/chat/api/debug-api";
 import type { ChatDebugApi } from "@/domains/chat/utils/debug-api";
-import { feedbackCreateMutation } from "@/generated/api/@tanstack/react-query.gen";
-import type { ClassificationEnum, ClientEnum } from "@/generated/api/types.gen";
 import { logsExportPost } from "@/generated/daemon/sdk.gen";
 import type { LogsExportPostData } from "@/generated/daemon/types.gen";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { buildAssetDiagnosticsSnapshot } from "@/lib/asset-query-diagnostics";
+import {
+  buildFeedbackForm,
+  type FeedbackClassification,
+  type FeedbackClient,
+  submitFeedbackForm,
+} from "@/lib/feedback-api";
 import { buildDiagnosticsSnapshot } from "@/lib/diagnostics";
 import { isElectron } from "@/runtime/is-electron";
 import { saveFile } from "@/runtime/native-file";
@@ -129,7 +133,7 @@ const ALLOWED_EXTENSIONS = new Set([
 const MAX_ATTACHMENTS = 10;
 const MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024;
 
-const CLASSIFICATION_MAP: Record<FeedbackReason, ClassificationEnum> = {
+const CLASSIFICATION_MAP: Record<FeedbackReason, FeedbackClassification> = {
   bug_report: "bug_report",
   feature_request: "feature_request",
   other: "other",
@@ -137,12 +141,8 @@ const CLASSIFICATION_MAP: Record<FeedbackReason, ClassificationEnum> = {
 
 /**
  * Which client this feedback is being sent from.
- *
- * Typed as the API's own `ClientEnum` rather than a restated union, so a value
- * the cloud stops accepting is a compile error here instead of a rejected
- * submission at runtime.
  */
-function getFeedbackClient(): ClientEnum {
+function getFeedbackClient(): FeedbackClient {
   if (isElectron()) {
     return "electron";
   }
@@ -731,7 +731,7 @@ export function ShareFeedbackModal({
   // instead of submitting feedback (which notifies Slack).
   const [downloadMode, setDownloadMode] = useState(false);
 
-  const mutation = useMutation(feedbackCreateMutation());
+  const mutation = useMutation({ mutationFn: submitFeedbackForm });
   const [isBuildingLogs, setIsBuildingLogs] = useState(false);
   const isSubmitting = mutation.isPending || isBuildingLogs;
 
@@ -893,10 +893,9 @@ export function ShareFeedbackModal({
           // The web bundle version remains a safe fallback for older shells.
         }
       }
-      const submitFeedback = (client: ClientEnum) =>
-        mutation.mutateAsync({
-          headers: { "Content-Type": null },
-          body: {
+      const submitFeedback = (client: FeedbackClient) =>
+        mutation.mutateAsync(
+          buildFeedbackForm({
             message: message.trim(),
             classification: CLASSIFICATION_MAP[selectedReason],
             client,
@@ -908,30 +907,8 @@ export function ShareFeedbackModal({
             ...(doctorSessionId ? { doctor_session_id: doctorSessionId } : {}),
             ...(logsFile ? { logs_file: logsFile } : {}),
             ...(attachments.length ? { attachments } : {}),
-          },
-          bodySerializer: (body) => {
-            const form = new FormData();
-            for (const [key, value] of Object.entries(
-              body as Record<string, unknown>,
-            )) {
-              if (value == null) {
-                continue;
-              }
-              if (key === "attachments" && Array.isArray(value)) {
-                for (const file of value) {
-                  form.append("attachments", file as Blob);
-                }
-                continue;
-              }
-              if (value instanceof Blob) {
-                form.append(key, value);
-              } else {
-                form.append(key, String(value));
-              }
-            }
-            return form;
-          },
-        });
+          }),
+        );
       try {
         await submitFeedback(feedbackClient);
       } catch (err) {

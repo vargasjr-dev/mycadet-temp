@@ -19,6 +19,7 @@ export const routes = {
     login: "/account/login",
     doctor: "/account/doctor",
     selectAssistant: "/account/select-assistant",
+    assistants: "/account/assistants",
     signup: "/account/signup",
     pair: "/account/pair",
     providerSignup: "/account/provider/signup",
