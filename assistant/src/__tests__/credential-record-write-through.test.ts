@@ -54,8 +54,6 @@ describe("CES credential record write-through", () => {
     // Nothing reached the catalog, and the cache still holds the record (the
     // in-process view is optimistic; the durable state was never written).
     expect(session.records.size).toBe(0);
-    expect(
-      getCredentialMetadata("slack_channel", "bot_token"),
-    ).toBeDefined();
+    expect(getCredentialMetadata("slack_channel", "bot_token")).toBeDefined();
   });
 });
