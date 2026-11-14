@@ -240,9 +240,6 @@ jobs:
             bun install --lockfile-only
           fi
 
-          # Regenerate OpenAPI spec with the new version
-          cd assistant && bun run generate:openapi && cd ..
-
           # Hotfix commits carry [skip ci] so pushing the branch doesn't trigger
           # a production release run — the branch is cut quietly and only releases
           # once fixes have been cherry-picked and CI is run intentionally.

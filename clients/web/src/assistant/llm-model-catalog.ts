@@ -1501,19 +1501,11 @@ export function getCloudUpstreamForModel(
   );
 }
 
-// Keep in sync with CODEX_SUBSCRIPTION_MODEL_IDS in
-// assistant/src/providers/openai/codex-models.ts. Lives in the catalog so
-// the "chatgpt" identity's model list resolves here like every provider's;
-// the settings domain re-exports it from codex-subscription-models.
-export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
-  "gpt-6-astra",
-  "gpt-6-sol",
-  "gpt-6-luna",
-  "gpt-5.6-sol",
-  "gpt-5.6-terra",
-  "gpt-5.6-luna",
-  "gpt-5.5",
-]);
+// The Codex allowlist is the daemon's own set, imported from
+// @mycadet/assistant-api — one source, no drift. It lives in the catalog
+// so the "chatgpt" identity's model list resolves here like every
+// provider's; the settings domain imports it from the api package too.
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@mycadet/assistant-api";
 
 /**
  * Whether a catalog model produces free-form chat text. Unlisted providers
