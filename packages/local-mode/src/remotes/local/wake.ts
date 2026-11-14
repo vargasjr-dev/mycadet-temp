@@ -11,7 +11,7 @@ import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
 import { getDaemonPidPath } from "./instance";
 import { startCes, startGateway, startLocalDaemon } from "./common";
-import { ensureLocalBinShims } from "./exec";
+
 import type { WakeResult } from "../../operations/wake";
 
 export async function wakeLocal(
@@ -78,16 +78,6 @@ async function wakeLocalSteps(
 ): Promise<WakeResult> {
   const { watch, defaultWorkspaceConfigPath } = opts;
 
-  // Refresh the instance's bin/ shims first: they bake the source entries
-  // this wake is about to run, and an upgrade that just installed a new
-  // runtime must never leave exec resolving the previous one. Best-effort —
-  // a shim that cannot resolve just stays absent (exec reports it).
-  try {
-    ensureLocalBinShims(entry);
-  } catch {
-    // shim materialization never blocks a wake
-  }
-
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
 
@@ -118,11 +108,16 @@ async function wakeLocalSteps(
   // responsibility: its process gates its own traffic on the daemon's
   // migrations, so an early start just means it holds the gate a little
   // longer.
+  if (defaultWorkspaceConfigPath) {
+    // The daemon env builder reads process.env directly — a hatch's
+    // first-boot config seed lands here instead of threading through
+    // DaemonStartOptions.
+    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
+      defaultWorkspaceConfigPath;
+  }
   await Promise.all([
     startCes(watch, entry),
-    startLocalDaemon(watch, entry, {
-      defaultWorkspaceConfigPath,
-    }),
+    startLocalDaemon(watch, entry),
     startGateway(watch, entry),
   ]);
 
