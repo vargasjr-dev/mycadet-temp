@@ -201,14 +201,29 @@ async function mintPairingChallengeOrExit(
   return parseMintedChallenge(stdout);
 }
 
-/** Parse the mint's last stdout line into the challenge response. */
+/** Parse the mint's JSON stdout line into the challenge response. */
 function parseMintedChallenge(
   stdout: string,
 ): RemoteWebPairingChallengeResponse {
-  const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";
+  // Scanned in reverse: pino's async writes can land a log line after the
+  // payload, and a pretty log object spans multiple lines, so "literally
+  // the last line" is not always the challenge.
+  const jsonLine = stdout
+    .split("\n")
+    .filter(Boolean)
+    .reverse()
+    .find((line) => {
+      try {
+        JSON.parse(line);
+        return true;
+      } catch {
+        return false;
+      }
+    });
   let challenge: RemoteWebPairingChallengeResponse;
   try {
-    challenge = JSON.parse(lastLine) as RemoteWebPairingChallengeResponse;
+    if (jsonLine === undefined) throw new Error("no JSON line in stdout");
+    challenge = JSON.parse(jsonLine) as RemoteWebPairingChallengeResponse;
   } catch {
     console.error("Error: could not parse the gateway's pairing mint output.");
     process.exit(1);

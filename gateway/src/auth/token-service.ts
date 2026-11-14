@@ -57,7 +57,7 @@ export function loadOrCreateSigningKey(): Buffer {
         `Invalid ACTOR_TOKEN_SIGNING_KEY: expected 64 hex characters, got ${envKey.length} chars`,
       );
     }
-    log.info("Signing key loaded from ACTOR_TOKEN_SIGNING_KEY env var");
+    log.debug("Signing key loaded from ACTOR_TOKEN_SIGNING_KEY env var");
     return Buffer.from(envKey, "hex");
   }
 
@@ -67,7 +67,7 @@ export function loadOrCreateSigningKey(): Buffer {
     try {
       const raw = readFileSync(keyPath);
       if (raw.length === 32) {
-        log.info("Auth signing key loaded from disk");
+        log.debug("Auth signing key loaded from disk");
         return raw;
       }
       log.warn("Signing key file has unexpected length, regenerating");

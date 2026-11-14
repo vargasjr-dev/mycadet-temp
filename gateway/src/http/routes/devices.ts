@@ -102,9 +102,10 @@ export async function runDevicesCommand(args: string[]): Promise<number> {
   if (method === "list") {
     const devices = await handleListDevices();
     if (devices.length === 0) {
-      console.log("No contacts found.");
+      console.log("No devices found.");
       return 0;
     }
+    console.log("DEVICE ID  PLATFORM  NAME");
     for (const device of devices) {
       console.log(
         `${device.hashedDeviceId}  ${device.platform}  ${device.clientReportedName}`,
