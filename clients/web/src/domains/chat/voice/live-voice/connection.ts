@@ -24,9 +24,10 @@
  * ---------------------------------------------------------------------------
  *
  *   POST /v1/auth/live-voice-token/
- *     Auth:     cloud session auth — session cookie (same-origin, rides
- *               automatically) + CSRF (`X-CSRFToken`) on web; the electron
- *               shell authenticates with its session token header instead.
+ *     Auth:     the browser's session cookie — the request is same-origin,
+ *               so the cookie rides unaided; the electron/capacitor shells
+ *               inject the credential at their proxy layer. The bundle
+ *               itself carries no auth token header logic.
  *     Request:  { assistantId: string }
  *     Response: { token: string; expiresAt: string }   // expiresAt is ISO-8601
  *
@@ -34,16 +35,13 @@
  * requested assistant; tunnel validates it on the WS upgrade.
  *
  * The dial is a deliberate same-origin swap of the generated cloud dial —
- * the serving host routes the path and the session cookie rides the
- * same-origin request (the tts voice catalog is the precedent).
+ * the serving host routes the path (the tts voice catalog is the precedent).
  *
  * This module is the route-agnostic gateway WS transport shared by live voice,
  * watch (`domains/chat/watch`), and the assistant desktop (`domains/chat/desktop`).
  */
 
 import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
-
-import { platformMutationSessionHeaders } from "@/lib/auth/session-headers";
 
 /**
  * Production tunnel host (no scheme). Fallback when neither the
@@ -97,13 +95,10 @@ function isTunnelWsToken(value: unknown): value is TunnelWsTokenResponse {
 /**
  * Mint a short-lived, user+org+assistant-scoped tunnel WS token.
  *
- * POSTs `/v1/auth/live-voice-token/` same-origin with the session
- * credentials the endpoint's contract asks for: the session cookie rides
- * the same-origin request, CSRF echoes the jar on web, and the electron
- * shell's session token (plus its renderer origin, a mutation-only
- * check) stands in for the cookie there. The generated client's
- * registration and device headers are identity hints a mint does not
- * need — nothing syncs off this endpoint.
+ * POSTs `/v1/auth/live-voice-token/` same-origin: the session cookie
+ * rides the request unaided, and a shell that authenticates some other
+ * way injects the credential at its proxy layer — the bundle carries no
+ * auth token header logic (see the module doc comment for the contract).
  *
  * Named for tunnel rather than for live voice because the token is not a
  * live-voice token in substance: the cloud stores it as an opaque random
@@ -118,17 +113,12 @@ function isTunnelWsToken(value: unknown): value is TunnelWsTokenResponse {
 export async function mintTunnelWsToken(
   assistantId: string,
 ): Promise<TunnelWsTokenResponse> {
-  // The mint dial is a deliberate same-origin swap of the generated cloud
-  // dial: the session cookie rides the same-origin request and the session
-  // headers come from the auth boundary — the tts voice catalog is the
-  // precedent for the transport swap.
+  // Same-origin swap of the generated cloud dial — the tts voice catalog
+  // is the precedent; credentials ride the cookie jar or the shell's proxy.
   // eslint-disable-next-line no-restricted-syntax -- same-origin swap of the generated cloud dial; see above
   const response = await fetch("/v1/auth/live-voice-token/", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...platformMutationSessionHeaders(),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ assistantId }),
   });
   if (!response.ok) {

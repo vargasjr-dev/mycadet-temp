@@ -39,7 +39,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   resourcepressureStatusGet: async () => ({ data: undefined }),
   diskpressureStatusGet: async () => ({ data: undefined }),
   healthzGet: async () => ({ data: undefined }),
-  // Imported for its side-effect module graph (assistant/api.ts); never called here.
+  // Imported for its side-effect module graph (lib/assistant-status-api); never called here.
   diskpressureAcknowledgePost: async () => ({ data: undefined }),
   workspaceThemeGet: workspaceThemeGetMock,
 }));

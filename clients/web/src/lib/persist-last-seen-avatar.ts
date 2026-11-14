@@ -1,6 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { supersedeCloudAvatar } from "@/hooks/use-cloud-avatar-urls";
 import {
   deleteLastSeenAvatar,
   lastSeenAvatarGenerations,
@@ -55,7 +54,6 @@ export async function persistLastSeenAvatar(
     // A blob that cannot be read back is simply not cached.
     return;
   }
-  supersedeCloudAvatar(queryClient, assistantId);
   void queryClient.invalidateQueries({
     queryKey: chooserRowAvatarCacheQueryKey(assistantId),
   });

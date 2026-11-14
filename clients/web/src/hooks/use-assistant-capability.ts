@@ -1,6 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { getAssistantHealthz } from "@/assistant/api";
+import { getAssistantHealthz } from "@/lib/assistant-status-api";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 

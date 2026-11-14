@@ -3,18 +3,75 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
-import {
-  assistantsRetrieveOptions,
-  assistantsRetrieveQueryKey,
-  releasesListOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
-import { assistantsUpgradeDetailCreate } from "@/generated/api/sdk.gen";
-import type { ReleaseListItem } from "@/generated/api/types.gen";
+import { z } from "zod";
 import { t, useTranslation } from "@/i18n";
 import { compareParsed, parseSemver } from "@/utils/semver";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { toast } from "@mycadet/design-library/components/toast";
+
+/** A release as the platform's `/v1/releases/` row offers it. */
+interface ReleaseListItem {
+  version: string;
+  released_at: string;
+  is_stable?: boolean;
+}
+
+interface UpgradeDetail {
+  detail?: string;
+  version?: string;
+}
+
+/** The assistant's own record, read for its release version while polling. */
+const AssistantRuntimeSchema = z.object({
+  current_release_version: z.string().nullable(),
+});
+
+const runtimeVersionKey = (assistantId: string) =>
+  ["assistantRuntimeVersion", assistantId] as const;
+const releasesKey = ["runtimeReleases"] as const;
+
+async function fetchRuntimeVersion(assistantId: string): Promise<string | null> {
+  // Same-origin scoped dials — the serving host authenticates the path; the
+  // tts voice catalog and the backups module are the precedents for the swap.
+  // eslint-disable-next-line no-restricted-syntax -- same-origin swap of the generated cloud dial; see above
+  const response = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/`,
+  );
+  if (!response.ok) {
+    throw new Error(`The assistant read failed (${response.status})`);
+  }
+  return AssistantRuntimeSchema.parse(await response.json())
+    .current_release_version;
+}
+
+async function fetchReleases(): Promise<ReleaseListItem[]> {
+  // eslint-disable-next-line no-restricted-syntax -- same-origin swap of the generated cloud dial; see above
+  const response = await fetch("/v1/releases/");
+  if (!response.ok) {
+    throw new Error(`The releases read failed (${response.status})`);
+  }
+  return (await response.json()) as ReleaseListItem[];
+}
+
+async function createUpgrade(
+  assistantId: string,
+  body: { version?: string },
+): Promise<UpgradeDetail> {
+  // eslint-disable-next-line no-restricted-syntax -- same-origin swap of the generated cloud dial; see above
+  const response = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/upgrade/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`The upgrade dial failed (${response.status})`);
+  }
+  return (await response.json()) as UpgradeDetail;
+}
 
 function releaseLabel(
   release: ReleaseListItem,
@@ -89,16 +146,18 @@ export function AssistantUpgrades({
   };
 
   useQuery({
-    ...assistantsRetrieveOptions({ path: { id: assistantId } }),
+    queryKey: runtimeVersionKey(assistantId ?? ""),
+    enabled: assistantId != null,
+    queryFn: async () => fetchRuntimeVersion(assistantId ?? ""),
     refetchInterval: isPollingUpgrade
-      ? (query) =>
-          pollRefetchInterval(query.state.data?.current_release_version)
+      ? (query) => pollRefetchInterval(query.state.data ?? null)
       : false,
   });
 
-  const { data: releases, isLoading: releasesLoading } = useQuery(
-    releasesListOptions({}),
-  );
+  const { data: releases, isLoading: releasesLoading } = useQuery({
+    queryKey: releasesKey,
+    queryFn: fetchReleases,
+  });
 
   const latestRelease = releases?.[0];
   const latestVersion = latestRelease?.version ?? null;
@@ -119,14 +178,8 @@ export function AssistantUpgrades({
   }, [latestVersion, currentVersion]);
 
   const upgradeCreate = useMutation({
-    mutationFn: async (body: { version?: string }) => {
-      const { data } = await assistantsUpgradeDetailCreate({
-        path: { id: assistantId },
-        body,
-        throwOnError: true,
-      });
-      return data;
-    },
+    mutationFn: async (body: { version?: string }) =>
+      createUpgrade(assistantId ?? "", body),
   });
 
   const handleUpgrade = async () => {
@@ -138,11 +191,12 @@ export function AssistantUpgrades({
     // way `getLatestRuntimeRelease` does.
     try {
       const result = await upgradeCreate.mutateAsync({});
-      const isNoOp = result.detail?.includes("Already on the latest");
-      if (isNoOp) {
+      const detail = result.detail;
+      const isNoOp = detail?.includes("Already on the latest");
+      if (isNoOp && detail !== undefined) {
         // Not a success — nothing actually happened. Surface a warning so the
         // user understands why the modal closed without kicking off an update.
-        toast.warning(result.detail);
+        toast.warning(detail);
         return;
       }
       targetVersionRef.current = result.version ?? null;
@@ -154,9 +208,7 @@ export function AssistantUpgrades({
       );
       setIsPollingUpgrade(true);
       queryClient.invalidateQueries({
-        queryKey: assistantsRetrieveQueryKey({
-          path: { id: assistantId },
-        }),
+        queryKey: runtimeVersionKey(assistantId ?? ""),
       });
     } catch {
       toast.error(t("assistantUpgrades.toastUpdateFailed"));

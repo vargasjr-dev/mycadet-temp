@@ -1,6 +1,6 @@
 import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
-import { getAssistantResourcePressureStatus } from "@/assistant/api";
+import { getAssistantResourcePressureStatus } from "@/lib/assistant-status-api";
 import {
   RESOURCE_PRESSURE_POLL_INTERVAL_MS,
   areResourcePressureStatusesEqual,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createAssistantBackup } from "@/assistant/api";
+import { createAssistantBackup } from "@/lib/assistant-backups-api";
 
 export type ManagedExportStep = "preparing" | "exporting";
 export interface ManagedExportOptions {

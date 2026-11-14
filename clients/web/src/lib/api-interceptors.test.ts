@@ -13,9 +13,7 @@
  */
 
 import {
-  afterAll,
   afterEach,
-  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -60,17 +58,8 @@ import {
 
 import { ApiError } from "@/utils/api-errors";
 import { getClientId } from "@/lib/client-identity";
-import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
 
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
-
-function setCsrfCookie(token: string): void {
-  document.cookie = `csrftoken=${token}; path=/`;
-}
-
-function clearCsrfCookie(): void {
-  document.cookie = "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-}
 
 async function intercept(
   method: string,
@@ -82,14 +71,6 @@ async function intercept(
 }
 
 describe("api-interceptors / requestInterceptor", () => {
-  beforeAll(() => {
-    setCsrfCookie("test-csrf-token");
-  });
-
-  afterAll(() => {
-    clearCsrfCookie();
-  });
-
   test("attaches X-Cadet-Client-Id and X-Cadet-Interface-Id on GET", async () => {
     const headers = await intercept("GET");
     expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
@@ -111,21 +92,6 @@ describe("api-interceptors / requestInterceptor", () => {
     }
   });
 
-  test("attaches X-CSRFToken on mutating requests", async () => {
-    const headers = await intercept("POST");
-    expect(headers.get("X-CSRFToken")).toBe("test-csrf-token");
-  });
-
-  test("does not attach X-CSRFToken on safe requests", async () => {
-    const headers = await intercept("GET");
-    expect(headers.get("X-CSRFToken")).toBeNull();
-  });
-
-  test("does not attach the session-token header on web (no Electron bridge)", async () => {
-    const headers = await intercept("GET");
-    expect(headers.get("X-Session-Token")).toBeNull();
-  });
-
   test("does not attach renderer-origin marker outside Electron", async () => {
     const headers = await intercept("POST");
     expect(headers.get(ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
@@ -144,36 +110,15 @@ describe("api-interceptors / requestInterceptor", () => {
   });
 });
 
-describe("api-interceptors / Electron session-token header", () => {
-  beforeAll(() => {
-    setCsrfCookie("test-csrf-token");
-  });
-
+describe("api-interceptors / Electron renderer-origin marker", () => {
   beforeEach(() => {
     (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
-      auth: { getSessionToken: () => "electron-sess-tok" },
     };
   });
 
   afterEach(() => {
     delete (window as unknown as { cadet?: unknown }).cadet;
-    resetSessionToken();
-  });
-
-  afterAll(() => {
-    clearCsrfCookie();
-  });
-
-  test("attaches the session-token header on platform requests", async () => {
-    const headers = await intercept("GET");
-    expect(headers.get("X-Session-Token")).toBe("electron-sess-tok");
-  });
-
-  test("drops CSRF on mutations — header auth, not cookie auth", async () => {
-    const headers = await intercept("POST");
-    expect(headers.get("X-Session-Token")).toBe("electron-sess-tok");
-    expect(headers.get("X-CSRFToken")).toBeNull();
   });
 
   test("attaches renderer-origin marker on Electron mutating requests", async () => {
@@ -206,8 +151,6 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // These tests pin the invariants that make that handoff safe:
 //   - URL origin gets swapped to the registered ingress.
-//   - Platform-only headers (X-CSRFToken) are
-//     stripped so the user's gateway never sees our session/CSRF state.
 //   - `Authorization: Bearer <token>` is attached when the connection
 //     has a token, and omitted when the token slot is `null` (the
 //     gateway then 401s, and the chat surface lands on its error UI —

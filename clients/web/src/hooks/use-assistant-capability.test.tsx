@@ -22,7 +22,7 @@ const health = mock(async () => {
         data: { capabilities: { chatsSettings: supported } },
       };
 });
-mock.module("@/assistant/api", () => ({ getAssistantHealthz: health }));
+mock.module("@/lib/assistant-status-api", () => ({ getAssistantHealthz: health }));
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {
     use: {

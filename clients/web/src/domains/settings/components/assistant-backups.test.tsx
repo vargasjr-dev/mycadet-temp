@@ -6,7 +6,7 @@ let exportFails = false;
 const calls: string[] = [];
 let toastErrors: string[] = [];
 
-mock.module("@/assistant/api", () => ({
+mock.module("@/lib/assistant-backups-api", () => ({
   listAssistantBackups: async () => ({ ok: true, status: 200, data: [] }),
   createAssistantBackup: async () => ({ ok: true, status: 201, data: {} }),
   restoreAssistantBackup: async () => ({ ok: true, status: 200, data: {} }),

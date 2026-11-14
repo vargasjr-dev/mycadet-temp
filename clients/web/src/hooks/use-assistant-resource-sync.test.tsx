@@ -30,7 +30,6 @@ import type { AssistantEvent } from "@/types/event-types";
 import { useAssistantResourceSync } from "@/hooks/use-assistant-resource-sync";
 import { assistantIdentityQueryKey } from "@/hooks/use-assistant-identity-init";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
-import { cloudAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
@@ -982,33 +981,6 @@ describe("useAssistantResourceSync", () => {
         queryKey: assistantIdentityQueryKey("asst-1"),
       });
     });
-  });
-
-  test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
-    const queryClient = freshQueryClient();
-    queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    const key = cloudAvatarUrlsQueryKey("");
-    queryClient.setQueryData(
-      key,
-      new Map([
-        ["asst-1", "https://cdn.example/a.png"],
-        ["asst-2", "https://cdn.example/b.png"],
-      ]),
-    );
-    renderHook(() => useAssistantResourceSync("asst-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    emit({ type: "avatar_updated" } as unknown as AssistantEvent);
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<Map<string, string>>(key)?.has("asst-1"),
-      ).toBe(false);
-    });
-    expect(
-      queryClient.getQueryData<Map<string, string>>(key)?.get("asst-2"),
-    ).toBe("https://cdn.example/b.png");
-    expect(queryClient.getQueryState(key)?.fetchStatus).toBe("idle");
   });
 
   test("invalidates avatar query on avatar_updated event", async () => {
