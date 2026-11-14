@@ -86,6 +86,7 @@ import {
   getSlackChannelConfig,
   setSlackChannelConfig,
 } from "../daemon/handlers/config-slack-channel.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { credentialKey } from "../security/credential-key.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
@@ -99,7 +100,6 @@ import {
   listCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 

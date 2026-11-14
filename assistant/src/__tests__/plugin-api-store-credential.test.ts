@@ -115,9 +115,10 @@ beforeEach(() => {
     .run();
 });
 
-afterEach(() => {
+afterEach(async () => {
   cesSession.records.clear();
   cesSession.failSet = false;
+  await cesRecordBackend.close();
   setSpy.mockRestore();
   getSpy.mockRestore();
   scrubSpy.mockRestore();
