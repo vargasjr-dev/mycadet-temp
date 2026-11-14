@@ -7,7 +7,10 @@
  */
 import { randomUUID } from "node:crypto";
 
+import { getTableName } from "drizzle-orm";
+
 import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { documentComments } from "../persistence/schema/documents.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("document-comments-store");
@@ -81,7 +84,7 @@ export function createComment(params: {
 
   rawRun(
     "docComments:createComment",
-    /*sql*/ `INSERT INTO document_comments
+    /*sql*/ `INSERT INTO ${getTableName(documentComments)}
       (id, surface_id, conversation_id, author, content,
        anchor_start, anchor_end, anchor_text, parent_comment_id,
        status, created_at, updated_at)
@@ -122,7 +125,7 @@ export function createComment(params: {
 export function getComment(id: string): CommentRecord | null {
   const row = rawGet<CommentRow>(
     "docComments:getComment",
-    /*sql*/ `SELECT * FROM document_comments WHERE id = ?`,
+    /*sql*/ `SELECT * FROM ${getTableName(documentComments)} WHERE id = ?`,
     id,
   );
   return row ? mapRowToComment(row) : null;
@@ -153,7 +156,7 @@ export function listComments(
   const where = conditions.join(" AND ");
   const rows = rawAll<CommentRow>(
     "docComments:listComments",
-    /*sql*/ `SELECT * FROM document_comments WHERE ${where} ORDER BY created_at ASC`,
+    /*sql*/ `SELECT * FROM ${getTableName(documentComments)} WHERE ${where} ORDER BY created_at ASC`,
     ...params,
   );
 
@@ -164,7 +167,7 @@ export function resolveComment(id: string, resolvedBy: string): boolean {
   const now = Date.now();
   const changes = rawRun(
     "docComments:resolveComment",
-    /*sql*/ `UPDATE document_comments
+    /*sql*/ `UPDATE ${getTableName(documentComments)}
       SET status = 'resolved', resolved_by = ?, resolved_at = ?, updated_at = ?
       WHERE id = ?`,
     resolvedBy,
@@ -182,7 +185,7 @@ export function reopenComment(id: string): boolean {
   const now = Date.now();
   const changes = rawRun(
     "docComments:reopenComment",
-    /*sql*/ `UPDATE document_comments
+    /*sql*/ `UPDATE ${getTableName(documentComments)}
       SET status = 'open', resolved_by = NULL, resolved_at = NULL, updated_at = ?
       WHERE id = ?`,
     now,
@@ -198,7 +201,7 @@ export function updateCommentContent(id: string, content: string): boolean {
   const now = Date.now();
   const changes = rawRun(
     "docComments:updateCommentContent",
-    /*sql*/ `UPDATE document_comments SET content = ?, updated_at = ? WHERE id = ?`,
+    /*sql*/ `UPDATE ${getTableName(documentComments)} SET content = ?, updated_at = ? WHERE id = ?`,
     content,
     now,
     id,
@@ -213,7 +216,7 @@ export function deleteComment(id: string): boolean {
   // Replies cascade-delete via the self-referential FK on parent_comment_id.
   const changes = rawRun(
     "docComments:deleteComment",
-    /*sql*/ `DELETE FROM document_comments WHERE id = ?`,
+    /*sql*/ `DELETE FROM ${getTableName(documentComments)} WHERE id = ?`,
     id,
   );
   if (changes > 0) {
@@ -225,7 +228,7 @@ export function deleteComment(id: string): boolean {
 export function getCommentCountForDocument(surfaceId: string): number {
   const row = rawGet<{ count: number }>(
     "docComments:getCommentCount",
-    /*sql*/ `SELECT COUNT(*) AS count FROM document_comments
+    /*sql*/ `SELECT COUNT(*) AS count FROM ${getTableName(documentComments)}
       WHERE surface_id = ? AND status = 'open'`,
     surfaceId,
   );

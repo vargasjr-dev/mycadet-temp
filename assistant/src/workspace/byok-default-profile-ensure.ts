@@ -11,7 +11,6 @@ import type { DefaultProfileKey } from "../config/default-profile-names.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { invalidateConfigCache } from "../config/loader.js";
 import {
-  isByokDefaultProviderChoice,
   isDefaultProviderChoice,
   LLMConfigBase,
   type LLMDefaultConfig,
@@ -22,6 +21,17 @@ import {
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import { getLogger } from "../util/logger.js";
 import { completedProfileBody } from "./custom-profile-ensure.js";
+
+/**
+ * Default-provider choices whose profiles materialize from the shared BYOK
+ * templates: every choice except the routing identities (`cadet`,
+ * `chatgpt`), whose defaults are pinned models on code-owned columns.
+ */
+function isByokDefaultProviderChoice(value: string): value is LLMProvider {
+  return (
+    !ROUTING_IDENTITY_PROVIDERS.has(value) && isDefaultProviderChoice(value)
+  );
+}
 
 const log = getLogger("byok-default-profile-ensure");
 

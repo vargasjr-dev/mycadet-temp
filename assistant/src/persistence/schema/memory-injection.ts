@@ -10,21 +10,6 @@ import {
 // concept's recent injection pressure. Lives in the dedicated memory database
 // (`assistant-memory.db`), not main — access it via the memory connection
 // (`getMemoryDb()` / `getMemorySqlite()`).
-export const memoryV2InjectionEvents = sqliteTable(
-  "memory_v2_injection_events",
-  {
-    id: integer("id").primaryKey(),
-    slug: text("slug").notNull(),
-    injectedAt: integer("injected_at").notNull(),
-  },
-  (table) => [
-    index("idx_memory_v2_injection_events_slug_time").on(
-      table.slug,
-      table.injectedAt,
-    ),
-    index("idx_memory_v2_injection_events_time").on(table.injectedAt),
-  ],
-);
 
 // Per-conversation record of every memory-v3 section ever injected, keyed by
 // (page slug, section key: `""` for the page lead or capability content), with

@@ -18,7 +18,6 @@ import {
 
 import { z } from "zod";
 
-import type { ClientOs } from "../channels/types.js";
 import { getDefaultPluginSkillRoots } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import {
@@ -165,37 +164,6 @@ export interface SkillSelectorResult {
 }
 
 // ─── Skill Tool Manifest Types ────────────────────────────────────────────────
-
-/**
- * Schema for a skill's TOOLS.json manifest file.
- * Declares which tools a skill provides and how they should be executed.
- */
-export interface SkillToolManifest {
-  version: 1;
-  tools: SkillToolEntry[];
-}
-
-/**
- * A single tool entry within a skill's TOOLS.json manifest.
- */
-export interface SkillToolEntry {
-  /** Unique tool name (must not collide with core tool names). */
-  name: string;
-  /** Human-readable description shown to the model. */
-  description: string;
-  /** Tool category for grouping/display. */
-  category: string;
-  /** Default risk level for permission checks. */
-  risk: "low" | "medium" | "high";
-  /** JSON Schema for the tool's input parameters. */
-  input_schema: Record<string, unknown>;
-  /** Relative path to the executor script within the skill directory. */
-  executor: string;
-  /** Where the tool script runs. */
-  execution_target: "host" | "sandbox";
-  /** Client operating systems that may expose this tool. Unset means all. */
-  supported_client_os?: ClientOs[];
-}
 
 /**
  * Lightweight metadata about a skill's tool manifest, attached to SkillSummary

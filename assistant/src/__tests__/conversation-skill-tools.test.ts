@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { SkillSummary, SkillToolManifest } from "../config/skills.js";
+import type { SkillSummary } from "../config/skills.js";
 import type {
   Message,
   ToolResultContent,
@@ -10,6 +10,7 @@ import type { SkillInstallMeta } from "../skills/install-meta.js";
 import { RiskLevel } from "../tools/tool-types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import type { Tool } from "../tools/types.js";
+import type { SkillToolManifest } from "./../skills/tool-manifest.js";
 import { buildSkillLoadHistory } from "./test-support/browser-skill-harness.js";
 
 // ---------------------------------------------------------------------------

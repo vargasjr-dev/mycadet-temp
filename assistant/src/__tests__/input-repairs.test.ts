@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import type { SkillToolEntry } from "../config/skills.js";
+import type { SkillToolEntry } from "../skills/tool-manifest.js";
 import {
   bundledToolInputAliases,
   bundledToolInputRepairs,

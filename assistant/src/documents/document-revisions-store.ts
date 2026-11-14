@@ -5,7 +5,10 @@
  * Snapshot writes run inside the caller's transaction, next to the document
  * write they precede, so a snapshot exists exactly when its write landed.
  */
+import { getTableName } from "drizzle-orm";
+
 import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { documentRevisions } from "../persistence/schema/documents.js";
 
 /** Who made the write a snapshot was taken ahead of. */
 export type DocumentRevisionAuthor = "user" | "assistant";
@@ -72,7 +75,7 @@ export function recordDocumentSnapshot(
 ): void {
   rawRun(
     "documentRevisions:record",
-    /*sql*/ `INSERT OR IGNORE INTO document_revisions (surface_id, revision, title, content, word_count, author, created_at)
+    /*sql*/ `INSERT OR IGNORE INTO ${getTableName(documentRevisions)} (surface_id, revision, title, content, word_count, author, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     state.surfaceId,
     state.revision,
@@ -84,10 +87,10 @@ export function recordDocumentSnapshot(
   );
   rawRun(
     "documentRevisions:prune",
-    /*sql*/ `DELETE FROM document_revisions
+    /*sql*/ `DELETE FROM ${getTableName(documentRevisions)}
      WHERE surface_id = ?
        AND revision NOT IN (
-         SELECT revision FROM document_revisions
+         SELECT revision FROM ${getTableName(documentRevisions)}
          WHERE surface_id = ?
          ORDER BY revision DESC
          LIMIT ?
@@ -107,7 +110,7 @@ export function recordDocumentSnapshot(
 export function shouldSnapshotBeforeUserSave(surfaceId: string): boolean {
   const latest = rawGet<{ author: string; created_at: number }>(
     "documentRevisions:latest",
-    /*sql*/ `SELECT author, created_at FROM document_revisions
+    /*sql*/ `SELECT author, created_at FROM ${getTableName(documentRevisions)}
      WHERE surface_id = ?
      ORDER BY revision DESC
      LIMIT 1`,
@@ -129,7 +132,7 @@ export function listDocumentRevisions(
   return rawAll<Omit<RevisionRow, "content">>(
     "documentRevisions:list",
     /*sql*/ `SELECT revision, author, created_at, word_count, title
-     FROM document_revisions
+     FROM ${getTableName(documentRevisions)}
      WHERE surface_id = ?
      ORDER BY revision DESC`,
     surfaceId,
@@ -144,7 +147,7 @@ export function getDocumentRevision(
   const row = rawGet<RevisionRow>(
     "documentRevisions:get",
     /*sql*/ `SELECT revision, author, created_at, word_count, title, content
-     FROM document_revisions
+     FROM ${getTableName(documentRevisions)}
      WHERE surface_id = ? AND revision = ?`,
     surfaceId,
     revision,

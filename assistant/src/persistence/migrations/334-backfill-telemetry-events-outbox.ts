@@ -1,5 +1,7 @@
 import { Database } from "bun:sqlite";
 
+import { getTableName } from "drizzle-orm";
+
 import { getLogger } from "../../util/logger.js";
 import { getTelemetryDbPath } from "../../util/telemetry-db-path.js";
 import { APP_VERSION } from "../../version.js";
@@ -8,6 +10,7 @@ import {
   getSqliteFrom,
   getTelemetrySqlite,
 } from "../db-connection.js";
+import { flushCheckpoints } from "../schema/infrastructure.js";
 import { RELOCATING_SUFFIX } from "./helpers/relocation.js";
 
 const log = getLogger("migration-334");
@@ -222,7 +225,7 @@ function selectUnshippedRows(
 ): LegacyRow[] {
   const keyPrefix = `telemetry:${spec.sourceId}:last_reported`;
   const checkpoint = raw.query(
-    /*sql*/ `SELECT value FROM flush_checkpoints WHERE key = ?`,
+    /*sql*/ `SELECT value FROM ${getTableName(flushCheckpoints)} WHERE key = ?`,
   );
   const atValue = (
     checkpoint.get(`${keyPrefix}_at`) as { value: string } | null
@@ -375,7 +378,7 @@ export function migrateBackfillTelemetryEventsOutbox(mainDb: DrizzleDb): void {
   ]);
   raw
     .query(
-      /*sql*/ `DELETE FROM flush_checkpoints WHERE key IN (${watermarkKeys.map(() => "?").join(", ")})`,
+      /*sql*/ `DELETE FROM ${getTableName(flushCheckpoints)} WHERE key IN (${watermarkKeys.map(() => "?").join(", ")})`,
     )
     .run(...watermarkKeys);
 

@@ -4,10 +4,7 @@ import {
   getCloudUpstream,
   parseCadetModel,
 } from "../../providers/cadet-model-routing.js";
-import {
-  PROVIDERS_REQUIRING_BASE_URL_AND_MODELS,
-  ROUTING_IDENTITY_PROVIDERS,
-} from "../../providers/inference/auth.js";
+import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../../providers/inference/auth.js";
 import {
   catalogModelSupportsText,
   PROVIDER_CATALOG,
@@ -118,19 +115,6 @@ export const DEFAULT_PROVIDER_CHOICES: readonly LLMProvider[] = [
 
 export function isDefaultProviderChoice(value: string): value is LLMProvider {
   return (DEFAULT_PROVIDER_CHOICES as readonly string[]).includes(value);
-}
-
-/**
- * Default-provider choices whose profiles materialize from the shared BYOK
- * templates: every choice except the routing identities (`cadet`,
- * `chatgpt`), whose defaults are pinned models on code-owned columns.
- */
-export function isByokDefaultProviderChoice(
-  value: string,
-): value is LLMProvider {
-  return (
-    !ROUTING_IDENTITY_PROVIDERS.has(value) && isDefaultProviderChoice(value)
-  );
 }
 
 /**

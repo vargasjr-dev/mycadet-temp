@@ -47,7 +47,7 @@ const steps: Step[] = [
       "scripts/check-circular-deps.ts",
       "--",
       "--max-cycles",
-      "167",
+      "166",
     ],
   },
 ];

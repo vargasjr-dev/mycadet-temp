@@ -1,4 +1,3 @@
-import * as appStore from "../../../../apps/app-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppUpdateInput } from "../../../../tools/apps/executors.js";
 import { executeAppUpdate } from "../../../../tools/apps/executors.js";
@@ -10,6 +9,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { bundledAppStore } from "../app-store-adapter.js";
 
 export async function run(
   input: Record<string, unknown>,
@@ -22,6 +22,6 @@ export async function run(
   throwIfCancelled(context);
   return executeAppUpdate(
     { ...input, app_id: appId } as unknown as AppUpdateInput,
-    appStore,
+    bundledAppStore,
   );
 }

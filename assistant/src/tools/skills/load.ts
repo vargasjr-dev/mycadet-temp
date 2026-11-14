@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import type { SkillSummary, SkillToolManifest } from "../../config/skills.js";
+import type { SkillSummary } from "../../config/skills.js";
 import {
   listReferenceFiles,
   loadSkillBySelector,
@@ -32,6 +32,7 @@ import type {
   ToolDefinition,
   ToolExecutionResult,
 } from "../types.js";
+import type { SkillToolManifest } from "./../../skills/tool-manifest.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
 
 /** Skill sources eligible for inline command expansion in v1. */

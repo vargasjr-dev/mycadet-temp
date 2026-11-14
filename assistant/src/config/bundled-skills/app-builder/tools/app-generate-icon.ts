@@ -1,4 +1,3 @@
-import * as appStore from "../../../../apps/app-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppGenerateIconInput } from "../../../../tools/apps/executors.js";
 import { executeAppGenerateIcon } from "../../../../tools/apps/executors.js";
@@ -10,6 +9,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { bundledAppStore } from "../app-store-adapter.js";
 
 export async function run(
   input: Record<string, unknown>,
@@ -22,7 +22,7 @@ export async function run(
   throwIfCancelled(context);
   return executeAppGenerateIcon(
     { ...input, app_id: appId } as unknown as AppGenerateIconInput,
-    appStore,
+    bundledAppStore,
     context.signal,
   );
 }

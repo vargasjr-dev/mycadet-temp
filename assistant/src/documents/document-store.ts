@@ -7,8 +7,11 @@
  */
 import { randomUUID } from "node:crypto";
 
+import { getTableName } from "drizzle-orm";
+
 import { getSqlite } from "../persistence/db-connection.js";
 import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { documentConversations } from "../persistence/schema/documents.js";
 import { getLogger } from "../util/logger.js";
 import {
   type DocumentRevisionAuthor,
@@ -51,7 +54,7 @@ export function addDocumentConversation(
 ): void {
   rawRun(
     "documents:addDocumentConversation",
-    /*sql*/ `INSERT OR IGNORE INTO document_conversations (surface_id, conversation_id, created_at) VALUES (?, ?, ?)`,
+    /*sql*/ `INSERT OR IGNORE INTO ${getTableName(documentConversations)} (surface_id, conversation_id, created_at) VALUES (?, ?, ?)`,
     surfaceId,
     conversationId,
     Date.now(),
@@ -128,7 +131,7 @@ export function isDocumentAssociatedWithConversation(
       "documents:isAssociatedWithConversation",
       /*sql*/ `
       SELECT 1 AS found
-      FROM document_conversations
+      FROM ${getTableName(documentConversations)}
       WHERE surface_id = ? AND conversation_id = ?
       LIMIT 1
       `,
@@ -159,7 +162,7 @@ export function getDocumentsForConversation(
       SELECT d.surface_id, dc.conversation_id AS conversation_id,
              d.title, d.word_count, d.created_at, d.updated_at, d.revision
       FROM documents d
-      INNER JOIN document_conversations dc ON d.surface_id = dc.surface_id
+      INNER JOIN ${getTableName(documentConversations)} dc ON d.surface_id = dc.surface_id
       WHERE dc.conversation_id = ?
       ORDER BY d.updated_at DESC
       `,
@@ -219,7 +222,7 @@ export function searchDocumentsByTitle(
           SELECT d.surface_id, dc.conversation_id AS conversation_id,
                  d.title, d.word_count, d.created_at, d.updated_at, d.revision
           FROM documents d
-          INNER JOIN document_conversations dc ON d.surface_id = dc.surface_id
+          INNER JOIN ${getTableName(documentConversations)} dc ON d.surface_id = dc.surface_id
           WHERE dc.conversation_id = ?
             AND d.title COLLATE NOCASE LIKE ? ESCAPE '\\'
           ORDER BY d.updated_at DESC
@@ -303,7 +306,7 @@ export function deleteDocument(surfaceId: string): boolean {
     );
     rawRun(
       "documents:deleteDocument:associations",
-      /*sql*/ `DELETE FROM document_conversations WHERE surface_id = ?`,
+      /*sql*/ `DELETE FROM ${getTableName(documentConversations)} WHERE surface_id = ?`,
       surfaceId,
     );
     const existed = changes > 0;

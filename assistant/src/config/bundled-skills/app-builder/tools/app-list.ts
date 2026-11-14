@@ -1,8 +1,9 @@
-import * as appStore from "../../../../apps/app-store.js";
+import type { AppDefinition } from "../../../../apps/app-store.js";
 import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { bundledAppStore } from "../app-store-adapter.js";
 
 interface AppListEntry {
   app_id: string;
@@ -12,7 +13,7 @@ interface AppListEntry {
   created_at: number;
 }
 
-function toEntry(app: appStore.AppDefinition): AppListEntry {
+function toEntry(app: AppDefinition): AppListEntry {
   return {
     app_id: app.id,
     name: app.name,
@@ -26,7 +27,7 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const apps = appStore.listApps();
+  const apps = bundledAppStore.listApps();
   const entries = apps.map(toEntry);
 
   const query =

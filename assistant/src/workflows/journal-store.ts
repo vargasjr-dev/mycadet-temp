@@ -14,7 +14,11 @@
  * (the engine, a later PR) own gating.
  */
 
+import { getTableName } from "drizzle-orm";
+
 import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { workflowJournal } from "../persistence/schema/workflows.js";
+import { workflowRuns } from "../persistence/schema/workflows.js";
 
 export type WorkflowRunStatus =
   | "running"
@@ -221,7 +225,7 @@ export function createRun(input: CreateRunInput): WorkflowRun {
   rawRun(
     "journal:createRun",
     /*sql*/ `
-    INSERT INTO workflow_runs (
+    INSERT INTO ${getTableName(workflowRuns)} (
       id, name, script_source, script_hash, args_json, capabilities_json,
       status, conversation_id, trust_json, agents_spawned, input_tokens,
       output_tokens, result_json, error, created_at, updated_at, finished_at
@@ -280,7 +284,7 @@ export function updateRun(
 
   rawRun(
     "journal:updateRun",
-    `UPDATE workflow_runs SET ${sets.join(", ")} WHERE id = ?`,
+    `UPDATE ${getTableName(workflowRuns)} SET ${sets.join(", ")} WHERE id = ?`,
     ...params,
   );
   return getRun(runId);
@@ -299,7 +303,7 @@ export function finishRun(
   rawRun(
     "journal:finishRun",
     /*sql*/ `
-    UPDATE workflow_runs
+    UPDATE ${getTableName(workflowRuns)}
     SET status = ?, result_json = ?, error = ?, updated_at = ?, finished_at = ?
     WHERE id = ?
     `,
@@ -336,7 +340,7 @@ export function appendJournalEntry(
   rawRun(
     "journal:appendJournalEntry",
     /*sql*/ `
-    INSERT INTO workflow_journal (
+    INSERT INTO ${getTableName(workflowJournal)} (
       run_id, seq, call_hash, kind, request_json, result_json, status,
       input_tokens, output_tokens, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -371,7 +375,7 @@ export function appendJournalEntry(
 export function getRun(runId: string): WorkflowRun | null {
   const row = rawGet<WorkflowRunRow>(
     "journal:getRun",
-    `SELECT * FROM workflow_runs WHERE id = ?`,
+    `SELECT * FROM ${getTableName(workflowRuns)} WHERE id = ?`,
     runId,
   );
   return row ? rowToRun(row) : null;
@@ -381,7 +385,7 @@ export function getRun(runId: string): WorkflowRun | null {
 export function getJournal(runId: string): WorkflowJournalEntry[] {
   const rows = rawAll<WorkflowJournalRow>(
     "journal:getJournal",
-    `SELECT * FROM workflow_journal WHERE run_id = ? ORDER BY seq ASC`,
+    `SELECT * FROM ${getTableName(workflowJournal)} WHERE run_id = ? ORDER BY seq ASC`,
     runId,
   );
   return rows.map(rowToJournalEntry);
@@ -397,13 +401,13 @@ export function listRuns(options: ListRunsOptions): WorkflowRun[] {
   const rows = options.status
     ? rawAll<WorkflowRunRow>(
         "journal:listRuns:byStatus",
-        `SELECT * FROM workflow_runs WHERE status = ? ORDER BY created_at DESC LIMIT ?`,
+        `SELECT * FROM ${getTableName(workflowRuns)} WHERE status = ? ORDER BY created_at DESC LIMIT ?`,
         options.status,
         options.limit,
       )
     : rawAll<WorkflowRunRow>(
         "journal:listRuns:all",
-        `SELECT * FROM workflow_runs ORDER BY created_at DESC LIMIT ?`,
+        `SELECT * FROM ${getTableName(workflowRuns)} ORDER BY created_at DESC LIMIT ?`,
         options.limit,
       );
   return rows.map(rowToRun);
@@ -428,7 +432,7 @@ export function listRuns(options: ListRunsOptions): WorkflowRun[] {
 export function markRunningAsInterrupted(): number {
   return rawRun(
     "journal:markRunningAsInterrupted",
-    /*sql*/ `UPDATE workflow_runs SET status = 'interrupted', updated_at = ? WHERE status = 'running'`,
+    /*sql*/ `UPDATE ${getTableName(workflowRuns)} SET status = 'interrupted', updated_at = ? WHERE status = 'running'`,
     Date.now(),
   );
 }
@@ -467,9 +471,9 @@ export function pruneRuns(retentionDays: number): number {
   rawRun(
     "journal:pruneRuns:journal",
     /*sql*/ `
-    DELETE FROM workflow_journal
+    DELETE FROM ${getTableName(workflowJournal)}
     WHERE run_id IN (
-      SELECT id FROM workflow_runs
+      SELECT id FROM ${getTableName(workflowRuns)}
       WHERE status IN (${TERMINAL_RUN_STATUS_SQL})
         AND created_at IS NOT NULL AND created_at < ?
     )
@@ -479,7 +483,7 @@ export function pruneRuns(retentionDays: number): number {
   return rawRun(
     "journal:pruneRuns:runs",
     /*sql*/ `
-    DELETE FROM workflow_runs
+    DELETE FROM ${getTableName(workflowRuns)}
     WHERE status IN (${TERMINAL_RUN_STATUS_SQL})
       AND created_at IS NOT NULL AND created_at < ?
     `,
@@ -494,7 +498,7 @@ export function getJournalEntry(
 ): WorkflowJournalEntry | null {
   const row = rawGet<WorkflowJournalRow>(
     "journal:getJournalEntry",
-    `SELECT * FROM workflow_journal WHERE run_id = ? AND seq = ?`,
+    `SELECT * FROM ${getTableName(workflowJournal)} WHERE run_id = ? AND seq = ?`,
     runId,
     seq,
   );

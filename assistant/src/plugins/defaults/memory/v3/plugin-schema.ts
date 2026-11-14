@@ -19,10 +19,13 @@
  * before installing their connection stubs.
  */
 
+import { getTableName } from "drizzle-orm";
+
 import {
   getMemoryCheckpoint,
   setMemoryCheckpoint,
 } from "../../../../persistence/checkpoints.js";
+import { memoryV3Selections } from "../../../../persistence/schema/memory-injection.js";
 import { getLogger } from "../logging.js";
 import { type MemorySqlite, memorySqliteOrNull } from "../memory-db.js";
 
@@ -353,7 +356,7 @@ export function deleteLegacyCardRows(
     .run(conversationId);
 }
 
-const SELECTIONS_TABLE = "memory_v3_selections";
+const SELECTIONS_TABLE = getTableName(memoryV3Selections);
 
 /**
  * Add `section_key` to `memory_v3_selections`, the v3 selection log: the

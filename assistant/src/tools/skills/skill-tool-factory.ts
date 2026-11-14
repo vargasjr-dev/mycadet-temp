@@ -1,7 +1,7 @@
 import { join, resolve } from "node:path";
 
-import type { SkillToolEntry } from "../../config/skills.js";
 import { getBundledSkillsDir } from "../../config/skills.js";
+import type { SkillToolEntry } from "../../skills/tool-manifest.js";
 import {
   coerceArrayShapes,
   coerceStringBooleans,
