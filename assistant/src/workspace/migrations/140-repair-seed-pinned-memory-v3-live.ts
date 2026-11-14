@@ -139,13 +139,14 @@ function wasCreatedInMigration105Era(workspaceDir: string): boolean {
 }
 
 /**
- * Whether a hatch-time default workspace overlay recorded a deliberate
- * memory-v3 opt-out. `mergeDefaultWorkspaceConfig()` archives the consumed
- * overlay to `default-config.json` next to config.json; an overlay carrying
- * `memory.v3.live: false` merged AFTER workspace migrations, so the
- * persisted `false` is the user's hatch-time choice, not the seed's stamp,
- * even though the workspace otherwise fingerprints as a seed-race victim
- * (born in the 105 era, no v3 selection rows).
+ * Whether a legacy hatch-time default workspace overlay recorded a
+ * deliberate memory-v3 opt-out. Older daemons archived the consumed
+ * overlay to `default-config.json` next to config.json (the overlay path
+ * is retired; only pre-retirement workspaces carry the archive); an
+ * overlay carrying `memory.v3.live: false` merged AFTER workspace
+ * migrations, so the persisted `false` is the user's hatch-time choice,
+ * not the seed's stamp, even though the workspace otherwise fingerprints
+ * as a seed-race victim (born in the 105 era, no v3 selection rows).
  */
 function hatchOverlayOptedOut(workspaceDir: string): boolean {
   try {

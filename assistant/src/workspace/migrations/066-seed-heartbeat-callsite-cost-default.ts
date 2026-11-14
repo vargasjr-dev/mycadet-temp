@@ -21,10 +21,6 @@ export const seedHeartbeatCallsiteCostDefaultMigration: WorkspaceMigration = {
   description:
     "Seed cost-optimized defaults for the heartbeatAgent LLM call site",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     const configExisted = existsSync(configPath);
 

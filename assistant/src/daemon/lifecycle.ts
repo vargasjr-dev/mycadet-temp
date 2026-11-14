@@ -8,11 +8,7 @@ import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guar
 import { isCloudClientConfigured } from "../cloud/client.js";
 import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
-import {
-  getConfig,
-  hasPendingDefaultWorkspaceConfig,
-  mergeDefaultWorkspaceConfig,
-} from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
 import { startCes } from "../credential-execution/ces-runtime.js";
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
@@ -54,7 +50,6 @@ import { DAEMON_OOM_SCORE_ADJ, setOomScoreAdj } from "../util/oom-priority.js";
 import { APP_VERSION } from "../version.js";
 import { drainOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";
 import { getWorkflowRunManager } from "../workflows/run-manager.js";
-import { repairAdaptiveThinkingOnCloudProfiles } from "../workspace/adaptive-thinking-repair.js";
 import { ensureByokDefaultProfiles } from "../workspace/byok-default-profile-ensure.js";
 import { ensureCompleteCustomProfiles } from "../workspace/custom-profile-ensure.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
@@ -141,23 +136,15 @@ export async function runDaemon(): Promise<void> {
   // Materialize partial custom profiles BEFORE any transport binds: routes
   // are gated on DB readiness, not on the config-shaping steps further down,
   // so a fast-reconnecting client could otherwise resolve a turn against a
-  // partial profile in the window between readiness and the post-overlay
-  // ensure call below. Sync, DB-free, and idempotent. Skipped when an
-  // unconsumed onboarding overlay is pending: the overlay can rewrite the
-  // llm config later this boot, and baking against the pre-overlay default
-  // would pin the wrong baseline — on that single boot (a fresh hatch, with
-  // no established clients to race the window) the post-overlay pass owns
-  // materialization; the overlay file is consumed on merge, so every
-  // subsequent boot takes this early pass.
-  if (!hasPendingDefaultWorkspaceConfig()) {
-    try {
-      ensureCompleteCustomProfiles(getWorkspaceDir());
-    } catch (err) {
-      log.warn(
-        { err },
-        "Pre-transport custom profile materialization failed — continuing startup",
-      );
-    }
+  // partial profile in the window between readiness and the post-seed
+  // ensure call below. Sync, DB-free, and idempotent.
+  try {
+    ensureCompleteCustomProfiles(getWorkspaceDir());
+  } catch (err) {
+    log.warn(
+      { err },
+      "Pre-transport custom profile materialization failed — continuing startup",
+    );
   }
 
   // Start the runtime HTTP server early so /healthz answers ASAP. Throws on
@@ -446,44 +433,20 @@ export async function runDaemon(): Promise<void> {
     }
   } // end if (dbReady)
 
-  // Merge CLI-provided default config (from CADET_DEFAULT_WORKSPACE_CONFIG_PATH)
-  // into the workspace config file before profile seeding and the first
-  // getConfig() call so onboarding/platform preferences are visible to the
-  // seeder and persisted alongside schema defaults.
-  const defaultConfigMerge = mergeDefaultWorkspaceConfig();
-
   // Seed inference profiles into the workspace config: active/advisor
   // resolution plus, on off-cloud hatches, `llm.default` and a
-  // personal provider connection for the hatch provider.
+  // personal provider connection for the hatch provider. A hatch's own
+  // values (provider, model, onboarding keys) no longer ride a boot-time
+  // overlay — they arrive after wake through the config API, and the
+  // first `llm.default.provider` config write re-runs this seeder with
+  // isHatch (see the config-write routes).
   try {
     seedInferenceProfiles({
-      preserveActiveProfile: defaultConfigMerge.providedLlmActiveProfile,
-      isHatch: defaultConfigMerge.hadOverlay,
       db: dbReady ? getDb() : undefined,
     });
     log.info("Inference profile seeding complete");
   } catch (err) {
     log.warn({ err }, "Inference profile seeding failed — continuing startup");
-  }
-
-  // Re-run the adaptive thinking repair after overlay merge + profile seeding.
-  // Workspace migration 097 enables adaptive thinking on cloud profiles, but
-  // it runs before mergeDefaultWorkspaceConfig() which can overwrite the fix
-  // with overlay profiles that have thinking disabled or absent. On-platform
-  // instances where the overlay supplies "balanced" / "quality-optimized"
-  // profiles without thinking enabled would be stuck permanently because the
-  // migration is already checkpointed as completed. This idempotent repair
-  // ensures thinking is enabled regardless of overlay ordering.
-  if (defaultConfigMerge.hadOverlay) {
-    try {
-      repairAdaptiveThinkingOnCloudProfiles(getWorkspaceDir());
-      log.info("Post-overlay adaptive thinking repair complete");
-    } catch (err) {
-      log.warn(
-        { err },
-        "Post-overlay adaptive thinking repair failed — continuing startup",
-      );
-    }
   }
 
   // Runs on every boot, after the default-provider ensure (it keys off

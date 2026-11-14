@@ -56,6 +56,7 @@ import {
 } from "../../config/schemas/llm.js";
 import { VALID_MEMORY_EMBEDDING_PROVIDERS } from "../../config/schemas/memory-storage.js";
 import { ServiceModeSchema } from "../../config/schemas/services.js";
+import { seedInferenceProfiles } from "../../config/seed-inference-profiles.js";
 import {
   describeShadowedConfigSet,
   findSubstrateShadowing,
@@ -852,6 +853,9 @@ async function handleSetConfigByKey({ body }: RouteHandlerArgs) {
   const value = parsedBody.data.value;
 
   const merged: AssistantConfig = structuredClone(getConfig());
+  // Captured before the write: a fresh workspace has no `llm.default`
+  // provider yet — the marker of a hatch's first provider selection.
+  const hadDefaultProviderBefore = merged.llm?.default?.provider != null;
   // `assistant config set ingress.publicBaseUrl <url>`, what the webhook
   // diagnostics tell users to run, retargets ingress like the settings route.
   if (path === "ingress.publicBaseUrl") {
@@ -861,6 +865,28 @@ async function handleSetConfigByKey({ body }: RouteHandlerArgs) {
   scrubNulledAcpAgentLeaves(merged);
 
   await handleSetConfig(merged);
+
+  // A hatch's first provider selection arrives through this route — the
+  // retired boot-time config overlay's replacement — so re-run the profile
+  // seeder in its hatch mode: the personal provider connection, the
+  // active-profile stamp, and the BYOK matrix land exactly as they did when
+  // the seeder consumed the overlay before boot. Once-only, gated on the
+  // workspace having had no `llm.default.provider` before this write.
+  if (
+    path === "llm.default.provider" &&
+    !hadDefaultProviderBefore &&
+    typeof value === "string" &&
+    value.length > 0
+  ) {
+    try {
+      seedInferenceProfiles({ isHatch: true, db: getDb() });
+    } catch (err) {
+      log.warn(
+        { err },
+        "Post-provider-write inference profile seeding failed — continuing",
+      );
+    }
+  }
 
   // A `memory.v2` substrate tunable whose `memory.substrate` twin is set does
   // not mean what an unpaired write means: the substrate namespace wins in

@@ -18,7 +18,6 @@ import {
 } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { validateChatSettingsWrite } from "./chat-settings.js";
-import { pruneSeededCallsiteDefaultsFromConfig } from "./prune-seeded-callsite-defaults.js";
 import { AssistantConfigSchema } from "./schema.js";
 import { AssistantConfig } from "./schema.js";
 
@@ -921,133 +920,6 @@ export function deepMergeOverwrite(
   }
 }
 
-export type DefaultWorkspaceConfigMergeResult = {
-  hadOverlay: boolean;
-  providedLlmProfileNames: Set<string>;
-  providedLlmActiveProfile: boolean;
-};
-
-function emptyDefaultWorkspaceConfigMergeResult(): DefaultWorkspaceConfigMergeResult {
-  return {
-    hadOverlay: false,
-    providedLlmProfileNames: new Set(),
-    providedLlmActiveProfile: false,
-  };
-}
-
-/**
- * Merge default workspace config from the file referenced by
- * CADET_DEFAULT_WORKSPACE_CONFIG_PATH into the workspace config on disk.
- *
- * Called once at daemon startup (before the first getConfig()) so platform
- * overrides are persisted to disk before the daemon's first config read.
- * Schema defaults are no longer materialized into the file on load — the
- * in-memory `getConfig()` cache applies them at access time instead.
- */
-/**
- * Whether an unconsumed onboarding overlay is waiting to be merged this boot.
- * The overlay file is renamed away on merge, so this is true for at most the
- * single boot that consumes it.
- */
-export function hasPendingDefaultWorkspaceConfig(): boolean {
-  const defaultConfigPath = process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-  return Boolean(defaultConfigPath && existsSync(defaultConfigPath));
-}
-
-export function mergeDefaultWorkspaceConfig(): DefaultWorkspaceConfigMergeResult {
-  if (!hasPendingDefaultWorkspaceConfig()) {
-    return emptyDefaultWorkspaceConfigMergeResult();
-  }
-  const defaultConfigPath = process.env
-    .CADET_DEFAULT_WORKSPACE_CONFIG_PATH as string;
-
-  let defaults: unknown;
-  try {
-    defaults = JSON.parse(readFileSync(defaultConfigPath, "utf-8"));
-  } catch (err) {
-    log.warn(
-      { err },
-      "Failed to read default workspace config from %s",
-      defaultConfigPath,
-    );
-    return emptyDefaultWorkspaceConfigMergeResult();
-  }
-
-  if (
-    defaults == null ||
-    typeof defaults !== "object" ||
-    Array.isArray(defaults)
-  ) {
-    return emptyDefaultWorkspaceConfigMergeResult();
-  }
-
-  const llmDefaults = readPlainObject(
-    (defaults as Record<string, unknown>).llm,
-  );
-  const providedProfiles = readPlainObject(llmDefaults?.profiles);
-  const mergeResult: DefaultWorkspaceConfigMergeResult = {
-    hadOverlay: true,
-    providedLlmProfileNames: new Set(
-      providedProfiles ? Object.keys(providedProfiles) : [],
-    ),
-    providedLlmActiveProfile:
-      llmDefaults != null &&
-      Object.prototype.hasOwnProperty.call(llmDefaults, "activeProfile"),
-  };
-
-  const configPath = getWorkspaceConfigPath();
-  let existing: Record<string, unknown> = {};
-  if (existsSync(configPath)) {
-    try {
-      existing = JSON.parse(readFileSync(configPath, "utf-8"));
-    } catch (err) {
-      quarantineCorruptConfig(configPath, err);
-      // After preserving the corrupt file, start fresh so the default overlay
-      // can still initialize a valid config for this startup.
-    }
-  }
-
-  if (mergeResult.providedLlmProfileNames.size > 0) {
-    // Default-config profile entries are authoritative fragments. Remove any
-    // old same-name profile first so recursive merge does not leave stale
-    // provider-specific leaves behind.
-    const existingLlm = readPlainObject(existing.llm);
-    const existingProfiles = readPlainObject(existingLlm?.profiles);
-    if (existingProfiles) {
-      for (const name of mergeResult.providedLlmProfileNames) {
-        delete existingProfiles[name];
-      }
-    }
-  }
-
-  deepMergeOverwrite(existing, defaults as Record<string, unknown>);
-  pruneSeededCallsiteDefaultsFromConfig(existing);
-
-  const dir = dirname(configPath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(configPath, JSON.stringify(existing, null, 2) + "\n");
-  invalidateConfigCache();
-
-  // Move the temp file into the workspace directory as a permanent record.
-  // This prevents re-application on daemon restart (the env var still points
-  // at the old /tmp path which no longer exists).
-  try {
-    const dest = join(dir, "default-config.json");
-    renameSync(defaultConfigPath, dest);
-    log.info(
-      "Merged default workspace config from %s (archived to %s)",
-      defaultConfigPath,
-      dest,
-    );
-  } catch {
-    log.info("Merged default workspace config from %s", defaultConfigPath);
-  }
-
-  return mergeResult;
-}
-
 export function getConfig(): AssistantConfig {
   const freshCached = getCachedConfigIfFresh();
   if (freshCached) {
@@ -1122,12 +994,12 @@ export function getConfig(): AssistantConfig {
     // modes = "managed") onto the in-memory config for any leaves that aren't
     // explicitly set in `fileConfig`. This runs on every load — not just the
     // first — because the workspace config file is written by upstream
-    // lifecycle steps (`mergeDefaultWorkspaceConfig`, `seedInferenceProfiles`)
-    // before `getConfig()` is reached. Gating on `!configFileExisted` would
-    // make the context defaults dead code on cloud-managed daemons whose
-    // config.json was created by those earlier steps without service-mode
-    // entries. Explicit user choices on disk are preserved because the helper
-    // only fills missing keys.
+    // lifecycle steps (`seedInferenceProfiles`, the config-write routes)
+    // after `getConfig()` is first reached. Gating on `!configFileExisted`
+    // would make the context defaults dead code on cloud-managed daemons
+    // whose config.json was created by those earlier steps without
+    // service-mode entries. Explicit user choices on disk are preserved
+    // because the helper only fills missing keys.
     const contextDefaults = getDeploymentContextDefaults();
     if (Object.keys(contextDefaults).length > 0) {
       fillContextDefaultsForMissingKeys(

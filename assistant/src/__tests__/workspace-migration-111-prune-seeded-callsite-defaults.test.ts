@@ -13,7 +13,6 @@ import { pruneSeededCallsiteDefaultsMigration } from "../workspace/migrations/11
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 
 let workspaceDir: string;
-let previousOverlayPath: string | undefined;
 
 function writeConfig(data: Record<string, unknown>): void {
   writeFileSync(
@@ -94,16 +93,9 @@ beforeEach(() => {
     `cadet-migration-111-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   mkdirSync(workspaceDir, { recursive: true });
-  previousOverlayPath = process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  if (previousOverlayPath === undefined) {
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-  } else {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = previousOverlayPath;
-  }
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }

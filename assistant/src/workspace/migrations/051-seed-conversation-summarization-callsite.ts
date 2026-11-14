@@ -23,8 +23,6 @@ import type { WorkspaceMigration } from "./types.js";
  * still needs `effort` / `thinking` defaults to avoid the same fallthrough
  * to the expensive default.
  *
- *   - Skip entirely when `CADET_DEFAULT_WORKSPACE_CONFIG_PATH` is set
- *     (platform overlay owns call-site seeds).
  *   - Skip when the resolved provider is not Anthropic / OpenRouter (the
  *     seeded model IDs are Anthropic-shaped; mixing with another provider
  *     would guarantee invalid-model errors).
@@ -38,10 +36,6 @@ export const seedConversationSummarizationCallsiteMigration: WorkspaceMigration 
     description:
       "Seed conversationSummarization LLM call-site defaults so summary runs stay inside the agent-loop budget",
     run(workspaceDir: string): void {
-      if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-        return;
-      }
-
       const configPath = join(workspaceDir, "config.json");
       const configExisted = existsSync(configPath);
 

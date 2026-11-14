@@ -40,11 +40,9 @@ function configPath(): string {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
@@ -151,20 +149,6 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
       llm: {
         default: { provider: "openai", model: "gpt-5.4" },
       },
-    });
-
-    seedConversationSummarizationCallsiteMigration.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
-    expect(config.llm.callSites).toBeUndefined();
-  });
-
-  test("skips when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
     });
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);

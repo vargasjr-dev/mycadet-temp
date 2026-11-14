@@ -27,11 +27,6 @@ export const seedMainAgentOpusCallsiteMigration: WorkspaceMigration = {
   id: "050-seed-main-agent-opus-callsite",
   description: "Seed callSites.mainAgent to claude-opus-4-7 for Anthropic",
   run(workspaceDir: string): void {
-    // Defer to platform-provided overlays.
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     const configExisted = existsSync(configPath);
 

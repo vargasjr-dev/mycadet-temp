@@ -40,10 +40,6 @@ export const sttEnglishDefaultToMultilingualMigration: WorkspaceMigration = {
   description:
     "Move services.stt.language from the accepted English default to multilingual on Deepgram and cloud speech",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
       return;

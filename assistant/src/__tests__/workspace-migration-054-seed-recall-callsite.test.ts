@@ -40,11 +40,9 @@ function configPath(): string {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
@@ -186,20 +184,6 @@ describe("054-seed-recall-callsite migration", () => {
       thinking: { enabled: false, streamThinking: false },
       temperature: 0,
     });
-  });
-
-  test("skips when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
-    });
-
-    seedRecallCallsiteMigration.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
-    expect(config.llm.callSites).toBeUndefined();
   });
 
   test("resolved recall config uses cost profile model with low-cost leaves", () => {

@@ -1,6 +1,12 @@
-import { writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+/**
+ * Hatch-time config values and their delivery to the assistant.
+ *
+ * Hatch collects flat dot-notation key=value pairs (plus the onboarding
+ * provider) and applies them through the assistant's public config API
+ * (`POST /v1/config/set`) after the assistant is up — the same API the web
+ * client and `assistant config set` use. There is no side channel: a remote
+ * hatch and a local hatch speak the same route.
+ */
 
 /**
  * Convert flat dot-notation key=value pairs into a nested config object.
@@ -35,21 +41,6 @@ export function buildNestedConfig(
 /**
  * Ensure hatch always provides enough initial LLM config for the assistant to
  * detect a fresh off-cloud hatch and seed BYOK profiles.
- *
- * @deprecated Part of the workspace-config overlay path — a CLI→Assistant
- * side channel that bypasses the Assistant's public APIs and has no
- * equivalent in web/desktop. Two replacement paths are on the table:
- *
- *   1. Post-hatch API calls — the CLI calls public Assistant routes after
- *      boot (`POST /v1/secrets`, plus a small read-only endpoint that
- *      returns the canonical inference-profile templates so the CLI can
- *      PATCH them in). See the closed alternatives in PR #32061 and
- *      PR #32131 for the shape this would take.
- *   2. Move inference-profile seeds out of workspace config and into
- *      Assistant code, so there is nothing for the CLI to inject in the
- *      first place.
- *
- * Either path removes the need for this helper.
  */
 export function buildHatchConfigValues(
   configValues: Record<string, string>,
@@ -65,34 +56,70 @@ export function buildHatchConfigValues(
   };
 }
 
-/**
- * Write arbitrary key-value pairs to a temporary JSON file and return its
- * path. The caller is responsible for getting the file to the daemon — for
- * the local hatch flow that means setting `CADET_DEFAULT_WORKSPACE_CONFIG_PATH`
- * on the daemon process; for the Docker hatch flow the caller stages the
- * file into the workspace volume so the rename-after-consume step in
- * `mergeDefaultWorkspaceConfig` is a same-filesystem rename.
- *
- * Keys use dot-notation to address nested fields. For example:
- *   "llm.default.provider" → {llm: {default: {provider: ...}}}
- *   "llm.default.model"    → {llm: {default: {model: ...}}}
- *
- * Returns undefined when configValues is empty (nothing to write).
- *
- * @deprecated See {@link buildHatchConfigValues} for the replacement
- * direction. This overlay path is a CLI→Assistant side channel and will be
- * removed once one of the documented replacements lands.
- */
-export function writeInitialConfig(
-  configValues: Record<string, string>,
-): string | undefined {
-  if (Object.keys(configValues).length === 0) return undefined;
+export interface ApplyHatchConfigOptions {
+  /** The assistant's gateway base URL. */
+  gatewayUrl: string;
+  /** Guardian bearer token leased for this hatch (settings.write scope). */
+  bearerToken?: string;
+  /** Flat dot-notation config values to set, e.g. `llm.default.provider`. */
+  configValues: Record<string, string>;
+  fetchImpl?: typeof fetch;
+  log?: (message: string) => void;
+}
 
-  const config = buildNestedConfig(configValues);
-  const tempPath = join(
-    tmpdir(),
-    `cadet-default-workspace-config-${process.pid}-${Date.now()}.json`,
-  );
-  writeFileSync(tempPath, JSON.stringify(config, null, 2) + "\n");
-  return tempPath;
+/**
+ * Apply hatch config values through the assistant's config API after it
+ * wakes. One `POST /v1/config/set` per dotted path — the same route the web
+ * client and `assistant config set` use — so local and remote hatches behave
+ * identically and every value rides the daemon's validated, hot-applied
+ * config write.
+ *
+ * Best-effort: a failed key logs a warning and the remaining keys still try,
+ * mirroring the provider-credential step that follows it. The assistant is
+ * still hatched; the values can be re-applied with `assistant config set`.
+ */
+export async function applyHatchConfig(
+  options: ApplyHatchConfigOptions,
+): Promise<void> {
+  const log = options.log ?? console.log;
+  const keys = Object.keys(options.configValues);
+  if (keys.length === 0) {
+    return;
+  }
+
+  if (!options.bearerToken) {
+    log(
+      "⚠️  Initial config skipped because the guardian token was not leased.\n" +
+        "   The assistant is still hatched. Re-apply with `assistant config set <path> <value>`.",
+    );
+    return;
+  }
+
+  const fetchImpl = options.fetchImpl ?? fetch;
+  for (const path of keys) {
+    try {
+      const response = await fetchImpl(
+        `${options.gatewayUrl.replace(/\/$/, "")}/v1/config/set`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${options.bearerToken}`,
+          },
+          body: JSON.stringify({ path, value: options.configValues[path] }),
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        throw new Error(`HTTP ${response.status}${body ? `: ${body}` : ""}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log(
+        `⚠️  Failed to apply ${path}: ${message}\n` +
+          "   The assistant is still hatched. Re-apply with `assistant config set`.",
+      );
+    }
+  }
 }
