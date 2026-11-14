@@ -33,10 +33,6 @@ function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
 }
 
-function configPath(): string {
-  return join(workspaceDir, "config.json");
-}
-
 beforeEach(() => {
   freshWorkspace();
 });

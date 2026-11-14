@@ -6,8 +6,8 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
 import {
-  upsertCredentialMetadata,
   _resetCredentialMetadataCacheForTests,
+  upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import {
   resolveById,
@@ -20,7 +20,6 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-credresolve-test-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 beforeEach(() => {
   _resetCredentialMetadataCacheForTests();

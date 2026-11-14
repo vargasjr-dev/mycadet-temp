@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -63,9 +63,9 @@ import {
 } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
 import {
+  _resetCredentialMetadataCacheForTests,
   getCredentialMetadata,
   upsertCredentialMetadata,
-  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 
 /**

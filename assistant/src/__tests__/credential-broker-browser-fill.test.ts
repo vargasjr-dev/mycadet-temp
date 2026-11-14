@@ -43,8 +43,8 @@ import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
 import {
-  upsertCredentialMetadata,
   _resetCredentialMetadataCacheForTests,
+  upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { BROWSER_FILL_CAPABILITY } from "../tools/credentials/tool-policy.js";
 

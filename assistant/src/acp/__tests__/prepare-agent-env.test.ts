@@ -33,10 +33,10 @@ import {
 } from "../../security/secure-keys.js";
 import { credentialBroker } from "../../tools/credentials/broker.js";
 import {
+  _resetCredentialMetadataCacheForTests,
   deleteCredentialMetadata,
   getCredentialMetadata,
   upsertCredentialMetadata,
-  _resetCredentialMetadataCacheForTests,
 } from "../../tools/credentials/metadata-store.js";
 import {
   ACP_OAUTH_EXPIRES_AT_FIELD,

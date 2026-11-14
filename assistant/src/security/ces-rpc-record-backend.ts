@@ -47,7 +47,7 @@ export interface CredentialRecordBackend {
 /** Minimum interval between lazy CES session attempts after a failure. */
 const LAZY_SESSION_COOLDOWN_MS = 3_000;
 
-export class CesRpcRecordBackend implements CredentialRecordBackend {
+class CesRpcRecordBackend implements CredentialRecordBackend {
   readonly name = "ces-rpc";
 
   /**

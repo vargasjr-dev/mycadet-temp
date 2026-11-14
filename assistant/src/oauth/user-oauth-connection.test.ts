@@ -147,8 +147,8 @@ import {
   _resetRefreshBreakers,
 } from "../security/token-manager.js";
 import {
-  upsertCredentialMetadata,
   _resetCredentialMetadataCacheForTests,
+  upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { resolveOAuthConnection } from "./connection-resolver.js";
 import { UserOAuthConnection } from "./user-oauth-connection.js";

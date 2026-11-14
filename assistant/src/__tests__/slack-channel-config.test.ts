@@ -93,10 +93,10 @@ import {
   setSecureKeyAsync,
 } from "../security/secure-keys.js";
 import {
+  _resetCredentialMetadataCacheForTests,
   getCredentialMetadata,
   listCredentialMetadata,
   upsertCredentialMetadata,
-  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";

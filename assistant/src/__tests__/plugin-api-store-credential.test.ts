@@ -29,8 +29,8 @@ import {
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
-  getCredentialMetadata,
   _resetCredentialMetadataCacheForTests,
+  getCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { storeCredentialValue } from "../tools/credentials/store.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
@@ -44,7 +44,6 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-plugin-storecred-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 /** The plugin every scoped case runs as: it owns the `acme` service. */
 const PLUGIN = "acme";

@@ -1,16 +1,13 @@
-import { randomBytes } from "node:crypto";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
+  _resetCredentialMetadataCacheForTests,
   assertMetadataWritable,
   deleteCredentialMetadata,
   getCredentialMetadata,
   getCredentialMetadataById,
   listCredentialMetadata,
   upsertCredentialMetadata,
-  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import type { CredentialInjectionTemplate } from "../tools/credentials/policy-types.js";
 

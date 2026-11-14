@@ -22,7 +22,7 @@ import {
   listCredentialRecordsLive,
 } from "./metadata-store.js";
 
-export const CREDENTIAL_STORE_UNREACHABLE =
+const CREDENTIAL_STORE_UNREACHABLE =
   "Credential store is unreachable. Retry in a moment, or check that the credential vault is running.";
 
 export class CredentialStoreUnreachableError extends Error {
