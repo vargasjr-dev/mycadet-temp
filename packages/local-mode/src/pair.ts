@@ -256,7 +256,6 @@ export function pairAssistant({ credentials, name }: PairOptions): PairResult {
       refreshAfter: credentials.refreshAfter ?? "",
       deviceId: credentials.deviceId ?? "",
       leasedAt: new Date(now).toISOString(),
-      pairedGatewayUrl: credentials.gatewayUrl,
     });
   } catch (err) {
     return {

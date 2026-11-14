@@ -78,11 +78,14 @@ const isRefresh = (url: string) => url.includes("/v1/guardian/refresh");
 function refreshResponse(): Response {
   return new Response(
     JSON.stringify({
+      guardianPrincipalId: "imported",
       accessToken: "new-acc",
-      refreshToken: "new-ref",
       accessTokenExpiresAt: FUTURE,
+      refreshToken: "new-ref",
       refreshTokenExpiresAt: FUTURE,
-      refreshAfter: "",
+      refreshAfter: FUTURE,
+      deviceId: "dev",
+      leasedAt: new Date().toISOString(),
     }),
     { status: 200, headers: { "content-type": "application/json" } },
   );

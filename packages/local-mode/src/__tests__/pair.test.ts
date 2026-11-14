@@ -273,7 +273,6 @@ describe("pairAssistant", () => {
       refreshTokenExpiresAt: 0,
       refreshAfter: "",
       deviceId: "dev-aaa",
-      pairedGatewayUrl: "http://10.0.0.5:7830",
     });
     expect(new Date(leasedAt as string).toISOString()).toBe(leasedAt as string);
     expect(Object.keys(token)).toEqual([
@@ -285,7 +284,6 @@ describe("pairAssistant", () => {
       "refreshAfter",
       "deviceId",
       "leasedAt",
-      "pairedGatewayUrl",
     ]);
 
     expect(fs.statSync(tokenPath).mode & 0o777).toBe(0o600);

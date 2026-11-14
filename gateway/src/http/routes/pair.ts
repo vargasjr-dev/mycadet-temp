@@ -13,6 +13,7 @@ import {
   contacts as gwContacts,
   contactChannels as gwContactChannels,
 } from "../../db/schema.js";
+import { GuardianTokenData } from "../../guardian-contract.js";
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("pair");
@@ -67,33 +68,13 @@ export async function resolveLocalGuardianPrincipalId(): Promise<string> {
 }
 
 /**
- * The payload speaks the guardian token file's own field names so the
- * leasing side can parse it with that schema directly — no rename hop.
- */
-export interface DeviceBoundPairPayload {
-  accessToken: string;
-  /** ISO-8601 instant the access token expires. */
-  accessTokenExpiresAt: string;
-  refreshToken: string;
-  /** ISO-8601 instant the device-bound refresh token expires. */
-  refreshTokenExpiresAt: string;
-  /** ISO-8601 instant after which the client should refresh the session. */
-  refreshAfter: string;
-  guardianPrincipalId: string;
-  /** The paired device's id, echoed so the lease can persist the binding. */
-  deviceId: string;
-  /** ISO-8601 instant the credential was leased. */
-  leasedAt: string;
-}
-
-/**
  * Mint a pairing token for a device
  */
 export async function mintPairingPayload(opts: {
   deviceId: string;
   platform: string;
   clientReportedName?: string;
-}): Promise<DeviceBoundPairPayload> {
+}): Promise<GuardianTokenData> {
   const guardian = await resolveOrCreateCadetGuardian({
     allowMintWithEvidence: true,
   });

@@ -72,31 +72,12 @@ describe("getGuardianAccessToken", () => {
     });
   });
 
-  test("expired refresh token yields hatch/wake guidance by default", async () => {
+  test("expired refresh token yields the unified re-run guidance", async () => {
     saveGuardianToken(
       "asst-1",
       makeTokenData({
         accessTokenExpiresAt: PAST,
         refreshTokenExpiresAt: PAST,
-      }),
-    );
-
-    const result = await getGuardianAccessToken("asst-1");
-
-    expect(result).toEqual({
-      ok: false,
-      status: 401,
-      error: "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
-    });
-  });
-
-  test("expired refresh token yields re-pair guidance for a paired entry", async () => {
-    saveGuardianToken(
-      "asst-1",
-      makeTokenData({
-        accessTokenExpiresAt: PAST,
-        refreshTokenExpiresAt: PAST,
-        pairedGatewayUrl: "https://gateway.example.com",
       }),
     );
 
@@ -106,7 +87,26 @@ describe("getGuardianAccessToken", () => {
       ok: false,
       status: 401,
       error:
-        "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`.",
+        "Guardian token expired. Re-run `cadet hatch`, `cadet wake`, or `cadet pair`.",
+    });
+  });
+
+  test("expired refresh token yields the same guidance without the paired provenance", async () => {
+    saveGuardianToken(
+      "asst-1",
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
+    );
+
+    const result = await getGuardianAccessToken("asst-1");
+
+    expect(result).toEqual({
+      ok: false,
+      status: 401,
+      error:
+        "Guardian token expired. Re-run `cadet hatch`, `cadet wake`, or `cadet pair`.",
     });
   });
 });

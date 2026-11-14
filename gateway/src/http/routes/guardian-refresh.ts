@@ -172,14 +172,32 @@ export async function handleGuardianRefresh(req: Request): Promise<Response> {
       },
       "Refresh token rotation succeeded",
     );
-    return Response.json(result.result);
+    // The device refresh answers with the full guardian credential
+    // contract — the same shape the pairing mint emits — so the client
+    // parses both with one schema and persists the rotation as-is. The
+    // browser arm above keeps its 4-field cookie contract.
+    const rotated = result.result;
+    return Response.json({
+      guardianPrincipalId: rotated.guardianPrincipalId,
+      accessToken: rotated.accessToken,
+      accessTokenExpiresAt: new Date(
+        rotated.accessTokenExpiresAt,
+      ).toISOString(),
+      refreshToken: rotated.refreshToken,
+      refreshTokenExpiresAt: new Date(
+        rotated.refreshTokenExpiresAt,
+      ).toISOString(),
+      refreshAfter: new Date(rotated.refreshAfter).toISOString(),
+      // The refresh token is bound to the device that presented it; echo
+      // the binding so the client's persisted credential stays whole.
+      deviceId,
+      leasedAt: new Date().toISOString(),
+    });
   } catch (err) {
     log.error({ err }, "Guardian refresh failed");
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-
-
 
 export const ROUTES: RouteDefinition[] = [
   {

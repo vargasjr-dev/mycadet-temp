@@ -269,12 +269,14 @@ describe("setup command", () => {
     pairDeviceMock.mockResolvedValue({
       ok: true,
       response: {
-        token: t.accessToken,
-        expiresAt: t.accessTokenExpiresAt,
+        guardianPrincipalId: t.guardianPrincipalId,
+        accessToken: t.accessToken,
+        accessTokenExpiresAt: t.accessTokenExpiresAt,
         refreshToken: t.refreshToken,
         refreshTokenExpiresAt: t.refreshTokenExpiresAt,
         refreshAfter: t.refreshAfter,
-        guardianId: t.guardianPrincipalId,
+        deviceId: t.deviceId,
+        leasedAt: t.leasedAt,
       },
     });
     installFetchStub();
@@ -309,12 +311,14 @@ describe("setup command", () => {
     pairDeviceMock.mockResolvedValue({
       ok: true,
       response: {
-        token: t.accessToken,
-        expiresAt: t.accessTokenExpiresAt,
+        guardianPrincipalId: t.guardianPrincipalId,
+        accessToken: t.accessToken,
+        accessTokenExpiresAt: t.accessTokenExpiresAt,
         refreshToken: t.refreshToken,
         refreshTokenExpiresAt: t.refreshTokenExpiresAt,
         refreshAfter: t.refreshAfter,
-        guardianId: t.guardianPrincipalId,
+        deviceId: t.deviceId,
+        leasedAt: t.leasedAt,
       },
     });
 

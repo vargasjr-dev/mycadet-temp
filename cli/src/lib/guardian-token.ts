@@ -8,13 +8,14 @@ import {
 } from "fs";
 
 import { dirname, join } from "path";
-import { z } from "zod";
 import {
   computeDeviceId,
+  GuardianLeasePermanentError,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loadGuardianToken,
   loopbackSafeFetch,
+  parseGuardianToken,
   saveGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
@@ -159,6 +160,15 @@ function isUnreachableGatewayError(error: unknown): boolean {
 function classifyRefreshThrownError(
   error: unknown,
 ): GuardianTokenRefreshResult {
+  // A malformed 200 body throws from parseGuardianToken: the gateway
+  // answered, so this is its contract that's broken — 502, not 500.
+  if (error instanceof GuardianLeasePermanentError) {
+    return {
+      ok: false,
+      status: 502,
+      error: "Assistant gateway returned a malformed token refresh response",
+    };
+  }
   if (isTimeoutLikeError(error)) {
     return {
       ok: false,
@@ -310,32 +320,11 @@ export async function refreshGuardianTokenResult(
       return classifyRefreshHttpStatus(response.status);
     }
 
-    // The refresh endpoint answers with the rotated access credential only
-    // (no refresh-token family, no device binding), so it parses with its own
-    // lenient shape rather than the pair response's full token-file schema.
-    const parsed = GuardianRefreshResponseSchema.safeParse(
-      await response.json(),
-    );
-    if (!parsed.success) {
-      return {
-        ok: false,
-        status: 502,
-        error: "Assistant gateway returned a malformed token refresh response",
-      };
-    }
-    const refreshed: GuardianTokenData = {
-      guardianPrincipalId:
-        parsed.data.guardianPrincipalId ?? tokenData.guardianPrincipalId,
-      accessToken: parsed.data.accessToken,
-      accessTokenExpiresAt:
-        parsed.data.accessTokenExpiresAt ?? tokenData.accessTokenExpiresAt,
-      refreshToken: tokenData.refreshToken,
-      refreshTokenExpiresAt: tokenData.refreshTokenExpiresAt,
-      refreshAfter: parsed.data.refreshAfter ?? tokenData.refreshAfter,
-      deviceId: tokenData.deviceId,
-      leasedAt: new Date().toISOString(),
-      pairedGatewayUrl: tokenData.pairedGatewayUrl,
-    };
+    // The refresh endpoint answers with the full guardian credential
+    // contract — the same shape the pairing mint emits — so one schema
+    // parses the credential from mint to rotation to token file. A
+    // malformed body throws and the surrounding catch classifies it.
+    const refreshed = parseGuardianToken(await response.json());
     saveGuardianToken(assistantId, refreshed);
     return { ok: true, token: refreshed };
   } catch (error) {
@@ -346,13 +335,6 @@ export async function refreshGuardianTokenResult(
     }
   }
 }
-
-const GuardianRefreshResponseSchema = z.object({
-  guardianPrincipalId: z.string().optional(),
-  accessToken: z.string(),
-  accessTokenExpiresAt: z.union([z.string(), z.number()]).optional(),
-  refreshAfter: z.string().optional(),
-});
 
 /** Convenience wrapper around {@link refreshGuardianTokenResult}. */
 export async function refreshGuardianToken(

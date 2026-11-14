@@ -233,7 +233,6 @@ describe("refreshGuardianToken", () => {
       refreshAfter: "",
       deviceId: "dev",
       leasedAt: new Date().toISOString(),
-      pairedGatewayUrl: "https://gw.example.com",
     });
   }
 
@@ -262,11 +261,14 @@ describe("refreshGuardianToken", () => {
         sawSignal = init?.signal instanceof AbortSignal;
         return new Response(
           JSON.stringify({
+            guardianPrincipalId: "imported",
             accessToken: "new-acc",
-            refreshToken: "new-ref",
             accessTokenExpiresAt: future(),
+            refreshToken: "new-ref",
             refreshTokenExpiresAt: future(),
-            refreshAfter: "",
+            refreshAfter: future(),
+            deviceId: "dev",
+            leasedAt: new Date().toISOString(),
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -277,20 +279,15 @@ describe("refreshGuardianToken", () => {
 
     expect(result?.accessToken).toBe("new-acc");
     expect(loadGuardianToken("px")?.accessToken).toBe("new-acc");
-    expect(loadGuardianToken("px")?.pairedGatewayUrl).toBe(
-      "https://gw.example.com",
-    );
+    expect(loadGuardianToken("px")?.refreshToken).toBe("new-ref");
     expect(sawSignal).toBe(true); // fetch carries a timeout AbortSignal
     expect(existsSync(lockPath("px"))).toBe(false); // lock released
   });
 
-  test("leases against the gateway's real pair shape — refreshAfter arrives as a number", async () => {
-    // The gateway's device-bound pair response maps onto the lease's field
-    // names (token → accessToken, guardianId → guardianPrincipalId);
-    // refreshAfter serializes as a NUMBER of ms (mintRefreshToken), and the
-    // strict lease check rejects a response missing any field. A string-only
-    // schema read that number as malformed, so every real hatch failed its
-    // lease while the ISO-string test doubles here stayed green.
+  test("persists the gateway's credential contract verbatim", async () => {
+    // The pair response IS the token file's shape now: the gateway mints
+    // ISO-8601 instants, echoes the device binding, and stamps the lease,
+    // and the lease persists the parse as-is.
     globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/readyz")) {
@@ -301,13 +298,18 @@ describe("refreshGuardianToken", () => {
     pairDeviceMock.mockResolvedValue({
       ok: true,
       response: {
-        token: "access-lease",
-        expiresAt: Date.now() + 60 * 60 * 1000,
+        guardianPrincipalId: "principal-lease",
+        accessToken: "access-lease",
+        accessTokenExpiresAt: new Date(
+          Date.now() + 60 * 60 * 1000,
+        ).toISOString(),
         refreshToken: "refresh-lease",
-        refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
-        refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
-        guardianId: "principal-lease",
-        mintedOverPriorEvidence: false,
+        refreshTokenExpiresAt: new Date(
+          Date.now() + 365 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        refreshAfter: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        deviceId: "device-lease",
+        leasedAt: new Date().toISOString(),
       },
     });
 
@@ -332,8 +334,8 @@ describe("refreshGuardianToken", () => {
     pairDeviceMock.mockResolvedValue({
       ok: true,
       response: {
-        guardianId: "principal-lease",
-        token: 42,
+        guardianPrincipalId: "principal-lease",
+        accessToken: 42,
         refreshToken: "refresh-lease",
       },
     });
@@ -350,8 +352,8 @@ describe("refreshGuardianToken", () => {
       );
     }
     expect(err.message).toContain("malformed token response");
-    expect(err.message).toContain("accessToken arrived as number");
-    expect(err.message).toContain("refreshTokenExpiresAt arrived as absent");
+    expect(err.message).toContain("expected string, received number");
+    expect(err.message).toContain("expected string, received undefined");
   });
 
   test("returns null without calling the gateway when the refresh token is expired", async () => {
@@ -397,10 +399,22 @@ describe("refreshGuardianToken", () => {
 
     globalThis.fetch = withPreconnect(
       async (_url: unknown, _init?: RequestInit) =>
-        new Response(JSON.stringify({ accessToken: "new-acc" }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify({
+            guardianPrincipalId: "imported",
+            accessToken: "new-acc",
+            accessTokenExpiresAt: future(),
+            refreshToken: "new-ref",
+            refreshTokenExpiresAt: future(),
+            refreshAfter: future(),
+            deviceId: "dev",
+            leasedAt: new Date().toISOString(),
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
     );
 
     const result = await refreshGuardianToken("https://gw.example.com", "px");
@@ -423,10 +437,22 @@ describe("refreshGuardianToken", () => {
       globalThis.fetch = withPreconnect(
         async (_url: unknown, _init?: RequestInit) => {
           called = true;
-          return new Response(JSON.stringify({ accessToken: "new-acc" }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({
+              guardianPrincipalId: "imported",
+              accessToken: "new-acc",
+              accessTokenExpiresAt: future(),
+              refreshToken: "new-ref",
+              refreshTokenExpiresAt: future(),
+              refreshAfter: future(),
+              deviceId: "dev",
+              leasedAt: new Date().toISOString(),
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          );
         },
       );
 
