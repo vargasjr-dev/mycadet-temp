@@ -91,9 +91,8 @@ export function registerCredentialsCommand(program: Command): void {
           // cli/no-daemon-internals rule.
           const { listSettingsCredentials, CredentialStoreUnreachableError } =
             await import("../../tools/credentials/settings-catalog.js");
-          const { cesRecordBackend } = await import(
-            "../../security/ces-rpc-record-backend.js"
-          );
+          const { cesRecordBackend } =
+            await import("../../security/ces-rpc-record-backend.js");
           let credentials: Record<string, unknown>[];
           try {
             credentials = await listSettingsCredentials(opts.search);

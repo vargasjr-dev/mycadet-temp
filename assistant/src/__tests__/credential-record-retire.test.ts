@@ -120,7 +120,10 @@ describe("CES credential record cache", () => {
     writeLeftover(leftoverRecord);
     const before = leftoverContents();
 
-    seedStore({ credentialId: "cred-leftover", allowedDomains: ["github.com"] });
+    seedStore({
+      credentialId: "cred-leftover",
+      allowedDomains: ["github.com"],
+    });
 
     getCredentialMetadata("github", "token");
     await _ensureCesRecordsLoaded();

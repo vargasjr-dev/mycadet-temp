@@ -15,9 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
-import {
-  CES_PROTOCOL_VERSION,
-} from "@mycadet/service-contracts";
+import { CES_PROTOCOL_VERSION } from "@mycadet/service-contracts";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
@@ -80,10 +78,9 @@ export function startTestCesRecordServer(): TestCesRecordServer {
     };
     switch (method) {
       case CesRpcMethod.GetCredential: {
-        const value = req.account !== undefined ? secrets.get(req.account) : undefined;
-        return value !== undefined
-          ? { found: true, value }
-          : { found: false };
+        const value =
+          req.account !== undefined ? secrets.get(req.account) : undefined;
+        return value !== undefined ? { found: true, value } : { found: false };
       }
       case CesRpcMethod.SetCredential: {
         if (state.failSet || req.account === undefined) {

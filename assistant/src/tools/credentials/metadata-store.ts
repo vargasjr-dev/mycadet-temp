@@ -195,7 +195,10 @@ async function flushPendingPersists(attempt: number): Promise<void> {
       pendingPersists.delete(account);
     }
   }
-  if (pendingPersists.size > 0 && attempt < PERSIST_RETRY_DELAYS_MS.length - 1) {
+  if (
+    pendingPersists.size > 0 &&
+    attempt < PERSIST_RETRY_DELAYS_MS.length - 1
+  ) {
     const delay = PERSIST_RETRY_DELAYS_MS[attempt + 1]!;
     setTimeout(() => {
       void flushPendingPersists(attempt + 1);
@@ -312,12 +315,15 @@ function parseVaultAccount(
   return { service: rest.slice(0, slashIdx), field: rest.slice(slashIdx + 1) };
 }
 
-async function reconcileMissingRecords(records: CredentialMetadata[]): Promise<void> {
+async function reconcileMissingRecords(
+  records: CredentialMetadata[],
+): Promise<void> {
   try {
     const knownAccounts = new Set(
       records.map((record) => credentialKey(record.service, record.field)),
     );
-    const { listSecureKeysAsync } = await import("../../security/secure-keys.js");
+    const { listSecureKeysAsync } =
+      await import("../../security/secure-keys.js");
     const vault = await listSecureKeysAsync();
     if (!vault.unreachable) {
       for (const account of vault.accounts) {

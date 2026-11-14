@@ -150,9 +150,7 @@ function assertNotPlatformManaged(
   action: CloudCredentialAction,
 ): void {
   if (isCloudCredential(service, field)) {
-    throw new ForbiddenError(
-      cloudCredentialRefusal(service, field, action),
-    );
+    throw new ForbiddenError(cloudCredentialRefusal(service, field, action));
   }
 }
 
