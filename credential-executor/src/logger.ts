@@ -72,7 +72,7 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
 
   const today = formatDate(new Date());
   const filePath = logFilePathForDate(config.dir, new Date());
-  const fileStream = pino.destination({
+  const fileDest = pino.destination({
     dest: filePath,
     sync: true,
     mkdir: true,
@@ -87,6 +87,16 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
 
   activeLogDate = today;
   activeConfig = config;
+
+  // Pretty-print into the rotating file (matching the assistant daemon's
+  // `[{module}] message` file format) so CES log files and exports read the
+  // same as every other service instead of raw jsonl.
+  const fileStream = pinoPretty({
+    destination: fileDest,
+    colorize: false,
+    messageFormat: "[{module}] {msg}",
+    ignore: "module",
+  });
 
   return pino(
     { name: "ces", serializers: logSerializers },

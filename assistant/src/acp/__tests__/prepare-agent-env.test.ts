@@ -33,10 +33,10 @@ import {
 } from "../../security/secure-keys.js";
 import { credentialBroker } from "../../tools/credentials/broker.js";
 import {
-  _setMetadataPath,
   deleteCredentialMetadata,
   getCredentialMetadata,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../../tools/credentials/metadata-store.js";
 import {
   ACP_OAUTH_EXPIRES_AT_FIELD,
@@ -81,16 +81,15 @@ const TEST_DIR = join(
 );
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   mkdirSync(TEST_DIR, { recursive: true });
   _resetBackend();
   useMemorySecureKeys();
-  _setMetadataPath(join(TEST_DIR, "metadata.json"));
   mockLogWarn.mockClear();
   ensureFreshAcpClaudeToken.mockClear();
 });
 
 afterEach(() => {
-  _setMetadataPath(null);
   _resetBackend();
   rmSync(TEST_DIR, { recursive: true, force: true });
 });

@@ -29,8 +29,8 @@ import {
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
-  _setMetadataPath,
   getCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import { storeCredentialValue } from "../tools/credentials/store.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
@@ -65,11 +65,11 @@ let evictSpy: ReturnType<typeof spyOn>;
 await initializeDb();
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
   // Belt-and-suspenders vs the module spies: if a spy ever fails to
   // intercept, seeded credentials land in a memory backend, not the vault.
   useMemorySecureKeys();
@@ -120,7 +120,6 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

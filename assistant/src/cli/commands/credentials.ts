@@ -63,10 +63,6 @@ function printCredentialHuman(output: Record<string, unknown>): void {
 // Response types for IPC calls
 // ---------------------------------------------------------------------------
 
-interface CredentialsListResponse {
-  credentials: Record<string, unknown>[];
-}
-
 interface CredentialsStatusResponse {
   backend: string;
   ready?: boolean;
@@ -91,18 +87,24 @@ export function registerCredentialsCommand(program: Command): void {
 
       subcommand(credential, "list").action(
         async (opts: { search?: string }, cmd: Command) => {
-          const r = await cliIpcCall<CredentialsListResponse>(
-            "credentials_list",
-            { body: { search: opts.search } },
-          );
-          if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+          // Dial the catalog logic directly — no IPC phone-home (the CLI's
+          // broader move off the daemon transport). The module is
+          // daemon-internal, so it lazy-imports here per the
+          // cli/no-daemon-internals rule.
+          const { listSettingsCredentials, CredentialStoreUnreachableError } =
+            await import("../../tools/credentials/settings-catalog.js");
+          let credentials: Record<string, unknown>[];
+          try {
+            credentials = await listSettingsCredentials(opts.search);
+          } catch (err) {
+            if (err instanceof CredentialStoreUnreachableError) {
+              return exitFromIpcResult(
+                { ok: false, error: err.message, statusCode: 503 },
+                cmd,
+              );
+            }
+            throw err;
           }
-
-          const { credentials } = r.result!;
 
           if (shouldOutputJson(cmd)) {
             writeOutput(cmd, {

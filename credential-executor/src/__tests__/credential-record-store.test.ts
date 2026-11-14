@@ -34,7 +34,9 @@ function makeRecord(
 describe("CesMetadataStore", () => {
   test("round-trips a record by account key", () => {
     const dir = mkdtempSync(join(tmpdir(), "ces-metadata-"));
-    const store = new CesMetadataStore(getMetadataPath(dir));
+    const prevData = process.env.CES_DATA_DIR;
+    process.env.CES_DATA_DIR = dir;
+    const store = new CesMetadataStore();
     const record = makeRecord("github", "token", {
       injectionTemplates: [
         {
@@ -52,17 +54,29 @@ describe("CesMetadataStore", () => {
     expect(store.list()).toEqual([{ account, record }]);
     expect(store.deleteByAccount(account)).toBe("deleted");
     expect(store.getByAccount(account)).toBeUndefined();
+    if (prevData === undefined) {
+      delete process.env.CES_DATA_DIR;
+    } else {
+      process.env.CES_DATA_DIR = prevData;
+    }
   });
 
   test("rejects an account that does not match the record", () => {
     const dir = mkdtempSync(join(tmpdir(), "ces-metadata-"));
-    const store = new CesMetadataStore(getMetadataPath(dir));
+    const prevData = process.env.CES_DATA_DIR;
+    process.env.CES_DATA_DIR = dir;
+    const store = new CesMetadataStore();
     expect(
       store.setByAccount(
         "credential/github/token",
         makeRecord("gitlab", "token"),
       ),
     ).toBe(false);
+    if (prevData === undefined) {
+      delete process.env.CES_DATA_DIR;
+    } else {
+      process.env.CES_DATA_DIR = prevData;
+    }
   });
 
   test("writes metadata.json under the CES data root", () => {
@@ -129,7 +143,7 @@ describe("003-import-workspace-metadata", () => {
 
     try {
       await importWorkspaceMetadataMigration.run(unusedBackend);
-      const store = new CesMetadataStore(getMetadataPath(cesData));
+      const store = new CesMetadataStore();
       const imported = store.getByAccount("credential/vercel/api_token");
       expect(imported?.allowedTools).toEqual(["publish_page"]);
       expect(imported?.credentialId).toBe("id-vercel-api_token");
@@ -167,7 +181,7 @@ describe("003-import-workspace-metadata", () => {
         ],
       }),
     );
-    const store = new CesMetadataStore(getMetadataPath(cesData));
+    const store = new CesMetadataStore();
     store.setByAccount(
       "credential/vercel/api_token",
       makeRecord("vercel", "api_token", {

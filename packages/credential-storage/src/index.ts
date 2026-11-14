@@ -15,55 +15,6 @@
  * assistant logic into this package without changing behavior.
  */
 
-// ---------------------------------------------------------------------------
-// Static credential metadata
-// ---------------------------------------------------------------------------
-
-/**
- * Non-secret metadata about a locally stored credential.
- * Secret values remain in the secure-key backend only.
- */
-export interface StaticCredentialRecord {
-  /** Opaque identifier for this credential. */
-  credentialId: string;
-  /** Service name (e.g. "github", "fal"). */
-  service: string;
-  /** Field name within the service (e.g. "api_key", "password"). */
-  field: string;
-  /** Tools permitted to consume this credential. */
-  allowedTools: string[];
-  /** Domains where this credential may be used. */
-  allowedDomains: string[];
-  /** Human-readable description of intended usage. */
-  usageDescription?: string;
-  /** Human-friendly alias (e.g. "fal-primary"). */
-  alias?: string;
-  /** Templates describing how to inject this credential into proxied requests. */
-  injectionTemplates?: InjectionTemplate[];
-  /** Epoch ms when the record was created. */
-  createdAt: number;
-  /** Epoch ms when the record was last updated. */
-  updatedAt: number;
-}
-
-/**
- * Describes how to inject a credential value into an outbound request
- * matching a specific host pattern.
- */
-export interface InjectionTemplate {
-  /** Glob pattern for matching request hosts (e.g. "*.fal.ai"). */
-  hostPattern: string;
-  /** Where the credential value is injected. */
-  injectionType: "header" | "query";
-  /** Header name when injectionType is "header" (e.g. "Authorization"). */
-  headerName?: string;
-  /** Prefix prepended to the secret value (e.g. "Key ", "Bearer "). */
-  valuePrefix?: string;
-  /** Query parameter name when injectionType is "query". */
-  queryParamName?: string;
-}
-
-// ---------------------------------------------------------------------------
 // Secure-key lookup
 // ---------------------------------------------------------------------------
 
@@ -178,13 +129,6 @@ export interface TokenPersistence {
 export function credentialKey(service: string, field: string): string {
   return `credential/${service}/${field}`;
 }
-
-// ---------------------------------------------------------------------------
-// Static credential metadata store
-// ---------------------------------------------------------------------------
-
-export { StaticCredentialMetadataStore } from "./static-credentials.js";
-export type { StaticCredentialPolicyInput } from "./static-credentials.js";
 
 // ---------------------------------------------------------------------------
 // OAuth runtime primitives

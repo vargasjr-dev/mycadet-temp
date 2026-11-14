@@ -1,6 +1,5 @@
 import { execFileSync, spawn, spawnSync, execSync } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { createHash } from "node:crypto";
 import {
   chmodSync,
   existsSync,
@@ -13,7 +12,7 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { Socket } from "node:net";
-import { homedir, platform, tmpdir } from "node:os";
+import { homedir, platform } from "node:os";
 import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 
 import {
@@ -46,12 +45,6 @@ import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
 
 const _require = createRequire(import.meta.url);
 
-// macOS AF_UNIX path limit (sun_path is 104 bytes, null-terminated → 103 usable).
-const DARWIN_UNIX_SOCKET_MAX_PATH_BYTES = 103;
-
-// The longest socket filename we place in the workspace directory.
-// assistant.sock = 14 chars, plus 1 for the "/" separator = 15 overhead.
-const LONGEST_SOCKET_FILENAME = "assistant.sock";
 const LOCAL_RUNTIME_PACKAGE = "cadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
@@ -288,46 +281,32 @@ export function ensureLocalRuntime(
 }
 
 /**
- * On macOS, if `{workspaceDir}/assistant.sock` would exceed the
- * 103-byte AF_UNIX path limit, compute a short tmpdir-based IPC socket
- * directory and return it.  Returns `undefined` when no override is needed
- * (the workspace path is short enough, or we're not on macOS).
- */
-function computeIpcSocketDirOverride(workspaceDir: string): string | undefined {
-  if (platform() !== "darwin") return undefined;
-
-  const longestPath = join(workspaceDir, LONGEST_SOCKET_FILENAME);
-  if (
-    Buffer.byteLength(longestPath, "utf8") <= DARWIN_UNIX_SOCKET_MAX_PATH_BYTES
-  ) {
-    return undefined;
-  }
-
-  // Use a short hash of the workspace dir so multiple instances get
-  // distinct socket directories under /tmp.
-  const hash = createHash("sha256")
-    .update(workspaceDir)
-    .digest("hex")
-    .slice(0, 12);
-  return join(tmpdir(), `cadet-ipc-${hash}`);
-}
-
-/**
- * If the workspace path is too long for AF_UNIX sockets on macOS, compute
- * a short override directory and set all IPC socket env vars on the target
- * env object. No-op on non-macOS or when paths are within limits.
+ * Pin the gateway IPC socket directory to a short, per-instance path —
+ * matching the docker topology, which mounts `GATEWAY_IPC_SOCKET_DIR`
+ * (`/run/gateway-ipc`) on both the assistant and gateway containers.
+ *
+ * Local assistants previously resolved `gateway.sock` from the workspace
+ * path and only pinned an override dir when that path exceeded macOS's
+ * 103-byte AF_UNIX cap, so the resolved path drifted between processes
+ * (and from the docker convention). Always pinning
+ * `<instanceDir>/ipc/gateway.sock` in BOTH the assistant and gateway envs
+ * keeps the two sides in exact agreement and far under the socket path
+ * limit.
  */
 function applyIpcSocketDirOverride(
   env: Record<string, string | undefined>,
 ): void {
   const workspaceDir =
     env.CADET_WORKSPACE_DIR || join(resolveDataDir(), "workspace");
-  const override = computeIpcSocketDirOverride(workspaceDir);
-  if (!override) return;
-
-  mkdirSync(override, { recursive: true });
+  const instanceDir = dirname(workspaceDir);
+  const override = join(instanceDir, "ipc");
+  try {
+    mkdirSync(override, { recursive: true });
+  } catch {
+    // Fall through: the gateway/assistant envs still carry the pinned dir;
+    // the socket bind error surfaces at startup if the dir is unwritable.
+  }
   env.GATEWAY_IPC_SOCKET_DIR = override;
-  env.ASSISTANT_IPC_SOCKET_DIR = override;
 }
 
 function isAssistantSourceDir(dir: string): boolean {

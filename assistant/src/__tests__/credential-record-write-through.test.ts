@@ -7,7 +7,6 @@ import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc
 
 import type { CredentialRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
-  _setMetadataPath,
   setCredentialRecordBackend,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
@@ -46,7 +45,6 @@ function makeBackend(): CredentialRecordBackend & {
 describe("CES credential record write-through", () => {
   afterEach(() => {
     setCredentialRecordBackend(undefined);
-    _setMetadataPath(null);
     const leftover = join(getDataDir(), "credentials", "metadata.json");
     if (existsSync(leftover)) {
       rmSync(leftover, { force: true });
@@ -66,17 +64,5 @@ describe("CES credential record write-through", () => {
     );
     expect(stored?.allowedTools).toEqual(["bash"]);
     expect(stored?.credentialId).toBe(created.credentialId);
-  });
-
-  test("test metadata path override skips CES write-through", async () => {
-    const backend = makeBackend();
-    setCredentialRecordBackend(backend);
-    _setMetadataPath("/tmp/does-not-write-through-metadata.json");
-
-    upsertCredentialMetadata("github", "token", {
-      allowedTools: ["bash"],
-    });
-
-    expect(backend.store.size).toBe(0);
   });
 });

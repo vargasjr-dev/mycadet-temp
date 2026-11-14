@@ -4,11 +4,10 @@ import { join } from "node:path";
 import type { SecureKeyBackend } from "@mycadet/credential-storage";
 
 import { getLogger } from "../logger.js";
-import { getCesDataRoot } from "../paths.js";
 import {
   accountForRecord,
   CesMetadataStore,
-  getMetadataPath,
+  readCredentialRecordsFromFile,
 } from "../records/metadata-store.js";
 import type { CesMigration } from "./types.js";
 
@@ -42,17 +41,16 @@ export const importWorkspaceMetadataMigration: CesMigration = {
       return;
     }
 
-    const source = new CesMetadataStore(leftoverPath);
-    const records = source.list();
+    const records = readCredentialRecordsFromFile(leftoverPath);
     if (records.length === 0) {
       log.info("CES metadata import: workspace metadata.json has no rows");
       return;
     }
 
-    const store = new CesMetadataStore(getMetadataPath(getCesDataRoot()));
+    const store = new CesMetadataStore();
     let imported = 0;
     let skipped = 0;
-    for (const { record } of records) {
+    for (const record of records) {
       const account = accountForRecord(record);
       const existing = store.getByAccount(account);
       if (existing) {

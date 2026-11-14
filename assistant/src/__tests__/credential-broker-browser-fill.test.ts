@@ -43,8 +43,8 @@ import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
 import {
-  _setMetadataPath,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import { BROWSER_FILL_CAPABILITY } from "../tools/credentials/tool-policy.js";
 
@@ -60,18 +60,17 @@ describe("CredentialBroker.browserFill", () => {
   });
 
   beforeEach(() => {
+    _resetCredentialMetadataCacheForTests();
     // Clear content files but preserve the directory structure
     for (const entry of readdirSync(TEST_DIR)) {
       rmSync(join(TEST_DIR, entry), { recursive: true, force: true });
     }
     _resetBackend();
     useMemorySecureKeys();
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
-    _setMetadataPath(null);
     _resetBackend();
   });
 

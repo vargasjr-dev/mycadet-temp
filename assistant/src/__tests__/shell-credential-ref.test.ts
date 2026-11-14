@@ -38,8 +38,8 @@ mock.module("../tools/network/script-proxy/index.js", () => ({
 
 // Set up metadata store for credential resolution
 import {
-  _setMetadataPath,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 
 const TEST_DIR = join(
@@ -59,17 +59,16 @@ const ctx: ToolContext = {
 };
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
   mockGetOrStartSession.mockClear();
   mockGetSessionEnv.mockClear();
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

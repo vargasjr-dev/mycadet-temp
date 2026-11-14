@@ -312,7 +312,7 @@ function startHealthServer(
           log,
         );
       },
-  });
+    });
   } catch (err) {
     // A health-port collision must never take the credential store down:
     // local callers reach the CES over the Unix socket, so a failed HTTP
@@ -321,7 +321,10 @@ function startHealthServer(
     // destination swallowing the fatal — which surfaced downstream as
     // "credential-executor socket not ready" and a 502 for every
     // credential read during hatch.
-    log.error({ err, port }, "CES health server failed to bind — continuing socket-only");
+    log.error(
+      { err, port },
+      "CES health server failed to bind — continuing socket-only",
+    );
     return null;
   }
 
@@ -386,7 +389,7 @@ async function main(): Promise<void> {
   await runCesMigrations(getCesDataRoot(), secureKeyBackend, CES_MIGRATIONS);
   log.info("CES startup: migrations complete");
 
-  initMetadataStore(getCesDataRoot());
+  initMetadataStore();
 
   // -- Build handlers --------------------------------------------------------
   // The per-connection session ID lives in each CesRpcServer's SessionContext;

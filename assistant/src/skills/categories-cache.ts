@@ -29,7 +29,7 @@ async function fetchCategories(): Promise<SkillCategoryDef[]> {
 
   if (!response.ok) {
     throw new Error(
-      `Platform API error ${response.status}: ${response.statusText}`,
+      `Cloud API error ${response.status}: ${response.statusText}`,
     );
   }
 

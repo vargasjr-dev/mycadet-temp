@@ -40,11 +40,14 @@ describe("credential metadata HTTP routes", () => {
   afterEach(() => {
     resetMetadataStoreForTests();
     delete process.env.CES_SERVICE_TOKEN;
+    delete process.env.CES_DATA_DIR;
   });
 
   test("put, get, list, and delete a record", async () => {
     const dir = mkdtempSync(join(tmpdir(), "ces-metadata-http-"));
-    initMetadataStore(dir);
+    // The store resolves its path from the CES data root env at construction.
+    process.env.CES_DATA_DIR = dir;
+    initMetadataStore();
     process.env.CES_SERVICE_TOKEN = SERVICE_TOKEN;
     const account = "credential/github/token";
     const record = makeRecord();
@@ -74,7 +77,9 @@ describe("credential metadata HTTP routes", () => {
 
   test("rejects requests without a bearer token", async () => {
     const dir = mkdtempSync(join(tmpdir(), "ces-metadata-http-"));
-    initMetadataStore(dir);
+    // The store resolves its path from the CES data root env at construction.
+    process.env.CES_DATA_DIR = dir;
+    initMetadataStore();
     process.env.CES_SERVICE_TOKEN = SERVICE_TOKEN;
     const res = await handleMetadataRoute(
       new Request("http://localhost:8090/v1/metadata", { method: "GET" }),

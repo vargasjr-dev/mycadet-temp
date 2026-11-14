@@ -6,8 +6,8 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
 import {
-  _setMetadataPath,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import {
   resolveById,
@@ -23,15 +23,14 @@ const TEST_DIR = join(
 const META_PATH = join(TEST_DIR, "metadata.json");
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

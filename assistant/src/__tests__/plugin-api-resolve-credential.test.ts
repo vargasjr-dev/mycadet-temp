@@ -22,9 +22,9 @@ import {
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
-  _setMetadataPath,
   type CredentialMetadata,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 import * as metadataStore from "../tools/credentials/metadata-store.js";
 
@@ -50,11 +50,11 @@ function seedCredential(service: string, field: string, value: string): string {
 }
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
 
   secureStore = new Map();
   unreachable = false;
@@ -72,7 +72,6 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

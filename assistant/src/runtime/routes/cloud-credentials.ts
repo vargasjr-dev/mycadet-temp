@@ -20,23 +20,20 @@ const MANAGED_PROXY_CREDENTIALS = [
   { service: "cadet", field: "assistant_api_key" },
 ] as const;
 
-export function isPlatformCloudCredential(
-  service: string,
-  field: string,
-): boolean {
+export function isCloudCredential(service: string, field: string): boolean {
   return MANAGED_PROXY_CREDENTIALS.some(
     (c) => c.service === service && c.field === field,
   );
 }
 
 /** What a caller was trying to do with a cloud credential. */
-export type PlatformCloudCredentialAction = "read" | "change";
+export type CloudCredentialAction = "read" | "change";
 
 /** Message the credentials API refuses one of these with. */
 export function platformCloudCredentialRefusal(
   service: string | undefined,
   field: string | undefined,
-  action: PlatformCloudCredentialAction,
+  action: CloudCredentialAction,
 ): string {
   const name = service && field ? `${service}:${field}` : "This credential";
   const verb =

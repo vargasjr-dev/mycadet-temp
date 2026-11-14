@@ -42,8 +42,8 @@ import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
 import {
-  _setMetadataPath,
   upsertCredentialMetadata,
+  _resetCredentialMetadataCacheForTests,
 } from "../tools/credentials/metadata-store.js";
 
 // ---------------------------------------------------------------------------
@@ -58,15 +58,14 @@ describe("CredentialBroker.serverUse", () => {
   let broker: CredentialBroker;
 
   beforeEach(() => {
+    _resetCredentialMetadataCacheForTests();
     mkdirSync(TEST_DIR, { recursive: true });
     _resetBackend();
     useMemorySecureKeys();
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
-    _setMetadataPath(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });
