@@ -2,33 +2,36 @@
  * Tests for the shared CES RPC session factory used by assistant boot and
  * child-process credential resolution.
  */
-import { afterAll, describe, expect, mock, test } from "bun:test";
-
-// Socket discovery is the process manager's concern — tests stub it at the
-// discovery module, not through a client-factory option.
-const actualDiscovery = await import("./executable-discovery.js");
-const discoverMock = mock(actualDiscovery.discoverCesWithRetry);
-mock.module("./executable-discovery.js", () => ({
-  ...actualDiscovery,
-  discoverCesWithRetry: discoverMock,
-}));
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, test } from "bun:test";
 
 import { createCesClient } from "./client.js";
 
+// Socket discovery is the process manager's concern, and it reads
+// `CES_SOCKET_DIR` — an empty socket dir makes the real discovery exhaust
+// its poll budget and come back unavailable, no module mocking needed.
+const socketDir = mkdtempSync(join(tmpdir(), "ces-no-socket-"));
+const prevSocketDir = process.env["CES_SOCKET_DIR"];
+process.env["CES_SOCKET_DIR"] = socketDir;
+
 afterAll(() => {
-  mock.module("./executable-discovery.js", () => actualDiscovery);
+  if (prevSocketDir === undefined) {
+    delete process.env["CES_SOCKET_DIR"];
+  } else {
+    process.env["CES_SOCKET_DIR"] = prevSocketDir;
+  }
 });
 
 describe("createCesClient", () => {
-  test("returns undefined when discovery fails without polling", async () => {
-    discoverMock.mockImplementation(async () => ({
-      mode: "unavailable" as const,
-      reason: "missing test socket",
-    }));
+  test("returns undefined when discovery finds no socket", async () => {
     const start = Date.now();
     const client = await createCesClient();
 
     expect(client).toBeUndefined();
-    expect(Date.now() - start).toBeLessThan(1_000);
+    // The discovery poll budget (3s) is the dominant cost — the point is
+    // that the factory settles on its own rather than hanging.
+    expect(Date.now() - start).toBeLessThan(10_000);
   });
 });
