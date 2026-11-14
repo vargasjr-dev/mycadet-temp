@@ -10,6 +10,7 @@ import {
 import { dirname, join } from "path";
 import {
   computeDeviceId,
+  GuardianLeasePermanentError,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loadGuardianToken,
@@ -159,6 +160,15 @@ function isUnreachableGatewayError(error: unknown): boolean {
 function classifyRefreshThrownError(
   error: unknown,
 ): GuardianTokenRefreshResult {
+  // A malformed 200 body throws from parseGuardianToken: the gateway
+  // answered, so this is its contract that's broken — 502, not 500.
+  if (error instanceof GuardianLeasePermanentError) {
+    return {
+      ok: false,
+      status: 502,
+      error: "Assistant gateway returned a malformed token refresh response",
+    };
+  }
   if (isTimeoutLikeError(error)) {
     return {
       ok: false,
@@ -312,17 +322,9 @@ export async function refreshGuardianTokenResult(
 
     // The refresh endpoint answers with the full guardian credential
     // contract — the same shape the pairing mint emits — so one schema
-    // parses the credential from mint to rotation to token file.
-    let refreshed: GuardianTokenData;
-    try {
-      refreshed = parseGuardianToken(await response.json());
-    } catch {
-      return {
-        ok: false,
-        status: 502,
-        error: "Assistant gateway returned a malformed token refresh response",
-      };
-    }
+    // parses the credential from mint to rotation to token file. A
+    // malformed body throws and the surrounding catch classifies it.
+    const refreshed = parseGuardianToken(await response.json());
     saveGuardianToken(assistantId, refreshed);
     return { ok: true, token: refreshed };
   } catch (error) {

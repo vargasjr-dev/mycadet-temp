@@ -5,9 +5,16 @@
  * it, the lease parses with it, and the token file persists it.
  *
  * Kept in its own module, exported from the package as
- * `./guardian-contract`, so the gateway can import the contract without
+ * `./guardian-contract`, so the CLI can import the contract without
  * pulling in the host I/O graph. It references no node built-ins and
  * `zod` is its only import.
+ *
+ * MIRRORED in `gateway/src/guardian-contract.ts` (same names, same
+ * shape): the gateway can't depend on this package because local-mode
+ * carries operator-facing APIs the gateway must never see. The
+ * duplication is temporary — once the gateway client-generation
+ * workstream lands, the generated SDK types replace both hand-rolled
+ * copies. Delete the leftovers then.
  */
 import { z } from "zod";
 

@@ -35,7 +35,6 @@
     "@mycadet/environments": "workspace:*",
     "@mycadet/gateway-client": "workspace:*",
     "@mycadet/ipc-server-utils": "workspace:*",
-    "@mycadet/local-mode": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "@mycadet/slack-text": "workspace:*",
     "@mycadet/twilio-client": "workspace:*",

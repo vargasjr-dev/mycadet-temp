@@ -7,7 +7,6 @@
     "@mycadet/environments",
     "@mycadet/gateway-client",
     "@mycadet/ipc-server-utils",
-    "@mycadet/local-mode",
     "@mycadet/service-contracts",
     "@mycadet/shared",
     "@mycadet/slack-text",
