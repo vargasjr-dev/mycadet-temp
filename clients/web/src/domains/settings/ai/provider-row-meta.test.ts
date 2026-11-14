@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { getModelsForProvider } from "@/assistant/llm-model-catalog";
-import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@/assistant/llm-model-catalog";
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@mycadet/assistant-api";
 import {
   isDefaultProviderId,
   providerRowMeta,

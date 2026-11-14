@@ -10,7 +10,7 @@
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { dial, okOrThrow } from "@/lib/dial";
+import { dial as dialCore } from "@/lib/dial";
 
 const AssistantDomainSchema = z.object({
   id: z.string(),
@@ -41,10 +41,27 @@ async function fetchList<T extends z.ZodTypeAny>(
   path: string,
   rowSchema: T,
 ): Promise<z.infer<T>[]> {
+  const { response, data } = await dialCore(path);
+  if (!response?.ok) {
+    throw new Error(`The domain dial failed (${response?.status})`);
+  }
   const body = z
     .object({ results: z.array(rowSchema) })
-    .parse(okOrThrow(await dial(path), "The domain dial failed"));
+    .parse(data);
   return body.results;
+}
+
+async function dial(
+  path: string,
+  init?: RequestInit,
+): Promise<unknown> {
+  const { response, data, detail } = await dialCore(path, init);
+  if (!response?.ok) {
+    throw new Error(
+      detail ?? `The domain dial failed (${response?.status})`,
+    );
+  }
+  return data;
 }
 
 const scoped = (assistantId: string, tail: string) =>
@@ -65,8 +82,7 @@ export function useDomains(assistantId: string) {
   return useQuery({
     queryKey: domainKeys.domains(assistantId),
     enabled: !!assistantId,
-    queryFn: () =>
-      fetchList(scoped(assistantId, "domains/"), AssistantDomainSchema),
+    queryFn: () => fetchList(scoped(assistantId, "domains/"), AssistantDomainSchema),
   });
 }
 
@@ -90,15 +106,7 @@ export function useDomainVerificationStatus(
     refetchOnWindowFocus: opts?.refetchOnWindowFocus,
     queryFn: async () =>
       DomainVerificationStatusSchema.parse(
-        okOrThrow(
-          await dial(
-            scoped(
-              assistantId,
-              `domains/${encodeURIComponent(domainId ?? "")}/verification-status/`,
-            ),
-          ),
-          "The domain dial failed",
-        ),
+        await dial(scoped(assistantId, `domains/${encodeURIComponent(domainId ?? "")}/verification-status/`)),
       ),
   });
 }
@@ -107,14 +115,11 @@ export function useCreateDomain(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: { subdomain: string; email_username?: string }) =>
-      okOrThrow(
-        await dial(scoped(assistantId, "domains/"), {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        }),
-        "The domain dial failed",
-      ),
+      dial(scoped(assistantId, "domains/"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: domainKeys.domains(assistantId),
@@ -127,13 +132,9 @@ export function useDestroyDomain(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (domainId: string) =>
-      okOrThrow(
-        await dial(
-          scoped(assistantId, `domains/${encodeURIComponent(domainId)}/`),
-          { method: "DELETE" },
-        ),
-        "The domain dial failed",
-      ),
+      dial(scoped(assistantId, `domains/${encodeURIComponent(domainId)}/`), {
+        method: "DELETE",
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: domainKeys.domains(assistantId),
@@ -146,16 +147,9 @@ export function useProvisionDomain(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (domainId: string) =>
-      okOrThrow(
-        await dial(
-          scoped(
-            assistantId,
-            `domains/${encodeURIComponent(domainId)}/provision/`,
-          ),
-          { method: "POST" },
-        ),
-        "The domain dial failed",
-      ),
+      dial(scoped(assistantId, `domains/${encodeURIComponent(domainId)}/provision/`), {
+        method: "POST",
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: domainKeys.domains(assistantId),

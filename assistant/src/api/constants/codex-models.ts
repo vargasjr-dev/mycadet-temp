@@ -1,0 +1,22 @@
+/**
+ * Model IDs Cadet allows through the ChatGPT Codex subscription endpoint
+ * (`https://chatgpt.com/backend-api/codex`).
+ *
+ * `oauth_subscription` OpenAI connections hard-route every request to that
+ * endpoint. Because unsupported model IDs return HTTP 400, this manually
+ * maintained compatibility allowlist gates whether such a connection may
+ * serve a given model during auto-resolution of an "Any active OpenAI
+ * connection" profile.
+ *
+ * Lives in the @mycadet/assistant-api package so the web client imports
+ * the same set the daemon enforces — one source, no drift.
+ */
+export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
+  "gpt-6-astra",
+  "gpt-6-sol",
+  "gpt-6-luna",
+  "gpt-5.6-sol",
+  "gpt-5.6-terra",
+  "gpt-5.6-luna",
+  "gpt-5.5",
+]);

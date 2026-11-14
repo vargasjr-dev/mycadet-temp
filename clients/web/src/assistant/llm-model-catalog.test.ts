@@ -17,9 +17,9 @@ import { describe, expect, test } from "bun:test";
 
 import { INFERENCE_PROVIDERS } from "@/domains/settings/ai/constants";
 import { CONNECTION_PROVIDERS } from "@/domains/settings/ai/provider-editor-constants";
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@mycadet/assistant-api";
 
 import {
-  CODEX_SUBSCRIPTION_MODEL_IDS,
   DEFAULT_MODEL_BY_PROVIDER,
   getDefaultModelForProvider,
   MODELS_BY_PROVIDER,

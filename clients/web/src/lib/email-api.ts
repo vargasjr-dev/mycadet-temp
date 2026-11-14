@@ -9,7 +9,7 @@
 
 import { z } from "zod";
 
-import { dial, okOrThrow } from "@/lib/dial";
+import { dial as dialCore } from "@/lib/dial";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const EmailMessageSchema = z.object({
@@ -53,10 +53,27 @@ async function fetchList<T extends z.ZodTypeAny>(
   path: string,
   rowSchema: T,
 ): Promise<z.infer<T>[]> {
+  const { response, data } = await dialCore(path);
+  if (!response?.ok) {
+    throw new Error(`The email dial failed (${response?.status})`);
+  }
   const body = z
     .object({ results: z.array(rowSchema) })
-    .parse(okOrThrow(await dial(path), "The email dial failed"));
+    .parse(data);
   return body.results;
+}
+
+async function dial(
+  path: string,
+  init?: RequestInit,
+): Promise<unknown> {
+  const { response, data, detail } = await dialCore(path, init);
+  if (!response?.ok) {
+    throw new Error(
+      detail ?? `The email dial failed (${response?.status})`,
+    );
+  }
+  return data;
 }
 
 const scoped = (assistantId: string, tail: string) =>
@@ -76,11 +93,7 @@ export const emailKeys = {
 
 export function useEmails(
   assistantId: string,
-  query?: {
-    direction?: "inbound" | "outbound";
-    limit?: number;
-    enabled?: boolean;
-  },
+  query?: { direction?: "inbound" | "outbound"; limit?: number; enabled?: boolean },
 ) {
   const { enabled, ...params } = query ?? {};
   return useQuery({
@@ -120,15 +133,7 @@ export function useEmailAddressStatus(
     refetchOnWindowFocus: opts?.refetchOnWindowFocus,
     queryFn: async () =>
       EmailAddressStatusSchema.parse(
-        okOrThrow(
-          await dial(
-            scoped(
-              assistantId,
-              `email-addresses/${encodeURIComponent(addressId ?? "")}/status/`,
-            ),
-          ),
-          "The email dial failed",
-        ),
+        await dial(scoped(assistantId, `email-addresses/${encodeURIComponent(addressId ?? "")}/status/`)),
       ),
   });
 }
@@ -137,14 +142,11 @@ export function useCreateEmailAddress(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: { username: string }) =>
-      okOrThrow(
-        await dial(scoped(assistantId, "email-addresses/"), {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        }),
-        "The email dial failed",
-      ),
+      dial(scoped(assistantId, "email-addresses/"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: emailKeys.emailAddresses(assistantId),
@@ -157,15 +159,9 @@ export function useDestroyEmailAddress(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (addressId: string) =>
-      okOrThrow(
-        await dial(
-          scoped(
-            assistantId,
-            `email-addresses/${encodeURIComponent(addressId)}/`,
-          ),
-          { method: "DELETE" },
-        ),
-        "The email dial failed",
+      dial(
+        scoped(assistantId, `email-addresses/${encodeURIComponent(addressId)}/`),
+        { method: "DELETE" },
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({

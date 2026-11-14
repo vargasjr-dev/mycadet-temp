@@ -71,17 +71,3 @@ export async function dial(
     networkError: null,
   };
 }
-
-/**
- * Demand success from an outcome: throws the server's `detail`, else the
- * caller's fallback message with the status attached. The shaping half
- * of `dial` for callers whose contract is "data or throw".
- */
-export function okOrThrow(outcome: DialOutcome, fallback: string): unknown {
-  if (!outcome.response?.ok) {
-    throw new Error(
-      outcome.detail ?? `${fallback} (${outcome.response?.status ?? 0})`,
-    );
-  }
-  return outcome.data;
-}

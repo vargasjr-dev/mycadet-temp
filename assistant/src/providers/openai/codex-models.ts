@@ -1,30 +1,11 @@
-/**
- * Model IDs Cadet allows through the ChatGPT Codex subscription endpoint
- * (`https://chatgpt.com/backend-api/codex`).
- *
- * `oauth_subscription` OpenAI connections hard-route every request to that
- * endpoint. Because unsupported model IDs return HTTP 400, this manually
- * maintained compatibility allowlist gates whether such a connection may
- * serve a given model during auto-resolution of an "Any active OpenAI
- * connection" profile.
- */
-// Exported for the web client's parity test — its deep import crosses
-// package boundaries, so the assistant's knip can't see this consumer.
-// Exported for the web client's parity test — its deep import crosses
-// package boundaries, so the assistant's knip can't see this consumer
-// (knip.json ignoreIssues carries the exemption). #785 dropped the
-// export and broke the web typecheck; this restores the contract.
-export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
-  "gpt-6-astra",
-  "gpt-6-sol",
-  "gpt-6-luna",
-  "gpt-5.6-sol",
-  "gpt-5.6-terra",
-  "gpt-5.6-luna",
-  "gpt-5.5",
-]);
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "../../api/constants/codex-models.js";
 
-/** True when `model` is allowlisted for Codex subscription routing. */
+/**
+ * Whether a model ID is servable through the ChatGPT Codex subscription
+ * endpoint. The allowlist itself lives in
+ * `@mycadet/assistant-api` (`src/api/constants/codex-models.ts`) so the
+ * web client imports the same set the daemon enforces.
+ */
 export function isCodexSubscriptionModel(model: string): boolean {
   return CODEX_SUBSCRIPTION_MODEL_IDS.has(model);
 }

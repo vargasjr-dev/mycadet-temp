@@ -1,7 +1,5 @@
-import {
-  CODEX_SUBSCRIPTION_MODEL_IDS,
-  getModelsForProvider,
-} from "@/assistant/llm-model-catalog";
+import { CODEX_SUBSCRIPTION_MODEL_IDS } from "@mycadet/assistant-api";
+import { getModelsForProvider } from "@/assistant/llm-model-catalog";
 import type {
   ConnectionProvider,
   ProviderConnection,
