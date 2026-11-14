@@ -18,7 +18,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
@@ -32,7 +32,6 @@ import {
   probePort,
   resolveConfigDir,
   resolveDataDir,
-  resolveLogDir,
   waitForDaemonReady,
 } from "@mycadet/local-mode";
 import { resolveClientDists } from "../web-dist.js";
@@ -55,8 +54,27 @@ export function getAppServerPaths(): AppServerPaths {
   return {
     dir,
     pidPath: join(resolveConfigDir(), "app-server.pid"),
-    logPath: join(resolveLogDir(), "app-server.log"),
+    logPath: appServerLogPath(),
   };
+}
+
+/**
+ * The app server's rolling log file — one per local calendar day under the
+ * data dir (`<data>/app-server/logs/app-YYYY-MM-DD.log`), so restarts never
+ * grow a single unbounded file and old days can be pruned by date. The day
+ * is the server's launch day: a detached child binds its stdout/stderr to
+ * one fd at spawn, so a long-lived server keeps writing its launch-day file
+ * until it restarts.
+ */
+export function appServerLogPath(now: Date = new Date()): string {
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return join(
+    resolveDataDir(),
+    "app-server",
+    "logs",
+    `app-${now.getFullYear()}-${month}-${day}.log`,
+  );
 }
 
 function readPidFile(pidPath: string): number | null {
@@ -582,7 +600,7 @@ export async function startAppServer(): Promise<StartAppServerResult> {
   // serves the build-time vite stamp the dist indexes carry.
   const paths = getAppServerPaths();
   mkdirSync(paths.dir, { recursive: true });
-  mkdirSync(resolveLogDir(), { recursive: true });
+  mkdirSync(dirname(paths.logPath), { recursive: true });
   const indexHtmlPath = join(paths.dir, "assistant-index.html");
   const appIndexHtmlPath = join(paths.dir, "app-index.html");
   const rawIndexHtml = readFileSync(join(webDistDir, "index.html"), "utf-8");
@@ -633,9 +651,10 @@ export async function startAppServer(): Promise<StartAppServerResult> {
   const rollback = async (
     status: "port-conflict" | "unreachable",
   ): Promise<AppServerUnreachableResult | AppServerPortConflictResult> => {
-    const { logPath } = getAppServerPaths();
     await stopAppServer();
-    return { status, listenPort, logPath };
+    // The launch-time path, not a fresh resolve: re-resolving could cross a
+    // local midnight and report a file the child never opened.
+    return { status, listenPort, logPath: paths.logPath };
   };
   const childExited = (): boolean => exited || child.exitCode !== null;
   if (!ready) {

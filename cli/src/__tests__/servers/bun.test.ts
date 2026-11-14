@@ -1148,7 +1148,7 @@ describe("ensureAppServer", () => {
     mockServerSpawnExitsOnStartup();
 
     await expect(ensureAppServer()).rejects.toThrow(
-      /exited on startup[\s\S]*app-server\.log/,
+      /exited on startup[\s\S]*logs\/app-\d{4}-\d{2}-\d{2}\.log/,
     );
   });
 });
