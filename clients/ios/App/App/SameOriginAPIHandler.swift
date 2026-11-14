@@ -135,14 +135,40 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         else {
             return
         }
-        let cookies = HTTPCookie.cookies(
-            withResponseHeaderFields: fields,
-            for: target
-        )
+        let tlsTarget = target.scheme?.lowercased() == "https"
+        let cookies = HTTPCookie
+            .cookies(withResponseHeaderFields: fields, for: target)
+            .map { Self.replayable($0, overTLS: tlsTarget) }
         guard !cookies.isEmpty else {
             return
         }
         HTTPCookieStorage.shared.setCookies(cookies, for: target, mainDocumentURL: target)
+    }
+
+    /// A `Secure` cookie never matches an http URL on the jar's read side —
+    /// plain RFC semantics, no exceptions. The gateway stamps `Secure`
+    /// unconditionally (the cloud's https origin needs it), including on
+    /// its plain-http local loopback, where a real browser still replays
+    /// the cookie because `http://localhost` is a trustworthy context. The
+    /// forwarder owns the jar for this transport and the server set these
+    /// cookies over it, so store them with the transport's actual scheme:
+    /// `Secure` kept for https targets, dropped otherwise — replaying to
+    /// the host that set the cookie over the transport that carried it
+    /// cannot leak it anywhere it has not already traveled.
+    private static func replayable(_ cookie: HTTPCookie, overTLS: Bool) -> HTTPCookie {
+        guard !overTLS, cookie.isSecure else {
+            return cookie
+        }
+        var properties: [HTTPCookie.PropertyKey: Any] = [
+            .name: cookie.name,
+            .value: cookie.value,
+            .domain: cookie.domain,
+            .path: cookie.path,
+        ]
+        if let expires = cookie.expiresDate {
+            properties[.expires] = expires
+        }
+        return HTTPCookie(properties: properties) ?? cookie
     }
 
     /// The request to fire at the base origin: the task's path and query

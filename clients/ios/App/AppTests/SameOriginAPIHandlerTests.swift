@@ -131,4 +131,60 @@ final class SameOriginAPIHandlerTests: XCTestCase {
         SameOriginAPIHandler.storeCookies(from: response, for: base)
         XCTAssertEqual(HTTPCookieStorage.shared.cookies(for: base) ?? [], [])
     }
+
+    // ── the pairing regression: the gateway's Secure cookie replays ────────
+
+    func testGatewaySecureCookieIsReplayedOverAnHTTPTarget() throws {
+        // The exact attribute spelling the gateway emits
+        // (`browser-auth-cookies.ts`): Secure unconditionally, including on
+        // its plain-http local loopback. A Secure cookie never matches an
+        // http URL in the jar's read side, so without the transport
+        // adjustment the first post-pairing forward went out bare and 401'd.
+        let response = HTTPURLResponse(
+            url: base,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: [
+                "Set-Cookie": [
+                    "cadet_web_access=eyJhbGciOi.",
+                    " HttpOnly",
+                    " Secure",
+                    " SameSite=Strict",
+                    " Path=/",
+                    " Max-Age=900",
+                ].joined()
+            ]
+        )!
+        SameOriginAPIHandler.storeCookies(from: response, for: base)
+
+        var request = URLRequest(
+            url: URL(string: "capacitor://localhost/v1/assistants/")!
+        )
+        request.httpMethod = "GET"
+        let forwarded = try XCTUnwrap(
+            SameOriginAPIHandler.forwardedRequest(for: request, to: base)
+        )
+        XCTAssertEqual(
+            forwarded.value(forHTTPHeaderField: "Cookie"),
+            "cadet_web_access=eyJhbGciOi."
+        )
+    }
+
+    func testSecureAttributeSurvivesForAnHTTPSTarget() throws {
+        let httpsBase = URL(string: "https://test.mycadet.ai")!
+        let response = HTTPURLResponse(
+            url: httpsBase,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: [
+                "Set-Cookie": "cadet_web_access=eyJhbGciOi.; HttpOnly; Secure; Path=/"
+            ]
+        )!
+        SameOriginAPIHandler.storeCookies(from: response, for: httpsBase)
+        let stored = HTTPCookieStorage.shared.cookies(for: httpsBase) ?? []
+        let cookie = try XCTUnwrap(stored.first(where: { $0.name == "cadet_web_access" }))
+        // TLS targets keep the attribute — the stripping exists only so the
+        // cookie can ride the plain-http transport that set it.
+        XCTAssertTrue(cookie.isSecure)
+    }
 }
