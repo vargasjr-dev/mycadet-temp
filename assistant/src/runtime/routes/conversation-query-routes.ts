@@ -561,17 +561,6 @@ const CallSiteOverrideDraftSchema = nullablePartial(
   .passthrough()
   .meta({ id: "CallSiteOverrideDraft" });
 
-/**
- * Request body schema for `PATCH /v1/config`.
- *
- * Mirrors the response shape but every field is `.nullable().optional()`:
- * omitted keys are left unchanged by the daemon's deep-merge, `null` values
- * delete the key. Uses the same Zod enums as `AssistantConfigSchema` so
- * the generated SDK produces literal-union types — no hand-written patch
- * types needed downstream.
- */
-export type ConfigPatchRequest = z.infer<typeof ConfigPatchRequestSchema>;
-
 const ConfigPatchRequestSchema = z
   .object({
     ...ChatSettingsPatchSchema.shape,

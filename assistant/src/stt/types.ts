@@ -252,17 +252,6 @@ export interface BatchTranscriber {
 // Streaming client events (client -> daemon)
 // ---------------------------------------------------------------------------
 
-/**
- * Events that a client sends to the daemon streaming session.
- *
- * The discriminated `type` field lets the runtime session handler
- * dispatch to the correct streaming adapter method without coupling
- * to transport-level framing (WebSocket opcodes, HTTP/2 frames, etc.).
- */
-export type SttStreamClientEvent =
-  | SttStreamClientAudioEvent
-  | SttStreamClientStopEvent;
-
 /** A chunk of audio data to be transcribed. */
 export interface SttStreamClientAudioEvent {
   readonly type: "audio";

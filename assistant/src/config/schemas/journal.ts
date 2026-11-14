@@ -12,5 +12,3 @@ export const JournalConfigSchema = z
       ),
   })
   .describe("Journal context window configuration");
-
-export type JournalConfig = z.infer<typeof JournalConfigSchema>;

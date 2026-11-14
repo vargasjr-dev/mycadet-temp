@@ -11,11 +11,6 @@ export const CALL_SITE_DOMAINS = [
 
 export type CallSiteDomainId = (typeof CALL_SITE_DOMAINS)[number]["id"];
 
-export interface CallSiteDomainEntry {
-  id: CallSiteDomainId;
-  displayName: string;
-}
-
 export interface CallSiteEntry {
   id: LLMCallSite;
   displayName: string;

@@ -423,10 +423,6 @@ async function startDaemonLocked(): Promise<{
   );
 }
 
-export type StopResult =
-  | { stopped: true }
-  | { stopped: false; reason: "not_running" | "stop_failed" };
-
 export async function ensureDaemonRunning(): Promise<void> {
   const status = await getDaemonStatus();
   if (status.running) {

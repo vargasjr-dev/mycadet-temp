@@ -1,21 +1,21 @@
 /**
  * CRUD operations for document comments.
  *
- * Follows the same raw-query pattern as document-store.ts — all SQL uses
- * snake_case columns, mapped to camelCase TypeScript interfaces via
- * `mapRowToComment()`.
+ * All queries go through drizzle — the model maps the snake_case DB columns to
+ * the camelCase `CommentRecord` fields via `mapRowToComment()`.
  */
 import { randomUUID } from "node:crypto";
 
-import { getTableName } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 
-import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { getDb } from "../persistence/db-connection.js";
+import { rawChanges } from "../persistence/raw-query.js";
 import { documentComments } from "../persistence/schema/documents.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("document-comments-store");
 
-/** A comment record with camelCase fields mapped from snake_case DB columns. */
+/** A comment record with camelCase fields mapped from the drizzle row. */
 export interface CommentRecord {
   id: string;
   surfaceId: string;
@@ -33,39 +33,24 @@ export interface CommentRecord {
   updatedAt: number;
 }
 
-interface CommentRow {
-  id: string;
-  surface_id: string;
-  conversation_id: string;
-  author: string;
-  content: string;
-  anchor_start: number | null;
-  anchor_end: number | null;
-  anchor_text: string | null;
-  parent_comment_id: string | null;
-  status: string;
-  resolved_by: string | null;
-  resolved_at: number | null;
-  created_at: number;
-  updated_at: number;
-}
-
-function mapRowToComment(row: CommentRow): CommentRecord {
+function mapRowToComment(
+  row: typeof documentComments.$inferSelect,
+): CommentRecord {
   return {
     id: row.id,
-    surfaceId: row.surface_id,
-    conversationId: row.conversation_id,
+    surfaceId: row.surfaceId,
+    conversationId: row.conversationId,
     author: row.author,
     content: row.content,
-    anchorStart: row.anchor_start,
-    anchorEnd: row.anchor_end,
-    anchorText: row.anchor_text,
-    parentCommentId: row.parent_comment_id,
+    anchorStart: row.anchorStart,
+    anchorEnd: row.anchorEnd,
+    anchorText: row.anchorText,
+    parentCommentId: row.parentCommentId,
     status: row.status as CommentRecord["status"],
-    resolvedBy: row.resolved_by,
-    resolvedAt: row.resolved_at,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    resolvedBy: row.resolvedBy,
+    resolvedAt: row.resolvedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -82,25 +67,22 @@ export function createComment(params: {
   const id = `comment-${randomUUID()}`;
   const now = Date.now();
 
-  rawRun(
-    "docComments:createComment",
-    /*sql*/ `INSERT INTO ${getTableName(documentComments)}
-      (id, surface_id, conversation_id, author, content,
-       anchor_start, anchor_end, anchor_text, parent_comment_id,
-       status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
-    id,
-    params.surfaceId,
-    params.conversationId,
-    params.author,
-    params.content,
-    params.anchorStart ?? null,
-    params.anchorEnd ?? null,
-    params.anchorText ?? null,
-    params.parentCommentId ?? null,
-    now,
-    now,
-  );
+  getDb()
+    .insert(documentComments)
+    .values({
+      id,
+      surfaceId: params.surfaceId,
+      conversationId: params.conversationId,
+      author: params.author,
+      content: params.content,
+      anchorStart: params.anchorStart ?? null,
+      anchorEnd: params.anchorEnd ?? null,
+      anchorText: params.anchorText ?? null,
+      parentCommentId: params.parentCommentId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
 
   log.info({ id, surfaceId: params.surfaceId }, "Created comment");
 
@@ -123,11 +105,11 @@ export function createComment(params: {
 }
 
 export function getComment(id: string): CommentRecord | null {
-  const row = rawGet<CommentRow>(
-    "docComments:getComment",
-    /*sql*/ `SELECT * FROM ${getTableName(documentComments)} WHERE id = ?`,
-    id,
-  );
+  const row = getDb()
+    .select()
+    .from(documentComments)
+    .where(eq(documentComments.id, id))
+    .get();
   return row ? mapRowToComment(row) : null;
 }
 
@@ -141,40 +123,39 @@ export function listComments(
   const status = opts?.status ?? "all";
   const topLevelOnly = opts?.topLevelOnly ?? false;
 
-  const conditions: string[] = ["surface_id = ?"];
-  const params: (string | number | null)[] = [surfaceId];
+  const conditions = [eq(documentComments.surfaceId, surfaceId)];
 
   if (status !== "all") {
-    conditions.push("status = ?");
-    params.push(status);
+    conditions.push(eq(documentComments.status, status));
   }
 
   if (topLevelOnly) {
-    conditions.push("parent_comment_id IS NULL");
+    conditions.push(isNull(documentComments.parentCommentId));
   }
 
-  const where = conditions.join(" AND ");
-  const rows = rawAll<CommentRow>(
-    "docComments:listComments",
-    /*sql*/ `SELECT * FROM ${getTableName(documentComments)} WHERE ${where} ORDER BY created_at ASC`,
-    ...params,
-  );
+  const rows = getDb()
+    .select()
+    .from(documentComments)
+    .where(and(...conditions))
+    .orderBy(asc(documentComments.createdAt))
+    .all();
 
   return rows.map(mapRowToComment);
 }
 
 export function resolveComment(id: string, resolvedBy: string): boolean {
   const now = Date.now();
-  const changes = rawRun(
-    "docComments:resolveComment",
-    /*sql*/ `UPDATE ${getTableName(documentComments)}
-      SET status = 'resolved', resolved_by = ?, resolved_at = ?, updated_at = ?
-      WHERE id = ?`,
-    resolvedBy,
-    now,
-    now,
-    id,
-  );
+  getDb()
+    .update(documentComments)
+    .set({
+      status: "resolved",
+      resolvedBy,
+      resolvedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(documentComments.id, id))
+    .run();
+  const changes = rawChanges();
   if (changes > 0) {
     log.info({ id, resolvedBy }, "Resolved comment");
   }
@@ -183,14 +164,17 @@ export function resolveComment(id: string, resolvedBy: string): boolean {
 
 export function reopenComment(id: string): boolean {
   const now = Date.now();
-  const changes = rawRun(
-    "docComments:reopenComment",
-    /*sql*/ `UPDATE ${getTableName(documentComments)}
-      SET status = 'open', resolved_by = NULL, resolved_at = NULL, updated_at = ?
-      WHERE id = ?`,
-    now,
-    id,
-  );
+  getDb()
+    .update(documentComments)
+    .set({
+      status: "open",
+      resolvedBy: null,
+      resolvedAt: null,
+      updatedAt: now,
+    })
+    .where(eq(documentComments.id, id))
+    .run();
+  const changes = rawChanges();
   if (changes > 0) {
     log.info({ id }, "Reopened comment");
   }
@@ -199,13 +183,12 @@ export function reopenComment(id: string): boolean {
 
 export function updateCommentContent(id: string, content: string): boolean {
   const now = Date.now();
-  const changes = rawRun(
-    "docComments:updateCommentContent",
-    /*sql*/ `UPDATE ${getTableName(documentComments)} SET content = ?, updated_at = ? WHERE id = ?`,
-    content,
-    now,
-    id,
-  );
+  getDb()
+    .update(documentComments)
+    .set({ content, updatedAt: now })
+    .where(eq(documentComments.id, id))
+    .run();
+  const changes = rawChanges();
   if (changes > 0) {
     log.info({ id }, "Updated comment content");
   }
@@ -214,11 +197,8 @@ export function updateCommentContent(id: string, content: string): boolean {
 
 export function deleteComment(id: string): boolean {
   // Replies cascade-delete via the self-referential FK on parent_comment_id.
-  const changes = rawRun(
-    "docComments:deleteComment",
-    /*sql*/ `DELETE FROM ${getTableName(documentComments)} WHERE id = ?`,
-    id,
-  );
+  getDb().delete(documentComments).where(eq(documentComments.id, id)).run();
+  const changes = rawChanges();
   if (changes > 0) {
     log.info({ id }, "Deleted comment and its replies");
   }
@@ -226,11 +206,15 @@ export function deleteComment(id: string): boolean {
 }
 
 export function getCommentCountForDocument(surfaceId: string): number {
-  const row = rawGet<{ count: number }>(
-    "docComments:getCommentCount",
-    /*sql*/ `SELECT COUNT(*) AS count FROM ${getTableName(documentComments)}
-      WHERE surface_id = ? AND status = 'open'`,
-    surfaceId,
-  );
-  return row?.count ?? 0;
+  const rows = getDb()
+    .select({ count: count() })
+    .from(documentComments)
+    .where(
+      and(
+        eq(documentComments.surfaceId, surfaceId),
+        eq(documentComments.status, "open"),
+      ),
+    )
+    .get();
+  return rows?.count ?? 0;
 }

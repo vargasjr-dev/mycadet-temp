@@ -40,4 +40,4 @@ export interface RecordingStatus {
 
 // --- Domain-level union aliases (consumed by the barrel file) ---
 
-export type _ComputerUseClientMessages = TaskSubmit | RecordingStatus;
+type _ComputerUseClientMessages = TaskSubmit | RecordingStatus;

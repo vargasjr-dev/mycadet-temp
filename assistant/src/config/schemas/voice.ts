@@ -145,6 +145,5 @@ export const VoiceConfigSchema = z
     "Transport-agnostic voice configuration shared by live voice and phone calls: front-door routing and progress narration tuning",
   );
 
-export type VoiceConfig = z.infer<typeof VoiceConfigSchema>;
 export type VoiceFrontModelConfig = z.infer<typeof VoiceFrontModelConfigSchema>;
 export type VoiceProgressConfig = z.infer<typeof VoiceProgressConfigSchema>;

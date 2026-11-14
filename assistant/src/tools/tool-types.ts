@@ -37,19 +37,6 @@ export type ExecutionTarget = "sandbox" | "host";
 /** The kind of extension that owns a tool. Core tools have no owner. */
 export type OwnerKind = "skill" | "mcp" | "plugin";
 
-/**
- * Identifies which extension owns a tool (skill / plugin / MCP server).
- * Tracked by the daemon's tool registry keyed by tool name, not stored on
- * the `Tool` object itself. The registry function `getToolOwner(name)`
- * returns this shape; ownership is established at `register_tools` time
- * via the `host.registries.register_tools` IPC method.
- */
-export interface OwnerInfo {
-  kind: OwnerKind;
-  /** ID of the owning extension (skill id / plugin name / MCP server id). */
-  id: string;
-}
-
 export enum RiskLevel {
   Low = "low",
   Medium = "medium",
@@ -69,12 +56,6 @@ export interface ToolDefinition {
   description: string;
   input_schema: object;
 }
-
-export type ErrorCategory =
-  | "permission_denied"
-  | "auth"
-  | "tool_failure"
-  | "unexpected";
 
 export interface DiffInfo {
   filePath: string;
@@ -367,26 +348,3 @@ export interface ToolContext {
 // ---------------------------------------------------------------------------
 // Tool
 // ---------------------------------------------------------------------------
-
-export interface Tool {
-  name: string;
-  description: string;
-  category: string;
-  defaultRiskLevel: RiskLevel;
-  /** Declared execution target from the skill manifest. Used by resolveExecutionTarget
-   * to accurately label lifecycle events for skill-provided tools. */
-  executionTarget?: ExecutionTarget;
-  /** Client operating systems that may expose this tool. Unset means all. */
-  supportedClientOs?: readonly (
-    | "web"
-    | "ios"
-    | "macos"
-    | "windows"
-    | "android"
-  )[];
-  getDefinition(): ToolDefinition;
-  execute(
-    input: Record<string, unknown>,
-    context: ToolContext,
-  ): Promise<ToolExecutionResult>;
-}

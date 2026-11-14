@@ -98,5 +98,4 @@ export const RateLimitConfigSchema = z
   })
   .describe("Rate limiting for LLM provider requests");
 
-export type TimeoutConfig = z.infer<typeof TimeoutConfigSchema>;
 export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;

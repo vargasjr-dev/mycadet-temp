@@ -63,7 +63,6 @@ export const AcpConfigSchema = z
     "Agent Communication Protocol (ACP) — inter-agent communication and delegation",
   );
 
-export type AcpConfig = z.infer<typeof AcpConfigSchema>;
 export type AcpAgentConfig = z.infer<typeof AcpAgentConfigSchema>;
 
 // ── Bundled defaults ──────────────────────────────────────────────────────

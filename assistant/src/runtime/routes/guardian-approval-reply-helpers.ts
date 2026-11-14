@@ -176,21 +176,3 @@ export async function deliverStaleApprovalReply(
 // ---------------------------------------------------------------------------
 // Identity mismatch reply
 // ---------------------------------------------------------------------------
-
-export interface DeliverIdentityMismatchReplyParams {
-  sourceChannel: ChannelId;
-  replyCallbackUrl: string;
-  chatId: string;
-  assistantId: string;
-  approvalCopyGenerator?: ApprovalCopyGenerator;
-  logger: pino.Logger;
-  errorLogMessage: string;
-  /** Extra fields merged into the pino error context. */
-  errorLogContext?: Record<string, unknown>;
-  /**
-   * When set, deliver via `chat.postEphemeral` so only this Slack user
-   * sees the message.
-   */
-  /** Restricts the reply to one reader. Absent means the room. */
-  audience?: MessageAudience;
-}

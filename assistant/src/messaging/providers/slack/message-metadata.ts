@@ -27,8 +27,6 @@ import {
  * context only and do not become durable message metadata.
  */
 
-export type SlackEventKind = "message" | "reaction";
-
 /**
  * Shape-check for a Slack `ts` value. Slack IDs messages by `<seconds>.<micros>`
  * strings (e.g. `"1700000000.000100"`). The daemon also stores identifiers in
@@ -80,7 +78,6 @@ export const slackMessageMetadataSchema = z.object({
   slackFiles: z.array(slackFileMetadataSchema).optional(),
 });
 
-export type SlackReactionMetadata = z.infer<typeof slackReactionMetadataSchema>;
 export type SlackFileMetadata = z.infer<typeof slackFileMetadataSchema>;
 export type SlackMessageMetadata = z.infer<typeof slackMessageMetadataSchema>;
 

@@ -184,9 +184,4 @@ export const MemoryMaintenanceConfigSchema = z
     "Database maintenance (PRAGMA optimize / WAL checkpoint) scheduling",
   );
 
-export type MemoryJobsConfig = z.infer<typeof MemoryJobsConfigSchema>;
-export type MemoryRetentionConfig = z.infer<typeof MemoryRetentionConfigSchema>;
 export type MemoryCleanupConfig = z.infer<typeof MemoryCleanupConfigSchema>;
-export type MemoryMaintenanceConfig = z.infer<
-  typeof MemoryMaintenanceConfigSchema
->;

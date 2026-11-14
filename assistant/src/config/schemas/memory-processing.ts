@@ -47,10 +47,3 @@ export const MemorySummarizationConfigSchema = z
   .describe(
     "Controls how memory items are summarized and consolidated over time. Model selection lives under llm.callSites.conversationSummarization.",
   );
-
-export type MemoryExtractionConfig = z.infer<
-  typeof MemoryExtractionConfigSchema
->;
-export type MemorySummarizationConfig = z.infer<
-  typeof MemorySummarizationConfigSchema
->;

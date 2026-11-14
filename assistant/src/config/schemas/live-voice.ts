@@ -155,6 +155,4 @@ export const LiveVoiceConfigSchema = z
     "Live voice (in-app duplex audio) configuration: VAD tuning, Flux turn detection, and audio archiving",
   );
 
-export type LiveVoiceConfig = z.infer<typeof LiveVoiceConfigSchema>;
-export type LiveVoiceVadConfig = z.infer<typeof LiveVoiceVadConfigSchema>;
 export type LiveVoiceFluxConfig = z.infer<typeof LiveVoiceFluxConfigSchema>;

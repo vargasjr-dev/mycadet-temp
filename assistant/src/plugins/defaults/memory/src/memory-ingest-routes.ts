@@ -49,7 +49,6 @@ const MemoryIngestParamsSchema = z.object({
   /** Rewrite pages whose slug already exists on disk (default: skip them). */
   overwrite: z.boolean().optional(),
 });
-export type MemoryIngestParams = z.infer<typeof MemoryIngestParamsSchema>;
 
 const MemoryIngestResultSchema = z.object({
   results: z.array(

@@ -7,7 +7,7 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
-import * as net from "node:net";
+import { createServer } from "node:net";
 import { dirname, join } from "node:path";
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
@@ -500,7 +500,7 @@ async function pickFreeAgentAddr(agents: NgrokAgentView[]): Promise<string> {
 function isAddrBindable(addr: string): Promise<boolean> {
   const port = Number(addr.split(":").pop());
   return new Promise((resolve) => {
-    const server = net.createServer();
+    const server = createServer();
     server.once("error", () => resolve(false));
     server.listen({ port, host: "127.0.0.1" }, () => {
       server.close(() => resolve(true));

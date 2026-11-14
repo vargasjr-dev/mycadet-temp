@@ -179,5 +179,3 @@ export const MemorySubstrateConfigSchema = z
       }
     }
   });
-
-export type MemorySubstrateConfig = z.infer<typeof MemorySubstrateConfigSchema>;

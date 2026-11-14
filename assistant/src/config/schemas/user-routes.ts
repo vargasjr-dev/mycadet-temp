@@ -23,5 +23,3 @@ export const UserRoutesConfigSchema = z
       .describe("Route host subprocess configuration."),
   })
   .describe("User-defined route (/x/*) execution configuration.");
-
-export type UserRoutesConfig = z.infer<typeof UserRoutesConfigSchema>;

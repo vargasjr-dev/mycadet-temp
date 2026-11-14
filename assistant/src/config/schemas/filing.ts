@@ -94,5 +94,3 @@ export const FilingConfigSchema = z
       });
     }
   });
-
-export type FilingConfig = z.infer<typeof FilingConfigSchema>;

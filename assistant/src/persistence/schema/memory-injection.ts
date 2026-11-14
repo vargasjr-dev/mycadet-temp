@@ -6,11 +6,6 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
-// Time-series of memory-v2 card injections, used by the router to decay a
-// concept's recent injection pressure. Lives in the dedicated memory database
-// (`assistant-memory.db`), not main — access it via the memory connection
-// (`getMemoryDb()` / `getMemorySqlite()`).
-
 // Per-conversation record of every memory-v3 section ever injected, keyed by
 // (page slug, section key: `""` for the page lead or capability content), with
 // a pruned_at tombstone so re-injection can be suppressed after pruning and a

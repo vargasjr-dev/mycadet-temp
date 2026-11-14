@@ -132,9 +132,3 @@ const IngressBaseSchema = z
 export const IngressConfigSchema = IngressBaseSchema.default(
   IngressBaseSchema.parse({}),
 );
-
-export type IngressWebhookConfig = z.infer<typeof IngressWebhookConfigSchema>;
-export type IngressRateLimitConfig = z.infer<
-  typeof IngressRateLimitConfigSchema
->;
-export type IngressConfig = z.infer<typeof IngressConfigSchema>;

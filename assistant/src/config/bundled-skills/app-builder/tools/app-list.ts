@@ -1,9 +1,9 @@
 import type { AppDefinition } from "../../../../apps/app-store.js";
+import { listApps } from "../../../../apps/app-store.js";
 import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
-import { bundledAppStore } from "../app-store-adapter.js";
 
 interface AppListEntry {
   app_id: string;
@@ -27,7 +27,7 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const apps = bundledAppStore.listApps();
+  const apps = listApps();
   const entries = apps.map(toEntry);
 
   const query =

@@ -6,21 +6,10 @@
  * the database.
  */
 
-import type { OAuthProviderRow } from "./oauth-store.js";
-
-/**
- * Full serialized representation of an OAuth provider row.
- *
- * JSON string fields are parsed into their native types, boolean/integer
- * fields are normalised to booleans, timestamps are ISO 8601 strings,
- * and computed fields are included.
- */
-export type SerializedProvider = ReturnType<typeof serializeProvider> &
-  Record<string, unknown>;
-
 import { isChannelBotProvider } from "@mycadet/service-contracts/channels";
 import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
+import type { OAuthProviderRow } from "./oauth-store.js";
 import { PROVIDER_SEED_DATA } from "./seed-providers.js";
 
 /**

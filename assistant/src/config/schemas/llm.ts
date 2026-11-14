@@ -606,7 +606,6 @@ export const RawDefaultSelectionSchema = z
 const ProfileStatusSchema = z
   .enum(["active", "disabled"])
   .meta({ id: "ProfileStatus" });
-export type ProfileStatus = z.infer<typeof ProfileStatusSchema>;
 
 // ---------------------------------------------------------------------------
 // Mix profiles
@@ -625,7 +624,6 @@ const MixArmSchema = z.object({
   profile: z.string().min(1),
   weight: z.number().finite().positive(),
 });
-export type MixArm = z.infer<typeof MixArmSchema>;
 
 const MixSchema = z.array(MixArmSchema).min(2);
 

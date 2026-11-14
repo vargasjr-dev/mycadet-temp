@@ -218,5 +218,3 @@ export const WorkspaceGitConfigSchema = z
   .describe(
     "Workspace git integration — auto-commits, enrichment, and LLM-generated commit messages",
   );
-
-export type WorkspaceGitConfig = z.infer<typeof WorkspaceGitConfigSchema>;

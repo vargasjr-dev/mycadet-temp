@@ -394,13 +394,6 @@ const MODE_TEXT_CONFIG: Record<
 export type PendingQuestionGuardianPayload = z.infer<
   typeof PendingQuestionPayloadSchema
 >;
-export type ToolApprovalGuardianPayload = z.infer<
-  typeof ToolApprovalPayloadSchema
->;
-export type ToolGrantGuardianPayload = z.infer<typeof ToolGrantPayloadSchema>;
-export type AccessRequestGuardianPayload = z.infer<
-  typeof AccessRequestGuardianPayloadSchema
->;
 export type GuardianQuestionPayload = z.infer<
   typeof GuardianQuestionPayloadSchema
 >;

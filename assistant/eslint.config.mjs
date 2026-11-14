@@ -43,6 +43,37 @@ const eslintConfig = defineConfig([
       // test on the real backend behind a seam — e.g. the memory-backed
       // helpers in src/__tests__/helpers/secure-keys.ts — instead of
       // masking module state.
+      //
+      // Also flag namespace imports (`import * as ns`) in the same countdown:
+      // a namespace hides which members the consumer actually uses, and knip
+      // cannot attribute members through every namespace shape. Import the
+      // named members instead. Test files are exempt (the block below) — the
+      // mock.module seam idiom spreads namespaces by design.
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "CallExpression[callee.object.name='mock'][callee.property.name='module']",
+          message:
+            "mock.module masks module state across tests; run on the real backend behind a seam instead. Remaining uses are being counted down — do not add new ones.",
+        },
+        {
+          selector:
+            "ImportDeclaration[importKind!='type'] > ImportNamespaceSpecifier",
+          message:
+            "Namespace imports hide the used surface — import the named members instead. Counted down like mock.module; do not add new ones.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      // Restated without the namespace-import rule: the test mock idiom
+      // (`import * as ns` + mock.module) legitimately holds a namespace.
+      // Flat config replaces rule options rather than merging, so this
+      // override must restate every rule it wants to keep.
       "no-restricted-syntax": [
         "warn",
         {
@@ -52,12 +83,6 @@ const eslintConfig = defineConfig([
             "mock.module masks module state across tests; run on the real backend behind a seam instead. Remaining uses are being counted down — do not add new ones.",
         },
       ],
-    },
-  },
-  {
-    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
     },
   },
   {

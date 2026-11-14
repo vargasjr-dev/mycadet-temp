@@ -115,7 +115,6 @@ export const askQuestionInputSchema = z
   });
 
 export type SingleQuestion = z.infer<typeof SingleQuestionSchema>;
-export type AskQuestionInput = z.infer<typeof askQuestionInputSchema>;
 
 // ── Tool description ────────────────────────────────────────────────
 

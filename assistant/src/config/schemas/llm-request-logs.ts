@@ -126,7 +126,6 @@ export const LlmRequestLogsConfigSchema = z
   .default({ readSource: "local", enabled: true })
   .describe("LLM request logging configuration");
 
-export type LlmRequestLogsConfig = z.infer<typeof LlmRequestLogsConfigSchema>;
 export type LlmRequestLogsClickHouseConfig = z.infer<
   typeof LlmRequestLogsClickHouseConfigSchema
 >;

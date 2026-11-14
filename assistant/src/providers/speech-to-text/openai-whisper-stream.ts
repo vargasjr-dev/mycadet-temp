@@ -12,8 +12,6 @@ import {
 } from "./incremental-batch-stream.js";
 import { whisperTranscribe } from "./openai-whisper.js";
 
-export type OpenAIWhisperStreamOptions = IncrementalBatchStreamOptions;
-
 export class OpenAIWhisperStreamingTranscriber extends IncrementalBatchStreamingTranscriber {
   readonly providerId = "openai-whisper" as const;
 

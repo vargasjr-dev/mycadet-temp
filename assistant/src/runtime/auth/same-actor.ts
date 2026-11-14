@@ -117,8 +117,6 @@ export interface SameActorPersistedArgs {
   hubForMissingTarget?: Pick<AssistantEventHub, "getActorPrincipalIdForClient">;
 }
 
-export type SameActorArgs = SameActorLiveArgs;
-
 type RejectionReason = "missing_source" | "missing_target" | "mismatch";
 
 function isLive(

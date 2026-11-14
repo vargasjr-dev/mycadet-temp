@@ -56,16 +56,8 @@ export type UiSurfaceShow = {
   [K in SurfaceType]: UiSurfaceShowFor<K>;
 }[SurfaceType];
 
-export type UiSurfaceShowCard = UiSurfaceShowFor<"card">;
-export type UiSurfaceShowChoice = UiSurfaceShowFor<"choice">;
-export type UiSurfaceShowCopyBlock = UiSurfaceShowFor<"copy_block">;
-export type UiSurfaceShowForm = UiSurfaceShowFor<"form">;
-export type UiSurfaceShowList = UiSurfaceShowFor<"list">;
-export type UiSurfaceShowConfirmation = UiSurfaceShowFor<"confirmation">;
 export type UiSurfaceShowDynamicPage = UiSurfaceShowFor<"dynamic_page">;
-export type UiSurfaceShowTable = UiSurfaceShowFor<"table">;
 export type UiSurfaceShowFileUpload = UiSurfaceShowFor<"file_upload">;
-export type UiSurfaceShowDocumentPreview = UiSurfaceShowFor<"document_preview">;
 export type UiSurfaceShowWorkResult = UiSurfaceShowFor<"work_result">;
 
 // All five surface lifecycle events are single-sourced from their canonical

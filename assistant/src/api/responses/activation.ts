@@ -105,9 +105,6 @@ export const ActivationTaskStartRequestSchema = z.object({
     "List the task came from, stored only while no list is frozen",
   ),
 });
-export type ActivationTaskStartRequest = z.infer<
-  typeof ActivationTaskStartRequestSchema
->;
 
 export const ActivationDismissKindSchema = z
   .enum(["modal", "all-done"])
@@ -120,9 +117,6 @@ export const ActivationDismissRequestSchema = z.object({
     "List the surface showed, stored only while no list is frozen",
   ),
 });
-export type ActivationDismissRequest = z.infer<
-  typeof ActivationDismissRequestSchema
->;
 
 /** Empty progress, returned before the store file exists. */
 export function emptyActivationProgress(): ActivationProgress {

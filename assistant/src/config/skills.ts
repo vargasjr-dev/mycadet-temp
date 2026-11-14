@@ -46,8 +46,6 @@ import { stripCommentLines } from "../util/strip-comment-lines.js";
 
 const log = getLogger("skills");
 
-// ─── Zod schemas for frontmatter metadata validation ─────────────────────────
-
 const CadetMetadataSchema = z
   .object({
     emoji: z.string().optional(),
@@ -88,8 +86,6 @@ export type SkillSource =
   | "workspace"
   | "extra"
   | "plugin";
-
-// ─── Core interfaces ─────────────────────────────────────────────────────────
 
 export interface SkillSummary {
   id: string;
@@ -163,8 +159,6 @@ export interface SkillSelectorResult {
   errorCode?: SkillLookupErrorCode;
 }
 
-// ─── Skill Tool Manifest Types ────────────────────────────────────────────────
-
 /**
  * Lightweight metadata about a skill's tool manifest, attached to SkillSummary
  * without loading the full manifest at catalog time.
@@ -185,8 +179,6 @@ export interface SkillToolManifestMeta {
    */
   versionHash?: string;
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export function getBundledSkillsDir(): string {
   const dir = import.meta.dir;
@@ -210,8 +202,6 @@ export function getBundledSkillsDir(): string {
 
   return join(dir, "bundled-skills");
 }
-
-// ─── Frontmatter parsing ─────────────────────────────────────────────────────
 
 export interface ParsedFrontmatter {
   name: string;
@@ -376,8 +366,6 @@ export function parseFrontmatter(
   };
 }
 
-// ─── Path utilities ──────────────────────────────────────────────────────────
-
 function getCanonicalPath(path: string): string {
   return existsSync(path) ? realpathSync(path) : resolve(path);
 }
@@ -396,8 +384,6 @@ function isOutsideSkillsRoot(
   const relativePath = getRelativeToSkillsRoot(skillsDir, candidatePath);
   return relativePath.startsWith("..") || isAbsolute(relativePath);
 }
-
-// ─── Tool manifest detection ─────────────────────────────────────────────────
 
 /**
  * Create a SkillToolManifestMeta with a lazily-computed versionHash.
@@ -467,8 +453,6 @@ function detectToolManifest(
     );
   }
 }
-
-// ─── Skill reading ───────────────────────────────────────────────────────────
 
 function readSkillFromDirectory(
   directoryPath: string,
@@ -595,8 +579,6 @@ function readBundledSkillFromDirectory(
     return null;
   }
 }
-
-// ─── Skill discovery ─────────────────────────────────────────────────────────
 
 function discoverBundledSkillDirectories(): string[] {
   const bundledDir = getBundledSkillsDir();
@@ -879,8 +861,6 @@ function discoverInstalledPluginResidentSkills(): SkillSummary[] {
 
   return summaries;
 }
-
-// ─── Catalog loading ─────────────────────────────────────────────────────────
 
 /**
  * Scope a list of skills to a conversation's per-chat plugin selection.
@@ -1378,5 +1358,3 @@ export function loadSkillBySelector(
   }
   return loadSkillDefinition(resolved.skill);
 }
-
-// ─── Icon generation ─────────────────────────────────────────────────────────

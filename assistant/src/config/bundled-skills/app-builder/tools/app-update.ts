@@ -9,7 +9,6 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
-import { bundledAppStore } from "../app-store-adapter.js";
 
 export async function run(
   input: Record<string, unknown>,
@@ -20,8 +19,8 @@ export async function run(
     return missingAppIdError();
   }
   throwIfCancelled(context);
-  return executeAppUpdate(
-    { ...input, app_id: appId } as unknown as AppUpdateInput,
-    bundledAppStore,
-  );
+  return executeAppUpdate({
+    ...input,
+    app_id: appId,
+  } as unknown as AppUpdateInput);
 }

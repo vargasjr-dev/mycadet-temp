@@ -8,13 +8,6 @@
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_BASE_DELAY_MS = 1000;
 
-export interface RetryOptions {
-  /** Maximum number of retry attempts (default 3). */
-  maxRetries?: number;
-  /** Base delay in ms for exponential backoff (default 1000). */
-  baseDelayMs?: number;
-}
-
 /**
  * Compute a retry delay with equal jitter: guaranteed floor of cap/2
  * plus random in [0, cap/2]. Prevents retry storms while ensuring

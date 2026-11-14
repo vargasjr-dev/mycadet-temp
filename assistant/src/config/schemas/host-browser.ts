@@ -39,10 +39,6 @@ const DesktopAutoCdpInspectConfigSchema = z
   })
   .describe("Auto-attempt policy for cdp-inspect on macOS-originated turns.");
 
-export type DesktopAutoCdpInspectConfig = z.infer<
-  typeof DesktopAutoCdpInspectConfigSchema
->;
-
 /**
  * Configuration for the `cdp-inspect` browser backend — connects directly
  * to a host Chrome instance that was launched with `--remote-debugging-port`
@@ -93,10 +89,6 @@ const HostBrowserCdpInspectConfigSchema = z
     "Settings for the cdp-inspect backend that connects to a host Chrome instance via its remote-debugging endpoint.",
   );
 
-export type HostBrowserCdpInspectConfig = z.infer<
-  typeof HostBrowserCdpInspectConfigSchema
->;
-
 /**
  * Top-level configuration for host-browser backends. Currently only exposes
  * `cdpInspect`, but the shape leaves room for additional host-browser knobs
@@ -109,5 +101,3 @@ export const HostBrowserConfigSchema = z
     ),
   })
   .describe("Host-browser backend configuration (cdp-inspect, etc.)");
-
-export type HostBrowserConfig = z.infer<typeof HostBrowserConfigSchema>;

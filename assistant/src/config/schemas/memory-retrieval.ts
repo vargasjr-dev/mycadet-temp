@@ -334,5 +334,3 @@ export const MemoryRetrievalConfigSchema = z
   .describe(
     "Controls how memories are retrieved and injected into conversations",
   );
-
-export type MemoryRetrievalConfig = z.infer<typeof MemoryRetrievalConfigSchema>;

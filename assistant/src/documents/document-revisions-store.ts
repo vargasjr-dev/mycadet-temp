@@ -5,9 +5,9 @@
  * Snapshot writes run inside the caller's transaction, next to the document
  * write they precede, so a snapshot exists exactly when its write landed.
  */
-import { getTableName } from "drizzle-orm";
+import { and, desc, eq, notInArray } from "drizzle-orm";
 
-import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { getDb } from "../persistence/db-connection.js";
 import { documentRevisions } from "../persistence/schema/documents.js";
 
 /** Who made the write a snapshot was taken ahead of. */
@@ -46,8 +46,8 @@ export interface DocumentSnapshotSource {
 interface RevisionRow {
   revision: number;
   author: DocumentRevisionAuthor;
-  created_at: number;
-  word_count: number;
+  createdAt: number;
+  wordCount: number;
   title: string;
   content: string;
 }
@@ -58,8 +58,8 @@ function mapRowToSummary(
   return {
     revision: row.revision,
     author: row.author,
-    createdAt: row.created_at,
-    wordCount: row.word_count,
+    createdAt: row.createdAt,
+    wordCount: row.wordCount,
     title: row.title,
   };
 }
@@ -73,32 +73,36 @@ export function recordDocumentSnapshot(
   state: DocumentSnapshotSource,
   author: DocumentRevisionAuthor,
 ): void {
-  rawRun(
-    "documentRevisions:record",
-    /*sql*/ `INSERT OR IGNORE INTO ${getTableName(documentRevisions)} (surface_id, revision, title, content, word_count, author, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    state.surfaceId,
-    state.revision,
-    state.title,
-    state.content,
-    state.wordCount,
-    author,
-    Date.now(),
-  );
-  rawRun(
-    "documentRevisions:prune",
-    /*sql*/ `DELETE FROM ${getTableName(documentRevisions)}
-     WHERE surface_id = ?
-       AND revision NOT IN (
-         SELECT revision FROM ${getTableName(documentRevisions)}
-         WHERE surface_id = ?
-         ORDER BY revision DESC
-         LIMIT ?
-       )`,
-    state.surfaceId,
-    state.surfaceId,
-    MAX_REVISIONS_PER_DOCUMENT,
-  );
+  getDb()
+    .insert(documentRevisions)
+    .values({
+      surfaceId: state.surfaceId,
+      revision: state.revision,
+      title: state.title,
+      content: state.content,
+      wordCount: state.wordCount,
+      author,
+      createdAt: Date.now(),
+    })
+    .onConflictDoNothing()
+    .run();
+  getDb()
+    .delete(documentRevisions)
+    .where(
+      and(
+        eq(documentRevisions.surfaceId, state.surfaceId),
+        notInArray(
+          documentRevisions.revision,
+          getDb()
+            .select({ revision: documentRevisions.revision })
+            .from(documentRevisions)
+            .where(eq(documentRevisions.surfaceId, state.surfaceId))
+            .orderBy(desc(documentRevisions.revision))
+            .limit(MAX_REVISIONS_PER_DOCUMENT),
+        ),
+      ),
+    )
+    .run();
 }
 
 /**
@@ -108,20 +112,22 @@ export function recordDocumentSnapshot(
  * assistant edit, so the assistant's result survives the user's next edits.
  */
 export function shouldSnapshotBeforeUserSave(surfaceId: string): boolean {
-  const latest = rawGet<{ author: string; created_at: number }>(
-    "documentRevisions:latest",
-    /*sql*/ `SELECT author, created_at FROM ${getTableName(documentRevisions)}
-     WHERE surface_id = ?
-     ORDER BY revision DESC
-     LIMIT 1`,
-    surfaceId,
-  );
+  const latest = getDb()
+    .select({
+      author: documentRevisions.author,
+      createdAt: documentRevisions.createdAt,
+    })
+    .from(documentRevisions)
+    .where(eq(documentRevisions.surfaceId, surfaceId))
+    .orderBy(desc(documentRevisions.revision))
+    .limit(1)
+    .get();
   if (!latest) {
     return true;
   }
   return (
     latest.author === "assistant" ||
-    Date.now() - latest.created_at >= USER_SNAPSHOT_INTERVAL_MS
+    Date.now() - latest.createdAt >= USER_SNAPSHOT_INTERVAL_MS
   );
 }
 
@@ -129,14 +135,21 @@ export function shouldSnapshotBeforeUserSave(surfaceId: string): boolean {
 export function listDocumentRevisions(
   surfaceId: string,
 ): DocumentRevisionSummary[] {
-  return rawAll<Omit<RevisionRow, "content">>(
-    "documentRevisions:list",
-    /*sql*/ `SELECT revision, author, created_at, word_count, title
-     FROM ${getTableName(documentRevisions)}
-     WHERE surface_id = ?
-     ORDER BY revision DESC`,
-    surfaceId,
-  ).map(mapRowToSummary);
+  return getDb()
+    .select({
+      revision: documentRevisions.revision,
+      author: documentRevisions.author,
+      createdAt: documentRevisions.createdAt,
+      wordCount: documentRevisions.wordCount,
+      title: documentRevisions.title,
+    })
+    .from(documentRevisions)
+    .where(eq(documentRevisions.surfaceId, surfaceId))
+    .orderBy(desc(documentRevisions.revision))
+    .all()
+    .map((row) =>
+      mapRowToSummary({ ...row, author: row.author as DocumentRevisionAuthor }),
+    );
 }
 
 /** One snapshot with its body, or `null` when it does not exist. */
@@ -144,13 +157,24 @@ export function getDocumentRevision(
   surfaceId: string,
   revision: number,
 ): DocumentRevisionRecord | null {
-  const row = rawGet<RevisionRow>(
-    "documentRevisions:get",
-    /*sql*/ `SELECT revision, author, created_at, word_count, title, content
-     FROM ${getTableName(documentRevisions)}
-     WHERE surface_id = ? AND revision = ?`,
-    surfaceId,
-    revision,
-  );
-  return row ? { ...mapRowToSummary(row), content: row.content } : null;
+  const row = getDb()
+    .select()
+    .from(documentRevisions)
+    .where(
+      and(
+        eq(documentRevisions.surfaceId, surfaceId),
+        eq(documentRevisions.revision, revision),
+      ),
+    )
+    .get();
+  if (!row) {
+    return null;
+  }
+  return {
+    ...mapRowToSummary({
+      ...row,
+      author: row.author as DocumentRevisionAuthor,
+    }),
+    content: row.content,
+  };
 }

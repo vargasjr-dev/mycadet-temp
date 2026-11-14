@@ -103,13 +103,9 @@ export const documentUpdateInputSchema = z.looseObject({
   content: nullAsOmitted(z.string()),
 });
 
-export const documentReadInputSchema = documentOpenInputSchema;
-
 export const documentListInputSchema = z.looseObject({
   query: z.string().optional().catch(undefined),
 });
-
-export const documentDeleteInputSchema = documentOpenInputSchema;
 
 export const documentFindInputSchema = z.looseObject({
   surface_id: nullAsOmitted(z.string()),
@@ -479,7 +475,7 @@ export function executeDocumentRead(
   input: Record<string, unknown>,
   context: ToolContext,
 ): ToolExecutionResult {
-  const parsedInput = documentReadInputSchema.safeParse(input);
+  const parsedInput = documentOpenInputSchema.safeParse(input);
   if (!parsedInput.success) {
     return invalidToolInputResult("document_read", parsedInput.error);
   }
@@ -545,7 +541,7 @@ export function executeDocumentDelete(
   input: Record<string, unknown>,
   context: ToolContext,
 ): ToolExecutionResult {
-  const parsedInput = documentDeleteInputSchema.safeParse(input);
+  const parsedInput = documentOpenInputSchema.safeParse(input);
   if (!parsedInput.success) {
     return invalidToolInputResult("document_delete", parsedInput.error);
   }

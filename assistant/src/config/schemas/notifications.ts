@@ -12,5 +12,3 @@ export const NotificationsConfigSchema = z
   .describe(
     "Notification delivery configuration. Model selection lives under llm.callSites.notificationDecision and llm.callSites.preferenceExtraction.",
   );
-
-export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;

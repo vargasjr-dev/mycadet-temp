@@ -31,19 +31,3 @@ export interface ExtractedCredential {
   secure: boolean;
   expires?: number;
 }
-
-export interface SessionRecording {
-  id: string;
-  startedAt: number;
-  endedAt: number;
-  targetDomain?: string;
-  networkEntries: NetworkRecordedEntry[];
-  cookies: ExtractedCredential[];
-  observations: Array<{
-    ocrText: string;
-    appName?: string;
-    windowTitle?: string;
-    timestamp: number;
-    captureIndex: number;
-  }>;
-}

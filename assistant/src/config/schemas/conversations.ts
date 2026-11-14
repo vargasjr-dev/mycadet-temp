@@ -30,5 +30,3 @@ export const ConversationsConfigSchema = z
       ),
   })
   .describe("Conversation behavior configuration");
-
-export type ConversationsConfig = z.infer<typeof ConversationsConfigSchema>;

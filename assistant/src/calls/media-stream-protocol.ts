@@ -156,11 +156,3 @@ export interface MediaStreamClearCommand {
   event: "clear";
   streamSid: string;
 }
-
-/**
- * Discriminated union of all outbound commands we can send to Twilio.
- */
-export type MediaStreamCommand =
-  | MediaStreamSendMediaCommand
-  | MediaStreamSendMarkCommand
-  | MediaStreamClearCommand;

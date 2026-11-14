@@ -146,11 +146,3 @@ export const MemorySegmentationConfigSchema = z
   .describe(
     "Controls how conversation text is split into segments for embedding and storage",
   );
-
-export type MemoryEmbeddingsConfig = z.infer<
-  typeof MemoryEmbeddingsConfigSchema
->;
-export type QdrantConfig = z.infer<typeof QdrantConfigSchema>;
-export type MemorySegmentationConfig = z.infer<
-  typeof MemorySegmentationConfigSchema
->;

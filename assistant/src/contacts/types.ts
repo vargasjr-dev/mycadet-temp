@@ -4,8 +4,6 @@ export type ContactRole = "guardian" | "contact";
 
 export type ContactType = "human" | "assistant";
 
-export type AssistantSpecies = "cadet" | "openclaw";
-
 export interface CadetAssistantMetadata {
   assistantId: string;
   gatewayUrl: string;
@@ -66,13 +64,3 @@ export interface ContactWriteResult {
   contact: ContactWithChannels;
   channel: ContactChannel;
 }
-
-export type ChannelType =
-  | "email"
-  | "slack"
-  | "whatsapp"
-  | "phone"
-  | "telegram"
-  | "discord"
-  | "cadet-shared"
-  | "other";

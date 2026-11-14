@@ -448,5 +448,3 @@ export const MemoryV3ConfigSchema = z
     poolLog: MemoryV3PoolLogSchema.default(MemoryV3PoolLogSchema.parse({})),
   })
   .describe("Memory v3 — section-grain lane retrieval");
-
-export type MemoryV3Config = z.infer<typeof MemoryV3ConfigSchema>;

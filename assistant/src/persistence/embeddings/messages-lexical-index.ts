@@ -37,12 +37,6 @@ export interface MessagesLexicalIndexConfig {
   onDisk?: boolean;
 }
 
-export interface MessageLexicalPayload {
-  messageId: string;
-  conversationId: string;
-  createdAt: number;
-}
-
 export interface MessageLexicalSearchResult {
   messageId: string;
   score: number;

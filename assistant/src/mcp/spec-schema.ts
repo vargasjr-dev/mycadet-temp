@@ -52,7 +52,6 @@ export const SpecMcpDocumentSchema = z.object({
 });
 
 export type SpecMcpServer = z.infer<typeof SpecMcpServerSchema>;
-export type SpecMcpDocument = z.infer<typeof SpecMcpDocumentSchema>;
 
 /**
  * Project one spec-shaped entry onto the assistant's transport union. The

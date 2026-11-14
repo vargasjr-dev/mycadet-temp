@@ -13,4 +13,4 @@ export interface DictationRequest {
 
 // --- Domain-level union aliases (consumed by the barrel file) ---
 
-export type _DiagnosticsClientMessages = DictationRequest;
+type _DiagnosticsClientMessages = DictationRequest;
