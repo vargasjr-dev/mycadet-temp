@@ -118,7 +118,9 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected refusal");
     expect(result.status).toBe(0);
-    expect(result.error).toBe("could not parse the gateway's pair output");
+    expect(result.error).toBe(
+      "could not parse the gateway's pair output (stdout tail: not json at all)",
+    );
   });
 
   test("an exec failure (gateway down) comes back structured", async () => {

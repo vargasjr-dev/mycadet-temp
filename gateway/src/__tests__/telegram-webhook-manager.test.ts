@@ -102,6 +102,10 @@ function makeCaches(
     get: async (key: string) => credentialMap[key],
     invalidate: () => {},
   } as unknown as CredentialCache;
+  // Mirror index.ts: the cloud-identity resolver reads the api key through
+  // the gateway credential cache. Without the binding, managed mode dials
+  // the real CES socket path.
+  bindCloudIdentityCredentialCache(credentials);
   if (cloudAssistantId) {
     applyCloudIdentityIds({
       assistantId: cloudAssistantId,
@@ -351,12 +355,6 @@ describe("reconcileTelegramWebhook", () => {
       assistantApiKey: "test-assistant-api-key",
       cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
-    // Keep the api-key read off the real local store / CES socket.
-    bindCloudIdentityCredentialCache(caches.credentials);
-    // Mirror index.ts: the cloud-identity resolver reads the api key through
-    // the gateway credential cache. Without the binding, managed mode dials
-    // the real CES socket path.
-    bindCloudIdentityCredentialCache(caches.credentials);
 
     fetchMock = mock(
       async (input: string | URL | Request, init?: RequestInit) => {
@@ -581,7 +579,13 @@ describe("reconcileTelegramWebhook", () => {
 
     await reconcileTelegramWebhook(caches);
 
-    expect(calls).toEqual(["deleteWebhook"]);
+    // Platform credentials present: the managed callback route is attempted
+    // first (LUM-2899), then the explicit-disable deletion still runs.
+    expect(calls).toEqual([
+      "unexpected:https://api.telegram.org/bottest-bot-token/getMe",
+      "unexpected:https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/",
+      "deleteWebhook",
+    ]);
   });
 
   test("deregisters the webhook when ingress is explicitly disabled even with an ingress URL", async () => {
