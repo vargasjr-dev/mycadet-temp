@@ -1,0 +1,24 @@
+// Extension-Test.xcconfig — test VoiceActivity extension overrides.
+// The bundle ID must stay prefixed by App-Test.xcconfig's, and the URL
+// scheme must match App-Test.xcconfig's exactly or the island deep-links
+// into the production app when it happens to be installed. The App Group
+// must match App-Test.xcconfig's character for character too: a container
+// is shared only between bundles naming the identical group.
+
+#include "Extension-Base.xcconfig"
+
+APP_GROUP_ID = group.ai.mycadet.ios.test
+BUNDLE_DISPLAY_NAME = Cadet Test
+BUNDLE_URL_SCHEME = cadet-test
+
+// The ground the app's mark is drawn on, which must equal the
+// `fill-specializations` solid in `App/AppIcon-Dev.icon/icon.json`: the widget
+// draws the containing app's icon, and this build compiles the dev icon (no
+// dedicated test avatar exists yet).
+APP_ICON_GROUND = display-p3:0.93870,0.55755,0.77770,1.00000
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.test.VoiceActivity
+
+// Exact portal profile name; must equal release-ios.yaml's `ext_profile_name`.
+// Test never releases (test builds sign automatically), so this only
+// exercises if someone manually archives this target with manual signing.
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Test VoiceActivity Distribution

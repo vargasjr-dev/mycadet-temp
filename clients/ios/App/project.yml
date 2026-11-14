@@ -144,7 +144,7 @@ targetTemplates:
   # WidgetKit extension hosting the live-voice Live Activity. One per
   # environment, so each app embeds an extension whose bundle ID is
   # prefixed by its own — iOS requires that, and it is why there are
-  # four of these rather than one shared appex.
+  # five of these rather than one shared appex.
   ExtensionEnvironment:
     type: app-extension
     platform: iOS
@@ -177,7 +177,7 @@ targetTemplates:
         Release:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: VOICE_ACTIVITY_EXTENSION
     # No `scheme:` — extensions build as embedded dependencies of the app
-    # targets, so the four app schemes are the only ones worth having.
+    # targets, so the five app schemes are the only ones worth having.
     preBuildScripts: *projectSpecFreshnessGuard
 
   # Notification Service Extension. iOS runs it for every push carrying
@@ -280,10 +280,10 @@ targets:
       - target: "NotificationService Dev"
         embed: true
 
-  # Local QA build. capacitor.config.ts bakes this scheme name as the
-  # default (CADET_ENVIRONMENT unset -> local), and the baked server.url
-  # is the loopback dev server, so `bun run dev` plus this scheme is the
-  # whole local-iOS flow. Never released.
+  # Local QA build. capacitor.config.ts bakes this scheme name when the sync
+  # runs with CADET_ENVIRONMENT=local, and the baked server.url is the
+  # loopback dev server, so `bun run dev` plus this scheme is the whole
+  # local-iOS flow. Never released.
   "App Local":
     templates: [AppEnvironment]
     sources:
@@ -297,6 +297,25 @@ targets:
       - target: "Share Local"
         embed: true
       - target: "NotificationService Local"
+        embed: true
+
+  # Test-environment QA build — pairs with the test seed (the port-blocked
+  # service environments behind https://test.mycadet.ai); capacitor.config.ts
+  # bakes its scheme when the sync runs with CADET_ENVIRONMENT=test. Never
+  # released. Compiles the dev avatar (no dedicated test one exists yet).
+  "App Test":
+    templates: [AppEnvironment]
+    sources:
+      - path: App/AppIcon-Dev.icon
+    configFiles:
+      Debug: App/Config/App-Test.xcconfig
+      Release: App/Config/App-Test.xcconfig
+    dependencies:
+      - target: "VoiceActivity Test"
+        embed: true
+      - target: "Share Test"
+        embed: true
+      - target: "NotificationService Test"
         embed: true
 
   VoiceActivity:
@@ -323,6 +342,12 @@ targets:
       Debug: App/Config/Extension-Local.xcconfig
       Release: App/Config/Extension-Local.xcconfig
 
+  "VoiceActivity Test":
+    templates: [ExtensionEnvironment]
+    configFiles:
+      Debug: App/Config/Extension-Test.xcconfig
+      Release: App/Config/Extension-Test.xcconfig
+
   Share:
     templates: [ShareExtensionEnvironment]
     configFiles:
@@ -347,6 +372,12 @@ targets:
       Debug: App/Config/Share-Local.xcconfig
       Release: App/Config/Share-Local.xcconfig
 
+  "Share Test":
+    templates: [ShareExtensionEnvironment]
+    configFiles:
+      Debug: App/Config/Share-Test.xcconfig
+      Release: App/Config/Share-Test.xcconfig
+
   NotificationService:
     templates: [NotificationServiceEnvironment]
     configFiles:
@@ -370,6 +401,12 @@ targets:
     configFiles:
       Debug: App/Config/NotificationService-Local.xcconfig
       Release: App/Config/NotificationService-Local.xcconfig
+
+  "NotificationService Test":
+    templates: [NotificationServiceEnvironment]
+    configFiles:
+      Debug: App/Config/NotificationService-Test.xcconfig
+      Release: App/Config/NotificationService-Test.xcconfig
 
   # Logic-only unit tests for the framework-free helpers under `App/`.
   # Sources are listed file by file rather than as the whole `App`

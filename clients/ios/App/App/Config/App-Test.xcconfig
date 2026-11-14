@@ -1,0 +1,22 @@
+// App-Test.xcconfig — test target overrides.
+
+#include "Base.xcconfig"
+
+// Alternate app icons compiled from App/App/AvatarIcons.xcassets.
+#include "AvatarIcons.xcconfig"
+
+APP_GROUP_ID = group.ai.mycadet.ios.test
+// No dedicated test avatar exists yet — this target compiles the dev icon
+// (and shares its ground color in Extension-Test.xcconfig); the display
+// name is what tells the two installs apart.
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-Dev
+ASSOCIATED_DOMAIN = test.mycadet.ai
+BUNDLE_DISPLAY_NAME = Cadet Test
+BUNDLE_URL_SCHEME = cadet-test
+CODE_SIGN_ENTITLEMENTS = App/App-Test.entitlements
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.test
+
+// Exact portal profile name; must equal release-ios.yaml's `profile_name`.
+// Test never releases (test builds sign automatically), so this only
+// exercises if someone manually archives this target with manual signing.
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Test Distribution
