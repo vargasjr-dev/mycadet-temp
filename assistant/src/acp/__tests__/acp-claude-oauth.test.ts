@@ -17,7 +17,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import { startTestCesRecordServer } from "../../__tests__/helpers/test-ces-record-server.js";
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
 
 // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ import {
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
 import { credentialKey } from "@mycadet/credential-storage";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
@@ -20,7 +21,6 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { getDataDir } from "../util/layout.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 const session = startTestCesRecordServer();
 

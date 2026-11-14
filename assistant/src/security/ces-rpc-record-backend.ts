@@ -14,10 +14,8 @@ import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
-import {
-  type CesRpcSession,
-  openCesRpcSession,
-} from "../credential-execution/ces-connect.js";
+import { openCesRpcSession } from "../credential-execution/ces-connect.js";
+import type { CesSessionClient } from "../credential-execution/client.js";
 import { CesUnavailableError } from "../credential-execution/process-manager.js";
 import { getLogger } from "../util/logger.js";
 
@@ -28,10 +26,10 @@ const LAZY_SESSION_COOLDOWN_MS = 3_000;
 
 class CesRpcRecordBackend {
   /**
-   * The live IPC session, opened by this backend's first record operation and
+   * The live IPC client, opened by this backend's first record operation and
    * reopened on the next operation whenever the transport dies.
    */
-  private session: CesRpcSession | undefined;
+  private client: CesSessionClient | undefined;
 
   /** Memoized in-flight session attempt (single-flight across callers). */
   private sessionAttempt: Promise<CesClient> | undefined;
@@ -41,7 +39,7 @@ class CesRpcRecordBackend {
 
   /** Sync snapshot of the live client; `undefined` until connected. */
   getClient(): CesClient | undefined {
-    return this.session?.client.isReady() ? this.session.client : undefined;
+    return this.client?.isReady() ? this.client : undefined;
   }
 
   /**
@@ -53,11 +51,11 @@ class CesRpcRecordBackend {
    * polling while CES is down.
    */
   async ensureClient(): Promise<CesClient> {
-    if (this.session?.client.isReady()) {
-      return this.session.client;
+    if (this.client?.isReady()) {
+      return this.client;
     }
-    // Stale session from a dead transport — drop it and re-open below.
-    this.session = undefined;
+    // Stale client from a dead transport — drop it and re-open below.
+    this.client = undefined;
     if (Date.now() - this.lastFailedAttemptAt < LAZY_SESSION_COOLDOWN_MS) {
       throw new CesUnavailableError(
         "CES is unreachable (recent connection attempt failed)",
@@ -65,14 +63,14 @@ class CesRpcRecordBackend {
     }
     if (!this.sessionAttempt) {
       this.sessionAttempt = openCesRpcSession()
-        .then((opened) => {
-          if (!opened) {
+        .then((client) => {
+          if (!client) {
             throw new CesUnavailableError(
               "CES is unreachable (socket discovery failed or handshake rejected)",
             );
           }
-          this.session = opened;
-          return opened.client;
+          this.client = client;
+          return client;
         })
         .catch((err) => {
           this.lastFailedAttemptAt = Date.now();
@@ -87,16 +85,16 @@ class CesRpcRecordBackend {
 
   /** Close the backend's connection (one-shot CLI processes call this on exit). */
   async close(): Promise<void> {
-    const session = this.session;
-    this.session = undefined;
+    const client = this.client;
+    this.client = undefined;
     this.sessionAttempt = undefined;
     // A deliberate close is a fresh start: clear any open-failure cooldown.
     this.lastFailedAttemptAt = 0;
-    await session?.close().catch(() => {});
+    await client?.stop().catch(() => {});
   }
 
   isAvailable(): boolean {
-    return this.session?.client.isReady() ?? false;
+    return this.client?.isReady() ?? false;
   }
 
   async set(account: string, record: CredentialRecord): Promise<boolean> {

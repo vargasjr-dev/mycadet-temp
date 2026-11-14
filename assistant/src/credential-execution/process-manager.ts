@@ -1,7 +1,7 @@
 /**
  * CES process manager.
  *
- * Creates a transport connection to the CES process over the shared bootstrap
+ * Creates a transport connection to the CES process over the shared IPC
  * socket. Local CLI siblings and managed sidecars bind the same path under
  * `CES_SOCKET_DIR`. The process manager owns only the transport
  * connection lifecycle; the CES process itself is managed by the CLI
@@ -18,7 +18,7 @@ import { createConnection, type Socket } from "node:net";
 import { StringDecoder } from "node:string_decoder";
 
 import { CesTransport } from "@mycadet/ces-client/rpc-client";
-import { getBootstrapSocketPath } from "@mycadet/ces-client/socket-path";
+import { getCesSocketPath } from "@mycadet/ces-client/socket-path";
 
 import type { AssistantConfig } from "../config/schema.js";
 import { getLogger } from "../util/logger.js";
@@ -76,7 +76,7 @@ export interface CesProcessManagerConfig {
 
 export interface CesProcessManager {
   /**
-   * Connect to the CES bootstrap socket.
+   * Connect to the CES IPC socket.
    * Returns a CesTransport ready for use with createCesClient().
    *
    * Throws if CES is unavailable.
@@ -213,7 +213,7 @@ export function createCesProcessManager(
     // The socket path comes straight from the shared resolver — the same one
     // discovery checked and CES binds — rather than being drilled through the
     // discovery result.
-    const socketPath = getBootstrapSocketPath();
+    const socketPath = getCesSocketPath();
     pmLog.info(
       { socketPath, mode: discoveryResult?.mode },
       "Connecting to CES over socket",

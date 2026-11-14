@@ -76,7 +76,7 @@ export function getCesLogDir(): string {
  * the CES data dir, never inside it.
  */
 export {
-  getBootstrapSocketPath,
+  getCesSocketPath,
   getCesSocketDir,
 } from "@mycadet/ces-client/socket-path";
 

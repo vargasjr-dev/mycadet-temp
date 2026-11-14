@@ -55,6 +55,8 @@ mock.module("../../../persistence/delivery-crud.js", () => ({
 }));
 
 mock.module("../../../persistence/delivery-status.js", () => ({
+  isDeduplicatedDeliveryOwnedBySibling: () =>
+    siblingDeliveryStatuses.some((status) => status !== "pending"),
   markDeliveryDelivered: (eventId: string) => {
     deliveredEvents.push(eventId);
   },

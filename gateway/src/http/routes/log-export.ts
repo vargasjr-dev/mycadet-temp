@@ -25,6 +25,7 @@ import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
 
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
+import { exportCesLogs } from "@mycadet/ces-client/log-export";
 import type { GatewayConfig } from "../../config.js";
 import { getConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
@@ -33,6 +34,7 @@ import {
   LOG_FILE_JSON_PATTERN,
   LOG_FILE_PATTERN,
 } from "../../logger.js";
+import { isCesManagedMode } from "../../credential-reader.js";
 import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("log-export");
@@ -100,12 +102,12 @@ export async function handleLogExport(req: Request): Promise<Response> {
   mkdirSync(stagingDir, { recursive: true });
 
   try {
-    // Run both collections in parallel. CES logs are not collected here:
-    // CES is IPC-only, and its log files live in the CES-private data dir
-    // that no other container mounts.
-    const [gatewayResult, daemonResult] = await Promise.allSettled([
+    // Run all collections in parallel. CES logs come over the shared Unix
+    // socket (`export_logs`), the same path as every other CES operation.
+    const [gatewayResult, daemonResult, cesResult] = await Promise.allSettled([
       collectGatewayLogs(config, stagingDir, startTime, endTime),
       collectDaemonExport(config, stagingDir, body),
+      collectCesExport(stagingDir, startTime, endTime),
     ]);
 
     // Process results and write error files for failures
@@ -115,6 +117,7 @@ export async function handleLogExport(req: Request): Promise<Response> {
       "daemon-export",
       stagingDir,
     );
+    const cesStatus = processResult(cesResult, "ces-export", stagingDir);
     // Write export manifest
     const manifest: ExportManifest = {
       type: "multi-service-export",
@@ -124,7 +127,7 @@ export async function handleLogExport(req: Request): Promise<Response> {
       services: {
         gateway: gatewayStatus,
         daemon: daemonStatus,
-        ces: "skipped",
+        ces: cesStatus,
       },
     };
 
@@ -407,3 +410,65 @@ export const ROUTES: RouteDefinition[] = [
     handler: (req) => handleLogExport(req),
   },
 ];
+
+/**
+ * Collect CES's own logs over the shared Unix socket. Skipped when CES is
+ * not part of this deployment (non-managed local mode has no CES sibling).
+ */
+async function collectCesExport(
+  stagingDir: string,
+  startTime?: number,
+  endTime?: number,
+): Promise<ServiceStatus> {
+  if (!isCesManagedMode()) {
+    log.info("CES not in managed mode — skipping CES export");
+    return "skipped";
+  }
+
+  const destDir = join(stagingDir, "ces-exports");
+  mkdirSync(destDir, { recursive: true });
+
+  const result = await exportCesLogs({
+    startTime,
+    endTime,
+    timeoutMs: EXPORT_TIMEOUT_MS,
+  });
+
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+
+  // Write the CES tar.gz response to a temp file and extract
+  const tarGzPath = join(stagingDir, "ces-export.tar.gz");
+  await Bun.write(tarGzPath, result.data);
+
+  const extractProc = Bun.spawn(
+    ["/usr/bin/tar", "xzf", tarGzPath, "-C", destDir],
+    { stdout: "pipe", stderr: "pipe", windowsHide: true },
+  );
+  const extractExit = await extractProc.exited;
+  if (extractExit !== 0) {
+    const stderr = await new Response(extractProc.stderr).text();
+    log.warn(
+      { exitCode: extractExit, stderr },
+      "Failed to extract CES export tar.gz — including raw archive",
+    );
+    // Move the raw tar.gz into the dest dir so we still have something
+    try {
+      renameSync(tarGzPath, join(destDir, "ces-export.tar.gz"));
+    } catch {
+      // best-effort
+    }
+    return "error";
+  }
+
+  // Clean up the temp tar.gz
+  try {
+    unlinkSync(tarGzPath);
+  } catch {
+    // best-effort
+  }
+
+  log.info("CES export collected");
+  return "ok";
+}

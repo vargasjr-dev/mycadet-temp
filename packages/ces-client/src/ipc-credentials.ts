@@ -21,11 +21,8 @@ import type { CesRpcContract } from "@mycadet/service-contracts/credential-rpc";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
-import { getBootstrapSocketPath } from "./socket-path.js";
-import {
-  createCesRpcClient,
-  type CesRpcClient,
-} from "./rpc-client.js";
+import { getCesSocketPath } from "./socket-path.js";
+import { createCesRpcClient, type CesRpcClient } from "./rpc-client.js";
 
 export type { CredentialRecord };
 
@@ -202,7 +199,7 @@ export function createCesIpcCredentialClient(
   let lastFailedAttemptAt = 0;
 
   function isAvailable(): boolean {
-    const socketPath = getBootstrapSocketPath();
+    const socketPath = getCesSocketPath();
     return socketPath.startsWith("\\\\.\\pipe\\") || existsSync(socketPath);
   }
 
@@ -221,7 +218,7 @@ export function createCesIpcCredentialClient(
     }
     if (!clientAttempt) {
       clientAttempt = (async () => {
-        const socketPath = getBootstrapSocketPath();
+        const socketPath = getCesSocketPath();
         const transport = await connectSocket(socketPath, logger);
         const rpc = createCesRpcClient(transport, {
           handshakeTimeoutMs: SOCKET_CONNECT_TIMEOUT_MS,
@@ -303,10 +300,9 @@ export function createCesIpcCredentialClient(
     },
 
     async bulkSet(credentials) {
-      const result = await callOrUnreachable(
-        CesRpcMethod.BulkSetCredentials,
-        { credentials },
-      );
+      const result = await callOrUnreachable(CesRpcMethod.BulkSetCredentials, {
+        credentials,
+      });
       if (!result.ok) {
         return credentials.map(({ account }) => ({ account, ok: false }));
       }
@@ -320,19 +316,18 @@ export function createCesIpcCredentialClient(
     },
 
     async getRecord(account) {
-      const result = await callOrUnreachable(
-        CesRpcMethod.GetCredentialRecord,
-        { account },
-      );
+      const result = await callOrUnreachable(CesRpcMethod.GetCredentialRecord, {
+        account,
+      });
       if (!result.ok) return { record: undefined, unreachable: true };
       return { record: result.response.record, unreachable: false };
     },
 
     async setRecord(account, record) {
-      const result = await callOrUnreachable(
-        CesRpcMethod.SetCredentialRecord,
-        { account, record },
-      );
+      const result = await callOrUnreachable(CesRpcMethod.SetCredentialRecord, {
+        account,
+        record,
+      });
       return result.ok && result.response.ok;
     },
 

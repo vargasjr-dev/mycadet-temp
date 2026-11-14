@@ -192,7 +192,7 @@ function readEncryptedCredential(account: string): string | undefined {
 
 /**
  * The shared CES IPC credential client — a lazily created singleton that
- * dials the socket CES binds (`getBootstrapSocketPath`). Returns undefined
+ * dials the socket CES binds (`getCesSocketPath`). Returns undefined
  * when the socket is absent AND the gateway is not containerized, which is
  * the signal that CES is not part of this deployment and the local
  * encrypted store is the only credential source.

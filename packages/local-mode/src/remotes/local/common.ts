@@ -1150,10 +1150,6 @@ export async function startCes(
     writeFileSync(cesPidFile, String(ces.pid), "utf-8");
   }
 
-  // No blocking wait for the socket here: the assistant's overall health
-  // check owns CES readiness (it probes live and nudges the single-flight
-  // connect), and the daemon's own discovery retries absorb the bind window.
-  // Hatch proceeds as soon as the sibling is spawned.
   startupLog("✅ credential-executor started\n");
 }
 

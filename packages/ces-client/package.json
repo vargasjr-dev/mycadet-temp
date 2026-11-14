@@ -9,9 +9,11 @@
     "./http-credentials": "./src/http-credentials.ts",
     "./http-log-export": "./src/http-log-export.ts",
     "./ipc-credentials": "./src/ipc-credentials.ts",
+    "./log-export": "./src/log-export.ts",
     "./rpc-client": "./src/rpc-client.ts",
     "./credential-rpc": "./src/credential-rpc.ts",
-    "./socket-path": "./src/socket-path.ts"
+    "./socket-path": "./src/socket-path.ts",
+    "./test-support": "./src/test-support.ts"
   },
   "scripts": {
     "typecheck": "bunx tsc --noEmit"

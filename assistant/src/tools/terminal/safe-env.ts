@@ -63,8 +63,6 @@ export const SAFE_ENV_VARS = [
   "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
   "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
   "CES_MANAGED_MODE",
-  // Child processes (bash, skill sandbox, scheduled scripts) reach CES
-  // over IPC via `CES_SOCKET_DIR` — CES has no HTTP surface to forward.
   // Per-instance port of the assistant-managed Qdrant sidecar, so skill and
   // bash-tool subprocesses that use the vector helpers (e.g. embed/search over
   // `@mycadet/plugin-api`) resolve the same local sidecar as the daemon

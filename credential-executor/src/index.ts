@@ -19,8 +19,4 @@ export type {
   SessionContext,
 } from "./server.js";
 
-export {
-  getCesDataRoot,
-  getBootstrapSocketPath,
-  getHealthPort,
-} from "./paths.js";
+export { getCesDataRoot, getCesSocketPath, getHealthPort } from "./paths.js";

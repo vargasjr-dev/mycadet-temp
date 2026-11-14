@@ -36,8 +36,11 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
 
 const { reconcileTelegramWebhook } =
   await import("../telegram/webhook-manager.js");
-const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
-  await import("../cloud-identity.js");
+const {
+  applyCloudIdentityIds,
+  bindCloudIdentityCredentialCache,
+  _resetCloudIdentityForTests,
+} = await import("../cloud-identity.js");
 
 afterEach(() => {
   fetchMock = mock(async () => new Response());
@@ -345,9 +348,15 @@ describe("reconcileTelegramWebhook", () => {
     const caches = makeCaches({
       ingressUrl: undefined,
       cloudBaseUrl: "https://test-cloud.mycadet.ai",
-      assistantApiKey: "ast-managed-key",
+      assistantApiKey: "test-assistant-api-key",
       cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
+    // Keep the api-key read off the real local store / CES socket.
+    bindCloudIdentityCredentialCache(caches.credentials);
+    // Mirror index.ts: the cloud-identity resolver reads the api key through
+    // the gateway credential cache. Without the binding, managed mode dials
+    // the real CES socket path.
+    bindCloudIdentityCredentialCache(caches.credentials);
 
     fetchMock = mock(
       async (input: string | URL | Request, init?: RequestInit) => {

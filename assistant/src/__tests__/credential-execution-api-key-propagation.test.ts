@@ -29,6 +29,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { CesTransport } from "@mycadet/ces-client/rpc-client";
+import type { CesRpcClient } from "@mycadet/ces-client/rpc-client";
 import {
   CES_PROTOCOL_VERSION,
   CesRpcMethod,
@@ -81,7 +82,7 @@ function createMockTransport(): CesTransport & {
 
 async function completeHandshake(
   transport: ReturnType<typeof createMockTransport>,
-  client: ReturnType<typeof createCesClient>,
+  client: CesRpcClient,
 ): Promise<void> {
   const handshakePromise = client.handshake();
   const sent = JSON.parse(transport.sentMessages[0]);

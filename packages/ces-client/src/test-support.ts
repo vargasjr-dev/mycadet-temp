@@ -6,10 +6,18 @@
  * protocol (`@mycadet/service-contracts` transport contract). This helper
  * binds that socket and answers handshake + record/credential requests from
  * an in-memory store — the real client, transport and discovery run
- * unmocked. Install BEFORE the first backend operation; it patches
- * `CES_SOCKET_DIR` itself.
+ * unmocked.
+ *
+ * Two ways to use it:
+ * - `startTestCesRecordServer()` — self-contained: mints its own temp socket
+ *   dir and patches `process.env.CES_SOCKET_DIR` so in-process callers dial
+ *   the fake. Install BEFORE the first backend operation.
+ * - `startTestCesRecordServer({ socketDir })` — for tests that spawn a CHILD
+ *   process (gateway, assistant) which must be given the socket dir in its
+ *   env up front: bind a dir the caller chose and never touch `process.env`.
+ *   Pass a dir that does not exist yet to simulate "CES will appear later".
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -40,11 +48,14 @@ export interface TestCesRecordServer {
   start: () => void;
 }
 
-export function startTestCesRecordServer(): TestCesRecordServer {
+export function startTestCesRecordServer(options?: {
+  socketDir?: string;
+}): TestCesRecordServer {
   const secrets = new Map<string, string>();
   const records = new Map<string, CredentialRecord>();
   const calls: Array<{ method: CesRpcMethod; request: unknown }> = [];
   const state = { failSet: false, failList: false };
+  const ownsEnv = options?.socketDir === undefined;
 
   const sockets = new Set<Socket>();
   let server: Server | undefined;
@@ -54,8 +65,12 @@ export function startTestCesRecordServer(): TestCesRecordServer {
     if (server) {
       return;
     }
-    socketDir = mkdtempSync(join(tmpdir(), "test-ces-socket-"));
-    process.env.CES_SOCKET_DIR = socketDir;
+    socketDir =
+      options?.socketDir ?? mkdtempSync(join(tmpdir(), "test-ces-socket-"));
+    if (ownsEnv) {
+      process.env.CES_SOCKET_DIR = socketDir;
+    }
+    mkdirSync(socketDir, { recursive: true });
     const socketPath = resolveIpcEndpoint("ces", {
       workspaceDir: socketDir,
     }).path;
@@ -247,15 +262,18 @@ export function startTestCesRecordServer(): TestCesRecordServer {
         server.close(() => resolve());
       });
       server = undefined;
-      if (socketDir) {
+      if (socketDir && ownsEnv) {
         rmSync(socketDir, { recursive: true, force: true });
+      }
+      if (ownsEnv) {
+        // While stopped, discovery must NOT fall through to a live machine
+        // socket — point it at an empty dir.
+        const emptyDir = mkdtempSync(join(tmpdir(), "test-ces-empty-"));
+        process.env.CES_SOCKET_DIR = emptyDir;
+        socketDir = emptyDir;
+      } else {
         socketDir = undefined;
       }
-      // While stopped, discovery must NOT fall through to a live machine
-      // socket — point it at an empty dir.
-      const emptyDir = mkdtempSync(join(tmpdir(), "test-ces-empty-"));
-      process.env.CES_SOCKET_DIR = emptyDir;
-      socketDir = emptyDir;
     },
     start: listen,
   };

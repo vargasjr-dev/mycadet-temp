@@ -11,6 +11,8 @@ import {
   test,
 } from "bun:test";
 
+import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+
 import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { credentialKey } from "../security/credential-key.js";
 import {
@@ -23,7 +25,6 @@ import {
   resolveCredentialRef,
   resolveForDomain,
 } from "../tools/credentials/resolve.js";
-import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 const TEST_DIR = join(
   tmpdir(),
