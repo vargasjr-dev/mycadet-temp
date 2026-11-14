@@ -169,6 +169,18 @@ function mockReconcileFetch(opts: { callbackUrl?: string } = {}): {
         // but not recorded, so `calls` stays a record of the resolution order.
         return makeTelegramResponse({ username: "test_bot" });
       }
+      if (url.includes("/v1/internal/assistants/validate/")) {
+        // The credential cache is bound (production wiring), so the identity
+        // resolver validates; answer it so the override survives.
+        return new Response(
+          JSON.stringify({
+            assistant_id: "11111111-2222-4333-8444-555555555555",
+            organization_id: "",
+            user_id: "",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
       if (url.includes("/callback-routes/register/")) {
         calls.push("registerCallbackRoute");
         if (!opts.callbackUrl) {
@@ -504,6 +516,16 @@ describe("reconcileTelegramWebhook", () => {
             : input instanceof URL
               ? input.toString()
               : input.url;
+        if (url.includes("/v1/internal/assistants/validate/")) {
+          return new Response(
+            JSON.stringify({
+              assistant_id: "11111111-2222-4333-8444-555555555555",
+              organization_id: "",
+              user_id: "",
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
         if (
           url ===
           "https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/"
@@ -569,6 +591,16 @@ describe("reconcileTelegramWebhook", () => {
           : input instanceof URL
             ? input.toString()
             : input.url;
+      if (url.includes("/v1/internal/assistants/validate/")) {
+        return new Response(
+          JSON.stringify({
+            assistant_id: "11111111-2222-4333-8444-555555555555",
+            organization_id: "",
+            user_id: "",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
       if (url.includes("/deleteWebhook")) {
         calls.push("deleteWebhook");
         return makeTelegramResponse(true);
@@ -898,6 +930,9 @@ describe("reconcileTelegramWebhook", () => {
 
   test("skips registration when no platform URL is available from cache or env", async () => {
     process.env.IS_CONTAINERIZED = "true";
+    // The env fallback the test name promises: without it the api-key read
+    // falls through to the CES socket (a cache miss is authoritative).
+    process.env.ASSISTANT_API_KEY = "env-fallback-key";
 
     const caches = makeCaches({
       ingressUrl: undefined,
@@ -906,12 +941,24 @@ describe("reconcileTelegramWebhook", () => {
       cloudAssistantId: undefined,
     });
 
-    fetchMock = mock(async () => new Response("", { status: 200 }));
+    const urls: string[] = [];
+    fetchMock = mock(async (input: string | URL | Request) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      urls.push(url);
+      return new Response("", { status: 200 });
+    });
 
     await reconcileTelegramWebhook(caches);
 
-    // No fetch calls should be made — registration is skipped
-    expect(fetchMock).not.toHaveBeenCalled();
+    // No platform registration — registration is skipped
+    expect(urls.some((url) => url.includes("/callback-routes/register/"))).toBe(
+      false,
+    );
   });
 
   test("calls setWebhook when current URL is empty", async () => {
