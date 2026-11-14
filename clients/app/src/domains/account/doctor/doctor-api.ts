@@ -15,7 +15,7 @@
 
 import { z } from "zod";
 
-import { dial as dialCore } from "@app/lib/dial";
+import { dial, type DialOutcome } from "@app/lib/dial";
 
 // ---------------------------------------------------------------------------
 // Response schemas — the cloud shapes the panel reads
@@ -73,13 +73,17 @@ type OperatorResult<T> = {
   response: Response;
 };
 
-async function dial(
-  path: string,
-  init?: RequestInit,
-): Promise<OperatorResult<unknown>> {
-  const { response, data, detail, networkError } = await dialCore(path, init);
+/**
+ * Shape the bundle's one {@link dial} outcome into the doctor surface's
+ * `OperatorResult` — network failures throw (the panel's error UI owns
+ * them), non-OK responses report the server's `detail`.
+ */
+function operatorResultOf(outcome: DialOutcome): OperatorResult<unknown> {
+  const { response, data, detail, networkError } = outcome;
   if (networkError || !response) {
-    throw networkError ?? new Error("The doctor dial failed without a response.");
+    throw (
+      networkError ?? new Error("The doctor dial failed without a response.")
+    );
   }
   return {
     data: response.ok ? data : null,
@@ -95,7 +99,9 @@ export async function doctorHistoryList(args: {
   const search = args.query?.limit
     ? `?limit=${encodeURIComponent(args.query.limit)}`
     : "";
-  const result = await dial(`/v1/assistant/doctor/history/${search}`);
+  const result = operatorResultOf(
+    await dial(`/v1/assistant/doctor/history/${search}`),
+  );
   const parsed = DoctorHistoryListSchema.safeParse(result.data);
   return {
     ...result,
@@ -107,8 +113,10 @@ export async function doctorHistoryList(args: {
 export async function doctorHistoryRetrieve(args: {
   path: { doctor_session_id: string };
 }): Promise<OperatorResult<DoctorHistorySessionResult>> {
-  const result = await dial(
-    `/v1/assistant/doctor/history/${encodeURIComponent(args.path.doctor_session_id)}/`,
+  const result = operatorResultOf(
+    await dial(
+      `/v1/assistant/doctor/history/${encodeURIComponent(args.path.doctor_session_id)}/`,
+    ),
   );
   const parsed = DoctorHistorySessionSchema.safeParse(result.data);
   return {
@@ -121,9 +129,11 @@ export async function doctorHistoryRetrieve(args: {
 export async function doctorSessionsCreate(args?: {
   path?: Record<string, never>;
 }): Promise<OperatorResult<z.infer<typeof DoctorSessionSchema>>> {
-  const result = await dial("/v1/assistant/doctor/sessions/", {
-    method: "POST",
-  });
+  const result = operatorResultOf(
+    await dial("/v1/assistant/doctor/sessions/", {
+      method: "POST",
+    }),
+  );
   const parsed = DoctorSessionSchema.safeParse(result.data);
   return {
     ...result,
@@ -135,9 +145,11 @@ export async function doctorSessionsCreate(args?: {
 export async function doctorSessionsDestroy(args: {
   path: { session_id: string };
 }): Promise<OperatorResult<null>> {
-  const result = await dial(
-    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/`,
-    { method: "DELETE" },
+  const result = operatorResultOf(
+    await dial(
+      `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/`,
+      { method: "DELETE" },
+    ),
   );
   return { ...result, data: null };
 }
@@ -147,9 +159,11 @@ export async function doctorSessionsMessagesCreate(args: {
   path: { session_id: string };
   body: { content: string; source_event_id?: string | null };
 }): Promise<OperatorResult<unknown>> {
-  return dial(
-    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/messages/`,
-    { method: "POST", body: JSON.stringify(args.body) },
+  return operatorResultOf(
+    await dial(
+      `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/messages/`,
+      { method: "POST", body: JSON.stringify(args.body) },
+    ),
   );
 }
 
@@ -158,8 +172,10 @@ export async function doctorSessionsUserOutcomeCreate(args: {
   path: { session_id: string };
   body: { resolved: boolean };
 }): Promise<OperatorResult<unknown>> {
-  return dial(
-    `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/user-outcome/`,
-    { method: "POST", body: JSON.stringify(args.body) },
+  return operatorResultOf(
+    await dial(
+      `/v1/assistant/doctor/sessions/${encodeURIComponent(args.path.session_id)}/user-outcome/`,
+      { method: "POST", body: JSON.stringify(args.body) },
+    ),
   );
 }

@@ -7,7 +7,25 @@
  * never read, so the module reports success/failure and nothing else.
  */
 
-import { dial as dialCore } from "@/lib/dial";
+import { dial, type DialOutcome } from "@/lib/dial";
+
+/** The push surface's contract: `{ error: null }` or the failure. */
+function outcomeError(outcome: DialOutcome): { error: Error | null } {
+  if (outcome.networkError) {
+    return {
+      error:
+        outcome.networkError instanceof Error
+          ? outcome.networkError
+          : new Error(String(outcome.networkError)),
+    };
+  }
+  if (!outcome.response?.ok) {
+    return {
+      error: new Error(`The push dial failed (${outcome.response?.status})`),
+    };
+  }
+  return { error: null };
+}
 
 /** APNs entitlement environment a token was minted under. */
 export type PushApnsEnvironment = "production" | "development";
@@ -50,22 +68,6 @@ export interface LiveActivityTokenUpsert {
   muted?: boolean;
 }
 
-async function dial(
-  path: string,
-  init?: RequestInit,
-): Promise<{ error: Error | null }> {
-  const { response, networkError } = await dialCore(path, init);
-  if (networkError) {
-    return {
-      error: networkError instanceof Error ? networkError : new Error(String(networkError)),
-    };
-  }
-  if (!response?.ok) {
-    return { error: new Error(`The push dial failed (${response?.status})`) };
-  }
-  return { error: null };
-}
-
 const scoped = (assistantId: string, tail: string) =>
   `/v1/assistants/${encodeURIComponent(assistantId)}/${tail}`;
 
@@ -73,32 +75,36 @@ const scoped = (assistantId: string, tail: string) =>
  * Upsert a freshly-minted device token to the assistant's cloud record.
  * Idempotent; the cloud fans dispatches out to every registered token.
  */
-export function upsertDevicePushToken(
+export async function upsertDevicePushToken(
   assistantId: string,
   body: DevicePushTokenUpsert,
 ): Promise<{ error: Error | null }> {
-  return dial(scoped(assistantId, "push-tokens/"), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return outcomeError(
+    await dial(scoped(assistantId, "push-tokens/"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 }
 
 /**
  * Remove a device token — the logout path, which must run while the
  * session cookie is still present.
  */
-export function deleteDevicePushToken(
+export async function deleteDevicePushToken(
   assistantId: string,
   deviceToken: string,
   bundleId: string,
 ): Promise<{ error: Error | null }> {
-  return dial(
-    scoped(
-      assistantId,
-      `push-tokens/${encodeURIComponent(deviceToken)}/?bundle_id=${encodeURIComponent(bundleId)}`,
+  return outcomeError(
+    await dial(
+      scoped(
+        assistantId,
+        `push-tokens/${encodeURIComponent(deviceToken)}/?bundle_id=${encodeURIComponent(bundleId)}`,
+      ),
+      { method: "DELETE" },
     ),
-    { method: "DELETE" },
   );
 }
 
@@ -106,13 +112,18 @@ export function deleteDevicePushToken(
  * Remove a Live Activity's update token — the session-end path, so a
  * finished activity stops being pushed.
  */
-export function deleteLiveActivityToken(
+export async function deleteLiveActivityToken(
   assistantId: string,
   deviceToken: string,
 ): Promise<{ error: Error | null }> {
-  return dial(
-    scoped(assistantId, `live-activity/tokens/${encodeURIComponent(deviceToken)}/`),
-    { method: "DELETE" },
+  return outcomeError(
+    await dial(
+      scoped(
+        assistantId,
+        `live-activity/tokens/${encodeURIComponent(deviceToken)}/`,
+      ),
+      { method: "DELETE" },
+    ),
   );
 }
 
@@ -120,13 +131,15 @@ export function deleteLiveActivityToken(
  * Register one ActivityKit Live Activity's update token, so its phases
  * can be pushed while the session is backgrounded.
  */
-export function upsertLiveActivityToken(
+export async function upsertLiveActivityToken(
   assistantId: string,
   body: LiveActivityTokenUpsert,
 ): Promise<{ error: Error | null }> {
-  return dial(scoped(assistantId, "live-activity/tokens/"), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return outcomeError(
+    await dial(scoped(assistantId, "live-activity/tokens/"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 }

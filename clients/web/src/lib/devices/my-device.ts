@@ -29,8 +29,7 @@ export async function fetchMyDevice(
   if (!response?.ok) {
     return null;
   }
-  const body = data;
-  const device = (body as { device?: unknown } | null)?.device;
+  const device = (data as { device?: unknown } | null)?.device;
   if (typeof device !== "object" || device === null) {
     return null;
   }

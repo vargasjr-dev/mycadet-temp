@@ -16,7 +16,7 @@ import { z } from "zod";
 
 import { toErrorObject } from "@app/utils/api-errors";
 
-import { dial as dialCore } from "@app/lib/dial";
+import { dial, type DialOutcome } from "@app/lib/dial";
 
 /** A backup snapshot as the table renders it. */
 export interface AssistantBackup {
@@ -66,19 +66,15 @@ const scoped = (assistantId: string, tail = "") =>
   `/v1/assistants/${encodeURIComponent(assistantId)}${tail}`;
 
 /**
- * Dial the scoped path with the browser's own credentials and shape the
- * outcome as `{ ok, status, data | error }` — the contract the backups
- * table already handles.
+ * Shape the bundle's one {@link dial} outcome into the
+ * `{ ok, status, data | error }` contract the backups table handles —
+ * network failures report as status 0.
  */
-async function dial(
-  path: string,
+function resultOf(
+  outcome: DialOutcome,
   failureMessage: string,
-  init?: RequestInit,
-): Promise<
-  | { ok: true; status: number; data: unknown }
-  | { ok: false; status: number; error: Record<string, unknown> }
-> {
-  const { response, data, detail, networkError } = await dialCore(path, init);
+): ManagementResult<unknown> {
+  const { response, data, detail, networkError } = outcome;
   if (networkError) {
     return {
       ok: false,
@@ -102,8 +98,8 @@ async function dial(
 export async function listAssistantBackups(
   assistantId: string,
 ): Promise<ManagementResult<AssistantBackup[]>> {
-  const result = await dial(
-    scoped(assistantId, "/backups/"),
+  const result = resultOf(
+    await dial(scoped(assistantId, "/backups/")),
     "Failed to list assistant backups.",
   );
   if (!result.ok) {
@@ -123,13 +119,12 @@ export async function listAssistantBackups(
 export async function createAssistantBackup(
   assistantId: string,
 ): Promise<ManagementResult<Record<string, unknown>>> {
-  const result = await dial(
-    scoped(assistantId, "/backups/"),
-    "Failed to create assistant backup.",
-    {
+  const result = resultOf(
+    await dial(scoped(assistantId, "/backups/"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-    },
+    }),
+    "Failed to create assistant backup.",
   );
   if (!result.ok) {
     return result;
@@ -138,7 +133,9 @@ export async function createAssistantBackup(
     ok: true,
     status: result.status,
     data:
-      result.data && typeof result.data === "object" && !Array.isArray(result.data)
+      result.data &&
+      typeof result.data === "object" &&
+      !Array.isArray(result.data)
         ? (result.data as Record<string, unknown>)
         : {},
   };
@@ -148,16 +145,18 @@ export async function restoreAssistantBackup(
   assistantId: string,
   backup: AssistantBackup,
 ): Promise<ManagementResult<Record<string, unknown>>> {
-  const result = await dial(
-    scoped(
-      assistantId,
-      `/backups/${encodeURIComponent(backup.snapshot_name)}/restore/`,
+  const result = resultOf(
+    await dial(
+      scoped(
+        assistantId,
+        `/backups/${encodeURIComponent(backup.snapshot_name)}/restore/`,
+      ),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      },
     ),
     "Failed to restore assistant backup.",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    },
   );
   if (!result.ok) {
     return result;
@@ -166,7 +165,9 @@ export async function restoreAssistantBackup(
     ok: true,
     status: result.status,
     data:
-      result.data && typeof result.data === "object" && !Array.isArray(result.data)
+      result.data &&
+      typeof result.data === "object" &&
+      !Array.isArray(result.data)
         ? (result.data as Record<string, unknown>)
         : {},
   };
@@ -218,18 +219,15 @@ export async function requestSignedDownloadUrl(
   _runtimeVersion: string | undefined,
   downloadFilename?: string,
 ): Promise<string> {
-  const response = await fetch(
-    scoped(assistantId, "/migrations/signed-url/"),
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        operation: "download",
-        bundle_key: bundleKey,
-        download_filename: downloadFilename,
-      }),
-    },
-  );
+  const response = await fetch(scoped(assistantId, "/migrations/signed-url/"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      operation: "download",
+      bundle_key: bundleKey,
+      download_filename: downloadFilename,
+    }),
+  });
   if (!response.ok) {
     const detail = await response
       .json()

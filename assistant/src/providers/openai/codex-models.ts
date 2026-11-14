@@ -10,7 +10,11 @@
  */
 // Exported for the web client's parity test — its deep import crosses
 // package boundaries, so the assistant's knip can't see this consumer.
-const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
+// Exported for the web client's parity test — its deep import crosses
+// package boundaries, so the assistant's knip can't see this consumer
+// (knip.json ignoreIssues carries the exemption). #785 dropped the
+// export and broke the web typecheck; this restores the contract.
+export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-6-astra",
   "gpt-6-sol",
   "gpt-6-luna",
