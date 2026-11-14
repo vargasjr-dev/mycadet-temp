@@ -13,7 +13,9 @@
  * here instead of a build-time constant — the serving depth is a property
  * of where the bundle was loaded from, not of the build.
  */
-export function bundleBasename(location = window.location): string | undefined {
+export function bundleBasename(
+  location: { pathname: string } = window.location,
+): string | undefined {
   const match = /\/assistant(?:\/|$)/.exec(location.pathname);
   return match && match.index > 0
     ? location.pathname.slice(0, match.index).replace(/\/+$/, "")
