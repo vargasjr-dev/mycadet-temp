@@ -498,9 +498,12 @@ describe("remote web pairing token exchange", () => {
 
     expect(refresh.status).toBe(200);
     const body = (await refresh.json()) as Record<string, unknown>;
-    expect(typeof body.accessToken).toBe("string");
-    expect(typeof body.refreshToken).toBe("string");
-    expect(typeof body.refreshAfter).toBe("number");
+    // The device refresh answers with the same credential contract the
+    // pairing mint emits (ISO strings, deviceId echoed) — one schema parses
+    // both.
+    expect(body.deviceId).toBe("legacy-device");
+    expect(typeof body.refreshAfter).toBe("string");
+    expect(typeof body.leasedAt).toBe("string");
     expect(setCookies(refresh)).toHaveLength(0);
   });
 

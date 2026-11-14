@@ -8,6 +8,12 @@ import {
   type SlashContext,
 } from "../daemon/conversation-slash.js";
 import { getWorkspaceConfigPath } from "../util/layout.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
+// The /models resolution probes configured providers through secure storage;
+// pin the memory backend so the classification-parity tests never route
+// through CES RPC discovery, which has no daemon to reach in a test process.
+useMemorySecureKeys();
 
 function makeSlashContext(overrides: Partial<SlashContext> = {}): SlashContext {
   return {
