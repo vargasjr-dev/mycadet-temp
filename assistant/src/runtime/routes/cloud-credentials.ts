@@ -30,7 +30,7 @@ export function isCloudCredential(service: string, field: string): boolean {
 export type CloudCredentialAction = "read" | "change";
 
 /** Message the credentials API refuses one of these with. */
-export function platformCloudCredentialRefusal(
+export function cloudCredentialRefusal(
   service: string | undefined,
   field: string | undefined,
   action: CloudCredentialAction,

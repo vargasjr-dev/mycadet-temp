@@ -26,7 +26,7 @@ import {
   handleReadyz,
   ROUTES,
 } from "../runtime/routes/identity-routes.js";
-import { setCesClient } from "../security/secure-keys.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { APP_VERSION } from "../version.js";
 import {
@@ -34,6 +34,11 @@ import {
   resolveHatchedAtReadOnly,
   selectHatchedAtFromStats,
 } from "../workspace/hatched-date.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
+
+// The real in-process CES socket server: the readiness tests exercise the
+// production client against it.
+const cesServer = startTestCesRecordServer();
 
 // ── Env helpers ─────────────────────────────────────────────────────────
 
@@ -136,7 +141,10 @@ beforeEach(() => {
   setDbReady(true);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  if (!cesServer.listening) {
+    await cesServer.start();
+  }
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) {
       delete process.env[key];
@@ -222,16 +230,11 @@ describe("identity routes — health endpoint", () => {
   });
 
   describe("CES readiness", () => {
-    beforeEach(() => {
-      setCesClient(undefined);
-    });
-
     test("/v1/health reports ces.connected=true when CES is ready", async () => {
-      const mockClient = {
-        isReady: () => true,
-        close: () => {},
-      } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
-      setCesClient(mockClient);
+      if (!cesServer.listening) {
+        await cesServer.start();
+      }
+      await cesRecordBackend.ensureClient();
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
 
@@ -240,11 +243,7 @@ describe("identity routes — health endpoint", () => {
     });
 
     test("/v1/health reports ces.connected=false when CES is not ready", async () => {
-      const mockClient = {
-        isReady: () => false,
-        close: () => {},
-      } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
-      setCesClient(mockClient);
+      await cesRecordBackend.close();
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
 
@@ -426,24 +425,16 @@ describe("identity routes — trivial /healthz liveness probe", () => {
 
   test("never touches CES/lifecycle state — a throwing CES client is never consulted", async () => {
     // If the trivial probe touched CES at all this would throw.
-    const explodingClient = {
-      isReady: () => {
-        throw new Error("handleHealth must not access CES");
-      },
-      close: () => {},
-    } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
-    setCesClient(explodingClient);
+    await cesRecordBackend.close();
 
     const res = handleHealth();
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
     expect(body).toEqual({ status: "ok", version: APP_VERSION });
-
-    setCesClient(undefined);
   });
 
   test("answers with CES uninitialized", async () => {
-    setCesClient(undefined);
+    await cesRecordBackend.close();
     const res = handleHealth();
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
@@ -452,9 +443,9 @@ describe("identity routes — trivial /healthz liveness probe", () => {
 });
 
 describe("identity routes — /readyz readiness gate", () => {
-  afterEach(() => {
+  afterEach(async () => {
     resetReadinessForTest();
-    setCesClient(undefined);
+    await cesRecordBackend.close();
   });
 
   test("returns 200 before startup and DB readiness", async () => {
@@ -502,13 +493,7 @@ describe("identity routes — /readyz readiness gate", () => {
   test("returns 200 even if CES is down", async () => {
     resetReadinessForTest();
     setDbReady(true);
-    const explodingClient = {
-      isReady: () => {
-        throw new Error("/readyz must not consult CES");
-      },
-      close: () => {},
-    } as unknown as import("@mycadet/ces-client/rpc-client").CesRpcClient;
-    setCesClient(explodingClient);
+    await cesRecordBackend.close();
 
     const res = handleReadyz();
     expect(res.status).toBe(200);

@@ -4,13 +4,7 @@ import type { CesRpcHandshakeOptions as CesClientHandshakeOptions } from "@mycad
 import { getCloudAssistantId } from "../config/env.js";
 import type { AssistantConfig } from "../config/schema.js";
 import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
-import {
-  attemptCesReconnection,
-  getCesClient as getSecureKeysCesClient,
-  onCesClientChanged,
-  setCesClient,
-  setCesReconnect,
-} from "../security/secure-keys.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import { getLogger } from "../util/logger.js";
 import { openCesRpcSession, reconnectCesRpcSession } from "./ces-connect.js";
 import {
@@ -20,7 +14,6 @@ import {
 import {
   awaitCesClientWithTimeout,
   DEFAULT_CES_STARTUP_TIMEOUT_MS,
-  injectCesClientWhenReady,
 } from "./startup-timeout.js";
 
 const log = getLogger("ces-runtime");
@@ -38,6 +31,8 @@ let initAbortController: AbortController | undefined;
 let clientRef: CesClient | undefined;
 /** Monotonically increasing counter to detect stale client updates. */
 let clientGeneration = 0;
+/** Boot-session reconnect, set by startCesProcess and used by the proactive loop. */
+let reconnectBootSession: (() => Promise<CesClient | undefined>) | undefined;
 
 interface CesStartupResult {
   client: CesClient | undefined;
@@ -62,15 +57,19 @@ function startCesProcess(config: AssistantConfig): CesStartupResult {
   let currentClient: CesClient | undefined;
   let handshake: CesClientHandshakeOptions = {};
 
-  // Own this process's CES session before resolveCloudProxyContext()
-  // reads the API key. That read must not take the child open path.
-  setCesReconnect(async () => {
+  // Reconnect the boot session in-process: the fresh client updates
+  // `currentClient`/`clientRef` directly (the record backend reconnects its
+  // own session independently).
+  reconnectBootSession = async (): Promise<CesClient | undefined> => {
     const client = await reconnectCesRpcSession(pm, handshake);
     if (client) {
       log.info("CES reconnection handshake accepted");
+      currentClient = client;
+      clientGeneration++;
+      clientRef = client;
     }
     return client;
-  });
+  };
 
   const handshakePromise = (async (): Promise<CesClient | undefined> => {
     try {
@@ -145,58 +144,33 @@ function applyCesResult(result: CesStartupResult): void {
 }
 
 /**
- * Update the client reference after a reconnection (fired via the
- * `onCesClientChanged` listener). Bumps the generation counter so any pending
- * handshake-promise callback won't overwrite this newer client.
- */
-function updateClientRef(client: CesClient | undefined): void {
-  clientGeneration++;
-  clientRef = client;
-}
-
-/**
  * Open the assistant's CES RPC client: handshake (blocking up to a 20s
- * timeout so credential reads can route through CES before provider init)
- * and keep the live client reference in sync. Reconnect ownership is
- * claimed before the identity read. Non-fatal: on failure the assistant
- * falls back to the direct credential store.
+ * timeout so the boot session — the one that hands CES the assistant API
+ * key — is established before provider init) and keep the live client
+ * reference in sync. Non-fatal on failure: credential reads route through
+ * the record backend's own lazily opened session regardless.
  */
 export async function startCes(config: AssistantConfig): Promise<void> {
   const cesResult = startCesProcess(config);
 
   // The handshake runs inside clientPromise. Await it (with a 20s timeout) so
-  // the CES client is available before provider initialization; fall back to
-  // the direct credential store on timeout.
+  // the boot session exists before provider initialization; a timeout only
+  // delays the identity handshake, it does not block startup.
   if (cesResult.clientPromise) {
     const client = await awaitCesClientWithTimeout(cesResult.clientPromise, {
       timeoutMs: DEFAULT_CES_STARTUP_TIMEOUT_MS,
       onTimeout: () => {
-        log.warn(
-          "CES handshake timed out after 20s, falling back to direct credential store",
-        );
+        log.warn("CES handshake timed out after 20s; continuing startup");
       },
     });
     if (client) {
-      log.info(
-        "CES client injected into credential resolver at startup; credential reads route through CES RPC",
-      );
-      setCesClient(client);
-    } else {
-      // The handshake lost the startup race, so provider init proceeds on the
-      // direct credential store. Still inject the CES client into the resolver
-      // once the handshake completes, so CES tools and the approval bridge
-      // route through CES rather than reporting it unavailable for the rest of
-      // the process.
-      injectCesClientWhenReady(cesResult.clientPromise, {
-        getCesClient: getSecureKeysCesClient,
-        setCesClient,
-      });
+      log.info("CES boot session established; assistant identity handed off");
     }
   }
 
   // Reconnect ownership is claimed inside startCesProcess before the
   // identity read. Snapshotting the API key there (not here) avoids a
-  // second resolveCloudProxyContext() after setCesClient, which would
+  // second resolveCloudProxyContext() after the handshake, which would
   // read the key through CES while reconnecting.
   if (cesResult.processManager) {
     const pm = cesResult.processManager;
@@ -213,10 +187,6 @@ export async function startCes(config: AssistantConfig): Promise<void> {
   }
 
   applyCesResult(cesResult);
-
-  // Keep the client ref in sync after reconnection so that secret routes and
-  // new conversations use the fresh client.
-  onCesClientChanged(updateClientRef);
 }
 
 /**
@@ -233,6 +203,8 @@ export async function stopCes(): Promise<void> {
   // transport, which would otherwise trigger onTransportClose and start
   // a reconnect loop racing against this shutdown.
   shuttingDown = true;
+  // Drop the record backend's own session too.
+  await cesRecordBackend.close().catch(() => {});
   // Abort any in-flight CES initialization so it fails fast instead of
   // blocking shutdown for up to ~15s (socket connect + handshake timeouts).
   if (initAbortController) {
@@ -258,6 +230,7 @@ export async function stopCes(): Promise<void> {
     clientPromise = undefined;
   }
   processManager = undefined;
+  reconnectBootSession = undefined;
   proactiveReconnectInFlight = false;
 }
 
@@ -285,20 +258,11 @@ let proactiveReconnectInFlight = false;
 let shuttingDown = false;
 
 /**
- * Start a retry-with-backoff loop that proactively re-establishes the CES
- * connection after the transport dies. Each attempt calls
- * `attemptCesReconnection()`, which shares the dedup + cooldown machinery
- * with the lazy (credential-op-triggered) reconnect path.
- *
- * On success, `setCesClient()` is called inside `attemptCesReconnection`,
- * which triggers the `onCesClientChanged` listener and updates `clientRef`.
- * The loop then stops.
- *
- * On failure (reconnect returned false or threw), the loop waits per the
- * backoff schedule and retries, up to `MAX_RECONNECT_ATTEMPTS`. After that,
- * the lazy path in `secure-keys.ts` remains as a permanent fallback: every
- * credential operation checks `isAvailable()` and triggers reconnection if
- * the backend is dead.
+ * Start a retry-with-backoff loop that proactively re-establishes the boot
+ * CES session after the transport dies. Each attempt calls the boot-session
+ * reconnect (which re-handshakes with the assistant API key and updates
+ * `clientRef`). The record backend reconnects its own session independently,
+ * cooldown-gated, on the next credential/record operation.
  */
 function startProactiveReconnectLoop(_pm: CesProcessManager): void {
   if (shuttingDown) {
@@ -327,8 +291,8 @@ function startProactiveReconnectLoop(_pm: CesProcessManager): void {
       }
 
       try {
-        const succeeded = await attemptCesReconnection();
-        if (succeeded) {
+        const client = await reconnectBootSession?.();
+        if (client) {
           log.info(
             { attempt: attempt + 1 },
             "Proactive CES reconnection succeeded",

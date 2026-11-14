@@ -368,6 +368,8 @@ function connectionResolutionUserMessage(
       // connections store login tokens — the fix differs but the location
       // doesn't.
       return `${connection}${usedBy} has no stored credential. Add an API key or reconnect it in ${fixPath}.`;
+    case "credential_store_unreachable":
+      return `${connection}${usedBy} couldn't verify its API key because the credential store is unreachable right now. Try again in a moment.`;
     case "platform_unauthenticated":
       // A cloud assistant cannot log in or switch providers, and
       // this classifier only sees the reason code, so one honest wording covers
