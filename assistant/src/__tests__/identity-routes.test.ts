@@ -36,13 +36,16 @@ import {
 } from "../workspace/hatched-date.js";
 import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
+// The real in-process CES socket server: the readiness tests exercise the
+// production client against it.
+const cesServer = startTestCesRecordServer();
+
 // ── Env helpers ─────────────────────────────────────────────────────────
 
 let savedEnv: Record<string, string | undefined>;
 
-const session = startTestCesRecordServer();
-
-const PROFILER_ENV_KEYS = [  "CADET_PROFILER_RUN_ID",
+const PROFILER_ENV_KEYS = [
+  "CADET_PROFILER_RUN_ID",
   "CADET_PROFILER_MODE",
   "CADET_PROFILER_MAX_BYTES",
   "CADET_PROFILER_MAX_RUNS",
@@ -138,7 +141,10 @@ beforeEach(() => {
   setDbReady(true);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  if (!cesServer.listening) {
+    await cesServer.start();
+  }
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) {
       delete process.env[key];
@@ -225,6 +231,9 @@ describe("identity routes — health endpoint", () => {
 
   describe("CES readiness", () => {
     test("/v1/health reports ces.connected=true when CES is ready", async () => {
+      if (!cesServer.listening) {
+        await cesServer.start();
+      }
       await cesRecordBackend.ensureClient();
       const res = await handleDetailedHealth();
       const body = (await res.json()) as Record<string, unknown>;
