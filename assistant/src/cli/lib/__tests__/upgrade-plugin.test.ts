@@ -41,7 +41,10 @@ import {
 const SHA_A = "a".repeat(40);
 const SHA_B = "b".repeat(40);
 const CANON_REPO = "vargasjr-dev/mycadet";
-const CATALOG_URL = "https://test-cloud.mycadet.ai/v1/plugins/";
+// Derived from the shared env seed (the test preload pins CADET_CLOUD_URL),
+// matching what resolveCloudBaseUrl() produces at runtime — hardcoding the
+// host here drifts when the seed changes.
+const CATALOG_URL = `${process.env.CADET_CLOUD_URL ?? "https://test.mycadet.ai"}/v1/plugins/`;
 const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
 
 /** A marketplace manifest pinning `name` to `ref`. */
