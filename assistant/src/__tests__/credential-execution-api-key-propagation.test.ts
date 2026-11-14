@@ -12,7 +12,7 @@
  * ## What this file tests (and what it does NOT)
  *
  * This file exercises **production code** exclusively:
- * - `createCesClient` from `credential-execution/client.ts`
+ * - `createCesRpcClient` from `@mycadet/ces-client/rpc-client`
  * - Zod schemas from `@mycadet/service-contracts/credential-rpc` (HandshakeRequestSchema,
  *   CesRpcSchemas, CesRpcMethod)
  *
@@ -30,14 +30,13 @@ import { describe, expect, test } from "bun:test";
 
 import type { CesTransport } from "@mycadet/ces-client/rpc-client";
 import type { CesRpcClient } from "@mycadet/ces-client/rpc-client";
+import { createCesRpcClient } from "@mycadet/ces-client/rpc-client";
 import {
   CES_PROTOCOL_VERSION,
   CesRpcMethod,
   CesRpcSchemas,
   HandshakeRequestSchema,
 } from "@mycadet/service-contracts/credential-rpc";
-
-import { createCesClient } from "../credential-execution/client.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -172,7 +171,7 @@ describe("update_managed_credential RPC contract", () => {
 describe("CesClient.updateAssistantApiKey()", () => {
   test("sends update_managed_credential RPC with the correct payload", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
       requestTimeoutMs: 1_000,
     });
@@ -210,7 +209,7 @@ describe("CesClient.updateAssistantApiKey()", () => {
 
   test("propagation flow: handshake without key then update", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
       requestTimeoutMs: 1_000,
     });
@@ -254,7 +253,7 @@ describe("CesClient.updateAssistantApiKey()", () => {
 
   test("throws if called before handshake", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport);
+    const client = createCesRpcClient(transport);
 
     try {
       await client.updateAssistantApiKey("key");

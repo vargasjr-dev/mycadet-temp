@@ -9,6 +9,7 @@ import { mock } from "bun:test";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 /** The bound guardian's actor principal, which `mintEdgeToken` defaults to. */
 export const GUARDIAN_PRINCIPAL = "test-user";
@@ -16,7 +17,7 @@ export const GUARDIAN_PRINCIPAL = "test-user";
 /** The bound guardian's platform user id, for the tunnel-attested path. */
 export const TUNNEL_USER_ID = "11111111-1111-1111-1111-111111111111";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 /** Mint a valid actor edge JWT. */

@@ -36,6 +36,7 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   loopbackSafeFetch,
+  pairCliStdoutToResult,
   pairDocker,
   pairLocal,
 } from "@mycadet/local-mode";
@@ -201,18 +202,18 @@ async function mintPairingChallengeOrExit(
   return parseMintedChallenge(stdout);
 }
 
-/** Parse the mint's last stdout line into the challenge response. */
+/** Parse the mint's JSON stdout line into the challenge response. */
 function parseMintedChallenge(
   stdout: string,
 ): RemoteWebPairingChallengeResponse {
-  const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";
-  let challenge: RemoteWebPairingChallengeResponse;
-  try {
-    challenge = JSON.parse(lastLine) as RemoteWebPairingChallengeResponse;
-  } catch {
+  // Same last-line JSON contract the guardian lease's pair door uses — the
+  // CLI runs with pino silenced, so the payload line is reliably last.
+  const parsed = pairCliStdoutToResult(stdout);
+  if (!parsed.ok) {
     console.error("Error: could not parse the gateway's pairing mint output.");
     process.exit(1);
   }
+  const challenge = parsed.response as RemoteWebPairingChallengeResponse;
   if (!challenge.deviceCode || !challenge.userCode) {
     console.error(
       "Error: the gateway's pairing mint output is missing the challenge codes.",

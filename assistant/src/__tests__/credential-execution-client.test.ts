@@ -24,10 +24,10 @@ import type { CesTransport } from "@mycadet/ces-client/rpc-client";
 import { CesClientError } from "@mycadet/ces-client/rpc-client";
 import { CesHandshakeError } from "@mycadet/ces-client/rpc-client";
 import { CesTransportError } from "@mycadet/ces-client/rpc-client";
+import { createCesRpcClient } from "@mycadet/ces-client/rpc-client";
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 import { CES_PROTOCOL_VERSION } from "@mycadet/service-contracts/credential-rpc";
 
-import { createCesClient } from "../credential-execution/client.js";
 import {
   discoverCes,
   discoverCesWithRetry,
@@ -207,7 +207,7 @@ describe("discoverCesWithRetry", () => {
 describe("CES client", () => {
   test("handshake sends correct protocol version", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
     });
 
@@ -240,7 +240,7 @@ describe("CES client", () => {
 
   test("handshake times out when CES does not respond", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 100, // Very short timeout for test
     });
 
@@ -258,7 +258,7 @@ describe("CES client", () => {
 
   test("handshake reports rejection from CES", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
     });
 
@@ -285,7 +285,7 @@ describe("CES client", () => {
 
   test("call() throws before handshake", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport);
+    const client = createCesRpcClient(transport);
 
     try {
       await client.call("list_credentials", {});
@@ -300,7 +300,7 @@ describe("CES client", () => {
 
   test("call() throws when transport is dead", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
     });
 
@@ -332,7 +332,7 @@ describe("CES client", () => {
 
   test("close() cancels pending requests", async () => {
     const transport = createMockTransport();
-    const client = createCesClient(transport, {
+    const client = createCesRpcClient(transport, {
       handshakeTimeoutMs: 1_000,
       requestTimeoutMs: 10_000,
     });

@@ -154,7 +154,7 @@ function listLiveness(
   return challenge.expiresAtMs <= now ? "expired" : "active";
 }
 
-function runPairingList(json: boolean): number {
+async function runPairingList(json: boolean): Promise<number> {
   const now = Date.now();
   const challenges = listPersistedRemoteWebPairingChallenges();
 
@@ -173,7 +173,6 @@ function runPairingList(json: boolean): number {
 
   if (challenges.length === 0) {
     console.log("No pairing challenges found.");
-    return 0;
   }
 
   for (const challenge of challenges) {
@@ -190,7 +189,38 @@ function runPairingList(json: boolean): number {
       `  ${challenge.verificationUri}  requester ${challenge.requesterIp}${userAgent}`,
     );
   }
+
+  // The device-bound mint (the guardian lease's door) creates no pairing
+  // challenge — it mints an actor token directly. Surface those leases here
+  // too, so a mint that just succeeded is visible from this command.
+  const leases = await listLocalDeviceLeases().catch(() => []);
+  if (leases.length > 0) {
+    console.log("");
+    console.log("Device-bound leases:");
+    for (const lease of leases) {
+      console.log(
+        `  ${lease.hashedDeviceId}  ${lease.platform}  ${
+          lease.clientReportedName ?? "(unnamed)"
+        }  issued ${new Date(lease.issuedAt).toISOString()}`,
+      );
+    }
+  }
+
   return 0;
+}
+
+/**
+ * The guardian's active device-bound leases, via the same handler the
+ * `gateway devices list` command renders. Best-effort context for the list
+ * view; an empty array on failure keeps the challenge listing working.
+ */
+async function listLocalDeviceLeases() {
+  try {
+    const { handleListDevices } = await import("../http/routes/devices.js");
+    return await handleListDevices();
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -237,7 +267,7 @@ export async function runPairingCommand(args: string[]): Promise<number> {
     return subcommand ? 0 : 1;
   }
   if (subcommand === "list") {
-    return runPairingList(args.includes("--json"));
+    return await runPairingList(args.includes("--json"));
   }
   if (subcommand === "approve" || subcommand === "deny") {
     const requestId = parsePairingArgs(args).positional;

@@ -28,6 +28,7 @@ import {
   StoreUnavailableError,
 } from "../materializers/local-secure-key-backend.js";
 import { buildCrudHandlers } from "../main.js";
+import { resetMetadataStoreForTests } from "../records/metadata-store.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -293,29 +294,63 @@ describe("buildCrudHandlers audit logging", () => {
   const ctx = { sessionId: "test-session" };
 
   test("SetCredential emits an audit line with account + outcome, never the value", async () => {
-    const calls: Array<{ obj: unknown; msg: string }> = [];
-    const audit = {
-      info: (obj: unknown, msg: string) => {
-        calls.push({ obj, msg });
-      },
-    };
-    const handlers = buildCrudHandlers(
-      fakeBackend(),
-      audit as unknown as Parameters<typeof buildCrudHandlers>[1],
+    // SetCredential must also leave a metadata entry (the store-side
+    // invariant), so sandbox the CES data root the metadata store writes to.
+    const cesDataDir = join(
+      tmpdir(),
+      `ces-audit-${randomBytes(4).toString("hex")}`,
     );
+    const savedCesDataDir = process.env.CES_DATA_DIR;
+    process.env.CES_DATA_DIR = cesDataDir;
+    resetMetadataStoreForTests();
+    try {
+      const calls: Array<{ obj: unknown; msg: string }> = [];
+      const audit = {
+        info: (obj: unknown, msg: string) => {
+          calls.push({ obj, msg });
+        },
+      };
+      const handlers = buildCrudHandlers(
+        fakeBackend(),
+        audit as unknown as Parameters<typeof buildCrudHandlers>[1],
+      );
 
-    const res = await handlers[CesRpcMethod.SetCredential]!(
-      { account: "cadet:assistant_api_key", value: "super-secret-value" },
-      ctx,
-    );
+      const res = await handlers[CesRpcMethod.SetCredential]!(
+        {
+          account: "credential/cadet/assistant_api_key",
+          value: "super-secret-value",
+        },
+        ctx,
+      );
 
-    expect(res).toEqual({ ok: true });
-    expect(calls).toContainEqual({
-      obj: { account: "cadet:assistant_api_key", ok: true },
-      msg: "CES credential set",
-    });
-    // The audit line must never carry the credential value.
-    expect(JSON.stringify(calls)).not.toContain("super-secret-value");
+      expect(res).toEqual({ ok: true });
+      expect(calls).toContainEqual({
+        obj: { account: "credential/cadet/assistant_api_key", ok: true },
+        msg: "CES credential set",
+      });
+      // The audit line must never carry the credential value.
+      expect(JSON.stringify(calls)).not.toContain("super-secret-value");
+      // The metadata invariant: the catalog can now see the account, and the
+      // value itself never lands in metadata.
+      const metadata = JSON.parse(
+        fs.readFileSync(join(cesDataDir, "metadata.json"), "utf-8"),
+      );
+      expect(
+        metadata.credentials.some(
+          (entry: { service: string; field: string }) =>
+            entry.service === "cadet" && entry.field === "assistant_api_key",
+        ),
+      ).toBe(true);
+      expect(JSON.stringify(metadata)).not.toContain("super-secret-value");
+    } finally {
+      resetMetadataStoreForTests();
+      if (savedCesDataDir === undefined) {
+        delete process.env.CES_DATA_DIR;
+      } else {
+        process.env.CES_DATA_DIR = savedCesDataDir;
+      }
+      fs.rmSync(cesDataDir, { recursive: true, force: true });
+    }
   });
 
   test("DeleteCredential emits an audit line with account + result", async () => {

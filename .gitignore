@@ -165,3 +165,4 @@ credential-executor/ces-data/
 # the web codegen pipeline); never checked in.
 assistant/openapi.yaml
 gateway/openapi.json
+gateway/gateway-security/

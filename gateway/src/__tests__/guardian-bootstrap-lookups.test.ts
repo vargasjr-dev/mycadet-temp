@@ -18,6 +18,7 @@
 import { Database } from "bun:sqlite";
 
 import { and, eq } from "drizzle-orm";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 import {
   describe,
@@ -84,7 +85,7 @@ mock.module("../db/assistant-db-proxy.js", () => ({
 }));
 
 // Initialize signing key so bootstrapGuardian's JWT minting works.
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 /** Minimal in-memory assistant DB mirroring the contacts/contact_channels schema. */

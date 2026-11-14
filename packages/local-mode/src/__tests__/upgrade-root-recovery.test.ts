@@ -130,7 +130,7 @@ test("versioned restore installs roots into stopped target containers before fir
   await mockChildProcessSpawn((command, args) => {
     if (command === "docker" && args[0] === "inspect") {
       return {
-        stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
+        stdout: JSON.stringify(["PATH=/usr/local/bin:/usr/bin"]),
         code: 0,
         pid: 4242,
         unref: () => {},

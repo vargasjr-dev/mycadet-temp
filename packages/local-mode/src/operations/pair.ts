@@ -23,7 +23,8 @@ export interface PairDeviceIdentity {
 
 /**
  * The gateway CLI prints the pair payload as single-line JSON; its last
- * stdout line is the answer (earlier lines may carry warnings).
+ * stdout line is the answer (earlier lines may carry warnings). The CLI
+ * itself runs with pino silenced, so the payload line is reliably last.
  */
 export function pairCliStdoutToResult(stdout: string): PairOperationResult {
   const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";

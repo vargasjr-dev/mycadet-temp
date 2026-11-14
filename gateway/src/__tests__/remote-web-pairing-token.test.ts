@@ -7,13 +7,14 @@ import { eq } from "drizzle-orm";
 
 import { MAX_PAIRING_USER_AGENT_CHARS } from "../auth/device-identity-text.js";
 import { initSigningKey } from "../auth/token-service.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 import {
   PUBLIC_BASE_URL,
   TEST_REQUESTER,
 } from "./helpers/remote-web-pairing-fixtures.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 const mockQuery = mock();

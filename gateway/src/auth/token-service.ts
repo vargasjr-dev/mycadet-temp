@@ -40,34 +40,22 @@ export function getSigningKeyPath(): string {
  * Resolve the signing key for the gateway.
  *
  * Resolution order:
- *   1. ACTOR_TOKEN_SIGNING_KEY env var (hex-encoded, set by CLI for Docker)
- *   2. Load from disk (GATEWAY_SECURITY_DIR/actor-token-signing-key)
- *   3. Adopt the key the assistant's daemon era persisted under the
+ *   1. Load from disk (GATEWAY_SECURITY_DIR/actor-token-signing-key)
+ *   2. Adopt the key the assistant's daemon era persisted under the
  *      workspace's transitional directory — the one-time migration for
  *      instances hatched before the gateway owned key custody. Consumed
  *      on read: the adopted key is persisted gateway-side and the old
  *      file removed.
- *   4. Generate a new key and persist to disk (local mode)
+ *   3. Generate a new key and persist to disk (local mode)
  */
 export function loadOrCreateSigningKey(): Buffer {
-  const envKey = process.env.ACTOR_TOKEN_SIGNING_KEY;
-  if (envKey) {
-    if (!/^[0-9a-f]{64}$/i.test(envKey)) {
-      throw new Error(
-        `Invalid ACTOR_TOKEN_SIGNING_KEY: expected 64 hex characters, got ${envKey.length} chars`,
-      );
-    }
-    log.info("Signing key loaded from ACTOR_TOKEN_SIGNING_KEY env var");
-    return Buffer.from(envKey, "hex");
-  }
-
   const keyPath = getSigningKeyPath();
 
   if (existsSync(keyPath)) {
     try {
       const raw = readFileSync(keyPath);
       if (raw.length === 32) {
-        log.info("Auth signing key loaded from disk");
+        log.debug("Auth signing key loaded from disk");
         return raw;
       }
       log.warn("Signing key file has unexpected length, regenerating");
@@ -142,8 +130,9 @@ function persistSigningKey(keyPath: string, key: Buffer): void {
 /**
  * Initialize (or reinitialize) the signing key. Called at gateway startup —
  * loads or creates the on-disk key via `loadOrCreateSigningKey()`, the one
- * path every real entrypoint shares. Tests that need a deterministic key set
- * ACTOR_TOKEN_SIGNING_KEY (its first resolution path) before calling.
+ * path every real entrypoint shares. Tests that need a deterministic key
+ * write one to the security dir first (see
+ * `src/__tests__/helpers/signing-key.ts`).
  */
 export function initSigningKey(): void {
   signingKey = loadOrCreateSigningKey();

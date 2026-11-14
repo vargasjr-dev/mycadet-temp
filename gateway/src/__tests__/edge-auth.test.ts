@@ -23,6 +23,7 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 
 import "./test-preload.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 // --- Mocks (set BEFORE importing the module under test) -------------------
 
@@ -223,7 +224,6 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH alone is insufficient", () => {
 // =========================================================================
 
 describe("requireEdgeAuth — JWT mode", () => {
-
   test("rejects edge-forwarded loopback requests when Authorization header is absent", async () => {
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
@@ -266,7 +266,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     );
     expect(res?.status).toBe(401);
   });
-
 });
 
 // =========================================================================
@@ -323,7 +322,6 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
 });
 
 describe("requireEdgeAuthWithScope — JWT mode", () => {
-
   test("rejects edge-forwarded loopback requests when scoped Authorization is absent", async () => {
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(
@@ -625,7 +623,7 @@ const { contacts } = await import("../db/schema.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 describe("handleCreateToken: derived actor-token identity carry-forward", () => {

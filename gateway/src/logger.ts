@@ -113,6 +113,9 @@ function openSecureDestination(filePath: string): pino.DestinationStream {
 }
 
 function buildLogger(config: LogFileConfig | null): pino.Logger {
+  if (process.env["GATEWAY_LOG_SILENT"]?.trim() === "1") {
+    return pino({ name: "gateway", level: "silent" });
+  }
   if (!config?.dir) {
     return pino(
       { name: "gateway", serializers: logSerializers },

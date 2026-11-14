@@ -2,6 +2,7 @@ import { describe, test, expect, mock, afterEach } from "bun:test";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 type FetchFn = (
   input: string | URL | Request,
@@ -23,7 +24,7 @@ mock.module("../config.js", () => ({
 
 const { handleRuntimeProxy } = await import("../http/routes/runtime-proxy.js");
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 /** Mint a valid edge JWT (aud=cadet-gateway) for test requests. */

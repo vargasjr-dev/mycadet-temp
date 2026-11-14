@@ -547,11 +547,7 @@ export async function runDaemon(): Promise<void> {
   applyModuleLogLevels(config.logFile?.levels);
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
-  // Blocks up to a 20s timeout so credential reads route through CES before
-  // provider init; non-fatal, falls back to the direct credential store on
-  // failure. CES serves a multi-connection IPC socket, so child
-  // processes can open the same `openCesRpcSession` path independently.
-  await initializeCesClient(config);
+  await initializeCesClient();
 
   // Bring up the plugin layer: install the runtime bridge, register the
   // first-party defaults, load user plugins, and run every plugin's

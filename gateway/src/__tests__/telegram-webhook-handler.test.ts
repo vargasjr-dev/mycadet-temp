@@ -3,6 +3,7 @@ import type { GatewayConfig } from "../config.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { initSigningKey } from "../auth/token-service.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 import {
   initAdmissionPolicyCache,
   resetAdmissionPolicyCache,
@@ -12,7 +13,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { testWorkspaceDir } from "./test-preload.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 type FetchFn = (
@@ -286,7 +287,9 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
   test("uses the saved ingress URL when the workspace records one", async () => {
     writeFileSync(
       join(testWorkspaceDir, "config.json"),
-      JSON.stringify({ ingress: { publicBaseUrl: "https://ingress.example.test" } }),
+      JSON.stringify({
+        ingress: { publicBaseUrl: "https://ingress.example.test" },
+      }),
     );
     try {
       const config = makeConfig({

@@ -13,6 +13,13 @@ import { runPairingCommand } from "./pairing.js";
 import { initGatewayDb } from "../db/connection.js";
 import { initSigningKey } from "../auth/token-service.js";
 
+// One-shot commands print machine-readable JSON on stdout; their callers
+// parse it. Silence pino entirely (no pretty stdout, no log files) — the
+// lazy proxy logger builds on the first log call, which happens inside the
+// command bodies below, after this flag is set. Errors surface through
+// console.error + exit codes instead.
+process.env["GATEWAY_LOG_SILENT"] = "1";
+
 function printUsage(): void {
   console.log("Usage: gateway <command>");
   console.log("");
