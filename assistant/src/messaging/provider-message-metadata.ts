@@ -119,9 +119,6 @@ export const providerMessageMetadataSchema = z
   })
   .passthrough();
 
-export type ProviderReactionMetadata = z.infer<
-  typeof providerReactionMetadataSchema
->;
 export type ProviderMessageMetadata = z.infer<
   typeof providerMessageMetadataSchema
 >;

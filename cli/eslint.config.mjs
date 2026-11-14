@@ -27,6 +27,21 @@ const eslintConfig = defineConfig([
     plugins: { "@mycadet": { rules: { "no-re-exports": noReExports } } },
     rules: { "@mycadet/no-re-exports": "error" },
   },
+  {
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "ImportDeclaration > ImportNamespaceSpecifier",
+          message: "Namespace imports hide the used surface.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+    rules: { "no-restricted-syntax": "off" },
+  },
 ]);
 
 export default eslintConfig;

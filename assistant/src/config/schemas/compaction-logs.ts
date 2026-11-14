@@ -73,7 +73,6 @@ export const CompactionLogsConfigSchema = z
   .default({ destination: "none" })
   .describe("Compaction log destination configuration");
 
-export type CompactionLogsConfig = z.infer<typeof CompactionLogsConfigSchema>;
 export type CompactionLogsClickHouseConfig = z.infer<
   typeof CompactionLogsClickHouseConfigSchema
 >;

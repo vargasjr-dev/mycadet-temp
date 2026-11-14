@@ -372,8 +372,6 @@ export const CHANNEL_PROCESSING_STATUSES = [
   "failed",
   "dead_letter",
 ] as const;
-export type ChannelProcessingStatus =
-  (typeof CHANNEL_PROCESSING_STATUSES)[number];
 
 export const channelInboundEvents = sqliteTable("channel_inbound_events", {
   id: text("id").primaryKey(),

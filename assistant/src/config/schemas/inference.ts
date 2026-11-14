@@ -6,23 +6,6 @@ const VALID_LATEST_TURN_COMPRESSION_POLICIES = [
   "drop",
 ] as const;
 
-export const ThinkingConfigSchema = z
-  .object({
-    enabled: z
-      .boolean({ error: "thinking.enabled must be a boolean" })
-      .default(true)
-      .describe(
-        "Whether to enable extended thinking (chain-of-thought) for the model",
-      ),
-    streamThinking: z
-      .boolean({ error: "thinking.streamThinking must be a boolean" })
-      .default(true)
-      .describe(
-        "Whether to stream the model's thinking tokens to the client in real time",
-      ),
-  })
-  .describe("Extended thinking (chain-of-thought) configuration");
-
 export const ContextOverflowRecoveryConfigSchema = z
   .object({
     enabled: z
@@ -183,7 +166,6 @@ export const ModelPricingOverrideSchema = z
     "Custom pricing override for a specific provider/model combination",
   );
 
-export type ThinkingConfig = z.infer<typeof ThinkingConfigSchema>;
 export type ContextOverflowRecoveryConfig = z.infer<
   typeof ContextOverflowRecoveryConfigSchema
 >;

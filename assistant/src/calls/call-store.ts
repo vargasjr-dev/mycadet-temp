@@ -1,8 +1,9 @@
-import { and, desc, eq, notInArray, or } from "drizzle-orm";
+import { and, desc, eq, lt, notInArray, or } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 import { getDb } from "../persistence/db-connection.js";
-import { rawChanges, rawRun } from "../persistence/raw-query.js";
+import { rawChanges } from "../persistence/raw-query.js";
+import { processedCallbacks } from "../persistence/schema/calls.js";
 import {
   callEvents,
   callPendingQuestions,
@@ -419,23 +420,29 @@ export function claimCallback(
   callSessionId: string,
 ): string | null {
   // Clear any expired orphaned claims so they can be reprocessed
-  rawRun(
-    "calls:claimCallback:clearExpired",
-    `DELETE FROM processed_callbacks WHERE dedupe_key = ? AND created_at < ?`,
-    dedupeKey,
-    Date.now() - CLAIM_EXPIRY_MS,
-  );
+  getDb()
+    .delete(processedCallbacks)
+    .where(
+      and(
+        eq(processedCallbacks.dedupeKey, dedupeKey),
+        lt(processedCallbacks.createdAt, Date.now() - CLAIM_EXPIRY_MS),
+      ),
+    )
+    .run();
 
   const claimId = uuid();
-  const changes = rawRun(
-    "calls:claimCallback:insert",
-    `INSERT OR IGNORE INTO processed_callbacks (id, dedupe_key, call_session_id, claim_id, created_at) VALUES (?, ?, ?, ?, ?)`,
-    uuid(),
-    dedupeKey,
-    callSessionId,
-    claimId,
-    Date.now(),
-  );
+  getDb()
+    .insert(processedCallbacks)
+    .values({
+      id: uuid(),
+      dedupeKey,
+      callSessionId,
+      claimId,
+      createdAt: Date.now(),
+    })
+    .onConflictDoNothing()
+    .run();
+  const changes = rawChanges();
   return changes > 0 ? claimId : null;
 }
 
@@ -447,12 +454,15 @@ export function claimCallback(
  * handler A from releasing a claim that was reclaimed by handler B.
  */
 export function releaseCallbackClaim(dedupeKey: string, claimId: string): void {
-  rawRun(
-    "calls:releaseCallbackClaim",
-    `DELETE FROM processed_callbacks WHERE dedupe_key = ? AND claim_id = ?`,
-    dedupeKey,
-    claimId,
-  );
+  getDb()
+    .delete(processedCallbacks)
+    .where(
+      and(
+        eq(processedCallbacks.dedupeKey, dedupeKey),
+        eq(processedCallbacks.claimId, claimId),
+      ),
+    )
+    .run();
 }
 
 /**
@@ -475,13 +485,17 @@ export function finalizeCallbackClaim(
 ): boolean {
   // Set created_at far in the future so expiry check never matches
   const NEVER_EXPIRE = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; // ~100 years
-  const changes = rawRun(
-    "calls:finalizeCallbackClaim",
-    `UPDATE processed_callbacks SET created_at = ? WHERE dedupe_key = ? AND claim_id = ?`,
-    NEVER_EXPIRE,
-    dedupeKey,
-    claimId,
-  );
+  getDb()
+    .update(processedCallbacks)
+    .set({ createdAt: NEVER_EXPIRE })
+    .where(
+      and(
+        eq(processedCallbacks.dedupeKey, dedupeKey),
+        eq(processedCallbacks.claimId, claimId),
+      ),
+    )
+    .run();
+  const changes = rawChanges();
   if (changes === 0) {
     log.warn(
       { dedupeKey, claimId },

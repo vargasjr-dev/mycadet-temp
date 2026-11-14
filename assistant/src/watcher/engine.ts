@@ -102,11 +102,6 @@ function notifyAuthEpisodeOnce(
   return true;
 }
 
-export interface WatcherEngineHandle {
-  runOnce(): Promise<number>;
-  stop(): void;
-}
-
 /** Cap on the provider-authored `eventType` label. See the constants module. */
 const EVENT_TYPE_MAX_CHARS = 100;
 

@@ -24,7 +24,3 @@ export const ChannelConfigResultBaseSchema = z.object({
   connected: z.boolean(),
   error: z.string().optional(),
 });
-
-export type ChannelConfigResultBase = z.infer<
-  typeof ChannelConfigResultBaseSchema
->;

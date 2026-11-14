@@ -61,6 +61,3 @@ export const LogFileConfigSchema = z
     ),
   })
   .describe("Log file storage, retention, and runtime log-level settings");
-
-export type AuditLogConfig = z.infer<typeof AuditLogConfigSchema>;
-export type LogFileConfig = z.infer<typeof LogFileConfigSchema>;

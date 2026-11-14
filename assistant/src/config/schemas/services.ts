@@ -136,33 +136,22 @@ const MondayOAuthServiceSchema = BaseServiceSchema.extend({
 const ShopifyOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),
 });
-export type ShopifyOAuthService = z.infer<typeof ShopifyOAuthServiceSchema>;
 
 const StripeLinkOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),
 });
-export type StripeLinkOAuthService = z.infer<
-  typeof StripeLinkOAuthServiceSchema
->;
 
 const FigmaOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),
 });
-export type FigmaOAuthService = z.infer<typeof FigmaOAuthServiceSchema>;
 
 const QuickBooksOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),
 });
-export type QuickBooksOAuthService = z.infer<
-  typeof QuickBooksOAuthServiceSchema
->;
 
 const EventbriteOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),
 });
-export type EventbriteOAuthService = z.infer<
-  typeof EventbriteOAuthServiceSchema
->;
 
 const CalendlyOAuthServiceSchema = BaseServiceSchema.extend({
   mode: ServiceModeSchema.default("your-own"),

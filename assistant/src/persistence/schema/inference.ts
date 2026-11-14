@@ -23,6 +23,3 @@ export const providerConnections = sqliteTable(
   },
   (table) => [index("idx_provider_connections_provider").on(table.provider)],
 );
-
-export type ProviderConnectionRow = typeof providerConnections.$inferSelect;
-export type NewProviderConnectionRow = typeof providerConnections.$inferInsert;

@@ -56,8 +56,6 @@ export const CloudConfigSchema = z
   })
   .describe("Cadet Cloud connection settings");
 
-export type CloudConfig = z.infer<typeof CloudConfigSchema>;
-
 export const DaemonConfigSchema = z
   .object({
     startupSocketWaitMs: z
@@ -115,6 +113,3 @@ export const UiConfigSchema = z
   .describe(
     "User interface display settings. Empty-state greeting model selection lives under llm.callSites.emptyStateGreeting.",
   );
-
-export type DaemonConfig = z.infer<typeof DaemonConfigSchema>;
-export type UiConfig = z.infer<typeof UiConfigSchema>;

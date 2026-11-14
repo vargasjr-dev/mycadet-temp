@@ -11,7 +11,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import type { SkillSummary, SkillToolManifest } from "../config/skills.js";
+import type { SkillSummary } from "../config/skills.js";
 import {
   filterSkillsByEnabledPlugins,
   loadSkillCatalog,
@@ -32,6 +32,7 @@ import {
 import { createSkillToolsFromManifest } from "../tools/skills/skill-tool-factory.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import { getLogger } from "../util/logger.js";
+import type { SkillToolManifest } from "./../skills/tool-manifest.js";
 
 const log = getLogger("conversation-skill-tools");
 

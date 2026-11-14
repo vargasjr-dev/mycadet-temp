@@ -18,7 +18,6 @@ import {
 
 import { z } from "zod";
 
-import type { ClientOs } from "../channels/types.js";
 import { getDefaultPluginSkillRoots } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import {
@@ -46,8 +45,6 @@ import {
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 
 const log = getLogger("skills");
-
-// ─── Zod schemas for frontmatter metadata validation ─────────────────────────
 
 const CadetMetadataSchema = z
   .object({
@@ -89,8 +86,6 @@ export type SkillSource =
   | "workspace"
   | "extra"
   | "plugin";
-
-// ─── Core interfaces ─────────────────────────────────────────────────────────
 
 export interface SkillSummary {
   id: string;
@@ -164,39 +159,6 @@ export interface SkillSelectorResult {
   errorCode?: SkillLookupErrorCode;
 }
 
-// ─── Skill Tool Manifest Types ────────────────────────────────────────────────
-
-/**
- * Schema for a skill's TOOLS.json manifest file.
- * Declares which tools a skill provides and how they should be executed.
- */
-export interface SkillToolManifest {
-  version: 1;
-  tools: SkillToolEntry[];
-}
-
-/**
- * A single tool entry within a skill's TOOLS.json manifest.
- */
-export interface SkillToolEntry {
-  /** Unique tool name (must not collide with core tool names). */
-  name: string;
-  /** Human-readable description shown to the model. */
-  description: string;
-  /** Tool category for grouping/display. */
-  category: string;
-  /** Default risk level for permission checks. */
-  risk: "low" | "medium" | "high";
-  /** JSON Schema for the tool's input parameters. */
-  input_schema: Record<string, unknown>;
-  /** Relative path to the executor script within the skill directory. */
-  executor: string;
-  /** Where the tool script runs. */
-  execution_target: "host" | "sandbox";
-  /** Client operating systems that may expose this tool. Unset means all. */
-  supported_client_os?: ClientOs[];
-}
-
 /**
  * Lightweight metadata about a skill's tool manifest, attached to SkillSummary
  * without loading the full manifest at catalog time.
@@ -217,8 +179,6 @@ export interface SkillToolManifestMeta {
    */
   versionHash?: string;
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export function getBundledSkillsDir(): string {
   const dir = import.meta.dir;
@@ -242,8 +202,6 @@ export function getBundledSkillsDir(): string {
 
   return join(dir, "bundled-skills");
 }
-
-// ─── Frontmatter parsing ─────────────────────────────────────────────────────
 
 export interface ParsedFrontmatter {
   name: string;
@@ -408,8 +366,6 @@ export function parseFrontmatter(
   };
 }
 
-// ─── Path utilities ──────────────────────────────────────────────────────────
-
 function getCanonicalPath(path: string): string {
   return existsSync(path) ? realpathSync(path) : resolve(path);
 }
@@ -428,8 +384,6 @@ function isOutsideSkillsRoot(
   const relativePath = getRelativeToSkillsRoot(skillsDir, candidatePath);
   return relativePath.startsWith("..") || isAbsolute(relativePath);
 }
-
-// ─── Tool manifest detection ─────────────────────────────────────────────────
 
 /**
  * Create a SkillToolManifestMeta with a lazily-computed versionHash.
@@ -499,8 +453,6 @@ function detectToolManifest(
     );
   }
 }
-
-// ─── Skill reading ───────────────────────────────────────────────────────────
 
 function readSkillFromDirectory(
   directoryPath: string,
@@ -627,8 +579,6 @@ function readBundledSkillFromDirectory(
     return null;
   }
 }
-
-// ─── Skill discovery ─────────────────────────────────────────────────────────
 
 function discoverBundledSkillDirectories(): string[] {
   const bundledDir = getBundledSkillsDir();
@@ -911,8 +861,6 @@ function discoverInstalledPluginResidentSkills(): SkillSummary[] {
 
   return summaries;
 }
-
-// ─── Catalog loading ─────────────────────────────────────────────────────────
 
 /**
  * Scope a list of skills to a conversation's per-chat plugin selection.
@@ -1410,5 +1358,3 @@ export function loadSkillBySelector(
   }
   return loadSkillDefinition(resolved.skill);
 }
-
-// ─── Icon generation ─────────────────────────────────────────────────────────

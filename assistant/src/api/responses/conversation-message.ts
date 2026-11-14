@@ -130,7 +130,6 @@ export const PendingToolQuestionSchema = z.object({
   requestId: z.string(),
   entries: z.array(QuestionEntrySchema),
 });
-export type PendingToolQuestion = z.infer<typeof PendingToolQuestionSchema>;
 
 /**
  * Closed set of confirmation outcomes recorded for a tool call. The daemon
@@ -143,7 +142,6 @@ export const ConfirmationDecisionSchema = z.enum([
   "denied",
   "timed_out",
 ]);
-export type ConfirmationDecision = z.infer<typeof ConfirmationDecisionSchema>;
 
 /**
  * A single tool call rendered into a history row. Mirrors the object the
@@ -328,9 +326,6 @@ const ConversationAcpNotificationSchema = z.object({
   acpSessionId: z.string(),
   agent: z.string().optional(),
 });
-export type ConversationAcpNotification = z.infer<
-  typeof ConversationAcpNotificationSchema
->;
 
 // ---------------------------------------------------------------------------
 // Background-tool completion

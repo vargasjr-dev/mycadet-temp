@@ -400,5 +400,3 @@ export const MemoryV2ConfigSchema = z
       }
     }
   });
-
-export type MemoryV2Config = z.infer<typeof MemoryV2ConfigSchema>;

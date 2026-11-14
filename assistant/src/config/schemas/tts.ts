@@ -283,7 +283,6 @@ const TtsProvidersSchema = z.object({
   ),
   xai: TtsXaiProviderConfigSchema.default(TtsXaiProviderConfigSchema.parse({})),
 });
-export type TtsProviders = z.infer<typeof TtsProvidersSchema>;
 
 // ---------------------------------------------------------------------------
 // Catalog-completeness guard
@@ -331,5 +330,3 @@ export const TtsServiceSchema = z
   .describe(
     "Text-to-speech service configuration — provider selection and per-provider settings",
   );
-
-export type TtsService = z.infer<typeof TtsServiceSchema>;

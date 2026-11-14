@@ -14,9 +14,6 @@ export enum ErrorCode {
   // Daemon errors
   DAEMON_ERROR = "DAEMON_ERROR",
 
-  // Platform-specific errors (clipboard, unsupported OS features)
-  PLATFORM_ERROR = "PLATFORM_ERROR",
-
   // WASM integrity check failures
   INTEGRITY_ERROR = "INTEGRITY_ERROR",
 

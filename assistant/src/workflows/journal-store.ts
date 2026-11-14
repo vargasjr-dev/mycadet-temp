@@ -14,7 +14,12 @@
  * (the engine, a later PR) own gating.
  */
 
-import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { and, asc, desc, eq, inArray, isNotNull, lt, sql } from "drizzle-orm";
+
+import { getDb } from "../persistence/db-connection.js";
+import { rawChanges } from "../persistence/raw-query.js";
+import { workflowJournal } from "../persistence/schema/workflows.js";
+import { workflowRuns } from "../persistence/schema/workflows.js";
 
 export type WorkflowRunStatus =
   | "running"
@@ -123,38 +128,8 @@ export interface AppendJournalEntryInput {
 // Row shapes + mappers
 // ---------------------------------------------------------------------------
 
-interface WorkflowRunRow {
-  id: string;
-  name: string | null;
-  script_source: string;
-  script_hash: string;
-  args_json: string | null;
-  capabilities_json: string | null;
-  status: string;
-  conversation_id: string | null;
-  trust_json: string | null;
-  agents_spawned: number;
-  input_tokens: number;
-  output_tokens: number;
-  result_json: string | null;
-  error: string | null;
-  created_at: number | null;
-  updated_at: number | null;
-  finished_at: number | null;
-}
-
-interface WorkflowJournalRow {
-  run_id: string;
-  seq: number;
-  call_hash: string;
-  kind: string;
-  request_json: string | null;
-  result_json: string | null;
-  status: string;
-  input_tokens: number | null;
-  output_tokens: number | null;
-  created_at: number | null;
-}
+type WorkflowRunRow = typeof workflowRuns.$inferSelect;
+type WorkflowJournalRow = typeof workflowJournal.$inferSelect;
 
 /** Parse a nullable JSON column; malformed values collapse to null. */
 function parseJsonColumn(value: string | null): unknown {
@@ -177,36 +152,36 @@ function rowToRun(row: WorkflowRunRow): WorkflowRun {
   return {
     id: row.id,
     name: row.name,
-    scriptSource: row.script_source,
-    scriptHash: row.script_hash,
-    args: parseJsonColumn(row.args_json),
-    capabilities: parseJsonColumn(row.capabilities_json),
+    scriptSource: row.scriptSource,
+    scriptHash: row.scriptHash,
+    args: parseJsonColumn(row.argsJson),
+    capabilities: parseJsonColumn(row.capabilitiesJson),
     status: row.status as WorkflowRunStatus,
-    conversationId: row.conversation_id,
-    trust: parseJsonColumn(row.trust_json),
-    agentsSpawned: row.agents_spawned,
-    inputTokens: row.input_tokens,
-    outputTokens: row.output_tokens,
-    result: parseJsonColumn(row.result_json),
+    conversationId: row.conversationId,
+    trust: parseJsonColumn(row.trustJson),
+    agentsSpawned: row.agentsSpawned,
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+    result: parseJsonColumn(row.resultJson),
     error: row.error,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    finishedAt: row.finished_at,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    finishedAt: row.finishedAt,
   };
 }
 
 function rowToJournalEntry(row: WorkflowJournalRow): WorkflowJournalEntry {
   return {
-    runId: row.run_id,
+    runId: row.runId,
     seq: row.seq,
-    callHash: row.call_hash,
+    callHash: row.callHash,
     kind: row.kind as WorkflowJournalKind,
-    request: parseJsonColumn(row.request_json),
-    result: parseJsonColumn(row.result_json),
+    request: parseJsonColumn(row.requestJson),
+    result: parseJsonColumn(row.resultJson),
     status: row.status,
-    inputTokens: row.input_tokens ?? undefined,
-    outputTokens: row.output_tokens ?? undefined,
-    createdAt: row.created_at,
+    inputTokens: row.inputTokens ?? undefined,
+    outputTokens: row.outputTokens ?? undefined,
+    createdAt: row.createdAt,
   };
 }
 
@@ -218,27 +193,22 @@ function rowToJournalEntry(row: WorkflowJournalRow): WorkflowJournalEntry {
 export function createRun(input: CreateRunInput): WorkflowRun {
   const now = Date.now();
   const status = input.status ?? "running";
-  rawRun(
-    "journal:createRun",
-    /*sql*/ `
-    INSERT INTO workflow_runs (
-      id, name, script_source, script_hash, args_json, capabilities_json,
-      status, conversation_id, trust_json, agents_spawned, input_tokens,
-      output_tokens, result_json, error, created_at, updated_at, finished_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, NULL, NULL, ?, ?, NULL)
-    `,
-    input.id,
-    input.name ?? null,
-    input.scriptSource,
-    input.scriptHash,
-    serializeJsonColumn(input.args),
-    serializeJsonColumn(input.capabilities),
-    status,
-    input.conversationId ?? null,
-    serializeJsonColumn(input.trust),
-    now,
-    now,
-  );
+  getDb()
+    .insert(workflowRuns)
+    .values({
+      id: input.id,
+      name: input.name ?? null,
+      scriptSource: input.scriptSource,
+      scriptHash: input.scriptHash,
+      argsJson: serializeJsonColumn(input.args),
+      capabilitiesJson: serializeJsonColumn(input.capabilities),
+      status,
+      conversationId: input.conversationId ?? null,
+      trustJson: serializeJsonColumn(input.trust),
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
   return getRun(input.id)!;
 }
 
@@ -250,39 +220,20 @@ export function updateRun(
   runId: string,
   input: UpdateRunInput,
 ): WorkflowRun | null {
-  const sets: string[] = [];
-  const params: (string | number | null)[] = [];
-
-  if (input.status !== undefined) {
-    sets.push("status = ?");
-    params.push(input.status);
-  }
-  if (input.agentsSpawned !== undefined) {
-    sets.push("agents_spawned = ?");
-    params.push(input.agentsSpawned);
-  }
-  if (input.inputTokens !== undefined) {
-    sets.push("input_tokens = ?");
-    params.push(input.inputTokens);
-  }
-  if (input.outputTokens !== undefined) {
-    sets.push("output_tokens = ?");
-    params.push(input.outputTokens);
-  }
-  if (input.conversationId !== undefined) {
-    sets.push("conversation_id = ?");
-    params.push(input.conversationId);
-  }
-
-  sets.push("updated_at = ?");
-  params.push(Date.now());
-  params.push(runId);
-
-  rawRun(
-    "journal:updateRun",
-    `UPDATE workflow_runs SET ${sets.join(", ")} WHERE id = ?`,
-    ...params,
-  );
+  // Drizzle skips columns whose value is `undefined`, so only the fields
+  // present in `input` (plus the updated_at bump) are written.
+  getDb()
+    .update(workflowRuns)
+    .set({
+      status: input.status,
+      agentsSpawned: input.agentsSpawned,
+      inputTokens: input.inputTokens,
+      outputTokens: input.outputTokens,
+      conversationId: input.conversationId,
+      updatedAt: Date.now(),
+    })
+    .where(eq(workflowRuns.id, runId))
+    .run();
   return getRun(runId);
 }
 
@@ -296,20 +247,17 @@ export function finishRun(
   input: FinishRunInput,
 ): WorkflowRun | null {
   const now = Date.now();
-  rawRun(
-    "journal:finishRun",
-    /*sql*/ `
-    UPDATE workflow_runs
-    SET status = ?, result_json = ?, error = ?, updated_at = ?, finished_at = ?
-    WHERE id = ?
-    `,
-    input.status,
-    serializeJsonColumn(input.result),
-    input.error ?? null,
-    now,
-    now,
-    runId,
-  );
+  getDb()
+    .update(workflowRuns)
+    .set({
+      status: input.status,
+      resultJson: serializeJsonColumn(input.result),
+      error: input.error ?? null,
+      updatedAt: now,
+      finishedAt: now,
+    })
+    .where(eq(workflowRuns.id, runId))
+    .run();
   return getRun(runId);
 }
 
@@ -333,33 +281,35 @@ export function finishRun(
 export function appendJournalEntry(
   input: AppendJournalEntryInput,
 ): WorkflowJournalEntry {
-  rawRun(
-    "journal:appendJournalEntry",
-    /*sql*/ `
-    INSERT INTO workflow_journal (
-      run_id, seq, call_hash, kind, request_json, result_json, status,
-      input_tokens, output_tokens, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(run_id, seq) DO UPDATE SET
-      call_hash = excluded.call_hash,
-      kind = excluded.kind,
-      request_json = excluded.request_json,
-      result_json = excluded.result_json,
-      status = excluded.status,
-      input_tokens = excluded.input_tokens,
-      output_tokens = excluded.output_tokens
-    `,
-    input.runId,
-    input.seq,
-    input.callHash,
-    input.kind,
-    serializeJsonColumn(input.request),
-    serializeJsonColumn(input.result),
-    input.status,
-    input.inputTokens ?? null,
-    input.outputTokens ?? null,
-    Date.now(),
-  );
+  getDb()
+    .insert(workflowJournal)
+    .values({
+      runId: input.runId,
+      seq: input.seq,
+      callHash: input.callHash,
+      kind: input.kind,
+      requestJson: serializeJsonColumn(input.request),
+      resultJson: serializeJsonColumn(input.result),
+      status: input.status,
+      inputTokens: input.inputTokens ?? null,
+      outputTokens: input.outputTokens ?? null,
+      createdAt: Date.now(),
+    })
+    // `created_at` is deliberately absent from the update set so the row
+    // keeps its first-write timestamp on conflict.
+    .onConflictDoUpdate({
+      target: [workflowJournal.runId, workflowJournal.seq],
+      set: {
+        callHash: sql`excluded.call_hash`,
+        kind: sql`excluded.kind`,
+        requestJson: sql`excluded.request_json`,
+        resultJson: sql`excluded.result_json`,
+        status: sql`excluded.status`,
+        inputTokens: sql`excluded.input_tokens`,
+        outputTokens: sql`excluded.output_tokens`,
+      },
+    })
+    .run();
   return getJournalEntry(input.runId, input.seq)!;
 }
 
@@ -369,22 +319,23 @@ export function appendJournalEntry(
 
 /** Fetch a single run by id, or null if it doesn't exist. */
 export function getRun(runId: string): WorkflowRun | null {
-  const row = rawGet<WorkflowRunRow>(
-    "journal:getRun",
-    `SELECT * FROM workflow_runs WHERE id = ?`,
-    runId,
-  );
+  const row = getDb()
+    .select()
+    .from(workflowRuns)
+    .where(eq(workflowRuns.id, runId))
+    .get();
   return row ? rowToRun(row) : null;
 }
 
 /** Fetch a run's full journal in sequence order for resume replay. */
 export function getJournal(runId: string): WorkflowJournalEntry[] {
-  const rows = rawAll<WorkflowJournalRow>(
-    "journal:getJournal",
-    `SELECT * FROM workflow_journal WHERE run_id = ? ORDER BY seq ASC`,
-    runId,
-  );
-  return rows.map(rowToJournalEntry);
+  return getDb()
+    .select()
+    .from(workflowJournal)
+    .where(eq(workflowJournal.runId, runId))
+    .orderBy(asc(workflowJournal.seq))
+    .all()
+    .map(rowToJournalEntry);
 }
 
 export interface ListRunsOptions {
@@ -395,17 +346,19 @@ export interface ListRunsOptions {
 /** List runs newest-first, optionally filtered by status. */
 export function listRuns(options: ListRunsOptions): WorkflowRun[] {
   const rows = options.status
-    ? rawAll<WorkflowRunRow>(
-        "journal:listRuns:byStatus",
-        `SELECT * FROM workflow_runs WHERE status = ? ORDER BY created_at DESC LIMIT ?`,
-        options.status,
-        options.limit,
-      )
-    : rawAll<WorkflowRunRow>(
-        "journal:listRuns:all",
-        `SELECT * FROM workflow_runs ORDER BY created_at DESC LIMIT ?`,
-        options.limit,
-      );
+    ? getDb()
+        .select()
+        .from(workflowRuns)
+        .where(eq(workflowRuns.status, options.status))
+        .orderBy(desc(workflowRuns.createdAt))
+        .limit(options.limit)
+        .all()
+    : getDb()
+        .select()
+        .from(workflowRuns)
+        .orderBy(desc(workflowRuns.createdAt))
+        .limit(options.limit)
+        .all();
   return rows.map(rowToRun);
 }
 
@@ -426,11 +379,12 @@ export function listRuns(options: ListRunsOptions): WorkflowRun[] {
  * reconciled.
  */
 export function markRunningAsInterrupted(): number {
-  return rawRun(
-    "journal:markRunningAsInterrupted",
-    /*sql*/ `UPDATE workflow_runs SET status = 'interrupted', updated_at = ? WHERE status = 'running'`,
-    Date.now(),
-  );
+  getDb()
+    .update(workflowRuns)
+    .set({ status: "interrupted", updatedAt: Date.now() })
+    .where(eq(workflowRuns.status, "running"))
+    .run();
+  return rawChanges();
 }
 
 // ---------------------------------------------------------------------------
@@ -450,11 +404,6 @@ const TERMINAL_RUN_STATUSES: readonly WorkflowRunStatus[] = [
   "cap_exceeded",
 ];
 
-/** SQL list literal of the terminal statuses, e.g. `'completed','failed',...`. */
-const TERMINAL_RUN_STATUS_SQL = TERMINAL_RUN_STATUSES.map((s) => `'${s}'`).join(
-  ", ",
-);
-
 /**
  * Delete TERMINAL runs older than `retentionDays` (by `created_at`) and their
  * journal entries. Non-terminal runs are never pruned, regardless of age:
@@ -464,27 +413,25 @@ const TERMINAL_RUN_STATUS_SQL = TERMINAL_RUN_STATUSES.map((s) => `'${s}'`).join(
  */
 export function pruneRuns(retentionDays: number): number {
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
-  rawRun(
-    "journal:pruneRuns:journal",
-    /*sql*/ `
-    DELETE FROM workflow_journal
-    WHERE run_id IN (
-      SELECT id FROM workflow_runs
-      WHERE status IN (${TERMINAL_RUN_STATUS_SQL})
-        AND created_at IS NOT NULL AND created_at < ?
-    )
-    `,
-    cutoff,
-  );
-  return rawRun(
-    "journal:pruneRuns:runs",
-    /*sql*/ `
-    DELETE FROM workflow_runs
-    WHERE status IN (${TERMINAL_RUN_STATUS_SQL})
-      AND created_at IS NOT NULL AND created_at < ?
-    `,
-    cutoff,
-  );
+  const terminalRuns = getDb()
+    .select({ id: workflowRuns.id })
+    .from(workflowRuns)
+    .where(
+      and(
+        inArray(workflowRuns.status, [...TERMINAL_RUN_STATUSES]),
+        isNotNull(workflowRuns.createdAt),
+        lt(workflowRuns.createdAt, cutoff),
+      ),
+    );
+  getDb()
+    .delete(workflowJournal)
+    .where(inArray(workflowJournal.runId, terminalRuns))
+    .run();
+  getDb()
+    .delete(workflowRuns)
+    .where(inArray(workflowRuns.id, terminalRuns))
+    .run();
+  return rawChanges();
 }
 
 /** Fetch a single journal entry by its `(run_id, seq)` key, or null. */
@@ -492,11 +439,10 @@ export function getJournalEntry(
   runId: string,
   seq: number,
 ): WorkflowJournalEntry | null {
-  const row = rawGet<WorkflowJournalRow>(
-    "journal:getJournalEntry",
-    `SELECT * FROM workflow_journal WHERE run_id = ? AND seq = ?`,
-    runId,
-    seq,
-  );
+  const row = getDb()
+    .select()
+    .from(workflowJournal)
+    .where(and(eq(workflowJournal.runId, runId), eq(workflowJournal.seq, seq)))
+    .get();
   return row ? rowToJournalEntry(row) : null;
 }

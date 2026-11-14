@@ -62,11 +62,6 @@ export const cronRuns = sqliteTable("cron_runs", {
   createdAt: integer("created_at").notNull(),
 });
 
-// Recurrence-centric aliases — prefer these in new code.
-// Physical table names remain `cron_jobs` / `cron_runs` for migration compatibility.
-export const scheduleJobs = cronJobs;
-export const scheduleRuns = cronRuns;
-
 export const heartbeatRuns = sqliteTable("heartbeat_runs", {
   id: text("id").primaryKey(),
   scheduledFor: integer("scheduled_for").notNull(),
@@ -195,62 +190,10 @@ export const llmRequestLogs = sqliteTable(
 // and the injected text. Lives in the dedicated memory database
 // (`assistant-memory.db`), not main — access it via the memory connection
 // (`getMemoryDb()` / `getMemorySqlite()`).
-export const memoryRecallLogs = sqliteTable(
-  "memory_recall_logs",
-  {
-    id: text("id").primaryKey(),
-    conversationId: text("conversation_id").notNull(),
-    messageId: text("message_id"),
-    enabled: integer("enabled").notNull(),
-    degraded: integer("degraded").notNull(),
-    provider: text("provider"),
-    model: text("model"),
-    degradationJson: text("degradation_json"),
-    semanticHits: integer("semantic_hits").notNull(),
-    mergedCount: integer("merged_count").notNull(),
-    selectedCount: integer("selected_count").notNull(),
-    tier1Count: integer("tier1_count").notNull(),
-    tier2Count: integer("tier2_count").notNull(),
-    hybridSearchLatencyMs: integer("hybrid_search_latency_ms").notNull(),
-    sparseVectorUsed: integer("sparse_vector_used").notNull(),
-    injectedTokens: integer("injected_tokens").notNull(),
-    latencyMs: integer("latency_ms").notNull(),
-    topCandidatesJson: text("top_candidates_json").notNull(),
-    injectedText: text("injected_text"),
-    reason: text("reason"),
-    queryContext: text("query_context"),
-    createdAt: integer("created_at").notNull(),
-  },
-  (table) => [
-    index("idx_memory_recall_logs_message_id").on(table.messageId),
-    index("idx_memory_recall_logs_conversation_id").on(table.conversationId),
-  ],
-);
 
 // Per-turn log of memory-v2 concept/skill activations. Lives in the
 // dedicated memory database (`assistant-memory.db`), not main — access it
 // via the memory connection (`getMemoryDb()` / `getMemorySqlite()`).
-export const memoryV2ActivationLogs = sqliteTable(
-  "memory_v2_activation_logs",
-  {
-    id: text("id").primaryKey(),
-    conversationId: text("conversation_id").notNull(),
-    messageId: text("message_id"),
-    turn: integer("turn").notNull(),
-    mode: text("mode").notNull(), // "context-load" | "per-turn"
-    conceptsJson: text("concepts_json").notNull(),
-    skillsJson: text("skills_json").notNull(),
-    configJson: text("config_json").notNull(),
-    createdAt: integer("created_at").notNull(),
-  },
-  (table) => [
-    index("idx_memory_v2_activation_logs_message_id").on(table.messageId),
-    index("idx_memory_v2_activation_logs_conversation_id").on(
-      table.conversationId,
-    ),
-    index("idx_memory_v2_activation_logs_created_at").on(table.createdAt),
-  ],
-);
 
 export const llmUsageEvents = sqliteTable(
   "llm_usage_events",
@@ -312,16 +255,6 @@ export const llmUsageEvents = sqliteTable(
     index("idx_llm_usage_events_conversation_id").on(table.conversationId),
   ],
 );
-
-// One row per conversation started on the activation-rail bootstrap template.
-// Lets the activation funnel telemetry scope its events to activation
-// conversations without inspecting the bootstrap template at emit time.
-// Lives in the dedicated memory database (`assistant-memory.db`), not main —
-// access it via the memory connection (`getMemoryDb()` / `getMemorySqlite()`).
-export const activationSessions = sqliteTable("activation_sessions", {
-  conversationId: text("conversation_id").primaryKey(),
-  createdAt: integer("created_at").notNull(),
-});
 
 // Key/value store for telemetry flush state — the per-event-type
 // `(last_reported_at, last_reported_id)` watermark cursors advanced by the

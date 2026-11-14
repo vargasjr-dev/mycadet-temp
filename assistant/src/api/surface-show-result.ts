@@ -11,12 +11,6 @@
  * so guidance can only ever be added in a way the parser still understands.
  */
 
-/** Fields a `ui_show` result envelope may carry beyond the surface id. */
-export interface SurfaceShowResult {
-  surfaceId: string;
-  [key: string]: unknown;
-}
-
 /**
  * Read the `surfaceId` out of a `ui_show` tool result, or `undefined` when the
  * content is not a surface envelope.

@@ -11,7 +11,16 @@
 import { normalizeAppIcon } from "@mycadet/app-icons";
 
 import type { AppDefinition } from "../../apps/app-store.js";
-import { getAppDirPath } from "../../apps/app-store.js";
+import {
+  addAppConversationId,
+  appFileExists,
+  createApp,
+  deleteApp,
+  getApp,
+  getAppDirPath,
+  updateApp,
+  writeAppFile,
+} from "../../apps/app-store.js";
 import { compileApp } from "../../bundler/app-compiler.js";
 import { generateAppIcon } from "../../media/app-icon-generator.js";
 import { getLogger } from "../../util/logger.js";
@@ -33,45 +42,6 @@ export interface ExecutorResult {
    */
   resolvedAppId?: string;
 }
-
-// ---------------------------------------------------------------------------
-// Dependency interfaces - callers inject these rather than importing the
-// app-store module directly, which makes the executors testable with mocks.
-// ---------------------------------------------------------------------------
-
-export interface AppStoreReader {
-  getApp(id: string): AppDefinition | null;
-  listApps(): AppDefinition[];
-  appFileExists(appId: string, path: string): boolean;
-}
-
-export interface AppStoreWriter {
-  createApp(params: {
-    name: string;
-    description?: string;
-    icon?: string;
-    schemaJson: string;
-    htmlDefinition: string;
-  }): AppDefinition;
-  updateApp(
-    id: string,
-    updates: Partial<
-      Pick<
-        AppDefinition,
-        "name" | "description" | "schemaJson" | "htmlDefinition" | "pages"
-      >
-    >,
-  ): AppDefinition;
-  deleteApp(id: string): void;
-  writeAppFile(appId: string, path: string, content: string): void;
-  /**
-   * Associate a freshly created app with the conversation that created it.
-   * Optional so test doubles need not implement it; the real store does.
-   */
-  addAppConversationId?(appId: string, conversationId: string): boolean;
-}
-
-export type AppStore = AppStoreReader & AppStoreWriter;
 
 /**
  * Proxy resolver type matching the shape used by the core tool context.
@@ -170,7 +140,6 @@ export interface AppCreateInput {
 
 export async function executeAppCreate(
   input: AppCreateInput,
-  store: AppStore,
   proxyToolResolver?: ProxyResolver,
   conversationId?: string,
 ): Promise<ExecutorResult> {
@@ -217,7 +186,7 @@ export async function executeAppCreate(
   // preview.icon is absent.
   const icon = normalizeAppIcon(preview?.icon ?? input.icon);
 
-  const app = store.createApp({
+  const app = createApp({
     name,
     description,
     icon,
@@ -230,9 +199,9 @@ export async function executeAppCreate(
   // `app_id` (see resolveAppId). Without this the link is only formed at
   // `app_open`, leaving the create→update→refresh gap unresolvable.
   // Best-effort: a failed association must never fail the create.
-  if (conversationId && store.addAppConversationId) {
+  if (conversationId) {
     try {
-      store.addAppConversationId(app.id, conversationId);
+      addAppConversationId(app.id, conversationId);
     } catch (err) {
       getLogger("app-executors").debug(
         { err, appId: app.id, conversationId },
@@ -272,16 +241,16 @@ render(<App />, document.getElementById('app')!);
 
   if (input.source_files) {
     for (const [filePath, content] of Object.entries(input.source_files)) {
-      store.writeAppFile(app.id, filePath, content);
+      writeAppFile(app.id, filePath, content);
     }
   }
 
-  const mainTsxScaffolded = !store.appFileExists(app.id, "src/main.tsx");
-  if (!store.appFileExists(app.id, "src/index.html")) {
-    store.writeAppFile(app.id, "src/index.html", indexHtml);
+  const mainTsxScaffolded = !appFileExists(app.id, "src/main.tsx");
+  if (!appFileExists(app.id, "src/index.html")) {
+    writeAppFile(app.id, "src/index.html", indexHtml);
   }
   if (mainTsxScaffolded) {
-    store.writeAppFile(app.id, "src/main.tsx", mainTsx);
+    writeAppFile(app.id, "src/main.tsx", mainTsx);
   }
 
   // When the placeholder main.tsx was actually scaffolded, the tool result
@@ -382,11 +351,8 @@ export interface AppDeleteInput {
   app_id: string;
 }
 
-export function executeAppDelete(
-  input: AppDeleteInput,
-  store: AppStore,
-): ExecutorResult {
-  store.deleteApp(input.app_id);
+export function executeAppDelete(input: AppDeleteInput): ExecutorResult {
+  deleteApp(input.app_id);
   return {
     content: JSON.stringify({ deleted: true, appId: input.app_id }),
     isError: false,
@@ -403,9 +369,8 @@ export interface AppRefreshInput {
 
 export async function executeAppRefresh(
   input: AppRefreshInput,
-  store: AppStore,
 ): Promise<ExecutorResult> {
-  const app = store.getApp(input.app_id);
+  const app = getApp(input.app_id);
   if (!app) {
     return {
       content: JSON.stringify({ error: `App '${input.app_id}' not found` }),
@@ -415,7 +380,7 @@ export async function executeAppRefresh(
 
   // Empty update bumps updatedAt timestamp, triggering surface refresh on
   // the client side.
-  const updated = store.updateApp(input.app_id, {});
+  const updated = updateApp(input.app_id, {});
 
   // Compile explicitly so the LLM sees any errors (bad imports, syntax
   // issues, etc.) instead of silently serving the stale scaffold placeholder
@@ -448,9 +413,8 @@ export interface AppUpdateInput {
 
 export async function executeAppUpdate(
   input: AppUpdateInput,
-  store: AppStore,
 ): Promise<ExecutorResult> {
-  const app = store.getApp(input.app_id);
+  const app = getApp(input.app_id);
   if (!app) {
     return {
       content: JSON.stringify({ error: `App '${input.app_id}' not found` }),
@@ -465,7 +429,7 @@ export async function executeAppUpdate(
 
   if (input.source_files) {
     for (const [filePath, content] of Object.entries(input.source_files)) {
-      store.writeAppFile(input.app_id, filePath, content);
+      writeAppFile(input.app_id, filePath, content);
     }
   }
 
@@ -483,7 +447,7 @@ export async function executeAppUpdate(
   }
 
   // An empty update still bumps updatedAt, triggering a client surface refresh.
-  const updated = store.updateApp(input.app_id, updates);
+  const updated = updateApp(input.app_id, updates);
 
   // Recompile so the agent sees any errors from the edited source instead of
   // serving a stale dist (mirrors app_refresh).
@@ -513,11 +477,10 @@ export interface AppGenerateIconInput {
 
 export async function executeAppGenerateIcon(
   input: AppGenerateIconInput,
-  store: AppStoreReader,
   /** Turn cancellation, checked before the rename and the paid generation. */
   signal?: AbortSignal,
 ): Promise<ExecutorResult> {
-  const app = store.getApp(input.app_id);
+  const app = getApp(input.app_id);
   if (!app) {
     return {
       content: JSON.stringify({ error: `App '${input.app_id}' not found` }),

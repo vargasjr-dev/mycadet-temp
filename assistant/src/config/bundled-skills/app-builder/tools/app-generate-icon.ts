@@ -1,4 +1,3 @@
-import * as appStore from "../../../../apps/app-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppGenerateIconInput } from "../../../../tools/apps/executors.js";
 import { executeAppGenerateIcon } from "../../../../tools/apps/executors.js";
@@ -22,7 +21,6 @@ export async function run(
   throwIfCancelled(context);
   return executeAppGenerateIcon(
     { ...input, app_id: appId } as unknown as AppGenerateIconInput,
-    appStore,
     context.signal,
   );
 }

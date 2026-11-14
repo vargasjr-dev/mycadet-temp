@@ -7,8 +7,14 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { getSqlite } from "../persistence/db-connection.js";
-import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
+import { and, desc, eq, sql } from "drizzle-orm";
+
+import { getDb, getSqlite } from "../persistence/db-connection.js";
+import { rawChanges, rawGet } from "../persistence/raw-query.js";
+import {
+  documentConversations,
+  documents,
+} from "../persistence/schema/documents.js";
 import { getLogger } from "../util/logger.js";
 import {
   type DocumentRevisionAuthor,
@@ -44,32 +50,31 @@ function countWords(content: string): number {
   return content.split(/\s+/).filter((word) => word.length > 0).length;
 }
 
-/** Insert a document–conversation association (idempotent via INSERT OR IGNORE). */
+/** Insert a document–conversation association (idempotent via conflict ignore). */
 export function addDocumentConversation(
   surfaceId: string,
   conversationId: string,
 ): void {
-  rawRun(
-    "documents:addDocumentConversation",
-    /*sql*/ `INSERT OR IGNORE INTO document_conversations (surface_id, conversation_id, created_at) VALUES (?, ?, ?)`,
-    surfaceId,
-    conversationId,
-    Date.now(),
-  );
+  getDb()
+    .insert(documentConversations)
+    .values({ surfaceId, conversationId, createdAt: Date.now() })
+    .onConflictDoNothing()
+    .run();
 }
 
-interface DocumentRow {
-  surface_id: string;
-  conversation_id: string;
+/**
+ * Structural row shape every document read feeds the mappers: the listing
+ * projection with camelCase names (drizzle maps columns to their model props).
+ */
+interface DocumentListRow {
+  surfaceId: string;
+  conversationId: string;
   title: string;
-  content: string;
-  word_count: number;
-  created_at: number;
-  updated_at: number;
+  wordCount: number;
+  createdAt: number;
+  updatedAt: number;
   revision: number;
 }
-
-type DocumentListRow = Omit<DocumentRow, "content">;
 
 /** How many times a read-modify-write retries after losing a revision race. */
 const MAX_WRITE_ATTEMPTS = 5;
@@ -80,30 +85,39 @@ function escapeSqlLikePattern(value: string): string {
 
 function mapRowToSummary(row: DocumentListRow): DocumentSummary {
   return {
-    surfaceId: row.surface_id,
-    conversationId: row.conversation_id,
+    surfaceId: row.surfaceId,
+    conversationId: row.conversationId,
     title: row.title,
-    wordCount: row.word_count,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    wordCount: row.wordCount,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     revision: row.revision,
   };
 }
 
-function mapRowToRecord(row: DocumentRow): DocumentRecord {
+function mapRowToRecord(
+  row: DocumentListRow & { content: string },
+): DocumentRecord {
   return { ...mapRowToSummary(row), content: row.content };
 }
 
 /** Look up a single document by surface ID. Returns `null` when not found. */
 export function getDocumentById(surfaceId: string): DocumentRecord | null {
   try {
-    const row = rawGet<DocumentRow>(
-      "documents:getDocumentById",
-      /*sql*/ `SELECT surface_id, conversation_id, title, content, word_count, created_at, updated_at, revision
-       FROM documents
-       WHERE surface_id = ?`,
-      surfaceId,
-    );
+    const row = getDb()
+      .select({
+        surfaceId: documents.surfaceId,
+        conversationId: documents.conversationId,
+        title: documents.title,
+        content: documents.content,
+        wordCount: documents.wordCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        revision: documents.revision,
+      })
+      .from(documents)
+      .where(eq(documents.surfaceId, surfaceId))
+      .get();
 
     if (!row) {
       log.info({ surfaceId }, "Document not found");
@@ -124,17 +138,17 @@ export function isDocumentAssociatedWithConversation(
   conversationId: string,
 ): boolean {
   try {
-    const row = rawGet<{ found: number }>(
-      "documents:isAssociatedWithConversation",
-      /*sql*/ `
-      SELECT 1 AS found
-      FROM document_conversations
-      WHERE surface_id = ? AND conversation_id = ?
-      LIMIT 1
-      `,
-      surfaceId,
-      conversationId,
-    );
+    const row = getDb()
+      .select({ found: sql<number>`1` })
+      .from(documentConversations)
+      .where(
+        and(
+          eq(documentConversations.surfaceId, surfaceId),
+          eq(documentConversations.conversationId, conversationId),
+        ),
+      )
+      .limit(1)
+      .get();
     return row != null;
   } catch (error) {
     log.error(
@@ -153,18 +167,24 @@ export function getDocumentsForConversation(
   conversationId: string,
 ): DocumentSummary[] {
   try {
-    const rows = rawAll<DocumentListRow>(
-      "documents:getDocumentsForConversation",
-      /*sql*/ `
-      SELECT d.surface_id, dc.conversation_id AS conversation_id,
-             d.title, d.word_count, d.created_at, d.updated_at, d.revision
-      FROM documents d
-      INNER JOIN document_conversations dc ON d.surface_id = dc.surface_id
-      WHERE dc.conversation_id = ?
-      ORDER BY d.updated_at DESC
-      `,
-      conversationId,
-    );
+    const rows = getDb()
+      .select({
+        surfaceId: documents.surfaceId,
+        conversationId: documentConversations.conversationId,
+        title: documents.title,
+        wordCount: documents.wordCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        revision: documents.revision,
+      })
+      .from(documents)
+      .innerJoin(
+        documentConversations,
+        eq(documentConversations.surfaceId, documents.surfaceId),
+      )
+      .where(eq(documentConversations.conversationId, conversationId))
+      .orderBy(desc(documents.updatedAt))
+      .all();
 
     log.info(
       { conversationId, count: rows.length },
@@ -183,14 +203,19 @@ export function getDocumentsForConversation(
  */
 export function listAllDocuments(): DocumentSummary[] {
   try {
-    const rows = rawAll<DocumentListRow>(
-      "documents:listAllDocuments",
-      /*sql*/ `
-      SELECT surface_id, conversation_id, title, word_count, created_at, updated_at, revision
-      FROM documents
-      ORDER BY updated_at DESC
-      `,
-    );
+    const rows = getDb()
+      .select({
+        surfaceId: documents.surfaceId,
+        conversationId: documents.conversationId,
+        title: documents.title,
+        wordCount: documents.wordCount,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        revision: documents.revision,
+      })
+      .from(documents)
+      .orderBy(desc(documents.updatedAt))
+      .all();
 
     log.info({ count: rows.length }, "Listed documents");
     return rows.map(mapRowToSummary);
@@ -212,33 +237,50 @@ export function searchDocumentsByTitle(
 ): DocumentSummary[] {
   try {
     const pattern = `%${escapeSqlLikePattern(query)}%`;
+    // `COLLATE NOCASE ... ESCAPE '\'` has no drizzle operator equivalent, so
+    // the case-insensitive match stays a raw fragment — with the column and
+    // the pattern bound through drizzle, not string interpolation.
+    const titleMatch = sql`${documents.title} COLLATE NOCASE LIKE ${pattern} ESCAPE '\\'`;
     const rows = options.conversationId
-      ? rawAll<DocumentListRow>(
-          "documents:searchByTitle:scoped",
-          /*sql*/ `
-          SELECT d.surface_id, dc.conversation_id AS conversation_id,
-                 d.title, d.word_count, d.created_at, d.updated_at, d.revision
-          FROM documents d
-          INNER JOIN document_conversations dc ON d.surface_id = dc.surface_id
-          WHERE dc.conversation_id = ?
-            AND d.title COLLATE NOCASE LIKE ? ESCAPE '\\'
-          ORDER BY d.updated_at DESC
-          LIMIT 20
-          `,
-          options.conversationId,
-          pattern,
-        )
-      : rawAll<DocumentListRow>(
-          "documents:searchByTitle:all",
-          /*sql*/ `
-          SELECT surface_id, conversation_id, title, word_count, created_at, updated_at, revision
-          FROM documents
-          WHERE title COLLATE NOCASE LIKE ? ESCAPE '\\'
-          ORDER BY updated_at DESC
-          LIMIT 20
-          `,
-          pattern,
-        );
+      ? getDb()
+          .select({
+            surfaceId: documents.surfaceId,
+            conversationId: documentConversations.conversationId,
+            title: documents.title,
+            wordCount: documents.wordCount,
+            createdAt: documents.createdAt,
+            updatedAt: documents.updatedAt,
+            revision: documents.revision,
+          })
+          .from(documents)
+          .innerJoin(
+            documentConversations,
+            eq(documentConversations.surfaceId, documents.surfaceId),
+          )
+          .where(
+            and(
+              eq(documentConversations.conversationId, options.conversationId),
+              titleMatch,
+            ),
+          )
+          .orderBy(desc(documents.updatedAt))
+          .limit(20)
+          .all()
+      : getDb()
+          .select({
+            surfaceId: documents.surfaceId,
+            conversationId: documents.conversationId,
+            title: documents.title,
+            wordCount: documents.wordCount,
+            createdAt: documents.createdAt,
+            updatedAt: documents.updatedAt,
+            revision: documents.revision,
+          })
+          .from(documents)
+          .where(titleMatch)
+          .orderBy(desc(documents.updatedAt))
+          .limit(20)
+          .all();
 
     log.info(
       { query, conversationId: options.conversationId, count: rows.length },
@@ -296,17 +338,12 @@ export function findRecentEmptyDocumentByTitle(
  */
 export function deleteDocument(surfaceId: string): boolean {
   try {
-    const changes = rawRun(
-      "documents:deleteDocument:doc",
-      /*sql*/ `DELETE FROM documents WHERE surface_id = ?`,
-      surfaceId,
-    );
-    rawRun(
-      "documents:deleteDocument:associations",
-      /*sql*/ `DELETE FROM document_conversations WHERE surface_id = ?`,
-      surfaceId,
-    );
-    const existed = changes > 0;
+    getDb().delete(documents).where(eq(documents.surfaceId, surfaceId)).run();
+    const existed = rawChanges() > 0;
+    getDb()
+      .delete(documentConversations)
+      .where(eq(documentConversations.surfaceId, surfaceId))
+      .run();
     log.info({ surfaceId, existed }, "Deleted document");
     return existed;
   } catch (error) {

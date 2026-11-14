@@ -18,8 +18,3 @@ export const MigrationsConfigSchema = z
     ),
   })
   .describe("Workspace/database migration configuration");
-
-export type MigrationsWorkerConfig = z.infer<
-  typeof MigrationsWorkerConfigSchema
->;
-export type MigrationsConfig = z.infer<typeof MigrationsConfigSchema>;

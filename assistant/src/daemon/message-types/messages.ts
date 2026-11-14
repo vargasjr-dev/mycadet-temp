@@ -47,7 +47,7 @@ export interface SecretResponse {
 
 // --- Domain-level union aliases (consumed by the barrel file) ---
 
-export type _MessagesClientMessages =
+type _MessagesClientMessages =
   | UserMessage
   | ConfirmationResponse
   | SecretResponse;

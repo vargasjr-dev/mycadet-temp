@@ -1,4 +1,3 @@
-import * as appStore from "../../../../apps/app-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import type { AppUpdateInput } from "../../../../tools/apps/executors.js";
 import { executeAppUpdate } from "../../../../tools/apps/executors.js";
@@ -20,8 +19,8 @@ export async function run(
     return missingAppIdError();
   }
   throwIfCancelled(context);
-  return executeAppUpdate(
-    { ...input, app_id: appId } as unknown as AppUpdateInput,
-    appStore,
-  );
+  return executeAppUpdate({
+    ...input,
+    app_id: appId,
+  } as unknown as AppUpdateInput);
 }

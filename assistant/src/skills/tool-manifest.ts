@@ -1,12 +1,41 @@
 import { readFileSync } from "node:fs";
 
 import { CLIENT_OS_VALUES, type ClientOs } from "../channels/types.js";
-import type { SkillToolEntry, SkillToolManifest } from "../config/skills.js";
 
 const VALID_RISK_LEVELS = new Set(["low", "medium", "high"]);
 const VALID_EXECUTION_TARGETS = new Set(["host", "sandbox"]);
 const VALID_CLIENT_OS_VALUES = new Set<string>(CLIENT_OS_VALUES);
 
+/**
+ * Schema for a skill's TOOLS.json manifest file.
+ * Declares which tools a skill provides and how they should be executed.
+ */
+export interface SkillToolManifest {
+  version: 1;
+  tools: SkillToolEntry[];
+}
+
+/**
+ * A single tool entry within a skill's TOOLS.json manifest.
+ */
+export interface SkillToolEntry {
+  /** Unique tool name (must not collide with core tool names). */
+  name: string;
+  /** Human-readable description shown to the model. */
+  description: string;
+  /** Tool category for grouping/display. */
+  category: string;
+  /** Default risk level for permission checks. */
+  risk: "low" | "medium" | "high";
+  /** JSON Schema for the tool's input parameters. */
+  input_schema: Record<string, unknown>;
+  /** Relative path to the executor script within the skill directory. */
+  executor: string;
+  /** Where the tool script runs. */
+  execution_target: "host" | "sandbox";
+  /** Client operating systems that may expose this tool. Unset means all. */
+  supported_client_os?: ClientOs[];
+}
 /**
  * Parse and validate a raw TOOLS.json payload into a typed SkillToolManifest.
  * Throws descriptive errors for any validation failure.

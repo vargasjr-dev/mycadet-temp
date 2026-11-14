@@ -76,13 +76,6 @@ export type SlimSkillResponse =
   | CustomSlimSkill
   | AssistantMemorySlimSkill;
 
-export interface SkillsListFilteredResponse {
-  type: "skills_list_response";
-  skills: SlimSkillResponse[];
-  categoryCounts: Record<string, number>;
-  totalCount: number;
-}
-
 // ─── Detail endpoint response (HTTP API) ──────────────────────────────────
 
 interface SkillDetailBase {

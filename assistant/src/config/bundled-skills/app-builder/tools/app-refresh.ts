@@ -1,4 +1,3 @@
-import * as appStore from "../../../../apps/app-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { executeAppRefresh } from "../../../../tools/apps/executors.js";
 import {
@@ -19,5 +18,5 @@ export async function run(
     return missingAppIdError();
   }
   throwIfCancelled(context);
-  return executeAppRefresh({ app_id: appId }, appStore);
+  return executeAppRefresh({ app_id: appId });
 }

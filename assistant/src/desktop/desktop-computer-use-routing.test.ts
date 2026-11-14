@@ -3,10 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 
 import { asConversation } from "../__tests__/helpers/mock-conversation.js";
-import {
-  getBundledSkillsDir,
-  type SkillToolManifest,
-} from "../config/skills.js";
+import { getBundledSkillsDir } from "../config/skills.js";
 import { surfaceProxyResolver } from "../daemon/conversation-surfaces.js";
 import { HostCuProxy } from "../daemon/host-cu-proxy.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
@@ -17,6 +14,7 @@ import {
   createSkillToolsFromManifest,
 } from "../tools/skills/skill-tool-factory.js";
 import { sensitiveToolReach } from "../tools/tool-approval-handler.js";
+import type { SkillToolManifest } from "./../skills/tool-manifest.js";
 import * as computerUse from "./desktop-computer-use.js";
 import { shouldUseVirtualDesktop } from "./virtual-desktop-feature.js";
 

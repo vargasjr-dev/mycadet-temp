@@ -220,16 +220,15 @@ export function registerMemoryNodesCommand(memory: Command): void {
     async (opts: { json?: boolean }, cmd: Command) => {
       // Deferred: loads config and the graph stats handler in-process.
       // No daemon needed — reads directly from the workspace SQLite DB.
-      const [{ handleStatsMemory }, { getConfig }] = await Promise.all([
-        import("../../../plugins/defaults/memory/graph/tool-handlers.js") as Promise<
-          typeof import("../../../plugins/defaults/memory/graph/tool-handlers.js")
-        >,
-        import("../../../config/loader.js") as Promise<
-          typeof import("../../../config/loader.js")
-        >,
-      ]);
+      // Sequential awaits (not Promise.all): knip attributes the imported
+      // members only when each namespace is bound directly from
+      // `await import(...)` — destructuring through Promise.all reads as an
+      // unused export (`handleStatsMemory`).
+      const toolHandlers =
+        await import("../../../plugins/defaults/memory/graph/tool-handlers.js");
+      const loader = await import("../../../config/loader.js");
 
-      const result = handleStatsMemory(getConfig());
+      const result = toolHandlers.handleStatsMemory(loader.getConfig());
 
       if (!result.success) {
         log.error(result.message);

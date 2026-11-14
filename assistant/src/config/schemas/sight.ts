@@ -41,5 +41,3 @@ export const SightConfigSchema = z
       ),
   })
   .describe("Ambient camera frames sampled during a live-voice call");
-
-export type SightConfig = z.infer<typeof SightConfigSchema>;

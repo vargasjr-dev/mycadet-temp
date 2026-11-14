@@ -43,12 +43,3 @@ export interface PkbIndexEntry {
   contentHash: string;
   chunkIndex: number;
 }
-
-export interface PkbIndexPayload {
-  target_type: typeof PKB_TARGET_TYPE;
-  target_id: string;
-  path: string;
-  mtime_ms: number;
-  chunk_index: number;
-  content_hash: string;
-}

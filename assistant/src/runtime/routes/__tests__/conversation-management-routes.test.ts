@@ -28,8 +28,8 @@ import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import {
   conversations,
+  cronJobs,
   providerConnections,
-  scheduleJobs,
 } from "../../../persistence/schema/index.js";
 import {
   createSchedule,
@@ -479,7 +479,7 @@ describe("DELETE /v1/conversations/:id (deleteConversation)", () => {
 
   beforeEach(() => {
     clearConversations();
-    getDb().delete(scheduleJobs).run();
+    getDb().delete(cronJobs).run();
   });
 
   test("deleting the last conversation of a plugin-declared schedule keeps the schedule", async () => {

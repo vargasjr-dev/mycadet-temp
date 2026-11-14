@@ -1,9 +1,3 @@
-/** Minimal Outlook message reference from list endpoint */
-export interface OutlookMessageRef {
-  id: string;
-  conversationId: string;
-}
-
 /** Outlook message list/search response (paginated) */
 export interface OutlookMessageListResponse {
   value?: OutlookMessage[];
@@ -103,12 +97,6 @@ export interface OutlookDraftMessage {
   attachments?: OutlookSendFileAttachment[];
 }
 
-/** Forward message payload (Graph API's /createForward returns a draft) */
-export interface OutlookForwardMessage {
-  toRecipients: OutlookRecipient[];
-  comment?: string;
-}
-
 /** Microsoft Graph user profile */
 export interface OutlookUserProfile {
   displayName: string;
@@ -198,11 +186,6 @@ export interface OutlookAutoReplySettings {
   externalReplyMessage?: string;
   scheduledStartDateTime?: { dateTime: string; timeZone: string };
   scheduledEndDateTime?: { dateTime: string; timeZone: string };
-}
-
-/** Mailbox settings containing automatic replies configuration */
-export interface OutlookMailboxSettings {
-  automaticRepliesSetting?: OutlookAutoReplySettings;
 }
 
 /** Delta query response with pagination support */

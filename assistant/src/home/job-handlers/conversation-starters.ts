@@ -169,9 +169,6 @@ const CONVERSATION_STARTER_CATEGORIES = [
   "integration",
 ] as const;
 
-export type ConversationStarterCategory =
-  (typeof CONVERSATION_STARTER_CATEGORIES)[number];
-
 interface GeneratedStarter {
   label: string;
   prompt: string;

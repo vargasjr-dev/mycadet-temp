@@ -14,10 +14,6 @@
     "assistant": "./src/index.ts"
   },
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "daemon:restart:http": "RUNTIME_HTTP_PORT=7821 bun run src/index.ts daemon restart",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
     "generate:openapi": "bun run scripts/generate-openapi.ts",
     "sync:llm-catalog": "bun run scripts/sync-llm-catalog.ts",
     "sync:web-search-catalog": "bun run scripts/sync-web-search-catalog.ts",
@@ -26,11 +22,7 @@
     "format:check": "prettier --check .",
     "lint": "bun run scripts/lint.ts",
     "typecheck": "bunx tsgo --noEmit",
-    "test": "bun run scripts/run-tests.ts",
-    "test:coverage": "COVERAGE=true bun run scripts/run-tests.ts",
-    "test:stable": "EXCLUDE_EXPERIMENTAL=true bun run scripts/run-tests.ts",
-    "test:bench": "find src -type f -name '*.benchmark.test.ts' -print0 | xargs -0 -P 1 -I {} bun test {}",
-    "test:filesystem-tools": "bash scripts/test-filesystem-tools.sh"
+    "test": "bun run scripts/run-tests.ts"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "0.25.0",
@@ -118,7 +110,6 @@
     "@types/uuid": "10.0.0",
     "@typescript/native-preview": "7.0.0-dev.20260624.1",
     "ajv": "8.18.0",
-    "drizzle-kit": "0.31.10",
     "eslint": "10.0.3",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "fast-check": "4.6.0",

@@ -8,9 +8,12 @@
  * than the formal migrations/ pipeline.
  */
 
+import { getTableName } from "drizzle-orm";
+
 import { getLogger } from "../util/logger.js";
 import { ensureDisplayOrderMigration } from "./conversation-display-order-migration.js";
 import { rawExec, rawGet, rawRun } from "./raw-query.js";
+import { conversationGroups } from "./schema/conversation-groups.js";
 const log = getLogger("conversation-store");
 
 function isDuplicateColumnError(err: unknown): boolean {
@@ -61,7 +64,7 @@ export function ensureGroupMigration(): void {
   try {
     rawRun(
       "group:migrateAddIcon",
-      "ALTER TABLE conversation_groups ADD COLUMN icon TEXT",
+      `ALTER TABLE ${getTableName(conversationGroups)} ADD COLUMN icon TEXT`,
     );
   } catch (err) {
     if (!isDuplicateColumnError(err)) {
@@ -76,7 +79,7 @@ export function ensureGroupMigration(): void {
   try {
     rawRun(
       "group:migrateAddGroupId",
-      "ALTER TABLE conversations ADD COLUMN group_id TEXT REFERENCES conversation_groups(id) ON DELETE SET NULL",
+      `ALTER TABLE conversations ADD COLUMN group_id TEXT REFERENCES ${getTableName(conversationGroups)}(id) ON DELETE SET NULL`,
     );
   } catch (err) {
     if (!isDuplicateColumnError(err)) {
@@ -88,7 +91,7 @@ export function ensureGroupMigration(): void {
   // 3. Seed system groups.
   const now = Math.floor(Date.now() / 1000);
   rawExec(`
-    INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group, created_at, updated_at)
+    INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group, created_at, updated_at)
     VALUES
       ('system:pinned', 'Pinned', 0, TRUE, ${now}, ${now}),
       ('system:scheduled', 'Scheduled', 1, TRUE, ${now}, ${now}),
@@ -102,22 +105,22 @@ export function ensureGroupMigration(): void {
   // repeated drift on restart.
   const sortShiftDone = rawGet<{ id: string }>(
     "group:migrateSortShiftGuard",
-    "SELECT id FROM conversation_groups WHERE id = '_sort_shift_complete'",
+    `SELECT id FROM ${getTableName(conversationGroups)} WHERE id = '_sort_shift_complete'`,
   );
   if (!sortShiftDone) {
     try {
       rawExec("BEGIN");
       rawRun(
         "group:migrateSortShift:shift",
-        "UPDATE conversation_groups SET sort_position = sort_position + 1 WHERE is_system_group = 0 AND sort_position >= 3",
+        `UPDATE ${getTableName(conversationGroups)} SET sort_position = sort_position + 1 WHERE is_system_group = 0 AND sort_position >= 3`,
       );
       rawRun(
         "group:migrateSortShift:setAll",
-        "UPDATE conversation_groups SET sort_position = 3 WHERE id = 'system:all' AND sort_position != 3",
+        `UPDATE ${getTableName(conversationGroups)} SET sort_position = 3 WHERE id = 'system:all' AND sort_position != 3`,
       );
       rawRun(
         "group:migrateSortShift:marker",
-        `INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group, created_at, updated_at)
+        `INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group, created_at, updated_at)
          VALUES ('_sort_shift_complete', '_sort_shift_complete', -1, TRUE, ${now}, ${now})`,
       );
       rawExec("COMMIT");
@@ -137,7 +140,7 @@ export function ensureGroupMigration(): void {
   // conversation_groups tracks whether backfill has already completed.
   const backfillDone = rawGet<{ id: string }>(
     "group:migrateBackfillGuard",
-    "SELECT id FROM conversation_groups WHERE id = '_backfill_complete'",
+    `SELECT id FROM ${getTableName(conversationGroups)} WHERE id = '_backfill_complete'`,
   );
 
   if (!backfillDone) {
@@ -204,7 +207,7 @@ export function ensureGroupMigration(): void {
 
       // Mark backfill as complete so it won't re-run on future process restarts
       rawExec(`
-        INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group)
+        INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group)
         VALUES ('_backfill_complete', '_backfill_complete', -1, TRUE)
       `);
 
@@ -223,7 +226,7 @@ export function ensureGroupMigration(): void {
   // where the original backfill already completed.
   const allBackfillDone = rawGet<{ id: string }>(
     "group:migrateBackfillAllGuard",
-    "SELECT id FROM conversation_groups WHERE id = '_backfill_all_complete'",
+    `SELECT id FROM ${getTableName(conversationGroups)} WHERE id = '_backfill_all_complete'`,
   );
 
   if (!allBackfillDone) {
@@ -235,7 +238,7 @@ export function ensureGroupMigration(): void {
       `);
 
       rawExec(`
-        INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group)
+        INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group)
         VALUES ('_backfill_all_complete', '_backfill_all_complete', -1, TRUE)
       `);
 
@@ -250,7 +253,7 @@ export function ensureGroupMigration(): void {
   // 6. One-time migration: move auto-analysis conversations from system:reflections to system:background
   const reflectionsMigrateDone = rawGet<{ id: string }>(
     "group:migrateReflectionsGuard",
-    "SELECT id FROM conversation_groups WHERE id = '_reflections_to_background_complete'",
+    `SELECT id FROM ${getTableName(conversationGroups)} WHERE id = '_reflections_to_background_complete'`,
   );
 
   if (!reflectionsMigrateDone) {
@@ -263,7 +266,7 @@ export function ensureGroupMigration(): void {
       `);
 
       rawExec(`
-        INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group)
+        INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group)
         VALUES ('_reflections_to_background_complete', '_reflections_to_background_complete', -1, TRUE)
       `);
 
@@ -287,7 +290,7 @@ export function ensureGroupMigration(): void {
   // entry with a fallback folder icon alongside the Background sub-group.
   const reflectionsGroupDeleted = rawGet<{ id: string }>(
     "group:migrateReflDeleteGuard",
-    "SELECT id FROM conversation_groups WHERE id = '_reflections_group_deleted_complete'",
+    `SELECT id FROM ${getTableName(conversationGroups)} WHERE id = '_reflections_group_deleted_complete'`,
   );
 
   if (!reflectionsGroupDeleted) {
@@ -302,11 +305,11 @@ export function ensureGroupMigration(): void {
       `);
 
       rawExec(
-        `DELETE FROM conversation_groups WHERE id = 'system:reflections'`,
+        `DELETE FROM ${getTableName(conversationGroups)} WHERE id = 'system:reflections'`,
       );
 
       rawExec(`
-        INSERT OR IGNORE INTO conversation_groups (id, name, sort_position, is_system_group)
+        INSERT OR IGNORE INTO ${getTableName(conversationGroups)} (id, name, sort_position, is_system_group)
         VALUES ('_reflections_group_deleted_complete', '_reflections_group_deleted_complete', -1, TRUE)
       `);
 

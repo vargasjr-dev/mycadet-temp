@@ -18,7 +18,7 @@ import { getDb } from "../persistence/db-connection.js";
 import { getGroup } from "../persistence/group-crud.js";
 import { isLifecycleQuiesced } from "../persistence/lifecycle-quiesce.js";
 import { rawChanges } from "../persistence/raw-query.js";
-import { scheduleJobs, scheduleRuns } from "../persistence/schema/index.js";
+import { cronJobs, cronRuns } from "../persistence/schema/index.js";
 import { publishSchedulesChanged } from "../runtime/sync/resource-sync-events.js";
 import { UserError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
@@ -366,7 +366,7 @@ async function insertSchedule(
     updatedAt: now,
   };
 
-  await withSqliteRetry(() => db.insert(scheduleJobs).values(row).run(), {
+  await withSqliteRetry(() => db.insert(cronJobs).values(row).run(), {
     op: "createSchedule",
     context: { scheduleId: id },
     ...(opts?.signal ? { signal: opts.signal } : {}),
@@ -457,11 +457,7 @@ export function resolveScheduleConversationGroupId(
 
 export function getSchedule(id: string): ScheduleJob | null {
   const db = getDb();
-  const row = db
-    .select()
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.id, id))
-    .get();
+  const row = db.select().from(cronJobs).where(eq(cronJobs.id, id)).get();
   if (!row) {
     return null;
   }
@@ -473,9 +469,9 @@ export function countSchedules(): { total: number; enabled: number } {
   const row = db
     .select({
       total: sql<number>`COUNT(*)`,
-      enabled: sql<number>`SUM(CASE WHEN ${scheduleJobs.enabled} THEN 1 ELSE 0 END)`,
+      enabled: sql<number>`SUM(CASE WHEN ${cronJobs.enabled} THEN 1 ELSE 0 END)`,
     })
-    .from(scheduleJobs)
+    .from(cronJobs)
     .get();
   return { total: row?.total ?? 0, enabled: row?.enabled ?? 0 };
 }
@@ -492,41 +488,37 @@ export function listSchedules(options?: {
   const db = getDb();
   const conditions = [];
   if (options?.enabledOnly) {
-    conditions.push(eq(scheduleJobs.enabled, true));
+    conditions.push(eq(cronJobs.enabled, true));
   }
   if (options?.oneShotOnly) {
-    conditions.push(isNull(scheduleJobs.cronExpression));
+    conditions.push(isNull(cronJobs.cronExpression));
   }
   if (options?.recurringOnly) {
-    conditions.push(sql`${scheduleJobs.cronExpression} IS NOT NULL`);
+    conditions.push(sql`${cronJobs.cronExpression} IS NOT NULL`);
   }
   if (options?.mode) {
-    conditions.push(eq(scheduleJobs.mode, options.mode));
+    conditions.push(eq(cronJobs.mode, options.mode));
   }
   if (options?.createdBy) {
     const createdBy = options.createdBy;
     conditions.push(
       typeof createdBy === "string"
-        ? eq(scheduleJobs.createdBy, createdBy)
-        : inArray(scheduleJobs.createdBy, [...createdBy]),
+        ? eq(cronJobs.createdBy, createdBy)
+        : inArray(cronJobs.createdBy, [...createdBy]),
     );
   }
   if (options?.conversationId) {
-    conditions.push(
-      eq(scheduleJobs.wakeConversationId, options.conversationId),
-    );
+    conditions.push(eq(cronJobs.wakeConversationId, options.conversationId));
   }
   if (options?.inferenceProfile) {
-    conditions.push(
-      eq(scheduleJobs.inferenceProfile, options.inferenceProfile),
-    );
+    conditions.push(eq(cronJobs.inferenceProfile, options.inferenceProfile));
   }
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const rows = db
     .select()
-    .from(scheduleJobs)
+    .from(cronJobs)
     .where(where)
-    .orderBy(asc(scheduleJobs.nextRunAt))
+    .orderBy(asc(cronJobs.nextRunAt))
     .all();
   return rows.map(parseJobRow);
 }
@@ -573,11 +565,7 @@ export async function updateSchedule(
   opts?: ScheduleWriteOptions,
 ): Promise<ScheduleJob | null> {
   const db = getDb();
-  const existing = db
-    .select()
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.id, id))
-    .get();
+  const existing = db.select().from(cronJobs).where(eq(cronJobs.id, id)).get();
   if (!existing) {
     return null;
   }
@@ -753,7 +741,7 @@ export async function updateSchedule(
   }
 
   await withSqliteRetry(
-    () => db.update(scheduleJobs).set(set).where(eq(scheduleJobs.id, id)).run(),
+    () => db.update(cronJobs).set(set).where(eq(cronJobs.id, id)).run(),
     {
       op: "updateSchedule",
       context: { scheduleId: id },
@@ -768,9 +756,9 @@ export async function updateSchedule(
 /** `source_key` of the row, or null when the row is absent or imperative. */
 function getRowSourceKey(id: string): string | null {
   const row = getDb()
-    .select({ sourceKey: scheduleJobs.sourceKey })
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.id, id))
+    .select({ sourceKey: cronJobs.sourceKey })
+    .from(cronJobs)
+    .where(eq(cronJobs.id, id))
     .get();
   return row?.sourceKey ?? null;
 }
@@ -793,7 +781,7 @@ export async function deleteSchedule(
   // await would race other async DB work on the shared connection.
   const deleted = await withSqliteRetry(
     () => {
-      db.delete(scheduleJobs).where(eq(scheduleJobs.id, id)).run();
+      db.delete(cronJobs).where(eq(cronJobs.id, id)).run();
       return rawChanges() > 0;
     },
     {
@@ -845,9 +833,9 @@ export function listDeclaredSchedules(): ScheduleJob[] {
   const db = getDb();
   const rows = db
     .select()
-    .from(scheduleJobs)
-    .where(isNotNull(scheduleJobs.sourceKey))
-    .orderBy(asc(scheduleJobs.nextRunAt))
+    .from(cronJobs)
+    .where(isNotNull(cronJobs.sourceKey))
+    .orderBy(asc(cronJobs.nextRunAt))
     .all();
   return rows.map(parseJobRow);
 }
@@ -891,8 +879,8 @@ export async function upsertDeclaredSchedule(
   const db = getDb();
   const existing = db
     .select()
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.sourceKey, sourceKey))
+    .from(cronJobs)
+    .where(eq(cronJobs.sourceKey, sourceKey))
     .get();
 
   if (!existing) {
@@ -975,11 +963,7 @@ export async function upsertDeclaredSchedule(
 
   await withSqliteRetry(
     () =>
-      db
-        .update(scheduleJobs)
-        .set(set)
-        .where(eq(scheduleJobs.id, existing.id))
-        .run(),
+      db.update(cronJobs).set(set).where(eq(cronJobs.id, existing.id)).run(),
     { op: "upsertDeclaredSchedule", context: { scheduleId: existing.id } },
   );
   notifySchedulesChanged();
@@ -1004,11 +988,7 @@ export async function upsertDeclaredSchedule(
  */
 export async function disarmDeclaredSchedule(id: string): Promise<boolean> {
   const db = getDb();
-  const existing = db
-    .select()
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.id, id))
-    .get();
+  const existing = db.select().from(cronJobs).where(eq(cronJobs.id, id)).get();
   if (!existing) {
     return false;
   }
@@ -1023,9 +1003,9 @@ export async function disarmDeclaredSchedule(id: string): Promise<boolean> {
   await withSqliteRetry(
     () =>
       db
-        .update(scheduleJobs)
+        .update(cronJobs)
         .set({ enabled: false, updatedAt: Date.now() })
-        .where(eq(scheduleJobs.id, id))
+        .where(eq(cronJobs.id, id))
         .run(),
     { op: "disarmDeclaredSchedule", context: { scheduleId: id } },
   );
@@ -1048,11 +1028,7 @@ export async function setUserEnabled(
   opts?: ScheduleWriteOptions,
 ): Promise<ScheduleJob | null> {
   const db = getDb();
-  const existing = db
-    .select()
-    .from(scheduleJobs)
-    .where(eq(scheduleJobs.id, id))
-    .get();
+  const existing = db.select().from(cronJobs).where(eq(cronJobs.id, id)).get();
   if (!existing) {
     return null;
   }
@@ -1096,7 +1072,7 @@ export async function setUserEnabled(
   }
 
   await withSqliteRetry(
-    () => db.update(scheduleJobs).set(set).where(eq(scheduleJobs.id, id)).run(),
+    () => db.update(cronJobs).set(set).where(eq(cronJobs.id, id)).run(),
     {
       op: "setUserEnabled",
       context: { scheduleId: id },
@@ -1133,15 +1109,15 @@ export async function claimDueSchedules(now: number): Promise<ScheduleJob[]> {
   // ── Recurring schedules ──────────────────────────────────────────
   const recurringCandidates = db
     .select()
-    .from(scheduleJobs)
+    .from(cronJobs)
     .where(
       and(
-        eq(scheduleJobs.enabled, true),
-        lte(scheduleJobs.nextRunAt, now),
-        sql`${scheduleJobs.cronExpression} IS NOT NULL`,
+        eq(cronJobs.enabled, true),
+        lte(cronJobs.nextRunAt, now),
+        sql`${cronJobs.cronExpression} IS NOT NULL`,
       ),
     )
-    .orderBy(asc(scheduleJobs.nextRunAt))
+    .orderBy(asc(cronJobs.nextRunAt))
     .all();
 
   for (const row of recurringCandidates) {
@@ -1184,13 +1160,10 @@ export async function claimDueSchedules(now: number): Promise<ScheduleJob[]> {
 
     const recurringClaimed = await withSqliteRetry(
       () => {
-        db.update(scheduleJobs)
+        db.update(cronJobs)
           .set(updates)
           .where(
-            and(
-              eq(scheduleJobs.id, row.id),
-              eq(scheduleJobs.nextRunAt, row.nextRunAt),
-            ),
+            and(eq(cronJobs.id, row.id), eq(cronJobs.nextRunAt, row.nextRunAt)),
           )
           .run();
         return rawChanges() > 0;
@@ -1216,30 +1189,28 @@ export async function claimDueSchedules(now: number): Promise<ScheduleJob[]> {
   // ── One-shot schedules ───────────────────────────────────────────
   const oneShotCandidates = db
     .select()
-    .from(scheduleJobs)
+    .from(cronJobs)
     .where(
       and(
-        isNull(scheduleJobs.cronExpression),
-        eq(scheduleJobs.status, "active"),
-        lte(scheduleJobs.nextRunAt, now),
-        eq(scheduleJobs.enabled, true),
+        isNull(cronJobs.cronExpression),
+        eq(cronJobs.status, "active"),
+        lte(cronJobs.nextRunAt, now),
+        eq(cronJobs.enabled, true),
       ),
     )
-    .orderBy(asc(scheduleJobs.nextRunAt))
+    .orderBy(asc(cronJobs.nextRunAt))
     .all();
 
   for (const row of oneShotCandidates) {
     const oneShotClaimed = await withSqliteRetry(
       () => {
-        db.update(scheduleJobs)
+        db.update(cronJobs)
           .set({
             status: "firing",
             lastRunAt: now,
             updatedAt: now,
           })
-          .where(
-            and(eq(scheduleJobs.id, row.id), eq(scheduleJobs.status, "active")),
-          )
+          .where(and(eq(cronJobs.id, row.id), eq(cronJobs.status, "active")))
           .run();
         return rawChanges() > 0;
       },
@@ -1275,13 +1246,13 @@ export async function completeOneShot(id: string): Promise<void> {
   const now = Date.now();
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({
           status: "fired",
           enabled: false,
           updatedAt: now,
         })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1301,12 +1272,12 @@ export async function failOneShot(id: string): Promise<void> {
   const now = Date.now();
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({
           status: "active",
           updatedAt: now,
         })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1327,13 +1298,13 @@ export async function retryOneShot(id: string): Promise<void> {
   const now = Date.now();
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({
           status: "active",
-          retryCount: sql`${scheduleJobs.retryCount} + 1`,
+          retryCount: sql`${cronJobs.retryCount} + 1`,
           updatedAt: now,
         })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1354,14 +1325,14 @@ export async function failOneShotPermanently(id: string): Promise<void> {
   const now = Date.now();
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({
           status: "cancelled",
           enabled: false,
           lastStatus: "error",
           updatedAt: now,
         })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1390,13 +1361,13 @@ export async function cancelSchedule(id: string): Promise<boolean> {
   const now = Date.now();
   const cancelled = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({
           status: "cancelled",
           enabled: false,
           updatedAt: now,
         })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "active")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "active")))
         .run();
       return rawChanges() > 0;
     },
@@ -1418,7 +1389,7 @@ export async function createScheduleRun(
   await withSqliteRetry(
     () =>
       db
-        .insert(scheduleRuns)
+        .insert(cronRuns)
         .values({
           id,
           jobId,
@@ -1441,9 +1412,9 @@ export function getScheduleRunStatus(
   runId: string,
 ): ScheduleRun["status"] | undefined {
   return getDb()
-    .select({ status: scheduleRuns.status })
-    .from(scheduleRuns)
-    .where(eq(scheduleRuns.id, runId))
+    .select({ status: cronRuns.status })
+    .from(cronRuns)
+    .where(eq(cronRuns.id, runId))
     .get()?.status;
 }
 
@@ -1456,14 +1427,14 @@ export function listRunningScheduleRuns(): Array<{
   const db = getDb();
   return db
     .select({
-      runId: scheduleRuns.id,
-      scheduleName: scheduleJobs.name,
-      startedAt: scheduleRuns.startedAt,
+      runId: cronRuns.id,
+      scheduleName: cronJobs.name,
+      startedAt: cronRuns.startedAt,
     })
-    .from(scheduleRuns)
-    .leftJoin(scheduleJobs, eq(scheduleRuns.jobId, scheduleJobs.id))
-    .where(eq(scheduleRuns.status, "running"))
-    .orderBy(asc(scheduleRuns.startedAt))
+    .from(cronRuns)
+    .leftJoin(cronJobs, eq(cronRuns.jobId, cronJobs.id))
+    .where(eq(cronRuns.status, "running"))
+    .orderBy(asc(cronRuns.startedAt))
     .limit(20)
     .all();
 }
@@ -1476,9 +1447,9 @@ export async function setScheduleRunConversationId(
   await withSqliteRetry(
     () =>
       db
-        .update(scheduleRuns)
+        .update(cronRuns)
         .set({ conversationId })
-        .where(eq(scheduleRuns.id, runId))
+        .where(eq(cronRuns.id, runId))
         .run(),
     { op: "setScheduleRunConversationId", context: { runId } },
   );
@@ -1496,11 +1467,7 @@ async function finishScheduleRunRow(
   const db = getDb();
   const now = Date.now();
 
-  const run = db
-    .select()
-    .from(scheduleRuns)
-    .where(eq(scheduleRuns.id, runId))
-    .get();
+  const run = db.select().from(cronRuns).where(eq(cronRuns.id, runId)).get();
   if (!run) {
     return null;
   }
@@ -1510,7 +1477,7 @@ async function finishScheduleRunRow(
   await withSqliteRetry(
     () =>
       db
-        .update(scheduleRuns)
+        .update(cronRuns)
         .set({
           status: result.status,
           finishedAt: now,
@@ -1524,7 +1491,7 @@ async function finishScheduleRunRow(
               ? null
               : safeStringSlice(result.error, 0, 2000),
         })
-        .where(eq(scheduleRuns.id, runId))
+        .where(eq(cronRuns.id, runId))
         .run(),
     { op: "finishScheduleRunRow", context: { runId } },
   );
@@ -1559,9 +1526,9 @@ export async function recordAdministrativeSkipRun(
   }
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ lastStatus: "error", updatedAt: finished.now })
-        .where(eq(scheduleJobs.id, jobId))
+        .where(eq(cronJobs.id, jobId))
         .run();
       return rawChanges() > 0;
     },
@@ -1589,21 +1556,17 @@ export async function completeScheduleRun(
   // Update the parent job's lastStatus and retryCount
   if (result.status === "error") {
     // Increment retry count
-    const job = db
-      .select()
-      .from(scheduleJobs)
-      .where(eq(scheduleJobs.id, jobId))
-      .get();
+    const job = db.select().from(cronJobs).where(eq(cronJobs.id, jobId)).get();
     if (job) {
       const changed = await withSqliteRetry(
         () => {
-          db.update(scheduleJobs)
+          db.update(cronJobs)
             .set({
               lastStatus: "error",
               retryCount: job.retryCount + 1,
               updatedAt: now,
             })
-            .where(eq(scheduleJobs.id, jobId))
+            .where(eq(cronJobs.id, jobId))
             .run();
           return rawChanges() > 0;
         },
@@ -1619,9 +1582,9 @@ export async function completeScheduleRun(
   } else {
     const changed = await withSqliteRetry(
       () => {
-        db.update(scheduleJobs)
+        db.update(cronJobs)
           .set({ lastStatus: "ok", retryCount: 0, updatedAt: now })
-          .where(eq(scheduleJobs.id, jobId))
+          .where(eq(cronJobs.id, jobId))
           .run();
         return rawChanges() > 0;
       },
@@ -1640,16 +1603,16 @@ export async function completeScheduleRun(
 export function getLastScheduleConversationId(jobId: string): string | null {
   const db = getDb();
   const row = db
-    .select({ conversationId: scheduleRuns.conversationId })
-    .from(scheduleRuns)
+    .select({ conversationId: cronRuns.conversationId })
+    .from(cronRuns)
     .where(
       and(
-        eq(scheduleRuns.jobId, jobId),
-        eq(scheduleRuns.status, "ok"),
-        sql`${scheduleRuns.conversationId} IS NOT NULL`,
+        eq(cronRuns.jobId, jobId),
+        eq(cronRuns.status, "ok"),
+        sql`${cronRuns.conversationId} IS NOT NULL`,
       ),
     )
-    .orderBy(desc(scheduleRuns.createdAt))
+    .orderBy(desc(cronRuns.createdAt))
     .limit(1)
     .get();
   return row?.conversationId ?? null;
@@ -1668,14 +1631,14 @@ export function getScheduleRuns(
   const db = getDb();
   const rows = db
     .select()
-    .from(scheduleRuns)
+    .from(cronRuns)
     .where(
       and(
-        eq(scheduleRuns.jobId, jobId),
-        before != null ? lt(scheduleRuns.createdAt, before) : undefined,
+        eq(cronRuns.jobId, jobId),
+        before != null ? lt(cronRuns.createdAt, before) : undefined,
       ),
     )
-    .orderBy(desc(scheduleRuns.createdAt))
+    .orderBy(desc(cronRuns.createdAt))
     .limit(limit ?? 10)
     .all();
   return rows.map(parseRunRow);
@@ -1908,9 +1871,9 @@ export async function deferClaimedSchedule(
   const now = Date.now();
   await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ nextRunAt: nextRetryAt, enabled: true, updatedAt: now })
-        .where(eq(scheduleJobs.id, id))
+        .where(eq(cronJobs.id, id))
         .run();
       return rawChanges() > 0;
     },
@@ -1918,9 +1881,9 @@ export async function deferClaimedSchedule(
   );
   await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ status: "active", updatedAt: now })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1942,9 +1905,9 @@ export async function scheduleRetry(
   const now = Date.now();
   let changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ nextRunAt: nextRetryAt, updatedAt: now })
-        .where(eq(scheduleJobs.id, id))
+        .where(eq(cronJobs.id, id))
         .run();
       return rawChanges() > 0;
     },
@@ -1954,9 +1917,9 @@ export async function scheduleRetry(
   // will claim it again when nextRetryAt arrives. No-op for recurring.
   const reverted = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ status: "active", updatedAt: now })
-        .where(and(eq(scheduleJobs.id, id), eq(scheduleJobs.status, "firing")))
+        .where(and(eq(cronJobs.id, id), eq(cronJobs.status, "firing")))
         .run();
       return rawChanges() > 0;
     },
@@ -1975,9 +1938,9 @@ export async function resetRetryCount(id: string): Promise<void> {
   const db = getDb();
   const changed = await withSqliteRetry(
     () => {
-      db.update(scheduleJobs)
+      db.update(cronJobs)
         .set({ retryCount: 0, updatedAt: Date.now() })
-        .where(eq(scheduleJobs.id, id))
+        .where(eq(cronJobs.id, id))
         .run();
       return rawChanges() > 0;
     },
@@ -2006,26 +1969,26 @@ export function findStaleInFlightJobs(staleThresholdMs: number = 0): Array<{
 
   // One-shots stuck in "firing" where lastRunAt is older than cutoff
   const staleOneShots = db
-    .select({ id: scheduleJobs.id })
-    .from(scheduleJobs)
+    .select({ id: cronJobs.id })
+    .from(cronJobs)
     .where(
       and(
-        isNull(scheduleJobs.cronExpression),
-        eq(scheduleJobs.status, "firing"),
-        eq(scheduleJobs.enabled, true),
-        staleThresholdMs > 0 ? lte(scheduleJobs.lastRunAt, cutoff) : undefined,
+        isNull(cronJobs.cronExpression),
+        eq(cronJobs.status, "firing"),
+        eq(cronJobs.enabled, true),
+        staleThresholdMs > 0 ? lte(cronJobs.lastRunAt, cutoff) : undefined,
       ),
     )
     .all();
 
   // Cron runs stuck in "running" where startedAt is older than cutoff
   const staleRuns = db
-    .select({ id: scheduleRuns.id, jobId: scheduleRuns.jobId })
-    .from(scheduleRuns)
+    .select({ id: cronRuns.id, jobId: cronRuns.jobId })
+    .from(cronRuns)
     .where(
       and(
-        eq(scheduleRuns.status, "running"),
-        staleThresholdMs > 0 ? lte(scheduleRuns.startedAt, cutoff) : undefined,
+        eq(cronRuns.status, "running"),
+        staleThresholdMs > 0 ? lte(cronRuns.startedAt, cutoff) : undefined,
       ),
     )
     .all();
@@ -2045,7 +2008,7 @@ export function findStaleInFlightJobs(staleThresholdMs: number = 0): Array<{
   return result;
 }
 
-function parseJobRow(row: typeof scheduleJobs.$inferSelect): ScheduleJob {
+function parseJobRow(row: typeof cronJobs.$inferSelect): ScheduleJob {
   return {
     id: row.id,
     name: row.name,
@@ -2123,7 +2086,7 @@ function parseOptionalJson(json: string | null | undefined): unknown {
   }
 }
 
-function parseRunRow(row: typeof scheduleRuns.$inferSelect): ScheduleRun {
+function parseRunRow(row: typeof cronRuns.$inferSelect): ScheduleRun {
   return {
     id: row.id,
     jobId: row.jobId,

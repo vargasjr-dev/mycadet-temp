@@ -84,7 +84,6 @@ export const SttProvidersSchema = z
       }
     }
   });
-export type SttProviders = z.infer<typeof SttProvidersSchema>;
 
 /**
  * Per-consumer provider overrides: `services.stt.roles.<role>`.
@@ -163,8 +162,6 @@ const SttRolesSchema = z
     `Per-consumer STT provider overrides (${STT_ROLES.join(", ")}). An unset role uses services.stt.provider`,
   );
 
-export type SttRoles = z.infer<typeof SttRolesSchema>;
-
 /** How a role's selection reads in an error: "deepgram" or "deepgram/flux". */
 function describeSelection(selection: {
   provider: string;
@@ -235,5 +232,3 @@ export const SttServiceSchema = z
   .describe(
     "Speech-to-text service configuration -- provider selection, spoken language, and per-provider settings",
   );
-
-export type SttService = z.infer<typeof SttServiceSchema>;

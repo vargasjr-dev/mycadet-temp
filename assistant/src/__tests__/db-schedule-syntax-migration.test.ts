@@ -7,7 +7,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrateScheduleDescription } from "../persistence/migrations/270-schedule-description.js";
 import { migrateScheduleSourceConversation } from "../persistence/migrations/270-schedule-source-conversation.js";
 import * as schema from "../persistence/schema/index.js";
-import { scheduleJobs } from "../persistence/schema/index.js";
+import { cronJobs } from "../persistence/schema/index.js";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");
@@ -66,7 +66,7 @@ describe("schedule_syntax column migration", () => {
     `);
 
     const now = Date.now();
-    db.insert(scheduleJobs)
+    db.insert(cronJobs)
       .values({
         id: "test-1",
         name: "Test Job",
@@ -86,8 +86,8 @@ describe("schedule_syntax column migration", () => {
 
     const row = db
       .select()
-      .from(scheduleJobs)
-      .where(eq(scheduleJobs.id, "test-1"))
+      .from(cronJobs)
+      .where(eq(cronJobs.id, "test-1"))
       .get();
     expect(row).toBeTruthy();
     expect(row!.scheduleSyntax).toBe("cron");
@@ -161,8 +161,8 @@ describe("schedule_syntax column migration", () => {
 
     const row = db
       .select()
-      .from(scheduleJobs)
-      .where(eq(scheduleJobs.id, "old-1"))
+      .from(cronJobs)
+      .where(eq(cronJobs.id, "old-1"))
       .get();
     expect(row).toBeTruthy();
     expect(row!.scheduleSyntax).toBe("cron");
@@ -242,8 +242,8 @@ describe("schedule_syntax column migration", () => {
     );
     const row = db
       .select()
-      .from(scheduleJobs)
-      .where(eq(scheduleJobs.id, "idem-1"))
+      .from(cronJobs)
+      .where(eq(cronJobs.id, "idem-1"))
       .get();
     expect(row!.scheduleSyntax).toBe("cron");
   });

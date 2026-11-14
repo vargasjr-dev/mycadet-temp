@@ -28,12 +28,84 @@ beforeEach(() => {
 });
 
 import type { AppDefinition } from "../apps/app-store.js";
-import type { AppStore } from "../tools/apps/executors.js";
 import {
   executeAppCreate,
   executeAppRefresh,
   executeAppUpdate,
 } from "../tools/apps/executors.js";
+
+// ---------------------------------------------------------------------------
+// Mocked app-store module
+// ---------------------------------------------------------------------------
+
+// The executors import the app-store module directly (no injected store), so
+// the tests mock the module — the same seam treatment compileApp gets above.
+// Per-test state lives in these module-level bindings, reset by beforeEach.
+let mockApp: AppDefinition | null = null;
+let mockFiles: Record<string, string> = {};
+let createdParams: Record<string, unknown> | undefined;
+let updateArgs: Record<string, unknown> | undefined;
+let associated: Array<{ appId: string; conversationId: string }> = [];
+let addAppConversationIdThrows = false;
+
+function setMockStore(
+  app: AppDefinition,
+  files: Record<string, string> = {},
+): void {
+  mockApp = app;
+  mockFiles = files;
+}
+
+mock.module("../apps/app-store.js", () => ({
+  getApp: (id: string) => (id === mockApp?.id ? mockApp : null),
+  listApps: () => (mockApp ? [mockApp] : []),
+  appFileExists: (_appId: string, path: string) => path in mockFiles,
+  createApp: (params: {
+    name: string;
+    description?: string;
+    icon?: string;
+    schemaJson: string;
+    htmlDefinition: string;
+  }) => {
+    createdParams = params as unknown as Record<string, unknown>;
+    return mockApp!;
+  },
+  updateApp: (
+    _id: string,
+    updates: Partial<
+      Pick<
+        AppDefinition,
+        "name" | "description" | "schemaJson" | "htmlDefinition" | "pages"
+      >
+    >,
+  ) => {
+    updateArgs = updates as Record<string, unknown>;
+    return { ...mockApp!, ...updates };
+  },
+  deleteApp: () => {},
+  writeAppFile: (_appId: string, path: string, content: string) => {
+    mockFiles[path] = content;
+  },
+  addAppConversationId: (appId: string, conversationId: string) => {
+    if (addAppConversationIdThrows) {
+      throw new Error("disk gone");
+    }
+    associated.push({ appId, conversationId });
+    return true;
+  },
+  // The executors resolve compile (and icon) paths through this; the mocked
+  // compileApp above never touches the filesystem, so any stable dir works.
+  getAppDirPath: (appId: string) => `/mock-apps/${appId}`,
+}));
+
+beforeEach(() => {
+  mockApp = null;
+  mockFiles = {};
+  createdParams = undefined;
+  updateArgs = undefined;
+  associated = [];
+  addAppConversationIdThrows = false;
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,66 +124,30 @@ function makeMultifileApp(overrides?: Partial<AppDefinition>): AppDefinition {
   };
 }
 
-/**
- * Builds a minimal mock AppStore that tracks writes/edits/reads
- * against an in-memory file map.
- */
-function mockStore(
-  app: AppDefinition,
-  files: Record<string, string> = {},
-): AppStore {
-  return {
-    getApp: (id: string) => (id === app.id ? app : null),
-    listApps: () => [app],
-    appFileExists: (_appId: string, path: string) => path in files,
-    createApp: () => app,
-    updateApp: () => app,
-    deleteApp: () => {},
-    writeAppFile: (_appId: string, path: string, content: string) => {
-      files[path] = content;
-    },
-  };
-}
-
 // ---------------------------------------------------------------------------
 // executeAppCreate
 // ---------------------------------------------------------------------------
 
 describe("executeAppCreate", () => {
   test("falls back to the preview title when the name is omitted or blank", async () => {
-    let createdParams: Record<string, unknown> | undefined;
     const app = makeMultifileApp({ name: "Coffee Tracker" });
-    const store: AppStore = {
-      ...mockStore(app, {}),
-      createApp: (params) => {
-        createdParams = params as unknown as Record<string, unknown>;
-        return app;
-      },
-    };
+    setMockStore(app, {});
 
-    const result = await executeAppCreate(
-      { name: "   ", preview: { title: "Coffee Tracker" } },
-      store,
-    );
+    const result = await executeAppCreate({
+      name: "   ",
+      preview: { title: "Coffee Tracker" },
+    });
 
     expect(result.isError).toBe(false);
     expect(createdParams?.name).toBe("Coffee Tracker");
   });
 
   test("defaults the name to 'New App' when neither name nor preview title is given", async () => {
-    let createdParams: Record<string, unknown> | undefined;
     const app = makeMultifileApp({ name: "New App" });
-    const store: AppStore = {
-      ...mockStore(app, {}),
-      createApp: (params) => {
-        createdParams = params as unknown as Record<string, unknown>;
-        return app;
-      },
-    };
+    setMockStore(app, {});
 
     const result = await executeAppCreate(
       {} as unknown as Parameters<typeof executeAppCreate>[0],
-      store,
     );
 
     expect(result.isError).toBe(false);
@@ -120,22 +156,12 @@ describe("executeAppCreate", () => {
 
   test("creates multifile app with src/ scaffold", async () => {
     const files: Record<string, string> = {};
-    let createdParams: Record<string, unknown> | undefined;
     const app = makeMultifileApp({ name: "New App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: (params) => {
-        createdParams = params as unknown as Record<string, unknown>;
-        return app;
-      },
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate(
-      {
-        name: "New App",
-      },
-      store,
-    );
+    const result = await executeAppCreate({
+      name: "New App",
+    });
 
     expect(result.isError).toBe(false);
     // htmlDefinition should be empty — the real source lives under src/
@@ -156,18 +182,10 @@ describe("executeAppCreate", () => {
 
   test("associates the new app with its conversation when a conversationId is given", async () => {
     const app = makeMultifileApp({ id: "app-xyz", name: "Assoc App" });
-    const associated: Array<{ appId: string; conversationId: string }> = [];
-    const store: AppStore = {
-      ...mockStore(app, {}),
-      addAppConversationId: (appId, conversationId) => {
-        associated.push({ appId, conversationId });
-        return true;
-      },
-    };
+    setMockStore(app, {});
 
     const result = await executeAppCreate(
       { name: "Assoc App" },
-      store,
       undefined,
       "conv-assoc-1",
     );
@@ -180,16 +198,11 @@ describe("executeAppCreate", () => {
 
   test("a failed conversation association does not fail the create", async () => {
     const app = makeMultifileApp({ id: "app-throw", name: "Throw App" });
-    const store: AppStore = {
-      ...mockStore(app, {}),
-      addAppConversationId: () => {
-        throw new Error("disk gone");
-      },
-    };
+    setMockStore(app, {});
+    addAppConversationIdThrows = true;
 
     const result = await executeAppCreate(
       { name: "Throw App" },
-      store,
       undefined,
       "conv-assoc-2",
     );
@@ -200,21 +213,14 @@ describe("executeAppCreate", () => {
   test("skips auto_open on scaffold even when proxy resolver is available", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "New App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
     let proxyCalled = false;
     const proxyResolver = async () => {
       proxyCalled = true;
       return { content: JSON.stringify({ opened: true }), isError: false };
     };
 
-    const result = await executeAppCreate(
-      { name: "New App" },
-      store,
-      proxyResolver,
-    );
+    const result = await executeAppCreate({ name: "New App" }, proxyResolver);
 
     expect(result.isError).toBe(false);
     expect(proxyCalled).toBe(false);
@@ -232,12 +238,9 @@ describe("executeAppCreate", () => {
       "src/main.tsx": "// real code from the agent",
     };
     const app = makeMultifileApp({ name: "Pre-written App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate({ name: "Pre-written App" }, store);
+    const result = await executeAppCreate({ name: "Pre-written App" });
 
     expect(result.isError).toBe(false);
     // The pre-written file must be preserved
@@ -255,12 +258,9 @@ describe("executeAppCreate", () => {
     };
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "Broken App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate({ name: "Broken App" }, store);
+    const result = await executeAppCreate({ name: "Broken App" });
 
     expect(result.isError).toBe(false);
     const parsed = JSON.parse(result.content);
@@ -280,15 +280,9 @@ describe("executeAppCreate", () => {
       "src/main.tsx": "// agent's real (but broken) code",
     };
     const app = makeMultifileApp({ name: "Broken Pre-written App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate(
-      { name: "Broken Pre-written App" },
-      store,
-    );
+    const result = await executeAppCreate({ name: "Broken Pre-written App" });
 
     expect(result.isError).toBe(false);
     const parsed = JSON.parse(result.content);
@@ -299,10 +293,7 @@ describe("executeAppCreate", () => {
   test("suppresses auto_open when only scaffold exists", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "New App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
     let proxyCalledWith: Record<string, unknown> | undefined;
     const proxyResolver = async (
       toolName: string,
@@ -312,11 +303,7 @@ describe("executeAppCreate", () => {
       return { content: JSON.stringify({ opened: true }), isError: false };
     };
 
-    const result = await executeAppCreate(
-      { name: "New App" },
-      store,
-      proxyResolver,
-    );
+    const result = await executeAppCreate({ name: "New App" }, proxyResolver);
 
     expect(result.isError).toBe(false);
     const parsed = JSON.parse(result.content);
@@ -328,10 +315,7 @@ describe("executeAppCreate", () => {
   test("fires auto_open when source_files includes main.tsx", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "Real App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
     let proxyCalledWith: Record<string, unknown> | undefined;
     const proxyResolver = async (
       toolName: string,
@@ -350,7 +334,6 @@ describe("executeAppCreate", () => {
           "src/styles.css": "body { margin: 0; }",
         },
       },
-      store,
       proxyResolver,
     );
 
@@ -366,21 +349,15 @@ describe("executeAppCreate", () => {
   test("source_files are written and prevent scaffold", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "Inline App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate(
-      {
-        name: "Inline App",
-        source_files: {
-          "src/main.tsx": "// custom app code",
-          "src/components/App.tsx": "// App component",
-        },
+    const result = await executeAppCreate({
+      name: "Inline App",
+      source_files: {
+        "src/main.tsx": "// custom app code",
+        "src/components/App.tsx": "// App component",
       },
-      store,
-    );
+    });
 
     expect(result.isError).toBe(false);
     expect(files["src/main.tsx"]).toBe("// custom app code");
@@ -393,18 +370,12 @@ describe("executeAppCreate", () => {
   test("rejects retired html shortcut", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "Custom App" });
-    const store: AppStore = {
-      ...mockStore(app, files),
-      createApp: () => app,
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppCreate(
-      {
-        name: "Custom App",
-        html: "<!DOCTYPE html><html><body></body></html>",
-      },
-      store,
-    );
+    const result = await executeAppCreate({
+      name: "Custom App",
+      html: "<!DOCTYPE html><html><body></body></html>",
+    });
 
     expect(result.isError).toBe(true);
     const parsed = JSON.parse(result.content);
@@ -416,17 +387,14 @@ describe("executeAppCreate", () => {
   test("rejects retired pages shortcut", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp({ name: "Custom App" });
-    const store = mockStore(app, files);
+    setMockStore(app, files);
 
-    const result = await executeAppCreate(
-      {
-        name: "Custom App",
-        pages: {
-          "settings.html": "<!DOCTYPE html><html><body></body></html>",
-        },
+    const result = await executeAppCreate({
+      name: "Custom App",
+      pages: {
+        "settings.html": "<!DOCTYPE html><html><body></body></html>",
       },
-      store,
-    );
+    });
 
     expect(result.isError).toBe(true);
     const parsed = JSON.parse(result.content);
@@ -443,8 +411,9 @@ describe("executeAppCreate", () => {
 describe("executeAppRefresh", () => {
   test("multifile app: compiles src/ and returns result", async () => {
     const app = makeMultifileApp();
-    const store = mockStore(app);
-    const result = await executeAppRefresh({ app_id: app.id }, store);
+    setMockStore(app);
+
+    const result = await executeAppRefresh({ app_id: app.id });
 
     expect(result.isError).toBe(false);
     const parsed = JSON.parse(result.content);
@@ -456,8 +425,9 @@ describe("executeAppRefresh", () => {
 
   test("returns error for unknown app", async () => {
     const app = makeMultifileApp();
-    const store = mockStore(app);
-    const result = await executeAppRefresh({ app_id: "nonexistent" }, store);
+    setMockStore(app);
+
+    const result = await executeAppRefresh({ app_id: "nonexistent" });
 
     expect(result.isError).toBe(true);
     const parsed = JSON.parse(result.content);
@@ -472,19 +442,13 @@ describe("executeAppRefresh", () => {
 describe("executeAppUpdate", () => {
   test("updates metadata and recompiles a multifile app", async () => {
     const app = makeMultifileApp({ name: "Old", description: "old desc" });
-    let updateArgs: unknown;
-    const store: AppStore = {
-      ...mockStore(app),
-      updateApp: (_id, updates) => {
-        updateArgs = updates;
-        return { ...app, ...updates };
-      },
-    };
+    setMockStore(app);
 
-    const result = await executeAppUpdate(
-      { app_id: app.id, name: "New Name", description: "new desc" },
-      store,
-    );
+    const result = await executeAppUpdate({
+      app_id: app.id,
+      name: "New Name",
+      description: "new desc",
+    });
 
     expect(result.isError).toBe(false);
     expect(updateArgs).toEqual({ name: "New Name", description: "new desc" });
@@ -498,15 +462,12 @@ describe("executeAppUpdate", () => {
   test("writes source_files before recompiling", async () => {
     const files: Record<string, string> = {};
     const app = makeMultifileApp();
-    const store: AppStore = {
-      ...mockStore(app, files),
-      updateApp: (_id, updates) => ({ ...app, ...updates }),
-    };
+    setMockStore(app, files);
 
-    const result = await executeAppUpdate(
-      { app_id: app.id, source_files: { "src/App.tsx": "// new code" } },
-      store,
-    );
+    const result = await executeAppUpdate({
+      app_id: app.id,
+      source_files: { "src/App.tsx": "// new code" },
+    });
 
     expect(result.isError).toBe(false);
     expect(files["src/App.tsx"]).toBe("// new code");
@@ -514,8 +475,9 @@ describe("executeAppUpdate", () => {
   });
 
   test("returns error for unknown app", async () => {
-    const store = mockStore(makeMultifileApp());
-    const result = await executeAppUpdate({ app_id: "nope" }, store);
+    setMockStore(makeMultifileApp());
+
+    const result = await executeAppUpdate({ app_id: "nope" });
 
     expect(result.isError).toBe(true);
     expect(JSON.parse(result.content).error).toContain("not found");
@@ -523,14 +485,12 @@ describe("executeAppUpdate", () => {
 
   test("rejects invalid source_files", async () => {
     const app = makeMultifileApp();
-    const store = mockStore(app);
-    const result = await executeAppUpdate(
-      {
-        app_id: app.id,
-        source_files: { "src/App.tsx": 123 as unknown as string },
-      },
-      store,
-    );
+    setMockStore(app);
+
+    const result = await executeAppUpdate({
+      app_id: app.id,
+      source_files: { "src/App.tsx": 123 as unknown as string },
+    });
 
     expect(result.isError).toBe(true);
     expect(JSON.parse(result.content).error).toContain("must be a string");

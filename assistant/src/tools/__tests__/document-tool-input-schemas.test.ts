@@ -11,11 +11,9 @@ import {
 } from "../document/document-comment-tool.js";
 import {
   documentCreateInputSchema,
-  documentDeleteInputSchema,
   documentFindInputSchema,
   documentListInputSchema,
   documentOpenInputSchema,
-  documentReadInputSchema,
   documentReplaceTextInputSchema,
   documentUpdateInputSchema,
 } from "../document/document-tool.js";
@@ -61,13 +59,13 @@ const CASES: {
   },
   {
     name: "document_read",
-    schema: documentReadInputSchema,
+    schema: documentOpenInputSchema,
     advertiseRequired: ["surface_id"],
   },
   { name: "document_list", schema: documentListInputSchema },
   {
     name: "document_delete",
-    schema: documentDeleteInputSchema,
+    schema: documentOpenInputSchema,
     advertiseRequired: ["surface_id"],
   },
   {

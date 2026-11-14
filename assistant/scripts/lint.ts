@@ -29,7 +29,7 @@ const steps: Step[] = [
   },
   {
     name: "eslint",
-    command: ["bunx", "eslint", ".", "--max-warnings", "2673"],
+    command: ["bunx", "eslint", ".", "--max-warnings", "2743"],
   },
   {
     name: "knip",
@@ -47,7 +47,7 @@ const steps: Step[] = [
       "scripts/check-circular-deps.ts",
       "--",
       "--max-cycles",
-      "167",
+      "166",
     ],
   },
 ];

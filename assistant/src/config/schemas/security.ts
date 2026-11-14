@@ -30,5 +30,3 @@ export const SecretDetectionConfigSchema = z
   .describe(
     "Prefix-based secret detection at user-message ingress, plus one-time-send override for the secure credential prompt",
   );
-
-export type SecretDetectionConfig = z.infer<typeof SecretDetectionConfigSchema>;
