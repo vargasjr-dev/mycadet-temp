@@ -207,28 +207,11 @@ function readPersistedDefault(): CadetEnvironment | undefined {
 }
 
 /**
- * The environment name every surface shares — the single resolution chain
- * local-mode hosts and the mobile config loader both ride:
- *
- *   1. `CADET_ENVIRONMENT` (explicit override, also inherited by the
- *      hatch/retire child processes the CLI spawns), then
- *      `VITE_ENVIRONMENT` (the build-time inlined var bundled surfaces bake)
- *   2. the release channel the running copy's version carries —
- *      `__CADET_OWN_VERSION__`, which the entrypoints that know their
- *      package root inject (the CLI's bin computes its git/local stamp,
- *      the Electron builds define it at build time). A released `-dev.`
- *      install resolves `dev` even on a machine that never wrote a
- *      persisted default
- *   3. the persisted default written by pre-version-tied CLIs (old files
- *      are still honored)
- *   4. `production`
- *
- * The version step is what keeps every released install from silently
- * reading production's state: the channel is decided by the release
- * pipeline, not by whatever default an older CLI happened to leave behind.
- * Names outside `CadetEnvironment` are ignored rather than returned: an
- * unrecognized value falls through to the next arm instead of leaking an
- * unkeyable string into `SEEDS` lookups.
+ * The environment name every surface shares: `CADET_ENVIRONMENT`, then
+ * `VITE_ENVIRONMENT`, then the release channel the copy's version carries
+ * (`__CADET_OWN_VERSION__`, defined at build time by hosts that bundle
+ * local-mode), then the persisted default written by pre-version-tied CLIs,
+ * then production.
  */
 export function resolveEnvironmentName(): CadetEnvironment {
   const env = processEnv();

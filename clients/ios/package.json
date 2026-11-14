@@ -9,7 +9,7 @@
   "type": "module",
   "description": "Cadet iOS Capacitor shell — native Xcode project plus the plugin set its sync wires",
   "scripts": {
-    "dev": "bash scripts/setup.sh && open App/App.xcodeproj",
+    "dev": "CADET_ENVIRONMENT=local bash scripts/setup.sh && open App/App.xcodeproj",
     "build": "bash scripts/build.sh"
   },
   "devDependencies": {
