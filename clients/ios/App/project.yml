@@ -432,6 +432,9 @@ targets:
       # capture/replay): WebKit types only, no Capacitor — the same
       # host-less posture as the parser.
       - path: App/SameOriginAPIHandler.swift
+      # The pairing token → shared-jar bridge: Foundation-only, so the
+      # SessionCookieInstallTests can compile it without the host.
+      - path: App/Shared/SessionCookieInstall.swift
       - path: App/Shared
         includes:
           - AppGroupID.swift

@@ -422,6 +422,11 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 completion(.failure(AuthFlowError(message: "Session exchange returned no session token")))
                 return
             }
+            // The token arrived in the body, not a `Set-Cookie`, and the web
+            // layer's `document.cookie` write never reaches the shared jar —
+            // install it natively so the FIRST post-pairing `/v1` forward
+            // already carries the session instead of 401ing.
+            SessionCookieInstall.install(token: sessionToken, for: baseURL)
             completion(.success(sessionToken))
         }.resume()
     }
