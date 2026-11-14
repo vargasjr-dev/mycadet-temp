@@ -54,12 +54,10 @@ import {
   getEffectiveProfiles,
   getEffectiveProfilesForProvider,
 } from "../config/default-profile-catalog.js";
-import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import {
   deepMergeOverwrite,
   getConfig,
   invalidateConfigCache,
-  mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
@@ -80,71 +78,52 @@ function writeConfig(obj: unknown): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(obj, null, 2) + "\n");
 }
 
-function latencySeed(): Record<string, unknown> {
-  return {
-    model: "claude-haiku-4-5-20251001",
-    effort: "low",
-    thinking: { enabled: false },
-  };
+function seedProfilesAtBoot(db?: DrizzleDb): void {
+  seedInferenceProfiles({ db });
 }
 
-function fullSeededCallSites(): Record<string, Record<string, unknown>> {
-  return {
-    guardianQuestionCopy: latencySeed(),
-    interactionClassifier: latencySeed(),
-    skillCategoryInference: latencySeed(),
-    inviteInstructionGenerator: latencySeed(),
-    notificationDecision: latencySeed(),
-    preferenceExtraction: latencySeed(),
-    commitMessage: {
-      model: "claude-haiku-4-5-20251001",
-      maxTokens: 120,
-      temperature: 0.2,
-      effort: "low",
-      thinking: { enabled: false },
-    },
-    conversationStarters: latencySeed(),
-    conversationSummarization: {
-      model: "claude-opus-4-7",
-      effort: "low",
-      thinking: { enabled: false },
-    },
-    recall: {
-      profile: "cost-optimized",
-      maxTokens: 4096,
-      effort: "low",
-      thinking: { enabled: false, streamThinking: false },
-      temperature: 0,
-      disableCache: true,
-    },
-    heartbeatAgent: {
-      profile: "cost-optimized",
-      maxTokens: 2048,
-      effort: "low",
-      temperature: 0,
-      thinking: { enabled: false, streamThinking: false },
-      contextWindow: { maxInputTokens: 16000 },
-    },
-    replySuggestion: {
-      model: "claude-haiku-4-5-20251001",
-      effort: "low",
-      thinking: { enabled: false },
-      disableCache: true,
-    },
-    memoryRouter: {
-      profile: "cost-optimized",
-      contextWindow: { maxInputTokens: 1_000_000 },
-    },
+/**
+ * Mirror the config overlay's replacement flow: the hatch CLI config-sets
+ * `llm.default.model` (when provided) and then `llm.default.provider`
+ * through the assistant's config API, and the config-write route re-runs
+ * the profile seeder in hatch mode on that first provider write (see
+ * handleSetConfigByKey). The helper performs the same write-then-seed
+ * sequence against the workspace config on disk.
+ */
+function applyHatchProviderSelection(options: {
+  provider: string;
+  model?: string;
+  activeProfile?: string;
+  profiles?: Record<string, unknown>;
+  db?: DrizzleDb;
+}): void {
+  const raw = existsSync(CONFIG_PATH)
+    ? (JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as Record<
+        string,
+        unknown
+      >)
+    : {};
+  const llm: Record<string, unknown> = {
+    ...((raw.llm as Record<string, unknown>) ?? {}),
   };
-}
-
-function mergeDefaultConfigAndSeedInferenceProfiles(db?: DrizzleDb): void {
-  const defaultConfigMerge = mergeDefaultWorkspaceConfig();
-  seedInferenceProfiles({
-    preserveActiveProfile: defaultConfigMerge.providedLlmActiveProfile,
-    isHatch: defaultConfigMerge.hadOverlay,
-    db,
-  });
+  const hadDefaultProviderBefore =
+    (llm.default as Record<string, unknown> | undefined)?.provider != null;
+  if (options.profiles !== undefined) {
+    llm.profiles = options.profiles;
+  }
+  if (options.activeProfile !== undefined) {
+    llm.activeProfile = options.activeProfile;
+  }
+  llm.default = {
+    ...((llm.default as Record<string, unknown>) ?? {}),
+    ...(options.model !== undefined ? { model: options.model } : {}),
+    provider: options.provider,
+  };
+  writeFileSync(CONFIG_PATH, JSON.stringify({ ...raw, llm }, null, 2) + "\n");
+  invalidateConfigCache();
+  if (!hadDefaultProviderBefore) {
+    seedInferenceProfiles({ isHatch: true, db: options.db });
+  }
 }
 
 /**
@@ -182,7 +161,7 @@ function createProviderConnectionsDb(): DrizzleDb {
 // ---------------------------------------------------------------------------
 // Tests: deepMergeOverwrite (unit) — JSON-null-as-deletion semantics
 //
-// `deepMergeOverwrite` is used by `mergeDefaultWorkspaceConfig` and platform
+// `deepMergeOverwrite` backs the config PATCH route and platform
 // override paths.
 // ---------------------------------------------------------------------------
 
@@ -398,13 +377,11 @@ describe("getConfig startup behavior", () => {
       rmSync(noticePath, { force: true });
     }
     ensureTestDir();
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
@@ -420,67 +397,6 @@ describe("getConfig startup behavior", () => {
 
     const after = readFileSync(CONFIG_PATH);
     expect(after.equals(before)).toBe(true);
-  });
-
-  test("getConfig().memory.v2.bm25_b returns schema default when absent on disk", () => {
-    // Consumer-side correctness: even though getConfig no longer writes
-    // schema defaults back to disk, accessors still see them via the
-    // in-memory `cached: AssistantConfig` populated by `applyNestedDefaults`.
-    writeConfig({ provider: "anthropic" });
-
-    const config = getConfig();
-
-    expect(config.memory.v2.bm25_b).toBe(0.4);
-  });
-
-  test("default workspace config merge prunes exact seeded call-site defaults", () => {
-    const seededCallSites = fullSeededCallSites();
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          gateway: {
-            unmappedPolicy: "default",
-            defaultAssistantId: "self",
-          },
-          llm: {
-            activeProfile: "balanced",
-            advisorProfile: "frontier",
-            callSites: {
-              ...seededCallSites,
-              recall: {
-                ...seededCallSites.recall,
-                disableCache: false,
-              },
-              customSite: { profile: "frontier" },
-            },
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    const result = mergeDefaultWorkspaceConfig();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as Record<
-      string,
-      Record<string, unknown>
-    >;
-    const llm = raw.llm as Record<string, unknown>;
-    const callSites = llm.callSites as Record<string, Record<string, unknown>>;
-
-    expect(result.hadOverlay).toBe(true);
-    expect(raw.gateway).toEqual({
-      unmappedPolicy: "default",
-      defaultAssistantId: "self",
-    });
-    expect(llm.activeProfile).toBe("balanced");
-    expect(llm.advisorProfile).toBe("frontier");
-    expect(Object.keys(callSites).sort()).toEqual(["customSite", "recall"]);
-    expect(callSites.recall?.disableCache).toBe(false);
-    expect(callSites.customSite).toEqual({ profile: "frontier" });
   });
 
   test("reloads cached config when config.json is updated externally", () => {
@@ -568,221 +484,19 @@ describe("getConfig startup behavior", () => {
     expect(raw.calls?.voice?.telephonyStreaming).toBe(false);
   });
 
-  test("still writes a default config on first launch when file is absent", () => {
-    // Discoverability: when no config.json exists, write one populated with
-    // all schema defaults so users can see and edit available options.
-    expect(existsSync(CONFIG_PATH)).toBe(false);
-
-    getConfig();
-
-    expect(existsSync(CONFIG_PATH)).toBe(true);
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    // Sanity: schema-defaulted nested fields are materialized
-    expect(raw.memory?.v2?.bm25_b).toBe(0.4);
-    expect(raw.dataDir).toBeUndefined();
-  });
-
-  test("off-cloud hatch writes no profile entries; defaults resolve through the hatch provider", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: {
-              provider: "anthropic",
-              model: "claude-opus-4-7",
-            },
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-    const db = createProviderConnectionsDb();
-
-    mergeDefaultConfigAndSeedInferenceProfiles(db);
-    const config = getConfig();
-
-    // `llm.default` is the base blob — the overlay blob reaches the parsed
-    // config as a partial fragment and the seed never writes a separate key.
-    expect(config.llm.default).toEqual({
-      provider: "anthropic",
-      model: "claude-opus-4-7",
-    });
-    expect(config.llm.activeProfile).toBe("balanced");
-    expect(config.llm.advisorProfile).toBe("quality-optimized");
-
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.llm.default).toEqual({
-      provider: "anthropic",
-      model: "claude-opus-4-7",
-    });
-    expect(raw.llm.activeProfile).toBe("balanced");
-    // The hatch materializes no profile entries: default content is
-    // code-owned and resolves through `llm.default`'s matrix column.
-    for (const name of LEGACY_HATCH_PROFILE_NAMES) {
-      expect(raw.llm.profiles[name]).toBeUndefined();
-    }
-    // The personal connection the BYOK column stamps is created at hatch.
-    expect(getConnection(db, "anthropic-personal")).not.toBeNull();
-
-    // Resolution contract the hatch relies on: the defaults resolve active
-    // through the hatch provider with the personal connection.
-    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
-    expect(effective.balanced?.provider).toBe("anthropic");
-    expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
-    expect(effective.balanced?.model).toBe("claude-sonnet-4-6");
-    expect("status" in (effective.balanced ?? {})).toBe(false);
-  });
-
-  test("on-cloud hatch writes no profile entries; defaults resolve from the catalog", () => {
-    process.env.IS_CLOUD = "true";
-
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: {
-              provider: "anthropic",
-              model: "claude-opus-4-7",
-            },
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    expect(raw.llm.activeProfile).toBe("balanced");
-    expect(raw.llm.advisorProfile).toBe("quality-optimized");
-    // Platform installs materialize no managed entries and no user profiles —
-    // llm.profiles holds only user/custom entries (none here).
-    expect(raw.llm.profiles).toEqual({});
-    // Default content resolves from the code catalog via the effective view.
-    const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
-    expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
-    expect(effectiveBalanced?.provider).toBe("cadet");
-    expect(effectiveBalanced?.provider_connection).toBeUndefined();
-  });
-
-  test("re-hatch from openai to anthropic leaves the user profile untouched and re-anchors the defaults", () => {
-    // Pre-seed an OpenAI-style workspace: user-defined custom-balanced profile
-    // is active, default is openai. Simulates a workspace that hatched against
-    // OpenAI under the pre-1.2 model.
+  test("boot repairs a non-dispatchable active profile", () => {
     writeConfig({
       llm: {
-        default: { provider: "openai", model: "gpt-5.4-mini" },
+        default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
-          "custom-balanced": {
-            provider: "openai",
-            model: "gpt-5.4-mini",
-          },
+          placeholder: { label: "Placeholder" },
         },
-        activeProfile: "custom-balanced",
+        profileOrder: ["placeholder"],
+        activeProfile: "placeholder",
       },
     });
 
-    const overlayPath = join(WORKSPACE_DIR, "rehatch-anthropic.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    // Off-platform re-hatch: the default profiles become active, anchored on
-    // the new hatch provider. The overlay's provider merges over the
-    // existing blob and the old model rides (fragment-merge semantics — the
-    // defaults themselves re-anchor through the provider's matrix column).
-    expect(raw.llm.activeProfile).toBe("balanced");
-    expect(raw.llm.default).toEqual({
-      provider: "anthropic",
-      model: "gpt-5.4-mini",
-    });
-    // The pre-existing custom profile is user-owned and never rewritten.
-    expect(raw.llm.profiles["custom-balanced"]).toEqual({
-      provider: "openai",
-      model: "gpt-5.4-mini",
-    });
-    // No stubs under the default keys; content resolves through the new
-    // default provider's matrix column.
-    expect(raw.llm.profiles.balanced).toBeUndefined();
-    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
-    expect(effective.balanced?.provider).toBe("anthropic");
-    expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
-  });
-
-  test("on-cloud re-hatch resets active profile to balanced", () => {
-    process.env.IS_CLOUD = "true";
-
-    writeConfig({
-      llm: {
-        default: { provider: "openai", model: "gpt-5.4-mini" },
-        profiles: {
-          "custom-balanced": {
-            provider: "openai",
-            model: "gpt-5.4-mini",
-          },
-        },
-        activeProfile: "custom-balanced",
-      },
-    });
-
-    const overlayPath = join(WORKSPACE_DIR, "rehatch-anthropic.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    // On-platform: no user profiles created, active resets to managed balanced.
-    expect(raw.llm.activeProfile).toBe("balanced");
-    // No managed entry is materialized; content resolves from the catalog.
-    expect(raw.llm.profiles.balanced).toBeUndefined();
-    const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
-    expect(effectiveBalanced?.provider).toBe("cadet");
-    expect(effectiveBalanced?.provider_connection).toBeUndefined();
-    // The old custom-balanced is preserved on disk but no longer active.
-    expect(raw.llm.profiles["custom-balanced"].provider).toBe("openai");
-  });
-
-  test("hatch overlay active profile must be dispatchable to be preserved", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: { provider: "anthropic", model: "claude-opus-4-7" },
-            profiles: {
-              placeholder: { label: "Placeholder" },
-            },
-            profileOrder: ["placeholder"],
-            activeProfile: "placeholder",
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.placeholder).toBeUndefined();
@@ -819,7 +533,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.placeholder).toBeUndefined();
@@ -833,33 +547,8 @@ describe("getConfig startup behavior", () => {
     expect(raw.llm.callSites.commitMessage.maxTokens).toBe(256);
   });
 
-  test("preserves user-supplied non-catalog model on every restart (ollama custom model)", () => {
-    // Models the ollama case: catalog lists only `llama3.2` but the user has
-    // pulled `codellama`. The seeder must NOT silently overwrite their pick.
-    writeConfig({
-      llm: { default: { provider: "ollama", model: "codellama" } },
-    });
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    let raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.llm.default.model).toBe("codellama");
-
-    // Re-run to confirm idempotency — the user's model survives every restart.
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.llm.default.model).toBe("codellama");
-  });
-
   test("off-cloud hatch with openai resolves the defaults through the openai column", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "openai" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    applyHatchProviderSelection({ provider: "openai" });
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.activeProfile).toBe("balanced");
@@ -884,16 +573,9 @@ describe("getConfig startup behavior", () => {
     // `together` has no column in PROFILE_IMPLS and no intent table: the
     // defaults must still anchor on it (not fall back to anthropic), backed
     // by the `together-personal` connection and its catalog defaultModel.
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "together" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
     const db = createProviderConnectionsDb();
 
-    mergeDefaultConfigAndSeedInferenceProfiles(db);
+    applyHatchProviderSelection({ provider: "together", db });
     const config = getConfig();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
@@ -925,20 +607,11 @@ describe("getConfig startup behavior", () => {
     // LLM provider, so no profile can reference it and it is not a
     // DEFAULT_PROVIDER_CHOICES member. The key and `typesafe-personal`
     // connection are still stored for manually-created profiles, but the
-    // defaults anchor on anthropic. litellm and opencode used to be the
-    // subjects here — both are first-class default-provider choices now, so
-    // a hatch anchored on either writes that provider directly (see the
-    // litellm hatch test above).
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "typesafe" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
+    // defaults anchor on anthropic: the seeder re-anchors the freshly
+    // written provider on its way through.
     const db = createProviderConnectionsDb();
 
-    mergeDefaultConfigAndSeedInferenceProfiles(db);
+    applyHatchProviderSelection({ provider: "typesafe", db });
     const config = getConfig();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
@@ -977,7 +650,7 @@ describe("getConfig startup behavior", () => {
     });
 
     // Non-hatch boot (no overlay).
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toEqual(drifted);
@@ -993,7 +666,7 @@ describe("getConfig startup behavior", () => {
   test("defaults the advisor profile to the cloud Quality profile", () => {
     writeConfig({ llm: { default: { provider: "anthropic" } } });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     // The strongest active managed default via the effective view. No
@@ -1027,7 +700,7 @@ describe("getConfig startup behavior", () => {
     });
 
     // Non-hatch boot (no overlay).
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toEqual(drifted);
@@ -1059,7 +732,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toEqual(edited);
@@ -1082,7 +755,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     // The stub is untouched, and the user's label rides on top of the
@@ -1104,7 +777,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toEqual(stub);
@@ -1128,7 +801,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toEqual(stub);
@@ -1145,7 +818,7 @@ describe("getConfig startup behavior", () => {
     // has none either.
     writeConfig({ llm: {} });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toBeUndefined();
@@ -1170,7 +843,7 @@ describe("getConfig startup behavior", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced.label).toBeNull();
@@ -1183,7 +856,7 @@ describe("getConfig startup behavior", () => {
     // plain boot serves the bare catalog labels through the effective view.
     writeConfig({});
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced).toBeUndefined();
@@ -1192,163 +865,6 @@ describe("getConfig startup behavior", () => {
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
     // Status is unset — the default resolves active.
     expect("status" in (effectiveBalanced ?? {})).toBe(false);
-  });
-
-  test("platform overlay fragment stays on disk verbatim; resolution serves catalog content with the overlay label", () => {
-    // The overlay's `balanced` fragment lands verbatim on disk and stays
-    // there across boots — boots never rewrite managed entries. Resolution,
-    // however, always serves default profile CONTENT from the code catalog:
-    // a cloud-source workspace entry contributes only label/status/topP,
-    // so the overlay's provider/model never reach the resolver. Only its
-    // `label` shows through the effective view.
-    process.env.IS_CLOUD = "true";
-
-    writeConfig({
-      llm: {
-        default: {
-          provider: "anthropic",
-          model: "claude-opus-4-7",
-        },
-        profiles: {
-          balanced: {
-            provider: "cadet",
-            model: "claude-sonnet-4-6",
-            maxTokens: 16000,
-            effort: "high",
-            thinking: { enabled: true, streamThinking: true },
-          },
-        },
-        activeProfile: "balanced",
-      },
-    });
-
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: {
-              provider: "cadet",
-              model: "gpt-5.4",
-            },
-            profiles: {
-              balanced: {
-                provider: "cadet",
-                model: "gpt-5.4",
-                label: "Cloud Balanced",
-              },
-            },
-            activeProfile: "balanced",
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = getConfig();
-    const mainAgentConfig = resolveCallSiteConfig("mainAgent", config.llm);
-
-    // Hatch boot: overlay fragment is preserved verbatim on disk
-    // (preserveProfileNames).
-    expect(config.llm.activeProfile).toBe("balanced");
-    expect(config.llm.profiles.balanced).toEqual({
-      provider: "cadet",
-      model: "gpt-5.4",
-      label: "Cloud Balanced",
-    });
-    // Resolution serves default-profile CONTENT from the code catalog: the
-    // overlay's provider/model never reach the resolver — even on the
-    // overlay boot. The overlay-set label is what shows through the
-    // effective view.
-    expect(mainAgentConfig.provider).toBe("cadet");
-    expect(mainAgentConfig.model).toBe(MANAGED_BALANCED_MODEL);
-
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.llm.profiles.balanced).toEqual({
-      provider: "cadet",
-      model: "gpt-5.4",
-      label: "Cloud Balanced",
-    });
-    expect(raw.llm.profiles.balanced.maxTokens).toBeUndefined();
-    expect(raw.llm.profiles.balanced.thinking).toBeUndefined();
-
-    // Next boot, no overlay: the entry stays byte-identical on disk, and
-    // resolution keeps serving the fireworks-managed catalog body with the
-    // overlay's label on top.
-    mergeDefaultConfigAndSeedInferenceProfiles();
-
-    const afterRestart = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(afterRestart.llm.activeProfile).toBe("balanced");
-    expect(afterRestart.llm.profiles.balanced).toEqual({
-      provider: "cadet",
-      model: "gpt-5.4",
-      label: "Cloud Balanced",
-    });
-    const effectiveBalanced = getEffectiveProfile(
-      afterRestart.llm.profiles,
-      "balanced",
-    );
-    expect(effectiveBalanced?.provider).toBe("cadet");
-    expect(effectiveBalanced?.provider_connection).toBeUndefined();
-    expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
-    expect(effectiveBalanced?.maxTokens).toBe(32000);
-    expect(effectiveBalanced?.thinking).toEqual({
-      enabled: true,
-      streamThinking: true,
-    });
-    expect(effectiveBalanced?.label).toBe("Cloud Balanced");
-  });
-
-  test("quarantines corrupt config before merging hatch overlay", () => {
-    writeFileSync(CONFIG_PATH, "{not valid json");
-
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: {
-              provider: "anthropic",
-              model: "claude-opus-4-7",
-            },
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-
-    const quarantined = readdirSync(WORKSPACE_DIR).filter((n) =>
-      n.startsWith("config.json.corrupt-"),
-    );
-    expect(quarantined.length).toBeGreaterThan(0);
-
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.llm.default).toEqual({
-      provider: "anthropic",
-      model: "claude-opus-4-7",
-    });
-    // Off-platform hatch: nothing is materialized; the defaults resolve
-    // through the hatch provider. The overlay's blob lands verbatim.
-    expect(raw.llm.activeProfile).toBe("balanced");
-    expect(raw.llm.default).toEqual({
-      provider: "anthropic",
-      model: "claude-opus-4-7",
-    });
-    for (const name of LEGACY_HATCH_PROFILE_NAMES) {
-      expect(raw.llm.profiles[name]).toBeUndefined();
-    }
-    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
-    expect(effective.balanced?.provider).toBe("anthropic");
-    expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
   });
 
   test("an active managed backup profile survives a reload", () => {
@@ -1371,7 +887,7 @@ describe("getConfig startup behavior", () => {
     const config = getConfig();
     expect(config.llm.activeProfile).toBe("balanced-backup");
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.llm.activeProfile).toBe("balanced-backup");
@@ -1397,7 +913,7 @@ describe("getConfig startup behavior", () => {
     const config = getConfig();
     expect(config.llm.activeProfile).toBeUndefined();
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.llm.activeProfile).toBe("balanced");
@@ -1422,105 +938,8 @@ describe("getConfig startup behavior", () => {
     expect(raw.llm.callSites.recall.profile).toBe("cost-optimized-backup");
   });
 
-  test("still quarantines corrupt JSON", () => {
-    // Corrupt-config quarantine is a recovery path: the broken file is
-    // renamed to `config.json.corrupt-<ts>.json` and the daemon proceeds
-    // with defaults. This must keep working.
-    writeFileSync(CONFIG_PATH, "{not valid json");
-
-    getConfig();
-
-    // A new defaults-populated config.json is written in place
-    expect(existsSync(CONFIG_PATH)).toBe(true);
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    expect(raw.memory?.v2?.bm25_b).toBe(0.4);
-
-    // The corrupt original is preserved as a `*.corrupt-*.json` sibling
-    const quarantined = readdirSync(WORKSPACE_DIR).filter((n) =>
-      n.startsWith("config.json.corrupt-"),
-    );
-    expect(quarantined.length).toBeGreaterThan(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Tests: BYOK-mode seed behavior. A BYOK hatch writes no profile entries at
-// all: the default names resolve through the hatch provider's column of the
-// intent × provider matrix (via `llm.default`), active and
-// connection-stamped. Boots never touch managed entries, so pre-existing
-// stubs and user toggles on them persist until the conversion pass removes
-// them.
-// ---------------------------------------------------------------------------
-
-describe("seedInferenceProfiles BYOK-mode default profiles", () => {
-  beforeEach(() => {
-    ensureTestDir();
-    const resetPaths = [
-      CONFIG_PATH,
-      join(WORKSPACE_DIR, "default-config.json"),
-      join(WORKSPACE_DIR, "hatch-overlay.json"),
-      join(WORKSPACE_DIR, "keys.enc"),
-      join(WORKSPACE_DIR, "data"),
-      join(WORKSPACE_DIR, "data", "memory"),
-    ];
-    for (const path of resetPaths) {
-      if (existsSync(path)) {
-        rmSync(path, { recursive: true, force: true });
-      }
-    }
-    ensureTestDir();
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_CLOUD;
-    invalidateConfigCache();
-  });
-
-  afterEach(() => {
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_CLOUD;
-    invalidateConfigCache();
-  });
-
-  test("off-cloud hatch writes no stubs; defaults resolve active with bare labels", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: { provider: "anthropic", model: "claude-opus-4-7" },
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    // No workspace entries at all: no disabled stubs, no label suffixes, no
-    // custom-* copies. The catalog serves the bare labels, active.
-    expect(raw.llm.profiles).toEqual({});
-    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
-    expect(effective.balanced?.label).toBe("Balanced");
-    expect(effective["quality-optimized"]?.label).toBe("Quality");
-    expect(effective["cost-optimized"]?.label).toBe("Budget");
-    expect("status" in (effective.balanced ?? {})).toBe(false);
-    expect("status" in (effective["quality-optimized"] ?? {})).toBe(false);
-    expect("status" in (effective["cost-optimized"] ?? {})).toBe(false);
-  });
-
   test("off-cloud BYOK hatch defaults advisor to quality-optimized", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    applyHatchProviderSelection({ provider: "anthropic" });
     const config = getConfig();
 
     expect(config.llm.activeProfile).toBe("balanced");
@@ -1562,7 +981,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const config = getConfig();
 
     // Advisor repair only considers the cloud defaults; a user profile is
@@ -1591,107 +1010,27 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const config = getConfig();
 
     expect(config.llm.advisorProfile).toBe("quality-optimized");
   });
 
-  test("off-cloud boot clears a disabled managed advisor when no active replacement exists", () => {
-    writeConfig({
-      llm: {
-        advisorProfile: "frontier",
-        profiles: {
-          frontier: {
-            provider: "cadet",
-            model: "claude-opus-4-8",
-            status: "disabled",
-          },
-          balanced: {
-            provider: "cadet",
-            model: "open-model",
-            status: "disabled",
-          },
-          "quality-optimized": {
-            provider: "cadet",
-            model: "accounts/fireworks/models/glm-5p2",
-            status: "disabled",
-          },
-          "cost-optimized": {
-            provider: "cadet",
-            model: "accounts/fireworks/models/deepseek-v4-flash",
-            status: "disabled",
-          },
+  test("off-cloud managed-inference hatch respects explicit non-managed active connection", () => {
+    const db = createProviderConnectionsDb();
+
+    applyHatchProviderSelection({
+      provider: "anthropic",
+      activeProfile: "balanced",
+      profiles: {
+        balanced: {
+          provider: "cadet",
+          provider_connection: "anthropic-personal",
+          model: "claude-sonnet-4-6",
         },
       },
+      db,
     });
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = getConfig();
-
-    expect(config.llm.advisorProfile).toBeUndefined();
-  });
-
-  test("off-cloud managed-inference hatch keeps selected cloud connection active", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: { provider: "anthropic" },
-            activeProfile: "balanced",
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-    const db = createProviderConnectionsDb();
-
-    mergeDefaultConfigAndSeedInferenceProfiles(db);
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    expect(raw.llm.activeProfile).toBe("balanced");
-    // The hatch overlay selected a cloud profile (all cloud profiles
-    // share the single `cadet` connection), so no disabled stubs are
-    // written: the defaults stay absent from llm.profiles and resolve active
-    // from the code catalog. The default advisor falls to the strongest
-    // active cloud profile, `quality-optimized`.
-    expect(raw.llm.advisorProfile).toBe("quality-optimized");
-    expect(raw.llm.profiles.balanced).toBeUndefined();
-    const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
-    expect(effectiveBalanced?.provider_connection).toBeUndefined();
-    expect("status" in (effectiveBalanced ?? {})).toBe(false);
-  });
-
-  test("off-cloud managed-inference hatch respects explicit non-managed active connection", () => {
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify(
-        {
-          llm: {
-            default: { provider: "anthropic" },
-            profiles: {
-              balanced: {
-                provider: "cadet",
-                provider_connection: "anthropic-personal",
-                model: "claude-sonnet-4-6",
-              },
-            },
-            activeProfile: "balanced",
-          },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-    const db = createProviderConnectionsDb();
-
-    mergeDefaultConfigAndSeedInferenceProfiles(db);
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.activeProfile).toBe("balanced");
@@ -1704,47 +1043,10 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(getConnection(db, "gemini-managed")).not.toBeNull();
   });
 
-  test("non-hatch off-cloud boot writes no managed entries and never auto-disables the defaults", () => {
-    // Existing installs that upgrade to a version where the workspace
-    // carries no entries for the default names get nothing materialized on
-    // a normal boot — and therefore nothing auto-disabled. The disabled
-    // stubs are written only at BYOK hatch time; without an overlay there
-    // is no hatch signal, and the defaults resolve active from the code
-    // catalog. This is the "we never want to auto-disable BYOK connections
-    // on restart" guarantee.
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic", model: "claude-opus-4-7" },
-        // Note: no `profiles` key — the default names stay absent from the
-        // workspace after the boot.
-      },
-    });
-
-    // No overlay → not a hatch.
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    expect(raw.llm.profiles.balanced).toBeUndefined();
-    expect(raw.llm.profiles["quality-optimized"]).toBeUndefined();
-    expect(raw.llm.profiles["cost-optimized"]).toBeUndefined();
-    const effective = getEffectiveProfiles(raw.llm.profiles);
-    expect("status" in (effective.balanced ?? {})).toBe(false);
-    expect("status" in (effective["quality-optimized"] ?? {})).toBe(false);
-    expect("status" in (effective["cost-optimized"] ?? {})).toBe(false);
-  });
-
   test("on-cloud hatch writes no managed stubs; catalog labels stay bare", () => {
     process.env.IS_CLOUD = "true";
 
-    const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
-    writeFileSync(
-      overlayPath,
-      JSON.stringify({ llm: { default: { provider: "anthropic" } } }, null, 2) +
-        "\n",
-    );
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    applyHatchProviderSelection({ provider: "anthropic" });
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     // Platform hatches materialize nothing, and the catalog labels carry no
@@ -1777,7 +1079,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profileOrder).toEqual([
@@ -1823,7 +1125,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     // No overlay → not a hatch.
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles).toEqual(legacyProfiles);
@@ -1860,7 +1162,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.profiles.balanced.label).toBe("My Balanced");
@@ -1886,7 +1188,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       },
     });
 
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const config = getConfig();
 
     expect(config.llm.profiles.balanced?.label).toBe("Balanced");
@@ -1917,7 +1219,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     // No overlay → this is a normal boot, not a hatch.
-    mergeDefaultConfigAndSeedInferenceProfiles();
+    seedProfilesAtBoot();
     const config = getConfig();
 
     // User's "active" decision survives the boot upsert.

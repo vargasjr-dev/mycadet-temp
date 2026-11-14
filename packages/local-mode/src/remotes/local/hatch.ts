@@ -10,7 +10,7 @@ import { sleepLocal } from "./sleep";
 import { wakeLocal } from "./wake";
 import { setStartupLogging } from "./common";
 import { withLocalHatchLock } from "./hatch-lock";
-import { buildHatchConfigValues, writeInitialConfig } from "./hatch-config";
+import { applyHatchConfig, buildHatchConfigValues } from "./hatch-config";
 import { generateInstanceName } from "../../naming";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -120,14 +120,10 @@ export async function hatchLocal(params: {
         ...(await allocateLocalPlacement(instanceName)),
       };
 
-      const defaultWorkspaceConfigPath = writeInitialConfig(
-        buildHatchConfigValues(configValues, provider),
-      );
-
       try {
-        // The wake leg owns starting — the hatch only threads the fresh
-        // daemon's first-boot config through.
-        await wakeLocal(fresh, { watch, defaultWorkspaceConfigPath });
+        // The wake leg owns starting; the config values ride the assistant's
+        // public config API once it is up.
+        await wakeLocal(fresh, { watch });
       } catch (error) {
         await sleepLocal(fresh, { force: true });
         throw error;
@@ -163,6 +159,8 @@ export async function hatchLocal(params: {
   log(`🥚 Hatching local assistant: ${instanceName}`);
   log("");
 
+  const hatchConfigValues = buildHatchConfigValues(configValues, provider);
+
   // Lease a guardian token so the desktop app can import it on first launch
   // instead of hitting /v1/guardian/init itself.
   const maxLeaseAttempts = 3;
@@ -191,6 +189,15 @@ export async function hatchLocal(params: {
       }
     }
   }
+
+  // Apply the hatch's config values through the assistant's public config
+  // API — the same route the web client uses — now that it is up. Mirrors
+  // the overlay's old place in the flow; non-fatal on failure.
+  await applyHatchConfig({
+    gatewayUrl: getGatewayUrl(entry),
+    bearerToken: guardianAccessToken,
+    configValues: hatchConfigValues,
+  });
 
   if (provider !== undefined && provider !== null && !guardianAccessToken) {
     log(

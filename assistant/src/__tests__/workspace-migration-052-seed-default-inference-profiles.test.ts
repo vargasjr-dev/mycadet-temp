@@ -39,11 +39,9 @@ function configPath(): string {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
@@ -210,19 +208,6 @@ describe("052-seed-default-inference-profiles migration", () => {
       model: "claude-opus-4-7",
       maxTokens: 32000,
     });
-  });
-
-  test("skips entirely when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({ llm: { default: { provider: "anthropic" } } });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { profiles?: Record<string, unknown>; activeProfile?: string };
-    };
-    expect(config.llm.profiles).toBeUndefined();
-    expect(config.llm.activeProfile).toBeUndefined();
   });
 
   test("writes fresh starter config when config.json is absent (Anthropic default)", () => {

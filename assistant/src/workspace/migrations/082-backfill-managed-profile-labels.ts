@@ -34,7 +34,6 @@
  *
  * Idempotent: running twice produces no second write.
  *
- * Does NOT skip on `CADET_DEFAULT_WORKSPACE_CONFIG_PATH`: the cloud
  * overlay supplies its own label when it cares, and the runtime seeder's
  * `preservedProfileNames` skip path will defer to that overlay-supplied
  * label on every boot. This migration only fills the gap when no source

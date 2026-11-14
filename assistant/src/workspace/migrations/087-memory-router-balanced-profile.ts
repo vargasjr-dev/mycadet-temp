@@ -27,10 +27,6 @@ export const memoryRouterBalancedProfileMigration: WorkspaceMigration = {
   description:
     "Set callSites.memoryRouter to { profile: 'balanced' }, dropping the seeded model and contextWindow override",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     const configExisted = existsSync(configPath);
 

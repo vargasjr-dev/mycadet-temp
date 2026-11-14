@@ -231,35 +231,4 @@ describe("082-backfill-managed-profile-labels migration", () => {
       backfillCloudProfileLabelsMigration.run(workspaceDir),
     ).not.toThrow();
   });
-
-  test("does NOT skip when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    // Unlike the seed migrations (040/046/052/054/...), this is a forward
-    // data repair that runs regardless. Platform-supplied overlay labels
-    // already win at the profile level (the on-disk entry has a `label`
-    // key, so this migration leaves it alone). Skipping the whole
-    // migration when the env var is set would leave migration-052 holes
-    // unhealed on platform-style hatches.
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({
-      llm: {
-        profiles: {
-          balanced: {
-            provider: "anthropic",
-            model: "claude-sonnet-4-6",
-          },
-        },
-      },
-    });
-
-    try {
-      backfillCloudProfileLabelsMigration.run(workspaceDir);
-
-      const config = readConfig();
-      const profiles = (config.llm as Record<string, unknown>)
-        .profiles as Record<string, Record<string, unknown>>;
-      expect(profiles.balanced.label).toBe("Balanced");
-    } finally {
-      delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    }
-  });
 });

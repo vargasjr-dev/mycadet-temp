@@ -16,18 +16,11 @@ import type { WakeResult } from "../../operations/wake";
 
 export async function wakeLocal(
   entry: LockfileAssistant,
-  opts: {
-    watch?: boolean;
-    /** The hatch's fresh-daemon first-boot workspace config (a temp file — CLI-internal, never a route surface). */
-    defaultWorkspaceConfigPath?: string;
-  } = {},
+  opts: { watch?: boolean } = {},
 ): Promise<WakeResult> {
-  const { watch = false, defaultWorkspaceConfigPath } = opts;
+  const { watch = false } = opts;
   try {
-    return await wakeLocalUnchecked(entry, {
-      watch,
-      defaultWorkspaceConfigPath,
-    });
+    return await wakeLocalUnchecked(entry, { watch });
   } catch (err) {
     return {
       ok: false,
@@ -44,12 +37,9 @@ export async function wakeLocal(
  */
 async function wakeLocalUnchecked(
   entry: LockfileAssistant,
-  opts: {
-    watch: boolean;
-    defaultWorkspaceConfigPath?: string;
-  },
+  opts: { watch: boolean },
 ): Promise<WakeResult> {
-  const { watch, defaultWorkspaceConfigPath } = opts;
+  const { watch } = opts;
   if (!isLocalEntry(entry)) {
     throw new WakeRefused(
       `'${entry.assistantId}' is not an on-machine assistant.`,
@@ -57,10 +47,7 @@ async function wakeLocalUnchecked(
   }
 
   try {
-    return await wakeLocalSteps(entry, {
-      watch,
-      defaultWorkspaceConfigPath,
-    });
+    return await wakeLocalSteps(entry, { watch });
   } catch (err) {
     if (err instanceof WakeRefused) {
       return { ok: false, status: 400, error: err.message };
@@ -71,12 +58,9 @@ async function wakeLocalUnchecked(
 
 async function wakeLocalSteps(
   entry: LocalAssistant,
-  opts: {
-    watch: boolean;
-    defaultWorkspaceConfigPath?: string;
-  },
+  opts: { watch: boolean },
 ): Promise<WakeResult> {
-  const { watch, defaultWorkspaceConfigPath } = opts;
+  const { watch } = opts;
 
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
@@ -108,13 +92,6 @@ async function wakeLocalSteps(
   // responsibility: its process gates its own traffic on the daemon's
   // migrations, so an early start just means it holds the gate a little
   // longer.
-  if (defaultWorkspaceConfigPath) {
-    // The daemon env builder reads process.env directly — a hatch's
-    // first-boot config seed lands here instead of threading through
-    // DaemonStartOptions.
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
-      defaultWorkspaceConfigPath;
-  }
   await Promise.all([
     startCes(watch, entry),
     startLocalDaemon(watch, entry),

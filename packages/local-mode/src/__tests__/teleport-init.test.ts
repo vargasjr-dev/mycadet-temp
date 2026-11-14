@@ -6,7 +6,6 @@ import * as lockfile from "../lockfile";
 import * as lookup from "../operations/lookup";
 import * as hatchLock from "../remotes/local/hatch-lock";
 import * as localHatch from "../remotes/local/hatch";
-import * as hatchConfig from "../remotes/local/hatch-config";
 import { initializeDockerTeleportTarget } from "../remotes/docker/teleport";
 import { initializeLocalTeleportTarget } from "../remotes/local/teleport";
 
@@ -86,7 +85,7 @@ test("a fresh docker target initializes the volumes without creating containers"
   ).toBe(true);
 });
 
-test("a fresh local target writes config, installs the archive, then persists", async () => {
+test("a fresh local target installs the archive, then persists", async () => {
   const withLock = spyOn(hatchLock, "withLocalHatchLock").mockImplementation(
     async (action) => action(),
   );
@@ -99,10 +98,6 @@ test("a fresh local target writes config, installs the archive, then persists", 
     daemonPort: 7831,
     cesPort: 7832,
   } as never);
-  const writeConfig = spyOn(
-    hatchConfig,
-    "writeInitialConfig",
-  ).mockImplementation(() => "/config-path");
   let saved: { assistantId: string; hatchedAt?: string } | undefined;
   const findEntry = spyOn(lookup, "findAssistantByName").mockImplementation(
     () => (saved ?? null) as never,
@@ -126,7 +121,6 @@ test("a fresh local target writes config, installs the archive, then persists", 
     expect(result.assistantId).toBe("fresh-local");
     expect(result.hatchedAt).toBeDefined();
     expect(withLock).toHaveBeenCalledTimes(1);
-    expect(writeConfig).toHaveBeenCalledTimes(1);
     expect(localArchive).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "fresh-local" }),
       "/backups/source-pre-teleport.tar.gz",
@@ -140,7 +134,6 @@ test("a fresh local target writes config, installs the archive, then persists", 
     for (const spy of [
       withLock,
       placement,
-      writeConfig,
       findEntry,
       localArchive,
       localSave,

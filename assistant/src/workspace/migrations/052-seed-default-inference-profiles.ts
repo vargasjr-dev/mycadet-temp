@@ -31,21 +31,12 @@ import type { WorkspaceMigration } from "./types.js";
  *   - `llm.callSites` entries are not touched. Non-main-agent call sites
  *     continue to win over profiles; `mainAgent` profiles now win over static
  *     call-site defaults because they are the user's chat-model selection.
- *
- * **Skip when `CADET_DEFAULT_WORKSPACE_CONFIG_PATH` is set.** Like
- * migration 040, a cloud-provided default-config overlay (applied
- * after migrations) is the authoritative source for both provider and
- * profile seeds. Skipping here avoids mismatched provider/model pairs.
  */
 export const seedDefaultInferenceProfiles052: WorkspaceMigration = {
   id: "052-seed-default-inference-profiles",
   description:
     "Seed default inference profiles (quality-optimized, balanced, cost-optimized) and activeProfile",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
 
     let config: Record<string, unknown> = {};

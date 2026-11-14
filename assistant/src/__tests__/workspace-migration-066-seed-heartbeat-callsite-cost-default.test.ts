@@ -38,11 +38,9 @@ function readConfig(): Record<string, unknown> {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
@@ -237,20 +235,6 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
       thinking: { enabled: false, streamThinking: false },
       contextWindow: { maxInputTokens: 16_000 },
     });
-  });
-
-  test("skips when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
-    });
-
-    seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
-    expect(config.llm.callSites).toBeUndefined();
   });
 
   test("resolved heartbeat config uses cheap model and bounded context", () => {

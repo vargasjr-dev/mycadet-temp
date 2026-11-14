@@ -38,11 +38,9 @@ function configPath(): string {
 
 beforeEach(() => {
   freshWorkspace();
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
 });
 
 afterEach(() => {
-  delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
   if (existsSync(workspaceDir)) {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
@@ -177,27 +175,6 @@ describe("087-memory-router-balanced-profile migration", () => {
     const afterSecond = readFileSync(configPath(), "utf-8");
 
     expect(afterSecond).toBe(afterFirst);
-  });
-
-  test("skips when CADET_DEFAULT_WORKSPACE_CONFIG_PATH is set", () => {
-    process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = "/tmp/overlay.json";
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic" },
-        callSites: {
-          memoryRouter: { model: "claude-sonnet-4-6" },
-        },
-      },
-    });
-
-    memoryRouterBalancedProfileMigration.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
-      model: "claude-sonnet-4-6",
-    });
   });
 
   test("preserves sibling call-site entries", () => {

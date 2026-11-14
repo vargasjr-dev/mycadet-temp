@@ -8,8 +8,8 @@ import type { WorkspaceMigration } from "./types.js";
  * call sites whose shipped defaults now opt out of prompt caching.
  *
  * The resolver prefers an explicit `llm.callSites.<id>` entry over
- * CALL_SITE_DEFAULTS, and earlier migrations (054 recall, 072 replySuggestion,
- * and platform overlays for the others) seeded such entries. Without this
+ * CALL_SITE_DEFAULTS, and earlier migrations (054 recall, 072 replySuggestion, and the rest)
+ * seeded such entries. Without this
  * migration, upgraded workspaces would keep paying prompt-cache writes on
  * call sites whose prompts never produce a cache read — only fresh installs
  * would pick up the new shipped default.
@@ -34,10 +34,6 @@ export const disableCacheOneShotCallsitesMigration: WorkspaceMigration = {
   description:
     "Add disableCache: true to existing one-shot call-site entries so upgraded workspaces match the new shipped defaults",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
       return;

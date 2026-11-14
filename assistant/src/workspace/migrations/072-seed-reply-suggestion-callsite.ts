@@ -21,8 +21,6 @@ import type { WorkspaceMigration } from "./types.js";
  * fixed Haiku defaults when no `conversationStarters` override exists.
  *
  * Mirrors `046-seed-conversation-starters-callsite`:
- *   - Skip entirely when `CADET_DEFAULT_WORKSPACE_CONFIG_PATH` is set
- *     (platform overlay owns call-site seeds).
  *   - In the fallback default path, skip when the resolved provider is not
  *     Anthropic or OpenRouter (the seeded model IDs are Anthropic-shaped, so
  *     mixing with another provider would guarantee invalid-model errors).
@@ -37,10 +35,6 @@ export const seedReplySuggestionCallsiteMigration: WorkspaceMigration = {
   description:
     "Seed latency-optimized default for replySuggestion LLM call site",
   run(workspaceDir: string): void {
-    if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
-      return;
-    }
-
     const configPath = join(workspaceDir, "config.json");
     const configExisted = existsSync(configPath);
 

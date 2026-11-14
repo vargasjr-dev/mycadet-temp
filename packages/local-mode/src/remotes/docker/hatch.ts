@@ -12,13 +12,13 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { chmodSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { arch, platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { isDevVersion } from "@mycadet/shared/version";
 import {
+  applyHatchConfig,
   buildHatchConfigValues,
-  writeInitialConfig,
 } from "../local/hatch-config";
 import { generateInstanceName } from "../../naming";
 import {
@@ -34,7 +34,7 @@ import {
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
 import { saveLockfileAssistant } from "../../lockfile";
-import { exec, execOutput, execWithStdin } from "../../exec";
+import { exec, execOutput } from "../../exec";
 import { buildImage, serviceImageConfigs, startFileWatcher } from "./watch";
 import type {
   DockerAssistant,
@@ -838,53 +838,11 @@ export async function hatchDocker(
       "chown 1001:1001 /workspace /run/assistant-ipc /run/gateway-ipc",
     ]);
 
-    // Stage the BYOK default-workspace-config overlay *inside* the workspace
-    // volume so the daemon's startup loader can consume it. The loader
-    // (`mergeDefaultWorkspaceConfig` in assistant/src/config/loader.ts) does:
-    //   1. JSON.parse + deep-merge into the workspace's config.json.
-    //   2. `renameSync(defaultConfigPath, <workspace>/default-config.json)`
-    //      to mark the overlay consumed so subsequent restarts skip it.
-    //
-    // The rename must be same-filesystem. Bind-mounting the host file into
-    // `/tmp/...` (the pre-#32025 design) crossed filesystems and silently
-    // failed with EXDEV, so every `docker start` re-applied the overlay.
-    // Staging into the workspace volume keeps the rename in-place.
-    //
-    // Streaming the JSON via stdin (instead of bind-mounting the host file
-    // into the staging container) sidesteps macOS Colima's virtiofs share,
-    // which doesn't expose `/var/folders/...` (where `os.tmpdir()` resolves
-    // on macOS) and would otherwise materialize an empty directory at the
-    // bind-mount target.
-    //
-    // @deprecated stopgap. Replacement direction is one of:
-    //   1. Post-hatch API calls (POST /v1/secrets + a small endpoint that
-    //      returns canonical inference-profile templates).
-    //   2. Move inference-profile seeds out of workspace config and into
-    //      Assistant code, eliminating the overlay entirely.
-    // See `cli/src/lib/config-utils.ts` JSDoc for context.
+    // The hatch's config values ride the assistant's public config API once
+    // the container is up (see the `if (ready)` block below) — no side
+    // channel, the same route a local hatch and the web client use.
     const hatchConfigValues = buildHatchConfigValues(configValues, provider);
-    const hostOverlayPath = writeInitialConfig(hatchConfigValues);
-    const stagedOverlayInContainer = "/workspace/.default-config-overlay.json";
     const extraAssistantEnv: Record<string, string> = {};
-    if (hostOverlayPath) {
-      await execWithStdin(
-        "docker",
-        [
-          "run",
-          "--rm",
-          "-i",
-          "-v",
-          `${res.workspaceVolume}:/workspace`,
-          "busybox",
-          "sh",
-          "-c",
-          `cat > ${stagedOverlayInContainer} && chown 1001:1001 ${stagedOverlayInContainer}`,
-        ],
-        readFileSync(hostOverlayPath, "utf-8"),
-      );
-      extraAssistantEnv.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
-        stagedOverlayInContainer;
-    }
 
     const cesServiceToken = randomBytes(32).toString("hex");
 
@@ -974,6 +932,15 @@ export async function hatchDocker(
     }
 
     if (ready) {
+      // The hatch's config values go through the assistant's public config
+      // API — the same route the web client and a local hatch use.
+      await applyHatchConfig({
+        gatewayUrl,
+        bearerToken: guardianAccessToken,
+        configValues: hatchConfigValues,
+        log,
+      });
+
       const providerSetupAction = resolveDockerProviderCredentialSetupAction({
         provider,
         guardianAccessToken,
