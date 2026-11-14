@@ -1,0 +1,13 @@
+// NotificationService-Test.xcconfig — test Notification Service Extension
+// overrides. The bundle ID must stay prefixed by App-Test.xcconfig's, and the App
+// Group must match that app's value exactly.
+
+#include "NotificationService-Base.xcconfig"
+
+APP_GROUP_ID = group.ai.mycadet.ios.test
+BUNDLE_DISPLAY_NAME = Cadet Test
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.test.NotificationService
+
+// Test never releases (test builds sign automatically), so this only
+// exercises if someone manually archives this target with manual signing.
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet iOS Test NotificationService Distribution
