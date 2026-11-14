@@ -134,7 +134,7 @@ describe("startCes", () => {
 
     // Verify env vars
     const env = lastSpawnCall!.options.env!;
-    expect(env["CES_BOOTSTRAP_SOCKET_DIR"]).toBe(join(tempDir, "ces-data"));
+    expect(env["CES_SOCKET_DIR"]).toBe(join(tempDir, "ces-ipc"));
     expect(env["CREDENTIAL_SECURITY_DIR"]).toBeDefined();
     expect(env["CADET_WORKSPACE_DIR"]).toBeDefined();
 
@@ -163,7 +163,7 @@ describe("startCes", () => {
     const socketPath = resolveCesSocketPath(resources, "linux");
     expect(socketPath).toBe(
       resolveIpcEndpoint("ces", {
-        workspaceDir: join("/tmp/assistant-123", "ces-data"),
+        workspaceDir: join("/tmp/assistant-123", "ces-ipc"),
         platform: "linux",
       }).path,
     );

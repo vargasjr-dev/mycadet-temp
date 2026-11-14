@@ -82,14 +82,14 @@ describe("buildServiceRunArgs — assistant", () => {
   test("keeps existing workspace and socket volume mounts intact", () => {
     const args = buildAssistantArgs();
     expect(args).toContain(`${instanceName}-workspace:/workspace`);
-    expect(args).toContain(`${instanceName}-socket:/run/ces-bootstrap`);
+    expect(args).toContain(`${instanceName}-socket:/run/ces-ipc`);
   });
 
   test("preserves existing required env vars", () => {
     const args = buildAssistantArgs();
     expect(args).toContain("IS_CONTAINERIZED=true");
     expect(args).toContain("CADET_WORKSPACE_DIR=/workspace");
-    expect(args).toContain("CES_BOOTSTRAP_SOCKET_DIR=/run/ces-bootstrap");
+    expect(args).toContain("CES_SOCKET_DIR=/run/ces-ipc");
     expect(args).toContain(`CADET_ASSISTANT_NAME=${instanceName}`);
   });
 

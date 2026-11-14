@@ -69,10 +69,10 @@ if (
 
 // The main preload also strands CES credential-RPC discovery: the socket dir
 // must be set AND resolve under tmpdir (deleting the var is not enough —
-// discovery falls back to the hardcoded /run/ces-bootstrap).
-const cesSocketDir = process.env.CES_BOOTSTRAP_SOCKET_DIR?.trim();
+// discovery falls back to the hardcoded /run/ces-ipc).
+const cesSocketDir = process.env.CES_SOCKET_DIR?.trim();
 if (!cesSocketDir) {
-  fail("CES_BOOTSTRAP_SOCKET_DIR is not set after main preload");
+  fail("CES_SOCKET_DIR is not set after main preload");
 }
 
 const resolvedCesSocket = canonicalize(cesSocketDir);
@@ -81,6 +81,6 @@ if (
   !resolvedCesSocket.startsWith(tmpRoot + sep)
 ) {
   fail(
-    `CES_BOOTSTRAP_SOCKET_DIR resolves to ${resolvedCesSocket}, which is not under ${tmpRoot}`,
+    `CES_SOCKET_DIR resolves to ${resolvedCesSocket}, which is not under ${tmpRoot}`,
   );
 }

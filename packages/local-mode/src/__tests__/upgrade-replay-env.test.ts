@@ -19,7 +19,6 @@ afterEach(() => {
 describe("buildReplayEnv", () => {
   test("gateway: drops secrets, statics, and PATH; keeps the rest", () => {
     const captured = {
-      CES_SERVICE_TOKEN: "s2",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
       CADET_TELEMETRY: "1",
@@ -57,7 +56,6 @@ describe("buildReplayEnv", () => {
     const captured = {
       CADET_ASSISTANT_NAME: "my-assistant",
       GATEWAY_INTERNAL_URL: "http://localhost:8080",
-      CES_SERVICE_TOKEN: "s2",
       PATH: "/usr/bin",
       MY_CUSTOM_FLAG: "yes",
       ANTHROPIC_API_KEY: "sk-captured",
@@ -76,36 +74,6 @@ describe("buildReplayEnv", () => {
       "assistant",
     );
     expect(replay).toEqual({ MY_CUSTOM_FLAG: "yes" });
-  });
-
-  test("a secret added to the spec is auto-excluded with no code change", () => {
-    const spec: DockerStatefulSetSpec = {
-      startOrder: ["gateway"],
-      readiness: { endpoint: "/readyz", timeoutMs: 1, intervalMs: 1 },
-      volumeClaimTemplates: [],
-      containers: [
-        {
-          name: "gateway-sidecar",
-          internalName: "gateway",
-          network: "container",
-          env: [
-            {
-              kind: "secret",
-              name: "FUTURE_SECRET",
-              secret: "cesServiceToken",
-            },
-          ],
-          volumeMounts: [],
-        },
-      ],
-    };
-
-    const replay = buildReplayEnv(
-      { FUTURE_SECRET: "leaky", CADET_DEVICE_ID: "abc" },
-      "gateway",
-      spec,
-    );
-    expect(replay).toEqual({ CADET_DEVICE_ID: "abc" });
   });
 });
 
@@ -146,21 +114,17 @@ describe("buildReplayState", () => {
     expect(state.extraAssistantEnv.CADET_DEVICE_ID).toBe("existing");
   });
 
-  test("plucks secrets from the captured envs", () => {
+  test("rides no secrets: CES is IPC-only, signing key stays gateway-owned", () => {
     const state = buildReplayState(
       { CES_SERVICE_TOKEN: "ces-token" },
       { CADET_DEVICE_ID: "gw" },
     );
-    expect(state.cesServiceToken).toBe("ces-token");
-    // The bootstrap secret rides no env anymore (pairing is the bootstrap
-    // door), and the signing key rides no env either: the gateway owns it in
-    // its security root, and replacement containers adopt it from there.
+    // CES_SERVICE_TOKEN no longer exists anywhere: CES has no HTTP routes to
+    // authenticate. The bootstrap secret rides no env either (pairing is the
+    // bootstrap door), and the signing key rides no env: the gateway owns it
+    // in its security root, and replacement containers adopt it from there.
+    expect("cesServiceToken" in state).toBe(false);
     expect("bootstrapSecret" in state).toBe(false);
     expect("signingKey" in state).toBe(false);
-  });
-
-  test("generates a service token when the captured env has none", () => {
-    const state = buildReplayState({}, {});
-    expect(state.cesServiceToken).toMatch(/^[0-9a-f]{64}$/);
   });
 });

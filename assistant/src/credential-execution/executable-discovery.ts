@@ -2,37 +2,22 @@
  * CES socket discovery and transport bootstrap.
  *
  * Local siblings and managed sidecars share one resolver: `ces.sock` under
- * `CES_BOOTSTRAP_SOCKET_DIR` (default `/run/ces-bootstrap`). Discovery fails
- * closed if the socket cannot be found.
+ * `CES_SOCKET_DIR` (default `/run/ces-ipc`) — `getBootstrapSocketPath()` from
+ * `@mycadet/ces-client/socket-path`, the same resolver CES binds with.
+ * Discovery fails closed if the socket cannot be found.
  */
 
 import { existsSync } from "node:fs";
 
-import { isNamedPipePath, resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
+import { getBootstrapSocketPath } from "@mycadet/ces-client/socket-path";
+import { isNamedPipePath } from "@mycadet/ipc-server-utils";
 
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("ces-discovery");
 
-/** Default directory for the CES Unix socket. */
-const DEFAULT_BOOTSTRAP_SOCKET_DIR = "/run/ces-bootstrap";
-
-/**
- * Resolve the CES socket path used in every environment.
- *
- * Uses `CES_BOOTSTRAP_SOCKET_DIR` when set, otherwise `/run/ces-bootstrap`.
- * `ces.sock` is resolved through `resolveIpcEndpoint`.
- */
-function getCesSocketPath(): string {
-  const dir =
-    process.env["CES_BOOTSTRAP_SOCKET_DIR"]?.trim() ||
-    DEFAULT_BOOTSTRAP_SOCKET_DIR;
-  return resolveIpcEndpoint("ces", { workspaceDir: dir }).path;
-}
-
 export interface ManagedDiscoverySuccess {
   mode: "managed";
-  socketPath: string;
 }
 
 export interface DiscoveryFailure {
@@ -48,19 +33,20 @@ export type DiscoveryResult = ManagedDiscoverySuccess | DiscoveryFailure;
  * Checks that the well-known socket exists. Does not open a connection.
  * CES serves a multi-connection listener, so the assistant and its child
  * processes can each connect. The actual connection is made later by
- * `CesProcessManager.start()`.
+ * `CesProcessManager.start()`, which dials `getBootstrapSocketPath()`
+ * directly.
  */
 export function discoverCes(): DiscoveryResult {
-  const socketPath = getCesSocketPath();
+  const socketPath = getBootstrapSocketPath();
 
   if (!isNamedPipePath(socketPath) && !existsSync(socketPath)) {
-    const reason = `CES bootstrap socket not found at ${socketPath}`;
+    const reason = `CES socket not found at ${socketPath}`;
     log.warn(reason);
     return { mode: "unavailable", reason };
   }
 
-  log.info({ socketPath }, "CES bootstrap socket found");
-  return { mode: "managed", socketPath };
+  log.info({ socketPath }, "CES socket found");
+  return { mode: "managed" };
 }
 
 /** How long to poll for the CES socket before giving up. */

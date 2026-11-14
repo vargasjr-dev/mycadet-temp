@@ -53,7 +53,7 @@ import { createLocalSecureKeyBackend } from "../materializers/local-secure-key-b
 /** Env vars saved/restored across tests. */
 const SAVED_ENV_KEYS = [
   "CES_DATA_DIR",
-  "CES_BOOTSTRAP_SOCKET_DIR",
+  "CES_SOCKET_DIR",
   "CES_HEALTH_PORT",
   "CREDENTIAL_SECURITY_DIR",
 ] as const;

@@ -1,4 +1,12 @@
-import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
+import {
+  describe,
+  test,
+  expect,
+  mock,
+  beforeEach,
+  afterEach,
+  afterAll,
+} from "bun:test";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { hostname, userInfo } from "node:os";
@@ -11,10 +19,34 @@ import {
   readCredentialResult,
   readServiceCredentials,
   readServiceCredentialsResult,
+  resetCesIpcClientForTests,
   type ServiceCredentialSpec,
 } from "../credential-reader.js";
 import { testSecurityDir, testWorkspaceDir } from "./test-preload.js";
+import { snapshotEnv } from "./helpers/env.js";
+
+// Hermetic topology: the host process may itself be a cadet container with
+// IS_CONTAINERIZED/CES_* set. This file decides managed mode per-test via
+// `withFakeCes`, so the ambient signal is pinned off and restored after all
+// tests.
+const restoreTopologyEnv = snapshotEnv([
+  "IS_CONTAINERIZED",
+  "CES_CREDENTIAL_URL",
+  "CES_SERVICE_TOKEN",
+]);
+delete process.env.IS_CONTAINERIZED;
+delete process.env.CES_CREDENTIAL_URL;
+delete process.env.CES_SERVICE_TOKEN;
+afterAll(() => restoreTopologyEnv());
+
 const logCalls: { method: string; args: unknown[] }[] = [];
+
+/** Behaviour for the fake CES IPC client installed by `withFakeCes`. */
+let fakeCesBehaviour:
+  | { mode: "unreachable" }
+  | { mode: "absent" }
+  | { records: "present" | "missing" }
+  | undefined;
 
 mock.module("../logger.js", () => ({
   getLogger: () =>
@@ -262,164 +294,141 @@ describe("readServiceCredentials", () => {
     });
   });
 
-  test("CES HTTP requires metadata records even when secrets exist", async () => {
+  test("CES requires metadata records even when secrets exist", async () => {
     writeEncryptedStore({
       [credentialKey("telegram", "bot_token")]: "my-bot-token",
       [credentialKey("telegram", "webhook_secret")]: "my-webhook-secret",
     });
 
-    const previousUrl = process.env.CES_CREDENTIAL_URL;
-    const previousToken = process.env.CES_SERVICE_TOKEN;
-    const server = Bun.serve({
-      port: 0,
-      fetch(req) {
-        const url = new URL(req.url);
-        if (req.method === "GET" && url.pathname.startsWith("/v1/metadata/")) {
-          return Response.json({ error: "Record not found" }, { status: 404 });
-        }
-        return new Response("Not Found", { status: 404 });
-      },
-    });
-    process.env.CES_CREDENTIAL_URL = `http://127.0.0.1:${server.port}`;
-    process.env.CES_SERVICE_TOKEN = "test-ces-service-token";
-    try {
+    await withFakeCes({ records: "missing" }, async () => {
       const result = await readServiceCredentials(telegramSpec);
       expect(result).toBeNull();
-    } finally {
-      server.stop(true);
-      if (previousUrl === undefined) {
-        delete process.env.CES_CREDENTIAL_URL;
-      } else {
-        process.env.CES_CREDENTIAL_URL = previousUrl;
-      }
-      if (previousToken === undefined) {
-        delete process.env.CES_SERVICE_TOKEN;
-      } else {
-        process.env.CES_SERVICE_TOKEN = previousToken;
-      }
-    }
+    });
   });
 
-  test("CES HTTP reads secrets after metadata records are present", async () => {
+  test("CES reads secrets after metadata records are present", async () => {
     writeEncryptedStore({
       [credentialKey("telegram", "bot_token")]: "my-bot-token",
       [credentialKey("telegram", "webhook_secret")]: "my-webhook-secret",
     });
 
-    const previousUrl = process.env.CES_CREDENTIAL_URL;
-    const previousToken = process.env.CES_SERVICE_TOKEN;
-    const server = Bun.serve({
-      port: 0,
-      fetch(req) {
-        const url = new URL(req.url);
-        if (req.method === "GET" && url.pathname.startsWith("/v1/metadata/")) {
-          return Response.json({
-            record: {
-              credentialId: "cred-1",
-              service: "telegram",
-              field: "ignored",
-              allowedTools: [],
-              allowedDomains: [],
-              createdAt: 1,
-              updatedAt: 1,
-            },
-          });
-        }
-        return new Response("Not Found", { status: 404 });
-      },
-    });
-    process.env.CES_CREDENTIAL_URL = `http://127.0.0.1:${server.port}`;
-    process.env.CES_SERVICE_TOKEN = "test-ces-service-token";
-    try {
+    await withFakeCes({ records: "present" }, async () => {
       const result = await readServiceCredentials(telegramSpec);
       expect(result).toEqual({
         bot_token: "my-bot-token",
         webhook_secret: "my-webhook-secret",
       });
-    } finally {
-      server.stop(true);
-      if (previousUrl === undefined) {
-        delete process.env.CES_CREDENTIAL_URL;
-      } else {
-        process.env.CES_CREDENTIAL_URL = previousUrl;
-      }
-      if (previousToken === undefined) {
-        delete process.env.CES_SERVICE_TOKEN;
-      } else {
-        process.env.CES_SERVICE_TOKEN = previousToken;
-      }
-    }
+    });
   });
 });
 
-function withCesEnv(url: string, token: string, run: () => Promise<void>) {
-  const previousUrl = process.env.CES_CREDENTIAL_URL;
-  const previousToken = process.env.CES_SERVICE_TOKEN;
-  process.env.CES_CREDENTIAL_URL = url;
-  process.env.CES_SERVICE_TOKEN = token;
-  return run().finally(() => {
-    if (previousUrl === undefined) {
-      delete process.env.CES_CREDENTIAL_URL;
+/**
+ * Install a controllable fake CES IPC client and flip the gateway into
+ * managed mode for the duration of `run`. `mode: "unreachable"` simulates a
+ * CES outage (every call reports unreachable); `"absent"` answers that an
+ * account does not exist; `"present"`/`"missing"` shape the metadata
+ * catalog the service-credentials gate reads.
+ */
+async function withFakeCes(
+  opts:
+    | { mode: "unreachable" }
+    | { mode: "absent" }
+    | { records: "present" | "missing" },
+  run: () => Promise<void>,
+): Promise<void> {
+  const previousContainerized = process.env.IS_CONTAINERIZED;
+  process.env.IS_CONTAINERIZED = "true";
+  fakeCesBehaviour = opts;
+  resetCesIpcClientForTests();
+  try {
+    await run();
+  } finally {
+    fakeCesBehaviour = undefined;
+    if (previousContainerized === undefined) {
+      delete process.env.IS_CONTAINERIZED;
     } else {
-      process.env.CES_CREDENTIAL_URL = previousUrl;
+      process.env.IS_CONTAINERIZED = previousContainerized;
     }
-    if (previousToken === undefined) {
-      delete process.env.CES_SERVICE_TOKEN;
-    } else {
-      process.env.CES_SERVICE_TOKEN = previousToken;
-    }
-  });
+    resetCesIpcClientForTests();
+  }
 }
+
+const recordFixture = {
+  credentialId: "cred-1",
+  service: "telegram",
+  field: "ignored",
+  allowedTools: [] as string[],
+  allowedDomains: [] as string[],
+  createdAt: 1,
+  updatedAt: 1,
+};
+
+mock.module("@mycadet/ces-client/ipc-credentials", () => ({
+  createCesIpcCredentialClient: () => ({
+    isAvailable: () => fakeCesBehaviour !== undefined,
+    async get(_account: string) {
+      if (fakeCesBehaviour && "mode" in fakeCesBehaviour) {
+        return fakeCesBehaviour.mode === "unreachable"
+          ? { value: undefined, unreachable: true }
+          : { value: undefined, unreachable: false };
+      }
+      // Records-mode: CES answers "account absent" so the reader falls
+      // through to the encrypted store.
+      return { value: undefined, unreachable: false };
+    },
+    async getRecord(_account: string) {
+      if (fakeCesBehaviour && "mode" in fakeCesBehaviour) {
+        return fakeCesBehaviour.mode === "unreachable"
+          ? { record: undefined, unreachable: true }
+          : { record: undefined, unreachable: false };
+      }
+      if (fakeCesBehaviour && fakeCesBehaviour.records === "present") {
+        return { record: recordFixture, unreachable: false };
+      }
+      return { record: undefined, unreachable: false };
+    },
+    async listRecords() {
+      if (fakeCesBehaviour && "mode" in fakeCesBehaviour) {
+        return { records: [], unreachable: true };
+      }
+      if (fakeCesBehaviour && fakeCesBehaviour.records === "present") {
+        return {
+          records: [{ account: "x", record: recordFixture }],
+          unreachable: false,
+        };
+      }
+      return { records: [], unreachable: false };
+    },
+    async list() {
+      if (fakeCesBehaviour && "mode" in fakeCesBehaviour) {
+        return { accounts: [], unreachable: true };
+      }
+      return { accounts: [], unreachable: false };
+    },
+  }),
+}));
 
 describe("readCredentialResult", () => {
   const account = credentialKey("cadet", "platform_user_id");
 
-  test("CES 5xx does not fall through to keys.enc", async () => {
+  test("CES outage does not fall through to keys.enc", async () => {
     writeEncryptedStore({ [account]: "stale-keys-enc-value" });
-    const server = Bun.serve({
-      port: 0,
-      fetch() {
-        return new Response("internal error", { status: 500 });
-      },
+    await withFakeCes({ mode: "unreachable" }, async () => {
+      const result = await readCredentialResult(account);
+      expect(result).toEqual({ value: undefined, unreachable: true });
+      expect(await readCredential(account)).toBeUndefined();
     });
-    try {
-      await withCesEnv(
-        `http://127.0.0.1:${server.port}`,
-        "test-ces-service-token",
-        async () => {
-          const result = await readCredentialResult(account);
-          expect(result).toEqual({ value: undefined, unreachable: true });
-          expect(await readCredential(account)).toBeUndefined();
-        },
-      );
-    } finally {
-      server.stop(true);
-    }
   });
 
-  test("CES 404 falls through to keys.enc", async () => {
+  test("CES not-found falls through to keys.enc", async () => {
     writeEncryptedStore({ [account]: "keys-enc-value" });
-    const server = Bun.serve({
-      port: 0,
-      fetch() {
-        return Response.json({ error: "not found" }, { status: 404 });
-      },
+    await withFakeCes({ mode: "absent" }, async () => {
+      const result = await readCredentialResult(account);
+      expect(result).toEqual({
+        value: "keys-enc-value",
+        unreachable: false,
+      });
     });
-    try {
-      await withCesEnv(
-        `http://127.0.0.1:${server.port}`,
-        "test-ces-service-token",
-        async () => {
-          const result = await readCredentialResult(account);
-          expect(result).toEqual({
-            value: "keys-enc-value",
-            unreachable: false,
-          });
-        },
-      );
-    } finally {
-      server.stop(true);
-    }
   });
 });
 
@@ -429,30 +438,16 @@ describe("readServiceCredentialsResult", () => {
     requiredFields: ["bot_token", "webhook_secret"],
   };
 
-  test("CES 5xx is unreachable, not missing", async () => {
+  test("CES outage is unreachable, not missing", async () => {
     writeEncryptedStore({
       [credentialKey("telegram", "bot_token")]: "my-bot-token",
       [credentialKey("telegram", "webhook_secret")]: "my-webhook-secret",
     });
-    const server = Bun.serve({
-      port: 0,
-      fetch() {
-        return new Response("internal error", { status: 500 });
-      },
+    await withFakeCes({ mode: "unreachable" }, async () => {
+      const result = await readServiceCredentialsResult(telegramSpec);
+      expect(result).toEqual({ status: "unreachable" });
+      expect(await readServiceCredentials(telegramSpec)).toBeNull();
     });
-    try {
-      await withCesEnv(
-        `http://127.0.0.1:${server.port}`,
-        "test-ces-service-token",
-        async () => {
-          const result = await readServiceCredentialsResult(telegramSpec);
-          expect(result).toEqual({ status: "unreachable" });
-          expect(await readServiceCredentials(telegramSpec)).toBeNull();
-        },
-      );
-    } finally {
-      server.stop(true);
-    }
   });
 });
 

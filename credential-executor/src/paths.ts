@@ -23,8 +23,6 @@
 
 import { join } from "node:path";
 
-import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
-
 // ---------------------------------------------------------------------------
 // Root directory helpers
 // ---------------------------------------------------------------------------
@@ -68,26 +66,19 @@ export function getCesLogDir(): string {
 // CES socket path (local sibling and managed sidecar)
 // ---------------------------------------------------------------------------
 
-/** Default directory for the CES Unix socket. */
-const BOOTSTRAP_SOCKET_DIR = "/run/ces-bootstrap";
-
 /**
- * Return the path to the CES Unix socket used in every environment.
+ * The path to the CES Unix socket used in every environment.
  *
- * Local siblings and managed sidecars share this resolver. The assistant
- * dials the same path CES binds.
- *
- * Uses `CES_BOOTSTRAP_SOCKET_DIR` when set, otherwise `/run/ces-bootstrap`.
- * `ces.sock` is resolved through `resolveIpcEndpoint` so macOS AF_UNIX
- * limits and Windows named pipes stay consistent.
- *
- * The pod template and local CLI export `CES_BOOTSTRAP_SOCKET_DIR`.
+ * Local siblings and managed sidecars share this resolver — it lives in
+ * `@mycadet/ces-client/socket-path` so the assistant, gateway, and CLI dial
+ * the same path CES binds without depending on this package. The directory
+ * comes from `CES_SOCKET_DIR` (default `/run/ces-ipc`) and is a sibling of
+ * the CES data dir, never inside it.
  */
-export function getBootstrapSocketPath(): string {
-  const dir =
-    process.env["CES_BOOTSTRAP_SOCKET_DIR"]?.trim() || BOOTSTRAP_SOCKET_DIR;
-  return resolveIpcEndpoint("ces", { workspaceDir: dir }).path;
-}
+export {
+  getBootstrapSocketPath,
+  getCesSocketDir,
+} from "@mycadet/ces-client/socket-path";
 
 // ---------------------------------------------------------------------------
 // Health port (managed mode only)

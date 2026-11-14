@@ -43,14 +43,6 @@ import {
   getSecurityDir,
 } from "./paths.js";
 import { CesRpcServer, type RpcHandlerRegistry } from "./server.js";
-import {
-  handleCredentialRoute,
-  type CredentialRouteDeps,
-} from "./http/credential-routes.js";
-import { handleLogExportRoute } from "./http/log-export-routes.js";
-import { isLoopbackAddress } from "./http/loopback-address.js";
-import { withCesHttpErrorLogging } from "./http/request-errors.js";
-import { handleMetadataRoute } from "./http/metadata-routes.js";
 import { CES_MIGRATIONS } from "./migrations/registry.js";
 import { runCesMigrations } from "./migrations/runner.js";
 import { buildRecordHandlers } from "./records/handlers.js";
@@ -241,16 +233,15 @@ let connectionCount = 0;
 function startHealthServer(
   port: number,
   signal: AbortSignal,
-  credentialDeps: CredentialRouteDeps | null,
 ): ReturnType<typeof Bun.serve> | null {
   // Listen on every interface so kubelet httpGet probes can hit the pod IP.
-  // Credential CRUD, metadata, and log export stay loopback-only: assistant
-  // and gateway in this pod call http://localhost:<CES_HEALTH_PORT>.
+  // This port serves liveness/readiness probes ONLY — credential invocation
+  // is IPC-only over the shared Unix socket.
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
-      async fetch(req, httpServer) {
+      async fetch(req) {
         const url = new URL(req.url);
         if (url.pathname === "/healthz") {
           return new Response(JSON.stringify({ status: "ok" }), {
@@ -277,40 +268,7 @@ function startHealthServer(
           );
         }
 
-        const peer = httpServer.requestIP(req)?.address;
-        if (!peer || !isLoopbackAddress(peer)) {
-          return new Response("Not Found", { status: 404 });
-        }
-
-        return withCesHttpErrorLogging(
-          req,
-          async () => {
-            // Credential CRUD routes (only if service token is configured)
-            if (credentialDeps) {
-              const metadataResponse = await handleMetadataRoute(req);
-              if (metadataResponse) {
-                return metadataResponse;
-              }
-              const credentialResponse = await handleCredentialRoute(
-                req,
-                credentialDeps,
-              );
-              if (credentialResponse) {
-                return credentialResponse;
-              }
-            }
-
-            // Log export route
-            const logExportResponse = await handleLogExportRoute(
-              req,
-              getCesLogDir(),
-            );
-            if (logExportResponse) return logExportResponse;
-
-            return new Response("Not Found", { status: 404 });
-          },
-          log,
-        );
+        return new Response("Not Found", { status: 404 });
       },
     });
   } catch (err) {
@@ -401,21 +359,11 @@ async function main(): Promise<void> {
   };
 
   // -- Health server ----------------------------------------------------------
-  const serviceToken = process.env["CES_SERVICE_TOKEN"] ?? "";
-  let credentialDeps: CredentialRouteDeps | null = null;
-
-  if (serviceToken) {
-    credentialDeps = { backend: secureKeyBackend, serviceToken };
-    log.info("Credential CRUD routes enabled (CES_SERVICE_TOKEN configured)");
-  } else {
-    log.warn(
-      "CES_SERVICE_TOKEN not set — credential CRUD HTTP routes are disabled. " +
-        "Set CES_SERVICE_TOKEN to enable credential management over HTTP.",
-    );
-  }
-
+  // Liveness/readiness probes only. Credential invocation is IPC-only:
+  // every caller (assistant, gateway, CLI) dials the shared Unix socket, so
+  // there are no HTTP routes to protect and no CES_SERVICE_TOKEN to manage.
   const healthPort = getHealthPort();
-  startHealthServer(healthPort, controller.signal, credentialDeps);
+  startHealthServer(healthPort, controller.signal);
   log.info(`Health server listening on port ${healthPort}`);
 
   // -- Socket server ---------------------------------------------------------

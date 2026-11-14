@@ -7,10 +7,7 @@
  */
 import { platform } from "node:os";
 
-import {
-  pullImage,
-  resolveImageRefs,
-} from "./hatch";
+import { pullImage, resolveImageRefs } from "./hatch";
 import { dockerResourceNames } from "./retire";
 import { ensureDockerDaemonRunning } from "./common";
 import { sleepDocker } from "./sleep";
@@ -161,8 +158,7 @@ export async function upgradeDocker(
     }),
   );
 
-  const { cesServiceToken, extraAssistantEnv, extraGatewayEnv } =
-    await captureReplayState(res);
+  const { extraAssistantEnv, extraGatewayEnv } = await captureReplayState(res);
 
   // Notify connected clients that an upgrade is about to begin.
   // This must fire BEFORE any progress broadcasts so the UI sets
@@ -254,7 +250,6 @@ export async function upgradeDocker(
 
   log("🚀 Starting upgraded containers...");
   const wake = await wakeDocker(entry, {
-    cesServiceToken,
     extraAssistantEnv,
     extraGatewayEnv,
     gatewayPort,
@@ -340,7 +335,6 @@ export async function upgradeDocker(
         await sleepDocker(entry);
 
         const rollbackWake = await wakeDocker(entry, {
-          cesServiceToken,
           extraAssistantEnv,
           extraGatewayEnv,
           gatewayPort,
@@ -358,7 +352,6 @@ export async function upgradeDocker(
             backupLabel: "pre-upgrade",
             res,
             containerOptions: {
-              cesServiceToken,
               extraAssistantEnv,
               extraGatewayEnv,
               gatewayPort,

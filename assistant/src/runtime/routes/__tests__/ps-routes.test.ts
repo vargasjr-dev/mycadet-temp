@@ -79,7 +79,8 @@ describe("ps route handler", () => {
 
     const { processes } = await getHandler()();
 
-    expect(processes).toHaveLength(1);
+    // The assistant's tree plus the always-reported credential executor.
+    expect(processes).toHaveLength(2);
     const root = processes[0];
     // The route must surface the daemon's node as "assistant", not the
     // entry-script name the tree builder derives ("daemon-main").
@@ -145,17 +146,20 @@ describe("ps route handler", () => {
     walk(processes[0]);
   });
 
-  test("falls back to a lone assistant node when enumeration fails", async () => {
+  test("falls back to a lone assistant node plus the credential executor when enumeration fails", async () => {
     listShouldThrow = true;
 
     const { processes } = await getHandler()();
 
-    expect(processes).toHaveLength(1);
+    expect(processes).toHaveLength(2);
     expect(processes[0]).toEqual({
       name: "assistant",
       status: "running",
       origin: "workspace",
       info: `pid ${process.pid}`,
     });
+    // The credential executor reports live RPC state, not tree membership.
+    expect(processes[1]!.name).toBe("credential-executor");
+    expect(processes[1]!.status).toBe("not_running");
   });
 });

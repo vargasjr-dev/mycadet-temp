@@ -44,7 +44,7 @@ export const SAFE_ENV_VARS = [
   "CADET_TEST_LOG_LEVEL",
 
   "CADET_WORKSPACE_DIR",
-  "CES_BOOTSTRAP_SOCKET_DIR",
+  "CES_SOCKET_DIR",
   "GATEWAY_INTERNAL_URL",
   "ASSISTANT_IPC_SOCKET_DIR",
   "GATEWAY_IPC_SOCKET_DIR",
@@ -63,12 +63,8 @@ export const SAFE_ENV_VARS = [
   "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
   "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
   "CES_MANAGED_MODE",
-  "CES_CREDENTIAL_URL",
-  "CES_SERVICE_TOKEN",
   // Child processes (bash, skill sandbox, scheduled scripts) reach CES
-  // over IPC via `CES_BOOTSTRAP_SOCKET_DIR`. CES HTTP credentials are
-  // forwarded so children can fail over to CES HTTP while that transport
-  // still exists.
+  // over IPC via `CES_SOCKET_DIR` — CES has no HTTP surface to forward.
   // Per-instance port of the assistant-managed Qdrant sidecar, so skill and
   // bash-tool subprocesses that use the vector helpers (e.g. embed/search over
   // `@mycadet/plugin-api`) resolve the same local sidecar as the daemon

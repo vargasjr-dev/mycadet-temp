@@ -182,7 +182,7 @@ Each instance gets its own:
 
 - **`CADET_WORKSPACE_DIR`**: Set to `<instanceDir>/.cadet/workspace`. The daemon resolves all workspace state (DB, logs, memory indices) relative to this directory.
 - **`GATEWAY_SECURITY_DIR`** / **`CREDENTIAL_SECURITY_DIR`**: Set to `<instanceDir>/.cadet/protected`. The gateway and credential-executor resolve their security state (keys, trust rules, credentials) relative to these directories.
-- **`CES_BOOTSTRAP_SOCKET_DIR`**: Set to `<instanceDir>/.cadet/protected/credential-executor`. CES binds `ces.sock` here; the assistant and its children discover the same path. Not derived from `CADET_WORKSPACE_DIR`.
+- **`CES_SOCKET_DIR`**: Set to `<instanceDir>/.cadet/protected/credential-executor`. CES binds `ces.sock` here; the assistant and its children discover the same path. Not derived from `CADET_WORKSPACE_DIR`.
 - **Daemon port** (`RUNTIME_HTTP_PORT`), **Gateway port** (`GATEWAY_PORT`), **Qdrant port** (`QDRANT_HTTP_PORT`): Allocated by scanning upward from the environment's base port — see "Port allocation" below.
 - **PID file**: `<instanceDir>/.cadet/cadet.pid`
 - **SQLite database, logs, memory indices**: All under `<instanceDir>/.cadet/workspace/data/`
@@ -237,7 +237,7 @@ Docker instances use dedicated volumes with per-service access boundaries instea
 <instance-name>-workspace       →  /workspace           (assistant: rw, gateway: rw, CES: ro)
 <instance-name>-gateway-sec     →  /gateway-security    (gateway only)
 <instance-name>-ces-sec         →  /ces-security        (CES only)
-<instance-name>-socket          →  /run/ces-bootstrap   (assistant + CES)
+<instance-name>-socket          →  /run/ces-ipc   (assistant + CES)
 <instance-name>-gateway-ipc     →  /run/gateway-ipc     (assistant + gateway)
 <instance-name>-assistant-ipc   →  /run/assistant-ipc   (assistant + gateway)
 <instance-name>-dockerd-data    →  /var/lib/docker      (assistant only — inner dockerd state)
@@ -246,7 +246,7 @@ Docker instances use dedicated volumes with per-service access boundaries instea
 - **Workspace volume** (`/workspace`): Shared state — config, conversations, apps, skills, database, logs. Set via `CADET_WORKSPACE_DIR=/workspace`. The assistant and gateway have read-write access; the CES mounts it read-only (for config reading).
 - **Gateway security volume** (`/gateway-security`): Files private to the gateway container. Only the gateway container mounts this volume. Set via `GATEWAY_SECURITY_DIR=/gateway-security`.
 - **CES security volume** (`/ces-security`): Credential encryption keys (`keys.enc`, `store.key`). Only the CES container mounts this volume. Set via `CREDENTIAL_SECURITY_DIR=/ces-security`.
-- **Socket volume** (`/run/ces-bootstrap`): CES bootstrap socket for initial service handshake between the assistant and CES containers.
+- **Socket volume** (`/run/ces-ipc`): CES bootstrap socket for initial service handshake between the assistant and CES containers.
 - **Gateway IPC volume** (`/run/gateway-ipc`): Contains `gateway.sock` — the Unix domain socket used for assistant→gateway IPC calls (feature flags, trust rules, credentials). Set via `GATEWAY_IPC_SOCKET_DIR=/run/gateway-ipc`.
 - **Assistant IPC volume** (`/run/assistant-ipc`): Contains `assistant.sock` — the Unix domain socket used for gateway→assistant reverse IPC calls. Set via `ASSISTANT_IPC_SOCKET_DIR=/run/assistant-ipc`.
 - **Inner dockerd data volume** (`/var/lib/docker`): Persistent storage for the `dockerd` that runs _inside_ the assistant container. Holds the pulled meet-bot image and any in-flight bot container state so image pulls don't repeat on every assistant restart. Only the assistant container mounts this volume.
@@ -284,7 +284,7 @@ Each bot container receives a bind of `/workspace` sourced from the assistant's 
 In Docker mode (`IS_CONTAINERIZED=true`), services that need data from another service's security domain use HTTP APIs instead of direct filesystem access:
 
 - **Trust rules**: The assistant reads/writes trust rules via the gateway's HTTP trust API. The gateway owns the filesystem copy at `/gateway-security/trust.json`.
-- **Credentials**: The assistant talks to CES over the bootstrap Unix socket (`CES_BOOTSTRAP_SOCKET_DIR`). The gateway still uses the CES HTTP API (`CES_CREDENTIAL_URL`), authenticated with `CES_SERVICE_TOKEN`. The assistant may fail over to that HTTP API if the RPC transport dies. The CES owns the encryption keys at `/ces-security/`.
+- **Credentials**: The assistant talks to CES over the bootstrap Unix socket (`CES_SOCKET_DIR`). The gateway still uses the CES HTTP API (`CES_CREDENTIAL_URL`), authenticated with `CES_SERVICE_TOKEN`. The assistant may fail over to that HTTP API if the RPC transport dies. The CES owns the encryption keys at `/ces-security/`.
 - **Contacts (auth/authz)**: The gateway owns `contacts` and `contact_channels` tables in its SQLite database (`/gateway-security/gateway.sqlite`). These tables store contact authentication and authorization data — who can talk to the assistant and what their channel policies are. The assistant daemon reads contact auth/authz data via IPC (`get_contact`, `list_contacts`, `get_contact_by_channel`, `get_channels_for_contact`). The assistant retains ownership of contact **context** (conversation history, memory associations, display preferences) in its own database. This separation is in progress — the gateway tables are declared and IPC handlers are wired, but endpoint cutover and data migration are not yet complete.
 
 ### Signing Key Custody
@@ -701,7 +701,6 @@ Every `web_search` failure path funnels through a single classification layer so
 - **No conflation with `web_fetch`.** The normalization layer keys exclusively on `web_search` (native server-tool web_search and the app-side search tool). It never inspects `WebFetchMetadata`, so a `web_fetch` DNS failure (e.g. an unresolved host) keeps its own `webFetch.errorMessage` and is never rewritten to the search backend copy.
 
 End-to-end coverage lives in `assistant/src/__tests__/web-search-backend-failure.test.ts`.
-
 
 ## Workflow Orchestration Engine
 

@@ -159,6 +159,24 @@ function printTable(
   }
 }
 
+// ── Focused assistant view (two columns) ────────────────────────
+
+function printFocusedTable(rows: FocusedRow[]): void {
+  const nameWidth = Math.max(
+    ...rows.map((r) => displayWidth(r.name)),
+    "PROCESS".length,
+  );
+  const infoWidth = Math.max(
+    ...rows.map((r) => displayWidth(r.info)),
+    "INFO".length,
+  );
+  console.log(`  ${pad("PROCESS", nameWidth)}  ${pad("INFO", infoWidth)}`);
+  console.log(`  ${"-".repeat(nameWidth)}  ${"-".repeat(infoWidth)}`);
+  for (const row of rows) {
+    console.log(`  ${pad(row.name, nameWidth)}  ${row.info}`);
+  }
+}
+
 // ── Managed process tree rendering ──────────────────────────────
 
 const STATUS_LABELS: Record<ManagedProcessEntry["status"], string> = {
@@ -167,20 +185,34 @@ const STATUS_LABELS: Record<ManagedProcessEntry["status"], string> = {
   unreachable: "unreachable",
 };
 
+/**
+ * One row of the focused assistant view: NAME and INFO only. The focused
+ * table has no TYPE or STATUS columns — every tree row is a live process by
+ * definition, and state that matters (CES session, unreachable gateway)
+ * reads as INFO.
+ */
+interface FocusedRow {
+  name: string;
+  info: string;
+}
+
 function flattenProcessTree(
   entries: ManagedProcessEntry[],
   depth = 0,
-): TableRow[] {
-  const rows: TableRow[] = [];
+): FocusedRow[] {
+  const rows: FocusedRow[] = [];
   for (const entry of entries) {
     const children = entry.children ?? [];
 
     rows.push({
       name:
         depth === 0 ? entry.name : `${"  ".repeat(depth - 1)}├─ ${entry.name}`,
-      type: ASSISTANT_TYPE,
-      status: withStatusEmoji(STATUS_LABELS[entry.status]),
-      info: entry.info ?? "",
+      info:
+        entry.status === "running"
+          ? (entry.info ?? "")
+          : [entry.info, STATUS_LABELS[entry.status]]
+              .filter(Boolean)
+              .join(" | "),
     });
 
     for (let j = 0; j < children.length; j++) {
@@ -189,9 +221,12 @@ function flattenProcessTree(
       const prefix = `${"  ".repeat(depth)}${isLast ? "└─" : "├─"} ${child.name}`;
       rows.push({
         name: prefix,
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(STATUS_LABELS[child.status]),
-        info: child.info ?? "",
+        info:
+          child.status === "running"
+            ? (child.info ?? "")
+            : [child.info, STATUS_LABELS[child.status]]
+                .filter(Boolean)
+                .join(" | "),
       });
 
       // Recurse into grandchildren
@@ -227,7 +262,7 @@ function locationFor(entry: LockfileAssistant): string {
 
 async function getAssistantProcessRows(
   entry: LockfileAssistant,
-): Promise<TableRow[]> {
+): Promise<FocusedRow[]> {
   console.log(
     `Processes for ${getAssistantDisplayName(entry)} — ${entry.cloud}:`,
   );
@@ -236,7 +271,8 @@ async function getAssistantProcessRows(
   // One path for every remote: the gateway's own process-tree API. The
   // gateway serves it regardless of topology — local and docker publish it
   // on their loopback port, remotes at their recorded address — so ps never
-  // discriminated by remote in the first place.
+  // discriminated by remote in the first place. The tree carries the
+  // assistant's descendants plus the gateway and the credential executor.
   const gatewayUrl = getGatewayUrl(entry);
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
   const tree = await fetchGatewayPs(gatewayUrl, token);
@@ -245,9 +281,7 @@ async function getAssistantProcessRows(
     : [
         {
           name: "assistant",
-          type: ASSISTANT_TYPE,
-          status: withStatusEmoji("unreachable"),
-          info: "could not reach the gateway's process tree — is the assistant running?",
+          info: "unreachable — could not reach the gateway's process tree; is the assistant running?",
         },
       ];
 }
@@ -519,18 +553,7 @@ export const ps = Object.assign(
     }
 
     const rows = await getAssistantProcessRows(result.entry);
-    // The CLI-managed processes (root lockfile) that front THIS assistant ride
-    // the same table; ones fronting another assistant stay in the list view.
-    for (const managed of await getRootManagedRows()) {
-      if (
-        managed.assistantId &&
-        managed.assistantId !== result.entry.assistantId
-      ) {
-        continue;
-      }
-      rows.push(managed.row);
-    }
-    printTable(rows);
+    printFocusedTable(rows);
   },
   { description: "List assistants" },
 );

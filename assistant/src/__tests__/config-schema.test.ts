@@ -56,10 +56,7 @@ describe("AssistantConfigSchema", () => {
   test("parses empty object with full defaults", () => {
     const result = AssistantConfigSchema.parse({});
     // Model selection lives under llm.profiles / llm.callSites, auth routing
-    // via provider_connections. There is no services.inference namespace.
-    expect(
-      (result.services as Record<string, unknown>).inference,
-    ).toBeUndefined();
+    // via provider_connections.
     expect(result.llm.profiles).toEqual({});
     expect(result.llm.profileOrder).toEqual([]);
     expect(result.llm.callSites).toEqual({});
@@ -265,16 +262,12 @@ describe("AssistantConfigSchema", () => {
     expect(() => AssistantConfigSchema.parse(input)).toThrow(/missing-profile/);
   });
 
-  test("legacy top-level inference keys are ignored after PR 19 cleanup", () => {
-    // The legacy keys (top-level maxTokens, effort, speed, thinking,
-    // contextWindow, services.inference.{provider,model}) were removed in PR
-    // 19. Configs that still carry them parse cleanly because Zod strips
-    // unknown fields, and migration 039 erases them from the on-disk file
-    // entirely.
+  test("legacy top-level keys are ignored after PR 19 cleanup", () => {
+    // The legacy keys (top-level maxTokens, effort, speed, thinking) were
+    // removed in PR 19. Configs that still carry them parse cleanly because
+    // Zod strips unknown fields, and migration 039 erases them from the
+    // on-disk file entirely.
     const input = {
-      services: {
-        inference: { provider: "openai", model: "gpt-4" },
-      },
       maxTokens: 8000,
       effort: "medium",
       speed: "fast",
@@ -285,9 +278,6 @@ describe("AssistantConfigSchema", () => {
     expect((result as Record<string, unknown>).effort).toBeUndefined();
     expect((result as Record<string, unknown>).speed).toBeUndefined();
     expect((result as Record<string, unknown>).thinking).toBeUndefined();
-    expect(
-      (result.services as Record<string, unknown>).inference,
-    ).toBeUndefined();
     expect(result.llm.profiles).toEqual({});
     expect(result.llm.callSites).toEqual({});
   });
@@ -2291,7 +2281,7 @@ describe("032-tts-provider-unification migration", () => {
   test("down removes services.tts from config", async () => {
     writeMigConfig({
       services: {
-        inference: { provider: "anthropic" },
+        "image-generation": { provider: "gemini" },
         tts: { provider: "elevenlabs", mode: "your-own" },
       },
     });
@@ -2302,7 +2292,7 @@ describe("032-tts-provider-unification migration", () => {
     const services = result.services as Record<string, unknown>;
     expect(services.tts).toBeUndefined();
     // Other services keys preserved
-    expect(services.inference).toBeDefined();
+    expect(services["image-generation"]).toBeDefined();
   });
 });
 

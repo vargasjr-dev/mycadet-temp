@@ -166,7 +166,7 @@ describe("local CES standalone sibling (real entrypoint)", () => {
       ...process.env,
       CREDENTIAL_SECURITY_DIR: securityDir,
       CADET_WORKSPACE_DIR: workspaceDir,
-      CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
+      CES_SOCKET_DIR: bootstrapDir,
       CES_HEALTH_PORT: String(healthPort),
     };
 

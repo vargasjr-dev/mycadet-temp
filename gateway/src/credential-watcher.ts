@@ -1,10 +1,11 @@
 /**
- * Watches the encrypted credential store and CES HTTP so channel
+ * Watches the encrypted credential store and CES so channel
  * credentials are reloaded when they are added, updated, or removed.
  *
- * Identity and policy live in CES (`GET /v1/metadata`). When CES HTTP
- * is configured, the watcher polls that catalog instead of leftover
- * workspace `metadata.json`. Local keys.enc mode stays secrets-only.
+ * Identity and policy live in CES (the credential-records catalog, dialed
+ * over the shared Unix socket). When CES is configured, the watcher polls
+ * that catalog instead of leftover workspace `metadata.json`. Local
+ * keys.enc mode stays secrets-only.
  *
  * Watches parent directories rather than files themselves because
  * keys.enc is rewritten via atomic rename. File-scoped fs.watch()
@@ -13,11 +14,11 @@
  */
 
 import { mkdirSync, watch, type FSWatcher } from "node:fs";
-import { createCesHttpCredentialClient } from "@mycadet/ces-client/http-credentials";
 import { getLogger } from "./logger.js";
 import {
   ALL_CREDENTIAL_SPECS,
-  getCesHttpConfig,
+  getCesIpcClient,
+  isCesManagedMode,
   readServiceCredentialsResult,
 } from "./credential-reader.js";
 import { getGatewaySecurityDir } from "./paths.js";
@@ -130,13 +131,12 @@ export class CredentialWatcher {
   }
 
   private startManagedBootstrapRetry(): void {
-    const config = getCesHttpConfig();
-    if (!config) {
+    if (!isCesManagedMode()) {
       return;
     }
 
     const poll = (): void => {
-      void this.pollManagedBootstrap(config.baseUrl, config.serviceToken);
+      void this.pollManagedBootstrap();
     };
 
     this.managedBootstrapTimer = setInterval(poll, MANAGED_BOOTSTRAP_POLL_MS);
@@ -144,19 +144,16 @@ export class CredentialWatcher {
     poll();
   }
 
-  private async pollManagedBootstrap(
-    baseUrl: string,
-    serviceToken: string,
-  ): Promise<void> {
+  private async pollManagedBootstrap(): Promise<void> {
     if (this.managedBootstrapPollInFlight) {
       return;
     }
     this.managedBootstrapPollInFlight = true;
     try {
-      const client = createCesHttpCredentialClient(
-        { baseUrl, serviceToken },
-        log,
-      );
+      const client = getCesIpcClient();
+      if (!client) {
+        return;
+      }
       const listResult = await client.list();
       const recordsResult = await client.listRecords();
 
@@ -178,7 +175,7 @@ export class CredentialWatcher {
         if (this.managedBootstrapTimer) {
           clearInterval(this.managedBootstrapTimer);
           this.managedBootstrapTimer = setInterval(() => {
-            void this.pollManagedBootstrap(baseUrl, serviceToken);
+            void this.pollManagedBootstrap();
           }, MANAGED_BOOTSTRAP_STEADY_POLL_MS);
           this.managedBootstrapTimer.unref?.();
         }
@@ -189,7 +186,7 @@ export class CredentialWatcher {
         if (this.managedBootstrapTimer) {
           clearInterval(this.managedBootstrapTimer);
           this.managedBootstrapTimer = setInterval(() => {
-            void this.pollManagedBootstrap(baseUrl, serviceToken);
+            void this.pollManagedBootstrap();
           }, MANAGED_BOOTSTRAP_POLL_MS);
           this.managedBootstrapTimer.unref?.();
         }
@@ -286,13 +283,12 @@ export class CredentialWatcher {
   }
 
   private async loadConfiguredServices(): Promise<Set<string>> {
-    const config = getCesHttpConfig();
-    if (!config) {
+    const client = getCesIpcClient();
+    if (!client) {
       return new Set(this.lastReadyServices);
     }
 
     try {
-      const client = createCesHttpCredentialClient(config, log);
       const listed = await client.listRecords();
       if (listed.unreachable) {
         return new Set(this.lastConfiguredServices);

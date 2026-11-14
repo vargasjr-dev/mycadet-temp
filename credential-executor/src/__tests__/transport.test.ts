@@ -156,9 +156,10 @@ describe("health probes", () => {
     // Health server uses Bun.serve on a dedicated port, not the socket
     expect(src).toMatch(/startHealthServer\(\s*healthPort/);
     // Kubelet httpGet targets the pod IP, so the probe listener must not
-    // bind loopback-only. Credential routes are gated with isLoopbackAddress.
+    // bind loopback-only. There are no credential routes left to gate:
+    // invocation is IPC-only, so isLoopbackAddress has no consumer here.
     expect(src).not.toMatch(/hostname:\s*"127\.0\.0\.1"/);
-    expect(src).toMatch(/isLoopbackAddress\(/);
+    expect(src).not.toMatch(/isLoopbackAddress\(/);
   });
 
   test("getHealthPort defaults to 8090", () => {
@@ -379,33 +380,33 @@ describe("CES data paths", () => {
     }
   });
 
-  test("getBootstrapSocketPath defaults to /run/ces-bootstrap", () => {
-    const savedDir = process.env["CES_BOOTSTRAP_SOCKET_DIR"];
-    delete process.env["CES_BOOTSTRAP_SOCKET_DIR"];
+  test("getBootstrapSocketPath defaults to /run/ces-ipc", () => {
+    const savedDir = process.env["CES_SOCKET_DIR"];
+    delete process.env["CES_SOCKET_DIR"];
     try {
       expect(getBootstrapSocketPath()).toBe(
         resolveIpcEndpoint("ces", {
-          workspaceDir: "/run/ces-bootstrap",
+          workspaceDir: "/run/ces-ipc",
         }).path,
       );
     } finally {
       if (savedDir !== undefined) {
-        process.env["CES_BOOTSTRAP_SOCKET_DIR"] = savedDir;
+        process.env["CES_SOCKET_DIR"] = savedDir;
       } else {
-        delete process.env["CES_BOOTSTRAP_SOCKET_DIR"];
+        delete process.env["CES_SOCKET_DIR"];
       }
     }
   });
 
-  test("getBootstrapSocketPath uses CES_BOOTSTRAP_SOCKET_DIR via resolveIpcEndpoint", () => {
-    const savedDir = process.env["CES_BOOTSTRAP_SOCKET_DIR"];
+  test("getBootstrapSocketPath uses CES_SOCKET_DIR via resolveIpcEndpoint", () => {
+    const savedDir = process.env["CES_SOCKET_DIR"];
     const savedWorkspace = process.env["CADET_WORKSPACE_DIR"];
-    process.env["CES_BOOTSTRAP_SOCKET_DIR"] = "/tmp/ces-bootstrap";
+    process.env["CES_SOCKET_DIR"] = "/tmp/ces-ipc";
     process.env["CADET_WORKSPACE_DIR"] = "/tmp/ces-ws";
     try {
       expect(getBootstrapSocketPath()).toBe(
         resolveIpcEndpoint("ces", {
-          workspaceDir: "/tmp/ces-bootstrap",
+          workspaceDir: "/tmp/ces-ipc",
         }).path,
       );
       expect(getBootstrapSocketPath()).not.toBe(
@@ -413,9 +414,9 @@ describe("CES data paths", () => {
       );
     } finally {
       if (savedDir !== undefined) {
-        process.env["CES_BOOTSTRAP_SOCKET_DIR"] = savedDir;
+        process.env["CES_SOCKET_DIR"] = savedDir;
       } else {
-        delete process.env["CES_BOOTSTRAP_SOCKET_DIR"];
+        delete process.env["CES_SOCKET_DIR"];
       }
       if (savedWorkspace !== undefined) {
         process.env["CADET_WORKSPACE_DIR"] = savedWorkspace;

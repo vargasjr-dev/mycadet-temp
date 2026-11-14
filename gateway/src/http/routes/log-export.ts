@@ -1,13 +1,12 @@
 /**
  * Gateway log export route.
  *
- * Orchestrates parallel collection from three sources:
+ * Orchestrates parallel collection from two sources:
  * 1. Gateway's own log files (filtered by date range)
  * 2. Daemon's POST /v1/export (forwarded with service token)
- * 3. CES GET /v1/logs/export (when CES_CREDENTIAL_URL is set)
  *
- * All three collections run via Promise.allSettled so individual failures
- * don't block the others. The result is a tar.gz archive containing the
+ * Both collections run via Promise.allSettled so individual failures
+ * don't block the other. The result is a tar.gz archive containing the
  * collected files plus an export-manifest.json documenting what succeeded.
  */
 
@@ -24,8 +23,6 @@ import {
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
-
-import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
@@ -103,11 +100,12 @@ export async function handleLogExport(req: Request): Promise<Response> {
   mkdirSync(stagingDir, { recursive: true });
 
   try {
-    // Run all three collections in parallel
-    const [gatewayResult, daemonResult, cesResult] = await Promise.allSettled([
+    // Run both collections in parallel. CES logs are not collected here:
+    // CES is IPC-only, and its log files live in the CES-private data dir
+    // that no other container mounts.
+    const [gatewayResult, daemonResult] = await Promise.allSettled([
       collectGatewayLogs(config, stagingDir, startTime, endTime),
       collectDaemonExport(config, stagingDir, body),
-      collectCesExport(stagingDir, startTime, endTime),
     ]);
 
     // Process results and write error files for failures
@@ -117,8 +115,6 @@ export async function handleLogExport(req: Request): Promise<Response> {
       "daemon-export",
       stagingDir,
     );
-    const cesStatus = processResult(cesResult, "ces-export", stagingDir);
-
     // Write export manifest
     const manifest: ExportManifest = {
       type: "multi-service-export",
@@ -128,7 +124,7 @@ export async function handleLogExport(req: Request): Promise<Response> {
       services: {
         gateway: gatewayStatus,
         daemon: daemonStatus,
-        ces: cesStatus,
+        ces: "skipped",
       },
     };
 
@@ -164,7 +160,6 @@ export async function handleLogExport(req: Request): Promise<Response> {
         archiveBytes: archiveData.byteLength,
         gateway: gatewayStatus,
         daemon: daemonStatus,
-        ces: cesStatus,
       },
       "Log export completed",
     );
@@ -401,76 +396,6 @@ async function collectDaemonExport(
   }
 
   log.info("Daemon export collected");
-  return "ok";
-}
-
-// ---------------------------------------------------------------------------
-// CES export collection
-// ---------------------------------------------------------------------------
-
-async function collectCesExport(
-  stagingDir: string,
-  startTime?: number,
-  endTime?: number,
-): Promise<ServiceStatus> {
-  const cesBaseUrl = process.env.CES_CREDENTIAL_URL?.trim();
-  if (!cesBaseUrl) {
-    log.info("CES_CREDENTIAL_URL not set — skipping CES export");
-    return "skipped";
-  }
-
-  const cesServiceToken = process.env.CES_SERVICE_TOKEN?.trim();
-  if (!cesServiceToken) {
-    log.warn("CES_CREDENTIAL_URL is set but CES_SERVICE_TOKEN is missing");
-    throw new Error(
-      "CES_SERVICE_TOKEN is required when CES_CREDENTIAL_URL is set",
-    );
-  }
-
-  const destDir = join(stagingDir, "ces-exports");
-  mkdirSync(destDir, { recursive: true });
-
-  const result = await fetchCesLogExport(
-    { baseUrl: cesBaseUrl, serviceToken: cesServiceToken },
-    { startTime, endTime, timeoutMs: EXPORT_TIMEOUT_MS },
-  );
-
-  if (!result.ok) {
-    throw new Error(result.error);
-  }
-
-  // Write the CES tar.gz response to a temp file and extract
-  const tarGzPath = join(stagingDir, "ces-export.tar.gz");
-  await Bun.write(tarGzPath, result.data);
-
-  const extractProc = Bun.spawn(
-    ["/usr/bin/tar", "xzf", tarGzPath, "-C", destDir],
-    { stdout: "pipe", stderr: "pipe", windowsHide: true },
-  );
-  const extractExit = await extractProc.exited;
-  if (extractExit !== 0) {
-    const stderr = await new Response(extractProc.stderr).text();
-    log.warn(
-      { exitCode: extractExit, stderr },
-      "Failed to extract CES export tar.gz — including raw archive",
-    );
-    // Move the raw tar.gz into the dest dir so we still have something
-    try {
-      renameSync(tarGzPath, join(destDir, "ces-export.tar.gz"));
-    } catch {
-      // best-effort
-    }
-    return "error";
-  }
-
-  // Clean up the temp tar.gz
-  try {
-    unlinkSync(tarGzPath);
-  } catch {
-    // best-effort
-  }
-
-  log.info("CES export collected");
   return "ok";
 }
 

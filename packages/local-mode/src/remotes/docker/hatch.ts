@@ -844,8 +844,6 @@ export async function hatchDocker(
     const hatchConfigValues = buildHatchConfigValues(configValues, provider);
     const extraAssistantEnv: Record<string, string> = {};
 
-    const cesServiceToken = randomBytes(32).toString("hex");
-
     const hostDeviceId = getOrCreateHostDeviceId();
     extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;
     // Forward the migration URL allowlists so a daemon inside the container
@@ -885,7 +883,6 @@ export async function hatchDocker(
     await startContainers(
       {
         createOnly: !!params.createOnly,
-        cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
@@ -980,7 +977,6 @@ export async function hatchDocker(
       };
       saveLockfileAssistant(watching);
       const stopWatcher = startFileWatcher({
-        cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
