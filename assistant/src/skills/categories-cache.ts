@@ -109,7 +109,7 @@ export async function getCategories(): Promise<SkillCategoryDef[]> {
   return categories;
 }
 
-export function getCachedCategoriesSync(): SkillCategoryDef[] {
+function getCachedCategoriesSync(): SkillCategoryDef[] {
   return cachedCategories ?? [];
 }
 

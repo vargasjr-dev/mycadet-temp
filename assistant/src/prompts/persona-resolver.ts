@@ -9,7 +9,7 @@ import {
   guardianForChannel,
   peekCachedGuardianDelivery,
 } from "../contacts/guardian-delivery-reader.js";
-import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembly.js";
+import type { ChannelCapabilities } from "../daemon/conversation-assembly-types.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { getWorkspaceDir, getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";

@@ -297,7 +297,7 @@ export async function applyCorrectionIfCalibrated(
  * "anisotropy correction is off for this embedder" and pass through raw
  * vectors. Module-level cached so subsequent calls hit memory.
  */
-export async function loadCalibration(
+async function loadCalibration(
   provider: EmbeddingProviderName,
   model: string,
   dim: number,

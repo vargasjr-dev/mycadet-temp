@@ -129,6 +129,10 @@ import {
   applyCompactionResult,
   runAgentLoopImpl,
 } from "./conversation-agent-loop.js";
+import type {
+  ChannelCapabilities,
+  InboundActorContext,
+} from "./conversation-assembly-types.js";
 import type { HistoryConversationContext } from "./conversation-history.js";
 import { undo as undoImpl } from "./conversation-history.js";
 import {
@@ -166,10 +170,8 @@ import type {
 import { MessageQueue } from "./conversation-queue-manager.js";
 import {
   applySightFrameRetention,
-  type ChannelCapabilities,
   getSlackCompactionWatermarkForPrefix,
   getSlackWatermarkAdvanceForRowPrefix,
-  type InboundActorContext,
   loadSlackChronologicalContext,
 } from "./conversation-runtime-assembly.js";
 import type { SkillProjectionCache } from "./conversation-skill-tools.js";

@@ -129,7 +129,7 @@ export interface MigrationRunResult {
 export const STEP_CHECKPOINT_PREFIX = "step:";
 
 /** Checkpoint value written when a step body throws. */
-export const FAILED_STEP_CHECKPOINT_PREFIX = "failed";
+const FAILED_STEP_CHECKPOINT_PREFIX = "failed";
 
 /** Cap on the compact error suffix stored in a failed checkpoint. */
 export const FAILED_STEP_CHECKPOINT_MAX_ERROR_CHARS = 2000;

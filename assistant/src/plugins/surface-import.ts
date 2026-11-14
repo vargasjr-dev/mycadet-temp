@@ -70,7 +70,7 @@ export function evictModule(filePath: string): void {
  * so callers that time-box user code can tell "the wrapped promise took too
  * long" apart from "the wrapped promise itself rejected".
  */
-export class TimeoutError extends Error {
+class TimeoutError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "TimeoutError";

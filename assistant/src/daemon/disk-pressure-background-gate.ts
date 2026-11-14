@@ -11,7 +11,7 @@ export type DiskPressureBackgroundGateDecision =
       blockedCapability: DiskPressureBlockedCapability;
     };
 
-export const DISK_PRESSURE_BACKGROUND_LOG_THROTTLE_MS = 60_000;
+const DISK_PRESSURE_BACKGROUND_LOG_THROTTLE_MS = 60_000;
 
 const lastSkipLogAtByKey = new Map<string, number>();
 

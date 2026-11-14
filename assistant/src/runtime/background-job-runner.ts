@@ -24,7 +24,10 @@ import type { LLMCallSite } from "../config/schemas/llm.js";
 import { processMessage } from "../daemon/process-message.js";
 import type { SubagentToolGateMode } from "../daemon/tool-setup-types.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import { emitBackgroundFailureSignal } from "../notifications/background-failure-signal.js";
+import {
+  type BackgroundJobErrorKind,
+  emitBackgroundFailureSignal,
+} from "../notifications/background-failure-signal.js";
 import { bootstrapConversation } from "../persistence/conversation-bootstrap.js";
 import { addMessage } from "../persistence/conversation-crud.js";
 import type { TitleOrigin } from "../persistence/conversation-title-service.js";
@@ -66,8 +69,6 @@ class BackgroundJobTurnFailureError extends Error {
     this.turnFailure = turnFailure;
   }
 }
-
-export type BackgroundJobErrorKind = "timeout" | "model_provider" | "exception";
 
 export interface RunBackgroundJobOptions {
   /** Short stable identifier for logs/notifications, e.g. "heartbeat", "filing". */

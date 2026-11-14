@@ -96,7 +96,7 @@ export function renderSlackBlocks(text: string): KnownBlock[] | undefined {
  * tree was parsed from; prose runs are sliced from it by node position so the
  * `markdown` blocks carry the exact GFM the user wrote.
  */
-export function renderSlack(tree: Root, source: string): KnownBlock[] {
+function renderSlack(tree: Root, source: string): KnownBlock[] {
   const blocks: KnownBlock[] = [];
   let run: RootContent[] = [];
   let tableCharsUsed = 0;

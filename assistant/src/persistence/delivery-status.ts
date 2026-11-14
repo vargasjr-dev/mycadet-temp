@@ -343,7 +343,7 @@ export function getRetryableDeliveryEvents(limit = 20): Array<{
  * path reads these statuses to tell an already-owned delivery from the crash
  * window where the reply was persisted but never delivered.
  */
-export function getSiblingEventDeliveryStatuses(
+function getSiblingEventDeliveryStatuses(
   messageId: string,
   excludeEventId: string,
 ): ChannelDeliveryStatus[] {

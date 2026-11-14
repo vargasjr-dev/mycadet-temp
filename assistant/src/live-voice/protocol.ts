@@ -248,10 +248,10 @@ function parseLiveVoiceEntry(value: unknown): string | null {
  * sub-100 ms pause would end turns mid-word; a 10 s barge-in guard would make
  * the assistant uninterruptible). The daemon config defaults sit inside these.
  */
-export const MIN_SILENCE_THRESHOLD_MS = 100;
-export const MAX_SILENCE_THRESHOLD_MS = 5_000;
-export const MIN_BARGE_IN_MIN_SPEECH_MS = 0;
-export const MAX_BARGE_IN_MIN_SPEECH_MS = 3_000;
+const MIN_SILENCE_THRESHOLD_MS = 100;
+const MAX_SILENCE_THRESHOLD_MS = 5_000;
+const MIN_BARGE_IN_MIN_SPEECH_MS = 0;
+const MAX_BARGE_IN_MIN_SPEECH_MS = 3_000;
 
 /**
  * Longest typed turn accepted on a `text` frame.

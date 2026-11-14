@@ -20,7 +20,7 @@ const { buildSystemPrompt, ensurePromptFiles } =
 const { BUNDLED_SYSTEM_SECTIONS } =
   await import("../templates/system-sections.js");
 type ChannelCapabilities =
-  import("../../daemon/conversation-runtime-assembly.js").ChannelCapabilities;
+  import("../../daemon/conversation-assembly-types.js").ChannelCapabilities;
 
 const HEADING = "Run Independent Tasks in Parallel";
 

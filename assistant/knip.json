@@ -9,9 +9,10 @@
     "src/windows-compiled-worker-entry.ts!",
     "src/plugin-api/index.ts!",
     "src/api/index.ts!",
-    "src/config/bundled-skills/**/tools/**/*.ts!"
+    "src/config/bundled-skills/**/tools/**/*.ts",
+    "src/cli/**/*.ts"
   ],
-  "project": ["src/**/*.ts!", "src/**/*.tsx!", "scripts/**/*.ts"],
+  "project": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts"],
   "ignore": [],
   "ignoreDependencies": [
     "@microsoft/api-extractor",
@@ -30,5 +31,15 @@
     "@mycadet/twilio-client",
     "ajv",
     "madge"
-  ]
+  ],
+  "ignoreIssues": {
+    "src/persistence/schema/**": ["exports"],
+    "src/workflows/journal-store.ts": ["exports"],
+    "src/apps/app-store.ts": ["exports"],
+    "src/config/schemas/llm.ts": ["exports"],
+    "src/config/profile-materialization.ts": ["exports"],
+    "src/plugins/defaults/memory/graph/tool-handlers.ts": ["exports"],
+    "src/config/schemas/inference.ts": ["exports"],
+    "src/notifications/signal.ts": ["exports"]
+  }
 }

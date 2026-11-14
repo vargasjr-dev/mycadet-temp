@@ -9,7 +9,7 @@
 // Checkpointed and resumable. Progress tracked via memory_checkpoints.
 // ---------------------------------------------------------------------------
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { and, asc, ne, sql } from "drizzle-orm";
@@ -215,110 +215,6 @@ export async function bootstrapFromHistory(
   );
 
   return result;
-}
-
-/**
- * Also extract from journal files on disk.
- */
-export async function bootstrapFromJournal(): Promise<{
-  extracted: number;
-  errors: number;
-}> {
-  const config = getConfig();
-  const journalDir = join(getWorkspaceDir(), "journal");
-  let extracted = 0;
-  let errors = 0;
-
-  if (!existsSync(journalDir)) {
-    return { extracted, errors };
-  }
-
-  // Iterate user slug directories
-  for (const slug of readdirSync(journalDir)) {
-    const slugDir = join(journalDir, slug);
-    let files: string[];
-    try {
-      files = readdirSync(slugDir).filter(
-        (f) =>
-          f.endsWith(".md") &&
-          !f.startsWith(".") &&
-          f.toLowerCase() !== "readme.md",
-      );
-    } catch {
-      continue;
-    }
-
-    for (const file of files) {
-      try {
-        const content = readFileSync(join(slugDir, file), "utf-8");
-        if (content.trim().length < 50) {
-          continue;
-        }
-
-        const transcript = `[journal entry: ${file}]\n\n${content}`;
-        const journalTimestamp = parseJournalDate(file);
-        await runGraphExtraction(`journal:${slug}:${file}`, config, {
-          transcript,
-          conversationTimestamp: journalTimestamp,
-          syntheticConversationId: true,
-        });
-        extracted++;
-      } catch (err) {
-        log.warn(
-          { file, slug, err: err instanceof Error ? err.message : String(err) },
-          "Failed to extract journal entry",
-        );
-        errors++;
-      }
-    }
-  }
-
-  return { extracted, errors };
-}
-
-/**
- * Parse a date from a journal filename like "2026-03-30-0045.md" or "2026-03-28-early.md".
- * Returns epoch ms, defaulting to noon on the parsed date.
- * Falls back to Date.now() if unparseable.
- */
-function parseJournalDate(filename: string): number {
-  const match = filename.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) {
-    return Date.now();
-  }
-
-  const [, year, month, day] = match;
-  // Check for a time-like suffix (e.g. "0045" → 00:45)
-  const timeMatch = filename.match(/^\d{4}-\d{2}-\d{2}-(\d{4})\./);
-  let hours = 12;
-  let minutes = 0;
-  if (timeMatch) {
-    hours = parseInt(timeMatch[1].slice(0, 2), 10);
-    minutes = parseInt(timeMatch[1].slice(2), 10);
-  } else if (filename.includes("dawn")) {
-    hours = 6;
-  } else if (filename.includes("early")) {
-    hours = 5;
-  } else if (
-    filename.includes("night") ||
-    filename.includes("midnight") ||
-    filename.includes("late")
-  ) {
-    hours = 23;
-  }
-
-  return new Date(
-    `${year}-${month}-${day}T${String(hours).padStart(2, "0")}:${String(
-      minutes,
-    ).padStart(2, "0")}:00`,
-  ).getTime();
-}
-
-/**
- * Reset the bootstrap checkpoint so it can be re-run from scratch.
- */
-export function resetBootstrapCheckpoint(): void {
-  setMemoryCheckpoint(CHECKPOINT_KEY, "");
 }
 
 /**

@@ -113,7 +113,7 @@ export function fallbackEscalationBridgeFor(language?: string): string {
  * bridge for it to count as a real bridge. Below this, the fallback bridge
  * is spoken before the quality leg runs.
  */
-export const MIN_SPOKEN_BRIDGE_CHARS = 3;
+const MIN_SPOKEN_BRIDGE_CHARS = 3;
 
 /**
  * The phrase spoken across an escalation hand-off, for both voice drivers:

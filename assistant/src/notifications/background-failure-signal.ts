@@ -1,4 +1,3 @@
-import type { BackgroundJobErrorKind } from "../runtime/background-job-runner.js";
 import { getLogger } from "../util/logger.js";
 import { activityFailedDedupeKey } from "./activity-failed-dedupe.js";
 import { emitNotificationSignal } from "./emit-signal.js";
@@ -6,6 +5,12 @@ import { resolveVisibleInSourceNow } from "./resolve-visible-in-source.js";
 import type { NotificationSourceChannel } from "./signal.js";
 
 const log = getLogger("background-failure-signal");
+
+/**
+ * Coarse classification of why a background job failed, as the notification
+ * copy and dedupe key switch on it.
+ */
+export type BackgroundJobErrorKind = "timeout" | "model_provider" | "exception";
 
 /**
  * One background failure, as a producer reports it.

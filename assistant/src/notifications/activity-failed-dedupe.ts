@@ -1,5 +1,5 @@
 import type { ConversationErrorCode } from "../api/events/conversation-error.js";
-import type { BackgroundJobErrorKind } from "../runtime/background-job-runner.js";
+import type { BackgroundJobErrorKind } from "./background-failure-signal.js";
 
 /**
  * Failure codes whose cause is the whole workspace: the cloud route and the

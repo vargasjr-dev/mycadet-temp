@@ -38,7 +38,7 @@ import { resolveSubstrateTuning } from "./substrate/tuning.js";
 const log = getLogger("memory-indexer");
 
 /** Minimum character length for a segment to be worth storing and embedding (~12-15 tokens). */
-export const MIN_SEGMENT_CHARS = 50;
+const MIN_SEGMENT_CHARS = 50;
 
 export interface IndexMessageInput {
   messageId: string;
@@ -448,20 +448,6 @@ function enqueueSubstrateIndexTriggers(
       Date.now() + idleTimeoutMs,
     );
   }
-}
-
-export function enqueueBackfillJob(force = false): string {
-  if (!isMemoryEnabled()) {
-    return "";
-  }
-  return enqueueMemoryJob("backfill", { force });
-}
-
-export function enqueueRebuildIndexJob(): string {
-  if (!isMemoryEnabled()) {
-    return "";
-  }
-  return enqueueMemoryJob("rebuild_index", {});
 }
 
 function buildSegmentId(messageId: string, segmentIndex: number): string {

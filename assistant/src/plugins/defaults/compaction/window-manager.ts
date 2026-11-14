@@ -39,8 +39,8 @@ import {
   estimatePromptTokens,
   estimateToolsTokens,
 } from "../../../context/token-estimator.js";
+import type { InjectionMode } from "../../../daemon/conversation-assembly-types.js";
 import { findConversationOrSubagent } from "../../../daemon/conversation-registry.js";
-import type { InjectionMode } from "../../../daemon/conversation-runtime-assembly.js";
 import { ToolDefinition } from "../../../tools/tool-types.js";
 import { getLogger } from "../../../util/logger.js";
 import {

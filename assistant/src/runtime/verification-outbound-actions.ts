@@ -558,7 +558,7 @@ export function deliverVerificationDiscord(
  * Deliver a verification email via the cloud email send API.
  * Fire-and-forget wrapper for use in the daemon process (HTTP route handlers).
  */
-export function deliverVerificationEmail(
+function deliverVerificationEmail(
   to: string,
   text: string,
   subject: string,

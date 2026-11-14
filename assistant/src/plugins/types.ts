@@ -18,7 +18,7 @@ import type {
   ChannelCapabilities,
   InboundActorContext,
   InjectionMode,
-} from "../daemon/conversation-runtime-assembly.js";
+} from "../daemon/conversation-assembly-types.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { MemoryJob } from "../persistence/jobs-store.js";
 import type { HookFunction } from "../plugin-api/types.js";

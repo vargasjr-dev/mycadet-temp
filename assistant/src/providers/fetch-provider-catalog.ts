@@ -55,7 +55,7 @@ export interface FetchProviderCatalogEntry {
   readonly defaultApiBase?: string;
 }
 
-export const FETCH_PROVIDER_CATALOG: readonly FetchProviderCatalogEntry[] = [
+const FETCH_PROVIDER_CATALOG: readonly FetchProviderCatalogEntry[] = [
   {
     id: "default",
     // Display-only: fetching runs in the daemon, not through the cloud

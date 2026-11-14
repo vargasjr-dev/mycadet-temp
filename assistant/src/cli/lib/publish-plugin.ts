@@ -209,7 +209,7 @@ async function runGit(dir: string, args: string[]): Promise<string> {
  * the GitHub remote (owner/repo), whether the working tree is dirty,
  * and whether the commit has been pushed to the remote.
  */
-export async function resolveGitContext(dir: string): Promise<GitContext> {
+async function resolveGitContext(dir: string): Promise<GitContext> {
   const sha = await runGit(dir, ["rev-parse", "HEAD"]);
 
   let dirty = false;
