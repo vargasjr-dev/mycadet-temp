@@ -233,7 +233,6 @@ describe("refreshGuardianToken", () => {
       refreshAfter: "",
       deviceId: "dev",
       leasedAt: new Date().toISOString(),
-      pairedGatewayUrl: "https://gw.example.com",
     });
   }
 
@@ -262,11 +261,14 @@ describe("refreshGuardianToken", () => {
         sawSignal = init?.signal instanceof AbortSignal;
         return new Response(
           JSON.stringify({
+            guardianPrincipalId: "imported",
             accessToken: "new-acc",
-            refreshToken: "new-ref",
             accessTokenExpiresAt: future(),
+            refreshToken: "new-ref",
             refreshTokenExpiresAt: future(),
-            refreshAfter: "",
+            refreshAfter: future(),
+            deviceId: "dev",
+            leasedAt: new Date().toISOString(),
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -277,9 +279,7 @@ describe("refreshGuardianToken", () => {
 
     expect(result?.accessToken).toBe("new-acc");
     expect(loadGuardianToken("px")?.accessToken).toBe("new-acc");
-    expect(loadGuardianToken("px")?.pairedGatewayUrl).toBe(
-      "https://gw.example.com",
-    );
+    expect(loadGuardianToken("px")?.refreshToken).toBe("new-ref");
     expect(sawSignal).toBe(true); // fetch carries a timeout AbortSignal
     expect(existsSync(lockPath("px"))).toBe(false); // lock released
   });

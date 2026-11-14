@@ -71,7 +71,6 @@ import { installImageContextMenu } from "@mycadet/electron-desktop/image-context
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 import { installLoginItem } from "./login-item.client";
 import { installLoginItemIpc } from "@mycadet/electron-desktop/login-item";
-import { installLockfileWatcher } from "@mycadet/electron-desktop/lockfile-watcher";
 import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "@mycadet/electron-desktop/app-logger";
@@ -315,10 +314,6 @@ startApp(log, async () => {
   installEscapeMonitor();
   const runProbe = installConnectivityProbe();
   installConnectivityIpc(runProbe);
-  // Start watching the lockfile before the tray installs so the assistant
-  // switcher submenu has data on its first right-click.
-  const teardownLockfileWatcher = installLockfileWatcher();
-  app.on("before-quit", teardownLockfileWatcher);
   const teardownHostProxy = installHostProxyBridge();
   app.on("before-quit", teardownHostProxy);
   installTray({

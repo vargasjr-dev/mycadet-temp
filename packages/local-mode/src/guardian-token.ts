@@ -25,25 +25,12 @@ import { resolveCliInvocation } from "./cli-invocation";
 const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
 const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
 
-/** The persisted shape of an assistant's guardian token file. */
-export const GuardianTokenFileSchema = z.object({
-  guardianPrincipalId: z.string(),
-  accessToken: z.string(),
-  /** ISO date string or epoch-ms number as returned by the gateway. */
-  accessTokenExpiresAt: z.union([z.string(), z.number()]),
-  refreshToken: z.string(),
-  /** ISO date string or epoch-ms number as returned by the gateway. */
-  refreshTokenExpiresAt: z.union([z.string(), z.number()]),
-  refreshAfter: z.string(),
-  deviceId: z.string(),
-  leasedAt: z.string(),
-  /** Remote gateway bound to a credential imported through the pairing flow. */
-  pairedGatewayUrl: z.string().optional(),
-});
+import {
+  GuardianTokenFileSchema,
+  type GuardianTokenData,
+} from "./guardian-contract";
 
-export interface GuardianTokenData extends z.infer<
-  typeof GuardianTokenFileSchema
-> {}
+export { GuardianTokenFileSchema, type GuardianTokenData };
 
 /**
  * Persist an assistant's guardian token where every host-seam reader resolves
@@ -344,9 +331,8 @@ export async function getGuardianAccessToken(
     return Promise.resolve({
       ok: false,
       status: 401,
-      error: data.pairedGatewayUrl
-        ? "Guardian token expired. Run `cadet pair` on the assistant's machine, then re-import it from the app's connect flow or with `cadet connect import`."
-        : "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
+      error:
+        "Guardian token expired. Re-run `cadet hatch`, `cadet wake`, or `cadet pair`.",
     });
   }
 

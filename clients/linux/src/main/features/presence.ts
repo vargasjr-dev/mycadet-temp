@@ -7,9 +7,6 @@ import type {
 } from "@mycadet/electron-desktop/capability-registry";
 import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
 import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
-import {
-  installLockfileWatcher,
-} from "@mycadet/electron-desktop/lockfile-watcher";
 import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
 import { configurePresenceRuntime } from "@mycadet/electron-desktop/presence-runtime";
 import {
@@ -31,11 +28,8 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
     installStatusIpc();
     const retryProbe = installConnectivityProbe();
     installConnectivityIpc(retryProbe);
-    const stopLockfileWatcher = installLockfileWatcher();
-    app.once("before-quit", stopLockfileWatcher);
     installLinuxTray();
   },
 };
 
 export default presence;
-
