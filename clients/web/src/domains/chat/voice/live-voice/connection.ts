@@ -24,19 +24,18 @@
  * ---------------------------------------------------------------------------
  *
  *   POST /v1/auth/live-voice-token/
- *     Auth:     cloud session auth — session cookie + CSRF
- *               (`X-CSRFToken`) + `Cadet-Organization-Id`, all attached
- *               automatically by the cloud HeyAPI client interceptor.
- *               Do NOT hand-roll an `Authorization` header.
+ *     Auth:     cloud session auth — session cookie (same-origin, rides
+ *               automatically) + CSRF (`X-CSRFToken`) on web; the electron
+ *               shell authenticates with its session token header instead.
  *     Request:  { assistantId: string }
  *     Response: { token: string; expiresAt: string }   // expiresAt is ISO-8601
  *
  * The endpoint scopes the minted token to the caller's active org and the
  * requested assistant; tunnel validates it on the WS upgrade.
  *
- * We call the generated platform SDK function `authLiveVoiceTokenCreate`, which
- * routes through the cloud `client` — that interceptor attaches the session
- * cookie + CSRF + `Cadet-Organization-Id`.
+ * The dial is a deliberate same-origin swap of the generated cloud dial —
+ * the serving host routes the path and the session cookie rides the
+ * same-origin request (the tts voice catalog is the precedent).
  *
  * This module is the route-agnostic gateway WS transport shared by live voice,
  * watch (`domains/chat/watch`), and the assistant desktop (`domains/chat/desktop`).
@@ -44,9 +43,7 @@
 
 import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
-import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
-import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import { assertHasResponse } from "@/utils/api-errors";
+import { platformMutationSessionHeaders } from "@/lib/auth/session-headers";
 
 /**
  * Production tunnel host (no scheme). Fallback when neither the
@@ -78,12 +75,18 @@ export class GatewayWsIngressError extends Error {
   }
 }
 
+/** The mint endpoint's body, carried locally off the sdk. */
+export interface TunnelWsTokenResponse {
+  token: string;
+  /** ISO-8601 instant the token stops working at. */
+  expiresAt: string;
+}
+
 /**
- * Type guard for the mint endpoint's wire shape. The SDK function is typed but
- * the body is unverified on the wire — narrow defensively rather than trusting
- * the generic.
+ * Type guard for the mint endpoint's wire shape — the body is unverified on
+ * the wire, so narrow defensively rather than trusting the dial.
  */
-function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
+function isTunnelWsToken(value: unknown): value is TunnelWsTokenResponse {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -94,9 +97,13 @@ function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
 /**
  * Mint a short-lived, user+org+assistant-scoped tunnel WS token.
  *
- * POSTs `/v1/auth/live-voice-token/` through the credentialed platform client
- * so the session cookie, CSRF token, and `Cadet-Organization-Id` ride along
- * automatically (see the module doc comment for the contract).
+ * POSTs `/v1/auth/live-voice-token/` same-origin with the session
+ * credentials the endpoint's contract asks for: the session cookie rides
+ * the same-origin request, CSRF echoes the jar on web, and the electron
+ * shell's session token (plus its renderer origin, a mutation-only
+ * check) stands in for the cookie there. The generated client's
+ * registration and device headers are identity hints a mint does not
+ * need — nothing syncs off this endpoint.
  *
  * Named for tunnel rather than for live voice because the token is not a
  * live-voice token in substance: the cloud stores it as an opaque random
@@ -110,18 +117,27 @@ function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
  */
 export async function mintTunnelWsToken(
   assistantId: string,
-): Promise<LiveVoiceTokenResponse> {
-  const { data, error, response } = await authLiveVoiceTokenCreate({
-    body: { assistantId },
-    throwOnError: false,
+): Promise<TunnelWsTokenResponse> {
+  // The mint dial is a deliberate same-origin swap of the generated cloud
+  // dial: the session cookie rides the same-origin request and the session
+  // headers come from the auth boundary — the tts voice catalog is the
+  // precedent for the transport swap.
+  // eslint-disable-next-line no-restricted-syntax -- same-origin swap of the generated cloud dial; see above
+  const response = await fetch("/v1/auth/live-voice-token/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...platformMutationSessionHeaders(),
+    },
+    body: JSON.stringify({ assistantId }),
   });
-  assertHasResponse(response, error, "Failed to mint tunnel WS token");
   if (!response.ok) {
     throw new TunnelWsTokenError(
       response.status,
       `Tunnel WS token request failed (HTTP ${response.status})`,
     );
   }
+  const data: unknown = await response.json().catch(() => null);
   if (!isTunnelWsToken(data)) {
     throw new TunnelWsTokenError(0, "Tunnel WS token response was malformed");
   }

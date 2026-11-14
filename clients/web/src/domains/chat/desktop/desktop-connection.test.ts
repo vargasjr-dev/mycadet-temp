@@ -6,25 +6,27 @@
 
 import { describe, expect, mock, test } from "bun:test";
 
-import { client } from "@/generated/api/client.gen";
 
 import {
   desktopEndReasonForClose,
   resolveDesktopStreamWsUrl,
 } from "./desktop-connection";
 
-// The unified transport mints off the shared client; stood in for so the
+// The unified transport mints with a same-origin POST; stood in for so the
 // URL smoke test doesn't leave the process.
-let originalPost: typeof client.post;
+const originalFetch = globalThis.fetch;
 
 describe("resolving the desktop stream URL", () => {
   test("dials the desktop route on the gateway", async () => {
-    originalPost = client.post;
-    client.post = mock(async () => ({
-      data: { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
-      error: null,
-      response: new Response(null, { status: 200 }),
-    })) as typeof client.post;
+    const storyFetch = mock(async () =>
+      Response.json(
+        { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+        { status: 200 },
+      ),
+    );
+    globalThis.fetch = Object.assign(storyFetch, {
+      preconnect: () => {},
+    }) as typeof globalThis.fetch;
     try {
       const url = new URL(await resolveDesktopStreamWsUrl("asst-1"));
 
@@ -34,7 +36,7 @@ describe("resolving the desktop stream URL", () => {
       expect(url.pathname).toBe("/asst-1/v1/desktop/stream");
       expect(url.searchParams.get("token")).toBe("tok-abc");
     } finally {
-      client.post = originalPost;
+      globalThis.fetch = originalFetch;
     }
   });
 });
