@@ -14,7 +14,7 @@ import {
   createAssistantBackup,
   listAssistantBackups,
   restoreAssistantBackup,
-} from "@/assistant/api";
+} from "@/lib/assistant-backups-api";
 import {
   exportBundleFilename,
   exportManagedBundle,

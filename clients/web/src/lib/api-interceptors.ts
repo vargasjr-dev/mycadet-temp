@@ -2,8 +2,6 @@
  * Request/response interceptors for the generated HeyAPI clients.
  *
  * For platform-bound requests, attaches:
- *   - `X-CSRFToken` (mutations only) — required by the cloud's
- *     SessionAuthentication.
  *   - `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` — identify the
  *     originating tab/interface to the daemon. Required by self-echo
  *     suppression: the daemon echoes the client id back on the resulting
@@ -17,13 +15,11 @@
 import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
-import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { currentLocale } from "@/i18n";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
 import { isElectron } from "@/runtime/is-electron";
-import { getElectronSessionToken } from "@/runtime/session-token";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
@@ -102,21 +98,6 @@ function createInterceptor({
     const deviceId = getDeviceId();
     if (deviceId) {
       newRequest.headers.set("Cadet-Device-Id", deviceId);
-    }
-
-    // Electron app provides a session token header. This is no-ops on web.
-    const sessionToken = getElectronSessionToken();
-    if (sessionToken) {
-      newRequest.headers.set("X-Session-Token", sessionToken);
-    }
-
-    // Clients authenticating via session cookie need to pass CSRF checks.
-    // Electron authenticates via a session token header.
-    if (!isElectron() && MUTATING_METHODS.has(request.method)) {
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        newRequest.headers.set("X-CSRFToken", csrfToken);
-      }
     }
 
     return newRequest;

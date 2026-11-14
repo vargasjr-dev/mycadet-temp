@@ -47,7 +47,6 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { supersedeCloudAvatar } from "@/hooks/use-cloud-avatar-urls";
 import { getClientId } from "@/lib/client-identity";
 import { SYNC_TAGS } from "@/lib/sync/types";
 
@@ -285,7 +284,6 @@ function resetAssistantCapabilities(
  * have changed there.
  */
 function onAvatarChanged(queryClient: QueryClient, assistantId: string): void {
-  supersedeCloudAvatar(queryClient, assistantId);
   invalidateAvatarQueries(queryClient, assistantId);
 }
 

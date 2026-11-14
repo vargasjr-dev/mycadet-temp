@@ -4,7 +4,7 @@ const createBackup = mock(async (_id: string) => ({
   status: 201,
   data: { snapshot_name: "assistant-1-backup-1" },
 }));
-mock.module("@/assistant/api", () => ({ createAssistantBackup: createBackup }));
+mock.module("@/lib/assistant-backups-api", () => ({ createAssistantBackup: createBackup }));
 const { exportManagedBundle, exportBundleFilename } =
   await import("./cloud-export");
 afterEach(() => createBackup.mockClear());

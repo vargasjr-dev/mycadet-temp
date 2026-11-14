@@ -6,7 +6,7 @@ import type { DiskPressureStatus } from "@mycadet/assistant-api";
 import {
   acknowledgeAssistantDiskPressure,
   getAssistantDiskPressureStatus,
-} from "@/assistant/api";
+} from "@/lib/assistant-status-api";
 import {
   DISK_PRESSURE_POLL_INTERVAL_MS,
   areDiskPressureStatusesEqual,

@@ -11,7 +11,7 @@
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import type { AssistantBackup } from "@/assistant/api";
+import type { AssistantBackup } from "@/lib/assistant-backups-api";
 import { setHosting } from "@/assistant/hosting.test-helper";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { fixtureNotFound } from "@/lib/stub-client-fetch";
