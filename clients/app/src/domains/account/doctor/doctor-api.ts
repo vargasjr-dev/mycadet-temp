@@ -15,6 +15,8 @@
 
 import { z } from "zod";
 
+import { dial as dialCore } from "@app/lib/dial";
+
 // ---------------------------------------------------------------------------
 // Response schemas — the cloud shapes the panel reads
 // ---------------------------------------------------------------------------
@@ -75,20 +77,15 @@ async function dial(
   path: string,
   init?: RequestInit,
 ): Promise<OperatorResult<unknown>> {
-  const response = await fetch(path, init);
-  let detail: string | null = null;
-  if (!response.ok) {
-    try {
-      const body = (await response.json()) as { detail?: unknown };
-      detail = typeof body.detail === "string" ? body.detail : null;
-    } catch {
-      detail = null;
-    }
+  const { response, data, detail, networkError } = await dialCore(path, init);
+  if (networkError || !response) {
+    throw networkError ?? new Error("The doctor dial failed without a response.");
   }
-  const data = response.ok
-    ? await response.json().catch(() => null)
-    : null;
-  return { data, error: detail === null ? null : { detail }, response };
+  return {
+    data: response.ok ? data : null,
+    error: detail === null ? null : { detail },
+    response,
+  };
 }
 
 /** The operator api's paginated doctor history for the active assistant. */

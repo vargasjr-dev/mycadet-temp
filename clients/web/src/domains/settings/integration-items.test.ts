@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/domains/settings/oauth-connections";
 
 import {
   buildIntegrationItems,

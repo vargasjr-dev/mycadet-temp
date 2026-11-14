@@ -29,7 +29,7 @@ import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
   const { t } = useTranslation("settings");
-  const { assistant, healthz, healthzLoading } = useAssistantWithHealthz();
+  const { healthz, healthzLoading } = useAssistantWithHealthz();
   const navigate = useNavigate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor();
@@ -50,14 +50,8 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  // Whether the platform upgrade panel is on screen. It renders the
-  // "Current" version line that carries the 7-tap developer-mode unlock, so
-  // when it does not show we must render a standalone version line to avoid
-  // dropping both the version display and the only unlock affordance (e.g.
-  // logged out of the cloud, or a self-hosted/remote-gateway runtime).
-
   useEffect(() => {
-    if (!assistant || window.location.hash !== "#storage-resources") {
+    if (window.location.hash !== "#storage-resources") {
       return;
     }
 
@@ -66,7 +60,7 @@ export function GeneralPage() {
         .getElementById("storage-resources")
         ?.scrollIntoView({ block: "start" });
     });
-  }, [assistant]);
+  }, []);
 
   const versionValue = healthz?.version ?? null;
 
@@ -103,7 +97,7 @@ export function GeneralPage() {
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
         accessory={
-          isCloudHosted && assistant ? (
+          isCloudHosted ? (
             <Button
               variant="outlined"
               onClick={() => setUpdateWindowOpen(true)}
@@ -114,25 +108,23 @@ export function GeneralPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          {assistant && (
-            <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
-              <span className="text-body-medium-default text-[var(--content-tertiary)]">
-                {t("generalPage.current")}
+          <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
+            <span className="text-body-medium-default text-[var(--content-tertiary)]">
+              {t("generalPage.current")}
+            </span>
+            {healthzLoading ? (
+              <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
+                —
               </span>
-              {healthzLoading ? (
-                <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
-                  —
-                </span>
-              ) : (
-                <span className="break-all text-body-medium-lighter text-[var(--content-default)]">
-                  {versionValue ?? "—"}
-                </span>
-              )}
-            </div>
-          )}
+            ) : (
+              <span className="break-all text-body-medium-lighter text-[var(--content-default)]">
+                {versionValue ?? "—"}
+              </span>
+            )}
+          </div>
         </div>
       </DetailCard>
-      {isCloudHosted && assistant && (
+      {isCloudHosted && (
         <UpdateWindowModal
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}

@@ -16,6 +16,8 @@ import { z } from "zod";
 
 import { toErrorObject } from "@app/utils/api-errors";
 
+import { dial as dialCore } from "@app/lib/dial";
+
 /** A backup snapshot as the table renders it. */
 export interface AssistantBackup {
   snapshot_name: string;
@@ -29,7 +31,7 @@ export type ManagementResult<T> =
   | { ok: true; status: number; data: T }
   | { ok: false; status: number; error: Record<string, unknown> };
 
-const PlatformBackupsSchema = z.object({
+const BackupsSchema = z.object({
   backups: z.array(
     z.object({
       snapshot_name: z.string(),
@@ -41,7 +43,7 @@ const PlatformBackupsSchema = z.object({
   ),
 });
 
-/** A release as the platform's `/v1/releases/` row offers it. */
+/** A release as the cloud's `/v1/releases/` row offers it. */
 export interface ReleaseListItem {
   version: string;
   released_at: string;
@@ -76,33 +78,24 @@ async function dial(
   | { ok: true; status: number; data: unknown }
   | { ok: false; status: number; error: Record<string, unknown> }
 > {
-  let response: Response;
-  try {
-    response = await fetch(path, init);
-  } catch (error) {
+  const { response, data, detail, networkError } = await dialCore(path, init);
+  if (networkError) {
     return {
       ok: false,
       status: 0,
-      error: toErrorObject(error),
+      error: toErrorObject(networkError),
     };
   }
-  if (!response.ok) {
-    const detail = await response
-      .json()
-      .then((body) => (body as { detail?: unknown }).detail)
-      .catch(() => null);
+  if (!response?.ok) {
     return {
       ok: false,
-      status: response.status,
+      status: response?.status ?? 0,
       error: toErrorObject(
-        typeof detail === "string"
-          ? detail
-          : `${failureMessage} (${response.status})`,
-        response,
+        detail ?? `${failureMessage} (${response?.status ?? 0})`,
+        response ?? undefined,
       ),
     };
   }
-  const data: unknown = await response.json().catch(() => null);
   return { ok: true, status: response.status, data };
 }
 
@@ -116,7 +109,7 @@ export async function listAssistantBackups(
   if (!result.ok) {
     return result;
   }
-  const parsed = PlatformBackupsSchema.safeParse(result.data);
+  const parsed = BackupsSchema.safeParse(result.data);
   if (!parsed.success) {
     return {
       ok: false,

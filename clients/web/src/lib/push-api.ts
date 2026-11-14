@@ -7,6 +7,8 @@
  * never read, so the module reports success/failure and nothing else.
  */
 
+import { dial as dialCore } from "@/lib/dial";
+
 /** APNs entitlement environment a token was minted under. */
 export type PushApnsEnvironment = "production" | "development";
 
@@ -52,15 +54,16 @@ async function dial(
   path: string,
   init?: RequestInit,
 ): Promise<{ error: Error | null }> {
-  try {
-    const response = await fetch(path, init);
-    if (!response.ok) {
-      return { error: new Error(`The push dial failed (${response.status})`) };
-    }
-    return { error: null };
-  } catch (err) {
-    return { error: err instanceof Error ? err : new Error(String(err)) };
+  const { response, networkError } = await dialCore(path, init);
+  if (networkError) {
+    return {
+      error: networkError instanceof Error ? networkError : new Error(String(networkError)),
+    };
   }
+  if (!response?.ok) {
+    return { error: new Error(`The push dial failed (${response?.status})`) };
+  }
+  return { error: null };
 }
 
 const scoped = (assistantId: string, tail: string) =>
