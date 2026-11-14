@@ -52,8 +52,8 @@ import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { recordRevealSuccess } from "../reveal-success-registry.js";
 import {
   type CloudCredentialAction,
+  cloudCredentialRefusal,
   isCloudCredential,
-  platformCloudCredentialRefusal,
 } from "./cloud-credentials.js";
 import {
   assertCredentialNotInUse,
@@ -151,7 +151,7 @@ function assertNotPlatformManaged(
 ): void {
   if (isCloudCredential(service, field)) {
     throw new ForbiddenError(
-      platformCloudCredentialRefusal(service, field, action),
+      cloudCredentialRefusal(service, field, action),
     );
   }
 }

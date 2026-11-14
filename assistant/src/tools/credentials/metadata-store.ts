@@ -1,16 +1,6 @@
 /**
- * Credential metadata store.
- *
- * CES owns identity + policy records. This module keeps a synchronous
- * in-process cache so existing call sites stay sync, and always
- * write-throughs to the CES record backend ({@link cesRecordBackend} — a
- * module-level singleton that owns the CES client, including lazy child
- * process sessions).
- *
- * The cache is filled lazily: the first catalog read or write starts a
- * single-flight CES `list()`. Leftover workspace `metadata.json` is not
- * read. CES import (003) may leave that file in place; this module
- * ignores it.
+ * Credential metadata store: an in-process cache write-through to the CES
+ * record backend.
  */
 
 import { randomUUID } from "node:crypto";
@@ -18,11 +8,7 @@ import { randomUUID } from "node:crypto";
 import { credentialKey } from "@mycadet/credential-storage";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
-import { createCesHttpRecordBackendIfConfigured } from "../../security/ces-http-record-backend.js";
-import {
-  cesRecordBackend,
-  type CredentialRecordBackend,
-} from "../../security/ces-rpc-record-backend.js";
+import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
 import { getLogger } from "../../util/logger.js";
 import type { CredentialInjectionTemplate } from "./policy-types.js";
 
@@ -169,64 +155,83 @@ function toRecord(metadata: CredentialMetadata): CredentialRecord {
   };
 }
 
-function resetCesLoad(): void {
-  _cesRecordsLoaded = false;
-  _cesLoad = undefined;
-  _cesLoadGeneration += 1;
-}
-
 // ---------------------------------------------------------------------------
 // Production record backend: always the CES RPC singleton
 // ---------------------------------------------------------------------------
 
-/**
- * Test-only backend pin. When set, every record operation forwards to it
- * instead of the CES RPC singleton (`undefined` pins a disabled backend —
- * writes stay in-process). Production never calls this; the singleton
- * {@link cesRecordBackend} is always the live backend.
- */
-let _testBackendPinned = false;
-let _testBackend: CredentialRecordBackend | undefined;
+/** Retry backoff for a failed record write (the hatch set races CES boot). */
+const PERSIST_RETRY_DELAYS_MS = [1_000, 3_000, 10_000, 30_000];
 
-/** @internal Test-only: pin the record backend. `undefined` disables CES. */
-export function setCredentialRecordBackend(
-  backend: CredentialRecordBackend | undefined,
-): void {
-  _testBackendPinned = true;
-  _testBackend = backend;
-  resetCesLoad();
+/**
+ * Records whose CES write failed, keyed by account. Re-flushed on the next
+ * successful CES load so a set that raced CES startup is not lost — the
+ * vault holds the secret but the catalog record is what every listing reads.
+ */
+const pendingPersists = new Map<string, CredentialMetadata>();
+
+let persistFlushScheduled = false;
+
+function schedulePendingFlush(): void {
+  if (persistFlushScheduled) {
+    return;
+  }
+  persistFlushScheduled = true;
+  const delay = PERSIST_RETRY_DELAYS_MS[0]!;
+  setTimeout(() => {
+    persistFlushScheduled = false;
+    void flushPendingPersists(0);
+  }, delay).unref?.();
 }
 
-function recordBackend(): CredentialRecordBackend | null {
-  if (_testBackendPinned) {
-    return _testBackend ?? null;
+async function flushPendingPersists(attempt: number): Promise<void> {
+  if (pendingPersists.size === 0) {
+    return;
   }
-  return cesRecordBackend;
+  const batch = [...pendingPersists.values()];
+  for (const metadata of batch) {
+    const account = credentialKey(metadata.service, metadata.field);
+    const ok = await cesRecordBackend.set(account, toRecord(metadata));
+    if (ok) {
+      pendingPersists.delete(account);
+    }
+  }
+  if (pendingPersists.size > 0 && attempt < PERSIST_RETRY_DELAYS_MS.length - 1) {
+    const delay = PERSIST_RETRY_DELAYS_MS[attempt + 1]!;
+    setTimeout(() => {
+      void flushPendingPersists(attempt + 1);
+    }, delay).unref?.();
+  }
 }
 
 async function persistCredentialMetadata(
   metadata: CredentialMetadata,
 ): Promise<void> {
-  const backend = recordBackend();
-  if (!backend) {
+  const account = credentialKey(metadata.service, metadata.field);
+  const ok = await cesRecordBackend.set(account, toRecord(metadata));
+  if (ok) {
+    pendingPersists.delete(account);
     return;
   }
-  const account = credentialKey(metadata.service, metadata.field);
-  const ok = await backend.set(account, toRecord(metadata));
-  if (!ok) {
-    log.warn(
-      { service: metadata.service, field: metadata.field },
-      "Failed to persist credential record to CES",
-    );
-  }
+  log.warn(
+    { service: metadata.service, field: metadata.field },
+    "Failed to persist credential record to CES; queued for retry",
+  );
+  pendingPersists.set(account, metadata);
+  schedulePendingFlush();
 }
 
 let _cesRecordsLoaded = false;
 let _cesLoad: Promise<void> | undefined;
 let _cesLoadGeneration = 0;
 
+function resetCesLoad(): void {
+  _cesRecordsLoaded = false;
+  _cesLoad = undefined;
+  _cesLoadGeneration += 1;
+}
+
 function ensureCesRecordsLoaded(): Promise<void> {
-  if (recordBackend() === null || _cesRecordsLoaded) {
+  if (_cesRecordsLoaded) {
     return Promise.resolve();
   }
   if (_cesLoad) {
@@ -243,14 +248,13 @@ function ensureCesRecordsLoaded(): Promise<void> {
 
 async function loadCesRecords(generation: number): Promise<void> {
   try {
-    const backend = recordBackend();
-    if (!backend || generation !== _cesLoadGeneration) {
+    if (generation !== _cesLoadGeneration) {
       return;
     }
-    // No sync availability pre-gate: the backend owns its CES session and
-    // connects lazily on the first list(). A failed list keeps the
-    // in-process cache (an outage must not look like an empty vault).
-    const remote = await backend.list();
+    // The backend owns its CES session and connects lazily on the first
+    // list(). A failed list keeps the in-process cache (an outage must not
+    // look like an empty vault).
+    const remote = await cesRecordBackend.list();
     if (generation !== _cesLoadGeneration) {
       return;
     }
@@ -278,8 +282,75 @@ async function loadCesRecords(generation: number): Promise<void> {
     _store.useMemory(merged);
     _cesRecordsLoaded = true;
     log.info({ count: remote.length }, "Loaded credential records from CES");
+
+    // Durability: a write that raced CES startup (initial hatch) or a restart
+    // before the write-through landed leaves the vault holding a secret with
+    // no catalog record. Re-persist anything the CES catalog is missing.
+    void reconcileMissingRecords(merged);
   } catch (err) {
     log.warn({ err }, "CES record load failed");
+  }
+}
+
+/**
+ * Push catalog records for vault-backed credentials that CES does not know
+ * about, so a hatch-time write lost to a CES race self-heals (including
+ * across assistant restarts — the vault enumerates its accounts).
+ */
+function parseVaultAccount(
+  account: string,
+): { service: string; field: string } | undefined {
+  const prefix = "credential/";
+  if (!account.startsWith(prefix)) {
+    return undefined;
+  }
+  const rest = account.slice(prefix.length);
+  const slashIdx = rest.lastIndexOf("/");
+  if (slashIdx < 1 || slashIdx === rest.length - 1) {
+    return undefined;
+  }
+  return { service: rest.slice(0, slashIdx), field: rest.slice(slashIdx + 1) };
+}
+
+async function reconcileMissingRecords(records: CredentialMetadata[]): Promise<void> {
+  try {
+    const knownAccounts = new Set(
+      records.map((record) => credentialKey(record.service, record.field)),
+    );
+    const { listSecureKeysAsync } = await import("../../security/secure-keys.js");
+    const vault = await listSecureKeysAsync();
+    if (!vault.unreachable) {
+      for (const account of vault.accounts) {
+        if (knownAccounts.has(account)) {
+          continue;
+        }
+        const parsed = parseVaultAccount(account);
+        if (!parsed) {
+          continue;
+        }
+        const now = Date.now();
+        const record: CredentialMetadata = {
+          credentialId: randomUUID(),
+          service: parsed.service,
+          field: parsed.field,
+          allowedTools: [],
+          allowedDomains: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+        _store.upsert(parsed.service, parsed.field);
+        pendingPersists.set(account, record);
+      }
+      if (pendingPersists.size > 0) {
+        log.info(
+          { count: pendingPersists.size },
+          "Reconciling vault credentials missing from the CES catalog",
+        );
+        void flushPendingPersists(0);
+      }
+    }
+  } catch (err) {
+    log.warn({ err }, "Vault-to-CES record reconciliation failed");
   }
 }
 
@@ -359,77 +430,17 @@ export type CredentialRecordListResult = {
   unreachable: boolean;
 };
 
-type ListedCredentialRecords = Array<{
-  account: string;
-  record: CredentialRecord;
-}>;
-
-async function listFromRecordBackend(
-  backend: CredentialRecordBackend,
-): Promise<ListedCredentialRecords | null> {
-  return backend.list();
-}
-
-function resolveHttpRecordBackend(): CredentialRecordBackend | null {
-  if (_httpRecordBackendOverride !== undefined) {
-    return _httpRecordBackendOverride;
-  }
-  return createCesHttpRecordBackendIfConfigured();
-}
-
-async function listFromHttpFallback(): Promise<ListedCredentialRecords | null> {
-  const httpBackend = resolveHttpRecordBackend();
-  if (!httpBackend) {
-    return null;
-  }
-  return listFromRecordBackend(httpBackend);
-}
-
-/**
- * Test override for the CES HTTP listing fallback. `undefined` uses the
- * production factory. `null` disables HTTP fallback.
- */
-let _httpRecordBackendOverride: CredentialRecordBackend | null | undefined;
-
-/** @internal Test-only: override the CES HTTP listing fallback. */
-export function _setHttpRecordBackendForTests(
-  backend: CredentialRecordBackend | null | undefined,
-): void {
-  _httpRecordBackendOverride = backend;
-}
-
 /**
  * Live catalog from the credential record backend. Does not read the
  * daemon in-process cache, so an outage cannot be mistaken for an empty
- * vault. `unreachable` is true when the backend is down, or the list RPC
- * fails, and CES HTTP failover is also unavailable.
- *
- * When the attached backend is CES RPC (the singleton), listing fails over
- * to CES HTTP in containerized deployments so a down RPC socket does not
- * hide a healthy vault sidecar. A successful empty catalog (`[]`) does not
- * fall through to HTTP.
+ * vault. `unreachable` is true when the backend is down or the list RPC
+ * fails.
  */
 export async function listCredentialRecordsLive(): Promise<CredentialRecordListResult> {
-  const backend = recordBackend();
-  if (backend) {
-    const remote = await listFromRecordBackend(backend);
-    if (remote !== null) {
-      return {
-        records: remote.map((entry) => entry.record as CredentialMetadata),
-        unreachable: false,
-      };
-    }
-    if (backend.name !== "ces-rpc") {
-      return { records: [], unreachable: true };
-    }
-  }
-  const httpRemote = await listFromHttpFallback();
-  if (httpRemote !== null) {
-    log.warn(
-      "CES RPC credential record list unavailable. Failing over to CES HTTP.",
-    );
+  const remote = await cesRecordBackend.list();
+  if (remote !== null) {
     return {
-      records: httpRemote.map((entry) => entry.record as CredentialMetadata),
+      records: remote.map((entry) => entry.record as CredentialMetadata),
       unreachable: false,
     };
   }
@@ -445,9 +456,8 @@ export function deleteCredentialMetadata(
 ): boolean {
   touchCesCache();
   const deleted = _store.delete(service, field);
-  const backend = recordBackend();
-  if (deleted && backend) {
-    void backend.delete(credentialKey(service, field));
+  if (deleted) {
+    void cesRecordBackend.delete(credentialKey(service, field));
   }
   return deleted;
 }

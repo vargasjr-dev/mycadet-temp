@@ -17,6 +17,8 @@ import {
 import { dirname, join } from "node:path";
 
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
+import { CredentialRecordSchema } from "@mycadet/service-contracts/credential-rpc";
+import { z } from "zod";
 
 import { getCesDataRoot } from "../paths.js";
 
@@ -24,10 +26,12 @@ const METADATA_FILENAME = "metadata.json";
 
 const CURRENT_VERSION = 5;
 
-interface MetadataFile {
-  version: typeof CURRENT_VERSION;
-  credentials: CredentialRecord[];
-}
+const MetadataFileSchema = z.object({
+  version: z.literal(CURRENT_VERSION),
+  credentials: z.array(CredentialRecordSchema),
+});
+
+type MetadataFile = z.infer<typeof MetadataFileSchema>;
 
 export function getMetadataPath(cesDataRoot: string): string {
   return join(cesDataRoot, METADATA_FILENAME);
@@ -57,20 +61,8 @@ export function accountForRecord(
   return `credential/${record.service}/${record.field}`;
 }
 
-function isRecord(value: unknown): value is CredentialRecord {
-  if (typeof value !== "object" || value == null) {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return (
-    typeof record.credentialId === "string" &&
-    typeof record.service === "string" &&
-    typeof record.field === "string" &&
-    Array.isArray(record.allowedTools) &&
-    Array.isArray(record.allowedDomains) &&
-    typeof record.createdAt === "number" &&
-    typeof record.updatedAt === "number"
-  );
+function emptyFile(): MetadataFile {
+  return { version: CURRENT_VERSION, credentials: [] };
 }
 
 export class CesMetadataStore {
@@ -148,15 +140,12 @@ export class CesMetadataStore {
       return { version: CURRENT_VERSION, credentials: [] };
     }
     try {
-      const parsed = JSON.parse(readFileSync(this.metadataPath, "utf-8")) as {
-        credentials?: unknown;
-      };
-      const credentials = Array.isArray(parsed.credentials)
-        ? parsed.credentials.filter(isRecord)
-        : [];
-      return { version: CURRENT_VERSION, credentials };
+      const parsed = MetadataFileSchema.safeParse(
+        JSON.parse(readFileSync(this.metadataPath, "utf-8")),
+      );
+      return parsed.success ? parsed.data : emptyFile();
     } catch {
-      return { version: CURRENT_VERSION, credentials: [] };
+      return emptyFile();
     }
   }
 
@@ -197,12 +186,10 @@ export function readCredentialRecordsFromFile(
     return [];
   }
   try {
-    const parsed = JSON.parse(readFileSync(path, "utf-8")) as {
-      credentials?: unknown;
-    };
-    return Array.isArray(parsed.credentials)
-      ? parsed.credentials.filter(isRecord)
-      : [];
+    const parsed = MetadataFileSchema.safeParse(
+      JSON.parse(readFileSync(path, "utf-8")),
+    );
+    return parsed.success ? parsed.data.credentials : [];
   } catch {
     return [];
   }

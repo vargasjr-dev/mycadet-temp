@@ -87,24 +87,29 @@ export function registerCredentialsCommand(program: Command): void {
 
       subcommand(credential, "list").action(
         async (opts: { search?: string }, cmd: Command) => {
-          // Dial the catalog logic directly — no IPC phone-home (the CLI's
-          // broader move off the daemon transport). The module is
-          // daemon-internal, so it lazy-imports here per the
+          // The module is daemon-internal, so it lazy-imports here per the
           // cli/no-daemon-internals rule.
           const { listSettingsCredentials, CredentialStoreUnreachableError } =
             await import("../../tools/credentials/settings-catalog.js");
+          const { cesRecordBackend } = await import(
+            "../../security/ces-rpc-record-backend.js"
+          );
           let credentials: Record<string, unknown>[];
           try {
             credentials = await listSettingsCredentials(opts.search);
           } catch (err) {
+            // This one-shot process opened its own CES session — close it so
+            // the command exits instead of hanging on the live socket.
+            await cesRecordBackend.close().catch(() => {});
             if (err instanceof CredentialStoreUnreachableError) {
-              return exitFromIpcResult(
-                { ok: false, error: err.message, statusCode: 503 },
-                cmd,
+              process.stderr.write(
+                (err instanceof Error ? err.message : String(err)) + "\n",
               );
+              process.exit(1);
             }
             throw err;
           }
+          await cesRecordBackend.close().catch(() => {});
 
           if (shouldOutputJson(cmd)) {
             writeOutput(cmd, {

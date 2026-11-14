@@ -47,7 +47,6 @@ import { removeWorkspaceHooksMigration } from "./048-remove-workspace-hooks.js";
 import { releaseNotesDefaultSonnetMigration } from "./049-release-notes-default-sonnet.js";
 import { seedMainAgentOpusCallsiteMigration } from "./050-seed-main-agent-opus-callsite.js";
 import { seedConversationSummarizationCallsiteMigration } from "./051-seed-conversation-summarization-callsite.js";
-import { seedDefaultInferenceProfiles052 } from "./052-seed-default-inference-profiles.js";
 import { releaseNotesAcpCodexMigration } from "./053-release-notes-acp-codex.js";
 import { seedRecallCallsiteMigration } from "./054-seed-recall-callsite.js";
 import { releaseNotesAgenticRecallMigration } from "./055-release-notes-agentic-recall.js";
@@ -213,7 +212,6 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   releaseNotesDefaultSonnetMigration,
   seedMainAgentOpusCallsiteMigration,
   seedConversationSummarizationCallsiteMigration,
-  seedDefaultInferenceProfiles052,
   releaseNotesAcpCodexMigration,
   seedRecallCallsiteMigration,
   releaseNotesAgenticRecallMigration,

@@ -1,68 +1,51 @@
-import { existsSync, rmSync } from "node:fs";
-import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { credentialKey } from "@mycadet/credential-storage";
-import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 
-import type { CredentialRecordBackend } from "../security/ces-rpc-record-backend.js";
-import {
-  setCredentialRecordBackend,
-  upsertCredentialMetadata,
-} from "../tools/credentials/metadata-store.js";
-import { getDataDir } from "../util/layout.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
+import { upsertCredentialMetadata } from "../tools/credentials/metadata-store.js";
+import { installMockCesRecordSession } from "./helpers/mock-ces-record-session.js";
 
-function makeBackend(): CredentialRecordBackend & {
-  store: Map<string, CredentialRecord>;
-} {
-  const store = new Map<string, CredentialRecord>();
-  return {
-    store,
-    isAvailable: () => true,
-    get: async (account) => store.get(account),
-    set: async (account, record) => {
-      store.set(account, record);
-      return true;
-    },
-    delete: async (account) => {
-      if (!store.has(account)) {
-        return "not-found";
-      }
-      store.delete(account);
-      return "deleted";
-    },
-    list: async () =>
-      [...store.entries()].map(([account, record]) => ({ account, record })),
-    bulkSet: async (records) => {
-      for (const { account, record } of records) {
-        store.set(account, record);
-      }
-      return records.map((entry) => ({ account: entry.account, ok: true }));
-    },
-  };
-}
+const session = installMockCesRecordSession();
 
 describe("CES credential record write-through", () => {
-  afterEach(() => {
-    setCredentialRecordBackend(undefined);
-    const leftover = join(getDataDir(), "credentials", "metadata.json");
-    if (existsSync(leftover)) {
-      rmSync(leftover, { force: true });
-    }
+  afterEach(async () => {
+    session.store.clear();
+    session.failSet = false;
+    await cesRecordBackend.close();
   });
 
   test("upsert write-through updates the CES backend", async () => {
-    const backend = makeBackend();
-    setCredentialRecordBackend(backend);
-
     const created = upsertCredentialMetadata("slack_channel", "bot_token", {
       allowedTools: ["bash"],
     });
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
-    const stored = backend.store.get(
+    const stored = session.store.get(
       credentialKey("slack_channel", "bot_token"),
     );
     expect(stored?.allowedTools).toEqual(["bash"]);
     expect(stored?.credentialId).toBe(created.credentialId);
+  });
+
+  test("a write that fails is queued and retried on the next flush", async () => {
+    session.failSet = true;
+    upsertCredentialMetadata("slack_channel", "bot_token", {
+      allowedTools: ["bash"],
+    });
+    await cesRecordBackend.close();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(session.store.size).toBe(0);
+
+    session.failSet = false;
+    upsertCredentialMetadata("slack_channel", "bot_token", {
+      allowedTools: ["bash"],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(
+      session.store.get(credentialKey("slack_channel", "bot_token"))
+        ?.allowedTools,
+    ).toEqual(["bash"]);
   });
 });

@@ -38,15 +38,10 @@ const BaseServiceSchema = z.object({
 });
 
 /**
- * Inference service entry. Carries no fields — routing is now governed
- * entirely by `provider_connections` rows and the `provider_connection`
- * reference on each `llm.profile`. The namespace is kept so callers
- * that walk `config.services.inference` do not need updating.
- *
- * Legacy `provider`, `model`, and `mode` fields are stripped by workspace
- * migrations `039-drop-legacy-llm-keys` and `076-drop-services-inference-mode`.
+ * Inference carries no fields: routing is governed entirely by
+ * `provider_connections` rows. The namespace is kept so callers that walk
+ * `config.services.inference` do not need updating.
  */
-const InferenceServiceSchema = z.object({});
 
 /**
  * Image generation carries no `mode`: `provider` is the only axis. `"cadet"`
@@ -174,7 +169,7 @@ const CalendlyOAuthServiceSchema = BaseServiceSchema.extend({
 });
 
 export const ServicesSchema = z.object({
-  inference: InferenceServiceSchema.default(InferenceServiceSchema.parse({})),
+  inference: z.object({}).default({}),
   "image-generation": ImageGenerationServiceSchema.default(
     ImageGenerationServiceSchema.parse({}),
   ),

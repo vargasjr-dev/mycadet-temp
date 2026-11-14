@@ -10,9 +10,10 @@
  * same `ConnectionResolutionError` the pre-dispatch preflight raises, so the
  * conversation layer renders its actionable "missing credential" error.
  *
- * A response with content passes through untouched, and an unreachable
+ * A response with content passes through untouched. An unreachable
  * credential store (`indeterminate`) is never reported as a missing
- * credential.
+ * credential — but it does surface a distinct "store unreachable" error, so
+ * a vault outage still cannot masquerade as a blank turn.
  */
 
 import type { ProviderRouteAttribution } from "../../util/errors.js";
@@ -82,11 +83,13 @@ export class MissingCredentialGuardProvider implements Provider {
 
     // An empty turn has causes other than a deleted key (a genuinely empty
     // completion, a refusal, a stop-sequence hit), so the credential read is
-    // what decides, and only its definitive `absent` answer does.
+    // what decides: a definitive `absent` reports the missing credential, and
+    // an `indeterminate` (vault unreachable) surfaces an actionable error too
+    // — a blank turn gives the user nothing to act on.
     const presence = await checkCredentialPresence(
       this.connection.credentialAccount,
     );
-    if (presence !== "absent") {
+    if (presence === "present") {
       return response;
     }
 
@@ -96,14 +99,23 @@ export class MissingCredentialGuardProvider implements Provider {
         credential: this.connection.credentialAccount,
         model: response.model,
         stopReason: response.stopReason,
+        presence,
       },
-      "Upstream returned no usable content for a connection whose credential is absent, so a configuration error is surfaced rather than an empty turn",
+      "Upstream returned no usable content; surfacing a configuration error rather than an empty turn",
     );
 
+    if (presence === "absent") {
+      throw new ConnectionResolutionError(
+        this.connection.name,
+        "missing_credential",
+        `provider_connection "${this.connection.name}" answered with an empty response and has no credential stored: its API key was removed`,
+        { model: response.model },
+      );
+    }
     throw new ConnectionResolutionError(
       this.connection.name,
-      "missing_credential",
-      `provider_connection "${this.connection.name}" answered with an empty response and has no credential stored: its API key was removed`,
+      "credential_store_unreachable",
+      `provider_connection "${this.connection.name}" answered with an empty response and the credential store could not be reached to verify its API key`,
       { model: response.model },
     );
   }

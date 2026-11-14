@@ -3,36 +3,21 @@
  * adapters.
  *
  * Backend selection (`resolveBackendAsync`) is the single async decision point:
- *   1. CES RPC (primary) - connect to the CES bootstrap socket and talk RPC.
- *      `openCesRpcSession` is the one client constructor. The assistant
- *      claims session ownership at boot (`startCes`) and hands CES the
- *      assistant API key. Child processes open a session on first credential
- *      read only when this process has no client and no reconnect owner.
- *   2. CES HTTP - containerized failover when IPC is unavailable
- *      (`IS_CONTAINERIZED` + `CES_CREDENTIAL_URL`). Used if the assistant's
- *      bootstrap RPC transport is down, or if a process with HTTP env could
- *      not open the socket.
+ *   1. CES RPC (primary) — the CES record backend owns this process's session
+ *      and reopens it when the transport dies.
  *
  * CES is purely a sibling process: it is the only credential store. When no
  * CES backend is ready, credentials report unreachable (callers fall back to
  * env vars); there is no local file fallback.
  */
 
-import { AsyncLocalStorage } from "node:async_hooks";
-
 import type { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 
 import { ACP_OAUTH_TOKEN_FIELD, ACP_SERVICE } from "../acp/acp-credentials.js";
-import { getIsContainerized } from "../config/env-registry.js";
-import {
-  openCesRpcSession,
-  reconnectCesRpcSession,
-} from "../credential-execution/ces-connect.js";
-import { discoverCes } from "../credential-execution/executable-discovery.js";
 import { getAnyProviderEnvVar } from "../providers/provider-env-vars.js";
 import { getLogger } from "../util/logger.js";
-import { createCesCredentialBackend } from "./ces-credential-client.js";
 import { CesRpcCredentialBackend } from "./ces-rpc-credential-backend.js";
+import { cesRecordBackend } from "./ces-rpc-record-backend.js";
 import type {
   CredentialBackend,
   CredentialListResult,
@@ -54,15 +39,14 @@ export interface SecureKeyResult {
 
 const log = getLogger("secure-keys");
 
-let _cesClient: CesClient | undefined;
 let _resolvedBackend: CredentialBackend | undefined;
 let _resolvePromise: Promise<CredentialBackend> | undefined;
 
 /**
  * Test-only backend pin. When set, resolveBackendAsync() returns it directly,
- * bypassing CES routing and its reconnection logic — the same way a test
- * process has no CES daemon to reach. Prefer the `useMemorySecureKeys` test
- * helper over calling this directly.
+ * bypassing CES routing — the same way a test process has no CES daemon to
+ * reach. Prefer the `useMemorySecureKeys` test helper over calling this
+ * directly.
  */
 let _testingBackend: CredentialBackend | undefined;
 
@@ -75,212 +59,50 @@ export function setSecureKeyBackendForTesting(
 }
 
 /**
- * In-flight CES RPC session promise for processes that did not call startCes().
- *
- * Workers and CLI subprocesses never call startCes(). When they hit
- * resolveBackendAsync() with no _cesClient and no _cesReconnect
- * (assistant-boot only), this promise memoizes `openCesRpcSession` so
- * concurrent credential reads in the same process share a single
- * connect+handshake rather than racing.
- */
-let _lazyConnectPromise: Promise<CesClient | undefined> | undefined;
-
-/**
- * Optional callback that attempts to re-establish a CES connection when
- * the current transport dies. Set by lifecycle.ts after initial CES startup.
- * Returns a new CesClient on success, or undefined if reconnection failed.
- */
-let _cesReconnect: (() => Promise<CesClient | undefined>) | undefined;
-
-/** Optional listener invoked whenever setCesClient() updates the client. */
-let _cesClientListener: ((client: CesClient | undefined) => void) | undefined;
-
-/** Epoch ms of the last reconnection attempt. Used for cooldown. */
-let _lastReconnectAttempt = 0;
-
-/** In-flight reconnection promise — concurrent callers share the same attempt. */
-let _reconnectInFlight: Promise<boolean> | undefined;
-
-/**
- * Per-async-context flag set while we are running the user-registered
- * `_cesReconnect` callback. Reentrant credential reads from within the
- * callback (on the same async call chain) must not `await`
- * `_reconnectInFlight` — that would await the caller's own reconnect and
- * deadlock until `CREDENTIAL_OP_TIMEOUT_MS` (45s) fires. Using
- * AsyncLocalStorage (rather than a module-level boolean) scopes the guard
- * to the actual reentrant stack, so unrelated concurrent callers keep
- * sharing the in-flight reconnect promise normally.
- */
-const _reconnectContext = new AsyncLocalStorage<true>();
-
-/**
- * Set to true when a ces-http operation returns an unreachable result.
- * Triggers CES RPC reconnection on the next resolveBackendAsync() call so
- * we don't keep routing to a dead HTTP endpoint. Cleared on reconnection or
- * backend reset.
- */
-let _cesHttpUnreachable = false;
-
-/** Minimum interval between CES reconnection attempts. */
-const RECONNECT_COOLDOWN_MS = 3_000;
-
-/**
  * Hard timeout for each public credential operation (resolve + backend call).
  * Prevents indefinite blocking when CES reconnection or backend operations hang.
- *
- * Set to 45s to comfortably cover the CES HTTP set worst case (~34s:
- * 3 fetch attempts × 10s REQUEST_TIMEOUT_MS + 2 × 2s SET_RETRY_DELAY_MS).
  */
 const CREDENTIAL_OP_TIMEOUT_MS = 45_000;
 
-/** Returns the current CES RPC client if one has been injected. */
-export function getCesClient(): CesClient | undefined {
-  return _cesClient;
-}
-
-/** Inject a CES RPC client for credential routing. Resets the resolved backend. */
-export function setCesClient(client: CesClient | undefined): void {
-  _cesClient = client;
-  // Reset resolved backend so next call picks up CES
-  _resolvedBackend = undefined;
-  _resolvePromise = undefined;
-  _cesHttpUnreachable = false;
-  log.info(
-    { hasClient: !!client },
-    "CES client updated; resetting resolved credential backend cache",
-  );
-  _cesClientListener?.(client);
-  // The record backend owns its CES client; the daemon shares its session
-  // (and every reconnect) so child-process lazy sessions stay the exception.
-  void import("./ces-rpc-record-backend.js").then(({ cesRecordBackend }) => {
-    cesRecordBackend.setClient(client);
-  });
-}
-
 /**
- * Register a listener that is called whenever setCesClient() updates the
- * CES client reference. Used by lifecycle.ts to keep DaemonServer in sync
- * after a successful reconnection.
+ * Returns the live CES RPC client, owned and reconnected by the record
+ * backend. `undefined` until the first credential/record operation opens the
+ * session.
  */
-export function onCesClientChanged(
-  fn: ((client: CesClient | undefined) => void) | undefined,
-): void {
-  _cesClientListener = fn;
-}
-
-/** Register a callback for reconnecting to CES when the transport dies. */
-export function setCesReconnect(
-  fn: (() => Promise<CesClient | undefined>) | undefined,
-): void {
-  _cesReconnect = fn;
+export function getCesClient(): CesClient | undefined {
+  return cesRecordBackend.getClient();
 }
 
 /**
  * Resolve the primary credential backend for this process (async).
  *
- * Priority:
- *   1. CES RPC: live client, or open one via `openCesRpcSession`.
- *   2. Containerized + CES_CREDENTIAL_URL: CES HTTP, only if IPC is down.
- *
- * Once resolved, the backend is cached. If it becomes unavailable (e.g. the
- * CES transport dies), we attempt to reconnect via `_cesReconnect` rather
- * than falling back to a different backend.
- *
- * If the CES bootstrap RPC transport dies in managed mode, we first fail
- * over from CES RPC to the CES HTTP credential API exposed by the same
- * sidecar. This avoids pinning credential reads to a dead bootstrap socket
- * when the in-pod HTTP interface is still healthy.
- *
- * If HTTP failover is unavailable, we attempt CES RPC reconnection. When
- * reconnection succeeds the cache is refreshed with the new client.
- *
- * If neither recovery path succeeds, the existing unavailable backend is
- * returned — its methods short-circuit via `isAvailable()` guards and return
- * `unreachable` results so callers can degrade gracefully.
- *
- * CES is purely a sibling process: when no CES backend is ready, an
- * unreachable backend is returned WITHOUT caching it (presence indeterminate,
- * which callers retry), so the next credential op re-attempts CES. There is
- * no local file fallback.
+ * The CES record backend owns this process's CES session: it opens one
+ * lazily on first use and reopens it (cooldown-gated) whenever the transport
+ * dies, so resolution either lands on the live CES RPC client or reports the
+ * store unreachable (presence indeterminate — callers retry). A dead cached
+ * backend is dropped and re-resolved on the next call; there is no local
+ * file fallback.
  *
  * Call `_resetBackend()` in tests to clear the cached resolution.
  */
-async function resolveBackendAsync(
-  options: { forceReconnect?: boolean } = {},
-): Promise<CredentialBackend> {
+async function resolveBackendAsync(): Promise<CredentialBackend> {
   if (_testingBackend) {
     return _testingBackend;
   }
-  if (_resolvedBackend) {
-    if (!_resolvedBackend.isAvailable()) {
-      // A CES client became ready after we reported unreachable (e.g. a
-      // worker/CLI whose handshake completed after the first read). No
-      // reconnect callback is needed — the live client already exists. Drop
-      // the cache and re-resolve so the CES RPC path wins.
-      if (_resolvedBackend.name === "unavailable" && _cesClient?.isReady()) {
-        log.info(
-          "CES client is ready; upgrading credential backend to CES RPC",
-        );
-        _resolvedBackend = undefined;
-        _resolvePromise = undefined;
-      } else {
-        const cesHttpFallback = tryFailoverToCesHttpBackend(_resolvedBackend);
-        if (cesHttpFallback) {
-          return cesHttpFallback;
-        }
-
-        // Backend is no longer reachable — attempt CES reconnection. Mutating
-        // ops pass `forceReconnect` to bypass the cooldown: writes are rare,
-        // and refusing the reconnect turns a transient transport blip into a
-        // silently dropped credential (reads degrade gracefully via env-var
-        // and dead-backend fallbacks; writes have no fallback).
-        const reconnected = await attemptCesReconnection({
-          ignoreCooldown: options.forceReconnect,
-        });
-        if (reconnected) {
-          // setCesClient() cleared the cache — fall through to re-resolve
-          // with the fresh client.
-        } else {
-          // Reconnection failed or on cooldown — return the existing (dead)
-          // backend. Its methods short-circuit via isAvailable() guards and
-          // return unreachable results. Callers like getProviderKeyAsync fall
-          // back to env vars, and embedding backend selection uses cached
-          // backends.
-          return _resolvedBackend;
-        }
-      }
-    } else if (
-      _cesReconnect &&
-      _resolvedBackend.name === "ces-http" &&
-      _cesHttpUnreachable
-    ) {
-      // CES RPC is the preferred backend. Attempt to reconnect when we have
-      // no backend at all (CES startup failed), or when we're on ces-http
-      // but an operation returned unreachable (HTTP endpoint is actually
-      // down even though isAvailable() returned true, since it only checks
-      // env vars, not actual connectivity).
-      // Mutating ops bypass the cooldown here too, so a write during the
-      // window lands on CES rather than being dropped.
-      const reconnected = await attemptCesReconnection({
-        ignoreCooldown: options.forceReconnect,
-      });
-      if (reconnected) {
-        // setCesClient() cleared the cache — fall through to re-resolve.
-      } else {
-        // Reconnection failed or on cooldown — continue with current backend.
-        return _resolvedBackend;
-      }
-    } else {
-      return _resolvedBackend;
-    }
+  if (_resolvedBackend?.isAvailable()) {
+    return _resolvedBackend;
   }
+  // Dead or absent — re-resolve. `ensureClient`'s cooldown gates how often
+  // the session reopen is attempted, so back-to-back ops don't hammer CES.
+  _resolvedBackend = undefined;
+  _resolvePromise = undefined;
   if (!_resolvePromise) {
     _resolvePromise = doResolveBackend().then((backend) => {
-      // The containerized guard returns an unreachable backend without caching
-      // it (`_resolvedBackend` stays unset). Clear the memoized promise so the
-      // next credential op re-attempts CES rather than pinning the unreachable
-      // result to a pod whose CES may since have come up.
-      if (backend.name === "unavailable") {
+      // Never cache an unreachable result: the next credential op must
+      // re-attempt CES rather than pinning an outage.
+      if (backend.name !== "unavailable") {
+        _resolvedBackend = backend;
+      } else {
         _resolvePromise = undefined;
       }
       return backend;
@@ -289,225 +111,19 @@ async function resolveBackendAsync(
   return _resolvePromise;
 }
 
-function tryFailoverToCesHttpBackend(
-  backend: CredentialBackend,
-): CredentialBackend | undefined {
-  if (backend.name !== "ces-rpc") {
-    return undefined;
-  }
-  if (!getIsContainerized() || !process.env.CES_CREDENTIAL_URL) {
-    return undefined;
-  }
-
-  const cesHttp = createCesCredentialBackend();
-  if (!cesHttp.isAvailable()) {
-    return undefined;
-  }
-
-  _resolvedBackend = cesHttp;
-  _resolvePromise = undefined;
-  log.warn(
-    "CES RPC credential backend became unavailable — failing over to CES HTTP backend",
-  );
-  return cesHttp;
-}
-
-/**
- * Try to re-establish a CES connection when the current transport has died.
- * Returns true if reconnection succeeded (setCesClient was called with a
- * new client), false otherwise.
- *
- * Concurrent callers share the same in-flight reconnection attempt to avoid
- * racing on the same process manager. A timestamp cooldown prevents rapid
- * back-to-back attempts after completion; `ignoreCooldown` bypasses it for
- * callers (credential writes) where a refused attempt loses data. The
- * in-flight dedup and reentrancy guard still apply either way.
- *
- * Exported so the proactive reconnect loop in ces-runtime.ts can trigger
- * reconnection immediately on transport close, reusing the same dedup +
- * cooldown machinery as the lazy (credential-op-triggered) path.
- */
-export async function attemptCesReconnection(
-  options: { ignoreCooldown?: boolean } = {},
-): Promise<boolean> {
-  if (!_cesReconnect) {
-    return false;
-  }
-
-  // Reentrancy guard. A nested credential read from inside the reconnect
-  // callback must not `await` our own in-flight promise — that would
-  // deadlock on the 45-second credential-op timeout. Report the reconnect
-  // as failed so the caller sees "unreachable" and falls back (env vars,
-  // dead-backend response) without blocking. Concurrent callers on other
-  // async chains don't see the ALS store, so they still share the
-  // in-flight promise normally.
-  if (_reconnectContext.getStore()) {
-    return false;
-  }
-
-  // If a reconnection is already in flight, share it.
-  if (_reconnectInFlight) {
-    return _reconnectInFlight;
-  }
-
-  // Cooldown — don't retry immediately after a completed attempt.
-  if (
-    !options.ignoreCooldown &&
-    Date.now() - _lastReconnectAttempt < RECONNECT_COOLDOWN_MS
-  ) {
-    return false;
-  }
-
-  _lastReconnectAttempt = Date.now();
-  log.warn("Credential backend unavailable — attempting CES reconnection");
-
-  _reconnectInFlight = _reconnectContext.run(true, async () => {
-    try {
-      const newClient = await _cesReconnect!();
-      if (newClient) {
-        setCesClient(newClient);
-        log.info("CES reconnection successful — credential backend restored");
-        return true;
-      }
-      log.warn("CES reconnection returned no client");
-    } catch (err) {
-      log.warn({ err }, "CES reconnection failed");
-    }
-    return false;
-  });
-
-  try {
-    return await _reconnectInFlight;
-  } finally {
-    _reconnectInFlight = undefined;
-  }
-}
-
-/**
- * Open a CES RPC session from a process that did not call startCes().
- *
- * Workers and CLI subprocesses never call startCes(). This function
- * opens the same `openCesRpcSession` path the assistant uses at boot,
- * memoizing the in-flight promise so concurrent callers share a single
- * connect+handshake. Discovery uses the shared CES bootstrap socket; a
- * missing socket fails immediately so callers can fall through without
- * polling.
- *
- * On success, the client is injected via setCesClient() so subsequent
- * resolveBackendAsync() calls take the live CES RPC path. A reconnect
- * callback is also registered so the session can heal if the transport
- * drops mid-process.
- *
- * Returns undefined on any failure (socket not found, handshake rejected,
- * timeout) so the caller falls through to the next backend.
- */
-async function tryLazyCesConnect(): Promise<CesClient | undefined> {
-  if (_lazyConnectPromise) {
-    return _lazyConnectPromise;
-  }
-
-  _lazyConnectPromise = (async () => {
-    const discovery = discoverCes();
-    if (discovery.mode === "unavailable") {
-      log.info(
-        { reason: discovery.reason },
-        "CES socket not reachable for lazy connect",
-      );
-      return undefined;
-    }
-    const session = await openCesRpcSession();
-    if (!session) {
-      return undefined;
-    }
-    log.info(
-      "CES RPC session established; credential operations route through CES RPC",
-    );
-    setCesClient(session.client);
-    setCesReconnect(async () => {
-      const client = await reconnectCesRpcSession(session.processManager);
-      if (client) {
-        log.info("CES RPC reconnection successful");
-      }
-      return client;
-    });
-    return session.client;
-  })();
-
-  try {
-    return await _lazyConnectPromise;
-  } finally {
-    _lazyConnectPromise = undefined;
-  }
-}
-
 async function doResolveBackend(): Promise<CredentialBackend> {
-  // 1. CES RPC. Primary credential backend in every environment. Boot
-  //    claims reconnect ownership before it reads handshake identity, so
-  //    that read cannot open a second session. Children open here only
-  //    when this process has no client and no reconnect owner.
-  if (_cesClient) {
-    const cesRpc = new CesRpcCredentialBackend(_cesClient);
+  const client = await cesRecordBackend.ensureClient();
+  if (client) {
+    const cesRpc = new CesRpcCredentialBackend(client);
     if (cesRpc.isAvailable()) {
-      _resolvedBackend = cesRpc;
       log.info("Resolved credential backend: ces-rpc");
       return cesRpc;
     }
-    log.warn(
-      "CES RPC client is set but not ready; trying the next credential backend",
-    );
   }
-
-  if (!_cesClient && !_cesReconnect) {
-    const client = await tryLazyCesConnect();
-    if (client) {
-      const cesRpc = new CesRpcCredentialBackend(client);
-      if (cesRpc.isAvailable()) {
-        _resolvedBackend = cesRpc;
-        log.info("Resolved credential backend: ces-rpc");
-        return cesRpc;
-      }
-    }
-  }
-
-  // 2. CES HTTP. Managed failover when IPC is unavailable.
-  if (getIsContainerized() && process.env.CES_CREDENTIAL_URL) {
-    const ces = createCesCredentialBackend();
-    if (ces.isAvailable()) {
-      _resolvedBackend = ces;
-      log.info("Resolved credential backend: ces-http");
-      return ces;
-    }
-    log.warn(
-      "CES_CREDENTIAL_URL is set but CES backend is not available; " +
-        "trying the next credential backend",
-    );
-  }
-
-  // 3. CES is purely a sibling process: when no CES backend is ready, resolve
-  //    to an unreachable backend (presence indeterminate — callers retry).
-  //    Cache it so the reconnection machinery below can fire on later ops
-  //    (cooldown-gated); a CES client arrival clears the cache via
-  //    setCesClient().
   log.error(
     "No CES credential backend is ready; reporting credentials as unreachable (indeterminate).",
   );
-  _resolvedBackend = createUnavailableBackend();
-  return _resolvedBackend;
-}
-
-/**
- * Update the ces-http reachability latch after any get/list operation.
- * Sets `_cesHttpUnreachable = true` on failure so the next
- * resolveBackendAsync() call triggers a CES RPC reconnection attempt.
- * Clears it on success so a transient blip doesn't cause endless churn.
- */
-function updateCesHttpReachability(
-  backend: CredentialBackend,
-  unreachable: boolean,
-): void {
-  if (backend.name === "ces-http") {
-    _cesHttpUnreachable = unreachable;
-  }
+  return createUnavailableBackend();
 }
 
 // ---------------------------------------------------------------------------
@@ -557,7 +173,6 @@ export async function listSecureKeysAsync(): Promise<CredentialListResult> {
     async () => {
       const backend = await resolveBackendAsync();
       const result = await backend.list();
-      updateCesHttpReachability(backend, result.unreachable);
       return result;
     },
     { accounts: [], unreachable: true },
@@ -584,7 +199,6 @@ export async function getSecureKeyResultAsync(
     async () => {
       const backend = await resolveBackendAsync();
       const result = await backend.get(account);
-      updateCesHttpReachability(backend, result.unreachable);
       if (result.value != null) {
         return { value: result.value, unreachable: false };
       }
@@ -648,7 +262,7 @@ export async function setSecureKeyAsync(
   value: string,
 ): Promise<boolean> {
   const ok = await withCredentialTimeout(async () => {
-    const backend = await resolveBackendAsync({ forceReconnect: true });
+    const backend = await resolveBackendAsync();
     const stored = await backend.set(account, value);
     if (!stored) {
       log.warn(
@@ -658,7 +272,6 @@ export async function setSecureKeyAsync(
     } else {
       log.info({ account, backend: backend.name }, "Credential stored");
     }
-    updateCesHttpReachability(backend, !stored);
     return stored;
   }, false);
   // Detached, because it neither decides the result nor gates it. Under the
@@ -682,12 +295,11 @@ export async function deleteSecureKeyAsync(
   account: string,
 ): Promise<DeleteResult> {
   return withCredentialTimeout(async () => {
-    const backend = await resolveBackendAsync({ forceReconnect: true });
+    const backend = await resolveBackendAsync();
     const result = await backend.delete(account);
     if (result === "deleted") {
       log.info({ account, backend: backend.name }, "Credential deleted");
     }
-    updateCesHttpReachability(backend, result === "error");
     return result;
   }, "error");
 }
@@ -759,12 +371,6 @@ export function getActiveBackendInfoAsync(): Promise<BackendInfo> {
       if (backend.name === "ces-rpc") {
         return { backend: "ces-rpc" as const, ready: backend.isAvailable() };
       }
-      if (backend.name === "ces-http") {
-        return {
-          backend: "ces-http" as const,
-          url: process.env.CES_CREDENTIAL_URL ?? "",
-        };
-      }
       return { backend: "none" as const };
     },
     { backend: "none" as const },
@@ -773,13 +379,6 @@ export function getActiveBackendInfoAsync(): Promise<BackendInfo> {
 
 /** @internal Test-only: reset the cached backends so they're re-created. */
 export function _resetBackend(): void {
-  _cesClient = undefined;
   _resolvedBackend = undefined;
   _resolvePromise = undefined;
-  _cesReconnect = undefined;
-  _cesClientListener = undefined;
-  _lastReconnectAttempt = 0;
-  _reconnectInFlight = undefined;
-  _cesHttpUnreachable = false;
-  _lazyConnectPromise = undefined;
 }

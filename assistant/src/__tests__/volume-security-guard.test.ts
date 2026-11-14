@@ -10,7 +10,7 @@ import { describe, expect, test } from "bun:test";
  *
  * All access must go through the appropriate abstraction layer:
  *  - Trust rules: trust-store.ts / trust-client.ts (file vs gateway backend)
- *  - Credentials: encrypted-store.ts / ces-credential-client.ts
+ *  - Credentials: encrypted-store.ts
  *  - Signing keys: secure-keys.ts / credential-backend.ts
  *
  * Only the abstraction-layer files themselves (and tests) are allowed to
@@ -29,7 +29,6 @@ const ALLOWED_FILES = new Set([
   // Credential backends
   "assistant/src/security/secure-keys.ts",
   "assistant/src/security/credential-backend.ts",
-  "assistant/src/security/ces-credential-client.ts",
   // CLI commands that run outside Docker (trust management)
   "assistant/src/cli/commands/trust.ts",
   // Permission checker: classifies file_read of signing key as High risk
@@ -133,7 +132,7 @@ describe("volume security: protected directory access guard", () => {
           "accessible to the assistant. All access to protected files must go",
           "through the abstraction layers:",
           "  - Trust rules: trust-store.ts / trust-client.ts",
-          "  - Credentials: secure-keys.ts / ces-credential-client.ts",
+          "  - Credentials: secure-keys.ts",
           "  - Signing keys: secure-keys.ts / credential-backend.ts",
           "",
           "If this file is a new abstraction backend, add it to ALLOWED_FILES",
