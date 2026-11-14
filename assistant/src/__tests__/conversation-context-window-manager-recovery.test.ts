@@ -8,8 +8,7 @@
  * acceptance and the turn's first manager touch. The run path rehydrates
  * history from the DB after such a teardown; the manager is the one piece the
  * turn cannot recover on its own. These tests pin that the accessor rebuilds
- * and re-registers the manager (instead of failing the turn) and replays the
- * injected inherited-context prefix seed onto the rebuilt instance.
+ * and re-registers the manager instead of failing the turn.
  */
 import { describe, expect, test } from "bun:test";
 
@@ -24,7 +23,6 @@ import {
   disposeContextWindowManager,
   getContextWindowManager,
 } from "../plugins/defaults/compaction/manager-store.js";
-import type { Message } from "../providers/types.js";
 import { createMockProvider } from "./helpers/mock-provider.js";
 
 await initializeDb();
@@ -43,15 +41,6 @@ function makeConversation(id: string): Conversation {
   createConversation(id);
   const { provider } = createMockProvider([]);
   return new Conversation(id, provider, "system prompt", () => {}, "/tmp");
-}
-
-function makeInheritedMessages(): Message[] {
-  return [
-    {
-      role: "user",
-      content: [{ type: "text", text: "inherited parent context" }],
-    },
-  ];
 }
 
 describe("contextWindowManager accessor after a store release", () => {
@@ -84,15 +73,5 @@ describe("contextWindowManager accessor after a store release", () => {
     const rebuilt = conversation.contextWindowManager;
 
     expect(conversation.contextWindowManager === rebuilt).toBe(true);
-  });
-
-  test("replays the injected inherited-context prefix onto the rebuild", () => {
-    const conversation = makeConversation("conv-cwm-seed");
-    conversation.injectInheritedContext(makeInheritedMessages());
-    expect(conversation.contextWindowManager.nonPersistedPrefixCount).toBe(1);
-
-    disposeContextWindowManager("conv-cwm-seed");
-
-    expect(conversation.contextWindowManager.nonPersistedPrefixCount).toBe(1);
   });
 });

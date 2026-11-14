@@ -898,13 +898,6 @@ export class Conversation {
    * @internal
    */
   private onboardingContext?: OnboardingContext;
-  /**
-   * Messages injected by {@link injectInheritedContext} are not persisted —
-   * they exist only in memory, and the compaction store's manager tracks how
-   * many of them still lead the history. Recorded here so a manager rebuilt
-   * after an eviction race can re-apply the seed.
-   */
-  private injectedContextPrefixCount: number | undefined;
   /** @internal */ currentTurnChannelContext: TurnChannelContext | null = null;
   /** @internal */ currentTurnInterfaceContext: TurnInterfaceContext | null =
     null;
@@ -1075,10 +1068,8 @@ export class Conversation {
    * the compaction module's per-conversation store. The constructor runs this
    * once; the {@link contextWindowManager} accessor runs it again as recovery
    * when the store entry was released while the conversation is still live.
-   * Re-applies the injected inherited-context prefix seed so a recovered
-   * manager keeps the compactor's non-persisted-prefix bookkeeping.
    */
-  private registerContextWindowManager(): void {
+  private registerContextWindowManager(): ContextWindowManager {
     const config = getConfig();
     const resolvedMainAgent = resolveCallSiteConfig("mainAgent", config.llm);
     const initialContextWindow = resolveEffectiveContextWindow({
@@ -1089,7 +1080,7 @@ export class Conversation {
       getAllToolDefinitions(),
       this,
     );
-    const manager = createContextWindowManager({
+    return createContextWindowManager({
       provider: this.provider,
       config: contextWindowConfigFromEffective(
         resolvedMainAgent.contextWindow,
@@ -1101,9 +1092,6 @@ export class Conversation {
         ? () => resolveTools(this.messages)
         : undefined,
     });
-    if (this.injectedContextPrefixCount != null) {
-      manager.seedNonPersistedPrefix(this.injectedContextPrefixCount);
-    }
   }
 
   /**
@@ -1121,22 +1109,10 @@ export class Conversation {
    * here rather than fail the turn.
    */
   /** @internal */ get contextWindowManager(): ContextWindowManager {
-    const manager = getContextWindowManager(this.conversationId);
-    if (manager != null) {
-      return manager;
-    }
-    log.warn(
-      { conversationId: this.conversationId },
-      "ContextWindowManager missing for a live conversation — rebuilding it (the compaction store entry was released while the conversation is still live)",
+    return (
+      getContextWindowManager(this.conversationId) ??
+      this.registerContextWindowManager()
     );
-    this.registerContextWindowManager();
-    const rebuilt = getContextWindowManager(this.conversationId);
-    if (rebuilt == null) {
-      throw new Error(
-        `ContextWindowManager rebuild failed for conversation ${this.conversationId} — the compaction store did not register one`,
-      );
-    }
-    return rebuilt;
   }
 
   // ── Onboarding context ───────────────────────────────────────────
@@ -2197,7 +2173,6 @@ export class Conversation {
       );
     }
     this.messages = [...messages];
-    this.injectedContextPrefixCount = messages.length;
     this.contextWindowManager.seedNonPersistedPrefix(messages.length);
   }
 
