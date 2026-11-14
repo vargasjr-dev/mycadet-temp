@@ -33,6 +33,4 @@ export const GuardianTokenFileSchema = z.object({
   leasedAt: z.string(),
 });
 
-export interface GuardianTokenData extends z.infer<
-  typeof GuardianTokenFileSchema
-> {}
+export type GuardianTokenData = z.infer<typeof GuardianTokenFileSchema>;
