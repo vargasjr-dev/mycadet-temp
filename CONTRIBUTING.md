@@ -21,7 +21,7 @@ cd mycadet
 Verify your setup:
 
 ```bash
-cadet --version
+cadet-local --version
 ```
 
 ### Running the Assistant Locally
@@ -29,10 +29,11 @@ cadet --version
 **CLI only:**
 
 ```bash
-cadet hatch   # first-time setup (only needed once)
-cadet wake    # start an existing assistant
-cadet client  # interact with your assistant through the terminal
-cadet sleep   # stop but do not remove an existing assistant
+cadet-local hatch   # first-time setup (only needed once)
+cadet-local sleep   # stop but do not remove an existing assistant
+cadet-local wake    # start an existing assistant
+cadet-local retire  # stop and remove an assistant
+cadet-local client  # interact with your assistant through the terminal
 ```
 
 ### Running Tests
@@ -118,6 +119,35 @@ If you can build it as a skill in your own workspace, do that first. If you thin
 
 - DM a member of the core team directly to coordinate a call, or
 - start a thread in the [#contributors](https://discord.com/channels/1471183263174234245/1503398277092081875) channel on Discord.
+
+## Dev Environment
+
+At least once per day there will be `dev` releases published to NPM for risk-tolerant users looking
+to help QA the bleeding edge. To get started with a `dev` release:
+
+```bash
+npm install -g mycadet@dev
+cadet-dev hatch
+```
+
+In general, we recommend only using dev releases for new Cadets that are not instrumental to your
+day-to-day work. However, some features can truly only be QA'd on your production Cadets.
+If you have an existing Cadet on a production release, and you would like to start using _that_ Cadet
+on a dev release, the dev releases come with both the `cadet-dev` and `cadet` binaries, where it simulates
+the production assistant with the latter. To use the dev release on your production Cadet:
+
+```bash
+npm install -g mycadet@dev
+cadet upgrade
+```
+
+**WARNING:** Going _backwards_ from a dev release to a production release has not well defined behavior
+and can lead to data corruption. We recommend waiting for the next production release before returning your
+Cadet from a dev release to a production release. For example:
+- *DO NOT* run `cadet upgrade` to move from `0.13.0-dev.202610280329.ad222b0` -> `0.13.0`
+- *DO* run `cadet upgrade` to move from `0.13.0-dev.202610280329.ad222b0` -> `0.13.1`
+
+We may introduce validation in the future to protect against the former.
 
 ## Code of Conduct
 
