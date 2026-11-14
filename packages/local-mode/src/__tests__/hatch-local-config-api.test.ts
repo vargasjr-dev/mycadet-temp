@@ -50,6 +50,13 @@ mock.module("../remotes/local/hatch-config", () => ({
   },
 }));
 
+const actualDaemonReadiness = await import("../daemon-readiness");
+const readyMock = mock(async () => true);
+mock.module("../daemon-readiness", () => ({
+  ...actualDaemonReadiness,
+  waitForReady: readyMock,
+}));
+
 // Spread the actual modules under the overrides — other modules in the
 // import graph need the exports this test doesn't touch.
 const actualGuardianToken = await import("../guardian-token");
@@ -87,6 +94,7 @@ const { hatchLocal } = await import("../remotes/local/hatch");
 afterAll(() => {
   mock.module("../remotes/local/wake", () => actualLocalWake);
   mock.module("../remotes/local/hatch-config", () => actualHatchConfig);
+  mock.module("../daemon-readiness", () => actualDaemonReadiness);
   mock.module("../guardian-token", () => actualGuardianToken);
   mock.module("../provider-credentials", () => actualProviderCredentials);
   mock.module("../cloud-auth", () => actualCloudAuth);

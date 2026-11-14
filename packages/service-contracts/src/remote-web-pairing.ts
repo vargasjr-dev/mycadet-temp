@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Wire contracts for the remote-web pairing flow — the RFC 8628-style
  * device-code exchange that connects a browser (or the iOS app) to a
@@ -58,6 +60,16 @@ export interface RemoteWebPairingChallengeResponse {
   /** Recommended poll interval (seconds) for the token-exchange endpoint. */
   intervalSeconds: number;
 }
+
+export const RemoteWebPairingChallengeResponseSchema = z.object({
+  deviceCode: z.string(),
+  userCode: z.string(),
+  verificationUri: z.string(),
+  publicBaseUrl: z.string(),
+  expiresAt: z.string(),
+  expiresInSeconds: z.number(),
+  intervalSeconds: z.number(),
+}) satisfies z.ZodType<RemoteWebPairingChallengeResponse>;
 
 /** `POST /v1/remote-web/pairing-verification` request body. */
 export interface RemoteWebPairingVerificationRequest {

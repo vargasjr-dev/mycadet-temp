@@ -189,6 +189,7 @@ COPY packages/egress-proxy /app/packages/egress-proxy
 COPY packages/environments /app/packages/environments
 COPY packages/gateway-client /app/packages/gateway-client
 COPY packages/ipc-server-utils /app/packages/ipc-server-utils
+COPY packages/shared /app/packages/shared
 COPY packages/slack-text /app/packages/slack-text
 COPY packages/twilio-client /app/packages/twilio-client
 

@@ -50,6 +50,7 @@ import { appleContainerPair } from "@mycadet/local-mode";
 import { cloudPair } from "../lib/remotes/cloud.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
+import { RemoteWebPairingChallengeResponseSchema } from "@mycadet/service-contracts/remote-web-pairing";
 
 function assistantDisplayName(entry: LockfileAssistant): string {
   return entry.name || entry.assistantId;
@@ -207,19 +208,19 @@ function parseMintedChallenge(
   stdout: string,
 ): RemoteWebPairingChallengeResponse {
   // Same last-line JSON contract the guardian lease's pair door uses — the
-  // CLI runs with pino silenced, so the payload line is reliably last.
-  const parsed = pairCliStdoutToResult(stdout);
+  // CLI runs with pino silenced, so the payload line is reliably last, and
+  // the parser zod-parses the shape so nothing downstream casts.
+  const parsed = pairCliStdoutToResult(
+    stdout,
+    RemoteWebPairingChallengeResponseSchema,
+  );
   if (!parsed.ok) {
-    console.error("Error: could not parse the gateway's pairing mint output.");
-    process.exit(1);
-  }
-  const challenge = parsed.response as RemoteWebPairingChallengeResponse;
-  if (!challenge.deviceCode || !challenge.userCode) {
     console.error(
-      "Error: the gateway's pairing mint output is missing the challenge codes.",
+      `Error: could not parse the gateway's pairing mint output: ${parsed.error}`,
     );
     process.exit(1);
   }
+  const challenge = parsed.response;
   return challenge;
 }
 

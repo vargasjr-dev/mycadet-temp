@@ -230,19 +230,21 @@ async function startAssistantThenSidecars(
   await Promise.all([start("gateway"), start("credential-executor")]);
 }
 
-/** Start all three containers: the namespace owner first, sidecars together. */
-export async function startContainers(
-  opts: {
-    createOnly?: boolean;
-    extraAssistantEnv?: Record<string, string>;
-    extraGatewayEnv?: Record<string, string>;
-    gatewayPort: number;
-    imageTags: Record<ServiceName, string>;
-    instanceName: string;
-    res: ReturnType<typeof dockerResourceNames>;
-    netnsContainer?: string;
-    assistantCaCertPath?: string;
-  },
+/** The container bring-up options shared by start and create. */
+type ServiceContainersOpts = {
+  extraAssistantEnv?: Record<string, string>;
+  extraGatewayEnv?: Record<string, string>;
+  gatewayPort: number;
+  imageTags: Record<ServiceName, string>;
+  instanceName: string;
+  res: ReturnType<typeof dockerResourceNames>;
+  netnsContainer?: string;
+  assistantCaCertPath?: string;
+};
+
+async function runServiceContainers(
+  opts: ServiceContainersOpts,
+  mode: "start" | "create",
   log: (msg: string) => void,
 ): Promise<void> {
   const runArgs = buildServiceRunArgs({
@@ -251,11 +253,34 @@ export async function startContainers(
   });
   await startAssistantThenSidecars(runArgs, async (service) => {
     const args = runArgs[service]();
-    if (opts.createOnly) {
+    if (mode === "create") {
       args[0] = "create";
       args.splice(args.indexOf("-d"), 1);
     }
-    log(`${opts.createOnly ? "Creating" : "Starting"} ${service} container...`);
+    log(
+      `${mode === "create" ? "Creating" : "Starting"} ${service} container...`,
+    );
     await exec("docker", args);
   });
+}
+
+/** Start all three containers: the namespace owner first, sidecars together. */
+export async function startContainers(
+  opts: ServiceContainersOpts,
+  log: (msg: string) => void,
+): Promise<void> {
+  return runServiceContainers(opts, "start", log);
+}
+
+/**
+ * Create all three containers WITHOUT starting them — the initialize-data
+ * half of a versioned restore: the caller installs the transferred archive
+ * into the created volumes, then wakes. Separate from `startContainers` so
+ * neither flow carries the other's mode.
+ */
+export async function createContainers(
+  opts: ServiceContainersOpts,
+  log: (msg: string) => void,
+): Promise<void> {
+  return runServiceContainers(opts, "create", log);
 }

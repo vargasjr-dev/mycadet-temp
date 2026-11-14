@@ -629,7 +629,8 @@ export async function leaseGuardianToken(
   });
   if (!paired.ok) throw new Error(paired.error);
 
-  const tokenData = parseGuardianToken(paired.response);
+  // The pair door already zod-parsed the mint's stdout line.
+  const tokenData = paired.response;
 
   saveGuardianToken(assistantId, tokenData);
   return tokenData;

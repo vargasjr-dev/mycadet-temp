@@ -1,3 +1,6 @@
+import { z } from "zod";
+
+import type { GuardianTokenData } from "../guardian-token";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { pairDocker } from "../remotes/docker/pair";
 import { pairLocal } from "../remotes/local/pair";
@@ -10,8 +13,8 @@ import { pairLocal } from "../remotes/local/pair";
  * the same way. The structured failure comes back for the caller to render;
  * the guardian lease is its consumer.
  */
-export type PairOperationResult =
-  | { ok: true; response: unknown }
+export type PairOperationResult<T = unknown> =
+  | { ok: true; response: T }
   | { ok: false; status: number; error: string };
 
 /** The device identity the gateway's pair door accepts. */
@@ -24,12 +27,18 @@ export interface PairDeviceIdentity {
 /**
  * The gateway CLI prints the pair payload as single-line JSON; its last
  * stdout line is the answer (earlier lines may carry warnings). The CLI
- * itself runs with pino silenced, so the payload line is reliably last.
+ * itself runs with pino silenced, so the payload line is reliably last. The
+ * caller's schema parses that line — a payload that parses as JSON but does
+ * not match the expected shape is a failed pair, same as garbage stdout.
  */
-export function pairCliStdoutToResult(stdout: string): PairOperationResult {
+export function pairCliStdoutToResult<T>(
+  stdout: string,
+  schema: z.ZodType<T>,
+): PairOperationResult<T> {
   const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";
+  let raw: unknown;
   try {
-    return { ok: true, response: JSON.parse(lastLine) };
+    raw = JSON.parse(lastLine);
   } catch {
     // The output is the only diagnostic for a failed lease — surface a
     // bounded tail of it (the payload line never parsed, so it is not a
@@ -44,13 +53,23 @@ export function pairCliStdoutToResult(stdout: string): PairOperationResult {
       }`,
     };
   }
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    const tail = stdout.trimEnd().slice(-300);
+    return {
+      ok: false,
+      status: 0,
+      error: `the gateway's pair output did not match the expected payload shape (stdout tail: ${tail})`,
+    };
+  }
+  return { ok: true, response: parsed.data };
 }
 
 export async function pairDevice(
   entry: LockfileAssistant,
   device: PairDeviceIdentity,
-): Promise<PairOperationResult> {
-  let result: PairOperationResult;
+): Promise<PairOperationResult<GuardianTokenData>> {
+  let result: PairOperationResult<GuardianTokenData>;
   switch (entry.cloud) {
     case "local":
       result = await pairLocal(entry, device);

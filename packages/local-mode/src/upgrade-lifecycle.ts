@@ -10,7 +10,7 @@ import { saveLockfileAssistant } from "./lockfile";
 import type { LockfileAssistant } from "./lockfile-contract";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops";
 import { captureImageRefs } from "./remotes/docker/upgrade";
-import { wakeDocker } from "./remotes/docker/wake";
+import { createContainers, wakeDocker } from "./remotes/docker/wake";
 import { pullImage, resolveImageRefs } from "./remotes/docker/hatch";
 import {
   getBuilderManagedEnvKeys,
@@ -683,7 +683,7 @@ export async function performDockerRollback(
   let ready = false;
   try {
     console.log("Creating stopped containers with the target version...");
-    await startContainers(
+    await createContainers(
       {
         extraAssistantEnv,
         extraGatewayEnv,
@@ -691,7 +691,6 @@ export async function performDockerRollback(
         imageTags: targetImageTags,
         instanceName,
         res,
-        createOnly: true,
       },
       (msg) => console.log(msg),
     );

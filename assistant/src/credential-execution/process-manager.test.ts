@@ -5,7 +5,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { waitFor } from "../__tests__/helpers/wait-for.js";
-import { createCesProcessManager } from "./process-manager.js";
+import {
+  createCesProcessManager,
+  type CesProcessManagerConfig,
+} from "./process-manager.js";
 
 const untilClosed = (predicate: () => boolean) =>
   waitFor(predicate, {
@@ -124,10 +127,11 @@ describe("CesProcessManager.onTransportClose", () => {
 // ---------------------------------------------------------------------------
 
 type LogCall = { level: string; msg: string };
+type PmLogger = NonNullable<CesProcessManagerConfig["logger"]>;
 
 function makeRecordingLogger(): {
   calls: LogCall[];
-  logger: NonNullable<Parameters<typeof createCesProcessManager>[0]["logger"]>;
+  logger: PmLogger;
 } {
   const calls: LogCall[] = [];
   const rec =
@@ -141,9 +145,7 @@ function makeRecordingLogger(): {
     warn: rec("warn"),
     debug: rec("debug"),
     error: rec("error"),
-  } as unknown as NonNullable<
-    Parameters<typeof createCesProcessManager>[0]["logger"]
-  >;
+  } as unknown as PmLogger;
   return { calls, logger };
 }
 

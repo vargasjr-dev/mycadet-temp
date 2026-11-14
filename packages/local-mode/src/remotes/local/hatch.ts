@@ -11,6 +11,7 @@ import { wakeLocal } from "./wake";
 import { setStartupLogging } from "./common";
 import { withLocalHatchLock } from "./hatch-lock";
 import { applyHatchConfig, buildHatchConfigValues } from "./hatch-config";
+import { waitForReady } from "../../daemon-readiness";
 import { generateInstanceName } from "../../naming";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -158,6 +159,23 @@ export async function hatchLocal(params: {
 
   log(`🥚 Hatching local assistant: ${instanceName}`);
   log("");
+
+  // Wake only proves the PROCESSES are alive — the gateway's traffic gate
+  // stays closed while the daemon migrates, and a config apply or guardian
+  // lease that races it gets `503 {"status":"starting"}`. Wait for the
+  // assistant to answer ready (the same body-classified poll the docker
+  // hatch runs) before leasing and applying config.
+  if (!(await waitForReady(getGatewayUrl(entry)))) {
+    return {
+      ok: false,
+      status: 500,
+      error:
+        `Timed out waiting for assistant to become ready\n\n` +
+        `❌ The assistant is running but never reported ready.\n` +
+        `   Logs: ${join(resolveAssistantsDir(), instanceName, "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+      assistantId: instanceName,
+    };
+  }
 
   const hatchConfigValues = buildHatchConfigValues(configValues, provider);
 

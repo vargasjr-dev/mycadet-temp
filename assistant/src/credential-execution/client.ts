@@ -59,8 +59,6 @@ export interface CesSessionClient extends CesRpcClient, CesClientLifecycle {}
 export interface CesSessionClientOptions {
   /** Handshake material reused verbatim across reconnections. */
   handshake?: CesRpcHandshakeOptions;
-  /** Socket discovery override. Tests inject a stub. */
-  discover?: Parameters<typeof createCesProcessManager>[0]["discover"];
   /** RPC/handshake timeouts forwarded to the shared client. */
   config?: CesRpcClientConfig;
 }
@@ -79,7 +77,9 @@ export interface CesSessionClientOptions {
 export async function createCesClient(
   options: CesSessionClientOptions = {},
 ): Promise<CesSessionClient | undefined> {
-  const pm = createCesProcessManager({ discover: options.discover });
+  // Socket discovery is the process manager's own concern — this factory
+  // only supplies the session-level handshake and timeouts.
+  const pm = createCesProcessManager();
   const handshake = options.handshake;
 
   let inner: CesRpcClient | undefined;

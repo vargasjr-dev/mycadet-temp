@@ -20,7 +20,7 @@ import {
   stageRootArchive,
   STATE_ROOTS,
 } from "../root-backup";
-import { startContainers } from "../remotes/docker/wake";
+import { createContainers } from "../remotes/docker/wake";
 import { sleepDocker } from "../remotes/docker/sleep";
 import { dockerResourceNames } from "../remotes/docker/retire";
 import type { LockfileAssistant } from "../lockfile-contract";
@@ -259,9 +259,8 @@ test("create-only provisioning creates every target container without starting s
       return { stdout: "created" };
     },
   );
-  await startContainers(
+  await createContainers(
     {
-      createOnly: true,
       gatewayPort: 7830,
       imageTags: {
         assistant: "assistant:target",

@@ -6,6 +6,8 @@ import type {
 import { pairCliStdoutToResult } from "../../operations/pair";
 import type { LocalAssistant } from "../../lockfile-contract";
 import { gatewayCliInvocation } from "./common";
+import type { GuardianTokenData } from "../../guardian-token";
+import { GuardianTokenFileSchema } from "../../guardian-token";
 
 /**
  * Pair by running the gateway's OWN CLI on this host (local topology): the
@@ -24,11 +26,11 @@ export function pairLocal(entry: LocalAssistant): Promise<string>;
 export function pairLocal(
   entry: LocalAssistant,
   device: PairDeviceIdentity,
-): Promise<PairOperationResult>;
+): Promise<PairOperationResult<GuardianTokenData>>;
 export async function pairLocal(
   entry: LocalAssistant,
   device?: PairDeviceIdentity,
-): Promise<string | PairOperationResult> {
+): Promise<string | PairOperationResult<GuardianTokenData>> {
   const invocation = gatewayCliInvocation(entry);
   const args = [...invocation.args, "pairing", "mint"];
   if (device) {
@@ -48,7 +50,9 @@ export async function pairLocal(
       env: invocation.env,
       timeoutMs: 30_000,
     });
-    return device ? pairCliStdoutToResult(stdout) : stdout;
+    return device
+      ? pairCliStdoutToResult(stdout, GuardianTokenFileSchema)
+      : stdout;
   } catch (err) {
     if (!device) throw err;
     return {

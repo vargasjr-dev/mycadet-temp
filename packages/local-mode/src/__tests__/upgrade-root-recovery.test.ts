@@ -21,6 +21,7 @@ const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(sleepDockerModule, "sleepDocker");
 const start = spyOn(dockerWake, "startContainers");
+const create = spyOn(dockerWake, "createContainers");
 const fetch = spyOn(localMode, "loopbackSafeFetch");
 const res = localMode.dockerResourceNames("recovery");
 const entry: LockfileAssistant = {
@@ -54,6 +55,7 @@ beforeEach(() => {
   restore.mockReset();
   sleep.mockReset();
   start.mockReset();
+  create.mockReset();
   fetch.mockReset();
   restore.mockImplementation(async () => {
     events.push("restore-roots");
@@ -75,6 +77,7 @@ afterAll(() => {
     restore,
     sleep,
     start,
+    create,
     fetch,
     capture,
     images,
@@ -151,8 +154,7 @@ test("versioned restore installs roots into stopped target containers before fir
     "credential-executor": "ces:current",
   });
   pull.mockResolvedValue(undefined);
-  start.mockImplementation(async (options) => {
-    expect((options as { createOnly?: boolean }).createOnly).toBe(true);
+  create.mockImplementation(async () => {
     events.push("create-stopped-target");
   });
   wake.mockImplementation(async () => {

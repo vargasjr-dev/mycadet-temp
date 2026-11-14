@@ -1,5 +1,18 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { LocalAssistant } from "../lockfile-contract";
+import type { GuardianTokenData } from "../guardian-token";
+
+/** A minimal valid guardian token payload — these tests exercise the door. */
+const fakeToken = (token: string): GuardianTokenData => ({
+  guardianPrincipalId: "guardian-1",
+  accessToken: token,
+  accessTokenExpiresAt: 0,
+  refreshToken: "refresh-1",
+  refreshTokenExpiresAt: 0,
+  refreshAfter: "1970-01-01T00:00:00.000Z",
+  deviceId: "device-1",
+  leasedAt: "1970-01-01T00:00:00.000Z",
+});
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -53,7 +66,7 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
   });
 
   test("runs `gateway pairing mint` with the device identity as flags", async () => {
-    execOutputMock.mockResolvedValue(JSON.stringify({ token: "t" }));
+    execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     const result = await pairLocal(entry, {
       platform: "cli",
       deviceId: "device-1",
@@ -77,11 +90,11 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(options?.cwd).toBe("/fake/state-root");
     expect(options?.env).toEqual({});
     expect(options?.timeoutMs).toBe(30_000);
-    expect(result).toEqual({ ok: true, response: { token: "t" } });
+    expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
   test("omits the name flag when the device reports none", async () => {
-    execOutputMock.mockResolvedValue(JSON.stringify({ token: "t" }));
+    execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     await pairLocal(entry, { platform: "cli", deviceId: "device-2" });
     expect(execOutputMock.mock.calls[0]![1]).toEqual([
       "run",
@@ -97,16 +110,13 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
 
   test("parses the LAST stdout line — earlier lines are warnings", async () => {
     execOutputMock.mockResolvedValue(
-      `warning: cache cold\n${JSON.stringify({ token: "t", guardianId: "g" })}`,
+      `warning: cache cold\n${JSON.stringify(fakeToken("t"))}`,
     );
     const result = await pairLocal(entry, {
       platform: "cli",
       deviceId: "device-3",
     });
-    expect(result).toEqual({
-      ok: true,
-      response: { token: "t", guardianId: "g" },
-    });
+    expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
   test("an unparseable answer comes back structured", async () => {

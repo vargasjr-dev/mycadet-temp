@@ -1,5 +1,17 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { DockerAssistant } from "../lockfile-contract";
+import type { GuardianTokenData } from "../guardian-token";
+/** A minimal valid guardian token payload — these tests exercise the door. */
+const fakeToken = (token: string): GuardianTokenData => ({
+  guardianPrincipalId: "guardian-1",
+  accessToken: token,
+  accessTokenExpiresAt: 0,
+  refreshToken: "refresh-1",
+  refreshTokenExpiresAt: 0,
+  refreshAfter: "1970-01-01T00:00:00.000Z",
+  deviceId: "device-1",
+  leasedAt: "1970-01-01T00:00:00.000Z",
+});
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them — bun runs every test file in one process with a
@@ -31,7 +43,7 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
   });
 
   test("docker-execs `gateway pairing mint` with the device identity as flags", async () => {
-    execOutputMock.mockResolvedValue(JSON.stringify({ token: "t" }));
+    execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     const result = await pairDocker(entry, {
       platform: "cli",
       deviceId: "device-1",
@@ -58,18 +70,16 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
       "box",
     ]);
     expect(options?.timeoutMs).toBe(30_000);
-    expect(result).toEqual({ ok: true, response: { token: "t" } });
+    expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
   test("parses the LAST stdout line of the mint", async () => {
-    execOutputMock.mockResolvedValue(
-      `warn\n${JSON.stringify({ token: "t", isNew: true })}`,
-    );
+    execOutputMock.mockResolvedValue(`warn\n${JSON.stringify(fakeToken("t"))}`);
     const result = await pairDocker(entry, {
       platform: "cli",
       deviceId: "device-2",
     });
-    expect(result).toEqual({ ok: true, response: { token: "t", isNew: true } });
+    expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
   test("an exec failure (container gone) comes back structured", async () => {

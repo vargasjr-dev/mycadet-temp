@@ -571,14 +571,6 @@ export interface HatchDockerParams {
    */
   precollectedApiKey?: string;
   /**
-   * Create the three containers without starting them and persist the entry
-   * without waiting for readiness — the teleport's initialize-data half. The
-   * caller installs the transferred archive into the created volumes and
-   * wakes; a hatch is just initialize-data + wake, and the teleport owns
-   * both halves itself.
-   */
-  createOnly?: boolean;
-  /**
    * The CLI's release version — owns the Docker Hub image resolution (the
    * published images are tagged from it).
    */
@@ -624,8 +616,8 @@ export type HatchDockerResult =
       ok: true;
       entry: DockerAssistant;
       /**
-       * False when hatch returned early (createOnly) or the readiness wait
-       * timed out in watch mode (where the watcher's rebuilds retry it).
+       * False when the readiness wait timed out in watch mode (where the
+       * watcher's rebuilds retry it).
        */
       ready: boolean;
       guardianAccessToken?: string;
@@ -877,12 +869,8 @@ export async function hatchDocker(
         cesImage: imageTags["credential-executor"],
       },
     };
-    if (params.createOnly) {
-      saveLockfileAssistant(dockerEntry);
-    }
     await startContainers(
       {
-        createOnly: !!params.createOnly,
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
@@ -898,12 +886,6 @@ export async function hatchDocker(
     // The active-assistant switch rides the same locked write.
     saveLockfileAssistant(dockerEntry, instanceName);
 
-    if (params.createOnly) {
-      // The teleport's initialize-data half: containers exist (created, not
-      // started) and the entry is persisted — the caller installs the
-      // transferred archive into the volumes and wakes.
-      return { ok: true, entry: dockerEntry, ready: false };
-    }
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;
     const { ready, guardianAccessToken, notReadyReason } =
@@ -1055,10 +1037,12 @@ async function waitForGatewayAndLease(opts: {
   if (detached) {
     // Lease a guardian token BEFORE declaring the assistant hatched so the
     // banner means `cadet ps`, `cadet exec`, and other CLI commands can
-    // already authenticate. Skip the /readyz readiness poll (the caller
-    // asked to detach and not block) but retry the lease silently since
-    // the gateway may need a moment to accept connections after the
-    // container starts; only a final failure surfaces to the user.
+    // already authenticate. The lease only proves the GATEWAY is answering —
+    // the assistant daemon behind it can still be starting, so the /readyz
+    // poll below still runs (same budget): the config apply and provider
+    // setup that follow the lease need the daemon actually ready, not just
+    // the gateway. The lease retries silently since the gateway may need a
+    // moment to accept connections after the container starts.
     const leaseDeadline = containersUpAt + DOCKER_READY_TIMEOUT_MS;
     let guardianAccessToken: string | undefined;
     while (Date.now() < leaseDeadline) {
@@ -1078,6 +1062,25 @@ async function waitForGatewayAndLease(opts: {
       );
     }
 
+    // The same body-classified readiness wait the attached path runs — a
+    // 503 `{"status":"starting"}` from the gateway's traffic gate is what
+    // awaits anything that skips it.
+    const detachedReadiness = await pollReadyzUntil(
+      gatewayUrl,
+      leaseDeadline,
+      log,
+    );
+    if (detachedReadiness === "failed") {
+      return {
+        ready: false,
+        guardianAccessToken,
+        notReadyReason: "migrations_failed",
+      };
+    }
+    if (detachedReadiness === "timeout") {
+      return { ready: false, guardianAccessToken };
+    }
+
     return { ready: true, guardianAccessToken };
   }
 
@@ -1086,47 +1089,21 @@ async function waitForGatewayAndLease(opts: {
   log("");
   log("Waiting for assistant to become ready...");
 
-  const readyUrl = `${gatewayUrl}/readyz`;
   const start = containersUpAt;
-  let ready = false;
-  let migrationsFailed = false;
-
   // Readiness is classified from the /readyz BODY: the assistant returns 200
   // with `ready: false` while DB migrations run (the k8s keep-the-pod
   // contract), so `resp.ok` alone would declare readiness mid-migration and
   // the guardian token lease below would burn its shared budget against the
   // gateway's still-closed traffic gate.
-  while (Date.now() - start < DOCKER_READY_TIMEOUT_MS) {
-    try {
-      const resp = await loopbackSafeFetch(readyUrl, {
-        signal: AbortSignal.timeout(5000),
-      });
-      const body = (await resp.json().catch(() => null)) as {
-        status?: string;
-        upstream?: number;
-      } | null;
-      const readiness = classifyReadyzResponse(resp.ok, body);
-      if (readiness === "ready") {
-        ready = true;
-        break;
-      }
-      if (readiness === "failed") {
-        migrationsFailed = true;
-        break;
-      }
-      const parts = [body?.status].filter(Boolean);
-      if (body?.upstream != null) parts.push(`upstream=${body.upstream}`);
-      const detail = parts.length > 0 ? ` — ${parts.join(", ")}` : "";
-      log(`Readiness check: ${resp.status}${detail} (retrying...)`);
-    } catch {
-      // Connection refused / timeout — not up yet
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
+  const readiness = await pollReadyzUntil(
+    gatewayUrl,
+    start + DOCKER_READY_TIMEOUT_MS,
+    log,
+  );
 
-  if (!ready) {
+  if (readiness !== "ready") {
     log("");
-    if (migrationsFailed) {
+    if (readiness === "failed") {
       log(`   \u26a0\ufe0f  Assistant database migrations FAILED.`);
     } else {
       log(`   \u26a0\ufe0f  Timed out waiting for assistant to become ready.`);
@@ -1136,7 +1113,7 @@ async function waitForGatewayAndLease(opts: {
     log("");
     return {
       ready: false,
-      ...(migrationsFailed
+      ...(readiness === "failed"
         ? { notReadyReason: "migrations_failed" as const }
         : {}),
     };
@@ -1191,7 +1168,44 @@ async function waitForGatewayAndLease(opts: {
 }
 
 /**
- * Mint (and approve) a remote-web pairing challenge inside the gateway
- * container — the docker topology's `gateway pairing mint`. Returns the
- * command's stdout; its last line is the challenge JSON.
+ * Poll the gateway's `/readyz` until the assistant answers ready, migrations
+ * fail outright, or the deadline passes. Readiness is classified from the
+ * response body (the same wire contract `daemon-readiness.ts` owns); every
+ * interim answer is narrated so a slow hatch explains itself. Shared by the
+ * attached and detached lease paths — the config apply that follows the
+ * guardian-token lease needs the daemon actually ready, and skipping this
+ * poll is what produced `503 {"status":"starting"}` config applies.
  */
+async function pollReadyzUntil(
+  gatewayUrl: string,
+  deadlineMs: number,
+  log: (msg: string) => void,
+): Promise<"ready" | "failed" | "timeout"> {
+  const readyUrl = `${gatewayUrl}/readyz`;
+  while (Date.now() < deadlineMs) {
+    try {
+      const resp = await loopbackSafeFetch(readyUrl, {
+        signal: AbortSignal.timeout(5000),
+      });
+      const body = (await resp.json().catch(() => null)) as {
+        status?: string;
+        upstream?: number;
+      } | null;
+      const readiness = classifyReadyzResponse(resp.ok, body);
+      if (readiness === "ready") {
+        return "ready";
+      }
+      if (readiness === "failed") {
+        return "failed";
+      }
+      const parts = [body?.status].filter(Boolean);
+      if (body?.upstream != null) parts.push(`upstream=${body.upstream}`);
+      const detail = parts.length > 0 ? ` — ${parts.join(", ")}` : "";
+      log(`Readiness check: ${resp.status}${detail} (retrying...)`);
+    } catch {
+      // Connection refused / timeout — not up yet
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return "timeout";
+}

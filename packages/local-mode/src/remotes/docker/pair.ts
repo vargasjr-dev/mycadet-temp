@@ -6,6 +6,8 @@ import {
 } from "../../operations/pair";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import { dockerResourceNames } from "./retire";
+import type { GuardianTokenData } from "../../guardian-token";
+import { GuardianTokenFileSchema } from "../../guardian-token";
 
 /**
  * Pair by running the gateway's OWN CLI inside the container (docker
@@ -23,11 +25,11 @@ export function pairDocker(entry: LockfileAssistant): Promise<string>;
 export function pairDocker(
   entry: LockfileAssistant,
   device: PairDeviceIdentity,
-): Promise<PairOperationResult>;
+): Promise<PairOperationResult<GuardianTokenData>>;
 export async function pairDocker(
   entry: LockfileAssistant,
   device?: PairDeviceIdentity,
-): Promise<string | PairOperationResult> {
+): Promise<string | PairOperationResult<GuardianTokenData>> {
   const container = dockerResourceNames(entry.assistantId).gatewayContainer;
   const args = ["exec", container, "bun", "run", "gateway", "pairing", "mint"];
   if (device) {
@@ -45,7 +47,9 @@ export async function pairDocker(
     const stdout = await execOutput("docker", args, {
       timeoutMs: 30_000,
     });
-    return device ? pairCliStdoutToResult(stdout) : stdout;
+    return device
+      ? pairCliStdoutToResult(stdout, GuardianTokenFileSchema)
+      : stdout;
   } catch (err) {
     if (!device) throw err;
     return {

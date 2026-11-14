@@ -8,6 +8,7 @@ import {
   test,
 } from "bun:test";
 import type { LocalAssistant, LockfileAssistant } from "../lockfile-contract";
+import type { GuardianTokenData } from "../guardian-token";
 import type {
   PairDeviceIdentity,
   PairOperationResult,
@@ -19,23 +20,35 @@ import type {
 const realLocalPair = { ...(await import("../remotes/local/pair")) };
 const realDockerPair = { ...(await import("../remotes/docker/pair")) };
 
+/** A minimal valid GuardianTokenData — the router test cares about routing. */
+const fakeToken = (origin: string): GuardianTokenData => ({
+  guardianPrincipalId: `guardian-${origin}`,
+  accessToken: `access-${origin}`,
+  accessTokenExpiresAt: 0,
+  refreshToken: `refresh-${origin}`,
+  refreshTokenExpiresAt: 0,
+  refreshAfter: "1970-01-01T00:00:00.000Z",
+  deviceId: "device-test",
+  leasedAt: "1970-01-01T00:00:00.000Z",
+});
+
 const pairLocalMock = mock<
   (
     entry: LocalAssistant,
     device?: PairDeviceIdentity,
-  ) => Promise<string | PairOperationResult>
+  ) => Promise<string | PairOperationResult<GuardianTokenData>>
 >(async () => ({
   ok: true,
-  response: { token: "local" },
+  response: fakeToken("local"),
 }));
 const pairDockerMock = mock<
   (
     entry: LockfileAssistant,
     device?: PairDeviceIdentity,
-  ) => Promise<string | PairOperationResult>
+  ) => Promise<string | PairOperationResult<GuardianTokenData>>
 >(async () => ({
   ok: true,
-  response: { token: "docker" },
+  response: fakeToken("docker"),
 }));
 
 mock.module("../remotes/local/pair", () => ({
@@ -71,10 +84,10 @@ afterEach(() => {
 
 describe("pairDevice — the credential door routes by remote", () => {
   beforeEach(() => {
-    pairLocalMock.mockResolvedValue({ ok: true, response: { token: "local" } });
+    pairLocalMock.mockResolvedValue({ ok: true, response: fakeToken("local") });
     pairDockerMock.mockResolvedValue({
       ok: true,
-      response: { token: "docker" },
+      response: fakeToken("docker"),
     });
   });
 
@@ -90,7 +103,7 @@ describe("pairDevice — the credential door routes by remote", () => {
     const [entryArg, deviceArg] = pairLocalMock.mock.calls[0]!;
     expect(entryArg).toBe(entry);
     expect(deviceArg).toEqual(device);
-    expect(result).toEqual({ ok: true, response: { token: "local" } });
+    expect(result).toEqual({ ok: true, response: fakeToken("local") });
     expect(pairDockerMock).not.toHaveBeenCalled();
   });
 
@@ -101,7 +114,7 @@ describe("pairDevice — the credential door routes by remote", () => {
     const [entryArg, deviceArg] = pairDockerMock.mock.calls[0]!;
     expect(entryArg).toBe(dockerEntry);
     expect(deviceArg).toEqual(device);
-    expect(result).toEqual({ ok: true, response: { token: "docker" } });
+    expect(result).toEqual({ ok: true, response: fakeToken("docker") });
     expect(pairLocalMock).not.toHaveBeenCalled();
   });
 

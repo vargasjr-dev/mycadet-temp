@@ -110,7 +110,7 @@ export interface CesProcessManager {
 // ---------------------------------------------------------------------------
 
 export function createCesProcessManager(
-  config: CesProcessManagerConfig,
+  config: CesProcessManagerConfig = {},
 ): CesProcessManager {
   const pmLog = config.logger ?? log;
   const discover = config.discover ?? discoverCesWithRetry;
