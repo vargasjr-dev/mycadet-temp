@@ -113,7 +113,7 @@ export function useAssistantResourceSync(assistantId: string | null): void {
         for (const tag of event.tags) {
           switch (tag) {
             case SYNC_TAGS.assistantAvatar:
-              onAvatarChanged(queryClient, assistantId);
+              invalidateAvatarQueries(queryClient, assistantId);
               break;
             case SYNC_TAGS.assistantIdentity:
               void queryClient.invalidateQueries({
@@ -235,7 +235,7 @@ export function useAssistantResourceSync(assistantId: string | null): void {
         return;
 
       case "avatar_updated":
-        onAvatarChanged(queryClient, assistantId);
+        invalidateAvatarQueries(queryClient, assistantId);
         return;
     }
   });
@@ -274,17 +274,6 @@ function resetAssistantCapabilities(
     queryKey: ["assistant-capability"],
     predicate: (query) => query.queryKey[2] === assistantId,
   });
-}
-
-/**
- * An avatar change on the connected assistant. Beyond the query sweep, drops
- * the row's synced `avatarUrl` and platform lookup entry: the cloud copy
- * lags the live change, and while set it keeps the chooser's live/cache paths
- * disabled. The reconnect sweep does not do this, since nothing is known to
- * have changed there.
- */
-function onAvatarChanged(queryClient: QueryClient, assistantId: string): void {
-  invalidateAvatarQueries(queryClient, assistantId);
 }
 
 /** The canonical avatar cache plus every chooser row variant for the same id. */

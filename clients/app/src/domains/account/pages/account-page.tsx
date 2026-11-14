@@ -94,6 +94,12 @@ export function AccountPage() {
         >
           {t("accountPage.goToAssistant")}
         </Link>
+        <Link
+          to={routes.account.assistants}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-base)] px-6 py-3 text-sm font-medium text-[var(--content-default)] no-underline transition-colors hover:bg-[var(--surface-lift)]"
+        >
+          {t("accountPage.manageAssistants")}
+        </Link>
         <button
           type="button"
           onClick={async () => {

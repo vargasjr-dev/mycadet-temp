@@ -6,7 +6,6 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { AllConversationsView } from "@/domains/settings/components/all-conversations-view";
 import { AssistantTerminalPanel } from "@/domains/settings/components/panels/assistant-terminal-panel";
 import { DatabaseDebugPanel } from "@/domains/settings/components/panels/database-debug-panel";
-import { DebugControlsPanel } from "@/domains/settings/components/panels/debug-controls-panel";
 import { ToneLabPanel } from "@/domains/settings/components/tone-lab/tone-lab-panel";
 import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helpers";
 import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
@@ -15,11 +14,6 @@ import { navigateToConversation } from "@/utils/conversation-navigation";
 import { Tabs } from "@mycadet/design-library/components/tabs";
 
 const ALL_TABS = [
-  {
-    id: "general",
-    labelKey: "debugPage.tabs.general",
-    defaultLabel: "General",
-  },
   {
     id: "terminal",
     labelKey: "debugPage.tabs.terminal",
@@ -40,7 +34,7 @@ const ALL_TABS = [
 
 type DebugTabId = (typeof ALL_TABS)[number]["id"];
 
-const DEFAULT_TAB: DebugTabId = "general";
+const DEFAULT_TAB: DebugTabId = "terminal";
 
 export function DebugPage() {
   const { t } = useTranslation("settings");
@@ -107,9 +101,6 @@ export function DebugPage() {
             </Tabs.Trigger>
           ))}
         </Tabs.List>
-        <Tabs.Panel value="general" className="pt-4">
-          <DebugControlsPanel />
-        </Tabs.Panel>
         {tabs.some((tab) => tab.id === "terminal") && (
           <Tabs.Panel
             value="terminal"

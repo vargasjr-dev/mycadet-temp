@@ -43,41 +43,6 @@
     "unsupportedDescription": "Настройки уведомлений недоступны в этой версии приложения.",
     "unsupportedLabel": "Недоступно"
   },
-  "assistantBackups": {
-    "columnCreated": "Создана",
-    "columnReady": "Готова",
-    "columnSnapshotName": "Имя снимка",
-    "columnType": "Тип",
-    "copyFailed": "Не удалось скопировать имя снимка.",
-    "copySnapshotName": "Скопировать имя снимка",
-    "createBackup": "Создать резервную копию",
-    "createFailedToast": "Не удалось создать резервную копию.",
-    "createSuccessToast": "Резервное копирование запущено. Скоро появится в списке.",
-    "creating": "Создание…",
-    "empty": "Для этого ассистента нет резервных копий.",
-    "export": "Экспортировать",
-    "exportDownloading": "Загрузка…",
-    "exportExporting": "Экспорт…",
-    "exportFailedToast": "Не удалось экспортировать ассистента.",
-    "exportMessage": "Скачать архив .tar.gz всей установки, включая зашифрованные учётные данные и ключи для их чтения. Храните этот архив в безопасном месте.",
-    "exportPreparing": "Подготовка…",
-    "exportTitle": "Экспорт ассистента",
-    "loadFailed": "Не удалось загрузить резервные копии.",
-    "loading": "Загрузка резервных копий...",
-    "notReady": "Резервная копия ещё не готова",
-    "oldestRemovedNotice": "Новая резервная копия удалит самую старую.",
-    "pending": "Ожидание",
-    "ready": "Готова",
-    "restore": "Восстановить",
-    "restoreFailedToast": "Не удалось восстановить резервную копию.",
-    "restoreMessage": "Восстановить из резервной копии \"{name}\"?\n\nНа время восстановления ассистент будет недоступен.",
-    "restoreSuccessToast": "Резервная копия успешно восстановлена.",
-    "restoreTitle": "Восстановить резервную копию",
-    "typeDoctor": "Doctor",
-    "typePointInTime": "На момент времени",
-    "typePreview": "Preview",
-    "typeScheduled": "По расписанию"
-  },
   "assistantStatusPanel": {
     "loadHealthzFailed": "Не удалось загрузить сведения об ассистенте"
   },
@@ -85,25 +50,6 @@
     "subtitle": "Интерактивная сессия оболочки на машине ассистента",
     "targetContainer": "Целевой контейнер",
     "title": "Терминал"
-  },
-  "assistantUpgrades": {
-    "alreadyOnVersion": "Текущая версия ассистента является актуальной.",
-    "confirmUpdateMessage": "Обновить до версии {version}? На время обновления ассистент будет недоступен.",
-    "confirmUpdateTitle": "Обновить ассистента",
-    "current": "Текущая",
-    "currentSuffix": "(текущая)",
-    "latest": "последняя",
-    "latestSuffix": "(последняя)",
-    "loading": "Загрузка...",
-    "noReleases": "Нет доступных релизов",
-    "selected": "Выбрана",
-    "successUpdated": "Успешно обновили до версии {version}.",
-    "toastUpdateComplete": "Обновление завершено. Ассистент в порядке.",
-    "toastUpdateFailed": "Не удалось запустить обновление. Повторите попытку.",
-    "toastUpdateInitiated": "Обновление до {version} запущено.",
-    "update": "Обновить",
-    "updateTo": "Обновить до",
-    "updating": "Обновление..."
   },
   "autoTopUpPaymentMethodModal": {
     "loadingLabel": "Загрузка полей оплаты"
@@ -263,11 +209,6 @@
     "searchPlaceholder": "Поиск учётных данных",
     "subtitleOwn": "Хранятся в зашифрованном виде в хранилище учётных данных ассистента. Значение можно показать по запросу, заменить или удалить в любой момент.",
     "title": "Секреты"
-  },
-  "debugControlsPanel": {
-    "backups": "Резервные копии",
-    "subtitle": "Управление резервными копиями ассистента.",
-    "title": "Общие"
   },
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",

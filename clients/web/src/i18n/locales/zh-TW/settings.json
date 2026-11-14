@@ -57,41 +57,6 @@
     "reset": "重設為預設",
     "title": "應用程式圖示"
   },
-  "assistantBackups": {
-    "columnCreated": "建立時間",
-    "columnReady": "就緒",
-    "columnSnapshotName": "快照名稱",
-    "columnType": "類型",
-    "copyFailed": "無法複製快照名稱。",
-    "copySnapshotName": "複製快照名稱",
-    "createBackup": "建立備份",
-    "createFailedToast": "建立備份失敗。",
-    "createSuccessToast": "備份已開始。它將很快顯示在清單中。",
-    "creating": "正在建立…",
-    "empty": "此助理沒有找到任何備份。",
-    "export": "匯出",
-    "exportDownloading": "正在下載…",
-    "exportExporting": "正在匯出…",
-    "exportFailedToast": "匯出助理失敗。",
-    "exportMessage": "下載整個安裝的 .tar.gz 封存檔，包括加密憑證及其解密金鑰。請妥善保管此封存檔。",
-    "exportPreparing": "正在準備…",
-    "exportTitle": "匯出助理",
-    "loadFailed": "載入備份失敗。",
-    "loading": "正在載入備份...",
-    "notReady": "備份尚未就緒，無法使用",
-    "oldestRemovedNotice": "建立新備份將會移除最舊的備份。",
-    "pending": "待處理",
-    "ready": "就緒",
-    "restore": "還原",
-    "restoreFailedToast": "還原備份失敗。",
-    "restoreMessage": "要從備份「{name}」還原嗎？\n\n還原期間，助理將暫時無法使用。",
-    "restoreSuccessToast": "備份已成功還原。",
-    "restoreTitle": "還原備份",
-    "typeDoctor": "診斷",
-    "typePointInTime": "時間點",
-    "typePreview": "預覽",
-    "typeScheduled": "排程"
-  },
   "assistantStatusPanel": {
     "loadHealthzFailed": "載入助理資訊失敗"
   },
@@ -99,25 +64,6 @@
     "subtitle": "助理機器上的互動式 shell 工作階段",
     "targetContainer": "目標容器",
     "title": "終端機"
-  },
-  "assistantUpgrades": {
-    "alreadyOnVersion": "您已是此版本。",
-    "confirmUpdateMessage": "更新至版本 {version}？更新期間助理將暫時無法使用。",
-    "confirmUpdateTitle": "更新助理",
-    "current": "目前",
-    "currentSuffix": "(目前)",
-    "latest": "最新",
-    "latestSuffix": "(最新)",
-    "loading": "載入中...",
-    "noReleases": "無可用版本",
-    "selected": "已選取",
-    "successUpdated": "已成功更新至版本 {version}。",
-    "toastUpdateComplete": "更新完成。您的助理運作正常。",
-    "toastUpdateFailed": "無法觸發更新。請再試一次。",
-    "toastUpdateInitiated": "已啟動更新至 {version}。",
-    "update": "更新",
-    "updateTo": "更新至",
-    "updating": "更新中..."
   },
   "autoTopUpPaymentMethodModal": {
     "loadingLabel": "正在載入付款欄位"
@@ -277,11 +223,6 @@
     "searchPlaceholder": "搜尋憑證",
     "subtitleOwn": "加密儲存於助理的憑證庫中。可依需求顯示、取代或隨時刪除其值。",
     "title": "憑證"
-  },
-  "debugControlsPanel": {
-    "backups": "備份",
-    "subtitle": "管理您的助理備份。",
-    "title": "一般"
   },
   "generalPage": {
     "chooseAssistant": "選擇助理",
@@ -1233,7 +1174,6 @@
   },
   "debugPage": {
     "tabs": {
-      "general": "一般",
       "terminal": "終端機",
       "database": "資料庫",
       "conversations": "對話",

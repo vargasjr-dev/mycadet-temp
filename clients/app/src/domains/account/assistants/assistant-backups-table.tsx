@@ -12,28 +12,22 @@ import { useCallback, useEffect, useState } from "react";
 import {
   type AssistantBackup,
   createAssistantBackup,
-  listAssistantBackups,
-  restoreAssistantBackup,
-} from "@/lib/assistant-backups-api";
-import {
   exportBundleFilename,
-  exportManagedBundle,
-  type ManagedExportStep,
-} from "@/domains/settings/teleport/cloud-export";
-import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { useTranslation } from "@/i18n";
-import { copyToClipboard } from "@/lib/copy-to-clipboard";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { saveFile } from "@/runtime/native-file";
-import { Button } from "@mycadet/design-library/components/button";
-import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
-import { type TagTone, Tag } from "@mycadet/design-library/components/tag";
-import { toast } from "@mycadet/design-library/components/toast";
+  listAssistantBackups,
+  requestSignedDownloadUrl,
+  restoreAssistantBackup,
+} from "@app/domains/account/assistants/assistants-management-api";
+import { useTranslation } from "@app/i18n";
+import { copyToClipboard } from "@app/lib/copy-to-clipboard";
+import { Button } from "@design/components/button";
+import { ConfirmDialog } from "@design/components/confirm-dialog";
+import { type TagTone, Tag } from "@design/components/tag";
+import { toast } from "@design/components/toast";
+import { captureError } from "@design/utils/capture-error";
 
 const MAX_POINT_IN_TIME_BACKUPS = 3;
 
-type ExportStep = ManagedExportStep | "downloading";
+type ExportStep = "preparing" | "exporting" | "downloading";
 
 const BACKUP_TYPE_TONE: Record<string, TagTone> = {
   point_in_time: "neutral",
@@ -43,7 +37,7 @@ const BACKUP_TYPE_TONE: Record<string, TagTone> = {
 };
 
 function BackupTypeBadge({ type }: { type: string }) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("account");
   let label = type;
   if (type === "point_in_time") {
     label = t("assistantBackups.typePointInTime");
@@ -78,11 +72,35 @@ function formatTimestamp(value: unknown): string {
   });
 }
 
-export function AssistantBackups() {
-  const { t } = useTranslation("settings");
-  // Backups are remote-agnostic now; the panel is the active assistant's —
-  // the id is the store's.
-  const assistantId = useActiveAssistantId();
+/**
+ * Hand a fetched backup bundle to the browser as a download. Chromium
+ * ignores the `download` attribute on a cross-origin URL and treats the
+ * click as a navigation — and the desktop shell's deny-all navigation
+ * policy blocks that — so a URL source is resolved to a same-origin blob
+ * URL first; both the download and the filename survive.
+ */
+async function saveBackupFile(source: string, filename: string): Promise<void> {
+  const blob = await fetch(source).then((response) => {
+    if (!response.ok) {
+      throw new Error(`The backup download failed (${response.status})`);
+    }
+    return response.blob();
+  });
+  const url = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export function AssistantBackupsTable({ assistantId }: { assistantId: string }) {
+  const { t } = useTranslation("account");
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backups, setBackups] = useState<AssistantBackup[]>([]);
@@ -198,19 +216,27 @@ export function AssistantBackups() {
     setExportOpen(false);
     setExportStep("preparing");
     try {
-      const { bundleKey, runtimeVersion } = await exportManagedBundle(
-        assistantId,
-        { onStep: setExportStep },
-      );
+      // The managed export IS a backup: create one, then hop to the
+      // operator's signed-url row for the download.
+      setExportStep("exporting");
+      const result = await createAssistantBackup(assistantId);
+      if (!result.ok) {
+        throw new Error("Cloud backup creation failed.");
+      }
+      const backup = (result.data as { snapshot_name?: unknown } | null) ?? {};
+      if (typeof backup.snapshot_name !== "string" || !backup.snapshot_name) {
+        throw new Error("Cloud backup creation failed.");
+      }
+      const bundleKey = backup.snapshot_name;
       setExportStep("downloading");
       const filename = exportBundleFilename(assistantId, new Date());
       const url = await requestSignedDownloadUrl(
         assistantId,
         bundleKey,
-        runtimeVersion,
+        undefined,
         filename,
       );
-      await saveFile(url, filename);
+      await saveBackupFile(url, filename);
     } catch (err) {
       captureError(err, { context: "assistant-backups-export" });
       toast.error(t("assistantBackups.exportFailedToast"), {

@@ -18,21 +18,34 @@ mock.module("@/runtime/native-file", () => ({
   },
 }));
 
-mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
-  assistantsListQueryKey: () => ["assistants", "email-test-listing"],
-
-  feedbackCreateMutation: () => ({
-    mutationFn: async (request: unknown) => {
-      feedbackRequests.push(request);
-      if (
-        rejectAndroidFeedbackClient &&
-        (request as { body?: { client?: string } }).body?.client === "android"
-      ) {
-        throw { client: ["Unsupported client."] };
+mock.module("@/lib/feedback-api", () => ({
+  buildFeedbackForm: (submission: Record<string, unknown>) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(submission)) {
+      if (value == null) {
+        continue;
       }
-      return { id: "feedback-1" };
-    },
-  }),
+      if (key === "attachments" && Array.isArray(value)) {
+        for (const file of value) {
+          form.append("attachments", file as Blob);
+        }
+        continue;
+      }
+      if (value instanceof Blob) {
+        form.append(key, value);
+      } else {
+        form.append(key, String(value));
+      }
+    }
+    return form;
+  },
+  submitFeedbackForm: async (form: FormData) => {
+    feedbackRequests.push(form);
+    if (rejectAndroidFeedbackClient && form.get("client") === "android") {
+      throw { client: ["Unsupported client."] };
+    }
+    return { id: "feedback-1" };
+  },
 }));
 
 mock.module("@capacitor/core", () => ({
@@ -81,9 +94,10 @@ async function submitAndGetLogsText(
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Submit" }));
   await waitFor(() => expect(feedbackRequests).toHaveLength(1));
-  const request = feedbackRequests[0] as { body: { logs_file?: File } };
-  expect(request.body.logs_file).toBeInstanceOf(File);
-  return decompressLogs(request.body.logs_file!);
+  const request = feedbackRequests[0] as FormData;
+  const logsFile = request.get("logs_file");
+  expect(logsFile).toBeInstanceOf(File);
+  return decompressLogs(logsFile as File);
 }
 
 describe("ShareFeedbackModal", () => {
@@ -194,8 +208,8 @@ describe("ShareFeedbackModal", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
-    const request = feedbackRequests[0] as { body: { client?: string } };
-    expect(request.body.client).toBe("android");
+    const request = feedbackRequests[0] as FormData;
+    expect(request.get("client")).toBe("android");
   });
 
   test("falls back to web when the cloud rejects Android", async () => {
@@ -221,8 +235,8 @@ describe("ShareFeedbackModal", () => {
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(2));
     expect(
-      feedbackRequests.map(
-        (request) => (request as { body: { client?: string } }).body.client,
+      feedbackRequests.map((request) =>
+        (request as FormData).get("client"),
       ),
     ).toEqual(["android", "web"]);
   });
@@ -252,13 +266,9 @@ describe("ShareFeedbackModal", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
-    const request = feedbackRequests[0] as {
-      body: { client?: string; client_version?: string };
-    };
-    expect(request.body).toMatchObject({
-      client: "electron",
-      client_version: "1.2.3",
-    });
+    const request = feedbackRequests[0] as FormData;
+    expect(request.get("client")).toBe("electron");
+    expect(request.get("client_version")).toBe("1.2.3");
   });
 
   test("submits Doctor session id and transcript diagnostics", async () => {
@@ -283,12 +293,10 @@ describe("ShareFeedbackModal", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
-    const request = feedbackRequests[0] as {
-      body: { doctor_session_id?: string; logs_file?: File };
-    };
-    expect(request.body.doctor_session_id).toBe("doctor-session-123");
+    const request = feedbackRequests[0] as FormData;
+    expect(request.get("doctor_session_id")).toBe("doctor-session-123");
 
-    const logsFile = request.body.logs_file;
+    const logsFile = request.get("logs_file");
     expect(logsFile).toBeInstanceOf(File);
     const logsText = await new Response(
       logsFile!.stream().pipeThrough(new DecompressionStream("gzip")),
@@ -319,11 +327,9 @@ describe("ShareFeedbackModal", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
-    const request = feedbackRequests[0] as {
-      body: { doctor_session_id?: string; logs_file?: File };
-    };
-    expect(request.body.doctor_session_id).toBe("doctor-session-123");
-    expect(request.body.logs_file).toBeUndefined();
+    const request = feedbackRequests[0] as FormData;
+    expect(request.get("doctor_session_id")).toBe("doctor-session-123");
+    expect(request.get("logs_file")).toBeNull();
   });
 });
 

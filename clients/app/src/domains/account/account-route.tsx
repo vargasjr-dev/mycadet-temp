@@ -49,6 +49,18 @@ export const accountRoute = {
               },
             },
             {
+              // Assistants management: the account's operator surfaces —
+              // backups, upgrades, the export flow — for each assistant the
+              // operator account holds.
+              path: "assistants",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/account/pages/assistants-page").then(
+                    (m) => m.AssistantsPage,
+                  ),
+              },
+            },
+            {
               // The Doctor as an account surface: reachable (and functional)
               // with the assistant's gateway completely offline.
               path: "doctor",
