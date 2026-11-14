@@ -29,7 +29,6 @@ const GENERATORS: Array<[string, string]> = [
 ];
 
 const SPEC_INPUTS = [
-  "openapi-schemas/cloud.yaml",
   "openapi-schemas/daemon.json",
   "openapi-schemas/gateway.json",
 ];
@@ -58,7 +57,7 @@ function hashInputs(): string {
 }
 
 function outputsExist(): boolean {
-  return ["api", "daemon", "gateway"].every((client) =>
+  return ["daemon", "gateway"].every((client) =>
     existsSync(resolve(WEB_ROOT, `src/generated/${client}/sdk.gen.ts`)),
   );
 }

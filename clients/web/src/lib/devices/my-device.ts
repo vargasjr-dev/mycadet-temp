@@ -1,3 +1,5 @@
+import { dial } from "@/lib/dial";
+
 /** Mirrors one `/v1/devices` row — the same shape `cadet devices` prints. */
 export interface MyDeviceRecord {
   hashedDeviceId: string;
@@ -21,14 +23,13 @@ export interface MyDeviceRecord {
 export async function fetchMyDevice(
   signal?: AbortSignal,
 ): Promise<MyDeviceRecord | null> {
-  // @eslint-ignore
-  const response = await fetch("/v1/assistant/devices/mine", {
+  const { response, data } = await dial("/v1/assistant/devices/mine", {
     signal,
   });
-  if (!response.ok) {
+  if (!response?.ok) {
     return null;
   }
-  const body = (await response.json().catch(() => null)) as unknown;
+  const body = data;
   const device = (body as { device?: unknown } | null)?.device;
   if (typeof device !== "object" || device === null) {
     return null;

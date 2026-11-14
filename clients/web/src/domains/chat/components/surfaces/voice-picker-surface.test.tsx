@@ -80,10 +80,6 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   configGetQueryKey: () => ["config-get-test"],
 }));
 
-mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
-  assistantsListQueryKey: () => ["assistants", "email-test-listing"],
-}));
-
 // The picker reads the unscoped cloud catalog through use-cloud-voices now;
 // the voices mock module replaces the catalog read outright — seeding
 // globalThis.fetch would race the happy-dom window fetch (see test-setup.ts),

@@ -1,10 +1,13 @@
 /**
- * The feedback submission's dial: a same-origin multipart POST to the
- * serving host's cloud proxy at `/v1/feedback/` — the browser's own
- * session cookie carries the call, the way every other web-bundle dial
- * works. Attachments and the diagnostics archive only travel as
- * multipart parts, so the body is a FormData the caller assembles with
- * {@link buildFeedbackForm}.
+ * The feedback submission's dial: a multipart POST straight to the cloud's
+ * ingest route at `{cloud}/v1/feedback/` — the one deliberate exception to
+ * the bundle's same-origin rule, because the daemon's cloud proxy forward
+ * is gone and feedback belongs to the cloud whatever host serves the page.
+ * The browser's cloud session cookie rides on the call (credentials:
+ * "include" covers both the cloud-hosted same-origin case and a
+ * self-hosted page posting across to the cloud). Attachments and the
+ * diagnostics archive only travel as multipart parts, so the body is a
+ * FormData the caller assembles with {@link buildFeedbackForm}.
  *
  * The classification and client unions are restated here rather than
  * carried from a generated cloud spec: they are the cloud's documented
@@ -12,6 +15,10 @@
  */
 
 import { z } from "zod";
+
+import { getCloudBaseUrl } from "@mycadet/shared";
+
+import { dial } from "@/lib/dial";
 
 export type FeedbackClassification =
   | "bug_report"
@@ -68,29 +75,30 @@ export function buildFeedbackForm(submission: FeedbackSubmission): FormData {
 }
 
 /**
- * POST the submission same-origin. A validation rejection (e.g. the
- * cloud refusing a native client value) throws the response's parsed
- * error body itself, so call sites can inspect the offending fields.
+ * POST the submission straight to the cloud. A validation rejection
+ * (e.g. the cloud refusing a native client value) throws the response's
+ * parsed error body itself, so call sites can inspect the offending
+ * fields.
  */
-const FEEDBACK_URL = "/v1/feedback/";
+const feedbackUrl = () => `${getCloudBaseUrl()}/v1/feedback/`;
 
 export async function submitFeedbackForm(
   form: FormData,
 ): Promise<{ id: string }> {
-  const response = await fetch(FEEDBACK_URL, {
+  const { response, data } = await dial(feedbackUrl(), {
     method: "POST",
     body: form,
+    credentials: "include",
   });
-  if (!response.ok) {
-    const body: unknown = await response.json().catch(() => null);
-    if (body !== null && typeof body === "object" && "client" in body) {
-      throw body;
+  if (!response?.ok) {
+    if (data !== null && typeof data === "object" && "client" in data) {
+      throw data;
     }
     const detail =
-      typeof (body as { detail?: unknown } | null)?.detail === "string"
-        ? (body as { detail: string }).detail
-        : `Failed to submit feedback (${response.status}).`;
+      typeof (data as { detail?: unknown } | null)?.detail === "string"
+        ? (data as { detail: string }).detail
+        : `Failed to submit feedback (${response?.status}).`;
     throw new Error(detail);
   }
-  return FeedbackIngestResponseSchema.parse(await response.json());
+  return FeedbackIngestResponseSchema.parse(data);
 }

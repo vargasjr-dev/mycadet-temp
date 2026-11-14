@@ -1,18 +1,24 @@
 /**
  * Request/response interceptors for the generated HeyAPI clients.
  *
- * For platform-bound requests, attaches:
+ * For daemon + gateway requests, attaches:
  *   - `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` — identify the
  *     originating tab/interface to the daemon. Required by self-echo
  *     suppression: the daemon echoes the client id back on the resulting
  *     `sync_changed` so the originator's SSE subscriber can be skipped.
+ *   - `Cadet-Device-Id` + the Electron renderer-origin marker on mutating
+ *     requests — the daemon's platform-path identity.
  *
  * Import this module for its side effects in the app entrypoint
- * (`main.tsx`) so interceptors are installed before any API call fires.
+ * (`boot.tsx`) so interceptors are installed before any API call fires.
+ *
+ * There is no cloud client here: the web bundle dials the serving host
+ * same-origin (cookies or proxy-injected credentials), and the one
+ * direct-to-cloud dial (feedback) builds its own URL with
+ * {@link getCloudBaseUrl}.
  *
  * Reference: https://heyapi.dev/openapi-ts/clients/fetch#interceptors
  */
-import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { ApiError, toApiError } from "@/utils/api-errors";
@@ -28,49 +34,19 @@ function getRendererTupleOrigin(): string {
   return `${window.location.protocol}//${window.location.host}`;
 }
 
-const PLATFORM_PUSH_FIRST_SEGMENTS = new Set<string>([
-  "push-tokens",
-  "live-activity",
-]);
-
 /**
- * Same resource match as the same path match, but allows an ingress
- * path prefix (`/assistant-123/v1/assistants/...`).
+ * Builds a request interceptor for a HeyAPI client. Every remaining
+ * generated client targets the self-hosted daemon (directly or through
+ * the gateway ingress), so all assistant sub-resource paths ride the
+ * same stamping.
  */
-const ASSISTANT_RESOURCE_RE = /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
-
-function isPlatformPushPath(url: string): boolean {
-  const match = ASSISTANT_RESOURCE_RE.exec(new URL(url).pathname);
-  return match !== null && PLATFORM_PUSH_FIRST_SEGMENTS.has(match[2]);
-}
-
-/**
- * Builds a request interceptor for a HeyAPI client.
- *
- * @param isDaemonClient `true` for the daemon + gateway clients. All
- *   assistant sub-resource paths are forwarded to the self-hosted gateway
- *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. `false` for the
- *   cloud and auth clients, where only allowlisted segments are forwarded
- *   (platform-owned routes like system-events, etc. fall
- *   through to the cloud).
- */
-function createInterceptor({
-  isDaemonClient = false,
-  allowRemoteGatewayDirect = false,
-} = {}) {
-  /**
-   * `outgoing` is the request the chain hands downstream; `url` is the original
-   * one, which still carries the cloud-shaped path a self-hosted rewrite
-   * would have replaced.
-   */
-
+function createRequestInterceptor() {
   const route = async (request: Request): Promise<Request> => {
     const newRequest = new Request(request);
 
     // Per-tab client identity — sent on *every* request (GET included)
     // so SSE-via-fetch readers and short-lived mutations carry the same
-    // id. Stamped first so it rides on both the cloud and
-    // self-hosted paths.
+    // id.
     for (const [name, value] of Object.entries(
       getClientRegistrationHeaders(),
     )) {
@@ -79,15 +55,6 @@ function createInterceptor({
 
     newRequest.headers.set("Accept-Language", currentLocale());
 
-    if (allowRemoteGatewayDirect) {
-      return newRequest;
-    }
-
-    if (!isDaemonClient && isPlatformPushPath(newRequest.url)) {
-      return newRequest;
-    }
-
-    // Platform path — cloud session auth.
     if (isElectron() && MUTATING_METHODS.has(request.method)) {
       newRequest.headers.set(
         ELECTRON_RENDERER_ORIGIN_HEADER,
@@ -108,19 +75,10 @@ function createInterceptor({
   };
 }
 
-/** Platform + auth clients: uses the segment allowlist. */
-export const requestInterceptor = createInterceptor({});
+/** Shared by the daemon and gateway clients. */
+export const daemonRequestInterceptor = createRequestInterceptor();
 
-/** Daemon client: bypasses the segment allowlist. */
-export const daemonRequestInterceptor = createInterceptor({
-  isDaemonClient: true,
-  allowRemoteGatewayDirect: true,
-});
-
-const gatewayRequestInterceptor = createInterceptor({
-  isDaemonClient: true,
-  allowRemoteGatewayDirect: true,
-});
+const gatewayRequestInterceptor = createRequestInterceptor();
 
 /**
  * Normalizes HeyAPI's raw thrown errors into {@link ApiError} instances
@@ -175,7 +133,7 @@ daemonClient.interceptors.error.use(daemonErrorInterceptor);
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
-// Force JSON body parsing for all three generated clients. The default
+// Force JSON body parsing for both generated clients. The default
 // `parseAs: 'auto'` infers the parsing strategy from the Content-Type
 // response header. When the header is absent (observed on iOS WKWebView
 // under concurrent fetch load), the client falls back to `'stream'`
@@ -186,10 +144,6 @@ gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 // sites (blob downloads) explicitly override `parseAs` per-request.
 //
 // Reference: https://heyapi.dev/openapi-ts/clients/fetch#parser
-for (const apiClient of [daemonClient, gatewayClient, cloudClient]) {
+for (const apiClient of [daemonClient, gatewayClient]) {
   apiClient.setConfig({ parseAs: "json" });
-}
-
-for (const apiClient of [cloudClient]) {
-  apiClient.interceptors.request.use(requestInterceptor);
 }

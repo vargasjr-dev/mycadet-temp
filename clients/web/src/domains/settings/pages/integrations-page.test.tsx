@@ -21,7 +21,7 @@ import {
 import type { ReactNode } from "react";
 import { MemoryRouter, useNavigate } from "react-router";
 
-import type { OAuthConnection } from "@/generated/api/types.gen";
+import type { OAuthConnection } from "@/domains/settings/oauth-connections";
 import type {
   OauthProvidersGetResponse,
   PluginsGetResponse,
