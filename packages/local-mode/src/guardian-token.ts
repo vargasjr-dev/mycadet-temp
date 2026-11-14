@@ -124,7 +124,9 @@ const BasetenTokenFileSchema = z.object({
  * expires_at — which is why this one is the door credential and the
  * sandbox token only feeds the exec HTTP arm.
  */
-export function readBasetenPreviewToken(assistantId: string): string | undefined {
+export function readBasetenPreviewToken(
+  assistantId: string,
+): string | undefined {
   try {
     const parsed = BasetenTokenFileSchema.safeParse(
       JSON.parse(fs.readFileSync(basetenTokenPath(assistantId), "utf-8")),
@@ -452,35 +454,53 @@ function refreshToken(
 // after its gateway is up so hosts can import the token instead of
 // re-pairing.
 
-const GuardianTokenFieldsSchema = z
-  .object({
-    guardianPrincipalId: z.string().optional().catch(undefined),
-    accessToken: z.string().optional().catch(undefined),
-    accessTokenExpiresAt: z
-      .union([z.string(), z.number()])
-      .optional()
-      .catch(undefined),
-    refreshToken: z.string().optional().catch(undefined),
-    refreshTokenExpiresAt: z
-      .union([z.string(), z.number()])
-      .optional()
-      .catch(undefined),
-    refreshAfter: z
-      .union([z.string(), z.number()])
-      .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
-      .optional()
-      .catch(undefined),
-    deviceId: z.string().optional().catch(undefined),
-  })
-  .catch({});
+/**
+ * The pair response's required shape, mapped from /v1/pair's field names
+ * (`guardianId` → `guardianPrincipalId`, `token` → `accessToken`). One
+ * required parse replaces the old optional-fields-plus-null-checks dance:
+ * a malformed response is a {@link GuardianLeasePermanentError} naming
+ * every field that arrived wrong, not a wonky Partial to poke at.
+ */
+const GuardianPairResponseSchema = z.object({
+  guardianPrincipalId: z.string(),
+  accessToken: z.string(),
+  accessTokenExpiresAt: z.union([z.string(), z.number()]),
+  refreshToken: z.string(),
+  refreshTokenExpiresAt: z.union([z.string(), z.number()]),
+  refreshAfter: z
+    .union([z.string(), z.number()])
+    .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v)),
+});
 
-/** Narrow untrusted JSON to the token fields whose values have the right
- * shape; fields absent or malformed come back undefined for callers to
- * fall back on or reject. */
-export function parseGuardianTokenFields(
-  value: unknown,
-): Partial<GuardianTokenData> {
-  return GuardianTokenFieldsSchema.parse(value);
+/**
+ * Parse /v1/pair's device-bound response into the token data the lease
+ * persists. Throws {@link GuardianLeasePermanentError} when the response
+ * is malformed — a 200 that will not fix itself on retry.
+ */
+export function parseGuardianToken(
+  raw: unknown,
+): Omit<GuardianTokenData, "deviceId" | "leasedAt" | "pairedGatewayUrl"> {
+  const rec = z.record(z.string(), z.unknown()).catch({}).parse(raw);
+  const mapped = {
+    guardianPrincipalId: rec.guardianId,
+    accessToken: rec.token,
+    accessTokenExpiresAt: rec.expiresAt,
+    refreshToken: rec.refreshToken,
+    refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
+    refreshAfter: rec.refreshAfter,
+  };
+  const parsed = GuardianPairResponseSchema.safeParse(mapped);
+  if (!parsed.success) {
+    const unusable = parsed.error.issues.map((issue) => {
+      const field = String(issue.path[0] ?? "response");
+      const sent = mapped[field as keyof typeof mapped];
+      return `${field} arrived as ${describeJsonType(sent)}`;
+    });
+    throw new GuardianLeasePermanentError(
+      `guardian pair returned a malformed token response — ${unusable.join(", ")}`,
+    );
+  }
+  return parsed.data;
 }
 
 const DEVICE_ID_SALT = "mycadet-host-id";
@@ -625,21 +645,6 @@ function describeJsonType(value: unknown): string {
   return typeof value;
 }
 
-/** Map /v1/pair's device-bound response onto the token-field names the
- * lease parses (`token` → `accessToken`, `guardianId` → `guardianPrincipalId`). */
-function mapPairResponse(raw: unknown): unknown {
-  const rec = z.record(z.string(), z.unknown()).catch({}).parse(raw);
-  return {
-    guardianPrincipalId: rec.guardianId,
-    accessToken: rec.token,
-    accessTokenExpiresAt: rec.expiresAt,
-    refreshToken: rec.refreshToken,
-    refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
-    refreshAfter: rec.refreshAfter,
-    isNew: rec.isNew,
-  };
-}
-
 /**
  * Pair with the assistant's gateway and persist the minted credential —
  * the lease every local-topology hatch runs once its gateway is up.
@@ -670,39 +675,9 @@ export async function leaseGuardianToken(
   });
   if (!paired.ok) throw new Error(paired.error);
 
-  const mapped = mapPairResponse(paired.response);
-  const parsed = parseGuardianTokenFields(mapped);
-  if (
-    parsed.guardianPrincipalId == null ||
-    parsed.accessToken == null ||
-    parsed.accessTokenExpiresAt == null ||
-    parsed.refreshToken == null ||
-    parsed.refreshTokenExpiresAt == null ||
-    parsed.refreshAfter == null
-  ) {
-    const raw = z.record(z.string(), z.unknown()).catch({}).parse(mapped);
-    const requiredFields: (keyof typeof parsed)[] = [
-      "guardianPrincipalId",
-      "accessToken",
-      "accessTokenExpiresAt",
-      "refreshToken",
-      "refreshTokenExpiresAt",
-      "refreshAfter",
-    ];
-    const unusable = requiredFields
-      .filter((field) => parsed[field] == null)
-      .map((field) => `${field} arrived as ${describeJsonType(raw[field])}`);
-    throw new GuardianLeasePermanentError(
-      `guardian pair returned a malformed token response — ${unusable.join(", ")}`,
-    );
-  }
+  const parsed = parseGuardianToken(paired.response);
   const tokenData: GuardianTokenData = {
-    guardianPrincipalId: parsed.guardianPrincipalId,
-    accessToken: parsed.accessToken,
-    accessTokenExpiresAt: parsed.accessTokenExpiresAt,
-    refreshToken: parsed.refreshToken,
-    refreshTokenExpiresAt: parsed.refreshTokenExpiresAt,
-    refreshAfter: parsed.refreshAfter,
+    ...parsed,
     deviceId,
     leasedAt: new Date().toISOString(),
   };

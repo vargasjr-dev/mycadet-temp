@@ -2,13 +2,11 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 const MOCK_DEVICE_ID = "test-device-00000000-0000-0000-0000-000000000000";
 
-const mockGetGuardianAccessToken = mock(
-  async (
-    ..._args: unknown[]
-  ): Promise<
-    | { ok: true; accessToken: string }
-    | { ok: false; status: number; error: string }
-  > => ({ ok: true, accessToken: "test-token" }),
+const mockLoadGuardianToken = mock(
+  (): import("@mycadet/local-mode").GuardianTokenData | null =>
+    ({
+      accessToken: "test-token",
+    }) as import("@mycadet/local-mode").GuardianTokenData,
 );
 
 type Lockfile = import("@mycadet/local-mode/contract").Lockfile;
@@ -56,9 +54,10 @@ mock.module("electron", () => ({
 const realLocalMode = await import("@mycadet/local-mode");
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
-  getGuardianAccessToken: mockGetGuardianAccessToken,
+  loadGuardianToken: mockLoadGuardianToken,
   readLockfile: () => mockCurrentLockfile,
 }));
+
 mock.module("../lockfile-watcher", () => ({
   onLockfileChange: (listener: (lockfile: Lockfile) => void) => {
     lockfileListener = listener;
@@ -91,7 +90,7 @@ const {
 } = await import("./router");
 type HostProxyRuntime = import("./router").HostProxyRuntime;
 
-// Keep the mint ride-out loop fast: many attempts, no real wait between them.
+// Keep the exchange ride-out loop fast: many attempts, no real wait between them.
 LOCAL_GATEWAY_TOKEN_RETRY.intervalMs = 0;
 
 // ---------------------------------------------------------------------------
@@ -394,11 +393,13 @@ describe("host-proxy-router", () => {
     lockfileListener = null;
     sessionTokenListener = null;
     mockCurrentLockfile = { assistants: [], activeAssistant: null };
-    mockGetGuardianAccessToken.mockReset();
-    mockGetGuardianAccessToken.mockImplementation(async () => ({
-      ok: true,
-      accessToken: "test-token",
-    }));
+    mockLoadGuardianToken.mockReset();
+    mockLoadGuardianToken.mockImplementation(
+      () =>
+        ({
+          accessToken: "test-token",
+        }) as import("@mycadet/local-mode").GuardianTokenData,
+    );
     mockSessionToken = "test-session-token";
     globalThis.fetch = mockGatewayTokenFetch as typeof globalThis.fetch;
     presenceReporter = null;
@@ -522,18 +523,19 @@ describe("host-proxy-router", () => {
     test("retiring an assistant during token acquisition aborts the stale connect", async () => {
       const requests: string[] = [];
       globalThis.fetch = (async (input: string | URL | Request) => {
-        requests.push(String(input));
+        const url = String(input);
+        if (url.includes("/auth/token")) {
+          // The gateway's binding hasn't accepted the exchange yet — hang
+          // until the test releases it.
+          requests.push(url);
+          return new Promise<Response>((resolve) => {
+            resolveExchange = resolve;
+          });
+        }
+        requests.push(url);
         return mockGatewayTokenFetch(input);
       }) as typeof globalThis.fetch;
-      let resolveToken:
-        | ((result: { ok: true; accessToken: string }) => void)
-        | null = null;
-      mockGetGuardianAccessToken.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveToken = resolve;
-          }),
-      );
+      let resolveExchange: ((response: Response) => void) | null = null;
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -550,11 +552,20 @@ describe("host-proxy-router", () => {
       await flush();
       expect(__testing.pendingConnects.has("a1")).toBe(true);
 
-      // Retired before the token resolves, so the pending connect is cancelled.
+      // Retired before the exchange resolves, so the pending connect is
+      // cancelled.
       lockfileListener?.({ assistants: [], activeAssistant: null });
       expect(__testing.pendingConnects.has("a1")).toBe(false);
 
-      resolveToken!({ ok: true, accessToken: "test-token" });
+      resolveExchange!(
+        new Response(
+          JSON.stringify({
+            token: "gateway-jwt",
+            expiresAt: Date.now() + 60_000,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
       await flush();
 
       expect(requests.some((url) => url.includes("/v1/events"))).toBe(false);
@@ -562,12 +573,8 @@ describe("host-proxy-router", () => {
       expect(__testing.pendingConnects.size).toBe(0);
     });
 
-    test("does not connect when guardian token fetch fails", async () => {
-      mockGetGuardianAccessToken.mockImplementation(async () => ({
-        ok: false,
-        status: 401,
-        error: "expired",
-      }));
+    test("does not connect when no guardian token is persisted", async () => {
+      mockLoadGuardianToken.mockImplementation(() => null);
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -586,19 +593,18 @@ describe("host-proxy-router", () => {
       expect(__testing.connections.has("a1")).toBe(false);
     });
 
-    test("rides out a guardian refresh 503, then connects", async () => {
+    test("rides out a 503 token exchange, then connects", async () => {
       let attempts = 0;
-      mockGetGuardianAccessToken.mockImplementation(async () => {
-        attempts++;
-        if (attempts < 3) {
-          return {
-            ok: false,
-            status: 503,
-            error: "Assistant gateway is unreachable",
-          };
+      globalThis.fetch = (async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes("/auth/token")) {
+          attempts++;
+          if (attempts < 3) {
+            return new Response("starting", { status: 503 });
+          }
         }
-        return { ok: true, accessToken: "test-token" };
-      });
+        return mockGatewayTokenFetch(input);
+      }) as typeof globalThis.fetch;
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -618,16 +624,16 @@ describe("host-proxy-router", () => {
       expect(__testing.connections.has("a1")).toBe(true);
     });
 
-    test("a guardian 500 is terminal and does not retry", async () => {
+    test("a 403 token exchange is terminal and does not retry", async () => {
       let attempts = 0;
-      mockGetGuardianAccessToken.mockImplementation(async () => {
-        attempts++;
-        return {
-          ok: false,
-          status: 500,
-          error: "Guardian token refresh timed out",
-        };
-      });
+      globalThis.fetch = (async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes("/auth/token")) {
+          attempts++;
+          return new Response("forbidden", { status: 403 });
+        }
+        return mockGatewayTokenFetch(input);
+      }) as typeof globalThis.fetch;
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -647,13 +653,13 @@ describe("host-proxy-router", () => {
       expect(__testing.connections.has("a1")).toBe(false);
     });
 
-    test("rides out a fetch-failed mint, then connects", async () => {
-      let mintAttempts = 0;
+    test("rides out a fetch-failed token exchange, then connects", async () => {
+      let exchangeAttempts = 0;
       globalThis.fetch = (async (input: string | URL | Request) => {
         const url = String(input);
         if (url.includes("/auth/token")) {
-          mintAttempts++;
-          if (mintAttempts < 3) {
+          exchangeAttempts++;
+          if (exchangeAttempts < 3) {
             throw new TypeError("fetch failed");
           }
         }
@@ -674,17 +680,17 @@ describe("host-proxy-router", () => {
       });
       await flush();
 
-      expect(mintAttempts).toBe(3);
+      expect(exchangeAttempts).toBe(3);
       expect(__testing.connections.has("a1")).toBe(true);
     });
 
-    test("rides out a 401 mint, then connects", async () => {
-      let mintAttempts = 0;
+    test("rides out a 401 token exchange, then connects", async () => {
+      let exchangeAttempts = 0;
       globalThis.fetch = (async (input: string | URL | Request) => {
         const url = String(input);
         if (url.includes("/auth/token")) {
-          mintAttempts++;
-          if (mintAttempts < 3) {
+          exchangeAttempts++;
+          if (exchangeAttempts < 3) {
             return new Response("unauthorized", { status: 401 });
           }
         }
@@ -705,47 +711,18 @@ describe("host-proxy-router", () => {
       });
       await flush();
 
-      expect(mintAttempts).toBe(3);
+      expect(exchangeAttempts).toBe(3);
       expect(__testing.connections.has("a1")).toBe(true);
     });
 
-    test("a 403 mint is terminal and does not retry", async () => {
-      let mintAttempts = 0;
-      globalThis.fetch = (async (input: string | URL | Request) => {
-        const url = String(input);
-        if (url.includes("/auth/token")) {
-          mintAttempts++;
-          return new Response("forbidden", { status: 403 });
-        }
-        return mockGatewayTokenFetch(input);
-      }) as typeof globalThis.fetch;
-      installHostProxyBridge(testRuntime);
-
-      lockfileListener?.({
-        assistants: [
-          {
-            assistantId: "a1",
-            cloud: "local",
-            port: 9001,
-            daemonPort: 9002,
-          },
-        ],
-        activeAssistant: "a1",
-      });
-      await flush();
-
-      expect(mintAttempts).toBe(1);
-      expect(__testing.connections.has("a1")).toBe(false);
-    });
-
-    test("a mint that never comes up spends the budget and skips the connection", async () => {
+    test("an exchange that never comes up spends the budget and skips the connection", async () => {
       const originalAttempts = LOCAL_GATEWAY_TOKEN_RETRY.attempts;
       LOCAL_GATEWAY_TOKEN_RETRY.attempts = 5;
-      let mintAttempts = 0;
+      let exchangeAttempts = 0;
       globalThis.fetch = (async (input: string | URL | Request) => {
         const url = String(input);
         if (url.includes("/auth/token")) {
-          mintAttempts++;
+          exchangeAttempts++;
           throw new TypeError("fetch failed");
         }
         return mockGatewayTokenFetch(input);
@@ -766,7 +743,7 @@ describe("host-proxy-router", () => {
         });
         await flush();
 
-        expect(mintAttempts).toBe(5);
+        expect(exchangeAttempts).toBe(5);
         expect(__testing.connections.has("a1")).toBe(false);
       } finally {
         LOCAL_GATEWAY_TOKEN_RETRY.attempts = originalAttempts;

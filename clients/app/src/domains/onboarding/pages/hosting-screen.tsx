@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Cloud, Laptop } from "lucide-react";
+import { ArrowLeft, Check, Cloud, Container, Laptop } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
@@ -35,6 +35,13 @@ const HOSTING_OPTIONS: HostingOption[] = [
     subtitle:
       "Runs directly on your machine. Your data never leaves your computer.",
     icon: <Laptop className="h-5 w-5 shrink-0" />,
+  },
+  {
+    mode: "docker",
+    label: "Docker",
+    subtitle:
+      "Runs in a Docker container on your machine — an isolated environment with its own filesystem.",
+    icon: <Container className="h-5 w-5 shrink-0" />,
   },
 ];
 

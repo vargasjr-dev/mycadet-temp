@@ -297,7 +297,7 @@ test("a sole assistant waits for selection rather than fetching detail on the ac
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
 
-test("an empty host list can be refreshed", async () => {
+test("an empty host list refetches on revisit", async () => {
   request
     .mockResolvedValueOnce(Response.json({ status: "empty" }))
     .mockResolvedValueOnce(
@@ -307,8 +307,14 @@ test("an empty host list can be refreshed", async () => {
       }),
     );
   setup();
-  await screen.findByText("No assistant is available.");
-  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  // The 200-empty state carries no status copy and no retry button — the
+  // primary hatch CTA is its whole body.
+  await screen.findByRole("button", { name: "Hatch a new assistant" });
+  expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  // Revisiting the chooser refetches — the refresh the retry button used
+  // to own rides the remount now.
+  cleanup();
+  setup();
   await screen.findByRole("radio", { name: /^One/ });
 });
 
@@ -320,9 +326,9 @@ test("an empty list offers creation into the hosting chooser", async () => {
     }
     return iframeDocument.clone();
   });
-  await screen.findByText("No assistant is available.");
   // The create affordance hands off to the onboarding hosting chooser —
-  // the dialog-era inline hatch is gone.
+  // the dialog-era inline hatch is gone. With nothing to choose, the CTA
+  // renders as the primary action rather than the dashed row.
   fireEvent.click(
     screen.getByRole("button", { name: "Hatch a new assistant" }),
   );

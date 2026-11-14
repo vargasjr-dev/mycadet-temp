@@ -109,7 +109,7 @@ export {
   getOrCreatePersistedDeviceId,
   GuardianLeasePermanentError,
   leaseGuardianToken,
-  parseGuardianTokenFields,
+  parseGuardianToken,
 } from "./guardian-token";
 export {
   configureHatchProviderApiKey,

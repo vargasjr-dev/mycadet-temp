@@ -439,7 +439,21 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     : null;
 
   if (assistants.length === 0) {
-    console.log("No assistants found.");
+    // No assistants, but the CLI may still manage root processes (the app
+    // server, the tunnel) — they deserve table rows too, same as the
+    // assistants-present path renders them.
+    const rootRows = (await getRootManagedRows()).map((managed) => managed.row);
+    if (rootRows.length === 0) {
+      console.log("No assistants found.");
+      return;
+    }
+    printTable(rootRows, {
+      name: "NAME",
+      type: "TYPE",
+      status: "STATUS",
+      info: "INFO",
+    });
+    console.log("");
     return;
   }
 

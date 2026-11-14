@@ -17,11 +17,7 @@ import {
   isUsableBaseUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
-import {
-  getGuardianAccessToken,
-  readLockfile,
-  TokenResult,
-} from "@mycadet/local-mode";
+import { loadGuardianToken, readLockfile } from "@mycadet/local-mode";
 import { hostname } from "node:os";
 
 import { onLockfileChange } from "../lockfile-watcher";
@@ -578,59 +574,15 @@ async function exchangeForGatewayToken(
   }
 }
 
-async function acquireGuardianToken(assistantId: string): Promise<TokenResult> {
-  try {
-    // The shared token mint resolves the CLI invocation itself; hosts that
-    // cannot reach a CLI get the package's structured error.
-    const result = await getGuardianAccessToken(assistantId);
-    if (!result.ok) {
-      log.warn("[host-proxy-router] failed to obtain guardian token", {
-        assistantId,
-        status: result.status,
-        error: result.error,
-      });
-    }
-    return result;
-  } catch (err) {
-    log.error("[host-proxy-router] failed to obtain guardian token", {
-      assistantId,
-      err,
-    });
-    return { ok: false, status: 500, error: String(err) };
-  }
-}
-
-async function acquireGatewayToken(
-  assistantId: string,
-  gatewayPort: number,
-): Promise<string | null> {
-  const guardianToken = await acquireGuardianToken(assistantId);
-  if (!guardianToken.ok) return null;
-
-  const exchanged = await exchangeForGatewayToken(
-    gatewayPort,
-    guardianToken.accessToken,
-  );
-  if (exchanged.kind !== "ok") return null;
-
-  return exchanged.token;
-}
-
 /**
- * `503` is the CLI's labeled "gateway unreachable / still starting" status
+ * The hatch operator owns initial guardian pairing: the hatch pairs the
+ * gateway, leases the token, and persists it (`guardian-token.json`). The
+ * desktop never mints — it loads the pairing the operator persisted and
+ * exchanges it for a gateway JWT. A missing file means the operator has not
+ * finished pairing yet (the lockfile entry can land first); the exchange
+ * itself rides out a gateway still binding its port.
  */
-function isTransientGuardianStatus(status: number): boolean {
-  return status === 503;
-}
-
-/**
- * Prime-time mint for a local connect. Rides out retryable mint failures
- * (port not bound yet, starting 503, transient 401) and a guardian refresh
- * `503` without skipping the connection. A missing or spent guardian token
- * or a `403` falls through immediately.
- * `isCurrentAttempt` aborts when lockfile reconcile cancels this connect.
- */
-async function acquireGatewayTokenRidingStartup(
+async function loadGatewayTokenRidingStartup(
   assistantId: string,
   gatewayPort: number,
   isCurrentAttempt: () => boolean,
@@ -640,20 +592,15 @@ async function acquireGatewayTokenRidingStartup(
     if (!isCurrentAttempt()) {
       return null;
     }
-    const guardianToken = await acquireGuardianToken(assistantId);
-    if (!guardianToken.ok) {
-      if (
-        !isTransientGuardianStatus(guardianToken.status) ||
-        attempt >= attempts
-      ) {
-        return null;
-      }
+    const saved = loadGuardianToken(assistantId);
+    if (!saved) {
+      if (attempt >= attempts) return null;
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
       continue;
     }
     const exchanged = await exchangeForGatewayToken(
       gatewayPort,
-      guardianToken.accessToken,
+      saved.accessToken,
     );
     if (exchanged.kind === "ok") {
       return exchanged.token;
@@ -664,6 +611,20 @@ async function acquireGatewayTokenRidingStartup(
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
   return null;
+}
+
+/** Reload the persisted pairing and re-exchange — the token refresh path. */
+async function loadAndExchangeGatewayToken(
+  assistantId: string,
+  gatewayPort: number,
+): Promise<string | null> {
+  const saved = loadGuardianToken(assistantId);
+  if (!saved) return null;
+  const exchanged = await exchangeForGatewayToken(
+    gatewayPort,
+    saved.accessToken,
+  );
+  return exchanged.kind === "ok" ? exchanged.token : null;
 }
 
 // A connection's fingerprint encodes everything that, if changed, requires a
@@ -732,11 +693,7 @@ async function connectLocalAssistant(
     assistantId,
     fingerprint,
     (isCurrentAttempt) =>
-      acquireGatewayTokenRidingStartup(
-        assistantId,
-        gatewayPort,
-        isCurrentAttempt,
-      ),
+      loadGatewayTokenRidingStartup(assistantId, gatewayPort, isCurrentAttempt),
     (token) =>
       openLocalConnection(assistantId, gatewayPort, token, fingerprint),
   );
@@ -752,7 +709,7 @@ function openLocalConnection(
   const authHeaders = () => ({ Authorization: `Bearer ${currentToken}` });
 
   const onRefreshToken = async (): Promise<string | null> => {
-    const fresh = await acquireGatewayToken(assistantId, gatewayPort);
+    const fresh = await loadAndExchangeGatewayToken(assistantId, gatewayPort);
     if (fresh) currentToken = fresh;
     return fresh;
   };

@@ -1,7 +1,10 @@
 // Trimmed model-provider catalog for the onboarding "Connect a Model Provider"
 // step. Limited to the providers the web daemon client supports (see
 // ConnectionProvider in domains/settings) and to the fields the onboarding
-// UI needs.
+// UI needs. Ordered to match the `cadet hatch` CLI's ranked prompt
+// (cli/src/lib/provider-secrets.ts HATCH_PROVIDER_CHOICES) — cadet filtered
+// out until Cadet Cloud stabilizes, so the default selection is Fireworks;
+// the app-only providers (Ollama, OpenAI-compatible) trail.
 
 export type OnboardingProviderId =
   | "anthropic"
@@ -41,13 +44,33 @@ export interface OnboardingModel {
 
 export const ONBOARDING_PROVIDERS: readonly OnboardingProvider[] = [
   {
-    id: "anthropic",
-    displayName: "Anthropic",
-    apiKeyPlaceholder: "sk-ant-api03-...",
-    docsUrl: "https://console.anthropic.com/settings/keys",
+    id: "fireworks",
+    displayName: "Fireworks",
+    apiKeyPlaceholder: "fw_...",
+    docsUrl: "https://fireworks.ai/account/api-keys",
     requiresKey: true,
-    defaultModel: "claude-sonnet-4-6",
+    defaultModel: "accounts/fireworks/models/minimax-m3",
   },
+
+  {
+    id: "openrouter",
+    displayName: "OpenRouter",
+    apiKeyPlaceholder: "sk-or-v1-...",
+    docsUrl: "https://openrouter.ai/keys",
+    requiresKey: true,
+    defaultModel: "anthropic/claude-sonnet-4.6",
+  },
+
+  {
+    id: "vercel-ai-gateway",
+    displayName: "Vercel AI Gateway",
+    apiKeyPlaceholder: "vck_...",
+    docsUrl:
+      "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys&title=AI+Gateway+API+Keys",
+    requiresKey: true,
+    defaultModel: "anthropic/claude-sonnet-4.6",
+  },
+
   {
     id: "openai",
     displayName: "OpenAI",
@@ -56,6 +79,16 @@ export const ONBOARDING_PROVIDERS: readonly OnboardingProvider[] = [
     requiresKey: true,
     defaultModel: "gpt-5.4-mini",
   },
+
+  {
+    id: "anthropic",
+    displayName: "Anthropic",
+    apiKeyPlaceholder: "sk-ant-api03-...",
+    docsUrl: "https://console.anthropic.com/settings/keys",
+    requiresKey: true,
+    defaultModel: "claude-sonnet-4-6",
+  },
+
   {
     id: "gemini",
     displayName: "Google Gemini",
@@ -64,6 +97,7 @@ export const ONBOARDING_PROVIDERS: readonly OnboardingProvider[] = [
     requiresKey: true,
     defaultModel: "gemini-3-flash-preview",
   },
+
   {
     id: "ollama",
     displayName: "Ollama",
@@ -86,31 +120,7 @@ export const ONBOARDING_PROVIDERS: readonly OnboardingProvider[] = [
       },
     ],
   },
-  {
-    id: "fireworks",
-    displayName: "Fireworks",
-    apiKeyPlaceholder: "fw_...",
-    docsUrl: "https://fireworks.ai/account/api-keys",
-    requiresKey: true,
-    defaultModel: "accounts/fireworks/models/minimax-m3",
-  },
-  {
-    id: "openrouter",
-    displayName: "OpenRouter",
-    apiKeyPlaceholder: "sk-or-v1-...",
-    docsUrl: "https://openrouter.ai/keys",
-    requiresKey: true,
-    defaultModel: "anthropic/claude-sonnet-4.6",
-  },
-  {
-    id: "vercel-ai-gateway",
-    displayName: "Vercel AI Gateway",
-    apiKeyPlaceholder: "vck_...",
-    docsUrl:
-      "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys&title=AI+Gateway+API+Keys",
-    requiresKey: true,
-    defaultModel: "anthropic/claude-sonnet-4.6",
-  },
+
   {
     id: "openai-compatible",
     displayName: "OpenAI-compatible",

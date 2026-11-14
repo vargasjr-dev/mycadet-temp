@@ -220,23 +220,31 @@ export function SelectAssistantScreen() {
             />
           );
         })}
-        <DashedActionButton
-          icon={<Link2 className="h-4 w-4" />}
-          label={t("selectAssistantScreen.hatchAssistant")}
-          onClick={() => navigate(routes.account.onboarding.hosting)}
-        />
-        {(status === "unauthenticated" || status === "empty") && (
-          <p role="status">{t(`appShell.${status}`)}</p>
+        {status === "empty" ? (
+          // The chooser's primary action when nothing is available yet.
+          <Button
+            variant="primary"
+            onClick={() => navigate(routes.account.onboarding.hosting)}
+          >
+            {t("selectAssistantScreen.hatchAssistant")}
+          </Button>
+        ) : (
+          <DashedActionButton
+            icon={<Link2 className="h-4 w-4" />}
+            label={t("selectAssistantScreen.hatchAssistant")}
+            onClick={() => navigate(routes.account.onboarding.hosting)}
+          />
         )}
         {status === "unauthenticated" && (
-          <Link to={routes.account.login}>{t("accountPage.signIn")}</Link>
-        )}
-        {(status === "empty" || status === "error") && (
           <>
-            <Button variant="outlined" onClick={retry}>
-              {t("appShell.retry")}
-            </Button>
+            <p role="status">{t(`appShell.${status}`)}</p>
+            <Link to={routes.account.login}>{t("accountPage.signIn")}</Link>
           </>
+        )}
+        {status === "error" && (
+          <Button variant="outlined" onClick={retry}>
+            {t("appShell.retry")}
+          </Button>
         )}
         <RetireConfirmDialog
           open={retireTarget != null}
