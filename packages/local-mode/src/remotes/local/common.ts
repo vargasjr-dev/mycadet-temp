@@ -15,6 +15,8 @@ import { Socket } from "node:net";
 import { homedir, platform } from "node:os";
 import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 
+import { getLocalSourceRoot } from "../../source-root";
+
 import {
   isNamedPipePath,
   removeIpcEndpointFile,
@@ -387,33 +389,27 @@ function resolveAssistantIndexPath(entry?: LocalAssistant): string | undefined {
     if (runtimeIndex) return runtimeIndex;
   }
 
-  // Source tree layout: cli/src/lib/ -> ../../.. -> repo root -> assistant/src/index.ts
-  const sourceTreeIndex = join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "assistant",
-    "src",
-    "index.ts",
-  );
-  if (existsSync(sourceTreeIndex)) {
-    return sourceTreeIndex;
-  }
+  // Reported source tree (the entrypoint's startup report or
+  // CADET_SOURCE_ROOT): the same layout the spawning process already
+  // resolved — bundled hosts have no module file position to walk from.
+  const sourceRoot = getLocalSourceRoot();
+  if (sourceRoot) {
+    const sourceTreeIndex = join(sourceRoot, "assistant", "src", "index.ts");
+    if (existsSync(sourceTreeIndex)) {
+      return sourceTreeIndex;
+    }
 
-  // bunx layout: @mycadet/cli/src/lib/ -> ../../../.. -> node_modules/cadet/src/index.ts
-  const bunxIndex = join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "..",
-    "cadet",
-    "src",
-    "index.ts",
-  );
-  if (existsSync(bunxIndex)) {
-    return bunxIndex;
+    // bunx layout: node_modules/cadet nests the assistant's entry one level down.
+    const bunxIndex = join(
+      sourceRoot,
+      "node_modules",
+      "cadet",
+      "src",
+      "index.ts",
+    );
+    if (existsSync(bunxIndex)) {
+      return bunxIndex;
+    }
   }
 
   const cwdSourceDir = findAssistantSourceFrom(process.cwd());
@@ -916,22 +912,19 @@ function resolveGatewayDir(entry?: LocalAssistant): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(entry);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
-  // Source tree: cli/src/lib/ → ../../.. → repo root → gateway/
-  const sourceDir = join(import.meta.dir, "..", "..", "..", "gateway");
-  if (isGatewaySourceDir(sourceDir)) {
-    return sourceDir;
-  }
+  // Reported source tree: the gateway checkout the launching process
+  // resolved, plus the npm sibling of a bunx/npm-installed CLI.
+  const sourceRoot = getLocalSourceRoot();
+  if (sourceRoot) {
+    const sourceDir = join(sourceRoot, "gateway");
+    if (isGatewaySourceDir(sourceDir)) {
+      return sourceDir;
+    }
 
-  // npm-installed: @mycadet/cli and @mycadet/gateway are siblings
-  const npmGatewayDir = join(
-    import.meta.dir,
-    "..",
-    "..",
-    "..",
-    "cadet-gateway",
-  );
-  if (isGatewaySourceDir(npmGatewayDir)) {
-    return npmGatewayDir;
+    const npmGatewayDir = join(sourceRoot, "node_modules", "cadet-gateway");
+    if (isGatewaySourceDir(npmGatewayDir)) {
+      return npmGatewayDir;
+    }
   }
 
   // Compiled binary: gateway/ bundled adjacent to the CLI executable.
@@ -953,41 +946,6 @@ function resolveGatewayDir(entry?: LocalAssistant): string {
       "Gateway not found. Ensure @mycadet/gateway is installed or run from the source tree.",
     );
   }
-}
-
-/**
- * How to invoke a `gateway <subcommand>` CLI process so it resolves the same
- * workspace AND gateway security dir as the locally spawned gateway server:
- * run the gateway package's CLI entry through bun with the spawn state root
- * as cwd and the instance-pinned CADET_WORKSPACE_DIR / GATEWAY_SECURITY_DIR
- * the server was given (the file-backed pairing store must resolve
- * identically in both processes). Callers pass the resolved assistant
- * entry's `entry` (undefined for the default instance, where both
- * processes fall back to the same cwd-relative paths).
- */
-export function gatewayCliInvocation(entry?: LocalAssistant): {
-  command: string;
-  args: string[];
-  cwd: string;
-  env: Record<string, string | undefined>;
-} {
-  return {
-    command: resolveBunExecutable(),
-    args: ["run", join(resolveGatewayDir(entry), "src/cli/index.ts")],
-    cwd: spawnStateRoot(),
-    env: {
-      ...process.env,
-      ...(entry
-        ? {
-            CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
-            GATEWAY_SECURITY_DIR: join(
-              getLocalInstanceDir(entry),
-              "gateway-security",
-            ),
-          }
-        : {}),
-    },
-  };
 }
 
 /**
@@ -1030,17 +988,19 @@ function resolveCesDir(entry?: LocalAssistant): string {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
-  // Source tree / npm sibling: walk up from this file until a
-  // `credential-executor/` sibling appears (the file's depth moved when the
-  // local remote module landed under remotes/).
-  let sourceDir = join(import.meta.dir, "credential-executor");
-  let probeDir = import.meta.dir;
-  while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
-    probeDir = dirname(probeDir);
-    sourceDir = join(probeDir, "credential-executor");
-  }
-  if (isCesSourceDir(sourceDir)) {
-    return sourceDir;
+  // Reported source tree / npm sibling: walk up from the reported root
+  // until a `credential-executor/` sibling appears.
+  const sourceRoot = getLocalSourceRoot();
+  if (sourceRoot) {
+    let sourceDir = join(sourceRoot, "credential-executor");
+    let probeDir = sourceRoot;
+    while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
+      probeDir = dirname(probeDir);
+      sourceDir = join(probeDir, "credential-executor");
+    }
+    if (isCesSourceDir(sourceDir)) {
+      return sourceDir;
+    }
   }
 
   // npm-installed elsewhere on disk: resolve via the package entry.

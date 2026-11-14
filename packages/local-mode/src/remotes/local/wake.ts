@@ -65,14 +65,6 @@ async function wakeLocalSteps(
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
 
-  // Port auto-heal: a recorded port something else holds (a still-running
-  // vellum assistant on the pre-de-clash ports, a stray listener) used to
-  // kill the daemon on EADDRINUSE — or worse, leave a foreign listener
-  // answering this wake's health probes. Move the entry off foreign-held
-  // ports before anything binds, and say so loudly. Ports held by our own
-  // processes are left for the orphan path to adopt. Local only: docker
-  // ports are published by existing containers and need a recreate, which
-  // the docker path below reports on its own.
   const portHeal = await healConflictedLocalPorts(entry);
   if (portHeal) {
     saveLockfileAssistant(entry);
@@ -85,13 +77,6 @@ async function wakeLocalSteps(
 
   const pidFile = getDaemonPidPath(entry);
 
-  // Simple parallel bring-up — the same shape as the Docker topology's
-  // sibling containers coming up together. startCes and startGateway clear
-  // their own stale processes before spawning; startLocalDaemon classifies
-  // an already-running assistant internally. Readiness is the gateway's
-  // responsibility: its process gates its own traffic on the daemon's
-  // migrations, so an early start just means it holds the gate a little
-  // longer.
   await Promise.all([
     startCes(watch, entry),
     startLocalDaemon(watch, entry),

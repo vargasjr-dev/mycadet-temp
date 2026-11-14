@@ -14,58 +14,40 @@ const fakeToken = (token: string): GuardianTokenData => ({
   leasedAt: "1970-01-01T00:00:00.000Z",
 });
 
-// Snapshot the real modules before mocking so the module-scoped `afterAll`
-// below can restore them — bun runs every test file in one process with a
+// Snapshot the real module before mocking so the module-scoped `afterAll`
+// below can restore it — bun runs every test file in one process with a
 // shared loader, and `mock.restore()` does not undo `mock.module()`.
 const realExec = { ...(await import("../exec")) };
-const realCommon = { ...(await import("../remotes/local/common")) };
 
 const execOutputMock = mock<typeof realExec.execOutput>(async () => "");
-const gatewayCliInvocationMock = mock<typeof realCommon.gatewayCliInvocation>(
-  () => ({
-    command: "/fake/bun",
-    args: ["run", "/fake/gateway/src/cli/index.ts"],
-    cwd: "/fake/state-root",
-    env: {},
-  }),
-);
 
 mock.module("../exec", () => ({
   ...realExec,
   execOutput: execOutputMock,
 }));
-mock.module("../remotes/local/common", () => ({
-  ...realCommon,
-  gatewayCliInvocation: gatewayCliInvocationMock,
-}));
 
 const { pairLocal } = await import("../remotes/local/pair");
 
+// The invocation context derives from the entry's recorded instanceDir —
+// recorded paths keep the assertions free of XDG resolution.
 const entry: LocalAssistant = {
   assistantId: "asst-local",
   cloud: "local",
+  instanceDir: "/data/assistants/asst-local",
   port: 7830,
 };
 
 afterAll(() => {
   mock.module("../exec", () => realExec);
-  mock.module("../remotes/local/common", () => realCommon);
 });
 
 describe("pairLocal — running the gateway's own CLI is the local presence proof", () => {
   beforeEach(() => {
     execOutputMock.mockClear();
     execOutputMock.mockResolvedValue("");
-    gatewayCliInvocationMock.mockClear();
-    gatewayCliInvocationMock.mockReturnValue({
-      command: "/fake/bun",
-      args: ["run", "/fake/gateway/src/cli/index.ts"],
-      cwd: "/fake/state-root",
-      env: {},
-    });
   });
 
-  test("runs `gateway pairing mint` with the device identity as flags", async () => {
+  test("runs the instance's `gateway pairing mint` shim with the device identity as flags", async () => {
     execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     const result = await pairLocal(entry, {
       platform: "cli",
@@ -74,10 +56,10 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     });
     expect(execOutputMock).toHaveBeenCalledTimes(1);
     const [command, args, options] = execOutputMock.mock.calls[0]!;
-    expect(command).toBe("/fake/bun");
+    // The bare command resolves through the instance's bin/ shim (put
+    // first on PATH) — a layer removed from bun.
+    expect(command).toBe("gateway");
     expect(args).toEqual([
-      "run",
-      "/fake/gateway/src/cli/index.ts",
       "pairing",
       "mint",
       "--platform",
@@ -87,8 +69,20 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
       "--client-reported-name",
       "box",
     ]);
-    expect(options?.cwd).toBe("/fake/state-root");
-    expect(options?.env).toEqual({});
+    // The same geography `cadet exec --service gateway` uses: cwd is the
+    // instance's gateway-security dir, and the workspace/security dirs are
+    // pinned to the instance so the pairing store resolves identically to
+    // the server's.
+    expect(options?.cwd).toBe("/data/assistants/asst-local/gateway-security");
+    expect(options?.env?.CADET_WORKSPACE_DIR).toBe(
+      "/data/assistants/asst-local/workspace",
+    );
+    expect(options?.env?.GATEWAY_SECURITY_DIR).toBe(
+      "/data/assistants/asst-local/gateway-security",
+    );
+    expect(
+      options?.env?.PATH?.startsWith("/data/assistants/asst-local/bin:"),
+    ).toBe(true);
     expect(options?.timeoutMs).toBe(30_000);
     expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
@@ -97,8 +91,6 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     await pairLocal(entry, { platform: "cli", deviceId: "device-2" });
     expect(execOutputMock.mock.calls[0]![1]).toEqual([
-      "run",
-      "/fake/gateway/src/cli/index.ts",
       "pairing",
       "mint",
       "--platform",
@@ -141,10 +133,9 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
       platform: "cli",
       deviceId: "device-5",
     });
-    expect(result).toEqual({
-      ok: false,
-      status: 0,
-      error: "gateway-cli exited with code 1",
-    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected refusal");
+    expect(result.status).toBe(0);
+    expect(result.error).toBe("gateway-cli exited with code 1");
   });
 });

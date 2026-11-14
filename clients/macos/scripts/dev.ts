@@ -52,4 +52,8 @@ run("preparing the dev Electron.app", MACOS_DIR, [
   "run",
   "prepare:electron-dev",
 ]);
+// The bundled electron main cannot discover the source tree from its own
+// file position (there is none), so hand it the repo root for local-mode's
+// service resolvers — the same report the CLI makes from its own path.
+process.env.CADET_SOURCE_ROOT ||= path.resolve(CLIENTS_DIR, "..");
 run("launching electron-vite dev", MACOS_DIR, ["bunx", "electron-vite", "dev"]);

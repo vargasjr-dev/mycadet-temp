@@ -121,10 +121,18 @@ export async function hatchLocal(params: {
         ...(await allocateLocalPlacement(instanceName)),
       };
 
+      log(`🥚 Hatching local assistant: ${instanceName}`);
+      log("");
+
       try {
         // The wake leg owns starting; the config values ride the assistant's
-        // public config API once it is up.
-        await wakeLocal(fresh, { watch });
+        // public config API once it is up. wakeLocal maps failures to
+        // {ok:false} — a swallowed failure here would sail into the lease
+        // below and pair against a gateway that never came up.
+        const woke = await wakeLocal(fresh, { watch });
+        if (!woke.ok) {
+          throw new Error(woke.error);
+        }
       } catch (error) {
         await sleepLocal(fresh, { force: true });
         throw error;
@@ -156,9 +164,6 @@ export async function hatchLocal(params: {
       assistantId: instanceName,
     };
   }
-
-  log(`🥚 Hatching local assistant: ${instanceName}`);
-  log("");
 
   // Wake only proves the PROCESSES are alive — the gateway's traffic gate
   // stays closed while the daemon migrates, and a config apply or guardian

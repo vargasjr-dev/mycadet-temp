@@ -12,6 +12,11 @@ import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
 import { resolveCesSocketPath, startCes } from "../remotes/local/common";
+import { setLocalSourceRoot } from "../source-root";
+
+// resolveCesDir walks the reported source tree for a credential-executor
+// sibling — the same report the CLI's entrypoint makes in production.
+setLocalSourceRoot(join(import.meta.dir, "..", "..", "..", ".."));
 
 // ---------------------------------------------------------------------------
 // Mocks

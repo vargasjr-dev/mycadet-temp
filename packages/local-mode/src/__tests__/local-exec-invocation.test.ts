@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { ensureLocalBinShims } from "../remotes/local/common";
+import { setLocalSourceRoot } from "../source-root";
 
 // The bin/ folder is the contract: exec prepends it to the child's PATH, so
 // EVERY invocation shape — argv, compound commands, pipes, shell scripts —
@@ -19,6 +20,10 @@ import { ensureLocalBinShims } from "../remotes/local/common";
 // In a checkout with no runtime install, resolution falls through to the
 // repo-root source tree — four levels up from this __tests__ dir.
 const repoRoot = join(import.meta.dir, "..", "..", "..", "..");
+
+// Shim resolution reads the reported source tree — the same report the
+// CLI's entrypoint makes in production.
+setLocalSourceRoot(repoRoot);
 
 describe("ensureLocalBinShims", () => {
   let instanceDir: string;

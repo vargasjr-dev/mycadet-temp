@@ -15,11 +15,8 @@ import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
 import { navigateToNewConversation } from "@/utils/conversation-navigation";
 
-import {
-  BUNDLE_BASE_NAME,
-  CONVERSATION_APP_SEGMENT,
-  routes,
-} from "@/utils/routes";
+import { bundleBasename } from "@/utils/bundle-basename";
+import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
 
 function FloatingHydrateFallback() {
   return null;
@@ -804,6 +801,6 @@ export const routeTree = [
 ];
 
 export const router = createBrowserRouter(routeTree as never, {
-  basename: BUNDLE_BASE_NAME,
+  basename: bundleBasename(),
   future: { v8_middleware: true },
 });

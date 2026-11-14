@@ -15,8 +15,7 @@ import {
   guardianTokenPath,
   resolveConfigDir,
 } from "./config";
-import { getGatewayUrl, type LockfileAssistant } from "./lockfile-contract";
-import { loopbackSafeFetch } from "./loopback-fetch";
+import type { LockfileAssistant } from "./lockfile-contract";
 import { readLockfile } from "./lockfile";
 import { pairDevice } from "./operations/pair";
 import type { CliInvocation } from "./util";
@@ -555,36 +554,6 @@ function readClientHostname(): string | undefined {
   }
 }
 
-const READY_POLL_INTERVAL_MS = 500;
-const READY_POLL_BUDGET_MS = 60_000;
-
-/**
- * The gateway 503s every non-probe route ({status: "starting"}) while its
- * post-assistant-ready backfills run — exactly the window that burns the
- * caller's lease-retry budget. Poll /readyz (body-aware: it is the probe
- * the gateway docs point CLI waits at) until the gate opens before the
- * first pair attempt.
- */
-async function waitForGatewayReady(gatewayUrl: string): Promise<void> {
-  const deadline = Date.now() + READY_POLL_BUDGET_MS;
-  while (Date.now() < deadline) {
-    try {
-      const res = await loopbackSafeFetch(`${gatewayUrl}/readyz`, {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (res.ok) return;
-      // Only the documented "starting" gate is worth waiting out. Anything
-      // else (404, connection refused) means there is no gate here — e.g.
-      // test doubles that serve only the leased routes — so proceed and let
-      // the caller's own retry budget handle it.
-      if (res.status !== 503) return;
-    } catch {
-      return;
-    }
-    await new Promise((r) => setTimeout(r, READY_POLL_INTERVAL_MS));
-  }
-}
-
 export class GuardianLeasePermanentError extends Error {
   constructor(message: string) {
     super(message);
@@ -592,32 +561,17 @@ export class GuardianLeasePermanentError extends Error {
   }
 }
 
-function describeJsonType(value: unknown): string {
-  if (value === undefined) return "absent";
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
-  return typeof value;
-}
-
 /**
  * Pair with the assistant's gateway and persist the minted credential —
  * the lease every local-topology hatch runs once its gateway is up.
  * The pair operation's transport proves presence; re-pairing IS the repair.
+ * Waiting for the gateway's ready gate is the caller's job (the hatch
+ * waits on the assistant before leasing) — the lease itself just pairs.
  */
 export async function leaseGuardianToken(
   entry: LockfileAssistant,
 ): Promise<GuardianTokenData> {
-  // The gateway address derives from the entry's topology; assistantId and
-  // the bootstrap secret ride the entry too. Only the local runtimes lease —
-  // they are the topologies a detached hatch records a bootstrap secret for.
-  if (entry.cloud !== "local" && entry.cloud !== "docker") {
-    throw new Error(
-      `Guardian token leasing is not available for '${entry.cloud}' assistants.`,
-    );
-  }
-  const gatewayUrl = getGatewayUrl(entry);
   const assistantId = entry.assistantId;
-  await waitForGatewayReady(gatewayUrl);
 
   const deviceId = computeDeviceId();
   const clientReportedName = readClientHostname();
@@ -629,8 +583,10 @@ export async function leaseGuardianToken(
   });
   if (!paired.ok) throw new Error(paired.error);
 
-  // The pair door already zod-parsed the mint's stdout line.
-  const tokenData = paired.response;
+  // The pair door already zod-parsed the mint's stdout line; the lease
+  // validates again at the persistence boundary — this is the credential
+  // about to be written to disk, and a malformed mint will not fix itself.
+  const tokenData = parseGuardianToken(paired.response);
 
   saveGuardianToken(assistantId, tokenData);
   return tokenData;

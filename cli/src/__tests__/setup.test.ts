@@ -283,15 +283,18 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/readyz");
+    // The lease pairs straight through the door — waiting for the
+    // gateway's ready gate is the hatch's waitForReady, not the lease's —
+    // so the flow's first fetch is the provider lookup, riding the leased
+    // token.
     expect(pairDeviceMock).toHaveBeenCalledTimes(1);
     const [entryArg, deviceArg] = pairDeviceMock.mock.calls[0]!;
     expect(entryArg.assistantId).toBe("assistant-123");
     expect(deviceArg.platform).toBe("cli");
-    expect(fetchCalls[1].url).toBe(
+    expect(fetchCalls[0].url).toBe(
       "http://127.0.0.1:3000/v1/config/llm/default-provider",
     );
-    expect(fetchCalls[1].headers.get("Authorization")).toBe(
+    expect(fetchCalls[0].headers.get("Authorization")).toBe(
       "Bearer leased-guardian-token",
     );
   });
@@ -324,7 +327,6 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://127.0.0.1:7831/readyz");
     expect(pairDeviceMock).toHaveBeenCalledTimes(1);
     const call = pairDeviceMock.mock.calls[0];
     if (!call) throw new Error("expected one pairDevice call");
