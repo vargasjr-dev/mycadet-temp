@@ -1,12 +1,23 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
+import {
+  resolveEnvironmentName,
+  type CadetEnvironment,
+} from "@mycadet/shared/seeds";
 import baseConfig from "@mycadet/app/capacitor.config.base";
 
-const SCHEME_NAMES: Record<string, string> = {
+// Keyed by the union the seeds file owns: adding an environment without
+// deciding its scheme is a compile error, and the lookup below needs no
+// `??` fallback.
+const SCHEME_NAMES: Record<CadetEnvironment, string> = {
   production: "App",
   staging: "App Staging",
   dev: "App Dev",
   local: "App Local",
+  // No dedicated test scheme exists — the test seed is for port-blocked
+  // service environments, so a sync against it bakes test cloud into the
+  // production scheme's bundle.
+  test: "App",
 };
 
 // The iOS-anchored config: `cap sync ios` runs from this package (the release
@@ -25,7 +36,7 @@ const config: CapacitorConfig = {
     // `.automatic` zeroes those insets and pads the scroll content itself,
     // hiding the header/composer under the notch and home indicator.
     contentInset: "never",
-    scheme: SCHEME_NAMES[process.env.CADET_ENVIRONMENT ?? "local"] ?? "App",
+    scheme: SCHEME_NAMES[resolveEnvironmentName("local")],
   },
   plugins: {
     // Spreads the base config's shared plugin block (`CadetCloud` — the

@@ -60,7 +60,8 @@ export {
 } from "./cloud-releases";
 
 export { fetchGatewayPs } from "./daemon-readiness";
-export { cliCommand, resolveEnvironmentName } from "./environment";
+export { cliCommand } from "./environment";
+export { resolveEnvironmentName } from "@mycadet/shared/seeds";
 
 export { readLockfile, saveLockfileAssistant } from "./lockfile";
 export {

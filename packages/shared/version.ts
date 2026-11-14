@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
  * The version string a source checkout reports for `--version`.
  *
  * Released CLIs carry their channel in the version itself (`-dev.`,
- * `-staging.`, nothing for production — see `environmentFromVersion`). A
+ * `-staging.`, nothing for production — the channel mapping lives with the
+ * environment resolver (`environmentFromVersion` in shared/seeds). A
  * source checkout reads the static version from package.json, which made
  * `cadet-local --version` indistinguishable from a production install. This
  * stamps a `-local.` postfix using the exact dev-release format
@@ -50,7 +51,8 @@ function isSourceCheckout(entryPath: string): boolean {
  * Bun, Node, and bundled evaluation all resolve it to this file on disk.
  */
 function moduleEntryPath(): string {
-  if (typeof import.meta.url === "string") return fileURLToPath(import.meta.url);
+  if (typeof import.meta.url === "string")
+    return fileURLToPath(import.meta.url);
   return import.meta.path;
 }
 
@@ -119,27 +121,4 @@ export function resolveVersion(packageRoot: string = process.cwd()): string {
   if (!base) return "";
   if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return base;
   return stampedVersion(base, new Date(), moduleEntryPath());
-}
-
-/**
- * Whether a version string denotes a dev build from the dev-release
- * pipeline, e.g. `0.12.6-dev.202610081023.3a27b77`.
- */
-export function isDevVersion(version: string): boolean {
-  return /-dev\./i.test(version);
-}
-
-/**
- * Whether a version string denotes a staging build, e.g. `0.6.0-staging.3`.
- */
-export function isStagingVersion(version: string): boolean {
-  return /-staging\./i.test(version);
-}
-
-/**
- * Whether a version string denotes a local build, e.g. `0.12.6-local.42`.
- * Local builds are never published.
- */
-export function isLocalVersion(version: string): boolean {
-  return /-local\./i.test(version);
 }

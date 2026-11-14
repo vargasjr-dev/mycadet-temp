@@ -1,6 +1,5 @@
-import { getCloudBaseUrl } from "@mycadet/shared";
+import { getCloudBaseUrl, resolveEnvironmentName } from "@mycadet/shared";
 
-import { resolveEnvironmentName } from "./environment";
 import {
   assertSafePathSegment,
   environmentDirectoryName,

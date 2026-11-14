@@ -391,6 +391,10 @@ targets:
       # The baked-config parser: Foundation-only, so the host-less
       # bundle compiles it directly (BakedCloudConfigTests exercises it).
       - path: App/Shared/BakedCloudConfig.swift
+      # The scheme handler's static halves (forward re-anchoring + cookie
+      # capture/replay): WebKit types only, no Capacitor — the same
+      # host-less posture as the parser.
+      - path: App/SameOriginAPIHandler.swift
       - path: App/Shared
         includes:
           - AppGroupID.swift
