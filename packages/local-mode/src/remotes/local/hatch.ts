@@ -103,6 +103,9 @@ export async function hatchLocal(params: {
     name ?? process.env.CADET_ASSISTANT_NAME,
   );
 
+  log(`🥚 Hatching local assistant: ${instanceName}`);
+  log("");
+
   let entry: LocalAssistant;
   try {
     const hatched = await withLocalHatchLock(async () => {
@@ -123,8 +126,13 @@ export async function hatchLocal(params: {
       try {
         // The wake leg owns starting; the config values ride the assistant's
         // public config API once it is up.
-        await wakeLocal(fresh, { watch });
+        console.log("let's wake up?");
+        const result = await wakeLocal(fresh, { watch });
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
       } catch (error) {
+        console.log("WE FAILED TO WAKE?", error);
         await sleepLocal(fresh, { force: true });
         throw error;
       }
@@ -156,13 +164,12 @@ export async function hatchLocal(params: {
     };
   }
 
-  log(`🥚 Hatching local assistant: ${instanceName}`);
-  log("");
-
   const hatchConfigValues = buildHatchConfigValues(configValues, provider);
 
   // Lease a guardian token so the desktop app can import it on first launch
   // instead of hitting /v1/guardian/init itself.
+  console.log("IM LEASING ???");
+
   const maxLeaseAttempts = 3;
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {

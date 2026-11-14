@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
-import { Socket } from "node:net";
+import fs from "fs";
 import { homedir, platform } from "node:os";
 import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 
@@ -611,6 +611,7 @@ export function applyAssistantEnvironment(
       .filter(Boolean)
       .join(delimiter);
   } catch {
+    console.log("FAILED TO ENSURE LOCAL SHIMS");
     // shim materialization never blocks env application
   }
   return env;
@@ -783,9 +784,11 @@ async function startDaemonFromSource(
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
+  console.log("what is this");
   if (await awaitStartingSentinel(pidFile, daemonPort)) {
     return null;
   }
+  console.log("we're ok");
 
   const daemonState = await resolveProcessState(
     pidFile,
@@ -804,6 +807,7 @@ async function startDaemonFromSource(
   }
 
   const env = applyAssistantEnvironment(entry);
+  console.log("NEW ENV", env.PATH);
 
   // Write a sentinel PID file before spawning so concurrent hatch() calls
   // detect the in-progress spawn and wait instead of racing.
@@ -956,36 +960,22 @@ function resolveGatewayDir(entry?: LocalAssistant): string {
 }
 
 /**
- * How to invoke a `gateway <subcommand>` CLI process so it resolves the same
- * workspace AND gateway security dir as the locally spawned gateway server:
- * run the gateway package's CLI entry through bun with the spawn state root
- * as cwd and the instance-pinned CADET_WORKSPACE_DIR / GATEWAY_SECURITY_DIR
- * the server was given (the file-backed pairing store must resolve
- * identically in both processes). Callers pass the resolved assistant
- * entry's `entry` (undefined for the default instance, where both
- * processes fall back to the same cwd-relative paths).
+ * How to invoke a `gateway <subcommand>` CLI process
  */
-export function gatewayCliInvocation(entry?: LocalAssistant): {
-  command: string;
-  args: string[];
+export function gatewayCliInvocation(entry: LocalAssistant): {
   cwd: string;
   env: Record<string, string | undefined>;
 } {
+  const root = getLocalInstanceDir(entry);
+  console.log("root", fs.readdirSync(root));
+  const gatewayDir = join(root, "gateway-security");
   return {
-    command: resolveBunExecutable(),
-    args: ["run", join(resolveGatewayDir(entry), "src/cli/index.ts")],
-    cwd: spawnStateRoot(),
+    cwd: gatewayDir,
     env: {
       ...process.env,
-      ...(entry
-        ? {
-            CADET_WORKSPACE_DIR: join(getLocalInstanceDir(entry), "workspace"),
-            GATEWAY_SECURITY_DIR: join(
-              getLocalInstanceDir(entry),
-              "gateway-security",
-            ),
-          }
-        : {}),
+      CADET_WORKSPACE_DIR: join(root, "workspace"),
+      GATEWAY_SECURITY_DIR: gatewayDir,
+      PATH: `${join(root, "bin")}:${process.env.PATH}`,
     },
   };
 }
@@ -1401,12 +1391,14 @@ export async function startLocalDaemon(
   entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): Promise<void> {
+  console.log("🔨 Starting local assistant daemon...");
   const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon);
 
   // The assistant daemon always runs from source through bun: the packaged
   // runtime ships assistant source beside the bundled bun, and dev/bunx
   // installs resolve it from the source tree or node_modules.
+  console.log("find index file", typeof import.meta.dir);
   const assistantIndex =
     localRuntimeAssistantIndex(entry) ?? resolveAssistantIndexPath(entry);
   if (!assistantIndex) {
@@ -1415,18 +1407,15 @@ export async function startLocalDaemon(
         "  Ensure the runtime ships assistant source, or run from the source tree.",
     );
   }
-  startupLog("🔨 Starting local assistant...");
-  const sourceSpawn = watch
-    ? await startDaemonWatchFromSource(
-        assistantIndex,
-        entry,
-        daemonPort,
-        options,
-      )
-    : await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
-  void sourceSpawn;
-  // Spawn and return — readiness is the gateway's responsibility: its
-  // process gates its own traffic on the daemon's migrations.
+  console.log("🔨 Starting local assistant...");
+  if (watch)
+    await startDaemonWatchFromSource(
+      assistantIndex,
+      entry,
+      daemonPort,
+      options,
+    );
+  else await startDaemonFromSource(assistantIndex, entry, daemonPort, options);
 }
 
 export async function startGateway(

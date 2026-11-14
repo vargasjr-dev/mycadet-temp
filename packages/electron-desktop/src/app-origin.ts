@@ -1,3 +1,5 @@
+import { resolveEnvironmentName } from "@mycadet/shared";
+
 /**
  * The single origin the renderer legitimately runs at, expressed as a
  * structured protocol + host pair rather than a string. Packaged, the
@@ -65,4 +67,13 @@ export const isAllowedOrigin = (
     }
   }
   return parsed.protocol === allowed.protocol && parsed.host === allowed.host;
+};
+
+export const getAppName = () => {
+  const envName = resolveEnvironmentName();
+  if (envName === "production") {
+    return "Cadet";
+  } else {
+    return `Cadet ${envName.slice(0, 1).toUpperCase()}${envName.slice(1)}`;
+  }
 };

@@ -29,8 +29,10 @@ export async function pairLocal(
   entry: LocalAssistant,
   device?: PairDeviceIdentity,
 ): Promise<string | PairOperationResult> {
+  console.log("FIND THE INVOCATION");
   const invocation = gatewayCliInvocation(entry);
-  const args = [...invocation.args, "pairing", "mint"];
+  console.log("FOUND THE INVOCATION");
+  const args = ["pairing", "mint"];
   if (device) {
     args.push(
       "--platform",
@@ -42,8 +44,9 @@ export async function pairLocal(
         : []),
     );
   }
+  console.log("INVOKE ME BRO");
   try {
-    const stdout = await execOutput(invocation.command, args, {
+    const stdout = await execOutput("gateway", args, {
       cwd: invocation.cwd,
       env: invocation.env,
       timeoutMs: 30_000,

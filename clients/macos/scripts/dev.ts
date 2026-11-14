@@ -14,19 +14,20 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 
-// Match the native Swift app's default of "local". Everything downstream
-// reads it — the electron-vite `define` block, the dev plist patcher, and
-// the main process's local-config resolution (which otherwise falls back
-// to the persisted CLI default, then "production").
-process.env.CADET_ENVIRONMENT ||= "local";
-
 const MACOS_DIR = path.resolve(import.meta.dir, "..");
 const CLIENTS_DIR = path.resolve(MACOS_DIR, "..");
 
 const run = (label: string, cwd: string, cmd: [string, ...string[]]): void => {
   console.log(`[dev] ${label}…`);
   const [bin, ...args] = cmd;
-  const result = spawnSync(bin, args, { cwd, stdio: "inherit" });
+  const result = spawnSync(bin, args, {
+    cwd,
+    stdio: "inherit",
+    env: {
+      CADET_ENVIRONMENT: "local",
+      ...process.env,
+    },
+  });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
