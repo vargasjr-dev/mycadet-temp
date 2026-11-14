@@ -3,6 +3,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import {
   mintAndRecordDeviceBoundTokenPair,
@@ -13,8 +14,7 @@ import {
   contacts as gwContacts,
   contactChannels as gwContactChannels,
 } from "../../db/schema.js";
-import type { GuardianTokenData } from "@mycadet/local-mode/guardian-contract";
-
+import { GuardianTokenFileSchema } from "@mycadet/local-mode/guardian-contract";
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("pair");
@@ -73,7 +73,7 @@ export async function resolveLocalGuardianPrincipalId(): Promise<string> {
  * parses this response with `GuardianTokenFileSchema` directly — one
  * schema owns the shape from mint to token file.
  */
-export type DeviceBoundPairPayload = GuardianTokenData;
+export type DeviceBoundPairPayload = z.infer<typeof GuardianTokenFileSchema>;
 
 /**
  * Mint a pairing token for a device

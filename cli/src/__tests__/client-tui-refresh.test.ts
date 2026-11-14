@@ -60,7 +60,18 @@ function stubRefresh(ok: boolean): {
     if (String(url).includes("/v1/guardian/refresh")) {
       calledUrl = String(url);
       return new Response(
-        ok ? JSON.stringify({ accessToken: "new-acc" }) : "nope",
+        ok
+          ? JSON.stringify({
+              guardianPrincipalId: "imported",
+              accessToken: "new-acc",
+              accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+              refreshToken: "new-ref",
+              refreshTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+              refreshAfter: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+              deviceId: "dev",
+              leasedAt: new Date().toISOString(),
+            })
+          : "nope",
         {
           status: ok ? 200 : 401,
           headers: { "content-type": "application/json" },
