@@ -231,5 +231,4 @@ describe("082-backfill-managed-profile-labels migration", () => {
       backfillCloudProfileLabelsMigration.run(workspaceDir),
     ).not.toThrow();
   });
-
 });

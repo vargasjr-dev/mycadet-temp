@@ -119,10 +119,7 @@ function applyHatchProviderSelection(options: {
     ...(options.model !== undefined ? { model: options.model } : {}),
     provider: options.provider,
   };
-  writeFileSync(
-    CONFIG_PATH,
-    JSON.stringify({ ...raw, llm }, null, 2) + "\n",
-  );
+  writeFileSync(CONFIG_PATH, JSON.stringify({ ...raw, llm }, null, 2) + "\n");
   invalidateConfigCache();
   if (!hadDefaultProviderBefore) {
     seedInferenceProfiles({ isHatch: true, db: options.db });
