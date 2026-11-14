@@ -49,7 +49,7 @@ const appQuitMock = mock(() => undefined);
 
 mock.module("electron", () => ({
   app: {
-    name: "Cadet Electron",
+    name: "Cadet Test",
     on: (event: string, handler: () => void) => {
       appListeners.set(event, handler);
     },
@@ -278,8 +278,8 @@ describe("installTray", () => {
     expect(labels).toContain("Mark All as Read");
     expect(labels).toContain("Show / Hide Main Window");
     expect(labels).toContain("Restart");
-    expect(labels).toContain("About Cadet Electron");
-    expect(labels).toContain("Quit Cadet Electron");
+    expect(labels).toContain("About Cadet Test");
+    expect(labels).toContain("Quit Cadet Test");
     expect(template.find((item) => item.label?.startsWith("Quit"))?.role).toBe(
       "quit",
     );

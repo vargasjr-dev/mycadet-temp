@@ -117,56 +117,10 @@ import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
 import { installWebContentsSecurity } from "@mycadet/electron-desktop/windows";
 
-// Dev-only: override the workspace `name` (`@mycadet/macos`) so the
-// menu bar's first submenu reads "Cadet Electron", and — more
-// importantly — so `app.getPath("userData")` resolves to
-// `~/Library/Application Support/Cadet Electron/`, cleanly separate
-// from the other app installs (current and legacy) the developer may
-// also be running.
-//
-// Caveat: `app.setName()` does NOT change the Dock / Cmd-Tab label —
-// those come from the running binary's `CFBundleName`. In dev the binary
-// is the `node_modules/electron/dist/Electron.app` binary, whose
-// `CFBundleName` is stamped to "Cadet Local" by
-// `scripts/prepare-electron-dev-app.ts` (which also busts the macOS Dock
-// display-name cache so the relabel
-// actually surfaces instead of the stale stock "Electron"). The userData
-// split is what prevents collision with Swift installs. Packaged builds
-// get a real `productName` from electron-builder, which writes
-// `CFBundleName`, so Dock / Cmd-Tab pick up the real name there too. The
-// per-assistant name (e.g. "Aria") can't ride the Dock tile — it isn't
-// known at launch and `CFBundleName` is read once — so it drives the
-// window title, the menu-bar tray, and the About panel instead (see
-// `./identity`).
-//
-// Gated on `!app.isPackaged` so a packaged build keeps its
-// electron-builder-derived `CFBundleName` instead of being overridden
-// at runtime. Must run before `app.getPath("userData")` is first read;
-// the electron-store instance in `./settings` is constructed lazily on
-// first IPC call, so this timing holds as long as `app.setName` runs
-// before `app.whenReady`.
-if (!app.isPackaged) {
-  app.setName("Cadet Electron");
-}
 const isDev = !app.isPackaged;
 
 // Dev-only: skip the real macOS Keychain for Chromium's `os_crypt` /
-// Electron `safeStorage`. Without this, the first `safeStorage` call —
-// e.g. persisting the session token after sign-in via
-// `./session-token-store.client` makes Chromium prompt for the login
-// keychain password ("Cadet Electron Safe Storage"). Denying that
-// prompt surfaces as `keychain_password_mac.mm ... userCanceledErr
-// (-128)` and silently drops token persistence. `--use-mock-keychain`
-// routes os_crypt to an in-process mock backend: `safeStorage` stays
-// available and encrypt/decrypt still work (so the token persists
-// across dev restarts), but nothing ever touches the real keychain, so
-// there is no prompt. Dev-encrypted blobs are not readable by a real
-// keychain build, which is fine for local dev — and a `session.enc`
-// left over from a previous real-keychain run just fails to decrypt and
-// falls back to signed-out (see `getSessionToken`), self-healing on the
-// next sign-in. Must be appended before `app` is ready; this module
-// runs synchronously at startup, well before `app.whenReady`. Gated on
-// dev so packaged builds keep real keychain encryption at rest.
+// Electron `safeStorage`.
 if (isDev) {
   app.commandLine.appendSwitch("use-mock-keychain");
 }

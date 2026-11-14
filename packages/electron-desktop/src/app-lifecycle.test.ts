@@ -1,6 +1,4 @@
-import { beforeAll, describe, expect, mock, test } from "bun:test";
-
-import type { IpcHandle } from "./ipc";
+import { describe, expect, mock, test } from "bun:test";
 
 // The lifecycle helper owns the whenReady + catch shape every desktop main
 // shares. Electron's `app` is mocked so the test drives resolve and reject
