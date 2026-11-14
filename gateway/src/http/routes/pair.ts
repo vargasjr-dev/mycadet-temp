@@ -66,16 +66,24 @@ export async function resolveLocalGuardianPrincipalId(): Promise<string> {
   return "local";
 }
 
+/**
+ * The payload speaks the guardian token file's own field names so the
+ * leasing side can parse it with that schema directly — no rename hop.
+ */
 export interface DeviceBoundPairPayload {
-  token: string;
+  accessToken: string;
   /** ISO-8601 instant the access token expires. */
-  expiresAt: string;
+  accessTokenExpiresAt: string;
   refreshToken: string;
   /** ISO-8601 instant the device-bound refresh token expires. */
   refreshTokenExpiresAt: string;
   /** ISO-8601 instant after which the client should refresh the session. */
   refreshAfter: string;
-  guardianId: string;
+  guardianPrincipalId: string;
+  /** The paired device's id, echoed so the lease can persist the binding. */
+  deviceId: string;
+  /** ISO-8601 instant the credential was leased. */
+  leasedAt: string;
 }
 
 /**
@@ -97,11 +105,13 @@ export async function mintPairingPayload(opts: {
   });
 
   return {
-    token: pair.accessToken,
-    expiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
+    accessToken: pair.accessToken,
+    accessTokenExpiresAt: new Date(pair.accessTokenExpiresAt).toISOString(),
     refreshToken: pair.refreshToken,
     refreshTokenExpiresAt: new Date(pair.refreshTokenExpiresAt).toISOString(),
     refreshAfter: new Date(pair.refreshAfter).toISOString(),
-    guardianId: guardian.guardianPrincipalId,
+    guardianPrincipalId: guardian.guardianPrincipalId,
+    deviceId: opts.deviceId,
+    leasedAt: new Date().toISOString(),
   };
 }

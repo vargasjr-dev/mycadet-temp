@@ -13,7 +13,9 @@ import { and, eq } from "drizzle-orm";
 import { initSigningKey } from "../auth/token-service.js";
 import { mintPairingPayload } from "../http/routes/pair.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from(
+  "test-signing-key-0123456789abcde",
+).toString("hex");
 initSigningKey();
 
 // The pair guardian-lookup reads the gateway DB; the assistant DB proxy is
@@ -434,7 +436,7 @@ describe("/v1/pair clientReportedName", () => {
       platform: "test",
       clientReportedName: "Alice's Chromebook",
     });
-    expect(res.token).toBeTruthy();
+    expect(res.accessToken).toBeTruthy();
 
     expect(actorRow("device-ext-name")?.clientReportedName).toBe(
       "Alice's Chromebook",
@@ -450,7 +452,7 @@ describe("/v1/pair clientReportedName", () => {
       platform: "test",
       clientReportedName: "Alice's MacBook Pro",
     });
-    expect(res.token).toBeTruthy();
+    expect(res.accessToken).toBeTruthy();
 
     expect(actorRow("device-cli-name")?.clientReportedName).toBe(
       "Alice's MacBook Pro",
@@ -465,7 +467,7 @@ describe("/v1/pair clientReportedName", () => {
       deviceId: "device-no-name",
       platform: "test",
     });
-    expect(res.token).toBeTruthy();
+    expect(res.accessToken).toBeTruthy();
 
     expect(actorRow("device-no-name")?.clientReportedName).toBeNull();
     expect(refreshRow("device-no-name")?.clientReportedName).toBeNull();

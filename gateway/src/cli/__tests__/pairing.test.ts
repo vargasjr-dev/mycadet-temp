@@ -60,7 +60,9 @@ mock.module("../../db/assistant-db-proxy.js", () => ({
 }));
 
 // Initialize signing key before any module that mints tokens is imported.
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from(
+  "test-signing-key-0123456789abcde",
+).toString("hex");
 initSigningKey();
 
 const { parsePairingArgs, parsePairingMintArgs, runPairingCommand } =
@@ -269,18 +271,23 @@ describe("gateway pairing mint --device-id", () => {
 
     expect(code).toBe(0);
     const payload = lastLoggedPayload();
-    expect(typeof payload.token).toBe("string");
+    expect(typeof payload.accessToken).toBe("string");
     expect(typeof payload.refreshToken).toBe("string");
-    expect(payload.guardianId).toBeTruthy();
-    // The wire contract is credentials + guardianId — no assistantId (the
-    // caller chose the gateway) and no isNew (the mint's business).
+    expect(payload.guardianPrincipalId).toBeTruthy();
+    expect(payload.deviceId).toBe("device-1");
+    // The wire contract speaks the guardian token file's field names —
+    // credentials + guardian + the device binding and the lease stamp —
+    // and nothing else: no assistantId (the caller chose the gateway), no
+    // isNew (the mint's business).
     expect(Object.keys(payload).sort()).toEqual([
-      "expiresAt",
-      "guardianId",
+      "accessToken",
+      "accessTokenExpiresAt",
+      "deviceId",
+      "guardianPrincipalId",
+      "leasedAt",
       "refreshAfter",
       "refreshToken",
       "refreshTokenExpiresAt",
-      "token",
     ]);
     // The mint landed in the gateway DB the running server reads.
     const rows = getGatewayDb()
@@ -297,7 +304,7 @@ describe("gateway pairing mint --device-id", () => {
     const code = await runPairingCommand(["mint", "--device-id", "device-2"]);
 
     expect(code).toBe(0);
-    expect(lastLoggedPayload().token).toBeTruthy();
+    expect(lastLoggedPayload().accessToken).toBeTruthy();
     // And no challenge was minted — the lease pairs without one.
     expect(errors.join("\n") + logs.join("\n")).not.toContain("deviceCode");
   });
