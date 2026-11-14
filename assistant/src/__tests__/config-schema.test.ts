@@ -55,9 +55,11 @@ function writeConfig(obj: unknown): void {
 describe("AssistantConfigSchema", () => {
   test("parses empty object with full defaults", () => {
     const result = AssistantConfigSchema.parse({});
-    // services.inference is an empty object; model selection lives under
-    // llm.profiles / llm.callSites, auth routing via provider_connections.
-    expect(result.services.inference).toEqual({});
+    // Model selection lives under llm.profiles / llm.callSites, auth routing
+    // via provider_connections. There is no services.inference namespace.
+    expect(
+      (result.services as Record<string, unknown>).inference,
+    ).toBeUndefined();
     expect(result.llm.profiles).toEqual({});
     expect(result.llm.profileOrder).toEqual([]);
     expect(result.llm.callSites).toEqual({});
@@ -284,10 +286,7 @@ describe("AssistantConfigSchema", () => {
     expect((result as Record<string, unknown>).speed).toBeUndefined();
     expect((result as Record<string, unknown>).thinking).toBeUndefined();
     expect(
-      (result.services.inference as Record<string, unknown>).provider,
-    ).toBeUndefined();
-    expect(
-      (result.services.inference as Record<string, unknown>).model,
+      (result.services as Record<string, unknown>).inference,
     ).toBeUndefined();
     expect(result.llm.profiles).toEqual({});
     expect(result.llm.callSites).toEqual({});

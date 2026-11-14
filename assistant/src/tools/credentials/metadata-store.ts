@@ -159,68 +159,19 @@ function toRecord(metadata: CredentialMetadata): CredentialRecord {
 // Production record backend: always the CES RPC singleton
 // ---------------------------------------------------------------------------
 
-/** Retry backoff for a failed record write (the hatch set races CES boot). */
-const PERSIST_RETRY_DELAYS_MS = [1_000, 3_000, 10_000, 30_000];
-
 /**
- * Records whose CES write failed, keyed by account. Re-flushed on the next
- * successful CES load so a set that raced CES startup is not lost — the
- * vault holds the secret but the catalog record is what every listing reads.
+ * Raised when the credential catalog (the CES record backend) cannot be
+ * written. Callers surface it as a 5xx: CES is expected to be up and
+ * reachable once the assistant reports ready, so the CLI owns any retry.
  */
-const pendingPersists = new Map<string, CredentialMetadata>();
-
-let persistFlushScheduled = false;
-
-function schedulePendingFlush(): void {
-  if (persistFlushScheduled) {
-    return;
-  }
-  persistFlushScheduled = true;
-  const delay = PERSIST_RETRY_DELAYS_MS[0]!;
-  setTimeout(() => {
-    persistFlushScheduled = false;
-    void flushPendingPersists(0);
-  }, delay).unref?.();
-}
-
-async function flushPendingPersists(attempt: number): Promise<void> {
-  if (pendingPersists.size === 0) {
-    return;
-  }
-  const batch = [...pendingPersists.values()];
-  for (const metadata of batch) {
-    const account = credentialKey(metadata.service, metadata.field);
-    const ok = await cesRecordBackend.set(account, toRecord(metadata));
-    if (ok) {
-      pendingPersists.delete(account);
+export class CredentialCatalogUnavailableError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = "CredentialCatalogUnavailableError";
+    if (options?.cause !== undefined) {
+      this.cause = options.cause;
     }
   }
-  if (
-    pendingPersists.size > 0 &&
-    attempt < PERSIST_RETRY_DELAYS_MS.length - 1
-  ) {
-    const delay = PERSIST_RETRY_DELAYS_MS[attempt + 1]!;
-    setTimeout(() => {
-      void flushPendingPersists(attempt + 1);
-    }, delay).unref?.();
-  }
-}
-
-async function persistCredentialMetadata(
-  metadata: CredentialMetadata,
-): Promise<void> {
-  const account = credentialKey(metadata.service, metadata.field);
-  const ok = await cesRecordBackend.set(account, toRecord(metadata));
-  if (ok) {
-    pendingPersists.delete(account);
-    return;
-  }
-  log.warn(
-    { service: metadata.service, field: metadata.field },
-    "Failed to persist credential record to CES; queued for retry",
-  );
-  pendingPersists.set(account, metadata);
-  schedulePendingFlush();
 }
 
 let _cesRecordsLoaded = false;
@@ -285,78 +236,8 @@ async function loadCesRecords(generation: number): Promise<void> {
     _store.useMemory(merged);
     _cesRecordsLoaded = true;
     log.info({ count: remote.length }, "Loaded credential records from CES");
-
-    // Durability: a write that raced CES startup (initial hatch) or a restart
-    // before the write-through landed leaves the vault holding a secret with
-    // no catalog record. Re-persist anything the CES catalog is missing.
-    void reconcileMissingRecords(merged);
   } catch (err) {
     log.warn({ err }, "CES record load failed");
-  }
-}
-
-/**
- * Push catalog records for vault-backed credentials that CES does not know
- * about, so a hatch-time write lost to a CES race self-heals (including
- * across assistant restarts — the vault enumerates its accounts).
- */
-function parseVaultAccount(
-  account: string,
-): { service: string; field: string } | undefined {
-  const prefix = "credential/";
-  if (!account.startsWith(prefix)) {
-    return undefined;
-  }
-  const rest = account.slice(prefix.length);
-  const slashIdx = rest.lastIndexOf("/");
-  if (slashIdx < 1 || slashIdx === rest.length - 1) {
-    return undefined;
-  }
-  return { service: rest.slice(0, slashIdx), field: rest.slice(slashIdx + 1) };
-}
-
-async function reconcileMissingRecords(
-  records: CredentialMetadata[],
-): Promise<void> {
-  try {
-    const knownAccounts = new Set(
-      records.map((record) => credentialKey(record.service, record.field)),
-    );
-    const { listSecureKeysAsync } =
-      await import("../../security/secure-keys.js");
-    const vault = await listSecureKeysAsync();
-    if (!vault.unreachable) {
-      for (const account of vault.accounts) {
-        if (knownAccounts.has(account)) {
-          continue;
-        }
-        const parsed = parseVaultAccount(account);
-        if (!parsed) {
-          continue;
-        }
-        const now = Date.now();
-        const record: CredentialMetadata = {
-          credentialId: randomUUID(),
-          service: parsed.service,
-          field: parsed.field,
-          allowedTools: [],
-          allowedDomains: [],
-          createdAt: now,
-          updatedAt: now,
-        };
-        _store.upsert(parsed.service, parsed.field);
-        pendingPersists.set(account, record);
-      }
-      if (pendingPersists.size > 0) {
-        log.info(
-          { count: pendingPersists.size },
-          "Reconciling vault credentials missing from the CES catalog",
-        );
-        void flushPendingPersists(0);
-      }
-    }
-  } catch (err) {
-    log.warn({ err }, "Vault-to-CES record reconciliation failed");
   }
 }
 
@@ -381,9 +262,15 @@ export function assertMetadataWritable(): void {
 /**
  * Create or update a credential metadata record.
  * If a record with the same service+field exists, it is updated.
- * The upsert also write-throughs to CES via the record backend.
+ * The upsert is awaited through to CES: the record is not "set" until the
+ * catalog write lands, and a CES outage raises
+ * {@link CredentialCatalogUnavailableError} so the caller can return a 5xx
+ * (the CLI owns retries).
+ *
+ * @throws {CredentialCatalogUnavailableError} when CES is unreachable or
+ *   rejects the write.
  */
-export function upsertCredentialMetadata(
+export async function upsertCredentialMetadata(
   service: string,
   field: string,
   policy?: {
@@ -395,10 +282,26 @@ export function upsertCredentialMetadata(
     /** Pass `null` to explicitly clear injection templates. */
     injectionTemplates?: CredentialInjectionTemplate[] | null;
   },
-): CredentialMetadata {
+): Promise<CredentialMetadata> {
   touchCesCache();
   const record = _store.upsert(service, field, policy);
-  void persistCredentialMetadata(record);
+  const account = credentialKey(service, field);
+  try {
+    const ok = await cesRecordBackend.set(account, toRecord(record));
+    if (!ok) {
+      throw new CredentialCatalogUnavailableError(
+        `CES rejected the credential record write for ${service}:${field}`,
+      );
+    }
+  } catch (err) {
+    if (err instanceof CredentialCatalogUnavailableError) {
+      throw err;
+    }
+    throw new CredentialCatalogUnavailableError(
+      `Failed to persist the credential record for ${service}:${field} — the credential catalog (CES) is unreachable`,
+      { cause: err },
+    );
+  }
   return record;
 }
 
@@ -454,16 +357,25 @@ export async function listCredentialRecordsLive(): Promise<CredentialRecordListR
 }
 
 /**
- * Delete metadata for a credential.
+ * Delete metadata for a credential. The deletion is awaited through to CES:
+ * a CES outage raises {@link CredentialCatalogUnavailableError} so the
+ * caller can return a 5xx instead of losing the delete silently.
  */
-export function deleteCredentialMetadata(
+export async function deleteCredentialMetadata(
   service: string,
   field: string,
-): boolean {
+): Promise<boolean> {
   touchCesCache();
   const deleted = _store.delete(service, field);
   if (deleted) {
-    void cesRecordBackend.delete(credentialKey(service, field));
+    try {
+      await cesRecordBackend.delete(credentialKey(service, field));
+    } catch (err) {
+      throw new CredentialCatalogUnavailableError(
+        `Failed to delete the credential record for ${service}:${field} — the credential catalog (CES) is unreachable`,
+        { cause: err },
+      );
+    }
   }
   return deleted;
 }

@@ -265,7 +265,7 @@ export async function storeAcpClaudeToken(
   // deliberate opt-in to ACP, so this widens a credential the broker would
   // otherwise keep denying the spawn read on, which would dead-loop the Connect
   // card on every auto-continue.
-  repairAcpSpawnPolicy(
+  await repairAcpSpawnPolicy(
     ACP_OAUTH_TOKEN_FIELD,
     ACP_CLAUDE_OAUTH_USAGE_DESCRIPTION,
   );

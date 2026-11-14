@@ -159,7 +159,7 @@ export async function persistPromptedCredential(args: {
     // transient value so no dangling value can fail policy checks.
     if (!getCredentialMetadata(service, field)) {
       try {
-        upsertCredentialMetadata(service, field, {
+        await upsertCredentialMetadata(service, field, {
           allowedTools: policy.allowedTools,
           allowedDomains: policy.allowedDomains,
           usageDescription: policy.usageDescription,
@@ -204,7 +204,7 @@ export async function persistPromptedCredential(args: {
   await scrubStoredCredentialFromTranscripts(value, { service, field });
 
   try {
-    upsertCredentialMetadata(service, field, {
+    await upsertCredentialMetadata(service, field, {
       allowedTools: policy.allowedTools,
       allowedDomains: policy.allowedDomains,
       usageDescription: policy.usageDescription,

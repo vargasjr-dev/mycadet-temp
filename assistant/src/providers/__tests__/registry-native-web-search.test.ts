@@ -58,7 +58,6 @@ function makeConfig(): ProvidersConfig {
   // to be schema-valid — resolution is never consulted for the model here.
   return {
     services: {
-      inference: {},
       "image-generation": {
         provider: "gemini",
         model: "gemini-3.1-flash-image-preview",

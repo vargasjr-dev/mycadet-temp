@@ -25,7 +25,9 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { createMockLoggerModule } from "../../__tests__/helpers/mock-logger.js";
 import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
+import { startTestCesRecordServer } from "../../__tests__/helpers/test-ces-record-server.js";
 import { FailedDependencyError } from "../../runtime/routes/errors.js";
+import { cesRecordBackend } from "../../security/ces-rpc-record-backend.js";
 import { credentialKey } from "../../security/credential-key.js";
 import {
   _resetBackend,
@@ -89,7 +91,7 @@ beforeEach(() => {
   ensureFreshAcpClaudeToken.mockClear();
 });
 
-afterEach(() => {
+afterEach(async () => {
   _resetBackend();
   rmSync(TEST_DIR, { recursive: true, force: true });
 });
@@ -125,6 +127,19 @@ function soleInjectionMissWarnFields(): Record<string, unknown> {
   expect(fields.field).toBe(ACP_OAUTH_TOKEN_FIELD);
   return fields;
 }
+
+// The awaited catalog write needs a live CES record backend: serve one over a
+// real socket so seeded credentials persist through the production path.
+const cesSession = startTestCesRecordServer();
+
+afterEach(async () => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
+  if (!cesSession.listening) {
+    await cesSession.start();
+  }
+  await cesRecordBackend.close();
+});
 
 describe("prepareAgentEnv — claude-agent-acp gating", () => {
   test("injects CLAUDE_CODE_OAUTH_TOKEN from the vault via the broker when agent.env has no override", async () => {

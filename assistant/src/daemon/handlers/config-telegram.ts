@@ -178,7 +178,7 @@ export async function setTelegramConfig(
   }
 
   // Store credential metadata record for policy checks
-  upsertCredentialMetadata("telegram", "bot_token", {});
+  await upsertCredentialMetadata("telegram", "bot_token", {});
 
   // Persist bot username and bot ID to config for the config-based path
   const raw = loadRawConfig();
@@ -199,7 +199,7 @@ export async function setTelegramConfig(
       webhookSecret,
     );
     if (secretStored) {
-      upsertCredentialMetadata("telegram", "webhook_secret", {});
+      await upsertCredentialMetadata("telegram", "webhook_secret", {});
       hasWebhookSecret = true;
     } else {
       // Only roll back the bot token if it was freshly provided.
@@ -227,7 +227,7 @@ export async function setTelegramConfig(
   } else {
     // Self-heal: ensure metadata exists even when the secret was
     // already present (covers previously lost/corrupted metadata).
-    upsertCredentialMetadata("telegram", "webhook_secret", {});
+    await upsertCredentialMetadata("telegram", "webhook_secret", {});
   }
 
   // Sync oauth_connection record so getConnectionByProvider("telegram")
@@ -306,8 +306,8 @@ export async function clearTelegramConfig(): Promise<TelegramConfigResult> {
     };
   }
 
-  deleteCredentialMetadata("telegram", "bot_token");
-  deleteCredentialMetadata("telegram", "webhook_secret");
+  await deleteCredentialMetadata("telegram", "bot_token");
+  await deleteCredentialMetadata("telegram", "webhook_secret");
 
   // Remove the oauth_connection row so getConnectionByProvider returns undefined.
   removeManualTokenConnection("telegram");

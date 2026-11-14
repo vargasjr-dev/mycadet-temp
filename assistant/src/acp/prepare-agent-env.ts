@@ -114,16 +114,16 @@ function projectEnsuredAcpPolicy(
  * {@link projectEnsuredAcpPolicy} describes, writing only the fields that
  * projection decides and only when it differs from what is stored.
  */
-export function ensureAcpCredentialPolicy(
+export async function ensureAcpCredentialPolicy(
   field: string,
   usageDescription: string,
-): void {
+): Promise<void> {
   const meta = getCredentialMetadata(ACP_SERVICE, field);
   const ensured = projectEnsuredAcpPolicy(meta, field, usageDescription);
   if (ensured === meta) {
     return;
   }
-  upsertCredentialMetadata(ACP_SERVICE, field, {
+  await upsertCredentialMetadata(ACP_SERVICE, field, {
     allowedTools: ensured.allowedTools,
     usageDescription: ensured.usageDescription,
   });
@@ -145,10 +145,10 @@ export function ensureAcpCredentialPolicy(
  * domain-restricted credential server-side, so a lingering restriction would keep
  * every spawn failing even after a successful connect.
  */
-export function repairAcpSpawnPolicy(
+export async function repairAcpSpawnPolicy(
   field: string,
   usageDescription: string,
-): void {
+): Promise<void> {
   const meta = getCredentialMetadata(ACP_SERVICE, field);
   const tools = meta?.allowedTools ?? [];
   const spawnAllowed = tools.includes(ACP_SPAWN_TOOL);
@@ -156,7 +156,7 @@ export function repairAcpSpawnPolicy(
   if (meta && spawnAllowed && domainUnrestricted) {
     return;
   }
-  upsertCredentialMetadata(ACP_SERVICE, field, {
+  await upsertCredentialMetadata(ACP_SERVICE, field, {
     allowedTools: spawnAllowed ? tools : [...tools, ACP_SPAWN_TOOL],
     allowedDomains: [],
     // Only a fresh record takes the description; an existing one keeps its own.
@@ -225,7 +225,7 @@ async function injectCredential(
   envVar: string,
   usageDescription: string,
 ): Promise<string | undefined> {
-  ensureAcpCredentialPolicy(field, usageDescription);
+  await ensureAcpCredentialPolicy(field, usageDescription);
   const result = await credentialBroker.serverUse<void>({
     service: ACP_SERVICE,
     field,

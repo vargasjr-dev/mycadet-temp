@@ -195,8 +195,10 @@ describe("inference-no-mode-boot-e2e: config without services.inference.mode", (
     const result = AssistantConfigSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
-      // inference is an empty object — no mode field
-      expect(result.data.services.inference).toEqual({});
+      // Legacy `services.inference` is stripped: no namespace in the schema.
+      expect(
+        (result.data.services as Record<string, unknown>).inference,
+      ).toBeUndefined();
     }
   });
 
@@ -211,7 +213,9 @@ describe("inference-no-mode-boot-e2e: config without services.inference.mode", (
     const result = AssistantConfigSchema.safeParse(raw);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.services.inference).toEqual({});
+      expect(
+        (result.data.services as Record<string, unknown>).inference,
+      ).toBeUndefined();
     }
   });
 

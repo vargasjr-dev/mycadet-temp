@@ -31,6 +31,7 @@ import {
 } from "../../security/secure-keys.js";
 import {
   assertMetadataWritable,
+  CredentialCatalogUnavailableError,
   type CredentialMetadata,
   deleteCredentialMetadata,
   getCredentialMetadata,
@@ -60,7 +61,12 @@ import {
   invalidateConnectionsAfterCredentialDelete,
 } from "./credential-in-use.js";
 import { InjectionTemplateSchema } from "./credential-prompt-routes.js";
-import { BadRequestError, ForbiddenError, InternalError } from "./errors.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalError,
+  ServiceUnavailableError,
+} from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -338,6 +344,11 @@ async function handleCredentialsSet({ body }: RouteHandlerArgs) {
     if (err instanceof CredentialStorageError) {
       throw new InternalError(err.message);
     }
+    if (err instanceof CredentialCatalogUnavailableError) {
+      // The catalog (CES) is down: a 5xx the CLI can distinguish from a
+      // rejection, so a retrying caller knows the credential may be stored.
+      throw new ServiceUnavailableError(err.message);
+    }
     throw err;
   }
 }
@@ -388,7 +399,15 @@ async function handleCredentialsDelete({ body }: RouteHandlerArgs) {
   // handler must not leave them dispatching with a credential that is gone.
   invalidateConnectionsAfterCredentialDelete(affectedConnections);
 
-  const metadataDeleted = deleteCredentialMetadata(service, field);
+  let metadataDeleted: boolean;
+  try {
+    metadataDeleted = await deleteCredentialMetadata(service, field);
+  } catch (err) {
+    if (err instanceof CredentialCatalogUnavailableError) {
+      throw new ServiceUnavailableError(err.message);
+    }
+    throw err;
+  }
 
   // Clean up OAuth connection (best-effort).
   let oauthResult: "disconnected" | "not-found" | "error" = "not-found";

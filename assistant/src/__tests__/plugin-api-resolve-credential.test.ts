@@ -20,6 +20,7 @@ import {
   resolveCredential,
 } from "../plugin-api/resolve-credential.js";
 import { runInPluginContext } from "../plugins/plugin-execution-context.js";
+import { cesRecordBackend } from "../security/ces-rpc-record-backend.js";
 import * as secureKeys from "../security/secure-keys.js";
 import {
   _resetCredentialMetadataCacheForTests,
@@ -27,6 +28,7 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import * as metadataStore from "../tools/credentials/metadata-store.js";
+import { startTestCesRecordServer } from "./helpers/test-ces-record-server.js";
 
 // Real metadata store backed by a temp file (no module mocking — a mock.module
 // on metadata-store / secure-keys would replace the whole module namespace and
@@ -42,8 +44,12 @@ let secureStore: Map<string, string>;
 let unreachable: boolean;
 let getSpy: ReturnType<typeof spyOn>;
 
-function seedCredential(service: string, field: string, value: string): string {
-  const meta = upsertCredentialMetadata(service, field, {});
+async function seedCredential(
+  service: string,
+  field: string,
+  value: string,
+): Promise<string> {
+  const meta = await upsertCredentialMetadata(service, field, {});
   secureStore.set(credentialKey(service, field), value);
   return meta.credentialId;
 }
@@ -65,7 +71,7 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => {
+afterEach(async () => {
   getSpy.mockRestore();
   delete process.env[PLUGIN_NAME_ENV];
 });
@@ -76,16 +82,29 @@ afterAll(() => {
   }
 });
 
+// The awaited catalog write needs a live CES record backend: serve one over a
+// real socket so seeded credentials persist through the production path.
+const cesSession = startTestCesRecordServer();
+
+afterEach(async () => {
+  cesSession.records.clear();
+  cesSession.failSet = false;
+  if (!cesSession.listening) {
+    await cesSession.start();
+  }
+  await cesRecordBackend.close();
+});
+
 describe("resolveCredential", () => {
   test("resolves plaintext by service/field ref when no plugin is in context", async () => {
-    seedCredential("openai", "api_key", "sk-secret");
+    await seedCredential("openai", "api_key", "sk-secret");
     await expect(resolveCredential("openai/api_key")).resolves.toBe(
       "sk-secret",
     );
   });
 
   test("resolves plaintext by credential UUID", async () => {
-    const id = seedCredential("stripe", "acme", "stripe-secret");
+    const id = await seedCredential("stripe", "acme", "stripe-secret");
     await expect(resolveCredential(id)).resolves.toBe("stripe-secret");
   });
 
@@ -96,7 +115,7 @@ describe("resolveCredential", () => {
   });
 
   test("throws when the store is unreachable", async () => {
-    upsertCredentialMetadata("openai", "api_key", {});
+    await upsertCredentialMetadata("openai", "api_key", {});
     unreachable = true;
     await expect(resolveCredential("openai/api_key")).rejects.toThrow(
       /unreachable/,
@@ -105,7 +124,7 @@ describe("resolveCredential", () => {
 
   describe("plugin scoping", () => {
     test("allows a plugin to resolve a credential whose service matches its name", async () => {
-      seedCredential("imessage", "api_key", "comms-key");
+      await seedCredential("imessage", "api_key", "comms-key");
       const value = await runInPluginContext("imessage", () =>
         resolveCredential("imessage/api_key"),
       );
@@ -113,21 +132,21 @@ describe("resolveCredential", () => {
     });
 
     test("blocks a plugin from resolving another service", async () => {
-      seedCredential("openai", "api_key", "sk-secret");
+      await seedCredential("openai", "api_key", "sk-secret");
       await expect(
         runInPluginContext("acme", () => resolveCredential("openai/api_key")),
       ).rejects.toThrow(/out of scope/);
     });
 
     test("blocks a plugin from resolving another service even when the field matches its name", async () => {
-      seedCredential("openai", "acme", "scoped-secret");
+      await seedCredential("openai", "acme", "scoped-secret");
       await expect(
         runInPluginContext("acme", () => resolveCredential("openai/acme")),
       ).rejects.toThrow(/out of scope/);
     });
 
     test("does not read the secure backend when out of scope", async () => {
-      seedCredential("openai", "api_key", "sk-secret");
+      await seedCredential("openai", "api_key", "sk-secret");
       getSpy.mockClear();
       await expect(
         runInPluginContext("acme", () => resolveCredential("openai/api_key")),
@@ -136,8 +155,8 @@ describe("resolveCredential", () => {
     });
 
     test("scoping applies to every field under the plugin's service", async () => {
-      seedCredential("imessage", "api_key", "comms-key");
-      seedCredential("imessage", "photon_project_id", "proj-id");
+      await seedCredential("imessage", "api_key", "comms-key");
+      await seedCredential("imessage", "photon_project_id", "proj-id");
       await expect(
         runInPluginContext("imessage", () =>
           resolveCredential("imessage/api_key"),
@@ -151,7 +170,7 @@ describe("resolveCredential", () => {
     });
 
     test("scopes resolution from CADET_PLUGIN_NAME when ALS is empty", async () => {
-      seedCredential("sms", "account_sid", "sid-secret");
+      await seedCredential("sms", "account_sid", "sid-secret");
       process.env[PLUGIN_NAME_ENV] = "sms";
       await expect(resolveCredential("sms/account_sid")).resolves.toBe(
         "sid-secret",
@@ -159,7 +178,7 @@ describe("resolveCredential", () => {
     });
 
     test("blocks another service when identity comes from CADET_PLUGIN_NAME", async () => {
-      seedCredential("openai", "api_key", "sk-secret");
+      await seedCredential("openai", "api_key", "sk-secret");
       process.env[PLUGIN_NAME_ENV] = "sms";
       await expect(resolveCredential("openai/api_key")).rejects.toThrow(
         /out of scope/,
