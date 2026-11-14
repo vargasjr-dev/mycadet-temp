@@ -14,8 +14,8 @@ import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
 import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc";
 import { CesRpcMethod } from "@mycadet/service-contracts/credential-rpc";
 
-import { openCesRpcSession } from "../credential-execution/ces-connect.js";
 import type { CesSessionClient } from "../credential-execution/client.js";
+import { createCesClient } from "../credential-execution/client.js";
 import { CesUnavailableError } from "../credential-execution/process-manager.js";
 import { getLogger } from "../util/logger.js";
 
@@ -62,7 +62,7 @@ class CesRpcRecordBackend {
       );
     }
     if (!this.sessionAttempt) {
-      this.sessionAttempt = openCesRpcSession()
+      this.sessionAttempt = createCesClient()
         .then((client) => {
           if (!client) {
             throw new CesUnavailableError(
