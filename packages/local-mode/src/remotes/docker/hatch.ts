@@ -15,7 +15,7 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { arch, platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { isDevVersion } from "@mycadet/shared/version";
+import { isDevVersion } from "@mycadet/shared";
 import {
   applyHatchConfig,
   buildHatchConfigValues,
@@ -63,7 +63,7 @@ import {
   isLocalBuildRef,
   loadImageViaHost,
 } from "./host-image-loader";
-import { resolveEnvironmentName } from "../../environment";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
 const DOCKERHUB_ORG = "mycadet";
 

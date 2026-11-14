@@ -14,13 +14,15 @@ import WebKit
 /// answer a same-origin `/v1` fetch with index markup — so this handler is
 /// the mobile shell's half of the contract.
 ///
-/// Session state rides `HTTPCookieStorage.shared`, the store Capacitor's
-/// bridge already configures (`cookieAcceptPolicy = .always`): forwarded
-/// responses' `Set-Cookie` headers land there, and later forwards attach
-/// the matching cookies for the target origin automatically. The scheme
-/// task has no cookie jar of its own, so the web layer must not expect
-/// `document.cookie` to see API session cookies — its fetches carry
-/// `credentials: "include"`, and this handler owns the jar.
+/// Session state rides `HTTPCookieStorage.shared`, explicitly: every
+/// forwarded response's `Set-Cookie` headers are parsed and stored against
+/// the TARGET origin (the store URLSession would populate implicitly, made
+/// explicit so the contract is testable and survives response shapes the
+/// implicit path misses — redirects, unusual status codes), and every
+/// forward re-attaches the stored cookies for its target in the `Cookie`
+/// header. The scheme task has no cookie jar of its own, so the web layer
+/// must not expect `document.cookie` to see API session cookies — its
+/// fetches carry `credentials: "include"`, and this handler owns the jar.
 final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
     private let wrapped: WKURLSchemeHandler
     private let base: URL?
@@ -30,7 +32,7 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
     /// is a protocol, so the identity is the only stable handle, and WebKit
     /// hands the same task object back to `stop`.
     private enum Route {
-        case forwarded(URLSessionDataTask)
+        case forwarded(URLSessionDataTask, URL)
         case assets
     }
     private var routes: [ObjectIdentifier: Route] = [:]
@@ -46,7 +48,8 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         guard let url = task.request.url,
               let base,
               url.path.hasPrefix("/v1"),
-              let request = Self.forwardedRequest(for: task.request, to: base)
+              let request = Self.forwardedRequest(for: task.request, to: base),
+              let target = request.url
         else {
             routes[ObjectIdentifier(task)] = .assets
             wrapped.webView(webView, start: task)
@@ -55,10 +58,10 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         let key = ObjectIdentifier(task)
         let dataTask = session.dataTask(with: request) { [weak self] data, response, error in
             DispatchQueue.main.async {
-                self?.settle(task, key: key, data: data, response: response, error: error)
+                self?.settle(task, key: key, target: target, data: data, response: response, error: error)
             }
         }
-        routes[key] = .forwarded(dataTask)
+        routes[key] = .forwarded(dataTask, target)
         dataTask.resume()
     }
 
@@ -67,7 +70,7 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         // Dropping the route first turns the in-flight completion into a
         // no-op: a task WebKit stopped may not be told anything further.
         switch routes.removeValue(forKey: key) {
-        case .forwarded(let dataTask):
+        case .forwarded(let dataTask, _):
             dataTask.cancel()
         case .assets:
             wrapped.webView(webView, stop: task)
@@ -81,6 +84,7 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
     private func settle(
         _ task: WKURLSchemeTask,
         key: ObjectIdentifier,
+        target: URL,
         data: Data?,
         response: URLResponse?,
         error: Error?
@@ -104,6 +108,7 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         // the web layer validates same-origin responses.
         let outgoing: URLResponse
         if let http = response as? HTTPURLResponse {
+            Self.storeCookies(from: http, for: target)
             outgoing = HTTPURLResponse(
                 url: original,
                 statusCode: http.statusCode,
@@ -118,12 +123,36 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         task.didFinish()
     }
 
+    /// Persist the response's cookies against the TARGET origin — the jar
+    /// the next forward reads. Parsed from the raw header fields rather
+    /// than left to URLSession's implicit path so the storage contract is
+    /// explicit and test-injectable through `HTTPCookieStorage.shared`.
+    static func storeCookies(from response: HTTPURLResponse, for target: URL) {
+        let headerFields = response.allHeaderFields
+        guard
+            let fields = headerFields as? [String: String],
+            !fields.isEmpty
+        else {
+            return
+        }
+        let cookies = HTTPCookie.cookies(
+            withResponseHeaderFields: fields,
+            for: target
+        )
+        guard !cookies.isEmpty else {
+            return
+        }
+        HTTPCookieStorage.shared.setCookies(cookies, for: target, mainDocumentURL: target)
+    }
+
     /// The request to fire at the base origin: the task's path and query
     /// re-anchored to the base, method and body preserved, and the
     /// host-identity headers dropped — `Host` is rebuilt by URLSession,
-    /// `Cookie` is re-attached from the shared store for the target origin,
     /// and `Origin`/`Referer` name the webview's scheme origin, which means
-    /// nothing to the server.
+    /// nothing to the server. The `Cookie` header is rebuilt from the
+    /// shared store for the TARGET origin — the jar this handler's own
+    /// `storeCookies` populates — so a session a previous forward earned
+    /// rides every subsequent one.
     static func forwardedRequest(for request: URLRequest, to base: URL) -> URLRequest? {
         guard let url = request.url else {
             return nil
@@ -142,6 +171,10 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
             forwarded.allHTTPHeaderFields = headers.filter {
                 !dropped.contains($0.key.lowercased())
             }
+        }
+        if let cookies = HTTPCookieStorage.shared.cookies(for: target), !cookies.isEmpty {
+            let header = cookies.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
+            forwarded.setValue(header, forHTTPHeaderField: "Cookie")
         }
         return forwarded
     }

@@ -6,9 +6,8 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
-} from "@mycadet/shared/version";
-
-import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
+  CADET_GITHUB_REPOSITORY,
+} from "@mycadet/shared";
 
 const originalFetch = globalThis.fetch;
 

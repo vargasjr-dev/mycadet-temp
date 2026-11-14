@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import {
+  forwardOperatorRequest,
   matchOperatorRequest,
   servedAssistantFromLockfile,
   servedConfigFromLockfile,
@@ -102,7 +103,9 @@ async function staticResponse(
 }
 
 function notFound(): Response {
-  return new Response(null, { status: 404 });
+  // The same static body the Electron shell's app-protocol handler answers
+  // — a 404 with a plain-text body, never a bare null one.
+  return new Response("Not Found", { status: 404 });
 }
 
 function redirect(location: string): Response {
@@ -236,7 +239,12 @@ async function serveStatic(
     }
     // A deep route (or a reload of one) boots the bundle from the fallback
     // document — it gets the config stamp like the exact mount paths.
-    return staticResponse(request, { file: spec.indexHtmlPath }, "no-cache", injectConfig);
+    return staticResponse(
+      request,
+      { file: spec.indexHtmlPath },
+      "no-cache",
+      injectConfig,
+    );
   }
 
   // The web bundle's baked base at the origin root: /assistant/ serves the
@@ -346,19 +354,11 @@ export function createAppServerHandler(
       }
     }
 
-    const match = matchOperatorRequest(pathname, request.method);
-    if (match) {
-      const response = await match.route.run({
-        assistantId: match.assistantId,
-        method: request.method,
-        path: pathname + new URL(request.url).search,
-        peer: server?.requestIP(request)?.address ?? null,
-        headers: request.headers,
-        body: request.body,
-      });
-      if (response) {
-        return withAppOriginCors(response, request, allowedOrigins);
-      }
+    const operated = await forwardOperatorRequest(request, {
+      peer: server?.requestIP(request)?.address ?? null,
+    });
+    if (operated) {
+      return withAppOriginCors(operated, request, allowedOrigins);
     }
 
     const static_ = await serveStatic(request, spec);

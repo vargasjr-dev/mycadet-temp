@@ -32,7 +32,7 @@ import { wakeLocal } from "./wake";
 import { compareVersions, versionsEqual } from "../../version-compat";
 import { stripVersionPrefix } from "../../version";
 import { fetchLatestVersion } from "../../cloud-releases";
-import { isLocalVersion } from "@mycadet/shared/version";
+import { isLocalVersion } from "@mycadet/shared";
 
 export interface UpgradeLocalParams {
   entry: LocalAssistant;

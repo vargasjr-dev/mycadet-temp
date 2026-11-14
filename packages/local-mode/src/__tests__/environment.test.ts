@@ -4,11 +4,9 @@ import os from "node:os";
 import path from "node:path";
 
 import {
-  defaultEnvironmentFilePath,
   environmentFromVersion,
-  readDefaultEnvironment,
   resolveEnvironmentName,
-} from "../environment";
+} from "@mycadet/shared/seeds";
 import {
   guardianTokenPath,
   resolveConfigDir,
@@ -31,6 +29,7 @@ const RESOLUTION_ENV_KEYS = [
   "APPDATA",
   "LOCALAPPDATA",
   "CADET_ENVIRONMENT",
+  "VITE_ENVIRONMENT",
 ] as const;
 
 const savedEnv = new Map<string, string | undefined>();
@@ -69,39 +68,6 @@ afterEach(() => {
   savedEnv.clear();
 });
 
-describe("defaultEnvironmentFilePath", () => {
-  test("honors XDG_CONFIG_HOME", () => {
-    expect(defaultEnvironmentFilePath()).toBe(
-      path.join(configHome, "cadet", "environment"),
-    );
-  });
-
-  test("falls back to ~/.config when XDG_CONFIG_HOME is unset", () => {
-    Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
-    expect(defaultEnvironmentFilePath()).toBe(
-      path.join(os.homedir(), ".config", "cadet", "environment"),
-    );
-  });
-});
-
-describe("readDefaultEnvironment", () => {
-  test("returns undefined when no file exists", () => {
-    expect(readDefaultEnvironment()).toBeUndefined();
-  });
-
-  test("returns the trimmed persisted name", () => {
-    persistDefault("dev");
-    expect(readDefaultEnvironment()).toBe("dev");
-  });
-
-  test("treats an empty file as no default", () => {
-    const file = path.join(configHome, "cadet", "environment");
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, "  \n", "utf-8");
-    expect(readDefaultEnvironment()).toBeUndefined();
-  });
-});
-
 describe("environmentFromVersion", () => {
   test("maps the release channels like the CLI resolver does", () => {
     expect(environmentFromVersion("0.12.6-local.42")).toBe("local");
@@ -134,11 +100,43 @@ describe("resolveEnvironmentName", () => {
     expect(resolveEnvironmentName()).toBe("dev");
   });
 
+  test("treats an empty persisted file as no default", () => {
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+      "0.0.1";
+    const file = path.join(configHome, "cadet", "environment");
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, "  \n", "utf-8");
+    expect(resolveEnvironmentName()).toBe("production");
+  });
+
   test("falls back to production when nothing pins an environment", () => {
     // Stable installed copy: plain version, no persisted default.
     (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
       "0.0.1";
     expect(resolveEnvironmentName()).toBe("production");
+  });
+
+  test("prefers VITE_ENVIRONMENT when CADET_ENVIRONMENT is unset", () => {
+    process.env.VITE_ENVIRONMENT = "staging";
+    expect(resolveEnvironmentName()).toBe("staging");
+  });
+
+  test("ignores an unknown CADET_ENVIRONMENT and falls through the chain", () => {
+    // The typed contract: a name outside the union is never returned — the
+    // remaining arms decide.
+    process.env.CADET_ENVIRONMENT = "not-a-seed";
+    persistDefault("dev");
+    expect(resolveEnvironmentName()).toBe("dev");
+  });
+
+  test("the version channel beats the persisted default", () => {
+    const globalWithVersion = globalThis as {
+      __CADET_OWN_VERSION__?: string;
+    };
+    globalWithVersion.__CADET_OWN_VERSION__ = "0.12.6-dev.202610081023.3a27b77";
+    persistDefault("staging");
+    expect(resolveEnvironmentName()).toBe("dev");
+    delete globalWithVersion.__CADET_OWN_VERSION__;
   });
 });
 
@@ -185,7 +183,6 @@ describe("Windows path resolution", () => {
 
   test("uses AppData", () => {
     const paths = [
-      [defaultEnvironmentFilePath(), "AppData\\Roaming\\cadet\\environment"],
       [resolveConfigDir(), "AppData\\Roaming\\cadet-dev"],
       [resolveDataDir(), "AppData\\Local\\cadet-dev"],
       [resolveLogDir(), "AppData\\Local\\cadet-dev\\logs"],
@@ -206,9 +203,6 @@ describe("Windows path resolution", () => {
     process.env.CADET_ENVIRONMENT = "production";
     expect(resolveLockfilePath()).toBe(
       "C:\\Users\\Example\\AppData\\Roaming\\cadet\\lockfile.json",
-    );
-    expect(defaultEnvironmentFilePath()).toBe(
-      "C:\\Users\\Example\\AppData\\Roaming\\cadet\\environment",
     );
   });
 

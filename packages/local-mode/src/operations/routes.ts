@@ -40,11 +40,12 @@ import { getGatewayUrl } from "../lockfile-contract";
  * forward — once every scoped route is an operation).
  *
  * Patterns are declared ONCE per surface and DERIVED by two helpers: the
- * absolute rows declare a rooted pattern and `v1Friendly` derives its `/v1`
- * spelling; the assistant rows declare a tail pattern and `scopedAssistant`
- * adds scoping support (the id capture under the assistants namespace, plus
- * the unscoped spellings — the operator backend's active assistant) and then
- * applies `v1Friendly`. A matched request runs through
+ * absolute rows declare a relative pattern (no leading slash) and
+ * `v1Friendly` derives its `/v1` spelling plus the optional trailing slash;
+ * the assistant rows declare a tail pattern and `scopedAssistant` adds
+ * scoping support (the id capture under the assistants namespace, plus
+ * the unscoped spellings — the operator backend's active assistant) and
+ * then applies `v1Friendly`. A matched request runs through
  * `match.route.run(match)` directly: the routes import the modules they
  * need, no injection surface.
  */
@@ -204,28 +205,33 @@ const json = (body: unknown, status = 200): Response =>
  * `null`.
  */
 /**
- * Helper 1 — the versioned derivation: a rooted pattern matches ONLY its
- * `/v1` and `/api` spellings — every api route nests under a version
- * prefix, since a bare spelling would collide with the frontend routes.
+ * Helper 1 — the versioned derivation: a relative pattern (no leading
+ * slash — every row declares its path relative) matches ONLY its `/v1` and
+ * `/api` spellings — every api route nests under a version prefix, since a
+ * bare spelling would collide with the frontend routes. The wrapper owns
+ * every slash: it joins the version group to the relative body with the
+ * leading `/` and appends the optional trailing one, so no row spells a
+ * slash itself and both `/v1/assistants` and `/v1/assistants/` match.
  * The absolute rows apply it alone.
  */
-function v1Friendly(rooted: RegExp): RegExp {
-  return new RegExp(rooted.source.replace(/^\^/, "^(?:\\/v1|\\/api)"));
+function v1Friendly(relative: RegExp): RegExp {
+  const body = relative.source.replace(/^\^/, "").replace(/\$$/, "");
+  return new RegExp(`^(?:\\/v1|\\/api)\\/${body}\\/?$`);
 }
 
 /**
  * Helper 2 — the scoping derivation: a tail pattern matches under BOTH
  * assistant reference spellings (the id capture of the assistants namespace,
  * and the bare assistant reference — the operator backend's active
- * assistant), then helper 1 adds the `/v1` spellings. The assistant rows
- * apply it alone.
+ * assistant), then helper 1 adds the `/v1` spellings and the slashes. The
+ * assistant rows apply it alone.
  */
 function scopedAssistant(tail: RegExp): RegExp {
   const tailSource = tail.source.replace(/^\^/, "").replace(/\$$/, "");
-  const separator = tailSource === "" ? "\\/?" : "\\/";
+  const separator = tailSource === "" ? "" : "\\/";
   return v1Friendly(
     new RegExp(
-      `^(?:\\/assistants\\/(?<id>[^\\/?#]+)|\\/assistant)${separator}(?:${tailSource})?\\/?$`,
+      `(?:assistants\\/(?<id>[^\\/?#]+)|assistant)${separator}(?:${tailSource})?`,
     ),
   );
 }
@@ -591,7 +597,10 @@ async function runProxyRoute(
   const method = request.method ?? "GET";
   const target = new URL(request.path ?? "/", getGatewayUrl(entry));
   const hasBody = method !== "GET" && method !== "HEAD";
-  const headers = normalizeForwardHeaders(request.headers, request.peer ?? null);
+  const headers = normalizeForwardHeaders(
+    request.headers,
+    request.peer ?? null,
+  );
   if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
     headers.set("x-cadet-proxy-server", "ipc");
   }
@@ -603,7 +612,6 @@ async function runProxyRoute(
   });
   const outHeaders = new Headers();
   upstream.headers.forEach((value, key) => {
-    console.log("UPSTREAM HEADER", key, value);
     const lower = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lower)) return;
     if (lower === "content-length" || lower === "content-encoding") return;
@@ -627,12 +635,12 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // The list assistants contract: the chooser's and the store's roster read.
   {
     method: "GET",
-    pattern: v1Friendly(/^\/assistants\/$/),
+    pattern: v1Friendly(/^assistants$/),
     run: runListRoute,
   },
   {
     method: "GET",
-    pattern: scopedAssistant(/^user\/username-available\/?$/),
+    pattern: scopedAssistant(/^user\/username-available$/),
     run: runUsernameAvailableRoute,
   },
   // The doctor's whole session surface — host-side so the panel keeps
@@ -641,37 +649,37 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // operator's own credentials; the event stream is the one streaming row.
   {
     method: "GET",
-    pattern: scopedAssistant(/^doctor\/history\/?$/),
+    pattern: scopedAssistant(/^doctor\/history$/),
     run: runDoctorHistoryListRoute,
   },
   {
     method: "GET",
-    pattern: scopedAssistant(/^doctor\/history\/[^\/?#]+\/?$/),
+    pattern: scopedAssistant(/^doctor\/history\/[^\/?#]+$/),
     run: runDoctorHistoryRetrieveRoute,
   },
   {
     method: "POST",
-    pattern: scopedAssistant(/^doctor\/sessions\/?$/),
+    pattern: scopedAssistant(/^doctor\/sessions$/),
     run: runDoctorSessionsCreateRoute,
   },
   {
     method: "DELETE",
-    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/?$/),
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+$/),
     run: runDoctorSessionsDestroyRoute,
   },
   {
     method: "GET",
-    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/events\/?$/),
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/events$/),
     run: runDoctorSessionsEventsRoute,
   },
   {
     method: "POST",
-    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/messages\/?$/),
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/messages$/),
     run: runDoctorSessionsMessagesRoute,
   },
   {
     method: "POST",
-    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/user-outcome\/?$/),
+    pattern: scopedAssistant(/^doctor\/sessions\/[^\/?#]+\/user-outcome$/),
     run: runDoctorSessionsUserOutcomeRoute,
   },
   // The teleport signed-url row — host-served so the web bundle's backup
@@ -679,37 +687,37 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // needing a cloud session in the browser.
   {
     method: "POST",
-    pattern: scopedAssistant(/^migrations\/signed-url\/?$/),
+    pattern: scopedAssistant(/^migrations\/signed-url$/),
     run: runMigrationsSignedUrlRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/assistants\/hatch\/?$/),
+    pattern: v1Friendly(/^assistants\/hatch$/),
     run: runHatchRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/devices\/?$/),
+    pattern: v1Friendly(/^devices$/),
     run: runDevicesListRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/devices\/revoke\/?$/),
+    pattern: v1Friendly(/^devices\/revoke$/),
     run: runDevicesRevokeRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/remote-web\/pairing-start\/?$/),
+    pattern: v1Friendly(/^remote-web\/pairing-start$/),
     run: runPairingStartRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/remote-web\/pairing-poll\/?$/),
+    pattern: v1Friendly(/^remote-web\/pairing-poll$/),
     run: runPairingPollRoute,
   },
   {
     method: "POST",
-    pattern: v1Friendly(/^\/remote-web\/pairing-cancel\/?$/),
+    pattern: v1Friendly(/^remote-web\/pairing-cancel$/),
     run: runPairingCancelRoute,
   },
   {
@@ -801,10 +809,14 @@ export function matchOperatorRequest(
  * route owns it) and the serving host's pre-existing chain answers instead.
  * The serving hosts (the Electron `app://` handler, the Vite dev
  * middleware, the CLI edge's operation server) all dispatch through this
- * one function so their mounts cannot drift.
+ * one function so their mounts cannot drift. Mounts whose server handle
+ * exposes the raw peer address (Bun's does, off the handle rather than the
+ * Request) pass it through `options.peer` so the proxy row's client-ip
+ * stamp names the real caller.
  */
 export async function forwardOperatorRequest(
   request: Request,
+  options?: { peer?: string | null },
 ): Promise<Response | null> {
   const match = matchOperatorRequest(
     new URL(request.url).pathname,
@@ -821,5 +833,6 @@ export async function forwardOperatorRequest(
     headers: request.headers,
     body: request.body,
     signal: request.signal,
+    ...(options?.peer !== undefined ? { peer: options.peer } : {}),
   });
 }

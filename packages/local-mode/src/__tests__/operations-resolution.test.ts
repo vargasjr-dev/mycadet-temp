@@ -125,6 +125,24 @@ describe("matchOperatorRequest — the four prefixes", () => {
     }
   });
 
+  test("every route answers both trailing-slash spellings", () => {
+    // Helper 1 owns the trailing slash and makes it optional — the bare
+    // spellings match the same rows their slashed forms do. The list row
+    // previously REQUIRED the slash, so the bare /v1/assistants fell
+    // through to the static surface's 404.
+    for (const requestPath of ["/v1/assistants", "/v1/assistants/"]) {
+      expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+    }
+    for (const requestPath of [
+      "/v1/devices",
+      "/v1/devices/",
+      "/v1/remote-web/pairing-start",
+      "/v1/remote-web/pairing-start/",
+    ]) {
+      expect(matchOperatorRequest(requestPath, "POST")).not.toBeNull();
+    }
+  });
+
   test("a scoped match carries the decoded id; an unscoped one names the active entry", () => {
     writeLockfile({
       assistants: [
@@ -160,14 +178,19 @@ describe("matchOperatorRequest — the four prefixes", () => {
       const derived = route.pattern.source;
       if (derived.includes("(?<id>")) {
         // An assistant row: helper 2's id capture plus helper 1's required
-        // version arm.
+        // version arm. Rows declare relative patterns, so the scoping arm
+        // carries no leading slash.
         expect(derived).toContain("(?:\\/v1|\\/api)");
-        expect(derived).toContain("|\\/assistant");
+        expect(derived).toContain("|assistant");
       } else {
         // An absolute row: helper 1's required version arm, no scoping.
         expect(derived).toContain("(?:\\/v1|\\/api)");
         expect(derived).not.toContain("(?<id>");
       }
+      // Helper 1 owns the slashes: every row ends in the optional trailing
+      // one, and none spells a slash of its own.
+      expect(derived.endsWith("\\/?$")).toBe(true);
+      expect(derived).not.toContain("\\/?$\\/");
     }
   });
 });

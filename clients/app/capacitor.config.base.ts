@@ -1,21 +1,9 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 // The `/seeds` subpath is deliberate: cap's TS config loader transpiles one
-// file at a time and cannot resolve a re-export barrel.
+// file at a time and cannot resolve a re-export barrel — nor any deeper
+// import chain, which is why the standalone seeds file (its resolver keeps
+// zero static imports) is the one shared import here.
 import { getCloudBaseUrl } from "@mycadet/shared/seeds";
-
-// Resolves the environment's single origin the same way every other surface
-// does (`SEEDS` via `CADET_ENVIRONMENT`; unset means the local cadet). It is
-// both the baked cloud origin the mobile shells' native half dials — the iOS
-// scheme handler forwards the boot bundle's same-origin `/v1` fetches at it,
-// and it is the baked-default fallback behind the chooser escape and the
-// widget identity — and the navigation escape hatch. A lockfile-dialed
-// tunnel/loopback origin for a device build is the mobile iteration's
-// follow-up.
-function resolveServerUrl(): string {
-  // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
-  process.env.CADET_ENVIRONMENT ??= "local";
-  return getCloudBaseUrl();
-}
 
 // The Capacitor config shared by all mobile shells
 const baseConfig: Omit<CapacitorConfig, "appId"> = {
@@ -26,9 +14,14 @@ const baseConfig: Omit<CapacitorConfig, "appId"> = {
   webDir: "../app/dist/capacitor",
   plugins: {
     // Inert to Capacitor itself — the mobile shells' native half reads the
-    // baked origin out of the synced config (SelfHostedServer on iOS).
+    // baked origin out of the synced config (SelfHostedServer on iOS). It is
+    // the environment's single origin — the iOS scheme handler forwards the
+    // boot bundle's same-origin `/v1` fetches at it, and it is the
+    // baked-default fallback behind the chooser escape and the widget
+    // identity. `CADET_ENVIRONMENT` at sync time picks the seed; there is no
+    // fallback argument to hide an unset environment.
     CadetCloud: {
-      cloudUrl: resolveServerUrl(),
+      cloudUrl: getCloudBaseUrl(),
     },
   },
   server: {
@@ -38,7 +31,7 @@ const baseConfig: Omit<CapacitorConfig, "appId"> = {
     // hostname: Capacitor matches it against Swift's port-less `URL.host`
     // via a dot-split comparison, so `.host`'s `localhost:3000` never
     // matched and every local boot bounced into Safari.
-    allowNavigation: [new URL(resolveServerUrl()).hostname],
+    allowNavigation: [new URL(getCloudBaseUrl()).hostname],
   },
 };
 

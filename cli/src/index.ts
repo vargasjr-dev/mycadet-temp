@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 
 import { checkHealth, resolveConfigDir } from "@mycadet/local-mode";
 
-import { stampedVersion } from "@mycadet/shared/version";
+import { resolveVersion, stampedVersion } from "@mycadet/shared/version";
 
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
@@ -40,6 +40,14 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
+
+// The environment resolver's version channel reads this global (see
+// shared/seeds); the entrypoint is the one place that knows the running
+// package root. `??=` so a test preload's value survives (cli tests run from
+// a source checkout, whose `-local.` stamp would pin the ambient environment
+// to `local`).
+(globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??=
+  resolveVersion(join(import.meta.dir, "../.."));
 const commands = {
   backup,
   app,

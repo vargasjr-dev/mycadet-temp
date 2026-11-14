@@ -30,12 +30,11 @@ export const DEFAULT_APP_SERVER_PORT = 7840;
 /**
  * A resolved environment definition. Required fields are `name` and
  * `baseUrl`. All other fields are optional and declared upfront — new
- * fields are additive, never breaking. `name` is intentionally typed as
- * `string` (not `keyof SEEDS`) so custom environments can be represented by
- * future layers (user config file, ad-hoc env vars, etc.).
+ * fields are additive, never breaking. `name` is a `CadetEnvironment`: a
+ * definition outside the known names has nowhere to key into.
  */
 export interface EnvironmentDefinition {
-  name: string;
+  name: CadetEnvironment;
 
   /**
    * The single origin for API, auth, web, and the assistant mount — one
@@ -90,26 +89,175 @@ function portBlock(base: number): PortMap {
 }
 
 /**
- * The base URL of Cadet Cloud — the hosted deployment the local surfaces
- * pair with (API, auth, web, and the assistant mount all live on it). The
- * explicit `CADET_CLOUD_URL` override wins, else the environment's seed —
- * `CADET_ENVIRONMENT` or `VITE_ENVIRONMENT` picks it; unknown falls back
- * to dev. This says "cloud" because the URL always points at a Cadet Cloud
- * deployment, never at something that represents this surface itself.
+ * The set of environment names every surface shares — the seeds below are
+ * exactly these five. Lockfiles, config directories, release channels, and
+ * the mobile shells' scheme keys all key off this union, so a name outside
+ * it is a bug the compiler can catch.
  */
-export function getCloudBaseUrl(): string {
-  // globalThis.process reads the same env under bun/node while staying
-  // crash-free in browser bundles (no bare `process` reference) — and free
-  // of import-meta syntax, which the Capacitor config loader can't transpile.
-  const env = (
+export const CADET_ENVIRONMENT_NAMES = [
+  "local",
+  "dev",
+  "staging",
+  "production",
+  "test",
+] as const;
+
+export type CadetEnvironment = (typeof CADET_ENVIRONMENT_NAMES)[number];
+
+function isCadetEnvironment(
+  name: string | undefined,
+): name is CadetEnvironment {
+  return (
+    typeof name === "string" &&
+    (CADET_ENVIRONMENT_NAMES as readonly string[]).includes(name)
+  );
+}
+
+/**
+ * globalThis.process reads the same env under bun/node while staying
+ * crash-free in browser bundles (no bare `process` reference) — and free
+ * of import-meta syntax, which the Capacitor config loader can't transpile.
+ */
+function processEnv(): Record<string, string | undefined> | undefined {
+  return (
     globalThis as unknown as {
       process?: { env?: Record<string, string | undefined> };
     }
   ).process?.env;
-  const explicit = env?.CADET_CLOUD_URL?.trim();
+}
+
+/**
+ * Whether a version string denotes a dev build from the dev-release
+ * pipeline, e.g. `0.12.6-dev.202610081023.3a27b77`.
+ */
+export function isDevVersion(version: string): boolean {
+  return /-dev\./i.test(version);
+}
+
+/**
+ * Whether a version string denotes a staging build, e.g. `0.6.0-staging.3`.
+ */
+export function isStagingVersion(version: string): boolean {
+  return /-staging\./i.test(version);
+}
+
+/**
+ * Whether a version string denotes a local build, e.g. `0.12.6-local.42`.
+ * Local builds are never published.
+ */
+export function isLocalVersion(version: string): boolean {
+  return /-local\./i.test(version);
+}
+
+/**
+ * The environment a released channel version pins, or `undefined` when the
+ * version carries no channel suffix. A plain version — a workspace
+ * checkout's unstamped package version — reads as "no version signal",
+ * leaving the remaining steps to decide. Mirrors the CLI resolver's mapping
+ * (local, dev, staging).
+ */
+export function environmentFromVersion(
+  version: string | undefined,
+): CadetEnvironment | undefined {
+  if (isLocalVersion(version ?? "")) return "local";
+  if (isDevVersion(version ?? "")) return "dev";
+  if (isStagingVersion(version ?? "")) return "staging";
+  return undefined;
+}
+
+/**
+ * Read the persisted default environment — the file pre-version-tied CLIs
+ * wrote so their successors honor the machine's chosen default. Node-only
+ * and resolved at call time (`process.getBuiltinModule`), so this file
+ * keeps zero static node imports: the Capacitor config loader transpiles it
+ * standalone and a static node import would die there, while browser
+ * bundles (chrome extension, web renderer) never reach the call.
+ */
+function readPersistedDefault(): CadetEnvironment | undefined {
+  const node = process as unknown as {
+    getBuiltinModule?: (id: string) => unknown;
+    platform: string;
+  };
+  const fs = node.getBuiltinModule?.("node:fs") as
+    | typeof import("node:fs")
+    | undefined;
+  const os = node.getBuiltinModule?.("node:os") as
+    | typeof import("node:os")
+    | undefined;
+  const path = node.getBuiltinModule?.("node:path") as
+    | typeof import("node:path")
+    | undefined;
+  if (!fs || !os || !path) return undefined;
+
+  // Mirrors local-mode's resolveConfigHome (the same XDG/AppData derivation).
+  const isWindows = node.platform === "win32";
+  const join = isWindows ? path.win32.join : path.posix.join;
+  const configHome = isWindows
+    ? process.env.APPDATA?.trim() || join(os.homedir(), "AppData", "Roaming")
+    : process.env.XDG_CONFIG_HOME?.trim() || join(os.homedir(), ".config");
+  const filePath = join(configHome, "cadet", "environment");
+  try {
+    if (!fs.existsSync(filePath)) return undefined;
+    const content = fs.readFileSync(filePath, "utf-8").trim();
+    return isCadetEnvironment(content) ? content : undefined;
+  } catch {
+    // Unreadable file — no default.
+    return undefined;
+  }
+}
+
+/**
+ * The environment name every surface shares — the single resolution chain
+ * local-mode hosts and the mobile config loader both ride:
+ *
+ *   1. `CADET_ENVIRONMENT` (explicit override, also inherited by the
+ *      hatch/retire child processes the CLI spawns), then
+ *      `VITE_ENVIRONMENT` (the build-time inlined var bundled surfaces bake)
+ *   2. the release channel the running copy's version carries —
+ *      `__CADET_OWN_VERSION__`, which the entrypoints that know their
+ *      package root inject (the CLI's bin computes its git/local stamp,
+ *      the Electron builds define it at build time). A released `-dev.`
+ *      install resolves `dev` even on a machine that never wrote a
+ *      persisted default
+ *   3. the persisted default written by pre-version-tied CLIs (old files
+ *      are still honored)
+ *   4. `production`
+ *
+ * The version step is what keeps every released install from silently
+ * reading production's state: the channel is decided by the release
+ * pipeline, not by whatever default an older CLI happened to leave behind.
+ * Names outside `CadetEnvironment` are ignored rather than returned: an
+ * unrecognized value falls through to the next arm instead of leaking an
+ * unkeyable string into `SEEDS` lookups.
+ */
+export function resolveEnvironmentName(): CadetEnvironment {
+  const env = processEnv();
+  const named = [
+    env?.CADET_ENVIRONMENT?.trim(),
+    env?.VITE_ENVIRONMENT?.trim(),
+  ].find(isCadetEnvironment);
+  if (named) return named;
+  return (
+    environmentFromVersion(
+      (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__,
+    ) ??
+    readPersistedDefault() ??
+    "production"
+  );
+}
+
+/**
+ * The base URL of Cadet Cloud — the hosted deployment the local surfaces
+ * pair with (API, auth, web, and the assistant mount all live on it). The
+ * explicit `CADET_CLOUD_URL` override wins, else the seed of
+ * `resolveEnvironmentName`. This says "cloud" because the URL always points
+ * at a Cadet Cloud deployment, never at something that represents this
+ * surface itself.
+ */
+export function getCloudBaseUrl(): string {
+  const explicit = processEnv()?.CADET_CLOUD_URL?.trim();
   if (explicit) return explicit;
-  const envName = env?.CADET_ENVIRONMENT ?? env?.VITE_ENVIRONMENT;
-  return ((envName && SEEDS[envName]) || SEEDS.dev).baseUrl;
+  return SEEDS[resolveEnvironmentName()].baseUrl;
 }
 
 /**
@@ -120,7 +268,7 @@ export function getCloudBaseUrl(): string {
  * "Coexisting environments" design doc. Until then, a call site that needs a
  * new environment must add it here and rebuild.
  */
-export const SEEDS: Record<string, EnvironmentDefinition> = {
+export const SEEDS: Record<CadetEnvironment, EnvironmentDefinition> = {
   production: {
     name: "production",
     baseUrl: "https://mycadet.ai",

@@ -1,8 +1,7 @@
 import { createServer } from "node:net";
 
-import { SEEDS, type PortMap } from "@mycadet/shared";
+import { SEEDS, resolveEnvironmentName, type PortMap } from "@mycadet/shared";
 
-import { resolveEnvironmentName } from "./environment";
 import { probePort } from "./port-probe";
 
 export { probePort };
