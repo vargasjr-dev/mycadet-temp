@@ -5,11 +5,10 @@ import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 /**
  * Lockfile watcher for the main process. Polls the lockfile's mtime every
- * 500ms and fires change listeners (tray rebuild, host-proxy reconcile).
- * Readers that want the lockfile read it fresh (`readLockfile` from
- * @mycadet/local-mode) — there is no shared cache to invalidate, so a
- * mutation made by this process is visible to the next read immediately and
- * the listeners fire within one poll.
+ * 500ms so the tray's snapshot stays fresh. Readers that want the lockfile
+ * read it fresh (`readLockfile` from @mycadet/local-mode) — there is no
+ * shared cache to invalidate, so a mutation made by this process is visible
+ * to the next read immediately.
  *
  * Polling mtime (rather than `fs.watch` or `chokidar`) because:
  *   - The lockfile is written via atomic rename (write tmp → rename to path),
@@ -21,8 +20,6 @@ import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
  * (e.g. CLI writing multiple assistants in sequence).
  */
 
-type LockfileChangeListener = (lockfile: Lockfile) => void;
-
 const POLL_INTERVAL_MS = 500;
 const DEBOUNCE_MS = 100;
 
@@ -33,7 +30,6 @@ let cachedLockfile: Lockfile = EMPTY_LOCKFILE;
 let lastMtimeMs = 0;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-const listeners = new Set<LockfileChangeListener>();
 
 const isAccessDenied = (error: unknown): boolean => {
   const code = (error as NodeJS.ErrnoException).code;
@@ -56,12 +52,6 @@ const readAndParse = (): Lockfile | null => {
     }
   }
   return EMPTY_LOCKFILE;
-};
-
-const notifyListeners = (): void => {
-  for (const listener of listeners) {
-    listener(cachedLockfile);
-  }
 };
 
 const checkForChanges = (): void => {
@@ -87,7 +77,6 @@ const checkForChanges = (): void => {
     }
     if (JSON.stringify(next) !== JSON.stringify(cachedLockfile)) {
       cachedLockfile = next;
-      notifyListeners();
     }
     return;
   }
@@ -107,21 +96,7 @@ const checkForChanges = (): void => {
     }
     lastMtimeMs = mtimeMs;
     cachedLockfile = next;
-    notifyListeners();
   }, DEBOUNCE_MS);
-};
-
-/**
- * Subscribe to lockfile changes. The listener fires whenever the lockfile's
- * mtime changes (debounced). Returns an unsubscribe function.
- */
-export const onLockfileChange = (
-  listener: LockfileChangeListener,
-): (() => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
 };
 
 /**
@@ -158,7 +133,6 @@ export const installLockfileWatcher = (): (() => void) => {
       clearTimeout(debounceTimer);
       debounceTimer = null;
     }
-    listeners.clear();
   };
 };
 
@@ -172,7 +146,6 @@ export const __resetForTesting = (): void => {
     clearTimeout(debounceTimer);
     debounceTimer = null;
   }
-  listeners.clear();
   cachedLockfile = EMPTY_LOCKFILE;
   lastMtimeMs = 0;
   lockfilePath = null;

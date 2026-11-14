@@ -455,49 +455,17 @@ function refreshToken(
 // re-pairing.
 
 /**
- * The pair response's required shape, mapped from /v1/pair's field names
- * (`guardianId` → `guardianPrincipalId`, `token` → `accessToken`). One
- * required parse replaces the old optional-fields-plus-null-checks dance:
- * a malformed response is a {@link GuardianLeasePermanentError} naming
- * every field that arrived wrong, not a wonky Partial to poke at.
- */
-const GuardianPairResponseSchema = z.object({
-  guardianPrincipalId: z.string(),
-  accessToken: z.string(),
-  accessTokenExpiresAt: z.union([z.string(), z.number()]),
-  refreshToken: z.string(),
-  refreshTokenExpiresAt: z.union([z.string(), z.number()]),
-  refreshAfter: z
-    .union([z.string(), z.number()])
-    .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v)),
-});
-
-/**
  * Parse /v1/pair's device-bound response into the token data the lease
- * persists. Throws {@link GuardianLeasePermanentError} when the response
- * is malformed — a 200 that will not fix itself on retry.
+ * persists. The payload speaks the guardian token file's own field names
+ * (the gateway's DeviceBoundPairPayload), so the file schema parses it
+ * directly — a malformed 200 throws a {@link GuardianLeasePermanentError};
+ * it will not fix itself on retry.
  */
-export function parseGuardianToken(
-  raw: unknown,
-): Omit<GuardianTokenData, "deviceId" | "leasedAt" | "pairedGatewayUrl"> {
-  const rec = z.record(z.string(), z.unknown()).catch({}).parse(raw);
-  const mapped = {
-    guardianPrincipalId: rec.guardianId,
-    accessToken: rec.token,
-    accessTokenExpiresAt: rec.expiresAt,
-    refreshToken: rec.refreshToken,
-    refreshTokenExpiresAt: rec.refreshTokenExpiresAt,
-    refreshAfter: rec.refreshAfter,
-  };
-  const parsed = GuardianPairResponseSchema.safeParse(mapped);
+export function parseGuardianToken(raw: unknown): GuardianTokenData {
+  const parsed = GuardianTokenFileSchema.safeParse(raw);
   if (!parsed.success) {
-    const unusable = parsed.error.issues.map((issue) => {
-      const field = String(issue.path[0] ?? "response");
-      const sent = mapped[field as keyof typeof mapped];
-      return `${field} arrived as ${describeJsonType(sent)}`;
-    });
     throw new GuardianLeasePermanentError(
-      `guardian pair returned a malformed token response — ${unusable.join(", ")}`,
+      `guardian pair returned a malformed token response — ${z.prettifyError(parsed.error)}`,
     );
   }
   return parsed.data;
@@ -675,12 +643,7 @@ export async function leaseGuardianToken(
   });
   if (!paired.ok) throw new Error(paired.error);
 
-  const parsed = parseGuardianToken(paired.response);
-  const tokenData: GuardianTokenData = {
-    ...parsed,
-    deviceId,
-    leasedAt: new Date().toISOString(),
-  };
+  const tokenData = parseGuardianToken(paired.response);
 
   saveGuardianToken(assistantId, tokenData);
   return tokenData;

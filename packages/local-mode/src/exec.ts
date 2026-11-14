@@ -128,11 +128,7 @@ export function execOutput(
   // `The "path" argument must be of type string` from spawn — name the
   // failure here instead, where the resolution context is at hand.
   if (typeof command !== "string" || command.length === 0) {
-    return Promise.reject(
-      new Error(
-        `execOutput: no command to run (resolved ${String(command)} for args ${args.join(" ")})`,
-      ),
-    );
+    return Promise.reject(new Error(`execOutput: no command to run`));
   }
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {

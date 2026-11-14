@@ -8,13 +8,13 @@ import {
 } from "fs";
 
 import { dirname, join } from "path";
+import { z } from "zod";
 import {
   computeDeviceId,
   guardianTokenPath,
   isConfidentialRefreshUrl,
   loadGuardianToken,
   loopbackSafeFetch,
-  parseGuardianTokenFields,
   saveGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
@@ -310,8 +310,13 @@ export async function refreshGuardianTokenResult(
       return classifyRefreshHttpStatus(response.status);
     }
 
-    const parsed = parseGuardianTokenFields(await response.json());
-    if (parsed.accessToken == null) {
+    // The refresh endpoint answers with the rotated access credential only
+    // (no refresh-token family, no device binding), so it parses with its own
+    // lenient shape rather than the pair response's full token-file schema.
+    const parsed = GuardianRefreshResponseSchema.safeParse(
+      await response.json(),
+    );
+    if (!parsed.success) {
       return {
         ok: false,
         status: 502,
@@ -320,14 +325,13 @@ export async function refreshGuardianTokenResult(
     }
     const refreshed: GuardianTokenData = {
       guardianPrincipalId:
-        parsed.guardianPrincipalId ?? tokenData.guardianPrincipalId,
-      accessToken: parsed.accessToken,
+        parsed.data.guardianPrincipalId ?? tokenData.guardianPrincipalId,
+      accessToken: parsed.data.accessToken,
       accessTokenExpiresAt:
-        parsed.accessTokenExpiresAt ?? tokenData.accessTokenExpiresAt,
-      refreshToken: parsed.refreshToken ?? tokenData.refreshToken,
-      refreshTokenExpiresAt:
-        parsed.refreshTokenExpiresAt ?? tokenData.refreshTokenExpiresAt,
-      refreshAfter: parsed.refreshAfter ?? tokenData.refreshAfter,
+        parsed.data.accessTokenExpiresAt ?? tokenData.accessTokenExpiresAt,
+      refreshToken: tokenData.refreshToken,
+      refreshTokenExpiresAt: tokenData.refreshTokenExpiresAt,
+      refreshAfter: parsed.data.refreshAfter ?? tokenData.refreshAfter,
       deviceId: tokenData.deviceId,
       leasedAt: new Date().toISOString(),
       pairedGatewayUrl: tokenData.pairedGatewayUrl,
@@ -342,6 +346,13 @@ export async function refreshGuardianTokenResult(
     }
   }
 }
+
+const GuardianRefreshResponseSchema = z.object({
+  guardianPrincipalId: z.string().optional(),
+  accessToken: z.string(),
+  accessTokenExpiresAt: z.union([z.string(), z.number()]).optional(),
+  refreshAfter: z.string().optional(),
+});
 
 /** Convenience wrapper around {@link refreshGuardianTokenResult}. */
 export async function refreshGuardianToken(
