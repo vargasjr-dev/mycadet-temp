@@ -72,10 +72,7 @@ function makeContentsFetch(opts: {
    */
   manifestStatus?: number;
 }): FetchLike {
-  // Derived from the shared env seed (the test preload pins CADET_CLOUD_URL),
-  // matching what resolveCloudBaseUrl() produces at runtime — hardcoding the
-  // host here drifts when the seed changes.
-  const CATALOG_URL = `${process.env.CADET_CLOUD_URL ?? "https://test.mycadet.ai"}/v1/plugins/`;
+  const CATALOG_URL = "https://test.mycadet.ai/v1/plugins/";
   const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
   const { tree } = opts;
 
