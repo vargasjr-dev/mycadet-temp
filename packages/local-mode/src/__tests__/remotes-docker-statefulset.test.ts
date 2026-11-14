@@ -47,16 +47,15 @@ function buildGatewayArgs(
   return builders.gateway();
 }
 
-const SECRET_KEYS = ["CES_SERVICE_TOKEN"];
+const SECRET_KEYS: string[] = [];
 
 describe("getBuilderManagedEnvKeys", () => {
-  test("gateway always-set keys cover spec static + secret entries and PATH", () => {
+  test("gateway always-set keys cover spec static entries and PATH", () => {
     const { always } = getBuilderManagedEnvKeys("gateway");
 
     const expected = [
       "CADET_WORKSPACE_DIR",
       "GATEWAY_SECURITY_DIR",
-      "CES_CREDENTIAL_URL",
       "GATEWAY_IPC_SOCKET_DIR",
       "ASSISTANT_IPC_SOCKET_DIR",
       "GATEWAY_PORT",
@@ -68,10 +67,13 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(always.has(key)).toBe(true);
     }
 
+    // CES is IPC-only: the credential URL and its bearer token are gone.
+    expect(always.has("CES_CREDENTIAL_URL")).toBe(false);
+    expect(always.has("CES_SERVICE_TOKEN")).toBe(false);
     expect(always.has("CADET_DEVICE_ID")).toBe(false);
   });
 
-  test("assistant always-set keys include secrets and builder-computed extras", () => {
+  test("assistant always-set keys include builder-computed extras", () => {
     const { always } = getBuilderManagedEnvKeys("assistant");
 
     const expected = [
@@ -212,14 +214,14 @@ describe("buildServiceRunArgs — assistant", () => {
   test("keeps existing workspace and socket volume mounts intact", () => {
     const args = buildAssistantArgs();
     expect(args).toContain(`${instanceName}-workspace:/workspace`);
-    expect(args).toContain(`${instanceName}-socket:/run/ces-bootstrap`);
+    expect(args).toContain(`${instanceName}-socket:/run/ces-ipc`);
   });
 
   test("preserves existing required env vars", () => {
     const args = buildAssistantArgs();
     expect(args).toContain("IS_CONTAINERIZED=true");
     expect(args).toContain("CADET_WORKSPACE_DIR=/workspace");
-    expect(args).toContain("CES_BOOTSTRAP_SOCKET_DIR=/run/ces-bootstrap");
+    expect(args).toContain("CES_SOCKET_DIR=/run/ces-ipc");
     expect(args).toContain(`CADET_ASSISTANT_NAME=${instanceName}`);
   });
 

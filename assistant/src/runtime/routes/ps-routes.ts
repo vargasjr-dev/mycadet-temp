@@ -11,6 +11,7 @@
 
 import { z } from "zod";
 
+import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import { getLogger } from "../../util/logger.js";
 import {
   buildProcessTree,
@@ -78,27 +79,40 @@ function toEntry(node: ProcTreeNode): ProcessEntry {
 }
 
 async function getProcessStatus() {
-  let entry: ProcessEntry;
+  const processes: ProcessEntry[] = [];
   try {
     const procs = await listProcesses();
-    entry = toEntry(buildProcessTree(procs, process.pid));
+    const entry = toEntry(buildProcessTree(procs, process.pid));
     // The daemon's own node derives its name from the entry script
     // (`daemon-main`); callers know this process as the assistant itself —
     // the fallback branch below already reports that name.
     entry.name = "assistant";
+    processes.push(entry);
   } catch (err) {
     // Enumeration failed (no /proc and `ps` unavailable). Still report the
     // daemon itself so the endpoint stays useful for liveness.
     log.warn({ err }, "Failed to enumerate process tree");
-    entry = {
+    processes.push({
       name: "assistant",
       status: "running",
       origin: "workspace",
       info: `pid ${process.pid}`,
-    };
+    });
   }
 
-  return { processes: [entry] };
+  // The credential executor is a sibling process (CLI-launched) or sidecar
+  // container, not a child of the daemon — the process tree above can never
+  // contain it. Report it live from the assistant's own RPC connection,
+  // mirroring readyz: connected+handshaked is running, anything else is not.
+  const cesConnected = getCesClient()?.isReady() ?? false;
+  processes.push({
+    name: "credential-executor",
+    status: cesConnected ? "running" : "not_running",
+    origin: "workspace",
+    info: cesConnected ? "rpc session established" : "no rpc session",
+  });
+
+  return { processes };
 }
 
 export const ROUTES: RouteDefinition[] = [

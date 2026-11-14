@@ -511,20 +511,19 @@ type DaemonStartOptions = {
 /**
  * Directory that holds the local CES Unix socket (`ces.sock`).
  *
- * Matches CES's local data root: `{CES_DATA_DIR}` (`<instanceDir>/ces-data`).
- * Local CLI and managed sidecars share `CES_BOOTSTRAP_SOCKET_DIR`; this is the
- * writable per-instance directory used outside containers.
+ * A SIBLING of the CES data dir (`<instanceDir>/ces-data`), never a child of
+ * it — matching the containerized layout, where the socket lives in its own
+ * `/run/ces-ipc` mount and `ces-data` is a separate CES-private volume. The
+ * data dir is CES-private state; the socket is the shared rendezvous.
  */
-function resolveCesBootstrapSocketDir(
+function resolveCesSocketDir(
   entry?: LocalAssistant,
   env?: Record<string, string | undefined>,
 ): string {
   if (entry) {
-    return join(getLocalInstanceDir(entry), "ces-data");
+    return join(getLocalInstanceDir(entry), "ces-ipc");
   }
-  const dataDir =
-    env?.CES_DATA_DIR?.trim() || join(resolveDataDir(), "ces-data");
-  return dataDir;
+  return env?.CES_SOCKET_DIR?.trim() || join(resolveDataDir(), "ces-ipc");
 }
 
 /**
@@ -598,10 +597,10 @@ export function applyAssistantEnvironment(
   }
   if (entry.port !== undefined) env.GATEWAY_PORT = String(entry.port);
   delete env.QDRANT_URL;
-  // CES and the assistant resolve the socket from CES_BOOTSTRAP_SOCKET_DIR.
-  const bootstrapDir = resolveCesBootstrapSocketDir(entry, env);
-  env.CES_BOOTSTRAP_SOCKET_DIR = bootstrapDir;
-  mkdirSync(bootstrapDir, { recursive: true });
+  // CES and the assistant resolve the socket from CES_SOCKET_DIR.
+  const socketDir = resolveCesSocketDir(entry, env);
+  env.CES_SOCKET_DIR = socketDir;
+  mkdirSync(socketDir, { recursive: true });
   applyIpcSocketDirOverride(env);
   // The instance's bin/ shims first on PATH: the cadet binaries then
   // resolve to the source build the daemons run (freshened on every call,
@@ -1059,7 +1058,7 @@ function resolveCesDir(entry?: LocalAssistant): string {
 
 /**
  * Resolve the local IPC endpoint shared by the CLI-launched CES sibling and
- * assistant. CES binds this path from `CES_BOOTSTRAP_SOCKET_DIR` via the same
+ * assistant. CES binds this path from `CES_SOCKET_DIR` via the same
  * `resolveIpcEndpoint("ces")` helper. Windows uses a named pipe. POSIX uses
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
@@ -1068,32 +1067,9 @@ export function resolveCesSocketPath(
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
-    workspaceDir: resolveCesBootstrapSocketDir(entry),
+    workspaceDir: resolveCesSocketDir(entry),
     platform: hostPlatform,
   }).path;
-}
-
-async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
-  if (!isNamedPipePath(endpointPath)) {
-    return existsSync(endpointPath);
-  }
-  return new Promise((resolve) => {
-    const socket = new Socket();
-    let settled = false;
-    const finish = (ready: boolean): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timer);
-      socket.destroy();
-      resolve(ready);
-    };
-    socket.once("connect", () => finish(true));
-    socket.once("error", () => finish(false));
-    const timer = setTimeout(() => finish(false), 100);
-    socket.connect(endpointPath);
-  });
 }
 
 /**
@@ -1131,10 +1107,10 @@ export async function startCes(
   const workspaceDir = entry
     ? join(getLocalInstanceDir(entry), "workspace")
     : join(resolveDataDir(), "workspace");
-  const bootstrapDir = resolveCesBootstrapSocketDir(entry);
+  const socketDir = resolveCesSocketDir(entry);
   mkdirSync(securityDir, { recursive: true });
   mkdirSync(dataDir, { recursive: true });
-  mkdirSync(bootstrapDir, { recursive: true });
+  mkdirSync(socketDir, { recursive: true });
 
   const cesHealthPort = await findAvailablePort(getDefaultPorts().ces);
 
@@ -1143,7 +1119,7 @@ export async function startCes(
     CREDENTIAL_SECURITY_DIR: securityDir,
     CES_DATA_DIR: dataDir,
     CADET_WORKSPACE_DIR: workspaceDir,
-    CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
+    CES_SOCKET_DIR: socketDir,
     CES_HEALTH_PORT: String(cesHealthPort),
   };
 
@@ -1174,34 +1150,11 @@ export async function startCes(
     writeFileSync(cesPidFile, String(ces.pid), "utf-8");
   }
 
-  // Wait for the endpoint so the daemon's discovery finds it on the
-  // first probe rather than burning its retry budget. A cold start (fresh
-  // install, antivirus scanning the binary) can be slow, so give it a
-  // minute and say so every 10 seconds instead of failing at 10.
-  const startedAt = Date.now();
-  const deadline = startedAt + 60_000;
-  let nextProgressLog = startedAt + 10_000;
-  let endpointReady = false;
-  while (Date.now() < deadline) {
-    endpointReady = await isIpcEndpointReady(socketPath);
-    if (endpointReady) {
-      break;
-    }
-    if (Date.now() >= nextProgressLog) {
-      console.warn(
-        `⚠ credential-executor socket not ready after ${Math.round((Date.now() - startedAt) / 1000)}s — still waiting`,
-      );
-      nextProgressLog += 10_000;
-    }
-    await new Promise((r) => setTimeout(r, 50));
-  }
-  if (!endpointReady) {
-    console.warn(
-      `⚠ credential-executor socket did not appear within 60s — its output is logged in ${join(resolveLogDir(), "hatch.log")}`,
-    );
-  } else {
-    startupLog("✅ credential-executor started\n");
-  }
+  // No blocking wait for the socket here: the assistant's overall health
+  // check owns CES readiness (it probes live and nudges the single-flight
+  // connect), and the daemon's own discovery retries absorb the bind window.
+  // Hatch proceeds as soon as the sibling is spawned.
+  startupLog("✅ credential-executor started\n");
 }
 
 /**

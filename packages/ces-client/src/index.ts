@@ -8,6 +8,7 @@
  * - `@mycadet/ces-client/http-credentials` — credential CRUD over CES HTTP
  * - `@mycadet/ces-client/http-log-export`  — CES log export over HTTP
  * - `@mycadet/ces-client/rpc-client`       — CES RPC envelope/handshake client
+ * - `@mycadet/ces-client/socket-path`      — shared CES socket path resolution
  */
 
 export {
@@ -43,3 +44,9 @@ export {
   type CesRpcHandshakeOptions,
   type CesRpcLogger,
 } from "./rpc-client.js";
+
+export {
+  CES_SOCKET_DIR_DEFAULT,
+  getCesSocketDir,
+  getBootstrapSocketPath,
+} from "./socket-path.js";

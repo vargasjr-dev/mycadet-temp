@@ -33,11 +33,6 @@ export interface CesRpcSession {
    * implementation detail of this module.
    */
   close(): Promise<void>;
-  /**
-   * The transport lifecycle owner. Only boot-level consumers that run a
-   * proactive reconnect loop need this; everyone else should use `close()`.
-   */
-  processManager: CesProcessManager;
 }
 
 export interface OpenCesRpcSessionOptions {
@@ -99,7 +94,6 @@ export async function openCesRpcSession(
     return {
       client,
       close: () => pm.stop(),
-      processManager: pm,
     };
   } catch (err) {
     if (err instanceof CesUnavailableError) {

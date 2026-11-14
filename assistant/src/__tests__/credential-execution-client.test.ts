@@ -78,17 +78,17 @@ function createMockTransport(): CesTransport & {
 }
 
 // ---------------------------------------------------------------------------
-// CES discovery — CES_BOOTSTRAP_SOCKET_DIR, not workspace
+// CES discovery — CES_SOCKET_DIR, not workspace
 // ---------------------------------------------------------------------------
 
 function withBootstrapDir(dir: string): () => void {
-  const savedDir = process.env["CES_BOOTSTRAP_SOCKET_DIR"];
-  process.env["CES_BOOTSTRAP_SOCKET_DIR"] = dir;
+  const savedDir = process.env["CES_SOCKET_DIR"];
+  process.env["CES_SOCKET_DIR"] = dir;
   return () => {
     if (savedDir !== undefined) {
-      process.env["CES_BOOTSTRAP_SOCKET_DIR"] = savedDir;
+      process.env["CES_SOCKET_DIR"] = savedDir;
     } else {
-      delete process.env["CES_BOOTSTRAP_SOCKET_DIR"];
+      delete process.env["CES_SOCKET_DIR"];
     }
   };
 }
@@ -101,7 +101,7 @@ describe("CES discovery", () => {
       const result = discoverCes();
       expect(result.mode).toBe("unavailable");
       expect((result as { reason: string }).reason).toContain(
-        "CES bootstrap socket not found",
+        "CES socket not found at",
       );
     } finally {
       restore();
@@ -123,8 +123,8 @@ describe("CES discovery", () => {
 });
 
 describe("CES bootstrap socket discovery", () => {
-  test("looks for the socket under CES_BOOTSTRAP_SOCKET_DIR", () => {
-    const bootstrapDir = mkdtempSync(join(tmpdir(), "ces-bootstrap-"));
+  test("looks for the socket under CES_SOCKET_DIR", () => {
+    const bootstrapDir = mkdtempSync(join(tmpdir(), "ces-ipc-"));
     const restore = withBootstrapDir(bootstrapDir);
     try {
       const socketPath = resolveIpcEndpoint("ces", {
@@ -140,7 +140,7 @@ describe("CES bootstrap socket discovery", () => {
   });
 
   test("does not discover CES from CADET_WORKSPACE_DIR", () => {
-    const bootstrapDir = mkdtempSync(join(tmpdir(), "ces-bootstrap-"));
+    const bootstrapDir = mkdtempSync(join(tmpdir(), "ces-ipc-"));
     const restore = withBootstrapDir(bootstrapDir);
     try {
       const result = discoverCes();
@@ -192,7 +192,6 @@ describe("discoverCesWithRetry", () => {
         intervalMs: 20,
       });
       expect(result.mode).toBe("managed");
-      expect((result as { socketPath: string }).socketPath).toBe(socketPath);
     } finally {
       clearTimeout(timer);
       restore();

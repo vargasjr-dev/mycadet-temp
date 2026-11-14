@@ -51,17 +51,6 @@ interface StaticEnv {
 }
 
 /**
- * An env var whose value comes from the opts object passed to
- * `buildServiceRunArgs` at container-start time.
- */
-interface SecretEnv {
-  kind: "secret";
-  name: string;
-  /** Key in `DockerRunSecrets`. */
-  secret: keyof DockerRunSecrets;
-}
-
-/**
  * An env var conditionally forwarded from the host process environment.
  * Only emitted when `process.env[hostVar]` is set.
  * Defaults to `name` for `hostVar` when omitted.
@@ -72,7 +61,7 @@ interface HostEnv {
   hostVar?: string;
 }
 
-type EnvEntry = StaticEnv | SecretEnv | HostEnv;
+type EnvEntry = StaticEnv | HostEnv;
 
 interface VolumeMount {
   /** Logical volume name — maps to a Docker volume via `DockerVolumeClaimTemplate`. */
@@ -129,11 +118,6 @@ export interface DockerStatefulSetSpec {
   };
 }
 
-/** Secrets injected at container-start time (from hatch / upgrade opts). */
-export interface DockerRunSecrets {
-  cesServiceToken?: string;
-}
-
 // ---------------------------------------------------------------------------
 // Spec
 // ---------------------------------------------------------------------------
@@ -150,7 +134,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
 
   volumeClaimTemplates: [
     { name: "assistant-workspace",  dockerVolume: (n) => `${n}-workspace` },
-    { name: "ces-bootstrap-socket", dockerVolume: (n) => `${n}-socket` },
+    { name: "ces-ipc-socket", dockerVolume: (n) => `${n}-socket` },
     { name: "assistant-ipc-socket", dockerVolume: (n) => `${n}-assistant-ipc` },
     { name: "gateway-ipc-socket",   dockerVolume: (n) => `${n}-gateway-ipc` },
     { name: "gateway-security",     dockerVolume: (n) => `${n}-gateway-sec` },
@@ -184,11 +168,9 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "CADET_BACKUP_DIR",         value: "/workspace/.backups" },
         { kind: "static", name: "CADET_BACKUP_KEY_PATH",    value: "/workspace/.backup.key" },
-        { kind: "static", name: "CES_CREDENTIAL_URL",        value: "http://localhost:8090" },
-        { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
+        { kind: "static", name: "CES_SOCKET_DIR",  value: "/run/ces-ipc" },
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
         { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },
-        { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
         // Provider API keys — forwarded from host if set
         ...Object.values(PROVIDER_ENV_VAR_NAMES).map(
           (v): HostEnv => ({ kind: "host", name: v }),
@@ -198,7 +180,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace" },
-        { volumeName: "ces-bootstrap-socket", mountPath: "/run/ces-bootstrap" },
+        { volumeName: "ces-ipc-socket", mountPath: "/run/ces-ipc" },
         { volumeName: "assistant-ipc-socket", mountPath: "/run/assistant-ipc" },
         { volumeName: "gateway-ipc-socket",   mountPath: "/run/gateway-ipc" },
       ],
@@ -212,12 +194,10 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       env: [
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "GATEWAY_SECURITY_DIR",      value: "/gateway-security" },
-        { kind: "static", name: "CES_CREDENTIAL_URL",        value: "http://localhost:8090" },
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
         { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },
         { kind: "static", name: "GATEWAY_PORT",              value: `${GATEWAY_INTERNAL_PORT}` },
         { kind: "static", name: "RUNTIME_HTTP_PORT",         value: `${ASSISTANT_INTERNAL_PORT}` },
-        { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
         { kind: "host",   name: "CADET_ENVIRONMENT" },
         { kind: "host",   name: "CADET_CLOUD_URL" },
         { kind: "host",   name: "TUNNEL_BASE_URL" },
@@ -227,6 +207,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { volumeName: "gateway-security",     mountPath: "/gateway-security" },
         { volumeName: "assistant-ipc-socket", mountPath: "/run/assistant-ipc" },
         { volumeName: "gateway-ipc-socket",   mountPath: "/run/gateway-ipc" },
+        { volumeName: "ces-ipc-socket",       mountPath: "/run/ces-ipc" },
       ],
     },
 
@@ -236,14 +217,13 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       network: "container",
       env: [
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
-        { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
+        { kind: "static", name: "CES_SOCKET_DIR",  value: "/run/ces-ipc" },
         { kind: "static", name: "CREDENTIAL_SECURITY_DIR",   value: "/ces-security" },
         { kind: "static", name: "CES_DATA_DIR",              value: "/ces-data" },
-        { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace", readOnly: true },
-        { volumeName: "ces-bootstrap-socket", mountPath: "/run/ces-bootstrap" },
+        { volumeName: "ces-ipc-socket", mountPath: "/run/ces-ipc" },
         { volumeName: "ces-security",         mountPath: "/ces-security" },
         { volumeName: "ces-data",             mountPath: "/ces-data" },
       ],
@@ -255,7 +235,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
 // Builder
 // ---------------------------------------------------------------------------
 
-export interface BuildServiceRunArgsOpts extends DockerRunSecrets {
+export interface BuildServiceRunArgsOpts {
   gatewayPort: number;
   imageTags: Record<ServiceName, string>;
   instanceName: string;
@@ -421,9 +401,6 @@ export function buildServiceRunArgs(
       for (const entry of container.env) {
         if (entry.kind === "static") {
           args.push("-e", `${entry.name}=${entry.value}`);
-        } else if (entry.kind === "secret") {
-          const val = opts[entry.secret];
-          if (val) args.push("-e", `${entry.name}=${val}`);
         } else {
           const hostVar = entry.hostVar ?? entry.name;
           const val = process.env[hostVar];

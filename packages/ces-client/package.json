@@ -8,14 +8,17 @@
     ".": "./src/index.ts",
     "./http-credentials": "./src/http-credentials.ts",
     "./http-log-export": "./src/http-log-export.ts",
+    "./ipc-credentials": "./src/ipc-credentials.ts",
     "./rpc-client": "./src/rpc-client.ts",
-    "./credential-rpc": "./src/credential-rpc.ts"
+    "./credential-rpc": "./src/credential-rpc.ts",
+    "./socket-path": "./src/socket-path.ts"
   },
   "scripts": {
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "@mycadet/service-contracts": "workspace:*"
+    "@mycadet/service-contracts": "workspace:*",
+    "@mycadet/ipc-server-utils": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "1.2.4",

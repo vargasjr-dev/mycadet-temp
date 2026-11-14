@@ -173,10 +173,10 @@ We have real users — maintain backwards compatibility for all interfaces, pers
 
 **Which migration strategy to use:**
 
-| What changed                                                                    | Migration type      | Location                                                                                                                                  |
-| ------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| What changed                                                                   | Migration type      | Location                                                                                                                                  |
+| ------------------------------------------------------------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | Workspace files (renames, moves, format changes under `$CADET_WORKSPACE_DIR/`) | Workspace migration | `assistant/src/workspace/migrations/` — append to `WORKSPACE_MIGRATIONS` in `registry.ts`                                                 |
-| Database schema or data (columns, indexes, backfills)                           | DB migration        | `assistant/src/persistence/migrations/` — add function and register in the `migrationSteps` array in `assistant/src/persistence/steps.ts` |
+| Database schema or data (columns, indexes, backfills)                          | DB migration        | `assistant/src/persistence/migrations/` — add function and register in the `migrationSteps` array in `assistant/src/persistence/steps.ts` |
 
 Migrations must be **idempotent** (safe to re-run if interrupted) and **append-only** (never reorder or remove existing entries). Each new DB migration file takes a fresh numeric prefix — never reuse one; the historical duplicate prefixes are frozen in `assistant/src/persistence/migrations/__tests__/migration-prefix-guard.test.ts`. Test migrations — see `assistant/src/__tests__/workspace-migration-*.test.ts` and `assistant/src/__tests__/db-*.test.ts` for patterns. Flag breaking changes in PR descriptions. If a migration is infeasible, call it out explicitly for human review.
 
@@ -267,7 +267,7 @@ Docker instances use six per-service volumes enforcing least-privilege at the co
 - **Trust rules** are owned by the gateway. In Docker mode (`IS_CONTAINERIZED=true`), the assistant reads/writes trust rules via the gateway's HTTP trust API — no direct filesystem access to `trust.json`.
 - **Credentials** are owned by the CES. Secret values live in `keys.enc`. Identity and policy records live in `<cesDataRoot>/metadata.json`. The assistant accesses credentials via CES RPC (Unix socket or named pipe) in every environment, with CES HTTP as managed failover. The gateway uses the CES HTTP API (`CES_CREDENTIAL_URL`). Neither has filesystem access to `keys.enc` / `store.key`.
 - **Meet bots in Docker mode** are not yet supported. The assistant container has no elevated capabilities (`--privileged`, `CAP_SYS_ADMIN` are absent). In bare-metal mode, meet bots are sibling containers on the host's Docker engine.
-- **CES socket auth is intentionally absent**: the CES Unix socket (`CES_BOOTSTRAP_SOCKET_DIR`, default `/run/ces-bootstrap/ces.sock`) does not require a handshake auth token. All processes on the host/pod are trusted. The security boundary is rules-based access control on credential operations inside CES, not network-level socket auth. Assistant subprocesses (tools, skills) are expected to be able to connect to CES; preventing credential exfiltration requires per-credential policy enforcement, not hiding the socket path.
+- **CES socket auth is intentionally absent**: the CES Unix socket (`CES_SOCKET_DIR`, default `/run/ces-ipc/ces.sock`) does not require a handshake auth token. All processes on the host/pod are trusted. The security boundary is rules-based access control on credential operations inside CES, not network-level socket auth. Assistant subprocesses (tools, skills) are expected to be able to connect to CES; preventing credential exfiltration requires per-credential policy enforcement, not hiding the socket path.
 
 ## Workspace & Secrets
 
@@ -321,8 +321,8 @@ Error reporting uses Sentry on the client surfaces (web, Electron, iOS, Android)
 
 Surfaces map onto Sentry projects as below. The Electron renderer reports to the macOS project, sharing the `SENTRY_DSN_MACOS` secret with the main process. Per-host flavor + DSN selection in the shared clients/web bundle is live: `flavor.ts` `selectSentryFlavor()` picks the capacitor flavor on native iOS/Android and the react flavor everywhere else (web + Electron renderer); `sentry-init.ts` `resolveDsn()` picks `VITE_SENTRY_DSN_MACOS` (Electron) / `VITE_SENTRY_DSN_IOS` (iOS) / `VITE_SENTRY_DSN_ANDROID` (Android) / `VITE_SENTRY_DSN` (web). All flavors share one `options` object (ignoreErrors, denyUrls, beforeBreadcrumb URL sanitize, enhanceFetchErrorMessages, attachStacktrace) so PII/noise filtering is uniform. An empty DSN no-ops.
 
-| Surface                  | Project                    | DSN source                                                | Delivered via                                |
-| ------------------------ | -------------------------- | --------------------------------------------------------- | -------------------------------------------- |
+| Surface                  | Project           | DSN source                                                | Delivered via                                |
+| ------------------------ | ----------------- | --------------------------------------------------------- | -------------------------------------------- |
 | Web SPA                  | `mycadet-web`     | `VITE_SENTRY_DSN` (vars)                                  | web build                                    |
 | Electron main            | `mycadet-macos`   | `SENTRY_DSN_MACOS` (secret) → `__SENTRY_DSN_MACOS__`      | macOS build define                           |
 | Electron renderer        | `mycadet-macos`   | `SENTRY_DSN_MACOS` (secret) → `VITE_SENTRY_DSN_MACOS`     | macOS build                                  |

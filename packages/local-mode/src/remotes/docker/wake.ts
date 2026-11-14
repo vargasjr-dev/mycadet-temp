@@ -33,7 +33,6 @@ export interface WakeDockerOptions {
   imageTags?: Record<ServiceName, string>;
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
-  cesServiceToken?: string;
   gatewayPort?: number;
   /** Wait for the gateway's `/readyz` after the containers come up. */
   waitUntilReady?: boolean;
@@ -185,7 +184,6 @@ async function recreateDockerContainers(
       ...options.extraAssistantEnv,
     },
     extraGatewayEnv: { CADET_DEVICE_ID: device, ...options.extraGatewayEnv },
-    cesServiceToken: options.cesServiceToken,
     gatewayPort,
     imageTags: images,
     instanceName: entry.assistantId,
@@ -236,7 +234,6 @@ async function startAssistantThenSidecars(
 export async function startContainers(
   opts: {
     createOnly?: boolean;
-    cesServiceToken?: string;
     extraAssistantEnv?: Record<string, string>;
     extraGatewayEnv?: Record<string, string>;
     gatewayPort: number;

@@ -11,10 +11,6 @@ import {
   type CesProcessManager,
   createCesProcessManager,
 } from "./process-manager.js";
-import {
-  awaitCesClientWithTimeout,
-  DEFAULT_CES_STARTUP_TIMEOUT_MS,
-} from "./startup-timeout.js";
 
 const log = getLogger("ces-runtime");
 
@@ -153,20 +149,11 @@ function applyCesResult(result: CesStartupResult): void {
 export async function startCes(config: AssistantConfig): Promise<void> {
   const cesResult = startCesProcess(config);
 
-  // The handshake runs inside clientPromise. Await it (with a 20s timeout) so
-  // the boot session exists before provider initialization; a timeout only
-  // delays the identity handshake, it does not block startup.
-  if (cesResult.clientPromise) {
-    const client = await awaitCesClientWithTimeout(cesResult.clientPromise, {
-      timeoutMs: DEFAULT_CES_STARTUP_TIMEOUT_MS,
-      onTimeout: () => {
-        log.warn("CES handshake timed out after 20s; continuing startup");
-      },
-    });
-    if (client) {
-      log.info("CES boot session established; assistant identity handed off");
-    }
-  }
+  // Non-blocking by design: the assistant's overall health check (readyz)
+  // owns CES readiness — it reports the live handshake state and nudges the
+  // single-flight connect, so boot never waits on CES here. The boot session
+  // (which hands CES the assistant API key) establishes in the background via
+  // clientPromise; applyCesResult keeps clientRef in sync once it resolves.
 
   // Reconnect ownership is claimed inside startCesProcess before the
   // identity read. Snapshotting the API key there (not here) avoids a

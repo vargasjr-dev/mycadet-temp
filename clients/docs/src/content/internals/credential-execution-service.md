@@ -149,7 +149,7 @@ Audit logs record every materialization event with: grant ID, credential ID, too
 │         ▼                   ▼            │
 │  ┌─────────────────────────────────┐    │
 │  │  shared emptyDir volume         │    │
-│  │  └── /run/ces-bootstrap/ces.sock │    │
+│  │  └── /run/ces-ipc/ces.sock │    │
 │  └─────────────────────────────────┘    │
 │         │                               │
 │         ▼                               │
@@ -229,7 +229,7 @@ These invariants are enforced by guard tests and code review:
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Process-boundary credential isolation      | Strong (separate child process)                                                                       | Strong (separate container)                                                                                                                      |
 | Credential value never in assistant memory | Strong                                                                                                | Strong                                                                                                                                           |
-| Grant persistence survives restarts        | Strong (filesystem-backed under `~/.cadet/protected/`)                                               | Strong (dedicated `/ces-data` volume)                                                                                                            |
+| Grant persistence survives restarts        | Strong (filesystem-backed under `~/.cadet/protected/`)                                                | Strong (dedicated `/ces-data` volume)                                                                                                            |
 | Network egress enforcement via proxy       | Moderate (cooperative via HTTP_PROXY/HTTPS_PROXY env vars; host networking is available — see Risk 7) | Moderate (cooperative via env vars; per-container Calico/NetworkPolicy egress restriction is a v2 design goal but not yet enforced — see Risk 7) |
 | Secret scrubbing in HTTP responses         | Defense-in-depth only                                                                                 | Defense-in-depth only                                                                                                                            |
 | `host_bash` restriction                    | Policy-only (trust rules can deny, but the tool exists)                                               | Policy-only (same; managed deployments should deny `host_bash` for untrusted agents)                                                             |

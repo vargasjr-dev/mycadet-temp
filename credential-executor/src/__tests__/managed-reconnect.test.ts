@@ -190,7 +190,7 @@ describe("managed CES reconnection (real entrypoint)", () => {
       env: {
         ...process.env,
         CES_DATA_DIR: dataDir,
-        CES_BOOTSTRAP_SOCKET_DIR: socketDir,
+        CES_SOCKET_DIR: socketDir,
         CES_HEALTH_PORT: String(healthPort),
       },
       stdout: "ignore",

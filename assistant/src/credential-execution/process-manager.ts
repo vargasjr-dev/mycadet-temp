@@ -3,12 +3,12 @@
  *
  * Creates a transport connection to the CES process over the shared bootstrap
  * socket. Local CLI siblings and managed sidecars bind the same path under
- * `CES_BOOTSTRAP_SOCKET_DIR`. The process manager owns only the transport
+ * `CES_SOCKET_DIR`. The process manager owns only the transport
  * connection lifecycle; the CES process itself is managed by the CLI
  * (sibling) or the pod infrastructure (managed).
  *
  * Env contract:
- * - CES_BOOTSTRAP_SOCKET_DIR: directory containing `ces.sock`
+ * - CES_SOCKET_DIR: directory containing `ces.sock`
  * - /assistant-data-ro: assistant data mounted read-only into CES
  * - /ces-data: CES private data directory (separate PVC)
  * - CES_HEALTH_PORT: health check port exposed by the CES sidecar
@@ -18,13 +18,13 @@ import { createConnection, type Socket } from "node:net";
 import { StringDecoder } from "node:string_decoder";
 
 import { CesTransport } from "@mycadet/ces-client/rpc-client";
+import { getBootstrapSocketPath } from "@mycadet/ces-client/socket-path";
 
 import type { AssistantConfig } from "../config/schema.js";
 import { getLogger } from "../util/logger.js";
 import {
   discoverCesWithRetry,
   type DiscoveryResult,
-  type ManagedDiscoverySuccess,
 } from "./executable-discovery.js";
 
 const log = getLogger("ces-process-manager");
@@ -135,7 +135,7 @@ export function createCesProcessManager(
         throw new CesUnavailableError(discoveryResult.reason);
       }
 
-      const transport = await connectManagedSocket(discoveryResult);
+      const transport = await connectManagedSocket();
       currentTransport = transport;
       wireTransportClose(transport);
       running = true;
@@ -209,16 +209,18 @@ export function createCesProcessManager(
   // Socket connection
   // -------------------------------------------------------------------------
 
-  async function connectManagedSocket(
-    discovery: ManagedDiscoverySuccess,
-  ): Promise<SocketTransport> {
+  async function connectManagedSocket(): Promise<SocketTransport> {
+    // The socket path comes straight from the shared resolver — the same one
+    // discovery checked and CES binds — rather than being drilled through the
+    // discovery result.
+    const socketPath = getBootstrapSocketPath();
     pmLog.info(
-      { socketPath: discovery.socketPath, mode: discovery.mode },
+      { socketPath, mode: discoveryResult?.mode },
       "Connecting to CES over socket",
     );
 
     const socket = await connectWithTimeout(
-      discovery.socketPath,
+      socketPath,
       SOCKET_CONNECT_TIMEOUT_MS,
     );
     managedSocket = socket;

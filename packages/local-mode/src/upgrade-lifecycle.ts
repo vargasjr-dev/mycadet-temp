@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { getGatewayUrl, isDockerEntry } from "./lockfile-contract";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -240,18 +239,16 @@ export function buildReplayEnv(
   );
 }
 
-/** Secrets and replay env derived from the outgoing containers. */
+/** Replay env derived from the outgoing containers. */
 interface ReplayState {
-  cesServiceToken: string;
   extraAssistantEnv: Record<string, string>;
   extraGatewayEnv: Record<string, string>;
 }
 
 /**
- * Derive the secrets and replay env for replacement containers from
- * already-captured assistant/gateway envs. CES_SERVICE_TOKEN can be generated
- * for older instances. The signing key rides no env — the gateway owns it in
- * its security root. CADET_DEVICE_ID is backfilled on the gateway from the
+ * Derive the replay env for replacement containers from already-captured
+ * assistant/gateway envs. The signing key rides no env — the gateway owns it
+ * in its security root. CADET_DEVICE_ID is backfilled on the gateway from the
  * host, and the assistant inherits the gateway's value (captured values win)
  * so the pair always matches.
  */
@@ -266,8 +263,6 @@ export function buildReplayState(
   extraAssistantEnv.CADET_DEVICE_ID ??= extraGatewayEnv.CADET_DEVICE_ID;
 
   return {
-    cesServiceToken:
-      capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
     extraAssistantEnv,
     extraGatewayEnv,
   };
@@ -616,8 +611,7 @@ export async function performDockerRollback(
     );
   }
 
-  const { cesServiceToken, extraAssistantEnv, extraGatewayEnv } =
-    await captureReplayState(res);
+  const { extraAssistantEnv, extraGatewayEnv } = await captureReplayState(res);
 
   // Derive the gateway port from the entry's canonical fields
   let gatewayPort = GATEWAY_INTERNAL_PORT;
@@ -691,7 +685,6 @@ export async function performDockerRollback(
     console.log("Creating stopped containers with the target version...");
     await startContainers(
       {
-        cesServiceToken,
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
@@ -795,7 +788,6 @@ export async function performDockerRollback(
 
         await startContainers(
           {
-            cesServiceToken,
             extraAssistantEnv,
             extraGatewayEnv,
             gatewayPort,
@@ -816,7 +808,6 @@ export async function performDockerRollback(
             backupLabel: "pre-rollback",
             res,
             containerOptions: {
-              cesServiceToken,
               extraAssistantEnv,
               extraGatewayEnv,
               gatewayPort,

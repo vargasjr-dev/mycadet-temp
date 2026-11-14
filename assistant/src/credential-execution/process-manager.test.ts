@@ -28,6 +28,7 @@ function discoverTestSocket() {
 
 describe("CesProcessManager.onTransportClose", () => {
   let tempDir: string;
+  let savedSocketDir: string | undefined;
   let server: Server;
   let connections: Array<import("node:net").Socket>;
 
@@ -35,6 +36,10 @@ describe("CesProcessManager.onTransportClose", () => {
     tempDir = mkdtempSync(join(tmpdir(), "ces-pm-test-"));
     mockSocketPath = join(tempDir, "ces.sock");
     connections = [];
+    // The manager dials the shared resolver's path (no socketPath drilling),
+    // so point CES_SOCKET_DIR at the mock server's directory.
+    savedSocketDir = process.env.CES_SOCKET_DIR;
+    process.env.CES_SOCKET_DIR = tempDir;
     // Create a Unix socket server that accepts connections but does nothing.
     server = createServer((socket) => {
       connections.push(socket);
@@ -53,6 +58,7 @@ describe("CesProcessManager.onTransportClose", () => {
     connections = [];
     await new Promise<void>((resolve) => server.close(() => resolve()));
     rmSync(tempDir, { recursive: true, force: true });
+    process.env.CES_SOCKET_DIR = savedSocketDir;
   });
 
   test("fires handler when the transport dies (socket closed)", async () => {
@@ -143,6 +149,7 @@ function makeRecordingLogger(): {
 
 describe("CesProcessManager transport-death logging", () => {
   let tempDir: string;
+  let savedSocketDir: string | undefined;
   let server: Server;
   let connections: Array<import("node:net").Socket>;
 
@@ -150,6 +157,10 @@ describe("CesProcessManager transport-death logging", () => {
     tempDir = mkdtempSync(join(tmpdir(), "ces-pm-log-test-"));
     mockSocketPath = join(tempDir, "ces.sock");
     connections = [];
+    // The manager dials the shared resolver's path (no socketPath drilling),
+    // so point CES_SOCKET_DIR at the mock server's directory.
+    savedSocketDir = process.env.CES_SOCKET_DIR;
+    process.env.CES_SOCKET_DIR = tempDir;
     server = createServer((socket) => {
       connections.push(socket);
       socket.on("error", () => {});
@@ -166,6 +177,7 @@ describe("CesProcessManager transport-death logging", () => {
     connections = [];
     await new Promise<void>((resolve) => server.close(() => resolve()));
     rmSync(tempDir, { recursive: true, force: true });
+    process.env.CES_SOCKET_DIR = savedSocketDir;
   });
 
   test("logs WARN when the transport dies unexpectedly (remote close)", async () => {

@@ -85,7 +85,6 @@ function affectedServices(
  * rebuild the affected images and restart their containers.
  */
 export function startFileWatcher(opts: {
-  cesServiceToken?: string;
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort: number;
@@ -106,7 +105,6 @@ export function startFileWatcher(opts: {
 
   const configs = serviceImageConfigs(repoRoot, imageTags);
   const runArgs = buildServiceRunArgs({
-    cesServiceToken: opts.cesServiceToken,
     extraAssistantEnv: opts.extraAssistantEnv,
     extraGatewayEnv: opts.extraGatewayEnv,
     gatewayPort,

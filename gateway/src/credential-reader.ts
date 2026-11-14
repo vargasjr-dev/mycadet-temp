@@ -2,7 +2,7 @@
  * Read-only reader for the assistant's credential stores.
  *
  * Resolution order:
- * 1. CES HTTP API (when CES_CREDENTIAL_URL is set)
+ * 1. CES over the shared Unix socket (when this deployment has CES)
  * 2. Encrypted-at-rest file (~/.cadet/protected/keys.enc)
  */
 
@@ -10,12 +10,26 @@ import { createDecipheriv, pbkdf2Sync } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { hostname, userInfo } from "node:os";
 import { join } from "node:path";
-import { createCesHttpCredentialClient } from "@mycadet/ces-client/http-credentials";
+import {
+  createCesIpcCredentialClient,
+  type CesIpcCredentialClient,
+} from "@mycadet/ces-client/ipc-credentials";
 import { credentialKey } from "./credential-key.js";
 import { getLogger } from "./logger.js";
 import { getGatewaySecurityDir } from "./paths.js";
 
 const log = getLogger("credential-reader");
+
+/** Lazily created shared CES IPC client (socket transport). */
+let cesIpcClient: CesIpcCredentialClient | undefined;
+
+/**
+ * Drop the memoized CES client so the next read re-evaluates managed mode.
+ * Tests use this to swap the CES client module for a fake between cases.
+ */
+export function resetCesIpcClientForTests(): void {
+  cesIpcClient = undefined;
+}
 
 const ALGORITHM = "aes-256-gcm";
 const AUTH_TAG_LENGTH = 16;
@@ -173,46 +187,53 @@ function readEncryptedCredential(account: string): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// CES HTTP credential reader (containerized mode)
+// CES IPC credential reader (socket transport, every topology)
 // ---------------------------------------------------------------------------
 
-export function getCesHttpConfig():
-  | { baseUrl: string; serviceToken: string }
-  | undefined {
-  const baseUrl = process.env.CES_CREDENTIAL_URL?.trim();
-  if (!baseUrl) {
-    return undefined;
+/**
+ * The shared CES IPC credential client — a lazily created singleton that
+ * dials the socket CES binds (`getBootstrapSocketPath`). Returns undefined
+ * when the socket is absent AND the gateway is not containerized, which is
+ * the signal that CES is not part of this deployment and the local
+ * encrypted store is the only credential source.
+ */
+export function getCesIpcClient(): CesIpcCredentialClient | undefined {
+  if (!cesIpcClient) {
+    if (!isCesManagedMode()) {
+      return undefined;
+    }
+    cesIpcClient = createCesIpcCredentialClient(log);
   }
-
-  const serviceToken = process.env.CES_SERVICE_TOKEN?.trim();
-  if (!serviceToken) {
-    log.warn("CES_CREDENTIAL_URL is set but CES_SERVICE_TOKEN is missing");
-    return undefined;
-  }
-
-  return { baseUrl, serviceToken };
+  return cesIpcClient;
 }
 
 /**
- * Try to read a credential from the CES cloud service over HTTP.
+ * Whether this deployment treats CES as the credential source. This is a
+ * TOPOLOGY signal, not a socket-presence signal: the local CES sibling binds
+ * the same socket path as a managed sidecar, so socket existence cannot
+ * distinguish the two. Containerized is the exact case where the encrypted
+ * store is CES-private and unreachable — the old CES_CREDENTIAL_URL static
+ * env rode the same containerized-only spec entry.
+ */
+export function isCesManagedMode(): boolean {
+  return process.env.IS_CONTAINERIZED === "true";
+}
+
+/**
+ * Try to read a credential from CES over the shared Unix socket.
  *
- * Delegates to `@mycadet/ces-client/http-credentials` for the transport.
- * Activated when `CES_CREDENTIAL_URL` is set (e.g. `http://ces-host:8090`).
- * Requires `CES_SERVICE_TOKEN` for bearer auth.
- *
- * Returns `undefined` when CES HTTP is not configured. When it is configured,
- * `unreachable` is true on transport/5xx failures so callers can distinguish
- * an outage from a missing credential.
+ * Returns `undefined` when CES is not configured for this deployment. When it
+ * is configured, `unreachable` is true on transport failures so callers can
+ * distinguish an outage from a missing credential.
  */
 async function readCesCredential(
   account: string,
 ): Promise<{ value: string | undefined; unreachable: boolean } | undefined> {
-  const config = getCesHttpConfig();
-  if (!config) {
+  const client = getCesIpcClient();
+  if (!client) {
     return undefined;
   }
 
-  const client = createCesHttpCredentialClient(config, log);
   return client.get(account);
 }
 
@@ -229,19 +250,18 @@ export type ServiceCredentialsRead =
   | { status: "unreachable" };
 
 /**
- * When CES HTTP is configured, every required field must have a CES
+ * When CES is configured, every required field must have a CES
  * metadata record. Leftover workspace `metadata.json` is not consulted.
- * Local keys.enc mode (no CES HTTP) skips this gate.
+ * Local keys.enc mode (no CES) skips this gate.
  */
 async function requiredCesMetadataResult(
   spec: ServiceCredentialSpec,
 ): Promise<"ok" | "missing" | "unreachable"> {
-  const config = getCesHttpConfig();
-  if (!config) {
+  const client = getCesIpcClient();
+  if (!client) {
     return "ok";
   }
 
-  const client = createCesHttpCredentialClient(config, log);
   for (const field of spec.requiredFields) {
     const result = await client.getRecord(credentialKey(spec.service, field));
     if (result.unreachable) {
@@ -263,7 +283,7 @@ async function requiredCesMetadataResult(
  * from a missing value.
  *
  * Resolution order:
- * 1. CES HTTP API (when CES_CREDENTIAL_URL is set)
+ * 1. CES over the shared Unix socket (when this deployment has CES)
  * 2. Encrypted-at-rest store (keys.enc), only when CES is not configured
  *    or CES answered that the account is absent
  *

@@ -2,12 +2,12 @@
  * In-process CES RPC test double served over a REAL unix socket.
  *
  * The production record backend discovers `ces.sock` under
- * `CES_BOOTSTRAP_SOCKET_DIR` and speaks the newline-delimited JSON RPC
+ * `CES_SOCKET_DIR` and speaks the newline-delimited JSON RPC
  * protocol (`@mycadet/service-contracts` transport contract). This helper
  * binds that socket and answers handshake + record/credential requests from
  * an in-memory store — the real client, transport and discovery run
  * unmocked. Install BEFORE the first backend operation; it patches
- * `CES_BOOTSTRAP_SOCKET_DIR` itself.
+ * `CES_SOCKET_DIR` itself.
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server, type Socket } from "node:net";
@@ -55,7 +55,7 @@ export function startTestCesRecordServer(): TestCesRecordServer {
       return;
     }
     socketDir = mkdtempSync(join(tmpdir(), "test-ces-socket-"));
-    process.env.CES_BOOTSTRAP_SOCKET_DIR = socketDir;
+    process.env.CES_SOCKET_DIR = socketDir;
     const socketPath = resolveIpcEndpoint("ces", {
       workspaceDir: socketDir,
     }).path;
@@ -254,7 +254,7 @@ export function startTestCesRecordServer(): TestCesRecordServer {
       // While stopped, discovery must NOT fall through to a live machine
       // socket — point it at an empty dir.
       const emptyDir = mkdtempSync(join(tmpdir(), "test-ces-empty-"));
-      process.env.CES_BOOTSTRAP_SOCKET_DIR = emptyDir;
+      process.env.CES_SOCKET_DIR = emptyDir;
       socketDir = emptyDir;
     },
     start: listen,
