@@ -296,7 +296,7 @@ describe("ShareFeedbackModal", () => {
     const request = feedbackRequests[0] as FormData;
     expect(request.get("doctor_session_id")).toBe("doctor-session-123");
 
-    const logsFile = request.get("logs_file");
+    const logsFile = request.get("logs_file") as File;
     expect(logsFile).toBeInstanceOf(File);
     const logsText = await new Response(
       logsFile!.stream().pipeThrough(new DecompressionStream("gzip")),
