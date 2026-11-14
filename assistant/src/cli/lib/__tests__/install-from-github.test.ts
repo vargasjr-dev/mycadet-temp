@@ -72,7 +72,7 @@ function makeContentsFetch(opts: {
    */
   manifestStatus?: number;
 }): FetchLike {
-  const CATALOG_URL = "https://test-cloud.mycadet.ai/v1/plugins/";
+  const CATALOG_URL = "https://test.mycadet.ai/v1/plugins/";
   const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
   const { tree } = opts;
 

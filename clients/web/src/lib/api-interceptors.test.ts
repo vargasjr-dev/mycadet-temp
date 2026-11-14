@@ -6,7 +6,7 @@
  * daemon can echo the originator id back on `sync_changed` and the hub can
  * suppress the SSE echo to that subscriber.
  *
- * The test calls `requestInterceptor` directly instead of round-tripping
+ * The test calls `daemonRequestInterceptor` directly instead of round-tripping
  * through the HeyAPI client. That way we don't depend on any private
  * interceptor-list internals; if the interceptor function gets the inputs
  * right, the registrations at the bottom of the module do the rest.
@@ -53,7 +53,7 @@ mock.module("@/lib/diagnostics", () => ({
 
 import {
   daemonErrorInterceptor,
-  requestInterceptor,
+  daemonRequestInterceptor,
 } from "@/lib/api-interceptors";
 
 import { ApiError } from "@/utils/api-errors";
@@ -66,11 +66,11 @@ async function intercept(
   url = "https://example.test/v1/probe",
 ) {
   const request = new Request(url, { method });
-  const result = await requestInterceptor(request);
+  const result = await daemonRequestInterceptor(request);
   return result.headers;
 }
 
-describe("api-interceptors / requestInterceptor", () => {
+describe("api-interceptors / daemonRequestInterceptor", () => {
   test("attaches X-Cadet-Client-Id and X-Cadet-Interface-Id on GET", async () => {
     const headers = await intercept("GET");
     expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
@@ -103,7 +103,7 @@ describe("api-interceptors / requestInterceptor", () => {
     });
     expect(input.headers.get("X-Cadet-Client-Id")).toBeNull();
 
-    const output = await requestInterceptor(input);
+    const output = await daemonRequestInterceptor(input);
     expect(output).not.toBe(input);
     expect(input.headers.get("X-Cadet-Client-Id")).toBeNull();
     expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
@@ -133,36 +133,6 @@ describe("api-interceptors / Electron renderer-origin marker", () => {
     expect(headers.get(ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// Self-hosted rewriting — platform client (requestInterceptor)
-// ---------------------------------------------------------------------------
-//
-// When the assistant resolves to `{ kind: "self_hosted" }`, the lifecycle
-// hook calls `setSelfHostedConnection({ url, token })`. From that point
-// on, allowlisted runtime-proxied `/v1/assistants/{id}/<segment>/...`
-// calls leave the cloud's base URL behind and go directly to the
-// user's gateway.
-//
-// The cloud client uses the segment allowlist — only explicitly
-// listed segments are rewritten. Platform-owned routes like
-// `system-events/`, `terminal/`,
-// `doctor/` fall through to the cloud.
-//
-// These tests pin the invariants that make that handoff safe:
-//   - URL origin gets swapped to the registered ingress.
-//   - `Authorization: Bearer <token>` is attached when the connection
-//     has a token, and omitted when the token slot is `null` (the
-//     gateway then 401s, and the chat surface lands on its error UI —
-//     this is the deliberate behaviour during the brief post-hatch
-//     window where `bootstrap_platform_actor_token` hasn't landed yet).
-//   - Client/interface identity headers ride along so the gateway can
-//     still echo them back for self-echo suppression once SSE lands.
-//
-// Negative tests confirm we don't route to the gateway when (a) no
-// connection is set, (b) the path's first segment isn't on the allowlist
-// (`activate`, `system-events`, `terminal`, …), or
-// (c) the path is the bare retrieve route `/v1/assistants/{id}/`.
 
 // ---------------------------------------------------------------------------
 // Daemon error interceptor — ApiError normalization
@@ -256,17 +226,3 @@ describe("api-interceptors / daemonErrorInterceptor", () => {
     expect(result).not.toBeInstanceOf(ApiError);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Local-mode body buffering — large uploads must not stall
-// ---------------------------------------------------------------------------
-//
-// Over plain HTTP the body can't stream (Chrome refuses a `duplex: "half"`
-// body without TLS), so it's buffered. It MUST be buffered to a Blob, not an
-// ArrayBuffer: an ArrayBuffer body is streamed to the network process through
-// a fixed-capacity (~1-2 MB) data pipe, so a larger upload stalls forever when
-// the local consumer (a busy dev server) drains the pipe slowly — the symptom
-// being image/file uploads above ~1.5 MB hanging on "Stalled". A Blob is
-// passed by reference (blob handle), so there is no renderer-side data pipe to
-// block on. The test setup stamps remote "cloud"; these tests flip the
-// isLocalClient mock so it returns true and the buffering path runs.

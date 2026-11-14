@@ -38,7 +38,7 @@ mock.module("../tools/network/script-proxy/index.js", () => ({
 
 // Set up metadata store for credential resolution
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 
@@ -46,7 +46,6 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-shell-cred-ref-test-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 // Import the shell tool after mocks
 import { shellTool } from "../tools/terminal/shell.js";
@@ -59,17 +58,16 @@ const ctx: ToolContext = {
 };
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
   mockGetOrStartSession.mockClear();
   mockGetSessionEnv.mockClear();
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

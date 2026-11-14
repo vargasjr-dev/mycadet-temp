@@ -147,7 +147,7 @@ import {
   _resetRefreshBreakers,
 } from "../security/token-manager.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { resolveOAuthConnection } from "./connection-resolver.js";
@@ -174,7 +174,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  _setMetadataPath(join(TEST_DIR, "metadata.json"));
+  _resetCredentialMetadataCacheForTests();
   _resetBackend();
   // seeded tokens land somewhere real instead of reporting unreachable.
   useMemorySecureKeys();

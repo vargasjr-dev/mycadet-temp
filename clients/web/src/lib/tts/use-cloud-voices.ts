@@ -13,6 +13,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { dial } from "@/lib/dial";
+
 /**
  * A cloud voice as offered to the UI. `source` is a plain `string` so
  * voices the cloud serves before this client learns their source still
@@ -81,12 +83,13 @@ export function useUnscopedCloudVoices(
       // a self-hosted host 404s into the empty catalog it has always
       // shown. The generated client's device/registration headers are
       // identity hints the catalog read does not need.
-      // eslint-disable-next-line no-restricted-syntax -- the catalog read is host-plane; see above
-      const response = await fetch("/v1/cloud-speech/tts/voices/");
-      if (!response.ok) {
-        throw new Error(`The voice catalog dial failed (${response.status})`);
+      const { response, data } = await dial("/v1/cloud-speech/tts/voices/");
+      if (!response?.ok) {
+        throw new Error(
+          `The voice catalog dial failed (${response?.status})`,
+        );
       }
-      return (await response.json()) as VoiceCatalogResponse;
+      return data as VoiceCatalogResponse;
     },
   });
 

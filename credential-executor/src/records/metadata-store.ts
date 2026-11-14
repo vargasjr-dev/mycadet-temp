@@ -20,7 +20,7 @@ import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc
 
 import { getCesDataRoot } from "../paths.js";
 
-export const METADATA_FILENAME = "metadata.json";
+const METADATA_FILENAME = "metadata.json";
 
 const CURRENT_VERSION = 5;
 
@@ -74,7 +74,11 @@ function isRecord(value: unknown): value is CredentialRecord {
 }
 
 export class CesMetadataStore {
-  constructor(private readonly metadataPath: string) {}
+  private readonly metadataPath: string;
+
+  constructor() {
+    this.metadataPath = getMetadataPath(getCesDataRoot());
+  }
 
   getPath(): string {
     return this.metadataPath;
@@ -169,16 +173,39 @@ export class CesMetadataStore {
 
 let processStore: CesMetadataStore | undefined;
 
-export function initMetadataStore(cesDataRoot: string): CesMetadataStore {
-  processStore = new CesMetadataStore(getMetadataPath(cesDataRoot));
+export function initMetadataStore(): CesMetadataStore {
+  processStore = new CesMetadataStore();
   return processStore;
 }
 
 export function getMetadataStore(): CesMetadataStore {
   if (!processStore) {
-    processStore = new CesMetadataStore(getMetadataPath(getCesDataRoot()));
+    processStore = new CesMetadataStore();
   }
   return processStore;
+}
+
+/**
+ * Read credential records from a legacy metadata file (CES import 003 reads
+ * the leftover workspace `metadata.json`). The CES store itself always
+ * persists at the canonical data-root path; this reader is import-only.
+ */
+export function readCredentialRecordsFromFile(
+  path: string,
+): CredentialRecord[] {
+  if (!existsSync(path)) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf-8")) as {
+      credentials?: unknown;
+    };
+    return Array.isArray(parsed.credentials)
+      ? parsed.credentials.filter(isRecord)
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 /** Test-only: drop the process store so the next init uses a fresh path. */

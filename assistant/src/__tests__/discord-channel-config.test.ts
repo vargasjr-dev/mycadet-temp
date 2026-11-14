@@ -36,7 +36,6 @@ import {
 import { credentialKey } from "../security/credential-key.js";
 import * as secureKeys from "../security/secure-keys.js";
 import { _resetBackend, getSecureKeyAsync } from "../security/secure-keys.js";
-import { _setMetadataPath } from "../tools/credentials/metadata-store.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
@@ -74,7 +73,6 @@ function installDiscordApi(fake: FakeDiscord) {
 
 afterAll(() => {
   globalThis.fetch = originalFetch;
-  _setMetadataPath(null);
   _resetBackend();
 });
 
@@ -89,7 +87,6 @@ beforeEach(() => {
   rmSync(metadataPath, { force: true });
   _resetBackend();
   useMemorySecureKeys();
-  _setMetadataPath(metadataPath);
 });
 
 afterEach(() => {

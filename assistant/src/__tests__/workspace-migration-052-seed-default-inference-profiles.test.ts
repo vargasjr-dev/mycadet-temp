@@ -33,10 +33,6 @@ function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
 }
 
-function configPath(): string {
-  return join(workspaceDir, "config.json");
-}
-
 beforeEach(() => {
   freshWorkspace();
 });
@@ -47,30 +43,6 @@ afterEach(() => {
   }
 });
 
-const ANTHROPIC_QUALITY = {
-  provider: "anthropic",
-  model: "claude-opus-4-7",
-  maxTokens: 32000,
-  effort: "max",
-  thinking: { enabled: true, streamThinking: true },
-};
-
-const ANTHROPIC_BALANCED = {
-  provider: "anthropic",
-  model: "claude-sonnet-4-6",
-  maxTokens: 16000,
-  effort: "high",
-  thinking: { enabled: true, streamThinking: true },
-};
-
-const ANTHROPIC_COST = {
-  provider: "anthropic",
-  model: "claude-haiku-4-5-20251001",
-  maxTokens: 8192,
-  effort: "low",
-  thinking: { enabled: false, streamThinking: false },
-};
-
 describe("052-seed-default-inference-profiles migration", () => {
   test("has correct migration id", () => {
     expect(seedDefaultInferenceProfiles052.id).toBe(
@@ -78,168 +50,49 @@ describe("052-seed-default-inference-profiles migration", () => {
     );
   });
 
-  test("seeds all three profiles + activeProfile=balanced on Anthropic workspace", () => {
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
-    });
+  // The migration is retired: default profile content is code-owned
+  // (config/default-profile-catalog.ts) and resolves through the effective
+  // profile view whether or not `llm.profiles` carries an entry. Fresh
+  // hatches must leave `llm.profiles` empty so a hatch that selects, say,
+  // fireworks dispatches the code-defined defaults for that provider instead
+  // of seeded Anthropic bodies.
+
+  test("leaves a workspace without llm config untouched", () => {
+    writeConfig({ settings: { theme: "dark" } });
 
     seedDefaultInferenceProfiles052.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        profiles: Record<string, Record<string, unknown>>;
-        activeProfile: string;
-      };
-    };
-    expect(config.llm.profiles["quality-optimized"]).toEqual(ANTHROPIC_QUALITY);
-    expect(config.llm.profiles.balanced).toEqual(ANTHROPIC_BALANCED);
-    expect(config.llm.profiles["cost-optimized"]).toEqual(ANTHROPIC_COST);
-    expect(config.llm.activeProfile).toBe("balanced");
+    const config = readConfig() as { llm?: unknown };
+    expect(config.llm).toBeUndefined();
   });
 
-  test("defaults to Anthropic seeding when llm.default.provider is absent", () => {
-    writeConfig({});
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: {
-        profiles: Record<string, Record<string, unknown>>;
-        activeProfile: string;
-      };
-    };
-    expect(config.llm.profiles.balanced).toEqual(ANTHROPIC_BALANCED);
-    expect(config.llm.activeProfile).toBe("balanced");
-  });
-
-  test("is idempotent — second run produces identical bytes", () => {
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
-    });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-    const afterFirst = readFileSync(configPath(), "utf-8");
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-    const afterSecond = readFileSync(configPath(), "utf-8");
-
-    expect(afterSecond).toBe(afterFirst);
-  });
-
-  test("preserves an existing user-defined quality-optimized profile", () => {
-    const userProfile = {
-      provider: "anthropic",
-      model: "claude-opus-4-6",
-      maxTokens: 8000,
-      effort: "low",
-    };
-    writeConfig({
+  test("leaves existing profiles untouched", () => {
+    const before = {
       llm: {
         default: { provider: "anthropic" },
-        profiles: { "quality-optimized": userProfile },
-      },
-    });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { profiles: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.profiles["quality-optimized"]).toEqual(userProfile);
-    // The other two slots still get seeded with the defaults.
-    expect(config.llm.profiles.balanced).toEqual(ANTHROPIC_BALANCED);
-    expect(config.llm.profiles["cost-optimized"]).toEqual(ANTHROPIC_COST);
-  });
-
-  test("preserves an existing activeProfile on Anthropic workspaces", () => {
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic" },
-        activeProfile: "quality-optimized",
-      },
-    });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: { activeProfile: string };
-    };
-    expect(config.llm.activeProfile).toBe("quality-optimized");
-  });
-
-  test("non-Anthropic provider seeds empty shells but no activeProfile", () => {
-    writeConfig({
-      llm: { default: { provider: "openai", model: "gpt-5.4" } },
-    });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const config = readConfig() as {
-      llm: {
-        profiles: Record<string, Record<string, unknown>>;
-        activeProfile?: string;
-      };
-    };
-    expect(config.llm.profiles["quality-optimized"]).toEqual({});
-    expect(config.llm.profiles.balanced).toEqual({});
-    expect(config.llm.profiles["cost-optimized"]).toEqual({});
-    expect(config.llm.activeProfile).toBeUndefined();
-  });
-
-  test("does not touch existing llm.callSites entries", () => {
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic" },
-        callSites: {
-          interactionClassifier: { model: "claude-haiku-4-5-20251001" },
-          mainAgent: { model: "claude-opus-4-7", maxTokens: 32000 },
+        profiles: {
+          balanced: { provider: "anthropic", model: "claude-sonnet-4-6" },
         },
+        activeProfile: "balanced",
       },
-    });
+    };
+    writeConfig(before);
 
     seedDefaultInferenceProfiles052.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.interactionClassifier).toEqual({
-      model: "claude-haiku-4-5-20251001",
-    });
-    expect(config.llm.callSites.mainAgent).toEqual({
-      model: "claude-opus-4-7",
-      maxTokens: 32000,
-    });
-  });
-
-  test("writes fresh starter config when config.json is absent (Anthropic default)", () => {
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: {
-        profiles: Record<string, Record<string, unknown>>;
-        activeProfile: string;
-      };
-    };
-    expect(config.llm.profiles.balanced).toEqual(ANTHROPIC_BALANCED);
+    const config = readConfig() as typeof before;
+    expect(config.llm.profiles).toEqual(before.llm.profiles);
     expect(config.llm.activeProfile).toBe("balanced");
   });
 
-  test("seeded config parses cleanly through LLMSchema", () => {
-    writeConfig({
-      llm: { default: { provider: "anthropic" } },
+  test("empty llm.profiles passes the typed LLM schema", () => {
+    // The state a fresh hatch lands in: default provider set (the hatch's
+    // provider choice), no seeded profile entries.
+    const parsed = LLMSchema.parse({
+      default: { provider: "fireworks" },
+      activeProfile: "balanced",
     });
-
-    seedDefaultInferenceProfiles052.run(workspaceDir);
-
-    const onDisk = readConfig() as { llm: unknown };
-    const parsed = LLMSchema.parse(onDisk.llm);
-    expect(Object.keys(parsed.profiles ?? {})).toEqual(
-      expect.arrayContaining([
-        "quality-optimized",
-        "balanced",
-        "cost-optimized",
-      ]),
-    );
     expect(parsed.activeProfile).toBe("balanced");
+    expect(Object.keys(parsed.profiles ?? {})).toEqual([]);
   });
 });

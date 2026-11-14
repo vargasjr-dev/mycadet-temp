@@ -6,7 +6,7 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import {
@@ -20,18 +20,16 @@ const TEST_DIR = join(
   tmpdir(),
   `cadet-credresolve-test-${randomBytes(4).toString("hex")}`,
 );
-const META_PATH = join(TEST_DIR, "metadata.json");
 
 beforeEach(() => {
+  _resetCredentialMetadataCacheForTests();
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }
   mkdirSync(TEST_DIR, { recursive: true });
-  _setMetadataPath(META_PATH);
 });
 
 afterAll(() => {
-  _setMetadataPath(null);
   if (existsSync(TEST_DIR)) {
     rmSync(TEST_DIR, { recursive: true });
   }

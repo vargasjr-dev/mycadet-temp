@@ -41,7 +41,7 @@ import {
 const SHA_A = "a".repeat(40);
 const SHA_B = "b".repeat(40);
 const CANON_REPO = "vargasjr-dev/mycadet";
-const CATALOG_URL = "https://test-cloud.mycadet.ai/v1/plugins/";
+const CATALOG_URL = "https://test.mycadet.ai/v1/plugins/";
 const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
 
 /** A marketplace manifest pinning `name` to `ref`. */

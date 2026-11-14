@@ -112,7 +112,6 @@ import {
   _resetRefreshBreakers,
   withValidToken,
 } from "../security/token-manager.js";
-import { _setMetadataPath } from "../tools/credentials/metadata-store.js";
 
 describe("withValidToken refresh deduplication", () => {
   beforeAll(() => {
@@ -126,7 +125,6 @@ describe("withValidToken refresh deduplication", () => {
     for (const entry of readdirSync(TEST_DIR)) {
       rmSync(join(TEST_DIR, entry), { recursive: true, force: true });
     }
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
     _resetRefreshBreakers();
     _resetInflightRefreshes();
     mockRefreshOAuth2Token.mockClear();
@@ -137,7 +135,6 @@ describe("withValidToken refresh deduplication", () => {
   });
 
   afterEach(() => {
-    _setMetadataPath(null);
     _resetBackend();
     _resetRefreshBreakers();
     _resetInflightRefreshes();

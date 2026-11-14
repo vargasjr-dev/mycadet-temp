@@ -10,12 +10,16 @@
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { dial as dialCore } from "@/lib/dial";
+
 const AssistantDomainSchema = z.object({
   id: z.string(),
   subdomain: z.string(),
   created: z.string(),
   modified: z.string(),
 });
+/** A domain row as the scoped surface serves it. */
+export type AssistantDomain = z.infer<typeof AssistantDomainSchema>;
 const DOMAIN_VERIFICATION_STATUSES = [
   "verified",
   "pending",
@@ -37,13 +41,13 @@ async function fetchList<T extends z.ZodTypeAny>(
   path: string,
   rowSchema: T,
 ): Promise<z.infer<T>[]> {
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`The domain dial failed (${response.status})`);
+  const { response, data } = await dialCore(path);
+  if (!response?.ok) {
+    throw new Error(`The domain dial failed (${response?.status})`);
   }
   const body = z
     .object({ results: z.array(rowSchema) })
-    .parse(await response.json());
+    .parse(data);
   return body.results;
 }
 
@@ -51,19 +55,13 @@ async function dial(
   path: string,
   init?: RequestInit,
 ): Promise<unknown> {
-  const response = await fetch(path, init);
-  if (!response.ok) {
-    const detail = await response
-      .json()
-      .then((body) => (body as { detail?: unknown }).detail)
-      .catch(() => null);
+  const { response, data, detail } = await dialCore(path, init);
+  if (!response?.ok) {
     throw new Error(
-      typeof detail === "string"
-        ? detail
-        : `The domain dial failed (${response.status})`,
+      detail ?? `The domain dial failed (${response?.status})`,
     );
   }
-  return response.json().catch(() => null);
+  return data;
 }
 
 const scoped = (assistantId: string, tail: string) =>

@@ -52,7 +52,7 @@ import {
 } from "../../tools/credentials/metadata-store.js";
 import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
-import { isPlatformCloudCredential } from "./cloud-credentials.js";
+import { isCloudCredential } from "./cloud-credentials.js";
 import {
   assertCredentialNotInUse,
   invalidateConnectionsAfterCredentialDelete,
@@ -328,7 +328,7 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         }
         assertMetadataWritable();
         await persistCredential(service, field, value);
-        if (isPlatformCloudCredential(service, field)) {
+        if (isCloudCredential(service, field)) {
           await refreshProvidersAfterSecretChange();
           // Close the first-boot race where the startup capability seed ran before
           // the cloud embedding credential was provisioned, leaving skill/CLI

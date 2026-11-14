@@ -18,10 +18,8 @@ import {
 import { MemoryRouter } from "react-router";
 
 import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
-import type {
-  AssistantDomain,
-  AssistantEmailAddress,
-} from "@/generated/api/types.gen";
+import type { AssistantDomain } from "@/lib/assistant-domains";
+import type { EmailAddress } from "@/lib/email-api";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
 import * as cloudGate from "@/assistant/hosting";
@@ -71,7 +69,7 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
 }));
 
 /** The address list, empty until setup registers one. */
-let addresses: AssistantEmailAddress[] = [];
+let addresses: EmailAddress[] = [];
 /** The domain list, empty on a fresh upgrade. */
 let domains: AssistantDomain[] = [];
 const domainCreateBodies: unknown[] = [];

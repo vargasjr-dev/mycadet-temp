@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -63,7 +63,7 @@ import {
 } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
 import {
-  _setMetadataPath,
+  _resetCredentialMetadataCacheForTests,
   getCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
@@ -238,16 +238,15 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
   let broker: CredentialBroker;
 
   beforeEach(() => {
+    _resetCredentialMetadataCacheForTests();
     mkdirSync(TEST_DIR, { recursive: true });
     _resetBackend();
     // reads/writes land somewhere real instead of reporting unreachable.
     useMemorySecureKeys();
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
-    _setMetadataPath(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });
@@ -325,15 +324,14 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
 
 describe("Invariant 6: oauth2ClientSecret not in metadata, only in secure store", () => {
   beforeEach(() => {
+    _resetCredentialMetadataCacheForTests();
     mkdirSync(TEST_DIR, { recursive: true });
     _resetBackend();
     // reads/writes land somewhere real instead of reporting unreachable.
     useMemorySecureKeys();
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
   });
 
   afterEach(() => {
-    _setMetadataPath(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });
@@ -369,40 +367,15 @@ describe("Invariant 6: oauth2ClientSecret not in metadata, only in secure store"
     ).toBe("my-secret");
   });
 
-  test("v2 metadata with oauth2ClientSecret is stripped on migration", () => {
-    const v2Data = {
-      version: 2,
-      credentials: [
-        {
-          credentialId: "cred-v2-secret",
-          service: "google",
-          field: "access_token",
-          allowedTools: [],
-          allowedDomains: [],
-          oauth2TokenUrl: "https://oauth2.googleapis.com/token",
-          oauth2ClientId: "test-client-id",
-          oauth2ClientSecret: "plaintext-secret-should-be-stripped",
-          createdAt: 1700000000000,
-          updatedAt: 1700000000000,
-        },
-      ],
-    };
-    writeFileSync(
-      join(TEST_DIR, "metadata.json"),
-      JSON.stringify(v2Data, null, 2),
-      "utf-8",
-    );
-
-    const meta = getCredentialMetadata("google", "access_token");
-    expect(meta).toBeDefined();
-    expect("oauth2ClientSecret" in meta!).toBe(false);
-
-    // Verify on-disk file no longer contains the secret
-    const raw = JSON.parse(
-      readFileSync(join(TEST_DIR, "metadata.json"), "utf-8"),
-    );
-    expect(raw.credentials[0]).not.toHaveProperty("oauth2ClientSecret");
-    expect(raw.version).toBe(5);
+  test("upserted metadata never carries oauth2ClientSecret or other OAuth fields", () => {
+    upsertCredentialMetadata("google", "access_token", {
+      allowedTools: ["api_request"],
+    });
+    const record = getCredentialMetadata("google", "access_token");
+    expect(record).toBeDefined();
+    expect("oauth2ClientSecret" in record!).toBe(false);
+    expect("oauth2TokenUrl" in record!).toBe(false);
+    expect("oauth2ClientId" in record!).toBe(false);
   });
 });
 

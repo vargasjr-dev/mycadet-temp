@@ -14,8 +14,8 @@ import type { CredentialRecord } from "@mycadet/service-contracts/credential-rpc
 import type { CredentialRecordBackend } from "../security/ces-rpc-record-backend.js";
 import {
   _ensureCesRecordsLoaded,
+  _resetCredentialMetadataCacheForTests,
   _setHttpRecordBackendForTests,
-  _setMetadataPath,
   getCredentialMetadata,
   listCredentialRecordsLive,
   setCredentialRecordBackend,
@@ -92,8 +92,8 @@ function makeBackend(name?: string): CredentialRecordBackend & {
 describe("CES credential record cache", () => {
   beforeEach(() => {
     setCredentialRecordBackend(undefined);
+    _resetCredentialMetadataCacheForTests();
     _setHttpRecordBackendForTests(null);
-    _setMetadataPath(null);
     const leftover = leftoverPath();
     if (existsSync(leftover)) {
       rmSync(leftover, { force: true });
@@ -102,8 +102,8 @@ describe("CES credential record cache", () => {
 
   afterEach(() => {
     setCredentialRecordBackend(undefined);
+    _resetCredentialMetadataCacheForTests();
     _setHttpRecordBackendForTests(null);
-    _setMetadataPath(null);
     const leftover = leftoverPath();
     if (existsSync(leftover)) {
       rmSync(leftover, { force: true });
@@ -291,7 +291,10 @@ describe("CES credential record cache", () => {
 
   test("live catalog list fails over to CES HTTP when CES RPC is unavailable", async () => {
     const rpc = makeBackend("ces-rpc");
+    // An unavailable transport reports `null` from list() — an outage must
+    // not look like a successful empty catalog.
     rpc.isAvailable = () => false;
+    rpc.list = async () => null;
     setCredentialRecordBackend(rpc);
 
     const http = makeBackend("ces-http");
