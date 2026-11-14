@@ -611,13 +611,10 @@ describe("reconcileTelegramWebhook", () => {
 
     await reconcileTelegramWebhook(caches);
 
-    // Platform credentials present: the managed callback route is attempted
-    // first (LUM-2899), then the explicit-disable deletion still runs.
-    expect(calls).toEqual([
-      "unexpected:https://api.telegram.org/bottest-bot-token/getMe",
-      "unexpected:https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/",
-      "deleteWebhook",
-    ]);
+    // The explicit-disable branch precedes every tier (cloud pods are the
+    // exemption, and this isn't one): the webhook is deleted without any
+    // managed callback attempt.
+    expect(calls).toEqual(["deleteWebhook"]);
   });
 
   test("deregisters the webhook when ingress is explicitly disabled even with an ingress URL", async () => {
