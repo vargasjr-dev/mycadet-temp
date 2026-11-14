@@ -23,7 +23,10 @@ import {
 } from "@mycadet/ces-client/rpc-client";
 
 import { getLogger } from "../util/logger.js";
-import { CesUnavailableError, createCesProcessManager } from "./process-manager.js";
+import {
+  CesUnavailableError,
+  createCesProcessManager,
+} from "./process-manager.js";
 
 const log = getLogger("ces-rpc-client");
 
@@ -56,8 +59,6 @@ export interface CesSessionClient extends CesRpcClient, CesClientLifecycle {}
 export interface CesSessionClientOptions {
   /** Handshake material reused verbatim across reconnections. */
   handshake?: CesRpcHandshakeOptions;
-  /** Abort signal — aborts the initial connect and any reconnect loop. */
-  signal?: AbortSignal;
   /** Socket discovery override. Tests inject a stub. */
   discover?: Parameters<typeof createCesProcessManager>[0]["discover"];
   /** RPC/handshake timeouts forwarded to the shared client. */
@@ -70,16 +71,16 @@ export interface CesSessionClientOptions {
  * reconnection (same handshake, bounded backoff) instead of surfacing a
  * close callback to the caller.
  *
- * Returns undefined when CES is missing, the handshake is rejected, or the
- * abort signal fires. The transport is stopped on those paths so a later
- * call can open a fresh session.
+ * Returns undefined when CES is missing or the handshake is rejected. The
+ * transport is stopped on those paths so a later call can open a fresh
+ * session. Shutdown goes through `client.forceStop()`, which also stops any
+ * in-session reconnect loop.
  */
 export async function createCesClient(
   options: CesSessionClientOptions = {},
 ): Promise<CesSessionClient | undefined> {
   const pm = createCesProcessManager({ discover: options.discover });
   const handshake = options.handshake;
-  const signal = options.signal;
 
   let inner: CesRpcClient | undefined;
   let stopping = false;
@@ -95,11 +96,16 @@ export async function createCesClient(
   /** Connect + handshake one transport. Returns the ready inner client. */
   const connectOnce = async (): Promise<CesRpcClient> => {
     const transport = await pm.start();
-    const rpc = createCesRpcClient(transport, { logger: log, ...options.config });
+    const rpc = createCesRpcClient(transport, {
+      logger: log,
+      ...options.config,
+    });
     const { accepted, reason } = await rpc.handshake(handshake);
     if (!accepted) {
       rpc.close();
-      throw new Error(reason ? `CES handshake rejected: ${reason}` : "CES handshake rejected");
+      throw new Error(
+        reason ? `CES handshake rejected: ${reason}` : "CES handshake rejected",
+      );
     }
     return rpc;
   };
@@ -110,7 +116,7 @@ export async function createCesClient(
    * keep calling the same object.
    */
   const scheduleReconnect = (): void => {
-    if (stopping || signal?.aborted) {
+    if (stopping) {
       return;
     }
     if (reconnecting) {
@@ -126,7 +132,7 @@ export async function createCesClient(
         if (delay > 0) {
           await sleep(delay);
         }
-        if (stopping || signal?.aborted) {
+        if (stopping) {
           reconnecting = false;
           log.info("CES reconnect loop stopped — session is closing");
           return;
@@ -171,9 +177,7 @@ export async function createCesClient(
     },
     call(method, request) {
       if (!inner) {
-        return Promise.reject(
-          new CesClientError("CES session is closed"),
-        );
+        return Promise.reject(new CesClientError("CES session is closed"));
       }
       return inner.call(method, request);
     },
@@ -198,11 +202,6 @@ export async function createCesClient(
       return stopInternal(true);
     },
   };
-
-  if (signal?.aborted) {
-    await pm.stop().catch(() => {});
-    return undefined;
-  }
 
   try {
     inner = await connectOnce();

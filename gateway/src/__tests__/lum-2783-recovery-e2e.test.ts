@@ -22,6 +22,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import "./test-preload.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 import {
   ensureCadetGuardianBinding,
@@ -37,7 +38,7 @@ import {
 import { actorTokenRecords, contacts, contactChannels } from "../db/schema.js";
 import { resolveTrustVerdict } from "../risk/trust-verdict-resolver.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 const PRINCIPAL = "cadet-principal-0aafaf2";

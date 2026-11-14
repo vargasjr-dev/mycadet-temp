@@ -6,13 +6,14 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import { AdmissionPolicyStore } from "../db/admission-policy-store.js";
 import { credentialKey } from "../credential-key.js";
 import { initSigningKey } from "../auth/token-service.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 import {
   initAdmissionPolicyCache,
   resetAdmissionPolicyCache,
 } from "../risk/admission-policy-cache.js";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 type FetchFn = (

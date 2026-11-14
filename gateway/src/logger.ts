@@ -113,18 +113,13 @@ function openSecureDestination(filePath: string): pino.DestinationStream {
 }
 
 function buildLogger(config: LogFileConfig | null): pino.Logger {
+  if (process.env["GATEWAY_LOG_SILENT"]?.trim() === "1") {
+    return pino({ name: "gateway", level: "silent" });
+  }
   if (!config?.dir) {
-    // Pretty logs go to STDERR, not stdout: one-shot CLI invocations
-    // (`gateway pairing mint`, `gateway devices list`, ...) print
-    // machine-readable JSON on stdout, and their callers parse it — the
-    // first pretty log line (e.g. the auth token service's startup log)
-    // would otherwise precede (and, with pino's async writes, sometimes
-    // FOLLOW) the payload and break last-line JSON parsing. Docker and
-    // the hatch supervisor capture both fds to the same place, so server
-    // log visibility is unchanged.
     return pino(
       { name: "gateway", serializers: logSerializers },
-      pinoPretty(prettyOpts({ destination: 2 })),
+      pinoPretty(prettyOpts({ destination: 1 })),
     );
   }
 
@@ -156,7 +151,7 @@ function buildLogger(config: LogFileConfig | null): pino.Logger {
       { stream: prettyFileStream, level: "info" as const },
       { stream: jsonFileStream, level: "info" as const },
       {
-        stream: pinoPretty(prettyOpts({ destination: 2 })),
+        stream: pinoPretty(prettyOpts({ destination: 1 })),
         level: "info" as const,
       },
     ]),

@@ -19,17 +19,4 @@ describe("createCesClient", () => {
     expect(client).toBeUndefined();
     expect(Date.now() - start).toBeLessThan(1_000);
   });
-
-  test("returns undefined when the abort signal is already fired", async () => {
-    const abort = new AbortController();
-    abort.abort();
-    const client = await createCesClient({
-      discover: async () => {
-        throw new Error("discover should not run after abort");
-      },
-      signal: abort.signal,
-    });
-
-    expect(client).toBeUndefined();
-  });
 });

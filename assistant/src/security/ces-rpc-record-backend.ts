@@ -24,10 +24,19 @@ const log = getLogger("ces-rpc-record-backend");
 /** Minimum interval between CES connection attempts after a failure. */
 const LAZY_SESSION_COOLDOWN_MS = 3_000;
 
+/** How long ensureClient waits on a self-healing session before giving up. */
+const RECONNECT_WAIT_MS = 15_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 class CesRpcRecordBackend {
   /**
-   * The live IPC client, opened by this backend's first record operation and
-   * reopened on the next operation whenever the transport dies.
+   * The live IPC session, opened by this backend's first record operation.
+   * The session owns its transport and reconnection: after a CES restart the
+   * same reference becomes ready again, so this backend never re-opens or
+   * swaps clients itself.
    */
   private client: CesSessionClient | undefined;
 
@@ -48,14 +57,26 @@ class CesRpcRecordBackend {
    * surface that rather than degrading, so a lost write is never mistaken
    * for a successful one. Failed attempts are not re-attempted within the
    * cooldown window: every operation would otherwise re-pay the discovery
-   * polling while CES is down.
+   * polling while CES is down. A held session whose transport died is NOT
+   * dropped here — the session reconnects itself; we just wait for it.
    */
   async ensureClient(): Promise<CesClient> {
     if (this.client?.isReady()) {
       return this.client;
     }
-    // Stale client from a dead transport — drop it and re-open below.
-    this.client = undefined;
+    if (this.client && !this.client.isReady()) {
+      // The session is self-healing (in-session reconnect loop) — wait for
+      // it to come back rather than opening a competing session.
+      for (let waited = 0; waited < RECONNECT_WAIT_MS; waited += 250) {
+        await sleep(250);
+        if (this.client.isReady()) {
+          return this.client;
+        }
+      }
+      throw new CesUnavailableError(
+        "CES is unreachable (session reconnect did not become ready)",
+      );
+    }
     if (Date.now() - this.lastFailedAttemptAt < LAZY_SESSION_COOLDOWN_MS) {
       throw new CesUnavailableError(
         "CES is unreachable (recent connection attempt failed)",

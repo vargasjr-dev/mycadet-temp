@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 
 import {
   afterAll,
@@ -72,7 +73,7 @@ type PluginWebhookHandlerDeps = Parameters<
 // The handler mints a real service token for the upstream hop. Initialising
 // the key beats mocking token-exchange, which is process-wide in bun and
 // would leak into every other suite in the run.
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 // Inbound delivery claims each message against redelivery, and that claim is

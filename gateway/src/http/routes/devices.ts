@@ -105,10 +105,22 @@ export async function runDevicesCommand(args: string[]): Promise<number> {
       console.log("No devices found.");
       return 0;
     }
-    console.log("DEVICE ID  PLATFORM  NAME");
+    // Hashed device ids vary in length — pad every column (header included)
+    // to its widest value so the rows stay aligned.
+    const idWidth = Math.max(
+      "DEVICE ID".length,
+      ...devices.map((d) => d.hashedDeviceId.length),
+    );
+    const platformWidth = Math.max(
+      "PLATFORM".length,
+      ...devices.map((d) => d.platform.length),
+    );
+    console.log(
+      `DEVICE ID${" ".repeat(idWidth - "DEVICE ID".length)}  PLATFORM${" ".repeat(platformWidth - "PLATFORM".length)}  NAME`,
+    );
     for (const device of devices) {
       console.log(
-        `${device.hashedDeviceId}  ${device.platform}  ${device.clientReportedName}`,
+        `${device.hashedDeviceId.padEnd(idWidth)}  ${device.platform.padEnd(platformWidth)}  ${device.clientReportedName}`,
       );
     }
     console.log("");

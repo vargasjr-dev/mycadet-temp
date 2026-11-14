@@ -194,6 +194,7 @@ export {
 
 export { loopbackSafeFetch, isLoopbackUrl } from "./loopback-fetch";
 export {
+  pairCliStdoutToResult,
   pairDevice,
   type PairDeviceIdentity,
   type PairOperationResult,

@@ -22,40 +22,28 @@ export interface PairDeviceIdentity {
 }
 
 /**
- * The gateway CLI prints the pair payload as single-line JSON; the payload
- * line is the last stdout line that parses as JSON (scanned in reverse —
- * pino's async writes can land a log line after it, and a pretty log object
- * spans multiple lines, so "literally the last line" is not always the
- * payload).
+ * The gateway CLI prints the pair payload as single-line JSON; its last
+ * stdout line is the answer (earlier lines may carry warnings). The CLI
+ * itself runs with pino silenced, so the payload line is reliably last.
  */
 export function pairCliStdoutToResult(stdout: string): PairOperationResult {
-  const jsonLine = stdout
-    .split("\n")
-    .filter(Boolean)
-    .reverse()
-    .find((line) => {
-      try {
-        JSON.parse(line);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-  if (jsonLine !== undefined) {
-    return { ok: true, response: JSON.parse(jsonLine) };
+  const lastLine = stdout.split("\n").filter(Boolean).pop() ?? "";
+  try {
+    return { ok: true, response: JSON.parse(lastLine) };
+  } catch {
+    // The output is the only diagnostic for a failed lease — surface a
+    // bounded tail of it (the payload line never parsed, so it is not a
+    // live credential; earlier lines may still carry secrets, so keep the
+    // tail, not the whole stdout).
+    const tail = stdout.trimEnd().slice(-300);
+    return {
+      ok: false,
+      status: 0,
+      error: `could not parse the gateway's pair output${
+        tail ? ` (stdout tail: ${tail})` : " (stdout was empty)"
+      }`,
+    };
   }
-  // The output is the only diagnostic for a failed lease — surface a
-  // bounded tail of it (no line parsed as JSON, so none is a live
-  // credential; earlier lines may still carry secrets, so keep the tail,
-  // not the whole stdout).
-  const tail = stdout.trimEnd().slice(-300);
-  return {
-    ok: false,
-    status: 0,
-    error: `could not parse the gateway's pair output${
-      tail ? ` (stdout tail: ${tail})` : " (stdout was empty)"
-    }`,
-  };
 }
 
 export async function pairDevice(

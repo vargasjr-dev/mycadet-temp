@@ -22,6 +22,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 import {
   afterAll,
   afterEach,
@@ -60,9 +61,7 @@ mock.module("../../db/assistant-db-proxy.js", () => ({
 }));
 
 // Initialize signing key before any module that mints tokens is imported.
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from(
-  "test-signing-key-0123456789abcde",
-).toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 const { parsePairingArgs, parsePairingMintArgs, runPairingCommand } =

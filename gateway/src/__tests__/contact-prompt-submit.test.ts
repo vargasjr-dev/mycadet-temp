@@ -21,8 +21,9 @@ import {
 } from "bun:test";
 
 import { initSigningKey } from "../auth/token-service.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 // ---------------------------------------------------------------------------

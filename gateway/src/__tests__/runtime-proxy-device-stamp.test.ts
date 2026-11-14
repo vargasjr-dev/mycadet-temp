@@ -20,8 +20,9 @@ import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import type { ScopeProfile } from "../auth/types.js";
 import type { GatewayConfig } from "../config.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 // --- Upstream daemon stubs (registered before the modules under test) ------

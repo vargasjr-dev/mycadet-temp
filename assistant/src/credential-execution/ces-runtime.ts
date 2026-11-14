@@ -21,7 +21,6 @@ const log = getLogger("ces-runtime");
  */
 
 let clientPromise: Promise<CesClient | undefined> | undefined;
-let initAbortController: AbortController | undefined;
 let clientRef: CesSessionClient | undefined;
 /** Monotonically increasing counter to detect stale client updates. */
 let clientGeneration = 0;
@@ -35,8 +34,6 @@ let clientGeneration = 0;
  * `clientRef` is updated once the handshake resolves.
  */
 export async function initializeCesClient(): Promise<void> {
-  const abortController = new AbortController();
-  initAbortController = abortController;
   const generation = ++clientGeneration;
 
   // Snapshot the API key inside this promise (not before it) to avoid a
@@ -49,9 +46,6 @@ export async function initializeCesClient(): Promise<void> {
       // after hatch and stored in the credential store. CES can't read
       // the env var, so we pass it via the handshake.
       const proxyCtx = await resolveCloudProxyContext();
-      if (abortController.signal.aborted) {
-        return undefined;
-      }
       const assistantId = getCloudAssistantId();
       const handshake: CesClientHandshakeOptions = {
         ...(proxyCtx.assistantApiKey
@@ -59,10 +53,7 @@ export async function initializeCesClient(): Promise<void> {
           : {}),
         ...(assistantId ? { assistantId } : {}),
       };
-      const client = await createCesClient({
-        signal: abortController.signal,
-        handshake,
-      });
+      const client = await createCesClient({ handshake });
       if (client && clientGeneration === generation) {
         clientRef = client;
         log.info(
@@ -95,12 +86,6 @@ export function getCesClient(): CesClient | undefined {
 export async function stopCes(): Promise<void> {
   // Drop the record backend's own session too.
   await cesRecordBackend.close().catch(() => {});
-  // Abort any in-flight CES initialization so it fails fast instead of
-  // blocking shutdown for up to ~15s (socket connect + handshake timeouts).
-  if (initAbortController) {
-    initAbortController.abort();
-    initAbortController = undefined;
-  }
   // Force-stop the live session's transport — forceStop() works even if
   // start() hasn't finished (unlike stop() which is a no-op when not
   // connected), and it disables the session's own reconnection loop.

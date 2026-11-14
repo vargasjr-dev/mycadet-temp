@@ -36,6 +36,7 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   loopbackSafeFetch,
+  pairCliStdoutToResult,
   pairDocker,
   pairLocal,
 } from "@mycadet/local-mode";
@@ -205,29 +206,14 @@ async function mintPairingChallengeOrExit(
 function parseMintedChallenge(
   stdout: string,
 ): RemoteWebPairingChallengeResponse {
-  // Scanned in reverse: pino's async writes can land a log line after the
-  // payload, and a pretty log object spans multiple lines, so "literally
-  // the last line" is not always the challenge.
-  const jsonLine = stdout
-    .split("\n")
-    .filter(Boolean)
-    .reverse()
-    .find((line) => {
-      try {
-        JSON.parse(line);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-  let challenge: RemoteWebPairingChallengeResponse;
-  try {
-    if (jsonLine === undefined) throw new Error("no JSON line in stdout");
-    challenge = JSON.parse(jsonLine) as RemoteWebPairingChallengeResponse;
-  } catch {
+  // Same last-line JSON contract the guardian lease's pair door uses — the
+  // CLI runs with pino silenced, so the payload line is reliably last.
+  const parsed = pairCliStdoutToResult(stdout);
+  if (!parsed.ok) {
     console.error("Error: could not parse the gateway's pairing mint output.");
     process.exit(1);
   }
+  const challenge = parsed.response as RemoteWebPairingChallengeResponse;
   if (!challenge.deviceCode || !challenge.userCode) {
     console.error(
       "Error: the gateway's pairing mint output is missing the challenge codes.",

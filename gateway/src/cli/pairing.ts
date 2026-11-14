@@ -196,7 +196,7 @@ async function runPairingList(json: boolean): Promise<number> {
   const leases = await listLocalDeviceLeases().catch(() => []);
   if (leases.length > 0) {
     console.log("");
-    console.log("Device-bound leases (this guardian):");
+    console.log("Device-bound leases:");
     for (const lease of leases) {
       console.log(
         `  ${lease.hashedDeviceId}  ${lease.platform}  ${
@@ -210,18 +210,11 @@ async function runPairingList(json: boolean): Promise<number> {
 }
 
 /**
- * The local guardian's active device-bound leases, via the same handler the
+ * The guardian's active device-bound leases, via the same handler the
  * `gateway devices list` command renders. Best-effort context for the list
  * view; an empty array on failure keeps the challenge listing working.
  */
-async function listLocalDeviceLeases(): Promise<
-  Array<{
-    hashedDeviceId: string;
-    platform: string;
-    clientReportedName: string | null;
-    issuedAt: Date | number | string;
-  }>
-> {
+async function listLocalDeviceLeases() {
   try {
     const { handleListDevices } = await import("../http/routes/devices.js");
     return await handleListDevices();

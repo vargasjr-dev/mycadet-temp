@@ -17,6 +17,7 @@ import {
   mock,
   test,
 } from "bun:test";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 
 import {
   hashInviteToken,
@@ -85,7 +86,7 @@ await import("./test-preload.js");
 
 const { initSigningKey, verifyToken } =
   await import("../auth/token-service.js");
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 const { initGatewayDb, getGatewayDb, resetGatewayDb } =

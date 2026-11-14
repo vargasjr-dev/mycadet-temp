@@ -2,6 +2,7 @@ import { describe, test, expect, mock, beforeEach, afterAll } from "bun:test";
 import type { GatewayConfig } from "../config.js";
 import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
+import { setTestSigningKey } from "./helpers/signing-key.js";
 import {
   createTwilioMediaWebsocketHandler,
   extractMediaStreamMetadata,
@@ -12,7 +13,7 @@ import {
 // Auth setup — initialize signing key so JWT minting/validation works
 // ---------------------------------------------------------------------------
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 /**

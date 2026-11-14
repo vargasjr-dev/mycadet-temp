@@ -277,14 +277,19 @@ describe("document editor history remount", () => {
         timeout: 10000,
       });
       // The store update that repaints the textarea trails the write by a
-      // render cycle (content prop → keyed effect) — under CI worker
-      // starvation the sync read can observe the pre-flush DOM
-      // (10/16/19 headroom pattern).
+      // render cycle (content prop → keyed effect). The drain completes on
+      // microtasks AFTER act()'s flush window (the held write resolves
+      // inside the write mock's continuation), so the repaint's state
+      // update can sit unflushed forever under CI worker starvation —
+      // waitFor only polls the DOM, it never makes React flush. Pump act
+      // on every poll so the pending render actually lands.
       await waitFor(
-        () =>
+        async () => {
+          await act(async () => {});
           expect((input as HTMLTextAreaElement).value).toBe(
             "Latest local body",
-          ),
+          );
+        },
         { timeout: 10000 },
       );
       fireEvent.change(input, {

@@ -7,6 +7,7 @@ import { initSigningKey } from "../../auth/token-service.js";
 import type { PluginIngressResolution } from "../../channels/plugin-ingress-approvals.js";
 import type { GatewayConfig } from "../../config.js";
 import { signHandshakeUrl } from "../plugin-ingress-handshake.js";
+import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 import {
   createPluginWebhookWebsocketHandler,
   getPluginWebhookWebsocketHandlers,
@@ -15,7 +16,7 @@ import {
 } from "./plugin-webhook-websocket.js";
 import { IngressRoute } from "../../channels/plugin-ingress.js";
 
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 const CONFIG = {

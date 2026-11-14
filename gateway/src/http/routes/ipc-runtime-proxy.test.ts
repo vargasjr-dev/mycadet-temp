@@ -13,6 +13,7 @@ import { isTrustCheckedScopeProfile } from "@mycadet/gateway-client";
 
 import { isNarrowScopeProfile } from "../../auth/scopes.js";
 import type { ScopeProfile } from "../../auth/types.js";
+import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 
 // ---------------------------------------------------------------------------
 // Mock implementations
@@ -214,7 +215,7 @@ mock.module("../../risk/trust-verdict-resolver.js", () => ({
 
 // The HTTP proxy mints a service token for the daemon on every request.
 const { initSigningKey } = await import("../../auth/token-service.js");
-process.env.ACTOR_TOKEN_SIGNING_KEY = Buffer.from("test-signing-key-0123456789abcde").toString("hex");
+setTestSigningKey();
 initSigningKey();
 
 // ---------------------------------------------------------------------------
