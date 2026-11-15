@@ -152,7 +152,7 @@ final class SameOriginAPIHandlerTests: XCTestCase {
                     " SameSite=Strict",
                     " Path=/",
                     " Max-Age=900",
-                ].joined()
+                ].joined(separator: "; ")
             ]
         )!
         SameOriginAPIHandler.storeCookies(from: response, for: base)
