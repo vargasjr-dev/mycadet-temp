@@ -159,7 +159,7 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
         guard !overTLS, cookie.isSecure else {
             return cookie
         }
-        var properties: [HTTPCookie.PropertyKey: Any] = [
+        var properties: [HTTPCookiePropertyKey: Any] = [
             .name: cookie.name,
             .value: cookie.value,
             .domain: cookie.domain,
