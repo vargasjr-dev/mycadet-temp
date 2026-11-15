@@ -27,6 +27,7 @@ import {
 } from "../lib/guardian-token.js";
 import {
   getOrCreatePersistedDeviceId,
+  GuardianLeasePermanentError,
   leaseGuardianToken,
   parseGuardianToken,
 } from "@mycadet/local-mode";
