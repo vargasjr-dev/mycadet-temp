@@ -42,19 +42,20 @@ const resolveActual = await import("@app/assistant/resolve-assistant");
 type Resolution = Awaited<ReturnType<typeof resolveActual.resolveAssistant>>;
 let resolutionReadyFromCall = 1;
 let resolutionCallCount = 0;
-const resolveAssistantMock = mock(async (): Promise<Resolution> => {
+function defaultResolutionBehavior(): Promise<Resolution> {
   resolutionCallCount += 1;
   if (resolutionCallCount >= resolutionReadyFromCall) {
-    return {
+    return Promise.resolve({
       status: "ready",
       assistant: {
         id: "local-1",
         version: "0.13.0",
       },
-    };
+    });
   }
-  return { status: "notReady" };
-});
+  return Promise.resolve({ status: "notReady" });
+}
+const resolveAssistantMock = mock(defaultResolutionBehavior);
 
 const writeSelectionMock = mock((_id: string) => {});
 
@@ -101,6 +102,7 @@ describe("hatching screen", () => {
     seedHatchAvatarMock.mockClear();
     resolutionCallCount = 0;
     resolutionReadyFromCall = 1;
+    resolveAssistantMock.mockImplementation(defaultResolutionBehavior);
     searchParams = new URLSearchParams();
   });
 
@@ -132,6 +134,21 @@ describe("hatching screen", () => {
       `${routes.onboarding.research}?hosting=local&assistant=local-1`,
       { replace: true },
     );
+  });
+
+  test("a resolution that says unauthenticated renders the error screen and stops asking", async () => {
+    searchParams = new URLSearchParams("hosting=local");
+    resolveAssistantMock.mockImplementation(async () => {
+      resolutionCallCount += 1;
+      return { status: "unauthenticated" } as Resolution;
+    });
+    render(<HatchingScreen />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
+    expect(hatchAssistantMock).toHaveBeenCalledWith("local");
+    // The 401 is fatal: one query, no polling, no handoff.
+    expect(resolutionCallCount).toBe(1);
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 
   test("the docker hatch passes the docker remote and carries the hosting choice to research", async () => {

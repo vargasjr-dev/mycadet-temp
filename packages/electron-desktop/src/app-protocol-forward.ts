@@ -1,4 +1,4 @@
-import { app, net, protocol } from "electron";
+import { app, net, protocol, session } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -9,6 +9,7 @@ import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
+  getGuardianAccessToken,
   readLockfile,
   resolveLocalConfigFromEnv,
   servedConfigFromLockfile,
@@ -25,6 +26,26 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
 const APP_PROTOCOL = "app";
 const APP_HOST = "mycadet.ai";
 const RENDERER_MOUNT = "/assistant";
+
+/** The hatch row's operator path — the pairing cookie ships off its 200. */
+const HATCH_PATH = "/v1/assistants/hatch";
+
+/**
+ * The gateway's browser access cookie (#576 cookie custody): the webview
+ * presents it and the gateway's edge never needs a token in page JS.
+ */
+const GATEWAY_ACCESS_COOKIE = "cadet_web_access";
+
+/** The cookie jar the webview's requests ride (Electron's `Cookies`). */
+export interface PairingCookieSink {
+  set: (details: {
+    url: string;
+    name: string;
+    value: string;
+    httpOnly?: boolean;
+    path?: string;
+  }) => Promise<void>;
+}
 
 const appOrigin = (): AllowedOrigin => ({
   protocol: `${APP_PROTOCOL}:`,
@@ -60,6 +81,67 @@ const resolveWebDistRoot = (): string => {
   return path.join(repoRoot(), "clients", "web", "dist");
 };
 
+/**
+ * Ship the hatch's pairing credential up to the client: a successful
+ * local/docker hatch leases a guardian token (the pairing), and the
+ * webview's subsequent same-origin calls — the boot resolution's
+ * `GET /v1/assistant` first among them — authenticate only when the
+ * browser presents it. The main process owns the lease's import (the
+ * renderer never sees the token in JS), so the credential crosses into
+ * the webview as the gateway's browser access cookie (#576 cookie
+ * custody) instead of any page-reachable handle.
+ *
+ * Everything here is best-effort: a hatch whose cookie ship fails still
+ * succeeds (the response passes through untouched), and requests that are
+ * not the hatch row pass straight through.
+ */
+export async function shipPairingCookie(
+  request: Request,
+  response: Response,
+  sink: PairingCookieSink,
+  accessToken: (assistantId: string) => Promise<string | null> = async (
+    assistantId,
+  ) => {
+    const result = await getGuardianAccessToken(assistantId);
+    return result.ok ? result.accessToken : null;
+  },
+): Promise<void> {
+  const url = new URL(request.url);
+  if (request.method !== "POST" || url.pathname !== HATCH_PATH) {
+    return;
+  }
+  const body = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as { ok?: boolean; assistantId?: unknown } | null;
+  const assistantId =
+    body?.ok && typeof body.assistantId === "string" ? body.assistantId : null;
+  if (!assistantId) {
+    return;
+  }
+  let token: string | null = null;
+  try {
+    token = await accessToken(assistantId);
+  } catch (err) {
+    log.warn("[pairing-cookie] guardian token read failed:", err);
+    return;
+  }
+  if (!token) {
+    return;
+  }
+  try {
+    await sink.set({
+      url: `${APP_PROTOCOL}://${APP_HOST}/`,
+      name: GATEWAY_ACCESS_COOKIE,
+      value: token,
+      httpOnly: true,
+      path: "/",
+    });
+  } catch (err) {
+    log.warn("[pairing-cookie] cookie set failed:", err);
+  }
+}
+
 export function registerAppProtocol(): void {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
@@ -91,6 +173,12 @@ export function registerAppProtocol(): void {
     // The operator routes ride ahead of the gateway proxy.
     const operated = await forwardOperatorRequest(request);
     if (operated) {
+      // A hatched pairing leases a guardian token — cross it into the
+      // webview's cookie jar before the response lands, so the caller's
+      // very next resolution dial presents it.
+      await shipPairingCookie(request, operated, {
+        set: (details) => session.defaultSession.cookies.set(details),
+      });
       return operated;
     }
 

@@ -228,6 +228,17 @@ export function HatchingScreen() {
               gatewayReady = true;
               break;
             }
+            if (resolution?.status === "unauthenticated") {
+              // The hatch 200'd, but the pairing credential never
+              // authenticated the caller — retrying cannot fix a missing
+              // credential, so fail loudly instead of polling a 401.
+              releaseHatchGuard();
+              releaseHatchTraits();
+              setError(
+                "We couldn't connect to your assistant. Please try again.",
+              );
+              return;
+            }
             if (Date.now() - pollStartMs >= MAX_HATCH_WAIT_MS) {
               // The hatch succeeded but the assistant never went healthy —
               // release the guards so "Try again" runs a genuinely fresh
