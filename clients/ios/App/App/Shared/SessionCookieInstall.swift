@@ -32,7 +32,7 @@ enum SessionCookieInstall {
             names.append("__Secure-sessionid")
         }
         return names.compactMap { name in
-            var properties: [HTTPCookie.PropertyKey: Any] = [
+            var properties: [HTTPCookiePropertyKey: Any] = [
                 .name: name,
                 .value: token,
                 .domain: host,
