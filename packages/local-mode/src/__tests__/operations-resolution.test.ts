@@ -176,6 +176,14 @@ describe("matchOperatorRequest — the four prefixes", () => {
   test("the derivation helpers give every row both versioned spellings", () => {
     for (const route of OPERATOR_ROUTES) {
       const derived = route.pattern.source;
+      if (derived.startsWith("^\\/webhooks")) {
+        // The channel-webhook row is PUBLIC ingress at the root — external
+        // services post fixed URLs (Telegram's registered callback), so no
+        // version arm or tail hygiene applies. Pinned exactly so no other
+        // row sneaks past the derivation unversioned.
+        expect(derived).toBe("^\\/webhooks(?:\\/.*)?$");
+        continue;
+      }
       if (derived.includes("(?<id>")) {
         // An assistant row: helper 2's id capture plus helper 1's required
         // version arm. Rows declare relative patterns, so the scoping arm
