@@ -643,3 +643,32 @@ describe("the route table's method scoping", () => {
     expect(match?.assistantId).toBe("");
   });
 });
+
+describe("the webhook row — /webhooks/* bridges to the fronted gateway", () => {
+  test("matches the subtree at the root in every method, unscoped to the active entry", () => {
+    const entry = seedEntry({
+      assistantId: "assistant-1",
+      name: "Homelab",
+      cloud: "local",
+      port: 7830,
+    });
+    for (const path of [
+      "/webhooks",
+      "/webhooks/telegram",
+      "/webhooks/twilio/voice",
+      "/webhooks/oauth/callback",
+    ]) {
+      for (const method of ["GET", "POST", "DELETE"]) {
+        const match = matchOperatorRequest(path, method);
+        expect(match?.assistantId).toBe(entry.assistantId);
+      }
+    }
+  });
+
+  test("near-miss roots match no row", () => {
+    seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
+    expect(matchOperatorRequest("/webhooks/telegram", "POST")).not.toBeNull();
+    expect(matchOperatorRequest("/hooks/telegram", "POST")).toBeNull();
+    expect(matchOperatorRequest("/webhookss/telegram", "POST")).toBeNull();
+  });
+});

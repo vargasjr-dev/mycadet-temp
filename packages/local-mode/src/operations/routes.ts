@@ -750,6 +750,15 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^avatar\/get$/),
     run: runAvatarRoute,
   },
+  // Channel webhooks: the tunnel fronts the serving hosts only and the
+  // gateway owns webhook ingress (gateway-only mode), so the subtree rides
+  // this unscoped proxy row to the fronted assistant's gateway verbatim.
+  // Each channel validates its own shared secret at the gateway — no bearer.
+  {
+    method: "ALL",
+    pattern: /^\/webhooks(?:\/.*)?$/,
+    run: runProxyRoute,
+  },
   {
     method: "ALL",
     pattern: scopedAssistant(/^.+$/),

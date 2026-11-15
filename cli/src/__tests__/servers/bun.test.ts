@@ -195,6 +195,7 @@ function seedAssistant(name = "Homelab"): void {
           assistantId: "assistant-1",
           name,
           cloud: "local",
+          port: 7830,
           localUrl: "http://127.0.0.1:7830",
         },
       ],
@@ -423,8 +424,8 @@ describe("the app server's routes", () => {
     expect(await response.text()).toBe("gateway says hi");
     expect(gateway.calls).toHaveLength(1);
     const forwarded = gateway.calls[0]!;
-    // The forward targets the fronted assistant's gateway, same live
-    // lockfile resolution the websocket relay rides.
+    // The proxy row targets the fronted assistant's gateway — the same
+    // lockfile resolution the websocket relay and the served config ride.
     expect(forwarded.url).toBe("http://127.0.0.1:7830/webhooks/telegram");
     expect(forwarded.method).toBe("POST");
     // The channel's own authentication header rides untouched — the gateway
@@ -463,7 +464,7 @@ describe("the app server's routes", () => {
     );
   });
 
-  test("a webhook with no lockfile entry is a 502, like the relay", async () => {
+  test("a webhook with no lockfile entry passes through to the edge's 404", async () => {
     makeWorkspace();
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
@@ -474,7 +475,9 @@ describe("the app server's routes", () => {
         body: "{}",
       }),
     );
-    expect(orphan.status).toBe(502);
+    // The proxy row passes when the assistant is unresolvable — the edge's
+    // own static/notFound chain answers, like any unmatched path.
+    expect(orphan.status).toBe(404);
     expect(gateway.calls).toHaveLength(0);
   });
 

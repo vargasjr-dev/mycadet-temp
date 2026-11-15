@@ -321,10 +321,10 @@ type AppServerHandle = {
 /**
  * The app server's one fetch handler. Priority order mirrors the nginx map:
  * the denylist (never edge-reachable), the operator dispatch (the rows are
- * the authority; a pass falls through), the channel-webhook ingress, the
- * static SPA surface, and the streaming gateway proxy for everything else.
- * `requestIP` is threaded in because Bun exposes the peer address off the
- * server handle, not the Request; handler-level tests omit it.
+ * the authority; a pass falls through), the static SPA surface, and the
+ * streaming gateway proxy for everything else. `requestIP` is threaded in
+ * because Bun exposes the peer address off the server handle, not the
+ * Request; handler-level tests omit it.
  */
 export function createAppServerHandler(
   spec: AppServerSpec,
@@ -359,17 +359,6 @@ export function createAppServerHandler(
     });
     if (operated) {
       return withAppOriginCors(operated, request, allowedOrigins);
-    }
-
-    // Channel webhooks are gateway-owned ingress — the runtime's direct
-    // webhook routes are gone in gateway-only mode, and the tunnel fronts
-    // this server only, so the edge bridges the /webhooks subtree to the
-    // gateway itself.
-    if (pathname === "/webhooks" || pathname.startsWith("/webhooks/")) {
-      return forwardWebhookRequest(
-        request,
-        server?.requestIP(request)?.address ?? null,
-      );
     }
 
     const static_ = await serveStatic(request, spec);
@@ -472,53 +461,6 @@ function upgradeToGateway(request: Request, server: AppServerHandle): Response {
   }
   // The socket is hijacked; Bun ignores the response body.
   return new Response(null, { status: 101 });
-}
-
-/**
- * The HTTP twin of `upgradeToGateway`: forward a channel webhook to the
- * fronted assistant's gateway. Webhooks authenticate themselves — each
- * channel validates its own shared secret at the gateway, no bearer token —
- * so the forward preserves the request verbatim (method, body bytes,
- * headers minus hop-by-hop, edge-stamped client IP) and echoes the
- * gateway's response untouched, because each channel reads its ACK
- * semantics off that response (Telegram's bare 200, Twilio's form reply).
- */
-async function forwardWebhookRequest(
-  request: Request,
-  peer: string | null,
-): Promise<Response> {
-  const entry = servedAssistantFromLockfile(readLockfile());
-  if (!entry) {
-    return new Response(null, { status: 502 });
-  }
-  const url = new URL(request.url);
-  const target = new URL(`${url.pathname}${url.search}`, getGatewayUrl(entry));
-  const headers: Record<string, string> = {};
-  request.headers.forEach((value, key) => {
-    const lower = key.toLowerCase();
-    if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) {
-      return;
-    }
-    headers[key] = value;
-  });
-  headers["X-Cadet-Client-Ip"] = edgeClientIp(request, peer);
-  const method = request.method;
-  let body: Uint8Array<ArrayBuffer> | undefined;
-  if (method !== "GET" && method !== "HEAD") {
-    body = new Uint8Array(await request.arrayBuffer());
-    headers["content-length"] = String(body.byteLength);
-  }
-  try {
-    return await fetch(target, {
-      method,
-      headers,
-      body,
-      signal: request.signal,
-      redirect: "manual",
-    });
-  } catch {
-    return new Response(null, { status: 502 });
-  }
 }
 
 /**
