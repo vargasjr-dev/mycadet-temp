@@ -148,6 +148,17 @@ export const router = createBrowserRouter(
         accountRoute,
         consentRoute,
         {
+          // Standalone About page rendered inside the Electron About
+          // BrowserWindow — metadata, not the app: a sibling of the auth
+          // tree so no auth middleware or shell chrome wraps it.
+          path: "/about",
+          HydrateFallback: RootHydrateFallback,
+          lazy: {
+            Component: () =>
+              import("@app/components/about-page").then((m) => m.AboutPage),
+          },
+        },
+        {
           path: "/",
           lazy: {
             Component: () =>

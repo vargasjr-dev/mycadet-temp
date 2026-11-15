@@ -583,10 +583,8 @@ export async function leaseGuardianToken(
   });
   if (!paired.ok) throw new Error(paired.error);
 
-  // The pair door already zod-parsed the mint's stdout line; the lease
-  // validates again at the persistence boundary — this is the credential
-  // about to be written to disk, and a malformed mint will not fix itself.
-  const tokenData = parseGuardianToken(paired.response);
+  // The pair door already zod-parsed the mint's stdout line.
+  const tokenData = paired.response;
 
   saveGuardianToken(assistantId, tokenData);
   return tokenData;

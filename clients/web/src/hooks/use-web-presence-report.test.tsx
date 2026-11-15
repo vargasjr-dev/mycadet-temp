@@ -270,7 +270,7 @@ describe("useWebPresenceReport", () => {
     });
 
     setVisibilityState("visible");
-    navigateTo(routes.about);
+    navigateTo(routes.settings.usage);
 
     await flushPresence();
     expect(postCalls[1]?.body).toEqual({
@@ -282,7 +282,7 @@ describe("useWebPresenceReport", () => {
   test("reports no focused conversation off the chat route even with an active id", async () => {
     useConversationStore.getState().setActiveConversationId("conv-1");
 
-    renderReportAt("assistant-1", routes.about);
+    renderReportAt("assistant-1", routes.settings.usage);
 
     await flushPresence();
     expect(postCalls).toHaveLength(1);
@@ -395,7 +395,7 @@ describe("useWebPresenceReport", () => {
     await flushPresence();
     expect(postCalls).toHaveLength(1);
 
-    navigateTo(routes.about);
+    navigateTo(routes.settings.usage);
 
     await flushPresence();
     expect(postCalls).toHaveLength(2);
@@ -541,7 +541,7 @@ describe("useWebPresenceReport: reconciliation", () => {
     await flushPresence();
     expect(postCalls).toHaveLength(1);
 
-    navigateTo(routes.about);
+    navigateTo(routes.settings.usage);
     await flushPresence();
     expect(postCalls).toHaveLength(2);
 

@@ -27,7 +27,6 @@ import {
 } from "../lib/guardian-token.js";
 import {
   getOrCreatePersistedDeviceId,
-  GuardianLeasePermanentError,
   leaseGuardianToken,
 } from "@mycadet/local-mode";
 import type { GuardianTokenData } from "@mycadet/local-mode";
@@ -323,21 +322,19 @@ describe("refreshGuardianToken", () => {
     expect(stored?.refreshAfter).toBe(leased.refreshAfter);
   });
 
-  test("a malformed 200 names the unusable fields and is not retried", async () => {
-    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.endsWith("/readyz")) {
-        return new Response("", { status: 404 });
-      }
+  test("a malformed 200 surfaces the pair door's refusal as the lease error", async () => {
+    // The door (pairCliStdoutToResult) zod-parses the mint's stdout and
+    // names the refusal; the lease passes it through verbatim. The door's
+    // own naming is pinned in local-mode's pair suite — this pins only the
+    // lease's pass-through.
+    globalThis.fetch = withPreconnect(async () => {
       throw new Error("the lease must not pair over fetch");
     });
     pairDeviceMock.mockResolvedValue({
-      ok: true,
-      response: {
-        guardianPrincipalId: "principal-lease",
-        accessToken: 42,
-        refreshToken: "refresh-lease",
-      },
+      ok: false,
+      status: 0,
+      error:
+        "the gateway's pair output did not match the expected payload shape",
     });
 
     makeEntry({ assistantId: "px" });
@@ -346,14 +343,10 @@ describe("refreshGuardianToken", () => {
       (e: unknown) => e,
     );
 
-    if (!(err instanceof GuardianLeasePermanentError)) {
-      throw new Error(
-        `expected GuardianLeasePermanentError, got ${String(err)}`,
-      );
-    }
-    expect(err.message).toContain("malformed token response");
-    expect(err.message).toContain("expected string, received number");
-    expect(err.message).toContain("expected string, received undefined");
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe(
+      "the gateway's pair output did not match the expected payload shape",
+    );
   });
 
   test("returns null without calling the gateway when the refresh token is expired", async () => {

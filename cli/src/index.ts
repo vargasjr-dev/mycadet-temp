@@ -44,11 +44,7 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
-// Report where the cadet source tree lives before any command can resolve
-// local services from it. This file's position is the ground truth when the
-// CLI runs from source (cli/src -> repo root); a bundled binary has no file
-// position, and the resolvers fall through to their packaged-runtime and
-// cwd probes. Source layout: cli/src/index.ts -> ../../ -> repo root.
+// Report where the source tree lives for local file resolution
 if (typeof import.meta.dir === "string") {
   setLocalSourceRoot(join(import.meta.dir, "..", ".."));
 }

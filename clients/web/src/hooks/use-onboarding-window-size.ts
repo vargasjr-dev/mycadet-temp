@@ -10,10 +10,10 @@ import { setOnboardingWindow } from "@/runtime/main-window";
  * Both are chrome-less, narrow, pre-app surfaces. Everything else (the main
  * app) uses the large window.
  *
- * The `/account` prefix assumes the hook is only mounted on `/account`
+/** The `/account` prefix assumes the hook is only mounted on `/account`
  * routes that render in the MAIN window (login, signup, etc., via
- * `AccountLayout`). Same hazard as `/assistant/about`, which renders in a
- * separate About `BrowserWindow` and likewise never mounts this hook: the
+ * `AccountLayout`). Same hazard as the app bundle's `/about`, which renders
+ * in a separate About `BrowserWindow` and likewise never mounts this hook: the
  * resize IPC targets the main window, so signalling from any non-main window
  * would resize the wrong window.
  */

@@ -239,8 +239,4 @@ export {
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";
 
-export {
-  getLocalSourceRoot,
-  resetLocalSourceRoot,
-  setLocalSourceRoot,
-} from "./source-root";
+export { setLocalSourceRoot } from "./source-root";

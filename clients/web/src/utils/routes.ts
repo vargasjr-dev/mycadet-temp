@@ -3,6 +3,8 @@ import { WWW_DOMAIN } from "@/utils/domains";
 const r = <const T extends string>(path: T): T => path;
 
 const dyn = (parent: string, id: string): string => `${parent}/${id}`;
+export const BUNDLE_BASE_NAME = "web";
+
 const SETTINGS_USAGE_PATH = r("/assistant/settings/usage");
 
 /**
@@ -35,18 +37,6 @@ export function hasOneShotEntryParam(search: string): boolean {
 
 export const routes = {
   assistant: r("/assistant"),
-  /**
-   * Standalone About page. Lives under `/assistant/*` so it falls inside
-   * `clients/web/vite.config.ts`'s `base: "/assistant/"` and Vite's SPA
-   * fallback serves it in dev. Declared as a sibling of `/assistant`
-   * in `routes.tsx` rather than a child, so it bypasses the app's auth
-   * middleware and `RootLayout` — it's metadata, not the app.
-   *
-   * Mounted from the Electron host (`clients/macos/src/main/about.ts`)
-   * into a frameless BrowserWindow; the route is also reachable from
-   * the web build, where the runtime wrapper degrades to a "—" fallback.
-   */
-  about: r("/assistant/about"),
   /**
    * Bundle confirmation page. Standalone like About — sits under
    * `/assistant/*` for Vite SPA fallback but outside the auth tree so

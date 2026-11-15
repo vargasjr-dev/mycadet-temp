@@ -4,11 +4,13 @@ import {
 } from "@mycadet/electron-desktop/about";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 
-import { RENDERER_BASE_PROD } from "./app-config";
+import { APP_RENDERER_BASE_PROD } from "./app-config";
 import { handle } from "./ipc";
 
 configureAboutRuntime({
-  rendererBase: () => RENDERER_BASE_PROD,
+  // The About window renders the app bundle's root-based /about route,
+  // not the web bundle's /assistant mount.
+  rendererBase: () => APP_RENDERER_BASE_PROD,
   getAssistantName: getName,
   onAssistantNameChange: onNameChange,
 });

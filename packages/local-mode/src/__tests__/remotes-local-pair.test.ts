@@ -111,6 +111,23 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
+  test("a malformed payload names the shape refusal and is structured", async () => {
+    // Valid JSON, wrong shape — the schema arm of the door's parser.
+    execOutputMock.mockResolvedValue(
+      JSON.stringify({ guardianPrincipalId: "guardian-1", accessToken: 42 }),
+    );
+    const result = await pairLocal(entry, {
+      platform: "cli",
+      deviceId: "device-shape",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected refusal");
+    expect(result.status).toBe(0);
+    expect(result.error).toBe(
+      'the gateway\'s pair output did not match the expected payload shape (stdout tail: {"guardianPrincipalId":"guardian-1","accessToken":42})',
+    );
+  });
+
   test("an unparseable answer comes back structured", async () => {
     execOutputMock.mockResolvedValue("not json at all");
     const result = await pairLocal(entry, {

@@ -17,7 +17,7 @@ export interface AboutIpc {
 }
 
 let runtime: AboutRuntime = {
-  rendererBase: () => "app://mycadet.ai/assistant",
+  rendererBase: () => "app://mycadet.ai",
 };
 
 export const configureAboutRuntime = (next: AboutRuntime): void => {
@@ -30,13 +30,13 @@ export const configureAboutRuntime = (next: AboutRuntime): void => {
  * Swift Cadet exposes today: app name, version, commit SHA, copyright,
  * link to the website.
  *
- * The UI itself is a React route in `clients/web` — `/assistant/about` —
- * loaded into a BrowserWindow by this module. Putting the UI in
- * `clients/web` keeps it inside the design system, lets it iterate
- * alongside the rest of the app, and stays in the dev contributor's
- * mental model that "UI lives in clients/web." Future auxiliary windows
- * (thread pop-outs, command palette, etc.) follow this same pattern;
- * this module is the working example.
+ * The UI itself is a React route in the app bundle (`clients/app`) —
+ * `/about`, top level — loaded into a BrowserWindow by this module.
+ * Putting the UI in the app bundle keeps it inside the design system and
+ * off the web bundle's mount (the web bundle's serving depth varies by
+ * host; the app bundle is always root-served). Future auxiliary windows
+ * that want app-native UI follow this same pattern; this module is the
+ * working example.
  *
  * Version + commit SHA + copyright still flow from the host: the
  * renderer asks for them via `window.cadet.app.versionInfo()`, and
@@ -87,9 +87,9 @@ export const getVersionInfo = (): AppVersionInfo => ({
   website: WEBSITE,
 });
 
-// The renderer route the About window loads. Mirrors `routes.about` in
-// `clients/web/src/utils/routes.ts`; the literal is duplicated rather than
-// imported because `clients/macos` and `clients/web` are separate TS projects.
+// The renderer route the About window loads — a top-level route in the
+// root-based app bundle. The literal is duplicated rather than imported
+// because the main process and the app bundle are separate TS projects.
 // Drift surfaces as the About window loading the app's catch-all
 // NotFound page.
 const ABOUT_PATH = "/about";

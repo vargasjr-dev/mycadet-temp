@@ -21,7 +21,6 @@ import { join } from "node:path";
  * plumbing, not shared machinery.
  */
 function gatewayPairInvocation(entry: LocalAssistant): {
-  args: string[];
   cwd: string;
   env: Record<string, string | undefined>;
 } {
@@ -31,7 +30,6 @@ function gatewayPairInvocation(entry: LocalAssistant): {
     // The instance's bin/ shim for `gateway` (materialized by the env
     // build every hatch/wake/exec runs) — a layer removed from bun, so
     // the shim's own source resolution governs which gateway runs.
-    args: ["pairing", "mint"],
     cwd: gatewaySecurityDir,
     env: {
       ...process.env,
@@ -67,7 +65,7 @@ export async function pairLocal(
   device?: PairDeviceIdentity,
 ): Promise<string | PairOperationResult<GuardianTokenData>> {
   const invocation = gatewayPairInvocation(entry);
-  const args = [...invocation.args];
+  const args = ["pairing", "mint"];
   if (device) {
     args.push(
       "--platform",

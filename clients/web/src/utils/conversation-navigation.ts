@@ -2,9 +2,9 @@ import type { NavigateFunction } from "react-router";
 
 import { autoSendPromptState } from "@/utils/auto-send-prompt";
 import { haptic } from "@/utils/haptics";
-import { bundleBasename } from "@/utils/bundle-basename";
 import {
   appIdForPath,
+  BUNDLE_BASE_NAME,
   conversationIdForPath,
   isConversationChatPath,
   routes,
@@ -51,9 +51,8 @@ export interface NavigateToConversationOptions {
 /** The route on screen, router-relative like `useLocation().pathname`. */
 export function currentPathname(): string {
   const { pathname } = window.location;
-  const base = bundleBasename();
-  return base && pathname.startsWith(base)
-    ? pathname.slice(base.length)
+  return pathname.startsWith(BUNDLE_BASE_NAME)
+    ? pathname.slice(BUNDLE_BASE_NAME.length)
     : pathname;
 }
 

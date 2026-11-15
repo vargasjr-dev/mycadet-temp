@@ -399,11 +399,11 @@ function resolveAssistantIndexPath(entry?: LocalAssistant): string | undefined {
       return sourceTreeIndex;
     }
 
-    // bunx layout: node_modules/cadet nests the assistant's entry one level down.
+    // bunx layout: node_modules/mycadet nests the assistant's entry one level down.
     const bunxIndex = join(
       sourceRoot,
       "node_modules",
-      "cadet",
+      "mycadet",
       "src",
       "index.ts",
     );
@@ -921,7 +921,12 @@ function resolveGatewayDir(entry?: LocalAssistant): string {
       return sourceDir;
     }
 
-    const npmGatewayDir = join(sourceRoot, "node_modules", "cadet-gateway");
+    const npmGatewayDir = join(
+      sourceRoot,
+      "node_modules",
+      "@mycadet",
+      "gateway",
+    );
     if (isGatewaySourceDir(npmGatewayDir)) {
       return npmGatewayDir;
     }

@@ -173,7 +173,7 @@ describe("openAboutWindow", () => {
     expect(loadURLMock).toHaveBeenCalledTimes(1);
     // Dev URL pattern — the test env doesn't set `app.isPackaged` true,
     // so the dev branch runs. URL must end with the renderer-side
-    // route path so the React route in clients/web mounts.
+    // route path so the React route in the app bundle mounts.
     expect(loadURLMock.mock.calls[0]?.[0]).toMatch(/\/about$/);
   });
 
