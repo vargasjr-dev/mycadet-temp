@@ -8,7 +8,6 @@ import { AssistantTerminalPanel } from "@/domains/settings/components/panels/ass
 import { DatabaseDebugPanel } from "@/domains/settings/components/panels/database-debug-panel";
 import { ToneLabPanel } from "@/domains/settings/components/tone-lab/tone-lab-panel";
 import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helpers";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { navigateToConversation } from "@/utils/conversation-navigation";
 import { Tabs } from "@mycadet/design-library/components/tabs";
@@ -48,30 +47,15 @@ export function DebugPage() {
     },
     [navigate],
   );
-  // The terminal is platform-routed and must be hidden when the active
-  // assistant is self-hosted — `cloudHostedOnly: true` is the correct
-  // variant. The standard gate still resolves to "full" on a cloud-mode app
-  // pointed at a self-hosted assistant, leaving the tab visible and letting
-  // the user land on a doomed terminal connection.
-  const isSelfHosted = useActiveAssistantIsSelfHosted();
-
-  const tabs = useMemo(
-    () =>
-      ALL_TABS.filter((tab) => !(isSelfHosted && tab.id === "terminal")),
-    [isSelfHosted],
-  );
-
-  // A gated deep-link (e.g. ?tab=terminal on a self-hosted assistant) has no
-  // matching visible tab, so fall back to General rather than rendering a
-  // panel with no trigger.
   const { tabId, conversationsFilter } = resolveDebugTabParam(
     searchParams.get("tab"),
   );
 
-  const activeTab: DebugTabId = useMemo(() => {
-    const match = tabs.find((tab) => tab.id === tabId);
-    return match?.id ?? DEFAULT_TAB;
-  }, [tabId, tabs]);
+  // Every tab renders now; an unknown deep-link falls back to General.
+  const activeTab: DebugTabId = (ALL_TABS as readonly { id: string }[])
+    .some((tab) => tab.id === tabId)
+    ? (tabId as DebugTabId)
+    : DEFAULT_TAB;
 
   const handleTabChange = (value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -95,20 +79,18 @@ export function DebugPage() {
         className="flex min-h-0 flex-1 flex-col"
       >
         <Tabs.List>
-          {tabs.map((tab) => (
+          {ALL_TABS.map((tab) => (
             <Tabs.Trigger key={tab.id} value={tab.id}>
               {t(tab.labelKey, tab.defaultLabel)}
             </Tabs.Trigger>
           ))}
         </Tabs.List>
-        {tabs.some((tab) => tab.id === "terminal") && (
-          <Tabs.Panel
-            value="terminal"
-            className="flex min-h-0 flex-1 flex-col pt-4"
-          >
-            <AssistantTerminalPanel />
-          </Tabs.Panel>
-        )}
+        <Tabs.Panel
+          value="terminal"
+          className="flex min-h-0 flex-1 flex-col pt-4"
+        >
+          <AssistantTerminalPanel />
+        </Tabs.Panel>
         <Tabs.Panel value="database" className="pt-4">
           <DatabaseDebugPanel />
         </Tabs.Panel>

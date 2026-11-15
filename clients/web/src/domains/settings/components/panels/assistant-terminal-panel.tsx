@@ -2,7 +2,6 @@ import { Terminal } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { TerminalPanel } from "@/components/terminal-panel";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { Select } from "@mycadet/design-library/components/select";
 
@@ -24,14 +23,6 @@ export function AssistantTerminalPanel() {
       ] as const,
     [],
   );
-
-  // The cloud-routed exec connection — the actual Trap-5 concern — lives
-  // inside `<TerminalPanel>` and is structurally blocked from mounting: the
-  // gate flips to `"gated"` and returns null when the lifecycle resolves to
-  // self-hosted.
-  if (useActiveAssistantIsSelfHosted()) {
-    return null;
-  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
