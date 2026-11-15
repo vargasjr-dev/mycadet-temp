@@ -284,16 +284,40 @@ function handlerFor(fixture: HandlerFixture) {
  * remaining stubs exist to prove it: a request that must not reach a
  * gateway records zero calls.
  */
-function stubGatewayFetch(): { calls: Array<{ url: string }> } {
-  const calls: Array<{ url: string }> = [];
-  globalThis.fetch = mock(async (input: unknown, init?: unknown) => {
-    const request =
-      input instanceof Request
-        ? input
-        : new Request(input as string, init as RequestInit | undefined);
-    calls.push({ url: request.url });
-    return new Response("gateway says hi");
-  }) as unknown as typeof fetch;
+function stubGatewayFetch(): {
+  calls: Array<{
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: Uint8Array<ArrayBuffer> | undefined;
+  }>;
+} {
+  const calls: Array<{
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: Uint8Array<ArrayBuffer> | undefined;
+  }> = [];
+  globalThis.fetch = mock(
+    async (input: unknown, init?: unknown) => {
+      const request =
+        input instanceof Request
+          ? input
+          : new Request(input as string, init as RequestInit | undefined);
+      const headers: Record<string, string> = {};
+      request.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+      const buffer = await request.arrayBuffer();
+      calls.push({
+        url: request.url,
+        method: request.method,
+        headers,
+        body: buffer.byteLength > 0 ? new Uint8Array(buffer) : undefined,
+      });
+      return new Response("gateway says hi");
+    },
+  ) as unknown as typeof fetch;
   return { calls };
 }
 
@@ -370,17 +394,87 @@ describe("the app server's routes", () => {
     // behind it at all.
     const health = await handler(new Request("http://127.0.0.1:7840/healthz"));
     expect(await health.json()).toEqual({ ok: true });
-    // Readiness and webhook callbacks are the gateway's own ports to answer;
-    // the edge no longer fronts them.
+    // Readiness is the gateway's own port to answer; the edge no longer
+    // fronts it.
     const ready = await handler(new Request("http://127.0.0.1:7840/readyz"));
     expect(ready.status).toBe(404);
-    const webhook = await handler(
+    expect(gateway.calls).toHaveLength(0);
+  });
+
+  test("forwards channel webhooks to the assistant's gateway verbatim", async () => {
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    seedAssistant();
+    const gateway = stubGatewayFetch();
+    const response = await handler(
+      new Request("http://127.0.0.1:7840/webhooks/telegram", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "webhook-secret",
+        },
+        body: JSON.stringify({
+          update_id: 1,
+          message: { text: "ping" },
+        }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("gateway says hi");
+    expect(gateway.calls).toHaveLength(1);
+    const forwarded = gateway.calls[0]!;
+    // The forward targets the fronted assistant's gateway, same live
+    // lockfile resolution the websocket relay rides.
+    expect(forwarded.url).toBe("http://127.0.0.1:7830/webhooks/telegram");
+    expect(forwarded.method).toBe("POST");
+    // The channel's own authentication header rides untouched — the gateway
+    // validates it, not the edge.
+    expect(forwarded.headers["x-telegram-bot-api-secret-token"]).toBe(
+      "webhook-secret",
+    );
+    // The edge stamps the client ip the tunnel-front observed.
+    expect(forwarded.headers["x-cadet-client-ip"]).toBe(EDGE_PEER_IP);
+    expect(new TextDecoder().decode(forwarded.body!)).toContain(
+      '"update_id":1',
+    );
+  });
+
+  test("the webhook forward preserves the gateway's status and passes query strings", async () => {
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    seedAssistant();
+    const gateway = stubGatewayFetch();
+    // The gateway's own response echoes back untouched — the edge adds no
+    // opinion of its own — and query strings ride to the gateway (the
+    // OAuth callback's code/state do).
+    const denied = await handler(
+      new Request("http://127.0.0.1:7840/webhooks/telegram"),
+    );
+    expect(denied.status).toBe(200);
+    expect(gateway.calls).toHaveLength(1);
+    expect(gateway.calls[0]!.url).toBe("http://127.0.0.1:7830/webhooks/telegram");
+    const search = new URL("http://127.0.0.1:7840/webhooks/oauth/callback?code=abc&state=xyz").search;
+    await handler(
+      new Request(`http://127.0.0.1:7840/webhooks/oauth/callback${search}`),
+    );
+    expect(gateway.calls).toHaveLength(2);
+    expect(gateway.calls[1]!.url).toBe(
+      `http://127.0.0.1:7830/webhooks/oauth/callback${search}`,
+    );
+  });
+
+  test("a webhook with no lockfile entry is a 502, like the relay", async () => {
+    makeWorkspace();
+    const fixture = makeHandlerFixture();
+    const handler = handlerFor(fixture);
+    const gateway = stubGatewayFetch();
+    const orphan = await handler(
       new Request("http://127.0.0.1:7840/webhooks/telegram", {
         method: "POST",
         body: "{}",
       }),
     );
-    expect(webhook.status).toBe(404);
+    expect(orphan.status).toBe(502);
     expect(gateway.calls).toHaveLength(0);
   });
 
