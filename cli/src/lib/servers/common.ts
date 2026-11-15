@@ -26,7 +26,7 @@ import { z } from "zod";
 import { DEFAULT_APP_SERVER_PORT } from "@mycadet/shared";
 import { resolveVersion } from "@mycadet/shared/version";
 
-import { readRootProcesses, stampRootProcess } from "../assistant-config.js";
+import { stampRootProcess } from "../assistant-config.js";
 import {
   clearAppProcessRecord,
   probePort,

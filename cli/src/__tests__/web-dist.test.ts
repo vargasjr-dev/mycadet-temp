@@ -87,7 +87,7 @@ function fakeSpawn(
   landBun?: () => void,
   bunCode = 0,
 ): typeof childProcess.spawn {
-  return ((command: string) => {
+  return (() => {
     landBun?.();
     const child = new childProcess.ChildProcess();
     // The real build spawn pipes both streams (the resolve captures the
